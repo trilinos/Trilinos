@@ -44,34 +44,36 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#include "mrtr_manager.H"
-#include "EpetraExt_MatrixMatrix.h"  // for adding matrices
-#include <EpetraExt_Transpose_RowMatrix.h>
-#include "Epetra_Time.h"
+#include "Moertel_ManagerT.hpp"
+#include "Teuchos_Time.hpp"
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MOERTEL::Manager::Manager(Epetra_Comm& comm, int outlevel) :
-outlevel_(outlevel),
-comm_(comm),
-dimensiontype_(MOERTEL::Manager::manager_none),
-problemmap_(Teuchos::null),
-inputmatrix_(Teuchos::null),
-constraintsmap_(Teuchos::null),
-D_(Teuchos::null),
-M_(Teuchos::null),
-saddlemap_(Teuchos::null),
-saddlematrix_(Teuchos::null),
-spdmatrix_(Teuchos::null),
-spdrhs_(Teuchos::null),
-I_(Teuchos::null),
-WT_(Teuchos::null),
-B_(Teuchos::null),
-annmap_(Teuchos::null),
-integrationparams_(Teuchos::null),
-solverparams_(Teuchos::null),
-solver_(Teuchos::null)
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+MoertelT::ManagerT<ST, LO, GO, N>::ManagerT(const Teuchos::RCP<const Teuchos::Comm<LO> >& comm, int outlevel) :
+	outlevel_(outlevel),
+	comm_(comm),
+	dimensiontype_(MoertelT::ManagerT<ST, LO, GO, N>::manager_none),
+	problemmap_(Teuchos::null),
+	inputmatrix_(Teuchos::null),
+	constraintsmap_(Teuchos::null),
+	D_(Teuchos::null),
+	M_(Teuchos::null),
+	saddlemap_(Teuchos::null),
+	saddlematrix_(Teuchos::null),
+	spdmatrix_(Teuchos::null),
+	spdrhs_(Teuchos::null),
+	I_(Teuchos::null),
+	WT_(Teuchos::null),
+	B_(Teuchos::null),
+	annmap_(Teuchos::null),
+	integrationparams_(Teuchos::null),
+	solverparams_(Teuchos::null),
+	solver_(Teuchos::null)
 {
   // create default integration parameters
   Default_Parameters();
@@ -80,8 +82,12 @@ solver_(Teuchos::null)
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 03/06|
  *----------------------------------------------------------------------*/
-MOERTEL::Manager::Manager(Epetra_Comm& comm, 
-                          MOERTEL::Manager::DimensionType dimension, 
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+MoertelT::ManagerT<ST, LO, GO, N>::ManagerT(const Teuchos::RCP<const Teuchos::Comm<LO> >& comm, 
+                          MoertelT::ManagerT<ST, LO, GO, N>::DimensionType dimension, 
                           int outlevel) :
 outlevel_(outlevel),
 comm_(comm),
@@ -110,7 +116,11 @@ solver_(Teuchos::null)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MOERTEL::Manager::~Manager()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+MoertelT::ManagerT<ST, LO, GO, N>::~ManagerT()
 {
   interface_.clear();
 }
@@ -118,7 +128,12 @@ MOERTEL::Manager::~Manager()
 /*----------------------------------------------------------------------*
  |  Add an interface (public)                                mwgee 06/05|
  *----------------------------------------------------------------------*/
-Teuchos::ParameterList& MOERTEL::Manager::Default_Parameters()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+Teuchos::ParameterList& 
+MoertelT::ManagerT<ST, LO, GO, N>::Default_Parameters()
 {
   if (integrationparams_==Teuchos::null)
   {
@@ -136,7 +151,11 @@ Teuchos::ParameterList& MOERTEL::Manager::Default_Parameters()
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-std::ostream& operator << (std::ostream& os, const MOERTEL::Manager& man)
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+std::ostream& operator << (std::ostream& os, const MoertelT::ManagerT<ST, LO, GO, N>& man)
 { 
   man.Print();
   return (os);
@@ -145,64 +164,69 @@ std::ostream& operator << (std::ostream& os, const MOERTEL::Manager& man)
 /*----------------------------------------------------------------------*
  |  print all data                                           mwgee 06/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::Print() const
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::Print() const
 { 
-  comm_.Barrier();
+  comm_->barrier();
 
-  if (Comm().MyPID()==0)
+  if (comm_->getRank()==0)
   std::cout << "\n========================= Mortar Manager =========================\n\n";
   fflush(stdout);
   
-  comm_.Barrier();
+  comm_->barrier();
 
-  std::map<int,Teuchos::RCP<MOERTEL::Interface> >::const_iterator curr;
+  typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::const_iterator curr;
   for (curr=interface_.begin(); curr!=interface_.end(); ++curr)
   {
-	Teuchos::RCP<MOERTEL::Interface> inter = curr->second;
+	Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > inter = curr->second;
     if (inter==Teuchos::null)
     {
-      std::cout << "***ERR*** MOERTEL::Manager::Print:\n"
+      std::cout << "***ERR*** MoertelT::ManagerT::Print:\n"
            << "***ERR*** found NULL entry in map of interfaces\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
     std::cout << *inter;
   }
-  comm_.Barrier();
+  comm_->barrier();
   if (problemmap_ != Teuchos::null)
   {
-    if (comm_.MyPID() == 0)
+    if (comm_->getRank() == 0)
     std::cout << "\n------------------ Input RowMap of original Problem ---------------\n";
-    comm_.Barrier();
+    comm_->barrier();
     std::cout << *problemmap_;
   }
-  comm_.Barrier();
+  comm_->barrier();
   if (constraintsmap_ != Teuchos::null)
   {
-    if (comm_.MyPID() == 0)
+    if (comm_->getRank() == 0)
     std::cout << "\n------------------ RowMap of Constraints ---------------\n";
-    comm_.Barrier();
+    comm_->barrier();
     std::cout << *constraintsmap_;
   }
-  comm_.Barrier();
+  comm_->barrier();
   if (D_ != Teuchos::null)
   {
-    if (comm_.MyPID() == 0)
+    if (comm_->getRank() == 0)
     std::cout << "\n------------------ Coupling Matrix D ---------------\n";
-    comm_.Barrier();
+    comm_->barrier();
     std::cout << *D_;
   }
-  comm_.Barrier();
+  comm_->barrier();
   if (M_ != Teuchos::null)
   {
-    if (comm_.MyPID() == 0)
+    if (comm_->getRank() == 0)
     std::cout << "\n------------------ Coupling Matrix M ---------------\n";
-    comm_.Barrier();
+    comm_->barrier();
     std::cout << *M_;
   }
-  comm_.Barrier();
+  comm_->barrier();
 
-  if (Comm().MyPID()==0)
+  if (comm_->getRank()==0)
   std::cout << "\n========================= End Mortar Manager =========================\n\n";
   fflush(stdout);
 
@@ -212,18 +236,24 @@ bool MOERTEL::Manager::Print() const
 /*----------------------------------------------------------------------*
  |  Add an interface (public)                                mwgee 06/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::AddInterface(MOERTEL::Interface& interface) 
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::AddInterface(const Teuchos::RCP<const MoertelT::InterfaceT<ST, LO, GO, N> >& interface) 
 {
-  if (!interface.IsComplete())
+  if (!interface->IsComplete())
   {
-    std::cout << "***ERR*** MOERTEL::Manager::AddInterface:\n"
+    std::cout << "***ERR*** MoertelT::ManagerT::AddInterface:\n"
          << "***ERR*** Cannot add segment as Complete() was not called before\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
-  Teuchos::RCP<MOERTEL::Interface> tmp = Teuchos::rcp(new MOERTEL::Interface(interface));
-  interface_.insert(std::pair<int,Teuchos::RCP<MOERTEL::Interface> >(tmp->Id(),tmp));
+  Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > tmp = 
+      Teuchos::rcp(new MoertelT::InterfaceT<ST, LO, GO, N>(*interface));
+  interface_.insert(std::pair<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >(tmp->Id(),tmp));
   
   return true;
 }
@@ -232,18 +262,24 @@ bool MOERTEL::Manager::AddInterface(MOERTEL::Interface& interface)
  |  Choose dofs for lagrange multipliers (private)           mwgee 07/05|
  | Note that this is collective for ALL procs                           |
  *----------------------------------------------------------------------*/
-Teuchos::RCP<Epetra_Map> MOERTEL::Manager::LagrangeMultiplierDofs()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+Teuchos::RCP<Tpetra::Map<LO, GO, N> > 
+MoertelT::ManagerT<ST, LO, GO, N> ::LagrangeMultiplierDofs()
 {
   if (problemmap_==Teuchos::null)
   {
-    std::cout << "***ERR*** MOERTEL::Manager::LagrangeMultiplierDofs:\n"
+    std::cout << "***ERR*** MoertelT::ManagerT::LagrangeMultiplierDofs:\n"
          << "***ERR*** problemmap_==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return Teuchos::null;
   }
   
   // find the largest row number in problemmap_
-  int maxinputGID = problemmap_->MaxAllGID();
+//  int maxinputGID = problemmap_->MaxAllGID();
+  int maxinputGID = problemmap_->getMaxAllGlobalIndex();
 
   // start numbering lagrange multipliers from maxinputGID+1
   int minLMGID = maxinputGID+1;
@@ -260,14 +296,14 @@ Teuchos::RCP<Epetra_Map> MOERTEL::Manager::LagrangeMultiplierDofs()
 
   // start with minLMGID and return maxLMGID+1 on a specific interface
   // Note this is collective for ALL procs
-  std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+  typename std::map<int, Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
     length -= minLMGID;
     maxLMGID = curr->second->SetLMDofs(minLMGID);
     if (!maxLMGID && maxLMGID!=minLMGID)
     {
-      std::cout << "***ERR*** MOERTEL::Manager::LagrangeMultiplierDofs:\n"
+      std::cout << "***ERR*** MoertelT::ManagerT::LagrangeMultiplierDofs:\n"
            << "***ERR*** interface " << curr->second->Id() << " returned false\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return Teuchos::null;
@@ -276,15 +312,15 @@ Teuchos::RCP<Epetra_Map> MOERTEL::Manager::LagrangeMultiplierDofs()
     length += maxLMGID;
   }  
 
-  std::vector<int> mylmids(length);
+  std::vector<GO> mylmids(length);
   int count=0;
   
   // get a vector of LM dof ids from each proc and each interface
   // and add it to the global one
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
-	Teuchos::RCP<MOERTEL::Interface> inter = curr->second;
-	std::vector<int>* lmids = inter->MyLMIds();
+	Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > inter = curr->second;
+	std::vector<GO>* lmids = inter->MyLMIds();
     if (count+lmids->size() > mylmids.size())
       mylmids.resize(mylmids.size()+5*lmids->size());
     for (int i=0; i<(int)lmids->size(); ++i)
@@ -294,21 +330,21 @@ Teuchos::RCP<Epetra_Map> MOERTEL::Manager::LagrangeMultiplierDofs()
   mylmids.resize(count);
   int lsize = count;
   int gsize = 0;
-  comm_.SumAll(&lsize,&gsize,1);
+  Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, 1, &lsize, &gsize);
   
   // create the rowmap for the constraints
-  // Note that this map contains the global communicator from the MOERTEL::Manager
+  // Note that this map contains the global communicator from the MoertelT::Manager
   // NOT any interface local one
 
-  Teuchos::RCP<Epetra_Map> map;
+  Teuchos::RCP<Tpetra::Map<LO, GO, N> > map;
 
   if(lsize == 0) // this PE contributes nothing to the global map
 
-	map = Teuchos::rcp(new Epetra_Map(gsize,0,NULL,0,comm_));
+	map = Teuchos::rcp(new Tpetra::Map<LO, GO, N> (gsize,NULL,0,0,comm_));
 
   else
 
-	map = Teuchos::rcp(new Epetra_Map(gsize,lsize,&(mylmids[0]),0,comm_));
+	map = Teuchos::rcp(new Tpetra::Map<LO, GO, N> (gsize,&(mylmids[0]),lsize,0,comm_));
 
   // tidy up
   mylmids.clear();
@@ -320,12 +356,17 @@ Teuchos::RCP<Epetra_Map> MOERTEL::Manager::LagrangeMultiplierDofs()
  |  integrate all mortar interfaces                       (public) 11/05|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::Mortar_Integrate()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::Mortar_Integrate()
 {
 		bool status;
   //-------------------------------------------------------------------
   // check for problem dimension
-  if (Dimension() == MOERTEL::Manager::manager_2D){
+  if (Dimension() == MoertelT::ManagerT<ST, LO, GO, N>::manager_2D){
 
     status = Integrate_Interfaces_2D();
 
@@ -333,7 +374,7 @@ bool MOERTEL::Manager::Mortar_Integrate()
 
     status = Build_MD_2D();
   }
-  else if (Dimension() == MOERTEL::Manager::manager_3D){
+  else if (Dimension() == MoertelT::ManagerT<ST, LO, GO, N>::manager_3D){
 
     status = Integrate_Interfaces_3D();
 
@@ -343,7 +384,7 @@ bool MOERTEL::Manager::Mortar_Integrate()
   }
   else
   {
-    std::cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
+    std::cout << "***ERR*** MoertelT::ManagerT::Mortar_Integrate:\n"
          << "***ERR*** problem dimension not set\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     status = false;
@@ -356,18 +397,23 @@ bool MOERTEL::Manager::Mortar_Integrate()
  |  Integrate all mortar interfaces                        (public) 8/10|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::Integrate_Interfaces()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::Integrate_Interfaces()
 {
 		bool status;
   //-------------------------------------------------------------------
   // check for problem dimension
-  if (Dimension() == MOERTEL::Manager::manager_2D)
+  if (Dimension() == MoertelT::ManagerT<ST, LO, GO, N>::manager_2D)
     status = Integrate_Interfaces_2D();
-  else if (Dimension() == MOERTEL::Manager::manager_3D)
+  else if (Dimension() == MoertelT::ManagerT<ST, LO, GO, N>::manager_3D)
     status = Integrate_Interfaces_3D();
   else
   {
-    std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces:\n"
+    std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces:\n"
          << "***ERR*** problem dimension not set\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     status = false;
@@ -381,13 +427,13 @@ bool MOERTEL::Manager::Integrate_Interfaces()
  |  integrate all mortar interfaces in 2D                 (public) 07/05|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::Mortar_Integrate_2D()
+bool MoertelT::Manager::Mortar_Integrate_2D()
 {
   //-------------------------------------------------------------------
   // check for problem dimension
-  if (Dimension() != MOERTEL::Manager::manager_2D)
+  if (Dimension() != MoertelT::Manager::manager_2D)
   {
-    std::cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
+    std::cout << "***ERR*** MoertelT::Manager::Mortar_Integrate:\n"
          << "***ERR*** problem dimension is not 2D?????\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -403,7 +449,7 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
   // check whether we have an input map
   if (problemmap_==Teuchos::null)
   {
-    std::cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
+    std::cout << "***ERR*** MoertelT::Manager::Mortar_Integrate:\n"
          << "***ERR*** problemmap_==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -413,7 +459,7 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
   // check whether we have a mortar side chosen on each interface or 
   // whether we have to chose it here
   {
-    map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+    map<int,Teuchos::RCP<MoertelT::Interface> >::iterator curr;
     bool foundit = true;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
@@ -433,7 +479,7 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
   // if not, check for functions flag and set them
   {
     bool foundit = true;
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	std::map<int,Teuchos::RCP<MoertelT::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       int nseg             = curr->second->GlobalNsegment();
@@ -453,13 +499,13 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
   //-------------------------------------------------------------------
   // build projections for all interfaces
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	std::map<int,Teuchos::RCP<MoertelT::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok  = curr->second->Project();
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
+        std::cout << "***ERR*** MoertelT::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on projection\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -473,13 +519,13 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
   // function will be reduced by one
 #if 0
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	std::map<int,Teuchos::RCP<MoertelT::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok = curr->second->DetectEndSegmentsandReduceOrder();
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
+        std::cout << "***ERR*** MoertelT::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -495,7 +541,7 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
     constraintsmap_ = LagrangeMultiplierDofs();
     if (constraintsmap_==Teuchos::null)
     {
-      std::cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
+      std::cout << "***ERR*** MoertelT::Manager::Mortar_Integrate:\n"
            << "***ERR*** LagrangeMultiplierDofs() returned NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -508,7 +554,7 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
     bool ok = BuildSaddleMap();
     if (!ok)
     {
-      std::cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
+      std::cout << "***ERR*** MoertelT::Manager::Mortar_Integrate:\n"
            << "***ERR*** BuildSaddleMap() returned false\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -517,20 +563,20 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
 
 
   //-------------------------------------------------------------------
-  // build the Epetra_CrsMatrix D and M
-  D_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,5,false));
-  M_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,40,false));
+  // build the Tpetra_CrsMatrix D and M
+  D_ = rcp(new Tpetra_CrsMatrix(saddlemap_,5));
+  M_ = rcp(new Tpetra_CrsMatrix(saddlemap_,40));
 
   //-------------------------------------------------------------------
   // integrate all interfaces
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	std::map<int,Teuchos::RCP<MoertelT::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       bool ok = curr->second->Mortar_Integrate(*D_,*M_);
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
+        std::cout << "***ERR*** MoertelT::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on integration\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -540,10 +586,10 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
   
   //-------------------------------------------------------------------
   // call FillComplete() on M_ and D_ 
-  D_->FillComplete(*saddlemap_,*saddlemap_);
-  D_->OptimizeStorage();
-  M_->FillComplete(*saddlemap_,*saddlemap_);
-  M_->OptimizeStorage();
+  D_->fillComplete(saddlemap_, saddlemap_);
+//  D_->OptimizeStorage();
+  M_->fillComplete(saddlemap_, saddlemap_);
+//  M_->OptimizeStorage();
   
   //-------------------------------------------------------------------
   // print this
@@ -558,24 +604,29 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
  |  Build M and D matrices in 2D                          (public) 08/10|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::Build_MD_2D()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::Build_MD_2D()
 {
 
   //-------------------------------------------------------------------
-  // build the Epetra_CrsMatrix D and M
-  D_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,5,false));
-  M_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,40,false));
+  // build the Tpetra_CrsMatrix D and M
+  D_ = Teuchos::rcp(new Tpetra::CrsMatrix<ST, LO, GO, N>(saddlemap_,5));
+  M_ = Teuchos::rcp(new Tpetra::CrsMatrix<ST, LO, GO, N>(saddlemap_,40));
 
   //-------------------------------------------------------------------
   // now that we have all maps and dofs we can assemble from the nodes
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       bool ok = curr->second->Mortar_Assemble(*D_,*M_);
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Build_MD_2D:\n"
+        std::cout << "***ERR*** MoertelT::ManagerT::Build_MD_2D:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on assembly\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -585,11 +636,11 @@ bool MOERTEL::Manager::Build_MD_2D()
 
   //-------------------------------------------------------------------
   // call FillComplete() on M_ and D_ 
-  D_->FillComplete(*saddlemap_,*saddlemap_);
-  D_ = Teuchos::rcp(MOERTEL::StripZeros(*D_,1.e-9));
-  D_->OptimizeStorage();
-  M_->FillComplete(*saddlemap_,*saddlemap_);
-  M_->OptimizeStorage();
+  D_->fillComplete(saddlemap_, saddlemap_);
+  D_ = MoertelT::StripZeros(*D_, 1.e-9);
+//  D_->OptimizeStorage();
+  M_->fillComplete(saddlemap_, saddlemap_);
+//  M_->OptimizeStorage();
   
   //-------------------------------------------------------------------
   // print this
@@ -603,14 +654,19 @@ bool MOERTEL::Manager::Build_MD_2D()
  |  just integrate all mortar interfaces in 2D                 (public) 07/05|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::Integrate_Interfaces_2D()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::Integrate_Interfaces_2D()
 {
 
   //-------------------------------------------------------------------
   // check for problem dimension
-  if (Dimension() != MOERTEL::Manager::manager_2D)
+  if (Dimension() != MoertelT::ManagerT<ST, LO, GO, N>::manager_2D)
   {
-    std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_2D:\n"
+    std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_2D:\n"
          << "***ERR*** problem dimension is not 2D?????\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -626,7 +682,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_2D()
   // check whether we have an input map
   if (problemmap_==Teuchos::null)
   {
-    std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_2D:\n"
+    std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_2D:\n"
          << "***ERR*** problemmap_==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -636,7 +692,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_2D()
   // check whether we have a mortar side chosen on each interface or 
   // whether we have to chose it here
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     bool foundit = true;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
@@ -656,7 +712,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_2D()
   // if not, check for functions flag and set them
   {
     bool foundit = true;
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       int nseg             = curr->second->GlobalNsegment();
@@ -676,13 +732,13 @@ bool MOERTEL::Manager::Integrate_Interfaces_2D()
   //-------------------------------------------------------------------
   // build normals for all interfaces
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok = curr->second->BuildNormals();
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_2D:\n"
+        std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_2D:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on building normals\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -697,13 +753,13 @@ bool MOERTEL::Manager::Integrate_Interfaces_2D()
   // The choice of the Mortar side in the case of several interfaces
   // is then arbitrary
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok = curr->second->DetectEndSegmentsandReduceOrder();
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_2D:\n"
+        std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_2D:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -718,13 +774,13 @@ bool MOERTEL::Manager::Integrate_Interfaces_2D()
   // in advance. All integrated rows of D and M are stored as
   // scalars in the nodes
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       bool ok = curr->second->Mortar_Integrate_2D(integrationparams_);
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_2D:\n"
+        std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_2D:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on integration\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -739,7 +795,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_2D()
     constraintsmap_ = LagrangeMultiplierDofs();
     if (constraintsmap_==Teuchos::null)
     {
-      std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_2D:\n"
+      std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_2D:\n"
            << "***ERR*** LagrangeMultiplierDofs() returned NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -752,7 +808,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_2D()
     bool ok = BuildSaddleMap();
     if (!ok)
     {
-      std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_2D:\n"
+      std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_2D:\n"
            << "***ERR*** BuildSaddleMap() returned false\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -767,24 +823,29 @@ bool MOERTEL::Manager::Integrate_Interfaces_2D()
  |  Build M & D 3D case                                   (public) 11/05|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::Build_MD_3D()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::Build_MD_3D()
 {
 
   //-------------------------------------------------------------------
-  // build the Epetra_CrsMatrix D and M
-  D_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,50,false));
-  M_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,100,false));
+  // build the Tpetra_CrsMatrix D and M
+  D_ = Teuchos::rcp(new Tpetra::CrsMatrix<ST, LO, GO, N>(saddlemap_,50));
+  M_ = Teuchos::rcp(new Tpetra::CrsMatrix<ST, LO, GO, N>(saddlemap_,100));
 
   //-------------------------------------------------------------------
   // now that we have all maps and dofs we can assemble from the nodes
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       bool ok = curr->second->Mortar_Assemble(*D_,*M_);
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Build_MD_3D:\n"
+        std::cout << "***ERR*** MoertelT::ManagerT::Build_MD_3D:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on assembly\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -794,14 +855,14 @@ bool MOERTEL::Manager::Build_MD_3D()
 
   //-------------------------------------------------------------------
   // call FillComplete() on M_ and D_ 
-  D_->FillComplete(*saddlemap_,*saddlemap_);
+  D_->fillComplete(saddlemap_, saddlemap_);
   // GAH - found by kimliegeois
   // when remeshing, the size of elements can become so small that all the entries, or part 
   // of the meaning entries, are below the threshold and therefore dropped. 
   // D_ = Teuchos::rcp(MOERTEL::StripZeros(*D_,1.e-4));
-  D_->OptimizeStorage();
-  M_->FillComplete(*saddlemap_,*saddlemap_);
-  M_->OptimizeStorage();
+//  D_->OptimizeStorage();
+  M_->fillComplete(saddlemap_, saddlemap_);
+//  M_->OptimizeStorage();
   
   //-------------------------------------------------------------------
   // print this
@@ -815,13 +876,18 @@ bool MOERTEL::Manager::Build_MD_3D()
  |  just integrate all mortar interfaces 3D case               (public) 11/05|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::Integrate_Interfaces_3D()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::Integrate_Interfaces_3D()
 {
   //-------------------------------------------------------------------
   // check for problem dimension
-  if (Dimension() != MOERTEL::Manager::manager_3D)
+  if (Dimension() != MoertelT::ManagerT<ST, LO, GO, N>::manager_3D)
   {
-    std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_3D:\n"
+    std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_3D:\n"
          << "***ERR*** problem dimension is not 3D?????\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -837,7 +903,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_3D()
   // check whether we have an input map
   if (problemmap_==Teuchos::null)
   {
-    std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_3D:\n"
+    std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_3D:\n"
          << "***ERR*** problemmap_==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -847,7 +913,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_3D()
   // check whether we have a mortar side chosen on each interface or 
   // whether we have to chose it here
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     bool foundit = true;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
@@ -867,7 +933,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_3D()
   // if not, check for functions flags and set functions from them
   {
     bool foundit = true;
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       const int nseg          = curr->second->GlobalNsegment();
@@ -887,13 +953,13 @@ bool MOERTEL::Manager::Integrate_Interfaces_3D()
   //-------------------------------------------------------------------
   // build normals for all interfaces
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok = curr->second->BuildNormals();
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_3D:\n"
+        std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_3D:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on building normals\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -908,13 +974,13 @@ bool MOERTEL::Manager::Integrate_Interfaces_3D()
   // The choice of the Mortar side in the case of several interfaces
   // is then arbitrary
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok = curr->second->DetectEndSegmentsandReduceOrder();
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_3D:\n"
+        std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_3D:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -925,13 +991,13 @@ bool MOERTEL::Manager::Integrate_Interfaces_3D()
   //-------------------------------------------------------------------
   // integrate all interfaces
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       bool ok = curr->second->Mortar_Integrate(integrationparams_);
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_3D:\n"
+        std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_3D:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on integration\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -946,7 +1012,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_3D()
     constraintsmap_ = LagrangeMultiplierDofs();
     if (constraintsmap_==Teuchos::null)
     {
-      std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_3D:\n"
+      std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_3D:\n"
            << "***ERR*** LagrangeMultiplierDofs() returned NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -959,7 +1025,7 @@ bool MOERTEL::Manager::Integrate_Interfaces_3D()
     bool ok = BuildSaddleMap();
     if (!ok)
     {
-      std::cout << "***ERR*** MOERTEL::Manager::Integrate_Interfaces_3D:\n"
+      std::cout << "***ERR*** MoertelT::ManagerT::Integrate_Interfaces_3D:\n"
            << "***ERR*** BuildSaddleMap() returned false\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -972,19 +1038,24 @@ bool MOERTEL::Manager::Integrate_Interfaces_3D()
 /*----------------------------------------------------------------------*
  | Assemble interface nodes times soln into JFNK residual vector
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::AssembleInterfacesIntoResidual(Lmselector *sel)
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::AssembleInterfacesIntoResidual(MOERTEL::Lmselector *sel)
 {
 
   //-------------------------------------------------------------------
   // now that we have all maps and dofs we can assemble from the nodes
   {
-	std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+	typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       bool ok = curr->second->AssembleJFNKVec(sel);
       if (!ok)
       {
-        std::cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
+        std::cout << "***ERR*** MoertelT::ManagerT::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on assembly\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -1000,11 +1071,16 @@ bool MOERTEL::Manager::AssembleInterfacesIntoResidual(Lmselector *sel)
  |                                                                 09/05|
  |  choose the mortar side                                              |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::ChooseMortarSide()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::ChooseMortarSide()
 {
   // find all interfaces
-  std::vector<Teuchos::RCP<MOERTEL::Interface> > inter(Ninterfaces());
-  std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
+  std::vector<Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > > inter(Ninterfaces());
+  typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
   curr=interface_.begin();
   int count = 0;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
@@ -1016,9 +1092,9 @@ bool MOERTEL::Manager::ChooseMortarSide()
   
   // call choice of the mortar side for all 1D interfaces
   bool ok = false; 
-  if (Dimension() == MOERTEL::Manager::manager_2D)
+  if (Dimension() == MoertelT::ManagerT<ST, LO, GO, N>::manager_2D)
     ok = ChooseMortarSide_2D(inter);
-  if (Dimension() == MOERTEL::Manager::manager_3D)
+  if (Dimension() == MoertelT::ManagerT<ST, LO, GO, N>::manager_3D)
     ok = ChooseMortarSide_3D(inter);
 
   // tidy up
@@ -1032,7 +1108,12 @@ bool MOERTEL::Manager::ChooseMortarSide()
  |                                                                 12/05|
  |  choose the mortar side                                              |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::ChooseMortarSide_3D(std::vector<Teuchos::RCP<MOERTEL::Interface> >& inter)
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::ChooseMortarSide_3D(std::vector<Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >& inter)
 {
   // loop interfaces and choose the side with less nodes as slave side
   // (only if not already chosen on some interface)
@@ -1051,7 +1132,12 @@ bool MOERTEL::Manager::ChooseMortarSide_3D(std::vector<Teuchos::RCP<MOERTEL::Int
  |                                                                 12/05|
  |  choose the mortar side                                              |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Interface> >& inter)
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::ManagerT<ST, LO, GO, N>::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >& inter)
 {
   // loop interfaces and choose the side with less nodes as slave side
   // (only if not already chosen on some interface)
@@ -1071,7 +1157,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
  |                                                                 09/05|
  |  choose the mortar side for 1D interfaces                            |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Interface> >& inter)
+bool MoertelT::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MoertelT::Interface> >& inter)
 {
   // number of interfaces
   const int ninter = inter.size();
@@ -1087,17 +1173,17 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
     fflush(stdout);
     if (Comm().MyPID()==0)
     {
-      std::cout << "---MOERTEL::Manager: start interface coloring:\n";
+      std::cout << "---MoertelT::Manager: start interface coloring:\n";
       for (int i=0; i<ninter; ++i)
         std::cout << "Interface " << inter[i]->Id() << " : Mortar Side : " << inter[i]->MortarSide() << std::endl;
-      std::cout << "---MOERTEL::Manager: finding common nodes on interfaces:\n";
+      std::cout << "---MoertelT::Manager: finding common nodes on interfaces:\n";
     }
     fflush(stdout);
   }
   Comm().Barrier();
   
   // time this process
-  Epetra_Time time(Comm());
+  Teuchos_Time time(Comm());
   time.ResetStartTime();
   
   
@@ -1227,7 +1313,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
   {
     fflush(stdout);
     if (Comm().MyPID()==0)
-      std::cout << "---MOERTEL::Manager: finding common nodes: " 
+      std::cout << "---MoertelT::Manager: finding common nodes: " 
            << time.ElapsedTime() << " sec" << std::endl;
     fflush(stdout);
   }
@@ -1325,7 +1411,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
                      else
                      {
 						 std::stringstream oss;
-                       oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+                       oss << "***ERR*** MoertelT::Manager::ChooseMortarSide:\n"
                             << "***ERR*** weird\n"
                             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 					   throw ReportError(oss);
@@ -1363,7 +1449,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
            if (inter[i]->MortarSide()==1)
            {
              if (OutLevel()>3)
-             std::cout << "***WRN*** MOERTEL::Manager::ChooseMortarSide:\n"
+             std::cout << "***WRN*** MoertelT::Manager::ChooseMortarSide:\n"
                   << "***WRN*** interface " << inter[i]->Id() << ": want to set mortar side to 0 but has been set to 1 before\n"
                   << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
              continue;
@@ -1377,7 +1463,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
            if (inter[i]->MortarSide()==0)
            {
              if (OutLevel()>3)
-             std::cout << "***WRN*** MOERTEL::Manager::ChooseMortarSide:\n"
+             std::cout << "***WRN*** MoertelT::Manager::ChooseMortarSide:\n"
                   << "***WRN*** interface " << inter[i]->Id() << ": want to set mortar side to 1 but has been set to 0 before\n"
                   << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
              continue;
@@ -1387,7 +1473,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
          else
          {
 			 std::stringstream oss;
-           oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+           oss << "***ERR*** MoertelT::Manager::ChooseMortarSide:\n"
                 << "***ERR*** unknown type of coloring flag: " << flags[k] << "\n"
                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		   throw ReportError(oss);
@@ -1408,7 +1494,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
            if (inter[k]->MortarSide()!=-2)
            {
 			 std::stringstream oss;
-             oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+             oss << "***ERR*** MoertelT::Manager::ChooseMortarSide:\n"
                   << "***ERR*** weird, this interface is not supposed to already have a mortar side assigned\n"
                   << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 				throw ReportError(oss);
@@ -1452,7 +1538,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
                          if (mortarside_s != inter[k]->OtherSide(nodeside_k))
                          {
 							std::stringstream oss;
-                           oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+                           oss << "***ERR*** MoertelT::Manager::ChooseMortarSide:\n"
                                 << "***ERR*** interface has a conflict that can not be resolved\n"
                                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 							throw ReportError(oss);
@@ -1467,7 +1553,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
                          if (mortarside_s != nodeside_k)
                          {
 							std::stringstream oss;
-                           oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+                           oss << "***ERR*** MoertelT::Manager::ChooseMortarSide:\n"
                                 << "***ERR*** interface has a conflict that can not be resolved\n"
                                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 							throw ReportError(oss);
@@ -1492,7 +1578,7 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
   {
     fflush(stdout);
     if (Comm().MyPID()==0)
-      std::cout << "---MOERTEL::Manager: coloring interfaces : " 
+      std::cout << "---MoertelT::Manager: coloring interfaces : " 
            << time.ElapsedTime() << " sec" << std::endl;
     fflush(stdout);
   }
@@ -1502,10 +1588,10 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
     fflush(stdout);
     if (Comm().MyPID()==0)
     {
-      std::cout << "---MOERTEL::Manager: chosen mortar sides : \n";
+      std::cout << "---MoertelT::Manager: chosen mortar sides : \n";
       for (int i=0; i<ninter; ++i)
         std::cout << "Interface " << inter[i]->Id() << " : Mortar Side : " << inter[i]->MortarSide() << std::endl;
-      std::cout << "---MOERTEL::Manager: end interface coloring\n";
+      std::cout << "---MoertelT::Manager: end interface coloring\n";
     }
     fflush(stdout);
   }
@@ -1525,3 +1611,69 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
   return true;
 }
 #endif
+
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool
+MoertelT::ManagerT<ST, LO, GO, N>::BuildSaddleMap()
+{
+  // check whether all interfaces are complete and integrated
+  typename std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >::iterator curr;
+  for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+  {
+    if (curr->second->IsComplete() == false)
+    {
+      std::cout << "***ERR*** MoertelT::ManagerT::BuildSaddleMap:\n"
+           << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+  }
+
+  // check whether we have a problemmap_
+  if (problemmap_==Teuchos::null)
+  {
+      std::cout << "***ERR*** MoertelT::ManagerT::BuildSaddleMap:\n"
+           << "***ERR*** No problemmap_ set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+  }
+
+  // check whether we have a constraintsmap_
+  if (constraintsmap_==Teuchos::null)
+  {
+      std::cout << "***ERR*** MoertelT::ManagerT::BuildSaddleMap:\n"
+           << "***ERR*** onstraintsmap is NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+  }
+
+  // the saddle point problem rowmap is the problemmap_ + the constraintmap
+  GO numglobalelements = problemmap_->getGlobalNumElements() +
+                          constraintsmap_->getGlobalNumElements();
+  LO nummyelements     = problemmap_->getNodeNumElements() +
+                          constraintsmap_->getNodeNumElements();
+  std::vector<GO> myglobalelements(nummyelements);
+  LO count = 0;
+  auto inputmyglobalelements = problemmap_->getMyGlobalIndices();
+  for (LO i=0; i<problemmap_->getNodeNumElements(); ++i)
+    myglobalelements[count++] = inputmyglobalelements[i];
+  auto constraintsmyglobalelements = constraintsmap_->getMyGlobalIndices();
+  for (LO i=0; i<constraintsmap_->getNodeNumElements(); ++i)
+    myglobalelements[count++] = constraintsmyglobalelements[i];
+  if (count != nummyelements)
+  {
+    std::cout << "***ERR*** MoertelT::ManagerT::BuildSaddleMap:\n"
+         << "***ERR*** Mismatch in dimensions\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  saddlemap_ = Teuchos::rcp(new Tpetra::Map<LO, GO, N>(numglobalelements, &(myglobalelements[0]), 
+       nummyelements, 0, comm_));
+  myglobalelements.clear();
+
+  return true;
+}
+

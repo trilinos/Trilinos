@@ -47,7 +47,7 @@
 /*!
  * \file mrtr_integrator.H
  *
- * \class MOERTEL::Integrator
+ * \class MoertelT::Integrator
  *
  * \brief A class to perform integration of mass matrices on the overlap of
           2 segments in 1D and 2D
@@ -55,16 +55,16 @@
  * \date Last update do Doxygen: 20-March-06
  *
  */
-#ifndef MOERTEL_INTEGRATOR_H
-#define MOERTEL_INTEGRATOR_H
+#ifndef MOERTEL_INTEGRATORT_H
+#define MOERTEL_INTEGRATORT_H
 
 #include <ctime>
 #include <iostream>
 #include <iomanip>
 #include <vector>
 
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_CrsMatrix.h"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "mrtr_overlap.hpp"
@@ -72,9 +72,9 @@
 // ----------   User Defined Includes   ----------
 
 /*!
-\brief MOERTEL: namespace of the Moertel package
+\brief MoertelT: namespace of the Moertel package
 
-The Moertel package depends on \ref Epetra, \ref EpetraExt, \ref Teuchos,
+The Moertel package depends on \ref Tpetra, \ref Teuchos,
 \ref Amesos, \ref ML and \ref AztecOO:<br>
 Use at least the following lines in the configure of Trilinos:<br>
 \code
@@ -88,11 +88,15 @@ Use at least the following lines in the configure of Trilinos:<br>
 \endcode
 
 */
-namespace MOERTEL
+namespace MoertelT
 {
 
 // forward declarations
-class Interface;
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+class InterfaceT;
 class Segment;
 class Node;
 
@@ -107,7 +111,11 @@ class Node;
 \author Glen Hansen (gahanse@sandia.gov)
 
 */
-class Integrator 
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+class IntegratorT
 {
 public:
   
@@ -124,12 +132,12 @@ public:
   \param oneD : flag indicating whether 1D or 2D regions shall be integrated
   \param outlevel : Level of output information written to stdout ( 0 - 10 )
   */
-  explicit Integrator(int ngp, bool oneD, int outlevel);
+  explicit IntegratorT(int ngp, bool oneD, int outlevel);
   
   /*!
   \brief Destructor
   */
-  virtual ~Integrator();
+  virtual ~IntegratorT();
   
   //@}
   // @{ \name Public members
@@ -181,7 +189,7 @@ public:
   \param mxia : lower bound of overlap in mortar segment coordinates
   \param mxib : upper bound of overlap in mortar segment coordinates
   */
-  Epetra_SerialDenseMatrix* Integrate(MOERTEL::Segment& sseg, double sxia, double sxib,
+  Teuchos::SerialDenseMatrix<LO, ST>* Integrate(MOERTEL::Segment& sseg, double sxia, double sxib,
                                       MOERTEL::Segment& mseg, double mxia, double mxib);
 
   /*!
@@ -193,9 +201,8 @@ public:
   \param M : global sparse matrix 'M'
   \param Mdense : local dense matrix from integration of overlap between sseg and mseg
   */
-  bool Assemble(MOERTEL::Interface& inter, MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
-                Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mdense);
-
+  bool Assemble(MoertelT::InterfaceT<ST, LO, GO, N>& inter, MOERTEL::Segment& sseg, 
+                Tpetra::CrsMatrix<ST, LO, GO, N>& D, Teuchos::SerialDenseMatrix<LO, ST>& Ddense);
 
   /*!
   \brief Integrate mass matrix 'D' on a 1D slave segment overlap
@@ -207,7 +214,7 @@ public:
   \param sxia : lower bound of overlap in slave segment coordinates
   \param sxib : upper bound of overlap in slave segment coordinates
   */
-  Epetra_SerialDenseMatrix* Integrate(MOERTEL::Segment& sseg, double sxia, double sxib);
+  Teuchos::SerialDenseMatrix<LO, ST>* Integrate(MOERTEL::Segment& sseg, double sxia, double sxib);
 
   /*!
   \brief Assemble integration result 'D' into global matrix 'D'
@@ -217,8 +224,9 @@ public:
   \param D : global sparse matrix 'D'
   \param Ddense : local dense matrix from integration of overlap between sseg and mseg
   */
-  bool Assemble(MOERTEL::Interface& inter, MOERTEL::Segment& sseg,  
-                Epetra_CrsMatrix& D, Epetra_SerialDenseMatrix& Ddense);
+  bool Assemble(MoertelT::InterfaceT<ST, LO, GO, N>& inter, 
+                MOERTEL::Segment& sseg,  MOERTEL::Segment& mseg,
+                Tpetra::CrsMatrix<ST, LO, GO, N>& D, Teuchos::SerialDenseMatrix<LO, ST>& Ddense);
 
 
   /*!
@@ -235,7 +243,7 @@ public:
   \param mxia : lower bound of overlap in mortar segment coordinates
   \param mxib : upper bound of overlap in mortar segment coordinates
   */
-  Epetra_SerialDenseMatrix* Integrate_2D_Mmod(MOERTEL::Segment& sseg, double sxia, double sxib,
+  Teuchos::SerialDenseMatrix<LO, ST>* Integrate_2D_Mmod(MOERTEL::Segment& sseg, double sxia, double sxib,
                                               MOERTEL::Segment& mseg, double mxia, double mxib);
 
   // Assemble the result -Mdense from the integration above into M
@@ -249,11 +257,11 @@ public:
   \param Mmod : local dense matrix from integration of modification on overlap between sseg and mseg
   */
 #if 0
-  bool Assemble_2D_Mod(MOERTEL::Interface& inter, MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
-                       Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mmod);
+  bool Assemble_2D_Mod(MoertelT::Interface& inter, MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
+                       Tpetra_CrsMatrix& M, Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& Mmod);
 #endif
-  bool Assemble_2D_Mod(MOERTEL::Interface& inter, MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
-                       Epetra_SerialDenseMatrix& Mmod);
+  bool Assemble_2D_Mod(MoertelT::InterfaceT<ST, LO, GO, N>& inter, MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
+                       Teuchos::SerialDenseMatrix<LO, ST>& Mmod);
 
 
   /*!
@@ -273,9 +281,9 @@ public:
   bool Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
                  MOERTEL::Segment& sseg, 
                  MOERTEL::Segment& mseg,
-                 Epetra_SerialDenseMatrix** Ddense, 
-                 Epetra_SerialDenseMatrix** Mdense, 
-                 MOERTEL::Overlap<MOERTEL::Interface>& overlap, double eps,
+                 Teuchos::SerialDenseMatrix<LO, ST>** Ddense, 
+                 Teuchos::SerialDenseMatrix<LO, ST>** Mdense, 
+                 MOERTEL::Overlap<MoertelT::InterfaceT<ST, LO, GO, N> >& overlap, double eps,
                  bool exactvalues);
 
   /*!
@@ -285,7 +293,8 @@ public:
   \param sseg : Slave Segment
   \param Ddense : local dense matrix from integration of overlap
   */
-  bool Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& sseg,Epetra_SerialDenseMatrix& Ddense);
+  bool Assemble(MoertelT::InterfaceT<ST, LO, GO, N>& inter,
+     MOERTEL::Segment& sseg,Teuchos::SerialDenseMatrix<LO, ST>& Ddense);
 
   /*!
   \brief Assemble integration result 'M' into Node (2D interfaces only)
@@ -295,16 +304,16 @@ public:
   \param mseg : Mortar Segment
   \param Mdense : local dense matrix from integration of overlap
   */
-  bool Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& sseg,MOERTEL::Segment& mseg,
-                Epetra_SerialDenseMatrix& Mdense);
+  bool Assemble(MoertelT::InterfaceT<ST, LO, GO, N>& inter,MOERTEL::Segment& sseg,MOERTEL::Segment& mseg,
+                Teuchos::SerialDenseMatrix<LO, ST>& Mdense);
 
   //@}
 
 private:  
   // don't want = operator
-  Integrator operator = (const Integrator& old);
+  IntegratorT operator = (const IntegratorT<ST, LO, GO, N>& old);
   // don't want copy-ctor
-  Integrator(MOERTEL::Integrator& old);
+  IntegratorT(MoertelT::IntegratorT<ST, LO, GO, N>& old);
 
 private:
 
@@ -317,6 +326,11 @@ private:
 
 };
 
-} // namespace MOERTEL
+} // namespace MoertelT
 
-#endif // MOERTEL_INTEGRATOR_H
+#ifndef HAVE_MOERTEL_EXPLICIT_INSTANTIATION
+#include "Moertel_IntegratorT.hpp"
+#include "Moertel_IntegratorT_Def.hpp"
+#endif
+
+#endif // MOERTEL_INTEGRATORT_H

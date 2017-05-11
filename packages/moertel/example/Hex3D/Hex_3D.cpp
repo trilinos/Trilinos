@@ -48,7 +48,7 @@
  * \date Last update do Doxygen: 20-March-06
  *
  */
-#ifdef HAVE_MPI
+#ifdef HAVE_MOERTEL_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
@@ -63,7 +63,7 @@
 #include "Galeri_Utils.h"
 #include "Galeri_FiniteElements.h"
 
-#ifdef MOERTEL_HAVE_EXODUS
+#ifdef HAVE_MOERTEL_SEACAS
 #include "ExodusInterface.h"
 #endif
 
@@ -123,7 +123,7 @@ double BoundaryValue(const double& x, const double& y,
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef HAVE_MOERTEL_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
@@ -474,7 +474,7 @@ int main(int argc, char *argv[])
     //manager.SetInputMatrix(&A,false);
     //manager.Solve(list,LHS,RHS);
 	
-#ifdef MOERTEL_HAVE_EXODUS
+#ifdef HAVE_MOERTEL_SEACAS
 
     // ==================    //
     // Output using ExodusII //
@@ -490,7 +490,7 @@ int main(int argc, char *argv[])
 #endif
 	
 
-#ifdef HAVE_MPI
+#ifdef HAVE_MOERTEL_MPI
   MPI_Finalize();
 #endif
 

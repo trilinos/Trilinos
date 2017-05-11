@@ -45,7 +45,7 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "mrtr_point.H"
-#include "mrtr_overlap.H"
+#include "mrtr_overlap.hpp"
 #include "mrtr_utils.H"
 
 /*----------------------------------------------------------------------*

@@ -44,20 +44,25 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#include "mrtr_interface.H"
+#include "Moertel_InterfaceT.hpp"
+#include "Moertel_UtilsT.hpp"
 #include "mrtr_utils.H"
 
 /*----------------------------------------------------------------------*
  |  finalize construction of this interface                             |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Complete()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MoertelT::InterfaceT<ST, LO, GO, N>::Complete()
 { 
   if (IsComplete())
   {
     if (OutLevel()>0)
-      std::cout << "MOERTEL: ***WRN*** MOERTEL::Interface::InterfaceComplete:\n"
-           << "MOERTEL: ***WRN*** InterfaceComplete() was called before, do nothing\n"
-           << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      std::cout << "MoertelT: ***WRN*** MoertelT::InterfaceT::InterfaceComplete:\n"
+           << "MoertelT: ***WRN*** InterfaceComplete() was called before, do nothing\n"
+           << "MoertelT: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return true;
   }
   
@@ -71,7 +76,7 @@ bool MOERTEL::Interface::Complete()
     {
       if (curr->second == Teuchos::null)
       {
-        std::cout << "***ERR*** MOERTEL::Interface::Complete:\n"
+        std::cout << "***ERR*** MoertelT::InterfaceT::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
              << "***ERR*** found NULL entry in map of nodes\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -86,7 +91,7 @@ bool MOERTEL::Interface::Complete()
     {
       if (curr->second == Teuchos::null)
       {
-        std::cout << "***ERR*** MOERTEL::Interface::Complete:\n"
+        std::cout << "***ERR*** MoertelT::Interface::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
              << "***ERR*** found NULL entry in map of segments\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -96,7 +101,7 @@ bool MOERTEL::Interface::Complete()
   }
   int lok = ok;
   int gok = 1;
-  gcomm_.MinAll(&lok,&gok,1);  
+  Teuchos::reduceAll<LO, int>(*gcomm_, Teuchos::REDUCE_MIN, 1, &lok, &gok);
   if (!gok) return false;
   
   //-------------------------------------------------------------------
@@ -107,23 +112,23 @@ bool MOERTEL::Interface::Complete()
 #if 1
   if (OutLevel()>9)
   {
-    for (int proc=0; proc<gcomm_.NumProc(); ++proc)
+    for (int proc=0; proc<gcomm_->getSize(); ++proc)
     {
       for (int side=0; side<2; ++side)
       {
         // create length of list of all nodes adjacent to segments on proc
         int sendsize =  0;
-        if (proc==gcomm_.MyPID())
+        if (proc==gcomm_->getRank())
         {
 		  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator curr;
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
             sendsize += curr->second->Nnode();
         }
-        gcomm_.Broadcast(&sendsize,1,proc);
+        Teuchos::broadcast<LO, int>(*gcomm_, proc, 1, &sendsize);
         
         // create list of all nodes adjacent to segments on proc
 		std::vector<int> ids(sendsize);
-        if (proc==gcomm_.MyPID())
+        if (proc==gcomm_->getRank())
         {
 		  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator curr;
           int counter=0;
@@ -134,7 +139,7 @@ bool MOERTEL::Interface::Complete()
               ids[counter++] = segids[i];
           }
         }
-        gcomm_.Broadcast(&ids[0],sendsize,proc);
+        Teuchos::broadcast<LO, int>(*gcomm_, proc, sendsize, &ids[0]);
         
         // check on all processors for nodes in ids
 		std::vector<int> foundit(sendsize);
@@ -145,20 +150,20 @@ bool MOERTEL::Interface::Complete()
           if (node_[side].find(ids[i]) != node_[side].end()) 
             foundit[i] = 1;
         }
-        gcomm_.MaxAll(&foundit[0],&gfoundit[0],sendsize);
+        Teuchos::reduceAll<LO, int>(*gcomm_, Teuchos::REDUCE_MAX, sendsize, &foundit[0], &gfoundit[0]);
         for (int i=0; i<sendsize; ++i)
         {
           if (gfoundit[i]!=1)
           {
-            if (gcomm_.MyPID()==proc)
-            std::cout << "***ERR*** MOERTEL::Interface::Complete:\n"
+            if (gcomm_->getRank()==proc)
+            std::cout << "***ERR*** MoertelT::Interface::Complete:\n"
                  << "***ERR*** cannot find segment's node # " << ids[i] << "\n"
                  << "***ERR*** in map of all nodes on all procs\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
             ids.clear();
             foundit.clear();
             gfoundit.clear();
-            gcomm_.Barrier();
+            gcomm_->barrier();
             return false;
           }
         }
@@ -173,48 +178,48 @@ bool MOERTEL::Interface::Complete()
 #endif  
   //-------------------------------------------------------------------
   // find all procs that have business on this interface (own nodes/segments)
-  // build a Epetra_comm that contains only those procs
+  // build a Teuchos_comm that contains only those procs
   // this intra-communicator will be used to handle most stuff on this 
   // interface so the interface will not block all other procs
   {
 #ifdef HAVE_MOERTEL_MPI
-	std::vector<int> lin(gcomm_.NumProc());
-	std::vector<int> gin(gcomm_.NumProc());
-    for (int i=0; i<gcomm_.NumProc(); ++i) lin[i] = 0;
+	std::vector<int> lin(gcomm_->getSize());
+	std::vector<int> gin(gcomm_->getSize());
+    for (int i=0; i<gcomm_->getSize(); ++i) lin[i] = 0;
     
     // check ownership of any segments
     for (int i=0; i<2; ++i)
       if (seg_[i].size() != 0)
       {
-        lin[gcomm_.MyPID()] = 1;
+        lin[gcomm_->getRank()] = 1;
         break;
       }
     // check ownership of any nodes
     for (int i=0; i<2; ++i)
       if (node_[i].size() != 0)
       {
-        lin[gcomm_.MyPID()] = 1;
+        lin[gcomm_->getRank()] = 1;
         break;
       }
-    gcomm_.MaxAll(&lin[0],&gin[0],gcomm_.NumProc());
+    Teuchos::reduceAll<LO, int>(*gcomm_, Teuchos::REDUCE_MAX, gcomm_->getSize(), &lin[0], &gin[0]);
     lin.clear();
     
-    // typecast the Epetra_Comm to Epetra_MpiComm
-    Epetra_MpiComm* epetrampicomm = dynamic_cast<Epetra_MpiComm*>(&gcomm_);
-    if (!epetrampicomm)
+    // typecast the Teuchos_Comm to Teuchos_MpiComm
+    const Teuchos::MpiComm<LO>* teuchosmpicomm = dynamic_cast<const Teuchos::MpiComm<LO>*>(gcomm_.get());
+    if (!teuchosmpicomm)
     {
 	  std::stringstream oss;
-			oss << "***ERR*** MOERTEL::Interface::Complete:\n"
-           << "***ERR*** Interface " << Id() << ": Epetra_Comm is not an Epetra_MpiComm\n"
+			oss << "***ERR*** MoertelT::Interface::Complete:\n"
+           << "***ERR*** Interface " << Id() << ": Teuchos_Comm is not a Teuchos_MpiComm\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      throw ReportError(oss);
+      throw MOERTEL::ReportError(oss);
     }
 
     // split the communicator into participating and none-participating procs
     int color;
-    int key = gcomm_.MyPID();
+    int key = gcomm_->getRank();
     // I am taking part in the new comm if I have any ownership 
-    if (gin[gcomm_.MyPID()]) 
+    if (gin[gcomm_->getRank()]) 
       color = 0; 
     // I am not taking part in the new comm
     else                    
@@ -224,15 +229,7 @@ bool MOERTEL::Interface::Complete()
     gin.clear();
 
     // create the local communicator   
-    MPI_Comm  mpi_global_comm = epetrampicomm->GetMpiComm();
-    MPI_Comm* mpi_local_comm  = new MPI_Comm();
-    MPI_Comm_split(mpi_global_comm,color,key,mpi_local_comm);
-
-    // create the new Epetra_MpiComm
-    if (*mpi_local_comm == MPI_COMM_NULL)
-      lcomm_ = Teuchos::null;
-    else
-      lcomm_ = Teuchos::rcp(new Epetra_MpiComm(*mpi_local_comm)); // FIXME: who destroys the MPI_Comm inside?
+    lcomm_ = gcomm_->split(color, key);
 
 #if 0
     // test this stuff on the mpi level
@@ -262,30 +259,30 @@ bool MOERTEL::Interface::Complete()
 
     
 #else  // the easy serial case
-    Epetra_SerialComm* serialcomm = dynamic_cast<Epetra_SerialComm*>(&gcomm_);
+    Teuchos::SerialComm* serialcomm = dynamic_cast<Teuchos::SerialComm*>(gcomm_->get());
     if (!serialcomm)
     {
 	  std::stringstream oss;
-			oss << "***ERR*** MOERTEL::Interface::Complete:\n"
-           << "***ERR*** Interface " << Id() << ": Epetra_Comm is not an Epetra_SerialComm\n"
+			oss << "***ERR*** MoertelT::Interface::Complete:\n"
+           << "***ERR*** Interface " << Id() << ": Teuchos::Comm is not a Teuchos::SerialComm\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      throw ReportError(oss);
+      throw MOERTEL::ReportError(oss);
     }
-    lcomm_ = Teuchos::rcp(new Epetra_SerialComm(*serialcomm));
+    lcomm_ = Teuchos::rcp(new Teuchos::SerialComm(*serialcomm));
 #endif // end of #ifdef PARALLEL    
   }
   
   //-------------------------------------------------------------------
   // create a map of all nodes to there PID (process id)
-  if (lComm())
-    for (int proc=0; proc<lcomm_->NumProc(); ++proc)
+  if (lcomm_ != Teuchos::null)
+    for (int proc=0; proc<lcomm_->getSize(); ++proc)
     {
       int lnnodes = 0;
-      if (proc==lcomm_->MyPID())
+      if (proc==lcomm_->getRank())
         lnnodes = node_[0].size() + node_[1].size();
-      lcomm_->Broadcast(&lnnodes,1,proc);
+      Teuchos::broadcast<LO, int>(*lcomm_, proc, 1, &lnnodes);
 	  std::vector<int> ids(lnnodes);
-      if (proc==lcomm_->MyPID())
+      if (proc==lcomm_->getRank())
       {
 		std::map<int,Teuchos::RCP<MOERTEL::Node> >::const_iterator curr;
         int counter=0;
@@ -293,7 +290,7 @@ bool MOERTEL::Interface::Complete()
           for (curr=node_[side].begin(); curr!=node_[side].end(); ++curr)
             ids[counter++] = curr->first;
       }
-      lcomm_->Broadcast(&ids[0],lnnodes,proc);
+      Teuchos::broadcast<LO, int>(*lcomm_, proc, lnnodes, &ids[0]);
       for (int i=0; i<lnnodes; ++i)
         nodePID_.insert(std::pair<int,int>(ids[i],proc));
       ids.clear();
@@ -301,15 +298,15 @@ bool MOERTEL::Interface::Complete()
   
   //-------------------------------------------------------------------
   // create a map of all segments to there PID (process id)
-  if (lComm())
-    for (int proc=0; proc<lcomm_->NumProc(); ++proc)
+  if (lcomm_ != Teuchos::null)
+    for (int proc=0; proc<lcomm_->getSize(); ++proc)
     {
       int lnsegs = 0;
-      if (proc==lcomm_->MyPID())
+      if (proc==lcomm_->getRank())
         lnsegs = seg_[0].size() + seg_[1].size();
-      lcomm_->Broadcast(&lnsegs,1,proc);
+      Teuchos::broadcast<LO, int>(*lcomm_, proc, 1, &lnsegs);
 	  std::vector<int> ids(lnsegs);
-      if (proc==lcomm_->MyPID())
+      if (proc==lcomm_->getRank())
       {
 		std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator curr;
         int counter=0;
@@ -317,7 +314,7 @@ bool MOERTEL::Interface::Complete()
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
             ids[counter++] = curr->first;
       }
-      lcomm_->Broadcast(&ids[0],lnsegs,proc);
+      Teuchos::broadcast<LO, int>(*lcomm_, proc, lnsegs, &ids[0]);
       for (int i=0; i<lnsegs; ++i)
         segPID_.insert(std::pair<int,int>(ids[i],proc));
       ids.clear();
@@ -332,7 +329,7 @@ bool MOERTEL::Interface::Complete()
   //-------------------------------------------------------------------
   // make the nodes know there adjacent segments
   // find max number of nodes to a segment
-  if (lComm())
+  if (lcomm_ != Teuchos::null)
   {
     int lmaxnnode = 0;
     int gmaxnnode = 0;
@@ -343,16 +340,16 @@ bool MOERTEL::Interface::Complete()
         if (lmaxnnode < scurr->second->Nnode())
           lmaxnnode = scurr->second->Nnode();
     }
-    lcomm_->MaxAll(&lmaxnnode,&gmaxnnode,1);
+    Teuchos::reduceAll<LO, int>(*lcomm_, Teuchos::REDUCE_MAX, 1, &lmaxnnode,&gmaxnnode);
     
     // loop all procs and broadcast their adjacency
-    for (int proc=0; proc<lcomm_->NumProc(); ++proc)
+    for (int proc=0; proc<lcomm_->getSize(); ++proc)
     {
       // local number of segments
       int lnseg = 0;
-      if (proc==lcomm_->MyPID())
+      if (proc==lcomm_->getRank())
         lnseg = seg_[0].size() + seg_[1].size();
-      lcomm_->Broadcast(&lnseg,1,proc);
+      Teuchos::broadcast<LO, int>(*lcomm_, proc, 1, &lnseg);
       
       // allocate vector to hold adjacency
       int offset = gmaxnnode+2;
@@ -360,7 +357,7 @@ bool MOERTEL::Interface::Complete()
 	  std::vector<int> adj(size);
       
       // proc fills adjacency vector adj and broadcasts
-      if (proc==lcomm_->MyPID())
+      if (proc==lcomm_->getRank())
       {
         int count = 0;
         for (int side=0; side<2; ++side)
@@ -378,7 +375,7 @@ bool MOERTEL::Interface::Complete()
           }
         }
       }
-      lcomm_->Broadcast(&adj[0],size,proc);
+      Teuchos::broadcast<LO, int>(*lcomm_, proc, size, &adj[0]);
       
       // all procs read adj and add segment to the nodes they own
       int count = 0;
@@ -389,18 +386,18 @@ bool MOERTEL::Interface::Complete()
         for (int j=0; j<nnode; ++j)
         {
           int nid = adj[count+2+j];
-          if (lcomm_->MyPID() == NodePID(nid))
+          if (lcomm_->getRank() == NodePID(nid))
           {
             // I own this node, so set the segment segid in it
 			Teuchos::RCP<MOERTEL::Node> node = GetNodeViewLocal(nid);
             if (node == Teuchos::null)
             {
 				std::stringstream oss;
-					oss << "***ERR*** MOERTEL::Interface::Complete:\n"
+					oss << "***ERR*** MoertelT::Interface::Complete:\n"
 						<< "***ERR*** cannot find node " << nid << "\n"
                    << "***ERR*** in map of all nodes on this proc\n"
                    << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-				throw ReportError(oss);
+				throw MOERTEL::ReportError(oss);
             }
             node->AddSegment(segid);
           }
@@ -415,7 +412,7 @@ bool MOERTEL::Interface::Complete()
   
   //-------------------------------------------------------------------
   // build redundant segments and nodes
-  if (lComm())
+  if (lcomm_ != Teuchos::null)
   {
     int ok = 0;
     ok += RedundantSegments(0);  
@@ -425,16 +422,16 @@ bool MOERTEL::Interface::Complete()
     if (ok != 4)
     {
 		std::stringstream oss;
-			oss << "***ERR*** MOERTEL::Interface::Complete:\n"
+			oss << "***ERR*** MoertelT::Interface::Complete:\n"
            << "***ERR*** building of redundant information failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
     }
   }
 
   //-------------------------------------------------------------------
   // make topology segments <-> nodes for each side
-  if (lComm())
+  if (lcomm_ != Teuchos::null)
     BuildNodeSegmentTopology(); 
 
   //-------------------------------------------------------------------

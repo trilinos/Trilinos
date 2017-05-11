@@ -48,27 +48,12 @@
 #include "Moertel_ExplicitTemplateInstantiation.hpp"
 
 #ifdef HAVE_MOERTEL_EXPLICIT_INSTANTIATION
-#include "mrtr_overlap_Def.hpp"
-#include "mrtr_overlap_utils_Def.hpp"
-#include "mrtr_convexhull_Def.hpp"
+#include "Moertel_IntegratorT.hpp"
+#include "Moertel_IntegratorT_Def.hpp"
 
-#include "mrtr_interface.H"
-#ifdef HAVE_MOERTEL_TPETRA
-#include "Moertel_InterfaceT.hpp"
-#endif
+namespace MoertelT {
 
-namespace MOERTEL {
-
-  #ifdef HAVE_MOERTEL_TPETRA
-    #ifdef HAVE_MOERTEL_INST_DOUBLE_INT_INT
-      MOERTEL_INSTANTIATE_NESTED_TEMPLATE_CLASS_ST_LO_GO_N(MOERTEL::Overlap, MoertelT::InterfaceT, double, int, int, KokkosNode)
-    #endif
-    #ifdef HAVE_MOERTEL_INST_DOUBLE_INT_LONGLONGINT
-      MOERTEL_INSTANTIATE_NESTED_TEMPLATE_CLASS_ST_LO_GO_N(MOERTEL::Overlap, MoertelT::InterfaceT, double, int, long long, KokkosNode)
-    #endif
-  #endif
-
-  MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ORD(Overlap, Interface)
+  MOERTEL_INSTANTIATE_TEMPLATE_CLASS(IntegratorT)
 
 } // namespace Moertel
 

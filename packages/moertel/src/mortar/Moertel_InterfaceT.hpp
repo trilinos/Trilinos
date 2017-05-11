@@ -45,31 +45,27 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 /*!
- * \file mrtr_interface.H
+ * \file mrtr_interfaceT.hpp
  *
- * \class MOERTEL::Interface
+ * \class MoertelT::Interface
  *
  * \brief A class to construct a single interface
  *
  * \date Last update do Doxygen: 20-March-06
  *
  */
-#ifndef MOERTEL_INTERFACE_H
-#define MOERTEL_INTERFACE_H
+#ifndef MOERTEL_INTERFACET_H
+#define MOERTEL_INTERFACET_H
 
 #include <ctime>
 #include <map>
 #include <iostream>
 #include <iomanip>
 
-// Trilinos includes
-#include <Epetra_CrsMatrix.h>
-#ifdef HAVE_MOERTEL_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Comm.hpp"
+
+#include "Tpetra_CrsMatrix.hpp"
 
 // mrtr includes
 #include "mrtr_lm_selector.H"
@@ -78,23 +74,10 @@
 #include "mrtr_projector.H"
 
 /*!
-\brief MOERTEL: namespace of the Moertel package
-
-The Moertel package depends on \ref Epetra, \ref EpetraExt, \ref Teuchos,
-\ref Amesos, \ref ML and \ref AztecOO:<br>
-Use at least the following lines in the configure of Trilinos:<br>
-\code
---enable-moertel 
---enable-epetra 
---enable-epetraext
---enable-teuchos 
---enable-ml
---enable-aztecoo --enable-aztecoo-teuchos 
---enable-amesos
-\endcode
+\brief MoertelT: namespace of the Moertel package
 
 */
-namespace MOERTEL
+namespace MoertelT
 {
 
 /*!
@@ -110,9 +93,9 @@ and \ref AddNode (MOERTEL::Node &node, int side).<br> After all segment and all
 nodes of an interface are added, a call to \ref Complete() finalizes the
 construction phase of the interface.<br> Once the interface is constructed and
 \ref Complete() was called, it should be passed to an instance of the \ref
-MOERTEL::Manager to handle the integration phase. It is highly recommended not
+MoertelT::Manager to handle the integration phase. It is highly recommended not
 to call any integration methods on the interface directly but leave this task
-to the \ref MOERTEL::Manager class that takes care of assembly of integration
+to the \ref MoertelT::Manager class that takes care of assembly of integration
 results and the case were nodes appear on more then one interface.<br>
 
 <b>Aspects of Interface geometry:</b><br>
@@ -160,21 +143,21 @@ o-----o-----o-----o-----o-----o-----o-----o-----o-----o-----o-----o------o------
 </pre>
 The example above shows a perfectly legal (though rather advanced an unusual) case.<br>
 The choice of the sides 0 or 1 is arbitrary, the correct choice of the slave and mortar side 
-is sophisticated here and can be done by the \ref MOERTEL::Manager or by the user himself.
+is sophisticated here and can be done by the \ref MoertelT::Manager or by the user himself.
 
 <br>
 <b>Comments on parallelism:</b><br>
 The Moertel package can handle multiple interfaces in serial and in parallel. When running
-in serial, the Mortar package expects the Epetra_Comm argument in the construction of
-\rer MOERTEL::Manager and \ref MOERTEL::Interface to implement an Epetra_SerialComm. <br>
-When running in parallel the MOERTEL package epxects this Epetra-Comm to implement Epetra_MPIComm. In the parallel
-case the package mainly makes use of the communication methods of the Epetra_MPIComm but also
-performs direct MPI calls using the MPI communicator extracted from the Epetra_MPIComm.<br>
+in serial, the Mortar package expects the Teuchos_Comm argument in the construction of
+\rer MoertelT::Manager and \ref MoertelT::Interface to implement an Teuchos_SerialComm. <br>
+When running in parallel the MOERTEL package epxects this Teuchos-Comm to implement Teuchos_MPIComm. In the parallel
+case the package mainly makes use of the communication methods of the Teuchos_MPIComm but also
+performs direct MPI calls using the MPI communicator extracted from the Teuchos_MPIComm.<br>
 Passing nodes and segments via \ref AddNode and \ref AddSegment to an Interface instance implicitly 
 defines the processes ownership over those objects. Calls to these methods therefore are never collective!
 Passing a node or segment object to an Interface also results in the process taking part in the
 integration of this Interface. the call to \ref Complete() will create a interface-local
-Epetra_MPIComm or Epetra_SerialComm as subset of the global Epetra_comm supplied by the user.
+Teuchos_MPIComm or Teuchos_SerialComm as subset of the global Teuchos_comm supplied by the user.
 All processes that passed segments or nodes to the interface will become member of that interface-local
 communicator. Processes not passing any data to the interface will not participate in the integration
 of that specific interface and the integration will be non-blocking to them.<br>
@@ -205,12 +188,12 @@ Process 2 does integration on interface 2 alone<br>
 Process 3 is not blocked by the MOERTEL package<br>
 <b>Interfaces 1,2 are computed in serial as interface subsets are overlapping</b><br>
 
-All calls to the \ref Interface(int Id, bool oneD, Epetra_Comm& comm, int outlevel)
-constructor are collective for all processes that are part of the Epetra_Comm comm.<br>
+All calls to the \ref Interface(int Id, bool oneD, Teuchos_Comm& comm, int outlevel)
+constructor are collective for all processes that are part of the Teuchos_Comm comm.<br>
 The computation phase though will not be collective as computations are only shared
 among those processes that have ownership of a node or a segment on this interface.
 That is process that passed in a segment or a node to this interface and therefore
-become a member of the internally constructed interface-local Epetra_Comm \ref lComm().<br>
+become a member of the internally constructed interface-local Teuchos_Comm \ref lComm().<br>
 The computation is non-blocking for all other processes. This allows the parallel
 computation of several interfaces at the same time.<br>
 This approach assumes that the user will balance the underlying domain among 
@@ -221,12 +204,16 @@ in any geometrical configuration. It is though computationally advantageous when
 as few as possible processes work on a single interface and non-overlapping subsets of
 processes work on different interfaces at the same time.
 
-The \ref MOERTEL::Interface class supports the std::ostream& operator <<
+The \ref MoertelT::Interface class supports the std::ostream& operator <<
 
 \author Glen Hansen (gahanse@sandia.gov)
 
 */
-class  Interface 
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+class  InterfaceT
 {
 public:
   
@@ -247,8 +234,8 @@ public:
     proj_orthogonal
   };
   
-  //! \brief the \ref MOERTEL::Integrator class is a friend to the interface class
-  friend class Integrator;
+  //! \brief the \ref MoertelT::Integrator class is a friend to the interface class
+//  friend class IntegratorT<ST, LO, GO, N>;
 
   // @{ \name Constructors and destructor
 
@@ -258,28 +245,28 @@ public:
   Constructs an empty instance of this class that must be subsequently filled in by the user with
   information about the nodes and segments on this interface. <br>
   <b>This is a collective call for all processors associated with the
-  Epetra_Comm. </b>
+  Teuchos_Comm. </b>
   
   \param Id : A unique positive interface id. Does not need to be continuous among several interfaces
   \param oneD : true if this interface is a 1D-interface of a 2D problem
-  \param comm : An Epetra_Comm object handle
+  \param comm : An Teuchos_Comm object handle
   \param outlevel : Level of output information written to stdout ( 0 - 10 )
   */
-  explicit Interface(int Id, bool oneD, Epetra_Comm& comm, int outlevel);
+  explicit InterfaceT(int Id, bool oneD, const Teuchos::RCP<const Teuchos::Comm<LO> >& comm, int outlevel);
   
   /*!
   \brief Copy-constructor
   
   Constructs a deep copy. 
   */
-  Interface(MOERTEL::Interface& old);
+  InterfaceT(const MoertelT::InterfaceT<ST, LO, GO, N>& old);
   
   /*!
   \brief Destructor
   
   Destroys this instance and all data it has ownership of 
   */
-  virtual ~Interface();
+  virtual ~InterfaceT();
   
   //@}
 
@@ -313,7 +300,7 @@ public:
   \brief Returns true if this interface has been successfully integrated and false otherwise
   
   */
-  bool IsIntegrated() const { if (!lComm()) return true; 
+  bool IsIntegrated() const { if (lcomm_ != Teuchos::null) return true; 
                               else return isIntegrated_; }
   
   /*!
@@ -324,22 +311,22 @@ public:
   inline int Id() const { return Id_; }
   
   /*!
-  \brief Returns the Epetra_Comm object associated with this interface
+  \brief Returns the Teuchos_Comm object associated with this interface
   
-  Note that all interfaces to be used in ONE \ref MOERTEL::Manager should share the
-  same Epetra_Comm object with that \ref MOERTEL::Manager
+  Note that all interfaces to be used in ONE \ref MoertelT::Manager should share the
+  same Teuchos_Comm object with that \ref MoertelT::Manager
   */
-  inline const Epetra_Comm& gComm() const { return gcomm_; }
+  inline const Teuchos::RCP<const Teuchos::Comm<LO> > gComm() const { return gcomm_; }
   
   /*!
-  \brief Returns the interface-local Epetra_Comm object associated with this interface
+  \brief Returns the interface-local Teuchos_Comm object associated with this interface
   
   It returns \b NULL if \ref Complete() has not been called.
   
-  \warning This Epetra_Comm object is for communication among processors that have business on
+  \warning This Teuchos_Comm object is for communication among processors that have business on
            this instance. It is NULL for all other processors.
   */
-  inline const Epetra_Comm* lComm() const { return lcomm_.get(); }
+  inline const Teuchos::RCP<const Teuchos::Comm<LO> > lComm() const { return lcomm_; }
   
   /*!
   \brief Returns the Mortar side of the interface
@@ -347,7 +334,7 @@ public:
   It returns the mortar side of the interface, which is either \b 0 or \b 1 <br>
   It returns \b -1 if the mortar side was not yet set by the user <br>
   It returns \b -2 if the user expects  the mortar side to be chosen automatically by the
-  \ref MOERTEL::Manager . (That is, the user dis set -2 as the mortar side using \ref SetMortarSide )
+  \ref MoertelT::Manager . (That is, the user dis set -2 as the mortar side using \ref SetMortarSide )
   */
   int MortarSide() const { return mortarside_; }
 
@@ -419,14 +406,14 @@ public:
   /*!
   \brief Returns the total number of segments on the specified side ( 0 or 1)
          that are owned by ALL processors that are a member of the
-         interface-local Epetra_Comm \ref lComm()
+         interface-local Teuchos_Comm \ref lComm()
   
   Returns \b -1 if 
   - \ref Complete() has not been called (also issues a warning)
   - side is not equal to \b 0 or \b 1
   
   Returns \b 0 if 
-  - Calling processor is not member of the interface-local Epetra_Comm \ref lComm()
+  - Calling processor is not member of the interface-local Teuchos_Comm \ref lComm()
   - There are no segments on the specified side
   
   \param side : side of interface (0 or 1)
@@ -486,7 +473,7 @@ public:
   - side is neither 1 or 0 (also issues a warning)
 
   Returns \b 0 if 
-  - the calling processor is not member of the interface-local Epetra_Comm \ref lComm()
+  - the calling processor is not member of the interface-local Teuchos_Comm \ref lComm()
   
   \param side : Side of interface (0 or 1)
   */
@@ -501,20 +488,20 @@ public:
   - \ref Complete() has not been called (also issues a warning) 
 
   Returns \b 0 if 
-  - the calling processor is not member of the interface-local Epetra_Comm \ref lComm()
+  - the calling processor is not member of the interface-local Teuchos_Comm \ref lComm()
   */
   int GlobalNnode();
 
   /*!
   \brief Returns the local PID of the owner of the node with Id nid 
   
-  Returns the PID (process id) in the interface-local Epetra_Comm \ref lComm() of
+  Returns the PID (process id) in the interface-local Teuchos_Comm \ref lComm() of
   the local process that owns the node with the id nid
   
   Returns \b -1 if 
   - \ref Complete() has not been called (also issues an error) 
   - Node with Id nid is not on this interface (also issues an error) 
-  - The calling processor is not member of the interface-local Epetra_Comm \ref lComm() (also issues an error) 
+  - The calling processor is not member of the interface-local Teuchos_Comm \ref lComm() (also issues an error) 
   
   \param nid : Unique node Id
   */
@@ -523,13 +510,13 @@ public:
   /*!
   \brief Returns the local PID of the owner of the segment with Id sid 
   
-  Returns the PID (process id) in the interface-local Epetra_Comm \ref lComm() of
+  Returns the PID (process id) in the interface-local Teuchos_Comm \ref lComm() of
   the local process that owns the segment with the id sid
   
   Returns \b -1 if 
   - \ref Complete() has not been called (also issues an error) 
   - Segment with id sid is not on this interface (also issues an error) 
-  - The calling processor is not member of the interface-local Epetra_Comm \ref lComm() (also issues an error) 
+  - The calling processor is not member of the interface-local Teuchos_Comm \ref lComm() (also issues an error) 
   
   \param nid : Unique node Id
   */
@@ -604,9 +591,9 @@ public:
   \ref lComm() , \ref GetSide(MOERTEL::Segment* seg) \ref GetSide(MOERTEL::Node* node)<br>
   \ref GetSide(int nodeid) , \ref GlobalNsegment(int side) , \ref GlobalNsegment() ,<br>
   \ref GlobalNnode(int side) , \ref GlobalNnode() , \ref NodePID(int nid) const ,<br>
-  \ref NodePID(int nid) const , \ref Mortar_Integrate() , \ref Mortar_Integrate(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
+  \ref NodePID(int nid) const , \ref Mortar_Integrate() , \ref Mortar_Integrate(Tpetra_CrsMatrix& D, Tpetra_CrsMatrix& M)
 
-  \ref Complete() has to be called before adding the interface to the \ref MOERTEL::Manager
+  \ref Complete() has to be called before adding the interface to the \ref MoertelT::Manager
 
   No nodes or segments can be added to the interface anymore after a call to \ref Complete()
 
@@ -622,9 +609,9 @@ public:
   Adds a segment \ref MOERTEL::Segment to this interface class on side 0 or 1
   
   This is \b not a collective call, the process that is adding the segment will become<br>
-  owner of that segment and will therefore be member of the interface-local <br>Epetra_Comm \ref lComm()
+  owner of that segment and will therefore be member of the interface-local <br>Teuchos_Comm \ref lComm()
 
-  The \ref MOERTEL::Interface class will not take ownership of the Segment seg,<br>
+  The \ref MoertelT::Interface class will not take ownership of the Segment seg,<br>
   instead it will create a deep copy of it so the user can destroy the <br>seg instance immediately
   after passing it to this method.
 
@@ -647,9 +634,9 @@ public:
   Adds a node \ref MOERTEL::Node to this interface class on side 0 or 1
   
   This is \b not a collective call, the process that is adding the node will become<br>
-  owner of that node and will therefore be member of the interface-local <br>Epetra_Comm \ref lComm()
+  owner of that node and will therefore be member of the interface-local <br>Teuchos_Comm \ref lComm()
 
-  The \ref MOERTEL::Interface class will not take ownership of the Node node,<br>
+  The \ref MoertelT::Interface class will not take ownership of the Node node,<br>
   instead it will create a deep copy of it so the user can destroy the <br>node instance immediately
   after passing it to this method.
 
@@ -675,7 +662,7 @@ public:
   Choices are:
   - 1 : Side 1 of the interface is mortar side
   - 0 : Side 0 of the interface is mortar side
-  - -2 : \ref MOERTEL::Manager shall choose the side automatically
+  - -2 : \ref MoertelT::Manager shall choose the side automatically
 
   \param side: side of interface which is to become mortar side
   
@@ -690,7 +677,7 @@ public:
   as discretization of the trace space and the Lagrange multiplier space manually.
   This is done by attaching one or two \ref MOERTEL::Function derived classes to the segments.
   
-  The \ref MOERTEL::Interface class does not take ownership of func and the
+  The \ref MoertelT::Interface class does not take ownership of func and the
   instance func can be destroyed directly after a call to this method
   
   \param side : Side of the interface (0 or 1) the function is to be attached to
@@ -707,14 +694,14 @@ public:
   Currently the package makes use of functions with ids 0 (trace space) and 1 (mortar space)
   
   \warning In case the Mortar side is unknown to the user as he wishes to leave the choice
-           of the Mortar side to the \ref MOERTEL::Manager, he can not set the mortar space 
+           of the Mortar side to the \ref MoertelT::Manager, he can not set the mortar space 
            shape functions to the slave side (as the slave side is unknown).
            In this case \ref SetFunctionTypes(MOERTEL::Function::FunctionType primal,
            MOERTEL::Function::FunctionType dual) should be used to specify 
-           the types of shape functions on wishes to use. The \ref MOERTEL::Manager
+           the types of shape functions on wishes to use. The \ref MoertelT::Manager
            will then associate the appropriate shape functions with the segments on the appropriate sides
            once the mortar side was chosen. This though only works when derived function classes
-           and types are used that are known to the \ref MOERTEL::Manager.
+           and types are used that are known to the \ref MoertelT::Manager.
            If the user want to create his/her own shae functions and use them, he/she needs
            to set them manually using this method.
            
@@ -727,10 +714,10 @@ public:
   \brief Integrate the mortar integrals on this interface (1D interface)
 
   The method performs the integration of the mortar integral on this interface.
-  the user should not call this method directly but use a \ref MOERTEL::Manager to
+  the user should not call this method directly but use a \ref MoertelT::Manager to
   perform the integration to make sure all necessary prerequisites are fulfilled
   
-  \param intparams : parameter list from the MOERTEL::Manager holding
+  \param intparams : parameter list from the MoertelT::Manager holding
                      integration parameters
   
   \warning \ref Complete() has to be called before integration
@@ -743,10 +730,10 @@ public:
   \brief Integrate the mortar integrals on this interface (2D interface)
 
   The method performs the integration of the mortar integral on this interface.
-  the user should not call this method directly but use a \ref MOERTEL::Manager to
+  the user should not call this method directly but use a \ref MoertelT::Manager to
   control the integration to make sure all necessary prerequisites are fulfilled
   
-  \param intparams : parameter list from the MOERTEL::Manager holding
+  \param intparams : parameter list from the MoertelT::Manager holding
                      integration parameters
 
   \warning \ref Complete() has to be called before integration
@@ -758,14 +745,14 @@ public:
   /*!
   \brief Assemble coupling matrices D and M after integration
 
-  This method is used by the \ref MOERTEL::Manager to assemble
+  This method is used by the \ref MoertelT::Manager to assemble
   values from the integration to the coupling matrices \b D and \b M
   
   \return True if successful, false otherwise
   */
-  bool Mortar_Assemble(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
+  bool Mortar_Assemble(Tpetra::CrsMatrix<ST, LO, GO, N>& D, Tpetra::CrsMatrix<ST, LO, GO, N>& M);
 
-  bool AssembleJFNKVec(Lmselector *sel);
+  bool AssembleJFNKVec(MOERTEL::Lmselector *sel);
   
   /*!
   \brief Set type of projection to be used for the mortar projection
@@ -774,10 +761,10 @@ public:
   nodes from the mortar side to the slave side ('mesh imprinting')
   
   Choices are
-  - \ref MOERTEL::Interface::proj_continousnormalfield (recommended in 1D and 2D interfaces)
-  - \ref MOERTEL::Interface::proj_orthogonal (1D interfaces only)
+  - \ref MoertelT::Interface::proj_continousnormalfield (recommended in 1D and 2D interfaces)
+  - \ref MoertelT::Interface::proj_orthogonal (1D interfaces only)
   */
-  void SetProjectionType(MOERTEL::Interface::ProjectionType typ) { ptype_ = typ; } 
+  void SetProjectionType(MoertelT::InterfaceT<ST, LO, GO, N>::ProjectionType typ) { ptype_ = typ; } 
 
   /*!
   \brief Build averaged nodal normals and projects nodes to other side
@@ -801,7 +788,7 @@ public:
   \brief Return vector of all Lagrange multiplier degrees of freedom on this interface
 
   */
-  std::vector<int>* MyLMIds();
+  std::vector<GO>* MyLMIds();
   
   /*!
   \brief Makes necessary boundary modification for 1D and 2D interfaces
@@ -818,9 +805,9 @@ public:
   If the user wishes not to set the shape functions for the trace space and the 
   mortar space himself he can use this method to set just the types of 
   functions to be used. Also, if the user does not choose the Mortar side
-  of the interface but leaves the choice to the \ref MOERTEL::Manager class
+  of the interface but leaves the choice to the \ref MoertelT::Manager class
   he has to specify the types of functions intended to be used. They will
-  be set to the interfaces once the \ref MOERTEL::Manager chose the mortar side.
+  be set to the interfaces once the \ref MoertelT::Manager chose the mortar side.
   
   This only works for supported shape functions, not for user created shape functions.<br>
   Supported shape functions are:<br>
@@ -844,7 +831,7 @@ public:
   
   Set the functions from the function types chosen by the user with \ref SetFunctionTypes(MOERTEL::Function::FunctionType primal,
   MOERTEL::Function::FunctionType dual).<br>
-  This method is called by the \ref MOERTEL::Manager and should not be used directly.
+  This method is called by the \ref MoertelT::Manager and should not be used directly.
   
   */
   bool SetFunctionsFromFunctionTypes();
@@ -854,7 +841,7 @@ public:
 private:  
 
   // don't want = operator
-  Interface operator = (const Interface& old);
+  InterfaceT operator = (const InterfaceT& old);
 
   // print local segment information to std::cout
   bool PrintSegments() const;
@@ -895,22 +882,22 @@ private:
   bool ProjectNodes_SlavetoMaster_Orthogonal();
   
   // control routine of the integration of the master/slave side in 2D
-  //bool Integrate_2D(Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
+  //bool Integrate_2D(Tpetra_CrsMatrix& M,Tpetra_CrsMatrix& D);
   bool Integrate_2D();
   
   // integrate the overlap of 2 segments in 2D (master/slave contribution)
 //  bool Integrate_2D_Section(MOERTEL::Segment& sseg,MOERTEL::Segment& mseg,
-//                            Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
-  bool Integrate_2D_Section(MOERTEL::Segment& sseg,MOERTEL::Segment& mseg);
+//                            Tpetra_CrsMatrix& M,Tpetra_CrsMatrix& D);
+  bool Integrate_2D_Section(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg);
 
   // control routine of the integration of the master/slave side in 3D
   bool Integrate_3D();
   
   // integrate the overlap of 2 segments in 3D (master/slave contribution)
-  bool Integrate_3D_Section(MOERTEL::Segment& sseg,MOERTEL::Segment& mseg);
+  bool Integrate_3D_Section(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg);
 
   // Assemble values from integration this interface (3D problem)
-  bool Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
+  bool Assemble_3D(Tpetra::CrsMatrix<ST, LO, GO, N>& D, Tpetra::CrsMatrix<ST, LO, GO, N>& M);
 
   // Check and see if the master seg and slave seg are even close to each other
   bool QuickOverlapTest_2D(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg);
@@ -925,8 +912,8 @@ private:
   bool                                 oneD_;         // flag indicating 1D interface (opposed to 2D)
   bool                                 isComplete_;   // flag indicating whether InterfaceComplete() has been called
   bool                                 isIntegrated_; // flag indicating status of integration
-  Epetra_Comm&                         gcomm_;        // the global communicator
-  Teuchos::RCP<Epetra_Comm>             lcomm_;        // the local communicator
+  Teuchos::RCP<const Teuchos::Comm<LO> >           gcomm_;        // the global communicator
+  Teuchos::RCP<const Teuchos::Comm<LO> >           lcomm_;        // the local communicator
   int                                  mortarside_;   // indicate which side (0 or 1) is mortar (master) side
   ProjectionType                       ptype_;        // type of projection used
   Teuchos::RCP<Teuchos::ParameterList>  intparams_;    // parameter list holding integration parameters
@@ -947,6 +934,19 @@ private:
 } // namespace MOERTEL
 
 // operator <<
-std::ostream& operator << (std::ostream& os, const MOERTEL::Interface& inter); 
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+std::ostream& operator << (std::ostream& os, const MoertelT::InterfaceT<ST, LO, GO, N>& inter); 
+
+#ifndef HAVE_MOERTEL_EXPLICIT_INSTANTIATION
+#include "Moertel_InterfaceT.hpp"
+#include "Moertel_InterfaceT_Complete_Def.hpp"
+#include "Moertel_InterfaceT_Integrate_Def.hpp"
+#include "Moertel_InterfaceT_Integrate3D_Def.hpp"
+#include "Moertel_InterfaceT_Tools_Def.hpp"
+#include "Moertel_InterfaceT_Project_Def.hpp"
+#endif
 
 #endif // MOERTEL_INTERFACE_H

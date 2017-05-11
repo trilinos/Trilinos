@@ -47,28 +47,34 @@
 #include <ctime>
 #include <vector>
 
-#include "mrtr_interface.H"
+#include "Moertel_InterfaceT.hpp"
+#include "Moertel_UtilsT.hpp"
 #include "mrtr_utils.H"
 #include "mrtr_pnode.H"
 #include "mrtr_segment.H"
-#include "mrtr_integrator.H"
+#include "Moertel_IntegratorT.hpp"
 
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_Time.h"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_Time.hpp"
 
 /*----------------------------------------------------------------------*
   |  assemble values from integration                                    |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
-    Epetra_CrsMatrix& M)
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::InterfaceT<ST, LO, GO, N>::Mortar_Assemble(Tpetra::CrsMatrix<ST, LO, GO, N>& D,
+    Tpetra::CrsMatrix<ST, LO, GO, N>& M)
 {
 
   //-------------------------------------------------------------------
   // interface needs to be complete
   if (!IsComplete())
   {
-    if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
+    if (gcomm_->getRank()==0)
+      std::cout << "***ERR*** MoertelT::InterfaceT::Mortar_Assemble:\n"
         << "***ERR*** Complete() not called on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -76,14 +82,14 @@ bool MOERTEL::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
 
   //-------------------------------------------------------------------
   // send all procs not member of this interface's intra-comm out of here
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
 
   //-------------------------------------------------------------------
   // interface needs to have a mortar side assigned
   if (MortarSide()==-1)
   {
-    if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
+    if (gcomm_->getRank()==0)
+      std::cout << "***ERR*** MoertelT::InterfaceT::Mortar_Assemble:\n"
         << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -93,8 +99,8 @@ bool MOERTEL::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
   // interface need to be integrated
   if (!IsIntegrated())
   {
-    if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
+    if (gcomm_->getRank()==0)
+      std::cout << "***ERR*** MoertelT::InterfaceT::Mortar_Assemble:\n"
         << "***ERR*** interface " << Id_ << " not integrated\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -109,21 +115,23 @@ bool MOERTEL::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
 /*----------------------------------------------------------------------*
   |  make mortar integration of this interface (2D problem)              |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
-    Epetra_CrsMatrix& M)
+template<class OrdinalType>
+bool 
+MoertelT::InterfaceT<OrdinalType>::Mortar_Integrate(Tpetra_CrsMatrix& D,
+    Tpetra_CrsMatrix& M)
 {
   bool ok = false;
 
   //-------------------------------------------------------------------
   // time this process
-  Epetra_Time time(*lComm());
+  Tpetra_Time time(*lComm());
   time.ResetStartTime();
 
   //-------------------------------------------------------------------
   if (!IsOneDimensional())
   {
     if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+      std::cout << "***ERR*** MoertelT::Interface::Mortar_Integrate:\n"
         << "***ERR*** This is not a 2D problem, we're in the wrong method here!!!\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -134,7 +142,7 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+      std::cout << "***ERR*** MoertelT::Interface::Mortar_Integrate:\n"
         << "***ERR*** Complete() not called on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -149,7 +157,7 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   if (MortarSide()==-1)
   {
     if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+      std::cout << "***ERR*** MoertelT::Interface::Mortar_Integrate:\n"
         << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -164,7 +172,7 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 1)
     {
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+      std::cout << "***ERR*** MoertelT::Interface::Mortar_Integrate:\n"
         << "***ERR*** interface " << Id_ << ", mortar side\n"
         << "***ERR*** segment " << scurr->second->Id() << " needs at least 1 function set\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -173,7 +181,7 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   for (scurr=seg_[sside].begin(); scurr!=seg_[sside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 2)
     {
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+      std::cout << "***ERR*** MoertelT::Interface::Mortar_Integrate:\n"
         << "***ERR*** interface " << Id_ << ", slave side\n"
         << "***ERR*** segment " << scurr->second->Id() << " needs at least 2 function set\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -193,7 +201,7 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   // time this process
   if (OutLevel()>5)
   {
-    std::cout << "MOERTEL::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
+    std::cout << "MoertelT::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
       << " finished in " << time.ElapsedTime() << " sec\n"; fflush(stdout);
   }
   return true;
@@ -203,7 +211,12 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
 /*----------------------------------------------------------------------*
   |  make mortar integration of this interface (2D problem)              |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Mortar_Integrate_2D(
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::InterfaceT<ST, LO, GO, N>::Mortar_Integrate_2D(
     Teuchos::RCP<Teuchos::ParameterList> intparams)
 {
   bool ok = false;
@@ -211,14 +224,14 @@ bool MOERTEL::Interface::Mortar_Integrate_2D(
 
   //-------------------------------------------------------------------
   // time this process
-  Epetra_Time time(*lComm());
-  time.ResetStartTime();
+  Teuchos::Time time("Mortar_Integrate_2D");
+  time.start(true);
 
   //-------------------------------------------------------------------
   if (!IsOneDimensional())
   {
-    if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+    if (gcomm_->getRank()==0)
+      std::cout << "***ERR*** MoertelT::InterfaceT::Mortar_Integrate:\n"
         << "***ERR*** This is not a 2D problem, we're in the wrong method here!!!\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -228,8 +241,8 @@ bool MOERTEL::Interface::Mortar_Integrate_2D(
   // interface needs to be complete
   if (!IsComplete())
   {
-    if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+    if (gcomm_->getRank()==0)
+      std::cout << "***ERR*** MoertelT::InterfaceT::Mortar_Integrate:\n"
         << "***ERR*** Complete() not called on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -237,14 +250,14 @@ bool MOERTEL::Interface::Mortar_Integrate_2D(
 
   //-------------------------------------------------------------------
   // send all procs not member of this interface's intra-comm out of here
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
 
   //-------------------------------------------------------------------
   // interface needs to have a mortar side assigned
   if (MortarSide()==-1)
   {
-    if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+    if (gcomm_->getRank()==0)
+      std::cout << "***ERR*** MoertelT::InterfaceT::Mortar_Integrate:\n"
         << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -259,7 +272,7 @@ bool MOERTEL::Interface::Mortar_Integrate_2D(
   for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 1)
     {
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+      std::cout << "***ERR*** MoertelT::InterfaceT::Mortar_Integrate:\n"
         << "***ERR*** interface " << Id_ << ", mortar side\n"
         << "***ERR*** segment " << scurr->second->Id() << " needs at least 1 function set\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -268,7 +281,7 @@ bool MOERTEL::Interface::Mortar_Integrate_2D(
   for (scurr=seg_[sside].begin(); scurr!=seg_[sside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 2)
     {
-      std::cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+      std::cout << "***ERR*** MoertelT::InterfaceT::Mortar_Integrate:\n"
         << "***ERR*** interface " << Id_ << ", slave side\n"
         << "***ERR*** segment " << scurr->second->Id() << " needs at least 2 function set\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -288,8 +301,8 @@ bool MOERTEL::Interface::Mortar_Integrate_2D(
   // time this process
   if (OutLevel()>5)
   {
-    std::cout << "MOERTEL::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
-      << " finished in " << time.ElapsedTime() << " sec\n"; fflush(stdout);
+    std::cout << "MoertelT::Interface " << Id() << ": Integration on proc " << gcomm_->getRank()
+      << " finished in " << time.totalElapsedTime() << " sec\n"; fflush(stdout);
   }
   return true;
 }
@@ -297,17 +310,22 @@ bool MOERTEL::Interface::Mortar_Integrate_2D(
 /*----------------------------------------------------------------------*
   |  make mortar integration of master/slave side in 2D (1D interface)   |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Integrate_2D()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::InterfaceT<ST, LO, GO, N>::Integrate_2D()
 {
   if (!IsComplete())
   {
-    if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Integrate_2D:\n"
+    if (gcomm_->getRank()==0)
+      std::cout << "***ERR*** MoertelT::InterfaceT::Integrate_2D:\n"
         << "***ERR*** Complete() not called on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
 
   // get the sides
   int mside = MortarSide();
@@ -330,7 +348,7 @@ bool MOERTEL::Interface::Integrate_2D()
     MOERTEL::Node** nodes = actsseg->Nodes();
     bool foundone = false;
     for (int i=0; i<nnode; ++i)
-      if (NodePID(nodes[i]->Id()) == lComm()->MyPID())
+      if (NodePID(nodes[i]->Id()) == lcomm_->getRank())
       {
         foundone = true;
         break;
@@ -367,13 +385,13 @@ bool MOERTEL::Interface::Integrate_2D()
 /*----------------------------------------------------------------------*
   |  make mortar integration of master/slave side in 2D (1D interface)   |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Integrate_2D(Epetra_CrsMatrix& M,
-    Epetra_CrsMatrix& D)
+bool MoertelT::Interface::Integrate_2D(Tpetra_CrsMatrix& M,
+    Tpetra_CrsMatrix& D)
 {
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Integrate_2D:\n"
+      std::cout << "***ERR*** MoertelT::Interface::Integrate_2D:\n"
         << "***ERR*** Complete() not called on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -433,17 +451,22 @@ bool MOERTEL::Interface::Integrate_2D(Epetra_CrsMatrix& M,
   | integrate the master/slave side's contribution from the overlap      |
   | of 2 segments (2D version) IF there is an overlap                    |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::InterfaceT<ST, LO, GO, N>::Integrate_2D_Section(MOERTEL::Segment& sseg,
     MOERTEL::Segment& mseg)
 {
   // if one of the segments is quadratic, we have to do something here
   if (sseg.Type()!=MOERTEL::Segment::seg_Linear1D || mseg.Type()!=MOERTEL::Segment::seg_Linear1D)
   {
     std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+    oss << "***ERR*** MoertelT::Interface::Integrate_2D_Section:\n"
       << "***ERR*** Integration of other than linear segments not yet implemented\n"
       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    throw ReportError(oss);
+    throw MOERTEL::ReportError(oss);
   }
 
 #if 0
@@ -552,13 +575,13 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   else if (!snode0 && !snode1 && mnode0 && !mnode1)
   {
     if (mxi[0]>-0.95)
-      std::cout << "MOERTEL: ***WRN*** Significant overlap ignored\n"
+      std::cout << "MoertelT: ***WRN*** Significant overlap ignored\n"
         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   }
   else if (!snode0 && !snode1 && !mnode0 && mnode1)
   {
     if (mxi[1]<0.95)
-      std::cout << "MOERTEL: ***WRN*** Significant overlap ignored\n"
+      std::cout << "MoertelT: ***WRN*** Significant overlap ignored\n"
         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   }
   else if (!snode0 && snode1 && !mnode0 && !mnode1)
@@ -611,10 +634,10 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   {
 
     std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+    oss << "***ERR*** MoertelT::InterfaceT::Integrate_2D_Section:\n"
       << "***ERR*** Unknown overlap case found\n"
       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    throw ReportError(oss);
+    throw MOERTEL::ReportError(oss);
   }
   if (!overlap)
     return true;
@@ -625,14 +648,14 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
 #endif
 
   // create an integrator instance of some given order
-  MOERTEL::Integrator integrator(5,IsOneDimensional(),OutLevel());
+  MoertelT::IntegratorT<ST, LO, GO, N> integrator(5,IsOneDimensional(),OutLevel());
 
   // do the integration of the master side
-  Epetra_SerialDenseMatrix* Mdense =
+  Teuchos::SerialDenseMatrix<LO, ST>* Mdense =
     integrator.Integrate(sseg,sxia,sxib,mseg,mxia,mxib);
 
   // do the integration of the slave side
-  Epetra_SerialDenseMatrix* Ddense = integrator.Integrate(sseg,sxia,sxib);
+  Teuchos::SerialDenseMatrix<LO, ST>* Ddense = integrator.Integrate(sseg,sxia,sxib);
 
   // Assemble contributions Mdense into nodes (scalar only)
   integrator.Assemble(*this,sseg,mseg,*Mdense);
@@ -648,7 +671,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
       if (mnodes[0]->Ndof() == mnodes[1]->Ndof() &&
           mnodes[0]->Ndof() == 2)
       {
-        Epetra_SerialDenseMatrix* Mmod = NULL;
+        Teuchos::SerialDenseMatrix<LO, ST>* Mmod = NULL;
 
         // get the normal at slave nodes
         const double* n0 = snodes[0]->Normal();
@@ -678,15 +701,15 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
         {
           // do the integration of the modification of the master side
           // integral ( -0.5 * psi_12 * phi_k ) k=1,...,nnode_master
-          Epetra_SerialDenseMatrix* Mmod_scalar =
+          Teuchos::SerialDenseMatrix<LO, ST>* Mmod_scalar =
             integrator.Integrate_2D_Mmod(sseg,sxia,sxib,mseg,mxia,mxib);
 
-          // create an Epetra_SerialDenseMatrix of dimension (nsnode x nlmdof , nmnode x nmdof)
+          // create an Teuchos::SerialDenseMatrix of dimension (nsnode x nlmdof , nmnode x nmdof)
           int nsnode = sseg.Nnode();
           int nsdof  = snodes[0]->Ndof();
           int nmnode = mseg.Nnode();
           int nmdof  = mnodes[0]->Ndof();
-          Mmod =  new Epetra_SerialDenseMatrix(nsnode*nsdof,nmnode*nmdof);
+          Mmod =  new Teuchos::SerialDenseMatrix<LO, ST>(nsnode*nsdof,nmnode*nmdof);
 
           // add modification values to Mmod
           for (int snode=0; snode<nsnode; ++snode)
@@ -704,7 +727,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
             } // for (int sdof=0; sdof<nsdof; ++sdof)
 
 #if 0  // verification of the expression by expressions given in paper
-          Epetra_SerialDenseMatrix* Mmod2 = new Epetra_SerialDenseMatrix(nsnode*nsdof,nmnode*nmdof);
+          Teuchos::SerialDenseMatrix<LO, ST>* Mmod2 = new Teuchos::SerialDenseMatrix<LO, ST>(nsnode*nsdof,nmnode*nmdof);
           // n1 dot n2
           double n1n2 = 0.0;
           for (int i=0; i<2; ++i) n1n2 += n[0][i]*n[1][i];
@@ -764,7 +787,12 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   return true;
 }
 
-bool MOERTEL::Interface::QuickOverlapTest_2D(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg)
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::InterfaceT<ST, LO, GO, N>::QuickOverlapTest_2D(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg)
 {
 
   MOERTEL::Node** snode = sseg.Nodes();
@@ -836,19 +864,19 @@ bool MOERTEL::Interface::QuickOverlapTest_2D(MOERTEL::Segment& sseg, MOERTEL::Se
   | integrate the master/slave side's contribution from the overlap      |
   | of 2 segments (2D version) IF there is an overlap                    |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
+bool MoertelT::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
     MOERTEL::Segment& mseg,
-    Epetra_CrsMatrix& M,
-    Epetra_CrsMatrix& D)
+    Tpetra_CrsMatrix& M,
+    Tpetra_CrsMatrix& D)
 {
   // if one of the segments is quadratic, we have to do something here
   if (sseg.Type()!=MOERTEL::Segment::seg_Linear1D || mseg.Type()!=MOERTEL::Segment::seg_Linear1D)
   {
     std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+    oss << "***ERR*** MoertelT::Interface::Integrate_2D_Section:\n"
       << "***ERR*** Integration of other then linear segments not yet implemented\n"
       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    throw ReportError(oss);
+    throw MOERTEL::ReportError(oss);
   }
 
 #if 0
@@ -1163,14 +1191,14 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   {
 
     std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+    oss << "***ERR*** MoertelT::Interface::Integrate_2D_Section:\n"
       << "***ERR*** # cases that apply here: " << foundcase << "\n"
       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n"
       << "Slave :" << sseg << "\n " << *ssnodes[0] << "   " << *ssnodes[1] << "\n"
       << "Master:" << mseg << "\n" << *mmnodes[0] << "   " << *mmnodes[1] << "\n"
       << "snode0: " << snode0 << " snode1: " << snode1 <<
       " mnode0: " << mnode0 << " mnode1: " << mnode1 << "\n";
-    throw ReportError(oss);
+    throw MOERTEL::ReportError(oss);
   }
 
   // there might be no overlap
@@ -1189,17 +1217,17 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   MOERTEL::Integrator integrator(5,IsOneDimensional(),OutLevel());
 
   // do the integration of the master side
-  Epetra_SerialDenseMatrix* Mdense =
+  Teuchos::SerialDenseMatrix<LO, ST>* Mdense =
     integrator.Integrate(sseg,sxia,sxib,mseg,mxia,mxib);
 
   // do the integration of the slave side
-  Epetra_SerialDenseMatrix* Ddense = integrator.Integrate(sseg,sxia,sxib);
+  Teuchos::SerialDenseMatrix<LO, ST>* Ddense = integrator.Integrate(sseg,sxia,sxib);
 
-  // put results -Mdense into Epetra_CrsMatrix M
+  // put results -Mdense into Tpetra_CrsMatrix M
   // note the sign change for M here
   integrator.Assemble(*this,sseg,mseg,M,*Mdense);
 
-  // put results Ddense into Epetra_CrsMatrix D
+  // put results Ddense into Tpetra_CrsMatrix D
   integrator.Assemble(*this,sseg,D,*Ddense);
 
 #if 1 // modification for curved interfaces from paper by B. Wohlmuth
@@ -1214,7 +1242,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
           mnodes[0]->Ndof() == mnodes[1]->Ndof() &&
           snodes[0]->Nlmdof() == mnodes[0]->Ndof())
       {
-        Epetra_SerialDenseMatrix* Mmod = NULL;
+        Teuchos::SerialDenseMatrix<LO, ST>* Mmod = NULL;
 
         // get the normal at slave nodes
         const double* n0 = snodes[0]->Normal();
@@ -1244,15 +1272,15 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
         {
           // do the integration of the modification of the master side
           // integral ( -0.5 * psi_12 * phi_k ) k=1,...,nnode_master
-          Epetra_SerialDenseMatrix* Mmod_scalar =
+          Teuchos::SerialDenseMatrix<LO, ST>* Mmod_scalar =
             integrator.Integrate_2D_Mmod(sseg,sxia,sxib,mseg,mxia,mxib);
 
-          // create an Epetra_SerialDenseMatrix of dimension (nsnode x nlmdof , nmnode x nmdof)
+          // create an Teuchos::SerialDenseMatrix<LO, ST> of dimension (nsnode x nlmdof , nmnode x nmdof)
           int nsnode = sseg.Nnode();
           int nsdof  = snodes[0]->Nlmdof();
           int nmnode = mseg.Nnode();
           int nmdof  = mnodes[0]->Ndof();
-          Mmod =  new Epetra_SerialDenseMatrix(nsnode*nsdof,nmnode*nmdof);
+          Mmod =  new Teuchos::SerialDenseMatrix<LO, ST>(nsnode*nsdof,nmnode*nmdof);
 
           // add modification values to Mmod
           for (int snode=0; snode<nsnode; ++snode)
@@ -1270,7 +1298,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
             } // for (int sdof=0; sdof<nsdof; ++sdof)
 
 #if 0  // verification of the expression by expressions given in paper
-          Epetra_SerialDenseMatrix* Mmod2 = new Epetra_SerialDenseMatrix(nsnode*nsdof,nmnode*nmdof);
+          Teuchos::SerialDenseMatrix<LO, ST>* Mmod2 = new Teuchos::SerialDenseMatrix<LO, ST>(nsnode*nsdof,nmnode*nmdof);
           // n1 dot n2
           double n1n2 = 0.0;
           for (int i=0; i<2; ++i) n1n2 += n[0][i]*n[1][i];

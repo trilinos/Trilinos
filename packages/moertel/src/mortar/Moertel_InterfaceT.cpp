@@ -48,28 +48,25 @@
 #include "Moertel_ExplicitTemplateInstantiation.hpp"
 
 #ifdef HAVE_MOERTEL_EXPLICIT_INSTANTIATION
-#include "mrtr_overlap_Def.hpp"
-#include "mrtr_overlap_utils_Def.hpp"
-#include "mrtr_convexhull_Def.hpp"
-
-#include "mrtr_interface.H"
-#ifdef HAVE_MOERTEL_TPETRA
 #include "Moertel_InterfaceT.hpp"
-#endif
+#include "Moertel_InterfaceT_Complete_Def.hpp"
+#include "Moertel_InterfaceT_Integrate_Def.hpp"
+#include "Moertel_InterfaceT_Integrate3D_Def.hpp"
+#include "Moertel_InterfaceT_Tools_Def.hpp"
+#include "Moertel_InterfaceT_Project_Def.hpp"
 
-namespace MOERTEL {
+namespace MoertelT {
 
-  #ifdef HAVE_MOERTEL_TPETRA
-    #ifdef HAVE_MOERTEL_INST_DOUBLE_INT_INT
-      MOERTEL_INSTANTIATE_NESTED_TEMPLATE_CLASS_ST_LO_GO_N(MOERTEL::Overlap, MoertelT::InterfaceT, double, int, int, KokkosNode)
-    #endif
-    #ifdef HAVE_MOERTEL_INST_DOUBLE_INT_LONGLONGINT
-      MOERTEL_INSTANTIATE_NESTED_TEMPLATE_CLASS_ST_LO_GO_N(MOERTEL::Overlap, MoertelT::InterfaceT, double, int, long long, KokkosNode)
-    #endif
-  #endif
-
-  MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ORD(Overlap, Interface)
+  MOERTEL_INSTANTIATE_TEMPLATE_CLASS(InterfaceT)
 
 } // namespace Moertel
+
+// non-member operators at global scope
+#ifdef HAVE_MOERTEL_INST_DOUBLE_INT_INT
+template std::ostream& operator << (std::ostream& os, const MoertelT::InterfaceT<double, int, int, KokkosNode>& inter);
+#endif
+#ifdef HAVE_MOERTEL_INST_DOUBLE_INT_LONGLONGINT
+template std::ostream& operator << (std::ostream& os, const MoertelT::InterfaceT<double, int, long long, KokkosNode>& inter);
+#endif
 
 #endif

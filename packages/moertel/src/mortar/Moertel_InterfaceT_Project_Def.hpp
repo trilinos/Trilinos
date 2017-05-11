@@ -44,8 +44,9 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#include "mrtr_interface.H"
+#include "Moertel_InterfaceT.hpp"
 #include "mrtr_projector.H"
+#include "Moertel_UtilsT.hpp"
 #include "mrtr_utils.H"
 #include "mrtr_pnode.H"
 
@@ -53,14 +54,18 @@
 /*----------------------------------------------------------------------*
  |  build averaged normals                                              |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::BuildNormals()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MoertelT::InterfaceT<ST, LO, GO, N>::BuildNormals()
 { 
   //-------------------------------------------------------------------
   // interface needs to be complete
   if (!IsComplete())
   {
-    if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
+    if (gcomm_->getRank()==0)
+      std::cout << "***ERR*** MoertelT::Interface::Project:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -68,7 +73,7 @@ bool MOERTEL::Interface::BuildNormals()
   
   //-------------------------------------------------------------------
   // send all procs not member of this interface's intra-comm out of here
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
 
   //-------------------------------------------------------------------
   // interface segments need to have at least one function on each side
@@ -77,7 +82,7 @@ bool MOERTEL::Interface::BuildNormals()
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr){
       if (curr->second->Nfunctions() < 1)
       {
-        std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
+        std::cout << "***ERR*** MoertelT::Interface::Project:\n"
              << "***ERR*** interface " << Id_ << ", mortar side\n"
              << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -109,7 +114,11 @@ bool MOERTEL::Interface::BuildNormals()
 /*----------------------------------------------------------------------*
  |  build averaged normals and make projection of nodes                 |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Project()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MoertelT::InterfaceT<ST, LO, GO, N>::Project()
 { 
   bool ok = false;
   
@@ -117,8 +126,8 @@ bool MOERTEL::Interface::Project()
   // interface needs to be complete
   if (!IsComplete())
   {
-    if (gcomm_.MyPID()==0)
-      std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
+    if (gcomm_->getRank()==0)
+      std::cout << "***ERR*** MoertelT::Interface::Project:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -126,7 +135,7 @@ bool MOERTEL::Interface::Project()
   
   //-------------------------------------------------------------------
   // send all procs not member of this interface's intra-comm out of here
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
 
   //-------------------------------------------------------------------
   // interface segments need to have at least one function on each side
@@ -135,7 +144,7 @@ bool MOERTEL::Interface::Project()
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr)
       if (curr->second->Nfunctions() < 1)
       {
-        std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
+        std::cout << "***ERR*** MoertelT::Interface::Project:\n"
              << "***ERR*** interface " << Id_ << ", mortar side\n"
              << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -165,19 +174,19 @@ bool MOERTEL::Interface::Project()
   // Then projects master nodes along the same normal field on slave
   // surfaces. Overrides the normals in the master nodes by the negative
   // of the normal field of their projection point
-  if (GetProjectionType() == MOERTEL::Interface::proj_continousnormalfield)
+  if (GetProjectionType() == MoertelT::InterfaceT<ST, LO, GO, N>::proj_continousnormalfield)
   {
     ok = ProjectNodes_NormalField();
     if (!ok) return false;
   }
-  else if (GetProjectionType() == MOERTEL::Interface::proj_orthogonal)
+  else if (GetProjectionType() == MoertelT::InterfaceT<ST, LO, GO, N>::proj_orthogonal)
   {
     ok = ProjectNodes_Orthogonal();
     if (!ok) return false;
   }
   else
   {
-    std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
+    std::cout << "***ERR*** MoertelT::Interface::Project:\n"
          << "***ERR*** interface " << Id() << "\n"
          << "***ERR*** unknown type of nodal projection\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -189,18 +198,22 @@ bool MOERTEL::Interface::Project()
 /*----------------------------------------------------------------------*
  | do projection of nodes on master and slave side                      |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::ProjectNodes_NormalField()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MoertelT::InterfaceT<ST, LO, GO, N>::ProjectNodes_NormalField()
 { 
   if (!IsComplete())
   {
 	  std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::ProjectNodes_NormalField:\n"
+    oss << "***ERR*** MoertelT::Interface::ProjectNodes_NormalField:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-	throw ReportError(oss);
+	throw MOERTEL::ReportError(oss);
 
   }
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
 
   // project the slave nodes onto the master surface along the slave normal field
   ProjectNodes_SlavetoMaster_NormalField();  
@@ -214,17 +227,21 @@ bool MOERTEL::Interface::ProjectNodes_NormalField()
 /*----------------------------------------------------------------------*
  | project the slave nodes onto master segments along slave normal field|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MoertelT::InterfaceT<ST, LO, GO, N>::ProjectNodes_SlavetoMaster_NormalField()
 { 
   if (!IsComplete())
   {
 	  std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+    oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-	throw ReportError(oss);
+	throw MOERTEL::ReportError(oss);
   }
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
   
   int mside = MortarSide();
   int sside = OtherSide(mside);
@@ -234,7 +251,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
 	Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
-    if (NodePID(snode->Id()) != lComm()->MyPID())
+    if (NodePID(snode->Id()) != lcomm_->getRank())
       continue;
     
     const double* sx = snode->XCoords();
@@ -262,10 +279,10 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     if (closenode == Teuchos::null)
     {
 	  std::stringstream oss;
-      oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+      oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
            << "***ERR*** Weired: for slave node " << snode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
     }
 
 #if 0
@@ -361,18 +378,18 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     else
     {
       if (OutLevel()>6)
-        std::cout << "MOERTEL: ***WRN***: Projection s->m: Node " << snode->Id() << " does not have projection\n";
+        std::cout << "MoertelT: ***WRN***: Projection s->m: Node " << snode->Id() << " does not have projection\n";
       snode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
-  lComm()->Barrier();
+  lcomm_->barrier();
   
   // loop all slave nodes again and make the projections redundant
   std::vector<double> bcast(4*rnode_[sside].size());
-  for (int proc=0; proc<lComm()->NumProc(); ++proc)
+  for (int proc=0; proc < lcomm_->getSize(); ++proc)
   {
     int blength = 0;
-    if (proc==lComm()->MyPID())
+    if (proc==lcomm_->getRank())
     {
       for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
       {
@@ -398,15 +415,15 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
       if (blength > (int)(4*rnode_[sside].size()))
       {
 		std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+        oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
              << "***ERR*** Overflow in communication buffer occured\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
       }
     }
-    lComm()->Broadcast(&blength,1,proc);
-    lComm()->Broadcast(&bcast[0],blength,proc);
-    if (proc!=lComm()->MyPID())
+    Teuchos::broadcast<LO, int>(*lcomm_, proc, 1, &blength);
+    Teuchos::broadcast<LO, double>(*lcomm_, proc, blength, &bcast[0]);
+    if (proc!= lcomm_->getRank())
     {
       int i;
       for (i=0; i<blength;)
@@ -422,10 +439,10 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
         if (snode == Teuchos::null)
         {
 		  std::stringstream oss;
-          oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+          oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
                << "***ERR*** Cannot get view of node\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-			throw ReportError(oss);
+			throw MOERTEL::ReportError(oss);
         }
         MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,xi,seg.get());
         snode->SetProjectedNode(pnode);
@@ -434,15 +451,15 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
       if (i != blength)
       {
 		  std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+        oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
              << "***ERR*** Mismatch in dimension of recv buffer\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-			throw ReportError(oss);
+			throw MOERTEL::ReportError(oss);
       }
     }
   } // for (int proc=0; proc<lComm()->NumProc(); ++proc)
   bcast.clear();
-  lComm()->Barrier();
+  lcomm_->barrier();
 
 #if 1
   // Postprocess the projections
@@ -502,17 +519,21 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
 /*----------------------------------------------------------------------*
  | project nodes master to slave along slave cont. normal field         |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MoertelT::InterfaceT<ST, LO, GO, N>::ProjectNodes_MastertoSlave_NormalField()
 { 
   if (!IsComplete())
   {
 	std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+    oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-	throw ReportError(oss);
+	throw MOERTEL::ReportError(oss);
   }
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
   
   int mside = MortarSide();
   int sside = OtherSide(mside);
@@ -522,7 +543,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
   for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
   {
 	Teuchos::RCP<MOERTEL::Node> mnode = mcurr->second;
-    if (NodePID(mnode->Id()) != lComm()->MyPID())
+    if (NodePID(mnode->Id()) != lcomm_->getRank())
       continue;
     
     const double* mx = mnode->XCoords();
@@ -549,10 +570,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
     if (closenode == Teuchos::null)
     {
 	  std::stringstream oss;
-      oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+      oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
            << "***ERR*** Weired: for master node " << mnode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
     }
 
 #if 0
@@ -644,9 +665,9 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
       double NN[3]; NN[0] = NN[1] = NN[2] = 0.0;
       for (int i=0; i<nsnode; ++i)
       {
-        const double* N = snodes[i]->Normal();
+        const double* Normal = snodes[i]->Normal();
         for (int j=0; j<3; ++j)
-          NN[j] -= val[i]*N[j];
+          NN[j] -= val[i]*Normal[j];
       }
       val.clear();
       mnode->SetN(NN);
@@ -660,7 +681,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
     else // this mnode does not have a valid projection
     {
       if (OutLevel()>6)
-        std::cout << "MOERTEL: ***WRN***: Projection m->s: Node " << mnode->Id() << " does not have projection\n";
+        std::cout << "MoertelT: ***WRN***: Projection m->s: Node " << mnode->Id() << " does not have projection\n";
       mnode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[mside].begin(); scurr!=rnode_[mside].end(); ++scurr)
@@ -668,10 +689,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
   // loop all master nodes again and make the projection and the new normal redundant
   int bsize = 7*rnode_[mside].size();
   std::vector<double> bcast(bsize);
-  for (int proc=0; proc<lComm()->NumProc(); ++proc)
+  for (int proc=0; proc < lcomm_->getSize(); ++proc)
   {
     int blength = 0;
-    if (proc==lComm()->MyPID())
+    if (proc == lcomm_->getRank())
     {
       for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
       {
@@ -680,7 +701,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
 		Teuchos::RCP<MOERTEL::ProjectedNode> pnode = mnode->GetProjectedNode();
         if (pnode == Teuchos::null) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
-        const double* N  = mnode->Normal();
+        const double* Normal  = mnode->Normal();
         bcast[blength] = (double)pnode->Id();
         ++blength;
         if (pnode->Segment())
@@ -692,11 +713,11 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
         ++blength;
         bcast[blength] = xi[1];
         ++blength;
-        bcast[blength] = N[0];
+        bcast[blength] = Normal[0];
         ++blength;
-        bcast[blength] = N[1];
+        bcast[blength] = Normal[1];
         ++blength;
-        bcast[blength] = N[2];
+        bcast[blength] = Normal[2];
         ++blength;
         bcast[blength] = pnode->Gap();
         ++blength;
@@ -704,15 +725,15 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
       if (blength > bsize)
       {
 		std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+        oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
              << "***ERR*** Overflow in communication buffer occured\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
       }
     }
-    lComm()->Broadcast(&blength,1,proc);
-    lComm()->Broadcast(&bcast[0],blength,proc);
-    if (proc!=lComm()->MyPID())
+    Teuchos::broadcast<LO, int>(*lcomm_, proc, 1, &blength);
+    Teuchos::broadcast<LO, double>(*lcomm_, proc, blength, &bcast[0]);
+    if (proc != lcomm_->getRank())
     {
       int i;
       for (i=0; i<blength;)
@@ -729,10 +750,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
         if (mnode == Teuchos::null)
         {
 		  std::stringstream oss;
-          oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+          oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
                << "***ERR*** Cannot get view of node\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-			throw ReportError(oss);
+			throw MOERTEL::ReportError(oss);
         }
         mnode->SetN(n);
         MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*mnode,xi,seg.get());
@@ -742,10 +763,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
       if (i != blength)
       {
 		  std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+        oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
              << "***ERR*** Mismatch in dimension of recv buffer\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
       }
     }
   } // for (int proc=0; proc<lComm()->NumProc(); ++proc)
@@ -757,17 +778,21 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
 /*----------------------------------------------------------------------*
  | do projection of nodes on master and slave side                      |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::ProjectNodes_Orthogonal()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MoertelT::InterfaceT<ST, LO, GO, N>::ProjectNodes_Orthogonal()
 { 
   if (!IsComplete())
   {
 	std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::ProjectNodes_Orthogonal:\n"
+    oss << "***ERR*** MoertelT::Interface::ProjectNodes_Orthogonal:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-	throw ReportError(oss);
+	throw MOERTEL::ReportError(oss);
   }
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
 
   // project the master nodes onto the slave surface orthogonaly
   ProjectNodes_MastertoSlave_Orthogonal();
@@ -781,17 +806,21 @@ bool MOERTEL::Interface::ProjectNodes_Orthogonal()
 /*----------------------------------------------------------------------*
  | project nodes master to slave along slave orthogonal         |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MoertelT::InterfaceT<ST, LO, GO, N>::ProjectNodes_MastertoSlave_Orthogonal()
 { 
   if (!IsComplete())
   {
 	std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+    oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-	throw ReportError(oss);
+	throw MOERTEL::ReportError(oss);
   }
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
   
   int mside = MortarSide();
   int sside = OtherSide(mside);
@@ -801,7 +830,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
   for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
   {
 	Teuchos::RCP<MOERTEL::Node> mnode = mcurr->second;
-    if (NodePID(mnode->Id()) != lComm()->MyPID())
+    if (NodePID(mnode->Id()) != lcomm_->getRank())
       continue;
       
     const double* mx = mnode->XCoords();
@@ -828,10 +857,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     if (closenode == Teuchos::null)
     {
 	  std::stringstream oss;
-      oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+      oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
            << "***ERR*** Weired: for master node " << mnode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
     }
 
 
@@ -867,10 +896,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       else
       {
 		std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+        oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
              << "***ERR*** not impl. for 3D\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
       }
       
     } // for (int i=0; i<nseg; ++i)
@@ -885,10 +914,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     else
     {
 	  std::stringstream oss;
-      oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+      oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
            << "***ERR*** not impl. for 3D\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
     }
     
     if (ok) // the projection is good
@@ -902,7 +931,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     else // this mnode does not have a valid projection
     {
       if (OutLevel()>6)
-      std::cout << "MOERTEL: ***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
+      std::cout << "MoertelT: ***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
       //mnode->SetProjectedNode(NULL);
     }
   } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
@@ -910,10 +939,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
   // loop all master nodes again and make projection redundant
   int bsize = 4*rnode_[mside].size();
   std::vector<double> bcast(bsize);
-  for (int proc=0; proc<lComm()->NumProc(); ++proc)
+  for (int proc=0; proc < lcomm_->getSize(); ++proc)
   {
     int blength = 0;
-    if (proc==lComm()->MyPID())
+    if (proc == lcomm_->getRank())
     {
       for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
       {
@@ -936,15 +965,15 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       if (blength>bsize)
       {
 		  std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+        oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
              << "***ERR*** Overflow in communication buffer occured\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
       }
     } // if (proc==lComm()->MyPID())
-    lComm()->Broadcast(&blength,1,proc);
-    lComm()->Broadcast(&bcast[0],blength,proc);
-    if (proc!=lComm()->MyPID())
+    Teuchos::broadcast<LO, int>(*lcomm_, proc, 1, &blength);
+    Teuchos::broadcast<LO, double>(*lcomm_, proc, blength, &bcast[0]);
+    if (proc != lcomm_->getRank())
     {
       int i;
       for (i=0; i<blength;)
@@ -958,10 +987,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
         if (mnode == Teuchos::null || seg == Teuchos::null)
         {
 		  std::stringstream oss;
-          oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+          oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
                << "***ERR*** Cannot get view of node or segment\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-			throw ReportError(oss);
+			throw MOERTEL::ReportError(oss);
         }
         MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*mnode,xi,seg.get());
         mnode->SetProjectedNode(pnode);
@@ -970,10 +999,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       if (i != blength)
       {
 		  std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+        oss << "***ERR*** MoertelT::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
              << "***ERR*** Mismatch in dimension of recv buffer: " << i << " != " << blength << "\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-			throw ReportError(oss);
+			throw MOERTEL::ReportError(oss);
       }
     } // if (proc!=lComm()->MyPID())
   }  // for (int proc=0; proc<lComm()->NumProc(); ++proc)
@@ -985,17 +1014,21 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
 /*----------------------------------------------------------------------*
  | project the slave nodes onto master segments orthogonal              |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MoertelT::InterfaceT<ST, LO, GO, N>::ProjectNodes_SlavetoMaster_Orthogonal()
 {
   if (!IsComplete())
   {
 	std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+    oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-	throw ReportError(oss);
+	throw MOERTEL::ReportError(oss);
   }
-  if (!lComm()) return true;
+  if (lcomm_ == Teuchos::null) return true;
   
   int mside = MortarSide();
   int sside = OtherSide(mside);
@@ -1010,7 +1043,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     std::cout << "now projecting\n " << *snode;
 #endif    
     
-    if (NodePID(snode->Id()) != lComm()->MyPID())
+    if (NodePID(snode->Id()) != lcomm_->getRank())
       continue;
     
     const double* sx = snode->XCoords();
@@ -1038,10 +1071,10 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     if (closenode == Teuchos::null)
     {
 	  std::stringstream oss;
-      oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+      oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
            << "***ERR*** Weired: for slave node " << snode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-		throw ReportError(oss);
+		throw MOERTEL::ReportError(oss);
     }
 
     // get segments attached to closest node cnode
@@ -1074,10 +1107,10 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         else
         {
 		  std::stringstream oss;
-          oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+          oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
                << "***ERR*** not impl. for 3D\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-			throw ReportError(oss);
+			throw MOERTEL::ReportError(oss);
         }
         
         if (ok) // the projection is good
@@ -1100,13 +1133,13 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 
 
   // loop all slave nodes again and make projections redundant
-  if (lComm()->NumProc()>1)
+  if (lcomm_->getSize() > 1)
   {
 	std::vector<double> bcast(10*rnode_[sside].size());
-    for (int proc=0; proc<lComm()->NumProc(); ++proc)
+    for (int proc=0; proc < lcomm_->getSize(); ++proc)
     {
       int blength=0;
-      if (proc==lComm()->MyPID())
+      if (proc == lcomm_->getRank())
       {
         for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
         {
@@ -1139,18 +1172,18 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         if (blength>=(int)bcast.size())
         {
 		  std::stringstream oss;
-          oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+          oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
                << "***ERR*** Overflow in communication buffer occured\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-			throw ReportError(oss);
+			throw MOERTEL::ReportError(oss);
         }
       } // if (proc==lComm()->MyPID())
       
-      lComm()->Broadcast(&blength,1,proc);
-      if (proc!=lComm()->MyPID()) bcast.resize(blength);
-      lComm()->Broadcast(&bcast[0],blength,proc);
+      Teuchos::broadcast<LO, int>(*lcomm_, proc, 1, &blength);
+      if (proc != lcomm_->getRank()) bcast.resize(blength);
+      Teuchos::broadcast<LO, double>(*lcomm_, proc, blength, &bcast[0]);
       
-      if (proc!=lComm()->MyPID())
+      if (proc != lcomm_->getRank())
       {
         int i;
         for (i=0; i<blength;)
@@ -1173,10 +1206,10 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         if (i != blength)
         {
 		  std::stringstream oss;
-          oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+          oss << "***ERR*** MoertelT::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
                << "***ERR*** Mismatch in dimension of recv buffer: " << i << " != " << blength << "\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-			throw ReportError(oss);
+			throw MOERTEL::ReportError(oss);
         }
       } // if (proc!=lComm()->MyPID())
     } // for (int proc=0; proc<lComm()->NumProc(); ++proc)

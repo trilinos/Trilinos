@@ -44,11 +44,11 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#include "mrtr_integrator.H"
+#include "Moertel_IntegratorT.hpp"
 #include "mrtr_node.H"
 #include "mrtr_segment.H"
-#include "mrtr_interface.H"
-#include "mrtr_utils.H"
+#include "Moertel_InterfaceT.hpp"
+#include "Moertel_UtilsT.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -57,7 +57,11 @@
 /*----------------------------------------------------------------------*
   |  ctor (public)                                            mwgee 07/05|
  *----------------------------------------------------------------------*/
-MOERTEL::Integrator::Integrator(int ngp, bool oneD, int outlevel) :
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+MoertelT::IntegratorT<ST, LO, GO, N>::IntegratorT(int ngp, bool oneD, int outlevel) :
   oneD_(oneD),
   ngp_(ngp),
   outputlevel_(outlevel)
@@ -181,11 +185,11 @@ MOERTEL::Integrator::Integrator(int ngp, bool oneD, int outlevel) :
       default:
 
         std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Integrator::Integrator:\n"
+        oss << "***ERR*** MoertelT::IntegratorT::IntegratorT:\n"
           << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
           << "***ERR*** use 1, 2, 3, 4, 5, 6, 7, 8, 10 instead\n"
           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        throw ReportError(oss);
+        throw MOERTEL::ReportError(oss);
 
         break;
     }
@@ -518,11 +522,11 @@ MOERTEL::Integrator::Integrator(int ngp, bool oneD, int outlevel) :
       default:
 
         std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Integrator::Integrator:\n"
+        oss << "***ERR*** MoertelT::IntegratorT::IntegratorT:\n"
           << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
           << "***ERR*** use 3 6 12 13 16 19 27 instead\n"
           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        throw ReportError(oss);
+        throw MOERTEL::ReportError(oss);
 
         break;
     }
@@ -533,7 +537,11 @@ MOERTEL::Integrator::Integrator(int ngp, bool oneD, int outlevel) :
 /*----------------------------------------------------------------------*
   |  dtor (public)                                            mwgee 07/05|
  *----------------------------------------------------------------------*/
-MOERTEL::Integrator::~Integrator()
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+MoertelT::IntegratorT<ST, LO, GO, N>::~IntegratorT()
 {
   coords_.clear();
   weights_.clear();
@@ -551,18 +559,24 @@ MOERTEL::Integrator::~Integrator()
   | mxi = 0.5*(1+eta)*mxia + 0.5*(1-eta)*mxib                            |
   | Note the sign change as orientation of sseg and mseg is in opposite  |
   | directions                                                           |
-  | Output is a Epetra_SerialDenseMatrix holding values of integration   |
+  | Output is a Teuchos::SerialDenseMatrix holding values of integration |
   | The calling routine is responsible for destroying the                |
-  | Epetra_SerialDenseMatrix object                                      |
+  | Teuchos::SerialDenseMatrix object                                    |
  *----------------------------------------------------------------------*/
-Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg,
+
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+Teuchos::SerialDenseMatrix<LO, ST>* 
+MoertelT::IntegratorT<ST, LO, GO, N>::Integrate(MOERTEL::Segment& sseg,
     double sxia, double sxib,
     MOERTEL::Segment& mseg,
     double mxia, double mxib)
 {
   int nrow = sseg.Nnode();
   int ncol = mseg.Nnode();
-  Epetra_SerialDenseMatrix* Mdense = new Epetra_SerialDenseMatrix(nrow,ncol);
+  Teuchos::SerialDenseMatrix<LO, ST>* Mdense = new Teuchos::SerialDenseMatrix<LO, ST>(nrow, ncol, false);
 
   for (int gp=0; gp<Ngp(); ++gp)
   {
@@ -615,11 +629,16 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg,
 /*----------------------------------------------------------------------*
   |  assemble the result -Mdense into M (public)              mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::IntegratorT<ST, LO, GO, N>::Assemble(MoertelT::InterfaceT<ST, LO, GO, N>& inter,
     MOERTEL::Segment& sseg,
     MOERTEL::Segment& mseg,
-    Epetra_CrsMatrix& M,
-    Epetra_SerialDenseMatrix& Mdense)
+    Tpetra::CrsMatrix<ST, LO, GO, N>& M,
+    Teuchos::SerialDenseMatrix<LO, ST>& Mdense)
 {
   MOERTEL::Node** snodes = sseg.Nodes();
   MOERTEL::Node** mnodes = mseg.Nodes();
@@ -627,7 +646,7 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
   for (int slave=0; slave<sseg.Nnode(); ++slave)
   {
     // only do slave node rows that belong to this proc
-    if (inter.NodePID(snodes[slave]->Id()) != inter.lComm()->MyPID())
+    if (inter.NodePID(snodes[slave]->Id()) != inter.lComm()->getRank())
       continue;
 
     // we want to add the row Mdense(slave,...) to the rows lmdof[sdof]
@@ -653,13 +672,13 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
       if (mndof != snlmdof) {
 
         std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Integrator::Assemble:\n"
+        oss << "***ERR*** MoertelT::IntegratorT::Assemble:\n"
           << "***ERR*** mismatch in number of Lagrange multipliers and primal degrees of freedom:\n"
           << "***ERR*** slave node " << snodes[slave]->Id()
           << " master node " << mnodes[master]->Id() << "\n"
           << "***ERR*** # Lagrange multipliers " << snlmdof << " # dofs " << mndof << "\n"
           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        throw ReportError(oss);
+        throw MOERTEL::ReportError(oss);
 
       }
 
@@ -667,20 +686,20 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
       for (int i=0; i<snlmdof; ++i)
       {
         int row = slmdof[i];
-        int col = mdof[i];
-        int err = M.SumIntoGlobalValues(row,1,&val,&col);
+        GO col = mdof[i];
+        int err = M.sumIntoGlobalValues(row,1,&val,&col);
 
         if (err)
 
-          err = M.InsertGlobalValues(row,1,&val,&col);
+          M.insertGlobalValues(row,1,&val,&col);
 
         if (err<0) {
 
           std::stringstream oss;
-          oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
-            << "***ERR*** Epetra_CrsMatrix::InsertGlobalValues returned an error\n"
+          oss << "***ERR*** MoertelT::InterfaceT::Integrate_2D_Section:\n"
+            << "***ERR*** Tpetra_CrsMatrix::InsertGlobalValues returned an error\n"
             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-          throw ReportError(oss);
+          throw MOERTEL::ReportError(oss);
 
         }
       } // for (int i=0; i<snlmdof; ++i)
@@ -692,17 +711,22 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
 /*----------------------------------------------------------------------*
   |  assemble the result Ddense into D (public)               mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::IntegratorT<ST, LO, GO, N>::Assemble(MoertelT::InterfaceT<ST, LO, GO, N>& inter,
     MOERTEL::Segment& sseg,
-    Epetra_CrsMatrix& D,
-    Epetra_SerialDenseMatrix& Ddense)
+    Tpetra::CrsMatrix<ST, LO, GO, N>& D,
+    Teuchos::SerialDenseMatrix<LO, ST>& Ddense)
 {
   MOERTEL::Node** snodes = sseg.Nodes();
 
   for (int rownode=0; rownode<sseg.Nnode(); ++rownode)
   {
     // only insert in rows that I own
-    if (inter.NodePID(snodes[rownode]->Id()) != inter.lComm()->MyPID())
+    if (inter.NodePID(snodes[rownode]->Id()) != inter.lComm()->getRank())
       continue;
 
     // get row dofs
@@ -726,12 +750,12 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
       if (nlmdof != ndof) {
 
         std::stringstream oss;
-        oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+        oss << "***ERR*** MoertelT::InterfaceT::Integrate_2D_Section:\n"
           << "***ERR*** mismatch in number of Lagrange multipliers and primal degrees of freedom:\n"
           << "***ERR*** slave node " << snodes[rownode]->Id()
           << "***ERR*** # Lagrange multipliers " << nlmdof << " # dofs " << ndof << "\n"
           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        throw ReportError(oss);
+        throw MOERTEL::ReportError(oss);
 
       }
 
@@ -739,20 +763,20 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
       for (int i=0; i<nlmdof; ++i)
       {
         int row = lmdof[i];
-        int col = dof[i];
-        int err = D.SumIntoGlobalValues(row,1,&val,&col);
+        GO col = dof[i];
+        int err = D.sumIntoGlobalValues(row,1,&val,&col);
 
         if (err)
 
-          err = D.InsertGlobalValues(row,1,&val,&col);
+          D.insertGlobalValues(row,1,&val,&col);
 
         if (err<0) {
 
           std::stringstream oss;
-          oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
-            << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
+          oss << "***ERR*** MoertelT::InterfaceT::Integrate_2D_Section:\n"
+            << "***ERR*** Tpetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-          throw ReportError(oss);
+          throw MOERTEL::ReportError(oss);
 
         }
       } // for (int i=0; i<nlmdof; ++i)
@@ -767,16 +791,21 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
   |  integrate a 1D slave segment (public)                    mwgee 07/05|
   |  This method integrates 2 functions on the same (slave) segment      |
   |  from given local coordinates sxia to sxib                           |
-  | Output is a Epetra_SerialDenseMatrix holding values of integration   |
+  | Output is a Teuchos::SerialDenseMatrix holding values of integration |
   | The calling routine is responsible for destroying the                |
-  | Epetra_SerialDenseMatrix object                                      |
+  | Teuchos::SerialDenseMatrix object                                    |
  *----------------------------------------------------------------------*/
-Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg,
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+Teuchos::SerialDenseMatrix<LO, ST>* 
+MoertelT::IntegratorT<ST, LO, GO, N>::Integrate(MOERTEL::Segment& sseg,
     double sxia, double sxib)
 {
   int nrow = sseg.Nnode();
   int ncol = nrow;
-  Epetra_SerialDenseMatrix* Ddense = new Epetra_SerialDenseMatrix(nrow,ncol);
+  Teuchos::SerialDenseMatrix<LO, ST>* Ddense = new Teuchos::SerialDenseMatrix<LO, ST>(nrow,ncol);
 
   for (int gp=0; gp<Ngp(); ++gp)
   {
@@ -828,13 +857,18 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg,
   |                                            (public)       mwgee 08/05|
   | integrate the modification of the master side                        |
  *----------------------------------------------------------------------*/
-Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate_2D_Mmod(
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+Teuchos::SerialDenseMatrix<LO, ST>* 
+MoertelT::IntegratorT<ST, LO, GO, N>::Integrate_2D_Mmod(
     MOERTEL::Segment& sseg,
     double sxia, double sxib,
     MOERTEL::Segment& mseg,
     double mxia, double mxib)
 {
-  Epetra_SerialDenseMatrix* Mmod = new Epetra_SerialDenseMatrix(mseg.Nnode(),1);
+  Teuchos::SerialDenseMatrix<LO, ST>* Mmod = new Teuchos::SerialDenseMatrix<LO, ST>(mseg.Nnode(),1);
 
   for (int gp=0; gp < Ngp(); ++gp)
   {
@@ -887,11 +921,14 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate_2D_Mmod(
 /*----------------------------------------------------------------------*
   |  assemble the modification -Mmod into M (public)          mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
+template <class LocalOrdinal,
+          class Scalar> 
+bool 
+MoertelT::IntegratorT<LocalOrdinal, Scalar>::Assemble_2D_Mod(MoertelT::InterfaceT& inter,
     MOERTEL::Segment& sseg,
     MOERTEL::Segment& mseg,
-    Epetra_CrsMatrix& M,
-    Epetra_SerialDenseMatrix& Mmod)
+    Tpetra_CrsMatrix& M,
+    Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& Mmod)
 {
   MOERTEL::Node** snodes = sseg.Nodes();
   MOERTEL::Node** mnodes = mseg.Nodes();
@@ -939,9 +976,9 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
 
           if (err<0) {
 
-            throw ReportError(
-                std::string("***ERR*** MOERTEL::Interface::Assemble_2D_Mod:\n") +
-                std::string("***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n") +
+            throw MOERTEL::ReportError(
+                std::string("***ERR*** MoertelT::InterfaceT::Assemble_2D_Mod:\n") +
+                std::string("***ERR*** Tpetra_CrsMatrix::SumIntoGlobalValues returned an error\n") +
                 std::string("***ERR*** file/line: ") + std::string(__FILE__) + "/" + toString(__LINE__) + "\n");
 
           } // if (err)
@@ -958,10 +995,15 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
   |  assemble the modification -Mmod into slave nodes (public)mwgee 08/05|
   |  Note that this is not scalar as the other assemble routines         |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::IntegratorT<ST, LO, GO, N>::Assemble_2D_Mod(MoertelT::InterfaceT<ST, LO, GO, N>& inter,
     MOERTEL::Segment& sseg,
     MOERTEL::Segment& mseg,
-    Epetra_SerialDenseMatrix& Mmod)
+    Teuchos::SerialDenseMatrix<LO, ST>& Mmod)
 {
   MOERTEL::Node** snodes = sseg.Nodes();
   MOERTEL::Node** mnodes = mseg.Nodes();
@@ -969,7 +1011,7 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
   for (int slave=0; slave<sseg.Nnode(); ++slave)
   {
     // only do slave node rows that belong to this proc
-    if (inter.NodePID(snodes[slave]->Id()) != inter.lComm()->MyPID())
+    if (inter.NodePID(snodes[slave]->Id()) != inter.lComm()->getRank())
       continue;
 
     // we want to add the row Mdense(slave,...) to the rows lmdof[sdof]
@@ -1035,12 +1077,17 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
   |  integrate a 2D triangle/quad overlap segment (public)    mwgee 11/05|
   |  contribution from the master/slave side M/D                         |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::IntegratorT<ST, LO, GO, N>::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
     MOERTEL::Segment& sseg,
     MOERTEL::Segment& mseg,
-    Epetra_SerialDenseMatrix** Ddense,
-    Epetra_SerialDenseMatrix** Mdense,
-    MOERTEL::Overlap<MOERTEL::Interface>& overlap, double eps,
+    Teuchos::SerialDenseMatrix<LO, ST>** Ddense,
+    Teuchos::SerialDenseMatrix<LO, ST>** Mdense,
+    MOERTEL::Overlap<MoertelT::InterfaceT<ST, LO, GO, N> >& overlap, double eps,
     bool exactvalues)
 {
   //  static int cnt = 0;
@@ -1048,10 +1095,10 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
   if (oneD_) {
 
     std::stringstream oss;
-    oss << "***ERR*** MOERTEL::Integrator::Integrate:\n"
-      << "***ERR*** Integrator was not constructed for 2D integration\n"
+    oss << "***ERR*** MoertelT::IntegratorT::Integrate:\n"
+      << "***ERR*** IntegratorT was not constructed for 2D integration\n"
       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    throw ReportError(oss);
+    throw MOERTEL::ReportError(oss);
   }
 
   // we integrate the scalar function here
@@ -1069,9 +1116,9 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
   if (area<0.0)
   {
     if (OutLevel()>3)
-      std::cout << "MOERTEL: ***ERR***  MOERTEL::Integrator::Integrate:\n" << "MOERTEL: ***ERR***  overlap segment area is negative: " << area << std::endl
-        << "MOERTEL: ***ERR***  skipping....\n"
-        << "MOERTEL: ***ERR***  file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      std::cout << "MoertelT: ***ERR***  MoertelT::IntegratorT::Integrate:\n" << "MoertelT: ***ERR***  overlap segment area is negative: " << area << std::endl
+        << "MoertelT: ***ERR***  skipping....\n"
+        << "MoertelT: ***ERR***  file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
 
@@ -1081,7 +1128,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
   if (abs(area/sarea)<eps)
   {
     if (OutLevel()>10)
-      std::cout << "MOERTEL: ***WRN*** Skipping overlap segment with tiny area " << area << std::endl;
+      std::cout << "MoertelT: ***WRN*** Skipping overlap segment with tiny area " << area << std::endl;
     points.clear();
     return false;
   }
@@ -1090,8 +1137,8 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
   if (Ngp()!=3)
     area *= 2.0;
 
-  *Mdense = new Epetra_SerialDenseMatrix(nrow,ncol);
-  *Ddense = new Epetra_SerialDenseMatrix(nrow,nrow);
+  *Mdense = new Teuchos::SerialDenseMatrix<LO, ST>(nrow,ncol);
+  *Ddense = new Teuchos::SerialDenseMatrix<LO, ST>(nrow,nrow);
 
   //========================================================================
   //========================================================================
@@ -1243,7 +1290,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
       // if we have problems projecting here, we better skip this gauss point
       if (!ok)
       {
-        std::cout << "MOERTEL: ***WRN***------------------projection failed in integration\n";
+        std::cout << "MoertelT: ***WRN***------------------projection failed in integration\n";
         fflush(stdout);
         continue;
       }
@@ -1287,8 +1334,13 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
   |  the scalar integrated functions are assembled here                  |
  *----------------------------------------------------------------------*/
 
-bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter, MOERTEL::Segment& sseg,
-    Epetra_SerialDenseMatrix& Ddense) {
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::IntegratorT<ST, LO, GO, N>::Assemble(MoertelT::InterfaceT<ST, LO, GO, N>& inter, MOERTEL::Segment& sseg,
+    Teuchos::SerialDenseMatrix<LO, ST>& Ddense) {
 
   // get nodes
   const int nnode       = sseg.Nnode();
@@ -1314,7 +1366,7 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter, MOERTEL::Segment& 
   for (int row=0; row<nnode; ++row) {
 
     // assemble only to my own nodes
-    if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID())
+    if (inter.NodePID(snode[row]->Id()) != inter.lComm()->getRank())
       continue;
 
     // row node is internal node
@@ -1359,10 +1411,15 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter, MOERTEL::Segment& 
   |  assemble contributions Mdense into slave nodes (public)  mwgee 11/05|
  *----------------------------------------------------------------------*/
 
-bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool 
+MoertelT::IntegratorT<ST, LO, GO, N>::Assemble(MoertelT::InterfaceT<ST, LO, GO, N>& inter,
     MOERTEL::Segment& sseg,
     MOERTEL::Segment& mseg,
-    Epetra_SerialDenseMatrix& Mdense) {
+    Teuchos::SerialDenseMatrix<LO, ST>& Mdense) {
 
   // get nodes
   const int nsnode    = sseg.Nnode();
@@ -1390,7 +1447,7 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
   for (int row=0; row<nsnode; ++row) {
 
     // assemble only to my own nodes
-    if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID())
+    if (inter.NodePID(snode[row]->Id()) != inter.lComm()->getRank())
       continue;
 
     // standard assembly for internal nodes

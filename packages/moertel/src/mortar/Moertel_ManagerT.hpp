@@ -47,47 +47,48 @@
 /*!
  * \file mrtr_manager.H
  *
- * \class MOERTEL::Manager
+ * \class MoertelT::Manager
  *
  * \brief Top level user interface to the mortar package 'Moertel'
  *
  * \date Last update do Doxygen: 09-July-2010
  *
  */
-#ifndef MOERTEL_MANAGER_H
-#define MOERTEL_MANAGER_H
+#ifndef MOERTEL_MANAGERT_H
+#define MOERTEL_MANAGERT_H
 
 #include <ctime>
 #include <iostream>
 #include <vector>
 
 // Trilinos includes
-#include <Epetra_Map.h>
-#include <Epetra_CrsMatrix.h>
-#include <Epetra_Vector.h>
-#ifdef HAVE_MOERTEL_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
+#include <Tpetra_Map.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Teuchos_Comm.hpp>
+//#ifdef HAVE_MOERTEL_MPI
+//#include <Teuchos_MpiComm.hpp>
+//#else
+//#include <Teuchos_SerialComm.hpp>
+//#endif
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 // Moertel includes
+#include "Moertel_InterfaceT.hpp"
 #include "mrtr_segment.H"
 #include "mrtr_node.H"
-#include "mrtr_interface.H"
-#include "mrtr_lm_selector.H"
 #include "mrtr_solver.H"
-#include "mrtr_utils.H"
+#include "mrtr_lm_selector.H"
+#include "Moertel_UtilsT.hpp"
 
 
 
 
 /*!
-\brief MOERTEL: namespace of the Moertel package
+\brief MoertelT: namespace of the Moertel package
 
-The Moertel package depends on \ref Epetra, \ref EpetraExt, \ref Teuchos,
+The Moertel package depends on \ref Tpetra, \ref Teuchos,
 \ref Amesos, \ref ML and \ref AztecOO:<br>
 Use at least the following lines in the configure of Trilinos:<br>
 \code
@@ -102,11 +103,11 @@ Use at least the following lines in the configure of Trilinos:<br>
 
 */
 
-namespace MOERTEL
-{
 // forward declarations
-class Solver;
+//class MOERTEL::Solver;
 
+namespace MoertelT
+{
 /*!
 \class Manager
 
@@ -120,8 +121,8 @@ mortar-coupled systems of equations.
 
 \b Proceeding:
 - The user constructs an arbitrary number of conforming or non-conforming 
- interfaces using the \ref MOERTEL::Interface class and passes them to this
- \ref MOERTEL::Manager.
+ interfaces using the \ref MoertelT::Interface class and passes them to this
+ \ref MoertelT::Manager.
 - This class will then choose appropriate mortar and slave sides on all interfaces
  (if not already done by the user) such that conflicts are avoided on 
  corner and edge nodes that are shared among interfaces.
@@ -144,10 +145,10 @@ mortar-coupled systems of equations.
   from the slave side to the master side and vice versa to use in domain decomposition methods.
   (not yet impl.)    
   
-The \ref MOERTEL::Manager class supports the std::ostream& operator <<
+The \ref MoertelT::Manager class supports the std::ostream& operator <<
 
 The package and this class make use of the other Trilinos packages 
-\b Epetra , \b EpetraExt , \b Teuchos , \b Amesos , \b ML .
+\b Tpetra , \b Teuchos , \b Amesos , \b ML .
 
 For more detailed information on the usage, see "The Moertel User's Guide", Sandia report XXXX
 
@@ -158,7 +159,11 @@ Springer, New York, 2001, ISBN 3-540-41083-X
 \author Glen Hansen (gahanse@sandia.gov)
 
 */
-class Manager 
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+class ManagerT
 {
 public:
 
@@ -183,14 +188,14 @@ public:
   Constructs an empty instance of this class to be filled by the user with
   information about the non-conforming interface(s). <br>
   This is a collective call for all processors associated with the
-  Epetra_Comm 
+  Teuchos_Comm 
   
-  \param comm : An Epetra_Comm object
+  \param comm : An Teuchos_Comm object
   \param dimension : Dimension of the problem
   \param outlevel : The level of output to stdout to be generated ( 0 - 10 )
   */
-  explicit Manager(Epetra_Comm& comm, 
-                   MOERTEL::Manager::DimensionType dimension, 
+  explicit ManagerT(const Teuchos::RCP<const Teuchos::Comm<LO> >& comm, 
+                   MoertelT::ManagerT<ST, LO, GO, N>::DimensionType dimension, 
                    int outlevel);
                    
   
@@ -200,12 +205,12 @@ public:
   Constructs an empty instance of this class that is filled in by the user with
   information about the non-conforming interface(s). <br>
   This is a collective call for all processors associated with the
-  Epetra_Comm 
+  Teuchos_Comm 
   
-  \param comm : An Epetra_Comm object
+  \param comm : An Teuchos_Comm object
   \param outlevel : The level of output to stdout to be generated ( 0 - 10 )
   */
-  explicit Manager(Epetra_Comm& comm, int outlevel);
+  explicit ManagerT(const Teuchos::RCP<const Teuchos::Comm<LO> >& comm, int outlevel);
 
   /*!
   \brief Destroys an instance of this class
@@ -213,16 +218,16 @@ public:
   Destructor
   
   */
-  virtual ~Manager();
+  virtual ~ManagerT();
   
   //@}
   
   // @{ \name Query methods
   
   /*!
-  \brief Returns the Epetra_Comm object associated with this class
+  \brief Returns the Teuchos_Comm object associated with this class
   */
-  Epetra_Comm& Comm() const {return comm_;}
+  Teuchos::RCP<const Teuchos::Comm<LO> > Comm() const {return comm_;}
 
   /*!
   \brief Returns the Level of output (0 - 10) the user specified in the constructor
@@ -235,7 +240,7 @@ public:
   Query the problem dimension
   
   */
-  MOERTEL::Manager::DimensionType Dimension() { return dimensiontype_; }
+  MoertelT::ManagerT<ST, LO, GO, N>::DimensionType Dimension() { return dimensiontype_; }
   
   /*!
   \brief Query the number of interfaces passed to this class via AddInterface
@@ -264,14 +269,14 @@ public:
   
   \param type : Dimension of the problem
   */
-  void SetDimension(MOERTEL::Manager::DimensionType type) { dimensiontype_ = type; return; }
+  void SetDimension(MoertelT::ManagerT<ST, LO, GO, N>::DimensionType type) { dimensiontype_ = type; return; }
   
   /*!
   \brief Add an interface class to this class
   
   Add a previously constructed interface to this class. </br>
   Before adding an interface, the interface's public method 
-  \ref MOERTEL::Interface::Complete() has to be called.</br>
+  \ref MoertelT::Interface::Complete() has to be called.</br>
   This class will not accept interface that are not completed.
   Any number of interfaces can be added. This class does not take ownership over the
   added class. The interface added can be destroyed immediately after the call to this method
@@ -281,7 +286,7 @@ public:
   
   \return true when adding the interface was successful and false otherwise
   */
-  bool AddInterface(MOERTEL::Interface& interface);
+  bool AddInterface(const Teuchos::RCP<const MoertelT::InterfaceT<ST, LO, GO, N> >& interface);
 
   /*!
   \brief Obtain a parameter list with default values
@@ -357,7 +362,7 @@ public:
   
   \return true if successful, false otherwise
   
-  \sa SetProblemMap , AddInterface , Mortar_Integrate
+  \sa etProblemMap , AddInterface , Mortar_Integrate
     
   */
 
@@ -377,7 +382,7 @@ public:
   
   */
 
-  bool AssembleInterfacesIntoResidual(Lmselector *sel);
+  bool AssembleInterfacesIntoResidual(MOERTEL::Lmselector *sel);
   
   
   //@}
@@ -399,7 +404,11 @@ public:
   \sa Mortar_Integrate()
   
   */
-  bool SetProblemMap(const Epetra_Map* map);
+  bool SetProblemMap(const Teuchos::RCP<const Tpetra::Map<LO, GO, N> >& map){
+
+       problemmap_ = map;
+       return true;
+  }
   
   /*!
   \brief Return view of row map of the uncoupled problem
@@ -410,7 +419,7 @@ public:
   \sa SetProblemMap
 
   */
-  Epetra_Map* ProblemMap() const { return problemmap_.get(); }
+  Teuchos::RCP<const Tpetra::Map<LO, GO, N> > ProblemMap() const { return problemmap_; }
   
   /*!
   \brief Set the Matrix of the original uncoupled problem
@@ -428,7 +437,7 @@ public:
   \sa MakeSaddleProblem() 
   
   */
-  bool SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy = false);
+  bool SetInputMatrix(Tpetra::CrsMatrix<ST, LO, GO, N>* inputmatrix, bool DeepCopy = false);
   
   /*!
   \brief Construct a saddle point system of equations
@@ -441,7 +450,7 @@ public:
   user must not destroy it.
   
   */
-  Epetra_CrsMatrix* MakeSaddleProblem();
+  Tpetra::CrsMatrix<ST, LO, GO, N>* MakeSaddleProblem();
 
   /*!
   \brief Construct a spd system of equations if possible
@@ -453,7 +462,7 @@ public:
   
   \sa GetSPDRHSMatrix()
   */
-  Epetra_CrsMatrix* MakeSPDProblem();
+  Tpetra::CrsMatrix<ST, LO, GO, N>* MakeSPDProblem();
 
   /*!
   \brief returns the righ hand side matrix of the spd system of equations
@@ -465,7 +474,7 @@ public:
   
   \sa MakeSPDProblem()
   */
-  Epetra_CrsMatrix* GetRHSMatrix();
+  Tpetra::CrsMatrix<ST, LO, GO, N>* GetRHSMatrix();
 
   /*!
   \brief Set a parameter list holding solver parameters
@@ -503,12 +512,12 @@ public:
 
   // argument sublist passed to and used for ML
   // see ML documentation, all configured parameters recognized by the
-  // ML_Epetra::ml_MultiLevelPreconditioner class can be used
+  // ML_Tpetra::ml_MultiLevelPreconditioner class can be used
   // Moertel sets the ML default parameters first which are then overridden by
   // this list
   // This is an example configuration:
   Teuchos::ParameterList& mlparams = params.sublist("ML");
-  ML_Epetra::SetDefaults("SA",mlparams);
+  ML_Tpetra::SetDefaults("SA",mlparams);
   mlparams.set("output",6);
   mlparams.set("print unused",-2);
   mlparams.set("increasing or decreasing","increasing");
@@ -570,7 +579,7 @@ public:
   \param sol (out) : The solution
   \param rhs (in) : The right hand side vector
   */
-  bool Solve(Teuchos::ParameterList& params, Epetra_Vector& sol, const Epetra_Vector& rhs);
+  bool Solve(Teuchos::ParameterList& params, Tpetra::Vector<ST, LO, GO, N>& sol, const Tpetra::Vector<ST, LO, GO, N>& rhs);
 
   /*!
   \brief Solve the problem
@@ -585,7 +594,7 @@ public:
   \param sol (out) : The solution
   \param rhs (in) : The right hand side vector
   */
-  bool Solve(Epetra_Vector& sol, const Epetra_Vector& rhs);
+  bool Solve(Tpetra::Vector<ST, LO, GO, N>& sol, const Tpetra::Vector<ST, LO, GO, N>& rhs);
   
   /*!
   \brief Reset the internal solver
@@ -602,13 +611,13 @@ public:
   \brief Get pointer to constraints matrix D
   
   */
-  const Epetra_CrsMatrix* D() const { return D_.get();}
+  const Tpetra::CrsMatrix<ST, LO, GO, N>* D() const { return D_.get();}
 
   /*!
   \brief Get pointer to constraints matrix M
   
   */
-  const Epetra_CrsMatrix* M() const { return M_.get();}
+  const Tpetra::CrsMatrix<ST, LO, GO, N>* M() const { return M_.get();}
 
   /*!
   \brief Query a managed interface added using AddInterface
@@ -622,18 +631,18 @@ public:
   
   \sa AddInterface, Ninterfaces
   */
-  Teuchos::RCP<MOERTEL::Interface> GetInterface(int idx) { return interface_[idx]; }
+  Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > GetInterface(int idx) { return interface_[idx]; }
 
   /*!
    */
-  Teuchos::RCP<Epetra_Map> GetSaddleMap() { return saddlemap_; }
+  Teuchos::RCP<Tpetra::Map<LO, GO, N> > GetSaddleMap() { return saddlemap_; }
 
   //@}
 
 private:  
   // don't want = operator and copy-ctor
-  Manager operator = (const Manager& old);
-  Manager(MOERTEL::Manager& old);
+  ManagerT operator = (const ManagerT<ST, LO, GO, N>& old);
+  ManagerT(MoertelT::ManagerT<ST, LO, GO, N>& old);
 
   // Build the M and D matrices 2D case
   bool Build_MD_2D();
@@ -651,37 +660,37 @@ private:
   bool BuildSaddleMap();
 
   // choose the dofs for Lagrange multipliers
-  Teuchos::RCP<Epetra_Map> LagrangeMultiplierDofs();
+  Teuchos::RCP<Tpetra::Map<LO, GO, N> > LagrangeMultiplierDofs();
   
   // automatically choose mortar side (called when mortarside==-2 on any interface)
   bool ChooseMortarSide();
-  bool ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Interface> >& inter);
-  bool ChooseMortarSide_3D(std::vector<Teuchos::RCP<MOERTEL::Interface> >& inter);
+  bool ChooseMortarSide_2D(std::vector<Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >& inter);
+  bool ChooseMortarSide_3D(std::vector<Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >& inter);
   
 protected:
 
   int                           outlevel_;            // output level (0-10)
-  Epetra_Comm&                  comm_;                // communicator (global, contains ALL procs)
+  const Teuchos::RCP<const Teuchos::Comm<LO> >&     comm_;                // communicator (global, contains ALL procs)
   DimensionType                 dimensiontype_;       // problem dimension
 
-  std::map<int,Teuchos::RCP<MOERTEL::Interface> >  interface_; // the interfaces
+  std::map<int,Teuchos::RCP<MoertelT::InterfaceT<ST, LO, GO, N> > >  interface_; // the interfaces
 
-  Teuchos::RCP<Epetra_Map>       problemmap_;          // the rowmap of the input matrix
-  Teuchos::RCP<Epetra_CrsMatrix> inputmatrix_;         // the uncoupled matrix on input
-  Teuchos::RCP<Epetra_Map>       constraintsmap_;      // the rowmap of M and D (both of them use comm_)
-  Teuchos::RCP<Epetra_CrsMatrix> D_;                   // the coupling matrix D
-  Teuchos::RCP<Epetra_CrsMatrix> M_;                   // the coupling matrix M
-  Teuchos::RCP<Epetra_Map>       saddlemap_;           // the rowmap of the saddlepointproblem
-  Teuchos::RCP<Epetra_CrsMatrix> saddlematrix_;        // the matrix of the saddle problem;
-  Teuchos::RCP<Epetra_CrsMatrix> spdmatrix_;           // the spd matrix of the problem;
-  Teuchos::RCP<Epetra_CrsMatrix> spdrhs_;              // the matrix to left-multiply the rhs vector with for the spd problem
+  Teuchos::RCP<const Tpetra::Map<LO, GO, N> >       problemmap_;          // the rowmap of the input matrix
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > inputmatrix_;         // the uncoupled matrix on input
+  Teuchos::RCP<Tpetra::Map<LO, GO, N> >       constraintsmap_;      // the rowmap of M and D (both of them use comm_)
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > D_;                   // the coupling matrix D
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > M_;                   // the coupling matrix M
+  Teuchos::RCP<Tpetra::Map<LO, GO, N> >       saddlemap_;           // the rowmap of the saddlepointproblem
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > saddlematrix_;        // the matrix of the saddle problem;
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > spdmatrix_;           // the spd matrix of the problem;
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > spdrhs_;              // the matrix to left-multiply the rhs vector with for the spd problem
   
   Teuchos::RCP<std::map<int,int> >    lm_to_dof_;           // maps lagrange multiplier dofs to primary dofs (slave side))
   
-  Teuchos::RCP<Epetra_CrsMatrix> I_;
-  Teuchos::RCP<Epetra_CrsMatrix> WT_;
-  Teuchos::RCP<Epetra_CrsMatrix> B_;
-  Teuchos::RCP<Epetra_Map>       annmap_;
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > I_;
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > WT_;
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > B_;
+  Teuchos::RCP<Tpetra::Map<LO, GO, N> >       annmap_;
 
   Teuchos::RCP<Teuchos::ParameterList> integrationparams_; // parameter list with integration parameters
   Teuchos::RCP<Teuchos::ParameterList> solverparams_;  // solution parameters passed from the user    
@@ -691,14 +700,23 @@ protected:
 
 };
 
-} // namespace MOERTEL
+} // namespace MoertelT
 
 /*!
 \brief << operator
 
-outputs all information stored in the \ref MOERTEL::Manager class to std::ostream
+outputs all information stored in the \ref MoertelT::Manager class to std::ostream
 
 */
-std::ostream& operator << (std::ostream& os, const MOERTEL::Manager& node);
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+std::ostream& operator << (std::ostream& os, const MoertelT::ManagerT<ST, LO, GO, N>& node);
 
-#endif // MOERTEL_MANAGER_H
+#ifndef HAVE_MOERTEL_EXPLICIT_INSTANTIATION
+#include "Moertel_ManagerT.hpp"
+#include "Moertel_ManagerT_Def.hpp"
+#endif
+
+#endif // MOERTEL_MANAGERT_H

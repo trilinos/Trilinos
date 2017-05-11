@@ -45,31 +45,47 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 
-#include "Moertel_ExplicitTemplateInstantiation.hpp"
+#ifndef Moertel_ExplicitTemplateInstantiation_hpp
+#define Moertel_ExplicitTemplateInstantiation_hpp
 
-#ifdef HAVE_MOERTEL_EXPLICIT_INSTANTIATION
-#include "mrtr_overlap_Def.hpp"
-#include "mrtr_overlap_utils_Def.hpp"
-#include "mrtr_convexhull_Def.hpp"
+#include "Moertel_config.h"
+#include <Kokkos_DefaultNode.hpp>
 
-#include "mrtr_interface.H"
-#ifdef HAVE_MOERTEL_TPETRA
-#include "Moertel_InterfaceT.hpp"
+//typedef DefaultNodeType KokkosNode;
+typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> KokkosNode;
+//typedef KokkosClassic::DefaultNode::DefaultNodeType KokkosNode;
+
+// ETI templates
+#define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ORD(name, ordinal) \
+  template class name<ordinal>;
+
+#define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_LO_ST(name, LocalOrdinal, ScalarType) \
+  template class name<LocalOrdinal, ScalarType>;
+
+#define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_LO_GO_ST(name, LocalOrdinal, GlobalOrdinal, ScalarType) \
+  template class name<LocalOrdinal, GlobalOrdinal, ScalarType>;
+
+#define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ST_LO_GO_N(name, ScalarType, LocalOrdinal, GlobalOrdinal, NodeType) \
+  template class name<ScalarType, LocalOrdinal, GlobalOrdinal, NodeType>;
+
+#define MOERTEL_INSTANTIATE_NESTED_TEMPLATE_CLASS_ST_LO_GO_N(name, name2, ScalarType, LocalOrdinal, GlobalOrdinal, NodeType) \
+  template class name<name2<ScalarType, LocalOrdinal, GlobalOrdinal, NodeType> >;
+
+#ifdef HAVE_MOERTEL_INST_DOUBLE_INT_INT
+#   define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_DII(name)\
+      MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ST_LO_GO_N(name, double, int, int, KokkosNode) 
+#else
+#   define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_DII(name)
 #endif
 
-namespace MOERTEL {
+#ifdef HAVE_MOERTEL_INST_DOUBLE_INT_LONGLONGINT
+#   define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_DILLI(name)\
+    MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ST_LO_GO_N(name, double, int, long long, KokkosNode)
+#else
+#   define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_DILLI(name)
+#endif
 
-  #ifdef HAVE_MOERTEL_TPETRA
-    #ifdef HAVE_MOERTEL_INST_DOUBLE_INT_INT
-      MOERTEL_INSTANTIATE_NESTED_TEMPLATE_CLASS_ST_LO_GO_N(MOERTEL::Overlap, MoertelT::InterfaceT, double, int, int, KokkosNode)
-    #endif
-    #ifdef HAVE_MOERTEL_INST_DOUBLE_INT_LONGLONGINT
-      MOERTEL_INSTANTIATE_NESTED_TEMPLATE_CLASS_ST_LO_GO_N(MOERTEL::Overlap, MoertelT::InterfaceT, double, int, long long, KokkosNode)
-    #endif
-  #endif
-
-  MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ORD(Overlap, Interface)
-
-} // namespace Moertel
-
+#define MOERTEL_INSTANTIATE_TEMPLATE_CLASS(name) \
+     MOERTEL_INSTANTIATE_TEMPLATE_CLASS_DII(name)\
+     MOERTEL_INSTANTIATE_TEMPLATE_CLASS_DILLI(name)
 #endif
