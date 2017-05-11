@@ -164,7 +164,7 @@ class AlgAMD : public Algorithm<Adapter>
       SuiteSparse_long *amd_offsets, *amd_edgeIds;
       TPL_Traits<SuiteSparse_long, const lno_t>::ASSIGN_ARRAY(&amd_offsets,
              offsets);
-      // This might through depending on how SuiteSparse was compiled
+      // This might throw depending on how SuiteSparse was compiled
       // with long or long long and the size of both of them
       TPL_Traits<SuiteSparse_long, const gno_t>::ASSIGN_ARRAY(&amd_edgeIds,
              edgeIds);
