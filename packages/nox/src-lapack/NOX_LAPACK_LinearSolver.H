@@ -136,6 +136,12 @@ namespace NOX {
 
       //! LAPACK wrappers
       Teuchos::LAPACK<int,T> lapack;
+      
+      
+      int lwork;
+      int rank;
+      double* sv;//singular values
+      double* work;
 
     };
 
@@ -150,7 +156,10 @@ NOX::LAPACK::LinearSolver<T>::LinearSolver(int n) :
   pivots(n),
   isValidLU(false),
   blas(),
-  lapack()
+  lapack(),
+  lwork(10*mat.numRows()+1),
+  sv(new double [mat.numRows()]),//this array is only used as output and is not necessary
+  work(new double [lwork])//this array is only used as output and is not necessary
 {
 }
 
@@ -161,13 +170,18 @@ NOX::LAPACK::LinearSolver<T>::LinearSolver(const NOX::LAPACK::LinearSolver<T>& s
   pivots(s.pivots),
   isValidLU(s.isValidLU),
   blas(),
-  lapack()
+  lapack(),
+  lwork(10*mat.numRows()+1),
+  sv(new double [mat.numRows()]),//this array is only used as output and is not necessary
+  work(new double [lwork])//this array is only used as output and is not necessary
 {
 }
 
 template <typename T>
 NOX::LAPACK::LinearSolver<T>::~LinearSolver()
 {
+  if(sv) delete [] sv;
+  if(work) delete [] work;
 }
 
 template <typename T>
@@ -179,6 +193,9 @@ NOX::LAPACK::LinearSolver<T>::operator=(const NOX::LAPACK::LinearSolver<T>& s)
     lu = s.lu;
     pivots = s.pivots;
     isValidLU = s.isValidLU;
+    lwork = s.lwork;
+    sv = new double [mat.numRows()];//this array is only used as output and is not necessary
+    work = new double [lwork];//this array is only used as output and is not necessary
   }
 
   return *this;
@@ -229,13 +246,17 @@ NOX::LAPACK::LinearSolver<T>::solve(bool trans, int ncols, T* output)
 {
   int info;
   int n = mat.numRows();
+  int rcond = -1.0;
 
   // Compute LU factorization if necessary
   if (!isValidLU) {
     lu = mat;
     lapack.GETRF(n, n, &lu(0,0), n, &pivots[0], &info);
-    if (info != 0)
+    if (info != 0){//try solving a least squares problem instead (in case the linear system has infinitely many solutions)
+      lu=mat;
+      lapack.GELSS(n,n,ncols,&lu(0,0), n, output, n, sv, rcond, &rank, work, lwork, &info);
       return false;
+    }
     isValidLU = true;
   }
 
