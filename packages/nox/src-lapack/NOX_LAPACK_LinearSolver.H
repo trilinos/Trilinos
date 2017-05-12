@@ -54,6 +54,7 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 #include "NOX_LAPACK_Matrix.H"
 
@@ -137,11 +138,14 @@ namespace NOX {
       //! LAPACK wrappers
       Teuchos::LAPACK<int,T> lapack;
       
-      
+      //! Work array size for GESSL if linear solve fails
       int lwork;
+      //! Rank param for GESSL if linear solve fails
       int rank;
-      double* sv;//singular values
-      double* work;
+      //! Singular values for GESSL if linear solve fails
+      Teuchos::ArrayRCP<T> sv;
+      //! Work array for GESSL if linear solve fails
+      Teuchos::ArrayRCP<T> work;
 
     };
 
@@ -158,8 +162,8 @@ NOX::LAPACK::LinearSolver<T>::LinearSolver(int n) :
   blas(),
   lapack(),
   lwork(10*mat.numRows()+1),
-  sv(new double [mat.numRows()]),//this array is only used as output and is not necessary
-  work(new double [lwork])//this array is only used as output and is not necessary
+  sv(mat.numRows()),
+  work(lwork)
 {
 }
 
@@ -172,17 +176,14 @@ NOX::LAPACK::LinearSolver<T>::LinearSolver(const NOX::LAPACK::LinearSolver<T>& s
   blas(),
   lapack(),
   lwork(10*mat.numRows()+1),
-  sv(new double [mat.numRows()]),//this array is only used as output and is not necessary
-  work(new double [lwork])//this array is only used as output and is not necessary
+  sv(mat.numRows()),
+  work(lwork)
 {
 }
 
 template <typename T>
 NOX::LAPACK::LinearSolver<T>::~LinearSolver()
-{
-  if(sv) delete [] sv;
-  if(work) delete [] work;
-}
+{}
 
 template <typename T>
 NOX::LAPACK::LinearSolver<T>&
@@ -194,8 +195,8 @@ NOX::LAPACK::LinearSolver<T>::operator=(const NOX::LAPACK::LinearSolver<T>& s)
     pivots = s.pivots;
     isValidLU = s.isValidLU;
     lwork = s.lwork;
-    sv = new double [mat.numRows()];//this array is only used as output and is not necessary
-    work = new double [lwork];//this array is only used as output and is not necessary
+    sv.resize(s.sv.size());
+    work.resize(lwork);
   }
 
   return *this;
@@ -254,7 +255,7 @@ NOX::LAPACK::LinearSolver<T>::solve(bool trans, int ncols, T* output)
     lapack.GETRF(n, n, &lu(0,0), n, &pivots[0], &info);
     if (info != 0){//try solving a least squares problem instead (in case the linear system has infinitely many solutions)
       lu=mat;
-      lapack.GELSS(n,n,ncols,&lu(0,0), n, output, n, sv, rcond, &rank, work, lwork, &info);
+      lapack.GELSS(n,n,ncols,&lu(0,0), n, output, n, sv.get(), rcond, &rank, work.get(), lwork, &info);
       return false;
     }
     isValidLU = true;
