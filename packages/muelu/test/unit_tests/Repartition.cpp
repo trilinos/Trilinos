@@ -60,13 +60,17 @@
 #include <MueLu_RepartitionFactory.hpp>
 #include <MueLu_ZoltanInterface.hpp>
 
-#include <Galeri_XpetraUtils.hpp>
-#include <Galeri_XpetraProblemFactory.hpp>
-#include <Galeri_XpetraMaps.hpp>
-
 #include <MueLu_SingleLevelFactoryBase.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
+
+// Forward declare Galeri::Xpetra::CreateMap() to avoid multiple definitions.
+namespace Galeri {
+namespace Xpetra {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
+} //namespace Galeri
+} //namespace Xpetra
 
 
 namespace MueLuTests {
