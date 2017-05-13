@@ -400,7 +400,7 @@ namespace MueLu {
       // do 1 multigrid cycle for improving the null space by "solving"
       //     A B_f = 0
       // where A is the system matrix and B_f the fine level null space vectors
-      H.Iterate(*homogRhsVec, *nspVector2, 1, false);
+      H.Iterate(*homogRhsVec, *nspVector2, Teuchos::ScalarTraits<LocalOrdinal>::one(), false);
 
       // store improved fine level null space
       Finest->Set("Nullspace",nspVector2);

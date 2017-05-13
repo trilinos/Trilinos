@@ -374,12 +374,12 @@ namespace MueLu {
      *    ParamsPvals
      */
     int    NLayers, NVertLines, MaxNnz, NCLayers, MyLine, MyLayer;
-    int    *InvLineLayer=NULL, *CptLayers=NULL, StartLayer, NStencilNodes;
-    int    BlkRow, dof_i, dof_j, node_k, *Sub2FullMap=NULL, RowLeng;
+    LO     *InvLineLayer=NULL, *CptLayers=NULL, StartLayer, NStencilNodes;
+    LO     BlkRow, dof_i, dof_j, node_k, *Sub2FullMap=NULL, RowLeng;
     int    i, j, iii, col, count, index, loc, PtRow, PtCol;
     SC *BandSol=NULL, *BandMat=NULL, TheSum;
     int    *IPIV=NULL, KL, KU, KLU, N, NRHS, LDAB,INFO;
-    int    *Pcols;
+    LO     *Pcols;
     size_t *Pptr;
     SC *Pvals;
     int    MaxStencilSize, MaxNnzPerRow;
@@ -389,7 +389,7 @@ namespace MueLu {
     int    Nghost;
     LO    *Layerdofs = NULL, *Col2Dof = NULL;
 
-    Teuchos::LAPACK<LO,SC> lapack;
+    Teuchos::LAPACK<int,SC> lapack;
 
     char notrans[3];
     notrans[0] = 'N';
@@ -493,7 +493,7 @@ namespace MueLu {
     LDAB   = 2*KL+KU+1;
     NRHS = DofsPerNode;
     Teuchos::ArrayRCP<SC> TBandMat= Teuchos::arcp<SC>(LDAB*MaxStencilSize*DofsPerNode+1); BandMat = TBandMat.getRawPtr();
-    Teuchos::ArrayRCP<LO> TIPIV= Teuchos::arcp<LO>((MaxStencilSize+1)*DofsPerNode); IPIV = TIPIV.getRawPtr();
+    Teuchos::ArrayRCP<int> TIPIV= Teuchos::arcp<int>((MaxStencilSize+1)*DofsPerNode); IPIV = TIPIV.getRawPtr();
 
     /*
      * Allocate storage for the final interpolation matrix. Note: each prolongator
@@ -624,7 +624,7 @@ namespace MueLu {
               ArrayView<const LO> AAcols;
               ArrayView<const SC> AAvals;
               Amat->getLocalRowView(j, AAcols, AAvals);
-              const int *Acols    = AAcols.getRawPtr();
+              const LO *Acols    = AAcols.getRawPtr();
               const SC *Avals = AAvals.getRawPtr();
               RowLeng = AAvals.size();
 

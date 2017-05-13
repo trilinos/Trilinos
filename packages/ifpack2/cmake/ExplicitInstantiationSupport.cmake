@@ -10,6 +10,8 @@ SET(Ifpack2_ETI_FIELDS "S|LO|GO|N")
 # Set up a pattern that excludes all complex Scalar types.
 # TriBITS' ETI system knows how to interpret this pattern.
 TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_COMPLEX "S=std::complex<float>|std::complex<double>" "LO=.*" "GO=.*" "N=.*")
+# Also ensure local ordinal type is not larger than global ordinal type
+TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET "S=.*" "LO=long" "GO=int" "N=.*")
 
 # TriBITS' ETI system expects a set of types to be a string, delimited
 # by |.  Each template parameter (e.g., Scalar, LocalOrdinal, ...) has

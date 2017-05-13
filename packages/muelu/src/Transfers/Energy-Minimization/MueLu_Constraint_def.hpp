@@ -91,9 +91,9 @@ namespace MueLu {
     SC one  = Teuchos::ScalarTraits<SC>::one();
 
     Teuchos::BLAS  <LO,SC> blas;
-    Teuchos::LAPACK<LO,SC> lapack;
+    Teuchos::LAPACK<int,SC> lapack;
     LO lwork = 3*NSDim;
-    ArrayRCP<LO> IPIV(NSDim);
+    ArrayRCP<int> IPIV(NSDim);
     ArrayRCP<SC> WORK(lwork);
 
     for (size_t i = 0; i < numRows; i++) {
@@ -123,7 +123,7 @@ namespace MueLu {
                           locX.values(),   locX.stride(),
                   zero, XXtInv.values(), XXtInv.stride());
 
-        LO info;
+        int info;
         // Compute LU factorization using partial pivoting with row exchanges
         lapack.GETRF(NSDim, NSDim, XXtInv.values(), XXtInv.stride(), IPIV.get(), &info);
         // Use the computed factorization to compute the inverse

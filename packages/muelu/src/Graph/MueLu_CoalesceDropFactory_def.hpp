@@ -201,7 +201,7 @@ namespace MueLu {
             GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
 
-          Set(currentLevel, "DofsPerNode", 1);
+          Set(currentLevel, "DofsPerNode", static_cast<LO>(1));
           Set(currentLevel, "Graph", graph);
 
         } else if (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) {
@@ -272,7 +272,7 @@ namespace MueLu {
             GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
           Set(currentLevel, "Graph",       graph);
-          Set(currentLevel, "DofsPerNode", 1);
+          Set(currentLevel, "DofsPerNode", static_cast<LO>(1));
 
         } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero()) {
           // Case 3:  Multiple DOF/node problem without dropping

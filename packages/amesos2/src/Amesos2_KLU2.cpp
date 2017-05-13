@@ -91,7 +91,7 @@ namespace Amesos2 {
   AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<double>,int,unsigned int);
 #endif
 }
-#endif //END INST_INST_UNSIGNED
+#endif //END INST_INT_UNSIGNED
 
 
 
@@ -129,6 +129,23 @@ namespace Amesos2 {
 #endif
 }
 #endif
+
+#ifdef HAVE_TPETRA_INST_LONG_LONG
+namespace Amesos2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,float,long, long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,double,long, long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<float>,long, long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<double>,long, long);
+#endif
+}
+#endif
 //
 // 7-Nov-2014: JJH code copied from Amesos2_SuperLU.cpp.
 //
@@ -156,6 +173,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_KLU2_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -169,6 +189,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_KLU2_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, long, long, NODETYPE)
     #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
@@ -184,6 +207,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -197,6 +223,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
     #endif
 #endif
 #undef NODETYPE
@@ -217,6 +246,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_KLU2_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -230,6 +262,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_KLU2_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, long, long, NODETYPE)
     #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
@@ -245,6 +280,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -258,6 +296,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
     #endif
 #endif
 #undef NODETYPE
@@ -278,6 +319,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_KLU2_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -291,6 +335,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_KLU2_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, long, long, NODETYPE)
     #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
@@ -306,6 +353,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -319,6 +369,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
     #endif
 #endif
 #undef NODETYPE
@@ -339,6 +392,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_KLU2_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -352,6 +408,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_KLU2_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, long, long, NODETYPE)
     #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
@@ -367,6 +426,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -380,6 +442,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
     #endif
 #endif
 #undef NODETYPE
