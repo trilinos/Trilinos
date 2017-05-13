@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
 
   typedef double ScalarType;
   typedef Teuchos::ScalarTraits<ScalarType> STS;
-  typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+  typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
   const int DIAG_SZ = 1031;
 
