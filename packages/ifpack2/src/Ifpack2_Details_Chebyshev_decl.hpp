@@ -471,6 +471,13 @@ private:
   //! Number of power method iterations for estimating the max eigenvalue.
   int eigMaxIters_;
 
+  /// \brief Tolerance for power method for estimating the max eigenvalue.
+  ///
+  /// Used in a simple heuristic: if three values of lambda estimates are
+  /// monotonically increasing, and relative difference is less than
+  /// tolerance, stop the process.
+  MT tol_;
+
   //! Whether to assume that the X input to apply() is always zero.
   bool zeroStartingSolution_;
 
@@ -656,13 +663,14 @@ private:
   /// \param D_inv [in] Vector to use as implicit right scaling of A.
   /// \param numIters [in] Maximum number of iterations of the power
   ///   method.
+  //  \param tol [in] Tolerance of the power method.
   /// \param x [in/out] On input: Initial guess Vector for the power
   ///   method.  Its Map must be the same as that of the domain Map of
   ///   A.  This method may use this Vector as scratch space.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
   ST
-  powerMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, V& x);
+  powerMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, const MT tol, V& x);
 
   /// \brief Use the power method to estimate the maximum eigenvalue
   ///   of A*D_inv.
@@ -671,10 +679,11 @@ private:
   /// \param D_inv [in] Vector to use as implicit right scaling of A.
   /// \param numIters [in] Maximum number of iterations of the power
   ///   method.
+  //  \param tol [in] Tolerance of the power method.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
   ST
-  powerMethod (const op_type& A, const V& D_inv, const int numIters);
+  powerMethod (const op_type& A, const V& D_inv, const int numIters, const MT tol);
 
   //! The maximum infinity norm of all the columns of X.
   static MT maxNormInf (const MV& X);

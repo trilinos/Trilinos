@@ -287,6 +287,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
+  tol_ (STS::zero()),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
@@ -313,6 +314,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params
   minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
+  tol_ (STS::zero()),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
@@ -355,6 +357,7 @@ setParameters (Teuchos::ParameterList& plist)
   const ST defaultMinDiagVal = STS::eps ();
   const int defaultNumIters = 1;
   const int defaultEigMaxIters = 10;
+  const MT  defaultEigTol = static_cast<MT> (0.0);
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
   const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
@@ -373,6 +376,7 @@ setParameters (Teuchos::ParameterList& plist)
   ST minDiagVal = defaultMinDiagVal;
   int numIters = defaultNumIters;
   int eigMaxIters = defaultEigMaxIters;
+  MT tol = defaultEigTol;
   bool zeroStartingSolution = defaultZeroStartingSolution;
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
@@ -631,6 +635,8 @@ setParameters (Teuchos::ParameterList& plist)
     "\" parameter (also called \"eigen-analysis: iterations\") must be a "
     "nonnegative integer.  You gave a value of " << eigMaxIters << ".");
 
+  tol = plist.get ("chebyshev: eigenvalue tol", tol);
+
   zeroStartingSolution = plist.get ("chebyshev: zero starting solution",
                                     zeroStartingSolution);
   assumeMatrixUnchanged = plist.get ("chebyshev: assume matrix does not change",
@@ -693,6 +699,7 @@ setParameters (Teuchos::ParameterList& plist)
   minDiagVal_ = minDiagVal;
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
+  tol_ = tol;
   zeroStartingSolution_ = zeroStartingSolution;
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
@@ -871,7 +878,7 @@ Chebyshev<ScalarType, MV>::compute ()
   // most important one if using Chebyshev as a smoother.
   if (! assumeMatrixUnchanged_ ||
       (! computedEigenvalueEstimates && STS::isnaninf (userLambdaMax_))) {
-    const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
+    const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_, tol_);
     TEUCHOS_TEST_FOR_EXCEPTION(
       STS::isnaninf (computedLambdaMax),
       std::runtime_error,
@@ -1385,6 +1392,7 @@ Chebyshev<ScalarType, MV>::
 powerMethodWithInitGuess (const op_type& A,
                           const V& D_inv,
                           const int numIters,
+                          const MT tol,
                           V& x)
 {
   using std::endl;
@@ -1417,6 +1425,44 @@ powerMethodWithInitGuess (const op_type& A,
     *out_ << "  norm1(x.scale(one/norm)): " << x.norm1 () << endl;
   }
 
+  /*
+    We use a heuristic for stopping early if tolerance is specified.
+    It works the following way:
+
+    Lets assume that
+      (a) our estimate for lambdaMax increases monotonically.
+          $ \lambda_{k+1} = \lambda_k + \delta_k $
+      (b) $\delta_k$ asymptotically and monotonically go to $\beta < 1$
+          from below, i.e.
+          $ \beta_k = \delta_{k+1}/\delta_k \to \beta \mbox{from below} $
+      (c) That starting from some point
+          $ \beta_{k+1}/\beta_k \le 1 + \gamma                            (1)
+
+      Then, we can estimate that
+        $ \beta \le (1 + \gamma) \beta_k, $
+      and
+      $$ \lambda_{max}
+          \le \lambda_n + \delta_n \le \lambda_{n-1} + \delta_{n-1} + \delta_n
+          \le \dots
+          \le \lambda_k + \delta_k + \delta_{k+1} + \dots + \delta_{n}
+          \le \lambda_k + \delta_k (1 + \beta + \beta^2 + \dots)
+          \le \lambda_k + \delta_k / (1 - \beta)
+          \le \lambda_k + \delta_k / (1 - (1 + \gamma) \beta_k)           (2)
+      $$
+
+    Throughout power method iterations, we check if the last few iterations
+    are monotonic in lambda. If they are, we check if we achived (1). If we
+    did, we stop the iterations and set lambda estimate to be the rhs in
+    (2). We also set the boost factor to 1.0 as if all our assupmtions are
+    true, we guarantee that this is a correct upper bound on lambda max.
+
+    The gamma in this method is what we call tolerance, and provided by a user
+    through the parameter list. Larger values (0.1+) would stop earlier.
+    A reasonable starting value seems to be 0.1.
+  */
+
+  int monotoneCount = 0;
+  std::vector<ST> lambdas, deltas, betas;
   for (int iter = 0; iter < numIters; ++iter) {
     if (debug_) {
       *out_ << "  Iteration " << iter << endl;
@@ -1428,7 +1474,11 @@ powerMethodWithInitGuess (const op_type& A,
     if (debug_) {
       *out_ << "   RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << endl;
     }
+
     lambdaMax = RQ_top / RQ_bottom;
+
+    lambdas.push_back(lambdaMax);
+
     norm = y.norm2 ();
     if (norm == zero) { // Return something reasonable.
       if (debug_) {
@@ -1437,6 +1487,41 @@ powerMethodWithInitGuess (const op_type& A,
       return zero;
     }
     x.update (one / norm, y, zero);
+
+    std::ostringstream oss;
+    oss << std::scientific << std::setprecision(8) << "   lambda = " << lambdaMax;
+    if (iter >= 1) {
+        deltas.push_back(lambdas[iter] - lambdas[iter-1]);
+        oss << " [delta = " << deltas.back() << ", reldelta = " << deltas.back()/lambdas[iter-1];
+    }
+    if (iter >= 2) {
+        betas.push_back(deltas[iter-1]/deltas[iter-2]);
+        oss << ", beta = " << deltas.back() << "]";
+    }
+    if (iter >= 3)
+      oss << ", beta ratio = " << betas[iter-2]/betas[iter-3] << "]";
+    oss << std::endl;
+    if (debug_)
+        *out_ << oss.str();
+
+    if (lambdas[iter] > lambdas[iter-1])
+      monotoneCount++;
+    else
+      monotoneCount = 0;
+
+
+    // Check the heuristic for stopping early
+    if (monotoneCount > 2 && (betas[iter-2]/betas[iter-3] < 1+tol)) {
+      auto tol1 = betas[iter-2]/betas[iter-3] - 1;
+      lambdaMax = lambdas[iter-1] + deltas.back()/(1-(1+tol1)*betas.back());
+
+      if (debug_)
+          *out_ << "Changing boost factor to 1.00" << std::endl;
+
+      boostFactor_ = 1.00;
+
+      break;
+    }
   }
   if (debug_) {
     *out_ << "  lambdaMax: " << lambdaMax << endl;
@@ -1470,7 +1555,7 @@ computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts) const
 template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
-powerMethod (const op_type& A, const V& D_inv, const int numIters)
+powerMethod (const op_type& A, const V& D_inv, const int numIters, const MT tol)
 {
   using std::endl;
   if (debug_) {
@@ -1484,7 +1569,7 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
   // entries nonnegative.
   computeInitialGuessForPowerMethod (x, false);
 
-  ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
+  ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, tol, x);
 
   // mfh 07 Jan 2015: Taking the real part here is only a concession
   // to the compiler, so that this class can build with ScalarType =
@@ -1506,7 +1591,7 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
     // For the second pass, make all the entries of the initial guess
     // vector have nonnegative real parts.
     computeInitialGuessForPowerMethod (x, true);
-    lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
+    lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, tol, x);
   }
   return lambdaMax;
 }
