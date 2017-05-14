@@ -99,10 +99,16 @@ namespace Belos {
         sing_tol_( sing_tol ),
         label_( label )
     {
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter( orthoLabel );
-#endif
+
+      // if timers are enabled, then we must update their labels, as they track the ortho passes
+      #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      {
+        std::stringstream ss;
+        ss << label_ + ": DGKS[" << max_blk_ortho_ << "]";
+        std::string orthoLabel = ss.str () + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+      }
+      #endif
     }
 
     //! Constructor that takes a list of parameters.
@@ -118,10 +124,15 @@ namespace Belos {
     {
       setParameterList (plist);
 
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter( orthoLabel );
-#endif
+      // if timers are enabled, then we must update their labels, as they track the ortho passes
+      #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      {
+        std::stringstream ss;
+        ss << label_ + ": DGKS[" << max_blk_ortho_ << "]";
+        std::string orthoLabel = ss.str () + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+      }
+      #endif
     }
 
     //! Destructor
@@ -163,6 +174,16 @@ namespace Belos {
       dep_tol_ = depTol;
       sing_tol_ = singTol;
 
+      // if timers are enabled, then we must update their labels, as they track the ortho passes
+      #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      {
+        std::stringstream ss;
+        ss << label_ + ": DGKS[" << max_blk_ortho_ << "]";
+        std::string orthoLabel = ss.str () + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+      }
+      #endif
+
       setMyParamList (params);
     }
 
@@ -188,6 +209,9 @@ namespace Belos {
 
         const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
 
+
+        //params->set ("Name", "DGKS", "Daniel, Gragg, Kaufman and Stewart (DGKS), orthgonalization");
+
         params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
                      "Maximum number of orthogonalization passes (includes the "
                      "first).  Default is 2, since \"twice is enough\" for Krylov "
@@ -203,6 +227,45 @@ namespace Belos {
       return defaultParams_;
     }
 
+    static
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getDefaultParameters ()
+    {
+      using Teuchos::as;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      RCP<ParameterList> params = parameterList ("DGKS");
+      const MagnitudeType eps = MGT::eps ();
+
+      // Default parameter values for DGKS orthogonalization.
+      // Documentation will be embedded in the parameter list.
+      const int defaultMaxNumOrthogPasses = 2;
+      const MagnitudeType defaultBlkTol =
+        as<MagnitudeType> (10) * MGT::squareroot (eps);
+      const MagnitudeType defaultDepTol =
+        MGT::one() / MGT::squareroot (as<MagnitudeType> (2));
+
+      const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
+
+
+      //params->set ("Name", "DGKS", "Daniel, Gragg, Kaufman and Stewart (DGKS), orthgonalization");
+
+      params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
+                   "Maximum number of orthogonalization passes (includes the "
+                   "first).  Default is 2, since \"twice is enough\" for Krylov "
+                   "methods.");
+      params->set ("blkTol", defaultBlkTol, "Block reorthogonalization "
+                   "threshhold.");
+      params->set ("depTol", defaultDepTol,
+                   "(Non-block) reorthogonalization threshold.");
+      params->set ("singTol", defaultSingTol, "Singular block detection "
+                   "threshold.");
+
+      RCP<const ParameterList> params_const = params;
+      return params;
+    }
     //@}
 
     Teuchos::RCP<const Teuchos::ParameterList>
@@ -531,10 +594,16 @@ namespace Belos {
   {
     if (label != label_) {
       label_ = label;
-      std::string orthoLabel = label_ + ": Orthogonalization";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
-#endif
+
+      // if timers are enabled, then we must update their labels, as they track the ortho passes
+      #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      {
+        std::stringstream ss;
+        ss << label_ + ": DGKS[" << max_blk_ortho_ << "]";
+        std::string orthoLabel = ss.str () + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+      }
+      #endif
     }
   }
 

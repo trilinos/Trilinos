@@ -656,6 +656,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
+  using Teuchos::sublist;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
@@ -735,9 +737,28 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     }
   }
 
+  // Optional sublist for OrthoManager parameters
+  RCP<ParameterList> orthoParams;
+  std::string tempOrthoType;
+  // the sublist for ortho options is new (2017).
+  // the intent is that the string parameter 'Orthogonalization'
+  // can optionally define a sublist.
+  const bool haveOrthoParamName = params->isParameter ("Orthogonalization");
+  if (haveOrthoParamName) {
+    tempOrthoType = params->get ("Orthogonalization", orthoType_default_);
+  } else {
+    tempOrthoType = orthoType_default_;
+  }
+
+  const bool haveOrthoSublist = params->isSublist (tempOrthoType);
+
+  if (haveOrthoSublist) {
+    orthoParams = sublist (params, tempOrthoType, true);
+  }
+
   // Check if the orthogonalization changed.
-  if (params->isParameter ("Orthogonalization")) {
-    std::string tempOrthoType = params->get ("Orthogonalization", orthoType_default_);
+  if (haveOrthoParamName || haveOrthoSublist) {
+
 #ifdef HAVE_BELOS_TSQR
     TEUCHOS_TEST_FOR_EXCEPTION(
       tempOrthoType != "DGKS" && tempOrthoType != "ICGS" &&
@@ -758,32 +779,52 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
+
       params_->set("Orthogonalization", orthoType_);
+
+      if (haveOrthoSublist) {
+        params_->set(orthoType_, *orthoParams);
+      }
+
       // Create orthogonalization manager
       if (orthoType_ == "DGKS") {
         typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
         if (orthoKappa_ <= 0) {
-          ortho_ = rcp (new ortho_type (label_));
+          ortho_ = rcp (new ortho_type (orthoParams,label_));
         }
         else {
-          ortho_ = rcp (new ortho_type (label_));
+          ortho_ = rcp (new ortho_type (orthoParams,label_));
+          // TODO: jje 01 Feb 2017
+          //  1) deprecate constructor call that uses kappa
+          //  2) clean up this logic.
+          //
+          // this will enforce precedence of the constructor ortho parameter.
+          // This is not good. The constructor should remove the kappa option
+          // otherwise, it is unclear which to use if both are specified
+          //rcp_dynamic_cast<ortho_type> (ortho_)->setParameterList (orthoParams);
           rcp_dynamic_cast<ortho_type> (ortho_)->setDepTol (orthoKappa_);
         }
       }
       else if (orthoType_ == "ICGS") {
         typedef ICGSOrthoManager<ScalarType, MV, OP> ortho_type;
-        ortho_ = rcp (new ortho_type (label_));
+        ortho_ = rcp (new ortho_type (orthoParams,label_));
+        // configure the orthogonalizer using the parameter sublist
+        //rcp_dynamic_cast<ortho_type> (ortho_)->setParameterList (orthoParams);
       }
       else if (orthoType_ == "IMGS") {
         typedef IMGSOrthoManager<ScalarType, MV, OP> ortho_type;
-        ortho_ = rcp (new ortho_type (label_));
+        ortho_ = rcp (new ortho_type (orthoParams,label_));
+        // configure the orthogonalizer using the parameter sublist
+        //rcp_dynamic_cast<ortho_type> (ortho_)->setParameterList (orthoParams);
       }
-#ifdef HAVE_BELOS_TSQR
+      #ifdef HAVE_BELOS_TSQR
       else if (orthoType_ == "TSQR") {
         typedef TsqrMatOrthoManager<ScalarType, MV, OP> ortho_type;
-        ortho_ = rcp (new ortho_type (label_));
+        ortho_ = rcp (new ortho_type (orthoParams,label_));
+        // configure the orthogonalizer using the parameter sublist
+        //rcp_dynamic_cast<ortho_type> (ortho_)->setParameterList (orthoParams);
       }
-#endif // HAVE_BELOS_TSQR
+      #endif // HAVE_BELOS_TSQR
     }
   }
 
@@ -1041,29 +1082,44 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Create orthogonalization manager if we need to.
   if (ortho_.is_null ()) {
+
     params_->set("Orthogonalization", orthoType_);
+    if (haveOrthoSublist) {
+      params_->set(orthoType_, *orthoParams);
+    }
+
     if (orthoType_ == "DGKS") {
       typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
       if (orthoKappa_ <= 0) {
-        ortho_ = rcp (new ortho_type (label_));
+        ortho_ = rcp (new ortho_type (orthoParams,label_));
+        // configure the orthogonalizer using the parameter sublist
+        //rcp_dynamic_cast<ortho_type> (ortho_)->setParameterList (orthoParams);
       }
       else {
-        ortho_ = rcp (new ortho_type (label_));
+        ortho_ = rcp (new ortho_type (orthoParams,label_));
+        // configure the orthogonalizer using the parameter sublist
+        //rcp_dynamic_cast<ortho_type> (ortho_)->setParameterList (orthoParams);
         rcp_dynamic_cast<ortho_type> (ortho_)->setDepTol (orthoKappa_);
       }
     }
     else if (orthoType_ == "ICGS") {
       typedef ICGSOrthoManager<ScalarType, MV, OP> ortho_type;
-      ortho_ = rcp (new ortho_type (label_));
+      ortho_ = rcp (new ortho_type (orthoParams,label_));
+      // configure the orthogonalizer using the parameter sublist
+      //rcp_dynamic_cast<ortho_type> (ortho_)->setParameterList (orthoParams);
     }
     else if (orthoType_ == "IMGS") {
       typedef IMGSOrthoManager<ScalarType, MV, OP> ortho_type;
-      ortho_ = rcp (new ortho_type (label_));
+      ortho_ = rcp (new ortho_type (orthoParams,label_));
+      // configure the orthogonalizer using the parameter sublist
+      //rcp_dynamic_cast<ortho_type> (ortho_)->setParameterList (orthoParams);
     }
 #ifdef HAVE_BELOS_TSQR
     else if (orthoType_ == "TSQR") {
       typedef TsqrMatOrthoManager<ScalarType, MV, OP> ortho_type;
-      ortho_ = rcp (new ortho_type (label_));
+      ortho_ = rcp (new ortho_type (orthoParams,label_));
+      // configure the orthogonalizer using the parameter sublist
+      //rcp_dynamic_cast<ortho_type> (ortho_)->setParameterList (orthoParams);
     }
 #endif // HAVE_BELOS_TSQR
     else {
@@ -1124,11 +1180,17 @@ template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
 PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
 {
-  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using Teuchos::sublist;
+  using Teuchos::parameterList;
+
+  static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+
+    RCP<ParameterList> pl = parameterList();
   // Set all the valid parameters and their default values.
-    pl= Teuchos::rcp( new Teuchos::ParameterList() );
+    pl= Teuchos::rcp( new ParameterList() );
     pl->set("Convergence Tolerance", convtol_default_,
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
@@ -1167,11 +1229,58 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "The type of scaling used in the explicit residual convergence test.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
+
+    //-----------------------------------------------------------------------
+    // Gather the orthoManager's default parameters
+//
+//    // DGKS ortho parameter list
+//    {
+//      typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
+//
+//      RCP<ParameterList> orthoParams = sublist(pl, "DGKS");
+//      orthoParams->setParameters( *(ortho_type::getDefaultParameters()) );
+//      // override the depTol using this class's defined value (legacy value)
+//      orthoParams->set("depTol", orthoKappa_default_);
+//    }
+//    // ICGS
+//    {
+//      typedef ICGSOrthoManager<ScalarType, MV, OP> ortho_type;
+//
+//      RCP<ParameterList> orthoParams = sublist(pl, "ICGS");
+//      orthoParams->setParameters( *(ortho_type::getDefaultParameters()) );
+//    }
+//    // IMGS
+//    {
+//      typedef IMGSOrthoManager<ScalarType, MV, OP> ortho_type;
+//
+//      RCP<ParameterList> orthoParams = sublist(pl, "IMGS");
+//
+//      orthoParams->setParameters( *(ortho_type::getDefaultParameters()) );
+//    }
+//    #ifdef HAVE_BELOS_TSQR
+//    // TSQR
+//    {
+//      typedef TsqrMatOrthoManager<ScalarType, MV, OP> ortho_type;
+//      RCP<ortho_type> ortho_tmp = rcp (new ortho_type ());
+//
+//      RCP<ParameterList> orthoParams = sublist(pl, "TSQR");
+//      orthoParams->setParameters( *(ortho_tmp->getValidParameters()) );
+//    }
+//    #endif // HAVE_BELOS_TSQR
+//    //-----------------------------------------------------------------------
+
+    // legacy parameters
     pl->set("Orthogonalization", orthoType_default_,
-      "The type of orthogonalization to use: DGKS, ICGS, IMGS.");
+      #ifdef HAVE_BELOS_TSQR
+        "The type of orthogonalization to use: DGKS, ICGS, IMGS, TSQR.");
+      #else
+        "The type of orthogonalization to use: DGKS, ICGS, IMGS.");
+      #endif
     pl->set("Orthogonalization Constant",orthoKappa_default_,
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
+
+
     pl->sublist("User Status Tests");
     pl->set("User Status Tests Combo Type", "SEQ",
         "Type of logical combination operation of user-defined\n"

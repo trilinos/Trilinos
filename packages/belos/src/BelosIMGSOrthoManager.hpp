@@ -99,25 +99,25 @@ namespace Belos {
         sing_tol_( sing_tol ),
         label_( label )
     {
-        std::string orthoLabel = label_ + ": Orthogonalization";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+
+      // if timers are enabled, then we must update their labels, as they track the ortho passes
+      #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      {
+        std::stringstream ss;
+        ss << label_ + ": IMGS[" << max_ortho_steps_ << "]";
+        std::string orthoLabel = ss.str () + ": Orthogonalization";
         timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
-#endif
 
-        std::string updateLabel = label_ + ": Ortho (Update)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        std::string updateLabel = ss.str () + ": Ortho (Update)";
         timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
-#endif
 
-        std::string normLabel = label_ + ": Ortho (Norm)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        std::string normLabel = ss.str () + ": Ortho (Norm)";
         timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
-#endif
 
-        std::string ipLabel = label_ + ": Ortho (Inner Product)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        std::string ipLabel = ss.str () + ": Ortho (Inner Product)";
         timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
-#endif
+      }
+      #endif
     }
 
     //! Constructor that takes a list of parameters.
@@ -132,22 +132,24 @@ namespace Belos {
     {
       setParameterList (plist);
 
-      std::string orthoLabel = label_ + ": Orthogonalization";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
-#endif
-      std::string updateLabel = label_ + ": Ortho (Update)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
-#endif
-      std::string normLabel = label_ + ": Ortho (Norm)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
-#endif
-      std::string ipLabel = label_ + ": Ortho (Inner Product)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
-#endif
+      // if timers are enabled, then we must update their labels, as they track the ortho passes
+      #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      {
+        std::stringstream ss;
+        ss << label_ + ": IMGS[" << max_ortho_steps_ << "]";
+        std::string orthoLabel = ss.str () + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+
+        std::string updateLabel = ss.str () + ": Ortho (Update)";
+        timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
+
+        std::string normLabel = ss.str () + ": Ortho (Norm)";
+        timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
+
+        std::string ipLabel = ss.str () + ": Ortho (Inner Product)";
+        timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
+      }
+      #endif
     }
 
     //! Destructor
@@ -225,6 +227,25 @@ namespace Belos {
       blk_tol_ = blkTol;
       sing_tol_ = singTol;
 
+      // if timers are enabled, then we must update their labels, as they track the ortho passes
+      #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      {
+        std::stringstream ss;
+        ss << label_ + ": IMGS[" << max_ortho_steps_ << "]";
+        std::string orthoLabel = ss.str () + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+
+        std::string updateLabel = ss.str () + ": Ortho (Update)";
+        timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
+
+        std::string normLabel = ss.str () + ": Ortho (Norm)";
+        timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
+
+        std::string ipLabel = ss.str () + ": Ortho (Inner Product)";
+        timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
+      }
+      #endif
+
       setMyParamList (params);
     }
 
@@ -247,6 +268,9 @@ namespace Belos {
           as<MagnitudeType> (10) * MGT::squareroot (eps);
         const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
 
+
+        //params->set ("Name", "IMGS", "Iterated Modified Gram Schmidt");
+
         params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
                      "Maximum number of orthogonalization passes (includes the "
                      "first).  Default is 2, since \"twice is enough\" for Krylov "
@@ -258,6 +282,41 @@ namespace Belos {
         defaultParams_ = params;
       }
       return defaultParams_;
+    }
+
+    static
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getDefaultParameters ()
+    {
+      using Teuchos::as;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      RCP<ParameterList> params = parameterList ("IMGS");
+
+      // Default parameter values for IMGS orthogonalization.
+      // Documentation will be embedded in the parameter list.
+      const int defaultMaxNumOrthogPasses = 2;
+      const MagnitudeType eps = MGT::eps();
+      const MagnitudeType defaultBlkTol =
+        as<MagnitudeType> (10) * MGT::squareroot (eps);
+      const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
+
+
+      //params->set ("Name", "IMGS", "Iterated Modified Gram Schmidt");
+
+      params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
+                   "Maximum number of orthogonalization passes (includes the "
+                   "first).  Default is 2, since \"twice is enough\" for Krylov "
+                   "methods.");
+      params->set ("blkTol", defaultBlkTol, "Block reorthogonalization "
+                   "threshhold.");
+      params->set ("singTol", defaultSingTol, "Singular block detection "
+                   "threshold.");
+
+      RCP<const ParameterList> params_const = params;
+      return (params_const);
     }
     //@}
 
@@ -543,25 +602,24 @@ namespace Belos {
   {
     if (label != label_) {
       label_ = label;
-      std::string orthoLabel = label_ + ": Orthogonalization";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
-#endif
+      // if timers are enabled, then we must update their labels, as they track the ortho passes
+      #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      {
+        std::stringstream ss;
+        ss << label_ + ": IMGS[" << max_ortho_steps_ << "]";
+        std::string orthoLabel = ss.str () + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
 
-      std::string updateLabel = label_ + ": Ortho (Update)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
-#endif
+        std::string updateLabel = ss.str () + ": Ortho (Update)";
+        timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
 
-      std::string normLabel = label_ + ": Ortho (Norm)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
-#endif
+        std::string normLabel = ss.str () + ": Ortho (Norm)";
+        timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
 
-      std::string ipLabel = label_ + ": Ortho (Inner Product)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
-#endif
+        std::string ipLabel = ss.str () + ": Ortho (Inner Product)";
+        timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
+      }
+      #endif
     }
   }
 
