@@ -55,6 +55,7 @@ Level 1
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
+     tentative: calculate qr = 1   [default]
      matrixmatrix: kernel params -> 
       [empty list]
      
@@ -87,7 +88,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2049ff8,node=0x2906540,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2468738,node=0x2d4a520,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
@@ -167,6 +168,7 @@ Level 2
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
+     tentative: calculate qr = 1   [default]
      matrixmatrix: kernel params -> 
       [empty list]
      
@@ -199,7 +201,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2049ff8,node=0x2906540,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2468738,node=0x2d4a520,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
@@ -279,6 +281,7 @@ Level 3
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
+     tentative: calculate qr = 1   [default]
      matrixmatrix: kernel params -> 
       [empty list]
      
@@ -311,7 +314,7 @@ Level 3
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2049ff8,node=0x2906540,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2468738,node=0x2d4a520,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1

@@ -50,6 +50,7 @@ Level 1
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
+     tentative: calculate qr = 1   [default]
      matrixmatrix: kernel params -> 
       [empty list]
      
@@ -78,7 +79,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x20ca2d0,node=0x1e9e370,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x27baaa0,node=0x288ba30,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -145,6 +146,7 @@ Level 2
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
+     tentative: calculate qr = 1   [default]
      matrixmatrix: kernel params -> 
       [empty list]
      
@@ -173,7 +175,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1ee7af0,node=0x1ee7fe0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x286b3f0,node=0x286bd60,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
