@@ -187,6 +187,7 @@ for ($i=0; $i<$numLines; $i++)
 # print "There are " . (scalar @entries) . " entries.\n";
 
 my $theDate = $ARGV[0];
+my $cdashDate = $ARGV[1];
 $theDate =~ s/_/ /g;
 
 print <<EOF;
@@ -314,7 +315,8 @@ Content-Type: text/html
   </head>
   <body>
 
-<!-- Go to the <a href="">full report</a> -->
+Go to the <a
+href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueLu&filtercount=1&showfilters=1&field1=site&compare1=63&value1=geminga&date=$cdashDate">full report</a>
 <br>
 
 
