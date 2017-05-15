@@ -52,6 +52,40 @@
 
 #include "../TOOLS/template_tools.hpp"
 
+
+// Example of ScalarFunction 
+// f(x,y) = <x,x> + 2*<y,y> - 2 y[0]*(x[0]+x[1]) + 3*x[0]*(y[1]-y[0])
+//
+// coeff = [1,2,-2,3]
+
+template<template<class> class Param, template<class> class Array>
+struct ExampleQuadratic {
+
+  template<class Real, class ScalarX, class ScalarY>
+  static AD::ResultType<Real,ScalarX,ScalarY> 
+
+  eval( const Param<Real> &param,
+        const Array<ScalarX> &x, 
+        const Array<ScalarY> &y ) {
+    
+    ScalarX xdotx; 
+    ScalarY ydoty;
+
+    auto nx = TemplateTools::size(x);
+    auto ny = TemplateTools::size(y);     
+
+    for( auto xval : x ) { xdotx += xval*xval; }
+    for( auto yval : y ) { ydoty += yval*yval; }
+
+    return param[0]*xdotx            + param[1]*ydoty + 
+           param[2]*y[0]*(x[0]+x[1]) + param[3]*x[0]*(y[1]-y[0]);
+
+  }
+}; // Example Quadratic
+
+
+
+
 int main(int argc, char *argv[] ) {
 
   using RealT = double;
@@ -63,47 +97,70 @@ int main(int argc, char *argv[] ) {
   if(argc>1)   os = rcp(&std::cout,false);
   else         os = rcp(&bhs,false);
   
+  using DFad = Sacado::Fad::DFad<RealT>;
+
   int errorFlag = 0;
 
-  RealT x = 2.0;
+  // Univariate tests
+  {
+    RealT x = 2.0;
 
-  using DFad = Sacado::Fad::DFad<RealT>;
-  DFad x_fad(1,0,x);
-  DFad f_fad = x_fad*x_fad;
+    DFad x_fad(1,0,x);
+    DFad f_fad = x_fad*x_fad;
 
-  errorFlag += static_cast<int>(AD::has_dx<RealT>::value);
-  errorFlag += static_cast<int>(!AD::has_dx<DFad>::value);
+    errorFlag += static_cast<int>(AD::has_dx<RealT>::value);
+    errorFlag += static_cast<int>(!AD::has_dx<DFad>::value);
 
-  *os << "Does type RealT = double have a method .dx()?... " << AD::has_dx<RealT>::value << std::endl;
-  *os << "Does type DFad<RealT> have a method .dx()?...... " << AD::has_dx<DFad>::value << std::endl;
+    *os << "Does type RealT = double have a method .dx()?... " 
+        << AD::has_dx<RealT>::value << std::endl;
 
-  auto xval  = AD::value(x);
-  auto xfval = AD::value(x_fad);
-  auto ffval = AD::value(f_fad);
+    *os << "Does type DFad<RealT> have a method .dx()?...... " 
+        << AD::has_dx<DFad>::value << std::endl;
 
-  auto xder  = AD::derivative(x,0);
-  auto xfder = AD::derivative(x_fad,0);
-  auto ffder = AD::derivative(f_fad,0);
+    auto xval  = AD::value(x);
+    auto xfval = AD::value(x_fad);
+    auto ffval = AD::value(f_fad);
 
-  *os << "RealT x(2.0);"             << std::endl;
-  *os << "DFad x_fad(1,x); "         << std::endl;
-  *os << "DFad f_fad = x_fad*x_fad " << std::endl;  
+    auto xder  = AD::derivative(x,0);
+    auto xfder = AD::derivative(x_fad,0);
+    auto ffder = AD::derivative(f_fad,0);
 
-  *os << "AD::value(x)     = " << xval  << std::endl;
-  *os << "AD::value(x_fad) = " << xfval << std::endl;
-  *os << "AD::value(f_fad) = " << ffval << std::endl;
+    *os << "RealT x(2.0);"             << std::endl;
+    *os << "DFad x_fad(1,x); "         << std::endl;
+    *os << "DFad f_fad = x_fad*x_fad " << std::endl;  
 
-  errorFlag += (xval  != 2);
-  errorFlag += (xfval != 2);
-  errorFlag += (ffval != 4);
+    *os << "AD::value(x)     = " << xval  << std::endl;
+    *os << "AD::value(x_fad) = " << xfval << std::endl;
+    *os << "AD::value(f_fad) = " << ffval << std::endl;
 
-  *os << "AD::derivative(x,0)      = "  << xder  << std::endl;
-  *os << "AD::derivative(x_fad,0)  = "  << xfder << std::endl;
-  *os << "AD::derivative(f_fad,0)  = "  << ffder << std::endl;
+    errorFlag += (xval  != 2);
+    errorFlag += (xfval != 2);
+    errorFlag += (ffval != 4);
 
-  errorFlag += (xder  != 0);
-  errorFlag += (xfder != 1);
-  errorFlag += (ffder != 4);
+    *os << "AD::derivative(x,0)      = "  << xder  << std::endl;
+    *os << "AD::derivative(x_fad,0)  = "  << xfder << std::endl;
+    *os << "AD::derivative(f_fad,0)  = "  << ffder << std::endl;
+
+    errorFlag += (xder  != 0);
+    errorFlag += (xfder != 1);
+    errorFlag += (ffder != 4);
+  }
+
+  // Multivariate tests
+  {
+    using size_type = typename std::vector<RealT>::size_type;
+
+    size_type Nx = 5;
+    size_type Ny = 3;
+
+    std::vector<RealT> coeff({1.0,2.0,-2.0,3.0});
+
+    std::vector<RealT> x(Nx);
+    std::vector<RealT> y(Ny); 
+  
+  }
+
+
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

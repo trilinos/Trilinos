@@ -44,25 +44,84 @@
 
 
 /*! \file  template_tools.hpp
-    \brief Provides generic programming components for automatic differentiation
+    \brief Provides generic programming components with emphasis on 
+           automatic differentiation
 */
+
+namespace TemplateTools {
+
+template<class...> struct voider { using type=void; };
+template<class...Ts> using void_t = typename voider<Ts...>::type;
+
+template<template<class...>class Z, class, class...Ts>
+struct has_method: public std::false_type {};
+
+template<template<class...>class Z, class...Ts>
+struct has_method<Z, void_t<Z<Ts...>>, Ts...> : public std::true_type {};
+
+
+// Detect existence of .size()
+template <class Container>
+using c_size_t = decltype(std::declval<Container>().size());
+
+template <class Container> 
+using has_size = has_method<c_size_t,Container>;
+
+// Detect subscript operator []
+template <class Container, class Index>
+using c_subscript_t = decltype(std::declval<Container>()[std::declval<Index>()]);
+
+template <class Container, class Index>
+using has_subscript = has_method<c_subscript_t, Container, Index>;
+
+// Call this method if the container has a .size()
+//template<class Container> 
+//typename std::enable_if<has_size<Container>::value,decltype(std::declval<Container>().size())>::type 
+//size( const Container &c ) {
+//  return c.size();  
+//}
+
+// Container type deduction
+template<class Container>
+struct ContainerTypes {
+    typename std::add_rvalue_reference<Container>::type arg = std::declval<Container>();
+    
+  static constexpr bool hasSize      = has_size<Container>::value;
+   
+  using IndexType = typename std::conditional<hasSize,
+                      decltype(std::declval<Container>().size()),void>::type;
+
+  static constexpr bool hasSubscript = has_subscript<Container,IndexType>::value;
+
+  using ElementType = typename std::conditional<hasSubscript,
+                        decltype(std::declval<Container>()[std::declval<IndexType>()]),void>::type; 
+
+}; // ContainerInterface
+
+template<class Container>
+typename std::enable_if<has_size<Container>::value,decltype(std::declval<Container>().size())>::type 
+size( const Container &c ) {
+  return c.size();  
+}
+
+template<class Container>
+typename std::enable_if<!has_size<Container>::value,decltype(std::declval<Container>().size())>::type 
+size( const Container &c ) {
+  return 0;  
+}
+
+
+} // namespace TemplateTools
 
 namespace AD {
 
-/*  ReturnType<A,...,H> deduces the type that would be needed to add 
+/*  ResultType<T...> deduces the type that would be needed to add 
  *  the constituent types together. For example if DFad = Sacado::Fad::DFad<Real>
  *  then ReturnType<Real,DFad> would be DFad since adding the two together
  *  would yield a DFad.
  */
-
-// Restrict to a known parameter set size to avoid recursive deduction -
-// Maybe there is a more general and efficient way
-template<class A,   class B=A, class C=B, class D=C, 
-         class E=D, class F=E, class G=F, class H=G>
-using ResultType = decltype( std::declval<A>() + std::declval<B>() +
-                             std::declval<C>() + std::declval<D>() +
-                             std::declval<E>() + std::declval<F>() +
-                             std::declval<G>() + std::declval<H>());
+template<typename T,typename ...Args>
+using ResultType = typename std::common_type<T,Args...>::type;
 
 
 /* Determine at compile time, whether the ScalarT has both of the required
@@ -72,11 +131,22 @@ using ResultType = decltype( std::declval<A>() + std::declval<B>() +
  *  2) dx() takes an integer argument
  *
  */
+
+// Detect dx() methjod
+//template <class Container, class Index>
+//using dx_t = decltype(std::declval<Container>().dx(std::declval<Index>()));
+
+//template <class Container, class Index>
+//using has_dx = has_method<dx_t, Container, Index>;
+
+
+
+
 template <class ScalarT> struct has_dx
 {
   std::add_rvalue_reference<int>::type arg = std::declval<int>();
 
-  // Checks whether there is a method .dx(int)
+  // checks whether there is a method .dx(int)
   template <typename C> static constexpr decltype(std::declval<C>().dx(arg), bool()) test(int)
   { return true;  }
   template <typename C> static constexpr bool test(...)
