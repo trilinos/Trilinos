@@ -579,6 +579,9 @@ namespace panzer_stk {
 
     m_wkstContainer = wkstContainer;
 
+    // set the global indexer so the orientations are evaluated
+    wkstContainer->setGlobalIndexer(globalIndexer);
+
     // find max number of worksets
     std::size_t max_wksets = 0;
     for(std::size_t p=0;p<physicsBlocks.size();p++) {
@@ -587,9 +590,6 @@ namespace panzer_stk {
     }
     user_data_params.set<std::size_t>("Max Worksets",max_wksets);
     wkstContainer->clear(); 
-
-    // set the global indexer so the orientations are evaluated
-    wkstContainer->setGlobalIndexer(globalIndexer);
 
     // Setup lagrangian type coordinates
     /////////////////////////////////////////////////////////////
