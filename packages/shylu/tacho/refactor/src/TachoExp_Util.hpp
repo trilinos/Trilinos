@@ -1,6 +1,5 @@
 #ifndef __TACHOEXP_UTIL_HPP__
 #define __TACHOEXP_UTIL_HPP__
-//#define __KK__ 1
 
 // standard C includes
 #include <stdio.h>
@@ -224,7 +223,11 @@ namespace Tacho {
 
     struct Algo {
       struct External { enum : int { tag = 1001 }; };
-      struct SuperNodes { enum : int { tag = 1002 }; };
+      struct Internal { enum : int { tag = 1002 }; };
+
+      struct Workflow {
+        struct Serial { enum : int { tag = 2001 }; };
+      };
     };
 
     template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>

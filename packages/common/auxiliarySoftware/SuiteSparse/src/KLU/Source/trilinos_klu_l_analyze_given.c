@@ -2,7 +2,7 @@
 /* === klu_analyze_given ==================================================== */
 /* ========================================================================== */
 
-/* Given an input permutation P and Q, create the Symbolic object.  BTF can
+/* Given an input permutation P and Q, create the Symbolic object.  TRILINOS_BTF can
  * be done to modify the user's P and Q (does not perform the max transversal;
  * just finds the strongly-connected components). */
 
@@ -17,15 +17,15 @@
 
 /* Allocate Symbolic object, and check input matrix.  Not user callable. */
 
-KLU_symbolic *KLU_alloc_symbolic
+TRILINOS_KLU_symbolic *TRILINOS_KLU_alloc_symbolic
 (
     Int n,
     Int *Ap,
     Int *Ai,
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
-    KLU_symbolic *Symbolic ;
+    TRILINOS_KLU_symbolic *Symbolic ;
     Int *P, *Q, *R ;
     double *Lnz ;
     Int nz, i, j, p, pend ;
@@ -34,7 +34,7 @@ KLU_symbolic *KLU_alloc_symbolic
     {
 	return (NULL) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
 
     /* A is n-by-n, with n > 0.  Ap [0] = 0 and nz = Ap [n] >= 0 required.
      * Ap [j] <= Ap [j+1] must hold for all j = 0 to n-1.  Row indices in Ai
@@ -45,7 +45,7 @@ KLU_symbolic *KLU_alloc_symbolic
     if (n <= 0 || Ap == NULL || Ai == NULL)
     {
 	/* Ap and Ai must be present, and n must be > 0 */
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (NULL) ;
     }
 
@@ -53,7 +53,7 @@ KLU_symbolic *KLU_alloc_symbolic
     if (Ap [0] != 0 || nz < 0)
     {
 	/* nz must be >= 0 and Ap [0] must equal zero */
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (NULL) ;
     }
 
@@ -62,15 +62,15 @@ KLU_symbolic *KLU_alloc_symbolic
 	if (Ap [j] > Ap [j+1])
 	{
 	    /* column pointers must be non-decreasing */
-	    Common->status = KLU_INVALID ;
+	    Common->status = TRILINOS_KLU_INVALID ;
 	    return (NULL) ;
 	}
     }
-    P = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
-    if (Common->status < KLU_OK)
+    P = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
+    if (Common->status < TRILINOS_KLU_OK)
     {
 	/* out of memory */
-	Common->status = KLU_OUT_OF_MEMORY ;
+	Common->status = TRILINOS_KLU_OUT_OF_MEMORY ;
 	return (NULL) ;
     }
     for (i = 0 ; i < n ; i++)
@@ -86,8 +86,8 @@ KLU_symbolic *KLU_alloc_symbolic
 	    if (i < 0 || i >= n || P [i] == j)
 	    {
 		/* row index out of range, or duplicate entry */
-		KLU_free (P, n, sizeof (Int), Common) ;
-		Common->status = KLU_INVALID ;
+		TRILINOS_KLU_free (P, n, sizeof (Int), Common) ;
+		Common->status = TRILINOS_KLU_INVALID ;
 		return (NULL) ;
 	    }
 	    /* flag row i as appearing in column j */
@@ -99,18 +99,18 @@ KLU_symbolic *KLU_alloc_symbolic
     /* allocate the Symbolic object */
     /* ---------------------------------------------------------------------- */
 
-    Symbolic = (KLU_symbolic*) KLU_malloc (sizeof (KLU_symbolic), 1, Common) ;
-    if (Common->status < KLU_OK)
+    Symbolic = (TRILINOS_KLU_symbolic*) TRILINOS_KLU_malloc (sizeof (TRILINOS_KLU_symbolic), 1, Common) ;
+    if (Common->status < TRILINOS_KLU_OK)
     {
 	/* out of memory */
-	KLU_free (P, n, sizeof (Int), Common) ;
-	Common->status = KLU_OUT_OF_MEMORY ;
+	TRILINOS_KLU_free (P, n, sizeof (Int), Common) ;
+	Common->status = TRILINOS_KLU_OUT_OF_MEMORY ;
 	return (NULL) ;
     }
 
-    Q = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
-    R = (Int*) KLU_malloc (n+1, sizeof (Int), Common) ;
-    Lnz = (double*) KLU_malloc (n, sizeof (double), Common) ;
+    Q = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
+    R = (Int*) TRILINOS_KLU_malloc (n+1, sizeof (Int), Common) ;
+    Lnz = (double*) TRILINOS_KLU_malloc (n, sizeof (double), Common) ;
 
     Symbolic->n = n ;
     Symbolic->nz = nz ;
@@ -119,11 +119,11 @@ KLU_symbolic *KLU_alloc_symbolic
     Symbolic->R = R ;
     Symbolic->Lnz = Lnz ;
 
-    if (Common->status < KLU_OK)
+    if (Common->status < TRILINOS_KLU_OK)
     {
 	/* out of memory */
-	KLU_free_symbolic (&Symbolic, Common) ;
-	Common->status = KLU_OUT_OF_MEMORY ;
+	TRILINOS_KLU_free_symbolic (&Symbolic, Common) ;
+	Common->status = TRILINOS_KLU_OUT_OF_MEMORY ;
 	return (NULL) ;
     }
 
@@ -132,11 +132,11 @@ KLU_symbolic *KLU_alloc_symbolic
 
 
 /* ========================================================================== */
-/* === KLU_analyze_given ==================================================== */
+/* === TRILINOS_KLU_analyze_given ==================================================== */
 /* ========================================================================== */
 
-KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
-				       KLU_symbolic object if successful */
+TRILINOS_KLU_symbolic *TRILINOS_KLU_analyze_given	    /* returns NULL if error, or a valid
+				       TRILINOS_KLU_symbolic object if successful */
 (
     /* inputs, not modified */
     Int n,		/* A is n-by-n */
@@ -145,10 +145,10 @@ KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
     Int Puser [ ],	/* size n, user's row permutation (may be NULL) */
     Int Quser [ ],	/* size n, user's column permutation (may be NULL) */
     /* -------------------- */
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
-    KLU_symbolic *Symbolic ;
+    TRILINOS_KLU_symbolic *Symbolic ;
     double *Lnz ;
     Int nblocks, nz, block, maxblock, *P, *Q, *R, nzoff, p, pend, do_btf, k ;
 
@@ -156,7 +156,7 @@ KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
     /* determine if input matrix is valid, and get # of nonzeros */
     /* ---------------------------------------------------------------------- */
 
-    Symbolic = KLU_alloc_symbolic (n, Ap, Ai, Common) ;
+    Symbolic = TRILINOS_KLU_alloc_symbolic (n, Ap, Ai, Common) ;
     if (Symbolic == NULL)
     {
 	return (NULL) ;
@@ -187,7 +187,7 @@ KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
     }
 
     /* ---------------------------------------------------------------------- */
-    /* get the control parameters for BTF and ordering method */
+    /* get the control parameters for TRILINOS_BTF and ordering method */
     /* ---------------------------------------------------------------------- */
 
     do_btf = Common->btf ;
@@ -208,28 +208,28 @@ KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
 
 	Int *Pinv, *Work, *Bi, k1, k2, nk, oldcol ;
 
-	Work = (Int*) KLU_malloc (4*n, sizeof (Int), Common) ;
-	Pinv = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+	Work = (Int*) TRILINOS_KLU_malloc (4*n, sizeof (Int), Common) ;
+	Pinv = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
 	if (Puser != (Int *) NULL)
 	{
-	    Bi = (Int*) KLU_malloc (nz+1, sizeof (Int), Common) ;
+	    Bi = (Int*) TRILINOS_KLU_malloc (nz+1, sizeof (Int), Common) ;
 	}
 	else
 	{
 	    Bi = Ai ;
 	}
 
-	if (Common->status < KLU_OK)
+	if (Common->status < TRILINOS_KLU_OK)
 	{
 	    /* out of memory */
-	    KLU_free (Work, 4*n, sizeof (Int), Common) ;
-	    KLU_free (Pinv, n, sizeof (Int), Common) ;
+	    TRILINOS_KLU_free (Work, 4*n, sizeof (Int), Common) ;
+	    TRILINOS_KLU_free (Pinv, n, sizeof (Int), Common) ;
 	    if (Puser != (Int *) NULL)
 	    {
-		KLU_free (Bi, nz+1, sizeof (Int), Common) ;
+		TRILINOS_KLU_free (Bi, nz+1, sizeof (Int), Common) ;
 	    }
-	    KLU_free_symbolic (&Symbolic, Common) ;
-	    Common->status = KLU_OUT_OF_MEMORY ;
+	    TRILINOS_KLU_free_symbolic (&Symbolic, Common) ;
+	    Common->status = TRILINOS_KLU_OUT_OF_MEMORY ;
 	    return (NULL) ;
 	}
 
@@ -326,11 +326,11 @@ KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
 	/* free all workspace */
 	/* ------------------------------------------------------------------ */
 
-	KLU_free (Work, 4*n, sizeof (Int), Common) ;
-	KLU_free (Pinv, n, sizeof (Int), Common) ;
+	TRILINOS_KLU_free (Work, 4*n, sizeof (Int), Common) ;
+	TRILINOS_KLU_free (Pinv, n, sizeof (Int), Common) ;
 	if (Puser != (Int *) NULL)
 	{
-	    KLU_free (Bi, nz+1, sizeof (Int), Common) ;
+	    TRILINOS_KLU_free (Bi, nz+1, sizeof (Int), Common) ;
 	}
 
     }
@@ -338,7 +338,7 @@ KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
     {
 
 	/* ------------------------------------------------------------------ */
-	/* BTF not requested */
+	/* TRILINOS_BTF not requested */
 	/* ------------------------------------------------------------------ */
 
 	nzoff = 0 ;

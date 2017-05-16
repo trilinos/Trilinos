@@ -89,8 +89,9 @@ namespace MueLu {
       try {
         (*it)->Setup(level);
 
-      } catch(MueLu::Exceptions::RuntimeError e) {
-        std::string msg = "MueLu::MergedSmoother<>::Setup(): Runtime Error.\n One of the underlying smoother throwed the following exception: \n"; msg += e.what();
+      } catch(MueLu::Exceptions::RuntimeError& e) {
+        std::string msg = "MueLu::MergedSmoother<>::Setup(): Runtime Error.\n One of the underlying smoother throwed the following exception: \n";
+        msg += e.what();
         throw MueLu::Exceptions::RuntimeError(msg);
       }
     }
@@ -114,8 +115,9 @@ namespace MueLu {
         // For second and later iterations, initial guess = previous result
         InitialGuessIsZero = false;
 
-      } catch(MueLu::Exceptions::RuntimeError e) {
-        std::string msg = "MueLu::MergedSmoother<>::Apply(): Runtime Error. One of the underlying smoothers throws the following exception: \n"; msg += e.what();
+      } catch(MueLu::Exceptions::RuntimeError& e) {
+        std::string msg = "MueLu::MergedSmoother<>::Apply(): Runtime Error. One of the underlying smoothers throws the following exception: \n";
+        msg += e.what();
         throw MueLu::Exceptions::RuntimeError(msg);
       }
   }

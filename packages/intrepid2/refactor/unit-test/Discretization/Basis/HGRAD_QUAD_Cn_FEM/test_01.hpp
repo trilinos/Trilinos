@@ -139,9 +139,8 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-
-        ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
+        ordinal_type nthrow = 0, ncatch = 0;
         constexpr  ordinal_type order = 5;
         if (order <= maxOrder) {
           QuadBasisType quadBasis(order);
@@ -222,13 +221,13 @@ namespace Intrepid2 {
             // exception #17: incorrect 2nd dimension of output array (must equal spatial dimension)
             INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D3) );
           }
-#endif
-          if (nthrow != ncatch) {
-            errorFlag++;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
-          }
         }
+        if (nthrow != ncatch) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
+        }
+#endif
       } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';

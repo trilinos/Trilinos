@@ -786,7 +786,21 @@ void run_vps(
         f[iSample] = responses[iSample];
         its[iSample] = iterations[iSample];
       }
+      perf_total.uq_count += num_samples;
     });
+
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "Total samples = " << perf_total.uq_count << std::endl;
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = "
+              << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+  }
 }
 
 template< class Device , int VectorSize >

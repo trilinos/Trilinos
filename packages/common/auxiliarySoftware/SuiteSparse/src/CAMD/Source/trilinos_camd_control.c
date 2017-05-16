@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === CAMD_control ======================================================== */
+/* === TRILINOS_CAMD_control ======================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -16,7 +16,7 @@
 
 #include "trilinos_camd_internal.h"
 
-GLOBAL void CAMD_control
+GLOBAL void TRILINOS_CAMD_control
 (
     double Control [ ]
 )
@@ -26,18 +26,18 @@ GLOBAL void CAMD_control
 
     if (Control != (double *) NULL)
     {
-	alpha = Control [CAMD_DENSE] ;
-	aggressive = Control [CAMD_AGGRESSIVE] != 0 ;
+	alpha = Control [TRILINOS_CAMD_DENSE] ;
+	aggressive = Control [TRILINOS_CAMD_AGGRESSIVE] != 0 ;
     }
     else
     {
-	alpha = CAMD_DEFAULT_DENSE ;
-	aggressive = CAMD_DEFAULT_AGGRESSIVE ;
+	alpha = TRILINOS_CAMD_DEFAULT_DENSE ;
+	aggressive = TRILINOS_CAMD_DEFAULT_AGGRESSIVE ;
     }
 
     PRINTF (("\ncamd version %d.%d, %s:  approximate minimum degree ordering:\n"
-	"    dense row parameter: %g\n", CAMD_MAIN_VERSION, CAMD_SUB_VERSION,
-	CAMD_DATE, alpha)) ;
+	"    dense row parameter: %g\n", TRILINOS_CAMD_MAIN_VERSION, TRILINOS_CAMD_SUB_VERSION,
+	TRILINOS_CAMD_DATE, alpha)) ;
 
     if (alpha < 0)
     {

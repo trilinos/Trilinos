@@ -44,6 +44,9 @@
 #  include "Teuchos_Details_MpiCommRequest.hpp"
 #  include "Teuchos_Details_MpiTypeTraits.hpp"
 #endif // HAVE_TEUCHOS_MPI
+#ifdef HAVE_TEUCHOSCORE_CXX11
+#  include <memory>
+#endif
 
 namespace Teuchos {
 
@@ -99,7 +102,12 @@ reduceAllImpl (const Comm<int>& comm,
     if (serialComm == NULL) {
       // We don't know what kind of Comm we have, so fall back to the
       // most general implementation.
-      std::auto_ptr<ValueTypeReductionOp<int, T> > reductOp (createOp<int, T> (reductType));
+#ifdef HAVE_TEUCHOSCORE_CXX11
+      std::unique_ptr<ValueTypeReductionOp<int, T> >
+#else
+      std::auto_ptr<ValueTypeReductionOp<int, T> >
+#endif
+          reductOp (createOp<int, T> (reductType));
       reduceAll (comm, *reductOp, count, sendBuffer, globalReducts);
     }
     else { // It's a SerialComm; there is only 1 process, so just copy.

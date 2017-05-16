@@ -253,12 +253,14 @@ void Piro::TempusSolver<Scalar>::initialize(
 
     //Set observer
     Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
+    bool supports_x_dotdot = model->createInArgs().supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot);
+ 
     if (Teuchos::nonnull(piroObserver)) {
       //Get solutionHistory from integrator
       const RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
       const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
       //Create Tempus::IntegratorObserverBasic object
-      observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory, timeStepControl, piroObserver));
+      observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory, timeStepControl, piroObserver, supports_x_dotdot));
     }
 
     if (Teuchos::nonnull(observer)) {

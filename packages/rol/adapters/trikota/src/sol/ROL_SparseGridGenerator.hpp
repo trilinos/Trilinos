@@ -53,18 +53,19 @@ template<class Real>
 class SparseGridGenerator : public SampleGenerator<Real> {
 private:
   Teuchos::RCP<Quadrature<Real> > grid_;
+  Teuchos::RCP<SparseGridIndexSet<Real> > indices_;
   bool adaptive_;
   QuadratureInfo info_;
-  std::multimap<Real,std::vector<int> > activeIndex_;
-  std::set<std::vector<int> > oldIndex_;
   Real error_;
+  int npts_;
   std::vector<int> index_;
   std::vector<int> search_index_;
   int direction_;
 
-  bool isAdmissible(std::vector<int> &index, int direction);
-  void buildDiffRule(Quadrature<Real> &outRule, std::vector<int> &index);
-  bool checkMaxLevel(std::vector<int> &index);
+  Teuchos::RCP<Vector<Real> > mydiff_, diff_;
+  bool isVectorInit_;
+
+  void buildDiffRule(Quadrature<Real> &outRule, const std::vector<int> &index) const;
   void splitSamples(std::vector<std::vector<Real> > &mypts, std::vector<Real> &mywts);
   void updateSamples(Quadrature<Real> &grid);
 
@@ -83,6 +84,7 @@ public:
   Real computeError(std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x);
   void refine(void);
   void setSamples(bool inConstructor = false);
+  void printIndexSet(void) const;
 }; // class SparseGridGenerator
 
 } // namespace ROL

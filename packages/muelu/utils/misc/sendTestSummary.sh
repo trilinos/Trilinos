@@ -38,7 +38,16 @@ PATTERN="(Xpetra|MueLu)"
 #root of file to be emailed.  The correct suffix must be appended whenever you use this.
 OUTFILE="test-summary-${timeStamp}"
 MAILCOMMAND="/usr/sbin/sendmail"
-RECIPIENTS=( "jhu@sandia.gov" "tawiesn@sandia.gov" "csiefer@sandia.gov" "nvrober@sandia.gov" "lberge@sandia.gov" "rstumin@sandia.gov" "mmayr@sandia.gov" )
+RECIPIENTS=(
+"csiefer@sandia.gov"
+"jhu@sandia.gov"
+"lberge@sandia.gov"
+"mmayr@sandia.gov"
+"nvrober@sandia.gov"
+"prokopenkoav@ornl.gov"
+"rstumin@sandia.gov"
+"tawiesn@sandia.gov"
+)
 
 backupFile="cron_driver.log.$timeStamp"
 cp cron_driver.log $backupFile
@@ -273,22 +282,13 @@ END {
 ' $INFILE
 
 date2=`echo $(date) | sed "s/ /_/g"`
-cat ${OUTFILE}.txt | perl /home/jhu/bin/drakify-email.pl ${date2} > ${OUTFILE}.html
+cdashDate="$(date +%F)"
+cat ${OUTFILE}.txt | perl /home/jhu/bin/drakify-email.pl ${date2} ${cdashDate} > ${OUTFILE}.html
 
 if [[ $DEBUGMODE == 1 ]]; then
-  #mailCommand="cat $OUTFILE | mail -s \"geminga test summary, $(date)\" $person"
   mailCommand="cat ${OUTFILE}.html | ${MAILCOMMAND} ${RECIPIENTS[@]}"
   echo "mail command: $mailCommand"
   echo "Debug mode, mail not sent."
 else
-    #mail -s "geminga test summary, $(date)" -a ${OUTFILE}.html ${RECIPIENTS[@]} << EOT
-#EOT
-    #cat ${OUTFILE}.html | mail -s "geminga test summary, $(date)" ${RECIPIENTS[@]}
     cat ${OUTFILE}.html | ${MAILCOMMAND} ${RECIPIENTS[@]}
-#  for person in "${RECIPIENTS[@]}"
-#  do
-#    mail -s "geminga test summary, $(date)" -a ${OUTFILE}.html $person << EOT
-#EOT
-#    #cat $OUTFILE | mail -s "geminga test summary, $(date)" $person
-#  done
 fi

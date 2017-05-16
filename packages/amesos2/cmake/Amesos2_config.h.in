@@ -85,6 +85,9 @@
 /* Define if you want to build amesos2-klu2 */
 #cmakedefine HAVE_AMESOS2_KLU2
 
+/* Defined if you want to enable amesos2-umfpack */
+#cmakedefine HAVE_AMESOS2_UMFPACK
+
 /* Define if you want to build amesos2-superlu */
 #cmakedefine HAVE_AMESOS2_SUPERLU
 

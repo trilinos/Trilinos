@@ -52,6 +52,7 @@ Level 1
      Strided block id = -1   [default]
      Domain GID offsets = {0}   [default]
      
+    tentative: calculate qr = 1   [default]
     matrixmatrix: kernel params -> 
      [empty list]
     
@@ -78,7 +79,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2104640,node=0x233ac90,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x26fc050,node=0x283d850,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -155,6 +156,7 @@ Level 2
      Strided block id = -1   [default]
      Domain GID offsets = {0}   [default]
      
+    tentative: calculate qr = 1   [default]
     matrixmatrix: kernel params -> 
      [empty list]
     
@@ -181,7 +183,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x23f5230,node=0x2101540,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x28217e0,node=0x2821590,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -336,6 +338,7 @@ Level 2
      Strided block id = -1   [default]
      Domain GID offsets = {0}   [default]
      
+    tentative: calculate qr = 1   [default]
     matrixmatrix: kernel params -> 
      [empty list]
     
@@ -362,7 +365,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x23f5230,node=0x2101540,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x28217e0,node=0x2821590,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]

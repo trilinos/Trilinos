@@ -49,6 +49,29 @@
 // Currently always aligning
 #define STOKHOS_ALIGN_MEMORY 1
 
+// Uncomment this if you know all accesses will be aligned.  Tthis is true
+// if all Stokhos variables are coming from Kokkos allocations, new/delete
+// or stack variables.  However it may not be true for C allocations (e.g.,
+// through MPI).
+// #define STOKHOS_ASSUME_ALIGNED
+
+// ivdep is necessary to get the intel compiler to vectorize through
+// expresion template assignent operators
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#define STOKHOS_HAVE_PRAGMA_IVDEP
+#endif
+
+// unrolling appears to slow everything down
+#if 0 && ( defined(__INTEL_COMPILER) || defined(__CUDA_ARCH__) )
+#define STOKHOS_HAVE_PRAGMA_UNROLL
+#endif
+
+// assume all memory accesses are aligned appropriately for aligned
+// vector loads
+#if defined(STOKHOS_ALIGN_MEMORY) && defined(STOKHOS_ASSUME_ALIGNED) && defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#define STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#endif
+
 namespace Stokhos {
 
 //! Traits class encapsulting memory alignment
@@ -57,9 +80,9 @@ struct MemoryTraits {
 
   //! Bytes to which memory allocations are aligned
   static const unsigned Alignment = 8;
-  KOKKOS_INLINE_FUNCTION
 
   //! Allocate aligned memory of given size
+  KOKKOS_INLINE_FUNCTION
   static void* alloc(const size_t size) { return operator new(size); }
 
   //! Free memory allocated by alloc()

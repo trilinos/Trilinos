@@ -10,10 +10,10 @@
  * http://www.cise.ufl.edu/research/sparse
  * -------------------------------------------------------------------------- */
 
-/* CHOLMOD interface to the COLAMD ordering routine (version 2.4 or later).
+/* CHOLMOD interface to the TRILINOS_COLAMD ordering routine (version 2.4 or later).
  * Finds a permutation p such that the Cholesky factorization of PAA'P' is
- * sparser than AA' using colamd.  If the postorder input parameter is TRUE,
- * the column etree is found and postordered, and the colamd ordering is then
+ * sparser than AA' using trilinos_colamd.  If the postorder input parameter is TRUE,
+ * the column etree is found and postordered, and the trilinos_colamd ordering is then
  * combined with its postordering.  A must be unsymmetric.
  *
  * There can be no duplicate entries in f.
@@ -32,15 +32,15 @@
 #include "trilinos_colamd.h"
 #include "amesos_cholmod_cholesky.h"
 
-#if (!defined (COLAMD_VERSION) || (COLAMD_VERSION < COLAMD_VERSION_CODE (2,5)))
-#error "COLAMD v2.5 or later is required"
+#if (!defined (TRILINOS_COLAMD_VERSION) || (COLAMD_VERSION < TRILINOS_COLAMD_VERSION_CODE (2,5)))
+#error "TRILINOS_COLAMD v2.5 or later is required"
 #endif
 
 /* ========================================================================== */
 /* === cholmod_colamd ======================================================= */
 /* ========================================================================== */
 
-int CHOLMOD(colamd)
+int CHOLMOD(trilinos_colamd)
 (
     /* ---- input ---- */
     cholmod_sparse *A,	/* matrix to order */
@@ -53,7 +53,7 @@ int CHOLMOD(colamd)
     cholmod_common *Common
 )
 {
-    double knobs [COLAMD_KNOBS] ;
+    double knobs [TRILINOS_COLAMD_KNOBS] ;
     cholmod_sparse *C ;
     Int *NewPerm, *Parent, *Post, *Work2n ;
     Int k, nrow, ncol ;
@@ -116,17 +116,17 @@ int CHOLMOD(colamd)
     }
 
     /* ---------------------------------------------------------------------- */
-    /* allocate COLAMD workspace */
+    /* allocate TRILINOS_COLAMD workspace */
     /* ---------------------------------------------------------------------- */
 
-    /* colamd_printf is only available in colamd v2.4 or later */
+    /* colamd_printf is only available in trilinos_colamd v2.4 or later */
     trilinos_colamd_printf = Common->print_function ;
 
     C = CHOLMOD(allocate_sparse) (ncol, nrow, alen, TRUE, TRUE, 0,
 	    CHOLMOD_PATTERN, Common) ;
 
     /* ---------------------------------------------------------------------- */
-    /* copy (and transpose) the input matrix A into the colamd workspace */
+    /* copy (and transpose) the input matrix A into the trilinos_colamd workspace */
     /* ---------------------------------------------------------------------- */
 
     /* C = A (:,f)', which also packs A if needed. */
@@ -140,21 +140,21 @@ int CHOLMOD(colamd)
     /* get parameters */
     if (Common->current < 0 || Common->current >= CHOLMOD_MAXMETHODS)
     {
-	/* this is the CHOLMOD default, not the COLAMD default */
-	knobs [COLAMD_DENSE_ROW] = -1 ;
+	/* this is the CHOLMOD default, not the TRILINOS_COLAMD default */
+	knobs [TRILINOS_COLAMD_DENSE_ROW] = -1 ;
     }
     else
     {
 	/* get the knobs from the Common parameters */
-	knobs [COLAMD_DENSE_COL] = Common->method[Common->current].prune_dense ;
-	knobs [COLAMD_DENSE_ROW] = Common->method[Common->current].prune_dense2;
-	knobs [COLAMD_AGGRESSIVE] = Common->method[Common->current].aggressive ;
+	knobs [TRILINOS_COLAMD_DENSE_COL] = Common->method[Common->current].prune_dense ;
+	knobs [TRILINOS_COLAMD_DENSE_ROW] = Common->method[Common->current].prune_dense2;
+	knobs [TRILINOS_COLAMD_AGGRESSIVE] = Common->method[Common->current].aggressive ;
     }
 
     if (ok)
     {
 	Int *Cp ;
-	Int stats [COLAMD_STATS] ;
+	Int stats [TRILINOS_COLAMD_STATS] ;
 	Cp = C->p ;
 
 #ifdef LONG
@@ -163,8 +163,8 @@ int CHOLMOD(colamd)
 	trilinos_colamd (ncol, nrow, alen, C->i, Cp, knobs, stats) ;
 #endif
 
-	ok = stats [COLAMD_STATUS] ;
-	ok = (ok == COLAMD_OK || ok == COLAMD_OK_BUT_JUMBLED) ;
+	ok = stats [TRILINOS_COLAMD_STATUS] ;
+	ok = (ok == TRILINOS_COLAMD_OK || ok == TRILINOS_COLAMD_OK_BUT_JUMBLED) ;
 	/* permutation returned in C->p, if the ordering succeeded */
 	for (k = 0 ; k < nrow ; k++)
 	{
@@ -190,7 +190,7 @@ int CHOLMOD(colamd)
 	ok = ok && CHOLMOD(analyze_ordering) (A, CHOLMOD_COLAMD, Perm, fset,
 		fsize, Parent, Post, NULL, NULL, NULL, Common) ;
 
-	/* combine the colamd permutation with its postordering */
+	/* combine the trilinos_colamd permutation with its postordering */
 	if (ok)
 	{
 	    NewPerm = Common->Iwork ;		/* size nrow (i/i/l) */

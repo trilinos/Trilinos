@@ -143,8 +143,8 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
 
   try {
 
-    ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
+    ordinal_type nthrow = 0, ncatch = 0;
     constexpr ordinal_type order = 3;
     if(order < maxOrder) {
       HexBasisType hexBasis(order);
@@ -231,12 +231,12 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D3) );
       }
     }
-#endif
     if (nthrow != ncatch) {
       errorFlag++;
       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
     }
+#endif
   } catch (std::exception err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';

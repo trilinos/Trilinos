@@ -391,7 +391,11 @@ int Ifpack_SparseContainer<T>::Initialize()
   RHS_ = Teuchos::rcp( new Epetra_MultiVector(*Map_,NumVectors_) );
   GID_.Reshape(NumRows_,1);
 
+#if defined(HAVE_TEUCHOSCORE_CXX11)
   Matrix_ = Teuchos::rcp( new Epetra_CrsMatrix(Epetra_DataAccess::Copy,*Map_,0) );
+#else
+  Matrix_ = Teuchos::rcp( new Epetra_CrsMatrix(::Copy,*Map_,0) );
+#endif
 
   // create the inverse
   Inverse_ = Teuchos::rcp( new T(Matrix_.get()) );

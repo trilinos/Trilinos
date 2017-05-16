@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_post_tree ======================================================= */
+/* === TRILINOS_AMD_post_tree ======================================================= */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -16,7 +16,7 @@
 
 #include "trilinos_amd_internal.h"
 
-GLOBAL Int AMD_post_tree
+GLOBAL Int TRILINOS_AMD_post_tree
 (
     Int root,			/* root of the tree */
     Int k,			/* start numbering at k */
@@ -49,7 +49,7 @@ GLOBAL Int AMD_post_tree
     i = root ;
     for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
     {
-	k = AMD_post_tree (f, k, Child, Sibling, Order, Stack, nn) ;
+	k = TRILINOS_AMD_post_tree (f, k, Child, Sibling, Order, Stack, nn) ;
     }
     Order [i] = k++ ;
     return (k) ;
@@ -68,7 +68,7 @@ GLOBAL Int AMD_post_tree
 	/* get head of stack */
 	ASSERT (head < nn) ;
 	i = Stack [head] ;
-	AMD_DEBUG1 (("head of stack "ID" \n", i)) ;
+	TRILINOS_AMD_DEBUG1 (("head of stack "ID" \n", i)) ;
 	ASSERT (i >= 0 && i < nn) ;
 
 	if (Child [i] != EMPTY)
@@ -89,7 +89,7 @@ GLOBAL Int AMD_post_tree
 	    {
 		ASSERT (h > 0) ;
 		Stack [h--] = f ;
-		AMD_DEBUG1 (("push "ID" on stack\n", f)) ;
+		TRILINOS_AMD_DEBUG1 (("push "ID" on stack\n", f)) ;
 		ASSERT (f >= 0 && f < nn) ;
 	    }
 	    ASSERT (Stack [h] == i) ;
@@ -102,20 +102,20 @@ GLOBAL Int AMD_post_tree
 	    /* the children of i (if there were any) are already ordered */
 	    /* remove i from the stack and order it.  Front i is kth front */
 	    head-- ;
-	    AMD_DEBUG1 (("pop "ID" order "ID"\n", i, k)) ;
+	    TRILINOS_AMD_DEBUG1 (("pop "ID" order "ID"\n", i, k)) ;
 	    Order [i] = k++ ;
 	    ASSERT (k <= nn) ;
 	}
 
 #ifndef NDEBUG
-	AMD_DEBUG1 (("\nStack:")) ;
+	TRILINOS_AMD_DEBUG1 (("\nStack:")) ;
 	for (h = head ; h >= 0 ; h--)
 	{
 	    Int j = Stack [h] ;
-	    AMD_DEBUG1 ((" "ID, j)) ;
+	    TRILINOS_AMD_DEBUG1 ((" "ID, j)) ;
 	    ASSERT (j >= 0 && j < nn) ;
 	}
-	AMD_DEBUG1 (("\n\n")) ;
+	TRILINOS_AMD_DEBUG1 (("\n\n")) ;
 	ASSERT (head < nn) ;
 #endif
 

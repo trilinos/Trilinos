@@ -426,6 +426,7 @@ int main(int narg, char **arg)
     myIds.ZoltanDDTest();
   }
 
+#ifdef HAVE_TPETRA_INT_LONG_LONG
   // Test with non-contiguous long long IDs starting at 200
   {
     size_t nIds = 5;        // Number of IDs per processor
@@ -439,4 +440,5 @@ int main(int narg, char **arg)
 
     myIds.ZoltanDDTest();
   }
+#endif
 }

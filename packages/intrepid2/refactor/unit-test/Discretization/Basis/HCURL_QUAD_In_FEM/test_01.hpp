@@ -138,8 +138,8 @@ namespace Intrepid2 {
 
       try{
 
-        ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
+        ordinal_type nthrow = 0, ncatch = 0;
         if(5 <= maxOrder) {
           const ordinal_type order = 5;
           QuadBasisType quadBasis(order);
@@ -212,12 +212,12 @@ namespace Intrepid2 {
             }
           }
         }
-#endif
         if (nthrow != ncatch) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
+#endif
       } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';

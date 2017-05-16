@@ -1,9 +1,9 @@
 /* ========================================================================== */
-/* === KLU_solve ============================================================ */
+/* === TRILINOS_KLU_solve ============================================================ */
 /* ========================================================================== */
 
-/* Solve Ax=b using the symbolic and numeric objects from KLU_analyze
- * (or KLU_analyze_given) and KLU_factor.  Note that no iterative refinement is
+/* Solve Ax=b using the symbolic and numeric objects from TRILINOS_KLU_analyze
+ * (or TRILINOS_KLU_analyze_given) and TRILINOS_KLU_factor.  Note that no iterative refinement is
  * performed.  Uses Numeric->Xwork as workspace (undefined on input and output),
  * of size 4n Entry's (note that columns 2 to 4 of Xwork overlap with
  * Numeric->Iwork).
@@ -14,11 +14,11 @@
 
 #include "trilinos_klu_internal.h"
 
-Int KLU_solve
+Int TRILINOS_KLU_solve
 (
     /* inputs, not modified */
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
+    TRILINOS_KLU_symbolic *Symbolic,
+    TRILINOS_KLU_numeric *Numeric,
     Int d,		    /* leading dimension of B */
     Int nrhs,		    /* number of right-hand-sides */
 
@@ -26,7 +26,7 @@ Int KLU_solve
     double B [ ],	    /* size n*nrhs, in column-oriented form, with
 			     * leading dimension d. */
     /* --------------- */
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     Entry x [4], offik, s ;
@@ -47,10 +47,10 @@ Int KLU_solve
     if (Numeric == NULL || Symbolic == NULL || d < Symbolic->n || nrhs < 0 ||
 	B == NULL)
     {
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (FALSE) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
 
     /* ---------------------------------------------------------------------- */
     /* get the contents of the Symbolic object */
@@ -82,7 +82,7 @@ Int KLU_solve
     Rs = Numeric->Rs ;
     X = (Entry *) Numeric->Xwork ;
 
-    ASSERT (KLU_valid (n, Offp, Offi, Offx)) ;
+    ASSERT (TRILINOS_KLU_valid (n, Offp, Offi, Offx)) ;
 
     /* ---------------------------------------------------------------------- */
     /* solve in chunks of 4 columns at a time */
@@ -252,9 +252,9 @@ Int KLU_solve
 	    }
 	    else
 	    {
-		KLU_lsolve (nk, Lip + k1, Llen + k1, LUbx [block], nr,
+		TRILINOS_KLU_lsolve (nk, Lip + k1, Llen + k1, LUbx [block], nr,
 			X + nr*k1) ;
-		KLU_usolve (nk, Uip + k1, Ulen + k1, LUbx [block],
+		TRILINOS_KLU_usolve (nk, Uip + k1, Ulen + k1, LUbx [block],
 			Udiag + k1, nr, X + nr*k1) ;
 	    }
 

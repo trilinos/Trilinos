@@ -1,9 +1,9 @@
 /* ========================================================================== */
-/* === KLU_factor =========================================================== */
+/* === TRILINOS_KLU_factor =========================================================== */
 /* ========================================================================== */
 
-/* Factor the matrix, after ordering and analyzing it with KLU_analyze
- * or KLU_analyze_given.
+/* Factor the matrix, after ordering and analyzing it with TRILINOS_KLU_analyze
+ * or TRILINOS_KLU_analyze_given.
  */
 
 /* This file should make the long int version of KLU */
@@ -21,11 +21,11 @@ static void factor2
     Int Ap [ ],		/* size n+1, column pointers */
     Int Ai [ ],		/* size nz, row indices */
     Entry Ax [ ],
-    KLU_symbolic *Symbolic,
+    TRILINOS_KLU_symbolic *Symbolic,
 
     /* inputs, modified on output: */
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    TRILINOS_KLU_numeric *Numeric,
+    TRILINOS_KLU_common *Common
 )
 {
     double lsize ;
@@ -66,7 +66,7 @@ static void factor2
     Rs = Numeric->Rs ;
     Pinv = Numeric->Pinv ;
     X = (Entry *) Numeric->Xwork ;		/* X is of size n */
-    Iwork = Numeric->Iwork ;			/* 5*maxblock for KLU_factor */
+    Iwork = Numeric->Iwork ;			/* 5*maxblock for TRILINOS_KLU_factor */
 						/* 1*maxblock for Pblock */
     Pblock = Iwork + 5*((size_t) Symbolic->maxblock) ;
     Common->nrealloc = 0 ;
@@ -76,7 +76,7 @@ static void factor2
 
     /* compute the inverse of P from symbolic analysis.  Will be updated to
      * become the inverse of the numerical factorization when the factorization
-     * is done, for use in KLU_refactor */
+     * is done, for use in TRILINOS_KLU_refactor */
 #ifndef NDEBUG
     for (k = 0 ; k < n ; k++)
     {
@@ -106,12 +106,12 @@ static void factor2
 	/* use Pnum as workspace. NOTE: scale factors are not yet permuted
 	 * according to the final pivot row ordering, so Rs [oldrow] is the
 	 * scale factor for A (oldrow,:), for the user's matrix A.  Pnum is
-	 * used as workspace in KLU_scale.  When the factorization is done,
+	 * used as workspace in TRILINOS_KLU_scale.  When the factorization is done,
 	 * the scale factors are permuted according to the final pivot row
 	 * permutation, so that Rs [k] is the scale factor for the kth row of
 	 * A(p,q) where p and q are the final row and column permutations. */
-	KLU_scale (scale, n, Ap, Ai, (double *) Ax, Rs, Pnum, Common) ;
-	if (Common->status < KLU_OK)
+	TRILINOS_KLU_scale (scale, n, Ap, Ai, (double *) Ax, Rs, Pnum, Common) ;
+	if (Common->status < TRILINOS_KLU_OK)
 	{
 	    /* matrix is invalid */
 	    return ;
@@ -208,7 +208,7 @@ static void factor2
 	    if (IS_ZERO (s))
 	    {
 		/* singular singleton */
-		Common->status = KLU_SINGULAR ;
+		Common->status = TRILINOS_KLU_SINGULAR ;
 		Common->numerical_rank = k1 ;
 		Common->singular_col = oldcol ;
 		if (Common->halt_if_singular)
@@ -232,7 +232,7 @@ static void factor2
 
 	    if (Lnz [block] < 0)
 	    {
-		/* COLAMD was used - no estimate of fill-in */
+		/* TRILINOS_COLAMD was used - no estimate of fill-in */
 		/* use 10 times the nnz in A, plus n */
 		lsize = -(Common->initmem) ;
 	    }
@@ -242,22 +242,22 @@ static void factor2
 	    }
 
 	    /* allocates 1 arrays: LUbx [block] */
-	    Numeric->LUsize [block] = KLU_kernel_factor (nk, Ap, Ai, Ax, Q,
+	    Numeric->LUsize [block] = TRILINOS_KLU_kernel_factor (nk, Ap, Ai, Ax, Q,
 		    lsize, &LUbx [block], Udiag + k1, Llen + k1, Ulen + k1,
 		    Lip + k1, Uip + k1, Pblock, &lnz_block, &unz_block,
 		    X, Iwork, k1, Pinv, Rs, Offp, Offi, Offx, Common) ;
 
-	    if (Common->status < KLU_OK ||
-	       (Common->status == KLU_SINGULAR && Common->halt_if_singular))
+	    if (Common->status < TRILINOS_KLU_OK ||
+	       (Common->status == TRILINOS_KLU_SINGULAR && Common->halt_if_singular))
 	    {
 		/* out of memory, invalid inputs, or singular */
 		return ;
 	    }
 
 	    PRINTF (("\n----------------------- L %d:\n", block)) ;
-	    ASSERT (KLU_valid_LU (nk, TRUE, Lip+k1, Llen+k1, LUbx [block])) ;
+	    ASSERT (TRILINOS_KLU_valid_LU (nk, TRUE, Lip+k1, Llen+k1, LUbx [block])) ;
 	    PRINTF (("\n----------------------- U %d:\n", block)) ;
-	    ASSERT (KLU_valid_LU (nk, FALSE, Uip+k1, Ulen+k1, LUbx [block])) ;
+	    ASSERT (TRILINOS_KLU_valid_LU (nk, FALSE, Uip+k1, Ulen+k1, LUbx [block])) ;
 
 	    /* -------------------------------------------------------------- */
 	    /* get statistics */
@@ -293,7 +293,7 @@ static void factor2
     }
     ASSERT (nzoff == Offp [n]) ;
     PRINTF (("\n------------------- Off diagonal entries:\n")) ;
-    ASSERT (KLU_valid (n, Offp, Offi, Offx)) ;
+    ASSERT (TRILINOS_KLU_valid (n, Offp, Offi, Offx)) ;
 
     Numeric->lnz = lnz ;
     Numeric->unz = unz ;
@@ -330,7 +330,7 @@ static void factor2
     }
 
     PRINTF (("\n------------------- Off diagonal entries, old:\n")) ;
-    ASSERT (KLU_valid (n, Offp, Offi, Offx)) ;
+    ASSERT (TRILINOS_KLU_valid (n, Offp, Offi, Offx)) ;
 
     /* apply the pivot row permutations to the off-diagonal entries */
     for (p = 0 ; p < nzoff ; p++)
@@ -340,18 +340,18 @@ static void factor2
     }
 
     PRINTF (("\n------------------- Off diagonal entries, new:\n")) ;
-    ASSERT (KLU_valid (n, Offp, Offi, Offx)) ;
+    ASSERT (TRILINOS_KLU_valid (n, Offp, Offi, Offx)) ;
 
 #ifndef NDEBUG
     {
 	PRINTF (("\n ############# KLU_BTF_FACTOR done, nblocks %d\n",nblocks));
 	Entry ss, *Udiag = Numeric->Udiag ;
-	for (block = 0 ; block < nblocks && Common->status == KLU_OK ; block++)
+	for (block = 0 ; block < nblocks && Common->status == TRILINOS_KLU_OK ; block++)
 	{
 	    k1 = R [block] ;
 	    k2 = R [block+1] ;
 	    nk = k2 - k1 ;
-	    PRINTF (("\n======================KLU_factor output: k1 %d k2 %d nk %d\n",k1,k2,nk)) ;
+	    PRINTF (("\n======================TRILINOS_KLU_factor output: k1 %d k2 %d nk %d\n",k1,k2,nk)) ;
 	    if (nk == 1)
 	    {
 		PRINTF (("singleton  ")) ;
@@ -367,11 +367,11 @@ static void factor2
 		Llen = Numeric->Llen + k1 ;
 		LU = (Unit *) Numeric->LUbx [block] ;
 		PRINTF (("\n---- L block %d\n", block));
-		ASSERT (KLU_valid_LU (nk, TRUE, Lip, Llen, LU)) ;
+		ASSERT (TRILINOS_KLU_valid_LU (nk, TRUE, Lip, Llen, LU)) ;
 		Uip = Numeric->Uip + k1 ;
 		Ulen = Numeric->Ulen + k1 ;
 		PRINTF (("\n---- U block %d\n", block)) ;
-		ASSERT (KLU_valid_LU (nk, FALSE, Uip, Ulen, LU)) ;
+		ASSERT (TRILINOS_KLU_valid_LU (nk, FALSE, Uip, Ulen, LU)) ;
 	    }
 	}
     }
@@ -381,31 +381,31 @@ static void factor2
 
 
 /* ========================================================================== */
-/* === KLU_factor =========================================================== */
+/* === TRILINOS_KLU_factor =========================================================== */
 /* ========================================================================== */
 
-KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
-				   KLU_numeric object if successful */
+TRILINOS_KLU_numeric *TRILINOS_KLU_factor		/* returns NULL if error, or a valid
+				   TRILINOS_KLU_numeric object if successful */
 (
     /* --- inputs --- */
     Int Ap [ ],		/* size n+1, column pointers */
     Int Ai [ ],		/* size nz, row indices */
     double Ax [ ],
-    KLU_symbolic *Symbolic,
+    TRILINOS_KLU_symbolic *Symbolic,
     /* -------------- */
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     Int n, nzoff, nblocks, maxblock, k, ok = TRUE ;
     Int *R ;
-    KLU_numeric *Numeric ;
+    TRILINOS_KLU_numeric *Numeric ;
     size_t n1, nzoff1, s, b6, n3 ;
 
     if (Common == NULL)
     {
 	return (NULL) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
     Common->numerical_rank = EMPTY ;
     Common->singular_col = EMPTY ;
 
@@ -416,7 +416,7 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
     /* check for a valid Symbolic object */
     if (Symbolic == NULL)
     {
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (NULL) ;
     }
 
@@ -425,7 +425,7 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
     nblocks = Symbolic->nblocks ;
     maxblock = Symbolic->maxblock ;
     R = Symbolic->R ;
-    PRINTF (("KLU_factor:  n %d nzoff %d nblocks %d maxblock %d\n",
+    PRINTF (("TRILINOS_KLU_factor:  n %d nzoff %d nblocks %d maxblock %d\n",
 	n, nzoff, nblocks, maxblock)) ;
 
     /* ---------------------------------------------------------------------- */
@@ -442,33 +442,33 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
     /* allocate the Numeric object  */
     /* ---------------------------------------------------------------------- */
 
-    /* this will not cause size_t overflow (already checked by KLU_symbolic) */
+    /* this will not cause size_t overflow (already checked by TRILINOS_KLU_symbolic) */
     n1 = ((size_t) n) + 1 ;
     nzoff1 = ((size_t) nzoff) + 1 ;
 
-    Numeric = (KLU_numeric*) KLU_malloc (sizeof (KLU_numeric), 1, Common) ;
-    if (Common->status < KLU_OK)
+    Numeric = (TRILINOS_KLU_numeric*) TRILINOS_KLU_malloc (sizeof (TRILINOS_KLU_numeric), 1, Common) ;
+    if (Common->status < TRILINOS_KLU_OK)
     {
 	/* out of memory */
-	Common->status = KLU_OUT_OF_MEMORY ;
+	Common->status = TRILINOS_KLU_OUT_OF_MEMORY ;
 	return (NULL) ;
     }
     Numeric->n = n ;
     Numeric->nblocks = nblocks ;
     Numeric->nzoff = nzoff ;
-    Numeric->Pnum = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Offp = (Int*) KLU_malloc (n1, sizeof (Int), Common) ;
-    Numeric->Offi = (Int*) KLU_malloc (nzoff1, sizeof (Int), Common) ;
-    Numeric->Offx = (Entry*) KLU_malloc (nzoff1, sizeof (Entry), Common) ;
+    Numeric->Pnum = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Offp = (Int*) TRILINOS_KLU_malloc (n1, sizeof (Int), Common) ;
+    Numeric->Offi = (Int*) TRILINOS_KLU_malloc (nzoff1, sizeof (Int), Common) ;
+    Numeric->Offx = (Entry*) TRILINOS_KLU_malloc (nzoff1, sizeof (Entry), Common) ;
 
-    Numeric->Lip  = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Uip  = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Llen = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Ulen = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Lip  = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Uip  = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Llen = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Ulen = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
 
-    Numeric->LUsize = (size_t*) KLU_malloc (nblocks, sizeof (size_t), Common) ;
+    Numeric->LUsize = (size_t*) TRILINOS_KLU_malloc (nblocks, sizeof (size_t), Common) ;
 
-    Numeric->LUbx = (void**) KLU_malloc (nblocks, sizeof (Unit *), Common) ;
+    Numeric->LUbx = (void**) TRILINOS_KLU_malloc (nblocks, sizeof (Unit *), Common) ;
     if (Numeric->LUbx != NULL)
     {
 	for (k = 0 ; k < nblocks ; k++)
@@ -477,11 +477,11 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
 	}
     }
 
-    Numeric->Udiag = KLU_malloc (n, sizeof (Entry), Common) ;
+    Numeric->Udiag = TRILINOS_KLU_malloc (n, sizeof (Entry), Common) ;
 
     if (Common->scale > 0)
     {
-	Numeric->Rs = (double*) KLU_malloc (n, sizeof (double), Common) ;
+	Numeric->Rs = (double*) TRILINOS_KLU_malloc (n, sizeof (double), Common) ;
     }
     else
     {
@@ -489,27 +489,27 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
 	Numeric->Rs = NULL ;
     }
 
-    Numeric->Pinv = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Pinv = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
 
     /* allocate permanent workspace for factorization and solve.  Note that the
      * solver will use an Xwork of size 4n, whereas the factorization codes use
-     * an Xwork of size n and integer space (Iwork) of size 6n. KLU_condest
+     * an Xwork of size n and integer space (Iwork) of size 6n. TRILINOS_KLU_condest
      * uses an Xwork of size 2n.  Total size is:
      *
      *    n*sizeof(Entry) + max (6*maxblock*sizeof(Int), 3*n*sizeof(Entry))
      */
-    s = KLU_mult_size_t (n, sizeof (Entry), &ok) ;
-    n3 = KLU_mult_size_t (n, 3 * sizeof (Entry), &ok) ;
-    b6 = KLU_mult_size_t (maxblock, 6 * sizeof (Int), &ok) ;
-    Numeric->worksize = KLU_add_size_t (s, MAX (n3, b6), &ok) ;
-    Numeric->Work = KLU_malloc (Numeric->worksize, 1, Common) ;
+    s = TRILINOS_KLU_mult_size_t (n, sizeof (Entry), &ok) ;
+    n3 = TRILINOS_KLU_mult_size_t (n, 3 * sizeof (Entry), &ok) ;
+    b6 = TRILINOS_KLU_mult_size_t (maxblock, 6 * sizeof (Int), &ok) ;
+    Numeric->worksize = TRILINOS_KLU_add_size_t (s, MAX (n3, b6), &ok) ;
+    Numeric->Work = TRILINOS_KLU_malloc (Numeric->worksize, 1, Common) ;
     Numeric->Xwork = Numeric->Work ;
     Numeric->Iwork = (Int *) ((Entry *) Numeric->Xwork + n) ;
-    if (!ok || Common->status < KLU_OK)
+    if (!ok || Common->status < TRILINOS_KLU_OK)
     {
 	/* out of memory or problem too large */
-	Common->status = ok ? KLU_OUT_OF_MEMORY : KLU_TOO_LARGE ;
-	KLU_free_numeric (&Numeric, Common) ;
+	Common->status = ok ? TRILINOS_KLU_OUT_OF_MEMORY : TRILINOS_KLU_TOO_LARGE ;
+	TRILINOS_KLU_free_numeric (&Numeric, Common) ;
 	return (NULL) ;
     }
 
@@ -523,22 +523,22 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
     /* return or free the Numeric object */
     /* ---------------------------------------------------------------------- */
 
-    if (Common->status < KLU_OK)
+    if (Common->status < TRILINOS_KLU_OK)
     {
 	/* out of memory or inputs invalid */
-	KLU_free_numeric (&Numeric, Common) ;
+	TRILINOS_KLU_free_numeric (&Numeric, Common) ;
     }
-    else if (Common->status == KLU_SINGULAR)
+    else if (Common->status == TRILINOS_KLU_SINGULAR)
     {
 	if (Common->halt_if_singular)
 	{
 	    /* Matrix is singular, and the Numeric object is only partially
 	     * defined because we halted early.  This is the default case for
 	     * a singular matrix. */
-	    KLU_free_numeric (&Numeric, Common) ;
+	    TRILINOS_KLU_free_numeric (&Numeric, Common) ;
 	}
     }
-    else if (Common->status == KLU_OK)
+    else if (Common->status == TRILINOS_KLU_OK)
     {
 	/* successful non-singular factorization */
 	Common->numerical_rank = n ;

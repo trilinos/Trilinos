@@ -35,10 +35,12 @@ public:
 };
 
 template <typename VectorType>
+inline
 typename VectorToViewTraits<VectorType>::View
 getView(typename VectorToViewTraits<VectorType>::ThyraVector & v);
  
 template < >
+inline
 typename VectorToViewTraits<Epetra_Vector>::View
 getView<Epetra_Vector>(typename VectorToViewTraits<Epetra_Vector>::ThyraVector & v)
 {
@@ -50,6 +52,7 @@ getView<Epetra_Vector>(typename VectorToViewTraits<Epetra_Vector>::ThyraVector &
 }
 
 template < >
+inline
 typename VectorToViewTraits<const Epetra_Vector>::View
 getView<const Epetra_Vector>(typename VectorToViewTraits<const Epetra_Vector>::ThyraVector & v)
 {

@@ -295,10 +295,38 @@ namespace MueLuTests {
     TEST_EQUALITY(mm.get(), map.get());
   } // InputDataMap
 
+  // helper class for testing functionality of FineLevelInputDataFactory
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class FineLevelInputDataFactoryTester {
+#   include "MueLu_UseShortNames.hpp"
+  public:
+    void test_testfunc(const FineLevelInputDataFactory& fac) {
+      std::cout << "FineLevelInputDataFactoryTester" << std::endl;
+      fac.test();
+    }
+  };
+
+  // unit test just for demonstration purposes
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FineLevelInputDataFactory, TestFunc, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    FineLevelInputDataFactory fac;
+
+    FineLevelInputDataFactoryTester<Scalar,LocalOrdinal,GlobalOrdinal,Node> tester;
+
+    tester.test_testfunc(fac);
+
+    //TEST_EQUALITY(AA.get(), A.get());
+  } // TestFunc
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FineLevelInputDataFactory, InputData, SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FineLevelInputDataFactory, InputDataMap, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FineLevelInputDataFactory, TestFunc, SC, LO, GO, Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 }

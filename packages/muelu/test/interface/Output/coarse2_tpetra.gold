@@ -55,6 +55,7 @@ Level 1
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -132,6 +133,7 @@ Level 2
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -209,6 +211,7 @@ Level 3
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -286,6 +289,7 @@ Level 4
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -363,6 +367,7 @@ Level 5
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   

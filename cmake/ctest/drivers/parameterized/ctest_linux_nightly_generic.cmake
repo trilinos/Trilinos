@@ -71,7 +71,16 @@ IF(COMM_TYPE STREQUAL MPI)
 ENDIF()
 SET(BUILD_DIR_NAME ${COMM_TYPE}_${BUILD_TYPE}_${COMPILER_DIR}_${COMM_DIR}_DEV)
 SET(CTEST_PARALLEL_LEVEL 16)
-SET(CTEST_TEST_TYPE $ENV{JENKINS_JOB_TYPE})
+
+# Note: CTEST_TEST_TYPE drives some side-effects in Tribits that should be 
+#       taken into account.  If CTEST_TEST_TYPE is Experimental, Tribits will
+#       override Trilinos_TRACK and *always* assign results to the Experimental
+#       track on CDash.  Also, Tribits does different things based on CTEST_TEST_TYPE
+#       being one of the 3 blessed types (Nightly, Continuous, Experimental), so it's
+#       best to keep CTEST_TEST_TYPE one of these values.  
+SET(CTEST_TEST_TYPE Nightly)
+SET(Trilinos_TRACK  $ENV{JENKINS_JOB_TYPE})
+
 SET(CTEST_TEST_TIMEOUT 900)
 
 

@@ -352,7 +352,7 @@ Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModel
      Vp_StV(v.ptr(), 0.5 * delta_t, *a);
 
      // Observe completed time step
-     if (observer != Teuchos::null) observer->observeSolution(*x, t);
+     if (observer != Teuchos::null) observer->observeSolution(*x, *v, *a, t);
 
    }
 

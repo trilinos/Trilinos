@@ -2558,12 +2558,13 @@ namespace Tpetra {
 
     if (k_values1D_.dimension_0 () != 0 && rowInfo.allocSize > 0) {
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        rowInfo.offset1D + rowInfo.allocSize > k_values1D_.dimension_0 (),
-        std::range_error, "Tpetra::CrsMatrix::getRowView: Invalid access "
-        "to 1-D storage of values." << std::endl << "rowInfo.offset1D (" <<
-        rowInfo.offset1D << ") + rowInfo.allocSize (" << rowInfo.allocSize <<
-        ") > k_values1D_.dimension_0() (" << k_values1D_.dimension_0 () << ").");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (rowInfo.offset1D + rowInfo.allocSize > this->k_values1D_.dimension_0 (),
+         std::range_error, "Tpetra::CrsMatrix::getRowView: Invalid access "
+         "to 1-D storage of values.  rowInfo.offset1D ("
+         << rowInfo.offset1D << ") + rowInfo.allocSize (" << rowInfo.allocSize
+         << ") > this->k_values1D_.dimension_0() ("
+         << this->k_values1D_.dimension_0 () << ").");
 #endif // HAVE_TPETRA_DEBUG
       range_type range (rowInfo.offset1D, rowInfo.offset1D + rowInfo.allocSize);
       // mfh 23 Nov 2015: Don't just create a subview of k_values1D_
@@ -2572,10 +2573,13 @@ namespace Tpetra {
       // reference count, which costs performance in a measurable way.
       // Instead, we create a temporary unmanaged view, then create
       // the subview from that.
-      return Kokkos::subview (subview_type (k_values1D_), range);
+      return Kokkos::subview (subview_type (this->k_values1D_), range);
     }
-    else if (values2D_ != Teuchos::null) {
-      Teuchos::ArrayView<const ST> rowView = values2D_[rowInfo.localRow] ();
+    else if (this->values2D_ != Teuchos::null) {
+      // Use a reference, so that I don't touch the Teuchos::ArrayView
+      // reference count in a debug build.  (It has no reference count
+      // in a release build.)  This ensures thread safety.
+      auto& rowView = this->values2D_[rowInfo.localRow];
       return subview_type (rowView.getRawPtr (), rowView.size ());
     }
     else {
@@ -2598,12 +2602,13 @@ namespace Tpetra {
 
     if (k_values1D_.dimension_0 () != 0 && rowInfo.allocSize > 0) {
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        rowInfo.offset1D + rowInfo.allocSize > k_values1D_.dimension_0 (),
-        std::range_error, "Tpetra::CrsMatrix::getRowViewNonConst: Invalid access "
-        "to 1-D storage of values." << std::endl << "rowInfo.offset1D (" <<
-        rowInfo.offset1D << ") + rowInfo.allocSize (" << rowInfo.allocSize <<
-        ") > k_values1D_.dimension_0() (" << k_values1D_.dimension_0 () << ").");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (rowInfo.offset1D + rowInfo.allocSize > this->k_values1D_.dimension_0 (),
+         std::range_error, "Tpetra::CrsMatrix::getRowViewNonConst: Invalid "
+         "access to 1-D storage of values.  rowInfo.offset1D ("
+         << rowInfo.offset1D << ") + rowInfo.allocSize (" << rowInfo.allocSize
+         << ") > this->k_values1D_.dimension_0() ("
+         << this->k_values1D_.dimension_0 () << ").");
 #endif // HAVE_TPETRA_DEBUG
       range_type range (rowInfo.offset1D, rowInfo.offset1D + rowInfo.allocSize);
       // mfh 23 Nov 2015: Don't just create a subview of k_values1D_
@@ -2612,10 +2617,13 @@ namespace Tpetra {
       // reference count, which costs performance in a measurable way.
       // Instead, we create a temporary unmanaged view, then create
       // the subview from that.
-      return Kokkos::subview (subview_type (k_values1D_), range);
+      return Kokkos::subview (subview_type (this->k_values1D_), range);
     }
-    else if (values2D_ != Teuchos::null) {
-      Teuchos::ArrayView<ST> rowView = values2D_[rowInfo.localRow] ();
+    else if (this->values2D_ != Teuchos::null) {
+      // Use a reference, so that I don't touch the Teuchos::ArrayView
+      // reference count in a debug build.  (It has no reference count
+      // in a release build.)  This ensures thread safety.
+      auto& rowView = this->values2D_[rowInfo.localRow];
       return subview_type (rowView.getRawPtr (), rowView.size ());
     }
     else {
@@ -3623,8 +3631,13 @@ namespace Tpetra {
         static_cast<LocalOrdinal> (theGraph.getNodeNumRows ());
       for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
         const RowInfo rowInfo = theGraph.getRowInfo (row);
-        Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
-        theGraph.template sortRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
+        auto lclColInds = theGraph.getLocalKokkosRowViewNonConst (rowInfo);
+        auto vals = this->getRowViewNonConst (rowInfo);
+        // FIXME (mfh 09 May 2017) This assumes CUDA UVM, at least for
+        // lclColInds, if not also for values.
+        sort2 (lclColInds.ptr_on_device (),
+               lclColInds.ptr_on_device () + rowInfo.numEntries,
+               vals.ptr_on_device ());
       }
       theGraph.indicesAreSorted_ = true;
     }
@@ -4168,20 +4181,89 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   sortEntries ()
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      isStaticGraph (), std::runtime_error, "Tpetra::CrsMatrix::sortEntries: "
-      "Cannot sort with static graph.");
-    if (! myGraph_->isSorted ()) {
-      const LocalOrdinal lclNumRows =
-        static_cast<LocalOrdinal> (this->getNodeNumRows ());
-      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
-        const RowInfo rowInfo = myGraph_->getRowInfo (row);
-        Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
-        myGraph_->template sortRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
-      }
+    typedef LocalOrdinal LO;
+    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+      host_execution_space;
+    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+    const char tfecfFuncName[] = "sortEntries: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isStaticGraph (), std::runtime_error, "Cannot sort with static graph.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (myGraph_.is_null (), std::logic_error, "myGraph_ is null, but this "
+       "matrix claims ! isStaticGraph().  Please report this bug to the "
+       "Tpetra developers.");
+
+    crs_graph_type& graph = * (this->myGraph_);
+    const bool sorted = graph.isSorted ();
+
+    if (! sorted) {
+      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
+      // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
+      Kokkos::parallel_for (range_type (0, lclNumRows),
+        [this, &graph] (const LO& lclRow) {
+          const RowInfo rowInfo = graph.getRowInfo (lclRow);
+          auto lclColInds = graph.getLocalKokkosRowViewNonConst (rowInfo);
+          auto vals = this->getRowViewNonConst (rowInfo);
+          // FIXME (mfh 09 May 2017) This assumes CUDA UVM, at least
+          // for lclColInds, if not also for values.
+          sort2 (lclColInds.ptr_on_device (),
+                 lclColInds.ptr_on_device () + rowInfo.numEntries,
+                 vals.ptr_on_device ());
+        });
       // we just sorted every row
-      myGraph_->indicesAreSorted_ = true;
+      graph.indicesAreSorted_ = true;
     }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  size_t
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  mergeRowIndicesAndValues (crs_graph_type& graph,
+                            const RowInfo& rowInfo)
+  {
+    const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (isStorageOptimized(), std::logic_error, "It is invalid to call this "
+       "method if the graph's storage has already been optimized.  Please "
+       "report this bug to the Tpetra developers.");
+
+    auto rowValues = this->getRowViewNonConst (rowInfo);
+    typedef typename std::decay<decltype (rowValues[0]) >::type value_type;
+    value_type* rowValueIter = rowValues.data ();
+    auto inds_view = graph.getLocalKokkosRowViewNonConst (rowInfo);
+
+    // beg,end define a half-exclusive interval over which to iterate.
+    LocalOrdinal* beg = inds_view.data ();
+    LocalOrdinal* end = inds_view.data () + rowInfo.numEntries;
+    LocalOrdinal* newend = beg;
+    if (beg != end) {
+      LocalOrdinal* cur = beg + 1;
+      value_type* vcur = rowValueIter + 1;
+      value_type* vend = rowValueIter;
+      cur = beg+1;
+      while (cur != end) {
+        if (*cur != *newend) {
+          // new entry; save it
+          ++newend;
+          ++vend;
+          (*newend) = (*cur);
+          (*vend) = (*vcur);
+        }
+        else {
+          // old entry; merge it
+          //(*vend) = f (*vend, *vcur);
+          (*vend) += *vcur;
+        }
+        ++cur;
+        ++vcur;
+      }
+      ++newend; // one past the last entry, per typical [beg,end) semantics
+    }
+    const size_t mergedEntries = newend - beg;
+    graph.k_numRowEntries_(rowInfo.localRow) = mergedEntries;
+    const size_t numDups = rowInfo.numEntries - mergedEntries;
+    return numDups;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -4189,18 +4271,30 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   mergeRedundantEntries ()
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      isStaticGraph (), std::runtime_error, "Tpetra::CrsMatrix::"
-      "mergeRedundantEntries: Cannot merge with static graph.");
-    if (! myGraph_->isMerged ()) {
-      const LocalOrdinal lclNumRows =
-        static_cast<LocalOrdinal> (this->getNodeNumRows ());
-      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
-        const RowInfo rowInfo = myGraph_->getRowInfo (row);
-        Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
-        myGraph_->template mergeRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
+    typedef LocalOrdinal LO;
+    // typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+    //   host_execution_space;
+    // typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+    const char tfecfFuncName[] = "mergeRedundantEntries: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isStaticGraph (), std::runtime_error, "Cannot merge with static graph.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->myGraph_.is_null (), std::logic_error, "myGraph_ is null, but this "
+       "matrix claims ! isStaticGraph().  Please report this bug to the "
+       "Tpetra developers.");
+
+    crs_graph_type& graph = * (this->myGraph_);
+    const bool merged = graph.isMerged ();
+
+    if (! merged) {
+      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
+      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        const RowInfo rowInfo = graph.getRowInfo (lclRow);
+        const size_t numDups = this->mergeRowIndicesAndValues (graph, rowInfo);
+        graph.nodeNumEntries_ -= numDups;
       }
-      myGraph_->noRedundancies_ = true; // we just merged every row
+      graph.noRedundancies_ = true; // we just merged every row
     }
   }
 
@@ -6348,9 +6442,7 @@ namespace Tpetra {
       bool locallyCorrect = unpackCrsMatrixAndCombine (
           this->lclMatrix_, lclColMap, errStr, importLIDs, imports,
           numPacketsPerLID, constantNumPackets, distor, combineMode, atomic);
-      if (!locallyCorrect) {
-        throw errStr->c_str();
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION(!locallyCorrect, std::runtime_error, *errStr);
     }
     else {
       this->unpackAndCombineImplNonStatic (importLIDs, imports, numPacketsPerLID,

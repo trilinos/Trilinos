@@ -100,8 +100,20 @@ namespace Belos {
         label_( label )
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter( orthoLabel );
+      std::stringstream ss;
+      ss << label_ + ": DGKS[" << max_blk_ortho_ << "]";
+
+      std::string orthoLabel = ss.str() + ": Orthogonalization";
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+
+      std::string updateLabel = ss.str() + ": Ortho (Update)";
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
+
+      std::string normLabel = ss.str() + ": Ortho (Norm)";
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
+
+      std::string ipLabel = ss.str() + ": Ortho (Inner Product)";
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
 
@@ -119,8 +131,20 @@ namespace Belos {
       setParameterList (plist);
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter( orthoLabel );
+      std::stringstream ss;
+      ss << label_ + ": DGKS[" << max_blk_ortho_ << "]";
+
+      std::string orthoLabel = ss.str() + ": Orthogonalization";
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+
+      std::string updateLabel = ss.str() + ": Ortho (Update)";
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
+
+      std::string normLabel = ss.str() + ": Ortho (Norm)";
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
+
+      std::string ipLabel = ss.str() + ": Ortho (Inner Product)";
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
 
@@ -489,7 +513,7 @@ namespace Belos {
     //! Label for timer(s).
     std::string label_;
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::RCP<Teuchos::Time> timerOrtho_;
+    Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_, timerNorm_, timerInnerProd_;
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
     //! Default parameter list.
@@ -499,6 +523,11 @@ namespace Belos {
     int findBasis(MV &X, Teuchos::RCP<MV> MX,
                   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > C,
                   bool completeBasis, int howMany = -1 ) const;
+
+    //! Routine to compute the block orthogonalization
+    bool blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX,
+                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     //! Routine to compute the block orthogonalization
     bool blkOrtho ( MV &X, Teuchos::RCP<MV> MX,
@@ -531,9 +560,21 @@ namespace Belos {
   {
     if (label != label_) {
       label_ = label;
-      std::string orthoLabel = label_ + ": Orthogonalization";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      std::stringstream ss;
+      ss << label_ + ": DGKS[" << max_blk_ortho_ << "]";
+
+      std::string orthoLabel = ss.str() + ": Orthogonalization";
       timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+
+      std::string updateLabel = ss.str() + ": Ortho (Update)";
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
+
+      std::string normLabel = ss.str() + ": Ortho (Norm)";
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
+
+      std::string ipLabel = ss.str() + ": Ortho (Inner Product)";
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
   }
@@ -546,7 +587,12 @@ namespace Belos {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
+    {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
     MatOrthoManager<ScalarType,MV,OP>::innerProd(X,X,MX,xTx);
+    }
     for (int i=0; i<rank; i++) {
       xTx(i,i) -= ONE;
     }
@@ -561,7 +607,12 @@ namespace Belos {
     int r1 = MVT::GetNumberVecs(X1);
     int r2  = MVT::GetNumberVecs(X2);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r2,r1);
+    {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
     MatOrthoManager<ScalarType,MV,OP>::innerProd(X2,X1,MX1,xTx);
+    }
     return xTx.normFrobenius();
   }
 
@@ -669,33 +720,46 @@ namespace Belos {
     // Some flags for checking dependency returns from the internal orthogonalization methods
     bool dep_flg = false;
 
-    // Make a temporary copy of X and MX, just in case a block dependency is detected.
-    Teuchos::RCP<MV> tmpX, tmpMX;
-    tmpX = MVT::CloneCopy(X);
-    if (this->_hasOp) {
-      tmpMX = MVT::CloneCopy(*MX);
-    }
+    if (xc == 1) {
 
-    // Use the cheaper block orthogonalization.
-    dep_flg = blkOrtho( X, MX, C, Q );
+      // Use the cheaper block orthogonalization.
+      // NOTE: Don't check for dependencies because the update has one vector.
+      dep_flg = blkOrtho1( X, MX, C, Q );
 
-    // If a dependency has been detected in this block, then perform
-    // the more expensive single-vector orthogonalization.
-    if (dep_flg) {
-      rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
-
-      // Copy tmpX back into X.
-      MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
+      // Normalize the new block X
+      if ( B == Teuchos::null ) {
+        B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
+      }
+      std::vector<ScalarType> diag(1);
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
+        MVT::MvDot( X, *MX, diag );
+      }
+      (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
+      rank = 1;
+      MVT::MvScale( X, ONE/(*B)(0,0) );
       if (this->_hasOp) {
-        MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
+        // Update MXj.
+        MVT::MvScale( *MX, ONE/(*B)(0,0) );
       }
     }
     else {
-      // There is no dependency, so orthonormalize new block X
-      rank = findBasis( X, MX, B, false );
-      if (rank < xc) {
-        // A dependency was found during orthonormalization of X,
-        // rerun orthogonalization using more expensive single-vector orthogonalization.
+
+      // Make a temporary copy of X and MX, just in case a block dependency is detected.
+      Teuchos::RCP<MV> tmpX, tmpMX;
+      tmpX = MVT::CloneCopy(X);
+      if (this->_hasOp) {
+        tmpMX = MVT::CloneCopy(*MX);
+      }
+
+      // Use the cheaper block orthogonalization.
+      dep_flg = blkOrtho( X, MX, C, Q );
+
+      // If a dependency has been detected in this block, then perform
+      // the more expensive single-vector orthogonalization.
+      if (dep_flg) {
         rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
         // Copy tmpX back into X.
@@ -704,7 +768,22 @@ namespace Belos {
           MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
         }
       }
-    }
+      else {
+        // There is no dependency, so orthonormalize new block X
+        rank = findBasis( X, MX, B, false );
+        if (rank < xc) {
+          // A dependency was found during orthonormalization of X,
+          // rerun orthogonalization using more expensive single-vector orthogonalization.
+          rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
+
+          // Copy tmpX back into X.
+          MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
+          if (this->_hasOp) {
+            MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
+          }
+        }
+      }
+    } // if (xc == 1) 
 
     // this should not raise an std::exception; but our post-conditions oblige us to check
     TEUCHOS_TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error,
@@ -729,6 +808,7 @@ namespace Belos {
 
     // call findBasis, with the instruction to try to generate a basis of rank numvecs(X)
     return findBasis(X, MX, B, true);
+    
   }
 
 
@@ -920,6 +1000,7 @@ namespace Belos {
       // Get a view of the previous vectors.
       std::vector<int> prev_idx( numX );
       Teuchos::RCP<const MV> prevX, prevMX;
+      Teuchos::RCP<MV> oldMXj;
 
       if (numX > 0) {
         for (int i=0; i<numX; i++) {
@@ -929,6 +1010,8 @@ namespace Belos {
         if (this->_hasOp) {
           prevMX = MVT::CloneView( *MX, prev_idx );
         }
+
+        oldMXj = MVT::CloneCopy( *MXj );
       }
 
       // Make storage for these Gram-Schmidt iterations.
@@ -937,8 +1020,12 @@ namespace Belos {
       //
       // Save old MXj vector and compute Op-norm
       //
-      Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj );
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
       MVT::MvDot( *Xj, *MXj, oldDot );
+      }
       // Xj^H Op Xj should be real and positive, by the hermitian positive definiteness of Op
       TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError,
                           "Belos::DGKSOrthoManager::findBasis(): Negative definiteness discovered in inner product" );
@@ -947,41 +1034,79 @@ namespace Belos {
         // Apply the first step of Gram-Schmidt
 
         // product <- prevX^T MXj
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
         MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*Xj,MXj,product);
-
+        }
         // Xj <- Xj - prevX prevX^T MXj
         //     = Xj - prevX product
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
         MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *Xj );
+        }
 
         // Update MXj
         if (this->_hasOp) {
           // MXj <- Op*Xj_new
           //      = Op*(Xj_old - prevX prevX^T MXj)
           //      = MXj - prevMX product
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
           MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *MXj );
         }
 
         // Compute new Op-norm
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
         MVT::MvDot( *Xj, *MXj, newDot );
+        }
 
         // Check if a correction is needed.
-        if ( SCT::magnitude(newDot[0]) < SCT::magnitude(dep_tol_*oldDot[0]) ) {
+        if ( MGT::squareroot(SCT::magnitude(newDot[0])) < dep_tol_*MGT::squareroot(SCT::magnitude(oldDot[0])) ) {
           // Apply the second step of Gram-Schmidt
           // This is the same as above
           Teuchos::SerialDenseMatrix<int,ScalarType> P2(numX,1);
-
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
           MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*Xj,MXj,P2);
+          }
           product += P2;
+ 
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
           MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *Xj );
+          }
           if ((this->_hasOp)) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+            Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
             MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *MXj );
           }
         } // if (newDot[0] < dep_tol_*oldDot[0])
 
       } // if (numX > 0)
 
-        // Compute Op-norm with old MXj
-      MVT::MvDot( *Xj, *oldMXj, newDot );
+      // Compute Op-norm with old MXj
+      if (numX > 0) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
+        MVT::MvDot( *Xj, *oldMXj, newDot );
+      }
+      else {
+        newDot[0] = oldDot[0];
+      }
 
       // Check to see if the new vector is dependent.
       if (completeBasis) {
@@ -1006,17 +1131,40 @@ namespace Belos {
           else {
             tempMXj = tempXj;
           }
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
           MVT::MvDot( *tempXj, *tempMXj, oldDot );
+          }
           //
           for (int num_orth=0; num_orth<max_blk_ortho_; num_orth++){
+            {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+            Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
             MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*tempXj,tempMXj,product);
+            }
+            {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+            Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
             MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *tempXj );
+            }
             if (this->_hasOp) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+              Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
               MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *tempMXj );
             }
           }
           // Compute new Op-norm
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
           MVT::MvDot( *tempXj, *tempMXj, newDot );
+          }
           //
           if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
             // Copy vector into current column of _basisvecs
@@ -1045,10 +1193,10 @@ namespace Belos {
       ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 
       if (SCT::magnitude(diag) > ZERO) {
-        MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
+        MVT::MvScale( *Xj, ONE/diag );
         if (this->_hasOp) {
           // Update MXj.
-          MVT::MvAddMv( ONE/diag, *MXj, ZERO, *MXj, *MXj );
+          MVT::MvScale( *MXj, ONE/diag );
         }
       }
 
@@ -1076,6 +1224,129 @@ namespace Belos {
   // Routine to compute the block orthogonalization
   template<class ScalarType, class MV, class OP>
   bool
+  DGKSOrthoManager<ScalarType, MV, OP>::blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX,
+                                                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                                                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
+  {
+    int nq = Q.size();
+    int xc = MVT::GetNumberVecs( X );
+    const ScalarType ONE  = SCT::one();
+
+    std::vector<int> qcs( nq );
+    for (int i=0; i<nq; i++) {
+      qcs[i] = MVT::GetNumberVecs( *Q[i] );
+    }
+
+    // Compute the initial Op-norms
+    std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
+    {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
+    MVT::MvDot( X, *MX, oldDot );
+    }
+
+    Teuchos::Array<Teuchos::RCP<MV> > MQ(nq);
+    // Define the product Q^T * (Op*X)
+    for (int i=0; i<nq; i++) {
+      // Multiply Q' with MX
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
+      MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,*C[i]);
+      }
+      // Multiply by Q and subtract the result in X
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
+      MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
+      }
+
+      // Update MX, with the least number of applications of Op as possible
+      if (this->_hasOp) {
+        if (xc <= qcs[i]) {
+          OPT::Apply( *(this->_Op), X, *MX);
+        }
+        else {
+          // this will possibly be used again below; don't delete it
+          MQ[i] = MVT::Clone( *Q[i], qcs[i] );
+          OPT::Apply( *(this->_Op), *Q[i], *MQ[i] );
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
+          MVT::MvTimesMatAddMv( -ONE, *MQ[i], *C[i], ONE, *MX );
+          }
+        }
+      }
+    }
+
+    {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
+    MVT::MvDot( X, *MX, newDot );
+    }
+
+/*  // Compute correction bound, compare with PETSc bound.
+    MagnitudeType hnrm = C[0]->normFrobenius();
+    for (int i=1; i<nq; i++)
+    {
+      hnrm += C[i]->normFrobenius();
+    }
+
+    std::cout << "newDot < 1/sqrt(2)*oldDot < hnrm = " << MGT::squareroot(SCT::magnitude(newDot[0])) << " < " << dep_tol_*MGT::squareroot(SCT::magnitude(oldDot[0])) << " < " << hnrm << std::endl;
+*/
+
+    // Check if a correction is needed.
+    if ( MGT::squareroot(SCT::magnitude(newDot[0])) < dep_tol_*MGT::squareroot(SCT::magnitude(oldDot[0])) ) {
+    // Apply the second step of Gram-Schmidt
+
+      for (int i=0; i<nq; i++) {
+        Teuchos::SerialDenseMatrix<int,ScalarType> C2(C[i]->numRows(), C[i]->numCols());
+
+        // Apply another step of classical Gram-Schmidt
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
+        MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,C2);
+        }
+        *C[i] += C2;
+
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
+        MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+        }
+
+        // Update MX, with the least number of applications of Op as possible
+        if (this->_hasOp) {
+          if (MQ[i].get()) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+            Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
+            // MQ was allocated and computed above; use it
+            MVT::MvTimesMatAddMv( -ONE, *MQ[i], C2, ONE, *MX );
+          }
+          else if (xc <= qcs[i]) {
+            // MQ was not allocated and computed above; it was cheaper to use X before and it still is
+            OPT::Apply( *(this->_Op), X, *MX);
+          }
+        }
+      } // for (int i=0; i<nq; i++)
+    }
+
+    return false;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Routine to compute the block orthogonalization
+  template<class ScalarType, class MV, class OP>
+  bool
   DGKSOrthoManager<ScalarType, MV, OP>::blkOrtho ( MV &X, Teuchos::RCP<MV> MX,
                                                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
@@ -1094,15 +1365,30 @@ namespace Belos {
 
     // Compute the initial Op-norms
     std::vector<ScalarType> oldDot( xc );
+    {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
     MVT::MvDot( X, *MX, oldDot );
+    }
 
     Teuchos::Array<Teuchos::RCP<MV> > MQ(nq);
     // Define the product Q^T * (Op*X)
     for (int i=0; i<nq; i++) {
       // Multiply Q' with MX
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
       MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,*C[i]);
+      }
       // Multiply by Q and subtract the result in X
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
       MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
+      }
 
       // Update MX, with the least number of applications of Op as possible
       if (this->_hasOp) {
@@ -1113,7 +1399,12 @@ namespace Belos {
           // this will possibly be used again below; don't delete it
           MQ[i] = MVT::Clone( *Q[i], qcs[i] );
           OPT::Apply( *(this->_Op), *Q[i], *MQ[i] );
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
           MVT::MvTimesMatAddMv( -ONE, *MQ[i], *C[i], ONE, *MX );
+          }
         }
       }
     }
@@ -1125,13 +1416,27 @@ namespace Belos {
         Teuchos::SerialDenseMatrix<int,ScalarType> C2(C[i]->numRows(), C[i]->numCols());
 
         // Apply another step of classical Gram-Schmidt
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
         MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,C2);
+        }
         *C[i] += C2;
+
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
         MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+        }
 
         // Update MX, with the least number of applications of Op as possible
         if (this->_hasOp) {
           if (MQ[i].get()) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+            Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
             // MQ was allocated and computed above; use it
             MVT::MvTimesMatAddMv( -ONE, *MQ[i], C2, ONE, *MX );
           }
@@ -1145,7 +1450,12 @@ namespace Belos {
 
     // Compute new Op-norms
     std::vector<ScalarType> newDot(xc);
+    {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
     MVT::MvDot( X, *MX, newDot );
+    }
 
     // Check to make sure the new block of vectors are not dependent on previous vectors
     for (int i=0; i<xc; i++){
@@ -1216,7 +1526,12 @@ namespace Belos {
       }
 
       // Compute the initial Op-norms
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
       MVT::MvDot( *Xj, *MXj, oldDot );
+      }
 
       Teuchos::Array<Teuchos::RCP<MV> > MQ(Q.size());
       // Define the product Q^T * (Op*X)
@@ -1226,9 +1541,19 @@ namespace Belos {
         Teuchos::SerialDenseMatrix<int,ScalarType> tempC( Teuchos::View, *C[i], qcs[i], 1, 0, j );
 
         // Multiply Q' with MX
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
         MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*Xj,MXj,tempC);
+        }
         // Multiply by Q and subtract the result in Xj
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
         MVT::MvTimesMatAddMv( -ONE, *Q[i], tempC, ONE, *Xj );
+        }
 
         // Update MXj, with the least number of applications of Op as possible
         if (this->_hasOp) {
@@ -1239,13 +1564,23 @@ namespace Belos {
             // this will possibly be used again below; don't delete it
             MQ[i] = MVT::Clone( *Q[i], qcs[i] );
             OPT::Apply( *(this->_Op), *Q[i], *MQ[i] );
+            {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+            Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
             MVT::MvTimesMatAddMv( -ONE, *MQ[i], tempC, ONE, *MXj );
+            }
           }
         }
       }
 
       // Compute the Op-norms
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
       MVT::MvDot( *Xj, *MXj, newDot );
+      }
 
       // Do one step of classical Gram-Schmidt orthogonalization
       // with a second correction step if needed.
@@ -1257,13 +1592,26 @@ namespace Belos {
           Teuchos::SerialDenseMatrix<int,ScalarType> C2( qcs[i], 1 );
 
           // Apply another step of classical Gram-Schmidt
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
           MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*Xj,MXj,C2);
+          }
           tempC += C2;
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
           MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, *Xj );
+          }
 
           // Update MXj, with the least number of applications of Op as possible
           if (this->_hasOp) {
             if (MQ[i].get()) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+              Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
               // MQ was allocated and computed above; use it
               MVT::MvTimesMatAddMv( -ONE, *MQ[i], C2, ONE, *MXj );
             }
@@ -1275,8 +1623,12 @@ namespace Belos {
         } // for (int i=0; i<Q.size(); i++)
 
         // Compute the Op-norms after the correction step.
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
         MVT::MvDot( *Xj, *MXj, newDot );
-
+        }
       } // if ()
 
       // Check for linear dependence.
@@ -1288,10 +1640,10 @@ namespace Belos {
       if (!dep_flg) {
         ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 
-        MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
+        MVT::MvScale( *Xj, ONE/diag );
         if (this->_hasOp) {
           // Update MXj.
-          MVT::MvAddMv( ONE/diag, *MXj, ZERO, *MXj, *MXj );
+          MVT::MvScale( *MXj, ONE/diag );
         }
 
         // Enter value on diagonal of B.
@@ -1309,7 +1661,12 @@ namespace Belos {
         else {
           tempMXj = tempXj;
         }
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
         MVT::MvDot( *tempXj, *tempMXj, oldDot );
+        }
         //
         for (int num_orth=0; num_orth<max_blk_ortho_; num_orth++) {
 
@@ -1317,12 +1674,25 @@ namespace Belos {
             Teuchos::SerialDenseMatrix<int,ScalarType> product( qcs[i], 1 );
 
             // Apply another step of classical Gram-Schmidt
+            {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+            Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
             MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*tempXj,tempMXj,product);
+            }
+            {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+            Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
             MVT::MvTimesMatAddMv( -ONE, *Q[i], product, ONE, *tempXj );
+            }
 
             // Update MXj, with the least number of applications of Op as possible
             if (this->_hasOp) {
               if (MQ[i].get()) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+                Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
                 // MQ was allocated and computed above; use it
                 MVT::MvTimesMatAddMv( -ONE, *MQ[i], product, ONE, *tempMXj );
               }
@@ -1336,7 +1706,12 @@ namespace Belos {
         }
 
         // Compute the Op-norms after the correction step.
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
         MVT::MvDot( *tempXj, *tempMXj, newDot );
+        }
 
         // Copy vector into current column of Xj
         if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {

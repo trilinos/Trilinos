@@ -6,11 +6,9 @@
 
 //This can be done to user the smaller domains
 
-#ifdef HAVE_AMESOS
 #include "trilinos_amd.h"
 #include "trilinos_colamd.h"
 #include "trilinos_ccolamd.h"
-#endif
 
 namespace BaskerNS
 {
@@ -41,8 +39,8 @@ namespace BaskerNS
    int *cmember
   )
   {
-    double knobs[CCOLAMD_KNOBS];
-    int    stats[CCOLAMD_STATS];
+    double knobs[TRILINOS_CCOLAMD_KNOBS];
+    int    stats[TRILINOS_CCOLAMD_STATS];
 
     //use default knob settings
     trilinos_ccolamd_set_defaults(knobs);
@@ -71,8 +69,8 @@ namespace BaskerNS
    long *cmember
   )
   {
-    double knobs[CCOLAMD_KNOBS];
-    long    stats[CCOLAMD_STATS];
+    double knobs[TRILINOS_CCOLAMD_KNOBS];
+    long    stats[TRILINOS_CCOLAMD_STATS];
 
     //use default knob settings
     trilinos_ccolamd_l_set_defaults(knobs);
@@ -99,7 +97,7 @@ namespace BaskerNS
   )
   {
 
-    double amd_info[AMD_INFO];
+    double amd_info[TRILINOS_AMD_INFO];
     trilinos_amd(M.ncol, &(M.col_ptr(0)), 
 	       &(M.row_idx(0)), &(p(0)),
 	       NULL, amd_info);

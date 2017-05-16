@@ -212,9 +212,9 @@ namespace MueLu {
     void UpdateFactoryManager_Coordinates(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 					  int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Repartition(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
-					int levelID, std::vector<keep_pair>& keeps) const;
+					  int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const;
     void UpdateFactoryManager_Nullspace(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
-					int levelID, std::vector<keep_pair>& keeps) const;
+					int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const;
 
     // Algorithm-specific components for UpdateFactoryManager
     void UpdateFactoryManager_SemiCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,

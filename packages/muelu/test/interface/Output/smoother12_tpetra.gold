@@ -51,6 +51,7 @@ Level 1
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -124,6 +125,7 @@ Level 2
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -197,6 +199,7 @@ Level 3
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -270,6 +273,7 @@ Level 4
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -343,6 +347,7 @@ Level 5
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -364,7 +369,7 @@ Level 5
  matrixmatrix: kernel params -> 
   [empty list]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -398,6 +403,6 @@ Smoother (level 3) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: tr
 
 Smoother (level 4) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94741, alpha: 2.99194, lambdaMin: 0.650887, boost factor: 1.1}, Global matrix dimensions: [124, 124], Global nnz: 370}
 
-Smoother (level 5) pre  : KLU2 solver interface
+Smoother (level 5) pre  : SuperLU solver interface, direct solve
 Smoother (level 5) post : no smoother
 

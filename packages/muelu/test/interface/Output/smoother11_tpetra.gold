@@ -72,6 +72,7 @@ Level 1
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -166,6 +167,7 @@ Level 2
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -187,7 +189,7 @@ Level 2
  matrixmatrix: kernel params -> 
   [empty list]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -214,6 +216,6 @@ Smoother (level 0) post : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 Smoother (level 1) pre  : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 3, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 Smoother (level 1) post : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 0, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) pre  : KLU2 solver interface
+Smoother (level 2) pre  : SuperLU solver interface, direct solve
 Smoother (level 2) post : no smoother
 

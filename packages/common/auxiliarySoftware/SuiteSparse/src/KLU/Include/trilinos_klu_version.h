@@ -41,49 +41,49 @@
 
 #ifdef DLONG
 
-#define KLU_scale trilinos_klu_zl_scale
-#define KLU_solve trilinos_klu_zl_solve
-#define KLU_tsolve trilinos_klu_zl_tsolve
-#define KLU_free_numeric trilinos_klu_zl_free_numeric
-#define KLU_factor trilinos_klu_zl_factor
-#define KLU_refactor trilinos_klu_zl_refactor
-#define KLU_kernel_factor trilinos_klu_zl_kernel_factor 
-#define KLU_lsolve trilinos_klu_zl_lsolve
-#define KLU_ltsolve trilinos_klu_zl_ltsolve
-#define KLU_usolve trilinos_klu_zl_usolve
-#define KLU_utsolve trilinos_klu_zl_utsolve
-#define KLU_kernel trilinos_klu_zl_kernel
-#define KLU_valid trilinos_klu_zl_valid
-#define KLU_valid_LU trilinos_klu_zl_valid_LU
-#define KLU_sort trilinos_klu_zl_sort
-#define KLU_rgrowth trilinos_klu_zl_rgrowth
-#define KLU_rcond trilinos_klu_zl_rcond
-#define KLU_extract trilinos_klu_zl_extract
-#define KLU_condest trilinos_klu_zl_condest
-#define KLU_flops trilinos_klu_zl_flops
+#define TRILINOS_KLU_scale trilinos_klu_zl_scale
+#define TRILINOS_KLU_solve trilinos_klu_zl_solve
+#define TRILINOS_KLU_tsolve trilinos_klu_zl_tsolve
+#define TRILINOS_KLU_free_numeric trilinos_klu_zl_free_numeric
+#define TRILINOS_KLU_factor trilinos_klu_zl_factor
+#define TRILINOS_KLU_refactor trilinos_klu_zl_refactor
+#define TRILINOS_KLU_kernel_factor trilinos_klu_zl_kernel_factor 
+#define TRILINOS_KLU_lsolve trilinos_klu_zl_lsolve
+#define TRILINOS_KLU_ltsolve trilinos_klu_zl_ltsolve
+#define TRILINOS_KLU_usolve trilinos_klu_zl_usolve
+#define TRILINOS_KLU_utsolve trilinos_klu_zl_utsolve
+#define TRILINOS_KLU_kernel trilinos_klu_zl_kernel
+#define TRILINOS_KLU_valid trilinos_klu_zl_valid
+#define TRILINOS_KLU_valid_LU trilinos_klu_zl_valid_LU
+#define TRILINOS_KLU_sort trilinos_klu_zl_sort
+#define TRILINOS_KLU_rgrowth trilinos_klu_zl_rgrowth
+#define TRILINOS_KLU_rcond trilinos_klu_zl_rcond
+#define TRILINOS_KLU_extract trilinos_klu_zl_extract
+#define TRILINOS_KLU_condest trilinos_klu_zl_condest
+#define TRILINOS_KLU_flops trilinos_klu_zl_flops
 
 #else
 
-#define KLU_scale trilinos_klu_z_scale
-#define KLU_solve trilinos_klu_z_solve
-#define KLU_tsolve trilinos_klu_z_tsolve
-#define KLU_free_numeric trilinos_klu_z_free_numeric
-#define KLU_factor trilinos_klu_z_factor
-#define KLU_refactor trilinos_klu_z_refactor
-#define KLU_kernel_factor trilinos_klu_z_kernel_factor 
-#define KLU_lsolve trilinos_klu_z_lsolve
-#define KLU_ltsolve trilinos_klu_z_ltsolve
-#define KLU_usolve trilinos_klu_z_usolve
-#define KLU_utsolve trilinos_klu_z_utsolve
-#define KLU_kernel trilinos_klu_z_kernel
-#define KLU_valid trilinos_klu_z_valid
-#define KLU_valid_LU trilinos_klu_z_valid_LU
-#define KLU_sort trilinos_klu_z_sort
-#define KLU_rgrowth trilinos_klu_z_rgrowth
-#define KLU_rcond trilinos_klu_z_rcond
-#define KLU_extract trilinos_klu_z_extract
-#define KLU_condest trilinos_klu_z_condest
-#define KLU_flops trilinos_klu_z_flops
+#define TRILINOS_KLU_scale trilinos_klu_z_scale
+#define TRILINOS_KLU_solve trilinos_klu_z_solve
+#define TRILINOS_KLU_tsolve trilinos_klu_z_tsolve
+#define TRILINOS_KLU_free_numeric trilinos_klu_z_free_numeric
+#define TRILINOS_KLU_factor trilinos_klu_z_factor
+#define TRILINOS_KLU_refactor trilinos_klu_z_refactor
+#define TRILINOS_KLU_kernel_factor trilinos_klu_z_kernel_factor 
+#define TRILINOS_KLU_lsolve trilinos_klu_z_lsolve
+#define TRILINOS_KLU_ltsolve trilinos_klu_z_ltsolve
+#define TRILINOS_KLU_usolve trilinos_klu_z_usolve
+#define TRILINOS_KLU_utsolve trilinos_klu_z_utsolve
+#define TRILINOS_KLU_kernel trilinos_klu_z_kernel
+#define TRILINOS_KLU_valid trilinos_klu_z_valid
+#define TRILINOS_KLU_valid_LU trilinos_klu_z_valid_LU
+#define TRILINOS_KLU_sort trilinos_klu_z_sort
+#define TRILINOS_KLU_rgrowth trilinos_klu_z_rgrowth
+#define TRILINOS_KLU_rcond trilinos_klu_z_rcond
+#define TRILINOS_KLU_extract trilinos_klu_z_extract
+#define TRILINOS_KLU_condest trilinos_klu_z_condest
+#define TRILINOS_KLU_flops trilinos_klu_z_flops
 
 #endif
 
@@ -91,49 +91,49 @@
 
 #ifdef DLONG
 
-#define KLU_scale trilinos_klu_l_scale
-#define KLU_solve trilinos_klu_l_solve
-#define KLU_tsolve trilinos_klu_l_tsolve
-#define KLU_free_numeric trilinos_klu_l_free_numeric
-#define KLU_factor trilinos_klu_l_factor
-#define KLU_refactor trilinos_klu_l_refactor
-#define KLU_kernel_factor trilinos_klu_l_kernel_factor 
-#define KLU_lsolve trilinos_klu_l_lsolve
-#define KLU_ltsolve trilinos_klu_l_ltsolve
-#define KLU_usolve trilinos_klu_l_usolve
-#define KLU_utsolve trilinos_klu_l_utsolve
-#define KLU_kernel trilinos_klu_l_kernel
-#define KLU_valid trilinos_klu_l_valid
-#define KLU_valid_LU trilinos_klu_l_valid_LU
-#define KLU_sort trilinos_klu_l_sort
-#define KLU_rgrowth trilinos_klu_l_rgrowth
-#define KLU_rcond trilinos_klu_l_rcond
-#define KLU_extract trilinos_klu_l_extract
-#define KLU_condest trilinos_klu_l_condest
-#define KLU_flops trilinos_klu_l_flops
+#define TRILINOS_KLU_scale trilinos_klu_l_scale
+#define TRILINOS_KLU_solve trilinos_klu_l_solve
+#define TRILINOS_KLU_tsolve trilinos_klu_l_tsolve
+#define TRILINOS_KLU_free_numeric trilinos_klu_l_free_numeric
+#define TRILINOS_KLU_factor trilinos_klu_l_factor
+#define TRILINOS_KLU_refactor trilinos_klu_l_refactor
+#define TRILINOS_KLU_kernel_factor trilinos_klu_l_kernel_factor 
+#define TRILINOS_KLU_lsolve trilinos_klu_l_lsolve
+#define TRILINOS_KLU_ltsolve trilinos_klu_l_ltsolve
+#define TRILINOS_KLU_usolve trilinos_klu_l_usolve
+#define TRILINOS_KLU_utsolve trilinos_klu_l_utsolve
+#define TRILINOS_KLU_kernel trilinos_klu_l_kernel
+#define TRILINOS_KLU_valid trilinos_klu_l_valid
+#define TRILINOS_KLU_valid_LU trilinos_klu_l_valid_LU
+#define TRILINOS_KLU_sort trilinos_klu_l_sort
+#define TRILINOS_KLU_rgrowth trilinos_klu_l_rgrowth
+#define TRILINOS_KLU_rcond trilinos_klu_l_rcond
+#define TRILINOS_KLU_extract trilinos_klu_l_extract
+#define TRILINOS_KLU_condest trilinos_klu_l_condest
+#define TRILINOS_KLU_flops trilinos_klu_l_flops
 
 #else
 
-#define KLU_scale trilinos_klu_scale
-#define KLU_solve trilinos_klu_solve
-#define KLU_tsolve trilinos_klu_tsolve
-#define KLU_free_numeric trilinos_klu_free_numeric
-#define KLU_factor trilinos_klu_factor
-#define KLU_refactor trilinos_klu_refactor
-#define KLU_kernel_factor trilinos_klu_kernel_factor 
-#define KLU_lsolve trilinos_klu_lsolve
-#define KLU_ltsolve trilinos_klu_ltsolve
-#define KLU_usolve trilinos_klu_usolve
-#define KLU_utsolve trilinos_klu_utsolve
-#define KLU_kernel trilinos_klu_kernel
-#define KLU_valid trilinos_klu_valid
-#define KLU_valid_LU trilinos_klu_valid_LU
-#define KLU_sort trilinos_klu_sort
-#define KLU_rgrowth trilinos_klu_rgrowth
-#define KLU_rcond trilinos_klu_rcond
-#define KLU_extract trilinos_klu_extract
-#define KLU_condest trilinos_klu_condest
-#define KLU_flops trilinos_klu_flops
+#define TRILINOS_KLU_scale trilinos_klu_scale
+#define TRILINOS_KLU_solve trilinos_klu_solve
+#define TRILINOS_KLU_tsolve trilinos_klu_tsolve
+#define TRILINOS_KLU_free_numeric trilinos_klu_free_numeric
+#define TRILINOS_KLU_factor trilinos_klu_factor
+#define TRILINOS_KLU_refactor trilinos_klu_refactor
+#define TRILINOS_KLU_kernel_factor trilinos_klu_kernel_factor 
+#define TRILINOS_KLU_lsolve trilinos_klu_lsolve
+#define TRILINOS_KLU_ltsolve trilinos_klu_ltsolve
+#define TRILINOS_KLU_usolve trilinos_klu_usolve
+#define TRILINOS_KLU_utsolve trilinos_klu_utsolve
+#define TRILINOS_KLU_kernel trilinos_klu_kernel
+#define TRILINOS_KLU_valid trilinos_klu_valid
+#define TRILINOS_KLU_valid_LU trilinos_klu_valid_LU
+#define TRILINOS_KLU_sort trilinos_klu_sort
+#define TRILINOS_KLU_rgrowth trilinos_klu_rgrowth
+#define TRILINOS_KLU_rcond trilinos_klu_rcond
+#define TRILINOS_KLU_extract trilinos_klu_extract
+#define TRILINOS_KLU_condest trilinos_klu_condest
+#define TRILINOS_KLU_flops trilinos_klu_flops
 
 #endif
 
@@ -142,51 +142,51 @@
 
 #ifdef DLONG
 
-#define KLU_analyze trilinos_klu_l_analyze
-#define KLU_analyze_given trilinos_klu_l_analyze_given
-#define KLU_alloc_symbolic trilinos_klu_l_alloc_symbolic
-#define KLU_free_symbolic trilinos_klu_l_free_symbolic
-#define KLU_defaults trilinos_klu_l_defaults
-#define KLU_free trilinos_klu_l_free
-#define KLU_malloc trilinos_klu_l_malloc
-#define KLU_realloc trilinos_klu_l_realloc
-#define KLU_add_size_t trilinos_klu_l_add_size_t
-#define KLU_mult_size_t trilinos_klu_l_mult_size_t
+#define TRILINOS_KLU_analyze trilinos_klu_l_analyze
+#define TRILINOS_KLU_analyze_given trilinos_klu_l_analyze_given
+#define TRILINOS_KLU_alloc_symbolic trilinos_klu_l_alloc_symbolic
+#define TRILINOS_KLU_free_symbolic trilinos_klu_l_free_symbolic
+#define TRILINOS_KLU_defaults trilinos_klu_l_defaults
+#define TRILINOS_KLU_free trilinos_klu_l_free
+#define TRILINOS_KLU_malloc trilinos_klu_l_malloc
+#define TRILINOS_KLU_realloc trilinos_klu_l_realloc
+#define TRILINOS_KLU_add_size_t trilinos_klu_l_add_size_t
+#define TRILINOS_KLU_mult_size_t trilinos_klu_l_mult_size_t
 
-#define KLU_symbolic klu_l_symbolic
-#define KLU_numeric klu_l_numeric
-#define KLU_common klu_l_common
+#define TRILINOS_KLU_symbolic trilinos_klu_l_symbolic
+#define TRILINOS_KLU_numeric trilinos_klu_l_numeric
+#define TRILINOS_KLU_common trilinos_klu_l_common
 
 #define BTF_order trilinos_btf_l_order
 #define BTF_strongcomp trilinos_btf_l_strongcomp
 
-#define AMD_order trilinos_amd_l_order
-#define COLAMD trilinos_colamd_l
-#define COLAMD_recommended trilinos_colamd_l_recommended
+#define TRILINOS_AMD_order trilinos_amd_l_order
+#define TRILINOS_COLAMD trilinos_colamd_l
+#define TRILINOS_COLAMD_recommended trilinos_colamd_l_recommended
 
 #else
 
-#define KLU_analyze trilinos_klu_analyze
-#define KLU_analyze_given trilinos_klu_analyze_given
-#define KLU_alloc_symbolic trilinos_klu_alloc_symbolic
-#define KLU_free_symbolic trilinos_klu_free_symbolic
-#define KLU_defaults trilinos_klu_defaults
-#define KLU_free trilinos_klu_free
-#define KLU_malloc trilinos_klu_malloc
-#define KLU_realloc trilinos_klu_realloc
-#define KLU_add_size_t trilinos_klu_add_size_t
-#define KLU_mult_size_t trilinos_klu_mult_size_t
+#define TRILINOS_KLU_analyze trilinos_klu_analyze
+#define TRILINOS_KLU_analyze_given trilinos_klu_analyze_given
+#define TRILINOS_KLU_alloc_symbolic trilinos_klu_alloc_symbolic
+#define TRILINOS_KLU_free_symbolic trilinos_klu_free_symbolic
+#define TRILINOS_KLU_defaults trilinos_klu_defaults
+#define TRILINOS_KLU_free trilinos_klu_free
+#define TRILINOS_KLU_malloc trilinos_klu_malloc
+#define TRILINOS_KLU_realloc trilinos_klu_realloc
+#define TRILINOS_KLU_add_size_t trilinos_klu_add_size_t
+#define TRILINOS_KLU_mult_size_t trilinos_klu_mult_size_t
 
-#define KLU_symbolic klu_symbolic
-#define KLU_numeric klu_numeric
-#define KLU_common klu_common
+#define TRILINOS_KLU_symbolic trilinos_klu_symbolic
+#define TRILINOS_KLU_numeric trilinos_klu_numeric
+#define TRILINOS_KLU_common trilinos_klu_common
 
 #define BTF_order trilinos_btf_order
 #define BTF_strongcomp trilinos_btf_strongcomp
 
-#define AMD_order trilinos_amd_order
-#define COLAMD trilinos_colamd
-#define COLAMD_recommended trilinos_colamd_recommended
+#define TRILINOS_AMD_order trilinos_amd_order
+#define TRILINOS_COLAMD trilinos_colamd
+#define TRILINOS_COLAMD_recommended trilinos_colamd_recommended
 
 #endif
 

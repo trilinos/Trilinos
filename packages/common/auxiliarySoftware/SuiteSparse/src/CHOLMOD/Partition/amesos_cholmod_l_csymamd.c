@@ -31,7 +31,7 @@
 #include "trilinos_ccolamd.h"
 #include "amesos_cholmod_partition.h"
 
-#if (CCOLAMD_VERSION < CCOLAMD_VERSION_CODE (2,5))
+#if (TRILINOS_CCOLAMD_VERSION < TRILINOS_CCOLAMD_VERSION_CODE (2,5))
 #error "CCOLAMD v2.0 or later is required"
 #endif
 
@@ -50,9 +50,9 @@ int CHOLMOD(csymamd)
     cholmod_common *Common
 )
 {
-    double knobs [CCOLAMD_KNOBS] ;
+    double knobs [TRILINOS_CCOLAMD_KNOBS] ;
     Int *perm, *Head ;
-    Int ok, i, nrow, stats [CCOLAMD_STATS] ;
+    Int ok, i, nrow, stats [TRILINOS_CCOLAMD_STATS] ;
 
     /* ---------------------------------------------------------------------- */
     /* check inputs */
@@ -101,8 +101,8 @@ int CHOLMOD(csymamd)
     if (Common->current >= 0 && Common->current < CHOLMOD_MAXMETHODS)
     {
 	/* get the knobs from the Common parameters */
-	knobs [CCOLAMD_DENSE_ROW] =Common->method[Common->current].prune_dense ;
-	knobs [CCOLAMD_AGGRESSIVE]=Common->method[Common->current].aggressive ;
+	knobs [TRILINOS_CCOLAMD_DENSE_ROW] =Common->method[Common->current].prune_dense ;
+	knobs [TRILINOS_CCOLAMD_AGGRESSIVE]=Common->method[Common->current].aggressive ;
     }
 
     {
@@ -113,14 +113,14 @@ int CHOLMOD(csymamd)
 	trilinos_csymamd (nrow, A->i, A->p, perm, knobs, stats, Common->calloc_memory,
 		Common->free_memory, Cmember, A->stype) ;
 #endif
-	ok = stats [CCOLAMD_STATUS] ;
+	ok = stats [TRILINOS_CCOLAMD_STATUS] ;
     }
 
-    if (ok == CCOLAMD_ERROR_out_of_memory)
+    if (ok == TRILINOS_CCOLAMD_ERROR_out_of_memory)
     {
 	ERROR (CHOLMOD_OUT_OF_MEMORY, "out of memory") ; 
     }
-    ok = (ok == CCOLAMD_OK || ok == CCOLAMD_OK_BUT_JUMBLED) ;
+    ok = (ok == TRILINOS_CCOLAMD_OK || ok == TRILINOS_CCOLAMD_OK_BUT_JUMBLED) ;
 
     /* ---------------------------------------------------------------------- */
     /* free the workspace and return result */

@@ -57,10 +57,10 @@ TEST( Numeric, constructor ) {
 
   NumericTools<ValueType,DeviceSpaceType> N(m, A.RowPtr(), A.Cols(), A.Values(),
                                             idx, idx,
-                                            S.NumSuperNodes(), S.SuperNodes(),
+                                            S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
                                             S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-                                            S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
+                                            S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 }
 
 TEST( Numeric, factorizeCholesky_Serial ) {
@@ -83,10 +83,10 @@ TEST( Numeric, factorizeCholesky_Serial ) {
 
   NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
                                             T.PermVector(), T.InvPermVector(),
-                                            S.NumSuperNodes(), S.SuperNodes(),
+                                            S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
                                             S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-                                            S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
+                                            S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
   N.factorizeCholesky_Serial();
 }
@@ -111,10 +111,10 @@ TEST( Numeric, factorizeCholesky_Parallel ) {
 
   NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
                                             T.PermVector(), T.InvPermVector(),
-                                            S.NumSuperNodes(), S.SuperNodes(),
+                                            S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
                                             S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-                                            S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
+                                            S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
   N.factorizeCholesky_Parallel();
 }
@@ -133,8 +133,8 @@ TEST( Numeric, factorizeCholesky_Parallel ) {
   // const auto perm = T.PermVector();
   // const auto peri = T.InvPermVector();
   
-  // const size_type ns = S.NumSuperNodes();
-  // const auto supernodes = S.SuperNodes();
+  // const size_type ns = S.NumSupernodes();
+  // const auto supernodes = S.Supernodes();
   // const auto gid_super_panel_ptr =  S.gidSuperPanelPtr();
   // const auto gid_super_panel_colidx = S.gidSuperPanelColIdx();
   // const auto sid_super_panel_ptr = S.sidSuperPanelPtr();

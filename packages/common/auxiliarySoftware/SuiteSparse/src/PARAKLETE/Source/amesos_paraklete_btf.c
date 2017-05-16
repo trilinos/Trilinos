@@ -3,7 +3,7 @@
 /* ========================================================================== */
 
 /* User-callable functions that combine the functions of Paraklete,
- * KLU, and BTF.  See pb.c for examples on how to use these functions.
+ * KLU, and TRILINOS_BTF.  See pb.c for examples on how to use these functions.
  *
  * PARAKLETE version 0.3: parallel sparse LU factorization.  Nov 13, 2007
  * Copyright (C) 2007, Univ. of Florida.  Author: Timothy A. Davis
@@ -26,7 +26,7 @@ static Int paraklete_btf_bcast_symbolic
     Int n, nblocks, header [4] ;
     int ok, all_ok ;
     cholmod_common *cm ;
-    KLU_common *km ;
+    TRILINOS_KLU_common *km ;
 
     cm = &(Common->cm) ;
     km = &(Common->km) ;
@@ -34,7 +34,7 @@ static Int paraklete_btf_bcast_symbolic
     n = EMPTY ;
     nblocks = EMPTY ;
 
-    /* broadcast number of diagonal blocks in the BTF form, or -1 if failure */
+    /* broadcast number of diagonal blocks in the TRILINOS_BTF form, or -1 if failure */
     if (Common->myid == 0)
     {
 	LU_btf_symbolic = *LU_btf_symbolic_handle ;
@@ -46,7 +46,7 @@ static Int paraklete_btf_bcast_symbolic
     }
     else
     {
-	/* other processes do not yet have the BTF symbolic object */
+	/* other processes do not yet have the TRILINOS_BTF symbolic object */
 	*LU_btf_symbolic_handle = NULL ;
     }
 
@@ -104,7 +104,7 @@ paraklete_btf_symbolic *amesos_paraklete_btf_alloc_symbolic
 )
 {
     cholmod_common *cm ;
-    KLU_common *km ;
+    TRILINOS_KLU_common *km ;
     paraklete_btf_symbolic *LU_btf_symbolic ;
     Int *p ;
     int ok = TRUE ;
@@ -160,14 +160,14 @@ paraklete_btf_symbolic *amesos_paraklete_btf_analyze
 	*Ai = NULL, *Cp = NULL, *Ci = NULL, *Pbinv = NULL ;
     cholmod_sparse *C = NULL ;
     cholmod_common *cm ;
-    KLU_common *km ;
+    TRILINOS_KLU_common *km ;
     paraklete_btf_symbolic *LU_btf_symbolic = NULL ;
     void **LUsymbolic ;
     Int nblocks, n = 0, nmatch, block, k, k1, k2, inew, jold, anz = 0, fnz,
 	cnz, p, nk ;
 
     /* ---------------------------------------------------------------------- */
-    /* root processor finds the BTF ordering */
+    /* root processor finds the TRILINOS_BTF ordering */
     /* ---------------------------------------------------------------------- */
 
     cm = &(Common->cm) ;
@@ -193,7 +193,7 @@ paraklete_btf_symbolic *amesos_paraklete_btf_analyze
 	LUsymbolic = LU_btf_symbolic->LUsymbolic ;  /* size n */
 
 	/* ------------------------------------------------------------------ */
-	/* find the BTF ordering */
+	/* find the TRILINOS_BTF ordering */
 	/* ------------------------------------------------------------------ */
 
 	Work = CHOLMOD (malloc) (n, 6*sizeof (Int), cm) ;
@@ -218,7 +218,7 @@ paraklete_btf_symbolic *amesos_paraklete_btf_analyze
     }
 
     /* ---------------------------------------------------------------------- */
-    /* broadcast the BTF information */
+    /* broadcast the TRILINOS_BTF information */
     /* ---------------------------------------------------------------------- */
 
     MPI (paraklete_btf_bcast_symbolic (&LU_btf_symbolic, Common)) ;
@@ -291,10 +291,10 @@ paraklete_btf_symbolic *amesos_paraklete_btf_analyze
             if (Common->myid == 0)
             {
                 /* use KLU on process 0 */
-                LUsymbolic [block] = (void *) KLU_analyze (nk, Cp, Ci, km) ;
-                if (km->status != KLU_OK)
+                LUsymbolic [block] = (void *) TRILINOS_KLU_analyze (nk, Cp, Ci, km) ;
+                if (km->status != TRILINOS_KLU_OK)
                 {
-                    /* TODO return if KLU_analyze failed; broadcast the error */
+                    /* TODO return if TRILINOS_KLU_analyze failed; broadcast the error */
                     PARAKLETE_ERROR (PK_UNKNOWN, "KLU analyze failed") ;
                 }
             }
@@ -351,7 +351,7 @@ paraklete_btf_numeric *amesos_paraklete_btf_factorize
 {
     cholmod_sparse *F = NULL, *C = NULL ;
     cholmod_common *cm ;
-    KLU_common *km ;
+    TRILINOS_KLU_common *km ;
     double *Ax = NULL, *Cx = NULL, *Fx = NULL, *Singleton = NULL ;
     Int *Qbtf = NULL, *Rbtf = NULL, *Ap = NULL, *Ai = NULL, *Cp = NULL,
 	*Ci = NULL, *Pbinv = NULL, *Fp = NULL, *Fi = NULL ;
@@ -490,9 +490,9 @@ paraklete_btf_numeric *amesos_paraklete_btf_factorize
             if (Common->myid == 0)
             {
                 /* use KLU on process 0 */
-                LUnumeric [block] = (void *) KLU_factor (Cp, Ci, Cx,
-                    (KLU_symbolic *) LUsymbolic [block], km) ;
-                if (km->status != KLU_OK)
+                LUnumeric [block] = (void *) TRILINOS_KLU_factor (Cp, Ci, Cx,
+                    (TRILINOS_KLU_symbolic *) LUsymbolic [block], km) ;
+                if (km->status != TRILINOS_KLU_OK)
                 {
                     /* TODO return if KLU failed; broadcast the error */
                     PARAKLETE_ERROR (PK_UNKNOWN, "KLU factorize failed") ;
@@ -553,7 +553,7 @@ Int amesos_paraklete_btf_solve                 /* TRUE if OK, FALSE otherwise */
 {
     double wk ;
     cholmod_common *cm ;
-    KLU_common *km ;
+    TRILINOS_KLU_common *km ;
     cholmod_sparse *F ;
     void **LUsymbolic ;
     void **LUnumeric ;
@@ -626,11 +626,11 @@ Int amesos_paraklete_btf_solve                 /* TRUE if OK, FALSE otherwise */
             if (Common->myid == 0)
             {
                 /* use KLU on process 0 */
-                KLU_solve (
-                    (KLU_symbolic *) LUsymbolic [block],
-                    (KLU_numeric  *) LUnumeric  [block], nk, 1, W+k1, km) ;
+                TRILINOS_KLU_solve (
+                    (TRILINOS_KLU_symbolic *) LUsymbolic [block],
+                    (TRILINOS_KLU_numeric  *) LUnumeric  [block], nk, 1, W+k1, km) ;
 
-                if (km->status != KLU_OK)
+                if (km->status != TRILINOS_KLU_OK)
                 {
                     /* TODO return NULL, and broadcast error to all processes */
                     PARAKLETE_ERROR (PK_UNKNOWN, "KLU solve failed") ;
@@ -696,7 +696,7 @@ void amesos_paraklete_btf_free_symbolic
     void **LUsymbolic ;
     Int n, block, nblocks, k1, k2, nk, *Rbtf ;
     cholmod_common *cm ;
-    KLU_common *km ;
+    TRILINOS_KLU_common *km ;
 
     if (LU_btf_symbolic_handle == NULL)
     {
@@ -722,9 +722,9 @@ void amesos_paraklete_btf_free_symbolic
 	nk = k2 - k1 ;
         if (nk < 1000)
         {
-            KLU_symbolic *S ;
-            S = (KLU_symbolic *) LUsymbolic [block] ;
-            KLU_free_symbolic (&S, &(Common->km)) ;
+            TRILINOS_KLU_symbolic *S ;
+            S = (TRILINOS_KLU_symbolic *) LUsymbolic [block] ;
+            TRILINOS_KLU_free_symbolic (&S, &(Common->km)) ;
         }
         else
         {
@@ -785,9 +785,9 @@ void amesos_paraklete_btf_free_numeric
             else
             {
                 /* this block was factorized with KLU */
-                KLU_numeric *K ;
-                K = (KLU_numeric *) LUnumeric [block] ;
-                KLU_free_numeric (&K, &(Common->km)) ;
+                TRILINOS_KLU_numeric *K ;
+                K = (TRILINOS_KLU_numeric *) LUnumeric [block] ;
+                TRILINOS_KLU_free_numeric (&K, &(Common->km)) ;
             }
         }
         LUnumeric [block] = NULL ;

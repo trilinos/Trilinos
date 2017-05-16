@@ -40,9 +40,11 @@ APPEND_SET(SOURCES
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp
+  UnsmooshFactory.cpp
   UserData/CreateXpetraPreconditioner.cpp
   Utilities
   VariableContainer.cpp
+  VariableDofLaplacianFactory.cpp
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsUserData_cp

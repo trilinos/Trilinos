@@ -1,31 +1,31 @@
 /* ========================================================================== */
-/* === KLU_refactor ========================================================= */
+/* === TRILINOS_KLU_refactor ========================================================= */
 /* ========================================================================== */
 
-/* Factor the matrix, after ordering and analyzing it with KLU_analyze, and
- * factoring it once with KLU_factor.  This routine cannot do any numerical
+/* Factor the matrix, after ordering and analyzing it with TRILINOS_KLU_analyze, and
+ * factoring it once with TRILINOS_KLU_factor.  This routine cannot do any numerical
  * pivoting.  The pattern of the input matrix (Ap, Ai) must be identical to
- * the pattern given to KLU_factor.
+ * the pattern given to TRILINOS_KLU_factor.
  */
 
 #include "trilinos_klu_internal.h"
 
 
 /* ========================================================================== */
-/* === KLU_refactor ========================================================= */
+/* === TRILINOS_KLU_refactor ========================================================= */
 /* ========================================================================== */
 
-Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
+Int TRILINOS_KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
 (
     /* inputs, not modified */
     Int Ap [ ],		/* size n+1, column pointers */
     Int Ai [ ],		/* size nz, row indices */
     double Ax [ ],
-    KLU_symbolic *Symbolic,
+    TRILINOS_KLU_symbolic *Symbolic,
 
     /* input/output */
-    KLU_numeric *Numeric,
-    KLU_common  *Common
+    TRILINOS_KLU_numeric *Numeric,
+    TRILINOS_KLU_common  *Common
 )
 {
     Entry ukk, ujk, s ;
@@ -46,12 +46,12 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
     {
 	return (FALSE) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
 
     if (Numeric == NULL)
     {
 	/* invalid Numeric object */
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (FALSE) ;
     }
 
@@ -88,10 +88,10 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
 	/* factorization was not scaled, but refactorization is scaled */
 	if (Numeric->Rs == NULL)
 	{
-	    Numeric->Rs = (double*) KLU_malloc (n, sizeof (double), Common) ;
-	    if (Common->status < KLU_OK)
+	    Numeric->Rs = (double*) TRILINOS_KLU_malloc (n, sizeof (double), Common) ;
+	    if (Common->status < TRILINOS_KLU_OK)
 	    {
-		Common->status = KLU_OUT_OF_MEMORY ;
+		Common->status = TRILINOS_KLU_OUT_OF_MEMORY ;
 		return (FALSE) ;
 	    }
 	}
@@ -100,7 +100,7 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
     {
 	/* no scaling for refactorization; ensure Numeric->Rs is freed.  This
 	 * does nothing if Numeric->Rs is already NULL. */
-	Numeric->Rs = (double*) KLU_free (Numeric->Rs, n, sizeof (double), Common) ;
+	Numeric->Rs = (double*) TRILINOS_KLU_free (Numeric->Rs, n, sizeof (double), Common) ;
     }
     Rs = Numeric->Rs ;
 
@@ -118,7 +118,7 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
     if (scale >= 0)
     {
 	/* check for out-of-range indices, but do not check for duplicates */
-	if (!KLU_scale (scale, n, Ap, Ai, Ax, Rs, NULL, Common))
+	if (!TRILINOS_KLU_scale (scale, n, Ap, Ai, Ax, Rs, NULL, Common))
 	{
 	    return (FALSE) ;
 	}
@@ -251,7 +251,7 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
 		    if (IS_ZERO (ukk))
 		    {
 			/* matrix is numerically singular */
-			Common->status = KLU_SINGULAR ;
+			Common->status = TRILINOS_KLU_SINGULAR ;
 			if (Common->numerical_rank == EMPTY)
 			{
 			    Common->numerical_rank = k+k1 ;
@@ -395,7 +395,7 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
 		    if (IS_ZERO (ukk))
 		    {
 			/* matrix is numerically singular */
-			Common->status = KLU_SINGULAR ;
+			Common->status = TRILINOS_KLU_SINGULAR ;
 			if (Common->numerical_rank == EMPTY)
 			{
 			    Common->numerical_rank = k+k1 ;
@@ -441,8 +441,8 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
     ASSERT (Offp [n] == poff) ;
     ASSERT (Symbolic->nzoff == poff) ;
     PRINTF (("\n------------------- Off diagonal entries, new:\n")) ;
-    ASSERT (KLU_valid (n, Offp, Offi, Offx)) ;
-    if (Common->status == KLU_OK)
+    ASSERT (TRILINOS_KLU_valid (n, Offp, Offi, Offx)) ;
+    if (Common->status == TRILINOS_KLU_OK)
     {
 	PRINTF (("\n ########### KLU_BTF_REFACTOR done, nblocks %d\n",nblocks));
 	for (block = 0 ; block < nblocks ; block++)
@@ -451,7 +451,7 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
 	    k2 = R [block+1] ;
 	    nk = k2 - k1 ;
 	    PRINTF ((
-		"\n================KLU_refactor output: k1 %d k2 %d nk %d\n",
+		"\n================TRILINOS_KLU_refactor output: k1 %d k2 %d nk %d\n",
 		k1, k2, nk)) ;
 	    if (nk == 1)
 	    {
@@ -464,11 +464,11 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
                 Llen = Numeric->Llen + k1 ;
                 LU = (Unit *) Numeric->LUbx [block] ;
 		PRINTF (("\n---- L block %d\n", block)) ;
-		ASSERT (KLU_valid_LU (nk, TRUE, Lip, Llen, LU)) ;
+		ASSERT (TRILINOS_KLU_valid_LU (nk, TRUE, Lip, Llen, LU)) ;
 		Uip = Numeric->Uip + k1 ;
                 Ulen = Numeric->Ulen + k1 ;
 		PRINTF (("\n---- U block %d\n", block)) ;
-		ASSERT (KLU_valid_LU (nk, FALSE, Uip, Ulen, LU)) ;
+		ASSERT (TRILINOS_KLU_valid_LU (nk, FALSE, Uip, Ulen, LU)) ;
 	    }
 	}
     }

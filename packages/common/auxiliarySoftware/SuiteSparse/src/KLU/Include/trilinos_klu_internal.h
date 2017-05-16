@@ -77,7 +77,7 @@
 #define UNFLIP(i) (((i) < EMPTY) ? FLIP (i) : (i))
 
 
-size_t KLU_kernel   /* final size of LU on output */
+size_t TRILINOS_KLU_kernel   /* final size of LU on output */
 (
     /* input, not modified */
     Int n,		/* A is n-by-n */
@@ -119,11 +119,11 @@ size_t KLU_kernel   /* final size of LU on output */
     Int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
     Int Offi [ ],
     Entry Offx [ ],
-    KLU_common *Common	/* the control input/output structure */
+    TRILINOS_KLU_common *Common	/* the control input/output structure */
 ) ;
 
 
-size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
+size_t TRILINOS_KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
 (
     /* inputs, not modified */
     Int n,	    /* A is n-by-n. n must be > 0. */
@@ -157,10 +157,10 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
     Int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
     Int Offi [ ],
     Entry Offx [ ],
-    KLU_common *Common	/* the control input/output structure */
+    TRILINOS_KLU_common *Common	/* the control input/output structure */
 ) ;
 
-void KLU_lsolve
+void TRILINOS_KLU_lsolve
 (
     /* inputs, not modified: */
     Int n,
@@ -172,7 +172,7 @@ void KLU_lsolve
     Entry X [ ]
 ) ;
 
-void KLU_ltsolve
+void TRILINOS_KLU_ltsolve
 (
     /* inputs, not modified: */
     Int n,
@@ -188,7 +188,7 @@ void KLU_ltsolve
 ) ;
 
 
-void KLU_usolve
+void TRILINOS_KLU_usolve
 (
     /* inputs, not modified: */
     Int n,
@@ -201,7 +201,7 @@ void KLU_usolve
     Entry X [ ]
 ) ;
 
-void KLU_utsolve
+void TRILINOS_KLU_utsolve
 (
     /* inputs, not modified: */
     Int n,
@@ -217,7 +217,7 @@ void KLU_utsolve
     Entry X [ ]
 ) ;
 
-Int KLU_valid 
+Int TRILINOS_KLU_valid 
 (
     Int n, 
     Int Ap [ ], 
@@ -225,7 +225,7 @@ Int KLU_valid
     Entry Ax [ ]
 ) ;
 
-Int KLU_valid_LU 
+Int TRILINOS_KLU_valid_LU 
 (
     Int n, 
     Int flag_test_start_ptr, 
@@ -234,10 +234,10 @@ Int KLU_valid_LU
     Unit LU [ ]
 );
 
-size_t KLU_add_size_t (size_t a, size_t b, Int *ok) ;
+size_t TRILINOS_KLU_add_size_t (size_t a, size_t b, Int *ok) ;
 
-size_t KLU_mult_size_t (size_t a, size_t k, Int *ok) ;
+size_t TRILINOS_KLU_mult_size_t (size_t a, size_t k, Int *ok) ;
 
-KLU_symbolic *KLU_alloc_symbolic (Int n, Int *Ap, Int *Ai, KLU_common *Common) ;
+TRILINOS_KLU_symbolic *TRILINOS_KLU_alloc_symbolic (Int n, Int *Ap, Int *Ai, TRILINOS_KLU_common *Common) ;
 
 #endif
