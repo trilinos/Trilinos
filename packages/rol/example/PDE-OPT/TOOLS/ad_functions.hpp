@@ -52,12 +52,14 @@ namespace AD {
 
 // Prototype function that returns a scalar quantity
 // Takes one or more templated containers with subscript access
-template<class Param, template<class> Array>  
+template<class Param, template<class> class Array>  
 struct ScalarFunction {
+
+  using Real = ElementType<Param>;
 
   template<class X> 
   static ResultType<Real,X>
-  eval( const Param<Real> &param,
+  eval( const Param &param,
         const Array<X> &x ) {
     return ResultType<Real,X>(0);
   }
@@ -69,6 +71,7 @@ struct ScalarFunction {
         const Array<Y> &y ) {
     return ResultType<Real,X,Y>(0);
   }
+
 }; // ScalarFunction
 
 
@@ -76,16 +79,18 @@ struct ScalarFunction {
 
 
 // Prototype function that modifies an array in-place
-template<template<class> class Param, template<class> class Array>
+template<class Param, template<class> class Array>
 struct ArrayFunction {
 
+  using Real = ElementType<Param>;
+
   template<class ScalarX>
-  static void eval( const Param<Real> &param,
+  static void eval( const Param &param,
                     Array<ResultType<Real,ScalarX>> &result,
                     const Array<ScalarX> &x ) { }
 
   template<class ScalarX, class ScalarY>
-  static void eval( const Param<Real> &param,
+  static void eval( const Param &param,
                     Array<ResultType<Real,ScalarX>> &result,
                     const Array<ScalarX> &x,
                     const Array<ScalarY> &y ) { }

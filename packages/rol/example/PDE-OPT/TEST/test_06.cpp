@@ -57,34 +57,48 @@
 // f(x,y) = <x,x> + 2*<y,y> - 2 y[0]*(x[0]+x[1]) + 3*x[0]*(y[1]-y[0])
 //
 // coeff = [1,2,-2,3]
-
-template<template<class> class Param, template<class> class Array>
+template<class Param, template<class> class Array>
 struct ExampleQuadratic {
+
+//  using Real = TemplateTools::ElementType<Param>;
+
+
 
   template<class Real, class ScalarX, class ScalarY>
   static AD::ResultType<Real,ScalarX,ScalarY> 
-
-  eval( const Param<Real> &param,
+  eval( const Param &p,
         const Array<ScalarX> &x, 
         const Array<ScalarY> &y ) {
-    
-    ScalarX xdotx; 
-    ScalarY ydoty;
+
+    using Index = TemplateTools::index_t<Array<ScalarX>>;    
+    using TemplateTools::get;
+
+    ScalarX xdotx(0); 
+    ScalarY ydoty(0);
 
     auto nx = TemplateTools::size(x);
     auto ny = TemplateTools::size(y);     
 
-    for( auto xval : x ) { xdotx += xval*xval; }
-    for( auto yval : y ) { ydoty += yval*yval; }
+    for( Index i=0; i<nx; ++i ) {
+      xdotx += get(x, i);
+    }
+    for( Index j=0; j<ny; ++j ) {
+      ydoty = get(y,j);
+    }
 
-    return param[0]*xdotx            + param[1]*ydoty + 
-           param[2]*y[0]*(x[0]+x[1]) + param[3]*x[0]*(y[1]-y[0]);
+    return get(p,0)*xdotx + 
+           get(p,1)*ydoty + 
+           get(p,2)*get(y,0)*(get(x,0)+get(x,1)) +
+           get(p,3)*get(x,0)*(get(y,1)-get(y,0));
 
   }
 }; // Example Quadratic
 
 
-
+struct Foo {
+  int size(){return 0;} 
+  void bar(int i) {}
+};
 
 int main(int argc, char *argv[] ) {
 
@@ -111,10 +125,10 @@ int main(int argc, char *argv[] ) {
     errorFlag += static_cast<int>(AD::has_dx<RealT>::value);
     errorFlag += static_cast<int>(!AD::has_dx<DFad>::value);
 
-    *os << "Does type RealT = double have a method .dx()?... " 
+    *os << "Does type RealT = double have a method .dx(int)?... " 
         << AD::has_dx<RealT>::value << std::endl;
 
-    *os << "Does type DFad<RealT> have a method .dx()?...... " 
+    *os << "Does type DFad<RealT> have a method .dx(int)?...... " 
         << AD::has_dx<DFad>::value << std::endl;
 
     auto xval  = AD::value(x);
@@ -157,7 +171,11 @@ int main(int argc, char *argv[] ) {
 
     std::vector<RealT> x(Nx);
     std::vector<RealT> y(Ny); 
-  
+
+//    std::cout << TemplateTools::size(coeff) << std::endl;
+//    std::cout << TemplateTools::max( coeff ) << std::endl;
+//    std::cout << TemplateTools::getElement( coeff, 1 ) << std::endl;
+
   }
 
 
