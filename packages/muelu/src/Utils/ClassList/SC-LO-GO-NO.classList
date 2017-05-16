@@ -96,10 +96,12 @@ TopSmootherFactory
 TpetraOperator
 TransPFactory
 TrilinosSmoother
+UnsmooshFactory
 UserPFactory
 Utilities
 UtilitiesBase
 Utilities_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+VariableDofLaplacianFactory
 SemiCoarsenPFactory
 UzawaSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 VisualizationHelpers
