@@ -152,7 +152,7 @@ public:
     }
     ParametrizedObjective_->update(x,flag,iter);
     ValueSampler_->update(x);
-    value_ = 0.0;
+    value_ = static_cast<Real>(0);
     if ( storage_ ) {
       value_storage_.clear();
     }
@@ -182,6 +182,7 @@ public:
     ValueSampler_->sumAll(&myval,&val,1);
     value_ += val;
     ValueSampler_->setSamples();
+    tol = error;
     return value_;
   }
 
@@ -198,12 +199,16 @@ public:
         (ptgs.back())->set(*pointDual_);
       }
       error = GradientSampler_->computeError(ptgs,x);
+//if (GradientSampler_->batchID()==0) {
+//  std::cout << "IN GRADIENT: ERROR = " << error << "  TOL = " << tol << std::endl;  
+//}
       ptgs.clear();
     }
     GradientSampler_->sumAll(*sumDual_,g);
     gradient_->plus(g);
     g.set(*(gradient_));
     GradientSampler_->setSamples();
+    tol = error;
   }
 
   virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v,
