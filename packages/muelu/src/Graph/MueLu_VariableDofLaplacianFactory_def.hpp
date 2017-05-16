@@ -114,7 +114,7 @@ namespace MueLu {
     Scalar amalgDropTol = 1.8e-9; // TODO parameter from parameter list ("variable DOF amalgamation: threshold")
 
     bool bHasZeroDiagonal = false;
-    Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*A,bHasZeroDiagonal,dirDropTol);
+    Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*A,bHasZeroDiagonal,STS::magnitude(dirDropTol));
 
     // TODO check availability + content (length)
     Teuchos::ArrayRCP<const bool> dofPresent = currentLevel.Get< Teuchos::ArrayRCP<const bool> >("DofPresent", NoFactory::get());
@@ -244,7 +244,7 @@ namespace MueLu {
       }
       for (size_t j = rowptr[i]; j < rowptr[i+1]; j++) {
         if(doNotDrop == true ||
-            ( STS::magnitude(values[j] / sqrt(STS::magnitude(diagVecData[i]) * STS::magnitude(diagVecData[colind[j]]))   ) >= amalgDropTol )) {
+            ( STS::magnitude(values[j] / sqrt(STS::magnitude(diagVecData[i]) * STS::magnitude(diagVecData[colind[j]]))   ) >= STS::magnitude(amalgDropTol) )) {
           blockColumn = myLocalNodeIds[colind[j]];
           if(isNonZero[blockColumn] == false) {
             isNonZero[blockColumn] = true;
