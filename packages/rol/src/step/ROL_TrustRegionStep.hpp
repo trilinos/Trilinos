@@ -235,15 +235,29 @@ private:
     Real oem2(1.e-2), one(1), oe4(1.e4);
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     if ( useInexact_[1] ) {
-      Real c = scale0_*std::max(oem2,std::min(one,oe4*algo_state.gnorm));
-      Real gtol1  = c*(state->searchSize);
-      Real gtol0  = scale1_*gtol1 + one;
-      while ( gtol0 > gtol1*scale1_ ) {
+      //Real c = scale0_*std::max(oem2,std::min(one,oe4*algo_state.gnorm));
+      //Real gtol1  = c*std::min(algo_state.gnorm,state->searchSize);
+      //Real gtol0  = scale1_*gtol1 + one;
+      //while ( gtol0 > gtol1*scale1_ ) {
+      //  obj.gradient(*(state->gradientVec),x,gtol1);
+      //  algo_state.gnorm = computeCriticalityMeasure(*(state->gradientVec),x,bnd);
+      //  gtol0 = gtol1;
+      //  c = scale0_*std::max(oem2,std::min(one,oe4*algo_state.gnorm));
+      //  gtol1 = c*std::min(algo_state.gnorm,state->searchSize);
+      //}
+      //algo_state.ngrad++;
+      Real gtol1  = scale0_*std::min(algo_state.gnorm,state->searchSize);
+      Real gtol0  = gtol1 + one, tmp(0);
+//int cnt = 0;
+      while ( gtol0 > gtol1 ) {
         obj.gradient(*(state->gradientVec),x,gtol1);
         algo_state.gnorm = computeCriticalityMeasure(*(state->gradientVec),x,bnd);
         gtol0 = gtol1;
-        c = scale0_*std::max(oem2,std::min(one,oe4*algo_state.gnorm));
-        gtol1 = c*std::min(algo_state.gnorm,state->searchSize);
+        gtol1 = scale0_*std::min(algo_state.gnorm,state->searchSize);
+//if (verbosity_) {
+//std::cout << "IN UPDATE GRADIENT: CNT = " << cnt << std::endl;
+//}
+//cnt++;
       }
       algo_state.ngrad++;
     }
@@ -653,6 +667,12 @@ public:
       }
       // Update algorithm state
       (algo_state.iterateVec)->set(x);
+    }
+    else {
+      if ( useInexact_[1] ) {
+        // Update objective function and approximate model
+        updateGradient(x,obj,bnd,algo_state);
+      }
     }
     // Update algorithm state
     algo_state.value = fnew;

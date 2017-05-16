@@ -170,7 +170,7 @@ public:
     updateFlag_ = flag;
     updateIter_ = iter;
     Real ctol = std::sqrt(ROL_EPSILON<Real>());
-    stateStore_->equalityConstraintUpdate(flag);
+    stateStore_->equalityConstraintUpdate(true);
     solveConRed(z, ctol);
   }
 

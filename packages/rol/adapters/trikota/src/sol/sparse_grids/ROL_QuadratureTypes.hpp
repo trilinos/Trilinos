@@ -199,6 +199,11 @@ namespace ROL {
     std::vector<EGrowth> growth1D;
     bool normalized;
     bool adaptive;
+    bool print;
+    std::string name;
+    QuadratureInfo(void)
+      : maxLevel(1), normalized(true), adaptive(false),
+        print(false), name("Default") {}
   };
 
   inline int growthRule1D(int index, EGrowth growth, EQuadrature rule) {
@@ -238,7 +243,7 @@ namespace ROL {
           return o;
         }
       }
-      else if (growth==GROWTH_MODEXP||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODEXP) {
         if (level==0) {
           return 1;
         }
@@ -250,7 +255,7 @@ namespace ROL {
           return o;
         }
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         if (level==0) {
           return 1;
         }
@@ -276,14 +281,14 @@ namespace ROL {
         }
         return o;
       }
-      else if (growth==GROWTH_MODEXP||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODEXP) {
         int o = 1;
         while (o<4*level+1) {
           o = 2*o+1;
         }
         return o;
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         return std::pow(2,level+1)-1;
       }
     }
@@ -310,7 +315,7 @@ namespace ROL {
         return o;
         }
       }
-      else if (growth==GROWTH_MODEXP||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODEXP) {
         if (level==0) {
           return 1;
         }
@@ -324,7 +329,7 @@ namespace ROL {
           return o;
         }
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         return std::pow(2,level+1)-1;
       }
     }
@@ -336,7 +341,7 @@ namespace ROL {
       else if (growth==GROWTH_SLOWLINODD) {
         return 2*((level+1)/2)+1;
       }
-      else if (growth==GROWTH_MODLIN||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODLIN) {
         return 2*level+1;
       }
       else if (growth==GROWTH_SLOWEXP) {
@@ -353,7 +358,7 @@ namespace ROL {
         }
         return o;
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         return std::pow(2,level+1)-1;
       }
     }
@@ -365,7 +370,7 @@ namespace ROL {
       else if (growth==GROWTH_SLOWLINODD) {
         return 2*((level+1)/2)+1;
       }
-      else if (growth==GROWTH_MODLIN||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODLIN) {
         return 2*level+1;
       }
       else if (growth==GROWTH_SLOWEXP) {
@@ -382,7 +387,7 @@ namespace ROL {
         }
         return o;
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         return std::pow(2,level+1)-1;
       }
     }
@@ -394,7 +399,7 @@ namespace ROL {
       else if (growth==GROWTH_SLOWLINODD) {
         return 2*((level+1)/2)+1;
       }
-      else if (growth==GROWTH_MODLIN||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODLIN) {
         return 2*level+1;
       }
       else if (growth==GROWTH_SLOWEXP) {
@@ -411,7 +416,7 @@ namespace ROL {
         }
         return o;
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         return std::pow(2,level+1)-1;
       }
     }
@@ -423,7 +428,7 @@ namespace ROL {
       else if (growth==GROWTH_SLOWLINODD) {
         return 2*((level+1)/2)+1;
       }
-      else if (growth==GROWTH_MODLIN||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODLIN) {
         return 2*level+1;
       }
       else if (growth==GROWTH_SLOWEXP) {
@@ -440,7 +445,7 @@ namespace ROL {
         }
         return o;
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         return std::pow(2,level+1)-1;
       }
     }
@@ -453,7 +458,7 @@ namespace ROL {
       else if (growth==GROWTH_SLOWLINODD) {
         return 2*((level+1)/2)+1;
       }
-      else if (growth==GROWTH_MODLIN||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODLIN) {
         return 2*level+1;
       }
       else if (growth==GROWTH_SLOWEXP) {
@@ -470,7 +475,7 @@ namespace ROL {
         }
         return o;
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         return std::pow(2,level+1)-1;
       }
     }
@@ -494,7 +499,7 @@ namespace ROL {
         }
         return o;
       }
-      else if (growth==GROWTH_MODEXP||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODEXP) {
         int l = 0, p = p_hgk[l], o = o_hgk[l];
         while (p<4*level+1 && l<4) {
           l++;
@@ -503,7 +508,7 @@ namespace ROL {
         }
         return o;
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         int l = level; l = std::max(l,0); l = std::min(l,4);
         return o_hgk[l];
       }
@@ -531,7 +536,7 @@ namespace ROL {
           return o;
         }
       }
-      else if (growth==GROWTH_MODEXP||growth==GROWTH_DEFAULT) {
+      else if (growth==GROWTH_MODEXP) {
         if (level==0) {
           return 1;
         }
@@ -543,7 +548,7 @@ namespace ROL {
           return o;
         }
       }
-      else if (growth==GROWTH_FULLEXP) {
+      else if (growth==GROWTH_FULLEXP||growth==GROWTH_DEFAULT) {
         if (level==0) {
           return 1;
         }

@@ -85,7 +85,7 @@ namespace Ifpack2 {
     /// In order to override the default, just specialize this
     /// function for your particular ScalarType.
     template<class ScalarType>
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
+    inline typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     ilutDefaultDropTolerance () {
       using Teuchos::as;
       typedef Teuchos::ScalarTraits<ScalarType> STS;
@@ -104,7 +104,7 @@ namespace Ifpack2 {
     // Full specialization for ScalarType = double.
     // This specialization preserves ILUT's previous default behavior.
     template<>
-    Teuchos::ScalarTraits<double>::magnitudeType
+    inline Teuchos::ScalarTraits<double>::magnitudeType
     ilutDefaultDropTolerance<double> () {
       return 1e-12;
     }
