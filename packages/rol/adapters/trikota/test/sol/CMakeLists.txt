@@ -10,6 +10,15 @@ IF(${PROJECT_NAME}_ENABLE_TriKota)
     ADD_DIR_TO_NAME
     )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SparseGridQuadratureTest
+    SOURCES test_02.cpp
+    ARGS PrintItAll
+    COMM serial mpi  
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     SparseGridBurgersControlDataCopy
     SOURCE_FILES
