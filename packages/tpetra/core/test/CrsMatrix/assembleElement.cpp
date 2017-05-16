@@ -269,7 +269,7 @@ namespace { // (anonymous)
         Kokkos::HostSpace> rhs_h ("rhs_h", eltDim);
       {
         SC curVal = ONE;
-        for (LO i = 0; i < rhs_h.dimension_0 (); ++i) {
+        for (LO i = 0; i < static_cast<LO> (rhs_h.dimension_0 ()); ++i) {
           rhs_h(i) = -curVal;
           curVal = curVal + ONE;
         }
@@ -421,7 +421,7 @@ namespace { // (anonymous)
         typename sparse_graph_type::row_map_type::array_layout,
         Kokkos::HostSpace> A_ptr_host ("A_ptr_host", numRows+1);
       A_ptr_host[0] = 0;
-      for (offset_type i = 1; i <= numRows; ++i) {
+      for (offset_type i = 1; i <= static_cast<offset_type> (numRows); ++i) {
         A_ptr_host[i] = A_ptr_host[i-1] + numEntPerRow[i-1];
       }
       TEST_EQUALITY( A_ptr_host[numRows], numEnt );
