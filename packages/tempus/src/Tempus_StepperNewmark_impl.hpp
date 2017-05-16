@@ -301,15 +301,17 @@ void StepperNewmark<Scalar>::takeStep(
     //Solve for new acceleration
     //IKT, 3/13/17: check how solveNonLinear works.
     const Thyra::SolveStatus<double> sStatus =
-      this->solveNonLinear(residualModel_, *solver_, a_new, inArgs_);
-
-    correctVelocity(*v_new, *v_pred, *a_new, dt);
-    correctDisplacement(*d_new, *d_pred, *a_new, dt);
+      this->solveNonLinear(residualModel_, *solver_, a_old, inArgs_);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+
+    Thyra::copy(*a_old, a_new.ptr()); 
+    correctVelocity(*v_new, *v_pred, *a_new, dt);
+    correctDisplacement(*d_new, *d_pred, *a_new, dt);
+
     workingState->setOrder(this->getOrder());
   }
   return;
