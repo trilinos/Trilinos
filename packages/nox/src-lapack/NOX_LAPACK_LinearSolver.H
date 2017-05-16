@@ -120,6 +120,8 @@ namespace NOX {
 
     protected:
 
+      typedef typename Teuchos::ScalarTraits<T>::magnitudeType MT;
+
       //! Matrix
       Matrix<T> mat;
 
@@ -138,14 +140,16 @@ namespace NOX {
       //! LAPACK wrappers
       Teuchos::LAPACK<int,T> lapack;
       
-      //! Work array size for GESSL if linear solve fails
+      //! Work array size for GELSS if linear solve fails
       int lwork;
-      //! Rank param for GESSL if linear solve fails
+      //! Rank param for GELSS if linear solve fails
       int rank;
-      //! Singular values for GESSL if linear solve fails
-      Teuchos::ArrayRCP<T> sv;
-      //! Work array for GESSL if linear solve fails
+      //! Singular values for GELSS if linear solve fails
+      Teuchos::ArrayRCP<MT> sv;
+      //! Work array for GELSS if linear solve fails
       Teuchos::ArrayRCP<T> work;
+      //! Magnitude work array for complex-valued GELSS
+      Teuchos::ArrayRCP<MT> rwork;
 
     };
 
@@ -255,7 +259,10 @@ NOX::LAPACK::LinearSolver<T>::solve(bool trans, int ncols, T* output)
     lapack.GETRF(n, n, &lu(0,0), n, &pivots[0], &info);
     if (info != 0){//try solving a least squares problem instead (in case the linear system has infinitely many solutions)
       lu=mat;
-      lapack.GELSS(n,n,ncols,&lu(0,0), n, output, n, sv.get(), rcond, &rank, work.get(), lwork, &info);
+      if (Teuchos::ScalarTraits<T>::isComplex) {
+        rwork.resize( 5*n );
+      }
+      lapack.GELSS(n,n,ncols,&lu(0,0), n, output, n, sv.get(), rcond, &rank, work.get(), lwork, rwork.get(), &info);
       return false;
     }
     isValidLU = true;
