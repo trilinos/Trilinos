@@ -137,7 +137,7 @@ namespace MueLu {
     size_t nLocalNodes, nLocalPlusGhostNodes;
     this->assignGhostLocalNodeIds(A->getRowMap(), A->getColMap(), myLocalNodeIds, map, maxDofPerNode, nLocalNodes, nLocalPlusGhostNodes, comm);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(dofPresent.size() != nLocalNodes * maxDofPerNode,MueLu::Exceptions::RuntimeError,"VariableDofLaplacianFactory: size of provided DofPresent array is " << dofPresent.size() << " but should be " << nLocalNodes * maxDofPerNode << " on the current processor.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(dofPresent.size()) != Teuchos::as<size_t>(nLocalNodes * maxDofPerNode),MueLu::Exceptions::RuntimeError,"VariableDofLaplacianFactory: size of provided DofPresent array is " << dofPresent.size() << " but should be " << nLocalNodes * maxDofPerNode << " on the current processor.");
 
     // put content of assignGhostLocalNodeIds here...
 
@@ -234,7 +234,7 @@ namespace MueLu {
     if (amalgDropTol == Teuchos::ScalarTraits<Scalar>::zero()) doNotDrop = true;
     if (values.size() == 0) doNotDrop = true;
 
-    for(size_t i = 0; i < rowptr.size()-1; i++) {
+    for(decltype(rowptr.size()) i = 0; i < rowptr.size()-1; i++) {
       blockRow = std::floor<LocalOrdinal>( map[i] / maxDofPerNode);
       if (blockRow != oldBlockRow) {
         // zero out info recording nonzeros in oldBlockRow
@@ -257,7 +257,7 @@ namespace MueLu {
     }
     amalgRowPtr[blockRow+1] = newNzs;
 
-    TEUCHOS_TEST_FOR_EXCEPTION((blockRow+1 != nLocalNodes) && (nLocalNodes !=0), MueLu::Exceptions::RuntimeError, "VariableDofsPerNodeAmalgamation: error, computed # block rows (" << blockRow+1 <<") != nLocalNodes (" << nLocalNodes <<")");
+    TEUCHOS_TEST_FOR_EXCEPTION((blockRow+1 != Teuchos::as<LO>(nLocalNodes)) && (nLocalNodes !=0), MueLu::Exceptions::RuntimeError, "VariableDofsPerNodeAmalgamation: error, computed # block rows (" << blockRow+1 <<") != nLocalNodes (" << nLocalNodes <<")");
 
     amalgCols.resize(amalgRowPtr[nLocalNodes]);
 
@@ -283,10 +283,10 @@ namespace MueLu {
     std::vector<bool> keep(amalgRowPtr[amalgRowPtr.size()-1],true); // keep connection associated with node
 
     size_t ii = 0; // iteration index for present dofs
-    for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
+    for(decltype(amalgRowPtr.size()) i = 0; i < amalgRowPtr.size()-1; i++) {
       LocalOrdinal temp = 1; // basis for dof-id
       uniqueId[i] = 0;
-      for (size_t j = 0; j < maxDofPerNode; j++) {
+      for (decltype(maxDofPerNode) j = 0; j < maxDofPerNode; j++) {
         if (dofPresent[ii++]) uniqueId[i] += temp; // encode dof to be present
         temp = temp * 2; // check next dof
       }
@@ -298,14 +298,14 @@ namespace MueLu {
     RCP<Vector> nodeIdTarget = VectorFactory::Build(amalgColMap,true);
 
     Teuchos::ArrayRCP< Scalar > nodeIdSrcData = nodeIdSrc->getDataNonConst(0);
-    for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
+    for(decltype(amalgRowPtr.size()) i = 0; i < amalgRowPtr.size()-1; i++) {
       nodeIdSrcData[i] = uniqueId[i];
     }
 
     nodeIdTarget->doImport(*nodeIdSrc, *nodeImporter, Xpetra::INSERT);
 
     Teuchos::ArrayRCP< const Scalar > nodeIdTargetData = nodeIdTarget->getData(0);
-    for(size_t i = 0; i < uniqueId.size(); i++) {
+    for(decltype(uniqueId.size()) i = 0; i < uniqueId.size(); i++) {
       uniqueId[i] = nodeIdTargetData[i];
     }
 
@@ -313,7 +313,7 @@ namespace MueLu {
 
     // uniqueId now should contain ghosted data
 
-    for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
+    for(decltype(amalgRowPtr.size()) i = 0; i < amalgRowPtr.size()-1; i++) {
       for(size_t j = amalgRowPtr[i]; j < amalgRowPtr[i+1]; j++) {
         if (uniqueId[i] != uniqueId[amalgCols[j]]) keep [j] = false;
       }
@@ -342,7 +342,7 @@ namespace MueLu {
     this->buildLaplacian(amalgRowPtr, amalgCols, lapVals, Coords->getNumVectors(), ghostedCoords);
 
     // sort column GIDs
-    for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
+    for(decltype(amalgRowPtr.size()) i = 0; i < amalgRowPtr.size()-1; i++) {
       size_t j = amalgRowPtr[i];
       this->MueLu_az_sort<LocalOrdinal>(&(amalgCols[j]), amalgRowPtr[i+1] - j, NULL, &(lapVals[j]));
     }
@@ -369,11 +369,11 @@ namespace MueLu {
       Teuchos::ArrayRCP< const double > x = ghostedCoords->getData(0);
       Teuchos::ArrayRCP< const double > y = ghostedCoords->getData(1);
 
-      for(size_t i = 0; i < rowPtr.size() - 1; i++) {
+      for(decltype(rowPtr.size()) i = 0; i < rowPtr.size() - 1; i++) {
         Scalar sum = Teuchos::ScalarTraits<Scalar>::zero();
         LocalOrdinal diag = -1;
         for(size_t j = rowPtr[i]; j < rowPtr[i+1]; j++) {
-          if(cols[j] != i){
+          if(cols[j] != Teuchos::as<LO>(i)){
             vals[j] = std::sqrt( (x[i]-x[cols[j]]) * (x[i]-x[cols[j]]) +
                                  (y[i]-y[cols[j]]) * (y[i]-y[cols[j]]) );
             TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == Teuchos::ScalarTraits<Scalar>::zero(), MueLu::Exceptions::RuntimeError, "buildLaplacian: error, " << i << " and " << cols[j] << " have same coordinates: " << x[i] << " and " << y[i]);
@@ -392,11 +392,11 @@ namespace MueLu {
       Teuchos::ArrayRCP< const double > y = ghostedCoords->getData(1);
       Teuchos::ArrayRCP< const double > z = ghostedCoords->getData(2);
 
-      for(size_t i = 0; i < rowPtr.size() - 1; i++) {
+      for(decltype(rowPtr.size()) i = 0; i < rowPtr.size() - 1; i++) {
         Scalar sum = Teuchos::ScalarTraits<Scalar>::zero();
         LocalOrdinal diag = -1;
         for(size_t j = rowPtr[i]; j < rowPtr[i+1]; j++) {
-          if(cols[j] != i){
+          if(cols[j] != Teuchos::as<LO>(i)){
             vals[j] = std::sqrt( (x[i]-x[cols[j]]) * (x[i]-x[cols[j]]) +
                                  (y[i]-y[cols[j]]) * (y[i]-y[cols[j]]) +
                                  (z[i]-z[cols[j]]) * (z[i]-z[cols[j]]) );
@@ -453,7 +453,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildPaddedMap(const Teuchos::ArrayRCP<const bool> & dofPresent, std::vector<LocalOrdinal> & map, size_t nDofs) const {
     size_t count = 0;
-    for (size_t i = 0; i < dofPresent.size(); i++)
+    for (decltype(dofPresent.size()) i = 0; i < dofPresent.size(); i++)
       if(dofPresent[i] == true) map[count++] = Teuchos::as<LocalOrdinal>(i);
     TEUCHOS_TEST_FOR_EXCEPTION(nDofs != count, MueLu::Exceptions::RuntimeError, "VariableDofLaplacianFactory::buildPaddedMap: #dofs in dofPresent does not match the expected value (number of rows of A): " << nDofs << " vs. " << count);
   }

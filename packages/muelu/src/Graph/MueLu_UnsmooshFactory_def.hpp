@@ -127,7 +127,7 @@ namespace MueLu {
       // also use injection.
 
       size_t cnt = 0; // local id counter
-      for (size_t i = 0; i < amalgRowPtr.size() - 1; i++) {
+      for (decltype(amalgRowPtr.size()) i = 0; i < amalgRowPtr.size() - 1; i++) {
         // determine number of entries in amalgamated dof row i
         size_t rowLength = amalgRowPtr[i+1] - amalgRowPtr[i];
 
@@ -153,7 +153,7 @@ namespace MueLu {
       // at the status array and skip padded dofs.
 
       size_t cnt = 0; // local id counter
-      for (size_t i = 0; i < amalgRowPtr.size() - 1; i++) {
+      for (decltype(amalgRowPtr.size()) i = 0; i < amalgRowPtr.size() - 1; i++) {
         // determine number of entries in amalgamated dof row i
         size_t rowLength = amalgRowPtr[i+1] - amalgRowPtr[i];
 
@@ -204,7 +204,7 @@ namespace MueLu {
     // We assume non-overlapping aggreagtes, i.e., colmap = domainmap
     Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(),coarseDomainMap, 1);
 
-    for (size_t i = 0; i < newPRowPtr.size() - 1; i++) {
+    for (decltype(newPRowPtr.size()) i = 0; i < newPRowPtr.size() - 1; i++) {
       unamalgPCrs->insertLocalValues(i, newPCols.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]),
           newPVals.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]));
     }
