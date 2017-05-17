@@ -47,6 +47,7 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Tpetra_Details_crsMatrixAssembleElement.hpp"
+#include <typeinfo> // methods on std::type_info
 #include <utility> // std::pair
 
 // CUDA 7.5 at least doesn't like functors in anonymous namespaces.
@@ -217,6 +218,14 @@ namespace { // (anonymous)
     out << "Create Map just to initialize Kokkos correctly" << endl;
     auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
     map_type mapToInitKokkos (Tpetra::global_size_t (100), 0, comm);
+
+    const bool execSpaceInitd = DT::execution_space::is_initialized ();
+    TEST_ASSERT( execSpaceInitd );
+    if (! execSpaceInitd) {
+      out << "Tpetra::Map failed to initialize Kokkos execution space \""
+          << typeid (DT::execution_space).name () << "\"." << endl;
+      return;
+    }
 
     // Dimension of the elements to test.
     constexpr LO eltDim = 4;
