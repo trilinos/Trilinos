@@ -58,7 +58,14 @@
 
 #ifdef HAVE_ZOLTAN2_AMD
 #include "amd.h"
+#ifdef SUITESPARSE_MAIN_VERSION
+#if SUITESPARSE_MAIN_VERSION < 4
+typedef UF_long SuiteSparse_long;
 #endif
+#endif
+#endif
+
+
 
 namespace Zoltan2{
 
