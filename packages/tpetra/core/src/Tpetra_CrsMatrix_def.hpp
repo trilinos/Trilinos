@@ -3636,9 +3636,6 @@ namespace Tpetra {
     const bool sortGraph = false; // we'll sort graph & matrix together below
     theGraph.reindexColumns (newColMap, newImport, sortGraph);
     if (sortEachRow && theGraph.isLocallyIndexed () && ! theGraph.isSorted ()) {
-      // We can't just call sortEntries() here, because that fails if
-      // the matrix has a const graph.  We want to use the given graph
-      // in that case.
       const LocalOrdinal lclNumRows =
         static_cast<LocalOrdinal> (theGraph.getNodeNumRows ());
       for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
@@ -4092,12 +4089,10 @@ namespace Tpetra {
       // anything if the graph is already locally indexed.
       myGraph_->makeIndicesLocal ();
 
-      if (! myGraph_->isSorted ()) {
-        sortEntries ();
-      }
-      if (! myGraph_->isMerged ()) {
-        mergeRedundantEntries ();
-      }
+      const bool sorted = myGraph_->isSorted ();
+      const bool merged = myGraph_->isMerged ();
+      this->sortAndMergeIndicesAndValues (sorted, merged);
+
       // Make the Import and Export, if they haven't been made already.
       myGraph_->makeImportExport ();
       myGraph_->computeGlobalConstants ();
@@ -4193,46 +4188,6 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sortEntries ()
-  {
-    typedef LocalOrdinal LO;
-    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
-      host_execution_space;
-    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
-    const char tfecfFuncName[] = "sortEntries: ";
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isStaticGraph (), std::runtime_error, "Cannot sort with static graph.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (myGraph_.is_null (), std::logic_error, "myGraph_ is null, but this "
-       "matrix claims ! isStaticGraph().  Please report this bug to the "
-       "Tpetra developers.");
-
-    crs_graph_type& graph = * (this->myGraph_);
-    const bool sorted = graph.isSorted ();
-
-    if (! sorted) {
-      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
-      // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
-      Kokkos::parallel_for (range_type (0, lclNumRows),
-        [this, &graph] (const LO& lclRow) {
-          const RowInfo rowInfo = graph.getRowInfo (lclRow);
-          auto lclColInds = graph.getLocalKokkosRowViewNonConst (rowInfo);
-          auto vals = this->getRowViewNonConst (rowInfo);
-          // FIXME (mfh 09 May 2017) This assumes CUDA UVM, at least
-          // for lclColInds, if not also for values.
-          sort2 (lclColInds.ptr_on_device (),
-                 lclColInds.ptr_on_device () + rowInfo.numEntries,
-                 vals.ptr_on_device ());
-        });
-      // we just sorted every row
-      graph.indicesAreSorted_ = true;
-    }
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   mergeRowIndicesAndValues (crs_graph_type& graph,
@@ -4294,40 +4249,57 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  mergeRedundantEntries ()
+  sortAndMergeIndicesAndValues (const bool sorted, const bool merged)
   {
+    using ::Tpetra::Details::ProfilingRegion;
     typedef LocalOrdinal LO;
     typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
       host_execution_space;
     typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
     //typedef Kokkos::RangePolicy<Kokkos::Serial, LO> range_type;
-    const char tfecfFuncName[] = "mergeRedundantEntries: ";
+    const char tfecfFuncName[] = "sortAndMergeIndicesAndValues: ";
+    ProfilingRegion regionSAM ("Tpetra::CrsMatrix::sortAndMergeIndicesAndValues");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isStaticGraph (), std::runtime_error, "Cannot merge with static graph.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->myGraph_.is_null (), std::logic_error, "myGraph_ is null, but this "
-       "matrix claims ! isStaticGraph().  Please report this bug to the "
-       "Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isStorageOptimized (), std::logic_error, "It is invalid to call "
-       "this method if the graph's storage has already been optimized.  "
-       "Please report this bug to the Tpetra developers.");
+    if (! sorted || ! merged) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->isStaticGraph (), std::runtime_error, "Cannot sort or merge with "
+         "\"static\" (const) graph, since the matrix does not own the graph.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->myGraph_.is_null (), std::logic_error, "myGraph_ is null, but "
+         "this matrix claims ! isStaticGraph().  "
+         "Please report this bug to the Tpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->isStorageOptimized (), std::logic_error, "It is invalid to call "
+         "this method if the graph's storage has already been optimized.  "
+         "Please report this bug to the Tpetra developers.");
 
-    crs_graph_type& graph = * (this->myGraph_);
-    const bool merged = graph.isMerged ();
-
-    if (! merged) {
+      crs_graph_type& graph = * (this->myGraph_);
       const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
       size_t totalNumDups = 0;
       // FIXME (mfh 10 May 2017) This may assume CUDA UVM.
       Kokkos::parallel_reduce (range_type (0, lclNumRows),
-        [this, &graph] (const LO& lclRow, size_t& numDups) {
+        [this, &graph, sorted, merged] (const LO& lclRow, size_t& numDups) {
           const RowInfo rowInfo = graph.getRowInfo (lclRow);
-          numDups += this->mergeRowIndicesAndValues (graph, rowInfo);
+          if (! sorted) {
+            auto lclColInds = graph.getLocalKokkosRowViewNonConst (rowInfo);
+            auto vals = this->getRowViewNonConst (rowInfo);
+            // FIXME (mfh 09 May 2017) This assumes CUDA UVM, at least
+            // for lclColInds, if not also for values.
+            sort2 (lclColInds.ptr_on_device (),
+                   lclColInds.ptr_on_device () + rowInfo.numEntries,
+                   vals.ptr_on_device ());
+          }
+          if (! merged) {
+            numDups += this->mergeRowIndicesAndValues (graph, rowInfo);
+          }
         }, totalNumDups);
-      graph.nodeNumEntries_ -= totalNumDups;
-      graph.noRedundancies_ = true; // we just merged every row
+      if (! sorted) {
+        graph.indicesAreSorted_ = true; // we just sorted every row
+      }
+      if (! merged) {
+        graph.nodeNumEntries_ -= totalNumDups;
+        graph.noRedundancies_ = true; // we just merged every row
+      }
     }
   }
 

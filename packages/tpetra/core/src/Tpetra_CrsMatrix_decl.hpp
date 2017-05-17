@@ -3927,19 +3927,12 @@ namespace Tpetra {
     ///   the graph must be owned by the matrix.
     void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas);
 
-    /// \brief Sort the entries of each row by their column indices.
-    ///
-    /// This only does anything if the graph isn't already sorted
-    /// (i.e., ! myGraph_->isSorted ()).  This method is called in
-    /// fillComplete().
-    void sortEntries();
-
     /// \brief Merge duplicate row indices in the given row, along
     ///   with their corresponding values.
     ///
-    /// This method is only called by mergeRedundantEntries(), and
-    /// only when the matrix owns the graph, not when the matrix was
-    /// constructed with a const graph.
+    /// This method is only called by sortAndMergeIndicesAndValues(),
+    /// and only when the matrix owns the graph, not when the matrix
+    /// was constructed with a const graph.
     ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
@@ -3947,12 +3940,23 @@ namespace Tpetra {
     mergeRowIndicesAndValues (crs_graph_type& graph,
                               const RowInfo& rowInfo);
 
-    /// \brief Merge entries in each row with the same column indices.
+    /// \brief Sort and merge duplicate local column indices in all
+    ///   rows on the calling process, along with their corresponding
+    ///   values.
     ///
-    /// This only does anything if the graph isn't already merged
-    /// (i.e., ! myGraph_->isMerged ()).  This method is called in
-    /// fillComplete().
-    void mergeRedundantEntries();
+    /// \pre The matrix is locally indexed (more precisely, not
+    ///   globally indexed).
+    /// \pre The matrix owns its graph.
+    /// \pre The matrix's graph is not already storage optimized:
+    ///   <tt>isStorageOptimized() == false</tt>.
+    ///
+    /// \param sorted [in] If true, the column indices in each row on
+    ///   the calling process are already sorted.
+    /// \param merged [in] If true, the column indices in each row on
+    ///   the calling process are already merged.
+    void
+    sortAndMergeIndicesAndValues (const bool sorted,
+                                  const bool merged);
 
     /// \brief Clear matrix properties that require collectives.
     ///
