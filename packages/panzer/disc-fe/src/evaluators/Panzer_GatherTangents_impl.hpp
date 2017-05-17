@@ -84,7 +84,8 @@ GatherTangents(
 
   // the field manager will allocate all of these field
   this->addDependentField(dof_orientation);
-  this->addDependentField(pointValues.jac);
+  constJac_ = pointValues.jac;
+  this->addDependentField(constJac_);
 
   gatherFieldTangents = PHX::MDField<ScalarT,Cell,NODE,Dim>(dof_name+"_Tangents",vector_layout_vector);
   this->addEvaluatedField(gatherFieldTangents);

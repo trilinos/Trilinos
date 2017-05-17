@@ -84,7 +84,8 @@ GatherNormals(
 
   // the field manager will allocate all of these field
   this->addDependentField(dof_orientation);
-  this->addDependentField(pointValues.jac);
+  constJac_ = pointValues.jac;
+  this->addDependentField(constJac_);
 
   gatherFieldNormals = PHX::MDField<ScalarT,Cell,NODE,Dim>(dof_name+"_Normals",vector_layout_vector);
   this->addEvaluatedField(gatherFieldNormals);
