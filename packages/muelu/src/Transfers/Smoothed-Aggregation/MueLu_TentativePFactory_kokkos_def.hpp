@@ -732,7 +732,7 @@ namespace MueLu {
     RCP<Matrix>      Ptentative;
     RCP<MultiVector> coarseNullspace;
     if (!aggregates->AggregatesCrossProcessors())
-      BuildPuncoupled(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
+      BuildPuncoupled(coarseLevel, A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
     else
       BuildPcoupled  (A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
 
@@ -761,7 +761,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  BuildPuncoupled(RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
+  BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                   RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const {
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
@@ -837,13 +837,16 @@ namespace MueLu {
 
 #if 1
 
-    // atomic data access for sizes view
-    typename AppendTrait<aggSizeType, Kokkos::Atomic>::type sizesAtomic = sizes;
+    {
+      SubFactoryMonitor m2(*this, "Calc AggSizes", coarseLevel);
 
-    // loop over all nodes
-    CollectAggregateSizeFunctor <decltype(sizesAtomic), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> collectAggregateSizes(sizesAtomic, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
-    Kokkos::parallel_for("MueLu:TentativePF:Build:getaggsizes", range_type(0,vertex2AggId.dimension_0()), collectAggregateSizes);
+      // atomic data access for sizes view
+      typename AppendTrait<aggSizeType, Kokkos::Atomic>::type sizesAtomic = sizes;
 
+      // loop over all nodes
+      CollectAggregateSizeFunctor <decltype(sizesAtomic), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> collectAggregateSizes(sizesAtomic, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
+      Kokkos::parallel_for("MueLu:TentativePF:Build:getaggsizes", range_type(0,vertex2AggId.dimension_0()), collectAggregateSizes);
+    }
 #else
     // we have to avoid race conditions when parallelizing the loops below
     if(stridedBlockSize == 1) {
@@ -889,11 +892,13 @@ namespace MueLu {
 
 #if 1
 
-    // atomic data access for agg2RowMapLO view
-    //typename AppendTrait<decltype(agg2RowMapLO), Kokkos::Atomic>::type agg2RowMapLOAtomic = agg2RowMapLO;
-    CreateAgg2RowMapLOFunctor<decltype(agg2RowMapLO), decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> createAgg2RowMap (agg2RowMapLO, sizes, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
-    Kokkos::parallel_for("MueLu:TentativePF:Build:createAgg2RowMap", range_type(0,numAggregates), createAgg2RowMap);
-
+    {
+      SubFactoryMonitor m2(*this, "Create Agg2RowMap", coarseLevel);
+      // atomic data access for agg2RowMapLO view
+      //typename AppendTrait<decltype(agg2RowMapLO), Kokkos::Atomic>::type agg2RowMapLOAtomic = agg2RowMapLO;
+      CreateAgg2RowMapLOFunctor<decltype(agg2RowMapLO), decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> createAgg2RowMap (agg2RowMapLO, sizes, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
+      Kokkos::parallel_for("MueLu:TentativePF:Build:createAgg2RowMap", range_type(0,numAggregates), createAgg2RowMap);
+    }
 #else
     Kokkos::View<LO*, DeviceType> numDofs("countDofsPerAggregate", numAggregates); // helper view. We probably don't need that
     if(stridedBlockSize == 1) {
@@ -977,117 +982,129 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(goodMap == false, Exceptions::RuntimeError, "Only works for non-overlapping aggregates (goodMap == true)");
 
-    if (NSDim == 1) {
+    {
+      SubFactoryMonitor m2(*this, "Stage 1 (LocalQR)", coarseLevel);
 
-#if 1
-      // only limited support for lambdas with CUDA 7.5
-      // see https://github.com/kokkos/kokkos/issues/763
-      //
-      // Set up team policy with numAggregates teams and one thread per team.
-      // Each team handles a slice of the data associated with one aggregate
-      // and performs a local QR decomposition (in this case no real QR decomp
-      // is necessary)
-      const Kokkos::TeamPolicy<execution_space> policy(numAggregates,1);
-      Kokkos::parallel_reduce(policy, LocalScalarQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
-#else
-      // Andrey's original implementation as a lambda
-      // 1D is special, as it is the easiest. We don't even need to the QR,
-      // just normalize an array. Plus, no worries abot small aggregates.
-      Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_loop", numAggregates, KOKKOS_LAMBDA(const GO agg, size_t& rowNnz) {
-        LO aggSize = aggRows(agg+1) - aggRows(agg);
+      if (NSDim == 1) {
 
-        // Extract the piece of the nullspace corresponding to the aggregate, and
-        // put it in the flat array, "localQR" (in column major format) for the
-        // QR routine. Trivial in 1D.
-        if (goodMap) {
-          // Calculate QR by hand
-          typedef Kokkos::ArithTraits<SC>     ATS;
-          typedef typename ATS::magnitudeType Magnitude;
+  #if 1
+        // only limited support for lambdas with CUDA 7.5
+        // see https://github.com/kokkos/kokkos/issues/763
+        //
+        // Set up team policy with numAggregates teams and one thread per team.
+        // Each team handles a slice of the data associated with one aggregate
+        // and performs a local QR decomposition (in this case no real QR decomp
+        // is necessary)
+        const Kokkos::TeamPolicy<execution_space> policy(numAggregates,1);
+        Kokkos::parallel_reduce(policy, LocalScalarQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
+  #else
+        // Andrey's original implementation as a lambda
+        // 1D is special, as it is the easiest. We don't even need to the QR,
+        // just normalize an array. Plus, no worries abot small aggregates.
+        Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_loop", numAggregates, KOKKOS_LAMBDA(const GO agg, size_t& rowNnz) {
+          LO aggSize = aggRows(agg+1) - aggRows(agg);
 
-          Magnitude norm = ATS::magnitude(zero);
-          for (size_t k = 0; k < aggSize; k++) {
-            Magnitude dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
-            norm += dnorm*dnorm;
-          }
-          norm = sqrt(norm);
+          // Extract the piece of the nullspace corresponding to the aggregate, and
+          // put it in the flat array, "localQR" (in column major format) for the
+          // QR routine. Trivial in 1D.
+          if (goodMap) {
+            // Calculate QR by hand
+            typedef Kokkos::ArithTraits<SC>     ATS;
+            typedef typename ATS::magnitudeType Magnitude;
 
-          if (norm == zero) {
-            // zero column; terminate the execution
-            statusAtomic(1) = true;
+            Magnitude norm = ATS::magnitude(zero);
+            for (size_t k = 0; k < aggSize; k++) {
+              Magnitude dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
+              norm += dnorm*dnorm;
+            }
+            norm = sqrt(norm);
+
+            if (norm == zero) {
+              // zero column; terminate the execution
+              statusAtomic(1) = true;
+              return;
+            }
+
+            // R = norm
+            coarseNS(agg, 0) = norm;
+
+            // Q = localQR(:,0)/norm
+            for (LO k = 0; k < aggSize; k++) {
+              LO localRow = agg2RowMapLO(aggRows(agg)+k);
+              SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0) / norm;
+
+              size_t rowStart = rowsAux(localRow);
+              colsAux(rowStart) = agg;
+              valsAux(rowStart) = localVal;
+
+              // Store true number of nonzeros per row
+              rows(localRow+1) = 1;
+              rowNnz          += 1;
+            }
+
+          } else {
+            // FIXME: implement non-standard map QR
+            // Look at the original TentativeP for how to do that
+            statusAtomic(0) = true;
             return;
           }
+        }, nnz);
+  #endif
 
-          // R = norm
-          coarseNS(agg, 0) = norm;
-
-          // Q = localQR(:,0)/norm
-          for (LO k = 0; k < aggSize; k++) {
-            LO localRow = agg2RowMapLO(aggRows(agg)+k);
-            SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0) / norm;
-
-            size_t rowStart = rowsAux(localRow);
-            colsAux(rowStart) = agg;
-            valsAux(rowStart) = localVal;
-
-            // Store true number of nonzeros per row
-            rows(localRow+1) = 1;
-            rowNnz          += 1;
+        typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
+        for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
+          if (statusHost(i)) {
+            std::ostringstream oss;
+            oss << "MueLu::TentativePFactory::MakeTentative: ";
+            switch(i) {
+              case 0: oss << "!goodMap is not implemented";               break;
+              case 1: oss << "fine level NS part has a zero column";      break;
+            }
+            throw Exceptions::RuntimeError(oss.str());
           }
 
-        } else {
-          // FIXME: implement non-standard map QR
-          // Look at the original TentativeP for how to do that
-          statusAtomic(0) = true;
-          return;
-        }
-      }, nnz);
-#endif
+      } else { // NSdim > 1
 
-      typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
-      for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
-        if (statusHost(i)) {
-          std::ostringstream oss;
-          oss << "MueLu::TentativePFactory::MakeTentative: ";
-          switch(i) {
-            case 0: oss << "!goodMap is not implemented";               break;
-            case 1: oss << "fine level NS part has a zero column";      break;
+        // Set up team policy with numAggregates teams and one thread per team.
+        // Each team handles a slice of the data associated with one aggregate
+        // and performs a local QR decomposition
+        //const Kokkos::TeamPolicy<> policy( numAggregates, 1); // numAggregates teams a 1 thread
+        const Kokkos::TeamPolicy<execution_space> policy(numAggregates,1);
+        Kokkos::parallel_reduce(policy, LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
+
+        typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
+        for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
+          if (statusHost(i)) {
+            std::ostringstream oss;
+            oss << "MueLu::TentativePFactory::MakeTentative: ";
+            switch(i) {
+              case 0: oss << "!goodMap is not implemented";               break;
+              case 1: oss << "fine level NS part has a zero column";      break;
+            }
+            throw Exceptions::RuntimeError(oss.str());
           }
-          throw Exceptions::RuntimeError(oss.str());
-        }
+      }
 
-    } else { // NSdim > 1
+    } // subtime monitor stage 1
 
-      // Set up team policy with numAggregates teams and one thread per team.
-      // Each team handles a slice of the data associated with one aggregate
-      // and performs a local QR decomposition
-      //const Kokkos::TeamPolicy<> policy( numAggregates, 1); // numAggregates teams a 1 thread
-      const Kokkos::TeamPolicy<execution_space> policy(numAggregates,1);
-      Kokkos::parallel_reduce(policy, LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
-
-      typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
-      for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
-        if (statusHost(i)) {
-          std::ostringstream oss;
-          oss << "MueLu::TentativePFactory::MakeTentative: ";
-          switch(i) {
-            case 0: oss << "!goodMap is not implemented";               break;
-            case 1: oss << "fine level NS part has a zero column";      break;
-          }
-          throw Exceptions::RuntimeError(oss.str());
-        }
+    {
+      SubFactoryMonitor m2(*this, "Stage 2 (CompressRows)", coarseLevel);
+      // Stage 2: compress the arrays
+      ScanFunctor<LO,decltype(rows)> scanFunctor(rows);
+      Kokkos::parallel_scan("MueLu:TentativePF:Build:compress_rows", range_type(0,numRows+1), scanFunctor);
     }
-
-    // Stage 2: compress the arrays
-    ScanFunctor<LO,decltype(rows)> scanFunctor(rows);
-    Kokkos::parallel_scan("MueLu:TentativePF:Build:compress_rows", range_type(0,numRows+1), scanFunctor);
 
     // The real cols and vals are constructed using calculated (not estimated) nnz
     typename cols_type::non_const_type cols("Ptent_cols", nnz);
     typename vals_type::non_const_type vals("Ptent_vals", nnz);
 
 #if 1
-    CompressArraysFunctor<LO, decltype(rows),decltype(cols),decltype(vals)> comprArr(INVALID, rowsAux, colsAux, valsAux, rows, cols, vals);
-    Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", range_type(0,numRows), comprArr);
+    {
+      SubFactoryMonitor m2(*this, "Stage 2 (CompressCols)", coarseLevel);
+
+      CompressArraysFunctor<LO, decltype(rows),decltype(cols),decltype(vals)> comprArr(INVALID, rowsAux, colsAux, valsAux, rows, cols, vals);
+      Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", range_type(0,numRows), comprArr);
+    }
 #else
     Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", numRows, KOKKOS_LAMBDA(const LO i) {
       LO rowStart = rows(i);
@@ -1107,12 +1124,14 @@ namespace MueLu {
     // Stage 3: construct Xpetra::Matrix
 #if 1
     // create local CrsMatrix
-    local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getNodeNumElements(), nnz, vals, rows, cols);
-    Teuchos::RCP<CrsMatrix> PtentCrs = CrsMatrixFactory::Build(rowMap,coarseMap,lclMatrix);
-    PtentCrs->resumeFill();  // we need that for rectangular matrices
-    PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
-    Ptentative = rcp(new CrsMatrixWrap(PtentCrs));
-
+    {
+      SubFactoryMonitor m2(*this, "Stage 3 (LocalMatrix+FillComplete)", coarseLevel);
+      local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getNodeNumElements(), nnz, vals, rows, cols);
+      Teuchos::RCP<CrsMatrix> PtentCrs = CrsMatrixFactory::Build(rowMap,coarseMap,lclMatrix);
+      PtentCrs->resumeFill();  // we need that for rectangular matrices
+      PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
+      Ptentative = rcp(new CrsMatrixWrap(PtentCrs));
+    }
 #else
     Ptentative = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0, Xpetra::StaticProfile));
     RCP<CrsMatrix> PtentCrs = rcp_dynamic_cast<CrsMatrixWrap>(Ptentative)->getCrsMatrix();
