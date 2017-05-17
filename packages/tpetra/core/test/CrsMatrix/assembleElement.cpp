@@ -241,52 +241,45 @@ namespace { // (anonymous)
       // unique values, to make sure we get the indices right.
       const SC ONE = Kokkos::ArithTraits<SC>::one ();
 
-      //out << "Constructing element matrix" << endl;
       out << "Constructing element matrix" << endl;
 
       Kokkos::View<SC**, DT> lhs_d ("lhs_d", eltDim, eltDim);
       {
-        //typename Kokkos::View<SC**, DT>::HostMirror lhs_h ("lhs_h", eltDim, eltDim);
-        Kokkos::View<SC**, typename Kokkos::View<SC**, DT>::array_layout,
-          Kokkos::HostSpace> lhs_h ("lhs_h", eltDim, eltDim);
-        {
-          SC curVal = ONE;
-          for (LO i = 0; i < eltDim; ++i) {
-            for (LO j = 0; j < eltDim; ++j) {
-              lhs_h(i,j) = curVal;
-              curVal = curVal + ONE;
-            }
+        auto lhs_h = Kokkos::create_mirror_view (lhs_d);
+
+        SC curVal = ONE;
+        for (LO i = 0; i < eltDim; ++i) {
+          for (LO j = 0; j < eltDim; ++j) {
+            lhs_h(i,j) = curVal;
+            curVal = curVal + ONE;
           }
-          out << "Element matrix (lhs): [";
-          for (LO i = 0; i < static_cast<LO> (lhs_h.dimension_0 ()); ++i) {
-            for (LO j = 0; j < static_cast<LO> (lhs_h.dimension_1 ()); ++j) {
-              constexpr int width = Kokkos::ArithTraits<SC>::is_complex ? 7 : 3;
-              out << std::setw (width) << lhs_h(i,j);
-              if (j + LO (1) < static_cast<LO> (lhs_h.dimension_1 ())) {
-                out << " ";
-              }
-            }
-            if (i + LO (1) < static_cast<LO> (lhs_h.dimension_0 ())) {
-              out << endl;
-            }
-          }
-          out << "]" << endl;
         }
+        out << "Element matrix (lhs): [";
+        for (LO i = 0; i < static_cast<LO> (lhs_h.dimension_0 ()); ++i) {
+          for (LO j = 0; j < static_cast<LO> (lhs_h.dimension_1 ()); ++j) {
+            constexpr int width = Kokkos::ArithTraits<SC>::is_complex ? 7 : 3;
+            out << std::setw (width) << lhs_h(i,j);
+            if (j + LO (1) < static_cast<LO> (lhs_h.dimension_1 ())) {
+              out << " ";
+            }
+          }
+          if (i + LO (1) < static_cast<LO> (lhs_h.dimension_0 ())) {
+            out << endl;
+          }
+        }
+        out << "]" << endl;
+
         Kokkos::deep_copy (lhs_d, lhs_h);
       }
 
       out << "Constructing element vector" << endl;
       Kokkos::View<SC*, DT> rhs_d ("rhs_d", eltDim);
       {
-        //typename Kokkos::View<SC*, DT>::HostMirror rhs_h ("rhs_h", eltDim);
-        Kokkos::View<SC*, typename Kokkos::View<SC*, DT>::array_layout,
-          Kokkos::HostSpace> rhs_h ("rhs_h", eltDim);
-        {
-          SC curVal = ONE;
-          for (LO i = 0; i < static_cast<LO> (rhs_h.dimension_0 ()); ++i) {
-            rhs_h(i) = -curVal;
-            curVal = curVal + ONE;
-          }
+        auto rhs_h = Kokkos::create_mirror_view (rhs_d);
+        SC curVal = ONE;
+        for (LO i = 0; i < static_cast<LO> (rhs_h.dimension_0 ()); ++i) {
+          rhs_h(i) = -curVal;
+          curVal = curVal + ONE;
         }
         Kokkos::deep_copy (rhs_d, rhs_h);
       }
@@ -431,9 +424,7 @@ namespace { // (anonymous)
       typename sparse_graph_type::row_map_type::non_const_type
         A_ptr ("A_ptr", numRows+1);
       {
-        Kokkos::View<offset_type*,
-          typename sparse_graph_type::row_map_type::array_layout,
-          Kokkos::HostSpace> A_ptr_host ("A_ptr_host", numRows+1);
+        auto A_ptr_host = Kokkos::create_mirror_view (A_ptr);
         A_ptr_host[0] = 0;
         for (offset_type i = 1; i <= static_cast<offset_type> (numRows); ++i) {
           A_ptr_host[i] = A_ptr_host[i-1] + numEntPerRow[i-1];
@@ -451,10 +442,10 @@ namespace { // (anonymous)
       typename sparse_graph_type::entries_type::non_const_type
         A_ind ("A_ind", numEnt);
       {
-        Kokkos::View<const LO*,
-          typename sparse_graph_type::entries_type::array_layout,
-          Kokkos::HostSpace,
-          Kokkos::MemoryUnmanaged> A_ind_host (matSparsityPattern, numEnt);
+        auto A_ind_host = Kokkos::create_mirror_view (A_ind);
+        for (size_t k = 0; k < static_cast<size_t> (numEnt); ++k) {
+          A_ind_host[k] = matSparsityPattern[k];
+        }
         Kokkos::deep_copy (A_ind, A_ind_host);
       }
       sparse_graph_type A_graph (A_ind, A_ptr);
