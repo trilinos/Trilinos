@@ -330,7 +330,7 @@ namespace MueLuTests {
 
     Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
     diff->norm2(norms);
-    for (LO i = 0; i < NSdim; ++i) {
+    for (decltype(NSdim) i = 0; i < NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
       TEST_EQUALITY(norms[i] < 1e-12, true);
     }
@@ -341,10 +341,10 @@ namespace MueLuTests {
     RCP<Vector> diagVec     = VectorFactory::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->norm1(),                     diagVec->getGlobalLength());
+      TEST_EQUALITY(diagVec->norm1() - diagVec->getGlobalLength() < 1e-14, true);
     TEST_EQUALITY(diagVec->normInf()-1 < 1e-12,         true);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-    TEST_EQUALITY(diagVec->meanValue(),                 1.0);
+    TEST_EQUALITY(diagVec->meanValue() - 1.0 < 1e-14, true);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(),   diagVec->getGlobalLength());
   }
 
