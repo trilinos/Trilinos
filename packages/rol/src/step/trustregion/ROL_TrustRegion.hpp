@@ -165,7 +165,7 @@ public:
     }
     // Evaluate objective function at new iterate
     prim_->set(x); prim_->plus(s);
-    obj.update(*prim_,false);
+    obj.update(*prim_,true);
     fnew = obj.value(*prim_,ftol);
 
     nfval = 1;
