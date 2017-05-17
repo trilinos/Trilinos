@@ -532,21 +532,21 @@ namespace Tpetra {
   Teuchos::RCP<const Teuchos::Comm<int> >
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getComm () const {
-    return getCrsGraph ()->getComm ();
+    return getCrsGraphRef ().getComm ();
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::RCP<Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNode () const {
-    return getCrsGraph ()->getNode ();
+    return getCrsGraphRef ().getNode ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   ProfileType
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getProfileType () const {
-    return getCrsGraph ()->getProfileType ();
+    return this->getCrsGraphRef ().getProfileType ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -567,112 +567,112 @@ namespace Tpetra {
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   isStorageOptimized () const {
-    return getCrsGraph()->isStorageOptimized();
+    return this->getCrsGraphRef ().isStorageOptimized ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   isLocallyIndexed () const {
-    return getCrsGraph ()->isLocallyIndexed ();
+    return getCrsGraphRef ().isLocallyIndexed ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   isGloballyIndexed () const {
-    return getCrsGraph ()->isGloballyIndexed ();
+    return getCrsGraphRef ().isGloballyIndexed ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   hasColMap () const {
-    return getCrsGraph ()->hasColMap ();
+    return getCrsGraphRef ().hasColMap ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   global_size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalNumEntries () const {
-    return getCrsGraph ()->getGlobalNumEntries ();
+    return getCrsGraphRef ().getGlobalNumEntries ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNodeNumEntries () const {
-    return getCrsGraph ()->getNodeNumEntries ();
+    return getCrsGraphRef ().getNodeNumEntries ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   global_size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalNumRows () const {
-    return getCrsGraph ()->getGlobalNumRows ();
+    return getCrsGraphRef ().getGlobalNumRows ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   global_size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalNumCols () const {
-    return getCrsGraph ()->getGlobalNumCols ();
+    return getCrsGraphRef ().getGlobalNumCols ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNodeNumRows () const {
-    return getCrsGraph ()->getNodeNumRows ();
+    return getCrsGraphRef ().getNodeNumRows ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNodeNumCols () const {
-    return getCrsGraph ()->getNodeNumCols ();
+    return getCrsGraphRef ().getNodeNumCols ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   global_size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalNumDiags () const {
-    return getCrsGraph ()->getGlobalNumDiags ();
+    return getCrsGraphRef ().getGlobalNumDiags ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNodeNumDiags () const {
-    return getCrsGraph ()->getNodeNumDiags ();
+    return getCrsGraphRef ().getNodeNumDiags ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNumEntriesInGlobalRow (GlobalOrdinal globalRow) const {
-    return getCrsGraph ()->getNumEntriesInGlobalRow (globalRow);
+    return getCrsGraphRef ().getNumEntriesInGlobalRow (globalRow);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNumEntriesInLocalRow (LocalOrdinal localRow) const {
-    return getCrsGraph ()->getNumEntriesInLocalRow (localRow);
+    return getCrsGraphRef ().getNumEntriesInLocalRow (localRow);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalMaxNumRowEntries () const {
-    return getCrsGraph ()->getGlobalMaxNumRowEntries ();
+    return getCrsGraphRef ().getGlobalMaxNumRowEntries ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNodeMaxNumRowEntries () const {
-    return getCrsGraph ()->getNodeMaxNumRowEntries ();
+    return getCrsGraphRef ().getNodeMaxNumRowEntries ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -686,28 +686,28 @@ namespace Tpetra {
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getRowMap () const {
-    return getCrsGraph ()->getRowMap ();
+    return getCrsGraphRef ().getRowMap ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getColMap () const {
-    return getCrsGraph ()->getColMap ();
+    return getCrsGraphRef ().getColMap ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getDomainMap () const {
-    return getCrsGraph ()->getDomainMap ();
+    return getCrsGraphRef ().getDomainMap ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getRangeMap () const {
-    return getCrsGraph()->getRangeMap();
+    return getCrsGraphRef ().getRangeMap ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -731,17 +731,29 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>&
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getCrsGraphRef () const {
+    if (! this->staticGraph_.is_null ()) {
+      return * (this->staticGraph_);
+    }
+    else {
+      return * (this->myGraph_);
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   isLowerTriangular () const {
-    return getCrsGraph ()->isLowerTriangular ();
+    return getCrsGraphRef ().isLowerTriangular ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   isUpperTriangular () const {
-    return getCrsGraph ()->isUpperTriangular ();
+    return getCrsGraphRef ().isUpperTriangular ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -3435,9 +3447,9 @@ namespace Tpetra {
       // import elements that are permuted or are on other processors.
       // (We will use the exporter to perform the import ("reverse
       // mode").)
-      if (getCrsGraph ()->getExporter () != Teuchos::null) {
+      if (getCrsGraphRef ().getExporter () != Teuchos::null) {
         RCP<vec_type> tempVec = rcp (new vec_type (getRowMap ()));
-        tempVec->doImport (x, * (getCrsGraph ()->getExporter ()), INSERT);
+        tempVec->doImport (x, * (getCrsGraphRef ().getExporter ()), INSERT);
         xp = tempVec;
       }
       else {
@@ -3490,9 +3502,9 @@ namespace Tpetra {
       // Take from Epetra: If we have a non-trivial exporter, we must
       // import elements that are permuted or are on other processors.
       // (We will use the exporter to perform the import.)
-      if (getCrsGraph ()->getImporter () != Teuchos::null) {
+      if (getCrsGraphRef ().getImporter () != Teuchos::null) {
         RCP<vec_type> tempVec = rcp (new vec_type (getColMap ()));
-        tempVec->doImport (x, * (getCrsGraph ()->getImporter ()), INSERT);
+        tempVec->doImport (x, * (getCrsGraphRef ().getImporter ()), INSERT);
         xp = tempVec;
       }
       else {
@@ -3516,7 +3528,7 @@ namespace Tpetra {
       const RowInfo rowinfo = staticGraph_->getRowInfo (i);
       rowValues = this->getViewNonConst (rowinfo);
       ArrayView<const LocalOrdinal> colInds;
-      getCrsGraph ()->getLocalRowView (i, colInds);
+      getCrsGraphRef ().getLocalRowView (i, colInds);
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
         rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
       }
@@ -3911,7 +3923,7 @@ namespace Tpetra {
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   haveGlobalConstants() const {
-    return getCrsGraph ()->haveGlobalConstants ();
+    return getCrsGraphRef ().haveGlobalConstants ();
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -3934,17 +3946,21 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      getCrsGraph ().is_null (), std::logic_error, "Tpetra::CrsMatrix::"
-      "fillComplete(params): getCrsGraph() returns null.  "
-      "This should not happen at this point.  "
+    const char tfecfFuncName[] = "fillComplete(params): ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->getCrsGraph ().is_null (), std::logic_error,
+      "getCrsGraph() returns null.  This should not happen at this point.  "
       "Please report this bug to the Tpetra developers.");
 
-    if (isStaticGraph () && getCrsGraph ()->isFillComplete ()) {
-      fillComplete (getCrsGraph ()->getDomainMap (),
-                    getCrsGraph ()->getRangeMap (), params);
+    if (this->isStaticGraph () && this->getCrsGraphRef ().isFillComplete ()) {
+      // If this matrix's graph is fill complete and the user did not
+      // supply a domain or range Map, use the graph's domain and
+      // range Maps.
+      this->fillComplete (this->getCrsGraphRef ().getDomainMap (),
+                          this->getCrsGraphRef ().getRangeMap (), params);
     } else {
-      fillComplete (getRowMap (), getRowMap (), params);
+      this->fillComplete (this->getRowMap (), this->getRowMap (), params);
     }
   }
 
@@ -3995,8 +4011,8 @@ namespace Tpetra {
       myGraph_->sortGhostsAssociatedWithEachProcessor_ = sortGhosts;
     }
 
-    if (! getCrsGraph()->indicesAreAllocated()) {
-      if (hasColMap ()) {
+    if (! this->getCrsGraphRef ().indicesAreAllocated ()) {
+      if (this->hasColMap ()) {
         // We have a column Map, so use local indices.
         allocateValues (LocalIndices, GraphNotYetAllocated);
       } else {
@@ -5386,8 +5402,8 @@ namespace Tpetra {
       // in to expertStaticFillComplete.
       RCP<const map_type> domainMap = this->getDomainMap ();
       RCP<const map_type> rangeMap = this->getRangeMap ();
-      RCP<const import_type> importer = this->getCrsGraph ()->getImporter ();
-      RCP<const export_type> exporter = this->getCrsGraph ()->getExporter ();
+      RCP<const import_type> importer = this->getCrsGraphRef ().getImporter ();
+      RCP<const export_type> exporter = this->getCrsGraphRef ().getExporter ();
       newmat->expertStaticFillComplete (domainMap, rangeMap, importer, exporter);
     }
 

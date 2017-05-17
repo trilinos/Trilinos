@@ -1961,7 +1961,29 @@ namespace Tpetra {
     //! This matrix's graph, as a CrsGraph.
     Teuchos::RCP<const crs_graph_type> getCrsGraph () const;
 
-    //! The local sparse matrix.
+  private:
+    /// \brief Const reference to this matrix's graph, as a CrsGraph.
+    ///
+    /// This is a thread-safe version of getCrsGraph() (see above).
+    /// Teuchos::RCP's copy constructor, assignment operator
+    /// (operator=), and destructor are not currently thread safe (as
+    /// of 17 May 2017).  Thus, if we want to write
+    /// host-thread-parallel code, it's important to avoid creating or
+    /// destroying Teuchos::RCP instances.  This method lets CrsMatrix
+    /// access its graph, without creating an Teuchos::RCP instance
+    /// (as the return value of getCrsGraph() does do).
+    const crs_graph_type& getCrsGraphRef () const;
+
+  public:
+    /// \brief The local sparse matrix.
+    ///
+    /// \warning It is only valid to call this method under certain
+    ///   circumstances.  In particular, either the CrsMatrix must
+    ///   have been created with a \c local_matrix_type object, or
+    ///   fillComplete must have been called on this CrsMatrix at
+    ///   least once.  This method will do no error checking, so you
+    ///   are responsible for knowing when it is safe to call this
+    ///   method.
     local_matrix_type getLocalMatrix () const {return lclMatrix_; }
 
     /// \brief Number of global elements in the row map of this matrix.
