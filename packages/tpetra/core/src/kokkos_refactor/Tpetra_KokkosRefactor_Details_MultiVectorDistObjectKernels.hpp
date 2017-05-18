@@ -136,12 +136,15 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       dst(k) = src(idx(k), col);
     }
 
-    static void pack(const DstView& dst,
-                     const SrcView& src,
-                     const IdxView& idx,
-                     size_t col) {
-      Kokkos::parallel_for( idx.size(),
-                            PackArraySingleColumn(dst,src,idx,col) );
+    static void
+    pack (const DstView& dst,
+          const SrcView& src,
+          const IdxView& idx,
+          size_t col)
+    {
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+      Kokkos::parallel_for (range_type (0, idx.size ()),
+                            PackArraySingleColumn (dst,src,idx,col));
     }
   };
 
@@ -316,8 +319,9 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                      const SrcView& src,
                      const IdxView& idx,
                      size_t numCols) {
-      Kokkos::parallel_for( idx.size(),
-                            PackArrayMultiColumn(dst,src,idx,numCols) );
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+      Kokkos::parallel_for (range_type (0, idx.size ()),
+                            PackArrayMultiColumn (dst,src,idx,numCols));
     }
   };
 
@@ -487,7 +491,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                      const IdxView& idx,
                      const ColView& col,
                      size_t numCols) {
-      Kokkos::parallel_for( idx.size(),
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+      Kokkos::parallel_for (range_type (0, idx.size ()),
                             PackArrayMultiColumnVariableStride(
                               dst,src,idx,col,numCols) );
     }
@@ -805,8 +810,9 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                        const IdxView& idx,
                        const Op& op,
                        size_t numCols) {
-      Kokkos::parallel_for( idx.size(),
-                            UnpackArrayMultiColumn(dst,src,idx,op,numCols) );
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+      Kokkos::parallel_for (range_type (0, idx.size ()),
+                            UnpackArrayMultiColumn (dst,src,idx,op,numCols));
     }
   };
 
@@ -995,7 +1001,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                        const ColView& col,
                        const Op& op,
                        size_t numCols) {
-      Kokkos::parallel_for( idx.size(),
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+      Kokkos::parallel_for (range_type (0, idx.size ()),
                             UnpackArrayMultiColumnVariableStride(
                               dst,src,idx,col,op,numCols) );
     }
@@ -1235,8 +1242,9 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                         const SrcIdxView& src_idx,
                         size_t numCols) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
-      Kokkos::parallel_for(
-        n, PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols) );
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+      Kokkos::parallel_for (range_type (0, n),
+                            PermuteArrayMultiColumn (dst,src,dst_idx,src_idx,numCols));
     }
   };
 
@@ -1295,9 +1303,14 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                         const SrcColView& src_col,
                         size_t numCols) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
-      Kokkos::parallel_for(
-        n, PermuteArrayMultiColumnVariableStride(
-          dst,src,dst_idx,src_idx,dst_col,src_col,numCols) );
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+      Kokkos::parallel_for (range_type (0, n),
+                            PermuteArrayMultiColumnVariableStride (dst, src,
+                                                                   dst_idx,
+                                                                   src_idx,
+                                                                   dst_col,
+                                                                   src_col,
+                                                                   numCols));
     }
   };
 
