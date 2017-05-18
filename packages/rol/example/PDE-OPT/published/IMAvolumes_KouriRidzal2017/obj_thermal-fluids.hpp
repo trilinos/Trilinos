@@ -48,8 +48,8 @@
 #ifndef PDEOPT_QOI_THERMALFLUIDS_HPP
 #define PDEOPT_QOI_THERMALFLUIDS_HPP
 
-#include "../TOOLS/qoi.hpp"
-#include "pde_thermal-fluids_ex03.hpp"
+#include "../../TOOLS/qoi.hpp"
+#include "pde_thermal-fluids.hpp"
 
 template <class Real>
 class QoI_Vorticity_ThermalFluids : public QoI<Real> {
