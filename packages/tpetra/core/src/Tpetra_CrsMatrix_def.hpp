@@ -738,6 +738,13 @@ namespace Tpetra {
       return * (this->staticGraph_);
     }
     else {
+#ifdef HAVE_TPETRA_DEBUG
+      const char tfecfFuncName[] = "getCrsGraphRef: ";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->myGraph_.is_null (), std::logic_error,
+         "Both staticGraph_ and myGraph_ are null.  "
+         "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
       return * (this->myGraph_);
     }
   }
@@ -782,21 +789,29 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   allocateValues (ELocalGlobal lg, GraphAllocationStatus gas)
   {
+    const char tfecfFuncName[] = "allocateValues: ";
 #ifdef HAVE_TPETRA_DEBUG
+    const char suffix[] = "  Please report this bug to the Tpetra developers.";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->staticGraph_.is_null (), std::logic_error,
+       "staticGraph_ is null." << suffix);
+
     // If the graph indices are already allocated, then gas should be
     // GraphAlreadyAllocated.  Otherwise, gas should be
     // GraphNotYetAllocated.
-    if ((gas == GraphAlreadyAllocated) != staticGraph_->indicesAreAllocated()) {
-      const std::string err1 ("allocateValues: The caller has asserted that "
-                              "the graph is ");
-      const std::string err2 ("already allocated, but the static graph says "
-                              "that its indices are ");
-      const std::string err3 ("already allocated.  Please report this bug to "
-                              "the Tpetra developers.");
-      TEUCHOS_TEST_FOR_EXCEPTION(gas == GraphAlreadyAllocated && ! staticGraph_->indicesAreAllocated(),
+    if ((gas == GraphAlreadyAllocated) != this->staticGraph_->indicesAreAllocated ()) {
+      const char err1[] = "The caller has asserted that the graph is ";
+      const char err2[] = "already allocated, but the static graph says "
+        "that its indices are ";
+      const char err3[] = "already allocated.  Please report this bug to "
+        "the Tpetra developers.";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (gas == GraphAlreadyAllocated && ! this->staticGraph_->indicesAreAllocated (),
         std::logic_error, err1 << err2 << "not " << err3);
-      TEUCHOS_TEST_FOR_EXCEPTION(gas != GraphAlreadyAllocated && staticGraph_->indicesAreAllocated(),
-        std::logic_error, err1 << "not " << err2 << err3);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (gas != GraphAlreadyAllocated && this->staticGraph_->indicesAreAllocated (),
+         std::logic_error, err1 << "not " << err2 << err3);
     }
 
     // If the graph is unallocated, then it had better be a
@@ -804,40 +819,63 @@ namespace Tpetra {
     // matrix gets to define the graph structure.  If the CrsMatrix
     // constructor that takes an RCP<const CrsGraph> was used, then
     // the matrix does _not_ own the graph.)
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! staticGraph_->indicesAreAllocated() && myGraph_.is_null(),
-      std::logic_error,
-      "allocateValues: The static graph says that its indices are not "
-      "allocated, but the graph is not owned by the matrix.  Please report "
-      "this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->staticGraph_->indicesAreAllocated () &&
+       this->myGraph_.is_null (), std::logic_error,
+       "The static graph says that its indices are not allocated, "
+       "but the graph is not owned by the matrix." << suffix);
 #endif // HAVE_TPETRA_DEBUG
 
     if (gas == GraphNotYetAllocated) {
-      myGraph_->allocateIndices (lg);
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->myGraph_.is_null (), std::logic_error,
+         "gas = GraphNotYetAllocated, but myGraph_ is null." << suffix);
+#endif // HAVE_TPETRA_DEBUG
+      try {
+        this->myGraph_->allocateIndices (lg);
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "CrsGraph::allocateIndices "
+           "threw an exception: " << e.what ());
+      }
+      catch (...) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "CrsGraph::allocateIndices "
+           "threw an exception not a subclass of std::exception.");
+      }
     }
 
     // Allocate matrix values.
-    if (getProfileType () == StaticProfile) {
+    if (this->getProfileType () == StaticProfile) {
       // "Static profile" means that the number of matrix entries in
       // each row was fixed at the time the CrsMatrix constructor was
       // called.  This lets us use 1-D storage for the matrix's
       // values.  ("1-D storage" means the same as that used by the
       // three arrays in the classic compressed sparse row format.)
 
-      const size_t lclNumRows = staticGraph_->getNodeNumRows ();
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->staticGraph_.is_null (), std::logic_error,
+         "this->getProfileType() == StaticProfile, but staticGraph_ is null."
+         << suffix);
+#endif // HAVE_TPETRA_DEBUG
+
+      const size_t lclNumRows = this->staticGraph_->getNodeNumRows ();
       typename Graph::local_graph_type::row_map_type k_ptrs =
-        staticGraph_->k_rowPtrs_;
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        k_ptrs.dimension_0 () != lclNumRows+1, std::logic_error,
-        "Tpetra::CrsMatrix::allocateValues: With StaticProfile, row offsets "
-        "array has length " << k_ptrs.dimension_0 () << " != (lclNumRows+1) = "
+        this->staticGraph_->k_rowPtrs_;
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (k_ptrs.dimension_0 () != lclNumRows+1, std::logic_error,
+        "With StaticProfile, row offsets array has length "
+        << k_ptrs.dimension_0 () << " != (lclNumRows+1) = "
         << (lclNumRows+1) << ".");
 
       // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
       // k_ptrs(lclNumRows), then copy that entry of k_ptrs to host
       // first.  We can do this with "0-D" subviews.
       auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, lclNumRows);
-      auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
+      auto k_ptrs_ent_h = Kokkos::create_mirror_view (k_ptrs_ent_d);
       Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
       const size_t lclTotalNumEntries = static_cast<size_t> (k_ptrs_ent_h ());
 
@@ -849,7 +887,8 @@ namespace Tpetra {
 
       // Allocate array of (packed???) matrix values.
       typedef typename local_matrix_type::values_type values_type;
-      k_values1D_ = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
+      this->k_values1D_ =
+        values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
     }
     else {
       // "Dynamic profile" means the number of matrix entries in each
@@ -857,7 +896,20 @@ namespace Tpetra {
       // values in "2-D storage," meaning an array of arrays.  The
       // outer array has as many inner arrays as there are rows in the
       // matrix, and each inner array stores the values in that row.
-      values2D_ = staticGraph_->template allocateValues2D<impl_scalar_type> ();
+      try {
+        this->values2D_ =
+          this->staticGraph_->template allocateValues2D<impl_scalar_type> ();
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "CrsGraph::allocateValues2D threw an "
+           "exception: " << e.what ());
+      }
+      catch (...) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "CrsGraph::allocateValues2D threw an "
+           "exception not a subclass of std::exception.");
+      }
     }
   }
 
@@ -1109,7 +1161,7 @@ namespace Tpetra {
       }
 #endif // HAVE_TPETRA_DEBUG
 
-      if (myGraph_->nodeNumEntries_ != myGraph_->nodeNumAllocated_) {
+      if (myGraph_->nodeNumEntries_ != myGraph_->getNodeAllocationSize ()) {
         // The matrix's current 1-D storage is "unpacked."  This means
         // the row offsets may differ from what the final row offsets
         // should be.  This could happen, for example, if the user
@@ -1354,11 +1406,7 @@ namespace Tpetra {
       myGraph_->k_lclInds1D_ = k_inds;
       this->k_values1D_ = k_vals;
 
-      // Storage is packed now, so the number of allocated entries is
-      // the same as the actual number of entries.
-      myGraph_->nodeNumAllocated_ = myGraph_->nodeNumEntries_;
-      // The graph is definitely StaticProfile now, whether or not it
-      // was before.
+      // Whatever graph was before, it's StaticProfile now.
       myGraph_->pftype_ = StaticProfile;
       myGraph_->storageStatus_ = Details::STORAGE_1D_PACKED;
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
@@ -1415,7 +1463,7 @@ namespace Tpetra {
     // get data from staticGraph_
     ArrayRCP<Array<LO> > lclInds2D = staticGraph_->lclInds2D_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
-    size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
+    size_t nodeNumAllocated = staticGraph_->getNodeAllocationSize ();
     row_map_type k_rowPtrs_ = staticGraph_->lclGraph_.row_map;
 
     row_map_type k_ptrs; // "packed" row offsets array
