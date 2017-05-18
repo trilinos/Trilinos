@@ -1213,14 +1213,16 @@ namespace Tpetra {
           inds_packer_type;
         inds_packer_type indsPacker (k_inds, myGraph_->k_lclInds1D_,
                                      k_ptrs, curRowOffsets);
-        Kokkos::parallel_for (lclNumRows, indsPacker);
+        typedef typename decltype (k_inds)::execution_space exec_space;
+        typedef Kokkos::RangePolicy<exec_space, LocalOrdinal> range_type;
+        Kokkos::parallel_for (range_type (0, lclNumRows), indsPacker);
 
         // Pack the values from unpacked k_values1D_ into packed
         // k_vals.  We will replace k_values1D_ below.
         typedef pack_functor<values_type, row_map_type> vals_packer_type;
         vals_packer_type valsPacker (k_vals, this->k_values1D_,
                                      k_ptrs, curRowOffsets);
-        Kokkos::parallel_for (lclNumRows, valsPacker);
+        Kokkos::parallel_for (range_type (0, lclNumRows), valsPacker);
 
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1589,7 +1591,10 @@ namespace Tpetra {
         // Pack k_values1D_ into k_vals.  We will replace k_values1D_ below.
         typedef pack_functor<values_type, row_map_type> packer_type;
         packer_type valsPacker (k_vals, k_values1D_, tmpk_ptrs, k_rowPtrs_);
-        Kokkos::parallel_for (lclNumRows, valsPacker);
+
+        typedef typename decltype (k_vals)::execution_space exec_space;
+        typedef Kokkos::RangePolicy<exec_space, LocalOrdinal> range_type;
+        Kokkos::parallel_for (range_type (0, lclNumRows), valsPacker);
       }
       else { // We don't have to pack, so just set the pointer.
         k_vals = k_values1D_;

@@ -3967,7 +3967,11 @@ namespace Tpetra {
           typename local_graph_type::entries_type::non_const_type,
           row_map_type> inds_packer_type;
         inds_packer_type f (ind_d, k_lclInds1D_, ptr_d, k_rowPtrs_);
-        Kokkos::parallel_for (lclNumRows, f);
+        {
+          typedef typename decltype (ind_d)::execution_space exec_space;
+          typedef Kokkos::RangePolicy<exec_space, LocalOrdinal> range_type;
+          Kokkos::parallel_for (range_type (0, lclNumRows), f);
+        }
 
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
