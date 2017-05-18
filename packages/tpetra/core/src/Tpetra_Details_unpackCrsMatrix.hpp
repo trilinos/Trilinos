@@ -187,6 +187,7 @@ unpackCrsMatrixAndCombine(
   typedef typename LocalMatrix::ordinal_type LO;
   typedef typename LocalMap::global_ordinal_type GO;
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
+  typedef typename LocalMatrix::device_type::execution_space execution_space;
 
   const size_type numImportLIDs = importLIDs.size();
   if (numImportLIDs != numPacketsPerLID.size()) {
@@ -199,6 +200,11 @@ unpackCrsMatrixAndCombine(
     *errStr = os.str();
     return false;
   }
+
+  // FIXME (mfh 30 May 2017) The code below assumes UVM.  It reads
+  // from and writes to the matrix's data on host.  Thus, we need to
+  // synchronize before and after running.
+  execution_space::fence ();
 
   // If a sanity check fails, keep track of some state at the
   // "first" place where it fails.  After the first failure, "run
@@ -295,6 +301,11 @@ unpackCrsMatrixAndCombine(
       offset += numBytes;
     }
   }
+
+  // FIXME (mfh 30 May 2017) The code above assumes UVM.  It reads
+  // from and writes to the matrix's data on host.  Thus, we need to
+  // synchronize before and after running.
+  execution_space::fence ();
 
   if (wrongNumBytes || outOfBounds || unpackErr) {
     std::ostringstream os;
