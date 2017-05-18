@@ -236,13 +236,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Enable the C++11 compiler options and related code (see ${PROJECT_NAME}_CXX11_FLAGS)"
     ${${PROJECT_NAME}_ENABLE_CXX11_DEFAULT} )
 
-  IF(WIN32 AND NOT CYGWIN)
-    IF ("${${PROJECT_NAME}_ENABLE_Fortran}" STREQUAL "")
-      MESSAGE(STATUS "Warning: Setting ${PROJECT_NAME}_ENABLE_Fortran=OFF by default"
-        " because this is Windows (not cygwin) and we assume to not have Fortran!")
-    ENDIF()
-    SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
-  ELSE()
+  IF ("${${PROJECT_NAME}_ENABLE_Fortran_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT ON)
   ENDIF()
 
