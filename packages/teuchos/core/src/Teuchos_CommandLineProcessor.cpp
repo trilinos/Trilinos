@@ -270,6 +270,17 @@ CommandLineProcessor::parse(
   const std::string  help_opt = "help";
   const std::string  pause_opt = "pause-for-debugging";
   int procRank = GlobalMPISession::getRank();
+
+  // check for help options before any others as we modify
+  // the values afterwards
+  for( int i = 1; i < argc; ++i ) {
+    bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
+    if( gov_return && opt_name == help_opt ) {
+      if(errout) printHelpMessage( argv[0], *errout );
+      return PARSE_HELP_PRINTED;
+    }
+  }
+  // check all other options
   for( int i = 1; i < argc; ++i ) {
     bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
     if( !gov_return ) {
@@ -289,10 +300,6 @@ CommandLineProcessor::parse(
         *errout << "\n\n";
       }
       continue;
-    }
-    if( opt_name == help_opt ) {
-      if(errout) printHelpMessage( argv[0], *errout );
-      return PARSE_HELP_PRINTED;
     }
     if( opt_name == pause_opt ) {
       if(procRank == 0) {
