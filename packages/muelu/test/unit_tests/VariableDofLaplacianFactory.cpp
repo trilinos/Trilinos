@@ -84,6 +84,7 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
+    if (!TYPE_EQUAL(SC, double)) { out << "Skipping test for SC != double; no support for complex SC in Galeri::Xpetra branch" << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -99,6 +100,8 @@ namespace MueLuTests {
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
       Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,CrsMatrixWrap,MultiVector>("Laplace2D", map, matrixParameters);
     RCP<Matrix> A = Pr->BuildMatrix();
+
+    // TODO coords should use SC = double
     RCP<MultiVector> coords = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", A->getRowMap(), matrixParameters);
 
     // build hierarchy
@@ -124,7 +127,7 @@ namespace MueLuTests {
     Teuchos::RCP<Vector> oneVec = VectorFactory::Build(A->getRowMap());
     Teuchos::RCP<Vector> res = VectorFactory::Build(A->getRowMap());
     oneVec->putScalar(Teuchos::ScalarTraits<Scalar>::one());
-    res->putScalar(27*Teuchos::ScalarTraits<Scalar>::one());
+    res->putScalar(Teuchos::as<Scalar>(27)*Teuchos::ScalarTraits<Scalar>::one());
     Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA)->apply(*oneVec,*res);
     TEST_COMPARE(res->normInf(),<, 1e-13);
   } // VarLaplConstructor
@@ -198,7 +201,7 @@ namespace MueLuTests {
     Teuchos::RCP<Vector> oneVec = VectorFactory::Build(lapA->getRowMap());
     Teuchos::RCP<Vector> res = VectorFactory::Build(lapA->getRowMap());
     oneVec->putScalar(Teuchos::ScalarTraits<Scalar>::one());
-    res->putScalar(27*Teuchos::ScalarTraits<Scalar>::one());
+    res->putScalar(Teuchos::as<Scalar>(27)*Teuchos::ScalarTraits<Scalar>::one());
     Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA)->apply(*oneVec,*res);
     TEST_COMPARE(res->normInf(),<, 1e-13);
 
@@ -219,7 +222,7 @@ namespace MueLuTests {
     Teuchos::RCP<Vector> oneVec2 = VectorFactory::Build(lapA2->getRowMap());
     Teuchos::RCP<Vector> res2 = VectorFactory::Build(lapA2->getRowMap());
     oneVec2->putScalar(Teuchos::ScalarTraits<Scalar>::one());
-    res2->putScalar(27*Teuchos::ScalarTraits<Scalar>::one());
+    res2->putScalar(Teuchos::as<Scalar>(27)*Teuchos::ScalarTraits<Scalar>::one());
     Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA2)->apply(*oneVec2,*res2);
     TEST_COMPARE(res2->normInf(),<, 1e-13);
     TEST_EQUALITY(res->getMap()->isSameAs(*(res2->getMap())),true);
