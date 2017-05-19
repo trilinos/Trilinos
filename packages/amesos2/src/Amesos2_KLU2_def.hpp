@@ -127,9 +127,10 @@ template <class Matrix, class Vector>
 int
 KLU2<Matrix,Vector>::symbolicFactorization_impl()
 {
-  if (data_.symbolic_ != NULL)
+  if (data_.symbolic_ != NULL) {
       ::KLU2::klu_free_symbolic<slu_type, local_ordinal_type>
                          (&(data_.symbolic_), &(data_.common_)) ;
+  }
 
   bool single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
   if ( single_process_optim_check ) {
@@ -159,9 +160,9 @@ KLU2<Matrix,Vector>::symbolicFactorization_impl()
   }
   else {
 
-  data_.symbolic_ = ::KLU2::klu_analyze<slu_type, local_ordinal_type>
-                ((local_ordinal_type)this->globalNumCols_, colptr_.getRawPtr(),
-                 rowind_.getRawPtr(), &(data_.common_)) ;
+    data_.symbolic_ = ::KLU2::klu_analyze<slu_type, local_ordinal_type>
+      ((local_ordinal_type)this->globalNumCols_, colptr_.getRawPtr(),
+       rowind_.getRawPtr(), &(data_.common_)) ;
 
   } //end single_process_optim_check = false
 
@@ -194,9 +195,10 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
 
-      if (data_.numeric_ != NULL)
+      if (data_.numeric_ != NULL) {
         ::KLU2::klu_free_numeric<slu_type, local_ordinal_type>
           (&(data_.numeric_), &(data_.common_)) ;
+      }
 
       bool single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
       if ( single_process_optim_check ) {
@@ -297,14 +299,14 @@ KLU2<Matrix,Vector>::solve_impl(
     // Thus, if the transFlag_ is true, the non-transpose solve should be used
     if (transFlag_ == 0)
     {
-      ::KLU2::klu_tsolve_trilinos<slu_type, local_ordinal_type>
+      ::KLU2::klu_tsolve2<slu_type, local_ordinal_type>
         (data_.symbolic_, data_.numeric_,
          (local_ordinal_type)this->globalNumCols_,
          (local_ordinal_type)nrhs,
          b_vector, x_vector,  &(data_.common_)) ;
     }
     else {
-      ::KLU2::klu_solve_trilinos<slu_type, local_ordinal_type>
+      ::KLU2::klu_solve2<slu_type, local_ordinal_type>
         (data_.symbolic_, data_.numeric_,
          (local_ordinal_type)this->globalNumCols_,
          (local_ordinal_type)nrhs,
@@ -336,7 +338,7 @@ KLU2<Matrix,Vector>::solve_impl(
               as<size_t>(ld_rhs),
               CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
       }
-    }
+    } // end Timer scope
 
     if ( this->root_ ) {
       //local_ordinal_type i_ld_rhs = as<local_ordinal_type>(ld_rhs);

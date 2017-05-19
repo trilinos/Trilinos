@@ -504,7 +504,7 @@ Int KLU_tsolve
 
 // Require Xout and B to have equal number of entries, pre-allocated
 template <typename Entry, typename Int>
-Int KLU_tsolve_trilinos
+Int KLU_tsolve2
 (
     /* inputs, not modified */
     KLU_symbolic<Entry, Int> *Symbolic,
