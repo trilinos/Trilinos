@@ -916,3 +916,4 @@ namespace BaskerNS
   }//end strong_component <long int>
 
 }//end namespace BaskerNS
+#endif
