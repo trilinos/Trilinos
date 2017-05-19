@@ -317,11 +317,11 @@ Int klu_tsolve
 
 
 /* -------------------------------------------------------------------------- */
-/* klu_solve_trilinos: solves Ax=b using the Symbolic and Numeric objects */
+/* klu_solve2: solves Ax=b using the Symbolic and Numeric objects */
 /* -------------------------------------------------------------------------- */
 
 template <typename Entry, typename Int>
-Int klu_solve_trilinos
+Int klu_solve2
 (
     /* inputs, not modified */
     klu_symbolic<Entry, Int> *Symbolic,
@@ -337,11 +337,11 @@ Int klu_solve_trilinos
 
 
 /* -------------------------------------------------------------------------- */
-/* klu_tsolve_trilinos: solves A'x=b using the Symbolic and Numeric objects */
+/* klu_tsolve2: solves A'x=b using the Symbolic and Numeric objects */
 /* -------------------------------------------------------------------------- */
 
 template <typename Entry, typename Int>
-Int klu_tsolve_trilinos
+Int klu_tsolve2
 (
     /* inputs, not modified */
     klu_symbolic<Entry, Int> *Symbolic,
