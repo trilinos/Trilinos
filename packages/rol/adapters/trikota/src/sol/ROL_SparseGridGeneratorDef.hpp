@@ -111,7 +111,7 @@ void SparseGridGenerator<Real>::refine(void) {
     npts_ = 0;
     Teuchos::RCP<Quadrature<Real> > rule;
 //    bool terminate = false;
-int cnt = 0;
+//int cnt = 0;
 //    while (!terminate) {
       // Select index to investigate
       if ( indices_->isEmpty() ) {
