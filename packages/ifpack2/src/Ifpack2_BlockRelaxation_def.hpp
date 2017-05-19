@@ -547,45 +547,43 @@ initialize ()
     IsParallel_ = false;
   }
 
+  // We should have checked for this in setParameters(), so it's a
+  // logic_error, not an invalid_argument or runtime_error.
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (NumSweeps_ < 0, std::logic_error, "Ifpack2::BlockRelaxation::initialize: "
+     "NumSweeps_ = " << NumSweeps_ << " < 0.");
+
+  // Extract the submatrices
+  ExtractSubmatricesStructure ();
+
+  // Compute the weight vector if we're doing overlapped Jacobi (and
+  // only if we're doing overlapped Jacobi).
+  if (PrecType_ == Ifpack2::Details::JACOBI && OverlapLevel_ > 0) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (hasBlockCrsMatrix_, std::runtime_error,
+       "Ifpack2::BlockRelaxation::initialize: "
+       "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");      
+
+    // weight of each vertex
+    W_ = rcp (new vector_type (A_->getRowMap ()));
+    W_->putScalar (STS::zero ());
+    Teuchos::ArrayRCP<scalar_type > w_ptr = W_->getDataNonConst(0);
+
+    for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
+      for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
+        // FIXME (mfh 12 Sep 2014) Should this really be int?
+        // Perhaps it should be local_ordinal_type instead.
+        int LID = (*Partitioner_)(i,j);
+        w_ptr[LID]+= STS::one();
+      }
+    }
+    W_->reciprocal (*W_);
+  }
+
   ++NumInitialize_;
   Time_->stop ();
   InitializeTime_ += Time_->totalElapsedTime ();
   IsInitialized_ = true;
-}
-
-
-template<class MatrixType,class ContainerType>
-void
-BlockRelaxation<MatrixType,ContainerType>::
-computeBlockCrs ()
-{
-  // typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type>     map_type; // unused
-  // typedef Tpetra::Import<local_ordinal_type,global_ordinal_type, node_type> import_type; // unused
-  using Teuchos::Ptr;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-
-  Time_->start (true);
-
-  // reset values
-  IsComputed_ = false;
-
-  // Extract the submatrices
-  ExtractSubmatrices ();
-
-  // Compute the weight vector if we're doing overlapped Jacobi (and
-  // only if we're doing overlapped Jacobi).
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (PrecType_ == Ifpack2::Details::JACOBI && OverlapLevel_ > 0, std::runtime_error,
-     "Ifpack2::BlockRelaxation::computeBlockCrs: "
-     "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");
-
-  ++NumCompute_;
-  Time_->stop ();
-  ComputeTime_ += Time_->totalElapsedTime();
-  IsComputed_ = true;
 }
 
 
@@ -605,19 +603,8 @@ compute ()
      "The matrix is null.  You must call setMatrix() with a nonnull matrix, "
      "then call initialize(), before you may call this method.");
 
-  // We should have checked for this in setParameters(), so it's a
-  // logic_error, not an invalid_argument or runtime_error.
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (NumSweeps_ < 0, std::logic_error, "Ifpack2::BlockRelaxation::compute: "
-     "NumSweeps_ = " << NumSweeps_ << " < 0.");
-
   if (! isInitialized ()) {
     initialize ();
-  }
-
-  if (hasBlockCrsMatrix_) {
-    computeBlockCrs ();
-    return;
   }
 
   Time_->start (true);
@@ -625,27 +612,8 @@ compute ()
   // reset values
   IsComputed_ = false;
 
-  // Extract the submatrices
-  ExtractSubmatrices ();
+  Container_->compute();   // compute each block matrix
 
-  // Compute the weight vector if we're doing overlapped Jacobi (and
-  // only if we're doing overlapped Jacobi).
-  if (PrecType_ == Ifpack2::Details::JACOBI && OverlapLevel_ > 0) {
-    // weight of each vertex
-    W_ = rcp (new vector_type (A_->getRowMap ()));
-    W_->putScalar (STS::zero ());
-    Teuchos::ArrayRCP<scalar_type > w_ptr = W_->getDataNonConst(0);
-
-    for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
-      for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
-        // FIXME (mfh 12 Sep 2014) Should this really be int?
-        // Perhaps it should be local_ordinal_type instead.
-        int LID = (*Partitioner_)(i,j);
-        w_ptr[LID]+= STS::one();
-      }
-    }
-    W_->reciprocal (*W_);
-  }
   ++NumCompute_;
   Time_->stop ();
   ComputeTime_ += Time_->totalElapsedTime();
@@ -655,11 +623,11 @@ compute ()
 template<class MatrixType, class ContainerType>
 void
 BlockRelaxation<MatrixType, ContainerType>::
-ExtractSubmatrices ()
+ExtractSubmatricesStructure ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION
     (Partitioner_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::"
-     "ExtractSubmatrices: Partitioner object is null.");
+     "ExtractSubmatricesStructure: Partitioner object is null.");
 
   NumLocalBlocks_ = Partitioner_->numLocalParts ();
   std::string containerType = ContainerType::getName ();
@@ -683,7 +651,6 @@ ExtractSubmatrices ()
   Container_ = ContainerFactory<MatrixType>::build(containerType, A_, localRows, Importer_, OverlapLevel_, DampingFactor_);
   Container_->setParameters(List_);
   Container_->initialize();
-  Container_->compute();   //initialize + compute each block matrix
 }
 
 template<class MatrixType,class ContainerType>
