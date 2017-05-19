@@ -95,6 +95,7 @@ protected:
    std::pair<int,int> determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const;
 
    void addSideSets(STK_Interface & mesh) const;
+   void addNodeSets(STK_Interface & mesh) const;
 
    double x0_, y0_;
    double xf_, yf_;
