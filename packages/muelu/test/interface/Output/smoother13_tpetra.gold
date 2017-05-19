@@ -47,6 +47,7 @@ Level 1
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -128,6 +129,7 @@ Level 2
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -161,7 +163,7 @@ Level 2
  matrixmatrix: kernel params -> 
   [empty list]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -188,6 +190,6 @@ Smoother (level 0) post : "Ifpack2::RILUK": {Initialized: true, Computed: true, 
 Smoother (level 1) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94982, alpha: 20, lambdaMin: 0.0974912, boost factor: 1.1}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 Smoother (level 1) post : "Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [3333, 3333], Global nnz: 9997, "Ifpack2::LocalSparseTriangularSolver": {Initialized: true, Computed: true, Matrix: not null, Global matrix dimensions: [3333, 3333]}, "Ifpack2::LocalSparseTriangularSolver": {Initialized: true, Computed: true, Matrix: not null, Global matrix dimensions: [3333, 3333]}}
 
-Smoother (level 2) pre  : SuperLU solver interface, direct solve
+Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother
 
