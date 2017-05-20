@@ -801,7 +801,14 @@ void Relaxation<MatrixType>::computeBlockCrs ()
     int info = 0;
     {
       Impl::InvertDiagBlocks<unmanaged_block_diag_type> idb(blockDiag);
-      Kokkos::parallel_reduce(lclNumMeshRows, idb, info);
+      typedef typename unmanaged_block_diag_type::execution_space exec_space;
+      typedef Kokkos::RangePolicy<exec_space, LO> range_type;
+
+      Kokkos::parallel_reduce (range_type (0, lclNumMeshRows), idb, info);
+      // FIXME (mfh 19 May 2017) Different processes may not
+      // necessarily have this error all at the same time, so it would
+      // be better just to preserve a local error state and let users
+      // check.
       TEUCHOS_TEST_FOR_EXCEPTION
         (info > 0, std::runtime_error, "GETF2 or GETRI failed on = " << info
          << " diagonal blocks.");
