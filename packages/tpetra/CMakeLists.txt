@@ -636,6 +636,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_COMPLEX_DOUBLE)
 GLOBAL_SET (HAVE_TPETRA_COMPLEX_DOUBLE ${Tpetra_INST_COMPLEX_DOUBLE})
 
+IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT Trilinos_ENABLE_COMPLEX_DOUBLE)
+  MESSAGE(WARNING "Tpetra_INST_COMPLEX_DOUBLE=ON, but Trilinos_ENABLE_COMPLEX_DOUBLE=OFF.  This will work, but it will make builds more expensive, because it turns off explicit instantiation for complex<double> in KokkosKernels.  If you want to use Scalar=complex<double> in Tpetra, just set Trilinos_ENABLE_COMPLEX_DOUBLE=ON.  You do not need to set Tpetra_INST_COMPLEX_DOUBLE explicitly any more.")
+ENDIF ()
+
 # Enabling Scalar = std::complex<T> requires that the corresponding
 # Scalar=T instantiation be enabled as well.  
 #
