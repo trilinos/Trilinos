@@ -184,6 +184,7 @@ namespace MueLu {
 
     int       blockSize_;     ///< block size of matrix (fixed block size)
     CycleType Cycle_;         ///< multigrid cycle type (V-cycle or W-cycle)
+    double    scalingFactor_; ///< prolongator scaling factor
     GlobalOrdinal dofOffset_; ///< global offset variable describing offset of DOFs in operator
 
     //! Easy interpreter stuff

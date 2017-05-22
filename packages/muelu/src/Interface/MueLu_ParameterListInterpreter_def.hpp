@@ -159,6 +159,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
     Cycle_     = Hierarchy::GetDefaultCycle();
+    scalingFactor_= Teuchos::ScalarTraits<double>::one();
     blockSize_ = 1;
     dofOffset_ = 0;
 
@@ -258,6 +259,10 @@ namespace MueLu {
       std::string cycleType = paramList.get<std::string>("cycle type");
       TEUCHOS_TEST_FOR_EXCEPTION(cycleMap.count(cycleType) == 0, Exceptions::RuntimeError, "Invalid cycle type: \"" << cycleType << "\"");
       Cycle_ = cycleMap[cycleType];
+    }
+
+    if (paramList.isParameter("coarse grid correction scaling factor")) {
+      scalingFactor_ = paramList.get<double>("coarse grid correction scaling factor");
     }
 
     this->maxCoarseSize_    = paramList.get<int> ("coarse: max size",    MasterList::getDefault<int>("coarse: max size"));
@@ -1915,6 +1920,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
     H.SetCycle(Cycle_);
+    H.SetProlongatorScalingFactor(scalingFactor_);
     HierarchyManager::SetupHierarchy(H);
   }
 
