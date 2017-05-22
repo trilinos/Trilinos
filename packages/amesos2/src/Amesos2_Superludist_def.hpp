@@ -819,6 +819,7 @@ namespace Amesos2 {
                                          nzvals_(), colind_(), rowptr_(),
                                          nnz_ret,
                                          ptrInArg(*superlu_rowmap_),
+                                         ROOTED,
                                          ARBITRARY);
   }
 
