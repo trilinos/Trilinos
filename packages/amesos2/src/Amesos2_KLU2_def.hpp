@@ -132,6 +132,7 @@ KLU2<Matrix,Vector>::symbolicFactorization_impl()
                          (&(data_.symbolic_), &(data_.common_)) ;
   }
 
+#ifndef HAVE_TEUCHOS_COMPLEX
   bool single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
   if ( single_process_optim_check ) {
 
@@ -158,8 +159,9 @@ KLU2<Matrix,Vector>::symbolicFactorization_impl()
       ((local_ordinal_type)this->globalNumCols_, sp_rowptr_with_common_type.getRawPtr(),
        sp_colind, &(data_.common_)) ;
   }
-  else {
-
+  else
+#endif
+  {
     data_.symbolic_ = ::KLU2::klu_analyze<slu_type, local_ordinal_type>
       ((local_ordinal_type)this->globalNumCols_, colptr_.getRawPtr(),
        rowind_.getRawPtr(), &(data_.common_)) ;
@@ -200,6 +202,7 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
           (&(data_.numeric_), &(data_.common_)) ;
       }
 
+#ifndef HAVE_TEUCHOS_COMPLEX
       bool single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
       if ( single_process_optim_check ) {
 
@@ -226,7 +229,9 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
           (sp_rowptr_with_common_type.getRawPtr(), sp_colind, sp_values,
            data_.symbolic_, &(data_.common_)) ;
       }
-      else {
+      else 
+#endif
+      {
 
         data_.numeric_ = ::KLU2::klu_factor<slu_type, local_ordinal_type>
           (colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr(),
@@ -271,7 +276,9 @@ KLU2<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  bool single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
+  bool single_process_optim_check = false;
+#ifndef HAVE_TEUCHOS_COMPLEX
+  single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
   if ( single_process_optim_check && (nrhs == 1) ) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
@@ -317,7 +324,9 @@ KLU2<Matrix,Vector>::solve_impl(
     Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
   } // end single_process_optim_check
-  else {
+  else 
+#endif
+  {
     const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
     Teuchos::Array<slu_type> bValues(val_store_size);
 
@@ -507,11 +516,14 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   if(current_phase == SOLVE)return(false);
 
+#ifndef HAVE_TEUCHOS_COMPLEX
   bool single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
   if ( single_process_optim_check ) {
     // Do nothing in this case - Crs raw pointers will be used
   }
-  else {
+  else 
+#endif
+  {
 
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);

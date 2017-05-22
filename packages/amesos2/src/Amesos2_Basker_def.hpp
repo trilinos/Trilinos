@@ -168,6 +168,7 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
       //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
 
+#ifndef HAVE_TEUCHOS_COMPLEX
       bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
       if ( case_check ) {
 
@@ -191,7 +192,9 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
                                 sp_values,
                                 true);
       }
-      else {   //follow original code path if conditions not met
+      else 
+#endif
+      {   //follow original code path if conditions not met
         // In this case, loadA_impl updates colptr_, rowind_, nzvals_
         info = basker->Symbolic(this->globalNumRows_,
                                 this->globalNumCols_,
@@ -238,6 +241,7 @@ Basker<Matrix,Vector>::numericFactorization_impl()
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
       //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
 
+#ifndef HAVE_TEUCHOS_COMPLEX
       bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
       if ( case_check ) {
 
@@ -259,7 +263,9 @@ Basker<Matrix,Vector>::numericFactorization_impl()
             sp_colind,
             sp_values);
       }
-      else {
+      else 
+#endif
+      {
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
         info = basker->Factor(this->globalNumRows_,
                               this->globalNumCols_,
@@ -331,6 +337,7 @@ Basker<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
+#ifndef HAVE_TEUCHOS_COMPLEX
   bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && (nrhs == 1 ) && is_contiguous_ ) ;
   if ( case_check ) {
 
@@ -379,7 +386,9 @@ Basker<Matrix,Vector>::solve_impl(
           "Could not alloc needed working memory for solve" );
     }
   }
-  else {
+  else 
+#endif
+  {
     const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
 
     xvals_.resize(val_store_size);
@@ -606,13 +615,16 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #ifdef SHYLUBASKER
   // NDE: Can clean up duplicated code with the #ifdef guards
 
+#ifndef HAVE_TEUCHOS_COMPLEX
   bool case_check = ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
 
   if ( case_check ) {
   // NDE: Nothing is done in this special case - CRS raw pointers are passed to SHYLUBASKER and transpose of copies handled there
   // In this case, colptr_, rowind_, nzvals_ are invalid
   }
-  else {
+  else 
+#endif
+  {
 
     // Only the root image needs storage allocated
     if( this->root_ ){
