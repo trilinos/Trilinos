@@ -55,6 +55,7 @@
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
+#include <MueLu_TpetraOperator.hpp>
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_Exceptions.hpp>
 
@@ -197,6 +198,19 @@ int main(int argc, char *argv[]) {
     Tpetra::MatrixMatrix::Add(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,(SC)1.0,SM_Matrix);
     SM_Matrix->fillComplete();
 
+    // transform Tpetra objects to Xpetra objects
+    Teuchos::RCP<CrsMatrix> XCRS_SM_Matrix = Teuchos::rcp( new TpetraCrsMatrix(SM_Matrix) );
+    Teuchos::RCP<Matrix> X_SM_Matrix = Teuchos::rcp( new CrsMatrixWrap(XCRS_SM_Matrix) );
+
+    Teuchos::RCP<CrsMatrix> XCRS_D0_Matrix = Teuchos::rcp( new TpetraCrsMatrix(D0_Matrix) );
+    Teuchos::RCP<Matrix> X_D0_Matrix = Teuchos::rcp( new CrsMatrixWrap(XCRS_D0_Matrix) );
+
+    Teuchos::RCP<CrsMatrix> XCRS_M0inv_Matrix = Teuchos::rcp( new TpetraCrsMatrix(M0inv_Matrix) );
+    Teuchos::RCP<Matrix> X_M0inv_Matrix = Teuchos::rcp( new CrsMatrixWrap(XCRS_M0inv_Matrix) );
+
+    Teuchos::RCP<CrsMatrix> XCRS_M1_Matrix = Teuchos::rcp( new TpetraCrsMatrix(M1_Matrix) );
+    Teuchos::RCP<Matrix> X_M1_Matrix = Teuchos::rcp( new CrsMatrixWrap(XCRS_M1_Matrix) );
+
     // set parameters
     Teuchos::ParameterList params, params11, params22;
     params.set("refmaxwell: disable add-on",false);
@@ -209,8 +223,11 @@ int main(int argc, char *argv[]) {
     params.set("refmaxwell: 22 list",params22);
     // construct preconditioner
     RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
-      = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
-            M1_Matrix,Teuchos::null,coords,params) );
+      = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(X_SM_Matrix,X_D0_Matrix,X_M0inv_Matrix,
+            X_M1_Matrix,Teuchos::null,Xpetra::toXpetra(coords),params) );
+
+    RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tpetra_prec =
+        rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(Teuchos::rcp_dynamic_cast<Xpetra::Operator<SC,LO,GO,NO> >(preconditioner)));
 
     // setup LHS, RHS
     RCP<TMV> vec = rcp( new TMV(edge_map,1) );
@@ -222,7 +239,7 @@ int main(int argc, char *argv[]) {
     // Belos linear problem
     RCP<BelosProblem> problem = rcp( new BelosProblem() );
     problem -> setOperator( SM_Matrix );
-    problem -> setRightPrec( preconditioner );
+    problem -> setRightPrec( tpetra_prec );
     problem -> setProblem( X, B );
     // Belos solver
     RCP<BelosManager> solver;
