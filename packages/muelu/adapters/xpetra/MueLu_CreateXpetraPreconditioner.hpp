@@ -8,6 +8,9 @@
 #ifndef PACKAGES_MUELU_ADAPTERS_XPETRA_MUELU_CREATEXPETRAPRECONDITIONER_HPP_
 #define PACKAGES_MUELU_ADAPTERS_XPETRA_MUELU_CREATEXPETRAPRECONDITIONER_HPP_
 
+//! @file
+//! @brief Various adapters that will create a MueLu preconditioner that is an Xpetra::Matrix.
+
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
@@ -26,6 +29,15 @@
 #include <stdlib.h>
 
 namespace MueLu {
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Xpetra.
+    @ingroup MueLuAdapters
+    Given an Xpetra::Matrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] inParamList Parameter list
+    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    @param[in] inNullspace (optional) Near nullspace of the matrix.
+  */
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
