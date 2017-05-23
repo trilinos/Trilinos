@@ -72,60 +72,6 @@ class Distributor;
 //
 namespace Details {
 
-/// \brief combine value in a CrsMatrix row
-///
-/// \warning The allowed \c combineMode are:
-///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
-template<class LocalMatrixType, class LocalMapType>
-typename LocalMatrixType::ordinal_type
-combineCrsMatrixValue(LocalMatrixType& lclMatrix,
-                      LocalMapType& lclColMap,
-                      const typename LocalMatrixType::ordinal_type lclRow,
-                      const typename LocalMatrixType::value_type val,
-                      const typename LocalMapType::global_ordinal_type col,
-                      const Tpetra::CombineMode combineMode,
-                      const bool atomic)
-{
-  typedef typename LocalMatrixType::ordinal_type LO;
-
-  // INSERT doesn't make sense for a static graph, since you
-  // aren't allowed to change the structure of the graph.
-  // However, all the other combine modes work.
-
-  LO numValid = 0; // number of valid input column indices
-  if (combineMode == ADD) {
-    LO lclColInd = lclColMap.getLocalElement(col);
-    numValid += lclMatrix.sumIntoValues(lclRow, &lclColInd, 1, &val, false, atomic);
-  }
-  else if (combineMode == REPLACE) {
-    LO lclColInd = lclColMap.getLocalElement(col);
-    numValid += lclMatrix.replaceValues(lclRow, &lclColInd, 1, &val, false, atomic);
-  }
-  else if (combineMode == ABSMAX) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument,
-        "ABSMAX combine mode is not yet implemented for a matrix that has a "
-        "static graph (i.e., was constructed with the CrsMatrix constructor "
-        "that takes a const CrsGraph pointer).");
-  }
-  else if (combineMode == INSERT) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument,
-        "INSERT combine mode is not allowed if the matrix has a static graph "
-        "(i.e., was constructed with the CrsMatrix constructor that takes a "
-        "const CrsGraph pointer).");
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::logic_error, "Invalid combine mode; should never get "
-        "here!  Please report this bug to the Tpetra developers.");
-  }
-
-  return numValid;
-
-}
-
-
 /// \brief Reduction result for UnpackCrsMatrixAndCombineFunctor below.
 ///
 /// The reduction result finds the offset and number of bytes associated with
@@ -317,18 +263,33 @@ struct UnpackCrsMatrixAndCombineFunctor {
 
         // Combine a single column/value at a time to avoid temporary storage
         LO num_modified = Teuchos::ScalarTraits<LO>::zero();
-        for (size_t k = 0; k < static_cast<size_t>(num_ent); ++k) {
-
-          IST val = Teuchos::ScalarTraits<IST>::zero();
-          memcpy(&val, val_beg + k * sizeof(IST), sizeof(IST));
-
-          GO col = Teuchos::ScalarTraits<GO>::zero();
-          memcpy(&col, ind_beg + k * sizeof(GO), sizeof(GO));
-
-          num_modified += combineCrsMatrixValue(local_matrix_, local_col_map_,
-              local_row, val, col, combine_mode_, atomic_);
+        if (combine_mode_ == ADD) {
+          for (size_t k = 0; k < static_cast<size_t>(num_ent); ++k) {
+            IST val = Teuchos::ScalarTraits<IST>::zero();
+            GO col = Teuchos::ScalarTraits<GO>::zero();
+            memcpy(&val, val_beg + k * sizeof(IST), sizeof(IST));
+            memcpy(&col, ind_beg + k * sizeof(GO), sizeof(GO));
+            LO local_col_idx = local_col_map_.getLocalElement(col);
+            num_modified += local_matrix_.sumIntoValues(local_row,
+                &local_col_idx, 1, &val, false, atomic_);
+          }
         }
-
+        else if (combine_mode_ == REPLACE) {
+          for (size_t k = 0; k < static_cast<size_t>(num_ent); ++k) {
+            IST val = Teuchos::ScalarTraits<IST>::zero();
+            GO col = Teuchos::ScalarTraits<GO>::zero();
+            memcpy(&val, val_beg + k * sizeof(IST), sizeof(IST));
+            memcpy(&col, ind_beg + k * sizeof(GO), sizeof(GO));
+            LO local_col_idx = local_col_map_.getLocalElement(col);
+            num_modified += local_matrix_.replaceValues(local_row,
+                &local_col_idx, 1, &val, false, atomic_);
+          }
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(
+              true, std::logic_error, "Invalid combine mode; should never get "
+              "here!  Please report this bug to the Tpetra developers.");
+        }
       }
 
       if (dst.wrong_num_bytes_error || dst.out_of_bounds_error || dst.unpacking_error) {
@@ -384,6 +345,27 @@ unpackCrsMatrixAndCombine(
   typedef typename CVT::device_type device_type;
   typedef typename device_type::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, LO> range_type;
+
+  if (combineMode == ABSMAX) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument,
+        "ABSMAX combine mode is not yet implemented for a matrix that has a "
+        "static graph (i.e., was constructed with the CrsMatrix constructor "
+        "that takes a const CrsGraph pointer).");
+  }
+  else if (combineMode == INSERT) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument,
+        "INSERT combine mode is not allowed if the matrix has a static graph "
+        "(i.e., was constructed with the CrsMatrix constructor that takes a "
+        "const CrsGraph pointer).");
+  }
+  else if (!(combineMode == ADD || combineMode == REPLACE)) {
+    // Unknown combine mode!
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error, "Invalid combine mode; should never get "
+        "here!  Please report this bug to the Tpetra developers.");
+  }
 
   const size_t numImportLIDs = static_cast<size_t>(importLIDs.size());
   if (numImportLIDs != static_cast<size_t>(numPacketsPerLID.size())) {
