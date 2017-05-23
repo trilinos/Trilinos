@@ -346,41 +346,49 @@ unpackCrsMatrixAndCombine(
   typedef typename device_type::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, LO> range_type;
 
-  if (combineMode == ABSMAX) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument,
-        "ABSMAX combine mode is not yet implemented for a matrix that has a "
-        "static graph (i.e., was constructed with the CrsMatrix constructor "
-        "that takes a const CrsGraph pointer).");
-  }
-  else if (combineMode == INSERT) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument,
-        "INSERT combine mode is not allowed if the matrix has a static graph "
-        "(i.e., was constructed with the CrsMatrix constructor that takes a "
-        "const CrsGraph pointer).");
-  }
-  else if (!(combineMode == ADD || combineMode == REPLACE)) {
-    // Unknown combine mode!
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::logic_error, "Invalid combine mode; should never get "
-        "here!  Please report this bug to the Tpetra developers.");
-  }
-
   const size_t numImportLIDs = static_cast<size_t>(importLIDs.size());
-  if (numImportLIDs != static_cast<size_t>(numPacketsPerLID.size())) {
+
+  {
+    // Check for correct input
+    int qa_errors = 0;
     std::ostringstream os;
-    os << "importLIDs.size() (" << numImportLIDs << ") != "
-       << "numPacketsPerLID.size() (" << numPacketsPerLID.size() << ").";
-    if (errStr.get() == NULL) {
-      errStr = std::unique_ptr<std::string>(new std::string());
+    if (combineMode == ABSMAX) {
+      qa_errors += 1;
+      os << "ABSMAX combine mode is not yet implemented for a matrix that has a "
+         << "static graph (i.e., was constructed with the CrsMatrix constructor "
+         << "that takes a const CrsGraph pointer).\n";
     }
-    *errStr = os.str();
-    return false;
-  }
+    else if (combineMode == INSERT) {
+      qa_errors += 1;
+      os << "INSERT combine mode is not allowed if the matrix has a static graph "
+         << "(i.e., was constructed with the CrsMatrix constructor that takes a "
+         << "const CrsGraph pointer).\n";
+    }
+    else if (!(combineMode == ADD || combineMode == REPLACE)) {
+      qa_errors += 1;
+      // Unknown combine mode!
+      os << "Invalid combine mode; should never get "
+         << "here!  Please report this bug to the Tpetra developers.\n";
+    }
+
+    // Check that sizes of input objects are consistent.
+    if (numImportLIDs != static_cast<size_t>(numPacketsPerLID.size())) {
+      qa_errors += 1;
+      os << "importLIDs.size() (" << numImportLIDs << ") != "
+         << "numPacketsPerLID.size() (" << numPacketsPerLID.size() << ").";
+    }
+
+    if (qa_errors) {
+      if (errStr.get() == NULL) {
+        errStr = std::unique_ptr<std::string>(new std::string());
+      }
+      *errStr = os.str();
+      return false;
+    }
+  } // end QA error checking
 
   CVT num_packets_per_lid(numPacketsPerLID.getRawPtr(), numPacketsPerLID.size());
-  LIVT import_lids(importLIDs.getRawPtr(), importLIDs.size());
+  LIVT import_lids(importLIDs.getRawPtr(), numImportLIDs);
   IPVT imports_v(imports.getRawPtr(), imports.size());
 
   // Get the offsets
