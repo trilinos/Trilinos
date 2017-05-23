@@ -46,6 +46,8 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
+#include "Tpetra_Details_computeOffsets.hpp"
+#include "Kokkos_Core.hpp"
 #include <memory>
 #include <string>
 
@@ -70,18 +72,22 @@ class Distributor;
 //
 namespace Details {
 
-template<class LocalMatrix, class LocalMap>
-typename LocalMatrix::ordinal_type
-combineCrsMatrixValues(LocalMatrix& lclMatrix,
-                       LocalMap& lclColMap,
-                       const typename LocalMatrix::ordinal_type lclRow,
-                       const typename LocalMatrix::ordinal_type numEnt,
-                       const typename LocalMatrix::value_type vals[],
-                       const typename LocalMap::global_ordinal_type cols[],
+/// \brief combine values in a single CRS matrix row
+///
+/// \warning The allowed \c combineMode are:
+///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
+template<class LocalMatrixType, class LocalMapType>
+typename LocalMatrixType::ordinal_type
+combineCrsMatrixValues(LocalMatrixType& lclMatrix,
+                       LocalMapType& lclColMap,
+                       const typename LocalMatrixType::ordinal_type lclRow,
+                       const typename LocalMatrixType::ordinal_type numEnt,
+                       const typename LocalMatrixType::value_type vals[],
+                       const typename LocalMapType::global_ordinal_type cols[],
                        const Tpetra::CombineMode combineMode,
                        const bool atomic)
 {
-  typedef typename LocalMatrix::ordinal_type LO;
+  typedef typename LocalMatrixType::ordinal_type LO;
 
   // INSERT doesn't make sense for a static graph, since you
   // aren't allowed to change the structure of the graph.
@@ -124,72 +130,271 @@ combineCrsMatrixValues(LocalMatrix& lclMatrix,
 
 }
 
-template<class LocalMatrix, class LocalMap>
-bool
-unpackCrsMatrixRow(LocalMatrix& lclMatrix,
-                   LocalMap& lclColMap,
-                   std::unique_ptr<std::string>& errStr,
-                   typename LocalMatrix::value_type* const valInTmp,
-                   typename LocalMap::global_ordinal_type* const indInTmp,
-                   const size_t tmpSize,
-                   const char* const valIn,
-                   const char* const indIn,
-                   const size_t numEnt,
-                   const typename LocalMatrix::ordinal_type lclRow,
-                   const Tpetra::CombineMode combineMode,
-                   const bool atomic)
-{
-  if (tmpSize < numEnt || (numEnt != 0 && (valInTmp == NULL || indInTmp == NULL))) {
-    return false;
+
+/// \brief Reduction result for UnpackCrsMatrixAndCombineFunctor below.
+///
+/// The reduction result finds the offset and number of bytes associated with
+/// the first out of bounds error or unpacking error occurs.
+template<class LO>
+struct UnpackCrsMatrixError {
+
+  LO bad_index; // only valid if outOfBounds == true.
+  size_t num_ent;
+  size_t offset;   // only valid if outOfBounds == true.
+  size_t expected_num_bytes;
+  size_t num_bytes; // only valid if outOfBounds == true.
+  size_t buf_size;
+  bool wrong_num_bytes_error;
+  bool out_of_bounds_error;
+  bool unpacking_error;
+
+  UnpackCrsMatrixError():
+    bad_index(Tpetra::Details::OrdinalTraits<LO>::invalid()),
+    num_ent(0),
+    offset(0),
+    expected_num_bytes(0),
+    num_bytes(0),
+    buf_size(0),
+    wrong_num_bytes_error(false),
+    out_of_bounds_error(false),
+    unpacking_error(false) {}
+
+  bool success() const
+  {
+    // Any possible error would result in bad_index being changed from
+    // `invalid` to the index associated with the error.
+    return bad_index == Tpetra::Details::OrdinalTraits<LO>::invalid();
   }
 
-  typedef typename LocalMatrix::value_type LO;
-  typedef typename LocalMap::global_ordinal_type GO;
-  memcpy(valInTmp, valIn, numEnt * sizeof(LO));
-  memcpy(indInTmp, indIn, numEnt * sizeof(GO));
+  std::string summary() const
+  {
+    std::ostringstream os;
+    if (wrong_num_bytes_error || out_of_bounds_error || unpacking_error) {
+      if (wrong_num_bytes_error) {
+        os << "At index i = " << bad_index
+           << ", expectedNumBytes > numBytes.";
+      }
+      else if (out_of_bounds_error) {
+        os << "First invalid offset into 'imports' "
+           << "unpack buffer at index i = " << bad_index << ".";
+      }
+      else if (unpacking_error) {
+        os << "First error in unpackRow() at index i = "
+           << bad_index << ".";
+      }
+      os << "  importLIDs[i]: " << bad_index
+         << ", bufSize: " << buf_size
+         << ", offset: " << offset
+         << ", numBytes: " << num_bytes
+         << ", expectedNumBytes: " << expected_num_bytes
+         << ", numEnt: " << num_ent;
+    }
+    return os.str();
+  }
+};
 
-  // FIXME (mfh 23 Mar 2017) It would make sense to use the return
-  // value here as more than just a "did it succeed" Boolean test.
 
-  // FIXME (mfh 23 Mar 2017) CrsMatrix_NonlocalSumInto_Ignore test
-  // expects this method to ignore incoming entries that do not
-  // exist on the process that owns those rows.  We would like to
-  // distinguish between "errors" resulting from ignored entries,
-  // vs. actual errors.
+/// \brief Unpacks and combines a single row of the CrsMatrix.
+///
+/// Data (bytes) describing the row of the CRS matrix are "unpacked"
+/// from a single (concatenated) char* in to the row of the matrix
+///
+/// \tparam LocalMatrixType the specialization of the KokkosSparse::CrsMatrix
+///   local matrix
+/// \tparam LocalMapType the type of the local column map
+template<class CountType, class OffsetType, class LocalMatrixType, class LocalMapType>
+struct UnpackCrsMatrixAndCombineFunctor {
 
-  //const LO numModified =
-  combineCrsMatrixValues<LocalMatrix,LocalMap>(
-      lclMatrix, lclColMap, lclRow, numEnt, valInTmp, indInTmp, combineMode, atomic);
-  return true; // FIXME (mfh 23 Mar 2013) See above.
-  //return numModified == numEnt;
-}
+  typedef CountType count_type;
+  typedef OffsetType offset_type;
+  typedef LocalMatrixType local_matrix_type;
+  typedef LocalMapType local_map_type;
+  typedef typename local_matrix_type::value_type IST;
+  typedef typename local_matrix_type::ordinal_type LO;
+  typedef typename local_map_type::global_ordinal_type GO;
+
+  typedef Kokkos::View<const count_type*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> num_packets_per_lid_view_type;
+  typedef Kokkos::View<offset_type*, Kokkos::HostSpace> offsets_view_type;
+  typedef Kokkos::View<const char*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> imports_view_type;
+  typedef Kokkos::View<const LO*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> import_lids_view_type;
+
+  typedef UnpackCrsMatrixError<LO> value_type;
+
+  static_assert (std::is_same<LO, typename LocalMatrixType::ordinal_type>::value,
+                 "LocalMapType::local_ordinal_type and "
+                 "LocalMatrixType::ordinal_type must be the same.");
+
+  num_packets_per_lid_view_type num_packets_per_lid_;
+  offsets_view_type offsets_;
+  imports_view_type imports_;
+  import_lids_view_type import_lids_;
+  LocalMatrixType local_matrix_;
+  LocalMapType local_col_map_;
+  Tpetra::CombineMode combine_mode_;
+  bool atomic_;
+
+  UnpackCrsMatrixAndCombineFunctor(num_packets_per_lid_view_type num_packets_per_lid,
+      offsets_view_type offsets, imports_view_type imports,
+      import_lids_view_type import_lids,
+      local_matrix_type local_matrix, local_map_type local_col_map,
+      Tpetra::CombineMode combine_mode, bool atomic) :
+    num_packets_per_lid_(num_packets_per_lid), offsets_(offsets),
+    imports_(imports), import_lids_(import_lids), local_matrix_(local_matrix),
+    local_col_map_(local_col_map), combine_mode_(combine_mode), atomic_(atomic)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void init(value_type& dst) const
+  {
+    dst.bad_index = Tpetra::Details::OrdinalTraits<LO>::invalid();
+    dst.num_ent = 0;
+    dst.offset = 0;
+    dst.expected_num_bytes = 0;
+    dst.num_bytes = 0;
+    dst.buf_size = 0;
+    dst.wrong_num_bytes_error = false;
+    dst.out_of_bounds_error = false;
+    dst.unpacking_error = false;
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst, const volatile value_type& src) const
+  {
+    // The dst object should reflect the first bad index and all other
+    // associated error codes and data.  Thus, we need only check if the src
+    // object shows an error and if its associated `bad_index` is less than the
+    // dst.bad_index (if dst shows errors).
+    LO invalid = Tpetra::Details::OrdinalTraits<LO>::invalid();
+    if (src.bad_index != invalid) {
+      // An error in the src, check if whether:
+      //   1. The dst shows errors
+      //   2. If dst does show errors, if src bad_index is less than its bad
+      //      index
+      if (dst.bad_index == invalid || src.bad_index < dst.bad_index) {
+        dst.bad_index = src.bad_index;
+        dst.num_ent = src.num_ent;
+        dst.offset = src.offset;
+        dst.expected_num_bytes = src.expected_num_bytes;
+        dst.num_bytes = src.num_bytes;
+        dst.buf_size = src.buf_size;
+        dst.wrong_num_bytes_error = src.wrong_num_bytes_error;
+        dst.out_of_bounds_error = src.out_of_bounds_error;
+        dst.unpacking_error = src.unpacking_error;
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const LO i, value_type& dst) const
+  {
+    const LO local_row = import_lids_[i];
+    const size_t num_bytes = num_packets_per_lid_(i);
+
+    if (num_bytes > 0) { // there is actually something in the row
+
+      const size_t buf_size = imports_.size();
+      const char* const num_ent_beg = imports_.ptr_on_device() + offsets_(i);
+      const char* const num_ent_end = num_ent_beg + sizeof(LO);
+
+      // Now we know how many entries to expect in the received data
+      // for this row.
+      LO num_ent = 0;
+      memcpy(&num_ent, num_ent_beg, sizeof(LO));
+
+      const char* const val_beg = num_ent_end;
+      const char* const val_end = val_beg + static_cast<size_t>(num_ent) * sizeof(IST);
+      const char* const ind_beg = val_end;
+      const size_t expected_num_bytes = sizeof(LO) +
+        static_cast<size_t>(num_ent) * (sizeof(IST) + sizeof(GO));
+
+      if (expected_num_bytes > num_bytes) {
+        dst.wrong_num_bytes_error = true;
+      }
+      else if (offsets_(i) > buf_size || offsets_(i) + num_bytes > buf_size) {
+        dst.out_of_bounds_error = true;
+      }
+      else {
+
+        // Unpack this row
+        IST* vals = new IST[num_ent];
+        memcpy(vals, val_beg, num_ent * sizeof(IST));
+
+        GO* cols = new GO[num_ent];
+        memcpy(cols, ind_beg, num_ent * sizeof(GO));
+
+        // FIXME (mfh 23 Mar 2017) It would make sense to use the return
+        // value here as more than just a "did it succeed" Boolean test.
+
+        // FIXME (mfh 23 Mar 2017) CrsMatrix_NonlocalSumInto_Ignore test
+        // expects this method to ignore incoming entries that do not
+        // exist on the process that owns those rows.  We would like to
+        // distinguish between "errors" resulting from ignored entries,
+        // vs. actual errors.
+
+        // Combine values
+        auto num_modified =
+          combineCrsMatrixValues(local_matrix_, local_col_map_,
+              local_row, num_ent, vals, cols, combine_mode_, atomic_);
+
+        delete [] vals;
+        delete [] cols;
+      }
+
+      if (dst.wrong_num_bytes_error || dst.out_of_bounds_error || dst.unpacking_error) {
+        dst.bad_index = i;
+        dst.num_ent = num_ent;
+        dst.offset = offsets_(i);
+        dst.expected_num_bytes = expected_num_bytes;
+        dst.num_bytes = num_bytes;
+        dst.buf_size = buf_size;
+      }
+    }
+  }
+
+};
 
 /// \brief Unpack the imported column indices and values, and combine into matrix.
 ///
 /// \warning The allowed \c combineMode are:
 ///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
-template<class LocalMatrix, class LocalMap>
+template<class LocalMatrixType, class LocalMapType>
 bool
 unpackCrsMatrixAndCombine(
-    LocalMatrix& lclMatrix,
-    const LocalMap& lclColMap,
+    LocalMatrixType& lclMatrix,
+    const LocalMapType& lclColMap,
     std::unique_ptr<std::string>& errStr,
-    const Teuchos::ArrayView<const typename LocalMatrix::ordinal_type>& importLIDs,
+    const Teuchos::ArrayView<const typename LocalMatrixType::ordinal_type>& importLIDs,
     const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     size_t constantNumPackets,
+    const int myRank,
     Distributor & /* distor */,
     CombineMode combineMode,
     const bool atomic)
 {
-  //typedef LocalMatrix::ordinal_type LO;
-  typedef typename LocalMatrix::value_type IST;
-  typedef typename LocalMatrix::ordinal_type LO;
-  typedef typename LocalMap::global_ordinal_type GO;
-  typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
+  using Kokkos::View;
+  using Kokkos::HostSpace;
+  using Kokkos::MemoryUnmanaged;
+  using ::Tpetra::Details::computeOffsetsFromCounts;
+  typedef LocalMatrixType local_matrix_type;
+  typedef LocalMapType local_map_type;
+  typedef typename LocalMapType::local_ordinal_type LO;
 
-  const size_type numImportLIDs = importLIDs.size();
-  if (numImportLIDs != numPacketsPerLID.size()) {
+  static_assert (std::is_same<LO, typename LocalMatrixType::ordinal_type>::value,
+                 "LocalMapType::local_ordinal_type and "
+                 "LocalMatrixType::ordinal_type must be the same.");
+
+  // Get the number of packets on each row.
+  typedef size_t count_type;
+  typedef View<const LO*, HostSpace, MemoryUnmanaged> LIVT;  // Local indices view type
+  typedef View<const count_type*, HostSpace, MemoryUnmanaged> CVT; // Counts view type
+  typedef View<const char*, HostSpace, MemoryUnmanaged> IPVT; // Imports view type
+
+  typedef typename CVT::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
+  typedef Kokkos::RangePolicy<execution_space, LO> range_type;
+
+  const size_t numImportLIDs = static_cast<size_t>(importLIDs.size());
+  if (numImportLIDs != static_cast<size_t>(numPacketsPerLID.size())) {
     std::ostringstream os;
     os << "importLIDs.size() (" << numImportLIDs << ") != "
        << "numPacketsPerLID.size() (" << numPacketsPerLID.size() << ").";
@@ -200,129 +405,38 @@ unpackCrsMatrixAndCombine(
     return false;
   }
 
-  // If a sanity check fails, keep track of some state at the
-  // "first" place where it fails.  After the first failure, "run
-  // through the motions" until the end of this method, then raise
-  // an error with an informative message.
-  size_type firstBadIndex = 0;
-  size_t firstBadOffset = 0;
-  size_t firstBadExpectedNumBytes = 0;
-  size_t firstBadNumBytes = 0;
-  LO firstBadNumEnt = 0;
-  // We have sanity checks for three kinds of errors:
-  //
-  //   1. Offset into array of all the incoming data (for all rows)
-  //      is out of bounds
-  //   2. Too few bytes of incoming data for a row, given the
-  //      reported number of entries in those incoming data
-  //   3. Error in unpacking the row's incoming data
-  //
-  bool outOfBounds = false;
-  bool wrongNumBytes = false;
-  bool unpackErr = false;
+  CVT num_packets_per_lid(numPacketsPerLID.getRawPtr(), numPacketsPerLID.size());
+  LIVT import_lids(importLIDs.getRawPtr(), importLIDs.size());
+  IPVT imports_v(imports.getRawPtr(), imports.size());
 
-  const size_t bufSize = static_cast<size_t>(imports.size());
-  const char* const importsRawPtr = imports.getRawPtr();
-  size_t offset = 0;
+  // Get the offsets
+  typedef size_t offset_type;
+  typedef View<offset_type*, HostSpace> OVT; // Offsets view type
+  OVT offsets("unpackCrsMatrixAndCombine: offsets", numImportLIDs+1);
+  computeOffsetsFromCounts(offsets, num_packets_per_lid);
 
-  // Temporary storage for incoming values and indices.  We need
-  // this because the receive buffer does not align storage; it's
-  // just contiguous bytes.  In order to avoid violating ANSI
-  // aliasing rules, we memcpy each incoming row's data into these
-  // temporary arrays.  We double their size every time we run out
-  // of storage.
-  std::vector<IST> valInTmp;
-  std::vector<GO> indInTmp;
-  for (size_type i = 0; i < numImportLIDs; ++i) {
-    const LO lclRow = importLIDs[i];
-    const size_t numBytes = numPacketsPerLID[i];
+  // Now do the actual unpack!
+  typedef UnpackCrsMatrixAndCombineFunctor<count_type, offset_type,
+          local_matrix_type, local_map_type> unpack_functor_type;
 
-    if (numBytes > 0) { // there is actually something in the row
-      const char* const numEntBeg = importsRawPtr + offset;
-      const char* const numEntEnd = numEntBeg + sizeof(LO);
+  typename unpack_functor_type::value_type result;
+  unpack_functor_type unpack_functor(num_packets_per_lid, offsets,
+      imports_v, import_lids, lclMatrix, lclColMap, combineMode, atomic);
+  Kokkos::parallel_reduce(range_type(0, numImportLIDs), unpack_functor, result);
 
-      // Now we know how many entries to expect in the received data
-      // for this row.
-      LO numEnt = 0;
-      memcpy(&numEnt, numEntBeg, sizeof(LO));
-
-      const char* const valBeg = numEntEnd;
-      const char* const valEnd =
-        valBeg + static_cast<size_t>(numEnt) * sizeof(IST);
-      const char* const indBeg = valEnd;
-      const size_t expectedNumBytes = sizeof(LO) +
-        static_cast<size_t>(numEnt) * (sizeof(IST) + sizeof(GO));
-
-      if (expectedNumBytes > numBytes) {
-        firstBadIndex = i;
-        firstBadOffset = offset;
-        firstBadExpectedNumBytes = expectedNumBytes;
-        firstBadNumBytes = numBytes;
-        firstBadNumEnt = numEnt;
-        wrongNumBytes = true;
-        break;
-      }
-      if (offset > bufSize || offset + numBytes > bufSize) {
-        firstBadIndex = i;
-        firstBadOffset = offset;
-        firstBadExpectedNumBytes = expectedNumBytes;
-        firstBadNumBytes = numBytes;
-        firstBadNumEnt = numEnt;
-        outOfBounds = true;
-        break;
-      }
-      size_t tmpNumEnt = static_cast<size_t>(valInTmp.size());
-      if (tmpNumEnt < static_cast<size_t>(numEnt) ||
-          static_cast<size_t>(indInTmp.size()) < static_cast<size_t>(numEnt)) {
-        // Double the size of the temporary arrays for incoming data.
-        tmpNumEnt = std::max(static_cast<size_t>(numEnt), tmpNumEnt * 2);
-        valInTmp.resize(tmpNumEnt);
-        indInTmp.resize(tmpNumEnt);
-      }
-
-      unpackErr = ! unpackCrsMatrixRow(lclMatrix, lclColMap, errStr,
-          valInTmp.data(), indInTmp.data(), tmpNumEnt,
-          valBeg, indBeg, numEnt, lclRow, combineMode, atomic);
-
-      if (unpackErr) {
-        firstBadIndex = i;
-        firstBadOffset = offset;
-        firstBadExpectedNumBytes = expectedNumBytes;
-        firstBadNumBytes = numBytes;
-        firstBadNumEnt = numEnt;
-        break;
-      }
-      offset += numBytes;
-    }
-  }
-
-  if (wrongNumBytes || outOfBounds || unpackErr) {
+  if (!result.success()) {
     std::ostringstream os;
-    if (wrongNumBytes) {
-      os << "At index i = " << firstBadIndex
-         << ", expectedNumBytes > numBytes.";
+    os << "Proc " << myRank << ": packCrsMatrix failed.  "
+       << result.summary()
+       << std::endl;
+    if (errStr.get () != NULL) {
+      errStr = std::unique_ptr<std::string> (new std::string ());
+      *errStr = os.str ();
     }
-    else if (outOfBounds) {
-      os << "First invalid offset into 'imports' "
-         << "unpack buffer at index i = " << firstBadIndex << ".";
-    }
-    else if (unpackErr) {
-      os << "First error in unpackRow() at index i = "
-         << firstBadIndex << ".";
-    }
-    os << "  importLIDs[i]: " << importLIDs[firstBadIndex]
-       << ", bufSize: " << bufSize
-       << ", offset: " << firstBadOffset
-       << ", numBytes: " << firstBadNumBytes
-       << ", expectedNumBytes: " << firstBadExpectedNumBytes
-       << ", numEnt: " << firstBadNumEnt;
-    if (errStr.get() == NULL) {
-      errStr = std::unique_ptr<std::string>(new std::string());
-    }
-    *errStr = os.str();
-    return false;
   }
-  return true;
+
+  return result.success();
+
 }
 
 } // namespace Details

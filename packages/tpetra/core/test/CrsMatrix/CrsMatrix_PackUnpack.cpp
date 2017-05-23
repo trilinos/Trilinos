@@ -221,7 +221,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   lcl_unpack_OK = unpackCrsMatrixAndCombine(
       B_lcl, col_map->getLocalMap(), errStr,
       exportLIDs, exports, numPacketsPerLID,
-      constantNumPackets, distor, Tpetra::REPLACE, atomic_updates);
+      constantNumPackets, world_rank, distor, Tpetra::REPLACE, atomic_updates);
   TEST_ASSERT( lcl_unpack_OK );
 
   // Loop through rows and compare matrix values
@@ -264,7 +264,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   lcl_unpack_OK = unpackCrsMatrixAndCombine(
       B_lcl, col_map->getLocalMap(), errStr,
       exportLIDs, exports, numPacketsPerLID,
-      constantNumPackets, distor, Tpetra::ADD, atomic_updates);
+      constantNumPackets, world_rank, distor, Tpetra::ADD, atomic_updates);
   TEST_ASSERT( lcl_unpack_OK );
 
   // Loop through rows and compare matrix values

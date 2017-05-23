@@ -154,9 +154,11 @@ struct PackCrsMatrixFunctor {
 
   typedef CountType count_type;
   typedef OffsetType offset_type;
-  typedef typename LocalMatrixType::value_type IST;
-  typedef typename LocalMatrixType::ordinal_type LO;
-  typedef typename LocalMapType::global_ordinal_type GO;
+  typedef LocalMatrixType local_matrix_type;
+  typedef LocalMapType local_map_type;
+  typedef typename local_matrix_type::value_type IST;
+  typedef typename local_matrix_type::ordinal_type LO;
+  typedef typename local_map_type::global_ordinal_type GO;
 
   typedef Kokkos::View<count_type*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> num_packets_per_lid_view_type;
   typedef Kokkos::View<offset_type*, Kokkos::HostSpace> offsets_view_type;
@@ -173,13 +175,13 @@ struct PackCrsMatrixFunctor {
   offsets_view_type offsets_;
   exports_view_type exports_;
   export_lids_view_type export_lids_;
-  LocalMatrixType local_matrix_;
-  LocalMapType local_col_map_;
+  local_matrix_type local_matrix_;
+  local_map_type local_col_map_;
 
   PackCrsMatrixFunctor(num_packets_per_lid_view_type num_packets_per_lid,
       offsets_view_type offsets, exports_view_type exports,
       export_lids_view_type export_lids,
-      LocalMatrixType local_matrix, LocalMapType local_col_map):
+      local_matrix_type local_matrix, local_map_type local_col_map):
     num_packets_per_lid_(num_packets_per_lid), offsets_(offsets),
     exports_(exports), export_lids_(export_lids), local_matrix_(local_matrix),
     local_col_map_(local_col_map)
@@ -455,8 +457,8 @@ packCrsMatrix (const LocalMatrixType& lclMatrix,
   using ::Tpetra::Details::computeOffsetsFromCounts;
   typedef LocalMatrixType local_matrix_type;
   typedef LocalMapType local_map_type;
-  typedef typename LocalMapType::local_ordinal_type LO;
-  typedef typename LocalMapType::global_ordinal_type GO;
+  typedef typename local_map_type::local_ordinal_type LO;
+  typedef typename local_map_type::global_ordinal_type GO;
 
   static_assert (std::is_same<LO, typename LocalMatrixType::ordinal_type>::value,
                  "LocalMapType::local_ordinal_type and "
