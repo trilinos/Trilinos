@@ -3100,10 +3100,9 @@ namespace Tpetra {
       "Please call resumeFill() to make fill active.");
 
     const size_t nlrs = staticGraph_->getNodeNumRows ();
-    const size_t numAlloc = staticGraph_->getNodeAllocationSize ();
     const size_t numEntries = staticGraph_->getNodeNumEntries ();
-    if (! staticGraph_->indicesAreAllocated () || nlrs == 0 ||
-        numAlloc == 0 || numEntries == 0) {
+    if (! staticGraph_->indicesAreAllocated () ||
+        nlrs == 0 || numEntries == 0) {
       // do nothing
     }
     else {
@@ -3145,10 +3144,9 @@ namespace Tpetra {
     // it is easiest to replace all allocated values, instead of replacing only the ones with valid entries
     // however, if there are no valid entries, we can short-circuit
     // furthermore, if the values aren't allocated, we can short-circuit (no entry have been inserted so far)
-    const size_t     nlrs = staticGraph_->getNodeNumRows(),
-                 numAlloc = staticGraph_->getNodeAllocationSize(),
-               numEntries = staticGraph_->getNodeNumEntries();
-    if (! staticGraph_->indicesAreAllocated () || numAlloc == 0 || numEntries == 0) {
+    const size_t nlrs = staticGraph_->getNodeNumRows();
+    const size_t numEntries = staticGraph_->getNodeNumEntries();
+    if (! staticGraph_->indicesAreAllocated () || numEntries == 0) {
       // do nothing
     }
     else {
