@@ -72,20 +72,19 @@ class Distributor;
 //
 namespace Details {
 
-/// \brief combine values in a single CRS matrix row
+/// \brief combine value in a CrsMatrix row
 ///
 /// \warning The allowed \c combineMode are:
 ///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
 template<class LocalMatrixType, class LocalMapType>
 typename LocalMatrixType::ordinal_type
-combineCrsMatrixValues(LocalMatrixType& lclMatrix,
-                       LocalMapType& lclColMap,
-                       const typename LocalMatrixType::ordinal_type lclRow,
-                       const typename LocalMatrixType::ordinal_type numEnt,
-                       const typename LocalMatrixType::value_type vals[],
-                       const typename LocalMapType::global_ordinal_type cols[],
-                       const Tpetra::CombineMode combineMode,
-                       const bool atomic)
+combineCrsMatrixValue(LocalMatrixType& lclMatrix,
+                      LocalMapType& lclColMap,
+                      const typename LocalMatrixType::ordinal_type lclRow,
+                      const typename LocalMatrixType::value_type val,
+                      const typename LocalMapType::global_ordinal_type col,
+                      const Tpetra::CombineMode combineMode,
+                      const bool atomic)
 {
   typedef typename LocalMatrixType::ordinal_type LO;
 
@@ -95,16 +94,12 @@ combineCrsMatrixValues(LocalMatrixType& lclMatrix,
 
   LO numValid = 0; // number of valid input column indices
   if (combineMode == ADD) {
-    for (int k=0; k<numEnt; k++) {
-      LO lclColInd = lclColMap.getLocalElement(cols[k]);
-      numValid += lclMatrix.sumIntoValues(lclRow, &lclColInd, 1, &vals[k], false, atomic);
-    }
+    LO lclColInd = lclColMap.getLocalElement(col);
+    numValid += lclMatrix.sumIntoValues(lclRow, &lclColInd, 1, &val, false, atomic);
   }
   else if (combineMode == REPLACE) {
-    for (int k=0; k<numEnt; k++) {
-      LO lclColInd = lclColMap.getLocalElement(cols[k]);
-      numValid += lclMatrix.replaceValues(lclRow, &lclColInd, 1, &vals[k], false, atomic);
-    }
+    LO lclColInd = lclColMap.getLocalElement(col);
+    numValid += lclMatrix.replaceValues(lclRow, &lclColInd, 1, &val, false, atomic);
   }
   else if (combineMode == ABSMAX) {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -297,7 +292,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
 
       // Now we know how many entries to expect in the received data
       // for this row.
-      LO num_ent = 0;
+      LO num_ent = Teuchos::ScalarTraits<LO>::zero();
       memcpy(&num_ent, num_ent_beg, sizeof(LO));
 
       const char* const val_beg = num_ent_end;
@@ -314,29 +309,26 @@ struct UnpackCrsMatrixAndCombineFunctor {
       }
       else {
 
-        // Unpack this row
-        IST* vals = new IST[num_ent];
-        memcpy(vals, val_beg, num_ent * sizeof(IST));
-
-        GO* cols = new GO[num_ent];
-        memcpy(cols, ind_beg, num_ent * sizeof(GO));
-
-        // FIXME (mfh 23 Mar 2017) It would make sense to use the return
-        // value here as more than just a "did it succeed" Boolean test.
-
         // FIXME (mfh 23 Mar 2017) CrsMatrix_NonlocalSumInto_Ignore test
         // expects this method to ignore incoming entries that do not
         // exist on the process that owns those rows.  We would like to
         // distinguish between "errors" resulting from ignored entries,
         // vs. actual errors.
 
-        // Combine values
-        auto num_modified =
-          combineCrsMatrixValues(local_matrix_, local_col_map_,
-              local_row, num_ent, vals, cols, combine_mode_, atomic_);
+        // Combine a single column/value at a time to avoid temporary storage
+        LO num_modified = Teuchos::ScalarTraits<LO>::zero();
+        for (size_t k = 0; k < static_cast<size_t>(num_ent); ++k) {
 
-        delete [] vals;
-        delete [] cols;
+          IST val = Teuchos::ScalarTraits<IST>::zero();
+          memcpy(&val, val_beg + k * sizeof(IST), sizeof(IST));
+
+          GO col = Teuchos::ScalarTraits<GO>::zero();
+          memcpy(&col, ind_beg + k * sizeof(GO), sizeof(GO));
+
+          num_modified += combineCrsMatrixValue(local_matrix_, local_col_map_,
+              local_row, val, col, combine_mode_, atomic_);
+        }
+
       }
 
       if (dst.wrong_num_bytes_error || dst.out_of_bounds_error || dst.unpacking_error) {
