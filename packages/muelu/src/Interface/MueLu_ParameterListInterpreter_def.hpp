@@ -1601,6 +1601,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
         hieraList.remove("transpose: use implicit");
       }
 
+      if (hieraList.isParameter("coarse grid correction scaling factor")) {
+        this->scalingFactor_ = hieraList.get<double>("coarse grid correction scaling factor");
+        hieraList.remove("coarse grid correction scaling factor");
+      }
+
       //TODO Move this its own class or MueLu::Utils?
       std::map<std::string,MsgType> verbMap;
       //for developers
