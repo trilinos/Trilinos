@@ -79,6 +79,8 @@
 
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
+#include <MueLu_CreateXpetraPreconditioner.hpp>
+
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -328,6 +330,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     temp = IO::ReadMultiVector ("yyy.mm", LinearMap);
     xpetraYYY->doImport(*temp, *Importer, Xpetra::INSERT);
 
+    Teuchos::RCP<MultiVector> coordinates = MultiVectorFactory::Build(LapMap,2);
+    Teuchos::ArrayRCP< const Scalar > srcX = xpetraXXX->getData(0);
+    Teuchos::ArrayRCP< const Scalar > srcY = xpetraYYY->getData(0);
+    Teuchos::ArrayRCP< Scalar > dataX = coordinates->getDataNonConst(0);
+    Teuchos::ArrayRCP< Scalar > dataY = coordinates->getDataNonConst(1);
+    for(LocalOrdinal i = 0; i < coordinates->getLocalLength(); i++) {
+      dataX[i] = srcX[i];
+      dataY[i] = srcY[i];
+    }
+
     // read in matrix
     GlobalOrdinal NumRows = 0; // number of rows in matrix
     GlobalOrdinal NumElements = 0; // number of elements in matrix
@@ -422,7 +434,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RHS->doImport(*temp, *dofImporter, Xpetra::INSERT);
     LHS->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
 
+    // MueLu part
 
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast("driver.xml", Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+
+    std::cout << paramList << std::endl;
+
+    RCP<Hierarchy> H;
+    H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList); //, coordinates);
 
     success = true;
   }
