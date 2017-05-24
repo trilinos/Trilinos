@@ -87,7 +87,6 @@ struct UnpackCrsMatrixError {
   size_t buf_size;
   bool wrong_num_bytes_error;
   bool out_of_bounds_error;
-  bool unpacking_error;
 
   UnpackCrsMatrixError():
     bad_index(Tpetra::Details::OrdinalTraits<LO>::invalid()),
@@ -97,8 +96,7 @@ struct UnpackCrsMatrixError {
     num_bytes(0),
     buf_size(0),
     wrong_num_bytes_error(false),
-    out_of_bounds_error(false),
-    unpacking_error(false) {}
+    out_of_bounds_error(false) {}
 
   bool success() const
   {
@@ -110,7 +108,7 @@ struct UnpackCrsMatrixError {
   std::string summary() const
   {
     std::ostringstream os;
-    if (wrong_num_bytes_error || out_of_bounds_error || unpacking_error) {
+    if (wrong_num_bytes_error || out_of_bounds_error) {
       if (wrong_num_bytes_error) {
         os << "At index i = " << bad_index
            << ", expectedNumBytes > numBytes.";
@@ -118,10 +116,6 @@ struct UnpackCrsMatrixError {
       else if (out_of_bounds_error) {
         os << "First invalid offset into 'imports' "
            << "unpack buffer at index i = " << bad_index << ".";
-      }
-      else if (unpacking_error) {
-        os << "First error in unpackRow() at index i = "
-           << bad_index << ".";
       }
       os << "  importLIDs[i]: " << bad_index
          << ", bufSize: " << buf_size
@@ -194,7 +188,6 @@ struct UnpackCrsMatrixAndCombineFunctor {
     dst.buf_size = 0;
     dst.wrong_num_bytes_error = false;
     dst.out_of_bounds_error = false;
-    dst.unpacking_error = false;
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -219,7 +212,6 @@ struct UnpackCrsMatrixAndCombineFunctor {
         dst.buf_size = src.buf_size;
         dst.wrong_num_bytes_error = src.wrong_num_bytes_error;
         dst.out_of_bounds_error = src.out_of_bounds_error;
-        dst.unpacking_error = src.unpacking_error;
       }
     }
   }
@@ -292,7 +284,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
         }
       }
 
-      if (dst.wrong_num_bytes_error || dst.out_of_bounds_error || dst.unpacking_error) {
+      if (dst.wrong_num_bytes_error || dst.out_of_bounds_error) {
         dst.bad_index = i;
         dst.num_ent = num_ent;
         dst.offset = offsets_(i);
