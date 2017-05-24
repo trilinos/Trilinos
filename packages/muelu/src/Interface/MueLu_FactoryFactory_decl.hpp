@@ -89,6 +89,7 @@
 #include "MueLu_DropNegativeEntriesFactory.hpp"
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
+#include "MueLu_FineLevelInputDataFactory.hpp"
 #include "MueLu_GeneralGeometricPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
@@ -136,11 +137,13 @@
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_UnsmooshFactory.hpp"
 #include "MueLu_UserAggregationFactory.hpp"
 #include "MueLu_UserPFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_UzawaSmoother.hpp"
 #endif
+#include "MueLu_VariableDofLaplacianFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
@@ -223,6 +226,7 @@ namespace MueLu {
       if (factoryName == "DropNegativeEntriesFactory")         return Build2<DropNegativeEntriesFactory>         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "EminPFactory")                       return Build2<EminPFactory>                       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "FilteredAFactory")                   return Build2<FilteredAFactory>                   (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "FineLevelInputDataFactory")          return Build2<FineLevelInputDataFactory>          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeneralGeometricPFactory")           return Build2<GeneralGeometricPFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                    return Build2<GenericRFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "LineDetectionFactory")               return Build2<LineDetectionFactory>               (paramList, factoryMapIn, factoryManagersIn);
@@ -251,8 +255,10 @@ namespace MueLu {
       if (factoryName == "TransPFactory")                      return Build2<TransPFactory>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TrilinosSmoother")                   return BuildTrilinosSmoother                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory")        return Build2<UncoupledAggregationFactory>        (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "UnsmooshFactory")                    return Build2<UnsmooshFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserAggregationFactory")             return Build2<UserAggregationFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserPFactory")                       return Build2<UserPFactory>                       (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "VariableDofLaplacianFactory")        return Build2<VariableDofLaplacianFactory>        (paramList, factoryMapIn, factoryManagersIn);
 
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -371,7 +377,8 @@ namespace MueLu {
       ParameterList paramListWithFactories;
 
       // Read the RCP<Factory> parameters of the class T
-      RCP<const ParameterList> validParamList = factory->GetValidParameterList();
+      RCP<const ParameterList> validParamList = factory->GetValidParameterList(); // TODO check for Teuchos::null (no parameter list validation)
+      TEUCHOS_TEST_FOR_EXCEPTION(validParamList == Teuchos::null, Exceptions::RuntimeError, "FactoryFactory::Build2: default parameter list is null. Please fix this.");
       for (ParameterList::ConstIterator param = validParamList->begin(); param != validParamList->end(); ++param) {
         const std::string& pName = validParamList->name(param);
 
