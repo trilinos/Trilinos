@@ -433,20 +433,7 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
       SizeType> functor (ptr, count);
     Kokkos::RangePolicy<execution_space, SizeType> range (0, numOffsets);
     try {
-#ifdef KOKKOS_HAVE_CUDA
-      constexpr bool isCuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-      constexpr bool isCuda = false;
-#endif // KOKKOS_HAVE_CUDA
-      // FIXME (mfh 26 Jun 2016) Kokkos::Cuda doesn't like explicit
-      // use of RangePolicy here; it reports a build error.  Not sure
-      // why.  Using an integer range works just fine.
-      if (isCuda) {
-        Kokkos::parallel_scan (numOffsets, functor);
-      }
-      else {
-        Kokkos::parallel_scan (range, functor);
-      }
+      Kokkos::parallel_scan (range, functor);
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION

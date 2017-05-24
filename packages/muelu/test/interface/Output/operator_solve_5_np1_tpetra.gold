@@ -44,6 +44,7 @@ Level 1
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -52,6 +53,7 @@ Level 1
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -118,6 +120,7 @@ Level 2
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -126,6 +129,7 @@ Level 2
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -192,6 +196,7 @@ Level 3
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -203,6 +208,7 @@ Level 3
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -224,7 +230,7 @@ Level 3
  matrixmatrix: kernel params -> 
   [empty list]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -252,6 +258,6 @@ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 2) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [192, 192], Global nnz: 1674}
 
-Smoother (level 3) pre  : KLU2 solver interface
+Smoother (level 3) pre  : SuperLU solver interface, direct solve
 Smoother (level 3) post : no smoother
 

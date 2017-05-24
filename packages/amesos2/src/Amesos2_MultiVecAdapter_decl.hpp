@@ -61,6 +61,7 @@
 #include <Tpetra_Map.hpp>
 
 #include "Amesos2_TypeDecl.hpp"
+#include "Amesos2_VectorTraits.hpp"
 
 namespace Amesos2 {
 
@@ -206,6 +207,26 @@ namespace Amesos2 {
   ///////////////////////////////////////////////////////////
 
   namespace Util {
+
+    /** \internal
+     *
+     * \brief Helper struct for getting pointers to the MV
+     * data - only used when number of vectors = 1
+     * and single MPI process
+     */
+    template <typename MV, typename V>
+    struct vector_pointer_helper {
+
+      typedef typename VectorTraits<V>::ptr_scalar_type ptr_return_type ;
+
+      static ptr_return_type * get_pointer_to_vector ( const Teuchos::Ptr< MV> &mv ) ;
+
+      static ptr_return_type * get_pointer_to_vector ( Teuchos::Ptr< MV> &mv ) ;
+
+      static ptr_return_type * get_pointer_to_vector ( const Teuchos::Ptr< const MV > &mv ) ;
+
+      static ptr_return_type * get_pointer_to_vector ( Teuchos::Ptr< const MV > &mv ) ;
+    };
 
     /*
      * If the multivector scalar type and the desired scalar tpye are

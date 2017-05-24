@@ -1,9 +1,9 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//           Amesos2: Templated Direct Sparse Solver Package
+//                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,55 +35,74 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
+//
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_DIRICHLET_RESIDUAL_FACEBASIS_HPP
-#define PANZER_EVALUATOR_DIRICHLET_RESIDUAL_FACEBASIS_HPP
 
-#include "Teuchos_RCP.hpp"
+#ifndef AMESOS2_VECTORTRAITS_HPP
+#define AMESOS2_VECTORTRAITS_HPP
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
+//#include "Amesos2_config.h"
 
-#include "PanzerDiscFE_config.hpp"
-#include "Panzer_PureBasis.hpp"
-#include "Panzer_Dimension.hpp"
-#include "Panzer_PointRule.hpp"
-#include "Panzer_PointValues2.hpp"
+#include <Tpetra_MultiVector.hpp>
 
-#include "Kokkos_DynRankView.hpp"
 
-#include "Panzer_Evaluator_Macros.hpp"
+#ifdef HAVE_TPETRA_INST_INT_INT
+#ifdef HAVE_AMESOS2_EPETRA
+#  include <Tpetra_DefaultPlatform.hpp>
+#  include <Epetra_MultiVector.h>
+// and perhaps some others later...
+#endif
+#endif
 
-namespace panzer {
-    
-/** Evaluates a Dirichlet BC residual corresponding to a field value
-  * at a set of points defined by a point rule. Note that this assumes
-  * a vector basis is used.
-  */
-PANZER_EVALUATOR_CLASS(DirichletResidual_FaceBasis)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<const ScalarT,Cell,Point,Dim> dof;
-  PHX::MDField<const ScalarT,Cell,Point,Dim> value;
-  PHX::MDField<const ScalarT,Cell,BASIS> dof_orientation; // will scale residual
-                                                    // by orientation to ensure
-                                                    // parallel consistency
+namespace Amesos2 {
 
-  Teuchos::RCP<const panzer::PureBasis> basis; 
-  Teuchos::RCP<const panzer::PointRule> pointRule; 
-  Kokkos::DynRankView<ScalarT,PHX::Device> faceNormal; // face normals
-  Kokkos::DynRankView<ScalarT,PHX::Device> refFaceNormal; // reference face normals
+  // The declaration
+  template <class Vector>
+  struct VectorTraits {};
 
-  PointValues2<ScalarT,PHX::MDField> pointValues;
-  PHX::MDField<const ScalarT, Cell, IP, Dim, Dim, void, void, void, void>
-    constJac_;
+  /*******************
+   * Specializations *
+   *******************/
 
-PANZER_EVALUATOR_CLASS_END
+  template < typename Scalar,
+             typename LocalOrdinal,
+             typename GlobalOrdinal,
+             typename Node >
+  struct VectorTraits<
+    Tpetra::MultiVector<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node> > {
+    typedef Scalar scalar_t;
+    typedef LocalOrdinal local_ordinal_t;
+    typedef GlobalOrdinal global_ordinal_t;
+    typedef Node node_t;
+
+    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  multivector_type;
+    typedef typename multivector_type::impl_scalar_type  ptr_scalar_type; // TODO Make this a pointer
+  };
+
+#ifdef HAVE_TPETRA_INST_INT_INT
+#ifdef HAVE_AMESOS2_EPETRA
+
+  template <>
+  struct VectorTraits<Epetra_MultiVector> {
+    typedef double scalar_t;
+    typedef int local_ordinal_t;
+    typedef int global_ordinal_t;
+    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
+
+    typedef Epetra_MultiVector multivector_type;
+    typedef double ptr_scalar_type; // TODO Make this a pointer
+  };
+
+#endif
+#endif
 
 }
 
-#endif
+#endif  // AMESOS2_VECTORTRAITS_HPP

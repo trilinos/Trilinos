@@ -7790,15 +7790,25 @@ These options are described below.
   
   If ``${PROJECT_NAME}_ENABLE_Fortran`` is ``ON``, then Fortran support for
   the project will be enabled and the Fortran compiler(s) must be found.  By
-  default, TriBITS sets this to ``ON`` for non-Windows systems (i.e. ``WIN32``
-  is not set by CMake) but is ``OFF`` for a Windows system.  A project that
-  always requires Fortran, for example, it can set the default::
-  
-    SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT TRUE)
+  default, TriBITS sets this to ``ON`` .
   
   If a project does not have any native Fortran code a good default would be::
   
     SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
+
+  This default can be set in `<projectDir>/ProjectName.cmake`_ or `<projectDir>/CMakeLists.txt`_.
+
+  Given that a native Fortran compiler is not supported by default on Windows
+  and on most Mac OSX systems, projects that have optional Fortran code may
+  decide to set the default depending on the platform by setting, for example::
+
+    IF ( (WIN32 AND NOT CYGWIN) OR (CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin") )
+      MESSAGE(STATUS "Warning: Setting ${PROJECT_NAME}_ENABLE_Fortran=OFF by default"
+       " because this is Windows (not cygwin) and we assume to not have Fortran!")
+      SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
+    ELSE()
+      SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT ON)
+    ENDIF()
   
   NOTE: It is usually not a good idea to always force off Fortran, or any
   compiler, because extra repositories and packages might be added by someone

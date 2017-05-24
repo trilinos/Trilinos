@@ -85,19 +85,16 @@ namespace Amesos2 {
       using Teuchos::rcpFromPtr;
       typedef Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t> import_t;
 
-      RCP<matrix_t> t_mat;
-      t_mat = rcp (new matrix_t (rcpFromPtr (map), this->getMaxRowNNZ()));
-
       RCP<import_t> importer =
         rcp (new import_t (this->getRowMap(), rcpFromPtr (map)));
 
-      // mfh 27 Mar 2012: INSERT is correct in this case, because
-      // we're Importing into an empty matrix with a dynamic graph.
-      t_mat->doImport (*(this->mat_), *importer, Tpetra::INSERT);
+      RCP<matrix_t> t_mat;
+
+      t_mat = Tpetra::importAndFillCompleteCrsMatrix<matrix_t>( (this->mat_), *importer ); // DomainMap, RangeMap, params inputs default to Teuchos::null
 
       // Case for non-contiguous GIDs
       if ( distribution == CONTIGUOUS_AND_ROOTED ) {
-        t_mat->fillComplete(); // if not used std::bad_alloc thrown...
+
         auto myRank = map->getComm()->getRank();
 
         auto local_matrix = t_mat->getLocalMatrix();

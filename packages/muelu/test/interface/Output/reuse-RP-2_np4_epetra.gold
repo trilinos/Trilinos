@@ -39,6 +39,7 @@ Level 1
       aggregation: enable phase 3 = 1   [default]
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
+      aggregation: error on nodes with no on-rank neighbors = 0   [default]
       OnePt aggregate map name =    [default]
       OnePt aggregate map factory =    [default]
       
@@ -79,7 +80,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2bfa5d0,node=0x29f95a0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x6672c20,node=0x66729e0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -135,6 +136,7 @@ Level 2
       aggregation: enable phase 3 = 1   [default]
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
+      aggregation: error on nodes with no on-rank neighbors = 0   [default]
       OnePt aggregate map name =    [default]
       OnePt aggregate map factory =    [default]
       
@@ -175,7 +177,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2ac9990,node=0x2ac9ed0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x6610500,node=0x66100c0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -209,7 +211,7 @@ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 2) post : no smoother
 
 Level 0
@@ -303,6 +305,6 @@ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 2) post : no smoother
 

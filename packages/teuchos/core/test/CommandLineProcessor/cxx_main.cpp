@@ -196,7 +196,67 @@ int main( int argc, char* argv[] )
   catch( ... ) {
     if(verbose)
       std::cout << "*** Caught UNEXPECTED unknown exception" << std::endl
-                << "Test 5:  CommandLineProcessor - Throw exceptions - Extra options not recognized: FAILED" << std::endl;
+                << "Test 6:  CommandLineProcessor - Throw exceptions - Extra options not recognized: FAILED" << std::endl;
+    parse_successful = false;  // No exceptions should be thrown for this command line processor.
+  }
+
+  // Next create tests for a command line processor that makes sure help output is the same independent of the arg position
+  try {
+    if (verbose)
+      std::cout << "Test 7 :  CommandLineProcessor - Help position" << std::endl;
+
+    CommandLineProcessor clp7(false, false);  // Recognize all options AND do not throw exceptions
+
+    int n = 10;
+    clp7.setOption("n", &n, "A parameter");
+
+    char arg_c[] = "command";
+    char arg_n[] = "--n=20";
+    char arg_h[] = "--help";
+
+    const int aux_argc = 3;
+    char *aux_argv[aux_argc];
+
+    std::stringbuf  buffer1, buffer2;;
+    std::streambuf* oldbuffer = NULL;
+
+    // help before args
+    aux_argv[0] = &arg_c[0];
+    aux_argv[1] = &arg_h[0];
+    aux_argv[2] = &arg_n[0];
+
+    oldbuffer = std::cerr.rdbuf(&buffer1);   // redirect output
+    clp7.parse(aux_argc, aux_argv);
+    std::cerr.rdbuf(oldbuffer);              // redirect output back
+
+    // help after args
+    aux_argv[0] = &arg_c[0];
+    aux_argv[1] = &arg_n[0];
+    aux_argv[2] = &arg_h[0];
+
+    oldbuffer = std::cerr.rdbuf(&buffer2);   // redirect output
+    clp7.parse(aux_argc, aux_argv);
+    std::cerr.rdbuf(oldbuffer);              // redirect output back
+
+    if (verbose)
+      std::cout << "Test 7 :  CommandLineProcessor - Help position: ";
+    if (buffer1.str() != buffer2.str())
+    {
+      parse_successful = false;
+      if (verbose) std::cout << "FAILED" << std::endl;
+    }
+    else
+      if (verbose) std::cout << "PASSED" << std::endl;
+  }
+  catch( CommandLineProcessor::UnrecognizedOption &excpt ) {
+    if(verbose)
+      std::cout << "*** Caught EXPECTED standard exception : " << excpt.what() << std::endl
+                << "Test 7:  CommandLineProcessor - Help position: PASSED" << std::endl;
+  }
+  catch( ... ) {
+    if(verbose)
+      std::cout << "*** Caught UNEXPECTED unknown exception" << std::endl
+                << "Test 7:  CommandLineProcessor - Help position: FAILED" << std::endl;
     parse_successful = false;  // No exceptions should be thrown for this command line processor.
   }
 

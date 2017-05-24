@@ -95,7 +95,8 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   pointValues.setupArrays(pointRule,af_pv);
 
   // the field manager will allocate all of these field
-  this->addDependentField(pointValues.jac);
+  constJac_ = pointValues.jac;
+  this->addDependentField(constJac_);
 
   
   this->addEvaluatedField(residual);

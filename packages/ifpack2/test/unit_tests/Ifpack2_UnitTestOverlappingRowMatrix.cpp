@@ -313,7 +313,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
   Array<global_ordinal_type> ind(3);
   scalar_type zero=0;
   scalar_type one=1;
-  scalar_type two=2;
   val[0] = as<scalar_type>(-1);
   val[1] = as<scalar_type>(2);
   val[2] = as<scalar_type>(-1);

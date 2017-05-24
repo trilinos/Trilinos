@@ -131,6 +131,7 @@ APPEND_SET(HEADERS
   Amesos2_TypeMap.hpp
   Amesos2_TypeDecl.hpp
   Amesos2_Util.hpp
+  Amesos2_VectorTraits.hpp
   Amesos2_Version.hpp
   )
 

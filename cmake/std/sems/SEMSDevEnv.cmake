@@ -17,6 +17,16 @@ IF (TPL_ENABLE_MPI)
    "Set in SEMSDevEnv.cmake")
   SET(CMAKE_Fortran_COMPILER "$ENV{MPIF90}" CACHE FILEPATH
    "Set in SEMSDevEnv.cmake")
+  # Point to the right MPI
+  ASSERT_DEFINED(ENV{SEMS_OPENMPI_ROOT})
+  SET(MPI_BASE_DIR "$ENV{SEMS_OPENMPI_ROOT}" CACHE PATH
+    "Set in SEMSDevEnv.cmake")
+  # Make OpenMPI 1.6.5 mpi.h with GCC 4.8.3 warnings go away (see #1341)
+  INCLUDE_DIRECTORIES(SYSTEM "$ENV{SEMS_OPENMPI_ROOT}/include")
+  # NOTE: With TriBITS, all soruce files get built with the MPI compiler
+  # wrappers so it should be safe to add this include directory with -isystem
+  # to all builds.  The only worry is Fortran 90+ code that will cause
+  # problems with older versions of gfortran.
 ELSE()
   # Set up serial non-MPI compiler wrappers
   ASSERT_DEFINED(ENV{CC})
@@ -39,11 +49,6 @@ ENDIF()
 SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS
   "-lgomp -lgfortran${LDL_LINK_ARG} -ldl"
   CACHE STRING "Set in SEMSDevEnv.cmake")
-
-# Point to the right MPI
-ASSERT_DEFINED(ENV{SEMS_OPENMPI_ROOT})
-SET(MPI_BASE_DIR "$ENV{SEMS_OPENMPI_ROOT}" CACHE PATH
-  "Set in SEMSDevEnv.cmake")
 
 #
 # B) Disable packages and TPLs by default not supported by SEMS Dev Env

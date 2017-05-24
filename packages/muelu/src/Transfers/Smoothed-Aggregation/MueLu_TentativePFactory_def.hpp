@@ -362,6 +362,8 @@ namespace MueLu {
 
     } else {
       GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
+      if (NSDim>1)
+        GetOStream(Warnings0) << "TentativePFactor : for nontrivial nullspace, this may degrade performance" << std::endl;
       /////////////////////////////
       //      "no-QR" option     //
       /////////////////////////////

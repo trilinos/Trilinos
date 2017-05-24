@@ -137,17 +137,18 @@ public:
                        BoundConstraint<Real>  &bnd,
                        TrustRegionModel<Real> &model ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
-    const Real one(1), oe4(1.e4), zero(0);
+    const Real one(1), zero(0);
 
     /***************************************************************************************************/
     // BEGIN INEXACT OBJECTIVE FUNCTION COMPUTATION
     /***************************************************************************************************/
     // Update inexact objective function
-    Real fold1 = fold, ftol = tol, TOL(1.e-2);
+    Real fold1 = fold, ftol = tol; // TOL(1.e-2);
     if ( useInexact_[0] ) {
       if ( !(cnt_%updateIter_) && (cnt_ != 0) ) {
         force_ *= forceFactor_;
       }
+      //const Real oe4(1e4);
       //Real c = scale_*std::max(TOL,std::min(one,oe4*std::max(pRed_,std::sqrt(ROL_EPSILON<Real>()))));
       //ftol   = c*std::pow(std::min(eta1_,one-eta2_)
       //          *std::min(std::max(pRed_,std::sqrt(ROL_EPSILON<Real>())),force_),one/omega_);
@@ -158,15 +159,13 @@ public:
       //cnt_++;
       Real eta = static_cast<Real>(0.999)*std::min(eta1_,one-eta2_);
       ftol     = scale_*std::pow(eta*std::min(pRed_,force_),one/omega_);
-      //if ( ftol_old_ > ftol || cnt_ == 0 ) {
-        ftol_old_ = ftol;
-        fold1 = obj.value(x,ftol_old_);
-      //}
+      ftol_old_ = ftol;
+      fold1 = obj.value(x,ftol_old_);
       cnt_++;
     }
     // Evaluate objective function at new iterate
     prim_->set(x); prim_->plus(s);
-    obj.update(*prim_,false);
+    obj.update(*prim_,true);
     fnew = obj.value(*prim_,ftol);
 
     nfval = 1;

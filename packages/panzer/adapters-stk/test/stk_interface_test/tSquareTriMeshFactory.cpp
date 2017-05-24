@@ -53,12 +53,6 @@
 
 #include "Shards_BasicTopologies.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
 
@@ -95,6 +89,13 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
    TEST_EQUALITY(numprocs,mpi_numprocs);
    TEST_EQUALITY(rank,mpi_rank);
+
+   // check for nodeset
+   std::vector<std::string> nodesets;
+   mesh->getNodesetNames(nodesets);
+ 
+   TEST_EQUALITY(nodesets.size(),1);
+   TEST_EQUALITY(nodesets[0],"origin");
 }
 
 }

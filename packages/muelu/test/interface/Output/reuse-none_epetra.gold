@@ -39,6 +39,7 @@ Level 1
       aggregation: enable phase 3 = 1   [default]
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
+      aggregation: error on nodes with no on-rank neighbors = 0   [default]
       OnePt aggregate map name =    [default]
       OnePt aggregate map factory =    [default]
       
@@ -83,7 +84,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2b6c090,node=0x2aa3260,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x5a06b50,node=0x59d0a00,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -147,6 +148,7 @@ Level 2
       aggregation: enable phase 3 = 1   [default]
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
+      aggregation: error on nodes with no on-rank neighbors = 0   [default]
       OnePt aggregate map name =    [default]
       OnePt aggregate map factory =    [default]
       
@@ -191,7 +193,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2811dc0,node=0x2812270,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x5be0f20,node=0x5be0ae0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -215,7 +217,7 @@ Level 2
  Computing Ac (MueLu::RebalanceAcFactory)
  repartition: use subcommunicators = 1   [default]
  
- Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
+ Setup Smoother (MueLu::AmesosSmoother{type = Klu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -240,7 +242,7 @@ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 2) post : no smoother
 
 Level 0
@@ -284,6 +286,7 @@ Level 1
       aggregation: enable phase 3 = 1   [default]
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
+      aggregation: error on nodes with no on-rank neighbors = 0   [default]
       OnePt aggregate map name =    [default]
       OnePt aggregate map factory =    [default]
       
@@ -328,7 +331,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2b6c090,node=0x2aa3260,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x5a06b50,node=0x59d0a00,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -392,6 +395,7 @@ Level 2
       aggregation: enable phase 3 = 1   [default]
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
+      aggregation: error on nodes with no on-rank neighbors = 0   [default]
       OnePt aggregate map name =    [default]
       OnePt aggregate map factory =    [default]
       
@@ -436,7 +440,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2811dc0,node=0x2812270,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x5be0f20,node=0x5be0ae0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -460,7 +464,7 @@ Level 2
  Computing Ac (MueLu::RebalanceAcFactory)
  repartition: use subcommunicators = 1   [default]
  
- Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
+ Setup Smoother (MueLu::AmesosSmoother{type = Klu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -485,6 +489,6 @@ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 2) post : no smoother
 

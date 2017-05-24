@@ -114,7 +114,7 @@ namespace MueLu {
     Scalar amalgDropTol = 1.8e-9; // TODO parameter from parameter list ("variable DOF amalgamation: threshold")
 
     bool bHasZeroDiagonal = false;
-    Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*A,bHasZeroDiagonal,dirDropTol);
+    Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*A,bHasZeroDiagonal,STS::magnitude(dirDropTol));
 
     // TODO check availability + content (length)
     Teuchos::ArrayRCP<const bool> dofPresent = currentLevel.Get< Teuchos::ArrayRCP<const bool> >("DofPresent", NoFactory::get());
@@ -244,7 +244,7 @@ namespace MueLu {
       }
       for (size_t j = rowptr[i]; j < rowptr[i+1]; j++) {
         if(doNotDrop == true ||
-            ( STS::magnitude(values[j] / sqrt(STS::magnitude(diagVecData[i]) * STS::magnitude(diagVecData[colind[j]]))   ) >= amalgDropTol )) {
+            ( STS::magnitude(values[j] / sqrt(STS::magnitude(diagVecData[i]) * STS::magnitude(diagVecData[colind[j]]))   ) >= STS::magnitude(amalgDropTol) )) {
           blockColumn = myLocalNodeIds[colind[j]];
           if(isNonZero[blockColumn] == false) {
             isNonZero[blockColumn] = true;
@@ -294,17 +294,17 @@ namespace MueLu {
 
     Teuchos::RCP<Import> nodeImporter = ImportFactory::Build(amalgRowMap, amalgColMap);
 
-    RCP<Vector> nodeIdSrc    = VectorFactory::Build(amalgRowMap,true);
-    RCP<Vector> nodeIdTarget = VectorFactory::Build(amalgColMap,true);
+    RCP<LOVector> nodeIdSrc    = Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(amalgRowMap,true);
+    RCP<LOVector> nodeIdTarget = Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(amalgColMap,true);
 
-    Teuchos::ArrayRCP< Scalar > nodeIdSrcData = nodeIdSrc->getDataNonConst(0);
+    Teuchos::ArrayRCP< LocalOrdinal > nodeIdSrcData = nodeIdSrc->getDataNonConst(0);
     for(decltype(amalgRowPtr.size()) i = 0; i < amalgRowPtr.size()-1; i++) {
       nodeIdSrcData[i] = uniqueId[i];
     }
 
     nodeIdTarget->doImport(*nodeIdSrc, *nodeImporter, Xpetra::INSERT);
 
-    Teuchos::ArrayRCP< const Scalar > nodeIdTargetData = nodeIdTarget->getData(0);
+    Teuchos::ArrayRCP< const LocalOrdinal > nodeIdTargetData = nodeIdTarget->getData(0);
     for(decltype(uniqueId.size()) i = 0; i < uniqueId.size(); i++) {
       uniqueId[i] = nodeIdTargetData[i];
     }
@@ -468,30 +468,30 @@ namespace MueLu {
     Teuchos::RCP<Import> importer = ImportFactory::Build(rowDofMap, colDofMap);
 
     // create a vector living on column map of A (dof based)
-    Teuchos::RCP<Vector> localNodeIdsTemp = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowDofMap,true);
-    Teuchos::RCP<Vector> localNodeIds = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colDofMap,true);
+    Teuchos::RCP<LOVector> localNodeIdsTemp = LOVectorFactory::Build(rowDofMap,true);
+    Teuchos::RCP<LOVector> localNodeIds     = LOVectorFactory::Build(colDofMap,true);
 
     // fill local dofs (padded local ids)
-    Teuchos::ArrayRCP< Scalar > localNodeIdsTempData = localNodeIdsTemp->getDataNonConst(0);
+    Teuchos::ArrayRCP< LocalOrdinal > localNodeIdsTempData = localNodeIdsTemp->getDataNonConst(0);
     for(size_t i = 0; i < localNodeIdsTemp->getLocalLength(); i++)
       localNodeIdsTempData[i] = std::floor<LocalOrdinal>( dofMap[i] / maxDofPerNode );
 
     localNodeIds->doImport(*localNodeIdsTemp, *importer, Xpetra::INSERT);
-    Teuchos::ArrayRCP< const Scalar > localNodeIdsData = localNodeIds->getData(0);
+    Teuchos::ArrayRCP< const LocalOrdinal > localNodeIdsData = localNodeIds->getData(0);
 
     // Note: localNodeIds contains local ids for the padded version as vector values
 
 
     // we use Scalar instead of int as type
-    Teuchos::RCP<Vector> myProcTemp = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowDofMap,true);
-    Teuchos::RCP<Vector> myProc = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colDofMap,true);
+    Teuchos::RCP<LOVector> myProcTemp = LOVectorFactory::Build(rowDofMap,true);
+    Teuchos::RCP<LOVector> myProc     = LOVectorFactory::Build(colDofMap,true);
 
     // fill local dofs (padded local ids)
-    Teuchos::ArrayRCP< Scalar > myProcTempData = myProcTemp->getDataNonConst(0);
+    Teuchos::ArrayRCP< LocalOrdinal > myProcTempData = myProcTemp->getDataNonConst(0);
     for(size_t i = 0; i < myProcTemp->getLocalLength(); i++)
-      myProcTempData[i] = Teuchos::as<Scalar>(comm->getRank());
+      myProcTempData[i] = Teuchos::as<LocalOrdinal>(comm->getRank());
     myProc->doImport(*myProcTemp, *importer, Xpetra::INSERT);
-    Teuchos::ArrayRCP<Scalar > myProcData = myProc->getDataNonConst(0); // we have to modify the data (therefore the non-const version)
+    Teuchos::ArrayRCP<LocalOrdinal> myProcData = myProc->getDataNonConst(0); // we have to modify the data (therefore the non-const version)
 
     // At this point, the ghost part of localNodeIds corresponds to the local ids
     // associated with the current owning processor. We want to convert these to
@@ -513,14 +513,14 @@ namespace MueLu {
     size_t notProcessed = nLocalDofs; // iteration index over all ghosted dofs
     size_t tempIndex = 0;
     size_t first = tempIndex;
-    int neighbor;
+    LocalOrdinal neighbor;
 
     while (notProcessed < nLocalPlusGhostDofs) {
-      neighbor = Teuchos::as<int>(myProcData[notProcessed]); // get processor id of not-processed element
+      neighbor = myProcData[notProcessed]; // get processor id of not-processed element
       first    = tempIndex;
       location[tempIndex] = notProcessed;
       tempId[tempIndex++] = localNodeIdsData[notProcessed];
-      myProcData[notProcessed] = Teuchos::as<Scalar>(-1 - neighbor);
+      myProcData[notProcessed] = -1 - neighbor;
 
       for(size_t i = notProcessed + 1; i < nLocalPlusGhostDofs; i++) {
         if(myProcData[i] == neighbor) {

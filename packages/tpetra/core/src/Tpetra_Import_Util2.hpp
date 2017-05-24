@@ -1148,23 +1148,29 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
   // For each row, sort column entries from smallest to largest.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   // Code copied from  Epetra_CrsMatrix::SortEntries()
-  // NOTE: This should not be taken as a particularly efficient way to sort 
+  // NOTE: This should not be taken as a particularly efficient way to sort
   // rows of matrices in parallel.  But it is correct, so that's something.
   size_t NumRows = CRS_rowptr.dimension_0()-1;
   size_t nnz = CRS_colind.dimension_0();
   typedef typename colind_array_type::traits::non_const_value_type Ordinal;
   typedef typename vals_array_type::traits::non_const_value_type Scalar;
 
-  Kokkos::parallel_for(NumRows,KOKKOS_LAMBDA(const size_t i) {
+  typedef size_t index_type; // what this function was using; not my choice
+  typedef typename vals_array_type::execution_space execution_space;
+  // Specify RangePolicy explicitly, in order to use correct execution
+  // space.  See #1345.
+  typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
+
+  Kokkos::parallel_for (range_type (0, NumRows), KOKKOS_LAMBDA (const size_t i) {
       size_t start=CRS_rowptr(i);
       if(start < nnz) {
         size_t NumEntries = CRS_rowptr(i+1) - start;
-        
+
         Ordinal n = (Ordinal) NumEntries;
         Ordinal m = 1;
         while (m<n) m = m*3+1;
         m /= 3;
-        
+
         while(m > 0) {
           Ordinal max = n - m;
           for(Ordinal j = 0; j < max; j++) {
@@ -1183,7 +1189,7 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
           m = m/3;
         }
       }
-    });  
+    });
 }
 
 

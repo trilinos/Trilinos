@@ -90,6 +90,7 @@ protected:
    std::pair<int,int> determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const;
 
    void addSideSets(STK_Interface & mesh) const;
+   void addNodeSets(STK_Interface & mesh) const;
 
    void buildTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
                        const Teuchos::Tuple<int,3> & element,

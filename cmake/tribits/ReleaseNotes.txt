@@ -2,6 +2,12 @@
 Release Notes for TriBITS
 ----------------------------------------
 
+2017/05/17:
+
+(*) MAJOR: TriBITS now unconditionally sets
+    ${PROJECT_NAME}_ENABLE_Fortran_DEFAULT to ON.  Projects will now need to
+    put in special logic to set to OFF or ON for certain platforms.
+
 2017/01/11:
 
 (*) MINOR: TriBITS now correctly sets the default value for

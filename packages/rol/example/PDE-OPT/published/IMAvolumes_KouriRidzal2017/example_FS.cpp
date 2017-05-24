@@ -41,9 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_RS.cpp
-    \brief Reduced-space solution of a thermal-fluids problem with random coefficients,
-           using a risk-neutral formulation and adaptive sparse-grid sampling.
+/*! \file  example_FS.cpp
+    \brief Full-space solution of a thermal-fluids problem with random coefficients,
+           using a risk-neutral formulation and Monte Carlo sampling.
 */
 
 #include "Teuchos_Comm.hpp"
@@ -62,7 +62,9 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_SparseGridGenerator.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_SimulatedEqualityConstraint.hpp"
+#include "ROL_SimulatedObjectiveCVaR.hpp"
+#include "ROL_SimulatedObjective.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../../TOOLS/pdeconstraint.hpp"
@@ -163,14 +165,10 @@ int main(int argc, char *argv[]) {
   try {
 
     /*** Read in XML input ***/
-    std::string filename = "input_RS.xml";
+    std::string filename = "input_FS.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
-    bool printSimOpt = parlist->sublist("SimOpt").sublist("Solve").get("Output Iteration History",false);
-    parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History",printSimOpt&&(myRank==0));
-    int verbosity = parlist->sublist("General").get("Print Verbosity",0);
-    verbosity = (myRank != 0) ? 0 : verbosity;
-    parlist->sublist("General").set("Print Verbosity",verbosity);
+    parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History",myRank==0);
 
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr
@@ -188,29 +186,22 @@ int main(int argc, char *argv[]) {
     pdecon->outputTpetraData();
 
     // Create state vector and set to zeroes
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp, p_rcp, du_rcp, dy_rcp, yu_rcp, yp_rcp, r_rcp, z_rcp, dz_rcp;
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp, p_rcp, y_rcp, r_rcp, z_rcp, s_rcp, t_rcp;
     u_rcp  = assembler->createStateVector();     u_rcp->randomize();
     p_rcp  = assembler->createStateVector();     p_rcp->randomize();
-    du_rcp = assembler->createStateVector();     du_rcp->randomize();
-    dy_rcp = assembler->createStateVector();     dy_rcp->randomize();
-    yu_rcp = assembler->createStateVector();     yu_rcp->randomize();
-    yp_rcp = assembler->createStateVector();     yp_rcp->randomize();
+    y_rcp  = assembler->createStateVector();     y_rcp->randomize();
     r_rcp  = assembler->createResidualVector();  r_rcp->randomize();
-    z_rcp  = assembler->createControlVector();   z_rcp->randomize();
-    dz_rcp = assembler->createControlVector();   dz_rcp->randomize();
-    Teuchos::RCP<ROL::Vector<RealT> > up, pp, dup, dyp, yup, ypp, rp, zp, dzp;
+    z_rcp  = assembler->createControlVector();   z_rcp->putScalar(1.234); //z_rcp->randomize();
+    s_rcp  = assembler->createControlVector();   s_rcp->putScalar(2.345); //s_rcp->randomize();
+    t_rcp  = assembler->createControlVector();   t_rcp->putScalar(3.456); //t_rcp->randomize();
+    Teuchos::RCP<ROL::Vector<RealT> > up, pp, yp, rp, zp, sp, tp;
     up  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
     pp  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
-    dup = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
-    dyp = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(dy_rcp,pde,assembler));
-    yup = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(yu_rcp,pde,assembler));
-    ypp = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(yp_rcp,pde,assembler));
+    yp  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(y_rcp,pde,assembler));
     rp  = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
     zp  = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
-    dzp = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
-    // Create ROL SimOpt vectors
-    ROL::Vector_SimOpt<RealT> x(up,zp);
-    ROL::Vector_SimOpt<RealT> d(dup,dzp);
+    sp  = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(s_rcp,pde,assembler));
+    tp  = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(t_rcp,pde,assembler));
 
     // Initialize objective function.
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
@@ -241,6 +232,13 @@ int main(int argc, char *argv[]) {
     int Nleft   = parlist->sublist("Problem").get("Left KL Truncation Order",5);
     int Nright  = parlist->sublist("Problem").get("Right KL Truncation Order",5);
     int stochDim = Nbottom + Nleft + Nright + 3;
+    bool use_sg = parlist->sublist("Problem").get("Use sparse grid",false);
+
+    Teuchos::RCP<ROL::BatchManager<RealT> > bman
+      = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
+    //  = Teuchos::rcp(new PDE_OptVector_BatchManager<RealT>(comm));
+    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler;
+
     // Build vector of distributions
     std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec(stochDim);
     Teuchos::ParameterList UList;
@@ -250,146 +248,135 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < stochDim; ++i) {
       distVec[i] = ROL::DistributionFactory<RealT>(UList);
     }
-    // Sampler
-    int maxLevel   = parlist->sublist("Problem").get("Maximum Sparse Grid Level",7);
-    bool adaptiveV = parlist->sublist("Problem").get("Use Value Adaptive Sparse Grids",false);
-    bool adaptiveG = parlist->sublist("Problem").get("Use Gradient Adaptive Sparse Grids",true);
-    bool printSG   = parlist->sublist("Problem").get("Print Sparse Grid Size",false);
-    ROL::QuadratureInfo info, vinfo, ginfo;
-    info.dim        = stochDim;
-    info.maxLevel   = maxLevel;
-    info.normalized = true;
-    info.adaptive   = false;
-    info.print      = (printSG&&(myRank==0));
-    info.name       = "Full";
-    info.rule1D.clear();   info.rule1D.resize(info.dim,ROL::QUAD_CLENSHAWCURTIS);
-    info.growth1D.clear(); info.growth1D.resize(info.dim,ROL::GROWTH_DEFAULT);
-    vinfo           = info;
-    vinfo.adaptive  = adaptiveV;
-    vinfo.name      = "Value";
-    ginfo           = info;
-    ginfo.adaptive  = adaptiveG;
-    ginfo.name      = "Gradient";
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman
-      = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
-    //  = Teuchos::rcp(new PDE_OptVector_BatchManager<RealT>(comm));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
-      = Teuchos::rcp(new ROL::SparseGridGenerator<RealT>(bman,info,false));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > vsampler
-      = Teuchos::rcp(new ROL::SparseGridGenerator<RealT>(bman,vinfo,adaptiveV));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > gsampler
-      = Teuchos::rcp(new ROL::SparseGridGenerator<RealT>(bman,ginfo,adaptiveG));
+
+    if (use_sg) {
+      int maxLevel   = parlist->sublist("Problem").get("Maximum Sparse Grid Level",7);
+      bool printSG   = parlist->sublist("Problem").get("Print Sparse Grid Size",false);
+      ROL::QuadratureInfo info;
+      info.dim        = stochDim;
+      info.maxLevel   = maxLevel;
+      info.normalized = true;
+      info.adaptive   = false;
+      info.print      = (printSG&&(myRank==0));
+      info.name       = "Full";
+      info.rule1D.clear();   info.rule1D.resize(info.dim,ROL::QUAD_CLENSHAWCURTIS);
+      info.growth1D.clear(); info.growth1D.resize(info.dim,ROL::GROWTH_DEFAULT);
+      sampler = Teuchos::rcp(new ROL::SparseGridGenerator<RealT>(bman,info,false));
+    }
+    else { 
+      // Sampler
+      int nsamp = parlist->sublist("Problem").get("Number of samples",100);
+      sampler = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,distVec,bman));
+    }
+
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
-    ROL::StochasticProblem<RealT> opt(*parlist,robj,vsampler,gsampler,zp);
-    opt.setSolutionStatistic(1.0);
+    bool useW    = parlist->sublist("SOL").sublist("Simulated").get("Use Constraint Weights", true);
+    bool useCVaR = parlist->sublist("SOL").sublist("Simulated").get("Use CVaR", false);
+    Teuchos::RCP<ROL::EqualityConstraint<RealT> > simcon
+      = Teuchos::rcp(new ROL::SimulatedEqualityConstraint<RealT>(sampler, con, useW));
+    Teuchos::RCP<ROL::Objective<RealT> > simobj;
+    if (useCVaR) {
+      Teuchos::ParameterList list = parlist->sublist("SOL").sublist("Simulated");
+      Teuchos::RCP<ROL::PlusFunction<RealT> > pf
+        = Teuchos::rcp(new ROL::PlusFunction<RealT>(list));
+      RealT alpha = parlist->sublist("SOL").sublist("Simulated").get("CVaR Confidence Level", 0.9);
+      simobj = Teuchos::rcp(new ROL::SimulatedObjectiveCVaR<RealT>(sampler, obj, pf, alpha));
+    }
+    else {
+      simobj = Teuchos::rcp(new ROL::SimulatedObjective<RealT>(sampler, obj));
+    }
+    std::vector<Teuchos::RCP<ROL::Vector<RealT> > > vuvec, vpvec, vyvec;
+    for (int i = 0; i < sampler->numMySamples(); ++i) {
+      Teuchos::RCP<Tpetra::MultiVector<> > vu_rcp, vp_rcp, vy_rcp;
+      vu_rcp  = assembler->createStateVector(); vu_rcp->putScalar(4.567); //vu_rcp->randomize();
+      vp_rcp  = assembler->createStateVector(); vp_rcp->putScalar(5.678); //vp_rcp->randomize();
+      vy_rcp  = assembler->createStateVector(); vy_rcp->putScalar(6.789); //vy_rcp->randomize();
+      Teuchos::RCP<ROL::Vector<RealT> > vup, vpp, vyp;
+      vup  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(vu_rcp,pde,assembler));
+      vpp  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(vp_rcp,pde,assembler));
+      vyp  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(vy_rcp,pde,assembler));
+      vuvec.push_back(vup);
+      vpvec.push_back(vpp);
+      vyvec.push_back(vyp);
+    }
+    Teuchos::RCP<ROL::Vector<RealT> > vu, vp, vy;
+    vu = Teuchos::rcp(new ROL::SimulatedVector<RealT>(vuvec,bman));
+    vp = Teuchos::rcp(new ROL::SimulatedVector<RealT>(vpvec,bman));
+    vy = Teuchos::rcp(new ROL::SimulatedVector<RealT>(vyvec,bman));
+    Teuchos::RCP<ROL::Vector<RealT> > rz, rs, rt;
+    if (useCVaR) {
+      rz = Teuchos::rcp(new ROL::RiskVector<RealT>(zp, true));
+      rs = Teuchos::rcp(new ROL::RiskVector<RealT>(sp, true));
+      rt = Teuchos::rcp(new ROL::RiskVector<RealT>(tp, true));
+    }
+    else {
+      rz = zp;
+      rs = sp;
+      rt = tp;
+    }
+    ROL::Vector_SimOpt<RealT> x(vu,rz);
+    ROL::Vector_SimOpt<RealT> p(vp,rs);
+    ROL::Vector_SimOpt<RealT> y(vy,rt);
+    x.checkVector(p,y,true,*outStream);
 
-    // Run derivative checks
-    bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
-    if ( checkDeriv ) {
-      *outStream << "Check Gradient of Full Objective Function" << std::endl;
-      obj->checkGradient(x,d,true,*outStream);
-      *outStream << std::endl << "Check Hessian of Full Objective Function" << std::endl;
-      obj->checkHessVec(x,d,true,*outStream);
-      *outStream << std::endl << "Check Jacobian of Constraint" << std::endl;
-      con->checkApplyJacobian(x,d,*up,true,*outStream);
-      *outStream << std::endl << "Check Jacobian_1 of Constraint" << std::endl;
-      con->checkApplyJacobian_1(*up,*zp,*dup,*rp,true,*outStream);
-      *outStream << std::endl << "Check Jacobian_2 of Constraint" << std::endl;
-      con->checkApplyJacobian_2(*up,*zp,*dzp,*rp,true,*outStream);
-      *outStream << std::endl << "Check Hessian of Constraint" << std::endl;
-      con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
-      *outStream << std::endl << "Check Hessian_11 of Constraint" << std::endl;
-      con->checkApplyAdjointHessian_11(*up,*zp,*pp,*dup,*rp,true,*outStream);
-      *outStream << std::endl << "Check Hessian_12 of Constraint" << std::endl;
-      con->checkApplyAdjointHessian_12(*up,*zp,*pp,*dup,*dzp,true,*outStream);
-      *outStream << std::endl << "Check Hessian_21 of Constraint" << std::endl;
-      con->checkApplyAdjointHessian_21(*up,*zp,*pp,*dzp,*rp,true,*outStream);
-      *outStream << std::endl << "Check Hessian_22 of Constraint" << std::endl;
-      con->checkApplyAdjointHessian_22(*up,*zp,*pp,*dzp,*dzp,true,*outStream);
-
-      *outStream << std::endl << "Check Adjoint Jacobian of Constraint" << std::endl;
-      con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
-      *outStream << std::endl << "Check Adjoint Jacobian_1 of Constraint" << std::endl;
-      con->checkAdjointConsistencyJacobian_1(*pp,*dup,*up,*zp,true,*outStream);
-      *outStream << std::endl << "Check Adjoint Jacobian_2 of Constraint" << std::endl;
-      con->checkAdjointConsistencyJacobian_2(*pp,*dzp,*up,*zp,true,*outStream);
-
-      *outStream << std::endl << "Check Constraint Solve" << std::endl;
-      con->checkSolve(*up,*zp,*rp,true,*outStream);
-      *outStream << std::endl << "Check Inverse Jacobian_1 of Constraint" << std::endl;
-      con->checkInverseJacobian_1(*rp,*dup,*up,*zp,true,*outStream);
-      *outStream << std::endl << "Check Inverse Adjoint Jacobian_1 of Constraint" << std::endl;
-      con->checkInverseAdjointJacobian_1(*rp,*pp,*up,*zp,true,*outStream);
-
-      *outStream << std::endl << "Check Gradient of Reduced Objective Function" << std::endl;
-      robj->checkGradient(*zp,*dzp,true,*outStream);
-      *outStream << std::endl << "Check Hessian of Reduced Objective Function" << std::endl;
-      robj->checkHessVec(*zp,*dzp,true,*outStream);
+    bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
+    if (derivCheck) {
+      *outStream << std::endl << "TESTING SimulatedEqualityConstraint" << std::endl;
+      simcon->checkApplyJacobian(x, p, *vu, true, *outStream);
+      simcon->checkAdjointConsistencyJacobian(*vu, p, x, *vu, x, true, *outStream);
+      simcon->checkApplyAdjointHessian(x, *vu, p, x, true, *outStream);
+      *outStream << std::endl << "TESTING SimulatedObjective" << std::endl;
+      RealT tol = 1e-8;
+      simobj->value(x, tol);
+      simobj->checkGradient(x, p, true, *outStream);
+      simobj->checkHessVec(x, p, true, *outStream);
     }
 
-    up->zero();
     zp->zero();
-    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+    Teuchos::RCP<ROL::SimulatedVector<RealT> > vusim
+      = Teuchos::rcp_dynamic_cast<ROL::SimulatedVector<RealT> >(vu);
+    for (int i = 0; i < sampler->numMySamples(); ++i) {
+      RealT tol = 1e-8;
+      std::vector<RealT> param = sampler->getMyPoint(i);
+      con->setParameter(param);
+      vusim->get(i)->zero();
+      con->update(*(vusim->get(i)),*zp);
+      con->solve(*rp,*(vusim->get(i)),*zp,tol);
+    }
+
+    bool zeroInit = parlist->sublist("Problem").get("Zero initial guess",true);
+    if (zeroInit) {
+      x.zero();
+      vp->zero();
+    }
+
+    /*************************************************************************/
+    /***************** SOLVE PROBLEM *****************************************/
+    /*************************************************************************/
+    ROL::Algorithm<RealT> algo("Composite Step",*parlist,false);
     std::clock_t timer = std::clock();
-    algo.run(opt,true,*outStream);
+    algo.run(x, *vp, *simobj, *simcon, true, *outStream);
     *outStream << "Optimization time: "
                << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
-               << " seconds." << std::endl << std::endl;
-
-    parlist->sublist("General").set("Inexact Objective Function", false);
-    parlist->sublist("General").set("Inexact Gradient", false);
-    ROL::StochasticProblem<RealT> optFull(*parlist,robj,sampler,sampler,zp);
-    optFull.setSolutionStatistic(1.0);
-    ROL::Algorithm<RealT> algoFull("Trust Region",*parlist,false);
-    std::clock_t timerFull = std::clock();
-    algoFull.run(optFull,true,*outStream);
-    *outStream << "Optimization time: "
-               << static_cast<RealT>(std::clock()-timerFull)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
     
     /*************************************************************************/
     /***************** OUTPUT RESULTS ****************************************/
     /*************************************************************************/
-    vsampler->print("Value_samples");
-    gsampler->print("Gradient_samples");
-    Teuchos::rcp_dynamic_cast<ROL::SparseGridGenerator<RealT> >(vsampler)->printIndexSet();
-    Teuchos::rcp_dynamic_cast<ROL::SparseGridGenerator<RealT> >(gsampler)->printIndexSet();
     std::clock_t timer_print = std::clock();
     assembler->printMeshData(*outStream);
     // Output control to file
     pdecon->outputTpetraVector(z_rcp,"control.txt");
     // Output expected state and samples to file
     *outStream << std::endl << "Print Expected Value of State" << std::endl;
-    up->zero(); pp->zero(); dup->zero(); dzp->zero(); yup->zero(); dyp->zero();
-    RealT tol(1.e-8);
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman_Eu
-      = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
-    std::vector<RealT> sample(stochDim);
-    std::stringstream name_samp;
-    name_samp << "samples_" << bman->batchID() << ".txt";
-    std::ofstream file_samp;
-    file_samp.open(name_samp.str());
-    file_samp << std::scientific << std::setprecision(15);
+    up->zero(); pp->zero();
     for (int i = 0; i < sampler->numMySamples(); ++i) {
-      *outStream << "Sample i = " << i << std::endl;
-      sample = sampler->getMyPoint(i);
-      con->setParameter(sample);
-      con->solve(*rp,*dup,*zp,tol);
-      up->axpy(sampler->getMyWeight(i),*dup);
-      con->solve(*rp,*dyp,*dzp,tol);
-      yup->axpy(sampler->getMyWeight(i),*dyp);
-      for (int j = 0; j < stochDim; ++j) {
-        file_samp << std::setw(25) << std::left << sample[j];
-      }
-      file_samp << std::endl;
+      up->axpy(sampler->getMyWeight(i),*(vusim->get(i)));
     }
-    file_samp.close();
-    bman_Eu->sumAll(*up,*pp);
-    bman_Eu->sumAll(*yup,*ypp);
+    bman->sumAll(*up,*pp);
     pdecon->outputTpetraVector(p_rcp,"mean_state.txt");
-    pdecon->outputTpetraVector(yp_rcp,"mean_uncontrolled_state.txt");
     // Build full objective function distribution
     *outStream << std::endl << "Print Objective CDF" << std::endl;
     int nsamp_dist = parlist->sublist("Problem").get("Number of output samples",100);

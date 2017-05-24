@@ -79,6 +79,14 @@ private:
 
   Teuchos::RCP<const PureBasis> basis;
   Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
+  PHX::MDField<const ScalarT, BASIS, IP,    void, void, void, void, void, void>
+    constBasisRefScalar_;
+  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   void, void, void, void, void>
+    constBasisScalar_;
+  PHX::MDField<const ScalarT, BASIS, IP,    Dim,  void, void, void, void, void>
+    constBasisRefVector_;
+  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   Dim,  void, void, void, void>
+    constBasisVector_;
 };
 
 /** Interpolates basis DOF values to IP DOF Curl values (specialization for the jacobian)
@@ -112,6 +120,14 @@ private:
 
   Teuchos::RCP<const PureBasis> basis;
   Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
+  PHX::MDField<const ScalarT, BASIS, IP,    void, void, void, void, void, void>
+    constBasisRefScalar_;
+  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   void, void, void, void, void>
+    constBasisScalar_;
+  PHX::MDField<const ScalarT, BASIS, IP,    Dim,  void, void, void, void, void>
+    constBasisRefVector_;
+  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   Dim,  void, void, void, void>
+    constBasisVector_;
 };
 
 }

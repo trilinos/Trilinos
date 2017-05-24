@@ -309,8 +309,12 @@ namespace { // (anonymous)
                      "call this specialization, the output View's space must "
                      "be able to access the input View's memory space.");
       typedef CopyOffsetsFunctor<OutputViewType, InputViewType> functor_type;
+      typedef typename OutputViewType::execution_space execution_space;
+      typedef typename OutputViewType::size_type size_type;
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+
       int noOverflow = 0; // output argument of the reduction
-      Kokkos::parallel_reduce (dst.dimension_0 (),
+      Kokkos::parallel_reduce (range_type (0, dst.dimension_0 ()),
                                functor_type (dst, src),
                                noOverflow);
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -371,8 +375,12 @@ namespace { // (anonymous)
       // outputSpaceCopy's data, so we can run the functor now.
       typedef CopyOffsetsFunctor<OutputViewType,
                                  output_space_copy_type> functor_type;
+      typedef typename OutputViewType::execution_space execution_space;
+      typedef typename OutputViewType::size_type size_type;
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+
       int noOverflow = 0;
-      Kokkos::parallel_reduce (dst.dimension_0 (),
+      Kokkos::parallel_reduce (range_type (0, dst.dimension_0 ()),
                                functor_type (dst, outputSpaceCopy),
                                noOverflow);
       TEUCHOS_TEST_FOR_EXCEPTION

@@ -35,6 +35,9 @@ namespace BaskerNS {
       //Int* matching_type_col_ptr = new Int[ncol+1];
       matching_type_col_ptr = new Int[ncol+1];
 
+    #ifdef KOKKOS_HAVE_OPENMP
+    #pragma omp parallel for
+    #endif
       for (Int i = 0; i < ncol+1; ++i)
       {
         matching_type_col_ptr[i] = col_ptr[i];
@@ -88,6 +91,9 @@ namespace BaskerNS {
     {
       //Int* matching_type_col_ptr = new Int[ncol+1];
 
+    #ifdef KOKKOS_HAVE_OPENMP
+    #pragma omp parallel for
+    #endif
       for (Int i = 0; i < ncol+1; ++i)
       {
         matching_type_col_ptr[i] = col_ptr[i];

@@ -2243,7 +2243,9 @@ namespace Tpetra {
           // results on the device, thus avoiding a copy to the host and
           // back again.
           KokkosBlas::Impl::SquareRootFunctor<RV> f (normsOut);
-          Kokkos::parallel_for (numVecs, f);
+          typedef typename RV::execution_space execution_space;
+          typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+          Kokkos::parallel_for (range_type (0, numVecs), f);
         }
       }
     }

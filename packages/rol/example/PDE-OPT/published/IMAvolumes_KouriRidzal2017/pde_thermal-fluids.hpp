@@ -48,9 +48,9 @@
 #ifndef PDE_THERMALFLUIDS_EX03_HPP
 #define PDE_THERMALFLUIDS_EX03_HPP
 
-#include "../TOOLS/pde.hpp"
-#include "../TOOLS/fe.hpp"
-#include "../TOOLS/fieldhelper.hpp"
+#include "../../TOOLS/pde.hpp"
+#include "../../TOOLS/fe.hpp"
+#include "../../TOOLS/fieldhelper.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
