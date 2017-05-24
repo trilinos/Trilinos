@@ -49,7 +49,7 @@
 namespace Tpetra {
 namespace Details {
 
-#if (KOKKOS_ENABLE_PROFILING)
+#if defined(KOKKOS_ENABLE_PROFILING)
 ProfilingRegion::ProfilingRegion (const char name[]) {
   ::Kokkos::Profiling::pushRegion (name);
 }
@@ -59,7 +59,7 @@ ProfilingRegion::ProfilingRegion (const char /* name */ []) {
 #endif // (KOKKOS_ENABLE_PROFILING)
 
 ProfilingRegion::~ProfilingRegion () {
-#if (KOKKOS_ENABLE_PROFILING)
+#if defined(KOKKOS_ENABLE_PROFILING)
   ::Kokkos::Profiling::popRegion ();
 #endif // (KOKKOS_ENABLE_PROFILING)
 }
