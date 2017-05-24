@@ -60,17 +60,17 @@ namespace MueLu {
   RCP<const ParameterList> FineLevelInputDataFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< std::string >("Fine level variable", std::string("A"), "Variable name on finest level.");
+    //validParamList->set< std::string >("Fine level variable", std::string("A"), "Variable name on finest level.");
     validParamList->set< std::string >("Variable", std::string("A"), "Variable name on all coarse levels (except the finest level).");
 
     validParamList->set< std::string >("Fine level factory", std::string("NoFactory"), "Generating factory of the fine level variable");
     validParamList->set< std::string >("Coarse level factory", std::string("NoFactory"), "Generating factory for data on all coarse levels (except the finest)");
 
-    validParamList->set< RCP<const FactoryBase> >("FinestLevelDataFactory", Teuchos::null, "Generating factory for level data on finest level");
-    validParamList->set< RCP<const FactoryBase> >("CoarseLevelDataFactory", Teuchos::null, "Generating factory for coarse level data");
+    //validParamList->set< RCP<const FactoryBase> >("FinestLevelDataFactory", Teuchos::null, "Generating factory for level data on finest level");
+    //validParamList->set< RCP<const FactoryBase> >("CoarseLevelDataFactory", Teuchos::null, "Generating factory for coarse level data");
 
-    //return validParamList;
-    return Teuchos::null;
+    return validParamList;
+    //return Teuchos::null;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
