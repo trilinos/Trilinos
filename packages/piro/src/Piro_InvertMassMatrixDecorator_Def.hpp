@@ -394,13 +394,12 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
       modelInArgs.set_alpha(-1.0);
       modelInArgs.set_beta(0.0);
     }
-    //FIXME! this would not work in Thyra::ModelEvaluator!
-    /*else {  // Mass Matrix is coeff of Second deriv
-      modelInArgs.set_x_dotdot(x_dot);
+    else {  // Mass Matrix is coeff of Second deriv
+      modelInArgs.set_x_dot_dot(x_dot);
       modelInArgs.set_alpha(0.0);
       modelInArgs.set_beta(0.0);
-      modelInArgs.set_omega(-1.0);
-    }*/
+      modelInArgs.set_W_x_dot_dot_coeff(-1.0);
+    }
 
     if (calcMassMatrix) {
       modelOutArgs.set_W_op(massMatrix);
