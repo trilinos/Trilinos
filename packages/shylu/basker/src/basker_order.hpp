@@ -405,9 +405,9 @@ namespace BaskerNS
           vals_order_ndbtfc_array(i) = i;
           inv_vals_order_ndbtfc_array(i) = i;
         }
+        sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
+        permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
       }
-      sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
-      permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
       
       if(Options.verbose_matrix_out == BASKER_TRUE)
       {
