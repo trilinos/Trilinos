@@ -51,7 +51,9 @@
 
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_IO.hpp>
 #include <Xpetra_MatrixUtils.hpp>
 
@@ -292,8 +294,135 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     Teuchos::RCP<Map> LapMap = MapFactory::Build(lib,nGlobalNodes,nodalGlobals(),0,comm);
 
-    LapMap->describe(out, Teuchos::VERB_EXTREME);
+    //LapMap->describe(out, Teuchos::VERB_EXTREME);
+
     //
+
+    {
+      FILE* data_file;
+      std::stringstream ss; ss << comm->getSize() << "ProcLinear" << comm->getRank();
+      data_file = fopen(ss.str().c_str(),"r");
+      TEUCHOS_TEST_FOR_EXCEPTION(data_file == NULL, MueLu::Exceptions::RuntimeError,"Problem opening file " << ss.str());
+      // loop over all local nodes
+      for(GlobalOrdinal i = 0; i < nNodes; i++) {
+        fscanf(data_file,"%d",&(nodalGlobals[i]));
+      }
+      fclose(data_file);
+      for(GlobalOrdinal i = 0; i < nNodes; i++) {
+        nodalGlobals[i] = nodalGlobals[i] - 1;
+      }
+    }
+
+    Teuchos::RCP<Map> LinearMap = MapFactory::Build(lib,nGlobalNodes,nodalGlobals(),0,comm);
+    //LinearMap->describe(out, Teuchos::VERB_EXTREME);LapMap->describe(out, Teuchos::VERB_EXTREME);
+
+    //LapMap->describe(out, Teuchos::VERB_EXTREME);LapMap->describe(out, Teuchos::VERB_EXTREME);
+
+    Teuchos::RCP<Import> Importer = ImportFactory::Build(LinearMap, LapMap);
+
+    Teuchos::RCP<MultiVector> xpetraXXX = MultiVectorFactory::Build(LapMap,1);
+    Teuchos::RCP<MultiVector> xpetraYYY = MultiVectorFactory::Build(LapMap,1);
+
+    RCP<MultiVector> temp = IO::ReadMultiVector ("xxx.mm", LinearMap);
+    xpetraXXX->doImport(*temp, *Importer, Xpetra::INSERT);
+    temp = IO::ReadMultiVector ("yyy.mm", LinearMap);
+    xpetraYYY->doImport(*temp, *Importer, Xpetra::INSERT);
+
+    // read in matrix
+    GlobalOrdinal NumRows = 0; // number of rows in matrix
+    GlobalOrdinal NumElements = 0; // number of elements in matrix
+    GlobalOrdinal Offset = 0; // number of elements in matrix
+    Teuchos::RCP<Matrix> SerialMatrix = Teuchos::null;
+    {
+      std::ifstream data_file;
+      if (comm->getRank() == 0) {
+        // proc 0 reads the number of rows, columns and nonzero elements
+        data_file.open("theMatrix");
+        TEUCHOS_TEST_FOR_EXCEPTION(data_file.good() == false, MueLu::Exceptions::RuntimeError,"Problem opening file theMatrix");
+        data_file >> NumRows;
+        data_file >> NumElements;
+        data_file >> Offset;
+
+      }
+
+      // create a standard (serial) row map for the Matrix data (only elements on proc 0)
+      Teuchos::RCP<Map> SerialMap = MapFactory::Build(lib,NumRows,NumRows,0,comm);
+      SerialMatrix = MatrixFactory::Build(SerialMap, 33);
+      if (comm->getRank() == 0) {
+        for(decltype(NumElements) i = 0; i < NumElements; ++i) {
+          GlobalOrdinal row;
+          GlobalOrdinal col;
+          Scalar val;
+          data_file >> row;
+          data_file >> col;
+          data_file >> val;
+          row -= Offset;
+          col -= Offset;
+          SerialMatrix->insertGlobalValues(row,Teuchos::Array<GlobalOrdinal>(1,col)(),Teuchos::Array<Scalar>(1,val)());
+          if (i % 10000 == 0) {
+            double percent = i * 100 / NumElements;
+            out << "Read matrix: " << percent << "% complete" << std::endl;
+          }
+        }
+        SerialMatrix->fillComplete();
+
+        data_file.close();
+      }
+
+      //SerialMatrix->describe(out, Teuchos::VERB_EXTREME);
+
+    } // end read in file
+
+    // distribute map and matrix over processors
+    Teuchos::RCP<const Map>    DistributedMap    = Teuchos::null;
+    Teuchos::RCP<Matrix> DistributedMatrix = Teuchos::null;
+    {
+      if(comm->getSize() > 1) {
+        Teuchos::broadcast(*comm,0,1,&NumRows);
+
+        DistributedMap    = MapFactory::Build(lib,NumRows,dofGlobals(),0,comm);
+        DistributedMatrix = MatrixFactory::Build(DistributedMap,33);
+
+        Teuchos::RCP<Import> dofMatrixImporter = ImportFactory::Build(SerialMatrix->getRowMap(), DistributedMap);
+
+        DistributedMatrix->doImport(*SerialMatrix,*dofMatrixImporter,Xpetra::INSERT);
+        DistributedMatrix->fillComplete();
+      } else {
+        DistributedMap = SerialMatrix->getRowMap();
+        DistributedMatrix = SerialMatrix;
+      }
+
+    } // end distribute matrix
+
+    // read in global vectors (e.g. rhs)
+    GlobalOrdinal nGlobalDof = 0;
+
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,comm->getSize(),&nDofs,&nGlobalDof);
+
+    Teuchos::RCP<const Map> dofLinearMap = Teuchos::null;
+    {
+      FILE* data_file;
+      std::stringstream ss; ss << comm->getSize() << "ProcLinear" << comm->getRank();
+      data_file = fopen(ss.str().c_str(),"r");
+      TEUCHOS_TEST_FOR_EXCEPTION(data_file == NULL, MueLu::Exceptions::RuntimeError,"Problem opening file " << ss.str());
+      // loop over all local nodes
+      fscanf(data_file,"%d",&(dofGlobals[0]));
+      fclose(data_file);
+      for(decltype(nDofs) i = 0; i < nDofs; i++) dofGlobals[i] = i + dofGlobals[0];
+      for(decltype(nDofs) i = 0; i < nDofs; i++) dofGlobals[i] = dofGlobals[i] - 1;
+      dofLinearMap = MapFactory::Build(lib,nGlobalDof,dofGlobals(),0,comm);
+    }
+
+    Teuchos::RCP<Import> dofImporter = ImportFactory::Build(dofLinearMap, DistributedMap);
+
+    RCP<MultiVector> RHS  = MultiVectorFactory::Build(DistributedMap,1);
+    RCP<MultiVector> LHS  = MultiVectorFactory::Build(DistributedMap,1);
+
+    temp = IO::ReadMultiVector ("rhs.mm", dofLinearMap);
+    RHS->doImport(*temp, *dofImporter, Xpetra::INSERT);
+    LHS->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+
+
 
     success = true;
   }
