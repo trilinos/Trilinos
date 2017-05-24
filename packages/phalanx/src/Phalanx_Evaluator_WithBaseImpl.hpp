@@ -166,8 +166,12 @@ namespace PHX {
 
     std::string name_;
 
-    //! functors that bind memory for evaluator fields
-    std::unordered_map<std::string,std::function<void(const PHX::any& f)>> field_binders_;
+    /** \brief Functors that bind memory for evaluator fields. Note
+     *  that two MDFields might point to the same underlying field in
+     *  a single evaluator. For this reason we use
+     *  std::unordered_multimap instead of std::unordered_map.
+     */
+    std::unordered_multimap<std::string,std::function<void(const PHX::any& f)>> field_binders_;
   };
 
 }

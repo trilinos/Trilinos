@@ -111,8 +111,7 @@ addEvaluatedField(const PHX::FieldTag& ft)
   if ( test == evaluated_.end() )
     evaluated_.push_back(ft.clone());
 
-  // This may be overwritten if a MDField object is registered
-  (this->field_binders_)[ft.identifier()] = PHX::DummyMemoryBinder();
+  this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
 }
 
 //**********************************************************************
@@ -124,8 +123,8 @@ addEvaluatedField(const PHX::Field<DataT>& f)
   this->addEvaluatedField(f.fieldTag());
 
   using NCF = PHX::MDField<DataT>;
-  (this->field_binders_)[f.fieldTag().identifier()] = 
-    PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f));
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -140,8 +139,8 @@ addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
   this->addEvaluatedField(f.fieldTag());
 
   using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
-  (this->field_binders_)[f.fieldTag().identifier()] = 
-    PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f));
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -156,8 +155,7 @@ addContributedField(const PHX::FieldTag& ft)
   if ( test == contributed_.end() )
     contributed_.push_back(ft.clone());
 
-  // This may be overwritten if a MDField object is registered
-  (this->field_binders_)[ft.identifier()] = PHX::DummyMemoryBinder();
+  this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
 }
 
 //**********************************************************************
@@ -169,8 +167,8 @@ addContributedField(const PHX::Field<DataT>& f)
   this->addContributedField(f.fieldTag());
 
   using NCF = PHX::MDField<DataT>;
-  (this->field_binders_)[f.fieldTag().identifier()] = 
-    PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f));
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -185,8 +183,8 @@ addContributedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
   this->addContributedField(f.fieldTag());
 
   using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
-  (this->field_binders_)[f.fieldTag().identifier()] = 
-    PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f));
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -201,8 +199,7 @@ addDependentField(const PHX::FieldTag& ft)
   if ( test == required_.end() )
     required_.push_back(ft.clone());
 
-  // This may be overwritten if a MDField object is registered
-  (this->field_binders_)[ft.identifier()] = PHX::DummyMemoryBinder();
+  this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
 }
 
 //**********************************************************************
@@ -215,8 +212,8 @@ addDependentField(const PHX::Field<DataT>& f)
   this->addDependentField(f.fieldTag());
 
   using NCF = PHX::MDField<DataT>;
-  (this->field_binders_)[f.fieldTag().identifier()] = 
-    PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f));
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -228,8 +225,8 @@ addDependentField(const PHX::Field<const DataT>& f)
   this->addDependentField(f.fieldTag());
 
   using NCF = PHX::MDField<DataT>;
-  (this->field_binders_)[f.fieldTag().identifier()] = 
-    PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f));
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -245,8 +242,8 @@ addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
   this->addDependentField(f.fieldTag());
 
   using NCF = PHX::MDField<typename std::remove_const<DataT>::type,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
-  (this->field_binders_)[f.fieldTag().identifier()] = 
-    PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f));
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -261,8 +258,8 @@ addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
   this->addDependentField(f.fieldTag());
 
   using NCF = PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
-  (this->field_binders_)[f.fieldTag().identifier()] = 
-    PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f));
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -345,7 +342,9 @@ template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 bindField(const PHX::FieldTag& ft, const PHX::any& f)
 {
-  field_binders_[ft.identifier()](f);
+  const auto& range = field_binders_.equal_range(ft.identifier());
+  for (auto it = range.first; it != range.second; ++it)
+    (it->second)(f);
 }
 
 //**********************************************************************
