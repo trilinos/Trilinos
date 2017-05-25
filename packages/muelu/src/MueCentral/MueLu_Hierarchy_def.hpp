@@ -1375,6 +1375,15 @@ namespace MueLu {
 
       Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
       nodeMap = MapFactory::Build(dofMap->lib(), INVALID, nodeGIDs(), indexBase, dofMap->getComm());
+    } else {
+      // blkSize == 1
+      // Check whether the length of vectors fits to the size of A
+      // If yes, make sure that the maps are matching
+      // If no, throw a warning but do not touch the Coordinates
+      if(coords->getLocalLength() != A->getRowMap()->getNodeNumElements()) {
+        GetOStream(Warnings) << "Coordinate vector does not match row map of matrix A!" << std::endl;
+        return;
+      }
     }
 
     Array<ArrayView<const double> >      coordDataView;
