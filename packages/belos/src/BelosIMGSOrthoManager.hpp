@@ -71,6 +71,14 @@
 
 namespace Belos {
 
+  /// \brief "Default" parameters for robustness and accuracy.
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getIMGSDefaultParameters ();
+
+  /// \brief "Fast" but possibly unsafe or less accurate parameters.
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getIMGSFastParameters();
+
   template<class ScalarType, class MV, class OP>
   class IMGSOrthoManager :
     public MatOrthoManager<ScalarType,MV,OP>,
@@ -90,9 +98,9 @@ namespace Belos {
     //! Constructor specifying re-orthogonalization tolerance.
     IMGSOrthoManager( const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null,
-                      const int max_ortho_steps = 1,
-                      const MagnitudeType blk_tol = 10*MGT::squareroot( MGT::eps() ),
-                      const MagnitudeType sing_tol = 10*MGT::eps() )
+                      const int max_ortho_steps = max_ortho_steps_default_,
+                      const MagnitudeType blk_tol = blk_tol_default_,
+                      const MagnitudeType sing_tol = sing_tol_default_ )
       : MatOrthoManager<ScalarType,MV,OP>(Op),
         max_ortho_steps_( max_ortho_steps ),
         blk_tol_( blk_tol ),
@@ -122,9 +130,9 @@ namespace Belos {
                       const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null) :
       MatOrthoManager<ScalarType,MV,OP>(Op),
-      max_ortho_steps_ (2),
-      blk_tol_ (10 * MGT::squareroot (MGT::eps())),
-      sing_tol_ (10 * MGT::eps()),
+      max_ortho_steps_ (max_ortho_steps_default_),
+      blk_tol_ (blk_tol_default_),
+      sing_tol_ (sing_tol_default_),
       label_ (label)
     {
       setParameterList (plist);
@@ -228,62 +236,14 @@ namespace Belos {
     Teuchos::RCP<const Teuchos::ParameterList>
     getValidParameters () const
     {
-      using Teuchos::as;
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
       if (defaultParams_.is_null()) {
-        RCP<ParameterList> params = parameterList ("IMGS");
-
-        // Default parameter values for IMGS orthogonalization.
-        // Documentation will be embedded in the parameter list.
-        const int defaultMaxNumOrthogPasses = 2;
-        const MagnitudeType eps = MGT::eps();
-        const MagnitudeType defaultBlkTol =
-          as<MagnitudeType> (10) * MGT::squareroot (eps);
-        const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
-
-        params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
-                     "Maximum number of orthogonalization passes (includes the "
-                     "first).  Default is 2, since \"twice is enough\" for Krylov "
-                     "methods.");
-        params->set ("blkTol", defaultBlkTol, "Block reorthogonalization "
-                     "threshhold.");
-        params->set ("singTol", defaultSingTol, "Singular block detection "
-                     "threshold.");
-        defaultParams_ = params;
+        defaultParams_ = Belos::getIMGSDefaultParameters<ScalarType, MV, OP>();
       }
+
       return defaultParams_;
     }
+
     //@}
-
-    /// \brief "Fast" but possibly unsafe or less accurate parameters.
-    ///
-    /// Use this parameter list when you care more about speed than
-    /// accuracy of the orthogonalization.
-    Teuchos::RCP<const Teuchos::ParameterList>
-    getFastParameters () const
-    {
-      using Teuchos::as;
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
-      RCP<const ParameterList> defaultParams = getValidParameters ();
-      // Start with a clone of the default parameters.
-      RCP<ParameterList> params = parameterList (*defaultParams);
-
-      const int maxBlkOrtho = 1; // No block reorthogonalization
-      const MagnitudeType blkTol = MGT::zero();
-      const MagnitudeType singTol = MGT::zero();
-
-      params->set ("maxNumOrthogPasses", maxBlkOrtho);
-      params->set ("blkTol", blkTol);
-      params->set ("singTol", singTol);
-
-      return params;
-    }
 
     //! @name Accessor routines
     //@{
@@ -481,7 +441,27 @@ namespace Belos {
 
     //@}
 
+    //! @name Default orthogonalization constants
+    //@{
+
+    //! Max number of (re)orthogonalization steps, including the first (default).
+    static const int max_ortho_steps_default_;
+    //! Block reorthogonalization threshold (default).
+    static const MagnitudeType blk_tol_default_;
+    //! Singular block detection threshold (default).
+    static const MagnitudeType sing_tol_default_;
+
+    //! Max number of (re)orthogonalization steps, including the first (fast).
+    static const int max_ortho_steps_fast_;
+    //! Block reorthogonalization threshold (fast).
+    static const MagnitudeType blk_tol_fast_;
+    //! Singular block detection threshold (fast).
+    static const MagnitudeType sing_tol_fast_;
+
+    //@}
+
   private:
+
     //! Max number of (re)orthogonalization steps, including the first.
     int max_ortho_steps_;
     //! Block reorthogonalization tolerance.
@@ -531,6 +511,34 @@ namespace Belos {
                        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
                        Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const;
   };
+
+  // Set static variables.
+  template<class ScalarType, class MV, class OP>
+  const int IMGSOrthoManager<ScalarType,MV,OP>::max_ortho_steps_default_ = 1;
+
+  template<class ScalarType, class MV, class OP>
+  const typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  IMGSOrthoManager<ScalarType,MV,OP>::blk_tol_default_
+    = 10*Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::squareroot(
+      Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::eps() );
+
+  template<class ScalarType, class MV, class OP>
+  const typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  IMGSOrthoManager<ScalarType,MV,OP>::sing_tol_default_
+    = 10*Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::eps();
+
+  template<class ScalarType, class MV, class OP>
+  const int IMGSOrthoManager<ScalarType,MV,OP>::max_ortho_steps_fast_ = 1;
+
+  template<class ScalarType, class MV, class OP>
+  const typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  IMGSOrthoManager<ScalarType,MV,OP>::blk_tol_fast_
+    = Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
+
+  template<class ScalarType, class MV, class OP>
+  const typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  IMGSOrthoManager<ScalarType,MV,OP>::sing_tol_fast_
+    = Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the label for this orthogonalization manager and create new timers if it's changed
@@ -1671,6 +1679,47 @@ namespace Belos {
     } // for (int j=0; j<xc; j++)
 
     return xc;
+  }
+
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getIMGSDefaultParameters ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    RCP<ParameterList> params = parameterList ("IMGS");
+
+    // Default parameter values for IMGS orthogonalization.
+    // Documentation will be embedded in the parameter list.
+    params->set ("maxNumOrthogPasses", IMGSOrthoManager<ScalarType, MV, OP>::max_ortho_steps_default_,
+                 "Maximum number of orthogonalization passes (includes the "
+                 "first).  Default is 2, since \"twice is enough\" for Krylov "
+                 "methods.");
+    params->set ("blkTol", IMGSOrthoManager<ScalarType, MV, OP>::blk_tol_default_,
+                 "Block reorthogonalization threshold.");
+    params->set ("singTol", IMGSOrthoManager<ScalarType, MV, OP>::sing_tol_default_,
+                 "Singular block detection threshold.");
+
+    return params;
+  }
+
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getIMGSFastParameters ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+
+    RCP<ParameterList> params = getIMGSDefaultParameters<ScalarType, MV, OP>();
+
+    params->set ("maxNumOrthogPasses",
+                 IMGSOrthoManager<ScalarType, MV, OP>::max_ortho_steps_fast_);
+    params->set ("blkTol",
+                 IMGSOrthoManager<ScalarType, MV, OP>::blk_tol_fast_);
+    params->set ("singTol",
+                 IMGSOrthoManager<ScalarType, MV, OP>::sing_tol_fast_);
+
+    return params;
   }
 
 } // namespace Belos
