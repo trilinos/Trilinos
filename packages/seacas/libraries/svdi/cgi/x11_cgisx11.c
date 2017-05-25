@@ -38,8 +38,8 @@
  * Sun Nov 19 12:02:52 MST 1989 - last date modified
  */
 
-#include "ifdefx.h"
-#include "mdcgi.h"
+#include "mdcgi.h"  // for xcact_, xcoon_
+#include "stdtyp.h" // for anything
 
 void cgix11_(); /* tell linker to load driver */
 

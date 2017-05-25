@@ -18,7 +18,6 @@
 #include <numeric>
 
 #include <assert.h>
-#include <mpi.h>
 
 #define IOSS_DEBUG_OUTPUT 0
 namespace {

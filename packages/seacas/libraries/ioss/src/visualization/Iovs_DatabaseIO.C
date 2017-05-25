@@ -741,8 +741,6 @@ __extension__
       //std::cerr << "DatabaseIO::write_meta_data node blocks\n";
       Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();
       assert(node_blocks.size() == 1);
-      spatialDimension = node_blocks[0]->
-                           get_property("component_degree").get_int();
       nodeCount =        node_blocks[0]->
                            get_property("entity_count").get_int();
       //std::cerr << "DatabaseIO::write_meta_data nodeCount:" << nodeCount << "\n";

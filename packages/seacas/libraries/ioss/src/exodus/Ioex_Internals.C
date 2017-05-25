@@ -755,9 +755,8 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   int rootid = static_cast<unsigned>(exodusFilePtr) & EX_FILE_ID_MASK;
 
   if (rootid == exodusFilePtr && nc_inq_dimid(exodusFilePtr, DIM_NUM_DIM, &numdimdim) == NC_NOERR) {
-    exerrval = EX_MSG;
     sprintf(errmsg, "Error: initialization already done for file id %d", exodusFilePtr);
-    ex_err(routine, errmsg, exerrval);
+    ex_err(routine, errmsg, EX_MSG);
     return (EX_FATAL);
   }
 
@@ -853,9 +852,8 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   }
 
   if ((status = nc_def_dim(exodusFilePtr, DIM_TIME, NC_UNLIMITED, &timedim)) != NC_NOERR) {
-    exerrval = status;
     sprintf(errmsg, "Error: failed to define time dimension in file id %d", exodusFilePtr);
-    ex_err(routine, errmsg, exerrval);
+    ex_err(routine, errmsg, status);
     return (EX_FATAL);
   }
 
@@ -863,10 +861,9 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   dim[0] = timedim;
   if ((status = nc_def_var(exodusFilePtr, VAR_WHOLE_TIME, nc_flt_code(exodusFilePtr), 1, dim,
                            &varid)) != NC_NOERR) {
-    exerrval = status;
     sprintf(errmsg, "Error: failed to define whole time step variable in file id %d",
             exodusFilePtr);
-    ex_err(routine, errmsg, exerrval);
+    ex_err(routine, errmsg, status);
     return (EX_FATAL);
   }
   ex_compress_variable(exodusFilePtr, varid, 2);
@@ -2531,12 +2528,12 @@ int Internals::put_metadata(const std::vector<EdgeSet> &edgesets)
       if (status == NC_ENAMEINUSE) {
         sprintf(errmsg, "Error: extra list already exists for edge set %" PRId64 " in file id %d",
                 edgesets[i].id, exodusFilePtr);
-        ex_err(routine, errmsg, exerrval);
+        ex_err(routine, errmsg, status);
       }
       else {
         sprintf(errmsg, "Error: failed to create extra list for edge set %" PRId64 " in file id %d",
                 edgesets[i].id, exodusFilePtr);
-        ex_err(routine, errmsg, exerrval);
+        ex_err(routine, errmsg, status);
       }
       return (EX_FATAL);
     }
@@ -2718,12 +2715,12 @@ int Internals::put_metadata(const std::vector<FaceSet> &facesets)
       if (status == NC_ENAMEINUSE) {
         sprintf(errmsg, "Error: extra list already exists for face set %" PRId64 " in file id %d",
                 facesets[i].id, exodusFilePtr);
-        ex_err(routine, errmsg, exerrval);
+        ex_err(routine, errmsg, status);
       }
       else {
         sprintf(errmsg, "Error: failed to create extra list for face set %" PRId64 " in file id %d",
                 facesets[i].id, exodusFilePtr);
-        ex_err(routine, errmsg, exerrval);
+        ex_err(routine, errmsg, status);
       }
       return (EX_FATAL);
     }

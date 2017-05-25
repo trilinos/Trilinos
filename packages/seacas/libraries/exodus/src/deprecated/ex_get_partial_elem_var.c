@@ -56,8 +56,8 @@ n * retains certain rights in this software.
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include "exodusII.h"  // for ex_get_partial_var, etc
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_get_partial_var, etc
 
 /*!
 \ingroup ResultsData

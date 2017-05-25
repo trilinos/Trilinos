@@ -33,20 +33,21 @@
  *
  */
 
-#include "EML_CodeTypes.h" // for StringIdVector
 #include "EML_SystemInterface.h"
-#include "EML_Version.h"   // for qainfo
-#include "GetLongOpt.h"    // for GetLongOption, etc
-#include "SL_tokenize.h"   // for tokenize
-#include <Ioss_FileInfo.h> // for FileInfo
-#include <algorithm>       // for sort, transform
-#include <ctype.h>         // for tolower
-#include <iostream>        // for operator<<, basic_ostream, etc
-#include <stddef.h>        // for size_t
-#include <stdlib.h>        // for nullptr, exit, strtod, etc
-#include <string.h>        // for strcmp
-#include <utility>         // for pair, make_pair
-#include <vector>          // for vector, allocator, etc
+#include <Ioss_FileInfo.h>              // for FileInfo
+#include <ctype.h>                      // for tolower
+#include <stddef.h>                     // for size_t
+#include <stdlib.h>                     // for exit, strtod, EXIT_SUCCESS, etc
+#include <string.h>                     // for strcmp
+#include <algorithm>                    // for sort, transform
+#include <iosfwd>                       // for ostream
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector
+#include "EML_CodeTypes.h"              // for StringIdVector
+#include "EML_Version.h"                // for qainfo
+#include "GetLongOpt.h"                 // for GetLongOption, etc
+#include "SL_tokenize.h"                // for tokenize
 
 namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);

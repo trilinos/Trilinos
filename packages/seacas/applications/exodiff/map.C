@@ -753,10 +753,12 @@ void Dump_Maps(const INT *node_map, const INT *elmt_map, ExoII_Read<INT> &file1)
   size_t ijk;
   std::cout << "\n=== node number map (file1 -> file2) local ids\n";
   bool one_to_one = true;
-  for (ijk = 0; ijk < file1.Num_Nodes(); ++ijk) {
-    if ((INT)ijk != node_map[ijk]) {
-      one_to_one = false;
-      break;
+  if (node_map != nullptr) {
+    for (ijk = 0; ijk < file1.Num_Nodes(); ++ijk) {
+      if ((INT)ijk != node_map[ijk]) {
+	one_to_one = false;
+	break;
+      }
     }
   }
   if (!one_to_one) {
@@ -769,10 +771,12 @@ void Dump_Maps(const INT *node_map, const INT *elmt_map, ExoII_Read<INT> &file1)
 
   std::cout << "\n=== element number map (file1 -> file2) local ids\n";
   one_to_one = true;
-  for (ijk = 0; ijk < file1.Num_Elmts(); ++ijk) {
-    if ((INT)ijk != elmt_map[ijk]) {
-      one_to_one = false;
-      break;
+  if (elmt_map != nullptr) {
+    for (ijk = 0; ijk < file1.Num_Elmts(); ++ijk) {
+      if ((INT)ijk != elmt_map[ijk]) {
+	one_to_one = false;
+	break;
+      }
     }
   }
   if (!one_to_one) {

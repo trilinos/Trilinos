@@ -32,8 +32,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include <cctype>  // for isupper, tolower
-#include <cstring> // for strlen
+#include <stddef.h>                     // for size_t
+#include <cctype>                       // for isupper, tolower
+#include <cstring>                      // for strlen
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Author(s):   Gary L. Hennigan (SNL 9221)

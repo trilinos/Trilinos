@@ -16,6 +16,10 @@ else()
 endif()
 TRIBITS_CONFIGURE_FILE(exodus_config.h)
 
+if (NOT ${EXODUS_THREADSAFE})
+   list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ex_threadsafe.c)
+endif()
+
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS

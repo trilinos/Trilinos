@@ -53,7 +53,8 @@
 *
 */
 
-#include "exodusII.h"  // for ex_block, void_int, etc
+#include "exodusII.h" // for ex_block, void_int, etc
+#include "exodusII_int.h"
 #include <string.h>    // for strcpy
 #include <sys/types.h> // for int64_t
 
@@ -68,6 +69,9 @@ int ex_get_block(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, char *
 {
   int      err;
   ex_block block;
+
+  EX_FUNC_ENTER();
+
   block.id   = blk_id;
   block.type = blk_type;
 
@@ -124,5 +128,5 @@ int ex_get_block(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, char *
     strcpy(elem_type, block.topology);
   }
 
-  return err;
+  EX_FUNC_LEAVE(err);
 }

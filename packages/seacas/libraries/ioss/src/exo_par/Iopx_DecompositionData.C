@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h> // for ElementTopology
 #include <Ioss_Field.h>           // for Field, etc
 #include <Ioss_Map.h>             // for Map, MapContainer
@@ -48,7 +49,6 @@
 #include <iterator> // for distance
 #include <limits.h> // for INT_MAX
 #include <map>      // for map
-#include <mpi.h>    // for MPI_Alltoall, MPI_Bcast, etc
 #include <numeric>  // for accumulate
 #include <stdlib.h> // for exit, EXIT_FAILURE
 #include <utility>  // for pair, make_pair

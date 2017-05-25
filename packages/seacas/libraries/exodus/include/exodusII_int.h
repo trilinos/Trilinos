@@ -41,6 +41,12 @@
 #ifndef EXODUS_II_INT_HDR
 #define EXODUS_II_INT_HDR
 
+#include "exodus_config.h"
+
+#if defined(EXODUS_THREADSAFE)
+#include <pthread.h>
+#endif
+
 #include "netcdf.h"
 #if defined(NC_HAVE_META_H)
 #include "netcdf_meta.h"
@@ -87,11 +93,6 @@ extern "C" {
 
 #define MAX_VAR_NAME_LENGTH 32 /**< Internal use only */
 
-/* this should be defined in ANSI C and C++, but just in case ... */
-#ifndef NULL
-#define NULL 0
-#endif
-
 /* Default "filesize" for newly created files.
  * Set to 0 for normal filesize setting.
  * Set to 1 for EXODUS_LARGE_MODEL setting to be the default
@@ -102,6 +103,108 @@ extern "C" {
 #define EX_FILE_ID_MASK (0xffff0000) /* Must match FILE_ID_MASK in netcdf nc4internal.h */
 #define EX_GRP_ID_MASK (0x0000ffff)  /* Must match GRP_ID_MASK in netcdf nc4internal.h */
 
+void ex_reset_error_status();
+
+#if defined(EXODUS_THREADSAFE)
+#if !defined(exerrval)
+/* In both exodusII.h and exodusII_int.h */
+typedef struct EX_errval
+{
+  int  errval;
+  char last_pname[MAX_ERR_LENGTH];
+  char last_errmsg[MAX_ERR_LENGTH];
+  int  last_err_num;
+} EX_errval_t;
+
+EXODUS_EXPORT EX_errval_t *ex_errval;
+#define exerrval ex_errval->errval
+#endif
+
+extern pthread_once_t EX_first_init_g;
+
+typedef struct EX_mutex_struct
+{
+  pthread_mutex_t     atomic_lock; /* lock for atomicity of new mechanism */
+  pthread_mutexattr_t attribute;
+} EX_mutex_t;
+
+extern EX_mutex_t EX_g;
+extern int ex_mutex_lock(EX_mutex_t *mutex);
+extern int ex_mutex_unlock(EX_mutex_t *mutex);
+extern void         ex_pthread_first_thread_init(void);
+extern EX_errval_t *exerrval_get();
+
+#define EX_FUNC_ENTER()                                                                            \
+  do {                                                                                             \
+    /* Initialize the thread-safe code */                                                          \
+    pthread_once(&EX_first_init_g, ex_pthread_first_thread_init);                                  \
+                                                                                                   \
+    /* Grab the mutex for the library */                                                           \
+    ex_mutex_lock(&EX_g);                                                                          \
+    ex_errval               = exerrval_get();                                                      \
+    exerrval                = 0;                                                                   \
+    ex_errval->last_err_num = 0;                                                                   \
+  } while (0)
+
+#define EX_FUNC_ENTER_INT()                                                                        \
+  do {                                                                                             \
+    /* Initialize the thread-safe code */                                                          \
+    pthread_once(&EX_first_init_g, ex_pthread_first_thread_init);                                  \
+                                                                                                   \
+    /* Grab the mutex for the library */                                                           \
+    ex_mutex_lock(&EX_g);                                                                          \
+    ex_errval = exerrval_get();                                                                    \
+  } while (0)
+
+#define EX_FUNC_LEAVE(error)                                                                       \
+  do {                                                                                             \
+    ex_mutex_unlock(&EX_g);                                                                        \
+    return error;                                                                                  \
+  } while (0)
+
+#define EX_FUNC_VOID()                                                                             \
+  do {                                                                                             \
+    ex_mutex_unlock(&EX_g);                                                                        \
+    return;                                                                                        \
+  } while (0)
+
+#else
+
+#if 0
+EXODUS_EXPORT int indent;
+#define EX_FUNC_ENTER()                                                                            \
+  do {                                                                                             \
+    ex_reset_error_status();                                                                       \
+    fprintf(stderr, "%d Enter: %s\n", indent, __func__);                                           \
+    indent++;                                                                                      \
+  } while (0)
+#define EX_FUNC_ENTER_INT()                                                                        \
+  do {                                                                                             \
+    fprintf(stderr, "%d Enter: %s\n", indent, __func__);                                           \
+    indent++;                                                                                      \
+  } while (0)
+#define EX_FUNC_LEAVE(error)                                                                       \
+  do {                                                                                             \
+    indent--;                                                                                      \
+    fprintf(stderr, "%d Leave: %s\n", indent, __func__);                                           \
+    return error;                                                                                  \
+  } while (0)
+#define EX_FUNC_VOID()                                                                             \
+  do {                                                                                             \
+    indent--;                                                                                      \
+    fprintf(stderr, "%d Leave: %s\n", indent, __func__);                                           \
+    return;                                                                                        \
+  } while (0)
+#else
+#define EX_FUNC_ENTER()                                                                            \
+  {                                                                                                \
+    ex_reset_error_status();                                                                       \
+  }
+#define EX_FUNC_ENTER_INT()
+#define EX_FUNC_LEAVE(error) return error
+#define EX_FUNC_VOID() return
+#endif
+#endif
 /*
  * This file contains defined constants that are used internally in the
  * EXODUS API.
@@ -745,8 +848,6 @@ int ex_put_nemesis_version(int exoid); /* NetCDF/Exodus file ID */
 
 int ne_check_file_version(int neid /* NetCDF/Exodus file ID */
                           );
-
-char *ex_catstrn12(char *name, int num1, int num2);
 
 int ne_id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
                const char * ne_var_name, /* Nemesis variable name */

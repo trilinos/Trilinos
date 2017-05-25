@@ -51,8 +51,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"  // for exerrval, ex_err, etc
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_get_partial_id_map, etc
 
 /*
  *  reads the element numbering map from the database; allows element numbers

@@ -86,8 +86,8 @@ static const char *Version = "2009/08/18";
 // Static internal helper functions
 // ========================================================================
 namespace {
-  bool set_id(const Ioss::GroupingEntity *entity, Ioxf::EntityIdSet *idset);
-  int get_id(const Ioss::GroupingEntity *entity, Ioxf::EntityIdSet *idset);
+  bool set_id(const Ioss::GroupingEntity *entity, const char *type, Ioxf::EntityIdSet *idset);
+  int get_id(const Ioss::GroupingEntity *entity, char type, Ioxf::EntityIdSet *idset);
   void xdmf_error(const std::string &msg, int lineno, int processor)
   {
     std::ostringstream errmsg;
@@ -567,7 +567,7 @@ namespace Ioxf {
       if (num_to_get > 0) {
 
         // Get the element block id and element count
-        get_id(eb, &ids_);
+        get_id(eb, 'E', &ids_);
         int                   element_count = eb->get_property("entity_count").get_int();
         Ioss::Field::RoleType role          = field.get_role();
 
@@ -1045,7 +1045,7 @@ namespace Ioxf {
 
       // Write the variable...
       int id;
-      id = get_id(ge, &ids_);
+      id = get_id(ge, type[0], &ids_);
 
       if (type[0] == 'E') {
         std::string block_name = ge->name();
@@ -1190,7 +1190,7 @@ namespace Ioxf {
       int num_to_get   = field.verify(data_size);
       if (num_to_get > 0) {
 
-        int                   id   = get_id(ns, &ids_);
+        int                   id   = get_id(ns, 'N', &ids_);
         Ioss::Field::RoleType role = field.get_role();
 
         if (role == Ioss::Field::MESH) {
@@ -1313,7 +1313,7 @@ namespace Ioxf {
         }
         /*
           if (commsetNodeCount > 0) {
-          int ierr = ne_put_node_cmap(get_file_pointer(), get_id(cs, &ids_),
+          int ierr = ne_put_node_cmap(get_file_pointer(), get_id(cs, 'C', &ids_),
           &entities[0], &procs[0], myProcessor);
           if (ierr < 0)
           xdmf_error(get_file_pointer(), __LINE__, myProcessor);
@@ -1400,7 +1400,7 @@ namespace Ioxf {
 	}
 #else
 /*
-  int ierr = ne_put_elem_cmap(get_file_pointer(), get_id(cs, &ids_),
+  int ierr = ne_put_elem_cmap(get_file_pointer(), get_id(cs, 'C', &ids_),
   &entities[0], &sides[0], &procs[0], myProcessor);
   if (ierr < 0)
   xdmf_error(get_file_pointer(), __LINE__, myProcessor);
@@ -1465,7 +1465,7 @@ namespace Ioxf {
     int num_to_get = field.verify(data_size);
     if (num_to_get > 0) {
 
-      int id = get_id(fb, &ids_);
+      int id = get_id(fb, 'S', &ids_);
 
       int                   entity_count = fb->get_property("entity_count").get_int();
       Ioss::Field::RoleType role         = field.get_role();
@@ -1738,14 +1738,14 @@ namespace Ioxf {
         Ioss::ElementBlockContainer::const_iterator I;
         // Set ids of all entities that have "id" property...
         for (I = element_blocks.begin(); I != element_blocks.end(); ++I) {
-          set_id(*I, &ids_);
+          set_id(*I, "Element Block", &ids_);
         }
 
         elementCount = 0;
         for (I = element_blocks.begin(); I != element_blocks.end(); ++I) {
           elementCount += (*I)->get_property("entity_count").get_int();
           // Set ids of all entities that do not have "id" property...
-          get_id(*I, &ids_);
+          get_id(*I, 'E', &ids_);
           Ioxf::Block T(*(*I));
           if (std::find(blocks.begin(), blocks.end(), T) == blocks.end()) {
             blocks.push_back(T);
@@ -1798,7 +1798,7 @@ namespace Ioxf {
           }
           int count = sset_entity_count[fb_index++];
           if (count > 0) {
-            set_id((*J), &ids_);
+            set_id((*J), "Surface", &ids_);
           }
         }
       }
@@ -1806,7 +1806,7 @@ namespace Ioxf {
         for (J = side_blocks.begin(); J != side_blocks.end(); ++J) {
           int count = sset_entity_count[fb_index++];
           if (count > 0) {
-            set_id((*J), &ids_);
+            set_id((*J), "Surface", &ids_);
           }
         }
       }
@@ -1823,7 +1823,7 @@ namespace Ioxf {
       for (J = side_blocks.begin(); J != side_blocks.end(); ++J) {
         int count = sset_entity_count[fb_index++];
         if (count > 0) {
-          get_id((*J), &ids_);
+          get_id((*J), 'S', &ids_);
           Ioxf::SideSet T(*(*J));
           if (std::find(ssets.begin(), ssets.end(), T) == ssets.end()) {
             ssets.push_back(T);
@@ -1845,11 +1845,11 @@ namespace Ioxf {
       Ioss::NodeSetContainer                 nodesets = region->get_nodesets();
       Ioss::NodeSetContainer::const_iterator IN;
       for (IN = nodesets.begin(); IN != nodesets.end(); ++IN) {
-        set_id(*IN, &ids_);
+        set_id(*IN, "Nodeset", &ids_);
       }
 
       for (IN = nodesets.begin(); IN != nodesets.end(); ++IN) {
-        get_id(*IN, &ids_);
+        get_id(*IN, 'N', &ids_);
         const Ioxf::NodeSet T(*(*IN));
         if (std::find(nsets.begin(), nsets.end(), T) == nsets.end()) {
           nsets.push_back(T);
@@ -2330,7 +2330,7 @@ namespace Ioxf {
 
         std::string type  = cs->get_property("entity_type").get_string();
         int         count = cs->get_property("entity_count").get_int();
-        int         id    = get_id(cs, &ids_);
+        int         id    = get_id(cs, 'C', &ids_);
 
         if (type == "node") {
           meta->nodeMap.push_back(Ioxf::CommunicationMap(id, count, 'n'));
@@ -2749,7 +2749,7 @@ namespace Ioxf {
 }
 
 namespace {
-  bool set_id(const Ioss::GroupingEntity *entity, Ioxf::EntityIdSet *idset)
+  bool set_id(const Ioss::GroupingEntity *entity, const char *type, Ioxf::EntityIdSet *idset)
   {
     // See description of 'get_id' function.  This function just primes
     // the idset with existing ids so that when we start generating ids,
@@ -2764,8 +2764,7 @@ namespace {
       int id = entity->get_property(id_prop).get_int();
 
       // See whether it already exists...
-      int type = static_cast<int>(entity->type());
-      succeed = idset->insert(std::make_pair(type, id)).second;
+      succeed = idset->insert(std::make_pair(type[0], id)).second;
       if (!succeed) {
         std::string name_string = entity->get_property(prop_name).get_string();
         IOSS_WARNING << "The " << type << " named '" << name_string
@@ -2784,7 +2783,7 @@ namespace {
     return succeed;
   }
 
-  int get_id(const Ioss::GroupingEntity *entity, Ioxf::EntityIdSet *idset)
+  int get_id(const Ioss::GroupingEntity *entity, char type, Ioxf::EntityIdSet *idset)
   {
     // Sierra uses names to refer to grouping entities; however,
     // exodusII requires integer ids.  When reading an exodusII file,
@@ -2843,7 +2842,6 @@ namespace {
     // At this point, we either have an id equal to '1' or we have an id
     // extracted from the entities name. Increment it until it is
     // unique...
-    int type = static_cast<int>(entity->type());
     while (idset->find(std::make_pair(type, id)) != idset->end()) {
       ++id;
     }

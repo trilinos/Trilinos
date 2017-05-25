@@ -51,7 +51,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_NAME_ELB, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_att_text, etc
 #include <inttypes.h>     // for PRId64
@@ -72,52 +72,49 @@ int ex_get_elem_type(int exoid, ex_entity_id elem_blk_id, char *elem_type)
 
   /*****************************************************************************/
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
 
   /* inquire id's of previously defined dimensions */
   if ((el_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find element block ID %" PRId64 " in file %d", elem_blk_id, exoid);
-    ex_err(func_name, errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err(func_name, errmsg, EX_LASTERR);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, VAR_CONN(el_blk_id_ndx), &connid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find connectivity variable in file ID %d",
              exoid);
-    ex_err(func_name, errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err(func_name, errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* get the element type name */
   if ((status = nc_inq_attlen(exoid, connid, ATT_NAME_ELB, &len)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find attribute in file ID %d", exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, status);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (len > (MAX_STR_LENGTH + 1)) {
-    exerrval = EX_MSG;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Element type must be of length %d in file ID %d",
              (int)len, exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, EX_BADPARAM);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Make sure the end of the string is terminated with a null character */
   elem_type[MAX_STR_LENGTH] = '\0';
 
   if ((status = nc_get_att_text(exoid, connid, ATT_NAME_ELB, elem_type)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get attribute \"%s\" in file ID %d",
              ATT_NAME_ELB, exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, status);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

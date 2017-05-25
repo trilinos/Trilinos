@@ -54,8 +54,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"  // for ex_get_var, ex_entity_id, etc
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_get_var, ex_entity_id, etc
 
 /*!
  * reads the values of a single nodeset variable for one nodeset at

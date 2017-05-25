@@ -47,13 +47,13 @@
  */
 
 /* LINTLIBRARY */
-#include "exodusII.h"
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <stdio.h>                      // for snprintf, NULL
+#include <stdlib.h>                     // for free, malloc, calloc
+#include <string.h>                     // for memset, strlen
+#include "exodusII.h"                   // for void_int, ex_err, etc
 #include "exodusII_int.h"
-#include "netcdf.h"
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*
  * The Build64 is for the "normal" SEACAS build which uses compiler

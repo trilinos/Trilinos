@@ -47,10 +47,10 @@
 #include <cgns/Iocgns_IOFactory.h>
 #endif
 
-#include <visualization/Iovs_IOFactory.h>
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Initializer.h>
 #include <transform/Iotr_Initializer.h>
+#include <visualization/Iovs_IOFactory.h>
 
 namespace Ioss {
   namespace Init {

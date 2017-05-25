@@ -10,6 +10,7 @@
 #ifndef SIERRA_Iovs_DatabaseIO_h
 #define SIERRA_Iovs_DatabaseIO_h
 
+#include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_EntityType.h>
@@ -142,8 +143,8 @@ namespace Iovs {
       return 0;
     }
 
-    virtual int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field, void *data,
-                                       size_t data_size) const
+    virtual int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                                       void *data, size_t data_size) const
     {
       return 0;
     }
@@ -192,21 +193,20 @@ namespace Iovs {
     {
       return 0;
     }
-    virtual int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field, void *data,
-                                       size_t data_size) const
+    virtual int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                                       void *data, size_t data_size) const
     {
       return 0;
     }
 
-
     void write_meta_data();
 
-    static ParaViewCatalystIossAdapterBase* load_plugin_library(const std::string &plugin_name,
-                                                                const std::string &plugin_library_name);
+    static ParaViewCatalystIossAdapterBase *
+    load_plugin_library(const std::string &plugin_name, const std::string &plugin_library_name);
 
     static std::string create_output_file_path(const std::string &          input_deck_name,
                                                const Ioss::PropertyManager &properties);
-    //static bool plugin_library_exists(const std::string &plugin_name);
+    // static bool plugin_library_exists(const std::string &plugin_name);
 
     int64_t handle_node_ids(void *ids, int64_t num_to_get);
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void *ids, size_t num_to_get);
@@ -235,7 +235,6 @@ namespace Iovs {
     int                applyDisplacements;
     int                createSideSets;
     int                createNodeSets;
-    int                spatialDimension;
     static int         useCount;
     static int         uniqueID;
 

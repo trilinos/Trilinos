@@ -53,10 +53,6 @@
 #include "Ioss_Region.h"
 #include "Ioss_State.h"
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #define OUTPUT std::cerr
 
 // ========================================================================

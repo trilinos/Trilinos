@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_QA, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <stddef.h>       // for size_t
@@ -98,11 +98,10 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
   size_t start[3], count[3];
   char   errmsg[MAX_ERR_LENGTH];
 
+  EX_FUNC_ENTER();
   int rootid = exoid & EX_FILE_ID_MASK;
 
   ex_check_valid_file_id(exoid);
-
-  exerrval = 0; /* clear error code */
 
   /* only do this if there are records */
 
@@ -116,42 +115,37 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
 
       /*   inquire previously defined dimensions  */
       if ((status = nc_inq_dimid(rootid, DIM_STR, &strdim)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate string length in file id %d",
                  rootid);
-        ex_err("ex_put_qa", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_qa", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
 
       if ((status = nc_inq_dimid(rootid, DIM_N4, &n4dim)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate record length in file id %d",
                  rootid);
-        ex_err("ex_put_qa", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_qa", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
 
       /*   put file into define mode  */
       if ((status = nc_redef(rootid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode",
                  rootid);
-        ex_err("ex_put_qa", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_qa", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
 
       /*   define dimensions */
       if ((status = nc_def_dim(rootid, DIM_NUM_QA, num_qa_records, &num_qa_dim)) != NC_NOERR) {
         if (status == NC_ENAMEINUSE) { /* duplicate entry? */
-          exerrval = status;
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: qa records already exist in file id %d", rootid);
-          ex_err("ex_put_qa", errmsg, exerrval);
+          ex_err("ex_put_qa", errmsg, status);
         }
         else {
-          exerrval = status;
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to define qa record array size in file id %d", rootid);
-          ex_err("ex_put_qa", errmsg, exerrval);
+          ex_err("ex_put_qa", errmsg, status);
         }
 
         goto error_ret; /* exit define mode and return */
@@ -163,29 +157,26 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
       dims[2] = strdim;
 
       if ((status = nc_def_var(rootid, VAR_QA_TITLE, NC_CHAR, 3, dims, &varid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define qa record array in file id %d",
                  rootid);
-        ex_err("ex_put_qa", errmsg, exerrval);
+        ex_err("ex_put_qa", errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
 
       /*   leave define mode  */
       if ((status = nc_enddef(rootid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d",
                  rootid);
-        ex_err("ex_put_qa", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_qa", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
     else {
       if ((status = nc_inq_varid(rootid, VAR_QA_TITLE, &varid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find qa records variable in file id %d",
                  rootid);
-        ex_err("ex_put_qa", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_qa", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
 
@@ -204,11 +195,10 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
 
           if ((status = nc_put_vara_text(rootid, varid, start, count, qa_record[i][j])) !=
               NC_NOERR) {
-            exerrval = status;
             snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store qa record in file id %d",
                      rootid);
-            ex_err("ex_put_qa", errmsg, exerrval);
-            return (EX_FATAL);
+            ex_err("ex_put_qa", errmsg, status);
+            EX_FUNC_LEAVE(EX_FATAL);
           }
         }
       }
@@ -225,13 +215,13 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
       }
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if (nc_enddef(rootid) != NC_NOERR) { /* exit define mode */
+  if ((status = nc_enddef(rootid)) != NC_NOERR) { /* exit define mode */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", rootid);
-    ex_err("ex_put_qa", errmsg, exerrval);
+    ex_err("ex_put_qa", errmsg, status);
   }
-  return (EX_FATAL);
+  EX_FUNC_LEAVE(EX_FATAL);
 }

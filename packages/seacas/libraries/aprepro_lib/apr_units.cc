@@ -31,12 +31,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "apr_util.h"
-#include "aprepro.h"
-#include "init_structs.h"
-#include <cstdio>
-#include <cstring>
-#include <iomanip>
+#include "apr_util.h"     // for conv_string
+#include "aprepro.h"      // for Aprepro, symrec, etc
+#include "init_structs.h" // for svar_init, var_init
+#include <cstring>        // for strcmp
+#include <iomanip>        // for operator<<, setw, etc
+#include <ostream>        // for operator<<, basic_ostream, etc
+#include <stddef.h>       // for size_t
+#include <string>         // for char_traits, operator<<, etc
 
 namespace SEAMS {
 

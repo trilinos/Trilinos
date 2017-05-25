@@ -795,13 +795,33 @@ namespace Iopx {
     // on the database.  Output a warning message if there is
     // potentially corrupt data on the database...
 
+    // Check whether user or application wants to limite the times even further...
+    // One use case is that job is restarting at a time prior to what has been
+    // written to the results file, so want to start appending after
+    // restart time instead of at end time on database.
+    int max_step = timestep_count;
+    if (properties.exists("APPEND_OUTPUT_AFTER_STEP")) {
+      max_step = properties.get("APPEND_OUTPUT_AFTER_STEP").get_int();
+    }
+    if (max_step > timestep_count) {
+      max_step = timestep_count;
+    }
+      
+    double max_time = std::numeric_limits<double>::max();
+    if (properties.exists("APPEND_OUTPUT_AFTER_TIME")) {
+      max_time = properties.get("APPEND_OUTPUT_AFTER_TIME").get_real();
+    }
+    if (last_time > max_time) {
+      last_time = max_time;
+    }
+
     Ioss::Region *this_region = get_region();
     for (int i = 0; i < timestep_count; i++) {
       if (tsteps[i] <= last_time) {
         this_region->add_state(tsteps[i] * timeScaleFactor);
       }
       else {
-        if (myProcessor == 0) {
+	if (myProcessor == 0 && max_time == std::numeric_limits<double>::max()) {
           // NOTE: Don't want to warn on all processors if there are
           // corrupt steps on all databases, but this will only print
           // a warning if there is a corrupt step on processor
@@ -2074,7 +2094,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
 
   size_t num_to_get = field.verify(data_size);
 
-  int64_t               id               = Ioex::get_id(eb, &ids_);
+  int64_t               id               = Ioex::get_id(eb, EX_ELEM_BLOCK, &ids_);
   size_t                my_element_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role             = field.get_role();
 
@@ -2207,7 +2227,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const Ioss::Fi
 {
   size_t num_to_get = field.verify(data_size);
 
-  int64_t               id            = Ioex::get_id(eb, &ids_);
+  int64_t               id            = Ioex::get_id(eb, EX_FACE_BLOCK, &ids_);
   size_t                my_face_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role          = field.get_role();
 
@@ -2281,7 +2301,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock *eb, const Ioss::Fi
 {
   size_t num_to_get = field.verify(data_size);
 
-  int64_t               id            = Ioex::get_id(eb, &ids_);
+  int64_t               id            = Ioex::get_id(eb, EX_EDGE_BLOCK, &ids_);
   int64_t               my_edge_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role          = field.get_role();
 
@@ -2350,7 +2370,7 @@ int64_t DatabaseIO::get_Xset_field_internal(ex_entity_type type, const Ioss::Ent
 
   // Find corresponding set in file decomp class...
   if (role == Ioss::Field::MESH) {
-    int64_t id = Ioex::get_id(ns, &ids_);
+    int64_t id = Ioex::get_id(ns, type, &ids_);
 
     if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
       if (field.get_type() == Ioss::Field::INTEGER) {
@@ -2486,7 +2506,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
   ssize_t num_to_get = field.verify(data_size);
   int     ierr       = 0;
 
-  int64_t id           = Ioex::get_id(fb, &ids_);
+  int64_t id           = Ioex::get_id(fb, EX_SIDE_SET, &ids_);
   int64_t entity_count = fb->get_property("entity_count").get_int();
   if (num_to_get != entity_count) {
     std::ostringstream errmsg;
@@ -2782,7 +2802,7 @@ int64_t DatabaseIO::write_attribute_field(ex_entity_type type, const Ioss::Field
   ssize_t     num_entity = ge->get_property("entity_count").get_int();
   ssize_t     offset     = field.get_index();
 
-  int64_t id = Ioex::get_id(ge, &ids_);
+  int64_t id = Ioex::get_id(ge, type, &ids_);
   assert(offset > 0);
   assert(offset - 1 + field.raw_storage()->component_count() <=
          ge->get_property("attribute_count").get_int());
@@ -2845,7 +2865,7 @@ int64_t DatabaseIO::read_attribute_field(ex_entity_type type, const Ioss::Field 
   int64_t num_entity = ge->get_property("entity_count").get_int();
 
   int     attribute_count = ge->get_property("attribute_count").get_int();
-  int64_t id              = Ioex::get_id(ge, &ids_);
+  int64_t id              = Ioex::get_id(ge, type, &ids_);
 
   std::string att_name = ge->name() + SEP() + field.get_name();
   ssize_t     offset   = field.get_index();
@@ -2915,7 +2935,7 @@ int64_t DatabaseIO::read_transient_field(ex_entity_type               type,
     std::string var_name = var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
 
     // Read the variable...
-    int64_t id   = Ioex::get_id(ge, &ids_);
+    int64_t id   = Ioex::get_id(ge, type, &ids_);
     int     ierr = 0;
     var_index    = variables.find(var_name)->second;
     assert(var_index > 0);
@@ -3511,7 +3531,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *eb, const Ioss:
   int ierr = 0;
 
   // Get the element block id and element count
-  int64_t               id               = Ioex::get_id(eb, &ids_);
+  int64_t               id               = Ioex::get_id(eb, EX_ELEM_BLOCK, &ids_);
   int64_t               my_element_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role             = field.get_role();
 
@@ -3683,7 +3703,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock *eb, const Ioss::Fi
   int ierr = 0;
 
   // Get the face block id and face count
-  int64_t               id            = Ioex::get_id(eb, &ids_);
+  int64_t               id            = Ioex::get_id(eb, EX_FACE_BLOCK, &ids_);
   int64_t               my_face_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role          = field.get_role();
 
@@ -3749,7 +3769,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock *eb, const Ioss::Fi
   int ierr = 0;
 
   // Get the edge block id and edge count
-  int64_t               id            = Ioex::get_id(eb, &ids_);
+  int64_t               id            = Ioex::get_id(eb, EX_EDGE_BLOCK, &ids_);
   int64_t               my_edge_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role          = field.get_role();
 
@@ -4183,7 +4203,7 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
       if (ge->property_exists("locally_owned_count"))
         file_count = ge->get_property("locally_owned_count").get_int();
 
-      int64_t id = Ioex::get_id(ge, &ids_);
+      int64_t id = Ioex::get_id(ge, type, &ids_);
       int     ierr;
       if (type == EX_SIDE_SET) {
         size_t offset = ge->get_property("set_offset").get_int();
@@ -4218,7 +4238,7 @@ int64_t DatabaseIO::put_Xset_field_internal(ex_entity_type type, const Ioss::Ent
   size_t entity_count = ns->get_property("entity_count").get_int();
   size_t num_to_get   = field.verify(data_size);
 
-  int64_t               id   = Ioex::get_id(ns, &ids_);
+  int64_t               id   = Ioex::get_id(ns, type, &ids_);
   Ioss::Field::RoleType role = field.get_role();
 
   if (role == Ioss::Field::MESH) {
@@ -4360,7 +4380,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
                                        void *data, size_t data_size) const
 {
   size_t  num_to_get = field.verify(data_size);
-  int64_t id         = Ioex::get_id(fb, &ids_);
+  int64_t id         = Ioex::get_id(fb, EX_SIDE_SET, &ids_);
 
   size_t entity_count = fb->get_property("entity_count").get_int();
   size_t offset       = fb->get_property("set_offset").get_int();
@@ -4590,14 +4610,14 @@ void DatabaseIO::write_meta_data()
     Ioss::EdgeBlockContainer edge_blocks = region->get_edge_blocks();
     assert(Ioex::check_block_order(edge_blocks));
     for (auto &edge_block : edge_blocks) {
-      Ioex::set_id(edge_block, &ids_);
+      Ioex::set_id(edge_block, EX_EDGE_BLOCK, &ids_);
     }
 
     edgeCount = 0;
     for (auto &edge_block : edge_blocks) {
       edgeCount += edge_block->get_property("entity_count").get_int();
       // Set ids of all entities that do not have "id" property...
-      Ioex::get_id(edge_block, &ids_);
+      Ioex::get_id(edge_block, EX_EDGE_BLOCK, &ids_);
       Ioex::EdgeBlock T(*(edge_block));
       mesh.edgeblocks.push_back(T);
     }
@@ -4610,14 +4630,14 @@ void DatabaseIO::write_meta_data()
     assert(Ioex::check_block_order(face_blocks));
     // Set ids of all entities that have "id" property...
     for (auto &face_block : face_blocks) {
-      Ioex::set_id(face_block, &ids_);
+      Ioex::set_id(face_block, EX_FACE_BLOCK, &ids_);
     }
 
     faceCount = 0;
     for (auto &face_block : face_blocks) {
       faceCount += face_block->get_property("entity_count").get_int();
       // Set ids of all entities that do not have "id" property...
-      Ioex::get_id(face_block, &ids_);
+      Ioex::get_id(face_block, EX_FACE_BLOCK, &ids_);
       Ioex::FaceBlock T(*(face_block));
       mesh.faceblocks.push_back(T);
     }
@@ -4630,14 +4650,14 @@ void DatabaseIO::write_meta_data()
     assert(Ioex::check_block_order(element_blocks));
     // Set ids of all entities that have "id" property...
     for (auto &element_block : element_blocks) {
-      Ioex::set_id(element_block, &ids_);
+      Ioex::set_id(element_block, EX_ELEM_BLOCK, &ids_);
     }
 
     elementCount = 0;
     for (auto &element_block : element_blocks) {
       elementCount += element_block->get_property("entity_count").get_int();
       // Set ids of all entities that do not have "id" property...
-      Ioex::get_id(element_block, &ids_);
+      Ioex::get_id(element_block, EX_ELEM_BLOCK, &ids_);
       Ioex::ElemBlock T(*(element_block));
       mesh.elemblocks.push_back(T);
     }
@@ -4648,11 +4668,11 @@ void DatabaseIO::write_meta_data()
   {
     Ioss::NodeSetContainer nodesets = region->get_nodesets();
     for (auto &set : nodesets) {
-      Ioex::set_id(set, &ids_);
+      Ioex::set_id(set, EX_NODE_SET, &ids_);
     }
 
     for (auto &set : nodesets) {
-      Ioex::get_id(set, &ids_);
+      Ioex::get_id(set, EX_NODE_SET, &ids_);
       const Ioex::NodeSet T(*(set));
       mesh.nodesets.push_back(T);
     }
@@ -4663,11 +4683,11 @@ void DatabaseIO::write_meta_data()
   {
     Ioss::EdgeSetContainer edgesets = region->get_edgesets();
     for (auto &set : edgesets) {
-      Ioex::set_id(set, &ids_);
+      Ioex::set_id(set, EX_EDGE_SET, &ids_);
     }
 
     for (auto &set : edgesets) {
-      Ioex::get_id(set, &ids_);
+      Ioex::get_id(set, EX_EDGE_SET, &ids_);
       const Ioex::EdgeSet T(*(set));
       mesh.edgesets.push_back(T);
     }
@@ -4678,11 +4698,11 @@ void DatabaseIO::write_meta_data()
   {
     Ioss::FaceSetContainer facesets = region->get_facesets();
     for (auto &set : facesets) {
-      Ioex::set_id(set, &ids_);
+      Ioex::set_id(set, EX_FACE_SET, &ids_);
     }
 
     for (auto &set : facesets) {
-      Ioex::get_id(set, &ids_);
+      Ioex::get_id(set, EX_FACE_SET, &ids_);
       const Ioex::FaceSet T(*(set));
       mesh.facesets.push_back(T);
     }
@@ -4693,11 +4713,11 @@ void DatabaseIO::write_meta_data()
   {
     Ioss::ElementSetContainer elementsets = region->get_elementsets();
     for (auto &set : elementsets) {
-      Ioex::set_id(set, &ids_);
+      Ioex::set_id(set, EX_ELEM_SET, &ids_);
     }
 
     for (auto &set : elementsets) {
-      Ioex::get_id(set, &ids_);
+      Ioex::get_id(set, EX_ELEM_SET, &ids_);
       const Ioex::ElemSet T(*(set));
       mesh.elemsets.push_back(T);
     }
@@ -4708,13 +4728,13 @@ void DatabaseIO::write_meta_data()
   {
     Ioss::SideSetContainer ssets = region->get_sidesets();
     for (auto &set : ssets) {
-      Ioex::set_id(set, &ids_);
+      Ioex::set_id(set, EX_SIDE_SET, &ids_);
     }
 
     // Get entity counts for all face sets... Create SideSets.
     for (auto &set : ssets) {
 
-      Ioex::get_id(set, &ids_);
+      Ioex::get_id(set, EX_SIDE_SET, &ids_);
       int64_t id           = set->get_property("id").get_int();
       int64_t entity_count = 0;
       int64_t df_count     = 0;
