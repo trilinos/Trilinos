@@ -15,6 +15,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       SOURCES test_bl_cg_complex_hb.cpp 
       ARGS
         "--verbose --filename=mhd1280b.cua"
+        "--verbose --filename=mhd1280b.cua --use-single-red"
       XHOST KALLIKRATES
       )
 
