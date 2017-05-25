@@ -44,22 +44,36 @@
 namespace Sacado {
 
   template <typename ExecSpace>
-  void createGlobalMemoryPool(const ExecSpace& space, const size_t total_size) {}
+  void createGlobalMemoryPool(const ExecSpace& space
+            , const size_t min_total_alloc_size
+            , const uint32_t min_block_alloc_size
+            , const uint32_t max_block_alloc_size
+            , const uint32_t min_superblock_size
+            ) {}
 
   template <typename ExecSpace>
   void destroyGlobalMemoryPool(const ExecSpace& space) {}
 
 #if 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
   namespace Impl {
-    extern const Kokkos::Experimental::MemoryPool<Kokkos::OpenMP>* global_sacado_openmp_memory_pool;
+    extern const Kokkos::MemoryPool<Kokkos::OpenMP>* global_sacado_openmp_memory_pool;
   }
 
   inline void
-  createGlobalMemoryPool(const Kokkos::OpenMP& space, const size_t total_size)
+  createGlobalMemoryPool(const ExecSpace& space
+            , const size_t min_total_alloc_size
+            , const uint32_t min_block_alloc_size
+            , const uint32_t max_block_alloc_size
+            , const uint32_t min_superblock_size
+            )
   {
-    typedef Kokkos::Experimental::MemoryPool<Kokkos::OpenMP> pool_t;
+    typedef Kokkos::MemoryPool<Kokkos::OpenMP> pool_t;
     Impl::global_sacado_openmp_memory_pool =
-      new pool_t(typename Kokkos::OpenMP::memory_space(), total_size);
+      new pool_t(typename Kokkos::OpenMP::memory_space(),
+          min_total_alloc_size,
+          min_block_alloc_size,
+          max_block_alloc_size,
+          min_superblock_size);
   }
 
   inline void destroyGlobalMemoryPool(const Kokkos::OpenMP& space)
@@ -72,12 +86,12 @@ namespace Sacado {
 
   namespace Impl {
 
-    extern const Kokkos::Experimental::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_host;
-    extern const Kokkos::Experimental::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_device;
-    __device__ const Kokkos::Experimental::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device;
+    extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_host;
+    extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_device;
+    __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device;
 
     struct SetMemoryPoolPtr {
-      Kokkos::Experimental::MemoryPool<Kokkos::Cuda>* pool_device;
+      Kokkos::MemoryPool<Kokkos::Cuda>* pool_device;
       __device__ inline void operator()(int) const {
         global_sacado_cuda_memory_pool_on_device = pool_device;
       };
@@ -88,11 +102,20 @@ namespace Sacado {
   // For some reason we get memory errors if these functions are defined in
   // Sacado_DynamicArrayTraits.cpp
   inline void
-  createGlobalMemoryPool(const Kokkos::Cuda& space, const size_t total_size)
+  createGlobalMemoryPool(const Kokkos::Cuda& space
+            , const size_t min_total_alloc_size
+            , const uint32_t min_block_alloc_size
+            , const uint32_t max_block_alloc_size
+            , const uint32_t min_superblock_size
+            )
   {
-    typedef Kokkos::Experimental::MemoryPool<Kokkos::Cuda> pool_t;
+    typedef Kokkos::MemoryPool<Kokkos::Cuda> pool_t;
     pool_t* pool =
-      new pool_t(typename Kokkos::Cuda::memory_space(), total_size);
+      new pool_t(typename Kokkos::Cuda::memory_space(),
+          min_total_alloc_size,
+          min_block_alloc_size,
+          max_block_alloc_size,
+          min_superblock_size);
     Impl::SetMemoryPoolPtr f;
     CUDA_SAFE_CALL( cudaMalloc( &f.pool_device, sizeof(pool_t) ) );
     CUDA_SAFE_CALL( cudaMemcpy( f.pool_device, pool,
