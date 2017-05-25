@@ -117,7 +117,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*A,bHasZeroDiagonal,STS::magnitude(dirDropTol));
 
     // TODO check availability + content (length)
-    Teuchos::ArrayRCP<const bool> dofPresent = currentLevel.Get< Teuchos::ArrayRCP<const bool> >("DofPresent", NoFactory::get());
+    Teuchos::ArrayRCP<bool> dofPresent = currentLevel.Get< Teuchos::ArrayRCP<bool> >("DofPresent", NoFactory::get());
 
     // map[k] indicates that the kth dof in the variable dof matrix A would
     // correspond to the map[k]th dof in the padded system. If, i.e., it is
@@ -348,6 +348,23 @@ namespace MueLu {
     }
 
     // TODO status array?
+
+    Teuchos::Array<char> status(nLocalNodes * maxDofPerNode);
+
+    //std::vector<LocalOrdinal> map (size ndofs)
+    // dir or not Teuchos::ArrayRCP<const bool> dirOrNot
+    for(decltype(status.size()) i = 0; i < status.size(); i++) status[i] = 's';
+    for(decltype(status.size()) i = 0; i < status.size(); i++) {
+      if(dofPresent[i] == false) status[i] = 'p';
+    }
+    if(dirOrNot.size() > 0) {
+      for(decltype(map.size()) i = 0; i < map.size(); i++) {
+        if(dirOrNot[i]) status[map[i]] = 'd';
+      }
+    }
+    Set(currentLevel,"DofStatus",status);
+
+    // end status array
 
     Teuchos::RCP<CrsMatrix> lapCrsMat = CrsMatrixFactory::Build(amalgRowMap, amalgColMap, 10); // TODO better approx for max nnz per row
 

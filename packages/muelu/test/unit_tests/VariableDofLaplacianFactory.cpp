@@ -111,8 +111,8 @@ namespace MueLuTests {
     l->Set("A", A);
     l->Set("Coordinates",coords);
 
-    Teuchos::ArrayRCP<const bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
-    l->Set<Teuchos::ArrayRCP<const bool> >("DofPresent", dofPresent);
+    Teuchos::ArrayRCP<bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
+    l->Set<Teuchos::ArrayRCP<bool> >("DofPresent", dofPresent);
 
     VariableDofLaplacianFactory lapFact;
 
@@ -185,8 +185,8 @@ namespace MueLuTests {
     l->Set("A", A);
     l->Set("Coordinates",coordinates);
 
-    Teuchos::ArrayRCP<const bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
-    l->Set<Teuchos::ArrayRCP<const bool> >("DofPresent", dofPresent);
+    Teuchos::ArrayRCP<bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
+    l->Set<Teuchos::ArrayRCP<bool> >("DofPresent", dofPresent);
 
     //A->getColMap()->describe(out,Teuchos::VERB_EXTREME);
 
@@ -209,7 +209,7 @@ namespace MueLuTests {
     for(decltype(dofPresent2.size()) i = 2; i < dofPresent2.size(); i = i+3) {
       dofPresent2[i] = false;
     }
-    l->Set<Teuchos::ArrayRCP<const bool> >("DofPresent", dofPresent2);
+    l->Set<Teuchos::ArrayRCP<bool> >("DofPresent", dofPresent2);
 
     //A->getColMap()->describe(out,Teuchos::VERB_EXTREME);
 
@@ -276,7 +276,7 @@ namespace MueLuTests {
 
     TEST_EQUALITY(dofMap->getNodeNumElements(),2*nodeMap->getNodeNumElements());
 
-    Teuchos::ArrayRCP<const bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
+    Teuchos::ArrayRCP<bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
 
     // build hierarchy
     typedef Teuchos::ScalarTraits<Scalar> TST;
@@ -286,7 +286,7 @@ namespace MueLuTests {
     Level l;
     l.Set("A", A);
     l.Set("Coordinates",coordinates);
-    l.Set<Teuchos::ArrayRCP<const bool> >("DofPresent", dofPresent);
+    l.Set<Teuchos::ArrayRCP<bool> >("DofPresent", dofPresent);
 
     VariableDofLaplacianFactory lapFact;
     lapFact.SetParameter("maxDofPerNode", Teuchos::ParameterEntry(2));
