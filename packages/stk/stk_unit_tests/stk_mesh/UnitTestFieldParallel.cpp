@@ -53,7 +53,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId, etc
-#include "stk_mesh/fixtures/HexFixture.hpp"  // for HexFixture
+#include "stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 namespace stk { namespace mesh { class Part; } }

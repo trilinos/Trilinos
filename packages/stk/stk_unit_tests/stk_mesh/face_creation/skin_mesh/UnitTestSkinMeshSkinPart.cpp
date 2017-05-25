@@ -4,7 +4,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc

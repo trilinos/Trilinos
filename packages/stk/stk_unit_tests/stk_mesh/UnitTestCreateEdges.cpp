@@ -40,8 +40,8 @@
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <string>                       // for string
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
@@ -55,7 +55,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
 #include <stk_unit_test_utils/BulkDataTester.hpp>
-#include "unit_tests/Setup2Block2HexMesh.hpp"  // for setup2Block2HexMesh
+#include "stk_unit_tests/stk_mesh/Setup2Block2HexMesh.hpp"  // for setup2Block2HexMesh
 
 using stk::mesh::MetaData;
 

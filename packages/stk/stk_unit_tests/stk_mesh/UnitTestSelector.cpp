@@ -39,7 +39,7 @@
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator|, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, BucketVector, etc
-#include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
+#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <string>                       // for basic_string, operator==, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector

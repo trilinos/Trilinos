@@ -35,7 +35,6 @@
 #include <limits>
 #include "gtest/gtest.h"
 #include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, etc
-#include "stk_util/parallel/DebugTool.hpp"
 #include "stk_mesh/base/BulkData.hpp"          // for BulkData, etc
 #include "stk_mesh/base/MetaData.hpp"          // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/FEMHelpers.hpp"        // for declare_element

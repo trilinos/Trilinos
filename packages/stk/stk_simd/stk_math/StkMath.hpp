@@ -91,6 +91,22 @@ STK_MATH_FORCE_INLINE double atan2(const double a, const double b) {
   return std::atan2(a, b);
 }
 
+STK_MATH_FORCE_INLINE double asinh(const double a) {
+  return std::asinh(a);
+}
+
+STK_MATH_FORCE_INLINE double acosh(const double a) {
+  return std::acosh(a);
+}
+
+STK_MATH_FORCE_INLINE double atanh(const double a) {
+  return std::atanh(a);
+}
+
+STK_MATH_FORCE_INLINE double erf(const double a) {
+  return std::erf(a);
+}
+
 STK_MATH_FORCE_INLINE double multiplysign(const double x, const double y) { // return x times sign of y
   return x * ( 1 - 2*(y<0) );
 }
@@ -121,14 +137,6 @@ STK_MATH_FORCE_INLINE double if_then_else(const bool b, const double v1, const d
 
 STK_MATH_FORCE_INLINE double if_then_else_zero(const bool b, const double v) {
   return b ? v : 0.0;
-}
-
-STK_MATH_FORCE_INLINE double if_not_then_else(const bool b, const double v1, const double v2) {
-  return b ? v2 : v1;
-}
-
-STK_MATH_FORCE_INLINE double if_not_then_else_zero(const bool b, const double v) {
-  return b ? 0.0 : v;
 }
 
 // float
@@ -205,6 +213,22 @@ STK_MATH_FORCE_INLINE float atan2(const float a, const float b) {
   return std::atan2(a,b);
 }
 
+STK_MATH_FORCE_INLINE float asinh(const float a) {
+  return std::asinh(a);
+}
+
+STK_MATH_FORCE_INLINE float acosh(const float a) {
+  return std::acosh(a);
+}
+
+STK_MATH_FORCE_INLINE float atanh(const float a) {
+  return std::atanh(a);
+}
+
+STK_MATH_FORCE_INLINE float erf(const float a) {
+  return std::erf(a);
+}
+
 STK_MATH_FORCE_INLINE float multiplysign(const float x, const float y) { // return x times sign of y
   return x * ( 1 - 2*(y<0) );
 }
@@ -235,14 +259,6 @@ STK_MATH_FORCE_INLINE float if_then_else(const bool b, const float v1, const flo
 
 STK_MATH_FORCE_INLINE float if_then_else_zero(const bool b, const float v) {
   return b ? v : 0.0;
-}
-
-STK_MATH_FORCE_INLINE float if_not_then_else(const bool b, const float v1, const float v2) {
-  return b ? v2 : v1;
-}
-
-STK_MATH_FORCE_INLINE float if_not_then_else_zero(const bool b, const float v) {
-  return b ? 0.0 : v;
 }
 
 } // namespace math

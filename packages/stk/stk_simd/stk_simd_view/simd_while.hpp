@@ -6,7 +6,7 @@
 
 template <typename FuncWhile>
 KOKKOS_INLINE_FUNCTION void simd_while(int numValid, FuncWhile whileFunc) {
-  while ( stk::simd::if_all(whileFunc(), numValid) ) {}
+  while ( stk::simd::are_all(whileFunc(), numValid) ) {}
 }
 
 

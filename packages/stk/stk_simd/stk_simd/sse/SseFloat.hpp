@@ -16,7 +16,8 @@ struct Float
     :_data(_mm_setr_ps(x[0],x[offset],x[2*offset],x[3*offset])) {
   }
 
-  STK_MATH_FORCE_INLINE Float(const volatile float x)
+  template <typename T>
+  STK_MATH_FORCE_INLINE Float(const T x, typename std::enable_if<std::is_convertible<T,float>::value, void*>::type=0)
     : _data(_mm_set1_ps(x)) {
   }
 
@@ -33,7 +34,8 @@ struct Float
     return *this;
   }
 
-  STK_MATH_FORCE_INLINE Float& operator= (const volatile float x) {
+  template <typename T>
+  STK_MATH_FORCE_INLINE typename std::enable_if<std::is_convertible<T,float>::value, Float&>::type operator= (const float x) {
     _data = _mm_set1_ps(x);
     return *this;
   }

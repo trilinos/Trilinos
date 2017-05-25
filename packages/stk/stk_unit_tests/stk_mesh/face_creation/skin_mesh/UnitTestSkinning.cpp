@@ -40,7 +40,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
-#include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
+#include <stk_unit_tests/stk_mesh_fixtures/GridFixture.hpp>  // for GridFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <vector>                       // for vector, etc
 #include "mpi.h"                        // for ompi_communicator_t, etc

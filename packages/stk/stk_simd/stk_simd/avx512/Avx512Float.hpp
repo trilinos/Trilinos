@@ -18,8 +18,9 @@ struct Float {
                           x[12*offset],x[13*offset],x[14*offset],x[15*offset])) {
   }
 
-  STK_MATH_FORCE_INLINE Float(const float x)
-    : _data(_mm512_set1_ps(x)) {
+  template <typename T>
+  STK_MATH_FORCE_INLINE Float(const T x, typename std::enable_if<std::is_convertible<T,float>::value, void*>::type=0)
+    : _data(_mm512_set1_ps(float(x))) {
   }
 
   STK_MATH_FORCE_INLINE Float(const __m512& x)
@@ -35,8 +36,9 @@ struct Float {
     return *this;
   }
 
-  STK_MATH_FORCE_INLINE Float& operator= (const float x) {
-    _data = _mm512_set1_ps(x);
+  template <typename T>
+  STK_MATH_FORCE_INLINE typename std::enable_if<std::is_convertible<T,float>::value, Float&>::type operator= (const T x) {
+    _data = _mm512_set1_ps(float(x));
     return *this;
   }
 

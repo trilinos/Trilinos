@@ -2538,8 +2538,7 @@ void BulkData::get_entities_that_have_sharing(std::vector<stk::mesh::Entity> &en
         while(dataFromAnotherProc.remaining())
         {
             dataFromAnotherProc.unpack<stk::mesh::EntityKey>(key);
-            Entity entity = this->get_entity(key);
-            ThrowRequireMsg(this->is_valid(entity) && this->parallel_owner_rank(entity) == myProcId, "Entitykey " << key << " is not owned by receiving processor " << myProcId);
+            ThrowAssertMsg(this->is_valid(this->get_entity(key)) && this->parallel_owner_rank(this->get_entity(key)) == myProcId, "Entitykey " << key << " is not owned by receiving processor " << myProcId);
             entityKeySharing[key].insert(sharingProc);
         }
     }
@@ -4171,10 +4170,8 @@ void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity>
     stk::CommSparse comm_sparse( parallel() );
 
     for ( int phase = 0; phase < 2; ++phase ) {
-        for ( std::vector<Entity>::const_iterator i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
-            Entity entity = *i ;
-            if ( parallel_owner_rank(entity) == parallel_rank() &&
-                   state(entity)  != Created ) {
+        for (Entity entity : shared_modified) {
+            if ( parallel_owner_rank(entity) == parallel_rank() && state(entity) != Created ) {
                 for ( PairIterEntityComm jc = internal_entity_comm_map_shared(entity_key(entity)) ; ! jc.empty() ; ++jc ) {
                     comm_sparse.send_buffer( jc->proc ) .pack<EntityKey>( entity_key(entity) );
                 }
@@ -5061,7 +5058,7 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts, const Entit
         unsigned count = 0;
         stk::mesh::EntityKey key;
         buf.unpack<stk::mesh::EntityKey>(key);
-        ThrowRequireMsg(key == expected_key, "Program error. Contact sierra-help@sandia.gov for support. Key mismatch!" << key << " not same as " << expected_key);
+        ThrowAssertMsg(key == expected_key, "Program error. Contact sierra-help@sandia.gov for support. Key mismatch!" << key << " not same as " << expected_key);
 
         buf.unpack<unsigned>(count);
         for(unsigned j = 0; j < count; ++j)
@@ -5132,9 +5129,11 @@ void BulkData::internal_resolve_shared_membership()
 
     PartStorage part_storage;
 
+#ifndef NDEBUG
     bool allOk = true;
     try
     {
+#endif
         for(const EntityCommListInfo& info : m_entity_comm_list)
         {
             bool i_own_this_entity_in_comm_list = info.owner == p_rank;
@@ -5143,16 +5142,16 @@ void BulkData::internal_resolve_shared_membership()
                 remove_unneeded_induced_parts(info.entity, info.entity_comm->comm_map, part_storage,  comm);
             }
         }
+#ifndef NDEBUG
     }
-    catch(...)
-    { allOk = false; }
-
+    catch(...) { allOk = false; }
     int numericAllOk = allOk;
     int minAllOk = 0;
 
     stk::all_reduce_min(this->parallel(), &numericAllOk, &minAllOk, 1);
     allOk = minAllOk == 1;
     ThrowRequireWithSierraHelpMsg(allOk);
+#endif
 
     std::vector<EntityProc> send_list;
     fill_entity_procs_for_owned_modified_or_created(send_list);

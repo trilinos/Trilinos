@@ -62,7 +62,7 @@ void test_that_ids_are_unique(stk::mesh::BulkData &bulkData, stk::topology::rank
             while(comm.recv_buffer(i).remaining())
             {
                 uint64_t key;
-                comm.recv_buffer(i).unpack<uint64_t>(key);
+                comm.recv_buffer(i).unpack(key);
                 bool is_other_procs_id_on_this_proc = std::binary_search(requestedIds.begin(), requestedIds.end(), key);
                 ThrowRequireMsg(is_other_procs_id_on_this_proc == false, "Oh no! " << __FILE__<< __LINE__);
                 bool is_id_already_in_use = std::binary_search(ids_in_use.begin(), ids_in_use.end(), key);

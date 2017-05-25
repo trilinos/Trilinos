@@ -3,7 +3,6 @@
 
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_unit_test_utils/unittestMeshUtils.hpp>
-#include <stk_util/parallel/DebugTool.hpp>
 
 #include <stk_balance/balance.hpp>
 #include <stk_balance/balanceUtils.hpp>

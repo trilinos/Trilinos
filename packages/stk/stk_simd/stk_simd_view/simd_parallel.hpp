@@ -5,7 +5,7 @@
 #include <stk_simd_view/has_typedef.hpp>
 #include <stk_simd_view/simd_index.hpp>
 #include <impl/Kokkos_Timer.hpp>
-
+#include <typeinfo>
 
 namespace stk {
 namespace simd {
@@ -105,6 +105,18 @@ parallel_for(std::string forName, int N, const Func& func) {
 
 #endif
 
+
+// ThreadTeamRange
+template <typename Func>
+KOKKOS_INLINE_FUNCTION void
+parallel_for(const Kokkos::TeamPolicy<>::member_type& thread, int N, const Func& func) {
+  const int simdLoopSize = get_simd_loop_size<double, Func>(N);
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, simdLoopSize), [&](const int i) {
+    func( simd::DeviceIndex(i) );
+  });
+}
+
+
 template <typename T, typename Func>
 STK_INLINE void
 for_each(int N, const Func& func) {
@@ -124,14 +136,15 @@ for_each(int N, const Func& func) {
 }
 
 
-template <typename Func, typename PolicyTag, typename RealType>
+template <typename Func, typename RealType, typename PolicyTag>
 struct SimdReduct {
   SimdReduct(const Func& func_, const int& simdLoopSizeWithoutRemainder_, const RealType& remainderMask_)
-    : func(func_), simdLoopSizeWithoutRemainder(simdLoopSizeWithoutRemainder_), remainderMask(remainderMask_) {}
+    : func(func_), simdLoopSizeWithoutRemainder(simdLoopSizeWithoutRemainder_), remainderMask(remainderMask_) {
+  }
 
   typedef RealType value_type;
   
-  STK_INLINE void init(value_type& initialVal) const {
+  static void init(PolicyTag, value_type& initialVal) {
     initialVal = 0.0;
   }
 
@@ -153,13 +166,13 @@ struct SimdReduct {
 
 
 template <typename Func, typename RealType>
-struct SimdReduct<Func, void, RealType> {
+struct SimdReduct<Func, RealType, void> {
   SimdReduct(const Func& func_, const int& simdLoopSizeWithoutRemainder_, const RealType& remainderMask_)
     : func(func_), simdLoopSizeWithoutRemainder(simdLoopSizeWithoutRemainder_), remainderMask(remainderMask_) {}
 
   typedef RealType value_type;
   
-  STK_INLINE void init(value_type& initialVal) const {
+  static void init(value_type& initialVal) {
     initialVal = 0.0;
   }
 
@@ -179,10 +192,9 @@ struct SimdReduct<Func, void, RealType> {
   const value_type remainderMask;
 };
 
-
-template <typename Func, typename PolicyTag, typename ScalarType> 
-inline void
-impl_parallel_reduce_sum(std::string reduceName, Kokkos::RangePolicy<PolicyTag> policy, const Func& func, ScalarType& reductee) {
+template <typename Func, typename PolicyTag, typename ScalarType>
+typename std::enable_if<!is_gpu<Func>()>::type
+parallel_reduce_sum(std::string reduceName, Kokkos::RangePolicy<PolicyTag> policy, const Func& func, ScalarType& reductee) {
   typedef typename stk::Traits<ScalarType>::simd_type SimdType;
   constexpr int simdLength = stk::Traits<SimdType>::length;
   SimdType reducteeSimd(reductee);
@@ -192,22 +204,16 @@ impl_parallel_reduce_sum(std::string reduceName, Kokkos::RangePolicy<PolicyTag> 
   ScalarType ones[simdLength];
   for (int i=0; i<simdLength; ++i) ones[i] = 1.0;
   SimdType remainderMask = stk::simd::load_part(ones, N%simdLength);
-  SimdReduct<Func,PolicyTag,SimdType> reductor(func, simdLoopSizeWithoutRemainder, remainderMask);
+  SimdReduct<Func,SimdType,PolicyTag> reductor(func, simdLoopSizeWithoutRemainder, remainderMask);
   Kokkos::RangePolicy<PolicyTag> policySimd(0, simdLoopSize);
   Kokkos::parallel_reduce(reduceName, policySimd, reductor, reducteeSimd);
   reductee = stk::simd::reduce_sum(reducteeSimd);
 }
 
-template <typename Func, typename PolicyTag, typename ScalarType>
-typename std::enable_if<!is_gpu<Func>()>::type
-parallel_reduce_sum(std::string reduceName, Kokkos::RangePolicy<PolicyTag> policy, const Func& func, ScalarType& reductee) {
-  impl_parallel_reduce_sum(reduceName, policy, func, reductee);
-}
-
 template <typename Func, typename ScalarType>
 typename std::enable_if<!is_gpu<Func>()>::type
 parallel_reduce_sum(std::string reduceName, const int N, const Func& func, ScalarType& reductee) {
-  impl_parallel_reduce_sum(reduceName, Kokkos::RangePolicy<void>(0,N), func, reductee);
+  parallel_reduce_sum(reduceName, Kokkos::RangePolicy<void>(0,N), func, reductee);
 }
 
 template <typename Func, typename PolicyTag, typename ScalarType>

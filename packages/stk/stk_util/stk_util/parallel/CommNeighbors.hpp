@@ -96,10 +96,9 @@ public:
 private:
 
   //----------------------------------------
-  /** Construct for undefined communication.
-   *  No buffers are allocated.
+  /** default Constructor not allowed
    */
-  CommNeighbors();
+  CommNeighbors() = delete;
 
   CommNeighbors( const CommNeighbors & );
   CommNeighbors & operator = ( const CommNeighbors & );

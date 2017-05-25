@@ -2,6 +2,7 @@
 #include <stddef.h>                     // for size_t, nullptr
 #include <string>                       // for string
 #include <stk_util/parallel/ParallelReduceBool.hpp>
+#include <stk_util/parallel/DebugTool.hpp>
 #include <map>
 #include <string>
 #include "BulkData.hpp"
@@ -15,7 +16,6 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp"
 #include "stk_mesh/baseImpl/elementGraph/ElemGraphCoincidentElems.hpp"
-#include "stk_util/parallel/DebugTool.hpp"
 
 namespace stk { namespace mesh {
 

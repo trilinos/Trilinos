@@ -37,7 +37,7 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/MetaData.hpp>   // for entity_rank_names, MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
-#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
 #include <string>                       // for string
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD

@@ -39,7 +39,7 @@
 #include <stk_util/util/human_bytes.hpp>
 #include <stk_util/environment/perf_util.hpp>
 
-#include <stk_mesh/fixtures/TetFixture.hpp>  // for TetFixture
+#include <stk_unit_tests/stk_mesh_fixtures/TetFixture.hpp>  // for TetFixture
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MemoryUsage.hpp>

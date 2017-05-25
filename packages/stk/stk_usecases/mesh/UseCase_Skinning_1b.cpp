@@ -41,7 +41,7 @@
 
 #include <stk_mesh/base/SkinMesh.hpp>
 
-#include <stk_mesh/fixtures/HexFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 

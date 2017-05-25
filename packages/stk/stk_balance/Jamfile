@@ -96,6 +96,7 @@ alias install-exe-targets : ;
 explicit install-user-bin ;
 install install-user-bin
   : stk_balance
+    stk_balance_m2n
   : <location>$(install-bin-dir)
   ;
 

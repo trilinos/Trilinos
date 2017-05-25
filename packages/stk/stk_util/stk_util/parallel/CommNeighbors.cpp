@@ -66,17 +66,6 @@ CommNeighbors::~CommNeighbors()
   m_rank = 0 ;
 }
 
-CommNeighbors::CommNeighbors()
-  : m_comm( parallel_machine_null() ),
-    m_size( 0 ), m_rank( 0 ),
-    m_send(),
-    m_recv(),
-    m_send_data(),
-    m_recv_data(),
-    m_send_procs(),
-    m_recv_procs()
-{}
-
 CommNeighbors::CommNeighbors( ParallelMachine comm, const std::vector<int>& neighbor_procs)
   : m_comm( comm ),
     m_size( parallel_machine_size( comm ) ),
