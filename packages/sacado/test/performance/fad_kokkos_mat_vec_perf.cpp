@@ -44,6 +44,7 @@
 // For vtune
 #include <sys/types.h>
 #include <unistd.h>
+#include <algorithm>
 
 // A performance test that computes the derivative of a simple Kokkos kernel
 // using various Fad classes
@@ -332,10 +333,17 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
 #if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
   const size_t concurrency = execution_space::concurrency();
   const size_t warp_dim = is_cuda ? 32 : 1;
+  const size_t block_size = pa*sizeof(double);
+  const size_t nkernels = concurrency / warp_dim;
   const size_t mem_pool_size =
-    static_cast<size_t>(1.2*concurrency*pa*sizeof(double)/warp_dim);
+    static_cast<size_t>(1.2*nkernels*block_size);
+  const size_t superblock_size = std::max(nkernels / 100, 1) * block_size;
   execution_space space;
-  Sacado::createGlobalMemoryPool(space, mem_pool_size);
+  Sacado::createGlobalMemoryPool(space, mem_pool_size,
+      block_size,
+      block_size,
+      superblock_size
+      );
 #endif
 
   // Execute the kernel once to warm up

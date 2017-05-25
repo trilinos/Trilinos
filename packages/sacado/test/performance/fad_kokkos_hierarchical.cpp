@@ -13,6 +13,7 @@
 #include "Kokkos_MemoryPool.hpp"
 #include "impl/Kokkos_Timer.hpp"
 #include <cstdio>
+#include <algorithm>
 
 // Advection kernel.
 
@@ -882,16 +883,20 @@ void run(const int cell_begin, const int cell_end, const int cell_step,
   // Include a fudge factor of 1.2 since memory pool treats a block as full
   // once it reaches 80% capacity
   std::cout << "concurrency = " << ExecSpace::concurrency() << std::endl;
-  size_t mem_pool_size =
-    static_cast<size_t>(1.2*ExecSpace::concurrency()*2*fad_dim*sizeof(double));
+  const size_t block_size = fad_dim*sizeof(double);
+  size_t nkernels = ExecSpace::concurrency()*2;
 #if defined(KOKKOS_HAVE_CUDA)
   if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
-    mem_pool_size /= 32;
+    nkernels /= 32;
 #endif
+  size_t mem_pool_size =
+    static_cast<size_t>(1.2*nkernels*block_size);
+  const size_t superblock_size = std::max(nkernels / 100, 1) * block_size;
     std::cout << "Memory pool size = " << mem_pool_size / (1024.0 * 1024.0)
               << " MB" << std::endl;
     ExecSpace exec_space;
-    Sacado::createGlobalMemoryPool(exec_space, mem_pool_size);
+    Sacado::createGlobalMemoryPool(exec_space, mem_pool_size,
+        block_size, block_size, superblock_size);
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL)
   std::cout << "hierarchical";
