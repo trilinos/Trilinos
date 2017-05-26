@@ -46,10 +46,7 @@
 
 #define NPOS std::string::npos
 
-IOShell::Interface::Interface()
-{
-  enroll_options();
-}
+IOShell::Interface::Interface() { enroll_options(); }
 
 IOShell::Interface::~Interface() = default;
 
@@ -74,8 +71,9 @@ void IOShell::Interface::enroll_options()
   options_.enroll("64-bit", Ioss::GetLongOption::NoValue, "Use 64-bit integers on output database",
                   nullptr);
 
-  options_.enroll("32-bit", Ioss::GetLongOption::NoValue, "Use 32-bit integers on output database."
-		  " This is the default unless input database uses 64-bit integers",
+  options_.enroll("32-bit", Ioss::GetLongOption::NoValue,
+                  "Use 32-bit integers on output database."
+                  " This is the default unless input database uses 64-bit integers",
                   nullptr);
 
   options_.enroll("float", Ioss::GetLongOption::NoValue,
@@ -147,9 +145,9 @@ void IOShell::Interface::enroll_options()
                   "not use for a real run)",
                   nullptr);
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
-		  "Number of processors that can perform simulataneous IO operations in "
-		  "a parallel run; 0 to disable",
-		  nullptr);
+                  "Number of processors that can perform simulataneous IO operations in "
+                  "a parallel run; 0 to disable",
+                  nullptr);
 #endif
 
   options_.enroll("external", Ioss::GetLongOption::NoValue,
@@ -170,6 +168,12 @@ void IOShell::Interface::enroll_options()
   options_.enroll("Minimum_Time", Ioss::GetLongOption::MandatoryValue,
                   "Minimum time on input database to transfer to output database", nullptr);
 
+  options_.enroll("append_after_time", Ioss::GetLongOption::MandatoryValue,
+                  "add steps on input database after specified time on output database", nullptr);
+
+  options_.enroll("append_after_step", Ioss::GetLongOption::MandatoryValue,
+                  "add steps on input database after specified step on output database", nullptr);
+
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
                   "Character used to separate a field suffix from the field basename\n"
                   "\t\t when recognizing vector, tensor fields. Enter '0' for no separator",
@@ -182,9 +186,10 @@ void IOShell::Interface::enroll_options()
 
 #ifdef SEACAS_HAVE_KOKKOS
   options_.enroll("data_storage", Ioss::GetLongOption::MandatoryValue,
-		          "Data type used internally to store field data\n"
-		          "\t\tOptions are: POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE",
-				  "POINTER");
+                  "Data type used internally to store field data\n"
+                  "\t\tOptions are: POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, "
+                  "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE",
+                  "POINTER");
 #else
   options_.enroll("data_storage", Ioss::GetLongOption::MandatoryValue,
                   "Data type used internally to store field data\n"
@@ -423,11 +428,12 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 #endif
 
       if (data_storage_type == 0) {
-        std::cerr << "ERROR: Option data_storage must be one of" << std::endl;
+        std::cerr << "ERROR: Option data_storage must be one of\n";
 #ifdef SEACAS_HAVE_KOKKOS
-        std::cerr << "       POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE" << std::endl;
+        std::cerr << "       POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
+	  "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE\n";
 #else
-        std::cerr << "       POINTER, or STD_VECTOR" << std::endl;
+        std::cerr << "       POINTER, or STD_VECTOR\n";
 #endif
         return false;
       }
@@ -445,6 +451,20 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("Minimum_Time");
     if (temp != nullptr) {
       minimum_time = std::strtod(temp, nullptr);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("append_after_time");
+    if (temp != nullptr) {
+      append_time = std::strtod(temp, nullptr);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("append_after_step");
+    if (temp != nullptr) {
+      append_step = std::strtol(temp, nullptr, 10);
     }
   }
 

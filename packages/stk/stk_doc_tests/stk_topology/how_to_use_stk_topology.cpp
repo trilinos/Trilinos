@@ -252,6 +252,9 @@ TEST(stk_topology_how_to, check_for_positive_polarity)
     EXPECT_TRUE(!quad4Topology.is_positive_polarity(5));
     EXPECT_TRUE(!quad4Topology.is_positive_polarity(6));
     EXPECT_TRUE(!quad4Topology.is_positive_polarity(7));
+
+    //or, print it and examine the output:
+    stk::verbose_print_topology(std::cout, quad4Topology);
 }
 //endCheckForPositivePolarity
 

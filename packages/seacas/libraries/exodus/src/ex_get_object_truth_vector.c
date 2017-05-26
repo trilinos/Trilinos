@@ -41,7 +41,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_get_dimension, EX_FATAL, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
 #include <inttypes.h>     // for PRId64
@@ -71,9 +71,8 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
   const char *ent_type = NULL;
   const char *var_name = NULL;
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
-
-  exerrval = 0; /* clear error code */
 
   switch (obj_type) {
   case EX_EDGE_BLOCK:
@@ -133,30 +132,30 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
     ent_type = "es";
     break;
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid variable type %d specified in file id %d",
              obj_type, exoid);
-    ex_err(routine, errmsg, exerrval);
-    return (EX_WARN);
+    ex_err(routine, errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
-    return (EX_WARN);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* Determine index of entity_id in id array */
   ent_ndx = ex_id_lkup(exoid, obj_type, entity_id);
-  if (exerrval != 0) {
-    if (exerrval != EX_NULLENTITY) {
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to locate %s id %" PRId64 " in id variable in file id %d",
-               ex_name_of_object(obj_type), entity_id, exoid);
-      ex_err(routine, errmsg, exerrval);
-      return (EX_FATAL);
+  if (ent_ndx <= 0) {
+    ex_get_err(NULL, NULL, &status);
+    if (status != 0) {
+      if (status != EX_NULLENTITY) {
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to locate %s id %" PRId64 " in id variable in file id %d",
+                 ex_name_of_object(obj_type), entity_id, exoid);
+        ex_err(routine, errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
+      }
     }
   }
-
   /* If this is a null entity, then 'ent_ndx' will be negative.
    * We don't care in this routine, so make it positive and continue...
    */
@@ -165,11 +164,10 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
   }
 
   if ((int)num_var_db != num_var) {
-    exerrval = EX_FATAL;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: # of variables doesn't match those defined in file id %d", exoid);
-    ex_err("ex_get_object_truth_vector", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_object_truth_vector", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (statust != NC_NOERR) {
@@ -200,11 +198,10 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
     status = nc_get_vara_int(exoid, tabid, start, count, var_vec);
 
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get truth vector from file id %d", exoid);
-      ex_err("ex_get_object_truth_vector", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_object_truth_vector", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

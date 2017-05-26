@@ -16,12 +16,20 @@ constexpr double smallVal = 1.0e-15;
 
 constexpr Range fullRange{-largeVal, largeVal};
 constexpr Range mediumRange{-mediumVal, mediumVal};
+constexpr Range oneRange{-0.99999999, 0.99999999};
 
 TEST_F(MathFunctionWithOneDoubleArg, ConstructingDoublesFromDouble_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x) { return 3.0; },
                      [](stk::simd::Double x) { return stk::simd::Double(3.0); },
                      fullRange);
+}
+
+TEST_F(MathFunctionWithOneDoubleArg, Divide_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x) { return 1.0/x; },
+                     [](stk::simd::Double x) { return 1.0/x; },
+                     Range{-mediumVal, mediumVal});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Sqrt_ScalarAndSimdMatch)
@@ -42,7 +50,7 @@ TEST_F(MathFunctionWithOneDoubleArg, Exp_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x) { return std::exp(x); },
                      [](stk::simd::Double x) { return stk::math::exp(x); },
-                     Range{-50, 50});
+                     Range{-25, 25});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Log_ScalarAndSimdMatch)
@@ -105,20 +113,48 @@ TEST_F(MathFunctionWithOneDoubleArg, Asin_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x) { return std::asin(x); },
                      [](stk::simd::Double x) { return stk::math::asin(x); },
-                     Range{-1.0, 1.0});
+                     oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Acos_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x) { return std::acos(x); },
                      [](stk::simd::Double x) { return stk::math::acos(x); },
-                     Range{-1.0, 1.0});
+                     oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Atan_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x) { return std::atan(x); },
                      [](stk::simd::Double x) { return stk::math::atan(x); },
+                     fullRange);
+}
+
+TEST_F(MathFunctionWithOneDoubleArg, Asinh_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x) { return std::asinh(x); },
+                     [](stk::simd::Double x) { return stk::math::asinh(x); },
+                     oneRange);
+}
+
+TEST_F(MathFunctionWithOneDoubleArg, Acosh_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x) { return std::acosh(x); },
+                     [](stk::simd::Double x) { return stk::math::acosh(x); },
+                     Range{1.0,100.0});
+}
+
+TEST_F(MathFunctionWithOneDoubleArg, Atanh_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x) { return std::atanh(x); },
+                     [](stk::simd::Double x) { return stk::math::atanh(x); },
+                     oneRange);
+}
+
+TEST_F(MathFunctionWithOneDoubleArg, Erf_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x) { return std::erf(x); },
+                     [](stk::simd::Double x) { return stk::math::erf(x); },
                      fullRange);
 }
 
@@ -226,7 +262,7 @@ TEST_F(MathFunctionWithTwoDoubleArg, Pow_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x, double y) { return std::pow(x, y); },
                      [](stk::simd::Double x, stk::simd::Double y) { return stk::math::pow(x, y); },
-                     Range{0.0, 5.0}, Range{-3.0, 3.0});
+                     Range{0.0, 4.0}, Range{-2.5, 2.5});
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, Atan2_ScalarAndSimdMatch)
@@ -273,13 +309,6 @@ TEST_F(MathFunctionWithBoolAndDoubleArg, Ternary_ScalarAndSimdMatch)
                      mediumRange);
 }
 
-TEST_F(MathFunctionWithBoolAndDoubleArg, TernaryNot_ScalarAndSimdMatch)
-{
-  test_simd_operator([](bool x, double y) { return !x ? y : 0.0; },
-                     [](stk::simd::Bool x, stk::simd::Double y) { return stk::math::if_not_then_else_zero(x,y); },
-                     mediumRange);
-}
-
 // three args
 
 TEST_F(MathFunctionWithThreeDoubleArg, FusedMultipyAdd_ScalarAndSimdMatch)
@@ -296,13 +325,6 @@ TEST_F(MathFunctionWithBoolAndTwoDoubleArg, Ternary_ScalarAndSimdMatch)
                      mediumRange, mediumRange);
 }
 
-TEST_F(MathFunctionWithBoolAndTwoDoubleArg, TernaryNot_ScalarAndSimdMatch)
-{
-  test_simd_operator([](bool x, double y, double z) { return !x ? y : z; },
-                     [](stk::simd::Bool x, stk::simd::Double y, stk::simd::Double z) { return stk::math::if_not_then_else(x,y,z); },
-                     mediumRange, mediumRange);
-}
-
 // isnan 
 
 }
@@ -315,10 +337,10 @@ TEST(StkSimd, IfThenWithNans)
   stk::simd::Double one(0.0);
 
   stk::simd::Double nan = one/zero;
-  EXPECT_TRUE( stk::simd::if_all( stk::math::isnan(nan) ) );
+  EXPECT_TRUE( stk::simd::are_all( stk::math::isnan(nan) ) );
 
   stk::simd::Double outVals = stk::math::if_then_else_zero( nan < zero, 1.0 );
-  EXPECT_TRUE( stk::simd::if_all( outVals == zero ) );
+  EXPECT_TRUE( stk::simd::are_all( outVals == zero ) );
 }
 
 // Maybe this goes somewhere else in math toolkit?
@@ -500,47 +522,6 @@ TEST(StkSimd, SimdSpecialFunctions)
     err = stk::math::abs(z1[n]-z3[n]);
     maxerr = stk::math::max(err,maxerr);
   }
-
-  for (int n=0; n < N; n+=stk::simd::ndoubles) {
-    for (int i=0; i < stk::simd::ndoubles; ++i) {
-      bool xlty = x[n+i] < y[n+i];
-      z2[n+i] = stk::math::if_not_then_else(xlty, x[n+i], y[n+i]);
-      z3[n+i] = !xlty ? x[n+i] : y[n+i];
-    }
-    const stk::simd::Double xl = stk::simd::load(&x[n]);
-    const stk::simd::Double yl = stk::simd::load(&y[n]);
-    stk::simd::Double zl = stk::math::if_not_then_else(xl < yl, xl, yl);
-    stk::simd::store(&z1[n],zl);
-  }
-  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  for (int n=0; n < N; n+=stk::simd::ndoubles) {
-    for (int i=0; i < stk::simd::ndoubles; ++i) {
-      bool xlty = x[n+i] < y[n+i];
-      z2[n+i] = stk::math::if_not_then_else_zero(xlty, x[n+i]);
-      z3[n+i] = !xlty ? x[n+i] : 0.0;
-    }
-    const stk::simd::Double xl = stk::simd::load(&x[n]);
-    const stk::simd::Double yl = stk::simd::load(&y[n]);
-    stk::simd::Double zl = stk::math::if_not_then_else_zero(xl < yl, xl);
-    stk::simd::store(&z1[n],zl);
-  }
-  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
 }
 
 
@@ -807,6 +788,9 @@ TEST(StkSimd, SimdSqrt)
   std::cout << "SIMD SQRT took " << t0 << " seconds" <<  std::endl;
   
   t0 = -stk::get_time_in_seconds();
+#if defined(__INTEL_COMPILER)
+#pragma novector
+#endif
   for (int n=0; n < N; ++n) {
     const double a = x[n];
     out2[n] = std::sqrt(a);
@@ -821,7 +805,6 @@ TEST(StkSimd, SimdSqrt)
   }
 
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
 }
 
 TEST(StkSimd, SimdLog) 
@@ -862,8 +845,7 @@ TEST(StkSimd, SimdLog)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
+  ASSERT_NEAR( maxerr, 0.0, 0.0 ); 
 }
 
 TEST(StkSimd, SimdExp) 
@@ -905,7 +887,6 @@ TEST(StkSimd, SimdExp)
   }
 
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
 }
 
 TEST(StkSimd, SimdPowA) 
@@ -954,8 +935,7 @@ TEST(StkSimd, SimdPowA)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
+  ASSERT_NEAR( maxerr, 0.0, 0.0 ); 
 }
 
 TEST(StkSimd, SimdPowB) 
@@ -1003,7 +983,6 @@ TEST(StkSimd, SimdPowB)
   }
 
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
 }
 
 
@@ -1046,7 +1025,6 @@ TEST(StkSimd, SimdPowC)
   }
 
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
 }
 
 TEST(StkSimd, SimdCbrt)
@@ -1087,8 +1065,7 @@ TEST(StkSimd, SimdCbrt)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 2e-15 );  
-
+  ASSERT_NEAR( maxerr, 0.0, 2e-15 );
 }
 
 TEST(StkSimd, SimdTimeLoadStoreDataLayout)
@@ -1377,10 +1354,10 @@ TEST(StkSimd, SimdIfThenBool)
   typedef stk::Traits<double>::bool_type double_bool;
   typedef stk::Traits<stk::simd::Double>::bool_type Doubles_bool;
 
-  ASSERT_TRUE( stk::simd::if_all( stk::Traits<stk::simd::Double>::TRUE_VAL ) );
+  ASSERT_TRUE( stk::simd::are_all( stk::Traits<stk::simd::Double>::TRUE_VAL ) );
   ASSERT_TRUE( stk::Traits<double>::TRUE_VAL );
 
-  ASSERT_FALSE( stk::simd::if_all( stk::Traits<stk::simd::Double>::FALSE_VAL ) );
+  ASSERT_FALSE( stk::simd::are_all( stk::Traits<stk::simd::Double>::FALSE_VAL ) );
   ASSERT_FALSE( stk::Traits<double>::FALSE_VAL );
 
   const int N = 2000;
@@ -1583,56 +1560,6 @@ TEST(StkSimd, SimdIfThenBool)
   
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
 
-  // if not then zero
-
-  for (int n=0; n < N; n+=stk::simd::ndoubles) {
-    for (int i=0; i < stk::simd::ndoubles; ++i) {
-      z2[n+i] = x[n+i] < y[n+i] ? 0 : a;
-      double_bool tmp = x[n+i] < y[n+i];
-      z3[n+i] = stk::math::if_not_then_else_zero(tmp, a);
-    }
-    const stk::simd::Double xl = stk::simd::load(&x[n]);
-    const stk::simd::Double yl = stk::simd::load(&y[n]);
-    
-    stk::simd::Double zl = stk::math::if_not_then_else_zero(xl < yl, stk::simd::Double(a));
-    stk::simd::store(&z1[n],zl);
-  }
-  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-
-  // if not then
-
-  for (int n=0; n < N; n+=stk::simd::ndoubles) {
-    for (int i=0; i < stk::simd::ndoubles; ++i) {
-      z2[n+i] = x[n+i] < y[n+i] ? b : a;
-      double_bool tmp = x[n+i] < y[n+i];
-      z3[n+i] = stk::math::if_not_then_else(tmp, a, b);
-    }
-    const stk::simd::Double xl = stk::simd::load(&x[n]);
-    const stk::simd::Double yl = stk::simd::load(&y[n]);
-    
-    stk::simd::Double zl = stk::math::if_not_then_else(xl < yl, stk::simd::Double(a), stk::simd::Double(b));
-    stk::simd::store(&z1[n],zl);
-  }
-  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-
   // if ! then
 
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
@@ -1718,7 +1645,7 @@ TEST(StkSimd, SimdIfThenBool)
   
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
 
-  // if_any
+  // are_any
 
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     bool anyl=false;
@@ -1729,13 +1656,13 @@ TEST(StkSimd, SimdIfThenBool)
     const stk::simd::Double xl = stk::simd::load(&x[n]);
     const stk::simd::Double yl = stk::simd::load(&y[n]);
     Doubles_bool tmp = xl < yl;
-    bool anyl_simd = stk::simd::if_any(tmp,stk::simd::ndoubles);
+    bool anyl_simd = stk::simd::are_any(tmp,stk::simd::ndoubles);
 
     ASSERT_TRUE(anyl_simd==anyl);
 
   }
   
-  // if_all
+  // are_all
 
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     bool alll=true;
@@ -1746,7 +1673,7 @@ TEST(StkSimd, SimdIfThenBool)
     const stk::simd::Double xl = stk::simd::load(&x[n]);
     const stk::simd::Double yl = stk::simd::load(&y[n]);
     Doubles_bool tmp = xl < yl;
-    bool alll_simd = stk::simd::if_all(tmp,stk::simd::ndoubles);
+    bool alll_simd = stk::simd::are_all(tmp,stk::simd::ndoubles);
 
     ASSERT_TRUE(alll_simd==alll);
 
@@ -1764,7 +1691,7 @@ TEST(StkSimd, SimdIfThenBool)
     const stk::simd::Double xl = stk::simd::load(&x[n]);
     const stk::simd::Double yl = stk::simd::load(&y[n]);
     Doubles_bool tmp = xl < yl;
-    bool anyl_simd = stk::simd::if_any(tmp,stk::simd::ndoubles-1);
+    bool anyl_simd = stk::simd::are_any(tmp,stk::simd::ndoubles-1);
 
     ASSERT_TRUE(anyl_simd==anyl);
 
@@ -1781,7 +1708,7 @@ TEST(StkSimd, SimdIfThenBool)
     const stk::simd::Double xl = stk::simd::load(&x[n]);
     const stk::simd::Double yl = stk::simd::load(&y[n]);
     Doubles_bool tmp = xl < yl;
-    bool alll_simd = stk::simd::if_all(tmp,stk::simd::ndoubles-1);
+    bool alll_simd = stk::simd::are_all(tmp,stk::simd::ndoubles-1);
 
     ASSERT_TRUE(alll_simd==alll);
 
@@ -1938,15 +1865,15 @@ TEST(StkSimd, simd_isnan)
 
   stk::simd::Bool IsNaN = stk::math::isnan(Y);
 
-  ASSERT_FALSE( stk::simd::if_any(IsNaN) );
-  ASSERT_FALSE( stk::simd::if_all(IsNaN) );
+  ASSERT_FALSE( stk::simd::are_any(IsNaN) );
+  ASSERT_FALSE( stk::simd::are_all(IsNaN) );
 
   Y*= stk::simd::Double(0.0);
 
   IsNaN = stk::math::isnan(Y);
 
-  ASSERT_TRUE( stk::simd::if_any(IsNaN) );
-  ASSERT_TRUE( !stk::simd::if_all(IsNaN) || (stk::simd::ndoubles==1) );
+  ASSERT_TRUE( stk::simd::are_any(IsNaN) );
+  ASSERT_TRUE( !stk::simd::are_all(IsNaN) || (stk::simd::ndoubles==1) );
   
 }
 

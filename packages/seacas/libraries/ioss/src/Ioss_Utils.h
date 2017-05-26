@@ -51,6 +51,7 @@ namespace Ioss {
   class Region;
   class SideBlock;
   class PropertyManager;
+  struct MeshCopyOptions;
 }
 
 #if __cplusplus > 199711L
@@ -246,6 +247,11 @@ namespace Ioss {
     // even though a history file is just a collection of global variables with no
     // real mesh. This routine will add the mesh portion to a history file.
     static void generate_history_mesh(Ioss::Region *region);
+
+    // Copy the mesh in 'region' to 'output_region'.  Behavior can be controlled
+    // via options in 'options'
+    static void copy_database(Ioss::Region &region, Ioss::Region &output_region,
+                              Ioss::MeshCopyOptions &options);
   };
 }
 #endif

@@ -31,18 +31,19 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "ED_SystemInterface.h" // for SystemInterface, interface
 #include "exo_entity.h"
-#include "exodusII.h"     // for ex_get_var, ex_inquire_int, etc
-#include "smart_assert.h" // for SMART_ASSERT
-#include "stringx.h"      // for to_lower
-#include "util.h"         // for TOPTR, free_name_array, etc
-#include <cstdlib>        // for exit, nullptr
-#include <cstring>        // for strlen
-#include <iostream>       // for operator<<, basic_ostream, etc
-#include <string>         // for string, char_traits, etc
-#include <sys/types.h>    // for int64_t
-#include <vector>         // for vector
+#include <cstdint>                      // for int64_t
+#include <cstdlib>                      // for exit
+#include <cstring>                      // for strlen
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <string>                       // for string, char_traits, etc
+#include <vector>                       // for vector
+#include "ED_SystemInterface.h"         // for ERROR
+#include "exodusII.h"                   // for ex_get_var, EX_INVALID_ID, etc
+#include "smart_assert.h"               // for SMART_ASSERT
+#include "stringx.h"                    // for to_lower
+#include "terminal_color.h"             // for operator<<, normal, red
+#include "util.h"                       // for TOPTR, free_name_array, etc
 
 namespace {
   template <class T> static std::string to_string(const T &t)

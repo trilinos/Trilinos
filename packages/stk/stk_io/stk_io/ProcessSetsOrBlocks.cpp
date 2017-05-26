@@ -244,8 +244,8 @@ void send_element_side_to_element_owner(stk::CommSparse &comm,
         const stk::mesh::EntityIdProcMap::const_iterator iter = elemIdMovedToProc.find(sideToMove.elem);
         ThrowRequireWithSierraHelpMsg(iter!=elemIdMovedToProc.end());
         int destProc = iter->second;
-        comm.send_buffer(destProc).pack<stk::mesh::EntityId>(sideToMove.elem);
-        comm.send_buffer(destProc).pack<unsigned>(sideToMove.sideOrdinal);
+        comm.send_buffer(destProc).pack(sideToMove.elem);
+        comm.send_buffer(destProc).pack(sideToMove.sideOrdinal);
         pack_vector_to_proc(comm, sideToMove.partOrdinals, destProc);
     }
 }
@@ -254,8 +254,8 @@ void unpack_and_declare_element_side(stk::CommSparse & comm, stk::mesh::BulkData
 {
     stk::mesh::EntityId elemId;
     unsigned sideOrdinal;
-    comm.recv_buffer(procId).unpack<stk::mesh::EntityId>(elemId);
-    comm.recv_buffer(procId).unpack<unsigned>(sideOrdinal);
+    comm.recv_buffer(procId).unpack(elemId);
+    comm.recv_buffer(procId).unpack(sideOrdinal);
     stk::mesh::OrdinalVector partOrdinals;
     unpack_vector_from_proc(comm, partOrdinals, procId);
 

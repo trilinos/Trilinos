@@ -33,24 +33,23 @@
  *
  */
 #include "EP_SystemInterface.h"
+#include <ctype.h>                      // for tolower
+#include <limits.h>                     // for INT_MAX
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for sort, transform
+#include <cstdlib>                      // for strtol, abs, exit, strtoul, etc
+#include <cstring>                      // for strchr, strlen
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <string>                       // for string, char_traits, etc
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector
+#include "EP_Version.h"                 // for qainfo
+#include "GetLongOpt.h"                 // for GetLongOption, etc
+#include "SL_tokenize.h"                // for tokenize
 
-#include "GetLongOpt.h" // for GetLongOption, etc
 
-#include <algorithm>
-#include <ctype.h> // for tolower
-#include <iostream>
-#include <stddef.h> // for size_t
-#include <string>   // for string, basic_string, etc
-#include <utility>  // for pair, make_pair
-#include <vector>
 
-#include <cctype>
-#include <cstdlib>
-#include <cstring>
-#include <limits.h>
 
-#include "EP_Version.h"
-#include "SL_tokenize.h"
 
 namespace {
   int case_strcmp(const std::string &s1, const std::string &s2)

@@ -33,8 +33,8 @@
  *
  */
 
-#include "exodusII.h"  // for ex_get_partial_num_map, etc
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_get_partial_num_map, etc
 
 /*
  * reads the element map with specified ID

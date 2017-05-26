@@ -54,10 +54,6 @@
 #include <unistd.h>
 #include <vector>
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #define OUTPUT                                                                                     \
   if (rank == 0)                                                                                   \
   std::cerr

@@ -30,7 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <chrono>
+#include <chrono>                       // for duration, etc
+#include <ratio>                        // for ratio
 double seacas_timer()
 {
   static auto                   start = std::chrono::high_resolution_clock::now();

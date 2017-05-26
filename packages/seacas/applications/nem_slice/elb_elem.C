@@ -34,12 +34,13 @@
  */
 
 #include "elb_elem.h"
-#include "elb_err.h"  // for error_report, Gen_Error
-#include "elb_util.h" // for in_list
-#include <cstddef>    // for size_t
-#include <cstdio>     // for sprintf
-#include <cstdlib>    // for exit
-#include <cstring>    // for strncasecmp
+#include <cstddef>                      // for size_t
+#include <cstdio>                       // for sprintf
+#include <cstdlib>                      // for exit
+#include <cstring>                      // for strncasecmp
+#include <vector>                       // for vector
+#include "elb_err.h"                    // for error_report, Gen_Error
+#include "elb_util.h"                   // for in_list
 
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()

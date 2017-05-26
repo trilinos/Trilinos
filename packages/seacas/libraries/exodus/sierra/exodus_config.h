@@ -1,3 +1,13 @@
+/* NOTE: Definitions in this file only control building via the Sierra
+ *       bjam system For SEACAS and Trilinos builds, these are all controlled
+ *       in the cmake configure step
+ */
+
+/* Enable this block to build a thread-safe version of the exodus library */
+#if 0
+#define EXODUS_THREADSAFE
+#endif
+
 /* Deprectated Code Handling Options:
  * 1. Ignore -- treat deprecated functions as normal non-deprecated functions (default)
  * 2. Delete -- the deprecated functions are not defined or compiled (SEACAS_HIDE_DEPRECATED_CODE is
@@ -24,3 +34,4 @@
 #  endif
 #endif
 #endif
+

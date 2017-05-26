@@ -292,7 +292,7 @@ namespace Ioex {
     }
   }
 
-  bool set_id(const Ioss::GroupingEntity *entity, Ioex::EntityIdSet *idset)
+  bool set_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::EntityIdSet *idset)
   {
     // See description of 'get_id' function.  This function just primes
     // the idset with existing ids so that when we start generating ids,
@@ -307,8 +307,7 @@ namespace Ioex {
       int64_t id = entity->get_property(id_prop).get_int();
 
       // See whether it already exists...
-      int type = static_cast<int>(entity->type());
-      succeed = idset->insert(std::make_pair(type, id)).second;
+      succeed = idset->insert(std::make_pair(static_cast<int>(type), id)).second;
       if (!succeed) {
         // Need to remove the property so it doesn't cause problems
         // later...
@@ -341,7 +340,7 @@ namespace Ioex {
     return 0;
   }
 
-  int64_t get_id(const Ioss::GroupingEntity *entity, Ioex::EntityIdSet *idset)
+  int64_t get_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::EntityIdSet *idset)
   {
     // Sierra uses names to refer to grouping entities; however,
     // exodusII requires integer ids.  When reading an exodusII file,
@@ -392,13 +391,12 @@ namespace Ioex {
     // At this point, we either have an id equal to '1' or we have an id
     // extracted from the entities name. Increment it until it is
     // unique...
-    int type = static_cast<int>(entity->type());
-    while (idset->find(std::make_pair(type, id)) != idset->end()) {
+    while (idset->find(std::make_pair(int(type), id)) != idset->end()) {
       ++id;
     }
 
     // 'id' is a unique id for this entity type...
-    idset->insert(std::make_pair(type, id));
+    idset->insert(std::make_pair(static_cast<int>(type), id));
     Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
     new_entity->property_add(Ioss::Property(id_prop, id));
     return id;
@@ -514,7 +512,9 @@ namespace Ioex {
     std::ostringstream errmsg;
     // Create errmsg here so that the exerrval doesn't get cleared by
     // the ex_close call.
-    errmsg << "Exodus error (" << exerrval << ") " << ex_strerror(exerrval) << " at line " << lineno
+    int status;
+    ex_get_err(nullptr, nullptr, &status);
+    errmsg << "Exodus error (" << status << ") " << ex_strerror(status) << " at line " << lineno
            << " of file '" << filename << "' in function '" << function
            << "' Please report to gdsjaar@sandia.gov if you need help.";
 

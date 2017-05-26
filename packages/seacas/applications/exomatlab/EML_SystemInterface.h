@@ -36,7 +36,6 @@
 
 #include <EML_CodeTypes.h> // for StringIdVector
 #include <GetLongOpt.h>    // for GetLongOption
-#include <iosfwd>          // for ostream
 #include <string>          // for string
 
 class SystemInterface

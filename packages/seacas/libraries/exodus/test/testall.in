@@ -41,12 +41,15 @@ if [ "$1" == "netcdf4" ]; then
    export EXODUS_NETCDF4=quiet
 fi
 
+
 #set PREFIX = "valgrind --tool=memcheck"
 PREFIX=""
 SUFFIX=""
 BINDIR=@CMAKE_CURRENT_BINARY_DIR@
 SRCDIR=@CMAKE_CURRENT_SOURCE_DIR@
 NCDUMP=@NETCDF_NCDUMP@
+THREAD_SAFE=@SEACASExodus_ENABLE_THREADSAFE@
+
 DIFF="diff -w"
 
 rm -f test.output
@@ -240,3 +243,55 @@ echo "test-empty - read an empty (only ex_create called) exodus file..."
 echo "begin test-empty" >> test.output
 ${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test-empty.dmp | tee test-empty.res
 echo "end test-empty" >> test.output
+
+if [ "$THREAD_SAFE" == "ON" ]; then
+
+echo "test_ts_nvar - each thread writes data for a single nodal variable..."
+echo "begin test_ts_nvar" >> test.output
+${PREFIX} ${BINDIR}/test_ts_nvar${SUFFIX} >> test.output
+echo "end test_ts_nvar" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/test_ts_nvar.dmp | tee testwt-long-name.res
+ 
+echo "test_ts_nvar_rd - each thread reads data for a single nodal variable..."
+echo "begin test_ts_nvar_rd" >> test.output
+${PREFIX} ${BINDIR}/test_ts_nvar_rd${SUFFIX} | ${DIFF} - ${SRCDIR}/test_ts_nvar_rd.dmp | tee test_ts_nvar_rd.res
+echo "end test_ts_nvar_rd" >> test.output
+
+ 
+echo "test_ts_partial_nvar - each thread writes data for a single nodal variable..."
+echo "begin test_ts_partial_nvar" >> test.output
+${PREFIX} ${BINDIR}/test_ts_partial_nvar${SUFFIX} >> test.output
+echo "end test_ts_partial_nvar" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/test_ts_partial_nvar.dmp | tee testwt-long-name.res
+ 
+echo "test_ts_partial_nvar_rd - each thread reads data for a single nodal variable..."
+echo "begin test_ts_partial_nvar_rd" >> test.output
+${PREFIX} ${BINDIR}/test_ts_partial_nvar${SUFFIX} >> test.output
+echo "end test_ts_partial_nvar_rd" >> test.output
+${PREFIX} ${BINDIR}/test_ts_partial_nvar_rd${SUFFIX} | ${DIFF} - ${SRCDIR}/test_ts_partial_nvar_rd.dmp | tee test_ts_partial_nvar_rd.res
+echo "test_ts_files - each thread creates its own file..."
+echo "begin test_ts_files" >> test.output
+${PREFIX} ${BINDIR}/test_ts_files${SUFFIX} >> test.output
+echo "end test_ts_files" >> test.output
+mv test0.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files0.res
+mv test1.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files1.res
+mv test2.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files2.res
+mv test3.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files3.res
+mv test4.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files4.res
+mv test5.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files5.res
+mv test6.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files6.res
+mv test7.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files7.res
+echo "test_ts_errval - multiple threads calling ex_err and ex_get_err..."
+echo "begin test_ts_errval" >> test.output
+${PREFIX} ${BINDIR}/test_ts_errval${SUFFIX} >> test.output
+echo "end test_ts_errval" >> test.output
+fi
+

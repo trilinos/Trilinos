@@ -53,6 +53,7 @@
 #include "BelosSolverManager.hpp"
 
 #include "BelosCGIter.hpp"
+#include "BelosCGSingleRedIter.hpp"
 #include "BelosBlockCGIter.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
@@ -191,6 +192,8 @@ namespace Belos {
      *                    conjugate-gradient solver. Default: 1
      *   - "Adaptive Block Size" - a \c bool specifying whether the block size can be modified
      *                             throughout the solve. Default: true
+     *   - "Use Single Reduction" - a \c bool specifying whether the iteration should apply a single
+     *                              reduction (only for block size of 1). Default: false
      *   - "Maximum Iterations" - an \c int specifying the maximum number of iterations the
      *                            underlying solver is allowed to perform. Default: 1000
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms
@@ -359,6 +362,7 @@ namespace Belos {
     static const int maxIters_default_;
     static const bool adaptiveBlockSize_default_;
     static const bool showMaxResNormOnly_default_;
+    static const bool useSingleReduction_default_;
     static const int blockSize_default_;
     static const int verbosity_default_;
     static const int outputStyle_default_;
@@ -393,7 +397,7 @@ namespace Belos {
 
     //! Current solver values
     int blockSize_, verbosity_, outputStyle_, outputFreq_;
-    bool adaptiveBlockSize_, showMaxResNormOnly_;
+    bool adaptiveBlockSize_, showMaxResNormOnly_, useSingleReduction_;
     std::string orthoType_, resScale_;
 
     //! Prefix label for all the timers.
@@ -422,6 +426,9 @@ const bool BlockCGSolMgr<ScalarType,MV,OP,true>::adaptiveBlockSize_default_ = tr
 
 template<class ScalarType, class MV, class OP>
 const bool BlockCGSolMgr<ScalarType,MV,OP,true>::showMaxResNormOnly_default_ = false;
+
+template<class ScalarType, class MV, class OP>
+const bool BlockCGSolMgr<ScalarType,MV,OP,true>::useSingleReduction_default_ = false;
 
 template<class ScalarType, class MV, class OP>
 const int BlockCGSolMgr<ScalarType,MV,OP,true>::blockSize_default_ = 1;
@@ -463,6 +470,7 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::BlockCGSolMgr() :
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  useSingleReduction_(useSingleReduction_default_),
   orthoType_(orthoType_default_),
   resScale_(resScale_default_),
   label_(label_default_),
@@ -488,6 +496,7 @@ BlockCGSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  useSingleReduction_(useSingleReduction_default_),
   orthoType_(orthoType_default_),
   resScale_(resScale_default_),
   label_(label_default_),
@@ -543,6 +552,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
     // Update parameter in our list.
     params_->set("Adaptive Block Size", adaptiveBlockSize_);
+  }
+
+  // Check if the user is requesting the single-reduction version of CG (only for blocksize == 1)
+  if (params->isParameter("Use Single Reduction")) {
+    useSingleReduction_ = params->get("Use Single Reduction", useSingleReduction_default_);
   }
 
   // Check to see if the timer label changed.
@@ -810,6 +824,8 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
+    pl->set("Use Single Reduction", useSingleReduction_default_,
+      "Use single reduction iteration when the block size is one.");
     pl->set("Implicit Residual Scaling", resScale_default_,
       "The type of scaling used in the residual convergence test.");
     pl->set("Timer Label", label_default_,
@@ -897,10 +913,18 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
   RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
   if (blockSize_ == 1) {
     // Standard (nonblock) CG is faster for the special case of a
-    // block size of 1.
-    block_cg_iter =
-      rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_,
-                                         outputTest_, plist));
+    // block size of 1.  A single reduction iteration can also be used
+    // if collectives are more expensive than vector updates.
+    if (useSingleReduction_) {
+      block_cg_iter =
+        rcp (new CGSingleRedIter<ScalarType,MV,OP> (problem_, printer_,
+                                                    outputTest_, plist));
+    }
+    else {
+      block_cg_iter =
+        rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_,
+                                           outputTest_, plist));
+    }
   } else {
     block_cg_iter =
       rcp (new BlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_,

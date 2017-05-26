@@ -79,16 +79,15 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
 /// @{
 ///
 
-
 //
-//  Provide single switch point for gemini interface options
+//  Provide single switch point for nemo interface options
 //
-  enum GeminiSCIVersion {
-    GEMINI_SCI_UNKNOWN = 0,
-    NEMO_1 = 101
-  };
+enum NemoVersion {
+  NEMO_UNKNOWN = 0,
+  NEMO_1       = 101
+};
 
-  GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver=GEMINI_SCI_UNKNOWN);
+NemoVersion GetNemoVersion(NemoVersion ver = NEMO_UNKNOWN);
 
 bool is_comm_valid();
 
@@ -381,9 +380,9 @@ int peer_group();
 
 
 /**
- * @brief Function <b>parallel_lag_master</b> returns the global rank of the Gemini Euler application.
+ * @brief Function <b>parallel_lag_master</b> returns the global rank of the Nemo Euler application.
  *
- * @return			a <b>int</b> value of the global rank of the Gemini Euler
+ * @return			a <b>int</b> value of the global rank of the Nemo Euler
  *				application.
  */
 int parallel_fluid_master();

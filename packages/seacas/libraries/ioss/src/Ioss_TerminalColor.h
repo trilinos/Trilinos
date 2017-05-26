@@ -41,7 +41,7 @@
 //     trmclr::Style basicStyle(trmclr::Attribute::DEFAULT);
 
 //     std::cout << fancyStyle << "Hello "
-//               << basicStyle << "World!" << std::endl;
+//               << basicStyle << "World!\n";
 
 //     return 0;
 // }

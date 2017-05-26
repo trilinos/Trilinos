@@ -119,7 +119,7 @@ import modules ;
 
 exe stk_util_doc_test
   :
-    [ glob $(stk_util-root)/testsForDocumentation/*.cpp ]
+    [ glob $(stk_util-root)/../stk_doc_tests/stk_util/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_util_parallel
     stk_util_util
@@ -132,15 +132,16 @@ exe stk_util_doc_test
     /tpl/trilinos//tpi
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
+    <include>$(stk_util-root)/../stk_doc_tests/stk_util
   ;
 
 exe stk_util_utest
   :
-    [ glob $(stk_util-root)/unit_tests/*.cpp ]
-    [ glob $(stk_util-root)/unit_tests/util/*.cpp ]
-    [ glob $(stk_util-root)/unit_tests/environment/*.cpp ]
-    [ glob $(stk_util-root)/unit_tests/command_line/*.cpp ]
-    [ glob $(stk_util-root)/unit_tests/diag/*.cpp ]
+    [ glob $(stk_util-root)/../stk_unit_tests/stk_util/*.cpp ]
+    [ glob $(stk_util-root)/../stk_unit_tests/stk_util/util/*.cpp ]
+    [ glob $(stk_util-root)/../stk_unit_tests/stk_util/environment/*.cpp ]
+    [ glob $(stk_util-root)/../stk_unit_tests/stk_util/command_line/*.cpp ]
+    [ glob $(stk_util-root)/../stk_unit_tests/stk_util/diag/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_util_parallel
     stk_util_util
@@ -154,11 +155,12 @@ exe stk_util_utest
     /tpl/trilinos//tpi
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
+    <include>$(stk_util-root)/../stk_unit_tests/stk_util
   ;
 
 exe stk_util_parallel_utest
   :
-    [ glob $(stk_util-root)/unit_tests/parallel/*.cpp ]
+    [ glob $(stk_util-root)/../stk_unit_tests/stk_util/parallel/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_util_parallel
     stk_util_use_case
@@ -169,6 +171,7 @@ exe stk_util_parallel_utest
     /tpl/boost-program-options//boost_program_options
     /mpi//mpi
   : <tag>@sierra-exec-tag
+    <include>$(stk_util-root)/../stk_unit_tests/stk_util/parallel
   ;
 
 lib stk_util_parallel

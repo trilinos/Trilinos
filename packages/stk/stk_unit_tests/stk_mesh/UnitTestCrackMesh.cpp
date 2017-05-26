@@ -34,8 +34,8 @@
 #include <gtest/gtest.h>                // for AssertHelper, TEST, etc
 #include <stddef.h>                     // for size_t
 #include <ostream>                      // for basic_ostream::operator<<
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"

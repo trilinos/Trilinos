@@ -33,10 +33,9 @@
  *
  */
 
-#include "exodusII.h"     // for ex_set, ex_get_set_param, etc
-#include "exodusII_int.h" // for EX_FATAL, EX_NOERR
-#include <stddef.h>       // for size_t
-#include <stdlib.h>       // for NULL
+#include "exodusII.h"     // for ex_set, EX_FATAL, EX_NOERR, etc
+#include "exodusII_int.h" // for ex_check_valid_file_id
+#include <stddef.h>       // for NULL, size_t
 
 int ex_get_sets(int exoid, size_t set_count, struct ex_set *sets)
 {
@@ -44,6 +43,7 @@ int ex_get_sets(int exoid, size_t set_count, struct ex_set *sets)
   int    status = EX_NOERR;
   int    stat;
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
 
   for (i = 0; i < set_count; i++) {
@@ -78,5 +78,5 @@ int ex_get_sets(int exoid, size_t set_count, struct ex_set *sets)
       }
     }
   }
-  return status;
+  EX_FUNC_LEAVE(status);
 }

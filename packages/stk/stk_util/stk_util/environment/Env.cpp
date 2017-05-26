@@ -64,20 +64,16 @@
 
 namespace boost { namespace program_options { class options_description; } }
 
-
-
-
-
 using namespace std;
 
 namespace sierra {
 
 std::string
 format_time(
-  double	t,
-  const char *	format)
+  double t,
+  const char *format)
 {
-  time_t	time = static_cast<time_t>(t);
+  time_t time = static_cast<time_t>(t);
   char s[128];
 
   ::strftime(s, sizeof(s), format, ::localtime(&time));
@@ -88,15 +84,16 @@ format_time(
 namespace Env {
 
 //
-//  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
+//  Set or get the nemo version, if passed value is not unknown, set the version, either way return the version
 //
-GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver) {
-  static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_UNKNOWN;  //This is the default gemini version
-  if(ver != GEMINI_SCI_UNKNOWN) {
-    GeminiSCIVersionValue = ver;
+NemoVersion GetNemoVersion(NemoVersion ver) 
+{
+  static NemoVersion nemoVersion = NEMO_UNKNOWN;  //This is the default nemo version
+  if(ver != NEMO_UNKNOWN) {
+    nemoVersion = ver;
   }
-  ThrowRequire(GeminiSCIVersionValue != GEMINI_SCI_UNKNOWN);
-  return GeminiSCIVersionValue;
+  ThrowRequire(nemoVersion != NEMO_UNKNOWN);
+  return nemoVersion;
 }
 
 const std::string &
@@ -135,11 +132,13 @@ developer_mode()
   return !get_param("developer-mode").empty();
 }
 
-void setInputFileName(std::string name) {
+void setInputFileName(std::string name) 
+{
   stk::EnvData::instance().m_inputFile = name;
 }
 
-std::string getInputFileName() {
+std::string getInputFileName() 
+{
   return stk::EnvData::instance().m_inputFile;
 }
 
@@ -171,7 +170,8 @@ architecture()
 }
 
 const std::string
-working_directory() {
+working_directory() 
+{
   char cwd[PATH_MAX];
   std::string directory = get_param("directory");
   if (directory[0] != '/' && getcwd(cwd, PATH_MAX) != nullptr) {
@@ -181,13 +181,11 @@ working_directory() {
   return directory;
 }
 
-
 std::ostream &
 output()
 {
   return stk::EnvData::instance().m_output;
 }
-
 
 std::ostream &
 outputP0()
@@ -195,12 +193,11 @@ outputP0()
   return *stk::EnvData::instance().m_outputP0;
 }
 
-
 std::ostream &
-outputNull() {
+outputNull() 
+{
   return stk::EnvData::instance().m_outputNull;
 }
-
 
 const char *
 section_separator()
@@ -245,10 +242,9 @@ cpu_now()
 #endif
 }
 
-
 std::string
 section_title(
-  const std::string &	title)
+  const std::string &title)
 {
   static size_t s_sectionSeparatorLength = std::strlen(section_separator());
 
@@ -258,12 +254,13 @@ section_title(
   return strout.str();
 }
 
-
-int parallel_size() {
+int parallel_size() 
+{
   return stk::EnvData::instance().m_parallelSize;
 }
 
-int parallel_rank() {
+int parallel_rank() 
+{
   return stk::EnvData::instance().m_parallelRank;
 }
 
@@ -285,15 +282,18 @@ parallel_world_comm()
   return stk::EnvData::instance().m_worldComm;
 }
 
-int parallel_lag_master() {
+int parallel_lag_master() 
+{
   return stk::EnvData::instance().m_execMap[EXEC_TYPE_LAG].m_master;
 }
 
-int parallel_fluid_master() {
+int parallel_fluid_master() 
+{
   return stk::EnvData::instance().m_execMap[EXEC_TYPE_FLUID].m_master;
 }
 
-int peer_group() {
+int peer_group() 
+{
   return stk::EnvData::instance().m_execMap[EXEC_TYPE_PEER].m_master;
 }
 
@@ -325,7 +325,6 @@ request_shutdown(bool shutdown)
   stk::EnvData::instance().m_shutdownRequested = shutdown;
 }
 
-
 bool
 is_shutdown_requested()
 {
@@ -341,8 +340,8 @@ is_shutdown_requested()
   return shutdown_requested != 0;
 }
 
-
-void abort() {
+void abort() 
+{
   stk::EnvData &env_data = stk::EnvData::instance();
 
   // Cannot be sure of parallel synchronization status; therefore, no communications can
@@ -363,17 +362,17 @@ void abort() {
   std::cerr.flush();
   std::cout.flush();
 
-  ::sleep(1);					// Give the other processors a chance at
-						// catching up, seems to help hanging problems.
+  ::sleep(1); // Give the other processors a chance at
+              // catching up, seems to help hanging problems.
 #if defined(STK_HAS_MPI)
-  MPI_Abort(env_data.m_parallelComm, MPI_ERR_OTHER);	// First try to die
+  MPI_Abort(env_data.m_parallelComm, MPI_ERR_OTHER); // First try to die
 #endif
-  std::exit( EXIT_FAILURE );                    // Second try to die
+  std::exit( EXIT_FAILURE );                         // Second try to die
 }
 
 const std::string &
 get_param(
-  const char * const	option)
+  const char * const option)
 {
   if (stk::EnvData::instance().m_vm.count(option)) {
     if (stk::EnvData::instance().m_vm[option].as<std::string>().empty())

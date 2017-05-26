@@ -38,11 +38,11 @@
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_mesh/fixtures/GearsFixture.hpp>  // for GearsFixture, etc
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_mesh/fixtures/TetFixture.hpp>  // for TetFixture
-#include <stk_mesh/fixtures/degenerate_mesh.hpp>
-#include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>  // for GearsFixture, etc
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_unit_tests/stk_mesh_fixtures/TetFixture.hpp>  // for TetFixture
+#include <stk_unit_tests/stk_mesh_fixtures/degenerate_mesh.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/heterogeneous_mesh.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD

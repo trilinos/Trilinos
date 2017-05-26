@@ -95,6 +95,26 @@ TEST(StkSimd, StkMathDouble_atan2)
   EXPECT_EQ( stk::math::atan2(a,b), std::atan2(a,b) );
 }
 
+TEST(StkSimd, StkMathDouble_asinh)
+{
+  EXPECT_EQ( stk::math::asinh(f), std::asinh(f) );
+}
+
+TEST(StkSimd, StkMathDouble_acosh)
+{
+  EXPECT_EQ( stk::math::acosh(f+1.0), std::acosh(f+1.0) );
+}
+
+TEST(StkSimd, StkMathDouble_atanh)
+{
+  EXPECT_EQ( stk::math::atanh(f), std::atanh(f) );
+}
+
+TEST(StkSimd, StkMathDouble_erf)
+{
+  EXPECT_EQ( stk::math::erf(f), std::erf(f) );
+}
+
 TEST(StkSimd, StkMathDouble_multiplysign)
 {
   EXPECT_EQ( stk::math::multiplysign(a,c), a * (c>=0 ? 1.0 : -1.0) );
@@ -126,14 +146,6 @@ TEST(StkSimd, StkMathDouble_if_then)
   EXPECT_EQ( stk::math::if_then_else(false,a,b), b );
   EXPECT_EQ( stk::math::if_then_else_zero(true,a), a );
   EXPECT_EQ( stk::math::if_then_else_zero(false,a), 0 );
-}
-
-TEST(StkSimd, StkMathDouble_if_not_then)
-{
-  EXPECT_DOUBLE_EQ( stk::math::if_not_then_else(false, a, b), a );
-  EXPECT_DOUBLE_EQ( stk::math::if_not_then_else(true, a, b), b );
-  EXPECT_DOUBLE_EQ( stk::math::if_not_then_else_zero(false, a), a );
-  EXPECT_DOUBLE_EQ( stk::math::if_not_then_else_zero(true, a), 0 );
 }
 
 TEST(StkSimd, StkMathDouble_isnan)

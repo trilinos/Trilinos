@@ -32,7 +32,7 @@
 // 
 
 #include <gtest/gtest.h>
-#include <stk_mesh/fixtures/HexFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>
 #include <stk_search_util/PeriodicBoundarySearch.hpp>
 #include <iostream>
 #include <iomanip>

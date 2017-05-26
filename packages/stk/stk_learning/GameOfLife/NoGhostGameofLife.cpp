@@ -31,21 +31,13 @@ NoGhostGameofLife::NoGhostGameofLife(GameofLifeMesh& Mesh, std::string name)
 {
     finish_construction();
 }
-//NoGhostGameofLife::NoGhostGameofLife(stk::mesh::BulkData& bulkData,
-//                                     ScalarIntField& lifeField,
-//                                     ScalarIntField& neighborField,
-//                                     std::string name)
-//: m_bulkData(bulkData), m_numProcs(m_bulkData.parallel_size()),
-//  m_lifeField(lifeField), m_neighborField(neighborField), m_name(name),
-//  m_stkIo(m_bulkData.parallel())
-//{
-//    finish_construction();
-//}
+
 void NoGhostGameofLife::activate_these_ids(stk::mesh::EntityIdVector& elemIds)
 {
    for (stk::mesh::EntityId elemId : elemIds)
        activate_element_id(elemId);
 }
+
 void NoGhostGameofLife::run_game_of_life(int numSteps)
 {
     if (0 == m_time)
@@ -59,16 +51,20 @@ void NoGhostGameofLife::run_game_of_life(int numSteps)
 stk::mesh::Entity NoGhostGameofLife::element_with_id(stk::mesh::EntityId elemId)
 {
    return m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
+
 }
+
 bool NoGhostGameofLife::is_valid_entity(stk::mesh::Entity entity)
 {
     return m_bulkData.is_valid(entity);
 }
+
 unsigned NoGhostGameofLife::num_neighbors(stk::mesh::Entity elem)
 {
     return m_localElementToLocalNeighborElements[elem].size() +
             m_localElementToRemoteElementKeys[elem].size();
 }
+
 unsigned NoGhostGameofLife::num_active_elems()
 {
     unsigned count = 0;
@@ -77,8 +73,8 @@ unsigned NoGhostGameofLife::num_active_elems()
             count++;
     return count;
 }
+
 unsigned NoGhostGameofLife::num_active_neighbors(stk::mesh::Entity elem)
-// I refuse to refactor this. Screw you, Uncle Bob
 {
     unsigned numActiveNeighbors = 0;
     //local elements

@@ -35,8 +35,6 @@
 #ifndef IOCGNS_DECOMPOSITONDATA_H
 #define IOCGNS_DECOMPOSITONDATA_H
 
-#include <mpi.h>
-
 #include <string>
 #include <unordered_map>
 #include <vector>

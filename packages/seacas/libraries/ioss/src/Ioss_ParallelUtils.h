@@ -40,10 +40,6 @@
 #include <string>   // for string
 #include <vector>   // for vector
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 namespace Ioss {
 
   class ParallelUtils
@@ -123,7 +119,7 @@ namespace Ioss {
     template <typename T> void gather(std::vector<T> &my_values, std::vector<T> &result) const;
 
     void progress(const std::string &output) const;
-    
+
   private:
     MPI_Comm communicator_;
   };
@@ -214,12 +210,12 @@ namespace Ioss {
                    const std::vector<int64_t> &recvcnts, const std::vector<int64_t> &recvdisp,
                    MPI_Comm comm)
   {
-    // Wrapper to handle case where send/recv counts and displacements are 64-bit integers.
-    // Two cases:
-    // 1) They are of type 64-bit integers, but only storing data in the 32-bit integer range.
-    //    -- if (sendcnts[#proc-1] + senddisp[#proc-1] < 2^31, then we are ok
-    // 2) They are of type 64-bit integers, and storing data in the 64-bit integer range.
-    //    -- call special alltoallv which does point-to-point sends
+// Wrapper to handle case where send/recv counts and displacements are 64-bit integers.
+// Two cases:
+// 1) They are of type 64-bit integers, but only storing data in the 32-bit integer range.
+//    -- if (sendcnts[#proc-1] + senddisp[#proc-1] < 2^31, then we are ok
+// 2) They are of type 64-bit integers, and storing data in the 64-bit integer range.
+//    -- call special alltoallv which does point-to-point sends
 #if 1
     int processor_count = 0;
     MPI_Comm_size(comm, &processor_count);
@@ -252,9 +248,10 @@ namespace Ioss {
                    const std::vector<int> &recvcnts, const std::vector<int> &recvdisp,
                    MPI_Comm comm)
   {
-    return MPI_Alltoallv(TOPTR(sendbuf), (int *)TOPTR(sendcnts), (int *)TOPTR(senddisp),
-                         mpi_type(T(0)), TOPTR(recvbuf), (int *)TOPTR(recvcnts),
-                         (int *)TOPTR(recvdisp), mpi_type(T(0)), comm);
+    return MPI_Alltoallv((void *)sendbuf.data(), const_cast<int *>(sendcnts.data()),
+                         const_cast<int *>(senddisp.data()), mpi_type(T(0)), recvbuf.data(),
+                         const_cast<int *>(recvcnts.data()), const_cast<int *>(recvdisp.data()),
+                         mpi_type(T(0)), comm);
   }
 #endif
 }

@@ -52,8 +52,9 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include "exodusII.h"  // for ex_get_partial_node_set, etc
-#include <sys/types.h> // for int64_t
+#include <stddef.h>                     // for NULL
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_get_partial_set, etc
 
 /*!
  * \deprecated Use ex_get_partial_set() instead

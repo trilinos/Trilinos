@@ -56,20 +56,21 @@
    modified by Greg Sjaardema, 07/05/2012 to use matio instead of matlab libraries.
 */
 
-#include <iostream>
-#include <numeric>
-#include <string>
-#include <vector>
+#include <SL_tokenize.h>                // for tokenize
+#include <assert.h>                     // for assert
+#include <exodusII.h>                   // for ex_put_variable_param, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, printf, fprintf, etc
+#include <stdlib.h>                     // for calloc, free, exit
+#include <string.h>                     // for strtok, memcpy, strlen, etc
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <numeric>                      // for accumulate
+#include <string>                       // for char_traits, string
+#include <vector>                       // for vector
+#include "add_to_log.h"                 // for add_to_log
+#include "matio.h"                      // for matvar_t, Mat_VarFree, etc
+#include "matio_pubconf.h"              // for MATIO_VERSION
 
-#include "add_to_log.h" // for add_to_log
-#include "matio.h"      // for matvar_t, Mat_VarFree, etc
-#include <SL_tokenize.h>
-#include <assert.h>
-#include <exodusII.h> // for ex_inquire_int, ex_put_var, etc
-#include <stddef.h>   // for size_t
-#include <stdio.h>    // for sprintf, nullptr, printf, etc
-#include <stdlib.h>   // for calloc, free, exit
-#include <string.h>   // for strtok, memcpy, strcat, etc
 #if MATIO_VERSION < 151
 #error "MatIO Version 1.5.1 or greater is required"
 #endif

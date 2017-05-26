@@ -35,7 +35,7 @@
 #ifndef IOPX_DECOMPOSITONDATA_H
 #define IOPX_DECOMPOSITONDATA_H
 
-#include <mpi.h>
+#include <Ioss_CodeTypes.h>
 #include <vector>
 #if !defined(NO_PARMETIS_SUPPORT)
 #include <parmetis.h>

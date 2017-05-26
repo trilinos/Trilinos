@@ -3,20 +3,20 @@ namespace stk {
 namespace math {
 
 namespace hidden {
-static inline float CBRT(const float x) { return cbrtf(x); }
+static STK_MATH_FORCE_INLINE float CBRT(const float x) { return cbrtf(x); }
 static const simd::Float SIGN_MASKf(-0.0);
 static const simd::Float ZEROf(0.0);
 }
 
-inline simd::Float fmadd(const simd::Float& a, const simd::Float& b, const simd::Float& c) {
+STK_MATH_FORCE_INLINE simd::Float fmadd(const simd::Float& a, const simd::Float& b, const simd::Float& c) {
   return simd::Float(_mm512_add_ps(_mm512_mul_ps(a._data,b._data), c._data));
 }
 
-inline simd::Float sqrt(const simd::Float& x) {
+STK_MATH_FORCE_INLINE simd::Float sqrt(const simd::Float& x) {
   return simd::Float(_mm512_sqrt_ps(x._data));
 }
   
-inline simd::Float cbrt(const simd::Float& x) {
+STK_MATH_FORCE_INLINE simd::Float cbrt(const simd::Float& x) {
 #if defined(__INTEL_COMPILER)
   return simd::Float(_mm512_cbrt_ps(x._data));
 #else
@@ -28,7 +28,7 @@ inline simd::Float cbrt(const simd::Float& x) {
 #endif
 }
 
-inline simd::Float log(const simd::Float& x) {
+STK_MATH_FORCE_INLINE simd::Float log(const simd::Float& x) {
 #if defined(__INTEL_COMPILER)
   return simd::Float(_mm512_log_ps(x._data));
 #else
@@ -40,7 +40,7 @@ inline simd::Float log(const simd::Float& x) {
 #endif
 }
 
-inline simd::Float log10(const simd::Float& x) {
+STK_MATH_FORCE_INLINE simd::Float log10(const simd::Float& x) {
   simd::Float tmp;
   for (int n=0; n < simd::nfloats; ++n) {
     tmp[n] = std::log10(x[n]);
@@ -48,7 +48,7 @@ inline simd::Float log10(const simd::Float& x) {
   return tmp;
 }
 
-inline simd::Float exp(const simd::Float& x) {
+STK_MATH_FORCE_INLINE simd::Float exp(const simd::Float& x) {
 #if defined(__INTEL_COMPILER)
   return simd::Float(_mm512_exp_ps(x._data));
 #else
@@ -60,7 +60,7 @@ inline simd::Float exp(const simd::Float& x) {
 #endif
 }
 
-inline simd::Float pow(const simd::Float& x, const simd::Float& y) {
+STK_MATH_FORCE_INLINE simd::Float pow(const simd::Float& x, const simd::Float& y) {
 #if defined(__INTEL_COMPILER)
   return simd::Float(_mm512_pow_ps(x._data,y._data));
 #else
@@ -72,7 +72,7 @@ inline simd::Float pow(const simd::Float& x, const simd::Float& y) {
 #endif
 }
 
-inline simd::Float pow(const simd::Float& x, float y) {
+STK_MATH_FORCE_INLINE simd::Float pow(const simd::Float& x, float y) {
 #if defined(__INTEL_COMPILER)
   return simd::Float(_mm512_pow_ps(x._data,_mm512_set1_ps(y)));
 #else
@@ -84,7 +84,7 @@ inline simd::Float pow(const simd::Float& x, float y) {
 #endif
 }
 
-inline simd::Float sin(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Float sin(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::sin(a[i]);
@@ -92,7 +92,7 @@ inline simd::Float sin(const simd::Float& a) {
   return tmp;
 }
  
-inline simd::Float cos(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Float cos(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::cos(a[i]);
@@ -100,7 +100,7 @@ inline simd::Float cos(const simd::Float& a) {
   return tmp;
 }
 
-inline simd::Float tan(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Float tan(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::tan(a[i]);
@@ -108,7 +108,7 @@ inline simd::Float tan(const simd::Float& a) {
   return tmp;
 }
 
-inline simd::Float sinh(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Float sinh(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::sinh(a[i]);
@@ -116,7 +116,7 @@ inline simd::Float sinh(const simd::Float& a) {
   return tmp;
 }
 
-inline simd::Float cosh(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Float cosh(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::cosh(a[i]);
@@ -124,7 +124,7 @@ inline simd::Float cosh(const simd::Float& a) {
   return tmp;
 }
 
-inline simd::Float tanh(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Float tanh(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::tanh(a[i]);
@@ -132,7 +132,7 @@ inline simd::Float tanh(const simd::Float& a) {
   return tmp;
 }
 
-inline simd::Float asin(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Float asin(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::asin(a[i]);
@@ -140,7 +140,7 @@ inline simd::Float asin(const simd::Float& a) {
   return tmp;
 }
 
-inline simd::Float acos(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Float acos(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::acos(a[i]);
@@ -148,7 +148,7 @@ inline simd::Float acos(const simd::Float& a) {
   return tmp;
 }
 
-inline simd::Float atan(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Float atan(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::atan(a[i]);
@@ -156,7 +156,7 @@ inline simd::Float atan(const simd::Float& a) {
   return tmp;
 }
 
-inline simd::Float atan2(const simd::Float& a, const simd::Float& b) {
+STK_MATH_FORCE_INLINE simd::Float atan2(const simd::Float& a, const simd::Float& b) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::atan2(a[i], b[i]);
@@ -164,34 +164,65 @@ inline simd::Float atan2(const simd::Float& a, const simd::Float& b) {
   return tmp;
 }
 
+STK_MATH_FORCE_INLINE simd::Float asinh(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::asinh(a[i]);
+  }
+  return tmp;
+}
 
-inline simd::Float multiplysign(const simd::Float& x, const simd::Float& y) { // return x times sign of y
+STK_MATH_FORCE_INLINE simd::Float acosh(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::acosh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Float atanh(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::atanh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Float erf(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::erf(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Float multiplysign(const simd::Float& x, const simd::Float& y) { // return x times sign of y
   __m512i sign_y =  _mm512_and_epi64(reinterpret_cast<const __m512i&>(hidden::SIGN_MASKf._data), reinterpret_cast<const __m512i&>(y._data));
   __m512i sol = _mm512_xor_epi64(reinterpret_cast<const __m512i&>(x._data),sign_y);
   return simd::Float( reinterpret_cast<__m512&>(sol) );
 }
   
-inline simd::Float copysign(const simd::Float& x, const simd::Float& y) { // return abs(x) times sign of y
+STK_MATH_FORCE_INLINE simd::Float copysign(const simd::Float& x, const simd::Float& y) { // return abs(x) times sign of y
   __m512i pos_x = _mm512_andnot_epi64(reinterpret_cast<const __m512i&>(hidden::SIGN_MASKf._data), reinterpret_cast<const __m512i&>(x._data));
   __m512i sign_y = _mm512_and_epi64(reinterpret_cast<const __m512i&>(hidden::SIGN_MASKf._data), reinterpret_cast<const __m512i&>(y._data));
   __m512i sol = _mm512_xor_epi64(pos_x,sign_y);
   return simd::Float( reinterpret_cast<__m512&>(sol) );
 }
 
-inline simd::Float abs(const simd::Float& x) {  // !sign_mask & x
+STK_MATH_FORCE_INLINE simd::Float abs(const simd::Float& x) {  // !sign_mask & x
   __m512i sol = _mm512_andnot_epi64(  reinterpret_cast<const __m512i&>(hidden::SIGN_MASKf._data), reinterpret_cast<const __m512i&>(x._data) ); 
   return simd::Float( reinterpret_cast<__m512&>(sol) );
 }
 
-inline simd::Float min(const simd::Float& x, const simd::Float& y) {
+STK_MATH_FORCE_INLINE simd::Float min(const simd::Float& x, const simd::Float& y) {
   return simd::Float(_mm512_min_ps(x._data, y._data));
 }
 
-inline simd::Float max(const simd::Float& x, const simd::Float& y) {
+STK_MATH_FORCE_INLINE simd::Float max(const simd::Float& x, const simd::Float& y) {
   return simd::Float(_mm512_max_ps(x._data, y._data));
 }
 
-inline simd::Boolf isnan(const simd::Float& a) {
+STK_MATH_FORCE_INLINE simd::Boolf isnan(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     if ( a[i] != a[i] ) {
@@ -203,20 +234,12 @@ inline simd::Boolf isnan(const simd::Float& a) {
   return tmp > simd::Float(0.5f);
 }
 
-inline simd::Float if_then_else(const simd::Boolf& b, const simd::Float& v1, const simd::Float& v2) {
+STK_MATH_FORCE_INLINE simd::Float if_then_else(const simd::Boolf& b, const simd::Float& v1, const simd::Float& v2) {
   return simd::Float( _mm512_mask_add_ps(v2._data, b._data,v1._data, hidden::ZEROf._data) );
 }
 
-inline simd::Float if_then_else_zero(const simd::Boolf& b, const simd::Float& v) {
+STK_MATH_FORCE_INLINE simd::Float if_then_else_zero(const simd::Boolf& b, const simd::Float& v) {
   return simd::Float( _mm512_mask_add_ps(hidden::ZEROf._data, b._data, v._data, hidden::ZEROf._data) );
-}
-
-inline simd::Float if_not_then_else(const simd::Boolf& b, const simd::Float& v1, const simd::Float& v2) {
-  return simd::Float( _mm512_mask_add_ps(v1._data, b._data, v2._data, hidden::ZEROf._data) );
-}
-
-inline simd::Float if_not_then_else_zero(const simd::Boolf& b, const simd::Float& v) {
-  return simd::Float( _mm512_mask_add_ps(v._data, b._data, hidden::ZEROf._data, hidden::ZEROf._data) );
 }
 
 } // namespace math

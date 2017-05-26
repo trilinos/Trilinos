@@ -367,7 +367,7 @@ namespace Iogn {
                   << "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
                   << "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
                   << "\ttets (split each hex into 6 tets)\n"
-                  << "\tvariables:type,count,...  type=element|nodal|nodeset\n"
+                  << "\tvariables:type,count,...  type=global|element|node|nodal|nodeset|sideset|surface\n"
                   << "\ttimes:count (number of timesteps to generate)\n"
                   << "\tshow -- show mesh parameters\n"
                   << "\thelp -- show this list\n\n";
@@ -1477,7 +1477,7 @@ namespace Iogn {
     else if (type == "element") {
       variableCount[Ioss::ELEMENTBLOCK] = count;
     }
-    else if (type == "nodal") {
+    else if (type == "nodal" || type == "node") {
       variableCount[Ioss::NODEBLOCK] = count;
     }
     else if (type == "nodeset") {
@@ -1489,7 +1489,7 @@ namespace Iogn {
     else {
       std::cerr << "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"
                 << "       Unrecognized variable type '" << type << "'. Valid types are:\n"
-                << "       global, element, nodal, nodeset, surface, sideset.\n";
+                << "       global, element, node, nodal, nodeset, surface, sideset.\n";
     }
   }
 

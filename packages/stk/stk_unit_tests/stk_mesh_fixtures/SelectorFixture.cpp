@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/SelectorFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>
 #include <sstream>                      // for ostringstream, etc
 #include <string>                       // for string
 #include "mpi.h"                        // for MPI_COMM_WORLD

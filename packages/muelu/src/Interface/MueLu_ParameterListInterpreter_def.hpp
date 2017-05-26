@@ -1606,6 +1606,17 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
         hieraList.remove("coarse grid correction scaling factor");
       }
 
+      // Translate cycle type parameter
+      if (hieraList.isParameter("cycle type")) {
+        std::map<std::string,CycleType> cycleMap;
+        cycleMap["V"] = VCYCLE;
+        cycleMap["W"] = WCYCLE;
+
+        std::string cycleType = hieraList.get<std::string>("cycle type");
+        TEUCHOS_TEST_FOR_EXCEPTION(cycleMap.count(cycleType) == 0, Exceptions::RuntimeError, "Invalid cycle type: \"" << cycleType << "\"");
+        this->Cycle_ = cycleMap[cycleType];
+      }
+
       //TODO Move this its own class or MueLu::Utils?
       std::map<std::string,MsgType> verbMap;
       //for developers

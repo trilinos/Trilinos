@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 #include <stk_simd/Simd.hpp>
+#include <impl/Kokkos_Timer.hpp>
 #include <algorithm>
 #include <functional>
 
@@ -28,8 +29,17 @@ double rand_in(Range range) {
   return range.left + (range.right-range.left) * (double(rand()) / (double)RAND_MAX);
 }
 
-int size() { return 64; }
+// #define TIME_SIMD_OPERATIONS
+
+int size() { 
+#ifdef TIME_SIMD_OPERATIONS
+  return 8192;
+#else
+  return 32;
+#endif
+}
 int simd_size() { return size() / stk::simd::ndoubles; }
+
 
 class TestSimdMathFunction : public ::testing::Test
 {
@@ -41,22 +51,41 @@ class TestSimdMathFunction : public ::testing::Test
   {
     DoubleVector scalarSolution = apply_generic_operator_on_scalar_array( scalarOperation );
     SimdDoubleVector simdSolution = apply_generic_operator_on_simd_array( simdOperation );
+#ifndef TIME_SIMD_OPERATIONS
     verify_arrays_equal(scalarSolution, simdSolution);
+#endif
   }
 
   template <typename ArgFunc>
-  DoubleVector apply_generic_operator_on_scalar_array(ArgFunc argFunc) const {
+  DoubleVector apply_generic_operator_on_scalar_array(const ArgFunc& argFunc) const {
     DoubleVector solution(size());
-    for (int i=0; i < size(); ++i)
+    const int sz = size();
+#ifdef TIME_SIMD_OPERATIONS
+    Kokkos::Impl::Timer scalarTimer;
+#endif
+#if defined(__INTEL_COMPILER)
+#pragma novector
+#endif
+    for (int i=0; i < sz; ++i)
       solution[i] = argFunc(i);
+#ifdef TIME_SIMD_OPERATIONS
+    printf("Sclr loop took: %g seconds.\n", scalarTimer.seconds());
+#endif
     return solution;
   }
 
   template <typename ArgFunc>
-  SimdDoubleVector apply_generic_operator_on_simd_array(ArgFunc argFunc) const {
+  SimdDoubleVector apply_generic_operator_on_simd_array(const ArgFunc& argFunc) const {
     SimdDoubleVector solution(simd_size());
-    for (int i=0; i < simd_size(); ++i)
+    const int sz = simd_size();
+#ifdef TIME_SIMD_OPERATIONS
+    Kokkos::Impl::Timer simdTimer;
+#endif
+    for (int i=0; i < sz; ++i)
       solution[i] = argFunc(i);
+#ifdef TIME_SIMD_OPERATIONS
+    printf("Simd loop took: %g seconds.\n", simdTimer.seconds());
+#endif
     return solution;
   }
 

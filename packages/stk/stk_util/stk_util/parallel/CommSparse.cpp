@@ -148,43 +148,6 @@ void CommSparse::rank_error( const char * method , int p ) const
 
 //----------------------------------------------------------------------
 
-CommSparse::~CommSparse()
-{
-  m_comm = parallel_machine_null();
-  m_size = 0 ;
-  m_rank = 0 ;
-  m_send.clear();
-  m_recv.clear();
-}
-
-CommSparse::CommSparse()
-  : m_comm( parallel_machine_null() ),
-    m_size( 0 ), m_rank( 0 ),
-    m_send(),
-    m_recv(),
-    m_send_data(),
-    m_recv_data(),
-    m_send_procs(),
-    m_recv_procs()
-{}
-
-CommSparse::CommSparse( ParallelMachine comm)
-  : m_comm( comm ),
-    m_size( parallel_machine_size( comm ) ),
-    m_rank( parallel_machine_rank( comm ) ),
-    m_send(),
-    m_recv(),
-    m_send_data(),
-    m_recv_data(),
-    m_send_procs(),
-    m_recv_procs()
-{
-  m_send.resize(m_size);
-  m_recv.resize(m_size);
-}
-
-//----------------------------------------------------------------------
-
 void CommSparse::reset_buffers()
 {
   for (size_t i=0 ; i<m_send.size(); ++i) {
@@ -201,8 +164,7 @@ void CommSparse::swap_send_recv()
 {
   if ( m_recv.empty() ) {
     // ERROR
-    std::string
-      msg("stk::CommSparse::swap_send_recv(){ NULL recv buffers }" );
+    std::string msg("stk::CommSparse::swap_send_recv(){ NULL recv buffers }" );
     throw std::logic_error( msg );
   }
 
@@ -276,7 +238,6 @@ void CommSparse::allocate_buffers(const std::vector<int>& send_procs, const std:
 
 void CommSparse::communicate()
 {
-
 #ifndef NDEBUG
   for ( int i = 0 ; i < m_size ; ++i ) {
     // Verify the send buffers have been filled, reset the buffer pointers
@@ -342,17 +303,24 @@ void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
 
   unsigned num_recv = 0;
 
-  result = MPI_Reduce_scatter(tmp,&num_recv,recvcounts,uint_type,MPI_SUM,comm);
+  result = MPI_Reduce(tmp,recvcounts,p_size,uint_type,MPI_SUM,0,comm);
+  if ( result != MPI_SUCCESS ) {
+    // PARALLEL ERROR
+    std::ostringstream msg ;
+    msg << method << " ERROR: " << result << " == MPI_Reduce" ;
+    throw std::runtime_error( msg.str() );
+  }
+
+  result = MPI_Scatter(recvcounts,1,uint_type,&num_recv,1,uint_type,0,comm);
 
   if ( result != MPI_SUCCESS ) {
     // PARALLEL ERROR
     std::ostringstream msg ;
-    msg << method << " ERROR: " << result << " == MPI_Reduce_scatter" ;
+    msg << method << " ERROR: " << result << " == MPI_Scatter" ;
     throw std::runtime_error( msg.str() );
   }
 
   // do point-to-point send/recvs
-
   const int mpi_tag = STK_COMMSPARSE_MPI_TAG_PROC_SIZING;
 
   MPI_Request request_null = MPI_REQUEST_NULL ;

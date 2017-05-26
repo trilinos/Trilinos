@@ -67,30 +67,27 @@ size_t align_quad( size_t n )
 
 void CommBuffer::pack_overflow() const
 {
+#ifndef NDEBUG
   std::ostringstream os ;
   os << "stk::CommBuffer::pack<T>(...){ overflow by " ;
   os << remaining() ;
   os << " bytes. }" ;
   throw std::overflow_error( os.str() );
+#endif
 }
 
 void CommBuffer::unpack_overflow() const
 {
+#ifndef NDEBUG
   std::ostringstream os ;
   os << "stk::CommBuffer::unpack<T>(...){ overflow by " ;
   os << remaining();
   os << " bytes. }" ;
   throw std::overflow_error( os.str() );
+#endif
 }
 
 //----------------------------------------------------------------------
-
-CommBuffer::CommBuffer()
-  : m_beg(nullptr), m_ptr(nullptr), m_end(nullptr)
-{ }
-
-CommBuffer::~CommBuffer()
-{ }
 
 void CommBuffer::deallocate( const unsigned number , CommBuffer * buffers )
 {
@@ -242,33 +239,6 @@ void CommBroadcast::communicate()
 #if defined( STK_HAS_MPI )
 
 //----------------------------------------------------------------------
-
-namespace {
-
-extern "C" {
-
-void sum_np_max_2_op(
-  void * inv , void * outv , int * len , ParallelDatatype * )
-{
-  const int np = *len - 2 ;
-  size_t * ind  = static_cast<size_t *>(inv);
-  size_t * outd = static_cast<size_t *>(outv);
-
-  // Sum all but the last two
-  // the last two are maximum
-
-  for ( int i = 0 ; i < np ; ++i ) {
-    *outd += *ind ;
-    ++outd ;
-    ++ind ;
-  }
-  if ( outd[0] < ind[0] ) { outd[0] = ind[0] ; }
-  if ( outd[1] < ind[1] ) { outd[1] = ind[1] ; }
-}
-
-}
-
-}
 
 //
 //  Determine the number of items each other process will send to the current processor

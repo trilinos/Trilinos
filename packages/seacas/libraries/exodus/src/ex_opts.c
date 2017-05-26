@@ -82,8 +82,8 @@ ex_opts(EX_ABORT|EX_VERBOSE);
 */
 int ex_opts(int options)
 {
+  EX_FUNC_ENTER();
   int oldval = exoptval;
-  exerrval   = 0; /* clear error code */
   exoptval   = options;
-  return oldval;
+  EX_FUNC_LEAVE(oldval);
 }

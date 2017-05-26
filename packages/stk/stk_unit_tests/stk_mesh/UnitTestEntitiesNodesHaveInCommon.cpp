@@ -43,7 +43,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "unit_tests/Setup2Block2HexMesh.hpp"
+#include "stk_unit_tests/stk_mesh/Setup2Block2HexMesh.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_unit_test_utils/getOption.h>

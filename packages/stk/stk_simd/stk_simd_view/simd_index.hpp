@@ -39,7 +39,6 @@ template <typename T>
 struct DeviceTraits {
   typedef typename stk::Traits<T>::base_type simd_type;
 };
-
 #else
 typedef Index DeviceIndex;
 
@@ -47,12 +46,12 @@ template <typename T>
 struct DeviceTraits {
   typedef typename stk::Traits<T>::simd_type simd_type;
 };
-
 #endif
 
 typedef typename IndexTraits<DeviceIndex>::double_type DeviceDouble;
 typedef typename IndexTraits<DeviceIndex>::float_type  DeviceFloat;
-
 }}
+
+
 
 #endif

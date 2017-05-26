@@ -54,11 +54,11 @@
 *****************************************************************************/
 
 #include "exodusII.h"     // for ex_set_specs, ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
+#include "exodusII_int.h" // for ex_check_valid_file_id, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <stddef.h>       // for NULL, size_t
+#include <stdint.h>       // for int64_t
+#include <stdio.h>        // for snprintf
 
 int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *set_specs)
 {
@@ -76,9 +76,8 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
   char       errmsg[MAX_ERR_LENGTH];
   ex_inquiry ex_inq_val;
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
-
-  exerrval = 0; /* clear error code */
 
   /* setup pointers based on set_type
      NOTE: there is another block that sets more stuff later ... */
@@ -99,26 +98,24 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     ex_inq_val = EX_INQ_ELEM_SETS;
   }
   else {
-    exerrval = EX_FATAL;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: invalid set type (%d)", set_type);
-    ex_err("ex_get_concat_sets", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_concat_sets", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* first check if any sets are specified */
 
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
-    exerrval = status;
     if (status == NC_EBADDIM) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined for file id %d",
                ex_name_of_object(set_type), exoid);
-      ex_err("ex_get_concat_sets", errmsg, exerrval);
-      return (EX_WARN);
+      ex_err("ex_get_concat_sets", errmsg, status);
+      EX_FUNC_LEAVE(EX_WARN);
     }
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %ss defined in file id %d",
              ex_name_of_object(set_type), exoid);
-    ex_err("ex_get_concat_sets", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_concat_sets", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* inquire how many sets have been stored */
@@ -128,16 +125,16 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss defined for file id %d",
              ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
-    ex_err("ex_get_concat_sets", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_concat_sets", errmsg, EX_LASTERR);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (ex_get_ids(exoid, set_type, set_specs->sets_ids) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s ids for file id %d",
              ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
-    ex_err("ex_get_concat_sets", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_concat_sets", errmsg, EX_LASTERR);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
@@ -161,7 +158,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       if (ex_get_set_param(exoid, set_type, set_id, &(((int64_t *)num_entries_per_set)[i]),
                            &(((int64_t *)num_dist_per_set)[i])) != NC_NOERR) {
-        return (EX_FATAL); /* error will be reported by sub */
+        EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by sub */
       }
 
       if (i < num_sets - 1) {
@@ -190,7 +187,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     else {
       if (ex_get_set_param(exoid, set_type, set_id, &(((int *)num_entries_per_set)[i]),
                            &(((int *)num_dist_per_set)[i])) != NC_NOERR) {
-        return (EX_FATAL); /* error will be reported by sub */
+        EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by sub */
       }
 
       if (i < num_sets - 1) {
@@ -217,7 +214,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     }
 
     if (status != NC_NOERR) {
-      return (EX_FATAL); /* error will be reported by subroutine */
+      EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by subroutine */
     }
 
     /* get distribution factors for this set */
@@ -242,10 +239,10 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
           status        = ex_get_set_dist_fact(exoid, set_type, set_id, &(dbl_dist_fact[df_idx]));
         }
         if (status != NC_NOERR) {
-          return (EX_FATAL); /* error will be reported by subroutine */
+          EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by subroutine */
         }
       }
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }
