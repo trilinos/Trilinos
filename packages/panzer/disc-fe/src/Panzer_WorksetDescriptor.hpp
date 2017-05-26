@@ -79,9 +79,9 @@ public:
                     const bool apply_orientations=true)
   : elementBlock_(element_block),
     worksetSize_(workset_size),
-    sideAssembly_(false),
     requiresPartitioning_(requires_partitioning),
-    applyOrientations_(apply_orientations)
+    applyOrientations_(apply_orientations),
+    sideAssembly_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
                                    "WorksetDescriptor constr: Element block name must be non-empty!");
@@ -108,9 +108,9 @@ public:
   : elementBlock_(element_block),
     sideset_(sideset),
     worksetSize_(EMPTY),
-    sideAssembly_(sideAssembly),
     requiresPartitioning_(false),
-    applyOrientations_(true)
+    applyOrientations_(true),
+    sideAssembly_(sideAssembly)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
                                "WorksetDescriptor constr: Element block name must be non-empty!");
@@ -141,9 +141,9 @@ public:
   : elementBlock_(element_block),
     sideset_(sideset),
     worksetSize_(workset_size),
-    sideAssembly_(false),
     requiresPartitioning_(requires_partitioning),
-    applyOrientations_(apply_orientations)
+    applyOrientations_(apply_orientations),
+    sideAssembly_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
                                "WorksetDescriptor constr: Element block name must be non-empty!");
@@ -180,9 +180,9 @@ public:
     sideset_(sideset_0),
     sideset_2_(sideset_1),
     worksetSize_(workset_size),
-    sideAssembly_(false),
     requiresPartitioning_(requires_partitioning),
-    applyOrientations_(apply_orientations)
+    applyOrientations_(apply_orientations),
+    sideAssembly_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
                                "WorksetDescriptor constr: Element block 0 name must be non-empty!");

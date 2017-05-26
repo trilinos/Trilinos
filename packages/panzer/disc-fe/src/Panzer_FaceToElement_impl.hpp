@@ -50,7 +50,10 @@ initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn)
   dimension = ebt[0].getDimension();
 
   Teuchos::RCP<const Teuchos::Comm<int>> comm(new Teuchos::MpiComm< int>(MPI_COMM_WORLD));
-  int my_rank = comm->getRank(), nprocs = comm->getSize();
+  int my_rank = comm->getRank();
+#ifndef NDEBUG
+  int nprocs = comm->getSize();
+#endif
 
   std::vector<GlobalOrdinal> element_GIDS;
   for (size_t iblk = 0 ; iblk < block_ids.size(); ++iblk) {
