@@ -48,6 +48,7 @@
 
 #include "AnasaziConfigDefs.hpp"
 
+#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBlockDavidsonSolMgr.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "AnasaziGeneralizedDavidsonSolMgr.hpp"
