@@ -40,48 +40,79 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Integrator_DivBasisTimesScalar_hpp__
-#define __Panzer_Integrator_DivBasisTimesScalar_hpp__
+#ifndef PANZER_BASIS_DESCRIPTOR_HPP
+#define PANZER_BASIS_DESCRIPTOR_HPP
 
 #include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
-
-#include "Panzer_Evaluator_Macros.hpp"
+#include <functional>
 
 namespace panzer {
-    
-/** This computes
-  * 
-  *  \f$\int \nabla\cdot \phi v \f$
-  *
-  * where \f$\phi\f$ is a vector HDIV basis.
-  */
-PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<const ScalarT,Cell,IP> scalar;
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
-  std::size_t num_nodes;
-  std::size_t num_qp;
-  std::size_t num_dim;
+class BasisDescriptor
+{
+public:
 
-  double multiplier;
+  /** \brief Constructor for empty basis
+   *
+   */
+  BasisDescriptor();
 
-  std::string basis_name;
-  std::size_t basis_index;
+  /** \brief Destructor
+   *
+   */
+  virtual ~BasisDescriptor() = default;
 
-  bool useScalarField;
+  /** \brief Constructor for basis description
+   *
+   * \param[in] basis_order Basis order (e.g. 1 could be piecewise linear)
+   * \param[in] basis_type Basis type (e.g. HGrad, HDiv, HCurl, ...)
+   */
+  BasisDescriptor(const int basis_order, const std::string & basis_type);
 
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
+  /** \brief Get type of basis
+   *
+   * \return Type of basis
+   */
+  const std::string & getType() const {return _basis_type;}
 
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
+  /** \brief Get order of basis
+   *
+   * \return Order of basis
+   */
+  int getOrder() const {return _basis_order;}
+
+  /** \brief Get unique key associated with basis of this order and type
+   *  The key is used to sort through a map of BasisDescriptors.
+   *
+   * \return Unique basis key
+   */
+  std::size_t getKey() const {return _key;}
+
+protected:
+
+  /// Basis type (HGrad, HDiv, HCurl,...)
+  std::string _basis_type;
+
+  // Basis order (>0)
+  int _basis_order;
+
+  // Unique key associated with basis.
+  std::size_t _key;
+
+};
 
 }
+
+
+namespace std {
+
+template <>
+struct hash<panzer::BasisDescriptor>
+{
+  std::size_t operator()(const panzer::BasisDescriptor& desc) const;
+};
+
+}
+
 
 #endif

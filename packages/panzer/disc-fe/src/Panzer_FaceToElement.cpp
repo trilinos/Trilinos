@@ -40,48 +40,12 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Integrator_DivBasisTimesScalar_hpp__
-#define __Panzer_Integrator_DivBasisTimesScalar_hpp__
+#include "Panzer_FaceToElement.hpp"
+#include "Panzer_FaceToElement_impl.hpp"
 
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
+#include "PanzerCore_config.hpp"
 
-#include "Panzer_Evaluator_Macros.hpp"
-
-namespace panzer {
-    
-/** This computes
-  * 
-  *  \f$\int \nabla\cdot \phi v \f$
-  *
-  * where \f$\phi\f$ is a vector HDIV basis.
-  */
-PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<const ScalarT,Cell,IP> scalar;
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
-
-  std::size_t num_nodes;
-  std::size_t num_qp;
-  std::size_t num_dim;
-
-  double multiplier;
-
-  std::string basis_name;
-  std::size_t basis_index;
-
-  bool useScalarField;
-
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
-
-}
-
+template class panzer::FaceToElement<int,int>;
+#ifndef PANZER_ORDINAL64_IS_INT
+template class panzer::FaceToElement<int,panzer::Ordinal64>;
 #endif

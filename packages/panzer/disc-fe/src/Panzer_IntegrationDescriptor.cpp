@@ -40,48 +40,50 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Integrator_DivBasisTimesScalar_hpp__
-#define __Panzer_Integrator_DivBasisTimesScalar_hpp__
+#include "Panzer_IntegrationDescriptor.hpp"
 
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
+#include "Panzer_HashUtils.hpp"
 
-#include "Panzer_Evaluator_Macros.hpp"
+#include "Teuchos_Assert.hpp"
 
-namespace panzer {
-    
-/** This computes
-  * 
-  *  \f$\int \nabla\cdot \phi v \f$
-  *
-  * where \f$\phi\f$ is a vector HDIV basis.
-  */
-PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<const ScalarT,Cell,IP> scalar;
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
+namespace panzer
+{
 
-  std::size_t num_nodes;
-  std::size_t num_qp;
-  std::size_t num_dim;
+IntegrationDescriptor::IntegrationDescriptor()
+{
+  setup(-1, NONE);
+}
 
-  double multiplier;
+IntegrationDescriptor::IntegrationDescriptor(const int cubature_order, const int integration_type, const int side)
+{
+  setup(cubature_order, integration_type, side);
+}
 
-  std::string basis_name;
-  std::size_t basis_index;
+void
+IntegrationDescriptor::setup(const int cubature_order, const int integration_type, const int side)
+{
+  _integration_type = integration_type;
+  _cubature_order = cubature_order;
+  _side = side;
 
-  bool useScalarField;
-
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
+  if(_integration_type == SIDE or _integration_type == CV_BOUNDARY){
+    TEUCHOS_ASSERT(side >= 0);
+  } else {
+    TEUCHOS_ASSERT(side == -1);
+  }
+  _key = std::hash<IntegrationDescriptor>()(*this);
+}
 
 }
 
-#endif
+std::size_t
+std::hash<panzer::IntegrationDescriptor>::operator()(const panzer::IntegrationDescriptor& desc) const
+{
+  std::size_t seed = 0;
+
+  panzer::hash_combine(seed,desc.getType());
+  panzer::hash_combine(seed,desc.getOrder());
+  panzer::hash_combine(seed,desc.getSide());
+
+  return seed;
+}

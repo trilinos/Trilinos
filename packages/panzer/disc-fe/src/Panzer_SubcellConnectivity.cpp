@@ -40,48 +40,46 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Integrator_DivBasisTimesScalar_hpp__
-#define __Panzer_Integrator_DivBasisTimesScalar_hpp__
+#include "Panzer_SubcellConnectivity.hpp"
 
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
-#include "Panzer_Evaluator_Macros.hpp"
+namespace panzer
+{
 
-namespace panzer {
-    
-/** This computes
-  * 
-  *  \f$\int \nabla\cdot \phi v \f$
-  *
-  * where \f$\phi\f$ is a vector HDIV basis.
-  */
-PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<const ScalarT,Cell,IP> scalar;
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
+void
+FaceConnectivity::setup(const panzer::LocalMeshPartition<int,int> & partition)
+{
+  const int num_cells = partition.cell_to_faces.dimension_0();
+  const int num_faces = partition.face_to_cells.dimension_0();
+  const int num_faces_per_cell = partition.cell_to_faces.dimension_1();
+  const int num_cells_per_face = 2;
 
-  std::size_t num_nodes;
-  std::size_t num_qp;
-  std::size_t num_dim;
+  _num_subcells = num_faces;
 
-  double multiplier;
+  _subcell_to_cells_adj = Kokkos::View<int*>("subcell_to_cells_adj", num_faces+1);
+  _subcell_to_cells = Kokkos::View<int*>("subcell_to_cells", num_faces*num_cells_per_face);
+  _subcell_to_local_subcells = Kokkos::View<int*>("subcell_to_local_subcells", num_faces*num_cells_per_face);
+  _cell_to_subcells_adj = Kokkos::View<int*>("cell_to_subcells_adj", num_cells+1);
+  _cell_to_subcells = Kokkos::View<int*>("cell_to_subcells", num_cells*num_faces_per_cell);
 
-  std::string basis_name;
-  std::size_t basis_index;
+  _subcell_to_cells_adj(0)=0;
+  for(int face=0;face<num_faces;++face){
+    _subcell_to_cells_adj(face+1) =_subcell_to_cells_adj(face)+num_cells_per_face;
+    _subcell_to_cells(num_cells_per_face*face + 0) = partition.face_to_cells(face,0);
+    _subcell_to_cells(num_cells_per_face*face + 1) = partition.face_to_cells(face,1);
+    _subcell_to_local_subcells(num_cells_per_face*face + 0) = partition.face_to_lidx(face,0);
+    _subcell_to_local_subcells(num_cells_per_face*face + 1) = partition.face_to_lidx(face,1);
+  }
 
-  bool useScalarField;
-
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
+  _cell_to_subcells_adj(0)=0;
+  for(int cell=0;cell<num_cells;++cell){
+    _cell_to_subcells_adj(cell+1) =_cell_to_subcells_adj(cell)+num_faces_per_cell;
+    for(int local_face=0;local_face<num_faces_per_cell;++local_face){
+      _cell_to_subcells(num_faces_per_cell*cell+local_face) = partition.cell_to_faces(cell,local_face);
+    }
+  }
 
 }
 
-#endif
+}

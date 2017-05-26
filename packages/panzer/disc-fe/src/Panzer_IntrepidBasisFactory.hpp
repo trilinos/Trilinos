@@ -198,7 +198,7 @@ namespace panzer {
     else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
-    else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order > 2) )
+    else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order >= 2) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
 
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,

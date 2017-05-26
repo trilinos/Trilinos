@@ -40,11 +40,17 @@
 // ***********************************************************************
 // @HEADER
 
+#include <Panzer_SetupPartitionedWorksetUtilities.hpp>
 #include "Panzer_STK_WorksetFactory.hpp"
+
+#include "Panzer_LocalMeshInfo.hpp"
 
 #include "Panzer_WorksetFactoryBase.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Interface.hpp"
+#include "Panzer_STK_LocalMeshUtilities.hpp"
+
+
 
 namespace panzer_stk {
 
@@ -123,7 +129,15 @@ Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
 getWorksets(const panzer::WorksetDescriptor & worksetDesc,
             const panzer::WorksetNeeds & needs) const
 {
-  if(!worksetDesc.useSideset()) {
+
+  if(worksetDesc.requiresPartitioning()){
+    if(mesh_info_ == Teuchos::null){
+      auto mesh_info = Teuchos::rcp(new panzer::LocalMeshInfo<int,int>());
+      panzer_stk::generateLocalMeshInfo(*mesh_,*mesh_info);
+      mesh_info_ = mesh_info;
+    }
+    return panzer::buildPartitionedWorksets(*mesh_info_,worksetDesc,needs);
+  } else if(!worksetDesc.useSideset()) {
     return panzer_stk::buildWorksets(*mesh_,worksetDesc.getElementBlock(), needs);
   }
   else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {

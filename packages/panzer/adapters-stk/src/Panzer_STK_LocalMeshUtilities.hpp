@@ -40,47 +40,29 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Integrator_DivBasisTimesScalar_hpp__
-#define __Panzer_Integrator_DivBasisTimesScalar_hpp__
+#ifndef PANZER_STK_LOCAL_MESH_UTILITIES_HPP
+#define PANZER_STK_LOCAL_MESH_UTILITIES_HPP
 
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
+namespace panzer
+{
+template <typename LO, typename GO>
+class LocalMeshInfo;
+}
 
-#include "Panzer_Evaluator_Macros.hpp"
+namespace panzer_stk
+{
+  class STK_Interface;
 
-namespace panzer {
-    
-/** This computes
-  * 
-  *  \f$\int \nabla\cdot \phi v \f$
+/** Create a structure containing information about the local portion of a given element block
   *
-  * where \f$\phi\f$ is a vector HDIV basis.
+  * \param[in] mesh Reference to STK mesh interface
+  *
+  * \returns Structure containing local mesh information
   */
-PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<const ScalarT,Cell,IP> scalar;
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
-
-  std::size_t num_nodes;
-  std::size_t num_qp;
-  std::size_t num_dim;
-
-  double multiplier;
-
-  std::string basis_name;
-  std::size_t basis_index;
-
-  bool useScalarField;
-
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
+template <typename LO, typename GO>
+void
+generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
+                      panzer::LocalMeshInfo<LO,GO> & mesh_info);
 
 }
 

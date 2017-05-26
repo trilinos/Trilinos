@@ -177,7 +177,7 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
       worksetVector = wkstFactory_->getWorksets(wd,needs);
 
       // apply orientations to the just constructed worksets
-      if(worksetVector!=Teuchos::null)
+      if(worksetVector!=Teuchos::null && wd.applyOrientations())
         applyOrientations(wd.getElementBlock(),*worksetVector);
 
       // store vector for reuse in the future

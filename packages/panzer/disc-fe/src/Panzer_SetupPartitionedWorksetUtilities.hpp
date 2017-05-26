@@ -40,47 +40,38 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Integrator_DivBasisTimesScalar_hpp__
-#define __Panzer_Integrator_DivBasisTimesScalar_hpp__
+#ifndef PANZER_SETUP_PARTITIONED_WORKSET_UTILITIES_HPP
+#define PANZER_SETUP_PARTITIONED_WORKSET_UTILITIES_HPP
 
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
+#include "Panzer_Workset.hpp"
 
-#include "Panzer_Evaluator_Macros.hpp"
+#include "Teuchos_RCP.hpp"
 
-namespace panzer {
-    
-/** This computes
-  * 
-  *  \f$\int \nabla\cdot \phi v \f$
+#include <vector>
+
+namespace panzer
+{
+class WorksetDescriptor;
+class WorksetNeeds;
+template<typename LO, typename GO>
+class LocalMeshInfo;
+}
+
+namespace panzer
+{
+
+/** Build worksets for a partitioned mesh
   *
-  * where \f$\phi\f$ is a vector HDIV basis.
+  * \param[in] mesh_info Mesh info object
+  * \param[in] description Description of workset
+  * \param[in] needs Requirements for workset
+  *
+  * \returns vector of worksets for the corresponding element block.
   */
-PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<const ScalarT,Cell,IP> scalar;
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
-
-  std::size_t num_nodes;
-  std::size_t num_qp;
-  std::size_t num_dim;
-
-  double multiplier;
-
-  std::string basis_name;
-  std::size_t basis_index;
-
-  bool useScalarField;
-
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
+Teuchos::RCP<std::vector<panzer::Workset> >  
+buildPartitionedWorksets(const panzer::LocalMeshInfo<int,int> & mesh_info,
+                         const panzer::WorksetDescriptor & description,
+                         const panzer::WorksetNeeds & needs);
 
 }
 

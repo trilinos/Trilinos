@@ -40,47 +40,54 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Integrator_DivBasisTimesScalar_hpp__
-#define __Panzer_Integrator_DivBasisTimesScalar_hpp__
+#ifndef PANZER_LOCAL_PARTITIONING_UTILITIES_HPP
+#define PANZER_LOCAL_PARTITIONING_UTILITIES_HPP
 
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
-#include "Panzer_Evaluator_Macros.hpp"
+#include <vector>
 
-namespace panzer {
-    
-/** This computes
-  * 
-  *  \f$\int \nabla\cdot \phi v \f$
-  *
-  * where \f$\phi\f$ is a vector HDIV basis.
-  */
-PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<const ScalarT,Cell,IP> scalar;
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
+namespace panzer
+{
 
-  std::size_t num_nodes;
-  std::size_t num_qp;
-  std::size_t num_dim;
+class WorksetDescriptor;
 
-  double multiplier;
+/** Create a set of partitions given a descriptor containing:
+ * 1) Volume worksets
+ *  - Element Block Name
+ *  - Workset Size
+ * 2) Sideset worksets
+ *  - Element Block Name
+ *  - Sideset Name
+ *  - Workset Size
+ *
+ * \param[in] mesh_info Reference to fully constructed mesh_info
+ * \param[in] description Workset descriptor defining area to partition
+ * \param[out] partitions Set of local mesh partitions for given region of mesh_info
+ *
+ */
+template<typename LO, typename GO>
+void
+generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
+                            const panzer::WorksetDescriptor & description,
+                            std::vector<panzer::LocalMeshPartition<LO,GO> > & partitions);
 
-  std::string basis_name;
-  std::size_t basis_index;
+namespace partitioning_utilities
+{
 
-  bool useScalarField;
-
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
+/** Create a LocalMeshInfoBase from a parent LocalMeshInfoBase given a set of cell indexes
+ *
+ * \param[in] parent_info Reference to fully constructed LocalMeshInfoBase
+ * \param[in] owned_parent_cells Vector of indexes (in parent's indexing scheme) for child to own
+ * \param[out] child_info Child which will be generated
+ *
+ */
+template<typename LO, typename GO>
+void
+setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
+                      const std::vector<LO> & owned_parent_cells,
+                      panzer::LocalMeshInfoBase<LO,GO> & child_info);
+}
 
 }
 

@@ -466,7 +466,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,2,1);
    RCP<const panzer_stk::STKConnManager<int> > stkManager = rcp_dynamic_cast<panzer_stk::STKConnManager<int> >(connManager);
-   RCP<panzer_stk::STK_Interface> meshDB = stkManager->getSTKInterface();
+   RCP<const panzer_stk::STK_Interface> meshDB = stkManager->getSTKInterface();
    meshDB->print(out);
 
    // grab elements from mesh
