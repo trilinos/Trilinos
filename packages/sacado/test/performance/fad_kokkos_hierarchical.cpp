@@ -891,7 +891,7 @@ void run(const int cell_begin, const int cell_end, const int cell_step,
 #endif
   size_t mem_pool_size =
     static_cast<size_t>(1.2*nkernels*block_size);
-  const size_t superblock_size = std::max(nkernels / 100, 1) * block_size;
+  const size_t superblock_size = std::max<size_t>(nkernels / 100, 1) * block_size;
     std::cout << "Memory pool size = " << mem_pool_size / (1024.0 * 1024.0)
               << " MB" << std::endl;
     ExecSpace exec_space;
