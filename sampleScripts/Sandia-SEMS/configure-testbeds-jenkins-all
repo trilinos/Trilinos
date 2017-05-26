@@ -13,6 +13,12 @@ EXTRA_ARGS=$@
 # Top Level Configuration Options
 TESTS=${JENKINS_DO_TESTS}
 EXAMPLES=${JENKINS_DO_EXAMPLES}
+SHARED=${JENKINS_DO_SHARED}
+
+if [ -z $SHARED ]
+then
+  SHARED=ON
+fi
 
 CUDA=${JENKINS_DO_CUDA}
 OPENMP=${JENKINS_DO_OPENMP}
@@ -20,7 +26,6 @@ PTHREAD=${JENKINS_DO_PTHREAD}
 SERIAL=${JENKINS_DO_SERIAL}
 
 COMPLEX=${JENKINS_DO_COMPLEX}
-
 
 #--------------------------------------------------
 #--------------------------------------------------
