@@ -13,7 +13,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
-#define DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
 
 namespace Tempus {
 
@@ -138,21 +138,48 @@ void StepperNewmarkExplicit<Scalar>::takeStep(
     RCP<const Thyra::VectorBase<Scalar> > d_old = currentState->getX();
     RCP<const Thyra::VectorBase<Scalar> > v_old = currentState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
+    
+    //Get dt and time 
+    const Scalar dt = workingState->getTimeStep();
+    const Scalar time = workingState->getTime();
+    
+    typedef Thyra::ModelEvaluatorBase MEB;
 
 #ifdef DEBUG_OUTPUT
     *out_ << "IKT d_old = " << Thyra::max(*d_old) << "\n";
     *out_ << "IKT v_old = " << Thyra::max(*v_old) << "\n";
-    *out_ << "IKT a_old = " << Thyra::max(*a_old) << "\n";
+    *out_ << "IKT a_old prescribed = " << Thyra::max(*a_old) << "\n";
 #endif
+    
+    //Compute initial acceleration, a_old, using initial displacement (d_old) and initial
+    //velocity (v_old) if in 1st time step 
+    //allocate a_init 
+    RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(d_old->space());
+    Thyra::put_scalar(0.0, a_init.ptr());
+    if (time == solutionHistory->minTime()) {
+      //Set x and x_dot in inArgs_ to be initial d and v, respectively 
+      inArgs_.set_x(d_old);
+      inArgs_.set_x_dot(v_old);
+      if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time);
+      // For model evaluators whose state function f(x, x_dot, x_dotdot, t) describes
+      // an implicit ODE, and which accept an optional x_dotdot input argument,
+      // make sure the latter is set to null in order to request the evaluation
+      // of a state function corresponding to the explicit ODE formulation
+      // x_dotdot = f(x, x_dot, t)
+      if (inArgs_.supports(MEB::IN_ARG_x_dot_dot)) inArgs_.set_x_dot_dot(Teuchos::null);
+      outArgs_.set_f(a_init);
+      eODEModel_->evalModel(inArgs_,outArgs_);
+      Thyra::copy(*a_init, a_old.ptr());
+#ifdef DEBUG_OUTPUT
+      *out_ << "IKT a_init computed = " << Thyra::max(*a_old) << "\n";
+#endif
+    }
 
+
+    //New d, v and a to be computed here 
     RCP<Thyra::VectorBase<Scalar> > d_new = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > v_new = workingState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > a_new = workingState->getXDotDot();
-  
-    //IKT, FIXME: add solve for acceleration in first step!  
-
-    //Get dt 
-    const Scalar dt = workingState->getTimeStep();
 
     //allocate d and v predictors 
     RCP<Thyra::VectorBase<Scalar> > d_pred =Thyra::createMember(d_old->space());
@@ -167,7 +194,6 @@ void StepperNewmarkExplicit<Scalar>::takeStep(
     *out_ << "IKT v_pred = " << Thyra::max(*v_pred) << "\n";
 #endif
 
-    typedef Thyra::ModelEvaluatorBase MEB;
     //Set x and x_dot in inArgs_ to be d and v predictors, respectively 
     inArgs_.set_x(d_pred);
     inArgs_.set_x_dot(v_pred);
@@ -183,8 +209,6 @@ void StepperNewmarkExplicit<Scalar>::takeStep(
 
     eODEModel_->evalModel(inArgs_,outArgs_);
 
-    //IKT, question: how does workingState->getXDotDot() get set?
-    //Update x_dotdot in working state
     Thyra::copy(*(outArgs_.get_f()), a_new.ptr());
     Thyra::scale(-1.0, a_new.ptr());  
 #ifdef DEBUG_OUTPUT
@@ -261,8 +285,7 @@ void StepperNewmarkExplicit<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
       std::logic_error,
       "\nError in 'Newmark Beta Explicit' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
-  *out << "\n \nSetting Gamma = " << gamma_
-       << " from Newmark Beta Explicit Parameters in input file.\n\n";
+  *out << "\n \nSetting Gamma = " << gamma_ << " from input file.\n\n";
 
 }
 
