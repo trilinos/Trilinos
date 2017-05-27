@@ -109,7 +109,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
 
     double old_rdot = Kokkos::Example::all_reduce( KokkosBlas::dot( r , r ) , import.comm );
 
-    norm_res  = sqrt( old_rdot );
+    norm_res  = std::sqrt( old_rdot );
     iteration = 0 ;
 
     Kokkos::Impl::Timer wall_clock ;
