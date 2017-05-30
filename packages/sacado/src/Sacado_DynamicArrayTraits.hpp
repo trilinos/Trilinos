@@ -32,6 +32,7 @@
 
 #include <new>
 #include <cstring>
+#include <stdint.h>
 
 #include "Sacado_Traits.hpp"
 #if defined(HAVE_SACADO_KOKKOSCORE)
