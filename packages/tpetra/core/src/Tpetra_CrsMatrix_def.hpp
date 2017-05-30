@@ -6495,9 +6495,11 @@ namespace Tpetra {
       const map_type& colMap = * (this->staticGraph_->colMap_);
       const auto lclColMap = colMap.getLocalMap ();
       std::unique_ptr<std::string> errStr;
+      const int myRank =
+        colMap.getComm ().is_null () ? 0 : colMap.getComm ()->getRank ();
       bool locallyCorrect = unpackCrsMatrixAndCombine (
           this->lclMatrix_, lclColMap, errStr, importLIDs, imports,
-          numPacketsPerLID, constantNumPackets, distor, combineMode, atomic);
+          numPacketsPerLID, constantNumPackets, myRank, distor, combineMode, atomic);
       TEUCHOS_TEST_FOR_EXCEPTION(!locallyCorrect, std::runtime_error, *errStr);
     }
     else {
