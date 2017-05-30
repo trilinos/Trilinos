@@ -244,6 +244,10 @@ evalModelImpl(
   RCP<VectorBase<Scalar> > g_out = outArgs.get_g(0);
   const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
 
+  Scalar neg_sign = 1.0; 
+  //Explicit ODE 
+  if (inArgs.get_x_dot_dot().is_null()) neg_sign = -1.0; 
+
   //Populate residual and Jacobian
   if (f_out != Teuchos::null) {
     Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
@@ -259,13 +263,13 @@ evalModelImpl(
     if (x_dot_in != Teuchos::null) {
       Thyra::ConstDetachedVectorView<Scalar> x_dot_in_view( *x_dot_in);
       for (int i=0; i<myVecLength; i++) {
-        f_out_view[i] += c_*x_dot_in_view[i];
+        f_out_view[i] += neg_sign*c_*x_dot_in_view[i];
       }
     }
     if (x_in != Teuchos::null) {
       Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in);
       for (int i=0; i<myVecLength; i++) {
-        f_out_view[i] += k_*x_in_view[i];
+        f_out_view[i] += neg_sign*k_*x_in_view[i];
       }
     }
   }
@@ -280,10 +284,10 @@ evalModelImpl(
     }
     matrix_view(0,0) = omega;
     if (x_dot_in != Teuchos::null) {
-      matrix_view(0,0) += c_*alpha;
+      matrix_view(0,0) += neg_sign*c_*alpha;
     }
     if (x_in != Teuchos::null) {
-      matrix_view(0,0) += k_*beta;
+      matrix_view(0,0) += neg_sign*k_*beta;
     }
   }
 

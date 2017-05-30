@@ -209,6 +209,460 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> &
   }
 }
 
+
+
+
+
+
+
+template <typename Scalar>
+void panzer::BasisValues2<Scalar>::
+evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates)
+{
+  MDFieldArrayFactory af("",ddims_,true);
+
+  // intrepid_basis->getDofCoords requires DynRankView, but basis_coordinates_ref is more of a static View
+  // We use an auxiliary 'dyn' array to get around this
+  using coordsScalarType = typename Intrepid2::Basis<PHX::Device::execution_space,Scalar,Scalar>::scalarType;
+  auto dyn_basis_coordinates_ref = af.buildArray<coordsScalarType,BASIS,Dim>("basis_coordinates_ref",
+                                                                             basis_coordinates_ref.dimension(0),
+                                                                             basis_coordinates_ref.dimension(1));
+  intrepid_basis->getDofCoords(dyn_basis_coordinates_ref.get_view());
+
+  // fill in basis coordinates
+  for (int i = 0; i < basis_coordinates_ref.extent_int(0); ++i)
+    for (int j = 0; j < basis_coordinates_ref.extent_int(1); ++j)
+      basis_coordinates_ref(i,j) = dyn_basis_coordinates_ref(i,j);
+
+  Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
+  cell_tools.mapToPhysicalFrame(basis_coordinates.get_view(),
+                                basis_coordinates_ref.get_view(),
+                                vertex_coordinates.get_view(),
+                                intrepid_basis->getBaseCellTopology());
+}
+
+
+
+
+
+template <typename Scalar>
+void panzer::BasisValues2<Scalar>::
+evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
+               const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+               const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+               const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+               bool use_vertex_coordinates)
+{
+
+  PureBasis::EElementSpace elmtspace = getElementSpace();
+
+  if(elmtspace == PureBasis::CONST){
+    evaluateValues_Const(cub_points,jac_inv,weighted_measure);
+  } else if(elmtspace == PureBasis::HGRAD){
+    evaluateValues_HGrad(cub_points,jac_inv,weighted_measure);
+  } else if(elmtspace == PureBasis::HCURL){
+    evaluateValues_HCurl(cub_points,jac,jac_det,jac_inv,weighted_measure);
+  } else if(elmtspace == PureBasis::HDIV){
+    evaluateValues_HDiv(cub_points,jac,jac_det,weighted_measure);
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"panzer::BasisValues2::evaluateValues : Element space not recognized.");
+  }
+
+  if(use_vertex_coordinates) {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(elmtspace == PureBasis::CONST,"panzer::BasisValues2::evaluateValues : Const basis cannot have basis coordinates.");
+    evaluateBasisCoordinates(vertex_coordinates);
+  }
+
+}
+
+template <typename Scalar>
+void panzer::BasisValues2<Scalar>::
+evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
+                     const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+                     const PHX::MDField<Scalar,Cell,IP> & weighted_measure)
+{
+
+  TEUCHOS_ASSERT(getElementSpace() == PureBasis::CONST);
+
+  typedef Intrepid2::FunctionSpaceTools<PHX::Device::execution_space> fst;
+  MDFieldArrayFactory af("",ddims_,true);
+
+  const panzer::PureBasis & basis = *(basis_layout->getBasis());
+
+  const int num_points = basis_layout->numPoints();
+  const int num_basis  = basis.cardinality();
+  const int num_dim    = basis_layout->dimension();
+  const int num_cells  = basis_layout->numCells();
+
+  auto cell_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_basis_scalar",1,num_basis,num_points);
+  auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
+  auto cell_grad_basis = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("cell_grad_basis",1,num_basis,num_points,num_dim);
+  auto cell_jac_inv = af.buildStaticArray<Scalar,Cell,IP,Dim,Dim>("cell_jac_inv",1,num_points,num_dim,num_dim);
+
+  auto cell_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("cell_basis_ref_scalar",num_basis,num_points);
+  auto cell_grad_basis_ref = af.buildStaticArray<Scalar,BASIS,IP,Dim>("cell_grad_basis_ref",num_basis,num_points,num_dim);
+
+  for(int cell=0;cell<num_cells;++cell){
+
+    // =============================================
+    // Load external into cell-local arrays
+
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        for(int d2=0;d2<num_dim;++d2)
+          cell_jac_inv(0,p,d,d2)=jac_inv(cell,p,d,d2);
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        cell_cub_points(p,d)=cub_points(cell,p,d);
+
+    // =============================================
+    // Load Reference Values
+
+    intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
+
+    if(compute_derivatives){
+      Kokkos::deep_copy(cell_grad_basis_ref.get_view(),0.0);
+    }
+
+    // =============================================
+    // Transform reference values to physical values
+
+    fst::HGRADtransformVALUE(cell_basis_scalar.get_view(),cell_basis_ref_scalar.get_view());
+    for(int b=0;b<num_basis;++b)
+      for(int p=0;p<num_points;++p)
+        basis_scalar(cell,b,p)=cell_basis_scalar(0,b,p);
+
+    if(compute_derivatives){
+        fst::HGRADtransformGRAD(cell_grad_basis.get_view(),cell_jac_inv.get_view(),cell_grad_basis_ref.get_view());
+        for(int b=0;b<num_basis;++b)
+          for(int p=0;p<num_points;++p)
+            for(int d=0;d<num_dim;++d)
+              grad_basis(cell,b,p,d)=cell_grad_basis(0,b,p,d);
+    }
+    // =============================================
+  }
+
+
+  if(build_weighted){
+    fst::multiplyMeasure(weighted_basis_scalar.get_view(),weighted_measure.get_view(),basis_scalar.get_view());
+    if(compute_derivatives){
+      fst::multiplyMeasure(weighted_grad_basis.get_view(),weighted_measure.get_view(),grad_basis.get_view());
+    }
+  }
+
+
+}
+
+template <typename Scalar>
+void panzer::BasisValues2<Scalar>::
+evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
+                     const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+                     const PHX::MDField<Scalar,Cell,IP> & weighted_measure)
+{
+
+  TEUCHOS_ASSERT(getElementSpace() == PureBasis::HGRAD);
+
+  typedef Intrepid2::FunctionSpaceTools<PHX::Device::execution_space> fst;
+  MDFieldArrayFactory af("",ddims_,true);
+
+  const panzer::PureBasis & basis = *(basis_layout->getBasis());
+
+  const int num_points = basis_layout->numPoints();
+  const int num_basis  = basis.cardinality();
+  const int num_dim    = basis_layout->dimension();
+  const int num_cells  = cub_points.dimension_0();
+
+  auto cell_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_basis_scalar",1,num_basis,num_points);
+  auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
+  auto cell_grad_basis = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("cell_grad_basis",1,num_basis,num_points,num_dim);
+  auto cell_jac_inv = af.buildStaticArray<Scalar,Cell,IP,Dim,Dim>("cell_jac_inv",1,num_points,num_dim,num_dim);
+
+  auto cell_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("cell_basis_ref_scalar",num_basis,num_points);
+  auto cell_grad_basis_ref = af.buildStaticArray<Scalar,BASIS,IP,Dim>("cell_grad_basis_ref",num_basis,num_points,num_dim);
+
+  for(int cell=0;cell<num_cells;++cell){
+
+    // =============================================
+    // Load external into cell-local arrays
+
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        for(int d2=0;d2<num_dim;++d2)
+          cell_jac_inv(0,p,d,d2)=jac_inv(cell,p,d,d2);
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        cell_cub_points(p,d)=cub_points(cell,p,d);
+
+    // =============================================
+    // Load Reference Values
+
+    intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
+
+    if(compute_derivatives){
+      intrepid_basis->getValues(cell_grad_basis_ref.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_GRAD);
+    }
+
+    // =============================================
+    // Transform reference values to physical values
+
+    fst::HGRADtransformVALUE(cell_basis_scalar.get_view(),cell_basis_ref_scalar.get_view());
+    for(int b=0;b<num_basis;++b)
+      for(int p=0;p<num_points;++p)
+        basis_scalar(cell,b,p)=cell_basis_scalar(0,b,p);
+
+    if(compute_derivatives){
+        fst::HGRADtransformGRAD(cell_grad_basis.get_view(),cell_jac_inv.get_view(),cell_grad_basis_ref.get_view());
+        for(int b=0;b<num_basis;++b)
+          for(int p=0;p<num_points;++p)
+            for(int d=0;d<num_dim;++d)
+              grad_basis(cell,b,p,d)=cell_grad_basis(0,b,p,d);
+    }
+    // =============================================
+  }
+
+  if(build_weighted){
+    fst::multiplyMeasure(weighted_basis_scalar.get_view(),weighted_measure.get_view(),basis_scalar.get_view());
+    if(compute_derivatives){
+      fst::multiplyMeasure(weighted_grad_basis.get_view(),weighted_measure.get_view(),grad_basis.get_view());
+    }
+  }
+
+}
+
+
+template <typename Scalar>
+void panzer::BasisValues2<Scalar>::
+evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
+               const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+               const PHX::MDField<Scalar,Cell,IP> & weighted_measure)
+{
+
+  TEUCHOS_ASSERT(getElementSpace() == PureBasis::HCURL);
+
+
+  typedef Intrepid2::FunctionSpaceTools<PHX::Device::execution_space> fst;
+  MDFieldArrayFactory af("",ddims_,true);
+
+  const panzer::PureBasis & basis = *(basis_layout->getBasis());
+
+  const int num_points = basis_layout->numPoints();
+  const int num_basis  = basis.cardinality();
+  const int num_dim    = basis_layout->dimension();
+  const int num_cells  = basis_layout->numCells();
+
+  auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
+  auto cell_jac = af.buildStaticArray<Scalar,Cell,IP,Dim,Dim>("cell_jac",1,num_points,num_dim,num_dim);
+  auto cell_jac_inv = af.buildStaticArray<Scalar,Cell,IP,Dim,Dim>("cell_jac_inv",1,num_points,num_dim,num_dim);
+  auto cell_jac_det = af.buildStaticArray<Scalar,Cell,IP>("cell_jac_det",1,num_points);
+
+  auto cell_basis_vector = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("cell_basis_vector",1,num_basis,num_points,num_dim);
+  auto cell_curl_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_curl_basis_scalar",1,num_basis,num_points);
+  auto cell_curl_basis_vector = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("cell_curl_basis_vector",1,num_basis,num_points,num_dim);
+
+  auto cell_curl_basis_ref = af.buildArray<Scalar,BASIS,IP,Dim>("cell_curl_basis_ref",num_basis,num_points,num_dim);
+  auto cell_curl_basis_ref_scalar =  af.buildStaticArray<Scalar,BASIS,IP>("cell_curl_basis_ref_scalar",num_basis,num_points);
+  auto cell_basis_ref_vector = af.buildArray<Scalar,BASIS,IP,Dim>("cell_basis_ref_vector",num_basis,num_points,num_dim);
+
+  for(int cell=0;cell<num_cells;++cell){
+
+    // =============================================
+    // Load external into cell-local arrays
+
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        for(int d2=0;d2<num_dim;++d2)
+          cell_jac(0,p,d,d2)=jac(cell,p,d,d2);
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        for(int d2=0;d2<num_dim;++d2)
+          cell_jac_inv(0,p,d,d2)=jac_inv(cell,p,d,d2);
+    for(int p=0;p<num_points;++p)
+      cell_jac_det(0,p)=jac_det(cell,p);
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        cell_cub_points(p,d)=cub_points(cell,p,d);
+
+    // =============================================
+    // Load Reference Values
+
+    intrepid_basis->getValues(cell_basis_ref_vector.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
+
+    if(compute_derivatives){
+      if(num_dim==2){
+        intrepid_basis->getValues(cell_curl_basis_ref_scalar.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_CURL);
+      } else if(num_dim==3){
+        intrepid_basis->getValues(cell_curl_basis_ref.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_CURL);
+      }
+    }
+
+    // =============================================
+    // Transform reference values to physical values
+
+    fst::HCURLtransformVALUE(cell_basis_vector.get_view(),cell_jac_inv.get_view(),cell_basis_ref_vector.get_view());
+    for(int b=0;b<num_basis;++b)
+      for(int p=0;p<num_points;++p)
+        for(int d=0;d<num_dim;++d)
+          basis_vector(cell,b,p,d)=cell_basis_vector(0,b,p,d);
+
+    if(compute_derivatives){
+      if(num_dim==2){
+        // note only volume deformation is needed!
+        // this relates directly to this being in
+        // the divergence space in 2D!
+        fst::HDIVtransformDIV(cell_curl_basis_scalar.get_view(),cell_jac_det.get_view(),cell_curl_basis_ref_scalar.get_view());
+        for(int b=0;b<num_basis;++b)
+          for(int p=0;p<num_points;++p)
+            curl_basis_scalar(cell,b,p)=cell_curl_basis_scalar(0,b,p);
+      } else if(num_dim==3) {
+        fst::HCURLtransformCURL(cell_curl_basis_vector.get_view(),cell_jac.get_view(),cell_jac_det.get_view(),cell_curl_basis_ref.get_view());
+        for(int b=0;b<num_basis;++b)
+          for(int p=0;p<num_points;++p)
+            for(int d=0;d<num_dim;++d)
+              curl_basis_vector(cell,b,p,d)=cell_curl_basis_vector(0,b,p,d);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"panzer::BasisValues2::evaluateValues_HCurl : HCurl only setup for 2D and 3D.");
+      }
+    }
+  }
+
+  if(build_weighted){
+    fst::multiplyMeasure(weighted_basis_vector.get_view(),weighted_measure.get_view(),basis_vector.get_view());
+    if(compute_derivatives){
+      if(num_dim==2){
+        fst::multiplyMeasure(weighted_curl_basis_scalar.get_view(),weighted_measure.get_view(),curl_basis_scalar.get_view());
+      } else if(num_dim==3){
+        fst::multiplyMeasure(weighted_curl_basis_vector.get_view(),weighted_measure.get_view(),curl_basis_vector.get_view());
+      }
+    }
+  }
+
+}
+
+template <typename Scalar>
+void panzer::BasisValues2<Scalar>::
+evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
+               const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+               const PHX::MDField<Scalar,Cell,IP> & weighted_measure)
+{
+
+  TEUCHOS_ASSERT(getElementSpace() == PureBasis::HDIV);
+
+  typedef Intrepid2::FunctionSpaceTools<PHX::Device::execution_space> fst;
+  MDFieldArrayFactory af("",ddims_,true);
+
+  const panzer::PureBasis & basis = *(basis_layout->getBasis());
+
+  const int num_points = basis_layout->numPoints();
+  const int num_basis  = basis.cardinality();
+  const int num_dim    = basis_layout->dimension();
+  const int num_cells  = basis_layout->numCells();
+
+  auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
+  auto cell_jac = af.buildStaticArray<Scalar,Cell,IP,Dim,Dim>("cell_jac",1,num_points,num_dim,num_dim);
+  auto cell_jac_det = af.buildStaticArray<Scalar,Cell,IP>("cell_jac_det",1,num_points);
+
+  auto cell_basis_vector = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("cell_basis_vector",1,num_basis,num_points,num_dim);
+  auto cell_div_basis = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_div_basis",1,num_basis,num_points);
+
+  auto cell_basis_ref_vector = af.buildArray<Scalar,BASIS,IP,Dim>("cell_basis_ref_vector",num_basis,num_points,num_dim);
+  auto cell_div_basis_ref =  af.buildStaticArray<Scalar,BASIS,IP>("cell_div_basis_ref",num_basis,num_points);
+
+  for(int cell=0;cell<num_cells;++cell){
+
+    // =============================================
+    // Load external into cell-local arrays
+
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        for(int d2=0;d2<num_dim;++d2)
+          cell_jac(0,p,d,d2)=jac(cell,p,d,d2);
+    for(int p=0;p<num_points;++p)
+      cell_jac_det(0,p)=jac_det(cell,p);
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        cell_cub_points(p,d)=cub_points(cell,p,d);
+    // =============================================
+    // Load Reference Values
+
+    intrepid_basis->getValues(cell_basis_ref_vector.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
+
+    if(compute_derivatives){
+      intrepid_basis->getValues(cell_div_basis_ref.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_DIV);
+    }
+
+    // =============================================
+    // Transform reference values to physical values
+
+    fst::HDIVtransformVALUE(cell_basis_vector.get_view(),cell_jac.get_view(),cell_jac_det.get_view(),cell_basis_ref_vector.get_view());
+    for(int b=0;b<num_basis;++b)
+      for(int p=0;p<num_points;++p)
+        for(int d=0;d<num_dim;++d)
+          basis_vector(cell,b,p,d)=cell_basis_vector(0,b,p,d);
+
+    if(compute_derivatives){
+      fst::HDIVtransformDIV(cell_div_basis.get_view(),cell_jac_det.get_view(),cell_div_basis_ref.get_view());
+      for(int b=0;b<num_basis;++b)
+        for(int p=0;p<num_points;++p)
+          div_basis(cell,b,p)=cell_div_basis(0,b,p);
+    }
+  }
+
+  if(build_weighted){
+    fst::multiplyMeasure(weighted_basis_vector.get_view(),weighted_measure.get_view(),basis_vector.get_view());
+    if(compute_derivatives){
+      fst::multiplyMeasure(weighted_div_basis.get_view(),weighted_measure.get_view(),div_basis.get_view());
+    }
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
 evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cell_cub_points,
@@ -556,8 +1010,6 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
 
   // maybe container dimension is different from num_dim and num_ip
   const int num_cell  = basis_layout->numCells(); // orientations.size();
-  // const int num_basis = basis_layout->cardinality();
-  // const int num_ip   = basis_layout->numPoints();
   const int num_dim   = basis_layout->dimension();
 
   TEUCHOS_TEST_FOR_EXCEPTION(num_cell != static_cast<int>(orientations.size()),

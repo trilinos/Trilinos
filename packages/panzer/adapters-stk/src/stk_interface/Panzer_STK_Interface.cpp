@@ -965,12 +965,11 @@ std::size_t STK_Interface::elementLocalId(stk::mesh::EntityId gid) const
 }
 
 
-std::string STK_Interface::containingBlockId(stk::mesh::Entity elmt)
+std::string STK_Interface::containingBlockId(stk::mesh::Entity elmt) const
 {
-   std::map<std::string,stk::mesh::Part*>::const_iterator itr;
-   for(itr=elementBlocks_.begin();itr!=elementBlocks_.end();++itr)
-      if(bulkData_->bucket(elmt).member(*itr->second))
-         return itr->first;
+   for(const auto & eb_pair : elementBlocks_)
+      if(bulkData_->bucket(elmt).member(*(eb_pair.second)))
+         return eb_pair.first;
    return "";
 }
 
@@ -1318,6 +1317,13 @@ void STK_Interface::rebalance(const Teuchos::ParameterList & params)
   currentLocalId_ = 0;
   orderedElementVector_ = Teuchos::null; // forces rebuild of ordered lists
 #endif
+}
+
+Teuchos::RCP<const Teuchos::Comm<int> >
+STK_Interface::getComm() const
+{
+  TEUCHOS_ASSERT(this->isInitialized());
+  return mpiComm_;
 }
 
 } // end namespace panzer_stk

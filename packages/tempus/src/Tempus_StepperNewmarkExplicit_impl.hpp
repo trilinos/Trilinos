@@ -210,7 +210,6 @@ void StepperNewmarkExplicit<Scalar>::takeStep(
     eODEModel_->evalModel(inArgs_,outArgs_);
 
     Thyra::copy(*(outArgs_.get_f()), a_new.ptr());
-    Thyra::scale(-1.0, a_new.ptr());  
 #ifdef DEBUG_OUTPUT
     *out_ << "IKT a_new = " << Thyra::max(*(workingState()->getXDotDot())) << "\n"; 
 #endif

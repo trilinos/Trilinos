@@ -129,7 +129,7 @@ void openmp_smart_static_matvec(AType A, XType x, YType y, int rows_per_thread,
   const LocalOrdinal* OMP_BENCH_RESTRICT matrixCols        = A.graph.entries.ptr_on_device();
   const LocalOrdinal* OMP_BENCH_RESTRICT matrixRowOffsets  = &A.graph.row_map(0);
   
-#if (KOKKOS_ENABLE_PROFILING)
+#if defined(KOKKOS_ENABLE_PROFILING)
     uint64_t kpID = 0;
      if(Kokkos::Profiling::profileLibraryLoaded()) {
       Kokkos::Profiling::beginParallelFor("KokkosSparse::Test_SPMV_raw_openmp", 0, &kpID);
@@ -166,7 +166,7 @@ void openmp_smart_static_matvec(AType A, XType x, YType y, int rows_per_thread,
   		}
  	 }
   }
-#if (KOKKOS_ENABLE_PROFILING)
+#if defined(KOKKOS_ENABLE_PROFILING)
      if(Kokkos::Profiling::profileLibraryLoaded()) {
         Kokkos::Profiling::endParallelFor(kpID);
      }

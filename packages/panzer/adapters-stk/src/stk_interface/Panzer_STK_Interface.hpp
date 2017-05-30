@@ -329,6 +329,9 @@ public:
 
    // Accessor functions
    //////////////////////////////////////////
+
+   //! get the comm associated with this mesh
+   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
  
    Teuchos::RCP<stk::mesh::BulkData> getBulkData() const { return bulkData_; }
    Teuchos::RCP<stk::mesh::MetaData> getMetaData() const { return metaData_; }
@@ -462,7 +465,7 @@ public:
 
    /**  Get the containing block ID of this element.
      */ 
-   std::string containingBlockId(stk::mesh::Entity elmt);
+   std::string containingBlockId(stk::mesh::Entity elmt) const;
 
    /** Get the stk mesh field pointer associated with a particular solution value
      * Assumes there is a field associated with "fieldName,blockId" pair. If none

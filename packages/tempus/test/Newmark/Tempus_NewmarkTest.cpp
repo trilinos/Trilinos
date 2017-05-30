@@ -47,6 +47,74 @@ using Tempus::SolutionState;
 //if you wish not to build/run all the test cases.
 #define TEST_HARMONIC_OSCILLATOR_DAMPED
 #define TEST_SINCOS_EXPLICIT
+#define TEST_BALL_PARABOLIC
+
+
+#ifdef TEST_BALL_PARABOLIC
+// ************************************************************
+TEUCHOS_UNIT_TEST(NewmarkExplicit, BallParabolic)
+{
+  //Tolerance to check if test passed 
+  double tolerance = 1.0e-14;
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_NewmarkExplicit_BallParabolic.xml");
+
+  // Setup the HarmonicOscillatorModel
+  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
+  RCP<HarmonicOscillatorModel<double> > model =
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
+
+  // Setup the Integrator and reset initial time step
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>(pl, model);
+
+  // Integrate to timeMax
+  bool integratorStatus = integrator->advanceTime();
+  TEST_ASSERT(integratorStatus)
+
+// Test if at 'Final Time'
+  double time = integrator->getTime();
+  double timeFinal =pl->sublist("Default Integrator")
+     .sublist("Time Step Control").get<double>("Final Time");
+  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+  // Time-integrated solution and the exact solution
+  RCP<Thyra::VectorBase<double> > x = integrator->getX();
+  RCP<const Thyra::VectorBase<double> > x_exact =
+    model->getExactSolution(time).get_x();
+
+  // Plot sample solution and exact solution
+  std::ofstream ftmp("Tempus_NewmarkExplicit_BallParabolic.dat");
+  ftmp.precision(16);
+  RCP<SolutionHistory<double> > solutionHistory =
+    integrator->getSolutionHistory();
+  bool passed = true;
+  double err = 0.0;
+  RCP<const Thyra::VectorBase<double> > x_exact_plot;
+  for (int i=0; i<solutionHistory->getNumStates(); i++) {
+    RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+    double time = solutionState->getTime();
+    RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
+    x_exact_plot = model->getExactSolution(time).get_x();
+    ftmp << time << "   "
+         << get_ele(*(x_plot), 0) << "   "
+         << get_ele(*(x_exact_plot), 0) << std::endl;
+    if (abs(get_ele(*(x_plot),0) - get_ele(*(x_exact_plot), 0)) > err)
+      err = abs(get_ele(*(x_plot),0) - get_ele(*(x_exact_plot), 0));
+  }
+  ftmp.close();
+  std::cout << "Max error = " << err << "\n \n";
+  if (err > tolerance)
+    passed = false;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(!passed, std::logic_error,
+    "\n Test failed!  Max error = " << err << " > tolerance = " << tolerance << "\n!");
+}
+#endif
+
 
 #ifdef TEST_SINCOS_EXPLICIT
 // ************************************************************

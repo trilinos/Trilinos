@@ -1229,7 +1229,7 @@ public:
       ArithTraits<mag_type>::isNan (x.imag ());
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
-    return sqrt (::Kokkos::real (x) * ::Kokkos::real (x) +
+    return std::sqrt (::Kokkos::real (x) * ::Kokkos::real (x) +
                  ::Kokkos::imag (x) * ::Kokkos::imag (x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
