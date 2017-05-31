@@ -293,7 +293,6 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperNewmarkExplicit<Scalar>::getValidParameters() const
 {
-  std::cout <<"IKT getValidParqameters" << std::endl; 
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", "Newmark Beta Explicit",
