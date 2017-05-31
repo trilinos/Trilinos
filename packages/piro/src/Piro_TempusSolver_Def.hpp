@@ -241,7 +241,13 @@ void Piro::TempusSolver<Scalar>::initialize(
     //Explicit time-integrators for 2nd order ODEs
     //IKT, FIXME: fill this in as more explicit integrators for 2nd order ODEs are added to Tempus.
     else if (stepperType == "Newmark Beta Explicit") {
-      if (tempusPL->get("Invert Mass Matrix", false)) {
+      bool invertMassMatrix = tempusPL->get("Invert Mass Matrix", false); 
+      if (!invertMassMatrix) {
+        *out << "\n WARNING in Piro::TempusSolver!  You are attempting to run \n" 
+             << "'Newmark Beta Explicit' Stepper with 'Invert Mass Matrix' set to 'false'. \n" 
+             << "This option should be set to 'true' unless your mass matrix is the identiy.\n"; 
+      }
+      else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
         tempusPL->get("Lump Mass Matrix", false);  //JF line does not do anything
 #ifdef ALBANY_BUILD
