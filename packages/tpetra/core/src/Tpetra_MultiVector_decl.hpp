@@ -1660,19 +1660,27 @@ namespace Tpetra {
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a device view.
     ///
-    /// The one-norm of a vector is the sum of squares of the
-    /// magnitudes of the vector's entries.  On exit, norms(j) is the
-    /// one-norm of column j of this MultiVector.
-    ///
     /// \param norms [out] Device View with getNumVectors() entries.
     ///
     /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->norm1 (* (A.getVector[j]))</tt>
+    ///
+    /// The one-norm of a vector is the sum of the magnitudes of the
+    /// vector's entries.  On exit, norms(j) is the one-norm of column
+    /// j of this MultiVector.
+    ///
+    /// We use Kokkos::Details::InnerProductSpaceTraits to define
+    /// "magnitude."  See the KokkosKernels package, and that class'
+    /// documentation in particular, for details.  This matters only
+    /// for "interesting" Scalar types, such as one might find in the
+    /// Stokhos package.
     void norm1 (const Kokkos::View<mag_type*, device_type>& norms) const;
 
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a device view.
     /// \tparam T The output type of the dot products.
+    ///
+    /// See the above norm1() method for documentation.
     ///
     /// This method only exists if mag_type and T are different types.
     /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
@@ -1699,16 +1707,15 @@ namespace Tpetra {
       Kokkos::deep_copy (norms, tmpNorms);
     }
 
-
     /// \brief Compute the one-norm of each vector (column).
     ///
-    /// The one-norm of a vector is the sum of squares of the
-    /// magnitudes of the vector's entries.  On exit, norms[j] is the
-    /// one-norm of column j of this MultiVector.
+    /// See the uppermost norm1() method above for documentation.
     void norm1 (const Teuchos::ArrayView<mag_type>& norms) const;
 
     /// \brief Compute the one-norm of each vector (column).
     /// \tparam T The output type of the norms.
+    ///
+    /// See the uppermost norm1() method above for documentation.
     ///
     /// This method only exists if mag_type and T are different types.
     /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
@@ -1736,19 +1743,27 @@ namespace Tpetra {
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
     ///
+    /// \param norms [out] Device View with getNumVectors() entries.
+    ///
+    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
+    /// \post <tt>norms(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
+    ///
     /// The two-norm of a vector is the standard Euclidean norm, the
     /// square root of the sum of squares of the magnitudes of the
     /// vector's entries.  On exit, norms(k) is the two-norm of column
     /// k of this MultiVector.
     ///
-    /// \param norms [out] Device View with getNumVectors() entries.
-    ///
-    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
-    /// \post <tt>norms(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
+    /// We use Kokkos::Details::InnerProductSpaceTraits to define
+    /// "magnitude."  See the KokkosKernels package, and that class'
+    /// documentation in particular, for details.  This matters only
+    /// for "interesting" Scalar types, such as one might find in the
+    /// Stokhos package.
     void norm2 (const Kokkos::View<mag_type*, device_type>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
+    ///
+    /// See the above norm2() method for documentation.
     ///
     /// This method only exists if mag_type and T are different types.
     /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
@@ -1776,14 +1791,13 @@ namespace Tpetra {
 
     /// \brief Compute the two-norm of each vector (column).
     ///
-    /// The two-norm of a vector is the standard Euclidean norm, the
-    /// square root of the sum of squares of the magnitudes of the
-    /// vector's entries.  On exit, norms[k] is the two-norm of column
-    /// k of this MultiVector.
+    /// See the uppermost norm2() method above for documentation.
     void norm2 (const Teuchos::ArrayView<mag_type>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column).
     /// \tparam T The output type of the norms.
+    ///
+    /// See the uppermost norm2() method above for documentation.
     ///
     /// This method only exists if mag_type and T are different types.
     /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
@@ -1814,10 +1828,18 @@ namespace Tpetra {
     /// The infinity-norm of a vector is the maximum of the magnitudes
     /// of the vector's entries.  On exit, norms(j) is the
     /// infinity-norm of column j of this MultiVector.
+    ///
+    /// We use Kokkos::Details::InnerProductSpaceTraits to define
+    /// "magnitude."  See the KokkosKernels package, and that class'
+    /// documentation in particular, for details.  This matters only
+    /// for "interesting" Scalar types, such as one might find in the
+    /// Stokhos package.
     void normInf (const Kokkos::View<mag_type*, device_type>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
+    ///
+    /// See the above normInf() method for documentation.
     ///
     /// This method only exists if mag_type and T are different types.
     /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
@@ -1843,15 +1865,17 @@ namespace Tpetra {
       Kokkos::deep_copy (norms, theNorms);
     }
 
-    /// \brief Compute the infinity-norm of each vector (column).
+    /// \brief Compute the infinity-norm of each vector (column),
+    ///   storing the result in a Teuchos::ArrayView.
     ///
-    /// The infinity-norm of a vector is the maximum of the magnitudes
-    /// of the vector's entries.  On exit, norms[j] is the
-    /// infinity-norm of column j of this MultiVector.
+    /// See the uppermost normInf() method above for documentation.
     void normInf (const Teuchos::ArrayView<mag_type>& norms) const;
 
-    /// \brief Compute the infinity-norm of each vector (column).
+    /// \brief Compute the infinity-norm of each vector (column),
+    ///   storing the result in a Teuchos::ArrayView.
     /// \tparam T The output type of the norms.
+    ///
+    /// See the uppermost normInf() method above for documentation.
     ///
     /// This method only exists if mag_type and T are different types.
     /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
