@@ -1,10 +1,11 @@
-#include "Teuchos_grammar.hpp"
+#include "Teuchos_Grammar.hpp"
 
-#include <cassert>
+#include <Teuchos_Assert.hpp>
 #include <set>
 #include <iostream>
 
 #include "Teuchos_vector.hpp"
+#include "Teuchos_Parser.hpp"
 
 namespace Teuchos {
 
@@ -13,8 +14,8 @@ int get_nnonterminals(Grammar const& g) {
 }
 
 bool is_terminal(Grammar const& g, int symbol) {
-  assert(0 <= symbol);
-  assert(symbol <= g.nsymbols);
+  TEUCHOS_DEBUG_ASSERT(0 <= symbol);
+  TEUCHOS_DEBUG_ASSERT(symbol <= g.nsymbols);
   return symbol < g.nterminals;
 }
 
@@ -28,34 +29,36 @@ int as_nonterminal(Grammar const& g, int symbol) {
 
 int find_goal_symbol(Grammar const& g) {
   std::set<int> nonterminals_in_rhss;
-  for (auto& p : g.productions) {
-    for (auto s : p.rhs) {
-      assert(0 <= s);
+  for (int i = 0; i < size(g.productions); ++i) {
+    const Grammar::Production& p = at(g.productions, i);
+    for (int j = 0; j < size(p.rhs); ++j) {
+      const int s = at(p.rhs, j);
+      TEUCHOS_DEBUG_ASSERT(0 <= s);
       if (is_nonterminal(g, s)) nonterminals_in_rhss.insert(s);
     }
   }
   int result = -1;
   for (int s = g.nterminals; s < g.nsymbols; ++s)
     if (!nonterminals_in_rhss.count(s)) {
-      if (result != -1) {
-        std::cerr << "ERROR: there is more than one root nonterminal (";
-        std::cerr << at(g.symbol_names, result) << " and "
-                  << at(g.symbol_names, s) << ") in this grammar\n";
-        abort();
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION(result != -1, ParserFail,
+          "ERROR: there is more than one root nonterminal ("
+          << at(g.symbol_names, result) << " and "
+          << at(g.symbol_names, s) << ") in this grammar\n");
       result = s;
     }
-  if (result == -1) {
-    std::cerr << "ERROR: the root nonterminal is unclear for this grammar\n";
-    abort();
-  }
+  TEUCHOS_TEST_FOR_EXCEPTION(result == -1, ParserFail,
+      "ERROR: the root nonterminal is unclear for this grammar\n"
+      "usually this means all nonterminals appear in the RHS of a production\n"
+      "and can be fixed by adding a new nonterminal root2, root2 -> root\n");
   return result;
 }
 
 void add_end_terminal(Grammar& g) {
-  for (auto& prod : g.productions) {
+  for (int i = 0; i < size(g.productions); ++i) {
+    Grammar::Production& prod = at(g.productions, i);
     if (is_nonterminal(g, prod.lhs)) prod.lhs++;
-    for (auto& rhs_symb : prod.rhs) {
+    for (int j = 0; j < size(prod.rhs); ++j) {
+      int& rhs_symb = at(prod.rhs, j);
       if (is_nonterminal(g, rhs_symb)) rhs_symb++;
     }
   }
@@ -69,10 +72,10 @@ int get_end_terminal(Grammar const& g) {
 }
 
 void add_accept_production(Grammar& g) {
-  auto goal_symbol = find_goal_symbol(g);
+  int goal_symbol = find_goal_symbol(g);
   Grammar::Production p;
   p.lhs = g.nsymbols;
-  p.rhs = {goal_symbol};
+  p.rhs.push_back(goal_symbol);
   g.productions.push_back(p);
   g.symbol_names.push_back("ACCEPT");
   g.nsymbols++;
@@ -93,9 +96,10 @@ std::ostream& operator<<(std::ostream& os, Grammar const& g) {
   }
   os << "productions:\n";
   for (int i = 0; i < size(g.productions); ++i) {
-    auto& prod = at(g.productions, i);
+    const Grammar::Production& prod = at(g.productions, i);
     os << i << ": " << prod.lhs << " ::=";
-    for (auto& symb : prod.rhs) {
+    for (int j = 0; j < size(prod.rhs); ++j) {
+      int symb = at(prod.rhs, j);
       os << ' ' << symb;
     }
     os << '\n';

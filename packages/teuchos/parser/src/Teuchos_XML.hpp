@@ -1,10 +1,10 @@
 #ifndef TEUCHOS_XML_HPP
 #define TEUCHOS_XML_HPP
 
-#include <Teuchos_language.hpp>
+#include <Teuchos_Language.hpp>
 
 namespace Teuchos {
-namespace xml {
+namespace XML {
 
 enum {
   PROD_DOC,
@@ -103,7 +103,7 @@ enum {
   PROD_COMMON_EQUAL,
   PROD_COMMON_LSQUARE,
   PROD_COMMON_UNDER,
-  PROD_COMMON_OTHER,
+  PROD_COMMON_OTHER
 };
 
 enum { NPRODS = PROD_COMMON_OTHER + 1 };
@@ -129,7 +129,7 @@ enum {
   TOK_LSQUARE,
   TOK_RSQUARE,
   TOK_UNDER,
-  TOK_OTHER,
+  TOK_OTHER
 };
 
 enum { NTOKS = TOK_OTHER + 1 };
@@ -139,7 +139,7 @@ LanguagePtr ask_language();
 
 ReaderTablesPtr ask_reader_tables();
 
-}  // end namespace xml
+}  // end namespace XML
 }  // end namespace Teuchos
 
 #endif

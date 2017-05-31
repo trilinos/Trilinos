@@ -2,37 +2,50 @@
 #define TEUCHOS_SET_HPP
 
 #include <set>
+#include <iosfwd>
+#include <Teuchos_Assert.hpp>
 
 namespace Teuchos {
 
 template <typename T>
 void unite_with(std::set<T>& a, std::set<T> const& b) {
-  for (auto& x : b) a.insert(x);
+  for (typename std::set<T>::const_iterator it = b.begin(); it != b.end(); ++it) {
+    const T& x = *it;
+    a.insert(x);
+  }
 }
 
 template <typename T>
-std::set<T> unite(std::set<T> const& a, std::set<T> const& b) {
-  auto c = a;
-  unite_with(c, b);
-  return c;
+void unite(std::set<T>& result, std::set<T> const& a, std::set<T> const& b) {
+  result = a;
+  unite_with(result, b);
 }
 
 template <typename T>
 void subtract_from(std::set<T>& a, std::set<T> const& b) {
-  for (auto& x : b) {
-    auto it = a.find(x);
-    if (it == a.end()) continue;
-    a.erase(it);
+  for (typename std::set<T>::const_iterator it = b.begin(); it != b.end(); ++it) {
+    const T& x = *it;
+    typename std::set<T>::iterator it2 = a.find(x);
+    if (it2 == a.end()) continue;
+    a.erase(it2);
   }
 }
 
 template <typename T>
-bool intersects(std::set<T>& a, std::set<T> const& b) {
-  for (auto& x : b) {
-    auto it = a.find(x);
-    if (it != a.end()) return true;
+bool intersects(std::set<T> const& a, std::set<T> const& b) {
+  for (typename std::set<T>::const_iterator it = b.begin(); it != b.end(); ++it) {
+    const T& x = *it;
+    typename std::set<T>::const_iterator it2 = a.find(x);
+    if (it2 != a.end()) return true;
   }
   return false;
+}
+
+/* NOTE: this is only required to support Teuchos::any's non-standard print functionality ! */
+template <typename T>
+std::ostream& operator<<(std::ostream& os, std::set<T> const&) {
+  TEUCHOS_ASSERT(0);
+  return os;
 }
 
 }

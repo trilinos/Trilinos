@@ -2,7 +2,7 @@
 #define TEUCHOS_STRING_HPP
 
 #include <string>
-#include <cassert>
+#include <Teuchos_Assert.hpp>
 
 namespace Teuchos {
 
@@ -14,15 +14,20 @@ inline int size(std::string const& s) {
 }
 
 inline typename std::string::reference at(std::string& s, int i) {
-  assert(0 <= i);
-  assert(i < int(s.size()));
+  TEUCHOS_DEBUG_ASSERT(0 <= i);
+  TEUCHOS_DEBUG_ASSERT(i < int(s.size()));
   return s[std::size_t(i)];
 }
 
 inline typename std::string::const_reference at(std::string const& s, int i) {
-  assert(0 <= i);
-  assert(i < int(s.size()));
+  TEUCHOS_DEBUG_ASSERT(0 <= i);
+  TEUCHOS_DEBUG_ASSERT(i < int(s.size()));
   return s[std::size_t(i)];
+}
+
+inline void resize(std::string& s, int n) {
+  TEUCHOS_DEBUG_ASSERT(0 <= n);
+  s.resize(std::size_t(n));
 }
 
 }
