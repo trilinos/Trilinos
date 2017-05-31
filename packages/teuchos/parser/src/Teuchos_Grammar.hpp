@@ -3,7 +3,8 @@
 
 #include <string>
 #include <vector>
-#include <memory>
+
+#include <Teuchos_RCP.hpp>
 
 namespace Teuchos {
 
@@ -11,19 +12,19 @@ namespace Teuchos {
    terminal symbols first, all non-terminal symbols after */
 
 struct Grammar {
-  using RHS = std::vector<int>;
+  typedef std::vector<int> RHS;
   struct Production {
     int lhs;
     RHS rhs;
   };
-  using Productions = std::vector<Production>;
+  typedef std::vector<Production> Productions;
   int nsymbols;
   int nterminals;
   Productions productions;
   std::vector<std::string> symbol_names;
 };
 
-using GrammarPtr = std::shared_ptr<Grammar const>;
+typedef RCP<const Grammar> GrammarPtr;
 
 int get_nnonterminals(Grammar const& g);
 bool is_terminal(Grammar const& g, int symbol);

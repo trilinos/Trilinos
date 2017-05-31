@@ -1,4 +1,4 @@
-#include "Teuchos_graph.hpp"
+#include "Teuchos_Graph.hpp"
 
 #include <iostream>
 
@@ -26,11 +26,17 @@ NodeEdges& get_edges(Graph& g, int i) {
   return at(g, i);
 }
 
+int count_edges(const Graph& g, int i) {
+  return size(at(g, i));
+}
+
 Graph make_transpose(Graph const& g) {
-  auto nnodes = get_nnodes(g);
-  auto transpose = make_graph_with_nnodes(nnodes);
+  int nnodes = get_nnodes(g);
+  Graph transpose = make_graph_with_nnodes(nnodes);
   for (int i = 0; i < nnodes; ++i) {
-    for (auto j : get_edges(g, i)) {
+    const NodeEdges& edges = get_edges(g, i);
+    for (NodeEdges::const_iterator it = edges.begin(); it != edges.end(); ++it) {
+      int j = *it;
       add_edge(transpose, j, i);
     }
   }
@@ -44,7 +50,11 @@ int at(Graph const& g, int i, int j) {
 std::ostream& operator<<(std::ostream& os, Graph const& g) {
   for (int i = 0; i < get_nnodes(g); ++i) {
     os << i << ":";
-    for (auto j : get_edges(g, i)) os << " " << j;
+    const NodeEdges& edges = get_edges(g, i);
+    for (NodeEdges::const_iterator it = edges.begin(); it != edges.end(); ++it) {
+      int j = *it;
+      os << " " << j;
+    }
     os << '\n';
   }
   return os;

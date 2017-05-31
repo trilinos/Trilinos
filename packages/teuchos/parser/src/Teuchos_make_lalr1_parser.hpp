@@ -4,19 +4,21 @@
 #include <set>
 #include <memory>
 
-#include <Teuchos_parser.hpp>
-#include <Teuchos_graph.hpp>
+#include <Teuchos_Parser.hpp>
+#include <Teuchos_Graph.hpp>
+#include <Teuchos_RCP.hpp>
 
 namespace Teuchos {
 
 struct Config {
   int production;
   int dot;
+  Config(int p, int d);
 };
 
-using Configs = std::vector<Config>;
+typedef std::vector<Config> Configs;
 
-using Context = std::set<int>;
+typedef std::set<int> Context;
 
 /* nonterminal transitions will be stored as SHIFT
    actions while in progress */
@@ -27,17 +29,23 @@ struct ActionInProgress {
 
 struct StateInProgress {
   std::vector<int> configs;
-  std::vector<ActionInProgress> actions;
+  typedef std::vector<ActionInProgress> Actions;
+  Actions actions;
 };
 
-using StatesInProgress = std::vector<std::unique_ptr<StateInProgress>>;
+void swap(StateInProgress& a, StateInProgress& b);
+
+typedef RCP<StateInProgress> StateInProgressPtr;
+
+typedef std::vector<StateInProgressPtr> StatesInProgress;
 
 struct StateConfig {
   int state;
   int config_in_state;
+  StateConfig(int s, int cis);
 };
 
-using StateConfigs = std::vector<StateConfig>;
+typedef std::vector<StateConfig> StateConfigs;
 
 struct ParserInProgress {
   StatesInProgress states;
@@ -51,14 +59,21 @@ StateConfigs form_state_configs(StatesInProgress const& states);
 Graph form_states_to_state_configs(StateConfigs const& scs,
     StatesInProgress const& states);
 
-void print_dot(
+void print_graphviz(
     std::string const& filepath,
-    ParserInProgress const& pip
+    ParserInProgress const& pip,
+    bool verbose,
+    std::ostream& os
     );
 
-ParserInProgress build_lalr1_parser(GrammarPtr grammar, bool verbose = false);
+ParserInProgress draft_lalr1_parser(GrammarPtr grammar, bool verbose = false);
 
 Parser accept_parser(ParserInProgress const& pip);
+
+class ParserBuildFail: public std::invalid_argument {
+ public:
+  ParserBuildFail(const std::string& msg);
+};
 
 }
 

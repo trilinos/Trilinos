@@ -1,10 +1,9 @@
 #ifndef TEUCHOS_READER_TABLES_HPP
 #define TEUCHOS_READER_TABLES_HPP
 
-#include <memory>
-
-#include <Teuchos_finite_automaton.hpp>
-#include <Teuchos_parser.hpp>
+#include <Teuchos_FiniteAutomaton.hpp>
+#include <Teuchos_Parser.hpp>
+#include <Teuchos_RCP.hpp>
 
 namespace Teuchos {
 
@@ -22,7 +21,7 @@ struct ReaderTables {
   IndentInfo indent_info;
 };
 
-using ReaderTablesPtr = std::shared_ptr<ReaderTables const>;
+typedef RCP<const ReaderTables> ReaderTablesPtr;
 
 }
 

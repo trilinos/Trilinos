@@ -1,10 +1,10 @@
 #ifndef TEUCHOS_REGEX_HPP
 #define TEUCHOS_REGEX_HPP
 
-#include <Teuchos_language.hpp>
-#include <Teuchos_finite_automaton.hpp>
-#include <Teuchos_reader_tables.hpp>
-#include <Teuchos_reader.hpp>
+#include <Teuchos_Language.hpp>
+#include <Teuchos_FiniteAutomaton.hpp>
+#include <Teuchos_ReaderTables.hpp>
+#include <Teuchos_Reader.hpp>
 
 namespace Teuchos {
 namespace regex {
@@ -31,7 +31,7 @@ enum {
   PROD_SET_ITEMS_ADD,
   PROD_SET_ITEM_CHAR,
   PROD_SET_ITEM_RANGE,
-  PROD_RANGE,
+  PROD_RANGE
 };
 
 enum { NPRODS = PROD_RANGE + 1 };
@@ -48,7 +48,7 @@ enum {
   TOK_NEGATE,
   TOK_STAR,
   TOK_PLUS,
-  TOK_MAYBE,
+  TOK_MAYBE
 };
 
 enum { NTOKS = TOK_MAYBE + 1 };
@@ -56,23 +56,19 @@ enum { NTOKS = TOK_MAYBE + 1 };
 Language build_language();
 LanguagePtr ask_language();
 
-FiniteAutomaton build_lexer();
+void build_lexer(FiniteAutomaton& result);
 
 ReaderTablesPtr ask_reader_tables();
 
-FiniteAutomaton build_dfa(std::string const& name, std::string const& regex, int token);
-
-any at_shift_internal(int token, std::string& text);
-any at_reduce_internal(int production, std::vector<any>& rhs, int result_token);
+void build_dfa(FiniteAutomaton& result, std::string const& name, std::string const& regex, int token);
 
 class Reader : public Teuchos::Reader {
  public:
   Reader(int result_token_in);
-  Reader(Reader const& other) = default;
-  virtual ~Reader() override = default;
+  virtual ~Reader() {}
  protected:
-  virtual any at_shift(int token, std::string& text) override;
-  virtual any at_reduce(int token, std::vector<any>& rhs) override;
+  virtual void at_shift(any& result, int token, std::string& text);
+  virtual void at_reduce(any& result, int token, std::vector<any>& rhs);
  private:
   int result_token;
 };
