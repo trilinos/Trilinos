@@ -4605,10 +4605,12 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   computeGlobalConstants ()
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::ArrayView;
     using Teuchos::outArg;
     using Teuchos::reduceAll;
     typedef global_size_t GST;
+    ProfilingRegion regionCGC ("Tpetra::CrsGraph::computeGlobalConstants");
 
     // Short circuit
     if(haveGlobalConstants_) return;
@@ -4661,11 +4663,13 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   computeLocalConstants ()
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::ArrayView;
     using Teuchos::outArg;
     using Teuchos::reduceAll;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+    ProfilingRegion regionCLC ("Tpetra::CrsGraph::computeLocalConstants");
 
     // Short circuit
     if(haveGlobalConstants_) return;
@@ -4762,6 +4766,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   makeIndicesLocal ()
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::arcp;
     using Teuchos::Array;
     typedef LocalOrdinal LO;
@@ -4774,8 +4779,8 @@ namespace Tpetra {
       lcl_col_inds_type;
     typedef Kokkos::View<GO*, typename lcl_col_inds_type::array_layout,
       device_type> gbl_col_inds_type;
-
     const char tfecfFuncName[] = "makeIndicesLocal: ";
+    ProfilingRegion regionMakeIndicesLocal ("Tpetra::CrsGraph::makeIndicesLocal");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! this->hasColMap (), std::logic_error, "The graph does not have a "

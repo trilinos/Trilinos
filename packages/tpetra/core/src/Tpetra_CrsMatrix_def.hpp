@@ -789,7 +789,10 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   allocateValues (ELocalGlobal lg, GraphAllocationStatus gas)
   {
+    using ::Tpetra::Details::ProfilingRegion;
     const char tfecfFuncName[] = "allocateValues: ";
+    ProfilingRegion regionAllocateValues ("Tpetra::CrsMatrix::allocateValues");
+
 #ifdef HAVE_TPETRA_DEBUG
     const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
@@ -959,6 +962,7 @@ namespace Tpetra {
   fillLocalGraphAndMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using ::Tpetra::Details::computeOffsetsFromCounts;
+    using ::Tpetra::Details::ProfilingRegion;
     using Kokkos::create_mirror_view;
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
@@ -969,6 +973,8 @@ namespace Tpetra {
     typedef typename local_matrix_type::row_map_type row_map_type;
     typedef typename Graph::local_graph_type::entries_type::non_const_type lclinds_1d_type;
     typedef typename local_matrix_type::values_type values_type;
+    ProfilingRegion regionFLGAM ("Tpetra::CrsGraph::fillLocalGraphAndMatrix");
+
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "fillLocalGraphAndMatrix (called from "
       "fillComplete or expertStaticFillComplete): ";
@@ -1434,6 +1440,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   fillLocalMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using Kokkos::create_mirror_view;
     using Teuchos::ArrayRCP;
     using Teuchos::Array;
@@ -1447,6 +1454,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "fillLocalMatrix (called from fillComplete): ";
 #endif // HAVE_TPETRA_DEBUG
+    ProfilingRegion regionFLM ("Tpetra::CrsGraph::fillLocalMatrix");
 
     const size_t lclNumRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
@@ -3750,6 +3758,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   globalAssemble ()
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::Comm;
     using Teuchos::outArg;
     using Teuchos::RCP;
@@ -3762,6 +3771,7 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef typename Teuchos::Array<GO>::size_type size_type;
     const char tfecfFuncName[] = "globalAssemble: "; // for exception macro
+    ProfilingRegion regionGlobalAssemble ("Tpetra::CrsMatrix::globalAssemble");
 
     RCP<const Comm<int> > comm = getComm ();
 
@@ -4019,15 +4029,17 @@ namespace Tpetra {
                 const Teuchos::RCP<const map_type>& rangeMap,
                 const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
     const char tfecfFuncName[] = "fillComplete";
+    ProfilingRegion regionFillComplete ("Tpetra::CrsMatrix::fillComplete");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! isFillActive () || isFillComplete (),
-      std::runtime_error, ": Matrix fill state must be active (isFillActive() "
-      "must be true) before you may call fillComplete().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! isFillActive () || isFillComplete (), std::runtime_error,
+       ": Matrix fill state must be active (isFillActive() "
+       "must be true) before you may call fillComplete().");
     const int numProcs = getComm ()->getSize ();
 
     //
@@ -4074,11 +4086,11 @@ namespace Tpetra {
       globalAssemble ();
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        numProcs == 1 && nonlocals_.size() > 0,
-        std::runtime_error, ": cannot have nonlocal entries on a serial run.  "
-        "An invalid entry (i.e., with row index not in the row Map) must have "
-        "been submitted to the CrsMatrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numProcs == 1 && nonlocals_.size() > 0,
+         std::runtime_error, ": cannot have nonlocal entries on a serial run.  "
+         "An invalid entry (i.e., with row index not in the row Map) must have "
+         "been submitted to the CrsMatrix.");
     }
 
     if (isStaticGraph ()) {
