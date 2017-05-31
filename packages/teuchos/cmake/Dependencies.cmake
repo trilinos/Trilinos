@@ -7,4 +7,5 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     Remainder     remainder     PS  REQUIRED
     KokkosCompat  kokkoscompat  PS  OPTIONAL
     KokkosComm    kokkoscomm    PS  OPTIONAL
+    Parser        parser        PS  OPTIONAL
   )
