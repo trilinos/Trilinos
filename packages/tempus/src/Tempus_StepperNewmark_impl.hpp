@@ -345,7 +345,7 @@ std::string StepperNewmark<Scalar>::description() const
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  std::string name = "Newmark ";
+  std::string name = "Newmark Beta";
   return(name);
 }
 
@@ -399,11 +399,11 @@ void StepperNewmark<Scalar>::setParameterList(
       TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
         std::logic_error,
            "\nError in 'Newmark' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n"); 
-      *out << "\n \nSetting Beta = " << beta_ << " and Gamma = " << gamma_
-           << " from Newmark Beta Parameters in input file.\n\n";
+      *out << "\nSetting Beta = " << beta_ << " and Gamma = " << gamma_
+           << " from Newmark Beta Parameters in input file.\n";
     } 
     else {
-      *out << "\n \nScheme Name = " << scheme_name << ".  Using values \n"
+      *out << "\nScheme Name = " << scheme_name << ".  Using values \n"
            << "of Beta and Gamma for this scheme (ignoring values of Beta and Gamma \n"
            << "in input file, if provided).\n"; 
        if (scheme_name == "Average Acceleration") {
@@ -425,14 +425,15 @@ void StepperNewmark<Scalar>::setParameterList(
        *out << "===> Beta = " << beta_ << ", Gamma = " << gamma_ << "\n"; 
     }
     if (beta_ == 0.0) {
-      *out << "\n \nRunning  Newmark Beta Stepper with Beta = 0.0, which \n"
-           << "specifies an explicit scheme.  WARNING: code has not been optimized \n"
-           << "yet for this case (no mass lumping)\n"; 
+      *out << "\nWARNING: Running (implicit implementation of) Newmark Beta Stepper with Beta = 0.0, which \n"
+           << "specifies an explicit scheme.  Mass lumping is not possible, so this will be slow!  To run explicit \n" 
+           << "implementation of Newmark Beta Stepper, please re-run with 'Stepper Type' = 'Newmark Beta Explicit'.\n"
+           << "This stepper allows for mass lumping when called through Piro::TempusSolver.\n"; 
     }
   }
   else {
-    *out << "\n  \nNo Newmark Beta Parameters sublist found in input file; using default values of Beta = "
-         << beta_ << " and Gamma = " << gamma_ << ".\n\n";
+    *out << "\nNo Newmark Beta Parameters sublist found in input file; using default values of Beta = "
+         << beta_ << " and Gamma = " << gamma_ << ".\n";
   }
 }
 
