@@ -4414,7 +4414,8 @@ namespace Tpetra {
     const bool Y_is_overwritten = (beta == ZERO);
 
     // We treat the case of a replicated MV output specially.
-    const bool Y_is_replicated = ! Y_in.isDistributed ();
+    const bool Y_is_replicated =
+      (! Y_in.isDistributed () && this->getComm ()->getSize () != 1);
 
     // This is part of the special case for replicated MV output.
     // We'll let each process do its thing, but do an all-reduce at
