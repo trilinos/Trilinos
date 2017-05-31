@@ -1133,7 +1133,7 @@ namespace {
     mvec2.dot(mvec1,dots2());
     TEST_COMPARE_FLOATING_ARRAYS(dots2,zeros,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,zeros,M0);
-    TEST_EQUALITY_CONST( mvec1.getVector(0)->dot(*mvec2.getVector(0)), S0);
+    TEST_EQUALITY_CONST( static_cast<Scalar> (mvec1.getVector(0)->dot(*mvec2.getVector(0))), S0 );
     mvec1.norm1(norms1());
     mvec2.norm1(norms2());
     std::fill(ans.begin(), ans.end(), M0);
@@ -1151,7 +1151,7 @@ namespace {
     mvec2.dot(mvec1,dots2());
     TEST_COMPARE_FLOATING_ARRAYS(dots2,zeros,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,zeros,M0);
-    TEST_EQUALITY_CONST( mvec1.getVector(0)->dot(*mvec2.getVector(0)), S0);
+    TEST_EQUALITY_CONST( static_cast<Scalar> (mvec1.getVector(0)->dot(*mvec2.getVector(0))), S0 );
     mvec1.norm1(norms1());
     mvec2.norm1(norms2());
     std::fill(ans.begin(), ans.end(), as<Mag>(numImages));
@@ -1169,7 +1169,7 @@ namespace {
     mvec2.dot(mvec1,dots2());
     TEST_COMPARE_FLOATING_ARRAYS(dots2,zeros,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,zeros,M0);
-    TEST_EQUALITY_CONST( mvec1.getVector(0)->dot(*mvec2.getVector(0)), S0);
+    TEST_EQUALITY_CONST( static_cast<Scalar> (mvec1.getVector(0)->dot(*mvec2.getVector(0))), S0 );
     mvec1.norm1(norms1());
     mvec2.norm1(norms2());
     std::fill(ans.begin(), ans.end(), as<Mag>(2*numImages));
