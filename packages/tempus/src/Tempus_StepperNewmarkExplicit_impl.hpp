@@ -279,12 +279,15 @@ void StepperNewmarkExplicit<Scalar>::setParameterList(
        "Error - Stepper Type is not 'Newmark Beta Explicit'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
   gamma_ = 0.5; //default value
-  Teuchos::RCP<Teuchos::FancyOStream> out =  Teuchos::VerboseObjectBase::getDefaultOStream();
-  gamma_ = stepperPL_->get<Scalar>("Gamma"); 
+  if (stepperPL_->isSublist("Newmark Beta Explicit Parameters")) {
+    Teuchos::ParameterList &newmarkPL =
+      stepperPL_->sublist("Newmark Beta Explicit Parameters", true);
+    gamma_ = newmarkPL.get("Gamma", 0.5);
+    *out_ << "\nSetting Gamma = " << gamma_ << " from input file.\n";
+  }
   TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
       std::logic_error,
       "\nError in 'Newmark Beta Explicit' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
-  *out << "\nSetting Gamma = " << gamma_ << " from input file.\n";
 
 }
 
@@ -297,7 +300,9 @@ StepperNewmarkExplicit<Scalar>::getValidParameters() const
   pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", "Newmark Beta Explicit",
           "'Stepper Type' must be 'Newmark Beta Explicit'.");
-  pl->set("Gamma", 0.5, "Newmark Beta Explicit parameter."); 
+  pl->sublist("Newmark Beta Explicit Parameters", false, "");
+  pl->sublist("Newmark Beta Explicit Parameters", false, "").set("Gamma",
+               0.5, "Newmark Beta Explicit parameter");
 
   return pl;
 }
