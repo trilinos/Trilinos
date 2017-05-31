@@ -241,9 +241,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     //Explicit time-integrators for 2nd order ODEs
     //IKT, FIXME: fill this in as more explicit integrators for 2nd order ODEs are added to Tempus.
     else if (stepperType == "Newmark Beta Explicit") {
-      std::cout << "IKT Newmark Beta Explicit here!" << std::endl; 
       if (tempusPL->get("Invert Mass Matrix", false)) {
-        std::cout << "IKT Invert Mass Matrix!" << std::endl; 
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
         tempusPL->get("Lump Mass Matrix", false);  //JF line does not do anything
 #ifdef ALBANY_BUILD
