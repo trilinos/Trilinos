@@ -1061,8 +1061,17 @@ reduceAll (const ValueTypeReductionOp<Ordinal,char> &reductOp,
     "MPI_Type_commit failed with error \"" << mpiErrorCodeToString (err)
     << "\".");
 
-  err = MPI_Allreduce (const_cast<char*> (sendBuffer), globalReducts, 1,
-                       char_block, op, *rawMpiComm_);
+  if (sendBuffer == globalReducts) {
+    // NOTE (mfh 31 May 2017) This is only safe if the communicator is
+    // NOT an intercomm.  The usual case is that communicators are
+    // intracomms.
+    err = MPI_Allreduce (MPI_IN_PLACE, globalReducts, 1,
+                         char_block, op, *rawMpiComm_);
+  }
+  else {
+    err = MPI_Allreduce (const_cast<char*> (sendBuffer), globalReducts, 1,
+                         char_block, op, *rawMpiComm_);
+  }
   if (err != MPI_SUCCESS) {
     // Don't throw until we release the type resources we allocated
     // above.  If freeing fails for some reason, let the memory leak
