@@ -211,19 +211,9 @@ public:
     }
   }
 
-  //! Set the initial value of the reduction result.
-  KOKKOS_INLINE_FUNCTION void init (output_offset_type& dst) const
-  {
-    dst = static_cast<output_offset_type> (0);
-  }
-
-  //! Combine intermedate reduction results across threads.
-  KOKKOS_INLINE_FUNCTION void
-  join (volatile output_offset_type& dst,
-        const volatile output_offset_type& src) const
-  {
-    dst += src;
-  }
+  // mfh 31 May 2017: Don't need init or join.  If you have join, MUST
+  // have join both with and without volatile!  Otherwise intrawarp
+  // joins are really slow on GPUs.
 
   //! Host function for getting the error.
   int getError () const {
