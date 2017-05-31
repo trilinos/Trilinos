@@ -284,7 +284,7 @@ void StepperNewmarkExplicit<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
       std::logic_error,
       "\nError in 'Newmark Beta Explicit' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
-  *out << "\n \nSetting Gamma = " << gamma_ << " from input file.\n\n";
+  *out << "\nSetting Gamma = " << gamma_ << " from input file.\n";
 
 }
 
