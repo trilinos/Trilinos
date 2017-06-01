@@ -441,8 +441,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     std::cout << paramList << std::endl;
 
+    const std::string userName = "user data";
+    Teuchos::ParameterList& userParamList = paramList.sublist(userName);
+    userParamList.set("multivector Coordinates",coordinates);
+    userParamList.set("ArrayRCP<bool> DofPresent", dofPresent);
+
     RCP<Hierarchy> H;
-    H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList); //, coordinates);
+    H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList, paramList /*coordinates*/);
 
     success = true;
   }
