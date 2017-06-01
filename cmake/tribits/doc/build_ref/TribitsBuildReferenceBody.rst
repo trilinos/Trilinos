@@ -7,7 +7,6 @@
 .. _TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES(): https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-tpl-find-include-dirs-and-libraries
 
 
-
 Getting set up to use CMake
 ===========================
 
@@ -1871,6 +1870,22 @@ NOTE: The set of extra repositories listed in the file
 ``<Project>_EXTRAREPOS_FILE`` can be filtered down by setting the variables
 ``<Project>_PRE_REPOSITORIES`` if PRE extra repos are listed and/or
 ``<Project>_EXTRA_REPOSITORIES`` if POST extra repos are listed.
+
+Selecting a different source location for a package
+---------------------------------------------------
+
+The source location for any package can be changed by configuring with::
+
+  -D<TRIBITS_PACKAGE>_SOURCE_DIR_OVERRIDE:STRING=<path>
+
+Here, ``<path>`` can be a relative path or an absolute path, but in both cases
+must be under the project source directory (otherwise, an error will occur).
+The relative path will then become the relative path for the package under the
+binary tree as well.
+
+This can be used, for example, to use a different repository for the
+implementation of a package that is otherwise snapshotted into the base
+project source repository (e.g. Kokkos in Trilinos).
 
   
 Reconfiguring completely from scratch

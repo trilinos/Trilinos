@@ -41,7 +41,7 @@
 INCLUDE(TribitsAddExecutableTestHelpers)
 INCLUDE(TribitsTestCategories)
 
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 INCLUDE(GlobalSet)
 INCLUDE(AppendGlobalSet)
 INCLUDE(AppendStringVarWithSep)

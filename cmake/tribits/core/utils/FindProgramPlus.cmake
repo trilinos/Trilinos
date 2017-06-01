@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 INCLUDE(PrintNonemptyVar)
 
 #
@@ -57,10 +57,15 @@ INCLUDE(PrintNonemptyVar)
 
 FUNCTION(FIND_PROGRAM_PLUS PROG_VAR)
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
+    #prefix
     PARSE
-    "NAMES;PATHS;DOC"
+    #options
     ""
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    "NAMES;PATHS;DOC"
     ${ARGN}
     )
 
