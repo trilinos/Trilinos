@@ -114,6 +114,12 @@ echo "
 # because load_ci_sems_dev_env.sh was sourced above.
 
 echo "
+-DPanzerDiscFE_LinearObjFactory_Tests_MPI_2_DISABLE=ON
+-DPanzerAdaptersSTK_assembly_engine_MPI_4_DISABLE=ON
+-DPanzerAdaptersSTK_CurlLaplacianExample_DISABLE=ON
+-DPanzerAdaptersSTK_MixedPoissonExample_DISABLE=ON
+-DPanzerAdaptersSTK_main_driver_energy-ss_DISABLE=ON
+-DPanzerAdaptersSTK_main_driver_energy-ss-blocked-tp_DISABLE=ON
 " > MPI_RELEASE_DEBUG_SHARED_PT.config
 
 # The fillowing extra build configurations can be run using
