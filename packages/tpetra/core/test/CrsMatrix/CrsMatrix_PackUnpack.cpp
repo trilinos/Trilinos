@@ -81,24 +81,32 @@ generate_test_matrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 
   const int world_rank = comm->getRank();
 
-  const int num_row_per_proc = 4;
+  const LO num_row_per_proc = 4;
   Array<GO> row_gids(num_row_per_proc);
 
-  GO start = num_row_per_proc * world_rank;
-  for (LO i = 0; i < num_row_per_proc; ++i) {
+  GO start = static_cast<GO>(num_row_per_proc * world_rank);
+  for (LO i=0; i<num_row_per_proc; ++i) {
     row_gids[i] = static_cast<GO>(start+i);
   }
 
   // Create random, unique column GIDs.
-  const int num_nz_cols = 100;
+  const LO num_nz_cols = 100;
   std::random_device rand_dev;
   std::mt19937 generator(rand_dev());
   std::uniform_int_distribution<GO>  distr(1, 2000);
   std::set<GO> col_gids_set;
+  typedef typename std::set<GO>::size_type SGO;
+  SGO num_gids_in_set = static_cast<SGO>(num_nz_cols);
   col_gids_set.insert(0);
-  while (col_gids_set.size() < num_nz_cols) {
+  int num_passes = 0;
+  while (col_gids_set.size() < num_gids_in_set && num_passes <= 2000) {
     col_gids_set.insert(distr(generator));
+    num_passes += 1;
   }
+  if (col_gids_set.size() != num_gids_in_set) {
+    throw std::runtime_error("Random column IDs not generate");
+  }
+
   Array<GO> col_gids(col_gids_set.begin(), col_gids_set.end());
 
   const GO INVALID = OrdinalTraits<GO>::invalid();
@@ -109,10 +117,10 @@ generate_test_matrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 
   Array<LO> columns(num_nz_cols);
   Array<SC> entries(num_nz_cols);
-  for (LO j=0; j<static_cast<LO>(num_nz_cols); ++j) columns[j] = j;
-  for (int i=0; i<num_row_per_proc; ++i) {
+  for (LO j=0; j<num_nz_cols; ++j) columns[j] = j;
+  for (LO i=0; i<num_row_per_proc; ++i) {
     //LO lcl_row = static_cast<LO>(start + i); // unused
-    for (int j=0; j<entries.size(); ++j) {
+    for (LO j=0; j<num_nz_cols; ++j) {
       entries[j] = static_cast<SC>(j+1);
     }
     A->insertLocalValues(i, columns(), entries());
@@ -169,9 +177,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
 
   out << "Preparing arguments for packCrsMatrix" << endl;
 
-  size_t num_loc_rows = A->getNodeNumRows();
+  LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
   Teuchos::Array<LO> exportLIDs (num_loc_rows); // input argument
-  for (LO i=0; i < static_cast<LO> (num_loc_rows); ++i) {
+  for (LO i=0; i < num_loc_rows; ++i) {
     exportLIDs[i] = static_cast<LO>(i); // pack all the rows
   }
   Array<char> exports; // output argument; to be realloc'd
@@ -252,7 +260,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   {
     std::ostringstream errStrm;
     int lclNumErrors = 0;
-    for (LO lclRow=0; lclRow < static_cast<LO>(num_loc_rows); ++lclRow) {
+    for (LO lclRow=0; lclRow<num_loc_rows; ++lclRow) {
       ArrayView<const LO> A_indices;
       ArrayView<const SC> A_values;
       A->getLocalRowView(lclRow, A_indices, A_values);
@@ -264,7 +272,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
       TEST_EQUALITY( A_indices.size (), B_indices.size () );
 
       int curNumErrors = 0;
-      for (int i=0; i<A_indices.size(); i++) {
+      LO num_indices = static_cast<LO>(A_indices.size());
+      for (LO i=0; i<num_indices; i++) {
         if (! essentially_equal<SC>(A_values[i], B_values[i])) {
           errStrm << "ERROR: Proc " << world_rank << ", row " << lclRow
                   << ", A[" << i << "]=" << A_values[i] << ", but "
@@ -331,7 +340,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   {
     std::ostringstream errStrm;
     int lclNumErrors = 0;
-    for (LO loc_row = 0; loc_row < static_cast<LO>(num_loc_rows); ++loc_row) {
+    for (LO loc_row=0; loc_row<num_loc_rows; ++loc_row) {
       ArrayView<const LO> A_indices;
       ArrayView<const SC> A_values;
       A->getLocalRowView(loc_row, A_indices, A_values);
@@ -343,7 +352,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
       TEST_EQUALITY( A_indices.size (), B_indices.size () );
 
       int curNumErrors = 0;
-      for (int i=0; i<A_indices.size(); i++) {
+      LO num_indices = static_cast<LO>(A_indices.size());
+      for (LO i=0; i<num_indices; i++) {
         if (! essentially_equal<SC>(2.0 * A_values[i], B_values[i])) {
           errStrm << "ERROR: Proc " << world_rank << ", row " << loc_row
                   << ", 2*A[" << i << "]=" << 2.0 * A_values[i] << ", but "
@@ -447,11 +457,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackError, SC, LO, GO, NT)
 
   bool lcl_pack_OK = false;
   {
-    size_t num_loc_rows = A->getNodeNumRows();
+    LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
     Array<LO> exportLIDs(num_loc_rows);
     // exportLIDs[i] should equal i, but we set it to i+2
-    for (size_t i=0; i<num_loc_rows; i++) {
-      exportLIDs[i] = static_cast<LO>(i+2);
+    for (LO i=0; i<num_loc_rows; i++) {
+      exportLIDs[i] = i + 2;
     }
 
     Array<char> exports;
@@ -482,12 +492,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackError, SC, LO, GO, NT)
 
   {
     // Let's try this again, but send in the wrong number of exportLIDs
-    size_t num_loc_rows = A->getNodeNumRows();
+    LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
     // Note the -1!
     out << "Allocating ids... ";
     Array<LO> exportLIDs(num_loc_rows-1);
-    for (size_t i=0; i < num_loc_rows-1; ++i) {
-      exportLIDs[i] = static_cast<LO>(i);
+    for (LO i=0; i < num_loc_rows-1; ++i) {
+      exportLIDs[i] = i;
     }
     out << "done" << endl;
 
