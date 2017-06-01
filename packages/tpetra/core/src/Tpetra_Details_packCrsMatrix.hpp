@@ -135,13 +135,6 @@ public:
     if (debug) {
       const size_t numRowsToPack = static_cast<size_t> (lclRowInds_.dimension_0 ());
 
-      if (static_cast<size_t> (numRowsToPack + 1) != static_cast<size_t> (rowOffsets_.dimension_0 ())) {
-        std::ostringstream os;
-        os << "lclRowInds.dimension_0() + 1 = " << (numRowsToPack + 1)
-           << " != rowOffsets.dimension_0() = " << rowOffsets_.dimension_0 ()
-           << ".";
-        throw std::invalid_argument (os.str ());
-      }
       if (numRowsToPack != static_cast<size_t> (counts_.dimension_0 ())) {
         std::ostringstream os;
         os << "lclRowInds.dimension_0() = " << numRowsToPack
