@@ -389,7 +389,14 @@ void Piro::RythmosSolver<Scalar>::initialize(
       stepperType == "Explicit RK" || 
       stepperType == "Forward Euler" || 
       stepperType == "Explicit Taylor Polynomial") {
-      if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
+
+      bool invertMassMatrix = rythmosSolverPL->get("Invert Mass Matrix", false); 
+      if (!invertMassMatrix) {
+        *out << "\n WARNING in Piro::RythmosSolver!  You are attempting to run \n" 
+             << " Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n" 
+             << "This option should be set to 'true' unless your mass matrix is the identiy.\n"; 
+      }
+      else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
         rythmosSolverPL->get("Lump Mass Matrix", false);  //JF line does not do anything
 #ifdef ALBANY_BUILD

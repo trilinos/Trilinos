@@ -226,7 +226,13 @@ void Piro::TempusSolver<Scalar>::initialize(
       stepperType == "RK Explicit Trapezoidal" ||
       stepperType == "General ERK" ) {
 
-      if (tempusPL->get("Invert Mass Matrix", false)) {
+      bool invertMassMatrix = tempusPL->get("Invert Mass Matrix", false); 
+      if (!invertMassMatrix) {
+        *out << "\n WARNING in Piro::TempusSolver!  You are attempting to run \n" 
+             << "Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n" 
+             << "This option should be set to 'true' unless your mass matrix is the identiy.\n"; 
+      }
+      else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
         tempusPL->get("Lump Mass Matrix", false);  //JF line does not do anything
 #ifdef ALBANY_BUILD
