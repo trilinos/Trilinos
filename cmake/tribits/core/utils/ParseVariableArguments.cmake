@@ -37,6 +37,17 @@
 # ************************************************************************
 # @HEADER
 
+# Set up to use CMAKE_PARSE_ARGUMENTS() function!
+INCLUDE(CMakeParseArguments)
+# NOTE: For CMake versions 3.5.0 and above, this module is empty so the
+# natively implemented function CMAKE_PARSE_ARGUMENTS() will get used!
+
+MACRO(PARSE_ARGUMENTS_DEPRECATED_WARNING)
+  MESSAGE(WARNING "PARSE_ARGUMENTS() is deprecated and should not be used."
+     " Instead use CMAKE_PARSE_ARGUMENTS()")
+ENDMACRO()
+
+PARSE_ARGUMENTS_DEPRECATED_WARNING()
 
 # Set PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED to TRUE to see output from parsing.
 
@@ -190,7 +201,9 @@ ENDFUNCTION()
 # names and input argument list names.
 #
 MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
-
+   
+  PARSE_ARGUMENTS_DEPRECATED_WARNING()
+ 
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: prefix='${prefix}'")
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: arg_names='${arg_names}'")
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: option_names='${option_names}'")

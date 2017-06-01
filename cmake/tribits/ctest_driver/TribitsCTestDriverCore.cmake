@@ -104,11 +104,11 @@ MESSAGE("PROJECT_NAME = ${PROJECT_NAME}")
 #
 # Set ${PROJECT_NAME}_TRIBITS_DIR
 #
-IF (NOT ${PROJECT_NAME}_TRIBITS_DIR)
+IF (NOT "$ENV{${PROJECT_NAME}_TRIBITS_DIR}" STREQUAL "")
   SET(${PROJECT_NAME}_TRIBITS_DIR "$ENV{${PROJECT_NAME}_TRIBITS_DIR}")
 ENDIF()
-IF (NOT ${PROJECT_NAME}_TRIBITS_DIR)
-  SET(${PROJECT_NAME}_TRIBITS_DIR "${TRIBITS_PROJECT_ROOT}/cmake//tribits")
+IF ("${${PROJECT_NAME}_TRIBITS_DIR}" STREQUAL "")
+  SET(${PROJECT_NAME}_TRIBITS_DIR "${TRIBITS_PROJECT_ROOT}/cmake/tribits")
 ENDIF()
 MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
@@ -261,7 +261,8 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #     If set, this is the base directory where this script runs that clones
 #     the sources for the project.  If this directory does not exist, it will
-#     be created.  If empty, then has no effect on the script.
+#     be created.  If provided the special value 'PWD', then the present
+#     working directory is used.  If empty, then has no effect on the script.
 #
 #   ``CTEST_SOURCE_DIRECTORY``
 #
@@ -278,6 +279,15 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     is put.  This is used to set to `PROJECT_BINARY_DIR`_ which is used by
 #     the TriBITS system.  If ``CTEST_DASHBOARD_ROOT`` is set, then this is
 #     hard-coded internally to ``${CTEST_DASHBOARD_ROOT}/BUILD``.
+#
+#   ``${PROJECT_NAME}_PACKAGES``
+#
+#     Determines the specific set of packages to test.  If left at the default
+#     value of empty "", then `${PROJECT_NAME}_ENABLE_ALL_PACKAGES`_ is set to
+#     ``ON`` and that enables packages as described in
+#     `<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages`_.
+#     This variable can also be specified and read from from the env and can
+#     use `,` to separate package names instead of ';'.
 #
 # ToDo: Document input variables that have defaults, to be set before, and can
 # be overridden from the env.
@@ -415,6 +425,10 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # The root of the dasbhoard where ${PROJECT_NAME} will be cloned and the
   # BUILD directory will be create (only override for separate testing)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
+  IF (CTEST_DASHBOARD_ROOT STREQUAL "PWD")
+    SET(CTEST_DASHBOARD_ROOT ${CMAKE_CURRENT_BINARY_DIR})
+    PRINT_VAR(CTEST_DASHBOARD_ROOT)
+  ENDIF()
 
   # The build type (e.g. DEBUG, RELEASE, NONE)
   SET_DEFAULT_AND_FROM_ENV( BUILD_TYPE NONE )
@@ -1019,8 +1033,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       LIST(APPEND CONFIGURE_OPTIONS
         "-D${PROJECT_NAME}_ENABLE_COVERAGE_TESTING:BOOL=ON")
     ENDIF()
+    IF (${PROJECT_NAME}_EXTRAREPOS_FILE STREQUAL "NONE")
+      SET(EXTRAREOS_FILE_PASSED "")
+    ELSE()
+      SET(EXTRAREOS_FILE_PASSED "${${PROJECT_NAME}_EXTRAREPOS_FILE}")
+    ENDIF()
     LIST(APPEND CONFIGURE_OPTIONS
-      "-D${PROJECT_NAME}_EXTRAREPOS_FILE:STRING=${${PROJECT_NAME}_EXTRAREPOS_FILE}")
+      "-D${PROJECT_NAME}_EXTRAREPOS_FILE:STRING=${EXTRAREOS_FILE_PASSED}")
     LIST(APPEND CONFIGURE_OPTIONS # See TRIBITS_SETUP_PACKAGES
       "-D${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON")
     LIST(APPEND CONFIGURE_OPTIONS
@@ -1068,6 +1087,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
         LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
       ELSE()
+        MESSAGE("${TRIBITS_PACKAGE}: Configure passed!")
         # load target properties and test keywords
         CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
         # Overridde from this file!
@@ -1122,6 +1142,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
       SET(BUILD_LIBS_SUCCESS FALSE)
       IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0")
+        MESSAGE("${TRIBITS_PACKAGE}: Libs build passed!")
         SET(BUILD_LIBS_SUCCESS TRUE)
       ENDIF()
       # Above: Since make -i is used BUILD_LIBS_RETURN_VAL might be 0, but
@@ -1154,8 +1175,11 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         MESSAGE("Build all: BUILD_ALL_NUM_ERRORS='${BUILD_ALL_NUM_ERRORS}',"
           "BUILD_ALL_RETURN_VAL='${BUILD_ALL_RETURN_VAL}'" )
 
-        IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0")
+        IF (NOT "${BUILD_ALL_NUM_ERRORS}" EQUAL "0")
+          MESSAGE("${TRIBITS_PACKAGE}: All build FAILED!")
           SET(BUILD_OR_TEST_FAILED TRUE)
+        ELSE()
+          MESSAGE("${TRIBITS_PACKAGE}: All build passed!")
         ENDIF()
 
         # Submit the build for all target
@@ -1183,8 +1207,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           # See if a 'LastTestsFailed*.log' file exists to determine if there
           # are failed tests
           FILE(GLOB FAILED_TEST_LOG_FILE "${TEST_TMP_DIR}/LastTestsFailed*.log")
-          PRINT_VAR(FAILED_TEST_LOG_FILE)
           IF (FAILED_TEST_LOG_FILE)
+	    MESSAGE("${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
+              " exists so there were failed tests!")
             SET(BUILD_OR_TEST_FAILED TRUE)
           ENDIF()
           # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...)
@@ -1261,10 +1286,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # iteration since these packages must be enabled
   FILE(WRITE "${FAILED_PACKAGES_FILE_NAME}" "${${PROJECT_NAME}_FAILED_PACKAGES}\n")
 
-  # This is no longer necessary with CMake 2.8.1
-  #MESSAGE("\nKill all hanging Zoltan processes ...")
-  #EXECUTE_PROCESS(COMMAND killall -s 9 zdrive.exe)
-
   MESSAGE("\nDone with the incremental building and testing of ${PROJECT_NAME} packages!\n")
 
   REPORT_QUEUED_ERRORS()
@@ -1287,6 +1308,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       "${SEE_CDASH_LINK_STR}\n"
       "TRIBITS_CTEST_DRIVER: OVERALL: ALL PASSSED\n")
   ELSE()
+    # ToDo: Find out why other breaking tests don't fail when FATAL_ERROR is
+    # removed!
     MESSAGE(FATAL_ERROR
       "${SEE_CDASH_LINK_STR}\n"
       "TRIBITS_CTEST_DRIVER: OVERALL: ALL FAILED\n")
@@ -1294,7 +1317,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     # Also, it is critical to dislplay the "See results" in this
     # MESSAGE(FATAL_ERROR ...) command in order for it to be printed last.
     # Otherwise, if you run with ctest -V -S, then the ouptut from
-    # CTEST_TEST() will be printed last.
+    # CTEST_TEST() will be printed last :-(
   ENDIF()
 
 ENDFUNCTION()

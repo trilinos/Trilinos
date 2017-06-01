@@ -295,7 +295,7 @@ commands which allow you to create user-defined macros and functions (which is
 what TriBITS is built on).  All of these built-in and user-defined macros and
 functions work exactly the same way; they take in an array of string
 arguments.  Some functions take in positional arguments but most actually take
-a combination of positional and keyword arguments (see `PARSE_ARGUMENTS()`_).
+a combination of positional and keyword arguments.
 
 Variable names are translated into their stored values using
 ``${SOME_VARIABLE}``.  The value that is extracted depends on if the variable
@@ -411,7 +411,7 @@ sensitivity rules for variables and functions.  However, because we must parse
 macro and function arguments when writing user-defined macros and functions,
 it is a good thing that CMake variables are case sensitive.  Case insensitivity
 would make it much harder and more expensive to parse argument lists that take
-keyword-based arguments (see `PARSE_ARGUMENTS()`_).
+keyword-based arguments.
 
 Other mistakes that people make result from not understanding how CMake scopes
 variables and other entities.  CMake defines a global scope (i.e. "cache"
@@ -4704,12 +4704,12 @@ package fails, then that TriBITS package is disabled in all downstream TriBITS
 package builds so as not to propagate already known failures.  Each TriBITS
 top-level package is assigned its own CDash regression email address (see
 `CDash regression email addresses`_) and each package configure/build/test is
-given its own row for the build in the CDash server.  A CTest script using
-`TRIBITS_CTEST_DRIVER()`_ is run in one of three different modes.  First, it
-can run standard once-a-day, from-scratch builds as described in `CTest/CDash
-Nightly Testing`_.  Second, it can run as a CI server as described in
-`CTest/CDash CI Server`_.  Third, it can run in experimental mode testing a
-local repository using the TriBITS-defined `make dashboard`_ target.
+given its own row for the package build in the CDash server.  A CTest script
+using `TRIBITS_CTEST_DRIVER()`_ is run in one of three different modes.
+First, it can run standard once-a-day, from-scratch builds as described in
+`CTest/CDash Nightly Testing`_.  Second, it can run as a CI server as
+described in `CTest/CDash CI Server`_.  Third, it can run in experimental mode
+testing a local repository using the TriBITS-defined `make dashboard`_ target.
 
 .. ToDo: Discuss the behavior of Continuous, Nightly, and Experimental
 .. CTest/CDash tracks and what that means in terms of sending out CDash error
@@ -5838,6 +5838,138 @@ Enable/Disable Logic`_).  Also, these files get processed in `Reduced Package
 Dependency Processing`_ as well so they get processed in all contexts where
 enable/disable logic is applied.
 
+How to submit testing results to a CDash site
+---------------------------------------------
+
+The following steps describe how to submit results to a CDash site using the
+`TriBITS Package-by-Package CTest/Dash Driver`_ support.
+
+1) Create a CDash project ``<ProjectName>`` on the targeted CDash site.
+
+  To do this, one must have an account on the CDash site and the permissions
+  to create a new CDash project.  The name of the project on CDash should
+  generally match the name of the TriBITS project ``PROJECT_NAME`` but it does
+  not have to.  In fact, one can generally submit to any CDash project with
+  any name so creating a new CDash project is actually optional.
+
+  NOTE: For open-source projects, Kitware provides the free CDash site
+  my.cdash.org that allows a limited number of submits and data per day.  But
+  it should be enough to test out submitting to CDash.
+
+2) Create ``CTestConfig.cmake`` and ``CTestCustom.cmake.in`` files for the
+   project.
+
+  * The file `<projectDir>/CTestConfig.cmake`_ can be copied and pasted from
+    TribitsExampleProject/CTestConfig.cmake.  To customize for your project,
+    you generally just need to update the variables ``CTEST_DROP_SITE``,
+    ``CTEST_PROJECT_NAME``, and ``CTEST_DROP_LOCATION``.
+
+  * The file `<projectDir>/cmake/ctest/CTestCustom.cmake.in`_ can be copied
+    and pasted from ``TribitsExampleProject/cmake/ctest/CTestCustom.cmake.in``
+    and them modified as desired.
+
+3) Test experimental submits with ``make dashboard``.
+
+  Once the CDash project and the `<projectDir>/CTestConfig.cmake`_ and
+  `<projectDir>/cmake/ctest/CTestCustom.cmake.in`_ files are created, one
+  perform an experimental submission by just configuring the project as normal
+  and then running the build target::
+
+    make dashboard
+
+  That will configure, build, test, and submit results to the CDash site to
+  the ``Experimental`` track of the target CDash project.
+
+  To work out issue locally without spamming the CDash site, one can run with:
+
+    env CTEST_DO_SUBMIT=OFF make dashboard
+
+  To submit to a different CDash site and project, change the cache vars
+  ``CTEST_DROP_SITE``, ``CTEST_PROJECT_NAME``, and ``CTEST_DROP_LOCATION`` at
+  configure time. For example, to submit TribitsExampleProject results to a
+  different CDash site, configure with::
+
+    ctest \
+    -DCTEST_DROP_SITE=testing.sandia.gov/cdash \
+    -DCTEST_PROJECT_NAME=TribitsExProj \
+    -DCTEST_DROP_LOCATION="/submit.php?project=TribitsExProj" \
+    [other options] \
+    <baseDir>/TribitsExamplProject
+
+  and then run ``make dashboard``.
+     
+4) Add custom CTest -S driver scripts.
+
+  For driving different builds and tests, one needs to set up one or more
+  CTest -S driver scripts.  There are various ways to do this but a simple
+  approach that avoids duplication is to first create a file like
+  ``TribitsExampleProject/cmake/ctest/TribitsExProjCTestDriver.cmake``:
+
+  .. include:: ../../examples/TribitsExampleProject/cmake/ctest/TribitsExProjCTestDriver.cmake
+     :literal:
+
+  and then create a set of CTest -S driver scripts that uses that file.  One
+  example is the file
+  ``TribitsExampleProject/cmake/ctest/general_gcc/ctest_serial_debug.cmake``:
+
+  .. include:: ../../examples/TribitsExampleProject/cmake/ctest/general_gcc/ctest_serial_debug.cmake
+     :literal:
+
+5) Test CTest -S driver scripts
+
+  Once a CTest -S driver script (like the ``ctest_serial_debug.cmake`` example
+  shown above) is created, one can test it locally and then test a submit to
+  CDash.  To test the exact state of the repository locally, one can create a
+  temporary base directory, symbolically link in the local project source
+  directory, and then run the CTest -S script by setting
+  ``CTEST_DO_SUBMIT=OFF``.  For example, the TribitsExampleProject CTest -S
+  script can be run and tested locally by doing::
+
+    $ mkdir MOCK_TRIBITSEXPROJ_SERIAL_DEBUG
+    $ cd MOCK_TRIBITSEXPROJ_SERIAL_DEBUG/
+    $ ln -s $TRIBITS_DIR/examples/TribitsExampleProject .
+    $ env  CTEST_DASHBOARD_ROOT=$PWD \
+         CTEST_DROP_SITE=testing.sandia.gov/cdash \
+         CTEST_PROJECT_NAME=TribitsExProj \
+         CTEST_DROP_LOCATION="/submit.php?project=TribitsExProj" \
+         CTEST_TEST_TYPE=Experimental \
+         CTEST_DO_SUBMIT=OFF \
+         CTEST_DO_UPDATES=OFF \
+         CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+         ctest -V -S \
+          $TRIBITS_DIR/examples/TribitsExampleProject/cmake/ctest/general_gcc/ctest_serial_debug.cmake \
+         &> console.out
+
+  where ``TRIBITS_DIR`` is an env var that points to the location of the
+  TriBITS/tribits directory on the local machine (and the location of the
+  CDash site and project is changed, since the free my.cdash.org site can only
+  accept as small number of builds each day).
+
+  Once that CTest -S driver script is working correctly without submitting to
+  CDash, the above ``ctest -S`` command can be run with ``CTEST_DO_SUBMIT=ON``
+  which submit the CDash and then print the location on CDash for the
+  submitted configure, build, and test results.
+
+6) Set up automated runs of CTest -S driver scripts
+
+  The custom CTest -S driver scripts created above can be run and used to
+  submit to CDash in a variety of ways:
+
+  * Cron jobs can be set up to run them at the same time every day.
+ 
+  * Jenkins jobs can be set up to run them based on various criteria.
+
+  * Travis CI can run them to respond to GitHub pushes.
+
+  The setup of Jenkins, Travis CI and other more sophisticated automated
+  testing systems will not be described here.  What will be briefly outlined
+  below is the setup using cron jobs on a Linux machine.  That is sufficient
+  for most smaller projects and provides tremendous value.
+
+  To set up an automated build using a cron job, one will typically create a
+  shell driver script that sets the env and then calls the `ctest -S <script>`
+  command.  Then one just adds a call to that shell driver script using
+  `crontab -e`.  That is about all there is to it.
 
 Additional Topics
 =================

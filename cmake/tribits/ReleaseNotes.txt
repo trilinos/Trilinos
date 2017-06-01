@@ -1,6 +1,12 @@
 ----------------------------------------
 Release Notes for TriBITS
 ----------------------------------------
+2017/05/25:
+
+(*) MINOR: PARSE_ARGUMENTS() has been depricated and replaced by
+    CMAKE_PARSE_ARGUMENTS() everywhere in TriBITS. Any call to
+    PARSE_ARGUMENTS() will warn users and tell them to use
+    CMAKE_PARSE_ARGUMENTS() instead.
 
 2017/05/17:
 
