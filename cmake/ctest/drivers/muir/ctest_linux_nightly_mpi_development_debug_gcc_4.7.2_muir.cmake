@@ -70,7 +70,7 @@ SET(Trilinos_TRACK  Nightly)   # CDASH Track
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
-SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos Didasko)
+SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos Didasko Phalanx Panzer)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
@@ -89,6 +89,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_MOOCHO=OFF"
   "-DTrilinos_ENABLE_Optika=OFF"
   "-DTrilinos_ENABLE_Didasko=OFF"
+  "-DTrilinos_ENABLE_Phalanx=OFF"
+  "-DTrilinos_ENABLE_Panzer=OFF"
   )
 
 #
