@@ -1,11 +1,12 @@
 # Trilinos Git Push Logger
 
-GitHub does not provid informatioin on pushes to a git repo (i.e. you can't se
-the reflog for a GitHub repo).  Therefore, one must implement one's own git
-push logger.  That is what the scripts in this directory do.
+GitHub does not provide information on pushes to a git repo (i.e. one can't
+see the reflog for a GitHub repo).  Therefore, one must implement one's own
+git push logger.  That is what the scripts in this directory do.
 
 This directory contains some simple scripts to log pushed commits to the main
-Trilinos git repo.  To set this up, simply do the following:
+Trilinos git repo on any arbitrary tracking branch.  To set this up to log
+commits pushed to the 'develop' branch, for example, simply do the following:
 
   $ cd <some-base-dir>/
   $ git clone git@github.com:trilinos/Trilinos.git
@@ -18,9 +19,12 @@ loop_log_pushed_commits.sh as:
 
   1  0  *  *  *  cd <some-base-dir>/ \
     && cp loop_log_pushed_commits.log loop_log_pushed_commits.last.log \
-    && ./loop_log_pushed_commits.sh &> loop_log_pushed_commits.log
+    && ./Trilinos/commonTools/git/log_pushes/loop_log_pushed_commits.sh \
+    &> loop_log_pushed_commits.log
 
-(but take out the line continuation lines, cron will not allow them).
+But take out the line continuation lines `\` and just list this on one line.
+(cron will not allow continuation lines.  They are just added above to improve
+readability.)
 
 This will create and continuously append the top commit log message pulled
 from the Trilinos 'develop' branch off of GitHub every minute and log that in
@@ -28,11 +32,11 @@ the file:
 
   <some-base-dir>/TrilinosPushLog.txt
 
-Therefore, if pushes to Trilinos don't overlap within one minute, then the the
+Therefore, if pushes to Trilinos don't overlap within one minute, then the
 file TrilinosPushLog.txt will contain a record of all of the pushes to
 Trilinos.  (But if multiple pushes do occur in the same minute, then only the
 top commit for the most recent push will get logged.  But multiple pushes to
-Trilinos in the same day are very rare.)
+Trilinos in the same minute are very rare.)
 
 Also note that this file TrilinosPushLog.txt will only be seen on the local
 system where it is created.  For a wider number of people to see this, it will
