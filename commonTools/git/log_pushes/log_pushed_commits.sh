@@ -22,6 +22,7 @@ if [ "$UPDATED_COMMITS" != "" ] ; then
   echo &>> ../TrilinosPushLog.txt
   git log --pretty=fuller -1 @{u} &>> ../TrilinosPushLog.txt
   echo &>> ../TrilinosPushLog.txt
-  echo "Number of commits pushed: `git rev-list --count HEAD..@{u}`" &>> ../TrilinosPushLog.txt
+  echo "Commits pushed:" &>> ../TrilinosPushLog.txt
+  echo "$UPDATED_COMMITS" &>> ../TrilinosPushLog.txt
   git pull
 fi
