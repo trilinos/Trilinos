@@ -11,6 +11,7 @@ commits pushed to the 'develop' branch, for example, simply do the following:
 ```
 $ cd <some-base-dir>/
 $ touch TrilinosPushLog.txt
+$ touch loop_log_pushed_commits.log
 $ git clone git@github.com:trilinos/Trilinos.git
 $ cd Trilinos/
 $ git checkout --track origin/develop
