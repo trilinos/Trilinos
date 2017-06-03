@@ -10,6 +10,7 @@ commits pushed to the 'develop' branch, for example, simply do the following:
 
 ```
 $ cd <some-base-dir>/
+$ touch TrilinosPushLog.txt
 $ git clone git@github.com:trilinos/Trilinos.git
 $ cd Trilinos/
 $ git checkout --track origin/develop
@@ -30,7 +31,7 @@ But take out the line continuation lines `\` and just list this on one line.
 (cron will not allow continuation lines.  They are just added above to improve
 readability.)
 
-This will create and continuously append the top commit log message pulled
+This will create and continuously prepend the top commit log message pulled
 from the Trilinos 'develop' branch off of GitHub every minute and log that in
 the file:
 
