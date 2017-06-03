@@ -38,11 +38,11 @@ the file:
   <some-base-dir>/TrilinosPushLog.txt
 ```
 
-Therefore, if pushes to Trilinos don't overlap within one minute, then the
-file TrilinosPushLog.txt will contain a record of all of the pushes to
-Trilinos.  (But if multiple pushes do occur in the same minute, then only the
-top commit for the most recent push will get logged.  But multiple pushes to
-Trilinos in the same minute are very rare.)
+Therefore, if pushes to Trilinos don't overlap within the same minute since
+the last logging period, then the file TrilinosPushLog.txt will contain a
+record of all of the pushes to Trilinos.  (But if multiple pushes do occur in
+the last minute, then only the top commit for the most recent push will get
+logged.  But multiple pushes to Trilinos in the same minute are very rare.)
 
 Also note that this file TrilinosPushLog.txt will only be seen on the local
 system where it is created.  For a wider number of people to see this, it will
@@ -51,5 +51,7 @@ need to be published in some way.
 NOTE: With this process, the file TrilinosPushLog.txt will get appended to
 forever and therefore will grow forever.  But it will not grow in size very
 fast since these scripts only log the commit message and not the list of files
-that got updated.  But one may want to archive the TrilinosPushLog.txt file on
-a yearly basis if it starts to get too big.
+that got updated.  It will log the full commit log for the top commit but will
+only log the oneline commit summary for all of the other commtis pulled in the
+last minutes.  One may want to archive the TrilinosPushLog.txt file and then
+start over on a yearly basis if it starts to get too big.
