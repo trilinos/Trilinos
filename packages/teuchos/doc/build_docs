@@ -20,7 +20,7 @@ echo
 doxygen Doxyfile
 
 echo
-echo "Generating RefCountPtrBeginnersGuildeSAND.pdf file ..."
+echo "Generating RefCountPtrBeginnersGuideSAND.pdf file ..."
 echo
 
 pushd ../../../doc/RefCountPtr/beginners; make pdf ; popd

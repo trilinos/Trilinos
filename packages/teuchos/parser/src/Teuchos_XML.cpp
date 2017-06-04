@@ -3,7 +3,7 @@
 namespace Teuchos {
 namespace XML {
 
-Language build_language() {
+Language make_language() {
   Language out;
   Language::Productions& prods = out.productions;
   prods.resize(NPRODS);
@@ -133,7 +133,7 @@ Language build_language() {
 LanguagePtr ask_language() {
   static LanguagePtr ptr;
   if (ptr.strong_count() == 0) {
-    ptr.reset(new Language(build_language()));
+    ptr.reset(new Language(make_language()));
   }
   return ptr;
 }
@@ -142,7 +142,7 @@ ReaderTablesPtr ask_reader_tables() {
   static ReaderTablesPtr ptr;
   if (ptr.strong_count() == 0) {
     LanguagePtr lang = ask_language();
-    ptr = build_reader_tables(*lang);
+    ptr = make_reader_tables(*lang);
   }
   return ptr;
 }

@@ -49,7 +49,7 @@ enum {
 
 enum { NTOKS = TOK_CONST + 1 };
 
-Teuchos::Language build_language() {
+Teuchos::Language make_language() {
   Teuchos::Language out;
   Teuchos::Language::Productions& prods = out.productions;
   prods.resize(NPRODS);
@@ -88,7 +88,7 @@ Teuchos::Language build_language() {
 Teuchos::ReaderTablesPtr ask_reader_tables() {
   static Teuchos::ReaderTablesPtr ptr;
   if (ptr.strong_count() == 0) {
-    ptr = Teuchos::build_reader_tables(build_language());
+    ptr = Teuchos::make_reader_tables(make_language());
   }
   return ptr;
 }

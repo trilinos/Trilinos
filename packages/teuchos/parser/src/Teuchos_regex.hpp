@@ -53,14 +53,14 @@ enum {
 
 enum { NTOKS = TOK_MAYBE + 1 };
 
-Language build_language();
+Language make_language();
 LanguagePtr ask_language();
 
-void build_lexer(FiniteAutomaton& result);
+void make_lexer(FiniteAutomaton& result);
 
 ReaderTablesPtr ask_reader_tables();
 
-void build_dfa(FiniteAutomaton& result, std::string const& name, std::string const& regex, int token);
+void make_dfa(FiniteAutomaton& result, std::string const& name, std::string const& regex, int token);
 
 class Reader : public Teuchos::Reader {
  public:
