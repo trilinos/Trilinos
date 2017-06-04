@@ -221,6 +221,7 @@
     <ParameterList name="Composite Step">
       <Parameter name="Output Level" type="int" value="0" />
       <Parameter name="Initial Radius" type="double" value="1e0" />
+      <Parameter name="Use Constraint Hessian" type="bool" value="false" />
       <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
       <ParameterList name="Optimality System Solver">
         <Parameter name="Nominal Relative Tolerance" type="double" value="1e-6"  />
