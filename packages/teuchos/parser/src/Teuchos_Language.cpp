@@ -36,7 +36,7 @@ Language::RHSBuilder Language::Production::operator()(std::string const& lhs_in)
   return Language::RHSBuilder(*this);
 }
 
-GrammarPtr build_grammar(Language const& language) {
+GrammarPtr make_grammar(Language const& language) {
   std::map<std::string, int> symbol_map;
   int nterminals = 0;
   for (Language::Tokens::const_iterator it = language.tokens.begin();
@@ -127,16 +127,16 @@ std::ostream& operator<<(std::ostream& os, Language const& lang) {
   return os;
 }
 
-void build_lexer(FiniteAutomaton& result, Language const& language) {
+void make_lexer(FiniteAutomaton& result, Language const& language) {
   using std::swap;
   for (int i = 0; i < size(language.tokens); ++i) {
     const std::string& name = at(language.tokens, i).name;
     const std::string& regex = at(language.tokens, i).regex;
     if (i == 0) {
-      regex::build_dfa(result, name, regex, i);
+      regex::make_dfa(result, name, regex, i);
     } else {
       FiniteAutomaton b;
-      regex::build_dfa(b, name, regex, i);
+      regex::make_dfa(b, name, regex, i);
       unite(result, result, b);
     }
   }
@@ -144,7 +144,7 @@ void build_lexer(FiniteAutomaton& result, Language const& language) {
   simplify(result, result);
 }
 
-static void build_indent_info(IndentInfo& out, Language const& language) {
+static void make_indent_info(IndentInfo& out, Language const& language) {
   out.is_sensitive = false;
   out.indent_token = -1;
   out.dedent_token = -1;
@@ -191,11 +191,11 @@ static void build_indent_info(IndentInfo& out, Language const& language) {
       "error: ]NODENT[ needs to come before all other indent tokens\n");
 }
 
-ReaderTablesPtr build_reader_tables(Language const& language) {
+ReaderTablesPtr make_reader_tables(Language const& language) {
   RCP<ReaderTables> out(new ReaderTables());
-  build_lexer(out->lexer, language);
-  build_indent_info(out->indent_info, language);
-  GrammarPtr grammar = build_grammar(language);
+  make_lexer(out->lexer, language);
+  make_indent_info(out->indent_info, language);
+  GrammarPtr grammar = make_grammar(language);
   out->parser = make_lalr1_parser(grammar);
   return out;
 }

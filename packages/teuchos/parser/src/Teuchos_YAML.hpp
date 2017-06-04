@@ -79,7 +79,7 @@ enum {
 
 enum { NTOKS = TOK_RCURLY + 1 };
 
-Language build_language();
+Language make_language();
 LanguagePtr ask_language();
 ReaderTablesPtr ask_reader_tables();
 

@@ -97,7 +97,7 @@ TEUCHOS_UNIT_TEST( Parser, lr0 ) {
   lang.productions[2]("E") >> "T";
   lang.productions[3]("T") >> "(", "E", ")";
   lang.productions[4]("T") >> "a";
-  GrammarPtr grammar = build_grammar(lang);
+  GrammarPtr grammar = make_grammar(lang);
   Parser parser = make_lalr1_parser(grammar);
 }
 
@@ -118,13 +118,13 @@ TEUCHOS_UNIT_TEST( Parser, lalr1 ) {
   lang.productions[2]("S") >> "d", "c";
   lang.productions[3]("S") >> "b", "d", "a";
   lang.productions[4]("A") >> "d";
-  GrammarPtr grammar = build_grammar(lang);
+  GrammarPtr grammar = make_grammar(lang);
   Parser parser = make_lalr1_parser(grammar);
 }
 
 TEUCHOS_UNIT_TEST( Parser, regex_lexer ) {
   FiniteAutomaton lexer;
-  regex::build_lexer(lexer);
+  regex::make_lexer(lexer);
   TEUCHOS_ASSERT(accepts(lexer, "a", regex::TOK_CHAR));
   TEUCHOS_ASSERT(accepts(lexer, ".", regex::TOK_DOT));
   TEUCHOS_ASSERT(accepts(lexer, "?", regex::TOK_MAYBE));
@@ -134,7 +134,7 @@ TEUCHOS_UNIT_TEST( Parser, regex_lexer ) {
 
 TEUCHOS_UNIT_TEST( Parser, regex_language ) {
   LanguagePtr lang = regex::ask_language();
-  GrammarPtr grammar = build_grammar(*lang);
+  GrammarPtr grammar = make_grammar(*lang);
   Parser parser = make_lalr1_parser(grammar);
 }
 
@@ -216,7 +216,7 @@ TEUCHOS_UNIT_TEST( Parser, regex_reader ) {
 
 TEUCHOS_UNIT_TEST( Parser, xml_language ) {
   LanguagePtr lang = XML::ask_language();
-  GrammarPtr grammar = build_grammar(*lang);
+  GrammarPtr grammar = make_grammar(*lang);
   make_lalr1_parser(grammar);
 }
 
@@ -236,7 +236,7 @@ TEUCHOS_UNIT_TEST( Parser, xml_reader ) {
 
 TEUCHOS_UNIT_TEST( Parser, yaml_language ) {
   LanguagePtr lang = yaml::ask_language();
-  GrammarPtr grammar = build_grammar(*lang);
+  GrammarPtr grammar = make_grammar(*lang);
   make_lalr1_parser(grammar);
 }
 
@@ -268,12 +268,9 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
   test_yaml_reader("---\nANONYMOUS:\n  empty: {}\n  non-empty: 1.5\n...\n");
   test_yaml_reader("---\nANONYMOUS:\n  empty: { }\n  non-empty: 1.5\n...\n");
   test_yaml_reader("---\nLord of the Rings:\n  - Sauron\n...\n");
-  DebugReader reader(yaml::ask_reader_tables(), std::cout);
-  any result;
-  reader.read_string(result,
+  test_yaml_reader(
       "---\n#top comment\ntop entry: \n  sub-entry: twelve\n"
-      "  # long comment\n  # about sub-entry2\n  sub-entry2: green\n...\n",
-      "comment test");
+      "  # long comment\n  # about sub-entry2\n  sub-entry2: green\n...\n");
 }
 
 } // anonymous namespace

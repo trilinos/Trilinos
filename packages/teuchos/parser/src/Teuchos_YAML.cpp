@@ -3,7 +3,7 @@
 namespace Teuchos {
 namespace yaml {
 
-Language build_language() {
+Language make_language() {
   Language out;
   Language::Productions& prods = out.productions;
   Language::Tokens& toks = out.tokens;
@@ -77,7 +77,7 @@ Language build_language() {
 LanguagePtr ask_language() {
   static LanguagePtr ptr;
   if (ptr.strong_count() == 0) {
-    ptr.reset(new Language(build_language()));
+    ptr.reset(new Language(make_language()));
   }
   return ptr;
 }
@@ -85,7 +85,7 @@ LanguagePtr ask_language() {
 ReaderTablesPtr ask_reader_tables() {
   static ReaderTablesPtr ptr;
   if (ptr.strong_count() == 0) {
-    ptr = build_reader_tables(*(yaml::ask_language()));
+    ptr = make_reader_tables(*(yaml::ask_language()));
   }
   return ptr;
 }

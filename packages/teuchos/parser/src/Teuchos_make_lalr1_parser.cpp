@@ -161,7 +161,7 @@ static void set_lr0_contexts(
   }
 }
 
-static StatesInProgress build_lr0_parser(Configs const& cs, Grammar const& grammar,
+static StatesInProgress make_lr0_parser(Configs const& cs, Grammar const& grammar,
     Graph const& lhs2sc) {
   StatesInProgress states;
   StatePtr2StateIndex state_ptrs2idxs;
@@ -1101,7 +1101,7 @@ ParserInProgress draft_lalr1_parser(GrammarPtr grammar, bool verbose) {
   cs = make_configs(*grammar);
   Graph lhs2cs = get_left_hand_sides_to_start_configs(cs, *grammar);
   if (verbose) std::cerr << "Building LR(0) parser\n";
-  states = build_lr0_parser(cs, *grammar, lhs2cs);
+  states = make_lr0_parser(cs, *grammar, lhs2cs);
   scs = form_state_configs(states);
   states2scs = form_states_to_state_configs(scs, states);
   if (verbose) print_graphviz("lr0.dot", out, true, std::cerr);

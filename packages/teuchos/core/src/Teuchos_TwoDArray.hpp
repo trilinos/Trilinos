@@ -54,7 +54,7 @@
 namespace Teuchos{
 
 /**
- * \brief A thin wrapper around the Array class which causes it to be interpurted
+ * \brief A thin wrapper around the Array class which causes it to be interpreted
  * as a 2D Array.
  *
  * 2D Array's can also be "symetric". This means that anyone viewing the

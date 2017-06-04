@@ -15,7 +15,7 @@
 namespace Teuchos {
 namespace regex {
 
-Language build_language() {
+Language make_language() {
   /* The top produtions were from the "grep.y" YACC grammar in the source
      code for Plan 9's grep utility, see here:
 https://github.com/wangeguo/plan9/blob/master/sys/src/cmd/grep/grep.y
@@ -67,7 +67,7 @@ http://www.cs.sfu.ca/~cameron/Teaching/384/99-3/regexp-plg.html */
 
 /* bootstrap ! This lexer is used to build the ReaderTables that read
    regular expressions themselves, so it can't depend on that reader ! */
-void build_lexer(FiniteAutomaton& result) {
+void make_lexer(FiniteAutomaton& result) {
   std::string meta_chars_str = ".[]()|-^*+?";
   std::set<int> all_chars;
   for (int i = 0; i < NCHARS; ++i) all_chars.insert(i);
@@ -108,9 +108,9 @@ ReaderTablesPtr ask_reader_tables() {
   if (ptr.strong_count() == 0) {
     RCP<ReaderTables> newptr(new ReaderTables());
     LanguagePtr lang = regex::ask_language();
-    GrammarPtr grammar = build_grammar(*lang);
+    GrammarPtr grammar = make_grammar(*lang);
     newptr->parser = make_lalr1_parser(grammar);
-    regex::build_lexer(newptr->lexer);
+    regex::make_lexer(newptr->lexer);
     newptr->indent_info.is_sensitive = false;
     newptr->indent_info.indent_token = -1;
     newptr->indent_info.dedent_token = -1;
@@ -122,16 +122,16 @@ ReaderTablesPtr ask_reader_tables() {
 LanguagePtr ask_language() {
   static LanguagePtr ptr;
   if (ptr.strong_count() == 0) {
-    ptr.reset(new Language(build_language()));
+    ptr.reset(new Language(make_language()));
   }
   return ptr;
 }
 
-void build_dfa(FiniteAutomaton& result, std::string const& name, std::string const& regex, int token) {
+void make_dfa(FiniteAutomaton& result, std::string const& name, std::string const& regex, int token) {
   using std::swap;
   /* special "regex"es for indentation sensitivity support */
   if (regex == "]INDENT[" || regex == "]DEDENT[" || regex == "]EQDENT[" || regex == "]NODENT[") {
-    build_dfa(result, name, "\r?\n[ \t]*", token);
+    make_dfa(result, name, "\r?\n[ \t]*", token);
     return;
   }
   regex::Reader reader(token);
