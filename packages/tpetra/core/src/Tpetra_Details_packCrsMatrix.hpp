@@ -176,12 +176,10 @@ public:
 
     if (curInd < static_cast<local_row_index_type> (counts_.dimension_0 ())) {
       const auto lclRow = lclRowInds_(curInd);
-      if (debug) {
-        if (static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (rowOffsets_.dimension_0 ()) ||
-            static_cast<local_row_index_type> (lclRow) < static_cast<local_row_index_type> (0)) {
-          error_ () = 3;
-          return;
-        }
+      if (static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (rowOffsets_.dimension_0 ()) ||
+          static_cast<local_row_index_type> (lclRow) < static_cast<local_row_index_type> (0)) {
+        error_ () = 3;
+        return;
       }
       // count_type could differ from the type of each row offset.
       // For example, row offsets might each be 64 bits, but if their
