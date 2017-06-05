@@ -47,7 +47,6 @@
 #ifndef PACKAGES_MUELU_SRC_GRAPH_MUELU_UNSMOOSHFACTORY_DEF_HPP_
 #define PACKAGES_MUELU_SRC_GRAPH_MUELU_UNSMOOSHFACTORY_DEF_HPP_
 
-
 #include "MueLu_Monitor.hpp"
 
 #include "MueLu_UnsmooshFactory_decl.hpp"
@@ -218,7 +217,7 @@ namespace MueLu {
     // Does this work for more than on nullspace vectors?
     // We assume non-overlapping aggreagtes, i.e., colmap = domainmap
     Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(),coarseDomainMap, 1);
-    for (decltype(unamalgA->getRowMap()->getNodeNumElements()) i = 0; i < unamalgA->getRowMap()->getNodeNumElements() - 1; i++) {
+    for (decltype(unamalgA->getRowMap()->getNodeNumElements()) i = 0; i < unamalgA->getRowMap()->getNodeNumElements(); i++) {
       unamalgPCrs->insertLocalValues(i, newPCols.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]),
           newPVals.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]));
     }
