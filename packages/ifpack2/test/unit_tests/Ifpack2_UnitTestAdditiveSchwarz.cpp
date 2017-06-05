@@ -980,7 +980,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, ILU_Overlap, Scalar, L
   typedef Tpetra::Map<LO,GO,Node>                map_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
   typedef Teuchos::ScalarTraits<Scalar>          STS;
-  typedef typename multivector_type::mag_type    mag_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
 
   RCP<const Teuchos::Comm<int> > comm =
@@ -1049,7 +1048,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, ILU_NonOverlap, Scalar
   typedef Tpetra::Map<LO,GO,Node>                map_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
   typedef Teuchos::ScalarTraits<Scalar>          STS;
-  typedef typename multivector_type::mag_type    mag_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
 
   RCP<const Teuchos::Comm<int> > comm =
@@ -1122,7 +1120,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_NonOverlap, Scalar
   typedef Tpetra::Map<LO,GO,Node>                map_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
   typedef Teuchos::ScalarTraits<Scalar>          STS;
-  typedef typename multivector_type::mag_type    mag_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
 
   RCP<const Teuchos::Comm<int> > comm =
@@ -1131,7 +1128,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_NonOverlap, Scalar
   //this test can only be run on 4 procs
   if(comm->getSize() != 4)
   {
-    out << "AdditiveSchwarz/ILU correctness test must be run on 4 procs.\n";
+    out << "AdditiveSchwarz/SGS correctness test must be run on 4 procs.\n";
     return;
   }
 
@@ -1193,7 +1190,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, L
   typedef Tpetra::Map<LO,GO,Node>                map_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
   typedef Teuchos::ScalarTraits<Scalar>          STS;
-  typedef typename multivector_type::mag_type    mag_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
 
   RCP<const Teuchos::Comm<int> > comm =
@@ -1202,7 +1198,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, L
   //this test can only be run on 4 procs
   if(comm->getSize() != 4)
   {
-    out << "AdditiveSchwarz/ILU correctness test must be run on 4 procs.\n";
+    out << "AdditiveSchwarz/SGS correctness test must be run on 4 procs.\n";
     return;
   }
 
