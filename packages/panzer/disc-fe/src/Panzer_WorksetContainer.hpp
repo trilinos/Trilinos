@@ -52,8 +52,12 @@
 #include "Panzer_WorksetDescriptor.hpp" // what the workset is defined over
 #include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
 
-#ifndef __KK__
-#define __KK__
+// #ifndef __KK__
+// #define __KK__
+// #endif
+
+#ifdef __KK__
+#undef __KK__
 #endif
 
 namespace panzer {
@@ -225,7 +229,7 @@ private:
    void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
                           const SideId & sideId,
                           std::map<unsigned,Workset> & worksets) const;
-#endif
+#else
 
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.
@@ -235,6 +239,7 @@ private:
    /** Using the stored global indexer, set the orientations for a side workset.
      */
    void applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) const;
+#endif
 
    // typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
    typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > VolumeMap;

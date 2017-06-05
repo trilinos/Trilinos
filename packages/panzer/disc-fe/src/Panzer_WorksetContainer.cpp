@@ -177,8 +177,16 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
       worksetVector = wkstFactory_->getWorksets(wd,needs);
 
       // apply orientations to the just constructed worksets
-      if(worksetVector!=Teuchos::null && wd.applyOrientations())
+      if(worksetVector!=Teuchos::null && wd.applyOrientations()) {
+#if defined(__KK__)
+        // this should be created once
+        if (globalIndexer_ == Teuchos::null) throw std::runtime_error("global indexer is not set yet");
+        const auto orientations = buildIntrepidOrientation(globalIndexer_);
+        applyOrientations(*orientations, wd.getElementBlock(), *worksetVector);
+#else
         applyOrientations(wd.getElementBlock(),*worksetVector);
+#endif
+      }
 
       // store vector for reuse in the future
       volWorksets_[wd] = worksetVector;
@@ -209,8 +217,16 @@ WorksetContainer::getSideWorksets(const BC & bc)
       }
 
       // apply orientations to the worksets for this side
-      if(worksetMap!=Teuchos::null)
+      if(worksetMap!=Teuchos::null) {
+#if defined(__KK__)
+        // this should be created once
+        if (globalIndexer_ == Teuchos::null) throw std::runtime_error("global indexer is not set yet");
+        const auto orientations = buildIntrepidOrientation(globalIndexer_);
+        applyOrientations(*orientations, side, *worksetMap);
+#else
         applyOrientations(side,*worksetMap);
+#endif
+      }
 
       // store map for reuse in the future
       sideWorksets_[side] = worksetMap;
@@ -224,6 +240,11 @@ WorksetContainer::getSideWorksets(const BC & bc)
 
 void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & eBlocks)
 {
+#if defined(__KK__)
+   if (globalIndexer_ == Teuchos::null) throw std::runtime_error("global indexer is not set yet");
+   const auto orientations = buildIntrepidOrientation(globalIndexer_);
+#endif
+
    for(std::size_t i=0;i<eBlocks.size();i++) {
       // couldn't find workset, build it!
       const std::string & eBlock = eBlocks[i];
@@ -234,13 +255,23 @@ void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & e
       volWorksets_[eBlock] = wkstFactory_->getWorksets(wd,needs);
 
       // apply orientations to the worksets for this side
-      if(volWorksets_[eBlock]!=Teuchos::null)
+      if(volWorksets_[eBlock]!=Teuchos::null) {
+#if defined(__KK__) 
+        applyOrientations(*orientations, eBlock,*volWorksets_[eBlock]);
+#else
         applyOrientations(eBlock,*volWorksets_[eBlock]);
+#endif
+      }
    }
 }
 
 void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
 {
+#if defined(__KK__)
+  if (globalIndexer_ == Teuchos::null) throw std::runtime_error("global indexer is not set yet");
+  const auto orientations = buildIntrepidOrientation(globalIndexer_);                                                                                                               
+#endif    
+
    for(std::size_t i=0;i<bcs.size();i++) {
       // couldn't find workset, build it!
       const BC & bc = bcs[i];
@@ -252,8 +283,13 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
       sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,needs);
 
       // apply orientations to the worksets for this side
-      if(sideWorksets_[side]!=Teuchos::null)
+      if(sideWorksets_[side]!=Teuchos::null) {
+#if defined(__KK__)
+        applyOrientations(*orientations, side,*sideWorksets_[side]);
+#else  
         applyOrientations(side,*sideWorksets_[side]);
+#endif
+      }
    }
 }
 
@@ -293,6 +329,7 @@ applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ug
 
 #if defined(__KK__)
   // this should be created once and stored in an appropriate place
+  if (globalIndexer_ == Teuchos::null) throw std::runtime_error("global indexer is not set yet");
   const auto orientations = buildIntrepidOrientation(globalIndexer_);
   
   // loop over volume worksets, apply orientations to each
@@ -441,8 +478,8 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
     }
   }
 }
-#endif
 
+#else
 void WorksetContainer::
 applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) const
 {
@@ -594,6 +631,7 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
     }
   }
 }
+#endif
 
 void getVolumeWorksetsFromContainer(WorksetContainer & wc,
                                     const std::vector<std::string> & elementBlockNames,
