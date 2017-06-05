@@ -100,7 +100,7 @@ else
 fi
 
 #
-# B) Set up the bulid configurations
+# B) Set up the build configurations
 #
 
 # Should not need any extra COMMON options on a machine with the SEMS env
@@ -128,7 +128,7 @@ echo "
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake
--DTrilinos_ENABLE_DEBUG=ON
+-DTrilinos_ENABLE_DEBUG=OFF
 -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
 " > MPI_RELEASE_SHARED_PT.config
 
