@@ -116,7 +116,7 @@ echo "
 echo "
 " > MPI_RELEASE_DEBUG_SHARED_PT.config
 
-# The fillowing extra build configurations can be run using
+# The following extra build configurations can be run using
 # --st-extra-builds=<build0>,<build1>,...
 
 echo "
@@ -125,6 +125,12 @@ echo "
 -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
 -DIntrepid2_refactor_perf-test_DynRankView_Serial_Test_01_MPI_1_DISABLE=ON
 " > MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX.config
+
+echo "
+-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake
+-DTrilinos_ENABLE_DEBUG=ON
+-DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
+" > MPI_RELEASE_SHARED_PT.config
 
 echo "
 -DTPL_ENABLE_MPI=ON
