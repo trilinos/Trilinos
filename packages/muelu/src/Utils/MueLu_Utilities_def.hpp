@@ -573,6 +573,12 @@ namespace MueLu {
     throw Exceptions::RuntimeError("ExtractCoordinatesFromParameterList: The coordinates vector in parameter list is expected to be a Tpetra multivector with SC=double or float.");
 #endif
 #endif // endif HAVE_TPETRA
+
+    // check for Xpetra coordinates vector
+    if(paramList.isType<decltype(coordinates)>("Coordinates")) {
+      coordinates = paramList.get<decltype(coordinates)>("Coordinates");
+    }
+
     return coordinates;
   } // ExtractCoordinatesFromParameterList
 
