@@ -26,3 +26,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
   
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  tIOSSConnManagerRectanglePg
+  rectangle.pg
+  EXEDEPS tIOSSConnManager1 tIOSSConnManager2 tIOSSConnManager3
+)
