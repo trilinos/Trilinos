@@ -158,11 +158,23 @@ namespace MueLu {
                           Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes, LO& lNumCoarseNodes,
                           ArrayRCP<Array<double> > coarseNodes) const;
 
+    void ComputeLocalEntries(const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,
+                             const Array<LO> endRate, const LO BlkSize, const Array<LO> elemInds,
+                             const Array<LO> lCoarseElementsPerDir, const Array<LO> range,
+                             const LO numDimensions, const Array<LO> lFineNodesPerDir,
+                             const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
+                             const Array<LO> lCoarseNodesPerDir) const;
+
+    void redorderStencil(const LO ie, const LO je, const LO ke, const Array<SC> rowValues,
+                         const Array<LO> elementNodesPerDir, Array<LO> stencil) const;
+
     void sh_sort_permute(
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const;
+
+    int getNodeType(LO ie, LO je, LO ke, Array<LO> elementNodesPerDir) const;
 
   }; //class BlackBoxPFactory
 

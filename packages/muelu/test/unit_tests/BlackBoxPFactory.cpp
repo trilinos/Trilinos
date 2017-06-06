@@ -106,9 +106,9 @@ namespace MueLuTests {
                       Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
 #include "MueLu_UseShortNames.hpp"
 
-    GO nx = 5;
-    GO ny = 5;
-    GO nz = (numDimensions == 2 ? 1 : 5);
+    GO nx = 7;
+    GO ny = 7;
+    GO nz = (numDimensions == 2 ? 1 : 7);
     GO gNumPoints = nx*ny*nz;
 
     gNodesPerDim[0] = nx;
@@ -125,32 +125,32 @@ namespace MueLuTests {
       if(comm->getRank() == 0) {
         if(numDimensions == 2) {
           myOffset = 0;
-          lNodesPerDim[0] = 3;
+          lNodesPerDim[0] = 4;
           lNodesPerDim[1] = 3;
           lNodesPerDim[2] = 1;
         } else if(numDimensions == 3) {
           myOffset = 0;
           lNodesPerDim[0] = nx;
-          lNodesPerDim[1] = 3;
-          lNodesPerDim[2] = 3;
+          lNodesPerDim[1] = 4;
+          lNodesPerDim[2] = 4;
         }
       } else if(comm->getRank() == 1) {
         if(numDimensions == 2) {
-          myOffset = 3;
-          lNodesPerDim[0] = 2;
+          myOffset = 4;
+          lNodesPerDim[0] = 3;
           lNodesPerDim[1] = 3;
           lNodesPerDim[2] = 1;
         } else if(numDimensions == 3) {
           myOffset = 15;
           lNodesPerDim[0] = nx;
-          lNodesPerDim[1] = 2;
-          lNodesPerDim[2] = 3;
+          lNodesPerDim[1] = 3;
+          lNodesPerDim[2] = 4;
         }
       } else if(comm->getRank() == 2) {
         if(numDimensions == 2) {
-          myOffset = 15;
-          lNodesPerDim[0] = 3;
-          lNodesPerDim[1] = 2;
+          myOffset = 21;
+          lNodesPerDim[0] = 4;
+          lNodesPerDim[1] = 4;
           lNodesPerDim[2] = 1;
         } else if(numDimensions == 3) {
           myOffset = 75;
@@ -160,9 +160,9 @@ namespace MueLuTests {
         }
       } else if(comm->getRank() == 3) {
         if(numDimensions == 2) {
-          myOffset = 18;
-          lNodesPerDim[0] = 2;
-          lNodesPerDim[1] = 2;
+          myOffset = 25;
+          lNodesPerDim[0] = 3;
+          lNodesPerDim[1] = 4;
           lNodesPerDim[2] = 1;
         } else if(numDimensions == 3) {
           myOffset = 90;
@@ -312,66 +312,84 @@ namespace MueLuTests {
 
     Array<GO> ghostGIDs_check, coarseNodesGIDs_check, colGIDs_check;
     if(map->getComm()->getSize() == 1) {
-      coarseNodesGIDs_check.resize(9);
-      for(LO i = 0; i < 9; ++i) {
+      coarseNodesGIDs_check.resize(16);
+      for(LO i = 0; i < 16; ++i) {
         coarseNodesGIDs_check[i] = i;
       }
       colGIDs_check = coarseNodesGIDs_check;
       ghostGIDs_check.resize(0);
     } else if(map->getComm()->getSize() == 4) {
-      colGIDs_check.resize(4);
+      coarseNodesGIDs_check.resize(4);
       if(map->getComm()->getRank() == 0) {
-        coarseNodesGIDs_check.resize(4);
         coarseNodesGIDs_check[0] = 0;
         coarseNodesGIDs_check[1] = 1;
-        coarseNodesGIDs_check[2] = 3;
-        coarseNodesGIDs_check[3] = 4;
+        coarseNodesGIDs_check[2] = 4;
+        coarseNodesGIDs_check[3] = 5;
+
+        ghostGIDs_check.resize(5);
+        ghostGIDs_check[0] = 4;
+        ghostGIDs_check[1] = 18;
+        ghostGIDs_check[2] = 28;
+        ghostGIDs_check[3] = 30;
+        ghostGIDs_check[4] = 32;
+
+        colGIDs_check.resize(9);
+        colGIDs_check[0] = 0;
+        colGIDs_check[1] = 1;
+        colGIDs_check[2] = 4;
+        colGIDs_check[3] = 5;
+        colGIDs_check[4] = 2;
+        colGIDs_check[5] = 6;
+        colGIDs_check[6] = 8;
+        colGIDs_check[7] = 9;
+        colGIDs_check[8] = 10;
+      } else if(map->getComm()->getRank() == 1) {
+        coarseNodesGIDs_check[0] = 2;
+        coarseNodesGIDs_check[1] = 3;
+        coarseNodesGIDs_check[2] = 6;
+        coarseNodesGIDs_check[3] = 7;
+
+        ghostGIDs_check.resize(2);
+        ghostGIDs_check[0] = 32;
+        ghostGIDs_check[1] = 34;
+
+        colGIDs_check.resize(6);
+        colGIDs_check[0] = 2;
+        colGIDs_check[1] = 3;
+        colGIDs_check[2] = 6;
+        colGIDs_check[3] = 7;
+        colGIDs_check[4] = 10;
+        colGIDs_check[5] = 11;
+      } else if(map->getComm()->getRank() == 2) {
+        coarseNodesGIDs_check[0] = 8;
+        coarseNodesGIDs_check[1] = 9;
+        coarseNodesGIDs_check[2] = 12;
+        coarseNodesGIDs_check[3] = 13;
+
+        ghostGIDs_check.resize(2);
+        ghostGIDs_check[0] = 32;
+        ghostGIDs_check[1] = 46;
+
+        colGIDs_check.resize(6);
+        colGIDs_check[0] = 8;
+        colGIDs_check[1] = 9;
+        colGIDs_check[2] = 12;
+        colGIDs_check[3] = 13;
+        colGIDs_check[4] = 10;
+        colGIDs_check[5] = 14;
+      } else if(map->getComm()->getRank() == 3) {
+        coarseNodesGIDs_check[0] = 10;
+        coarseNodesGIDs_check[1] = 11;
+        coarseNodesGIDs_check[2] = 14;
+        coarseNodesGIDs_check[3] = 15;
 
         ghostGIDs_check.resize(0);
 
-        colGIDs_check[0] = 0;
-        colGIDs_check[1] = 1;
-        colGIDs_check[2] = 3;
-        colGIDs_check[3] = 4;
-      } else if(map->getComm()->getRank() == 1) {
-        coarseNodesGIDs_check.resize(2);
-        coarseNodesGIDs_check[0] = 2;
-        coarseNodesGIDs_check[1] = 5;
-
-        ghostGIDs_check.resize(2);
-        ghostGIDs_check[0] = 2;
-        ghostGIDs_check[1] = 12;
-
-        colGIDs_check[0] = 2;
-        colGIDs_check[1] = 5;
-        colGIDs_check[2] = 1;
-        colGIDs_check[3] = 4;
-      } else if(map->getComm()->getRank() == 2) {
-        coarseNodesGIDs_check.resize(2);
-        coarseNodesGIDs_check[0] = 6;
-        coarseNodesGIDs_check[1] = 7;
-
-        ghostGIDs_check.resize(2);
-        ghostGIDs_check[0] = 10;
-        ghostGIDs_check[1] = 12;
-
-        colGIDs_check[0] = 6;
-        colGIDs_check[1] = 7;
-        colGIDs_check[2] = 3;
-        colGIDs_check[3] = 4;
-      } else if(map->getComm()->getRank() == 3) {
-        coarseNodesGIDs_check.resize(1);
-        coarseNodesGIDs_check[0] = 8;
-
-        ghostGIDs_check.resize(3);
-        ghostGIDs_check[0] = 12;
-        ghostGIDs_check[1] = 14;
-        ghostGIDs_check[2] = 22;
-
-        colGIDs_check[0] = 8;
-        colGIDs_check[1] = 4;
-        colGIDs_check[2] = 5;
-        colGIDs_check[3] = 7;
+        colGIDs_check.resize(4);
+        colGIDs_check[0] = 10;
+        colGIDs_check[1] = 11;
+        colGIDs_check[2] = 14;
+        colGIDs_check[3] = 15;
       }
     }
     TEST_EQUALITY(coarseNodesGIDs_check == coarseNodesGIDs, true);
