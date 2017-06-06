@@ -93,7 +93,9 @@ fi
 
 if [ "$TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD" == "" ] ; then
   export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
-  source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
+  source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh ""
+  # NOTE: Above, must pass empty arg "" or bash will pass in "$@" which is
+  # bad!
 else
   echo "Skipping load of standard SEMS CI env because TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD=$TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD!"
   module list
