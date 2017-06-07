@@ -552,7 +552,6 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // kokkos view accessors
-#ifdef PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
     {
       // non-const view
       auto kva = a.get_view(); 
@@ -565,9 +564,6 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
       const auto const_kvc = c.get_view(); 
       const_kvc(0,0) = MyTraits::FadType(1.0);
     }
-#else
-    // unsupported on the deprecated runtime view
-#endif
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // ostream

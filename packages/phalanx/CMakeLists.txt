@@ -109,27 +109,6 @@ IF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
 ENDIF()
 ENDIF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KOKKOS_DYN_RANK_VIEW
-  PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
-  "Enable the Kokkos EXPERIMENTAL DynRankView capability. Default is ON."
-  ON )
-MESSAGE(STATUS "Kokkos EXPERIMENTAL DynRankView support: ${PHX_ENABLE_KOKKOS_DYN_RANK_VIEW}")
-
-IF(${Intrepid2_ENABLE_KokkosDynRankView})
-  GLOBAL_SET(PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR ON)
-  MESSAGE(STATUS "Use Intrepid2 refactor for DynRankView: ON")
-ELSE()
-  GLOBAL_SET(PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR OFF)
-  MESSAGE(STATUS "Use Intrepid2 refactor for DynRankView: OFF")
-ENDIF()
-
-# Intrepid2 is an optional package
-IF(${PACKAGE_NAME}_ENABLE_Intrepid2)
-  MESSAGE(STATUS "Build MDField support for Intrepid2: ON")
-ELSE()
-  MESSAGE(STATUS "Build MDField support for Intrepid2: OFF")
-ENDIF()
-
 # For use by Phalanx and Panzer unit tests
 GLOBAL_SET(PHALANX_UNIT_TEST_MAIN
   "${PACKAGE_SOURCE_DIR}/test/Utilities/Phalanx_UnitTestMain.cpp")
