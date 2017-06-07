@@ -89,12 +89,20 @@ namespace MueLu {
     Teuchos::ParameterList& userList = inParamList.sublist("user data");
     if (userList.isParameter("Coordinates")) {
       RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
-      coordinates = TpetraMultiVector_To_XpetraMultiVector<double,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates"));
+      try {
+        coordinates = TpetraMultiVector_To_XpetraMultiVector<double,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates"));
+      } catch(Teuchos::Exceptions::InvalidParameterType) {
+        coordinates = userList.get<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates");
+      }
       userList.set<RCP<Xpetra::MultiVector<double,LO,GO,NO> > >("Coordinates", coordinates);
     }
     RCP<MultiVector> nullspace = Teuchos::null;
     if (userList.isParameter("Nullspace")) {
-      nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace"));
+      try {
+        nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace"));
+      } catch(Teuchos::Exceptions::InvalidParameterType) {
+        nullspace = userList.get<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace");
+      }
     }
     if(nullspace == Teuchos::null) {
       int nPDE = MueLu::MasterList::getDefault<int>("number of equations");
