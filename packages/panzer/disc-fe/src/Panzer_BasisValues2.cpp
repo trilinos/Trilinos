@@ -1170,10 +1170,6 @@ template <typename Scalar>
 void BasisValues2<Scalar>::
 applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations)
 {
-#ifdef __KK__
-  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"panzer::BasisValues2::applyOrientations : Not this.");
-#endif
-
   int num_cell  = orientations.dimension(0);
   int num_basis = orientations.dimension(1);
   int num_dim   = basis_layout->dimension();
