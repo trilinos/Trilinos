@@ -1009,42 +1009,69 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
   const PureBasis::EElementSpace elmtspace = getElementSpace();
 
   // maybe container dimension is different from num_dim and num_ip
-  const int num_cell  = basis_layout->numCells(); // orientations.size();
+  const int num_cell  = orientations.size(); // do not use basis_layout->numCells(), this gives workset size 
   const int num_dim   = basis_layout->dimension();
-
-  TEUCHOS_TEST_FOR_EXCEPTION(num_cell != static_cast<int>(orientations.size()),
-                             std::logic_error,
-                             "The number of cells does not match to the dimension of orientation array.");
+  const Kokkos::pair<int,int> range_cell(0, num_cell);
 
   Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> 
     drv_orts((Intrepid2::Orientation*)orientations.data(), num_cell);
     
   if (elmtspace==PureBasis::HGRAD) {
     {
-      auto drv_basis_scalar = basis_scalar.get_view();
-      Kokkos::DynRankView<Scalar,PHX::Device> drv_basis_scalar_tmp("drv_basis_scalar_tmp", 
-                                                                   drv_basis_scalar.dimension(0),  // C
-                                                                   drv_basis_scalar.dimension(1),  // F
-                                                                   drv_basis_scalar.dimension(2)); // P
-      Kokkos::deep_copy(drv_basis_scalar_tmp, drv_basis_scalar);
-      ots::modifyBasisByOrientation(drv_basis_scalar, 
-                                    drv_basis_scalar_tmp, 
-                                    drv_orts,
-                                    intrepid_basis);
+      {
+        auto drv_basis_scalar = Kokkos::subview(basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
+        Kokkos::DynRankView<Scalar,PHX::Device> drv_basis_scalar_tmp("drv_basis_scalar_tmp", 
+                                                                     num_cell, // C
+                                                                     drv_basis_scalar.dimension(1),  // F
+                                                                     drv_basis_scalar.dimension(2)); // P
+        Kokkos::deep_copy(drv_basis_scalar_tmp, drv_basis_scalar);
+        ots::modifyBasisByOrientation(drv_basis_scalar, 
+                                      drv_basis_scalar_tmp, 
+                                      drv_orts,
+                                      intrepid_basis);
+      }
+      if(build_weighted) {
+        auto drv_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
+        Kokkos::DynRankView<Scalar,PHX::Device> drv_basis_scalar_tmp("drv_basis_scalar_tmp", 
+                                                                     num_cell, // C
+                                                                     drv_basis_scalar.dimension(1),  // F
+                                                                     drv_basis_scalar.dimension(2)); // P
+        Kokkos::deep_copy(drv_basis_scalar_tmp, drv_basis_scalar);
+        ots::modifyBasisByOrientation(drv_basis_scalar, 
+                                      drv_basis_scalar_tmp, 
+                                      drv_orts,
+                                      intrepid_basis);
+      }
+
     } 
 
     if (compute_derivatives) {
-      auto drv_grad_basis = grad_basis.get_view();
-      Kokkos::DynRankView<Scalar,PHX::Device> drv_grad_basis_tmp("drv_grad_basis_tmp", 
-                                                                 drv_grad_basis.dimension(0),  // C
-                                                                 drv_grad_basis.dimension(1),  // F
-                                                                 drv_grad_basis.dimension(2),  // P
-                                                                 drv_grad_basis.dimension(3)); // D
-      Kokkos::deep_copy(drv_grad_basis_tmp, drv_grad_basis);
-      ots::modifyBasisByOrientation(drv_grad_basis, 
-                                    drv_grad_basis_tmp, 
-                                    drv_orts,
-                                    intrepid_basis);
+      {
+        auto drv_grad_basis = Kokkos::subview(grad_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        Kokkos::DynRankView<Scalar,PHX::Device> drv_grad_basis_tmp("drv_grad_basis_tmp", 
+                                                                   num_cell, // C
+                                                                   drv_grad_basis.dimension(1),  // F
+                                                                   drv_grad_basis.dimension(2),  // P
+                                                                   drv_grad_basis.dimension(3)); // D
+        Kokkos::deep_copy(drv_grad_basis_tmp, drv_grad_basis);
+        ots::modifyBasisByOrientation(drv_grad_basis, 
+                                      drv_grad_basis_tmp, 
+                                      drv_orts,
+                                      intrepid_basis);
+      }
+      if(build_weighted) {
+        auto drv_grad_basis = Kokkos::subview(weighted_grad_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        Kokkos::DynRankView<Scalar,PHX::Device> drv_grad_basis_tmp("drv_grad_basis_tmp", 
+                                                                   num_cell, // C
+                                                                   drv_grad_basis.dimension(1),  // F
+                                                                   drv_grad_basis.dimension(2),  // P
+                                                                   drv_grad_basis.dimension(3)); // D
+        Kokkos::deep_copy(drv_grad_basis_tmp, drv_grad_basis);
+        ots::modifyBasisByOrientation(drv_grad_basis, 
+                                      drv_grad_basis_tmp, 
+                                      drv_orts,
+                                      intrepid_basis);
+      }
     }
   }
   else if (elmtspace==PureBasis::HCURL && num_dim==2) {
@@ -1143,6 +1170,10 @@ template <typename Scalar>
 void BasisValues2<Scalar>::
 applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations)
 {
+#ifdef __KK__
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"panzer::BasisValues2::applyOrientations : Not this.");
+#endif
+
   int num_cell  = orientations.dimension(0);
   int num_basis = orientations.dimension(1);
   int num_dim   = basis_layout->dimension();

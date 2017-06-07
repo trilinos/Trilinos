@@ -101,25 +101,35 @@ namespace Intrepid2 {
       }
     }
     else if (name == "Intrepid2_HGRAD_TRI_Cn_FEM") {
-      const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 3, numOrts = 2;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_TRI_Cn_FEM",
-                                        numEdges,
-                                        numOrts,
-                                        matDim, 
-                                        matDim);
-
-      init_HGRAD_TRI_Cn_FEM(matData, order);
+      if (order > 1) {
+        const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 3, numOrts = 2;      
+        matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_TRI_Cn_FEM",
+                                          numEdges,
+                                          numOrts,
+                                          matDim, 
+                                          matDim);
+        
+        init_HGRAD_TRI_Cn_FEM(matData, order);
+      } else {
+        // add dummy
+        matData = CoeffMatrixDataViewType();
+      }        
     } 
     else if (name == "Intrepid2_HGRAD_TET_Cn_FEM") {
-      const ordinal_type matDim = ordinalToTag(tagToOrdinal(2, 0, 0), 3), numSubcells = 10, numOrts = 6;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_TET_Cn_FEM",
-                                        numSubcells,
-                                        numOrts,
-                                        matDim, 
-                                        matDim);
-      
-      init_HGRAD_TET_Cn_FEM(matData, order);
-    } 
+      if (order > 1) {
+        const ordinal_type matDim = ordinalToTag(tagToOrdinal(2, 0, 0), 3), numSubcells = 10, numOrts = 6;
+        matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_TET_Cn_FEM",
+                                          numSubcells,
+                                          numOrts,
+                                          matDim, 
+                                          matDim);
+        
+        init_HGRAD_TET_Cn_FEM(matData, order);
+      } else {
+        // add dummy
+        matData = CoeffMatrixDataViewType();
+      }        
+    }
 
     //
     // High order HCURL Elements
