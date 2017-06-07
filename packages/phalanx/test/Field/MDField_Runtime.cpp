@@ -43,13 +43,12 @@
 
 
 #include "Kokkos_DynRankView_Fad.hpp"
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_DimTag.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_MDField.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -124,8 +123,6 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
   
   RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
   TimeMonitor tm(*total_time);
-  
-  PHX::InitializeKokkosDevice();
 
   // *********************************************************************
   // Start of MDField Testing
@@ -582,6 +579,5 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     out << output.str() << endl;
   }
 
-  PHX::FinalizeKokkosDevice();  
   TimeMonitor::summarize();
 }

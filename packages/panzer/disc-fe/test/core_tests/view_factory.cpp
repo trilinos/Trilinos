@@ -44,7 +44,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Sacado.hpp"
 #include "Kokkos_ViewFactory.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_MDField.hpp"
 
 namespace panzer_test {

@@ -51,8 +51,6 @@
 #include <vector>
 #include <set>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"

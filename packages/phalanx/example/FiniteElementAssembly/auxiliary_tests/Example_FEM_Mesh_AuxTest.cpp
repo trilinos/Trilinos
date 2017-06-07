@@ -43,7 +43,6 @@
 
 
 #include "Phalanx_config.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"

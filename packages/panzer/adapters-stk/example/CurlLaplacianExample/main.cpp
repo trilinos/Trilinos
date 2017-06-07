@@ -92,8 +92,6 @@
 #include "Example_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "Example_EquationSetFactory.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "AztecOO.h"
 
 #include <sstream>
@@ -159,7 +157,7 @@ int main(int argc,char * argv[])
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
 
-   PHX::KokkosDeviceSession session;
+   Kokkos::initialize(argc,argv);
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));

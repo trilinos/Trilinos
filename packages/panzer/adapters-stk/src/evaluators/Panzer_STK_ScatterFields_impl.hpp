@@ -45,7 +45,7 @@
 
 #include "Teuchos_Assert.hpp"
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"

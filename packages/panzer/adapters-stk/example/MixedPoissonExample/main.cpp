@@ -50,8 +50,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -117,7 +115,7 @@ int main(int argc,char * argv[])
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
 
-   PHX::InitializeKokkosDevice();
+   Kokkos::initialize(argc,argv);
 
    {
   
@@ -470,8 +468,6 @@ int main(int argc,char * argv[])
      else
         out << "ALL PASSED: Epetra" << std::endl;
    }
-
-   PHX::FinalizeKokkosDevice();
 
    return 0;
 }

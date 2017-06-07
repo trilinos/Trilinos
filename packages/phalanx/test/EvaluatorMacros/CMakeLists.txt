@@ -2,7 +2,8 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   evaluator_macros
-  SOURCES ${PHALANX_UNIT_TEST_MAIN} EvaluatorMacrosTest.cpp EvaluatorWithMacros.hpp EvaluatorWithMacros_Def.hpp
+  SOURCES EvaluatorMacrosTest.cpp EvaluatorWithMacros.hpp EvaluatorWithMacros_Def.hpp
+  TESTONLYLIBS phalanx_unit_test_main
   COMM serial mpi
   NUM_MPI_PROCS 1
 )

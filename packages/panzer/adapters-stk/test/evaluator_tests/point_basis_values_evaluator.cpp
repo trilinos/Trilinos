@@ -72,8 +72,6 @@ using Teuchos::rcp;
 
 #include "RandomFieldEvaluator.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 

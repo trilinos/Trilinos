@@ -26,3 +26,9 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   TESTONLY
   )
+
+TRIBITS_ADD_LIBRARY(
+  phalanx_unit_test_main
+  SOURCES Phalanx_UnitTestMain.cpp
+  TESTONLY
+  )

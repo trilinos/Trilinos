@@ -47,7 +47,7 @@
 
 #include "Phalanx_config.hpp"
 #include "Kokkos_View.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace phx_example {
 

@@ -68,8 +68,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_ScatterFields.hpp"
 #include "Panzer_STK_ScatterCellAvgQuantity.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"

@@ -72,9 +72,6 @@
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_String_Utilities.hpp"
 
-// Phalanx
-#include "Phalanx_KokkosUtilities.hpp"
-
 // Seacass
 #include <Ioss_SerializeIO.h>
 
@@ -192,7 +189,6 @@ main(
   using   panzer_stk::STK_Interface;
   using   panzer_stk::STK_MeshFactory;
   using   panzer_stk::WorksetFactory;
-  using   PHX::InitializeKokkosDevice;
   using   shards::CellTopology;
   using   std::cout;
   using   std::endl;
@@ -232,7 +228,7 @@ main(
   int status(0);
 
   // Initialize Kokkos/MPI.
-  InitializeKokkosDevice();
+  Kokkos::initialize(argc, argv);
   oblackholestream blackhole;
   GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
@@ -446,7 +442,7 @@ main(
     *out << "Run completed." << endl;
 
   // Shut things down.
-  PHX::FinalizeKokkosDevice();
+  Kokkos::finalize_all();
   return status;
 } // end of main()
 

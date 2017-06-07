@@ -53,8 +53,6 @@
 #include "user_app_BCStrategy_Factory.hpp"
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
