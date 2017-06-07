@@ -80,6 +80,7 @@ namespace MueLu {
     // rate in every spatial dimentions, or it can be a longer string that will then be interpreted as an array of integers.
     // By default coarsen is set as "{2}", hence a coarsening rate of 2 in every spatial dimension is the default setting!
     validParamList->set<std::string >           ("Coarsen",                 "{2}", "Coarsening rate in all spatial dimensions");
+    validParamList->set<int>                    ("order",                   1, "Order of the interpolation scheme used");
     validParamList->set<RCP<const FactoryBase> >("A",                         Teuchos::null, "Generating factory of the matrix A");
     validParamList->set<RCP<const FactoryBase> >("Nullspace",                 Teuchos::null, "Generating factory of the nullspace");
     validParamList->set<RCP<const FactoryBase> >("Coordinates",               Teuchos::null, "Generating factory for coorindates");
@@ -193,6 +194,11 @@ namespace MueLu {
         coarseRate[i] = 1;
       }
     }
+
+    int interpolationOrder = pL.get<int>("order");
+    TEUCHOS_TEST_FOR_EXCEPTION((interpolationOrder < 0) || (interpolationOrder > 1),
+                               Exceptions::RuntimeError,
+                               "The interpolation order can only be set to 0 or 1.");
 
     // Get the axis permutation from Global axis to Local axis
     std::string axisPermutation = pL.get<std::string>("axisPermutation");
@@ -553,8 +559,8 @@ namespace MueLu {
     RCP<const Map> stridedDomainMapP;
     RCP<Matrix>    P;
     MakeGeneralGeometricP(numDimensions, mapDirL2G, mapDirG2L, lFineNodesPerDir, lCoarseNodesPerDir, gCoarseNodesPerDir,
-                                       gFineNodesPerDir, coarseRate, endRate, offsets, ghostInterface, fineCoords, nTerms, blkSize, stridedDomainMapP, A,
-                                       P, coarseCoords, ghostsGIDs);
+                          gFineNodesPerDir, coarseRate, endRate, offsets, ghostInterface, fineCoords, nTerms, blkSize,
+                          stridedDomainMapP, A, P, coarseCoords, ghostsGIDs, interpolationOrder);
 
     // set StridingInformation of P
     if (A->IsView("stridedMaps") == true) {
@@ -578,7 +584,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MakeGeneralGeometricP(LO const ndm, const Array<LO> mapDirL2G, const Array<LO> mapDirG2L, const Array<LO> lFineNodesPerDir, const Array<LO> lCoarseNodesPerDir, Array<GO> gCoarseNodesPerDir, Array<GO> gFineNodesPerDir, ArrayRCP<LO> const coarseRate, LO const endRate[3], LO const offsets[6], bool const ghostInterface[6], const RCP<Xpetra::MultiVector<double,LO,GO,Node> >& fineCoords, LO const nnzP, LO const dofsPerNode, RCP<const Map>& stridedDomainMapP, RCP<Matrix> & Amat, RCP<Matrix>& P, RCP<Xpetra::MultiVector<double,LO,GO,Node> >& coarseCoords, Array<GO> ghostsGIDs) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MakeGeneralGeometricP(LO const ndm, const Array<LO> mapDirL2G, const Array<LO> mapDirG2L, const Array<LO> lFineNodesPerDir, const Array<LO> lCoarseNodesPerDir, Array<GO> gCoarseNodesPerDir, Array<GO> gFineNodesPerDir, ArrayRCP<LO> const coarseRate, LO const endRate[3], LO const offsets[6], bool const ghostInterface[6], const RCP<Xpetra::MultiVector<double,LO,GO,Node> >& fineCoords, LO const nnzP, LO const dofsPerNode, RCP<const Map>& stridedDomainMapP, RCP<Matrix> & Amat, RCP<Matrix>& P, RCP<Xpetra::MultiVector<double,LO,GO,Node> >& coarseCoords, Array<GO> ghostsGIDs, int interpolationOrder) const {
 
     /*
      *
@@ -926,7 +932,7 @@ namespace MueLu {
         indices[3][2] = lFineNodesPerDir[2]-1;
       }
 
-      GO currentNodeIndices[3];
+      Array<GO> currentNodeIndices(3);
       currentNodeIndices[0] = gStartIndices[0] + Teuchos::as<GO>(indices[0][mapDirL2G[0]]);
       currentNodeIndices[1] = gStartIndices[1] + Teuchos::as<GO>(indices[0][mapDirL2G[1]]);
       currentNodeIndices[2] = gStartIndices[2] + Teuchos::as<GO>(indices[0][mapDirL2G[2]]);
@@ -960,22 +966,25 @@ namespace MueLu {
 
       // We need to check whether we are on the edge of the mesh in which case we need to adjust the coarse nodes
       firstCoarseNodeIndex = 0;
+      Array<GO> firstCoarseNodeIndices;
       if((currentNodeIndices[2] == gFineNodesPerDir[2] -1) && (endRate[2] == coarseRate[2])) {
         // If we are on the last node and have a endRate == coarseRate we need to take the coarse node below the current node
-        firstCoarseNodeIndex += ((currentNodeIndices[2] / coarseRate[2]) - 1) * coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+        firstCoarseNodeIndices[2] = (currentNodeIndices[2] / coarseRate[2]) - 1;
       } else {
-        firstCoarseNodeIndex += (currentNodeIndices[2] / coarseRate[2]) * coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+        firstCoarseNodeIndices[2] = currentNodeIndices[2] / coarseRate[2];
       }
       if((currentNodeIndices[1] == gFineNodesPerDir[1] -1) && (endRate[1] == coarseRate[1])) {
-        firstCoarseNodeIndex += ((currentNodeIndices[1] / coarseRate[1]) - 1) * coarseRate[1]*gFineNodesPerDir[0];
+        firstCoarseNodeIndices[1] = (currentNodeIndices[1] / coarseRate[1]) - 1;
       } else {
-        firstCoarseNodeIndex += (currentNodeIndices[1] / coarseRate[1]) * coarseRate[1]*gFineNodesPerDir[0];
+        firstCoarseNodeIndices[1] = currentNodeIndices[1] / coarseRate[1];
       }
       if((currentNodeIndices[0] == gFineNodesPerDir[0] -1) && (endRate[0] == coarseRate[0])) {
-        firstCoarseNodeIndex += ((currentNodeIndices[0] / coarseRate[0]) - 1) * coarseRate[0];
+        firstCoarseNodeIndices[0] = (currentNodeIndices[0] / coarseRate[0]) - 1;
       } else {
-        firstCoarseNodeIndex += (currentNodeIndices[0] / coarseRate[0]) * coarseRate[0];
+        firstCoarseNodeIndices[0] = currentNodeIndices[0] / coarseRate[0];
       }
+      firstCoarseNodeIndex += firstCoarseNodeIndices[2] * coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0]
+        + firstCoarseNodeIndices[1] * coarseRate[1]*gFineNodesPerDir[0] + firstCoarseNodeIndices[0] * coarseRate[0];
       GO firstCoarseNodeOnCoarseGridIndex;
       {
         GO tmpInds[4];
@@ -1102,8 +1111,8 @@ namespace MueLu {
       }
 
       // Compute the actual geometric interpolation stencil
-      SC stencil[8]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-      ComputeLinearInterpolationStencil(ndm,connec,stencil);
+      SC stencil[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+      ComputeStencil(ndm, currentNodeIndices, firstCoarseNodeIndices, rate, connec, interpolationOrder, stencil);
 
       // Finally check whether the fine node is on a coarse: node, edge or face
       // and select accordingly the non-zero values from the stencil and the
@@ -1182,66 +1191,50 @@ namespace MueLu {
   } // MakeGeneralGeometricP
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeStencil(const LO numDimension, const double coord[9][3], SC stencil[8]) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeStencil(
+                                const LO numDimensions, const Array<GO> currentNodeIndices,
+                                const Array<GO> coarseNodeIndices, const LO rate[3],
+                                const double coord[9][3], const int interpolationOrder,
+                                SC stencil[8]) const {
 
-    //                 ht    hn          7      8
-    //                                   x------x
-    //                  x  x            /|     /|
-    //                  | /           5/ |   6/ |
-    //                  |/            x------x  |
-    //         hw  x----o----x  he    |  x---|--x
-    //                 /|             | /3   | /4
-    //                / |             |/     |/
-    //  z  y         x  x             x------x
-    //  | /                           1      2
-    //  |/         hs    hb
-    //  o---x
-    //
-    //  coords contains the coordinates of the node of interest indexed 0 and shown as "o" on the left plot
-    //  and the coordinates of the hexahedron as indexed on the right plot.
-    //  So far, assuming that the hexahedron is really a regular prism, the only coordinates
-    //  needed are coord[0][], coord[1][] and coord[8][]
-    //  hw=coord[0][0]-coord[1][0];  hs=coord[0][1]-coord[1][1];  hb=coord[0][2]-coord[1][2];
-    //  he=coord[2][0]-coord[0][0];  hn=coord[2][1]-coord[0][1];  ht=coord[2][2]-coord[0][2];
+    TEUCHOS_TEST_FOR_EXCEPTION((interpolationOrder > 1) || (interpolationOrder < 0),
+                               Exceptions::RuntimeError,
+                               "The interpolation order can be set to 0 or 1 only.");
 
-    SC hw=0.0; SC he=0.0; SC hs=0.0; SC hn=0.0; SC hb=0.0; SC ht=0.0;
-    hw = coord[0][0] - coord[1][0];
-    he = coord[8][0] - coord[0][0];
-    hs = coord[0][1] - coord[1][1];
-    hn = coord[8][1] - coord[0][1];
-    hb = coord[0][2] - coord[1][2];
-    ht = coord[8][2] - coord[0][2];
-
-    SC hx = 0.0; SC hy = 0.0; SC hz = 0.0;
-    hx = hw + he;
-    hy = hs + hn;
-    hz = hb + ht;
-
-    if(numDimension==1) {
-      hs = 1;
-      hn = 1;
-      hy = 1;
-      hb = 1;
-      ht = 1;
-      hz = 1;
-    } else if (numDimension==2) {
-      hb = 1;
-      ht = 1;
-      hz = 1;
+    if(interpolationOrder == 0) {
+      ComputeConstantInterpolationStencil(numDimensions, currentNodeIndices, coarseNodeIndices, rate, stencil);
+    } else if(interpolationOrder == 1) {
+      ComputeLinearInterpolationStencil(numDimensions, coord, stencil);
     }
 
-    stencil[0] = he/hx*hn/hy*ht/hz;
-    stencil[1] = hw/hx*hn/hy*ht/hz;
-    stencil[2] = he/hx*hs/hy*ht/hz;
-    stencil[3] = hw/hx*hs/hy*ht/hz;
-    stencil[4] = he/hx*hn/hy*hb/hz;
-    stencil[5] = hw/hx*hn/hy*hb/hz;
-    stencil[6] = he/hx*hs/hy*hb/hz;
-    stencil[7] = hw/hx*hs/hy*hb/hz;
   } // End ComputeStencil
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeLinearInterpolationStencil(const LO numDimension, const double coord[9][3], SC stencil[8]) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeConstantInterpolationStencil(
+                                const LO numDimensions, const Array<GO> currentNodeIndices,
+                                const Array<GO> coarseNodeIndices, const LO rate[3], SC stencil[8]) const {
+
+    LO coarseNode = 0;
+    if(numDimensions > 2) {
+      if((currentNodeIndices[2] - coarseNodeIndices[2]) > (rate[2] / 2)) {
+        coarseNode += 4;
+      }
+    }
+    if(numDimensions > 1) {
+      if((currentNodeIndices[1] - coarseNodeIndices[1]) > (rate[1] / 2)) {
+        coarseNode += 2;
+      }
+    }
+    if((currentNodeIndices[0] - coarseNodeIndices[0]) > (rate[0] / 2)) {
+      coarseNode += 1;
+    }
+    stencil[coarseNode] = 1.0;
+
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeLinearInterpolationStencil(
+                                const LO numDimensions, const double coord[9][3], SC stencil[8]) const {
 
     //                7         8                Find xi, eta and zeta such that
     //                x---------x
@@ -1258,37 +1251,37 @@ namespace MueLu {
     //  o---x
     //
 
-    Teuchos::SerialDenseMatrix<LO,double> Jacobian(numDimension, numDimension);
-    Teuchos::SerialDenseVector<LO,double> residual(numDimension);
-    Teuchos::SerialDenseVector<LO,double> solutionDirection(numDimension);
-    Teuchos::SerialDenseVector<LO,double> paramCoords(numDimension);
+    Teuchos::SerialDenseMatrix<LO,double> Jacobian(numDimensions, numDimensions);
+    Teuchos::SerialDenseVector<LO,double> residual(numDimensions);
+    Teuchos::SerialDenseVector<LO,double> solutionDirection(numDimensions);
+    Teuchos::SerialDenseVector<LO,double> paramCoords(numDimensions);
     Teuchos::SerialDenseSolver<LO,double> problem;
-    LO numTerms = std::pow(2,numDimension), iter = 0, max_iter = 5;
+    LO numTerms = std::pow(2,numDimensions), iter = 0, max_iter = 5;
     double functions[4][8], norm_ref = 1, norm2 = 1, tol = 1e-5;
-    paramCoords.size(numDimension);
+    paramCoords.size(numDimensions);
 
     while( (iter < max_iter) && (norm2 > tol*norm_ref) ) {
       ++iter;
       norm2 = 0;
-      solutionDirection.size(numDimension);
-      residual.size(numDimension);
+      solutionDirection.size(numDimensions);
+      residual.size(numDimensions);
       Jacobian = 0.0;
 
       // Compute Jacobian and Residual
-      GetInterpolationFunctions(numDimension, paramCoords, functions);
-      for(LO i = 0; i < numDimension; ++i) {
+      GetInterpolationFunctions(numDimensions, paramCoords, functions);
+      for(LO i = 0; i < numDimensions; ++i) {
         residual(i) = coord[0][i];                 // Add coordinates from point of interest
         for(LO k = 0; k < numTerms; ++k) {
           residual(i) -= functions[0][k]*coord[k+1][i];  // Remove contribution from all coarse points
         }
         if(iter == 1) {
           norm_ref += residual(i)*residual(i);
-          if(i == numDimension -1) {
+          if(i == numDimensions - 1) {
             norm_ref = std::sqrt(norm_ref);
           }
         }
 
-        for(LO j = 0; j < numDimension; ++j) {
+        for(LO j = 0; j < numDimensions; ++j) {
           for(LO k = 0; k < numTerms; ++k) {
             Jacobian(i,j) += functions[j+1][k]*coord[k+1][i];
           }
@@ -1300,13 +1293,13 @@ namespace MueLu {
       problem.setVectors(Teuchos::rcp(&solutionDirection, false), Teuchos::rcp(&residual, false));
       problem.solve();
 
-      for(LO i = 0; i < numDimension; ++i) {
+      for(LO i = 0; i < numDimensions; ++i) {
         paramCoords(i) = paramCoords(i) + solutionDirection(i);
       }
 
       // Recompute Residual norm
-      GetInterpolationFunctions(numDimension, paramCoords, functions); // These need to be recomputed with new paramCoords!
-      for(LO i = 0; i < numDimension; ++i) {
+      GetInterpolationFunctions(numDimensions, paramCoords, functions); // These need to be recomputed with new paramCoords!
+      for(LO i = 0; i < numDimensions; ++i) {
         double tmp = coord[0][i];
         for(LO k = 0; k < numTerms; ++k) {
           tmp -= functions[0][k]*coord[k+1][i];
@@ -1325,16 +1318,16 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetInterpolationFunctions(const LO numDimension, const Teuchos::SerialDenseVector<LO,double> parameters, double functions[4][8]) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetInterpolationFunctions(const LO numDimensions, const Teuchos::SerialDenseVector<LO,double> parameters, double functions[4][8]) const {
     double xi = 0.0, eta = 0.0, zeta = 0.0, denominator = 0.0;
-    if(numDimension == 1) {
+    if(numDimensions == 1) {
       xi = parameters[0];
       denominator = 2.0;
-    } else if(numDimension == 2) {
+    } else if(numDimensions == 2) {
       xi  = parameters[0];
       eta = parameters[1];
       denominator = 4.0;
-    } else if(numDimension == 3) {
+    } else if(numDimensions == 3) {
       xi   = parameters[0];
       eta  = parameters[1];
       zeta = parameters[2];

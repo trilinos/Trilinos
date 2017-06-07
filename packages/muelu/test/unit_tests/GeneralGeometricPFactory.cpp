@@ -271,6 +271,7 @@ namespace MueLuTests {
     // Set paramters needed by the factories
     Pfact->SetParameter("Coarsen", Teuchos::ParameterEntry(std::string("{2,2,2}")));
     Pfact->SetParameter("axisPermutation", Teuchos::ParameterEntry(std::string("{0,1,2}")));
+    Pfact->SetParameter("order", Teuchos::ParameterEntry(1));
 
     Tfact->SetParameter("Geometric", Teuchos::ParameterEntry(true));
 
