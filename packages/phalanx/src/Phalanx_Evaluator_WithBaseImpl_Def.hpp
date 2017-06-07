@@ -116,19 +116,6 @@ addEvaluatedField(const PHX::FieldTag& ft)
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT>
-void PHX::EvaluatorWithBaseImpl<Traits>::
-addEvaluatedField(const PHX::Field<DataT>& f)
-{ 
-  this->addEvaluatedField(f.fieldTag());
-
-  using NCF = PHX::MDField<DataT>;
-  this->field_binders_.emplace(f.fieldTag().identifier(),
-                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
-}
-
-//**********************************************************************
-template<typename Traits>
 template<typename DataT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
@@ -160,19 +147,6 @@ addContributedField(const PHX::FieldTag& ft)
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT>
-void PHX::EvaluatorWithBaseImpl<Traits>::
-addContributedField(const PHX::Field<DataT>& f)
-{ 
-  this->addContributedField(f.fieldTag());
-
-  using NCF = PHX::MDField<DataT>;
-  this->field_binders_.emplace(f.fieldTag().identifier(),
-                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
-}
-
-//**********************************************************************
-template<typename Traits>
 template<typename DataT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
@@ -200,33 +174,6 @@ addDependentField(const PHX::FieldTag& ft)
     required_.push_back(ft.clone());
 
   this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
-}
-
-//**********************************************************************
-// DEPRECATED!!!!
-template<typename Traits>
-template<typename DataT>
-void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::Field<DataT>& f)
-{
-  this->addDependentField(f.fieldTag());
-
-  using NCF = PHX::MDField<DataT>;
-  this->field_binders_.emplace(f.fieldTag().identifier(),
-                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
-}
-
-//**********************************************************************
-template<typename Traits>
-template<typename DataT>
-void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::Field<const DataT>& f)
-{
-  this->addDependentField(f.fieldTag());
-
-  using NCF = PHX::MDField<DataT>;
-  this->field_binders_.emplace(f.fieldTag().identifier(),
-                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************

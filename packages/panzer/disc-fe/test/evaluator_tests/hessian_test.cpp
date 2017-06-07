@@ -62,7 +62,7 @@ using Teuchos::rcp;
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Phalanx_MDField.hpp"
 
 namespace panzer {
 

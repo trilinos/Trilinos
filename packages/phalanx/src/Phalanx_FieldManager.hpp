@@ -55,7 +55,6 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_EvaluationContainer_TemplateManager.hpp"
 

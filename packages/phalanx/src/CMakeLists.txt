@@ -54,8 +54,6 @@ APPEND_SET(HEADERS
   Phalanx_Evaluator_AliasField.hpp
   Phalanx_Evaluator_UnmanagedFieldDummy.hpp
   Phalanx_Exceptions.hpp
-  Phalanx_Field_Def.hpp
-  Phalanx_Field.hpp
   Phalanx_FieldManager_Def.hpp
   Phalanx_FieldManager.hpp
   Phalanx_FieldTag.hpp

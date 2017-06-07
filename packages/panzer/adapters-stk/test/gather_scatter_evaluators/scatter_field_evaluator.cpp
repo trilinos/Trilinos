@@ -76,7 +76,7 @@ using Teuchos::rcp;
 #include "Teuchos_OpaqueWrapper.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Phalanx_MDField.hpp"
 
 #include "Epetra_MpiComm.h"
 
