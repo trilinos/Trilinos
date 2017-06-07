@@ -28,6 +28,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   tIOSSConnManagerRectanglePg
-  rectangle.pg
+  SOURCE_FILES rectangle.pg
   EXEDEPS tIOSSConnManager1 tIOSSConnManager2 tIOSSConnManager3
 )
