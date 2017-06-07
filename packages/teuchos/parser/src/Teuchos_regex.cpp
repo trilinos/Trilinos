@@ -1,3 +1,5 @@
+#include "Teuchos_set.hpp"
+
 #include "Teuchos_regex.hpp"
 
 #include <iostream>
@@ -8,7 +10,6 @@
 #include "Teuchos_vector.hpp"
 #include "Teuchos_string.hpp"
 #include "Teuchos_chartab.hpp"
-#include "Teuchos_set.hpp"
 #include "Teuchos_Reader.hpp"
 #include "Teuchos_chartab.hpp"
 
