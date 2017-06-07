@@ -62,7 +62,8 @@
     <ParameterList name="Metrics"> 
       <ParameterList name="metriccheck1">
         <Parameter name="check" type="string" value="imbalance"/>
-        <Parameter name="upper" type="double" value="1.2"/>
+        <Parameter name="weight" type="int" value="0"/>
+        <Parameter name="upper" type="double" value="1.10"/>
       </ParameterList>    
     </ParameterList>
   </ParameterList>
