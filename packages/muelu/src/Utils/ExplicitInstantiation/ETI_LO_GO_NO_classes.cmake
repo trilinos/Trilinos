@@ -11,7 +11,6 @@ APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::AggregationPhase3Algorithm_kokkos-.
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::AmalgamationInfo )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::CoupledAggregationCommHelper )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::CoupledAggregationFactory )
-APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::DemoFactory )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::Graph )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::IsolatedNodeAggregationAlgorithm )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::IsolatedNodeAggregationAlgorithm_kokkos-.?if.defined[HAVE_MUELU_KOKKOS_REFACTOR] )
