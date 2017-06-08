@@ -523,8 +523,6 @@ namespace MueLuTests {
     RCP<Xpetra::Matrix<SC,LO,GO,Node> > P = lvl1->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
-    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/Pconst.m", *P);
-
     // Construct vectors to check that a linear vector remains linear after projection
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
