@@ -966,25 +966,26 @@ namespace MueLu {
 
       // We need to check whether we are on the edge of the mesh in which case we need to adjust the coarse nodes
       firstCoarseNodeIndex = 0;
-      Array<GO> firstCoarseNodeIndices;
+      Array<GO> firstCoarseNodeIndices(3); // These are fine grid indices, divide by coarseRate[i] to get coarse grid indices
       if((currentNodeIndices[2] == gFineNodesPerDir[2] -1) && (endRate[2] == coarseRate[2])) {
         // If we are on the last node and have a endRate == coarseRate we need to take the coarse node below the current node
-        firstCoarseNodeIndices[2] = (currentNodeIndices[2] / coarseRate[2]) - 1;
+        firstCoarseNodeIndices[2] = ((currentNodeIndices[2] / coarseRate[2]) - 1) * coarseRate[2];
       } else {
-        firstCoarseNodeIndices[2] = currentNodeIndices[2] / coarseRate[2];
+        firstCoarseNodeIndices[2] = (currentNodeIndices[2] / coarseRate[2]) * coarseRate[2];
       }
       if((currentNodeIndices[1] == gFineNodesPerDir[1] -1) && (endRate[1] == coarseRate[1])) {
-        firstCoarseNodeIndices[1] = (currentNodeIndices[1] / coarseRate[1]) - 1;
+        firstCoarseNodeIndices[1] = ((currentNodeIndices[1] / coarseRate[1]) - 1) * coarseRate[1];
       } else {
-        firstCoarseNodeIndices[1] = currentNodeIndices[1] / coarseRate[1];
+        firstCoarseNodeIndices[1] = (currentNodeIndices[1] / coarseRate[1]) * coarseRate[1];
       }
       if((currentNodeIndices[0] == gFineNodesPerDir[0] -1) && (endRate[0] == coarseRate[0])) {
-        firstCoarseNodeIndices[0] = (currentNodeIndices[0] / coarseRate[0]) - 1;
+        firstCoarseNodeIndices[0] = ((currentNodeIndices[0] / coarseRate[0]) - 1) * coarseRate[0];
       } else {
-        firstCoarseNodeIndices[0] = currentNodeIndices[0] / coarseRate[0];
+        firstCoarseNodeIndices[0] = (currentNodeIndices[0] / coarseRate[0]) * coarseRate[0];
       }
-      firstCoarseNodeIndex += firstCoarseNodeIndices[2] * coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0]
-        + firstCoarseNodeIndices[1] * coarseRate[1]*gFineNodesPerDir[0] + firstCoarseNodeIndices[0] * coarseRate[0];
+      firstCoarseNodeIndex += firstCoarseNodeIndices[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0]
+        + firstCoarseNodeIndices[1]*gFineNodesPerDir[0] + firstCoarseNodeIndices[0];
+
       GO firstCoarseNodeOnCoarseGridIndex;
       {
         GO tmpInds[4];
