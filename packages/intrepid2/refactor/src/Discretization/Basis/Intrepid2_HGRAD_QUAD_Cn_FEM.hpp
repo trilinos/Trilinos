@@ -116,7 +116,7 @@ namespace Intrepid2 {
           constexpr ordinal_type spaceDim = 2;
           constexpr ordinal_type bufSize = 
             (spaceDim+1) * Intrepid2::getPnCardinality<spaceDim,Parameters::MaxOrder>()*numPtsEval;// :
-          outputValueType buf[bufSize];
+          char buf[bufSize*sizeof(outputValueType)];
           
           Kokkos::DynRankView<outputValueType,
             Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
