@@ -86,7 +86,7 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("Coordinates",               Teuchos::null, "Generating factory for coorindates");
     validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
-    validParamList->set<std::string >("axisPermutation",                    "", "Assuming a global (x,y,z) orientation, local might be (z,y,x). This vector gives a permutation from global to local orientation.");
+    validParamList->set<std::string >("axisPermutation",                    "{0,1,2}", "Assuming a global (x,y,z) orientation, local might be (z,y,x). This vector gives a permutation from global to local orientation.");
 
     return validParamList;
   }
@@ -1292,7 +1292,9 @@ namespace MueLu {
       // Set Jacobian, Vectors and solve problem
       problem.setMatrix(Teuchos::rcp(&Jacobian, false));
       problem.setVectors(Teuchos::rcp(&solutionDirection, false), Teuchos::rcp(&residual, false));
+      problem.factorWithEquilibration(true);
       problem.solve();
+      problem.unequilibrateLHS();
 
       for(LO i = 0; i < numDimensions; ++i) {
         paramCoords(i) = paramCoords(i) + solutionDirection(i);
