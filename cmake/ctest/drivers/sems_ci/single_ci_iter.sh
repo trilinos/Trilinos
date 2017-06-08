@@ -15,8 +15,8 @@ export CTEST_DASHBOARD_ROOT=$PWD
 
 # See if there are updated files:
 cd Trilinos/
-./cmake/tribits/python_utils/gitdist fetch
-NEW_COMMITS=`./cmake/tribits/python_utils/gitdist log --oneline @{u} ^HEAD | grep -v "\(Git Repo\|^$\)"`
+./cmake/tribits/python_utils/gitdist --dist-no-color fetch
+NEW_COMMITS=`./cmake/tribits/python_utils/gitdist --dist-no-color log --oneline @{u} ^HEAD | grep -v "\(Git Repo\|^$\)"`
 echo "NEW_COMMITS ='$NEW_COMMITS'"
 cd ..
 
