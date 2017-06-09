@@ -293,6 +293,7 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_reader ) {
   test_mathexpr_reader("sqrt(x^2 + y^2) < 0.5 ? 1 : 0");
   test_mathexpr_reader("1.22+30.*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
   test_mathexpr_reader("1.23e5+8.07e10*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
+  test_mathexpr_reader("---16");
 }
 
 } // anonymous namespace

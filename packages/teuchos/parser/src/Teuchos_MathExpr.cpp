@@ -36,7 +36,7 @@ Teuchos::Language make_language() {
   prods[PROD_SOME_ARGS]("args?") >> "args";
   prods[PROD_FIRST_ARG]("args") >> "ternary";
   prods[PROD_NEXT_ARG]("args") >> "args", ",", "S?", "ternary";
-  prods[PROD_NEG]("neg") >> "-", "S?", "scalar";
+  prods[PROD_NEG]("neg") >> "-", "S?", "neg";
   prods[PROD_PARENS]("scalar") >> "(", "S?", "ternary", ")", "S?";
   prods[PROD_CONST]("scalar") >> "constant", "S?";
   prods[PROD_VAR]("scalar") >> "name", "S?";
