@@ -59,21 +59,21 @@ template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 const std::string PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::m_field_tag_error_msg = 
-  "Error - PHX::MDField::fieldTag() - No tag has been set!";
+  "Error - PHX::MDField - No tag has been set!";
 
 template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 const std::string PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::m_field_data_error_msg = 
-  "Error - PHX::MDField::operator[] - No data has been set!  Please call getFieldData(this) on all PHX::MDField objects in providers!";
+  "Error - PHX::MDField - No data has been set!  Please bind memory (call getFieldData()) to MDField!";
 
 template<typename DataT>
 const std::string PHX::MDField<DataT>::m_field_tag_error_msg = 
-  "Error - PHX::MDField::fieldTag() - No tag has been set!";
+  "Error - PHX::MDField - No tag has been set!";
 
 template<typename DataT>
 const std::string PHX::MDField<DataT>::m_field_data_error_msg = 
-  "Error - PHX::MDField::operator[] - No data has been set!  Please call getFieldData(this) on all PHX::MDField objects in providers!";
+  "Error - PHX::MDField - No data has been set!  Please bind memory (call getFieldData()) to MDField!";
 #endif
 
 //**********************************************************************
@@ -334,11 +334,6 @@ typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 rank() const 
 {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
-
   return m_field_data.Rank;
 }
 
@@ -352,10 +347,6 @@ typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimension(const iType& ord) const
 { 
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
   return m_field_data.dimension(ord);
 }
 
@@ -366,12 +357,12 @@ template<typename DataT,
 template<typename iType>
 void PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimensions(std::vector<iType>& dims)
-{ 
+{
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
-  
+
   dims.resize(m_field_data.Rank);
   for ( size_type i = 0 ; i <  m_field_data.Rank; ++i ) 
     dims[i] = static_cast<iType>(m_field_data.dimension(i));  // dangerous
@@ -384,18 +375,8 @@ template<typename DataT,
 KOKKOS_FORCEINLINE_FUNCTION
 typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size() const
-{ 
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
+{
    return m_field_data.size();
-  
-  // loop over the dimensions and compute the size (this gets around an issue with
-  // Kokkos-Fad 10/21/2014 where size() was working incorrectly)
-/*  typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type sz = 1;
-  for ( size_type i = 0 ; i <  m_field_data.Rank; ++i ) 
-    sz *= m_field_data.dimension(i);
-  return sz;*/
 }
 
 //**********************************************************************
