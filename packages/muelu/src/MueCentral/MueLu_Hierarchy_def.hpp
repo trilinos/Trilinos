@@ -186,16 +186,16 @@ namespace MueLu {
 
     // Get smoother complexity at each level
     for (int i = 0; i < GetNumLevels(); ++i) {
-      size_t level_sc=0;      
+      size_t level_sc=0;
       if(!Levels_[i]->IsAvailable("PreSmoother")) continue;
       RCP<SmootherBase> S = Levels_[i]->template Get<RCP<SmootherBase> >("PreSmoother");
       if (S.is_null()) continue;
       level_sc = S->getNodeSmootherComplexity();
       if(level_sc == INVALID) {global_sc=-1.0;break;}
-      
+
       node_sc += as<double>(level_sc);
     }
-     
+
     double min_sc=0.0;
     RCP<const Teuchos::Comm<int> > comm =A->getDomainMap()->getComm();
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,node_sc,Teuchos::ptr(&global_sc));
@@ -1081,10 +1081,10 @@ namespace MueLu {
 
       if (!A.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A_" + toString(i) + suffix + ".m", *A);
       if (!P.is_null()) {
-	Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P_" + toString(i) + suffix + ".m", *P);
+        Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P_" + toString(i) + suffix + ".m", *P);
       }
       if (!R.is_null()) {
-	Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("R_" + toString(i) + suffix + ".m", *R);
+        Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("R_" + toString(i) + suffix + ".m", *R);
       }
     }
   }
@@ -1146,7 +1146,7 @@ namespace MueLu {
     reduceAll(*comm, Teuchos::REDUCE_MAX, smartData, Teuchos::ptr(&maxSmartData));
     root = maxSmartData % comm->getSize();
 #endif
-    
+
     // Compute smoother complexity, if needed
     double smoother_comp =-1.0;
     if (verbLevel & (Statistics0 | Test))
@@ -1188,10 +1188,10 @@ namespace MueLu {
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
 
-	if(smoother_comp!=-1.0) {
-	  oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-	      << smoother_comp << std::endl;
-	}
+        if(smoother_comp!=-1.0) {
+          oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+              << smoother_comp << std::endl;
+        }
 
         switch (Cycle_) {
            case VCYCLE:

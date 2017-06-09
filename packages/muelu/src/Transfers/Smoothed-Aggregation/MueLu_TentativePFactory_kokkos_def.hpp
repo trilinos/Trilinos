@@ -215,22 +215,22 @@ namespace MueLu {
       KOKKOS_INLINE_FUNCTION
       void operator()(const LO lnode) const {
         if(stridedBlockSize == 1) {
-	  if(procWinner(lnode,0) == myPid) {
-	    auto myAgg = vertex2AggId(lnode,0);
-	    LO myAggDofStart = aggSizes(myAgg);
-	    auto idx = Kokkos::atomic_fetch_add( &aggDofCount(myAgg), 1 );
-	    agg2RowMap(myAggDofStart + idx) = lnode;
-	  }        
+          if(procWinner(lnode,0) == myPid) {
+            auto myAgg = vertex2AggId(lnode,0);
+            LO myAggDofStart = aggSizes(myAgg);
+            auto idx = Kokkos::atomic_fetch_add( &aggDofCount(myAgg), 1 );
+            agg2RowMap(myAggDofStart + idx) = lnode;
+          }
         } else {
-	  if(procWinner(lnode,0) == myPid) {
-	    auto myAgg = vertex2AggId(lnode,0);
-	    LO myAggDofStart = aggSizes(myAgg);
-	    auto idx = Kokkos::atomic_fetch_add( &aggDofCount(myAgg), stridedBlockSize );
-	    for (LO k = 0; k< stridedBlockSize; k++) {
-	      agg2RowMap(myAggDofStart + idx + k) = lnode * stridedBlockSize +k;
-	    }
-	  }
-	}
+          if(procWinner(lnode,0) == myPid) {
+            auto myAgg = vertex2AggId(lnode,0);
+            LO myAggDofStart = aggSizes(myAgg);
+            auto idx = Kokkos::atomic_fetch_add( &aggDofCount(myAgg), stridedBlockSize );
+            for (LO k = 0; k< stridedBlockSize; k++) {
+              agg2RowMap(myAggDofStart + idx + k) = lnode * stridedBlockSize +k;
+            }
+          }
+        }
       }
     };
 
@@ -887,9 +887,9 @@ namespace MueLu {
     {
       SubFactoryMonitor m2(*this, "Create Agg2RowMap", coarseLevel);
       // NOTE: This zeros itself on construction
-      aggSizeType aggDofCount("aggDofCount", numAggregates); 
+      aggSizeType aggDofCount("aggDofCount", numAggregates);
 
-     
+
       // atomic data access for agg2RowMapLO view
       //typename AppendTrait<decltype(agg2RowMapLO), Kokkos::Atomic>::type agg2RowMapLOAtomic = agg2RowMapLO;
 
