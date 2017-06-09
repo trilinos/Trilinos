@@ -18,7 +18,7 @@ SET(HEADERS
   "${DIR}/Teuchos_TableDecl.hpp"
   "${DIR}/Teuchos_XML.hpp"
   "${DIR}/Teuchos_YAML.hpp"
-  "${DIR}/Teuchos_Parser.hpp"
+  "${DIR}/Teuchos_MathExpr.hpp"
   )
 
 SET(SOURCES
@@ -33,6 +33,7 @@ SET(SOURCES
   "${DIR}/Teuchos_regex.cpp"
   "${DIR}/Teuchos_XML.cpp"
   "${DIR}/Teuchos_YAML.cpp"
+  "${DIR}/Teuchos_MathExpr.cpp"
   )
 
 #
