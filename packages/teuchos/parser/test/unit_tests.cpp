@@ -7,6 +7,7 @@
 #include <Teuchos_Reader.hpp>
 #include <Teuchos_XML.hpp>
 #include <Teuchos_YAML.hpp>
+#include <Teuchos_MathExpr.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include <iostream>
@@ -271,6 +272,28 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
   test_yaml_reader(
       "---\n#top comment\ntop entry: \n  sub-entry: twelve\n"
       "  # long comment\n  # about sub-entry2\n  sub-entry2: green\n...\n");
+}
+
+TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
+  LanguagePtr lang = MathExpr::ask_language();
+  GrammarPtr grammar = make_grammar(*lang);
+  make_lalr1_parser(grammar);
+}
+
+void test_mathexpr_reader(std::string const& str) {
+  Reader reader(MathExpr::ask_reader_tables());
+  any result;
+  reader.read_string(result, str, "test_mathexpr_reader");
+}
+
+TEUCHOS_UNIT_TEST( Parser, mathexpr_reader ) {
+  test_mathexpr_reader("1 + 1");
+  test_mathexpr_reader("concat(one, two, three)");
+  test_mathexpr_reader("x < 0.5 ? 1 : 0");
+  test_mathexpr_reader("sqrt(x^2 + y^2) < 0.5 ? 1 : 0");
+  test_mathexpr_reader("1.22+30.*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
+  test_mathexpr_reader("1.23e5+8.07e10*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
+  test_mathexpr_reader("---16");
 }
 
 } // anonymous namespace
