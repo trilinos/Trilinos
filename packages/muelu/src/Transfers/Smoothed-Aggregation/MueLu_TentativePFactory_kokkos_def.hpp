@@ -212,7 +212,6 @@ namespace MueLu {
         myPid(myPID_) {
       }
 
-      KOKKOS_INLINE_FUNCTION
       void operator()(const LO lnode) const {
         if(stridedBlockSize == 1) {
           if(procWinner(lnode,0) == myPid) {
