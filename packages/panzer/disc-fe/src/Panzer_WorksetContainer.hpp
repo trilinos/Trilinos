@@ -48,6 +48,7 @@
 #include "Intrepid2_Orientation.hpp"
 
 #include "Panzer_PhysicsBlock.hpp"
+#include "Panzer_BC.hpp"
 #include "Panzer_WorksetFactoryBase.hpp"
 #include "Panzer_WorksetDescriptor.hpp" // what the workset is defined over
 #include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
@@ -161,6 +162,7 @@ public:
    const WorksetNeeds & lookupNeeds(const std::string & eBlock) const;
 
    //! Access to volume worksets
+   PANZER_DEPRECATED
    Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
 
    //! Access to volume worksets
@@ -170,29 +172,38 @@ public:
    Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const BC & bc);
 
    //! Iterator access to volume worksets
+   PANZER_DEPRECATED
    inline std::vector<Workset>::iterator begin(const std::string & eBlock)
-   { return getVolumeWorksets(eBlock)->begin(); }
+   { 
+     WorksetDescriptor wd = blockDescriptor(eBlock); 
+     return getWorksets(wd)->begin(); }
 
    //! Iterator access to volume worksets
+   PANZER_DEPRECATED
    inline std::vector<Workset>::iterator end(const std::string & eBlock)
-   { return getVolumeWorksets(eBlock)->end(); }
+   { WorksetDescriptor wd = blockDescriptor(eBlock); 
+     return getWorksets(eBlock)->end(); }
 
    //! Iterator access to side worksets
+   PANZER_DEPRECATED
    inline std::map<unsigned,Workset>::iterator begin(const BC & bc)
    { return getSideWorksets(bc)->begin(); }
 
    //! Iterator access to side worksets
+   PANZER_DEPRECATED
    inline std::map<unsigned,Workset>::iterator end(const BC & bc)
    { return getSideWorksets(bc)->end(); }
 
    /** Allocate worksets associated with the element blocks in a vector, this
      * will overwrite any previously constructed worksets.
      */
+   PANZER_DEPRECATED
    void allocateVolumeWorksets(const std::vector<std::string> & eBlocks);
 
    /** Allocate worksets associated with the BC objects in a vector, this
      * will overwrite any previously constructed worksets.
      */
+   PANZER_DEPRECATED
    void allocateSideWorksets(const std::vector<BC> & bcs);
 
    /** Set the global indexer. This is used solely for accessing the

@@ -47,26 +47,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-namespace panzer_stk { 
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb)
-{
-  using namespace workset_utils;
-
-  std::vector<std::string> element_blocks;
-
-  std::vector<std::size_t> local_cell_ids;
-  Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates;
-
-  getIdsAndVertices(mesh, pb.elementBlockID(), local_cell_ids, cell_vertex_coordinates);
-
-  // only build workset if there are elements to worry about
-  // this may be processor dependent, so an element block
-  // may not have elements and thus no contribution
-  // on this processor
-  return panzer::buildWorksets(pb, local_cell_ids, cell_vertex_coordinates);
-}
+namespace panzer_stk {
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
@@ -87,124 +68,6 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   // may not have elements and thus no contribution
   // on this processor
   return panzer::buildWorksets(needs, eBlock, local_cell_ids, cell_vertex_coordinates);
-}
-
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb,
-              const std::string & sideset,
-              bool useCascade)
-{
-  using namespace workset_utils;
-  using Teuchos::RCP;
-
-  std::vector<stk::mesh::Entity> sideEntities; 
-
-  try {
-     // grab local entities on this side
-     // ...catch any failure...primarily wrong side set and element block info
-     if(!useCascade)
-        mesh.getMySides(sideset,pb.elementBlockID(),sideEntities);
-     else
-        mesh.getAllSides(sideset,pb.elementBlockID(),sideEntities);
-  } 
-  catch(STK_Interface::SidesetException & e) {
-     std::stringstream ss;
-     std::vector<std::string> sideSets; 
-     mesh.getSidesetNames(sideSets);
- 
-     // build an error message
-     ss << e.what() << "\nChoose one of:\n";
-     for(std::size_t i=0;i<sideSets.size();i++) 
-        ss << "\"" << sideSets[i] << "\"\n";
-
-     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
-  }
-  catch(STK_Interface::ElementBlockException & e) {
-     std::stringstream ss;
-     std::vector<std::string> elementBlocks; 
-     mesh.getElementBlockNames(elementBlocks);
-
-     // build an error message
-     ss << e.what() << "\nChoose one of:\n";
-     for(std::size_t i=0;i<elementBlocks.size();i++) 
-        ss << "\"" << elementBlocks[i] << "\"\n";
-
-     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
-  }
-  catch(std::logic_error & e) {
-     std::stringstream ss;
-     ss << e.what() << "\nUnrecognized logic error.\n";
-
-     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
-  }
-  
-  std::vector<stk::mesh::Entity> elements;
-  std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> > local_cell_ids;
-  if(!useCascade) {
-    unsigned subcell_dim = pb.cellData().baseCellDimension()-1;
-    std::vector<std::size_t> local_side_ids;
-    getSideElements(mesh, pb.elementBlockID(),
-  		      sideEntities,local_side_ids,elements);
-
-    // build local cell_ids, mapped by local side id
-    for(std::size_t elm=0;elm<elements.size();++elm) {
-      stk::mesh::Entity element = elements[elm];
-	
-      local_cell_ids[std::make_pair(subcell_dim,local_side_ids[elm])].push_back(mesh.elementLocalId(element));
-    }
-  }
-  else {
-    std::vector<std::size_t> local_subcell_ids, subcell_dim;
-    getSideElementCascade(mesh, pb.elementBlockID(),
-  		          sideEntities,subcell_dim,local_subcell_ids,elements);
-
-    // build local cell_ids, mapped by local side id
-    for(std::size_t elm=0;elm<elements.size();++elm) {
-      stk::mesh::Entity element = elements[elm];
-	
-      local_cell_ids[std::make_pair(subcell_dim[elm],local_subcell_ids[elm])].push_back(mesh.elementLocalId(element));
-    }
-  }
-
-  // only build workset if there are elements to worry about
-  // this may be processor dependent, so a defined boundary
-  // condition may have not elements and thus no contribution
-  // on this processor
-  if(elements.size()!=0) {
-    Teuchos::RCP<const shards::CellTopology> topo = mesh.getCellTopology(pb.elementBlockID());
-
-    // worksets to be returned
-    Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
-
-    // loop over each side
-    for(std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> >::const_iterator itr=local_cell_ids.begin();
-        itr!=local_cell_ids.end();++itr) {
- 
-      if(itr->second.size()==0)
-        continue;
-
-      Kokkos::DynRankView<double,PHX::Device> vertices;
-      mesh.getElementVertices(itr->second,pb.elementBlockID(),vertices);
-  
-      Teuchos::RCP<std::vector<panzer::Workset> > current
-         = panzer::buildWorksets(pb, itr->second, vertices);
-
-      // correct worksets so the sides are correct
-      for(std::size_t w=0;w<current->size();w++) {
-        (*current)[w].subcell_dim = itr->first.first;
-        (*current)[w].subcell_index = itr->first.second;
-      }
-
-      // append new worksets
-      worksets->insert(worksets->end(),current->begin(),current->end());
-    }
-
-    return worksets;
-  }
-  
-  // return Teuchos::null;
-  return Teuchos::rcp(new std::vector<panzer::Workset>());
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
@@ -328,8 +191,10 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::PhysicsBlock & pb_a,
-                const panzer::PhysicsBlock & pb_b,
+                const panzer::WorksetNeeds & needs_a,
+                const std::string & blockid_a,
+                const panzer::WorksetNeeds & needs_b,
+                const std::string & blockid_b,
                 const std::string & sideset)
 {
   using namespace workset_utils;
@@ -379,7 +244,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   std::vector<std::size_t> local_side_ids_a, local_side_ids_b;
 
   // this enforces that "a" elements must be owned.
-  getSideElements(mesh, pb_a.elementBlockID(), pb_b.elementBlockID(), sideEntities,
+  getSideElements(mesh, blockid_a,blockid_b, sideEntities,
                         local_side_ids_a,elements_a, 
                         local_side_ids_b,elements_b);
 
@@ -405,88 +270,12 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   }
 
   Kokkos::DynRankView<double,PHX::Device> vertex_coordinates_a, vertex_coordinates_b;
-  mesh.getElementVertices(local_cell_ids_a,pb_a.elementBlockID(),vertex_coordinates_a);
-  mesh.getElementVertices(local_cell_ids_b,pb_b.elementBlockID(),vertex_coordinates_b);
+  mesh.getElementVertices(local_cell_ids_a,blockid_a,vertex_coordinates_a);
+  mesh.getElementVertices(local_cell_ids_b,blockid_b,vertex_coordinates_b);
 
   // worksets to be returned
-  return buildBCWorkset(pb_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a,
-                        pb_b, local_cell_ids_b, local_side_ids_b, vertex_coordinates_b);
-}
-
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::PhysicsBlock & pb,
-                const std::string & sidesetID)
-{
-  using namespace workset_utils;
-  using Teuchos::RCP;
-
-  std::vector<stk::mesh::Entity> sideEntities; 
-
-  try {
-     // grab local entities on this side
-     // ...catch any failure...primarily wrong side set and element block info
-     mesh.getMySides(sidesetID,pb.elementBlockID(),sideEntities);
-  } 
-  catch(STK_Interface::SidesetException & e) {
-     std::stringstream ss;
-     std::vector<std::string> sideSets; 
-     mesh.getSidesetNames(sideSets);
- 
-     // build an error message
-     ss << e.what() << "\nChoose one of:\n";
-     for(std::size_t i=0;i<sideSets.size();i++) 
-        ss << "\"" << sideSets[i] << "\"\n";
-
-     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
-  }
-  catch(STK_Interface::ElementBlockException & e) {
-     std::stringstream ss;
-     std::vector<std::string> elementBlocks; 
-     mesh.getElementBlockNames(elementBlocks);
-
-     // build an error message
-     ss << e.what() << "\nChoose one of:\n";
-     for(std::size_t i=0;i<elementBlocks.size();i++) 
-        ss << "\"" << elementBlocks[i] << "\"\n";
-
-     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
-  }
-  catch(std::logic_error & e) {
-     std::stringstream ss;
-     ss << e.what() << "\nUnrecognized logic error.\n";
-
-     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
-  }
-  
-  std::vector<stk::mesh::Entity> elements;
-  std::vector<std::size_t> local_cell_ids;
-  std::vector<std::size_t> local_side_ids;
-  getSideElements(mesh, pb.elementBlockID(),
-		      sideEntities,local_side_ids,elements);
-
-  // loop over elements of this block
-  for(std::size_t elm=0;elm<elements.size();++elm) {
-	stk::mesh::Entity element = elements[elm];
-	
-	local_cell_ids.push_back(mesh.elementLocalId(element));
-  }
-
-  // only build workset if there are elements to worry about
-  // this may be processor dependent, so a defined boundary
-  // condition may have not elements and thus no contribution
-  // on this processor
-  if(elements.size()!=0) {
-      Teuchos::RCP<const shards::CellTopology> topo 
-         = mesh.getCellTopology(pb.elementBlockID());
-
-      Kokkos::DynRankView<double,PHX::Device> vertices;
-      mesh.getElementVertices(local_cell_ids,pb.elementBlockID(),vertices);
-  
-      return panzer::buildBCWorkset(pb, local_cell_ids, local_side_ids, vertices);
-  }
-  
-  return Teuchos::null;
+  return buildBCWorkset(needs_a,blockid_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a,
+                        needs_b,blockid_b, local_cell_ids_b, local_side_ids_b, vertex_coordinates_b);
 }
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >

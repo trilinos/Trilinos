@@ -189,10 +189,12 @@ namespace panzer {
     
     Teuchos::RCP<std::vector<panzer::Workset> > fmb_vol_worksets;
 
-    fmb_vol_worksets = wkstContainer->getVolumeWorksets("eblock-0_0");
+    panzer::WorksetDescriptor wd = blockDescriptor("eblock-0_0");
+    fmb_vol_worksets = wkstContainer->getWorksets(wd);
     TEST_ASSERT(fmb_vol_worksets!=Teuchos::null);
 
-    fmb_vol_worksets = wkstContainer->getVolumeWorksets("eblock-1_0");
+    wd = blockDescriptor("eblock-1_0");
+    fmb_vol_worksets = wkstContainer->getWorksets(wd);
     TEST_ASSERT(fmb_vol_worksets!=Teuchos::null);
     
 

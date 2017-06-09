@@ -61,68 +61,26 @@ void WorksetFactory::setMesh(const Teuchos::RCP<const panzer_stk::STK_Interface>
    mesh_ = mesh;
 }
 
-/** Build sets of boundary condition worksets
-  */
 Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
-getSideWorksets(const panzer::BC & bc,
-              const panzer::PhysicsBlock & pb) const
+getSideWorksets(const panzer::WorksetDescriptor & desc,
+                const panzer::WorksetNeeds & needs) const
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+  TEUCHOS_ASSERT(desc.useSideset());
 
-  panzer::WorksetNeeds needs;
-  needs.cellData = pb.cellData();
-
-  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = pb.getIntegrationRules();
-  for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
-      ir_itr != int_rules.end(); ++ir_itr)
-    needs.int_rules.push_back(ir_itr->second);
-
-  const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= pb.getBases();
-  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
-      b_itr != bases.end(); ++b_itr)
-    needs.bases.push_back(b_itr->second);
-
-  return getSideWorksets(bc,needs);
+  return panzer_stk::buildBCWorksets(*mesh_,needs,desc.getElementBlock(0),desc.getSideset());
 }
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
-getSideWorksets(const panzer::BC & bc,
-              const panzer::WorksetNeeds & needs) const
+getSideWorksets(const panzer::WorksetDescriptor & desc,
+                const panzer::WorksetNeeds & needs_a,
+                const panzer::WorksetNeeds & needs_b) const
 {
-  return panzer_stk::buildBCWorksets(*mesh_,needs,bc.elementBlockID(),bc.sidesetID());
-}
-
-Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
-getSideWorksets(const panzer::BC & bc,
-                const panzer::PhysicsBlock & pb_a,
-                const panzer::PhysicsBlock & pb_b) const
-{
-  TEUCHOS_ASSERT(bc.bcType() == panzer::BCT_Interface);
-  return panzer_stk::buildBCWorksets(*mesh_, pb_a, pb_b, bc.sidesetID());
-}
-
-Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
-getWorksets(const panzer::WorksetDescriptor & worksetDesc,
-            const panzer::PhysicsBlock & pb) const
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  panzer::WorksetNeeds needs;
-  needs.cellData = pb.cellData();
-
-  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = pb.getIntegrationRules();
-  for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
-      ir_itr != int_rules.end(); ++ir_itr)
-    needs.int_rules.push_back(ir_itr->second);
-
-  const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= pb.getBases();
-  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
-      b_itr != bases.end(); ++b_itr)
-    needs.bases.push_back(b_itr->second);
-
-  return getWorksets(worksetDesc,needs);
+  // ensure that this is a interface descriptor
+  TEUCHOS_ASSERT(desc.connectsElementBlocks());
+  TEUCHOS_ASSERT(desc.getSideset(0)==desc.getSideset(1));
+  return panzer_stk::buildBCWorksets(*mesh_, needs_a, desc.getElementBlock(0),
+                                             needs_b, desc.getElementBlock(1),
+                                             desc.getSideset(0));
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
@@ -146,21 +104,6 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
   }
   else {
     TEUCHOS_ASSERT(false);
-    
-    // The following code does not yet function in full generality, we need
-    // to fix how the assembly process is handled for sidesets 
-    /*
-    Teuchos::RCP<std::map<unsigned,panzer::Workset> > workset_map =
-      panzer_stk::buildBCWorksets(*mesh_,pb,worksetDesc.getSideset());
-
-    // loop over worksets, adding them to vector
-    Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
-    for(std::map<unsigned,panzer::Workset>::const_iterator itr=workset_map->begin();
-        itr!=workset_map->end();++itr)
-      worksets->push_back(itr->second);
-
-    return worksets;
-    */
   }
 }
 

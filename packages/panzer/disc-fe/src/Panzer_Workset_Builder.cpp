@@ -44,30 +44,15 @@
 
 #include "Panzer_Workset_Builder_decl.hpp"
 
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
-
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 #include "Panzer_Workset_Builder_impl.hpp"
 
 template
 Teuchos::RCP<std::vector<panzer::Workset> > 
-panzer::buildWorksets(const panzer::PhysicsBlock & pb,
-		      const std::vector<std::size_t>& local_cell_ids,
-		      const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates);
-
-template
-Teuchos::RCP<std::vector<panzer::Workset> > 
 panzer::buildWorksets(const WorksetNeeds & needs,
                       const std::string & elementBlock,
-		      const std::vector<std::size_t>& local_cell_ids,
-		      const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates);
-
-template
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
-		       const std::vector<std::size_t>& local_cell_ids,
-		       const std::vector<std::size_t>& local_side_ids,
-		       const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates);
+                      const std::vector<std::size_t>& local_cell_ids,
+                      const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates);
 
 template
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
@@ -79,28 +64,30 @@ panzer::buildBCWorkset(const WorksetNeeds& needs,
                        const bool populate_value_arrays);
 
 template
-Teuchos::RCP<std::vector<panzer::Workset> > 
-panzer::buildEdgeWorksets(const panzer::PhysicsBlock &,
-	  	          const std::vector<std::size_t>&,
-		          const std::vector<std::size_t>&,
-		          const Kokkos::DynRankView<double,PHX::Device>&,
-                          const panzer::PhysicsBlock &,
-		          const std::vector<std::size_t>&,
-		          const std::vector<std::size_t>&,
-		          const Kokkos::DynRankView<double,PHX::Device>&);
-
-template
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-panzer::buildBCWorkset(const panzer::PhysicsBlock& pb_a,
+panzer::buildBCWorkset(const WorksetNeeds & needs_a,
+                       const std::string & blockid_a,
                        const std::vector<std::size_t>& local_cell_ids_a,
                        const std::vector<std::size_t>& local_side_ids_a,
-                       const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates_a,
-                       const panzer::PhysicsBlock& pb_b,
+                       const Kokkos::DynRankView<double,PHX::Device> & vertex_coordinates_a,
+                       const panzer::WorksetNeeds & needs_b,
+                       const std::string & blockid_b,
                        const std::vector<std::size_t>& local_cell_ids_b,
                        const std::vector<std::size_t>& local_side_ids_b,
-                       const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates_b);
+                       const Kokkos::DynRankView<double,PHX::Device> & vertex_coordinates_b);
 
-#endif
+template
+Teuchos::RCP<std::vector<panzer::Workset> > 
+panzer::buildEdgeWorksets(const panzer::WorksetNeeds & needs_a,
+                          const std::string & eblock_a,
+                          const std::vector<std::size_t>& local_cell_ids_a,
+                          const std::vector<std::size_t>& local_side_ids_a,
+                          const Kokkos::DynRankView<double,PHX::Device> & vertex_coordinates_a,
+                          const panzer::WorksetNeeds & needs_b,
+                          const std::string & eblock_b,
+                          const std::vector<std::size_t>& local_cell_ids_b,
+                          const std::vector<std::size_t>& local_side_ids_b,
+                          const Kokkos::DynRankView<double,PHX::Device> & vertex_coordinates_b);
 
 namespace panzer {
 
@@ -157,7 +144,7 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
       std::size_t int_degree_index = std::distance(details.ir_degrees->begin(), 
                                                    std::find(details.ir_degrees->begin(), 
                                                              details.ir_degrees->end(), 
-				                             int_rules[i]->order()));
+                                                             int_rules[i]->order()));
       RCP<panzer::BasisValues2<double> > bv2 = 
           rcp(new panzer::BasisValues2<double>("",true,true));
       bv2->setupArrays(b_layout);
@@ -172,27 +159,6 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
     }
   }
 
-}
-
-void populateValueArrays(std::size_t num_cells,bool isSide,const panzer::PhysicsBlock & pb,
-                         WorksetDetails & details,const Teuchos::RCP<WorksetDetails> other_details)
-{
-  using Teuchos::RCP;
-
-  WorksetNeeds needs;
-  needs.cellData = pb.cellData();
-
-  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = pb.getIntegrationRules();
-  for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
-      ir_itr != int_rules.end(); ++ir_itr)
-    needs.int_rules.push_back(ir_itr->second);
-  
- const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= pb.getBases();
- for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
-     b_itr != bases.end(); ++b_itr)
-   needs.bases.push_back(b_itr->second);
- 
- return populateValueArrays(num_cells,isSide,needs,details,other_details);
 }
 
 }

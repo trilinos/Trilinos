@@ -198,14 +198,16 @@ WorksetContainer::getSideWorksets(const BC & bc)
    SideMap::iterator itr = sideWorksets_.find(side);
    if(itr==sideWorksets_.end()) {
       // couldn't find workset, build it!
-      if (bc.bcType() == BCT_Interface)
-        worksetMap = wkstFactory_->getSideWorksets(bc, lookupPhysicsBlock(bc.elementBlockID()),
-                                                   lookupPhysicsBlock(bc.elementBlockID2()));
+      if (bc.bcType() == BCT_Interface) {
+        WorksetDescriptor desc(bc.elementBlockID(),bc.elementBlockID2(),bc.sidesetID(),bc.sidesetID());
+        worksetMap = wkstFactory_->getSideWorksets(desc, lookupNeeds(bc.elementBlockID()),
+                                                         lookupNeeds(bc.elementBlockID2()));
+      }
       else {
         const std::string & eBlock = side.eblk_id;
-        //const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
         const WorksetNeeds & needs = lookupNeeds(eBlock);
-        worksetMap = wkstFactory_->getSideWorksets(bc,needs);
+        WorksetDescriptor desc(eBlock,bc.sidesetID());
+        worksetMap = wkstFactory_->getSideWorksets(desc,needs);
       }
 
       // apply orientations to the worksets for this side
@@ -247,9 +249,10 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
       SideId side(bc);
       const std::string & eBlock = bc.elementBlockID();
       const WorksetNeeds & needs = lookupNeeds(eBlock);
+      WorksetDescriptor desc(eBlock,bc.sidesetID());
 
       // store map for reuse in the future
-      sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,needs);
+      sideWorksets_[side] = wkstFactory_->getSideWorksets(desc,needs);
 
       // apply orientations to the worksets for this side
       if(sideWorksets_[side]!=Teuchos::null)
@@ -599,8 +602,10 @@ void getVolumeWorksetsFromContainer(WorksetContainer & wc,
                                     const std::vector<std::string> & elementBlockNames,
                                     std::map<std::string,Teuchos::RCP<std::vector<Workset> > > & volumeWksts) 
 {
-   for(std::size_t i=0;i<elementBlockNames.size();i++)
-      volumeWksts[elementBlockNames[i]] = wc.getVolumeWorksets(elementBlockNames[i]);
+   for(std::size_t i=0;i<elementBlockNames.size();i++) {
+      WorksetDescriptor wd = blockDescriptor(elementBlockNames[i]);
+      volumeWksts[elementBlockNames[i]] = wc.getWorksets(wd);
+   }
 }
 
 void getSideWorksetsFromContainer(WorksetContainer & wc,

@@ -87,7 +87,8 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
 
     // build the setup data using passed in information
     Traits::SetupData setupData;
-    setupData.worksets_ = wkstContainer.getVolumeWorksets(blockId);
+    const WorksetDescriptor wd = blockDescriptor(blockId);
+    setupData.worksets_ = wkstContainer.getWorksets(wd);
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers[blockId] = fm;
@@ -137,7 +138,8 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
 
     // build the setup data using passed in information
     Traits::SetupData setupData;
-    setupData.worksets_ = wkstContainer.getVolumeWorksets(blockId);
+    const WorksetDescriptor wd = blockDescriptor(blockId);
+    setupData.worksets_ = wkstContainer.getWorksets(wd);
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers[blockId] = fm;
@@ -181,7 +183,8 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
     fm->preEvaluate<panzer::Traits::Residual>(ped);
 
     // Loop over worksets in this element block
-    std::vector<panzer::Workset>& w = *wkstContainer.getVolumeWorksets(blockId);
+    const WorksetDescriptor wd = blockDescriptor(blockId);
+    std::vector<panzer::Workset>& w = *wkstContainer.getWorksets(wd);
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
       

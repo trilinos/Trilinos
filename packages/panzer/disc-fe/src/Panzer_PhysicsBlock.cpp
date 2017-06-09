@@ -659,6 +659,24 @@ const std::vector<panzer::StrPureBasisPair>& panzer::PhysicsBlock::getTangentFie
 }
 
 // *******************************************************************
+panzer::WorksetNeeds panzer::PhysicsBlock::getWorksetNeeds() const
+{
+  panzer::WorksetNeeds needs;
+
+  needs.cellData = this->cellData();
+  const std::map<int,Teuchos::RCP<panzer::IntegrationRule> >& int_rules = this->getIntegrationRules();
+  for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
+       ir_itr != int_rules.end(); ++ir_itr)
+    needs.int_rules.push_back(ir_itr->second);  
+  const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= this->getBases();
+  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
+      b_itr != bases.end(); ++b_itr)
+    needs.bases.push_back(b_itr->second);
+
+  return needs;
+}
+
+// *******************************************************************
 const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& 
 panzer::PhysicsBlock::getBases() const
 {

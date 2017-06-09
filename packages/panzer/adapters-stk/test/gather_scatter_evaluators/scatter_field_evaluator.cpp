@@ -188,7 +188,8 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
 
-    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,*physics_block_one);
+    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,physics_block_one->elementBlockID(),
+                                                                                            physics_block_one->getWorksetNeeds()); 
 
     panzer::Traits::SetupData sd;
     sd.worksets_ = volume_worksets;
@@ -306,7 +307,8 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
-    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,*physics_block_one);
+    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,physics_block_one->elementBlockID(),
+                                                                                            physics_block_one->getWorksetNeeds()); 
 
 
     panzer::Traits::SetupData sd;
