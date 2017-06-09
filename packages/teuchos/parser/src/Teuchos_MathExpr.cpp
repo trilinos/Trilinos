@@ -9,7 +9,7 @@ Teuchos::Language make_language() {
   Teuchos::Language::Productions& prods = out.productions;
   prods.resize(NPRODS);
   prods[PROD_EXPR]("expr") >> "ternary";
-  prods[PROD_TERNARY_DECAY]("ternary") >> "add_mul";
+  prods[PROD_TERNARY_DECAY]("ternary") >> "add_sub";
   prods[PROD_OR_DECAY]("or") >> "and";
   prods[PROD_AND_DECAY]("and") >> "comp";
   prods[PROD_ADD_SUB_DECAY]("add_sub") >> "mul_div";
@@ -34,8 +34,8 @@ Teuchos::Language make_language() {
     >> "name", "S?", "(", "S?", "args?", ")", "S?";
   prods[PROD_NO_ARGS]("args?");
   prods[PROD_SOME_ARGS]("args?") >> "args";
-  prods[PROD_FIRST_ARG]("args") >> "arg";
-  prods[PROD_NEXT_ARG]("args") >> "args", ",", "S?", "arg";
+  prods[PROD_FIRST_ARG]("args") >> "ternary";
+  prods[PROD_NEXT_ARG]("args") >> "args", ",", "S?", "ternary";
   prods[PROD_NEG]("neg") >> "-", "S?", "scalar";
   prods[PROD_PARENS]("scalar") >> "(", "S?", "ternary", ")", "S?";
   prods[PROD_CONST]("scalar") >> "constant", "S?";

@@ -7,6 +7,7 @@
 #include <Teuchos_Reader.hpp>
 #include <Teuchos_XML.hpp>
 #include <Teuchos_YAML.hpp>
+#include <Teuchos_MathExpr.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include <iostream>
@@ -271,6 +272,12 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
   test_yaml_reader(
       "---\n#top comment\ntop entry: \n  sub-entry: twelve\n"
       "  # long comment\n  # about sub-entry2\n  sub-entry2: green\n...\n");
+}
+
+TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
+  LanguagePtr lang = MathExpr::ask_language();
+  GrammarPtr grammar = make_grammar(*lang);
+  make_lalr1_parser(grammar);
 }
 
 } // anonymous namespace
