@@ -58,7 +58,6 @@ using Teuchos::rcp;
 #include "Panzer_CommonArrayFactories.hpp"
 
 #include "Phalanx_FieldManager.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
