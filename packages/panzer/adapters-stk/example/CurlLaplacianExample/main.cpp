@@ -140,7 +140,6 @@ using Teuchos::rcp;
 //      Out[145]= {2+y-y^2,2+x-x^2,0}
 //
 
-
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		        std::vector<panzer::BC>& bcs,
                         const std::string & eBlockName,int basis_order);
