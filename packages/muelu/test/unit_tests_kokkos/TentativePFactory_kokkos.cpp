@@ -344,7 +344,7 @@ namespace MueLuTests {
       TEST_EQUALITY(diagVec->norm1() - diagVec->getGlobalLength() < 1e-14, true);
     TEST_EQUALITY(diagVec->normInf()-1 < 1e-12,         true);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-    TEST_EQUALITY(diagVec->meanValue() - 1.0 < 1e-14, true);
+    TEST_EQUALITY(Teuchos::ScalarTraits<SC>::magnitude(diagVec->meanValue()) - 1.0 < 1e-14, true);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(),   diagVec->getGlobalLength());
   }
 
