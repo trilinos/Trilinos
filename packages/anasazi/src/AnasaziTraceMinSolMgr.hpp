@@ -162,6 +162,26 @@ class TraceMinSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
 };
 
 
+//---------------------------------------------------------------------------//
+// Prevent instantiation on complex scalar type
+// FIXME: this really is just a current flaw in the implementation, TraceMin
+// *should* work for Hermitian matrices
+//---------------------------------------------------------------------------//
+template <class MagnitudeType, class MV, class OP>
+class TraceMinSolMgr<std::complex<MagnitudeType>,MV,OP>
+{
+  public:
+
+    typedef std::complex<MagnitudeType> ScalarType;
+    TraceMinSolMgr(
+            const RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
+            Teuchos::ParameterList &pl )
+    {
+        // Provide a compile error when attempting to instantiate on complex type
+        MagnitudeType::this_class_is_missing_a_specialization();
+    }
+};
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor - accepts maximum iterations in addition to the other parameters of the abstract base class
 template<class ScalarType, class MV, class OP>
