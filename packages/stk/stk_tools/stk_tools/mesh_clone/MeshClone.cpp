@@ -22,7 +22,7 @@ stk::mesh::Entity clone_element_side(stk::mesh::BulkData &bulk,
                                      stk::mesh::ConnectivityOrdinal ord,
                                      const stk::mesh::PartVector &parts)
 {
-    return bulk.declare_element_side(id, elem, ord, parts);
+    return bulk.declare_element_side_with_id(id, elem, ord, parts);
 }
 
 }}
@@ -104,11 +104,32 @@ void copy_fields(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMet
     newMeta.set_coordinate_field(get_corresponding_field(newMeta, *oldMeta.coordinate_field()));
 }
 
+void copy_surface_to_block_mapping(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
+{
+    std::vector<const stk::mesh::Part *> oldSurfacesInMap = oldMeta.get_surfaces_in_surface_to_block_map();
+    for(size_t i=0;i<oldSurfacesInMap.size();++i)
+    {
+        stk::mesh::Part* surfaceNew = get_corresponding_part(newMeta, oldSurfacesInMap[i]);
+        ThrowRequireWithSierraHelpMsg(surfaceNew != nullptr);
+
+        std::vector<const stk::mesh::Part*> oldBlocks = oldMeta.get_blocks_touching_surface(oldSurfacesInMap[i]);
+        std::vector<const stk::mesh::Part*> newBlocks(oldBlocks.size());
+        for(size_t ii=0;ii<oldBlocks.size();++ii)
+        {
+            stk::mesh::Part* newBlock = get_corresponding_part(newMeta, oldBlocks[ii]);
+            ThrowRequireWithSierraHelpMsg(newBlock != nullptr);
+            newBlocks[ii] = newBlock;
+        }
+        newMeta.set_surface_to_block_mapping(surfaceNew, newBlocks);
+    }
+}
+
 void copy_meta(const stk::mesh::MetaData &inputMeta, stk::mesh::MetaData &outputMeta)
 {
     outputMeta.initialize(inputMeta.spatial_dimension(), inputMeta.entity_rank_names());
     copy_parts(inputMeta, outputMeta);
     copy_fields(inputMeta, outputMeta);
+    copy_surface_to_block_mapping(inputMeta, outputMeta);
 }
 
 void copy_relations(const stk::mesh::BulkData& oldBulk,

@@ -54,6 +54,35 @@ namespace Amesos2{
 
   namespace Util {
 
+    ///////////////////////////////
+    // Pointer-getting utilities //
+    ///////////////////////////////
+
+    template <typename MV, typename V>
+    typename vector_pointer_helper<MV, V>::ptr_return_type *
+    vector_pointer_helper<MV, V>::get_pointer_to_vector ( const Teuchos::Ptr< MV > &mv ) {
+      return mv->getMVPointer_impl();
+    }
+
+    template <typename MV, typename V>
+    typename vector_pointer_helper<MV, V>::ptr_return_type *
+    vector_pointer_helper<MV, V>::get_pointer_to_vector ( Teuchos::Ptr< MV > &mv ) {
+      return mv->getMVPointer_impl();
+    }
+
+    template <typename MV, typename V>
+    typename vector_pointer_helper<MV, V>::ptr_return_type *
+    vector_pointer_helper<MV, V>::get_pointer_to_vector ( const Teuchos::Ptr< const MV > &mv ) {
+      return mv->getMVPointer_impl();
+    }
+
+    template <typename MV, typename V>
+    typename vector_pointer_helper<MV, V>::ptr_return_type *
+    vector_pointer_helper<MV, V>::get_pointer_to_vector ( Teuchos::Ptr< const MV > &mv ) {
+      return mv->getMVPointer_impl();
+    }
+
+
     ////////////////////////////
     // Copy-getting utilities //
     ////////////////////////////
@@ -66,9 +95,10 @@ namespace Amesos2{
     void same_type_get_copy<MV>::apply(const Teuchos::Ptr<const MV>& mv,
                                        const Teuchos::ArrayView<typename MV::scalar_t>& v,
                                        const size_t ldx,
-                                       Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map )
+                                       Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                                       EDistribution distribution )
     {
-      mv->get1dCopy (v, ldx, distribution_map);
+      mv->get1dCopy (v, ldx, distribution_map, distribution);
     }
 
     /*
@@ -82,7 +112,8 @@ namespace Amesos2{
     apply (const Teuchos::Ptr<const MV>& mv,
            const Teuchos::ArrayView<S>& v,
            const size_t& ldx,
-           Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map)
+           Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+           EDistribution distribution )
     {
       typedef typename MV::scalar_t mv_scalar_t;
       typedef typename Teuchos::Array<mv_scalar_t>::size_type size_type;
@@ -97,7 +128,7 @@ namespace Amesos2{
       const size_type vals_length = v.size ();
       Teuchos::Array<mv_scalar_t> vals_tmp (vals_length);
 
-      mv->get1dCopy (vals_tmp (), ldx, distribution_map);
+      mv->get1dCopy (vals_tmp (), ldx, distribution_map, distribution);
       for (size_type i = 0; i < vals_length; ++i) {
         v[i] = Teuchos::as<S> (vals_tmp[i]);
       }
@@ -114,12 +145,13 @@ namespace Amesos2{
     do_get (const Teuchos::Ptr<const MV>& mv,
             const Teuchos::ArrayView<S>& vals,
             const size_t ldx,
-            Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map)
+            Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+            EDistribution distribution)
     {
       // Dispatch to the copy function appropriate for the type
       if_then_else<is_same<typename MV::scalar_t,S>::value,
         same_type_get_copy<MV>,
-        diff_type_get_copy<MV,S> >::type::apply (mv, vals, ldx, distribution_map);
+        diff_type_get_copy<MV,S> >::type::apply (mv, vals, ldx, distribution_map, distribution);
     }
 
     template <class MV, typename S>
@@ -142,8 +174,11 @@ namespace Amesos2{
       Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
         = Amesos2::Util::getDistributionMap<lo_t,go_t,gs_t,node_t> (distribution,
                                                                     mv->getGlobalLength (),
-                                                                    mv->getComm (), indexBase);
-      do_get (mv, vals, ldx, Teuchos::ptrInArg (*map));
+                                                                    mv->getComm (),
+                                                                    indexBase,
+                                                                    mv->getMap());
+
+      do_get (mv, vals, ldx, Teuchos::ptrInArg (*map), distribution);
     }
 
     template <class MV, typename S>
@@ -163,7 +198,8 @@ namespace Amesos2{
         map.is_null (), std::invalid_argument,
         "Amesos2::get_1d_copy_helper::do_get(3 args): mv->getMap() is null.");
 
-      do_get (mv, vals, ldx, Teuchos::ptrInArg (*map));
+
+      do_get (mv, vals, ldx, Teuchos::ptrInArg (*map), ROOTED); // ROOTED the default here for now
     }
 
 
@@ -175,9 +211,10 @@ namespace Amesos2{
     void same_type_data_put<MV>::apply(const Teuchos::Ptr<MV>& mv,
                                        const Teuchos::ArrayView<typename MV::scalar_t>& data,
                                        const size_t ldx,
-                                       Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map )
+                                       Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                                       EDistribution distribution )
     {
-      mv->put1dData (data, ldx, distribution_map);
+      mv->put1dData (data, ldx, distribution_map, distribution);
     }
 
     /*
@@ -190,7 +227,8 @@ namespace Amesos2{
     void diff_type_data_put<MV,S>::apply(const Teuchos::Ptr<MV>& mv,
                                          const Teuchos::ArrayView<S>& data,
                                          const size_t& ldx,
-                                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map )
+                                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                                         EDistribution distribution )
     {
       typedef typename MV::scalar_t mv_scalar_t;
       typedef typename Teuchos::Array<mv_scalar_t>::size_type size_type;
@@ -206,7 +244,7 @@ namespace Amesos2{
         data_tmp[i] = Teuchos::as<mv_scalar_t> (data[i]);
       }
 
-      mv->put1dData (data_tmp (), ldx, distribution_map);
+      mv->put1dData (data_tmp (), ldx, distribution_map, distribution);
     }
 
 
@@ -220,12 +258,13 @@ namespace Amesos2{
     void put_1d_data_helper<MV,S>::do_put(const Teuchos::Ptr<MV>& mv,
                                           const Teuchos::ArrayView<S>& data,
                                           const size_t ldx,
-                                          Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map )
+                                          Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                                          EDistribution distribution )
     {
       // Dispatch to the copy function appropriate for the type
       if_then_else<is_same<typename MV::scalar_t,S>::value,
         same_type_data_put<MV>,
-        diff_type_data_put<MV,S> >::type::apply(mv, data, ldx, distribution_map);
+        diff_type_data_put<MV,S> >::type::apply(mv, data, ldx, distribution_map, distribution);
     }
 
     template <class MV, typename S>
@@ -242,8 +281,11 @@ namespace Amesos2{
       const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
         = Amesos2::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
                                                                    mv->getGlobalLength(),
-                                                                   mv->getComm(), indexBase);
-      do_put(mv, data, ldx, Teuchos::ptrInArg(*map));
+                                                                   mv->getComm(), 
+                                                                   indexBase,
+                                                                   mv->getMap());
+
+      do_put(mv, data, ldx, Teuchos::ptrInArg(*map), distribution);
     }
 
     template <class MV, typename S>
@@ -255,7 +297,7 @@ namespace Amesos2{
         typename MV::global_ordinal_t,
         typename MV::node_t> > map
         = mv->getMap();
-      do_put (mv, data, ldx, Teuchos::ptrInArg (*map));
+      do_put (mv, data, ldx, Teuchos::ptrInArg (*map), ROOTED); // Default as ROOTED for now
     }
 
   } // end namespace Util

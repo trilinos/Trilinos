@@ -34,11 +34,9 @@
  */
 /* mdcgi - multiple simultaneous devices routines for cgi  */
 #include "mdcgi.h"
-#include "cgi.h"
-#include "fortyp.h"
-#include "ifdefx.h"
-#include "stdtyp.h"
-#include <stdio.h>
+#include "cgi.h"    // for device_struct, MAX_DEVICES, etc
+#include "stdtyp.h" // for anything
+#include <stdio.h>  // for fprintf, stderr, NULL
 /******************************************************************************/
 /*									      */
 /*	Global variables						      */

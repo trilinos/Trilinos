@@ -295,45 +295,54 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   }
 
   FILE * handle = 0;
+  int rv=0;
   if (me == 0) {
     if (verbose) std::cout << "Reading MatrixMarket file " << filename << std::endl;
     handle = fopen(filename,"r");  // Open file
-    if (handle == 0)
-      EPETRA_CHK_ERR(-1); // file not found
+    if (handle == 0) {
+      rv = -1; // file not found
+    }
 
     // Check first line, which should be
     // %%MatrixMarket matrix coordinate real general
-    if(fgets(line, headerlineLength, handle)==0) {
+    if( (rv != -1) && fgets(line, headerlineLength, handle)==0 ) {
       if (handle!=0) fclose(handle);
-      EPETRA_CHK_ERR(-1);
+      rv = -1;
     }
-    if(sscanf(line, "%s %s %s %s %s", token1,token2,token3,token4,token5)==0) {
+    if( (rv != -1) && sscanf(line, "%s %s %s %s %s", token1,token2,token3,token4,token5)==0) {
       if (handle!=0) fclose(handle);
-      EPETRA_CHK_ERR(-1);
+      rv = -1;
     }
-    if (strcmp(token1, "%%MatrixMarket") ||
+    if ( (rv != -1) && (strcmp(token1, "%%MatrixMarket") ||
         strcmp(token2, "matrix") ||
         strcmp(token3, "coordinate") ||
         strcmp(token4, "real") ||
-        strcmp(token5, "general")) {
+        strcmp(token5, "general")) ) {
       if (handle!=0) fclose(handle);
-      EPETRA_CHK_ERR(-1);
+      rv = -1;
     }
 
     // Next, strip off header lines (which start with "%")
-    do {
-      if(fgets(line, headerlineLength, handle)==0) {
-        if (handle!=0) fclose(handle);
-        EPETRA_CHK_ERR(-1);
-      }
-    } while (line[0] == '%');
+    if (rv != -1) {
+      do {
+        if(fgets(line, headerlineLength, handle)==0) {
+          if (handle!=0) fclose(handle);
+          rv = -1;
+          break;
+        }
+      } while (line[0] == '%');
+    }
 
     // Next get problem dimensions: M, N, NZ
-    if(sscanf(line, "%d %d %d", &M, &N, &NZ)==0) {
+    if((rv != -1) && sscanf(line, "%d %d %d", &M, &N, &NZ)==0) {
       if (handle!=0) fclose(handle);
-      EPETRA_CHK_ERR(-1);
+      rv = -1;
     }
   }
+  // If there's an error reading the file, broadcast to all processes in communicator.
+  comm.Broadcast(&rv, 1, 0);
+  if (rv==-1)
+    EPETRA_CHK_ERR(-1);
   comm.Broadcast(&M, 1, 0);
   comm.Broadcast(&N, 1, 0);
   comm.Broadcast(&NZ, 1, 0);

@@ -44,7 +44,6 @@
 
 #include "MiniTensor_config.h"
 #include "Sacado.hpp"
-#include "Teuchos_ScalarTraits.hpp"
 
 namespace minitensor {
 
@@ -189,6 +188,14 @@ template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
 integer_power(T const & X, Index const exponent);
+
+///
+/// Compute a non-negative integer root by bisection.
+///
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+T
+integer_root(T const & x, Index const root);
 
 ///
 /// Utility for Kronecker delta in 2D

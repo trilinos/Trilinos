@@ -45,7 +45,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR
 #include "netcdf.h"       // for nc_sync, NC_NOERR
 #include <stdio.h>
@@ -60,15 +60,14 @@ int ex_update(int exoid)
   char errmsg[MAX_ERR_LENGTH];
   int  status;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
 
   ex_check_valid_file_id(exoid);
 
   if ((status = nc_sync(exoid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to update file id %d", exoid);
-    ex_err("ex_update", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_update", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

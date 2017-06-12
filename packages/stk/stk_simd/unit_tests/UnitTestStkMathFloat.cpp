@@ -29,6 +29,11 @@ TEST(StkSimd, StkMathFloat_log)
   EXPECT_EQ( stk::math::log(a), std::log(a) );
 }
 
+TEST(StkSimd, StkMathFloat_log10)
+{
+  EXPECT_EQ( stk::math::log10(a), std::log10(a) );
+}
+
 TEST(StkSimd, StkMathFloat_exp)
 {
   EXPECT_EQ( stk::math::exp(a), std::exp(a) );
@@ -55,6 +60,21 @@ TEST(StkSimd, StkMathFloat_tan)
   EXPECT_EQ( stk::math::tan(a), std::tan(a) );
 }
 
+TEST(StkSimd, StkMathFloat_sinh)
+{
+  EXPECT_EQ( stk::math::sinh(a), std::sinh(a) );
+}
+
+TEST(StkSimd, StkMathFloat_cosh)
+{
+  EXPECT_EQ( stk::math::cosh(a), std::cosh(a) );
+}
+
+TEST(StkSimd, StkMathFloat_tanh)
+{
+  EXPECT_EQ( stk::math::tanh(a), std::tanh(a) );
+}
+
 TEST(StkSimd, StkMathFloat_asin)
 {
   EXPECT_EQ( stk::math::asin(f), std::asin(f) );
@@ -73,6 +93,26 @@ TEST(StkSimd, StkMathFloat_atan)
 TEST(StkSimd, StkMathFloat_atan2)
 {
   EXPECT_EQ( stk::math::atan2(a,b), std::atan2(a,b) );
+}
+
+TEST(StkSimd, StkMathFloat_asinh)
+{
+  EXPECT_EQ( stk::math::asinh(f), std::asinh(f) );
+}
+
+TEST(StkSimd, StkMathFloat_acosh)
+{
+  EXPECT_EQ( stk::math::acosh(f+1.f), std::acosh(f+1.f) );
+}
+
+TEST(StkSimd, StkMathFloat_atanh)
+{
+  EXPECT_EQ( stk::math::atanh(f), std::atanh(f) );
+}
+
+TEST(StkSimd, StkMathFloat_erf)
+{
+  EXPECT_EQ( stk::math::erf(f), std::erf(f) );
 }
 
 TEST(StkSimd, StkMathFloat_multiplysign)
@@ -106,14 +146,6 @@ TEST(StkSimd, StkMathFloat_if_then)
   EXPECT_EQ( stk::math::if_then_else(false,a,b), b );
   EXPECT_EQ( stk::math::if_then_else_zero(true,a), a );
   EXPECT_EQ( stk::math::if_then_else_zero(false,a), 0.0f );
-}
-
-TEST(StkSimd, StkMathFloat_if_not_then)
-{
-  EXPECT_EQ( stk::math::if_not_then_else(false,a,b), a );
-  EXPECT_EQ( stk::math::if_not_then_else(true,a,b), b );
-  EXPECT_EQ( stk::math::if_not_then_else_zero(false,a), a );
-  EXPECT_EQ( stk::math::if_not_then_else_zero(true,a), 0.0f );
 }
 
 TEST(StkSimd, StkMathFloat_isnan)

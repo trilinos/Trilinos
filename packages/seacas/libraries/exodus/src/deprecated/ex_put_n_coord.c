@@ -54,8 +54,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"  // for ex_put_partial_coord
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_put_partial_coord
 
 /*!
  * \deprecated Use ex_put_partial_coord() instead.

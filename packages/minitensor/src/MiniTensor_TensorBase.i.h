@@ -222,8 +222,7 @@ TensorBase<T, ST>::TensorBase(
 //
 template<typename T, typename ST>
 KOKKOS_INLINE_FUNCTION
-TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X) :
-    dimension_(X.dimension_)
+TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X)
 {
   Index const
   number_components = X.get_number_components();
@@ -247,8 +246,6 @@ TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 {
   if (this == &X) return *this;
 
-  dimension_ = X.dimension_;
-
   Index const
   number_components = X.get_number_components();
 
@@ -262,24 +259,20 @@ TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 }
 
 //
-// Simple destructor
-//
-template<typename T, typename ST>
-KOKKOS_INLINE_FUNCTION
-TensorBase<T, ST>::~TensorBase()
-{
-  return;
-}
-
-//
 // Get dimension
 //
 template<typename T, typename ST>
 KOKKOS_INLINE_FUNCTION
 Index
-TensorBase<T, ST>::get_dimension() const
+TensorBase<T, ST>::get_dimension(Index const order) const
 {
-  return dimension_;
+  Index const
+  number_components = get_number_components();
+
+  Index const
+  dimension = integer_root(number_components, order);
+
+  return dimension;
 }
 
 //
@@ -290,8 +283,6 @@ KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::set_dimension(Index const dimension, Index const order)
 {
-  dimension_ = dimension == DYNAMIC ? DYNAMIC : dimension;
-
   Index const
   number_components = integer_power(dimension, order);
 
@@ -388,48 +379,48 @@ TensorBase<T, ST>::fill(Filler const value)
   case Filler::ZEROS:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = Teuchos::ScalarTraits<T>::zero();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = Kokkos::Details::ArithTraits<S>::zero();
     }
     break;
 
   case Filler::ONES:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = Teuchos::ScalarTraits<T>::one();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = Kokkos::Details::ArithTraits<S>::one();
     }
     break;
 
   case Filler::SEQUENCE:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = static_cast<T>(i);
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = static_cast<S>(i);
     }
     break;
 
   case Filler::RANDOM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = random<T>();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = random<S>();
     }
     break;
 
   case Filler::RANDOM_UNIFORM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = random_uniform<T>();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = random_uniform<S>();
     }
     break;
 
   case Filler::RANDOM_NORMAL:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = random_normal<T>();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = random_normal<S>();
     }
     break;
 
@@ -437,7 +428,7 @@ TensorBase<T, ST>::fill(Filler const value)
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, not_a_number<S>());
-      entry = not_a_number<T>();
+      entry = not_a_number<S>();
     }
     break;
 
@@ -464,7 +455,7 @@ TensorBase<T, ST>::fill(T const & s)
 
   for (Index i = 0; i < number_components; ++i) {
     auto & entry = (*this)[i];
-    fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+    fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
     entry = s;
   }
 

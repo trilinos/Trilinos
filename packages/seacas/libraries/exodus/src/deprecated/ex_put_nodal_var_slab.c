@@ -55,12 +55,8 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include "exodusII.h"     // for exerrval, ex_err, etc
-#include "exodusII_int.h" // for EX_WARN, ex_comp_ws, etc
-#include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_put_partial_var, etc
 
 /*
  * writes the values of a single nodal variable for a single time step to

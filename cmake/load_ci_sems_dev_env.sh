@@ -15,16 +15,13 @@ called=$_
 _SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 #echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
 
-source $_SCRIPT_DIR/std/sems/get_default_modules.sh
-
-if [ "$PLATFORM_TYPE" == "Linux" ] ; then
-  DEFAULT_CI_SEMS_COMPILER=sems-gcc/4.7.2
-elif [ "$PLATFORM_TYPE" == "Darwin" ] ; then
-  DEFAULT_CI_SEMS_COMPILER=sems-gcc/5.3.0
-else
-  echo "ERROR, unknown platform type '$DEFAULT_CI_SEMS_COMPILER'!"
-  exit 1
+if [ "$1" != "" ] ; then
+  echo "ERROR, the source script 'load_ci_sems_dev_env.sh' takes no arguments! (Remove '$1' ...)"
+  return 1
 fi
 
-source $_SCRIPT_DIR/load_sems_dev_env.sh \
-  $DEFAULT_CI_SEMS_COMPILER sems-openmpi/1.6.5 sems-cmake/3.5.2
+source $_SCRIPT_DIR/load_sems_dev_env.sh
+
+# NOTE: Above, we will maintain the load_sems_dev_env.sh defaults so that they
+# match the desired CI env.  That way, Trilinos users can accidentally source
+# load_sems_dev_env.sh and they will get the stanard CI dev env.

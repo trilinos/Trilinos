@@ -246,6 +246,20 @@ namespace Amesos2 {
   const RCP<const Tpetra::Map<MatrixTraits<Epetra_RowMatrix>::local_ordinal_t,
                               MatrixTraits<Epetra_RowMatrix>::global_ordinal_t,
                               MatrixTraits<Epetra_RowMatrix>::node_t> >
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMap_impl() const
+  {
+    // Should Map() be used (returns Epetra_BlockMap)
+    /*
+    printf("Amesos2_EpetraRowMatrix_AbstractMatrixAdapter: Epetra does not support a 'getMap()' method. Returning rcp(Teuchos::null). \
+        If your map contains non-contiguous GIDs please use Tpetra instead of Epetra. \n");
+    */
+    return( Teuchos::null );
+  }
+
+  template <class DerivedMat>
+  const RCP<const Tpetra::Map<MatrixTraits<Epetra_RowMatrix>::local_ordinal_t,
+                              MatrixTraits<Epetra_RowMatrix>::global_ordinal_t,
+                              MatrixTraits<Epetra_RowMatrix>::node_t> >
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getRowMap_impl() const
   {
     // Must transform to a Tpetra::Map
@@ -285,16 +299,17 @@ namespace Amesos2 {
     return this->mat_->IndicesAreGlobal();
   }
 
+
   template <class DerivedMat>
   RCP<const MatrixAdapter<DerivedMat> >
-  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
   {
     // Delegate implementation to subclass
 #ifdef __CUDACC__
     // NVCC doesn't seem to like the static_cast, even though it is valid
-    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
 #else
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
 #endif
   }
 

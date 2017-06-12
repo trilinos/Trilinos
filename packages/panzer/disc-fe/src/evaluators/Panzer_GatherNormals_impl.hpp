@@ -74,7 +74,7 @@ GatherNormals(
 
   // setup the orientation field
   std::string orientationFieldName = basis->name() + " Orientation";
-  dof_orientation = PHX::MDField<ScalarT,Cell,NODE>(orientationFieldName,basis_layout);
+  dof_orientation = PHX::MDField<const ScalarT,Cell,NODE>(orientationFieldName,basis_layout);
 
   // setup all basis fields that are required
   MDFieldArrayFactory af_pv(pointRule->getName()+"_");
@@ -84,7 +84,8 @@ GatherNormals(
 
   // the field manager will allocate all of these field
   this->addDependentField(dof_orientation);
-  this->addDependentField(pointValues.jac);
+  constJac_ = pointValues.jac;
+  this->addDependentField(constJac_);
 
   gatherFieldNormals = PHX::MDField<ScalarT,Cell,NODE,Dim>(dof_name+"_Normals",vector_layout_vector);
   this->addEvaluatedField(gatherFieldNormals);

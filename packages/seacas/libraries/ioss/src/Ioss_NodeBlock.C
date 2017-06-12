@@ -101,7 +101,7 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database, const std::string &my_
       Ioss::Field("implicit_ids", field_int_type(), SCALAR(), Ioss::Field::MESH, node_count));
 
   fields.add(
-	     Ioss::Field("owning_processor", Ioss::Field::INT32, SCALAR(), Ioss::Field::MESH, node_count));
+      Ioss::Field("owning_processor", Ioss::Field::INT32, SCALAR(), Ioss::Field::MESH, node_count));
 }
 
 Ioss::NodeBlock::~NodeBlock() = default;

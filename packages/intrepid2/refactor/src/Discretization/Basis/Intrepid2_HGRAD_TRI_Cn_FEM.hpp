@@ -132,11 +132,16 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
-          constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2*numPtsEval;
-          outputValueType buf[bufSize];
+          typedef typename outputValueViewType::pointer_type outputPointerType; 
+
+          constexpr ordinal_type spaceDim = 2;
+          constexpr ordinal_type bufSize =
+              (opType == OPERATOR_CURL)  ? spaceDim* Intrepid2::getPnCardinality<spaceDim,Parameters::MaxOrder>()*numPtsEval :
+                                           Intrepid2::getDkCardinality<opType, spaceDim>()*Intrepid2::getPnCardinality<spaceDim,Parameters::MaxOrder>()*numPtsEval;
+          char buf[bufSize*sizeof(outputValueType)];
 
           Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+            Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
 
           switch (opType) {
           case OPERATOR_VALUE : {
@@ -186,6 +191,7 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
 
     using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
@@ -227,7 +233,7 @@ namespace Intrepid2 {
     }
 
     void
-    getVandermondeInverse( outputViewType vinv ) const {
+    getVandermondeInverse( scalarViewType vinv ) const {
       // has to be same rank and dimensions
       Kokkos::deep_copy(vinv, this->vinv_);
     }
@@ -248,7 +254,7 @@ namespace Intrepid2 {
 
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
         coefficients of the nodal basis in terms of phis_ */
-    Kokkos::DynRankView<outputValueType,ExecSpaceType> vinv_;
+    Kokkos::DynRankView<scalarType,ExecSpaceType> vinv_;
 
   };
 

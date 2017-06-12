@@ -35,6 +35,7 @@
 #ifndef SEACAS_Internals_h
 #define SEACAS_Internals_h
 
+#include <string> // for string
 #include <vector> // for vector
 namespace Excn {
   class Block;
@@ -50,6 +51,16 @@ namespace Excn {
 }
 namespace Excn {
   template <typename INT> class SideSet;
+}
+namespace Excn {
+}
+namespace Excn {
+}
+namespace Excn {
+}
+namespace Excn {
+}
+namespace Excn {
 }
 
 /*!

@@ -46,16 +46,11 @@
 #include <string>
 
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
-
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_PureBasis.hpp"
-
 #include "Kokkos_DynRankView.hpp"
-
-#include "Panzer_Evaluator_WithBaseImpl.hpp"
-
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
@@ -86,9 +81,9 @@ private:
   typedef typename EvalT::ScalarT ScalarT;
 
   //! Dependent field: DOF coefficient values at source basis
-  PHX::MDField<ScalarT> dof_source_coeff;
+  PHX::MDField<const ScalarT> dof_source_coeff;
   
-  //! Vealuated field: DOF coefficient values at target basis
+  //! Evaluated field: DOF coefficient values at target basis
   PHX::MDField<ScalarT> dof_target_coeff;
 
   //! Reference cell basis values at target points, replicated for each cell in workset

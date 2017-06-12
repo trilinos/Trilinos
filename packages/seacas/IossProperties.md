@@ -53,11 +53,12 @@ PARALLEL_IO_MODE | mpiio, pnetcdf |
  Property              | Value  | Description
 -----------------------|--------|-----------------------------------------------------------
   FILE_TYPE            | [netcdf], netcdf4, netcdf-4, hdf5 |
- COMPRESSION_LEVEL     | [0]-9    | In the range [0..9]. A value of 0 indicates no compression, will automatically set file_type=netcdf4, recommend <=4
+ COMPRESSION_LEVEL     | [0]-9    | In the range [0..9]. A value of 0 indicates no compression, will automatically set `file_type=netcdf4`, recommend <=4
  COMPRESSION_SHUFFLE   | on/[off] |to enable/disable hdf5's shuffle compression algorithm.
  MAXIMUM_NAME_LENGTH   | [32]     | Maximum length of names that will be returned/passed via api call.
  APPEND_OUTPUT         | on/[off] | Append output to end of existing output database
-
+ APPEND_OUTPUT_AFTER_STEP | {step}| Max step to read from an input db or a db being appended to (typically used with APPEND_OUTPUT)
+ APPEND_OUTPUT_AFTER_TIME | {time}| Max time to read from an input db or a db being appended to (typically used with APPEND_OUTPUT)
 
 ## Properties for the heartbeat output 
  Property              | Value  | Description

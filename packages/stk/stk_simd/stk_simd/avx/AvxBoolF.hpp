@@ -12,7 +12,7 @@ class Boolf {
 
  public:
     
-  STK_MATH_FORCE_INLINE Boolf() : _data(_mm256_setzero_ps()) {}
+  STK_MATH_FORCE_INLINE Boolf() {}
     
   STK_MATH_FORCE_INLINE Boolf(const bool x) 
     : _data(x ? _mm256_cmp_ps(_mm256_setzero_ps(),_mm256_setzero_ps(),_CMP_EQ_OQ) : _mm256_setzero_ps())

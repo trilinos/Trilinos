@@ -450,8 +450,11 @@ class StatusTestGenResSubNorm<Scalar,Xpetra::MultiVector<Scalar,LocalOrdinal,Glo
       Teuchos::RCP<const Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xOp =
           Teuchos::rcp_dynamic_cast<const Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(Op);
       TEUCHOS_TEST_FOR_EXCEPTION(xOp.is_null(), MueLu::Exceptions::BadCast, "Bad cast from \'const Belos::OperatorT\' to \'const Belos::XpetraOp\'. The origin type is "  << typeid(const OP).name() << ".");
-      Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xMat =
+      Teuchos::RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xIntOp =
           xOp->getOperator();
+      TEUCHOS_TEST_FOR_EXCEPTION(xIntOp.is_null(), MueLu::Exceptions::BadCast, "Cannot access Xpetra::Operator stored in Belos::XpetraOperator.");
+      Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xMat =
+          Teuchos::rcp_dynamic_cast<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xIntOp);
       TEUCHOS_TEST_FOR_EXCEPTION(xMat.is_null(), MueLu::Exceptions::RuntimeError, "Cannot access Xpetra::Matrix stored in Belos::XpetraOp. Error.");
       Teuchos::RCP<const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > bMat = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xMat);
       TEUCHOS_TEST_FOR_EXCEPTION(bMat.is_null(), MueLu::Exceptions::BadCast, "Bad cast from \'const Xpetra::Matrix\' to \'const Xpetra::BlockedCrsMatrix\'. The origin type is "  << typeid(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>).name() << ". Note: you need a BlockedCrsMatrix object for the StatusTestGenResSubNorm to work!");

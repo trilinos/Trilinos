@@ -59,30 +59,6 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
   const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
   stk::io::default_part_processing(node_sets, meta);
 
-  stk::mesh::Field<double> & distribution_factors_field =
-    meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
-  stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
-
-  /** \todo REFACTOR How to associate distribution_factors field
-   * with the nodeset part if a node is a member of multiple
-   * nodesets
-   */
-
-  for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
-      it != node_sets.end(); ++it) {
-    Ioss::NodeSet *entity = *it;
-
-    if (stk::io::include_entity(entity)) {
-      stk::mesh::Part* const part = meta.get_part(entity->name());
-
-      STKIORequire(part != NULL);
-      STKIORequire(entity->field_exists("distribution_factors"));
-
-      stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
-      stk::mesh::put_field(distribution_factors_field, *part);
-    }
-  }
-
   for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
       it != node_sets.end(); ++it) {
     Ioss::NodeSet *entity = *it;
@@ -268,8 +244,8 @@ void send_element_side_to_element_owner(stk::CommSparse &comm,
         const stk::mesh::EntityIdProcMap::const_iterator iter = elemIdMovedToProc.find(sideToMove.elem);
         ThrowRequireWithSierraHelpMsg(iter!=elemIdMovedToProc.end());
         int destProc = iter->second;
-        comm.send_buffer(destProc).pack<stk::mesh::EntityId>(sideToMove.elem);
-        comm.send_buffer(destProc).pack<unsigned>(sideToMove.sideOrdinal);
+        comm.send_buffer(destProc).pack(sideToMove.elem);
+        comm.send_buffer(destProc).pack(sideToMove.sideOrdinal);
         pack_vector_to_proc(comm, sideToMove.partOrdinals, destProc);
     }
 }
@@ -278,8 +254,8 @@ void unpack_and_declare_element_side(stk::CommSparse & comm, stk::mesh::BulkData
 {
     stk::mesh::EntityId elemId;
     unsigned sideOrdinal;
-    comm.recv_buffer(procId).unpack<stk::mesh::EntityId>(elemId);
-    comm.recv_buffer(procId).unpack<unsigned>(sideOrdinal);
+    comm.recv_buffer(procId).unpack(elemId);
+    comm.recv_buffer(procId).unpack(sideOrdinal);
     stk::mesh::OrdinalVector partOrdinals;
     unpack_vector_from_proc(comm, partOrdinals, procId);
 

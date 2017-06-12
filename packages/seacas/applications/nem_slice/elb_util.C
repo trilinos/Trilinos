@@ -51,12 +51,11 @@
  *      find_inter()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 #include "elb_util.h"
-#include <cassert> // for assert
-#include <cctype>  // for isupper, tolower
-#include <cmath>
-#include <cstddef> // for size_t
-#include <cstdlib>
-#include <cstring> // for strlen
+#include <cassert>                      // for assert
+#include <cctype>                       // for isupper, tolower
+#include <cmath>                        // for ceil, floor
+#include <cstddef>                      // for size_t
+#include <cstring>                      // for strlen
 
 /*****************************************************************************/
 /*****************************************************************************/

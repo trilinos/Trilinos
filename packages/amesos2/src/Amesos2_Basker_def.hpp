@@ -72,6 +72,7 @@ Basker<Matrix,Vector>::Basker(
   , nzvals_()                   // initialize to empty arrays
   , rowind_()
   , colptr_()
+  , is_contiguous_(true)
 {
 
   //Nothing
@@ -144,7 +145,6 @@ template <class Matrix, class Vector>
 int
 Basker<Matrix,Vector>::symbolicFactorization_impl()
 {
-  
 #ifdef SHYLUBASKER
 
   if(this->root_)
@@ -168,7 +168,8 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
       //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
 
-      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
+#ifndef HAVE_TEUCHOS_COMPLEX
+      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
       if ( case_check ) {
 
         // this needs to be checked during loadA_impl...
@@ -191,7 +192,9 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
                                 sp_values,
                                 true);
       }
-      else {   //follow original code path if conditions not met
+      else 
+#endif
+      {   //follow original code path if conditions not met
         // In this case, loadA_impl updates colptr_, rowind_, nzvals_
         info = basker->Symbolic(this->globalNumRows_,
                                 this->globalNumCols_,
@@ -200,7 +203,6 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
                                 rowind_.getRawPtr(),
                                 nzvals_.getRawPtr());
       }
-      //std::cout << "Symbolic Factorization Done" << std::endl; 
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
         std::runtime_error, "Error in Basker Symbolic");
  
@@ -239,7 +241,8 @@ Basker<Matrix,Vector>::numericFactorization_impl()
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
       //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
 
-      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
+#ifndef HAVE_TEUCHOS_COMPLEX
+      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
       if ( case_check ) {
 
         auto sp_rowptr = this->matrixA_->returnRowPtr();
@@ -260,7 +263,9 @@ Basker<Matrix,Vector>::numericFactorization_impl()
             sp_colind,
             sp_values);
       }
-      else {
+      else 
+#endif
+      {
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
         info = basker->Factor(this->globalNumRows_,
                               this->globalNumCols_,
@@ -325,63 +330,130 @@ Basker<Matrix,Vector>::solve_impl(
  const Teuchos::Ptr<MultiVecAdapter<Vector> >  X,
  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
+  int ierr = 0; // returned error code
+
   using Teuchos::as;
 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
+#ifndef HAVE_TEUCHOS_COMPLEX
+  bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && (nrhs == 1 ) && is_contiguous_ ) ;
+  if ( case_check ) {
 
-  xvals_.resize(val_store_size);
-  bvals_.resize(val_store_size);
-
-  {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
+    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-      slu_type>::do_get(B, bvals_(),as<size_t>(ld_rhs),
-                                               ROOTED);
-  }
 
-  int ierr = 0; // returned error code
+    auto sp_rowptr = this->matrixA_->returnRowPtr();
+    TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
+    auto sp_colind = this->matrixA_->returnColInd();
+    TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
+    auto sp_values = this->matrixA_->returnValues();
+    TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
-  if ( this->root_ ) {
-    {                           // Do solve!
+    auto b_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B );
+    TEUCHOS_TEST_FOR_EXCEPTION(b_vector == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
+    auto x_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X );
+    TEUCHOS_TEST_FOR_EXCEPTION(x_vector  == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
+
+    if ( this->root_ ) {
+      {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+        Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
 #ifdef SHYLUBASKER
-      ierr = basker->Solve(nrhs, bvals_.getRawPtr(), 
-			   xvals_.getRawPtr());
+        ierr = basker->Solve(nrhs, b_vector, x_vector);
 #else
-    ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
+        ierr = basker.solveMultiple(nrhs, b_vector, x_vector);
 #endif
+      }
+
+      /* All processes should have the same error code */
+      Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+
+      TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
+          std::runtime_error,
+          "Encountered zero diag element at: " << ierr);
+      TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
+          std::runtime_error,
+          "Could not alloc needed working memory for solve" );
+    }
+  }
+  else 
+#endif
+  {
+    const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
+
+    xvals_.resize(val_store_size);
+    bvals_.resize(val_store_size);
+
+    {                             // Get values from RHS B
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+      Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
+#endif
+
+      if ( is_contiguous_ == true ) {
+        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+          slu_type>::do_get(B, bvals_(), as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+      }
+      else {
+        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+          slu_type>::do_get(B, bvals_(), as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      }
     }
 
-  }
-
-  /* All processes should have the same error code */
-  Teuchos::broadcast(*(this->getComm()), 0, &ierr);
-
-  TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
-                      std::runtime_error,
-                      "Encountered zero diag element at: " << ierr);
-  TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
-                      std::runtime_error,
-                      "Could not alloc needed working memory for solve" );
-
-  {
+    if ( this->root_ ) {
+      {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+        Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-    Util::put_1d_data_helper<
-    MultiVecAdapter<Vector>,slu_type>::do_put(X, xvals_(),
-                                         as<size_t>(ld_rhs),
-                                         ROOTED);
+#ifdef SHYLUBASKER
+        ierr = basker->Solve(nrhs, bvals_.getRawPtr(), 
+            xvals_.getRawPtr());
+#else
+        ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
+#endif
+      }
+
+    }
+
+    /* All processes should have the same error code */
+    Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+
+    TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
+        std::runtime_error,
+        "Encountered zero diag element at: " << ierr);
+    TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
+        std::runtime_error,
+        "Could not alloc needed working memory for solve" );
+
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
+
+      if ( is_contiguous_ == true ) {
+        Util::put_1d_data_helper<
+          MultiVecAdapter<Vector>,slu_type>::do_put(X, xvals_(),
+              as<size_t>(ld_rhs),
+              ROOTED);
+      }
+      else {
+        Util::put_1d_data_helper<
+          MultiVecAdapter<Vector>,slu_type>::do_put(X, xvals_(),
+              as<size_t>(ld_rhs),
+              CONTIGUOUS_AND_ROOTED);
+      }
+    }
   }
 
   return(ierr);
@@ -406,6 +478,11 @@ Basker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterL
   using Teuchos::ParameterEntryValidator;
 
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
+
+  if(parameterList->isParameter("IsContiguous"))
+    {
+      is_contiguous_ = parameterList->get<bool>("IsContiguous");
+    }
 
 #ifdef SHYLUBASKER
   if(parameterList->isParameter("num_threads"))
@@ -443,7 +520,7 @@ Basker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterL
   if(parameterList->isParameter("matching_type"))
     {
       basker->Options.matching_type =
-	(local_ordinal_type) parameterList->get<int>("matching_type");
+        (local_ordinal_type) parameterList->get<int>("matching_type");
     }
   if(parameterList->isParameter("btf"))
     {
@@ -478,6 +555,8 @@ Basker<Matrix,Vector>::getValidParameters_impl() const
   if( is_null(valid_params) )
     {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->set("IsContiguous", true, 
+	      "Are GIDs contiguous");
       pl->set("num_threads", 1, 
 	      "Number of threads");
       pl->set("pivot", false,
@@ -511,6 +590,7 @@ Basker<Matrix,Vector>::getValidParameters_impl() const
   if( is_null(valid_params) ){
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
+    pl->set("IsContiguous", true, "Are GIDs contiguous");
     pl->set("alnnz",  2, "Approx number of nonzeros in L, default is 2*nnz(A)");
     pl->set("aunnx",  2, "Approx number of nonzeros in I, default is 2*nnz(U)");
     valid_params = pl;
@@ -525,29 +605,32 @@ bool
 Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
   using Teuchos::as;
-
   if(current_phase == SOLVE) return (false);
 
   #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
   #endif
 
+
 #ifdef SHYLUBASKER
   // NDE: Can clean up duplicated code with the #ifdef guards
 
-  bool case_check = ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
+#ifndef HAVE_TEUCHOS_COMPLEX
+  bool case_check = ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
 
   if ( case_check ) {
   // NDE: Nothing is done in this special case - CRS raw pointers are passed to SHYLUBASKER and transpose of copies handled there
   // In this case, colptr_, rowind_, nzvals_ are invalid
   }
-  else {
+  else 
+#endif
+  {
 
     // Only the root image needs storage allocated
     if( this->root_ ){
       nzvals_.resize(this->globalNumNonZeros_);
       rowind_.resize(this->globalNumNonZeros_);
-      colptr_.resize(this->globalNumCols_ + 1);
+      colptr_.resize(this->globalNumCols_ + 1); //this will be wrong for case of gapped col ids, e.g. 0,2,4,9; num_cols = 10 ([0,10)) but num GIDs = 4...
     }
 
     local_ordinal_type nnz_ret = 0;
@@ -555,16 +638,25 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
     #endif
-      Util::get_ccs_helper<
-        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
-            nnz_ret, ROOTED, ARBITRARY); // copies from matrixA_ to Basker ConcreteSolver cp, ri, nzval members
+
+      if ( is_contiguous_ == true ) {
+        Util::get_ccs_helper<
+          MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+          ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+              nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_); // copies from matrixA_ to Basker ConcreteSolver cp, ri, nzval members
+      }
+      else {
+        Util::get_ccs_helper<
+          MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+          ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+              nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_); // copies from matrixA_ to Basker ConcreteSolver cp, ri, nzval members
+      }
     }
 
     if( this->root_ ){
       TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
           std::runtime_error,
-          "Did not get the expected number of non-zero vals");
+          "Amesos2_Basker loadA_impl: Did not get the expected number of non-zero vals");
     }
 
   } //end alternative path 
@@ -582,16 +674,25 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
   #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
   #endif
-    Util::get_ccs_helper<
-    MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-    ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
-             nnz_ret, ROOTED, ARBITRARY);
+
+    if ( is_contiguous_ == true ) {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+            nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
+    }
+    else {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+            nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
+    }
   }
 
   if( this->root_ ){
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                         std::runtime_error,
-                        "Did not get the expected number of non-zero vals");
+                        "Amesos2_Basker loadA_impl: Did not get the expected number of non-zero vals");
   }
 #endif //SHYLUBASKER
   return true;

@@ -36,7 +36,8 @@
 #ifndef _EXOIILB_ERR_CONST_H_
 #define _EXOIILB_ERR_CONST_H_
 
-#include <string>
+#include <algorithm> // for move
+#include <string>    // for string
 
 /* Structure to store an error message */
 struct error_message

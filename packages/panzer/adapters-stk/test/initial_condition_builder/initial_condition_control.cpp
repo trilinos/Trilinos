@@ -67,8 +67,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
 
@@ -100,7 +98,7 @@ namespace panzer {
       panzer_stk::SquareQuadMeshFactory mesh_factory;
       mesh_factory.setParameterList(pl);
       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
-      mesh->writeToExodus("test.exo");
+      mesh->writeToExodus("initial_condition_control.exo");
     }
 
     RCP<const shards::CellTopology> ct = mesh->getCellTopology("eblock-0_0");

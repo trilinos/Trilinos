@@ -82,7 +82,7 @@ namespace Intrepid {
     // { (phi_i,0,0) }_{i=0}^{scalarLittleN-1} ,
     // { (0,phi_i,0) }_{i=0}^{scalarLittleN-1} ,
     // { (0,0,phi_i) }_{i=0}^{scalarLittleN-1} ,
-    // { (x,y) . phi_i}_{i=scalarLittleN}^{scalarBigN-1}
+    // { (x,y) . phi_i}_{i=startPKH}^{scalarLittleN-1}
     // columns of V1 are expansion of this basis in terms of the orthogonal basis
     // for P_{n}^3
 

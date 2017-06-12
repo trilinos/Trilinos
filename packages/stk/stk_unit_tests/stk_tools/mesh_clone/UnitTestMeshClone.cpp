@@ -169,6 +169,25 @@ void expect_all_fields_equal(stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &
         expect_equal_fields(newMeta, *oldFields[i], *newFields[i]);
 }
 
+void expect_surface_to_block_mappings_equal(stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
+{
+    std::vector<const stk::mesh::Part *> oldSurfacesInMap = oldMeta.get_surfaces_in_surface_to_block_map();
+    std::vector<const stk::mesh::Part *> newSurfacesInMap = newMeta.get_surfaces_in_surface_to_block_map();
+
+    ASSERT_EQ(oldSurfacesInMap.size(), newSurfacesInMap.size());
+
+    for(size_t i=0;i<oldSurfacesInMap.size();++i)
+    {
+        std::vector<const stk::mesh::Part*> oldBlocks = oldMeta.get_blocks_touching_surface(oldSurfacesInMap[i]);
+        std::vector<const stk::mesh::Part*> newBlocks = newMeta.get_blocks_touching_surface(newSurfacesInMap[i]);
+        ASSERT_EQ(oldBlocks.size(), newBlocks.size());
+        for(size_t i=0;i<oldBlocks.size();++i)
+        {
+            EXPECT_EQ(oldBlocks[i]->name(), newBlocks[i]->name());
+        }
+    }
+}
+
 void expect_equal_meta_datas(stk::mesh::MetaData& oldMeta, stk::mesh::MetaData& newMeta)
 {
     EXPECT_TRUE(newMeta.is_initialized());
@@ -178,6 +197,7 @@ void expect_equal_meta_datas(stk::mesh::MetaData& oldMeta, stk::mesh::MetaData& 
     EXPECT_EQ(oldMeta.coordinate_field()->name(), newMeta.coordinate_field()->name());
     expect_all_parts_equal(oldMeta, newMeta);
     expect_all_fields_equal(oldMeta, newMeta);
+    expect_surface_to_block_mappings_equal(oldMeta, newMeta);
 }
 
 void expect_equal_entity_counts(stk::mesh::BulkData& oldBulk, stk::mesh::BulkData& newBulk)

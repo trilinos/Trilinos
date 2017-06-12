@@ -767,6 +767,15 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
                   Teuchos::constPtr(solveCriteria));
   }
 
+  // If the linear solver left us an iteration count, stash it on the output list
+  if(!solve_status.extraParameters.is_null()) {
+    int current_iters    = solve_status.extraParameters->get("Iteration Count",0);
+    int cumulative_iters = p.sublist("Output").get("Cumulative Iteration Count",0);
+
+    p.sublist("Output").set("Last Iteration Count",current_iters);
+    p.sublist("Output").set("Cumulative Iteration Count",cumulative_iters + current_iters);
+  }
+
   this->unscaleResidualAndJacobian();
 
   if (nonnull(right_weight_vec_)){

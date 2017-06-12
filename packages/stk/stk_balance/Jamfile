@@ -65,6 +65,7 @@ explicit install-targets ;
 alias install-targets
   : stk_balance_unit_tester
     stk_balance_integration_tester
+    stk_balance_m2n
     stk_balance
   ;
 
@@ -95,6 +96,7 @@ alias install-exe-targets : ;
 explicit install-user-bin ;
 install install-user-bin
   : stk_balance
+    stk_balance_m2n
   : <location>$(install-bin-dir)
   ;
 
@@ -110,6 +112,20 @@ install install-user-lib
   : <location>$(install-root)/stk/stk_balance/lib
   ;
 
+lib search_tolerance
+  :
+    [ ifdevbuild 
+      [ glob $(stk_balance-root)/stk_balance/search_tolerance/*.cpp 
+      ] 
+    ]
+    /sierra/stk_balance//stk_balance_lib
+    /sierra/stk_mesh//stk_mesh_base
+  :
+    <include>$(stk_balance-root)/stk_balance/search_tolerance/
+    [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_search_tolerance.a ]
+  :
+  :
+  ;
 
 lib stk_balance_lib
   :
@@ -117,8 +133,6 @@ lib stk_balance_lib
       [ glob 
              $(stk_balance-root)/stk_balance/*.cpp 
              $(stk_balance-root)/stk_balance/internal/*.cpp 
-          :
-             $(stk_balance-root)/stk_balance/main.cpp 
       ] 
     ]
     /sierra/stk_io//stk_io
@@ -167,6 +181,7 @@ exe stk_balance_unit_tester
     /tpl/gtest//gtest
     /mpi//mpi
     /sierra/stk_util//stk_util_parallel
+    /sierra/stk_util//stk_util_command_line
   :
     <tag>@sierra-exec-tag
   ;
@@ -180,6 +195,7 @@ exe stk_balance_integration_tester
     stk_balance_test_utils
     stk_balance_lib
     /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_balance//search_tolerance
     /sierra/seacas//ioss
     /tpl/gtest//gtest
     /mpi//mpi
@@ -190,12 +206,24 @@ exe stk_balance_integration_tester
 exe stk_balance
   :
     [ glob 
-        $(stk_balance-root)/stk_balance/main.cpp
+        $(stk_balance-root)/stk_balance/balance_main/*.cpp
     ]
     stk_balance_lib
+    /sierra/stk_util//stk_util_command_line
     /mpi//mpi
   :
     <tag>@sierra-exec-tag
   ;
 
+exe stk_balance_m2n
+  :
+    [ glob 
+        $(stk_balance-root)/stk_balance/m2n_main/*.cpp
+    ]
+    stk_balance_lib
+    /sierra/stk_util//stk_util_command_line
+    /mpi//mpi
+  :
+    <tag>@sierra-exec-tag
+  ;
 

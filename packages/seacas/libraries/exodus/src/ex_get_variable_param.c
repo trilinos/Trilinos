@@ -49,7 +49,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <stddef.h>       // for size_t
@@ -108,9 +108,9 @@ int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars)
   const char *dnumvar;
   int         status;
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
 
-  exerrval  = 0; /* clear error code */
   *num_vars = 0;
 
   switch (obj_type) {
@@ -125,35 +125,32 @@ int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars)
   case EX_SIDE_SET: dnumvar   = DIM_NUM_SSET_VAR; break;
   case EX_ELEM_SET: dnumvar   = DIM_NUM_ELSET_VAR; break;
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: invalid variable type %d requested from file id %d",
              obj_type, exoid);
-    ex_err("ex_get_variable_param", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_variable_param", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != NC_NOERR) {
     *num_vars = 0;
     if (status == NC_EBADDIM) {
-      return (EX_NOERR); /* no global variables defined */
+      EX_FUNC_LEAVE(EX_NOERR); /* no global variables defined */
     }
     else {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s variable names in file id %d",
                ex_name_of_object(obj_type), exoid);
-      ex_err("ex_get_variable_param", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_variable_param", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &dimlen)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s variables in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_variable_param", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_variable_param", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
   *num_vars = dimlen;
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

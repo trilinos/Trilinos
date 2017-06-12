@@ -133,7 +133,7 @@ static void dumpgraph (idxtype *Mp, idxtype *Mi, UF_long n,
  * (4.0.2, perhaps) proposed to George Karypis.  This version uses function
  * pointer for malloc and free.  They can be set to mxMalloc and mxFree
  * (see sputil_config in MATLAB/sputil.c).  On Linux, with gcc, you must also
- * compile CHOLMOD, METIS, AMD, COLAMD, and CCOLAMD with the -fexceptions
+ * compile CHOLMOD, METIS, AMD, TRILINOS_COLAMD, and CCOLAMD with the -fexceptions
  * compiler flag.  With this configuration, mxMalloc safely aborts the
  * mexFunction, frees all memory allocted by METIS, and safely returns to
  * MATLAB.  You may then set Common->metis_memory = 0.

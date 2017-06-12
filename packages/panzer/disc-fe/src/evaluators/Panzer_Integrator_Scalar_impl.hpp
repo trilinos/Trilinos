@@ -62,7 +62,7 @@ PHX_EVALUATOR_CTOR(Integrator_Scalar,p) : quad_index(-1)
 
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->dimension(0)));
   integral = PHX::MDField<ScalarT>( p.get<std::string>("Integral Name"), dl_cell);
-  scalar = PHX::MDField<ScalarT,Cell,IP>( p.get<std::string>("Integrand Name"), ir->dl_scalar);
+  scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Integrand Name"), ir->dl_scalar);
 
   this->addEvaluatedField(integral);
   this->addDependentField(scalar);
@@ -78,12 +78,12 @@ PHX_EVALUATOR_CTOR(Integrator_Scalar,p) : quad_index(-1)
     for (std::vector<std::string>::const_iterator name = 
 	   field_multiplier_names.begin(); 
 	 name != field_multiplier_names.end(); ++name) {
-      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+      PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
     }
   }
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->addDependentField(*field);
 
@@ -97,7 +97,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
   this->utils.setFieldData(integral,fm);
   this->utils.setFieldData(scalar,fm);
   
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
@@ -119,7 +119,7 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       tmp(cell,qp) = multiplier * scalar(cell,qp);
-      for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
 	   field != field_multipliers.end(); ++field)
         tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
     }

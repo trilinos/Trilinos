@@ -125,25 +125,35 @@ public:
    *  3) Send buffers are identically packed; however, this
    *     packing copies data into the send buffers.
    */
-  explicit CommSparse( ParallelMachine );
+  explicit CommSparse( ParallelMachine comm)
+    : m_comm( comm ),
+      m_size( parallel_machine_size( comm ) ),
+      m_rank( parallel_machine_rank( comm ) ),
+      m_send(m_size),
+      m_recv(m_size),
+      m_send_data(),
+      m_recv_data(),
+      m_send_procs(),
+      m_recv_procs()
+  {
+  }
 
   /** Allocate communication buffers based upon
    *  sizing from the surrogate send buffer packing.
    */
   void allocate_buffers();
+
   /** Allocate communication buffers based upon
    *  sizing from the surrogate send buffer packing, with user-specified
    *  vectors of procs to send and receive with. Allowing the send/recv
    *  procs to be specified allows the CommSparse class to avoid a
-   *  call to MPI_Reduce_scatter.
+   *  round of communication.
    */
   void allocate_buffers(const std::vector<int>& send_procs, const std::vector<int>& recv_procs);
 
-  //----------------------------------------
   /** Communicate send buffers to receive buffers.  */
   void communicate();
 
-  //----------------------------------------
   /** Swap send and receive buffers leading to reversed communication. */
   void swap_send_recv();
 
@@ -152,15 +162,30 @@ public:
    */
   void reset_buffers();
 
-  ~CommSparse();
-
+  ~CommSparse()
+  {
+    m_comm = parallel_machine_null();
+    m_size = 0 ;
+    m_rank = 0 ;
+    m_send.clear();
+    m_recv.clear();
+  }
 private:
 
-  //----------------------------------------
   /** Construct for undefined communication.
    *  No buffers are allocated.
    */
-  CommSparse();
+  CommSparse()
+    : m_comm( parallel_machine_null() ),
+      m_size( 0 ), 
+      m_rank( 0 ),
+      m_send(),
+      m_recv(),
+      m_send_data(),
+      m_recv_data(),
+      m_send_procs(),
+      m_recv_procs()
+  {}
 
   void rank_error( const char * , int ) const ;
 

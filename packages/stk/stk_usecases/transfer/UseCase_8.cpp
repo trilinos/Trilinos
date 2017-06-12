@@ -45,6 +45,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <init/Ionit_Initializer.h>
 
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 
@@ -192,6 +193,6 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
   }
   timer.stop();
 
-  const bool collective_result = use_case::print_status(comm, status);
+  const bool collective_result = stk::is_true_on_all_procs(comm, status);
   return collective_result;
 }

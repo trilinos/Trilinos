@@ -170,7 +170,8 @@ namespace {
                    #endif
                    bool writeCoordinates,
                    bool writeTopo,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer,
+                   bool useCoordinates
                    )
   {
     using Teuchos::RCP;
@@ -310,7 +311,8 @@ namespace {
           }
 
           #ifdef PANZER_HAVE_MUELU
-          if(rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer)!=Teuchos::null) {
+          if(rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer)!=Teuchos::null
+             && useCoordinates) {
              if(!writeCoordinates)
                 callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
 

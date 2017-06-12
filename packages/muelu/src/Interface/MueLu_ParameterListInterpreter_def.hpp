@@ -1,4 +1,4 @@
-// @HEADER
+
 //
 // ***********************************************************************
 //
@@ -159,6 +159,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
     Cycle_     = Hierarchy::GetDefaultCycle();
+    scalingFactor_= Teuchos::ScalarTraits<double>::one();
     blockSize_ = 1;
     dofOffset_ = 0;
 
@@ -224,10 +225,10 @@ namespace MueLu {
 #else
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
   RCP<Factory> varName; \
-  if (!useKokkos) varName = rcp(new oldFactory()); \
+  if (!useKokkos_) varName = rcp(new oldFactory()); \
   else            varName = rcp(new newFactory());
 #define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
-  if (!useKokkos) varName = rcp(new oldFactory()); \
+  if (!useKokkos_) varName = rcp(new oldFactory()); \
   else            varName = rcp(new newFactory());
 #endif
 
@@ -245,6 +246,10 @@ namespace MueLu {
       paramList = constParamList;
     }
 
+    // Check for Kokkos
+    MUELU_SET_VAR_2LIST(constParamList,constParamList, "use kokkos refactor", bool, useKokkos);
+    useKokkos_ = useKokkos;
+
     // Translate cycle type parameter
     if (paramList.isParameter("cycle type")) {
       std::map<std::string,CycleType> cycleMap;
@@ -254,6 +259,10 @@ namespace MueLu {
       std::string cycleType = paramList.get<std::string>("cycle type");
       TEUCHOS_TEST_FOR_EXCEPTION(cycleMap.count(cycleType) == 0, Exceptions::RuntimeError, "Invalid cycle type: \"" << cycleType << "\"");
       Cycle_ = cycleMap[cycleType];
+    }
+
+    if (paramList.isParameter("coarse grid correction scaling factor")) {
+      scalingFactor_ = paramList.get<double>("coarse grid correction scaling factor");
     }
 
     this->maxCoarseSize_    = paramList.get<int> ("coarse: max size",    MasterList::getDefault<int>("coarse: max size"));
@@ -418,6 +427,10 @@ namespace MueLu {
     VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
   }
 
+
+  // =====================================================================================================
+  // ==================================== UpdateFactoryManager ===========================================
+  // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager(ParameterList& paramList,
             const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
@@ -444,9 +457,6 @@ namespace MueLu {
         "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
 #endif
 
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
-    bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
-
     // Only some combinations of reuse and multigrid algorithms are tested, all
     // other are considered invalid at the moment
     if (reuseType == "none" || reuseType == "S" || reuseType == "RP" || reuseType == "RAP") {
@@ -461,17 +471,105 @@ namespace MueLu {
       this->GetOStream(Warnings0) << "Ignoring \"emin\" reuse option it is only compatible with \"emin\" multigrid algorithm" << std::endl;
     }
 
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "use kokkos refactor", bool, useKokkos);
-    (void) useKokkos;
-
     // == Non-serializable data ===
     // Check both the parameter and the type
-    bool have_userA = false, have_userP = false, have_userR = false, have_userNS = false, have_userCO = false;
-    if (paramList.isParameter("A")           && !paramList.get<RCP<Matrix> >     ("A")          .is_null()) have_userA  = true;
+    bool have_userP = false;
     if (paramList.isParameter("P")           && !paramList.get<RCP<Matrix> >     ("P")          .is_null()) have_userP  = true;
-    if (paramList.isParameter("R")           && !paramList.get<RCP<Matrix> >     ("R")          .is_null()) have_userR  = true;
-    if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
-    if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
+
+    // == Smoothers ==
+    UpdateFactoryManager_Smoothers(paramList,defaultList,manager,levelID,keeps);
+
+    // === Coarse solver ===
+    UpdateFactoryManager_CoarseSolvers(paramList,defaultList,manager,levelID,keeps);
+
+    // === Aggregation ===
+    UpdateFactoryManager_Aggregation_TentativeP(paramList,defaultList,manager,levelID,keeps);
+
+    // === Nullspace ===
+    RCP<Factory> nullSpaceFactory; // Need to cache this guy for the combination of semi-coarsening & repartitioning
+    UpdateFactoryManager_Nullspace(paramList,defaultList,manager,levelID,keeps,nullSpaceFactory);
+
+    // === Prolongation ===
+    // NOTE: None of the UpdateFactoryManager routines called here check the multigridAlgo.  This is intentional, to allow for
+    // reuse of components underneath.  Thus, the multigridAlgo must be checked here.
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab"
+                               && multigridAlgo != "pcoarsen", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
+#ifndef HAVE_MUELU_MATLAB
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
+        "Cannot use MATLAB prolongator factory - MueLu was not configured with MATLAB support.");
+#endif
+#ifndef HAVE_MUELU_INTREPID2
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
+        "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
+#endif
+    if (have_userP) {
+      // User prolongator
+      manager.SetFactory("P", NoFactory::getRCP());
+    } else if (multigridAlgo == "unsmoothed") {
+      // Unsmoothed aggregation
+      manager.SetFactory("P", manager.GetFactory("Ptent"));
+    } else if (multigridAlgo == "sa") {
+      // Smoothed aggregation
+      UpdateFactoryManager_SA(paramList,defaultList,manager,levelID,keeps);
+    } else if (multigridAlgo == "emin") {
+      // Energy minimization
+      UpdateFactoryManager_Emin(paramList,defaultList,manager,levelID,keeps);
+    } else if (multigridAlgo == "pg") {
+      // Petrov-Galerkin
+      UpdateFactoryManager_PG(paramList,defaultList,manager,levelID,keeps);
+    } else if(multigridAlgo == "matlab") {
+      // Matlab Coarsneing
+      UpdateFactoryManager_Matlab(paramList,defaultList,manager,levelID,keeps);
+    } else if(multigridAlgo == "pcoarsen") {
+      // P-Coarsening
+      UpdateFactoryManager_PCoarsen(paramList,defaultList,manager,levelID,keeps);
+    }
+
+    // === Semi-coarsening ===
+    UpdateFactoryManager_SemiCoarsen(paramList,defaultList,manager,levelID,keeps);
+
+    // === Restriction ===
+    UpdateFactoryManager_Restriction(paramList,defaultList,manager,levelID,keeps);
+
+    // === RAP ===
+    UpdateFactoryManager_RAP(paramList,defaultList,manager,levelID,keeps);
+
+    // === Coordinates ===
+    UpdateFactoryManager_Coordinates(paramList,defaultList,manager,levelID,keeps);
+
+    // === Pre-Repartition Keeps for Reuse ===
+    if ((reuseType == "RP" || reuseType == "RAP" || reuseType == "full") && levelID)
+      keeps.push_back(keep_pair("Nullspace", manager.GetFactory("Nullspace").get()));
+
+    if (reuseType == "RP" && levelID) {
+      keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
+      if (!this->implicitTranspose_)
+        keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
+    }
+    if ((reuseType == "tP" || reuseType == "RP" || reuseType == "emin") && useCoordinates_ && levelID)
+      keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
+
+    // === Repartitioning ===
+    UpdateFactoryManager_Repartition(paramList,defaultList,manager,levelID,keeps,nullSpaceFactory);
+
+    // === Final Keeps for Reuse ===
+    if ((reuseType == "RAP" || reuseType == "full") && levelID) {
+      keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
+      if (!this->implicitTranspose_)
+        keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
+      keeps.push_back(keep_pair("A", manager.GetFactory("A").get()));
+    }
+  }
+
+
+  // =====================================================================================================
+  // ========================================= Smoothers =================================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Smoothers(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
 
     // === Smoothing ===
     // FIXME: should custom smoother check default list too?
@@ -543,16 +641,16 @@ namespace MueLu {
 #ifdef HAVE_MUELU_INTREPID2
       // Propagate P-coarsening for Topo smoothing
       if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
-	// P-Coarsening by schedule (new interface)
-	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
-	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
+        // P-Coarsening by schedule (new interface)
+        // NOTE: levelID represents the *coarse* level in this case
+        Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
+        std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
 
-	if(levelID <  (int)pcoarsen_schedule.size()) {
-	  // Topo info for P-Coarsening
-	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
-	  preSmootherParams.set("pcoarsen: hi basis",lo);
-	}
+        if(levelID <  (int)pcoarsen_schedule.size()) {
+          // Topo info for P-Coarsening
+          std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+          preSmootherParams.set("pcoarsen: hi basis",lo);
+        }
       }
 #endif
 
@@ -590,16 +688,16 @@ namespace MueLu {
 #ifdef HAVE_MUELU_INTREPID2
       // Propagate P-coarsening for Topo smoothing
       if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
-	// P-Coarsening by schedule (new interface)
-	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
-	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
+        // P-Coarsening by schedule (new interface)
+        // NOTE: levelID represents the *coarse* level in this case
+        Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
+        std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
 
-	if(levelID <  (int)pcoarsen_schedule.size()) {
-	  // Topo info for P-Coarsening
-	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
-	  postSmootherParams.set("pcoarsen: hi basis",lo);
-	}
+        if(levelID <  (int)pcoarsen_schedule.size()) {
+          // Topo info for P-Coarsening
+          std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+          postSmootherParams.set("pcoarsen: hi basis",lo);
+        }
       }
 #endif
 
@@ -621,56 +719,7 @@ namespace MueLu {
       }
     }
 
-    // === Coarse solver ===
-    // FIXME: should custom coarse solver check default list too?
-    bool isCustomCoarseSolver =
-        paramList.isParameter("coarse: type")   ||
-        paramList.isParameter("coarse: params");
-    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "coarse: type", std::string, "none")) {
-      this->GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
-      manager.SetFactory("CoarseSolver", Teuchos::null);
-
-    } else if (isCustomCoarseSolver) {
-      // FIXME: get default values from the factory
-      // NOTE: none of the smoothers at the moment use parameter validation framework, so we
-      // cannot get the default values from it.
-      MUELU_SET_VAR_2LIST(paramList, defaultList, "coarse: type", std::string, coarseType);
-
-      int overlap = 0;
-      if (paramList.isParameter("coarse: overlap"))
-        overlap = paramList.get<int>("coarse: overlap");
-
-      ParameterList coarseParams;
-      if (paramList.isSublist("coarse: params"))
-        coarseParams = paramList.sublist("coarse: params");
-      else if (defaultList.isSublist("coarse: params"))
-        coarseParams = defaultList.sublist("coarse: params");
-
-      RCP<SmootherPrototype> coarseSmoother;
-      // TODO: this is not a proper place to check. If we consider direct solver to be a special
-      // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
-      // have a single factory responsible for those. Then, this check would belong there.
-      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
-          coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
-          coarseType == "Amesos" ||
-          coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
-          coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
-          coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION" ||
-          coarseType == "TOPOLOGICAL")
-        coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
-      else {
-#ifdef HAVE_MUELU_MATLAB
-        if (coarseType == "matlab")
-          coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
-        else
-#endif
-        coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
-      }
-
-      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
-    }
-
-    // The first clause is not necessary, but it is here for clarity
+   // The first clause is not necessary, but it is here for clarity
     // Smoothers are reused if smoother explicitly said to reuse them, or if
     // any other reuse option is enabled
     bool reuseSmoothers = (reuseType == "S" || reuseType != "none");
@@ -718,7 +767,70 @@ namespace MueLu {
       keeps.push_back(keep_pair("PreSmoother", manager.GetFactory("CoarseSolver").get()));
     }
 
-    // === Aggregation ===
+}
+
+
+  // =====================================================================================================
+  // ====================================== Coarse Solvers ===============================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_CoarseSolvers(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+    // FIXME: should custom coarse solver check default list too?
+    bool isCustomCoarseSolver =
+        paramList.isParameter("coarse: type")   ||
+        paramList.isParameter("coarse: params");
+    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "coarse: type", std::string, "none")) {
+      this->GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
+      manager.SetFactory("CoarseSolver", Teuchos::null);
+
+    } else if (isCustomCoarseSolver) {
+      // FIXME: get default values from the factory
+      // NOTE: none of the smoothers at the moment use parameter validation framework, so we
+      // cannot get the default values from it.
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "coarse: type", std::string, coarseType);
+
+      int overlap = 0;
+      if (paramList.isParameter("coarse: overlap"))
+        overlap = paramList.get<int>("coarse: overlap");
+
+      ParameterList coarseParams;
+      if (paramList.isSublist("coarse: params"))
+        coarseParams = paramList.sublist("coarse: params");
+      else if (defaultList.isSublist("coarse: params"))
+        coarseParams = defaultList.sublist("coarse: params");
+
+      RCP<SmootherPrototype> coarseSmoother;
+      // TODO: this is not a proper place to check. If we consider direct solver to be a special
+      // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
+      // have a single factory responsible for those. Then, this check would belong there.
+      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
+          coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
+          coarseType == "Amesos" ||
+          coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
+          coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
+          coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION" ||
+          coarseType == "TOPOLOGICAL")
+        coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
+      else {
+#ifdef HAVE_MUELU_MATLAB
+        if (coarseType == "matlab")
+          coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
+        else
+#endif
+        coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
+      }
+
+      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
+    }
+}
+
+  // =====================================================================================================
+  // ========================================= Smoothers =================================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Aggregation_TentativeP(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+
     // Aggregation graph
     RCP<Factory> dropFactory;
 
@@ -763,6 +875,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: error on nodes with no on-rank neighbors", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
       // make sure that the aggregation factory has all necessary data
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
@@ -803,254 +916,28 @@ namespace MueLu {
     ParameterList ptentParams;
     if(paramList.isSublist("matrixmatrix: kernel params"))   ptentParams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
     if(defaultList.isSublist("matrixmatrix: kernel params")) ptentParams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, ptentParams);
     Ptent->SetParameterList(ptentParams);
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
-    Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));    
+    Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
     manager.SetFactory("Ptent",     Ptent);
-
 
     if (reuseType == "tP" && levelID) {
       keeps.push_back(keep_pair("Nullspace", Ptent.get()));
       keeps.push_back(keep_pair("P",         Ptent.get()));
     }
+}
 
-    // Nullspace
-    MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
-    if (!have_userNS) {
-      nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
-      manager.SetFactory("Nullspace", nullSpace);
-    }
-
-    // === Prolongation ===
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab"
-                               && multigridAlgo != "pcoarsen", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
-#ifndef HAVE_MUELU_MATLAB
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
-        "Cannot use MATLAB prolongator factory - MueLu was not configured with MATLAB support.");
-#endif
-#ifndef HAVE_MUELU_INTREPID2
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
-        "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
-#endif
-    if (have_userP) {
-      // User prolongator
-      manager.SetFactory("P", NoFactory::getRCP());
-    } else if (multigridAlgo == "unsmoothed") {
-      // Unsmoothed aggregation
-      manager.SetFactory("P", Ptent);
-    } else if (multigridAlgo == "sa") {
-      // Smoothed aggregation
-      MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
-      ParameterList Pparams;
-      if(paramList.isSublist("matrixmatrix: kernel params"))   Pparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
-      if(defaultList.isSublist("matrixmatrix: kernel params")) Pparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
-      P->SetParameterList(Pparams);
-
-      // Filtering
-      if (useFiltering) {
-        MUELU_KOKKOS_FACTORY(filterFactory, FilteredAFactory, FilteredAFactory_kokkos);
-        ParameterList fParams;
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, fParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
-        filterFactory->SetParameterList(fParams);
-        filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
-        // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
-        filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
-        P->SetFactory("A", filterFactory);
-      }
-
-      P->SetFactory("P", manager.GetFactory("Ptent"));
-      manager.SetFactory("P", P);
-
-      if (reuseType == "tP" && !filteringChangesMatrix)
-        keeps.push_back(keep_pair("AP reuse data", P.get()));
-
-    } else if (multigridAlgo == "emin") {
-      MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
-      TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument,
-                                 "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
-      // Pattern
-      RCP<PatternFactory> patternFactory = rcp(new PatternFactory());
-      ParameterList patternParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: pattern order", int, patternParams);
-      patternFactory->SetParameterList(patternParams);
-      patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
-      manager.SetFactory("Ppattern", patternFactory);
-
-      // Constraint
-      RCP<ConstraintFactory> constraintFactory = rcp(new ConstraintFactory());
-      constraintFactory->SetFactory("Ppattern",        manager.GetFactory("Ppattern"));
-      constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
-      manager.SetFactory("Constraint", constraintFactory);
-
-      // Energy minimization
-      RCP<EminPFactory> P = rcp(new EminPFactory());
-      ParameterList Pparams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations",           int, Pparams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
-      if (reuseType == "emin") {
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations",   int, Pparams);
-        Pparams.set("Keep P0",          true);
-        Pparams.set("Keep Constraint0", true);
-      }
-      P->SetParameterList(Pparams);
-      P->SetFactory("P",          manager.GetFactory("Ptent"));
-      P->SetFactory("Constraint", manager.GetFactory("Constraint"));
-      manager.SetFactory("P", P);
-
-    } else if (multigridAlgo == "pg") {
-      TEUCHOS_TEST_FOR_EXCEPTION(this->implicitTranspose_, Exceptions::RuntimeError,
-            "Implicit transpose not supported with Petrov-Galerkin smoothed transfer operators: Set \"transpose: use implicit\" to false!\n" \
-            "Petrov-Galerkin transfer operator smoothing for non-symmetric problems requires a separate handling of the restriction operator which " \
-            "does not allow the usage of implicit transpose easily.");
-
-      // Petrov-Galerkin
-      RCP<PgPFactory> P = rcp(new PgPFactory());
-      P->SetFactory("P", manager.GetFactory("Ptent"));
-      manager.SetFactory("P", P);
-    }
-#ifdef HAVE_MUELU_MATLAB
-    else if(multigridAlgo == "matlab") {
-      ParameterList Pparams = paramList.sublist("transfer: params");
-      RCP<TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node> > P = rcp(new TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
-      P->SetParameterList(Pparams);
-      P->SetFactory("P",manager.GetFactory("Ptent"));
-      manager.SetFactory("P", P);
-    }
-#endif
-#ifdef HAVE_MUELU_INTREPID2
-    else if(multigridAlgo == "pcoarsen") {
-      // This only makes sense to invoke from the default list.
-      if(defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
-	// P-Coarsening by schedule (new interface)
-	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
-	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
-
-	if(levelID >= (int)pcoarsen_schedule.size()) {
-	  // Smoothed aggregation
-	  // NOTE: This is copied directly from above.  Not sure this is the best idea.
-	  MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
-	  ParameterList Pparams;
-	  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
-	  P->SetParameterList(Pparams);
-	  // Filtering
-	  if (useFiltering) {
-	    MUELU_KOKKOS_FACTORY(filterFactory, FilteredAFactory, FilteredAFactory_kokkos);
-	    ParameterList fParams;
-	    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
-	    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, fParams);
-	    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
-	    filterFactory->SetParameterList(fParams);
-	    filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
-	    // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
-	    filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
-	    P->SetFactory("A", filterFactory);
-	  }
-	  P->SetFactory("P", manager.GetFactory("Ptent"));
-	  manager.SetFactory("P", P);
-
-	  if (reuseType == "tP" && !filteringChangesMatrix)
-	    keeps.push_back(keep_pair("AP reuse data", P.get()));
-	}
-	else {
-	  // P-Coarsening
-	  ParameterList Pparams;
-	  RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
-	  std::string hi;
-	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
-	  if(levelID!=0) hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
-	  else hi = lo;
-	  Pparams.set("pcoarsen: hi basis",hi);
-	  Pparams.set("pcoarsen: lo basis",lo);
-	  P->SetParameterList(Pparams);
-	  manager.SetFactory("P", P);
-	  // Add special nullspace handling
-	  nullSpace->SetFactory("Nullspace", manager.GetFactory("P"));
-	  manager.SetFactory("Nullspace", nullSpace);
-	}
-      }
-      else {
-	// P-Coarsening by manual specification (old interface)
-	ParameterList Pparams;
-	RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
-	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: hi basis", std::string, Pparams);
-	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: lo basis", std::string, Pparams);
-	P->SetParameterList(Pparams);
-	manager.SetFactory("P", P);
-	// Add special nullspace handling
-	nullSpace->SetFactory("Nullspace", manager.GetFactory("P"));
-	manager.SetFactory("Nullspace", nullSpace);
-      }
-    }
-#endif
-
-    // === Semi-coarsening ===
-    RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
-    if (paramList.isParameter("semicoarsen: number of levels") &&
-        paramList.get<int>("semicoarsen: number of levels") > 0) {
-
-      ParameterList togglePParams;
-      ParameterList semicoarsenPParams;
-      ParameterList linedetectionParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int,         togglePParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate",     int,         semicoarsenPParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
-
-      semicoarsenFactory                             = rcp(new SemiCoarsenPFactory());
-      RCP<LineDetectionFactory> linedetectionFactory = rcp(new LineDetectionFactory());
-      RCP<TogglePFactory>       togglePFactory       = rcp(new TogglePFactory());
-
-      linedetectionFactory->SetParameterList(linedetectionParams);
-      semicoarsenFactory->SetParameterList(semicoarsenPParams);
-      togglePFactory->SetParameterList(togglePParams);
-      togglePFactory->AddCoarseNullspaceFactory(semicoarsenFactory);
-      togglePFactory->AddProlongatorFactory(semicoarsenFactory);
-      togglePFactory->AddPtentFactory(semicoarsenFactory);
-      togglePFactory->AddCoarseNullspaceFactory(manager.GetFactory("Ptent"));
-      togglePFactory->AddProlongatorFactory(manager.GetFactory("P"));
-      togglePFactory->AddPtentFactory(manager.GetFactory("Ptent"));
-
-      manager.SetFactory("CoarseNumZLayers", linedetectionFactory);
-      manager.SetFactory("LineDetection_Layers", linedetectionFactory);
-      manager.SetFactory("LineDetection_VertLineIds", linedetectionFactory);
-
-      manager.SetFactory("P",         togglePFactory);
-      manager.SetFactory("Ptent",     togglePFactory);
-      manager.SetFactory("Nullspace", togglePFactory);
-    }
-
-    // === Restriction ===
-    if (!this->implicitTranspose_) {
-      MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
-      if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
-        this->GetOStream(Warnings0) << "Switching \"problem: symmetric\" parameter to symmetric as multigrid algorithm. " << multigridAlgo << " is primarily supposed to be used for symmetric problems." << std::endl << std::endl;
-        this->GetOStream(Warnings0) << "Please note: if you are using \"unsmoothed\" transfer operators the \"problem: symmetric\" parameter has no real mathematical meaning, i.e. you can use it for non-symmetric" << std::endl;
-        this->GetOStream(Warnings0) << "problems, too. With \"problem: symmetric\"=\"symmetric\" you can use implicit transpose for building the restriction operators which may drastically reduce the amount of consumed memory." << std::endl;
-        isSymmetric = true;
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pg" && isSymmetric == true, Exceptions::RuntimeError,
-            "Petrov-Galerkin smoothed transfer operators are only allowed for non-symmetric problems: Set \"problem: symmetric\" to false!\n" \
-            "While PG smoothed transfer operators generally would also work for symmetric problems this is an unusual use case. " \
-            "You can use the factory-based xml interface though if you need PG-AMG for symmetric problems.");
-
-      if (have_userR) {
-        manager.SetFactory("R", NoFactory::getRCP());
-      } else {
-        RCP<Factory> R;
-        if (isSymmetric)  R = rcp(new TransPFactory());
-        else              R = rcp(new GenericRFactory());
-
-        R->SetFactory("P", manager.GetFactory("P"));
-        manager.SetFactory("R", R);
-      }
-
-    } else {
-      manager.SetFactory("R", Teuchos::null);
-    }
+  // =====================================================================================================
+  // ============================================ RAP ====================================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_RAP(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  bool have_userA = false;
+    if (paramList.isParameter("A")           && !paramList.get<RCP<Matrix> >     ("A")          .is_null()) have_userA  = true;
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
+    bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
 
     // === RAP ===
     RCP<RAPFactory> RAP;
@@ -1106,200 +993,461 @@ namespace MueLu {
         keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
       }
     }
+}
 
-    // === Coordinates ===
-    if (useCoordinates_) {
-      if (have_userCO) {
-        manager.SetFactory("Coordinates", NoFactory::getRCP());
+ // =====================================================================================================
+ // ======================================= Restriction ==============================================
+ // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Coordinates(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  bool have_userCO=false;
+  if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
 
-      } else {
-        MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
-        coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
-        coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
-        manager.SetFactory("Coordinates", coords);
+  if (useCoordinates_) {
+    if (have_userCO) {
+      manager.SetFactory("Coordinates", NoFactory::getRCP());
 
-        if (paramList.isParameter("semicoarsen: number of levels")) {
-          RCP<ToggleCoordinatesTransferFactory> tf = rcp(new ToggleCoordinatesTransferFactory());
-          tf->SetFactory("Chosen P", manager.GetFactory("P"));
-          tf->AddCoordTransferFactory(semicoarsenFactory);
-          tf->AddCoordTransferFactory(coords);
-          manager.SetFactory("Coordinates", tf);
+    } else {
+      MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
+      coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+      coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+      manager.SetFactory("Coordinates", coords);
 
-        }
-        RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
-      }
-    }
-
-    if ((reuseType == "RP" || reuseType == "RAP" || reuseType == "full") && levelID)
-      keeps.push_back(keep_pair("Nullspace", manager.GetFactory("Nullspace").get()));
-
-    if (reuseType == "RP" && levelID) {
-      keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
-      if (!this->implicitTranspose_)
-        keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
-    }
-    if ((reuseType == "tP" || reuseType == "RP" || reuseType == "emin") && useCoordinates_ && levelID)
-      keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
-
-    // === Repartitioning ===
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
-    if (enableRepart) {
-#ifdef HAVE_MPI
-      // Short summary of the issue: RebalanceTransferFactory shares ownership
-      // of "P" with SaPFactory, and therefore, changes the stored version.
-      // That means that if SaPFactory generated P, and stored it on the level,
-      // then after rebalancing the value in that storage changed. It goes
-      // against the concept of factories (I think), that every factory is
-      // responsible for its own objects, and they are immutable outside.
-      //
-      // In reuse, this is what happens: as we reuse Importer across setups,
-      // the order of factories changes, and coupled with shared ownership
-      // leads to problems.
-      // *First setup*
-      //    SaP               builds     P [and stores it]
-      //    TransP            builds     R [and stores it]
-      //    RAP               builds     A [and stores it]
-      //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (*)
-      //    RebalanceTransfer rebalances R
-      //    RebalanceAc       rebalances A
-      // *Second setup* ("RP" reuse)
-      //    RebalanceTransfer rebalances P [which is incorrect due to (*)]
-      //    RebalanceTransfer rebalances R
-      //    RAP               builds     A [which is incorrect due to (*)]
-      //    RebalanceAc       rebalances A [which throws due to map inconsistency]
-      //    ...
-      // *Second setup* ("tP" reuse)
-      //    SaP               builds     P [and stores it]
-      //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (**)
-      //    TransP            builds     R [which is incorrect due to (**)]
-      //    RebalanceTransfer rebalances R
-      //    ...
-      //
-      // Couple solutions to this:
-      //    1. [implemented] Requre "tP" and "PR" reuse to only be used with
-      //       implicit rebalancing.
-      //    2. Do deep copy of P, and changed domain map and importer there.
-      //       Need to investigate how expensive this is.
-      TEUCHOS_TEST_FOR_EXCEPTION(this->doPRrebalance_ && (reuseType == "tP" || reuseType == "RP"), Exceptions::InvalidArgument,
-                                 "Reuse types \"tP\" and \"PR\" require \"repartition: rebalance P and R\" set to \"false\"");
-
-      //TEUCHOS_TEST_FOR_EXCEPTION(aggType == "brick", Exceptions::InvalidArgument,
-      //                           "Aggregation type \"brick\" requires \"repartition: enable\" set to \"false\"");
-
-      MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
-      TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
-                                 "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
-
-      // RepartitionHeuristic
-      RCP<RepartitionHeuristicFactory> repartheurFactory = rcp(new RepartitionHeuristicFactory());
-      ParameterList repartheurParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartheurParams);
-      repartheurFactory->SetParameterList(repartheurParams);
-      repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
-      manager.SetFactory("number of partitions", repartheurFactory);
-
-      // Partitioner
-      RCP<Factory> partitioner;
-      if (partName == "zoltan") {
-#ifdef HAVE_MUELU_ZOLTAN
-        partitioner = rcp(new ZoltanInterface());
-        // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
-#else
-        throw Exceptions::RuntimeError("Zoltan interface is not available");
-#endif
-      } else if (partName == "zoltan2") {
-#ifdef HAVE_MUELU_ZOLTAN2
-        partitioner = rcp(new Zoltan2Interface());
-        ParameterList partParams;
-        RCP<const ParameterList> partpartParams = rcp(new ParameterList(paramList.sublist("repartition: params", false)));
-        partParams.set("ParameterList", partpartParams);
-        partitioner->SetParameterList(partParams);
-#else
-        throw Exceptions::RuntimeError("Zoltan2 interface is not available");
-#endif
-      }
-      partitioner->SetFactory("A",           manager.GetFactory("A"));
-      partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
-      partitioner->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
-      manager.SetFactory("Partition", partitioner);
-
-      // Repartitioner
-      RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
-      ParameterList repartParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: print partition distribution", bool, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts",                  bool, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values",              int, repartParams);
-      repartFactory->SetParameterList(repartParams);
-      repartFactory->SetFactory("A",         manager.GetFactory("A"));
-      repartFactory->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
-      repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
-      manager.SetFactory("Importer", repartFactory);
-      if (reuseType != "none" && reuseType != "S" && levelID)
-        keeps.push_back(keep_pair("Importer", manager.GetFactory("Importer").get()));
-
-      // Rebalanced A
-      RCP<RebalanceAcFactory> newA = rcp(new RebalanceAcFactory());
-      ParameterList rebAcParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rebAcParams);
-      newA->SetParameterList(rebAcParams);
-      newA->SetFactory("A",         manager.GetFactory("A"));
-      newA->SetFactory("Importer",  manager.GetFactory("Importer"));
-      manager.SetFactory("A", newA);
-
-      // Rebalanced P
-      RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
-      ParameterList newPparams;
-      newPparams.set("type",                           "Interpolation");
-      if (changedPRrebalance_)
-        newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
-      newP->  SetParameterList(newPparams);
-      newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
-      newP->  SetFactory("P",           manager.GetFactory("P"));
-      if (!paramList.isParameter("semicoarsen: number of levels"))
-        newP->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
-      else
-        newP->  SetFactory("Nullspace",   manager.GetFactory("P")); // TogglePFactory
-      newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
-      manager.SetFactory("P",           newP);
-      manager.SetFactory("Coordinates", newP);
-
-      // Rebalanced R
-      RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
-      ParameterList newRparams;
-      newRparams.set("type",                           "Restriction");
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
-      if (changedPRrebalance_)
-        newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
-      if (changedImplicitTranspose_)
-        newRparams.set("transpose: use implicit",        this->implicitTranspose_);
-      newR->  SetParameterList(newRparams);
-      newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
-      if (!this->implicitTranspose_) {
-        newR->SetFactory("R",              manager.GetFactory("R"));
-        manager.SetFactory("R",            newR);
-      }
-
-      // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
-      // level if a user does not do that. For all other levels it simply passes
-      // nullspace from a real factory to whoever needs it. If we don't use
-      // repartitioning, that factory is "TentativePFactory"; if we do, it is
-      // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
-      // the "Nullspace" of the manager
-      nullSpace->SetFactory("Nullspace", newP);
-#else
-      throw Exceptions::RuntimeError("No repartitioning available for a serial run");
-#endif
-    }
-    if ((reuseType == "RAP" || reuseType == "full") && levelID) {
-      keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
-      if (!this->implicitTranspose_)
-        keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
-      keeps.push_back(keep_pair("A", manager.GetFactory("A").get()));
+      RCP<RAPFactory> RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
+      RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
     }
   }
+}
+
+  // =====================================================================================================
+  // ======================================= Restriction ==============================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Restriction(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
+  bool have_userR=false;
+  if (paramList.isParameter("R")           && !paramList.get<RCP<Matrix> >     ("R")          .is_null()) have_userR  = true;
+   // === Restriction ===
+    if (!this->implicitTranspose_) {
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
+      if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
+        this->GetOStream(Warnings0) << "Switching \"problem: symmetric\" parameter to symmetric as multigrid algorithm. " << multigridAlgo << " is primarily supposed to be used for symmetric problems." << std::endl << std::endl;
+        this->GetOStream(Warnings0) << "Please note: if you are using \"unsmoothed\" transfer operators the \"problem: symmetric\" parameter has no real mathematical meaning, i.e. you can use it for non-symmetric" << std::endl;
+        this->GetOStream(Warnings0) << "problems, too. With \"problem: symmetric\"=\"symmetric\" you can use implicit transpose for building the restriction operators which may drastically reduce the amount of consumed memory." << std::endl;
+        isSymmetric = true;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pg" && isSymmetric == true, Exceptions::RuntimeError,
+            "Petrov-Galerkin smoothed transfer operators are only allowed for non-symmetric problems: Set \"problem: symmetric\" to false!\n" \
+            "While PG smoothed transfer operators generally would also work for symmetric problems this is an unusual use case. " \
+            "You can use the factory-based xml interface though if you need PG-AMG for symmetric problems.");
+
+      if (have_userR) {
+        manager.SetFactory("R", NoFactory::getRCP());
+      } else {
+        RCP<Factory> R;
+        if (isSymmetric)  R = rcp(new TransPFactory());
+        else              R = rcp(new GenericRFactory());
+
+        R->SetFactory("P", manager.GetFactory("P"));
+        manager.SetFactory("R", R);
+      }
+
+    } else {
+      manager.SetFactory("R", Teuchos::null);
+    }
+}
+
+  // =====================================================================================================
+  // ========================================= Repartition ==============================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Repartition(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const {
+  // === Repartitioning ===
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
+  if (enableRepart) {
+#ifdef HAVE_MPI
+    // Short summary of the issue: RebalanceTransferFactory shares ownership
+    // of "P" with SaPFactory, and therefore, changes the stored version.
+    // That means that if SaPFactory generated P, and stored it on the level,
+    // then after rebalancing the value in that storage changed. It goes
+    // against the concept of factories (I think), that every factory is
+    // responsible for its own objects, and they are immutable outside.
+    //
+    // In reuse, this is what happens: as we reuse Importer across setups,
+    // the order of factories changes, and coupled with shared ownership
+    // leads to problems.
+    // *First setup*
+    //    SaP               builds     P [and stores it]
+    //    TransP            builds     R [and stores it]
+    //    RAP               builds     A [and stores it]
+    //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (*)
+    //    RebalanceTransfer rebalances R
+    //    RebalanceAc       rebalances A
+    // *Second setup* ("RP" reuse)
+    //    RebalanceTransfer rebalances P [which is incorrect due to (*)]
+    //    RebalanceTransfer rebalances R
+    //    RAP               builds     A [which is incorrect due to (*)]
+    //    RebalanceAc       rebalances A [which throws due to map inconsistency]
+    //    ...
+    // *Second setup* ("tP" reuse)
+    //    SaP               builds     P [and stores it]
+    //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (**)
+    //    TransP            builds     R [which is incorrect due to (**)]
+    //    RebalanceTransfer rebalances R
+    //    ...
+    //
+    // Couple solutions to this:
+    //    1. [implemented] Requre "tP" and "PR" reuse to only be used with
+    //       implicit rebalancing.
+    //    2. Do deep copy of P, and changed domain map and importer there.
+    //       Need to investigate how expensive this is.
+    TEUCHOS_TEST_FOR_EXCEPTION(this->doPRrebalance_ && (reuseType == "tP" || reuseType == "RP"), Exceptions::InvalidArgument,
+                               "Reuse types \"tP\" and \"PR\" require \"repartition: rebalance P and R\" set to \"false\"");
+
+    //TEUCHOS_TEST_FOR_EXCEPTION(aggType == "brick", Exceptions::InvalidArgument,
+    //                           "Aggregation type \"brick\" requires \"repartition: enable\" set to \"false\"");
+
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
+    TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
+                               "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
+
+    // RepartitionHeuristic
+    RCP<RepartitionHeuristicFactory> repartheurFactory = rcp(new RepartitionHeuristicFactory());
+    ParameterList repartheurParams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartheurParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartheurParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartheurParams);
+    repartheurFactory->SetParameterList(repartheurParams);
+    repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
+    manager.SetFactory("number of partitions", repartheurFactory);
+
+    // Partitioner
+    RCP<Factory> partitioner;
+    if (partName == "zoltan") {
+#ifdef HAVE_MUELU_ZOLTAN
+      partitioner = rcp(new ZoltanInterface());
+      // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
+#else
+      throw Exceptions::RuntimeError("Zoltan interface is not available");
+#endif
+    } else if (partName == "zoltan2") {
+#ifdef HAVE_MUELU_ZOLTAN2
+      partitioner = rcp(new Zoltan2Interface());
+      ParameterList partParams;
+      RCP<const ParameterList> partpartParams = rcp(new ParameterList(paramList.sublist("repartition: params", false)));
+      partParams.set("ParameterList", partpartParams);
+      partitioner->SetParameterList(partParams);
+#else
+      throw Exceptions::RuntimeError("Zoltan2 interface is not available");
+#endif
+    }
+    partitioner->SetFactory("A",           manager.GetFactory("A"));
+    partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
+    partitioner->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+    manager.SetFactory("Partition", partitioner);
+
+    // Repartitioner
+    RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
+    ParameterList repartParams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: print partition distribution", bool, repartParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts",                  bool, repartParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values",              int, repartParams);
+    repartFactory->SetParameterList(repartParams);
+    repartFactory->SetFactory("A",         manager.GetFactory("A"));
+    repartFactory->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
+    repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
+    manager.SetFactory("Importer", repartFactory);
+    if (reuseType != "none" && reuseType != "S" && levelID)
+      keeps.push_back(keep_pair("Importer", manager.GetFactory("Importer").get()));
+
+    // Rebalanced A
+    RCP<RebalanceAcFactory> newA = rcp(new RebalanceAcFactory());
+    ParameterList rebAcParams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rebAcParams);
+    newA->SetParameterList(rebAcParams);
+    newA->SetFactory("A",         manager.GetFactory("A"));
+    newA->SetFactory("Importer",  manager.GetFactory("Importer"));
+    manager.SetFactory("A", newA);
+
+    // Rebalanced P
+    RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
+    ParameterList newPparams;
+    newPparams.set("type",                           "Interpolation");
+    if (changedPRrebalance_)
+      newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
+    newP->  SetParameterList(newPparams);
+    newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
+    newP->  SetFactory("P",           manager.GetFactory("P"));
+    if (!paramList.isParameter("semicoarsen: number of levels"))
+      newP->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
+    else
+      newP->  SetFactory("Nullspace",   manager.GetFactory("P")); // TogglePFactory
+    newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+    manager.SetFactory("P",           newP);
+    manager.SetFactory("Coordinates", newP);
+
+    // Rebalanced R
+    RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
+    ParameterList newRparams;
+    newRparams.set("type",                           "Restriction");
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
+    if (changedPRrebalance_)
+      newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+    if (changedImplicitTranspose_)
+      newRparams.set("transpose: use implicit",        this->implicitTranspose_);
+    newR->  SetParameterList(newRparams);
+    newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
+    if (!this->implicitTranspose_) {
+      newR->SetFactory("R",              manager.GetFactory("R"));
+      manager.SetFactory("R",            newR);
+    }
+
+    // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
+    // level if a user does not do that. For all other levels it simply passes
+    // nullspace from a real factory to whoever needs it. If we don't use
+    // repartitioning, that factory is "TentativePFactory"; if we do, it is
+    // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
+    // the "Nullspace" of the manager
+    // NOTE: This really needs to be set on the *NullSpaceFactory*, not manager.get("Nullspace").
+    nullSpaceFactory->SetFactory("Nullspace", newP);
+#else
+    throw Exceptions::RuntimeError("No repartitioning available for a serial run");
+#endif
+  }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Nullspace(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps,RCP<Factory> & nullSpaceFactory) const {
+  // Nullspace
+  MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
+  bool have_userNS = false;
+  if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
+  if (!have_userNS) {
+    nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
+    manager.SetFactory("Nullspace", nullSpace);
+  }
+  nullSpaceFactory = nullSpace;
+}
+
+
+  // =====================================================================================================
+  // ================================= Algorithm: SemiCoarsening =========================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_SemiCoarsen(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+
+   // === Semi-coarsening ===
+    RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
+    if (paramList.isParameter("semicoarsen: number of levels") &&
+        paramList.get<int>("semicoarsen: number of levels") > 0) {
+
+      ParameterList togglePParams;
+      ParameterList semicoarsenPParams;
+      ParameterList linedetectionParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int,         togglePParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate",     int,         semicoarsenPParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
+
+      semicoarsenFactory                             = rcp(new SemiCoarsenPFactory());
+      RCP<LineDetectionFactory> linedetectionFactory = rcp(new LineDetectionFactory());
+      RCP<TogglePFactory>       togglePFactory       = rcp(new TogglePFactory());
+
+      linedetectionFactory->SetParameterList(linedetectionParams);
+      semicoarsenFactory->SetParameterList(semicoarsenPParams);
+      togglePFactory->SetParameterList(togglePParams);
+      togglePFactory->AddCoarseNullspaceFactory(semicoarsenFactory);
+      togglePFactory->AddProlongatorFactory(semicoarsenFactory);
+      togglePFactory->AddPtentFactory(semicoarsenFactory);
+      togglePFactory->AddCoarseNullspaceFactory(manager.GetFactory("Ptent"));
+      togglePFactory->AddProlongatorFactory(manager.GetFactory("P"));
+      togglePFactory->AddPtentFactory(manager.GetFactory("Ptent"));
+
+      manager.SetFactory("CoarseNumZLayers", linedetectionFactory);
+      manager.SetFactory("LineDetection_Layers", linedetectionFactory);
+      manager.SetFactory("LineDetection_VertLineIds", linedetectionFactory);
+
+      manager.SetFactory("P",         togglePFactory);
+      manager.SetFactory("Ptent",     togglePFactory);
+      manager.SetFactory("Nullspace", togglePFactory);
+    }
+
+
+    if (paramList.isParameter("semicoarsen: number of levels")) {
+      RCP<ToggleCoordinatesTransferFactory> tf = rcp(new ToggleCoordinatesTransferFactory());
+      tf->SetFactory("Chosen P", manager.GetFactory("P"));
+      tf->AddCoordTransferFactory(semicoarsenFactory);
+      MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
+      coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+      coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+      tf->AddCoordTransferFactory(coords);
+      manager.SetFactory("Coordinates", tf);
+    }
+}
+
+
+  // =====================================================================================================
+  // ================================== Algorithm: P-Coarsening ==========================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_PCoarsen(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+#ifdef HAVE_MUELU_INTREPID2
+  // This only makes sense to invoke from the default list.
+  if(defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
+    // P-Coarsening by schedule (new interface)
+    // NOTE: levelID represents the *coarse* level in this case
+    Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
+    std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
+
+    if(levelID >= (int)pcoarsen_schedule.size()) {
+      // Past the p-coarsening levels, we do Smoothed Aggregation
+      // NOTE: We should probably consider allowing other options past p-coarsening
+      UpdateFactoryManager_SA(paramList,defaultList, manager,levelID,keeps);
+    }
+    else {
+      // P-Coarsening
+      ParameterList Pparams;
+      RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
+      std::string hi;
+      std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+      if(levelID!=0) hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
+      else hi = lo;
+      Pparams.set("pcoarsen: hi basis",hi);
+      Pparams.set("pcoarsen: lo basis",lo);
+      P->SetParameterList(Pparams);
+      manager.SetFactory("P", P);
+      // Add special nullspace handling
+      Teuchos::rcp_dynamic_cast<Factory>(manager.GetFactoryNonConst("Nullspace"))->SetFactory("Nullspace",manager.GetFactory("P"));
+    }
+  }
+  else {
+    // P-Coarsening by manual specification (old interface)
+    ParameterList Pparams;
+    RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: hi basis", std::string, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: lo basis", std::string, Pparams);
+    P->SetParameterList(Pparams);
+    manager.SetFactory("P", P);
+    // Add special nullspace handling
+    Teuchos::rcp_dynamic_cast<Factory>(manager.GetFactoryNonConst("Nullspace"))->SetFactory("Nullspace",manager.GetFactory("P"));
+  }
+
+#endif
+}
+
+
+  // =====================================================================================================
+  // ============================== Algorithm: Smoothed Aggregation ======================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_SA(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+  bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
+
+  // Smoothed aggregation
+  MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
+  ParameterList Pparams;
+  if(paramList.isSublist("matrixmatrix: kernel params"))   Pparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
+  if(defaultList.isSublist("matrixmatrix: kernel params")) Pparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
+  P->SetParameterList(Pparams);
+
+  // Filtering
+  if (useFiltering) {
+    MUELU_KOKKOS_FACTORY(filterFactory, FilteredAFactory, FilteredAFactory_kokkos);
+    ParameterList fParams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, fParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
+    filterFactory->SetParameterList(fParams);
+    filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
+    // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
+    filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
+    P->SetFactory("A", filterFactory);
+  }
+
+  P->SetFactory("P", manager.GetFactory("Ptent"));
+  manager.SetFactory("P", P);
+
+  if (reuseType == "tP" && !filteringChangesMatrix)
+    keeps.push_back(keep_pair("AP reuse data", P.get()));
+}
+
+  // =====================================================================================================
+  // =============================== Algorithm: Energy Minimization ======================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Emin(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+  TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument,
+                             "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
+  // Pattern
+  RCP<PatternFactory> patternFactory = rcp(new PatternFactory());
+  ParameterList patternParams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: pattern order", int, patternParams);
+  patternFactory->SetParameterList(patternParams);
+  patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
+  manager.SetFactory("Ppattern", patternFactory);
+
+  // Constraint
+  RCP<ConstraintFactory> constraintFactory = rcp(new ConstraintFactory());
+  constraintFactory->SetFactory("Ppattern",        manager.GetFactory("Ppattern"));
+  constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
+  manager.SetFactory("Constraint", constraintFactory);
+
+  // Energy minimization
+  RCP<EminPFactory> P = rcp(new EminPFactory());
+  ParameterList Pparams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations",           int, Pparams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
+  if (reuseType == "emin") {
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations",   int, Pparams);
+    Pparams.set("Keep P0",          true);
+    Pparams.set("Keep Constraint0", true);
+  }
+  P->SetParameterList(Pparams);
+  P->SetFactory("P",          manager.GetFactory("Ptent"));
+  P->SetFactory("Constraint", manager.GetFactory("Constraint"));
+  manager.SetFactory("P", P);
+}
+
+  // =====================================================================================================
+  // ================================= Algorithm: Petrov-Galerkin ========================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_PG(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  TEUCHOS_TEST_FOR_EXCEPTION(this->implicitTranspose_, Exceptions::RuntimeError,
+                             "Implicit transpose not supported with Petrov-Galerkin smoothed transfer operators: Set \"transpose: use implicit\" to false!\n" \
+                             "Petrov-Galerkin transfer operator smoothing for non-symmetric problems requires a separate handling of the restriction operator which " \
+                             "does not allow the usage of implicit transpose easily.");
+
+  // Petrov-Galerkin
+  RCP<PgPFactory> P = rcp(new PgPFactory());
+  P->SetFactory("P", manager.GetFactory("Ptent"));
+  manager.SetFactory("P", P);
+}
+
+
+  // =====================================================================================================
+  // ====================================== Algorithm: Matlab ============================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Matlab(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+#ifdef HAVE_MUELU_MATLAB
+  ParameterList Pparams = paramList.sublist("transfer: params");
+  RCP<TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node> > P = rcp(new TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+  P->SetParameterList(Pparams);
+  P->SetFactory("P",manager.GetFactory("Ptent"));
+  manager.SetFactory("P", P);
+#endif
+}
+
+
+
 #undef MUELU_SET_VAR_2LIST
 #undef MUELU_TEST_AND_SET_VAR
 #undef MUELU_TEST_AND_SET_PARAM_2LIST
@@ -1451,6 +1599,22 @@ namespace MueLu {
       if (hieraList.isParameter("transpose: use implicit")) {
         this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
         hieraList.remove("transpose: use implicit");
+      }
+
+      if (hieraList.isParameter("coarse grid correction scaling factor")) {
+        this->scalingFactor_ = hieraList.get<double>("coarse grid correction scaling factor");
+        hieraList.remove("coarse grid correction scaling factor");
+      }
+
+      // Translate cycle type parameter
+      if (hieraList.isParameter("cycle type")) {
+        std::map<std::string,CycleType> cycleMap;
+        cycleMap["V"] = VCYCLE;
+        cycleMap["W"] = WCYCLE;
+
+        std::string cycleType = hieraList.get<std::string>("cycle type");
+        TEUCHOS_TEST_FOR_EXCEPTION(cycleMap.count(cycleType) == 0, Exceptions::RuntimeError, "Invalid cycle type: \"" << cycleType << "\"");
+        this->Cycle_ = cycleMap[cycleType];
       }
 
       //TODO Move this its own class or MueLu::Utils?
@@ -1772,6 +1936,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
     H.SetCycle(Cycle_);
+    H.SetProlongatorScalingFactor(scalingFactor_);
     HierarchyManager::SetupHierarchy(H);
   }
 

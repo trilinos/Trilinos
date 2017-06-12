@@ -244,6 +244,9 @@ namespace MueLu {
     //! Supports VCYCLE and WCYCLE types.
     void      SetCycle(CycleType Cycle)        { Cycle_ = Cycle; }
 
+    //! Specify damping factor alpha such that x = x + alpha*P*c, where c is the coarse grid correction.
+    void SetProlongatorScalingFactor(double scalingFactor) { scalingFactor_ = scalingFactor; }
+
     /*!
       @brief Apply the multigrid preconditioner.
 
@@ -362,6 +365,9 @@ namespace MueLu {
 
     // V- or W-cycle
     CycleType Cycle_;
+
+    // Scaling factor to be applied to coarse grid correction.
+    double scalingFactor_;
 
     // Epetra/Tpetra mode
     Xpetra::UnderlyingLib lib_;

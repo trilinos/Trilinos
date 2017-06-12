@@ -15,6 +15,7 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
       KLU2_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
+    NUM_MPI_PROCS 2
     CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
     )
@@ -47,8 +48,32 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
       Superlu_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
+    NUM_MPI_PROCS 2
     CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
+    )
+
+ENDIF()
+
+
+##### Umfpack Tests #####
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_UMFPACK)
+IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyUmfpackFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES umfpack_test.xml
+    EXEDEPS Solver_Test
+    )
+
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Umfpack_Solver_Test
+    ARGS "--xml-params=umfpack_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    COMM serial mpi
     )
 
 ENDIF()
@@ -140,6 +165,7 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
       Basker_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
+    NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
     )
     

@@ -65,6 +65,7 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate(
     const inputViewType input,
     const ordinal_type order ) {
 
+  constexpr ordinal_type spaceDim =3;
   constexpr ordinal_type maxNumPts = Parameters::MaxNumPtsPerBasisEval;
 
   typedef typename outputViewType::value_type value_type;
@@ -80,52 +81,9 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate(
   // z(i,0) --> (2.0 * z(i,0) - 1.0)
   // z(i,1) --> (2.0 * z(i,1) - 1.0)
 
-
-  /** \brief function for indexing from orthogonal expansion indices into linear space
-      p+q+r = the degree of the polynomial.
-      \param p [in] - the first index
-      \param q [in] - the second index
-      \param r [in] - the third index */
-  auto idx = [](const ordinal_type p,
-      const ordinal_type q,
-      const ordinal_type r) {
-      return (p+q+r)*(p+q+r+1)*(p+q+r+2)/6+(q+r)*(q+r+1)/2+r;
-  };
-  
-    /** \brief function for computing the Jacobi recurrence coefficients so that
-      \param alpha [in] - the first Jacobi weight
-      \param beta  [in] - the second Jacobi weight
-      \param n     [n]  - the polynomial degree
-      \param an    [out] - the a weight for recurrence
-      \param bn    [out] - the b weight for recurrence
-      \param cn    [out] - the c weight for recurrence
-
-      The recurrence is
-      \f[
-      P^{\alpha,\beta}_{n+1} = \left( a_n + b_n x\right) P^{\alpha,\beta}_n - c_n P^{\alpha,\beta}_{n-1}
-      \f],
-      where
-      \f[
-      P^{\alpha,\beta}_0 = 1
-      \f]
-  */
-  auto jrc = [](const value_type alpha,
-      const value_type beta ,
-      const ordinal_type n ,
-            value_type  &an,
-            value_type  &bn,
-            value_type  &cn) {
-    an = ( (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) /
-        (2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) ) );
-    bn = ( (alpha*alpha-beta*beta)*(2.0*n+1.0+alpha+beta) /
-        (2.0*(n+1.0)*(2.0*n+alpha+beta)*(n+1.0+alpha+beta) ) );
-    cn = ( (n+alpha)*(n+beta)*(2.0*n+2.0+alpha+beta) /
-        ( (n+1.0)*(n+1.0+alpha+beta)*(2.0*n+alpha+beta) ) );
-  };
-
   // set D^{0,0,0} = 1.0
   {
-    const ordinal_type loc = idx(0,0,0);
+    const ordinal_type loc = Intrepid2::getPnEnumeration<spaceDim>(0,0,0);
     for (ordinal_type i=0;i<npts;++i) {
       output0(loc, i) = 1.0;
       if(hasDeriv) {
@@ -163,7 +121,7 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate(
 
     // set D^{1,0,0} = f1
     {
-      const ordinal_type loc = idx(1,0,0);
+      const ordinal_type loc = Intrepid2::getPnEnumeration<spaceDim>(1,0,0);
       for (ordinal_type i=0;i<npts;++i) {
         output0(loc, i) = f1[i];
         if(hasDeriv) {
@@ -178,9 +136,9 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate(
     // D^{p+1,0,0}
     for (ordinal_type p=1;p<order;p++) {
       const ordinal_type
-      loc = idx(p,0,0),
-      loc_p1 = idx(p+1,0,0),
-      loc_m1 = idx(p-1,0,0);
+      loc = Intrepid2::getPnEnumeration<spaceDim>(p,0,0),
+      loc_p1 = Intrepid2::getPnEnumeration<spaceDim>(p+1,0,0),
+      loc_m1 = Intrepid2::getPnEnumeration<spaceDim>(p-1,0,0);
 
       const value_type
       a = (2.0*p+1.0)/(1.0+p),
@@ -203,8 +161,8 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate(
     // D^{p,1,0}
     for (ordinal_type p=0;p<order;++p) {
       const ordinal_type
-      loc_p_0 = idx(p,0,0),
-      loc_p_1 = idx(p,1,0);
+      loc_p_0 = Intrepid2::getPnEnumeration<spaceDim>(p,0,0),
+      loc_p_1 = Intrepid2::getPnEnumeration<spaceDim>(p,1,0);
 
       for (ordinal_type i=0;i<npts;++i) {
         const value_type coeff = (2.0 * p + 3.0) * z(i,1) + z(i,2)-1.0;
@@ -223,12 +181,12 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate(
     for (ordinal_type p=0;p<order-1;++p)
       for (ordinal_type q=1;q<order-p;++q) {
         const ordinal_type
-        loc_p_qp1 = idx(p,q+1,0),
-        loc_p_q = idx(p,q,0),
-        loc_p_qm1 = idx(p,q-1,0);
+        loc_p_qp1 = Intrepid2::getPnEnumeration<spaceDim>(p,q+1,0),
+        loc_p_q = Intrepid2::getPnEnumeration<spaceDim>(p,q,0),
+        loc_p_qm1 = Intrepid2::getPnEnumeration<spaceDim>(p,q-1,0);
 
         value_type a,b,c, coeff, dcoeff_1, dcoeff_2;
-        jrc((value_type)(2*p+1),(value_type)0,q,a,b,c);
+        Intrepid2::getJacobyRecurrenceCoeffs(a,b,c, 2*p+1,0,q);
         for (ordinal_type i=0;i<npts;++i) {
           coeff = a * f3[i] + b * f4[i];
           dcoeff_1 = a * df3_1;
@@ -252,8 +210,8 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate(
       for (ordinal_type q=0;q<order-p;++q) {
 
       const ordinal_type
-      loc_p_q_0 = idx(p,q,0),
-      loc_p_q_1 = idx(p,q,1);
+      loc_p_q_0 = Intrepid2::getPnEnumeration<spaceDim>(p,q,0),
+      loc_p_q_1 = Intrepid2::getPnEnumeration<spaceDim>(p,q,1);
 
       for (ordinal_type i=0;i<npts;++i) {
         const value_type coeff =  2.0 * ( 2.0 + q + p ) * z(i,2) - 1.0;
@@ -272,12 +230,12 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate(
       for (ordinal_type q=0;q<order-p-1;++q)
         for (ordinal_type r=1;r<order-p-q;++r) {
         const ordinal_type
-        loc_p_q_rp1 = idx(p,q,r+1),
-        loc_p_q_r = idx(p,q,r),
-        loc_p_q_rm1 = idx(p,q,r-1);
+        loc_p_q_rp1 = Intrepid2::getPnEnumeration<spaceDim>(p,q,r+1),
+        loc_p_q_r = Intrepid2::getPnEnumeration<spaceDim>(p,q,r),
+        loc_p_q_rm1 = Intrepid2::getPnEnumeration<spaceDim>(p,q,r-1);
 
         value_type a,b,c, coeff;
-        jrc((value_type)(2*p+2*q+2),(value_type)0,r,a,b,c);
+        Intrepid2::getJacobyRecurrenceCoeffs(a,b,c, 2*p+2*q+2,0,r);
         for (ordinal_type i=0;i<npts;++i) {
           coeff = 2.0 * a * z(i,2) - a + b;
           output0(loc_p_q_rp1,i) =  coeff * output0(loc_p_q_r,i) - c * output0(loc_p_q_rm1,i) ;
@@ -295,7 +253,7 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate(
   for (ordinal_type p=0;p<=order;++p)
     for (ordinal_type q=0;q<=order-p;++q)
       for (ordinal_type r=0;r<=order-p-q;++r) {
-        ordinal_type loc_p_q_r = idx(p,q,r);
+        ordinal_type loc_p_q_r = Intrepid2::getPnEnumeration<spaceDim>(p,q,r);
         value_type scal = std::sqrt( (p+0.5)*(p+q+1.0)*(p+q+r+1.5) );
         for (ordinal_type i=0;i<npts;++i) {
           output0(loc_p_q_r,i) *= scal;
@@ -320,24 +278,24 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,1>::generate(
   typedef typename outputViewType::pointer_type pointer_type;
   typedef typename Kokkos::DynRankView<value_type, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
 
-  constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)*(Parameters::MaxOrder+3)/6;
-  constexpr ordinal_type elemDim = 3;
+  constexpr ordinal_type spaceDim = 3;
+  constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
   const ordinal_type
   npts = input.dimension(0),
   card = output.dimension(0);
 
   // use stack buffer
-  value_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][elemDim+1]; //elemDim for derivatives, 1 for value
-  //outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, elemDim+1);
+  value_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][spaceDim+1]; //spaceDim for derivatives, 1 for value
+  //outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, spaceDim+1);
 
   typedef typename Kokkos::View<value_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outHackViewType; // Issue trying to do this directly with DynRankView - no matching ctor
-  outHackViewType hack_view( (pointer_type)&outBuf[0][0][0], card, npts, elemDim+1); // As a hack, wrapped with a View then wrapped the View with a DynRankView
+  outHackViewType hack_view( (pointer_type)&outBuf[0][0][0], card, npts, spaceDim+1); // As a hack, wrapped with a View then wrapped the View with a DynRankView
   outViewType out(hack_view);
 
   OrthPolynomialTet<outViewType,inputViewType,hasDeriv,0>::generate(out, input, order);
   for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
-        for (ordinal_type k=0;k<elemDim;++k)
+        for (ordinal_type k=0;k<spaceDim;++k)
           output(i,j,k) = out(i,j,k+1);
 }
 
@@ -352,42 +310,30 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,n>::generate(
     const inputViewType input,
     const ordinal_type order ) {
 
-  /** \brief function for multi-index \alpha = (p,q,r) into linear space.
-      Works for a given |\alpha| = p+q+r, and gives back linear indexing from 0 to (|\alpha|+1)(|\alpha|+2)/2-1
-      p+q+r = the degree of the polynomial.
-      \param p [in] - the first index  (not used)
-      \param q [in] - the second index
-      \param r [in] - the third index*/
-  auto idx = [](const ordinal_type ,
-      const ordinal_type q,
-      const ordinal_type r) {
-      return (q+r)*(q+r+1)/2+r;
-  };
-
-  constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)*(Parameters::MaxOrder+3)/6;
-  constexpr ordinal_type elemDim = 3;
+  constexpr ordinal_type spaceDim = 3;
+  constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
 
   typedef typename outputViewType::value_type value_type;
-  typedef Sacado::Fad::SFad<value_type,elemDim> fad_type;
+  typedef Sacado::Fad::SFad<value_type,spaceDim> fad_type;
 
   const ordinal_type
   npts = input.dimension(0),
   card = output.dimension(0);
 
   // use stack buffer
-  fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][elemDim],
-           outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n];
+  fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][spaceDim],
+           outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n*(n+1)/2];
 
   typedef typename Kokkos::View<fad_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
   typedef typename Kokkos::View<fad_type**, Kokkos::Impl::ActiveExecutionMemorySpace> inViewType;
 
-  inViewType in((value_type*)(&inBuf[0][0]), npts, elemDim);
+  inViewType in((value_type*)(&inBuf[0][0]), npts, spaceDim);
   outViewType out((value_type*)(&outBuf[0][0][0]), card, npts, n*(n+1)/2);
 
   for (ordinal_type i=0;i<npts;++i)
-    for (ordinal_type j=0;j<elemDim;++j) {
+    for (ordinal_type j=0;j<spaceDim;++j) {
       in(i,j) = input(i,j);
-      in(i,j).diff(j,elemDim);
+      in(i,j).diff(j,spaceDim);
     }
 
   OrthPolynomialTet<outViewType,inViewType,hasDeriv,n-1>::generate(out, in, order);
@@ -396,27 +342,28 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,n>::generate(
       for (ordinal_type i_dx = 0; i_dx <= n; ++i_dx)
         for (ordinal_type i_dy = 0; i_dy <= n-i_dx; ++i_dy) {
           ordinal_type i_dz = n - i_dx - i_dy;
-          ordinal_type i_Dn = idx(i_dx,i_dy,i_dz);
+          ordinal_type i_Dn = Intrepid2::getDkEnumeration<spaceDim>(i_dx,i_dy,i_dz);
           if(i_dx > 0) {
           //n=2:  (f_x)_x, (f_y)_x, (f_z)_x
           //n=3:  (f_xx)_x, (f_xy)_x, (f_xz)_x, (f_yy)_x, (f_yz)_x, (f_zz)_x
-            ordinal_type i_Dnm1 = idx(i_dx-1, i_dy, i_dz);
+            ordinal_type i_Dnm1 = Intrepid2::getDkEnumeration<spaceDim>(i_dx-1, i_dy, i_dz);
             output(i,j,i_Dn) = out(i,j,i_Dnm1).dx(0);
           }
           else if (i_dy > 0) {
             //n=2:  (f_y)_y, (f_z)_y
             //n=3:  (f_yy)_y, (f_yz)_y, (f_zz)_y
-            ordinal_type i_Dnm1 = idx(i_dx, i_dy-1, i_dz);
+            ordinal_type i_Dnm1 = Intrepid2::getDkEnumeration<spaceDim>(i_dx, i_dy-1, i_dz);
             output(i,j,i_Dn) = out(i,j,i_Dnm1).dx(1);
           }
           else  {                                          
             //n=2: (f_z)_z;
             //n=3: (f_zz)_z
-            ordinal_type i_Dnm1 = idx(i_dx, i_dy, i_dz-1);
+            ordinal_type i_Dnm1 = Intrepid2::getDkEnumeration<spaceDim>(i_dx, i_dy, i_dz-1);
             output(i,j,i_Dn) = out(i,j,i_Dnm1).dx(2);
           }
         }
     }
+
 }
 
 
@@ -444,11 +391,11 @@ getValues( outputViewType output,
     OrthPolynomialTet<outputViewType,inputViewType,true,2>::generate( output, input, order );
     break;
   }
+  /*
   case OPERATOR_D3: {
     OrthPolynomialTet<outputViewType,inputViewType,true,3>::generate( output, input, order );
     break;
   }
-  /*
   case OPERATOR_D4: {
     OrthPolynomialTet<outputViewType,inputViewType,true,4>::generate( output, input, order );
     break;
@@ -523,12 +470,13 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
     break;
   }
+/*
+  // Commented out - Cuda takes FOREVER to compile 
   case OPERATOR_D3: {
     typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D3,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
     break;
   }
-/*
   case OPERATOR_D4: {
     typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D4,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
@@ -585,7 +533,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
 template<typename SpT, typename OT, typename PT>
 Basis_HGRAD_TET_Cn_FEM_ORTH<SpT,OT,PT>::
 Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order ) {
-  this->basisCardinality_  = (order+1)*(order+2)*(order+3)/6;
+  this->basisCardinality_  = Intrepid2::getPnCardinality<3>(order);
   this->basisDegree_       = order;
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
   this->basisType_         = BASIS_FEM_HIERARCHICAL;
@@ -593,13 +541,15 @@ Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order ) {
 
   // initialize tags
   {
+    constexpr ordinal_type spaceDim = 3;
+
     // Basis-dependent initializations
     constexpr ordinal_type tagSize  = 4;    // size of DoF tag, i.e., number of fields in the tag
     const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
     const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
     const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-    constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)*(Parameters::MaxOrder+3)/6;
+    constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
     ordinal_type tags[maxCard][tagSize];
     const ordinal_type card = this->basisCardinality_;
     for (ordinal_type i=0;i<card;++i) {

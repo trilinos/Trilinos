@@ -629,7 +629,6 @@ template< class T > RCP< T > rcp(T* p, bool owns_mem = true);
 template< class T > RCP< T > rcpFromRef(T& r);
 template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 }
-%include "KokkosCore_config.h"
 %include "Kokkos_Macros.hpp"
 %ignore KokkosClassic::ESweepDirection;
 %include "Kokkos_ConfigDefs.hpp"
@@ -792,10 +791,10 @@ __version__ = version()
     return self->description();
   }
 }
-%ignore Tpetra::Map::Map;
-%ignore Tpetra::Map::getLocalElement;
-%ignore Tpetra::Map::getGlobalElement;
-%ignore Tpetra::Map::getRemoteIndexList;
+// %ignore Tpetra::Map::Map;
+// %ignore Tpetra::Map::getLocalElement;
+// %ignore Tpetra::Map::getGlobalElement;
+// %ignore Tpetra::Map::getRemoteIndexList;
 // The official definition of Tpetra::Map uses some C++ 11 and other
 // advanced features that confuse SWIG, so I declare a "simplified"
 // version here.
@@ -815,31 +814,31 @@ public:
                                    typename Node::memory_space > device_type;
   typedef Details::LocalMap< LocalOrdinal, GlobalOrdinal, device_type >
     local_map_type;
-  Map(global_size_t numGlobalElements,
-      GlobalOrdinal indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-      LocalGlobal lg=GloballyDistributed,
-      const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
-  Map(global_size_t numGlobalElements,
-      size_t numLocalElements,
-      GlobalOrdinal indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-      const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
-  Map(const global_size_t numGlobalElements,
-      const Kokkos::View<const GlobalOrdinal*, device_type>& indexList,
-      const GlobalOrdinal indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
-  Map(const global_size_t numGlobalElements,
-      const GlobalOrdinal indexList[],
-      const LocalOrdinal indexListSize,
-      const GlobalOrdinal indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
-  Map(const global_size_t numGlobalElements,
-      const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
-      const GlobalOrdinal indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-      const Teuchos::RCP<Node>& node = defaultArgNode<Node>());
-  Map();
+  // Map(global_size_t numGlobalElements,
+  //     GlobalOrdinal indexBase,
+  //     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  //     LocalGlobal lg=GloballyDistributed,
+  //     const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
+  // Map(global_size_t numGlobalElements,
+  //     size_t numLocalElements,
+  //     GlobalOrdinal indexBase,
+  //     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  //     const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
+  // Map(const global_size_t numGlobalElements,
+  //     const Kokkos::View<const GlobalOrdinal*, device_type>& indexList,
+  //     const GlobalOrdinal indexBase,
+  //     const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+  // Map(const global_size_t numGlobalElements,
+  //     const GlobalOrdinal indexList[],
+  //     const LocalOrdinal indexListSize,
+  //     const GlobalOrdinal indexBase,
+  //     const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+  // Map(const global_size_t numGlobalElements,
+  //     const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
+  //     const GlobalOrdinal indexBase,
+  //     const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+  //     const Teuchos::RCP<Node>& node = defaultArgNode<Node>());
+  // Map();
   ~Map();
   bool isOneToOne() const;
   global_size_t getGlobalNumElements() const;
@@ -851,15 +850,15 @@ public:
   GlobalOrdinal getMaxGlobalIndex() const;
   GlobalOrdinal getMinAllGlobalIndex() const;
   GlobalOrdinal getMaxAllGlobalIndex() const;
-  LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
-  GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
-  LookupStatus
-  getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > & GIDList,
-                     const Teuchos::ArrayView< int > & nodeIDList,
-                     const Teuchos::ArrayView< LocalOrdinal> & LIDList) const;
-  LookupStatus
-  getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > & GIDList,
-                     const Teuchos::ArrayView< int > & nodeIDList) const;
+  // LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
+  // GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
+  // LookupStatus
+  // getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > & GIDList,
+  //                    const Teuchos::ArrayView< int > & nodeIDList,
+  //                    const Teuchos::ArrayView< LocalOrdinal> & LIDList) const;
+  // LookupStatus
+  // getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > & GIDList,
+  //                    const Teuchos::ArrayView< int > & nodeIDList) const;
   Kokkos::View< const GlobalOrdinal*,
                 Kokkos::LayoutLeft,
                 device_type > getMyGlobalIndices() const;

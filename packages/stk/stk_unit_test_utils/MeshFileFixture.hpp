@@ -2,7 +2,10 @@
 #define UNITTEST_MESHFILEFIXTURE_HPP
 
 #include <mpi.h>
+
 #include <gtest/gtest.h>
+
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_unit_test_utils/ioUtils.hpp>
@@ -11,6 +14,7 @@
 
 namespace stk
 {
+
 namespace unit_test_util
 {
 

@@ -52,7 +52,9 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include "exodusII.h" // for ex_err, exerrval, etc
+#include <stddef.h>                     // for NULL
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_put_partial_set, etc
 
 /*!
  * \deprecated Use ex_put_partial_set() instead.

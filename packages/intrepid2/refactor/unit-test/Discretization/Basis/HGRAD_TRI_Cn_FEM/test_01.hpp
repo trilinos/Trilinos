@@ -125,6 +125,8 @@ namespace Intrepid2 {
 
       typedef Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> TriBasisType;
 
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder;
+
       const ordinal_type dim = 2;
 
       try {
@@ -136,7 +138,7 @@ namespace Intrepid2 {
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 10;
+        const ordinal_type order = maxOrder;
         TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
 
         shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
@@ -186,7 +188,7 @@ namespace Intrepid2 {
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 3;
+        const ordinal_type order = std::min(3, maxOrder);
         TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
         auto dofData = triBasis.getAllDofOrdinal();
         

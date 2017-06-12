@@ -45,12 +45,10 @@
 
 #include <string>
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
+#include "Phalanx_MDField.hpp"
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_PointValues2.hpp"
 #include "Panzer_BasisValues2.hpp"
-
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
@@ -63,8 +61,9 @@ PANZER_EVALUATOR_CLASS(BasisValues_Evaluator)
   // is anything other than ScalarT really needed here?
   Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
   PointValues2<ScalarT,PHX::MDField> pointValues;
+  PointValues2<const ScalarT,PHX::MDField> constPointValues;
 
-  PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> orientation;
+  PHX::MDField<const ScalarT,panzer::Cell,panzer::BASIS> orientation;
 
   bool derivativesRequired_;
  

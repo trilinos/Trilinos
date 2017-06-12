@@ -68,8 +68,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
@@ -289,7 +287,7 @@ namespace panzer {
     fm.evaluateFields<panzer::Traits::Residual>(workset);
 
     // test Residual fields
-    std::size_t dd_count = 0;
+    panzer::index_t dd_count(0);
     Teuchos::ArrayRCP<const double> data, dd_data;
     Teuchos::RCP<const Thyra::ProductVectorBase<double> > f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_loc->get_f());
     Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_f());
@@ -545,7 +543,7 @@ namespace panzer {
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
 
     // test Residual fields
-    std::size_t dd_count = 0;
+    panzer::index_t dd_count(0);
     Teuchos::ArrayRCP<const double> data, dd_data;
     Teuchos::RCP<const Thyra::ProductVectorBase<double> > f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_loc->get_f());
     Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_f());

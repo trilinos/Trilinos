@@ -42,7 +42,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/fixtures/SelectorFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>
 
 #include <stdexcept>
 

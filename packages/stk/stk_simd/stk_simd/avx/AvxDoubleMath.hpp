@@ -111,6 +111,14 @@ STK_MATH_FORCE_INLINE simd::Double log(const simd::Double& x) {
 // #endif
 }
 
+STK_MATH_FORCE_INLINE simd::Double log10(const simd::Double& x) {
+  simd::Double tmp;
+  for (int n=0; n < simd::ndoubles; ++n) {
+    tmp[n] = std::log10(x[n]);
+  }
+  return tmp;
+}
+
 STK_MATH_FORCE_INLINE simd::Double exp(const simd::Double& x) {
 #if defined(__INTEL_COMPILER)
   return simd::Double(_mm256_exp_pd(x._data));
@@ -183,6 +191,30 @@ STK_MATH_FORCE_INLINE simd::Double tan(const simd::Double& a) {
   return tmp;
 }
 
+STK_MATH_FORCE_INLINE simd::Double sinh(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::sinh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double cosh(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::cosh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double tanh(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::tanh(a[i]);
+  }
+  return tmp;
+}
+
 STK_MATH_FORCE_INLINE simd::Double asin(const simd::Double& a) {
   simd::Double tmp;
   for (int i=0; i < simd::ndoubles; ++i) {
@@ -211,6 +243,38 @@ STK_MATH_FORCE_INLINE simd::Double atan2(const simd::Double& a, const simd::Doub
   simd::Double tmp;
   for (int i=0; i < simd::ndoubles; ++i) {
     tmp[i] = std::atan2(a[i],b[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double asinh(const simd::Double &a) {
+  simd::Double tmp;
+  for (int i = 0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::asinh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double acosh(const simd::Double &a) {
+  simd::Double tmp;
+  for (int i = 0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::acosh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double atanh(const simd::Double &a) {
+  simd::Double tmp;
+  for (int i = 0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::atanh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double erf(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::erf(a[i]);
   }
   return tmp;
 }
@@ -253,14 +317,6 @@ STK_MATH_FORCE_INLINE simd::Double if_then_else(const simd::Bool& b, const simd:
 
 STK_MATH_FORCE_INLINE simd::Double if_then_else_zero(const simd::Bool& b, const simd::Double& v) {
   return simd::Double( _mm256_and_pd(b._data, v._data) );
-}
-
-STK_MATH_FORCE_INLINE simd::Double if_not_then_else(const simd::Bool& b, const simd::Double& v1, const simd::Double& v2) {
-  return simd::Double( _mm256_add_pd(_mm256_and_pd(b._data, v2._data),_mm256_andnot_pd(b._data, v1._data)) );
-}
-
-STK_MATH_FORCE_INLINE simd::Double if_not_then_else_zero(const simd::Bool& b, const simd::Double& v) {
-  return simd::Double( _mm256_andnot_pd(b._data, v._data) );
 }
 
 } // namespace math

@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === CAMD_postorder ====================================================== */
+/* === TRILINOS_CAMD_postorder ====================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -16,7 +16,7 @@
 
 #include "trilinos_camd_internal.h"
 
-GLOBAL Int CAMD_postorder
+GLOBAL Int TRILINOS_CAMD_postorder
 (
     Int j,	    /* start at node j, a root of the assembly tree */
     Int k,	    /* on input, next node is the kth node */

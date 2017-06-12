@@ -222,7 +222,7 @@ struct dimension_product<DYNAMIC, DYNAMIC> {
 ///
 /// Base static storage class. Simple linear access memory model.
 ///
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 class Storage
 {
 public:
@@ -250,10 +250,10 @@ public:
     resize(number_entries);
   }
 
-  Storage(Storage<T, N, ES> const & s) = delete;
+  Storage(Storage<T, N> const & s) = delete;
 
-  Storage<T, N, ES> &
-  operator=(Storage<T, N, ES> const & s) = delete;
+  Storage<T, N> &
+  operator=(Storage<T, N> const & s) = delete;
 
   ~Storage()
   {
@@ -328,8 +328,8 @@ private:
 ///
 /// Base dynamic storage class. Simple linear access memory model.
 ///
-template<typename T, typename ES>
-class Storage<T, DYNAMIC, ES>
+template<typename T>
+class Storage<T, DYNAMIC>
 {
 public:
   using value_type = T;
@@ -356,10 +356,10 @@ public:
     resize(number_entries);
   }
 
-  Storage(Storage<T, DYNAMIC, ES> const & s) = delete;
+  Storage(Storage<T, DYNAMIC> const & s) = delete;
 
-  Storage<T, DYNAMIC, ES> &
-  operator=(Storage<T, DYNAMIC, ES> const & s) = delete;
+  Storage<T, DYNAMIC> &
+  operator=(Storage<T, DYNAMIC> const & s) = delete;
 
   ~Storage()
   {

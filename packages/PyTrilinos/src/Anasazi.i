@@ -129,37 +129,7 @@ package:
 
 // Epetra includes
 #ifdef HAVE_EPETRA
-#include "Epetra_Comm.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "PyTrilinos_Epetra_Util.hpp"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // Anasazi includes
@@ -325,23 +295,24 @@ __version__ = Anasazi_Version().split()[2]
 ///////////////////////////
 %extend Anasazi::Eigensolution
 {
-  std::vector< Anasazi::Value< ScalarType > > Evals()
+  std::vector< Anasazi::Value< ScalarType > > evals()
   {
     return self->Evals;
   }
-  MV & Evecs()
+  Teuchos::RCP<MV> evecs()
   {
-    return *(self->Evecs);
+    return self->Evecs;
   }
-  MV & Espace()
+  Teuchos::RCP<MV> espace()
   {
-    return *(self->Espace);
+    return self->Espace;
   }
 }
 %ignore Anasazi::Eigensolution::Evals;
 %ignore Anasazi::Eigensolution::Evecs;
 %ignore Anasazi::Eigensolution::Espace;
 %include "AnasaziTypes.hpp"
+
 %extend Anasazi::Value
 {
   std::string __str__()
@@ -562,6 +533,12 @@ Anasazi::MultiVecTraits< double,
   Anasazi::LOBPCGSolMgr< double, Epetra_MultiVector, Epetra_Operator >;
 %template(EigensolutionEpetra)
   Anasazi::Eigensolution< double, Epetra_MultiVector >;
+%pythoncode
+%{
+EigensolutionEpetra.Evals  = EigensolutionEpetra.evals
+EigensolutionEpetra.Evecs  = EigensolutionEpetra.evecs
+EigensolutionEpetra.Espace = EigensolutionEpetra.espace
+%}
 #endif
 
 /////////////////////////

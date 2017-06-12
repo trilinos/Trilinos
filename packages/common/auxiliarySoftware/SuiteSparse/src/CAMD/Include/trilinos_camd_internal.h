@@ -171,21 +171,21 @@
 #define ID  UF_long_id
 #define Int_MAX UF_long_max
 
-#define CAMD_order trilinos_camd_l_order
-#define CAMD_defaults trilinos_camd_l_defaults
-#define CAMD_control trilinos_camd_l_control
-#define CAMD_info trilinos_camd_l_info
-#define CAMD_1 trilinos_camd_l1
-#define CAMD_2 trilinos_camd_l2
-#define CAMD_valid trilinos_camd_l_valid
-#define CAMD_cvalid trilinos_camd_l_cvalid
-#define CAMD_aat trilinos_camd_l_aat
-#define CAMD_postorder trilinos_camd_l_postorder
-#define CAMD_post_tree trilinos_camd_l_post_tree
-#define CAMD_dump trilinos_camd_l_dump
-#define CAMD_debug trilinos_camd_l_debug
-#define CAMD_debug_init trilinos_camd_l_debug_init
-#define CAMD_preprocess trilinos_camd_l_preprocess
+#define TRILINOS_CAMD_order trilinos_camd_l_order
+#define TRILINOS_CAMD_defaults trilinos_camd_l_defaults
+#define TRILINOS_CAMD_control trilinos_camd_l_control
+#define TRILINOS_CAMD_info trilinos_camd_l_info
+#define TRILINOS_CAMD_1 trilinos_camd_l1
+#define TRILINOS_CAMD_2 trilinos_camd_l2
+#define TRILINOS_CAMD_valid trilinos_camd_l_valid
+#define TRILINOS_CAMD_cvalid trilinos_camd_l_cvalid
+#define TRILINOS_CAMD_aat trilinos_camd_l_aat
+#define TRILINOS_CAMD_postorder trilinos_camd_l_postorder
+#define TRILINOS_CAMD_post_tree trilinos_camd_l_post_tree
+#define TRILINOS_CAMD_dump trilinos_camd_l_dump
+#define TRILINOS_CAMD_debug trilinos_camd_l_debug
+#define TRILINOS_CAMD_debug_init trilinos_camd_l_debug_init
+#define TRILINOS_CAMD_preprocess trilinos_camd_l_preprocess
 
 #else
 
@@ -193,21 +193,21 @@
 #define ID "%d"
 #define Int_MAX INT_MAX
 
-#define CAMD_order trilinos_camd_order
-#define CAMD_defaults trilinos_camd_defaults
-#define CAMD_control trilinos_camd_control
-#define CAMD_info trilinos_camd_info
-#define CAMD_1 trilinos_camd_1
-#define CAMD_2 trilinos_camd_2
-#define CAMD_valid trilinos_camd_valid
-#define CAMD_cvalid trilinos_camd_cvalid
-#define CAMD_aat trilinos_camd_aat
-#define CAMD_postorder trilinos_camd_postorder
-#define CAMD_post_tree trilinos_camd_post_tree
-#define CAMD_dump trilinos_camd_dump
-#define CAMD_debug trilinos_camd_debug
-#define CAMD_debug_init trilinos_camd_debug_init
-#define CAMD_preprocess trilinos_camd_preprocess
+#define TRILINOS_CAMD_order trilinos_camd_order
+#define TRILINOS_CAMD_defaults trilinos_camd_defaults
+#define TRILINOS_CAMD_control trilinos_camd_control
+#define TRILINOS_CAMD_info trilinos_camd_info
+#define TRILINOS_CAMD_1 trilinos_camd_1
+#define TRILINOS_CAMD_2 trilinos_camd_2
+#define TRILINOS_CAMD_valid trilinos_camd_valid
+#define TRILINOS_CAMD_cvalid trilinos_camd_cvalid
+#define TRILINOS_CAMD_aat trilinos_camd_aat
+#define TRILINOS_CAMD_postorder trilinos_camd_postorder
+#define TRILINOS_CAMD_post_tree trilinos_camd_post_tree
+#define TRILINOS_CAMD_dump trilinos_camd_dump
+#define TRILINOS_CAMD_debug trilinos_camd_debug
+#define TRILINOS_CAMD_debug_init trilinos_camd_debug_init
+#define TRILINOS_CAMD_preprocess trilinos_camd_preprocess
 
 #endif
 
@@ -228,7 +228,7 @@
 /* CAMD routine definitions (not user-callable) */
 /* ------------------------------------------------------------------------- */
 
-GLOBAL size_t CAMD_aat
+GLOBAL size_t TRILINOS_CAMD_aat
 (
     Int n,
     const Int Ap [ ],
@@ -238,7 +238,7 @@ GLOBAL size_t CAMD_aat
     double Info [ ]
 ) ;
 
-GLOBAL void CAMD_1
+GLOBAL void TRILINOS_CAMD_1
 (
     Int n,
     const Int Ap [ ],
@@ -253,12 +253,12 @@ GLOBAL void CAMD_1
     const Int C [ ]
 ) ;
 
-GLOBAL Int CAMD_postorder
+GLOBAL Int TRILINOS_CAMD_postorder
 (
     Int j, Int k, Int n, Int head [], Int next [], Int post [], Int stack []
 ) ;
 
-GLOBAL void CAMD_preprocess
+GLOBAL void TRILINOS_CAMD_preprocess
 (
     Int n,
     const Int Ap [ ],
@@ -282,11 +282,11 @@ GLOBAL void CAMD_preprocess
 #define EXTERN extern
 #endif
 
-EXTERN Int CAMD_debug ;
+EXTERN Int TRILINOS_CAMD_debug ;
 
-GLOBAL void CAMD_debug_init ( char *s ) ;
+GLOBAL void TRILINOS_CAMD_debug_init ( char *s ) ;
 
-GLOBAL void CAMD_dump
+GLOBAL void TRILINOS_CAMD_dump
 (
     Int n,
     Int Pe [ ],
@@ -318,20 +318,20 @@ GLOBAL void CAMD_dump
 #define ASSERT(expression) (assert (expression))
 #endif
 
-#define CAMD_DEBUG0(params) { PRINTF (params) ; }
-#define CAMD_DEBUG1(params) { if (CAMD_debug >= 1) PRINTF (params) ; }
-#define CAMD_DEBUG2(params) { if (CAMD_debug >= 2) PRINTF (params) ; }
-#define CAMD_DEBUG3(params) { if (CAMD_debug >= 3) PRINTF (params) ; }
-#define CAMD_DEBUG4(params) { if (CAMD_debug >= 4) PRINTF (params) ; }
+#define TRILINOS_CAMD_DEBUG0(params) { PRINTF (params) ; }
+#define TRILINOS_CAMD_DEBUG1(params) { if (TRILINOS_CAMD_debug >= 1) PRINTF (params) ; }
+#define TRILINOS_CAMD_DEBUG2(params) { if (TRILINOS_CAMD_debug >= 2) PRINTF (params) ; }
+#define TRILINOS_CAMD_DEBUG3(params) { if (TRILINOS_CAMD_debug >= 3) PRINTF (params) ; }
+#define TRILINOS_CAMD_DEBUG4(params) { if (TRILINOS_CAMD_debug >= 4) PRINTF (params) ; }
 
 #else
 
 /* no debugging */
 #define ASSERT(expression)
-#define CAMD_DEBUG0(params)
-#define CAMD_DEBUG1(params)
-#define CAMD_DEBUG2(params)
-#define CAMD_DEBUG3(params)
-#define CAMD_DEBUG4(params)
+#define TRILINOS_CAMD_DEBUG0(params)
+#define TRILINOS_CAMD_DEBUG1(params)
+#define TRILINOS_CAMD_DEBUG2(params)
+#define TRILINOS_CAMD_DEBUG3(params)
+#define TRILINOS_CAMD_DEBUG4(params)
 
 #endif

@@ -37,9 +37,9 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_mesh/fixtures/TetFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/TetFixture.hpp>  // for QuadFixture
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData

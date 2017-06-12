@@ -52,8 +52,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"  // for ex_put_partial_nodal_var
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_put_partial_var, etc
 
 /*!
 \ingroup ResultsData

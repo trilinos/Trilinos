@@ -105,11 +105,13 @@ namespace Intrepid2 {
 
       int errorFlag = 0;
       const double tol = tolerence();
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
       typedef OrientationTools<DeviceSpaceType> ots;
       try {
 
-        const ordinal_type testOrderBegin = 2, testOrderEnd = 4;
+        const ordinal_type testOrderBegin = std::min(2, maxOrder);
+        const ordinal_type testOrderEnd = std::min(4, maxOrder);
         for (ordinal_type testOrder=testOrderBegin;testOrder<testOrderEnd;++testOrder) {
           *outStream << "\n -- Testing order " << testOrder << "\n" 
                      << "===============================================================================\n"

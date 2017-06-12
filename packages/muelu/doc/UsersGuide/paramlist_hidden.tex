@@ -9,6 +9,8 @@
         
 \cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
         
+\cbb{coarse grid correction scaling factor}{double}{1.0}{Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.}
+        
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
         
 \cbb{xml parameter file}{string}{""}{An XML file from which to read additional
@@ -75,6 +77,10 @@
 \cbb{aggregation: enable phase 2b}{bool}{true}{Turn on/off phase 2b of aggregation}
         
 \cbb{aggregation: enable phase 3}{bool}{true}{Turn on/off phase 3 of aggregation}
+        
+\cbb{aggregation: error on nodes with no on-rank neighbors}{bool}{false}{Causes phase 3 aggregation to throw an error for
+      non-Dirichlet nodes that have no on-rank neighbors.  This only
+      works for Uncoupled Aggregation.}
         
 \cbb{aggregation: allow empty prolongator columns}{bool}{false}{Fix diagonal of coarse level operator A resulting from empty columns (rows) in the prolongation (restriction) operators caused by singleton aggregates and number of null space vectors larger than number of DOFs per node. This option might be helpful for elasticity problems with singleton aggregates.}
         
@@ -167,6 +173,8 @@
 \cbb{emin: pattern}{string}{"AkPtent"}{Sparsity pattern to use for energy minimization. Possible values: "AkPtent".}
         
 \cbb{emin: pattern order}{int}{1}{Matrix order for the "AkPtent" pattern.}
+        
+\cbb{tentative: calculate qr}{bool}{true}{If false, skip local QR decomposition phase of smoothed aggregation.}
         
 \cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
         

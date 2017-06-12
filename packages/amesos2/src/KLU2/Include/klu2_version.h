@@ -73,6 +73,8 @@
 #define KLU_scale klu_scale
 #define KLU_solve klu_solve
 #define KLU_tsolve klu_tsolve
+#define KLU_solve2 klu_solve2
+#define KLU_tsolve2 klu_tsolve2
 #define KLU_free_numeric klu_free_numeric
 #define KLU_factor klu_factor
 #define KLU_refactor klu_refactor

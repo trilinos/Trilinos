@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_info ============================================================ */
+/* === TRILINOS_AMD_info ============================================================ */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -17,7 +17,7 @@
 
 #define PRI(format,x) { if (x >= 0) { PRINTF ((format, x)) ; }}
 
-GLOBAL void AMD_info
+GLOBAL void TRILINOS_AMD_info
 (
     double Info [ ]
 )
@@ -25,35 +25,35 @@ GLOBAL void AMD_info
     double n, ndiv, nmultsubs_ldl, nmultsubs_lu, lnz, lnzd ;
 
     PRINTF (("\nAMD version %d.%d.%d, %s, results:\n",
-	AMD_MAIN_VERSION, AMD_SUB_VERSION, AMD_SUBSUB_VERSION, AMD_DATE)) ;
+	TRILINOS_AMD_MAIN_VERSION, TRILINOS_AMD_SUB_VERSION, TRILINOS_AMD_SUBSUB_VERSION, TRILINOS_AMD_DATE)) ;
 
     if (!Info)
     {
 	return ;
     }
 
-    n = Info [AMD_N] ;
-    ndiv = Info [AMD_NDIV] ;
-    nmultsubs_ldl = Info [AMD_NMULTSUBS_LDL] ;
-    nmultsubs_lu = Info [AMD_NMULTSUBS_LU] ;
-    lnz = Info [AMD_LNZ] ;
+    n = Info [TRILINOS_AMD_N] ;
+    ndiv = Info [TRILINOS_AMD_NDIV] ;
+    nmultsubs_ldl = Info [TRILINOS_AMD_NMULTSUBS_LDL] ;
+    nmultsubs_lu = Info [TRILINOS_AMD_NMULTSUBS_LU] ;
+    lnz = Info [TRILINOS_AMD_LNZ] ;
     lnzd = (n >= 0 && lnz >= 0) ? (n + lnz) : (-1) ;
 
     /* AMD return status */
     PRINTF (("    status: ")) ;
-    if (Info [AMD_STATUS] == AMD_OK)
+    if (Info [TRILINOS_AMD_STATUS] == TRILINOS_AMD_OK)
     {
 	PRINTF (("OK\n")) ;
     }
-    else if (Info [AMD_STATUS] == AMD_OUT_OF_MEMORY)
+    else if (Info [TRILINOS_AMD_STATUS] == TRILINOS_AMD_OUT_OF_MEMORY)
     {
 	PRINTF (("out of memory\n")) ;
     }
-    else if (Info [AMD_STATUS] == AMD_INVALID)
+    else if (Info [TRILINOS_AMD_STATUS] == TRILINOS_AMD_INVALID)
     {
 	PRINTF (("invalid matrix\n")) ;
     }
-    else if (Info [AMD_STATUS] == AMD_OK_BUT_JUMBLED)
+    else if (Info [TRILINOS_AMD_STATUS] == TRILINOS_AMD_OK_BUT_JUMBLED)
     {
 	PRINTF (("OK, but jumbled\n")) ;
     }
@@ -65,21 +65,21 @@ GLOBAL void AMD_info
     /* statistics about the input matrix */
     PRI ("    n, dimension of A:                                  %.20g\n", n);
     PRI ("    nz, number of nonzeros in A:                        %.20g\n",
-	Info [AMD_NZ]) ;
+	Info [TRILINOS_AMD_NZ]) ;
     PRI ("    symmetry of A:                                      %.4f\n",
-	Info [AMD_SYMMETRY]) ;
+	Info [TRILINOS_AMD_SYMMETRY]) ;
     PRI ("    number of nonzeros on diagonal:                     %.20g\n",
-	Info [AMD_NZDIAG]) ;
+	Info [TRILINOS_AMD_NZDIAG]) ;
     PRI ("    nonzeros in pattern of A+A' (excl. diagonal):       %.20g\n",
-	Info [AMD_NZ_A_PLUS_AT]) ;
+	Info [TRILINOS_AMD_NZ_A_PLUS_AT]) ;
     PRI ("    # dense rows/columns of A+A':                       %.20g\n",
-	Info [AMD_NDENSE]) ;
+	Info [TRILINOS_AMD_NDENSE]) ;
 
     /* statistics about AMD's behavior  */
     PRI ("    memory used, in bytes:                              %.20g\n",
-	Info [AMD_MEMORY]) ;
+	Info [TRILINOS_AMD_MEMORY]) ;
     PRI ("    # of memory compactions:                            %.20g\n",
-	Info [AMD_NCMPA]) ;
+	Info [TRILINOS_AMD_NCMPA]) ;
 
     /* statistics about the ordering quality */
     PRINTF (("\n"
@@ -99,7 +99,7 @@ GLOBAL void AMD_info
     PRI ("    # multiply-subtract operations for LU:              %.20g\n",
 	nmultsubs_lu) ;
     PRI ("    max nz. in any column of L (incl. diagonal):        %.20g\n",
-	Info [AMD_DMAX]) ;
+	Info [TRILINOS_AMD_DMAX]) ;
 
     /* total flop counts for various factorizations */
 

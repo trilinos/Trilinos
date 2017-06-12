@@ -125,6 +125,7 @@ namespace Intrepid2 {
 
       typedef Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> TetBasisType;
 
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
       const ordinal_type dim = 3;
 
       try {
@@ -136,7 +137,7 @@ namespace Intrepid2 {
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 2;
+        const ordinal_type order = std::min(2,maxOrder);
         TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
 
         shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
@@ -170,7 +171,6 @@ namespace Intrepid2 {
             }
           }
         }
-        
       } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
@@ -187,7 +187,7 @@ namespace Intrepid2 {
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 4;
+        const ordinal_type order = std::min(4,maxOrder);
         TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
         auto dofData = tetBasis.getAllDofOrdinal();
         
@@ -222,7 +222,7 @@ namespace Intrepid2 {
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 2;
+        const ordinal_type order = std::min(2,maxOrder);
         TetBasisType tetBasis(order, POINTTYPE_EQUISPACED);
 
         shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
@@ -258,11 +258,11 @@ namespace Intrepid2 {
         *outStream
           << "\n"
           << "===============================================================================\n"
-          << "| TEST 3: Testing OPERATOR_D3                                              |\n"
+          << "| TEST 3: Testing OPERATOR_D2                                              |\n"
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 2;
+        const ordinal_type order = 1;
         TetBasisType tetBasis(order, POINTTYPE_EQUISPACED);
 
         shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
@@ -271,9 +271,9 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(lattice, np_lattice , dim);
         PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
 
-        int deriv_order = 3;
+        int deriv_order = 2;
         DynRankView ConstructWithLabel(dbasisAtLattice, polydim , np_lattice , (deriv_order+1)*(deriv_order+2)/2);
-        tetBasis.getValues(dbasisAtLattice, lattice, OPERATOR_D3);
+        tetBasis.getValues(dbasisAtLattice, lattice, OPERATOR_D2);
 
         auto h_dbasisAtLattice = Kokkos::create_mirror_view(dbasisAtLattice);
         Kokkos::deep_copy(h_dbasisAtLattice, dbasisAtLattice);
@@ -281,10 +281,10 @@ namespace Intrepid2 {
         for (int i=0;i<polydim;i++) {
           for (int j=0;j<np_lattice;j++)
             for(ordinal_type k=0; k< (ordinal_type) h_dbasisAtLattice.dimension(3); k++){
-            if ( i==j && std::abs( h_dbasisAtLattice(i,j,k)) > tol ) {
+            if ( std::abs( h_dbasisAtLattice(i,j,k)) > tol ) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "Component " << k <<  " of third order derivative of second order polynomial basis function " << i << " does not vanish at node " << j << "\n";
+              *outStream << "Component " << k <<  " of second order derivative of first order polynomial basis function " << i << " does not vanish at node " << j << "\n";
               *outStream << " derivative value is " << h_dbasisAtLattice(i,j,k) << "\n";
             }
           }

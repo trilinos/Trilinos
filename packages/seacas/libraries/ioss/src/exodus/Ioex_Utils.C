@@ -512,7 +512,9 @@ namespace Ioex {
     std::ostringstream errmsg;
     // Create errmsg here so that the exerrval doesn't get cleared by
     // the ex_close call.
-    errmsg << "Exodus error (" << exerrval << ") " << ex_strerror(exerrval) << " at line " << lineno
+    int status;
+    ex_get_err(nullptr, nullptr, &status);
+    errmsg << "Exodus error (" << status << ") " << ex_strerror(status) << " at line " << lineno
            << " of file '" << filename << "' in function '" << function
            << "' Please report to gdsjaar@sandia.gov if you need help.";
 

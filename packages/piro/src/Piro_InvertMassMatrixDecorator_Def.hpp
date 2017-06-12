@@ -394,13 +394,12 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
       modelInArgs.set_alpha(-1.0);
       modelInArgs.set_beta(0.0);
     }
-    //FIXME! this would not work in Thyra::ModelEvaluator!
-    /*else {  // Mass Matrix is coeff of Second deriv
-      modelInArgs.set_x_dotdot(x_dot);
+    else {  // Mass Matrix is coeff of Second deriv
+      modelInArgs.set_x_dot_dot(x_dot);
       modelInArgs.set_alpha(0.0);
       modelInArgs.set_beta(0.0);
-      modelInArgs.set_omega(-1.0);
-    }*/
+      modelInArgs.set_W_x_dot_dot_coeff(-1.0);
+    }
 
     if (calcMassMatrix) {
       modelOutArgs.set_W_op(massMatrix);
@@ -421,6 +420,18 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
         Thyra::put_scalar<Scalar>(1.0, invDiag.ptr());
         Thyra::apply<Scalar>(*massMatrix, Thyra::NOTRANS, *invDiag, invDiag.ptr(), 1.0, 0.0);
         Thyra::reciprocal<Scalar>(*invDiag, invDiag.ptr());
+        //IKT, 5/31/17: adding the following logic which checks invDiag vector for nans
+        //and throws an exception if nans are found.
+        typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType ScalarMag;
+        typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+        const Scalar sumInvDiag = sum(*invDiag);
+        bool isNanInvDiag = SMT::isnaninf(sumInvDiag);
+        if (isNanInvDiag) {
+          TEUCHOS_TEST_FOR_EXCEPTION(true,
+              Teuchos::Exceptions::InvalidParameter,
+              "\n Error! Piro::InvertMassMatrixDecorator: lumped mass has 0 values, \n" <<
+              "so its inverse is not defined! \n";)
+        } 
       }
     }
 

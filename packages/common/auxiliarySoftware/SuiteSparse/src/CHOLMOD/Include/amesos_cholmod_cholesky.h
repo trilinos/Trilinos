@@ -17,7 +17,7 @@
  * The primary routines are all that a user requires to order, analyze, and
  * factorize a sparse symmetric positive definite matrix A (or A*A'), and
  * to solve Ax=b (or A*A'x=b).  The primary routines rely on the secondary
- * routines, the CHOLMOD Core module, and the AMD and COLAMD packages.  They
+ * routines, the CHOLMOD Core module, and the AMD and TRILINOS_COLAMD packages.  They
  * make optional use of the CHOLMOD Supernodal and Partition modules, the
  * METIS package, and the CCOLAMD package.
  *
@@ -38,7 +38,7 @@
  * cholmod_etree		find the elimination tree
  * cholmod_rowcolcounts		compute the row/column counts of L
  * cholmod_amd			order using AMD
- * cholmod_colamd		order using COLAMD
+ * cholmod_colamd		order using TRILINOS_COLAMD
  * cholmod_rowfac		incremental simplicial factorization
  * cholmod_rowfac_mask		rowfac, specific to LPDASA
  * cholmod_row_subtree		find the nonzero pattern of a row of L
@@ -46,7 +46,7 @@
  * cholmod_resymbol_noperm	recompute the symbolic pattern of L, no L->Perm
  * cholmod_postorder		postorder a tree
  *
- * Requires the Core module, and two packages: AMD and COLAMD.
+ * Requires the Core module, and two packages: AMD and TRILINOS_COLAMD.
  * Optionally uses the Supernodal and Partition modules.
  * Required by the Partition module.
  */
@@ -287,7 +287,7 @@ int amesos_cholmod_l_amd (cholmod_sparse *, UF_long *, size_t, UF_long *,
     cholmod_common *) ;
 
 /* -------------------------------------------------------------------------- */
-/* cholmod_colamd:  order using COLAMD */
+/* cholmod_colamd:  order using TRILINOS_COLAMD */
 /* -------------------------------------------------------------------------- */
 
 /* Finds a permutation P to reduce fill-in in the factorization of P*A*A'*P'.

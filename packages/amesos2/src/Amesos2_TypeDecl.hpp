@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Sivasankaran Rajamanickam (srajama@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -124,7 +124,8 @@ namespace Amesos2 {
     DISTRIBUTED,                /**< no processor has a view of the entire matrix, only local pieces */
     DISTRIBUTED_NO_OVERLAP,     /**< no row or column may be present on more than one processor */
     GLOBALLY_REPLICATED,        /**< each processor has a view of the entire matrix */
-    ROOTED                      /**< only \c rank=0 has a full view, all others have nothing. */
+    ROOTED,                     /**< only \c rank=0 has a full view, all others have nothing. */
+    CONTIGUOUS_AND_ROOTED       /**< the global GIDs of the map are not contiguous */
   } EDistribution;
 
   /** \internal

@@ -3,7 +3,6 @@
 
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_unit_test_utils/unittestMeshUtils.hpp>
-#include <stk_util/parallel/DebugTool.hpp>
 
 #include <stk_balance/balance.hpp>
 #include <stk_balance/balanceUtils.hpp>
@@ -35,7 +34,7 @@ protected:
     void write_rebalanced_mxn()
     {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::balance::internal::rebalanceMtoN(get_bulk(), get_num_procs_target_decomp(), get_output_filename());
+        stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename());
     }
 
     // FIXME
@@ -47,8 +46,8 @@ protected:
 
     void create_field_on_entire_mesh(const std::string& fieldName)
     {
-        stk::mesh::Field<double> &field = get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
-        stk::mesh::put_field(field, get_meta().universal_part());
+        targetDecompField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
+        stk::mesh::put_field(*targetDecompField, get_meta().universal_part());
     }
 
     void create_target_decomp_field_on_entire_mesh()
@@ -58,7 +57,7 @@ protected:
 
     const std::string get_target_decomp_field_name()
     {
-        return "TargetDecomp";
+        return "Target_Decomp";
     }
 
     void test_decomp()
@@ -94,7 +93,8 @@ protected:
 
     std::vector<unsigned> get_num_elements_assigned_to_each_proc()
     {
-        stk::mesh::EntityProcVec localDecomp = stk::balance::internal::get_element_decomp(get_num_procs_target_decomp(), get_bulk());
+        stk::balance::GraphCreationSettings graphSettings;
+        stk::mesh::EntityProcVec localDecomp = stk::balance::internal::get_element_decomp(get_num_procs_target_decomp(), get_bulk(), graphSettings);
 
         std::vector<unsigned> num_elements_assigned_to_each_proc_local(get_num_procs_target_decomp(),0);
         for(size_t i=0;i<localDecomp.size();++i)
@@ -170,6 +170,8 @@ protected:
     virtual unsigned get_z() const { return 0; }
     virtual unsigned get_num_procs_initial_decomp() const = 0;
     virtual unsigned get_num_procs_target_decomp() const = 0;
+
+    stk::mesh::Field<double> *targetDecompField;
 };
 
 #endif

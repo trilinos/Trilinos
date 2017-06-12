@@ -133,7 +133,7 @@ public:
 
   friend
   std::ostream &
-  operator<<(std::ostream & os, MiniTensorVector & u)
+  operator<<(std::ostream & os, MiniTensorVector const & u)
   {
     os << u.vector_;
     return os;

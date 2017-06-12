@@ -115,7 +115,7 @@ namespace Intrepid2 {
           typedef typename outputValueViewType::value_type outputValueType;
           typedef typename outputValueViewType::pointer_type outputPointerType;
           constexpr ordinal_type bufSize = 3*(Parameters::MaxOrder+1)*numPtsEval;
-          outputValueType buf[bufSize];
+          char buf[bufSize*sizeof(outputValueType)];
           
           Kokkos::DynRankView<outputValueType,
             Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
@@ -179,7 +179,7 @@ namespace Intrepid2 {
                                       this->getBaseCellTopology(),
                                       this->getCardinality() );
 #endif
-      constexpr ordinal_type numPtsPerEval = 1;
+      constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
       Impl::Basis_HCURL_QUAD_In_FEM::
         getValues<ExecSpaceType,numPtsPerEval>( outputValues,
                                                 inputPoints,

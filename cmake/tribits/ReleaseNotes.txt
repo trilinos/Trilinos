@@ -1,6 +1,18 @@
 ----------------------------------------
 Release Notes for TriBITS
 ----------------------------------------
+2017/05/25:
+
+(*) MINOR: PARSE_ARGUMENTS() has been depricated and replaced by
+    CMAKE_PARSE_ARGUMENTS() everywhere in TriBITS. Any call to
+    PARSE_ARGUMENTS() will warn users and tell them to use
+    CMAKE_PARSE_ARGUMENTS() instead.
+
+2017/05/17:
+
+(*) MAJOR: TriBITS now unconditionally sets
+    ${PROJECT_NAME}_ENABLE_Fortran_DEFAULT to ON.  Projects will now need to
+    put in special logic to set to OFF or ON for certain platforms.
 
 2017/01/11:
 

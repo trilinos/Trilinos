@@ -1961,7 +1961,29 @@ namespace Tpetra {
     //! This matrix's graph, as a CrsGraph.
     Teuchos::RCP<const crs_graph_type> getCrsGraph () const;
 
-    //! The local sparse matrix.
+  private:
+    /// \brief Const reference to this matrix's graph, as a CrsGraph.
+    ///
+    /// This is a thread-safe version of getCrsGraph() (see above).
+    /// Teuchos::RCP's copy constructor, assignment operator
+    /// (operator=), and destructor are not currently thread safe (as
+    /// of 17 May 2017).  Thus, if we want to write
+    /// host-thread-parallel code, it's important to avoid creating or
+    /// destroying Teuchos::RCP instances.  This method lets CrsMatrix
+    /// access its graph, without creating an Teuchos::RCP instance
+    /// (as the return value of getCrsGraph() does do).
+    const crs_graph_type& getCrsGraphRef () const;
+
+  public:
+    /// \brief The local sparse matrix.
+    ///
+    /// \warning It is only valid to call this method under certain
+    ///   circumstances.  In particular, either the CrsMatrix must
+    ///   have been created with a \c local_matrix_type object, or
+    ///   fillComplete must have been called on this CrsMatrix at
+    ///   least once.  This method will do no error checking, so you
+    ///   are responsible for knowing when it is safe to call this
+    ///   method.
     local_matrix_type getLocalMatrix () const {return lclMatrix_; }
 
     /// \brief Number of global elements in the row map of this matrix.
@@ -2629,6 +2651,47 @@ namespace Tpetra {
       }
     }
 
+  private:
+
+    /// \brief Compute the local part of a sparse matrix-(Multi)Vector
+    ///   multiply.
+    ///
+    /// This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
+    /// where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the
+    /// transpose), or \f$A^H\f$ (the conjugate transpose).
+    ///
+    /// The Map of X and \c mode must satisfy the following:
+    /// \code
+    /// mode == Teuchos::NO_TRANS &&
+    ///   X.getMap ()->isSameAs(* (this->getColMap ())) ||
+    /// mode != Teuchos::NO_TRANS &&
+    ///   X.getMap ()->isSameAs(* (this->getRowMap ()));
+    /// \endcode
+    ///
+    /// The Map of Y and \c mode must satisfy the following:
+    /// \code
+    /// mode == Teuchos::NO_TRANS &&
+    ///   Y.getMap ()->isSameAs(* (this->getRowMap ())) ||
+    /// mode != Teuchos::NO_TRANS &&
+    ///   Y.getMap ()->isSameAs(* (this->getColMap ()));
+    /// \endcode
+    ///
+    /// If <tt>beta == 0</tt>, this operation will enjoy overwrite
+    /// semantics: Y's entries will be ignored, and Y will be
+    /// overwritten with the result of the multiplication, even if it
+    /// contains <tt>Inf</tt> or <tt>NaN</tt> floating-point entries.
+    /// Likewise, if <tt>alpha == 0</tt>, this operation will ignore A
+    /// and X, even if they contain <tt>Inf</tt> or <tt>NaN</tt>
+    /// floating-point entries.
+    void
+    localApply (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+                MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&Y,
+                const Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
+                const Scalar& beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
+
+  public:
+
     /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
     ///
     /// Apply a forward or backward sweep of Gauss-Seidel or
@@ -3242,7 +3305,16 @@ namespace Tpetra {
                           const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
                           size_t constantNumPackets,
                           Distributor& distor,
-                          CombineMode combineMode);
+                          CombineMode combineMode,
+                          const bool atomic = useAtomicUpdatesByDefault);
+    void
+    unpackAndCombineImplNonStatic (
+        const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+        const Teuchos::ArrayView<const char>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        size_t constantNumPackets,
+        Distributor& distor,
+        CombineMode combineMode);
 
   public:
     /// \brief Unpack the imported column indices and values, and combine into matrix.
@@ -3855,19 +3927,36 @@ namespace Tpetra {
     ///   the graph must be owned by the matrix.
     void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas);
 
-    /// \brief Sort the entries of each row by their column indices.
+    /// \brief Merge duplicate row indices in the given row, along
+    ///   with their corresponding values.
     ///
-    /// This only does anything if the graph isn't already sorted
-    /// (i.e., ! myGraph_->isSorted ()).  This method is called in
-    /// fillComplete().
-    void sortEntries();
+    /// This method is only called by sortAndMergeIndicesAndValues(),
+    /// and only when the matrix owns the graph, not when the matrix
+    /// was constructed with a const graph.
+    ///
+    /// \pre The graph is not already storage optimized:
+    ///   <tt>isStorageOptimized() == false</tt>
+    size_t
+    mergeRowIndicesAndValues (crs_graph_type& graph,
+                              const RowInfo& rowInfo);
 
-    /// \brief Merge entries in each row with the same column indices.
+    /// \brief Sort and merge duplicate local column indices in all
+    ///   rows on the calling process, along with their corresponding
+    ///   values.
     ///
-    /// This only does anything if the graph isn't already merged
-    /// (i.e., ! myGraph_->isMerged ()).  This method is called in
-    /// fillComplete().
-    void mergeRedundantEntries();
+    /// \pre The matrix is locally indexed (more precisely, not
+    ///   globally indexed).
+    /// \pre The matrix owns its graph.
+    /// \pre The matrix's graph is not already storage optimized:
+    ///   <tt>isStorageOptimized() == false</tt>.
+    ///
+    /// \param sorted [in] If true, the column indices in each row on
+    ///   the calling process are already sorted.
+    /// \param merged [in] If true, the column indices in each row on
+    ///   the calling process are already merged.
+    void
+    sortAndMergeIndicesAndValues (const bool sorted,
+                                  const bool merged);
 
     /// \brief Clear matrix properties that require collectives.
     ///

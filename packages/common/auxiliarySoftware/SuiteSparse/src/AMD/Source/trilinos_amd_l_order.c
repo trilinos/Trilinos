@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_order =========================================================== */
+/* === TRILINOS_AMD_order =========================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -19,10 +19,10 @@
 #include "trilinos_amd_internal.h"
 
 /* ========================================================================= */
-/* === AMD_order =========================================================== */
+/* === TRILINOS_AMD_order =========================================================== */
 /* ========================================================================= */
 
-GLOBAL Int AMD_order
+GLOBAL Int TRILINOS_AMD_order
 (
     Int n,
     const Int Ap [ ],
@@ -37,59 +37,59 @@ GLOBAL Int AMD_order
     double mem = 0 ;
 
 #ifndef NDEBUG
-    AMD_debug_init ("amd") ;
+    TRILINOS_AMD_debug_init ("amd") ;
 #endif
 
     /* clear the Info array, if it exists */
     info = Info != (double *) NULL ;
     if (info)
     {
-	for (i = 0 ; i < AMD_INFO ; i++)
+	for (i = 0 ; i < TRILINOS_AMD_INFO ; i++)
 	{
 	    Info [i] = EMPTY ;
 	}
-	Info [AMD_N] = n ;
-	Info [AMD_STATUS] = AMD_OK ;
+	Info [TRILINOS_AMD_N] = n ;
+	Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OK ;
     }
 
     /* make sure inputs exist and n is >= 0 */
     if (Ai == (Int *) NULL || Ap == (Int *) NULL || P == (Int *) NULL || n < 0)
     {
-	if (info) Info [AMD_STATUS] = AMD_INVALID ;
-	return (AMD_INVALID) ;	    /* arguments are invalid */
+	if (info) Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_INVALID ;
+	return (TRILINOS_AMD_INVALID) ;	    /* arguments are invalid */
     }
 
     if (n == 0)
     {
-	return (AMD_OK) ;	    /* n is 0 so there's nothing to do */
+	return (TRILINOS_AMD_OK) ;	    /* n is 0 so there's nothing to do */
     }
 
     nz = Ap [n] ;
     if (info)
     {
-	Info [AMD_NZ] = nz ;
+	Info [TRILINOS_AMD_NZ] = nz ;
     }
     if (nz < 0)
     {
-	if (info) Info [AMD_STATUS] = AMD_INVALID ;
-	return (AMD_INVALID) ;
+	if (info) Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_INVALID ;
+	return (TRILINOS_AMD_INVALID) ;
     }
 
     /* check if n or nz will cause size_t overflow */
     if (((size_t) n) >= SIZE_T_MAX / sizeof (Int)
      || ((size_t) nz) >= SIZE_T_MAX / sizeof (Int))
     {
-	if (info) Info [AMD_STATUS] = AMD_OUT_OF_MEMORY ;
-	return (AMD_OUT_OF_MEMORY) ;	    /* problem too large */
+	if (info) Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OUT_OF_MEMORY ;
+	return (TRILINOS_AMD_OUT_OF_MEMORY) ;	    /* problem too large */
     }
 
-    /* check the input matrix:	AMD_OK, AMD_INVALID, or AMD_OK_BUT_JUMBLED */
-    status = AMD_valid (n, n, Ap, Ai) ;
+    /* check the input matrix:	TRILINOS_AMD_OK, TRILINOS_AMD_INVALID, or TRILINOS_AMD_OK_BUT_JUMBLED */
+    status = TRILINOS_AMD_valid (n, n, Ap, Ai) ;
 
-    if (status == AMD_INVALID)
+    if (status == TRILINOS_AMD_INVALID)
     {
-	if (info) Info [AMD_STATUS] = AMD_INVALID ;
-	return (AMD_INVALID) ;	    /* matrix is invalid */
+	if (info) Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_INVALID ;
+	return (TRILINOS_AMD_INVALID) ;	    /* matrix is invalid */
     }
 
     /* allocate two size-n integer workspaces */
@@ -102,14 +102,14 @@ GLOBAL Int AMD_order
 	/* :: out of memory :: */
 	trilinos_amd_free (Len) ;
 	trilinos_amd_free (Pinv) ;
-	if (info) Info [AMD_STATUS] = AMD_OUT_OF_MEMORY ;
-	return (AMD_OUT_OF_MEMORY) ;
+	if (info) Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OUT_OF_MEMORY ;
+	return (TRILINOS_AMD_OUT_OF_MEMORY) ;
     }
 
-    if (status == AMD_OK_BUT_JUMBLED)
+    if (status == TRILINOS_AMD_OK_BUT_JUMBLED)
     {
 	/* sort the input matrix and remove duplicate entries */
-	AMD_DEBUG1 (("Matrix is jumbled\n")) ;
+	TRILINOS_AMD_DEBUG1 (("Matrix is jumbled\n")) ;
 	Rp = (Int*) trilinos_amd_malloc ((n+1) * sizeof (Int)) ;
 	Ri = (Int*) trilinos_amd_malloc (MAX (nz,1) * sizeof (Int)) ;
 	mem += (n+1) ;
@@ -121,11 +121,11 @@ GLOBAL Int AMD_order
 	    trilinos_amd_free (Ri) ;
 	    trilinos_amd_free (Len) ;
 	    trilinos_amd_free (Pinv) ;
-	    if (info) Info [AMD_STATUS] = AMD_OUT_OF_MEMORY ;
-	    return (AMD_OUT_OF_MEMORY) ;
+	    if (info) Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OUT_OF_MEMORY ;
+	    return (TRILINOS_AMD_OUT_OF_MEMORY) ;
 	}
 	/* use Len and Pinv as workspace to create R = A' */
-	AMD_preprocess (n, Ap, Ai, Rp, Ri, Len, Pinv) ;
+	TRILINOS_AMD_preprocess (n, Ap, Ai, Rp, Ri, Len, Pinv) ;
 	Cp = Rp ;
 	Ci = Ri ;
     }
@@ -142,8 +142,8 @@ GLOBAL Int AMD_order
     /* determine the symmetry and count off-diagonal nonzeros in A+A' */
     /* --------------------------------------------------------------------- */
 
-    nzaat = AMD_aat (n, Cp, Ci, Len, P, Info) ;
-    AMD_DEBUG1 (("nzaat: %g\n", (double) nzaat)) ;
+    nzaat = TRILINOS_AMD_aat (n, Cp, Ci, Len, P, Info) ;
+    TRILINOS_AMD_DEBUG1 (("nzaat: %g\n", (double) nzaat)) ;
     ASSERT ((MAX (nz-n, 0) <= nzaat) && (nzaat <= 2 * (size_t) nz)) ;
 
     /* --------------------------------------------------------------------- */
@@ -166,7 +166,7 @@ GLOBAL Int AMD_order
     {
 	S = (Int*) trilinos_amd_malloc (slen * sizeof (Int)) ;
     }
-    AMD_DEBUG1 (("slen %g\n", (double) slen)) ;
+    TRILINOS_AMD_DEBUG1 (("slen %g\n", (double) slen)) ;
     if (!S)
     {
 	/* :: out of memory :: (or problem too large) */
@@ -174,20 +174,20 @@ GLOBAL Int AMD_order
 	trilinos_amd_free (Ri) ;
 	trilinos_amd_free (Len) ;
 	trilinos_amd_free (Pinv) ;
-	if (info) Info [AMD_STATUS] = AMD_OUT_OF_MEMORY ;
-	return (AMD_OUT_OF_MEMORY) ;
+	if (info) Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OUT_OF_MEMORY ;
+	return (TRILINOS_AMD_OUT_OF_MEMORY) ;
     }
     if (info)
     {
 	/* memory usage, in bytes. */
-	Info [AMD_MEMORY] = mem * sizeof (Int) ;
+	Info [TRILINOS_AMD_MEMORY] = mem * sizeof (Int) ;
     }
 
     /* --------------------------------------------------------------------- */
     /* order the matrix */
     /* --------------------------------------------------------------------- */
 
-    AMD_1 (n, Cp, Ci, P, Pinv, Len, slen, S, Control, Info) ;
+    TRILINOS_AMD_1 (n, Cp, Ci, P, Pinv, Len, slen, S, Control, Info) ;
 
     /* --------------------------------------------------------------------- */
     /* free the workspace */
@@ -198,6 +198,6 @@ GLOBAL Int AMD_order
     trilinos_amd_free (Len) ;
     trilinos_amd_free (Pinv) ;
     trilinos_amd_free (S) ;
-    if (info) Info [AMD_STATUS] = status ;
+    if (info) Info [TRILINOS_AMD_STATUS] = status ;
     return (status) ;	    /* successful ordering */
 }

@@ -67,8 +67,6 @@ using Teuchos::rcp;
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 

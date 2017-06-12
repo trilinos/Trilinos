@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_2 =============================================================== */
+/* === TRILINOS_AMD_2 =============================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -9,9 +9,9 @@
 /* web: http://www.cise.ufl.edu/research/sparse/amd                          */
 /* ------------------------------------------------------------------------- */
 
-/* AMD_2:  performs the AMD ordering on a symmetric sparse matrix A, followed
+/* TRILINOS_AMD_2:  performs the AMD ordering on a symmetric sparse matrix A, followed
  * by a postordering (via depth-first search) of the assembly tree using the
- * AMD_postorder routine.
+ * TRILINOS_AMD_postorder routine.
  */
  
 /* This file should make the long int version of AMD */
@@ -40,10 +40,10 @@ static Int trilinos_clear_flag (Int wflg, Int wbig, Int W [ ], Int n)
 
 
 /* ========================================================================= */
-/* === AMD_2 =============================================================== */
+/* === TRILINOS_AMD_2 =============================================================== */
 /* ========================================================================= */
 
-GLOBAL void AMD_2
+GLOBAL void TRILINOS_AMD_2
 (
     Int n,		/* A is n-by-n, where n > 0 */
     Int Pe [ ],		/* Pe [0..n-1]: index in Iw of row i on input */
@@ -63,8 +63,8 @@ GLOBAL void AMD_2
     Int W [ ],
 
     /* control parameters and output statistics */
-    double Control [ ],	/* array of size AMD_CONTROL */
-    double Info [ ]	/* array of size AMD_INFO */
+    double Control [ ],	/* array of size TRILINOS_AMD_CONTROL */
+    double Info [ ]	/* array of size TRILINOS_AMD_INFO */
 )
 {
 
@@ -210,7 +210,7 @@ GLOBAL void AMD_2
  *	user-callable interface to this routine (amd_order.c).  The algorithm
  *	will not run at all if iwlen < pfree.  Restriction: iwlen >= pfree + n.
  *	Note that this is slightly more restrictive than the actual minimum
- *	(iwlen >= pfree), but AMD_2 will be very slow with no elbow room.
+ *	(iwlen >= pfree), but TRILINOS_AMD_2 will be very slow with no elbow room.
  *	Thus, this routine enforces a bare minimum elbow room of size n.
  *
  * pfree: On input the tail end of the array, Iw [pfree..iwlen-1], is empty,
@@ -218,19 +218,19 @@ GLOBAL void AMD_2
  *	additional data is placed in Iw, and pfree is modified so that
  *	Iw [pfree..iwlen-1] is always the unused part of Iw.
  *
- * Control:  A double array of size AMD_CONTROL containing input parameters
+ * Control:  A double array of size TRILINOS_AMD_CONTROL containing input parameters
  *	that affect how the ordering is computed.  If NULL, then default
  *	settings are used.
  *
- *	Control [AMD_DENSE] is used to determine whether or not a given input
+ *	Control [TRILINOS_AMD_DENSE] is used to determine whether or not a given input
  *	row is "dense".  A row is "dense" if the number of entries in the row
- *	exceeds Control [AMD_DENSE] times sqrt (n), except that rows with 16 or
+ *	exceeds Control [TRILINOS_AMD_DENSE] times sqrt (n), except that rows with 16 or
  *	fewer entries are never considered "dense".  To turn off the detection
- *	of dense rows, set Control [AMD_DENSE] to a negative number, or to a
- *	number larger than sqrt (n).  The default value of Control [AMD_DENSE]
- *	is AMD_DEFAULT_DENSE, which is defined in amd.h as 10.
+ *	of dense rows, set Control [TRILINOS_AMD_DENSE] to a negative number, or to a
+ *	number larger than sqrt (n).  The default value of Control [TRILINOS_AMD_DENSE]
+ *	is TRILINOS_AMD_DEFAULT_DENSE, which is defined in amd.h as 10.
  *
- *	Control [AMD_AGGRESSIVE] is used to determine whether or not aggressive
+ *	Control [TRILINOS_AMD_AGGRESSIVE] is used to determine whether or not aggressive
  *	absorption is to be performed.  If nonzero, then aggressive absorption
  *	is performed (this is the default).
 
@@ -281,7 +281,7 @@ GLOBAL void AMD_2
  *	assembly tree.  Note that i refers to a row/column in the original
  *	matrix, not the permuted matrix.
  *
- * Info:  A double array of size AMD_INFO.  If present, (that is, not NULL),
+ * Info:  A double array of size TRILINOS_AMD_INFO.  If present, (that is, not NULL),
  *	then statistics about the ordering are returned in the Info array.
  *	See amd.h for a description.
 
@@ -565,7 +565,7 @@ GLOBAL void AMD_2
 /* ========================================================================= */
 
     /* Note that this restriction on iwlen is slightly more restrictive than
-     * what is actually required in AMD_2.  AMD_2 can operate with no elbow
+     * what is actually required in TRILINOS_AMD_2.  TRILINOS_AMD_2 can operate with no elbow
      * room at all, but it will be slow.  For better performance, at least
      * size-n elbow room is enforced. */
     ASSERT (iwlen >= pfree + n) ;
@@ -587,13 +587,13 @@ GLOBAL void AMD_2
     /* get control parameters */
     if (Control != (double *) NULL)
     {
-	alpha = Control [AMD_DENSE] ;
-	aggressive = (Control [AMD_AGGRESSIVE] != 0) ;
+	alpha = Control [TRILINOS_AMD_DENSE] ;
+	aggressive = (Control [TRILINOS_AMD_AGGRESSIVE] != 0) ;
     }
     else
     {
-	alpha = AMD_DEFAULT_DENSE ;
-	aggressive = AMD_DEFAULT_AGGRESSIVE ;
+	alpha = TRILINOS_AMD_DEFAULT_DENSE ;
+	aggressive = TRILINOS_AMD_DEFAULT_AGGRESSIVE ;
     }
     /* Note: if alpha is NaN, this is undefined: */
     if (alpha < 0)
@@ -607,7 +607,7 @@ GLOBAL void AMD_2
     }
     dense = MAX (16, dense) ;
     dense = MIN (n,  dense) ;
-    AMD_DEBUG1 (("\n\nAMD (debug), alpha %g, aggr. "ID"\n",
+    TRILINOS_AMD_DEBUG1 (("\n\nAMD (debug), alpha %g, aggr. "ID"\n",
 	alpha, aggressive)) ;
 
     for (i = 0 ; i < n ; i++)
@@ -625,8 +625,8 @@ GLOBAL void AMD_2
     }
 
 #ifndef NDEBUG
-    AMD_DEBUG1 (("\n======Nel "ID" initial\n", nel)) ;
-    AMD_dump (n, Pe, Iw, Len, iwlen, pfree, Nv, Next, Last,
+    TRILINOS_AMD_DEBUG1 (("\n======Nel "ID" initial\n", nel)) ;
+    TRILINOS_AMD_dump (n, Pe, Iw, Len, iwlen, pfree, Nv, Next, Last,
 		Head, Elen, Degree, W, -1) ;
 #endif
 
@@ -670,7 +670,7 @@ GLOBAL void AMD_2
 	     * version does not have this option.
 	     * ------------------------------------------------------------- */
 
-	    AMD_DEBUG1 (("Dense node "ID" degree "ID"\n", i, deg)) ;
+	    TRILINOS_AMD_DEBUG1 (("Dense node "ID" degree "ID"\n", i, deg)) ;
 	    ndense++ ;
 	    Nv [i] = 0 ;		/* do not postorder this node */
 	    Elen [i] = EMPTY ;
@@ -702,10 +702,10 @@ GLOBAL void AMD_2
     {
 
 #ifndef NDEBUG
-	AMD_DEBUG1 (("\n======Nel "ID"\n", nel)) ;
-	if (AMD_debug >= 2)
+	TRILINOS_AMD_DEBUG1 (("\n======Nel "ID"\n", nel)) ;
+	if (TRILINOS_AMD_debug >= 2)
 	{
-	    AMD_dump (n, Pe, Iw, Len, iwlen, pfree, Nv, Next,
+	    TRILINOS_AMD_dump (n, Pe, Iw, Len, iwlen, pfree, Nv, Next,
 		    Last, Head, Elen, Degree, W, nel) ;
 	}
 #endif
@@ -726,7 +726,7 @@ GLOBAL void AMD_2
 	}
 	mindeg = deg ;
 	ASSERT (me >= 0 && me < n) ;
-	AMD_DEBUG1 (("=================me: "ID"\n", me)) ;
+	TRILINOS_AMD_DEBUG1 (("=================me: "ID"\n", me)) ;
 
 	/* ----------------------------------------------------------------- */
 	/* remove chosen variable from link list */
@@ -834,7 +834,7 @@ GLOBAL void AMD_2
 		    e = me ;
 		    pj = p ;
 		    ln = slenme ;
-		    AMD_DEBUG2 (("Search sv: "ID" "ID" "ID"\n", me,pj,ln)) ;
+		    TRILINOS_AMD_DEBUG2 (("Search sv: "ID" "ID" "ID"\n", me,pj,ln)) ;
 		}
 		else
 		{
@@ -843,7 +843,7 @@ GLOBAL void AMD_2
 		    ASSERT (e >= 0 && e < n) ;
 		    pj = Pe [e] ;
 		    ln = Len [e] ;
-		    AMD_DEBUG2 (("Search element e "ID" in me "ID"\n", e,me)) ;
+		    TRILINOS_AMD_DEBUG2 (("Search element e "ID" in me "ID"\n", e,me)) ;
 		    ASSERT (Elen [e] < EMPTY && W [e] > 0 && pj >= 0) ;
 		}
 		ASSERT (ln >= 0 && (ln == 0 || (pj >= 0 && pj < iwlen))) ;
@@ -860,7 +860,7 @@ GLOBAL void AMD_2
 		    i = Iw [pj++] ;
 		    ASSERT (i >= 0 && i < n && (i == me || Elen [i] >= EMPTY));
 		    nvi = Nv [i] ;
-		    AMD_DEBUG2 ((": "ID" "ID" "ID" "ID"\n",
+		    TRILINOS_AMD_DEBUG2 ((": "ID" "ID" "ID" "ID"\n",
 				i, Elen [i], Nv [i], wflg)) ;
 
 		    if (nvi > 0)
@@ -873,7 +873,7 @@ GLOBAL void AMD_2
 			if (pfree >= iwlen)
 			{
 
-			    AMD_DEBUG1 (("GARBAGE COLLECTION\n")) ;
+			    TRILINOS_AMD_DEBUG1 (("GARBAGE COLLECTION\n")) ;
 
 			    /* prepare for compressing Iw by adjusting pointers
 			     * and lengths so that the lists being searched in
@@ -915,7 +915,7 @@ GLOBAL void AMD_2
 				j = FLIP (Iw [psrc++]) ;
 				if (j >= 0)
 				{
-				    AMD_DEBUG2 (("Got object j: "ID"\n", j)) ;
+				    TRILINOS_AMD_DEBUG2 (("Got object j: "ID"\n", j)) ;
 				    Iw [pdst] = Pe [j] ;
 				    Pe [j] = pdst++ ;
 				    lenj = Len [j] ;
@@ -949,7 +949,7 @@ GLOBAL void AMD_2
 			degme += nvi ;
 			Nv [i] = -nvi ;
 			Iw [pfree++] = i ;
-			AMD_DEBUG2 (("     s: "ID"     nv "ID"\n", i, Nv [i]));
+			TRILINOS_AMD_DEBUG2 (("     s: "ID"     nv "ID"\n", i, Nv [i]));
 
 			/* ------------------------------------------------- */
 			/* remove variable i from degree link list */
@@ -977,7 +977,7 @@ GLOBAL void AMD_2
 		{
 		    /* set tree pointer and flag to indicate element e is
 		     * absorbed into new element me (the parent of e is me) */
-		    AMD_DEBUG1 ((" Element "ID" => "ID"\n", e, me)) ;
+		    TRILINOS_AMD_DEBUG1 ((" Element "ID" => "ID"\n", e, me)) ;
 		    Pe [e] = FLIP (me) ;
 		    W [e] = 0 ;
 		}
@@ -1001,9 +1001,9 @@ GLOBAL void AMD_2
 	 * diagonal part). */
 
 #ifndef NDEBUG
-	AMD_DEBUG2 (("New element structure: length= "ID"\n", pme2-pme1+1)) ;
-	for (pme = pme1 ; pme <= pme2 ; pme++) AMD_DEBUG3 ((" "ID"", Iw[pme]));
-	AMD_DEBUG3 (("\n")) ;
+	TRILINOS_AMD_DEBUG2 (("New element structure: length= "ID"\n", pme2-pme1+1)) ;
+	for (pme = pme1 ; pme <= pme2 ; pme++) TRILINOS_AMD_DEBUG3 ((" "ID"", Iw[pme]));
+	TRILINOS_AMD_DEBUG3 (("\n")) ;
 #endif
 
 	/* ----------------------------------------------------------------- */
@@ -1033,13 +1033,13 @@ GLOBAL void AMD_2
 	 * in Scan 2.
 	 * ----------------------------------------------------------------- */
 
-	AMD_DEBUG2 (("me: ")) ;
+	TRILINOS_AMD_DEBUG2 (("me: ")) ;
 	for (pme = pme1 ; pme <= pme2 ; pme++)
 	{
 	    i = Iw [pme] ;
 	    ASSERT (i >= 0 && i < n) ;
 	    eln = Elen [i] ;
-	    AMD_DEBUG3 ((""ID" Elen "ID": \n", i, eln)) ;
+	    TRILINOS_AMD_DEBUG3 ((""ID" Elen "ID": \n", i, eln)) ;
 	    if (eln > 0)
 	    {
 		/* note that Nv [i] has been negated to denote i in Lme: */
@@ -1051,26 +1051,26 @@ GLOBAL void AMD_2
 		    e = Iw [p] ;
 		    ASSERT (e >= 0 && e < n) ;
 		    we = W [e] ;
-		    AMD_DEBUG4 (("    e "ID" we "ID" ", e, we)) ;
+		    TRILINOS_AMD_DEBUG4 (("    e "ID" we "ID" ", e, we)) ;
 		    if (we >= wflg)
 		    {
 			/* unabsorbed element e has been seen in this loop */
-			AMD_DEBUG4 (("    unabsorbed, first time seen")) ;
+			TRILINOS_AMD_DEBUG4 (("    unabsorbed, first time seen")) ;
 			we -= nvi ;
 		    }
 		    else if (we != 0)
 		    {
 			/* e is an unabsorbed element */
 			/* this is the first we have seen e in all of Scan 1 */
-			AMD_DEBUG4 (("    unabsorbed")) ;
+			TRILINOS_AMD_DEBUG4 (("    unabsorbed")) ;
 			we = Degree [e] + wnvi ;
 		    }
-		    AMD_DEBUG4 (("\n")) ;
+		    TRILINOS_AMD_DEBUG4 (("\n")) ;
 		    W [e] = we ;
 		}
 	    }
 	}
-	AMD_DEBUG2 (("\n")) ;
+	TRILINOS_AMD_DEBUG2 (("\n")) ;
 
 /* ========================================================================= */
 /* DEGREE UPDATE AND ELEMENT ABSORPTION */
@@ -1087,7 +1087,7 @@ GLOBAL void AMD_2
 	{
 	    i = Iw [pme] ;
 	    ASSERT (i >= 0 && i < n && Nv [i] < 0 && Elen [i] >= 0) ;
-	    AMD_DEBUG2 (("Updating: i "ID" "ID" "ID"\n", i, Elen[i], Len [i]));
+	    TRILINOS_AMD_DEBUG2 (("Updating: i "ID" "ID" "ID"\n", i, Elen[i], Len [i]));
 	    p1 = Pe [i] ;
 	    p2 = p1 + Elen [i] - 1 ;
 	    pn = p1 ;
@@ -1117,12 +1117,12 @@ GLOBAL void AMD_2
 			    deg += dext ;
 			    Iw [pn++] = e ;
 			    hash += e ;
-			    AMD_DEBUG4 ((" e: "ID" hash = "ID"\n",e,hash)) ;
+			    TRILINOS_AMD_DEBUG4 ((" e: "ID" hash = "ID"\n",e,hash)) ;
 			}
 			else
 			{
 			    /* external degree of e is zero, absorb e into me*/
-			    AMD_DEBUG1 ((" Element "ID" =>"ID" (aggressive)\n",
+			    TRILINOS_AMD_DEBUG1 ((" Element "ID" =>"ID" (aggressive)\n",
 				e, me)) ;
 			    ASSERT (dext == 0) ;
 			    Pe [e] = FLIP (me) ;
@@ -1146,7 +1146,7 @@ GLOBAL void AMD_2
 			deg += dext ;
 			Iw [pn++] = e ;
 			hash += e ;
-			AMD_DEBUG4 (("	e: "ID" hash = "ID"\n",e,hash)) ;
+			TRILINOS_AMD_DEBUG4 (("	e: "ID" hash = "ID"\n",e,hash)) ;
 		    }
 		}
 	    }
@@ -1175,7 +1175,7 @@ GLOBAL void AMD_2
 		    deg += nvj ;
 		    Iw [pn++] = j ;
 		    hash += j ;
-		    AMD_DEBUG4 (("  s: "ID" hash "ID" Nv[j]= "ID"\n",
+		    TRILINOS_AMD_DEBUG4 (("  s: "ID" hash "ID" Nv[j]= "ID"\n",
 				j, hash, nvj)) ;
 		}
 	    }
@@ -1215,7 +1215,7 @@ GLOBAL void AMD_2
 		 * flop count analysis.  It also means that the post-ordering
 		 * is not an exact elimination tree post-ordering. */
 
-		AMD_DEBUG1 (("  MASS i "ID" => parent e "ID"\n", i, me)) ;
+		TRILINOS_AMD_DEBUG1 (("  MASS i "ID" => parent e "ID"\n", i, me)) ;
 		Pe [i] = FLIP (me) ;
 		nvi = -Nv [i] ;
 		degme -= nvi ;
@@ -1302,12 +1302,12 @@ GLOBAL void AMD_2
 /* SUPERVARIABLE DETECTION */
 /* ========================================================================= */
 
-	AMD_DEBUG1 (("Detecting supervariables:\n")) ;
+	TRILINOS_AMD_DEBUG1 (("Detecting supervariables:\n")) ;
 	for (pme = pme1 ; pme <= pme2 ; pme++)
 	{
 	    i = Iw [pme] ;
 	    ASSERT (i >= 0 && i < n) ;
-	    AMD_DEBUG2 (("Consider i "ID" nv "ID"\n", i, Nv [i])) ;
+	    TRILINOS_AMD_DEBUG2 (("Consider i "ID" nv "ID"\n", i, Nv [i])) ;
 	    if (Nv [i] < 0)
 	    {
 		/* i is a principal variable in Lme */
@@ -1348,7 +1348,7 @@ GLOBAL void AMD_2
 		*/
 
 		ASSERT (i >= EMPTY && i < n) ;
-		AMD_DEBUG2 (("----i "ID" hash "ID"\n", i, hash)) ;
+		TRILINOS_AMD_DEBUG2 (("----i "ID" hash "ID"\n", i, hash)) ;
 
 		while (i != EMPTY && Next [i] != EMPTY)
 		{
@@ -1384,7 +1384,7 @@ GLOBAL void AMD_2
 			/* check if j and i have identical nonzero pattern */
 			/* ------------------------------------------------- */
 
-			AMD_DEBUG3 (("compare i "ID" and j "ID"\n", i,j)) ;
+			TRILINOS_AMD_DEBUG3 (("compare i "ID" and j "ID"\n", i,j)) ;
 
 			/* check if i and j have the same Len and Elen */
 			ASSERT (Len [j] >= 0 && Elen [j] >= 0) ;
@@ -1402,7 +1402,7 @@ GLOBAL void AMD_2
 			    /* found it!  j can be absorbed into i */
 			    /* --------------------------------------------- */
 
-			    AMD_DEBUG1 (("found it! j "ID" => i "ID"\n", j,i));
+			    TRILINOS_AMD_DEBUG1 (("found it! j "ID" => i "ID"\n", j,i));
 			    Pe [j] = FLIP (i) ;
 			    /* both Nv [i] and Nv [j] are negated since they */
 			    /* are in Lme, and the absolute values of each */
@@ -1438,7 +1438,7 @@ GLOBAL void AMD_2
 		}
 	    }
 	}
-	AMD_DEBUG2 (("detect done\n")) ;
+	TRILINOS_AMD_DEBUG2 (("detect done\n")) ;
 
 /* ========================================================================= */
 /* RESTORE DEGREE LISTS AND REMOVE NONPRINCIPAL SUPERVARIABLES FROM ELEMENT */
@@ -1451,7 +1451,7 @@ GLOBAL void AMD_2
 	    i = Iw [pme] ;
 	    ASSERT (i >= 0 && i < n) ;
 	    nvi = -Nv [i] ;
-	    AMD_DEBUG3 (("Restore i "ID" "ID"\n", i, nvi)) ;
+	    TRILINOS_AMD_DEBUG3 (("Restore i "ID" "ID"\n", i, nvi)) ;
 	    if (nvi > 0)
 	    {
 		/* i is a principal variable in Lme */
@@ -1492,13 +1492,13 @@ GLOBAL void AMD_2
 
 	    }
 	}
-	AMD_DEBUG2 (("restore done\n")) ;
+	TRILINOS_AMD_DEBUG2 (("restore done\n")) ;
 
 /* ========================================================================= */
 /* FINALIZE THE NEW ELEMENT */
 /* ========================================================================= */
 
-	AMD_DEBUG2 (("ME = "ID" DONE\n", me)) ;
+	TRILINOS_AMD_DEBUG2 (("ME = "ID" DONE\n", me)) ;
 	Nv [me] = nvpiv ;
 	/* save the length of the list for the new element me */
 	Len [me] = p - pme1 ;
@@ -1545,12 +1545,12 @@ GLOBAL void AMD_2
 	}
 
 #ifndef NDEBUG
-	AMD_DEBUG2 (("finalize done nel "ID" n "ID"\n   ::::\n", nel, n)) ;
+	TRILINOS_AMD_DEBUG2 (("finalize done nel "ID" n "ID"\n   ::::\n", nel, n)) ;
 	for (pme = Pe [me] ; pme <= Pe [me] + Len [me] - 1 ; pme++)
 	{
-	      AMD_DEBUG3 ((" "ID"", Iw [pme])) ;
+	      TRILINOS_AMD_DEBUG3 ((" "ID"", Iw [pme])) ;
 	}
-	AMD_DEBUG3 (("\n")) ;
+	TRILINOS_AMD_DEBUG3 (("\n")) ;
 #endif
 
     }
@@ -1581,28 +1581,28 @@ GLOBAL void AMD_2
 	nms_ldl += (s + lnzme)/2 ;
 
 	/* number of nz's in L (excl. diagonal) */
-	Info [AMD_LNZ] = lnz ;
+	Info [TRILINOS_AMD_LNZ] = lnz ;
 
 	/* number of divide ops for LU and LDL' */
-	Info [AMD_NDIV] = ndiv ;
+	Info [TRILINOS_AMD_NDIV] = ndiv ;
 
 	/* number of multiply-subtract pairs for LDL' */
-	Info [AMD_NMULTSUBS_LDL] = nms_ldl ;
+	Info [TRILINOS_AMD_NMULTSUBS_LDL] = nms_ldl ;
 
 	/* number of multiply-subtract pairs for LU */
-	Info [AMD_NMULTSUBS_LU] = nms_lu ;
+	Info [TRILINOS_AMD_NMULTSUBS_LU] = nms_lu ;
 
 	/* number of "dense" rows/columns */
-	Info [AMD_NDENSE] = ndense ;
+	Info [TRILINOS_AMD_NDENSE] = ndense ;
 
 	/* largest front is dmax-by-dmax */
-	Info [AMD_DMAX] = dmax ;
+	Info [TRILINOS_AMD_DMAX] = dmax ;
 
 	/* number of garbage collections in AMD */
-	Info [AMD_NCMPA] = ncmpa ;
+	Info [TRILINOS_AMD_NCMPA] = ncmpa ;
 
 	/* successful ordering */
-	Info [AMD_STATUS] = AMD_OK ;
+	Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OK ;
     }
 
 /* ========================================================================= */
@@ -1649,56 +1649,56 @@ GLOBAL void AMD_2
  * is the size of element e.  Elen [i] is EMPTY for unordered variable i. */
 
 #ifndef NDEBUG
-    AMD_DEBUG2 (("\nTree:\n")) ;
+    TRILINOS_AMD_DEBUG2 (("\nTree:\n")) ;
     for (i = 0 ; i < n ; i++)
     {
-	AMD_DEBUG2 ((" "ID" parent: "ID"   ", i, Pe [i])) ;
+	TRILINOS_AMD_DEBUG2 ((" "ID" parent: "ID"   ", i, Pe [i])) ;
 	ASSERT (Pe [i] >= EMPTY && Pe [i] < n) ;
 	if (Nv [i] > 0)
 	{
 	    /* this is an element */
 	    e = i ;
-	    AMD_DEBUG2 ((" element, size is "ID"\n", Elen [i])) ;
+	    TRILINOS_AMD_DEBUG2 ((" element, size is "ID"\n", Elen [i])) ;
 	    ASSERT (Elen [e] > 0) ;
 	}
-	AMD_DEBUG2 (("\n")) ;
+	TRILINOS_AMD_DEBUG2 (("\n")) ;
     }
-    AMD_DEBUG2 (("\nelements:\n")) ;
+    TRILINOS_AMD_DEBUG2 (("\nelements:\n")) ;
     for (e = 0 ; e < n ; e++)
     {
 	if (Nv [e] > 0)
 	{
-	    AMD_DEBUG3 (("Element e= "ID" size "ID" nv "ID" \n", e,
+	    TRILINOS_AMD_DEBUG3 (("Element e= "ID" size "ID" nv "ID" \n", e,
 		Elen [e], Nv [e])) ;
 	}
     }
-    AMD_DEBUG2 (("\nvariables:\n")) ;
+    TRILINOS_AMD_DEBUG2 (("\nvariables:\n")) ;
     for (i = 0 ; i < n ; i++)
     {
 	Int cnt ;
 	if (Nv [i] == 0)
 	{
-	    AMD_DEBUG3 (("i unordered: "ID"\n", i)) ;
+	    TRILINOS_AMD_DEBUG3 (("i unordered: "ID"\n", i)) ;
 	    j = Pe [i] ;
 	    cnt = 0 ;
-	    AMD_DEBUG3 (("  j: "ID"\n", j)) ;
+	    TRILINOS_AMD_DEBUG3 (("  j: "ID"\n", j)) ;
 	    if (j == EMPTY)
 	    {
-		AMD_DEBUG3 (("	i is a dense variable\n")) ;
+		TRILINOS_AMD_DEBUG3 (("	i is a dense variable\n")) ;
 	    }
 	    else
 	    {
 		ASSERT (j >= 0 && j < n) ;
 		while (Nv [j] == 0)
 		{
-		    AMD_DEBUG3 (("	j : "ID"\n", j)) ;
+		    TRILINOS_AMD_DEBUG3 (("	j : "ID"\n", j)) ;
 		    j = Pe [j] ;
-		    AMD_DEBUG3 (("	j:: "ID"\n", j)) ;
+		    TRILINOS_AMD_DEBUG3 (("	j:: "ID"\n", j)) ;
 		    cnt++ ;
 		    if (cnt > n) break ;
 		}
 		e = j ;
-		AMD_DEBUG3 (("	got to e: "ID"\n", e)) ;
+		TRILINOS_AMD_DEBUG3 (("	got to e: "ID"\n", e)) ;
 	    }
 	}
     }
@@ -1720,28 +1720,28 @@ GLOBAL void AMD_2
 	     * was selected as pivot.
 	     * ------------------------------------------------------------- */
 
-	    AMD_DEBUG1 (("Path compression, i unordered: "ID"\n", i)) ;
+	    TRILINOS_AMD_DEBUG1 (("Path compression, i unordered: "ID"\n", i)) ;
 	    j = Pe [i] ;
 	    ASSERT (j >= EMPTY && j < n) ;
-	    AMD_DEBUG3 (("	j: "ID"\n", j)) ;
+	    TRILINOS_AMD_DEBUG3 (("	j: "ID"\n", j)) ;
 	    if (j == EMPTY)
 	    {
 		/* Skip a dense variable.  It has no parent. */
-		AMD_DEBUG3 (("      i is a dense variable\n")) ;
+		TRILINOS_AMD_DEBUG3 (("      i is a dense variable\n")) ;
 		continue ;
 	    }
 
 	    /* while (j is a variable) */
 	    while (Nv [j] == 0)
 	    {
-		AMD_DEBUG3 (("		j : "ID"\n", j)) ;
+		TRILINOS_AMD_DEBUG3 (("		j : "ID"\n", j)) ;
 		j = Pe [j] ;
-		AMD_DEBUG3 (("		j:: "ID"\n", j)) ;
+		TRILINOS_AMD_DEBUG3 (("		j:: "ID"\n", j)) ;
 		ASSERT (j >= 0 && j < n) ;
 	    }
 	    /* got to an element e */
 	    e = j ;
-	    AMD_DEBUG3 (("got to e: "ID"\n", e)) ;
+	    TRILINOS_AMD_DEBUG3 (("got to e: "ID"\n", e)) ;
 
 	    /* -------------------------------------------------------------
 	     * traverse the path again from i to e, and compress the path
@@ -1754,7 +1754,7 @@ GLOBAL void AMD_2
 	    while (Nv [j] == 0)
 	    {
 		jnext = Pe [j] ;
-		AMD_DEBUG3 (("j "ID" jnext "ID"\n", j, jnext)) ;
+		TRILINOS_AMD_DEBUG3 (("j "ID" jnext "ID"\n", j, jnext)) ;
 		Pe [j] = e ;
 		j = jnext ;
 		ASSERT (j >= 0 && j < n) ;
@@ -1766,7 +1766,7 @@ GLOBAL void AMD_2
 /* postorder the assembly tree */
 /* ========================================================================= */
 
-    AMD_postorder (n, Pe, Nv, Elen,
+    TRILINOS_AMD_postorder (n, Pe, Nv, Elen,
 	W,			/* output order */
 	Head, Next, Last) ;	/* workspace */
 
@@ -1834,12 +1834,12 @@ GLOBAL void AMD_2
     }
     ASSERT (nel == n) ;
 
-    AMD_DEBUG2 (("\n\nPerm:\n")) ;
+    TRILINOS_AMD_DEBUG2 (("\n\nPerm:\n")) ;
     for (i = 0 ; i < n ; i++)
     {
 	k = Next [i] ;
 	ASSERT (k >= 0 && k < n) ;
 	Last [k] = i ;
-	AMD_DEBUG2 (("   perm ["ID"] = "ID"\n", k, i)) ;
+	TRILINOS_AMD_DEBUG2 (("   perm ["ID"] = "ID"\n", k, i)) ;
     }
 }

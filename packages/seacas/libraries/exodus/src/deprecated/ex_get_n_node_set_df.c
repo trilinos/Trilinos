@@ -33,8 +33,8 @@
  *
  */
 
+#include <stdint.h>                     // for int64_t
 #include "exodusII.h"
-#include <sys/types.h> // for int64_t
 
 /*!
  * \deprecated Use ex_get_partial_set_dist_fact() instead

@@ -198,13 +198,25 @@ MultiVecAdapter<Epetra_MultiVector>::getVectorNonConst( size_t j )
 }
 
 
+double * MultiVecAdapter<Epetra_MultiVector>::getMVPointer_impl() const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( this->getGlobalNumVectors() != 1,
+		      std::invalid_argument,
+		      "Amesos2_EpetraMultiVectorAdapter: getMVPointer_impl should only be called for case with a single vector and single MPI process" );
+
+  double* vector_data = mv_->operator[](Teuchos::as<int>(0)); // raw pointer to data from 0^th vector
+  return vector_data;
+}
+
+
 void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
   const Teuchos::ArrayView<MultiVecAdapter<Epetra_MultiVector>::scalar_t>& av,
   size_t lda,
   Teuchos::Ptr<
     const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
                       MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
-                      MultiVecAdapter<Epetra_MultiVector>::node_t> > distribution_map ) const
+                      MultiVecAdapter<Epetra_MultiVector>::node_t> > distribution_map,
+                      EDistribution distribution) const
 {
   using Teuchos::rcpFromPtr;
   using Teuchos::as;
@@ -222,7 +234,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
 		      "and number of vectors" );
 #endif
 
-  // Optimization for ROOTED
+  // Optimization for ROOTED and single MPI process
   if ( num_vecs == 1 && mv_->Comm().MyPID() == 0 && mv_->Comm().NumProc() == 1 ) {
 	  mv_->ExtractCopy(av.getRawPtr(), lda);
   }
@@ -307,7 +319,8 @@ MultiVecAdapter<Epetra_MultiVector>::put1dData(
   Teuchos::Ptr<
     const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
                       MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
-                      MultiVecAdapter<Epetra_MultiVector>::node_t> > source_map)
+                      MultiVecAdapter<Epetra_MultiVector>::node_t> > source_map,
+                      EDistribution distribution )
 {
   using Teuchos::rcpFromPtr;
   using Teuchos::as;
@@ -316,12 +329,17 @@ MultiVecAdapter<Epetra_MultiVector>::put1dData(
   // TODO: check that the following const_cast is safe
   double* data_ptr = const_cast<double*>(new_data.getRawPtr());
 
-  // Optimization for ROOTED
-  // TODO: Element-wise copy rather than using importer
+  // Optimization for ROOTED and single MPI process
   if ( num_vecs == 1 && mv_->Comm().MyPID() == 0 && mv_->Comm().NumProc() == 1 ) {
-	  const multivec_t source_mv(Copy, *mv_map_, data_ptr, as<int>(lda), as<int>(num_vecs));
-	  const Epetra_Import importer(*mv_map_, *mv_map_); //trivial - map does not change
-	  mv_->Import(source_mv, importer, Insert);
+    // First, functioning impl
+    //const multivec_t source_mv(Copy, *mv_map_, data_ptr, as<int>(lda), as<int>(num_vecs));
+    //const Epetra_Import importer(*mv_map_, *mv_map_); //trivial - map does not change
+	  //mv_->Import(source_mv, importer, Insert);
+    // Element-wise copy rather than using importer
+    auto vector = mv_->Pointers();
+    for ( size_t i = 0; i < lda; ++i ) {
+      vector[0][i] = data_ptr[i];
+    }
   }
   else {
     const Epetra_BlockMap e_source_map

@@ -33,11 +33,9 @@
 #ifndef FileInfo_h
 #define FileInfo_h
 
-#include <iosfwd>
-#include <string>
-
-#include <string>
-#include <sys/types.h>
+#include <string>      // for string, operator!=, etc
+#include <sys/types.h> // for off_t
+#include <time.h>      // for time_t
 
 /*! \class FileInfo
  *  \author Greg Sjaardema

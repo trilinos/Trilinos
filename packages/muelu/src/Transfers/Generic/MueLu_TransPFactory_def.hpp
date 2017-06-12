@@ -90,11 +90,11 @@ namespace MueLu {
 
     // Reuse pattern if available (multiple solve)
     RCP<ParameterList> Tparams;
-    if(pL.isSublist("matrixmatrix: kernel params")) 
-	Tparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-      else 
-	Tparams= rcp(new ParameterList);
-      
+    if(pL.isSublist("matrixmatrix: kernel params"))
+        Tparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else
+        Tparams= rcp(new ParameterList);
+
     // By default, we don't need global constants for transpose
     Tparams->set("compute global constants: temporaries",Tparams->get("compute global constants: temporaries",false));
     Tparams->set("compute global constants",Tparams->get("compute global constants",false));

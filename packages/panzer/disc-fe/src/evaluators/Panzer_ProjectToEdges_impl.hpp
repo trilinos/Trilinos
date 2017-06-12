@@ -46,6 +46,9 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
+#include "Intrepid2_Cubature.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Kokkos_ViewFactory.hpp"
@@ -77,7 +80,7 @@ ProjectToEdges(
   result = PHX::MDField<ScalarT,Cell,BASIS>(dof_name,basis_layout);
   this->addEvaluatedField(result);
 
-  tangents      = PHX::MDField<ScalarT,Cell,BASIS,Dim>(dof_name+"_Tangents",vector_layout);
+  tangents = PHX::MDField<const ScalarT,Cell,BASIS,Dim>(dof_name+"_Tangents",vector_layout);
   this->addDependentField(tangents);
 
   if(quad_degree > 0){
@@ -90,13 +93,13 @@ ProjectToEdges(
     vector_values.resize(numQPoints);
     for (int qp(0); qp < numQPoints; ++qp)
     {
-      vector_values[qp] = PHX::MDField<ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector"+"_qp_"+std::to_string(qp),vector_layout);
+      vector_values[qp] = PHX::MDField<const ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector"+"_qp_"+std::to_string(qp),vector_layout);
       this->addDependentField(vector_values[qp]);
     }
 
     // setup the orientation field
     std::string orientationFieldName = basis->name() + " Orientation";
-    dof_orientation = PHX::MDField<ScalarT,Cell,NODE>(orientationFieldName,basis_layout);
+    dof_orientation = PHX::MDField<const ScalarT,Cell,NODE>(orientationFieldName,basis_layout);
     this->addDependentField(dof_orientation);
 
     gatherFieldTangents = PHX::MDField<ScalarT,Cell,NODE,Dim>(dof_name+"_Tangents",basis->functional_grad);
@@ -104,7 +107,7 @@ ProjectToEdges(
 
   } else {
     vector_values.resize(1);
-    vector_values[0] = PHX::MDField<ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector",vector_layout);
+    vector_values[0] = PHX::MDField<const ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector",vector_layout);
     this->addDependentField(vector_values[0]);
   }
 

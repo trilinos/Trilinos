@@ -120,6 +120,9 @@ void SquareTriMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Pa
    // now that edges are built, sidets can be added
    addSideSets(mesh);
 
+   // add nodesets
+   addNodeSets(mesh);
+
    // calls Stk_MeshFactory::rebalance
    this->rebalance(mesh);
 }
@@ -218,6 +221,9 @@ void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
    mesh.addSideset("bottom",side_ctd);
+
+   // add nodesets
+   mesh.addNodeset("origin");
 }
 
 void SquareTriMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
@@ -400,6 +406,25 @@ void SquareTriMeshFactory::addSideSets(STK_Interface & mesh) const
          if(mesh.entityOwnerRank(edge)==machRank_)
             mesh.addEntityToSideset(edge,top);
       }
+   }
+
+   mesh.endModification();
+}
+
+void SquareTriMeshFactory::addNodeSets(STK_Interface & mesh) const
+{
+   mesh.beginModification();
+
+   // get all part vectors
+   stk::mesh::Part * origin = mesh.getNodeset("origin");
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   if(machRank_==0) 
+   {
+      stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
+
+      // add zero node to origin node set
+      mesh.addEntityToNodeset(node,origin);
    }
 
    mesh.endModification();

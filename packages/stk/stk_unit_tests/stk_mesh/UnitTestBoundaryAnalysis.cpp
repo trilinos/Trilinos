@@ -41,7 +41,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
+#include <stk_unit_tests/stk_mesh_fixtures/GridFixture.hpp>  // for GridFixture
 #include <string>                       // for string
 #include <utility>                      // for pair, operator==
 #include <vector>                       // for vector, vector<>::iterator

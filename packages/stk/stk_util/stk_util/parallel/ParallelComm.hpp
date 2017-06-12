@@ -125,8 +125,8 @@ public:
   /** Pointer to base of buffer. */
   void * buffer() const ;
 
-  ~CommBuffer();
-  CommBuffer();
+  ~CommBuffer() {}
+  CommBuffer() : m_beg(nullptr), m_ptr(nullptr), m_end(nullptr) { }
 
 private:
   friend class CommSparse ;

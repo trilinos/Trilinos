@@ -442,9 +442,8 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh, const CommunicationMeta
   }
 
   if ((status = nc_def_dim(exodusFilePtr, DIM_TIME, NC_UNLIMITED, &timedim)) != NC_NOERR) {
-    exerrval = status;
     sprintf(errmsg, "Error: failed to define time dimension in file id %d", exodusFilePtr);
-    ex_err(routine, errmsg, exerrval);
+    ex_err(routine, errmsg, status);
     return (EX_FATAL);
   }
 
@@ -454,10 +453,9 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh, const CommunicationMeta
     dim[0]    = timedim;
     if ((status = nc_def_var(exodusFilePtr, VAR_WHOLE_TIME, nc_flt_code(exodusFilePtr), 1, dim,
                              &varid)) != NC_NOERR) {
-      exerrval = status;
       sprintf(errmsg, "Error: failed to define whole time step variable in file id %d",
               exodusFilePtr);
-      ex_err(routine, errmsg, exerrval);
+      ex_err(routine, errmsg, status);
       return (EX_FATAL);
     }
   }

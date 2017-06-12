@@ -106,8 +106,6 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   using Teuchos::tuple;
   using Thyra::VectorBase;
   using Thyra::createMember;
-  //typedef Thyra::ModelEvaluatorBase MEB;  // not used
-  //typedef Teuchos::ScalarTraits<Scalar> ST; // not used
 
   TEUCHOS_ASSERT(lof_!=Teuchos::null);
 
@@ -911,7 +909,6 @@ evalModel_D2gDx2(int respIndex,
                  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDx2) const
 {
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   // set model parameters from supplied inArgs
   setParameters(inArgs);
@@ -956,7 +953,6 @@ evalModel_D2gDxDp(int respIndex,
                   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDxDp) const
 {
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   // set model parameters from supplied inArgs
   setParameters(inArgs);
@@ -1002,7 +998,6 @@ evalModel_D2gDp2(int respIndex,
                  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDp2) const
 {
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   // set model parameters from supplied inArgs
   setParameters(inArgs);
@@ -1052,7 +1047,6 @@ evalModel_D2gDpDx(int respIndex,
                   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDpDx) const
 {
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   // set model parameters from supplied inArgs
   setParameters(inArgs);
@@ -1302,8 +1296,6 @@ evalModel_D2fDpDx(int pIndex,
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::null;
 
-  typedef Thyra::ModelEvaluatorBase MEB;
-
   // parameter is not distributed 
   TEUCHOS_ASSERT(parameters_[pIndex]->is_distributed);
 
@@ -1351,7 +1343,6 @@ evalModel_D2fDp2(int pIndex,
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::null;
 
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   // parameter is not distributed 
   TEUCHOS_ASSERT(parameters_[pIndex]->is_distributed);

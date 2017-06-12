@@ -262,8 +262,8 @@ int CHOLMOD(defaults)
 	/* CHOLMOD nested dissection and minimum degree parameter */
 	Common->method [i].prune_dense = 10.0 ;	/* dense row/col control */
 
-	/* min degree parameters (AMD, COLAMD, SYMAMD, CAMD, CCOLAMD, CSYMAMD)*/
-	Common->method [i].prune_dense2 = -1 ;	/* COLAMD dense row control */
+	/* min degree parameters (AMD, TRILINOS_COLAMD, SYMAMD, CAMD, CCOLAMD, CSYMAMD)*/
+	Common->method [i].prune_dense2 = -1 ;	/* TRILINOS_COLAMD dense row control */
 	Common->method [i].aggressive = TRUE ;	/* aggressive absorption */
 	Common->method [i].order_for_lu = FALSE ;/* order for Cholesky not LU */
 
@@ -301,7 +301,7 @@ int CHOLMOD(defaults)
     Common->method [7].ordering = CHOLMOD_NESDIS ;
     Common->method [7].prune_dense = -1. ;
 
-    /* COLAMD for A*A', AMD for A */
+    /* TRILINOS_COLAMD for A*A', AMD for A */
     Common->method [8].ordering = CHOLMOD_COLAMD ;
 
     return (TRUE) ;

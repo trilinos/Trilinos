@@ -2697,14 +2697,14 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
     return;
   }
 
-  char * file_data = new char[len];
-  file_data[len-1] = '\0'; // critical to null terminate buffer // MDM added -1 as this was a buffer overwrite
+  char * file_data = new char[len+1];
+  file_data[len] = '\0'; // critical to null terminate buffer 
   if(rank == 0){
     file.read(file_data,len); // if proc 0 then read file
   }
 
   // broadcast the file to the world
-  this->tcomm_->broadcast(0,(int)len,file_data);
+  this->tcomm_->broadcast(0,(int)len+1,file_data);
   this->tcomm_->barrier();
 
   // Create the PamgenMesh

@@ -243,7 +243,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 
 void get_nodes_that_are_kept_from_other_proc(stk::mesh::BulkData &mesh, stk::mesh::EntityVector &new_nodes, stk::mesh::EntityVector& sharedNodes)
 {
-    stk::CommSparse commAll(mesh.parallel());
+    stk::CommSparse comm(mesh.parallel());
 
     int otherProc = 1 - mesh.parallel_rank();
 
@@ -253,24 +253,24 @@ void get_nodes_that_are_kept_from_other_proc(stk::mesh::BulkData &mesh, stk::mes
         {
             if(mesh.state(new_nodes[i]) != stk::mesh::Deleted && mesh.is_valid(new_nodes[i]))
             {
-                commAll.send_buffer(otherProc).pack<stk::mesh::EntityKey>(mesh.entity_key(new_nodes[i]));
+                comm.send_buffer(otherProc).pack<stk::mesh::EntityKey>(mesh.entity_key(new_nodes[i]));
             }
         }
 
         if(phase == 0)
         {
-            commAll.allocate_buffers();
+            comm.allocate_buffers();
         }
         else
         {
-            commAll.communicate();
+            comm.communicate();
         }
     }
 
-    while(commAll.recv_buffer(otherProc).remaining())
+    while(comm.recv_buffer(otherProc).remaining())
     {
         stk::mesh::EntityKey key;
-        commAll.recv_buffer(otherProc).unpack<stk::mesh::EntityKey>(key);
+        comm.recv_buffer(otherProc).unpack<stk::mesh::EntityKey>(key);
 
         stk::mesh::Entity node = mesh.get_entity(key);
         if(mesh.is_valid(node) && mesh.state(node) != stk::mesh::Deleted)

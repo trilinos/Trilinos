@@ -121,9 +121,15 @@ namespace Intrepid2 {
       typedef ValueType pointValueType;
       Basis_HDIV_TET_I1_FEM<DeviceSpaceType,outputValueType,pointValueType> tetBasis;
 
+      *outStream
+      << "\n"
+      << "===============================================================================\n"
+      << "| TEST 1: constructors and exceptions                                         |\n"
+      << "===============================================================================\n";
+
       try {
-        ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
+        ordinal_type nthrow = 0, ncatch = 0;
 
         // Define array containing the 4 vertices of the reference TET and its center.  
         DynRankView ConstructWithLabel(tetNodes, 10, 3);

@@ -59,6 +59,7 @@
 namespace panzer {
 
   class CellData;
+  class BasisDescriptor;
 
   //! Description and data layouts associated with a particular basis
   class PureBasis { 
@@ -80,6 +81,14 @@ namespace panzer {
       \param[in] cell_topo A shards topology description
     */
     PureBasis(const std::string & basis_type,const int basis_order,const int num_cells,const Teuchos::RCP<const shards::CellTopology> & cell_topo);
+
+
+    /** Build a basis given a type, order, number of cells (for data layouts) and shards topology
+      \param[in] description Description of basis
+      \param[in] cell_topo A shards topology description
+      \param[in] num_cells Number of cells used in the data layouts for this basis
+    */
+    PureBasis(const panzer::BasisDescriptor & description, const Teuchos::RCP<const shards::CellTopology> & cell_topology, const int num_cells);
 
     //! Returns the number of basis coefficients
     int cardinality() const;

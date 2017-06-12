@@ -1378,7 +1378,6 @@ namespace Tpetra {
       // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
       lclInds2D_[rowInfo.localRow].resize (newAllocSize);
       rowVals.resize (newAllocSize);
-      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
 
       RowInfo rowInfoOut = rowInfo;
       rowInfoOut.allocSize = newAllocSize;
@@ -1402,7 +1401,6 @@ namespace Tpetra {
       // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
       gblInds2D_[rowInfo.localRow].resize (newAllocSize);
       rowVals.resize (newAllocSize);
-      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
 
       RowInfo rowInfoOut = rowInfo;
       rowInfoOut.allocSize = newAllocSize;
@@ -2657,123 +2655,30 @@ namespace Tpetra {
     /// sorted" and "is merged" states.
     void setLocallyModified ();
 
-    //! Sort the column indices in all the rows.
-    void sortAllIndices ();
+  private:
+    /// \brief Sort and merge the column indices in all the rows.
+    ///
+    /// \param sorted [in] Whether the indices are already sorted.
+    /// \param merged [in] Whether the indices are already merged.
+    void
+    sortAndMergeAllIndices (const bool sorted, const bool merged);
+
+    // mfh 08 May 2017: I only restore "protected" here for backwards
+    // compatibility.
+  protected:
 
     //! Sort the column indices in the given row.
-    void sortRowIndices (const RowInfo rowinfo);
+    void sortRowIndices (const RowInfo& rowinfo);
 
-    /// \brief Sort the column indices and their values in the given row.
-    ///
-    /// \tparam Scalar The type of the values.  When calling this
-    ///   method from CrsMatrix, this should be the same as the
-    ///   <tt>Scalar</tt> template parameter of CrsMatrix.
-    ///
-    /// \param rowinfo [in] Result of getRowInfo() for the row.
-    ///
-    /// \param values [in/out] On input: values for the given row.  If
-    ///   indices is an array of the column indices in the row, then
-    ///   values and indices should have the same number of entries,
-    ///   and indices[k] should be the column index corresponding to
-    ///   values[k].  On output: the same values, but sorted in the
-    ///   same order as the (now sorted) column indices in the row.
-    template <class Scalar>
-    void
-    sortRowIndicesAndValues (const RowInfo rowinfo,
-                             const Teuchos::ArrayView<Scalar>& values)
-    {
-      if (rowinfo.numEntries > 0) {
-        Teuchos::ArrayView<LocalOrdinal> inds_view =
-          this->getLocalViewNonConst (rowinfo);
-        sort2 (inds_view.begin (), inds_view.begin () + rowinfo.numEntries,
-               values.begin ());
-      }
-    }
-
-    /// \brief Merge duplicate row indices in all of the rows.
+    /// \brief Merge duplicate column indices in the given row.
     ///
     /// \pre The graph is locally indexed:
     ///   <tt>isGloballyIndexed() == false</tt>.
-    ///
-    /// \pre The graph has not already been merged: <tt>isMerged()
-    ///   == false</tt>.  That is, this function would normally only
-    ///   be called after calling sortIndices().
-    void mergeAllIndices ();
-
-    /// \brief Merge duplicate row indices in the given row.
-    ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
-    void mergeRowIndices (RowInfo rowinfo);
-
-    /// \brief Merge duplicate row indices in the given row, along
-    ///   with their corresponding values.
     ///
-    /// This method is only called by CrsMatrix, for a CrsMatrix whose
-    /// graph is this CrsGraph instance.  It is only called when the
-    /// matrix owns the graph, not when the matrix was constructed
-    /// with a const graph.
-    ///
-    /// \pre The graph is not already storage optimized:
-    ///   <tt>isStorageOptimized() == false</tt>
-    template<class Scalar>
-    void
-    mergeRowIndicesAndValues (RowInfo rowinfo,
-                              const Teuchos::ArrayView<Scalar>& rowValues)
-    {
-      using Teuchos::ArrayView;
-      const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (isStorageOptimized(), std::logic_error, "It is invalid to call this "
-         "method if the graph's storage has already been optimized.  Please "
-         "report this bug to the Tpetra developers.");
-
-      typedef typename ArrayView<Scalar>::iterator Iter;
-      Iter rowValueIter = rowValues.begin ();
-      ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst (rowinfo);
-      typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
-
-      // beg,end define a half-exclusive interval over which to iterate.
-      beg = inds_view.begin();
-      end = inds_view.begin() + rowinfo.numEntries;
-      newend = beg;
-      if (beg != end) {
-        typename ArrayView<LocalOrdinal>::iterator cur = beg + 1;
-        Iter vcur = rowValueIter + 1;
-        Iter vend = rowValueIter;
-        cur = beg+1;
-        while (cur != end) {
-          if (*cur != *newend) {
-            // new entry; save it
-            ++newend;
-            ++vend;
-            (*newend) = (*cur);
-            (*vend) = (*vcur);
-          }
-          else {
-            // old entry; merge it
-            //(*vend) = f (*vend, *vcur);
-            (*vend) += *vcur;
-          }
-          ++cur;
-          ++vcur;
-        }
-        ++newend; // one past the last entry, per typical [beg,end) semantics
-      }
-      const size_t mergedEntries = newend - beg;
-#ifdef HAVE_TPETRA_DEBUG
-      // merge should not have eliminated any entries; if so, the
-      // assignment below will destroy the packed structure
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (isStorageOptimized() && mergedEntries != rowinfo.numEntries,
-         std::logic_error,
-         "Merge was incorrect; it eliminated entries from the graph.  "
-         << "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-
-      k_numRowEntries_(rowinfo.localRow) = mergedEntries;
-      nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
-    }
+    /// \return The number of duplicate column indices eliminated from the row.
+    size_t mergeRowIndices (const RowInfo& rowInfo);
 
     //@}
 
@@ -2861,28 +2766,28 @@ namespace Tpetra {
     ///   indices of row rowinfo.localRow (only works if the matrix is
     ///   locally indexed on the calling process).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<const LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getLocalKokkosRowView (const RowInfo& rowinfo) const;
+    getLocalKokkosRowView (const RowInfo& rowInfo) const;
 
     /// \brief Get a nonconst nonowned view of the local column
     ///   indices of row rowinfo.localRow (only works if the matrix is
     ///   locally indexed on the calling process).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getLocalKokkosRowViewNonConst (const RowInfo& rowinfo);
+    getLocalKokkosRowViewNonConst (const RowInfo& rowInfo);
 
     /// \brief Get a const nonowned view of the global column indices
     ///   of row rowinfo.localRow (only works if the matrix is
     ///   globally indexed).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<const GlobalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getGlobalKokkosRowView (const RowInfo& rowinfo) const;
+    getGlobalKokkosRowView (const RowInfo& rowInfo) const;
 
   protected:
 
@@ -2890,13 +2795,13 @@ namespace Tpetra {
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<const GlobalOrdinal>
-    getGlobalView (const RowInfo rowinfo) const;
+    getGlobalView (const RowInfo& rowinfo) const;
 
     /// \brief Get a nonconst, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<GlobalOrdinal>
-    getGlobalViewNonConst (const RowInfo rowinfo);
+    getGlobalViewNonConst (const RowInfo& rowinfo);
 
     /// \brief Get a pointer to the global column indices of a locally
     ///   owned row, using the result of getRowInfoFromGlobalRowIndex.
@@ -2960,11 +2865,33 @@ namespace Tpetra {
     //! Local graph; only initialized after first fillComplete() call.
     local_graph_type lclGraph_;
 
-    // Local and Global Counts
-    // nodeNumEntries_ and nodeNumAllocated_ are required to be always consistent
-    // nodeMaxNumEntries_, nodeNumDiags_ and the global quantities are computed during fillComplete() and only valid when isFillComplete()
-    global_size_t globalNumEntries_, globalNumDiags_, globalMaxNumRowEntries_;
-    size_t          nodeNumEntries_,   nodeNumDiags_,   nodeMaxNumRowEntries_, nodeNumAllocated_;
+    //! Local number of (populated) entries; must always be consistent.
+    size_t nodeNumEntries_;
+
+    /// \brief Local number of (populated) diagonal entries.
+    ///
+    /// Computed in computeLocalConstants(); only valid when isFillComplete().
+    size_t nodeNumDiags_;
+
+    /// \brief Local maximum of the number of entries in each row.
+    ///
+    /// Computed in computeLocalConstants(); only valid when isFillComplete().
+    size_t nodeMaxNumRowEntries_;
+
+    /// \brief Global number of entries in the graph.
+    ///
+    /// Only valid when isFillComplete().
+    global_size_t globalNumEntries_;
+
+    /// \brief Global number of (populated) diagonal entries.
+    ///
+    /// Computed in computeGlobalConstants(); only valid when isFillComplete().
+    global_size_t globalNumDiags_;
+
+    /// \brief Global maximum of the number of entries in each row.
+    ///
+    /// Computed in computeGlobalConstants(); only valid when isFillComplete().
+    global_size_t globalMaxNumRowEntries_;
 
     //! Whether the graph was allocated with static or dynamic profile.
     ProfileType pftype_;

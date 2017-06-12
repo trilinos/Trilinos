@@ -243,6 +243,12 @@ public:
    *        that represent the global indexes of the bounds on this
    *        processor, excluding padding
    *
+   * \param padding [in] an array of padding_type (a 2-tuple of
+   *        integers) specifying the local padding along each
+   *        axis. Since this is local, the MDMap constructor can
+   *        determine from context whether each pad refers to
+   *        communication padding or boundary padding.
+   *
    * \param replicatedBoundary [in] An array of ints which are simple
    *        flags denoting whether each axis contains replicated
    *        boundary points (RBPs). RBPs pertain only to periodic

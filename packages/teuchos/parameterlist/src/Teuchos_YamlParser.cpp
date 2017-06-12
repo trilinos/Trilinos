@@ -226,6 +226,16 @@ void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFil
   YAMLParameterList::writeYamlFile(yamlFileName, *toConvert);
 }
 
+void convertXmlToYaml(std::istream& xmlStream, std::ostream& yamlStream)
+{
+  //read xmlStream into a string until EOF
+  std::string xmlString(std::istreambuf_iterator<char>(xmlStream), {});
+  //load the parameter list from xml
+  Teuchos::RCP<Teuchos::ParameterList> toConvert = Teuchos::getParametersFromXmlString(xmlString);
+  //replace the file extension ".xml" with ".yaml", or append it if there was no extension
+  YAMLParameterList::writeYamlStream(yamlStream, *toConvert);
+}
+
 bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::ParameterList& rhs, bool verbose)
 {
   typedef Teuchos::ParameterList::ConstIterator Iter;
@@ -260,7 +270,8 @@ bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::P
     {
       if(verbose)
       {
-        std::cout << "Values for key \"" << key << "\" have different types.\n";
+        std::cout << "Values for key \"" << key << "\" have different types: \"" <<
+          any1.typeName() << "\" vs \"" << any2.typeName() << "\"\n";
       }
       return false;
     }
@@ -493,6 +504,26 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
 
 void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
 {
+  //warn the user if floats/doubles with integer values will be printed incorrectly
+  auto flags = yaml.flags();
+  //make temporary stringstream to test flags
+  std::ostringstream testStream;
+  testStream.flags(flags);
+  double testVal = 1;
+  testStream << testVal;
+  bool popFlags = false;
+  if(testStream.str() == "1")
+  {
+    //must add showpoint to flags while writing yaml
+    //this will always disambiguate (double) n and n, even if stream precision is 0
+    //prints as "n.0000" where the number of trailing zeros is the stream precision
+    //note: in YAML, "5." is a double but not an int
+    std::cout << "Warning: yaml stream format flags would confuse double with integer value with int.\n";
+    std::cout << "Setting std::ios::showpoint on the stream to fix this (will restore flags when done)\n";
+    auto flagsCopy = flags;
+    flagsCopy |= std::ios::showpoint;
+    popFlags = true;
+  }
   yaml << "%YAML 1.1\n---\n";
   yaml << "ANONYMOUS:";         //original top-level list name is not stored by ParameterList
   if(pl.numParams() == 0)
@@ -504,6 +535,11 @@ void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
     writeParameterList(pl, yaml, 2);
   }
   yaml << "...\n";
+  //restore flags
+  if(popFlags)
+  {
+    yaml.flags(flags);
+  }
 }
 
 void writeYamlFile(const std::string& yamlFile, const Teuchos::ParameterList& pl)

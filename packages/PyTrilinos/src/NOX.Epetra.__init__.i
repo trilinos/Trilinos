@@ -92,39 +92,18 @@ NOX.Epetra provides the following user-level classes:
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
 
+// Teuchos includes
+#include "Teuchos_DefaultComm.hpp"
+
 // Epetra includes
-#include "Epetra_BLAS.h"
-#include "Epetra_Object.h"
-#include "Epetra_CompObject.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_DistObject.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_DLLExportMacro.h"
-#include "PyTrilinos_Epetra_Util.hpp"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // EpetraExt includes
 #ifdef HAVE_NOX_EPETRAEXT
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 #include "EpetraExt_ModelEvaluator.h"
+#include "PyTrilinos_EpetraExt_Util.hpp"
 #endif
 
 // NOX includes
@@ -181,7 +160,8 @@ using namespace NOX::Epetra;
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)
 %teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
-// Allow import from the parent directory
+// Allow import from the parent directory, and force correct import of
+// ___init__
 %pythoncode
 %{
 import sys, os.path as op
@@ -189,6 +169,9 @@ parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 from .. import Abstract
+if "delete_Group" not in dir(___init__):
+    del ___init__
+    from . import ___init__
 %}
 
 // Include typemaps for Abstract base classes
@@ -220,7 +203,7 @@ from .. import Abstract
 // EpetraExt import
 #ifdef HAVE_NOX_EPETRAEXT
 %ignore EpetraExt::Add;
-%include "EpetraExt.i"
+%import "EpetraExt.i"
 #endif
 
 // General exception handling
@@ -260,15 +243,6 @@ from .. import Abstract
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-
-// Allow import from the parent directory
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 
 //////////////////////////////
 // NOX.Epetra.Group support //
@@ -493,10 +467,10 @@ def defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None
         assert isinstance(reqInterface, Interface.Required)
     if jacInterface is not None:
         assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(jacobian    , PyTrilinos.Epetra.Operator)
     if precInterface is not None:
         assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(preconditioner, PyTrilinos.Epetra.Operator)
 
     # Extract parameter lists
     printParams = nonlinearParameters["Printing"     ]
@@ -660,10 +634,10 @@ def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
         assert isinstance(reqInterface, Interface.Required)
     if jacInterface is not None:
         assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(jacobian    , PyTrilinos.Epetra.Operator)
     if precInterface is not None:
         assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(preconditioner, PyTrilinos.Epetra.Operator)
 
     # Get the communicator
     comm = initGuess.Comm()

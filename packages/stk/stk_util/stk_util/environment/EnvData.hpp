@@ -49,7 +49,7 @@ namespace sierra {
     /**
      * @brief Enumeration ExecutableType defines the known types of coordinated executables that operate
      * with a sierra application.  Unfortunately, this scheme for coordination is currently defined by
-     * Gemini whose implementation forces a limit of two executables, namely it and a fluid code.  The
+     * Nemo whose implementation forces a limit of two executables, namely it and a fluid code.  The
      * startup_multi_exec() function handles the creation of groups which are contiguous processor
      * groups, each with lead processor being the least ranked processor in the group.
      *
@@ -57,10 +57,10 @@ namespace sierra {
      * two executable types.
      */
     enum ExecType {
-      EXEC_TYPE_WORLD = 0,            ///< Generic application using entire communicator (MPI_COMM_WORLD)
-      EXEC_TYPE_FLUID = 1,            ///< Gemini Euler application
-      EXEC_TYPE_LAG   = 2,            ///< Sierra Lagrangian application
-      EXEC_TYPE_PEER  = 3            ///< Split communicator application; non-Gemini
+      EXEC_TYPE_WORLD = 0,           ///< Generic application using entire communicator (MPI_COMM_WORLD)
+      EXEC_TYPE_FLUID = 1,           ///< fluid application
+      EXEC_TYPE_LAG   = 2,           ///< Sierra Lagrangian application
+      EXEC_TYPE_PEER  = 3            ///< Split communicator application; non-fluid
     };
 
     struct ExecInfo

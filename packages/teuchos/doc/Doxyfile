@@ -47,7 +47,7 @@ WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc groups.doc \
-                         ../core/src ../parameterlist/src ../comm/src ../numerics/src ../remainder/src
+                         ../core/src ../parameterlist/src ../comm/src ../numerics/src ../remainder/src ../parser/src
 #INPUT                  = index.doc
 FILE_PATTERNS          = *.h *.c *.hpp *.cpp
 RECURSIVE              = YES
@@ -67,7 +67,8 @@ EXAMPLE_PATH           = \
                           ../numerics/example/BLAS/cxx_main.cpp \
                           ../numerics/example/DenseMatrix/cxx_main.cpp \
                           ../numerics/example/DenseMatrix/cxx_main_sym.cpp \
-                          ../numerics/example/LAPACK/cxx_main.cpp
+                          ../numerics/example/LAPACK/cxx_main.cpp \
+                          ../parser/example/Calc.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 

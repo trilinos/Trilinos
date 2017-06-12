@@ -52,4 +52,18 @@ namespace std {
 }
 #endif // HAS_C99_TR1_CMATH
 
+namespace Sacado {
+
+  // Replacement for ternary operator, for scalar types that don't implement
+  // logical operations that return bool, e.g., a simd scalar type that returns
+  // a simd bool.  Sacado overloaded operators use this internally when ever
+  // the ternary operator would be used.  It can also be used by client code.
+  template <typename Cond, typename T>
+  KOKKOS_INLINE_FUNCTION
+  T if_then_else(const Cond cond, const T& a, const T& b) {
+    return cond ? a : b;
+  }
+
+}
+
 #endif // SACADO_CMATH_HPP

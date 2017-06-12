@@ -87,32 +87,6 @@ stk::diag::TimerSet &timerSet();
 
 stk::diag::Timer &timer();
 
-void my_report_handler(const char *message, int type);
-
-/**
- * Print the sucess or failure of a use_case by combining the success
- * flags for all procs in comm. Prints a string that should be grepped for
- * in the test XML files.
- *
- * Returns true if all procs passed.
- */
-bool print_status(stk::ParallelMachine comm, bool success);
-
-struct UseCaseEnvironment
-{
-  // Will initialize a comm
-  UseCaseEnvironment(int *argc, char ***argv);
-
-  // shared constructor implementation; do not call directly
-  void initialize(int* argc, char ***argv);
-
-  ~UseCaseEnvironment();
-
-  const stk::ParallelMachine    m_comm;
-  std::string                   m_workingDirectory;
-  bool                          m_need_to_finalize;
-};
-
 } // namespace use_case
 
 #endif // stk_util_use_cases_UseCaseEnvironement_hpp

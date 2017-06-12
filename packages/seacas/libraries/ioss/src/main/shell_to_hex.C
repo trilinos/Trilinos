@@ -32,10 +32,6 @@
 
 #include <Ioss_CodeTypes.h>
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #include <Ionit_Initializer.h>
 #include <algorithm>
 #include <cassert>

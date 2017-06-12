@@ -348,6 +348,22 @@ namespace Amesos2 {
                       LocalOrdinal,
                       GlobalOrdinal,
                       Node>,
+    DerivedMat>:: getMap_impl() const
+  {
+    return this->mat_->getMap();
+  }
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
     DerivedMat>:: getRowMap_impl() const
   {
     return this->mat_->getRowMap();
@@ -417,17 +433,18 @@ namespace Amesos2 {
     return this->mat_->isGloballyIndexed();
   }
 
+
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, class DerivedMat>
   RCP<const MatrixAdapter<DerivedMat> >
   AbstractConcreteMatrixAdapter<
     Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat
-    >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
+    >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
   {
 #ifdef __CUDACC__
     // NVCC doesn't seem to like the static_cast, even though it is valid
-    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
 #else
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
 #endif
   }
 

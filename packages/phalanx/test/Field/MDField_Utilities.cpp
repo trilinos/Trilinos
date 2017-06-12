@@ -44,13 +44,13 @@
 
 #include <vector>
 #include <limits>
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_MDField_Utilities.hpp"
 #include "Phalanx_DimTag.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
+#include "Phalanx_MDField.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -134,11 +134,8 @@ TEUCHOS_UNIT_TEST(mdfield, Utilities) {
   Teuchos::RCP<Teuchos::Time>
     total_time = Teuchos::TimeMonitor::getNewTimer("Total Run Time");
   Teuchos::TimeMonitor tm(*total_time);
-  
-  PHX::InitializeKokkosDevice();
 
   for (int rank = 1; rank <= 7; ++rank) testRank(rank,out,success);
 
-  PHX::FinalizeKokkosDevice();  
   Teuchos::TimeMonitor::summarize();
 }

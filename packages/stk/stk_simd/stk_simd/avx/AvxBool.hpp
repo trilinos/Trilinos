@@ -12,7 +12,7 @@ class Bool {
 
  public:
     
-  STK_MATH_FORCE_INLINE Bool() : _data(_mm256_setzero_pd()) {}
+  STK_MATH_FORCE_INLINE Bool() {}
     
   STK_MATH_FORCE_INLINE Bool(const bool x)
     : _data(x ? _mm256_cmp_pd(_mm256_setzero_pd(),_mm256_setzero_pd(),_CMP_EQ_OQ) : _mm256_setzero_pd())

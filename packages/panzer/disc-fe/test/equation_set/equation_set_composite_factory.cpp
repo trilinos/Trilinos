@@ -45,8 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_CellData.hpp"
 #include "user_app_EquationSetFactory_Physics1.hpp"
 #include "user_app_EquationSetFactory_Physics2.hpp"

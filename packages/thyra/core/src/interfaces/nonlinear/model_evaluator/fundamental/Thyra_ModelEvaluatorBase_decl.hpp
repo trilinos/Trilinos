@@ -45,6 +45,7 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_any.hpp"
 #include "Teuchos_Assert.hpp"
 
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
@@ -112,7 +113,7 @@ public:
     IN_ARG_p_mp ///< .
   };
 
-  /** \brief Concrete aggregate class for all output arguments computable by a
+  /** \brief Concrete aggregate class for all input arguments computable by a
    * <tt>ModelEvaluator</tt> subclass object.
    *
    * The set of supported objects is returned from the <tt>supports()</tt>
@@ -121,6 +122,38 @@ public:
    * A client can not directly set what input arguments are supported or not
    * supported.  Only a subclass of <tt>ModelEvaluator</tt> can do that
    * (through the <tt>InArgsSetup</tt> subclass).
+   *
+   * Extended types: The methods for %supports(), set() and get() that
+   * are templated on the <tt>ObjectType</tt> are used to support what
+   * are called extended types. This functionality allows developers
+   * to inject new objects into the ModelEvaluator evaluations. This
+   * can be used for expermenting with new capabilities that require
+   * adding new/special arguments to the inArgs. This also can be used
+   * to reduce the clutter and complexity of the model evaluator
+   * inArgs object. For example, users could create their own inArgs
+   * for a stochastic computation:
+   *
+   * \code{.cpp}
+   *   struct StochasticInArgs {
+   *     StochLib::MultiVector<Scalar> stochastic_x;
+   *     ...
+   *   };
+   * \endcode
+   *
+   * This object could then be used in a model evaluator without
+   * changing the base classes in Thyra:
+   *
+   * \code{.cpp}
+   * auto inArgs = model->createInArgs();
+   * assert(inArgs.template supports<StochasticInArgs<Scalar>>());
+   *
+   * RCP<StochasticInArgs> stochInArgs = rcp(new StochasticInArgs<Scalar>);
+   * 
+   * stochInArgs->stochastic_x = ... // create and set objects
+   * ...
+   *
+   * inArgs.set(stochInArgs);
+   * \endcode
    */
   template<class Scalar>
   class InArgs : public Teuchos::Describable {
@@ -147,6 +180,16 @@ public:
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
     RCP<const VectorBase<Scalar> > get_x() const;
 
+    /** \brief Determines if an extended input argument of type <tt>ObjectType</tt> is supported. */
+    template<typename ObjectType>
+    bool supports() const;
+    /** \brief Set an extended input object of type <tt>ObjectType</tt> in the InArgs. Precondition: <tt>supports()==true</tt>. */
+    template<typename ObjectType>
+    void set(const RCP<const ObjectType>& uo);
+    /** \brief Get an extended input object of type <tt>ObjectType>/tt> from the InArgs. Precondition: <tt>supports()==true</tt>. */
+    template<typename ObjectType>
+    RCP<const ObjectType> get() const;
+    
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
     /** \brief Precondition: <tt>supports(IN_ARG_x_poly)==true</tt>.  */
     void set_x_poly( 
@@ -234,6 +277,9 @@ public:
     /** \brief . */
     void _setSupports( const InArgs<Scalar>& inputInArgs, const int Np );
     /** \brief . */
+    template<typename ObjectType>
+    void _setSupports( const bool supports );
+    /** \brief . */
     void _setUnsupportsAndRelated( EInArgsMembers arg );
   private:
     // types
@@ -263,6 +309,8 @@ public:
     void assert_supports(EInArgsMembers arg) const;
     void assert_supports(EInArgs_p_mp arg, int l) const;
     void assert_l(int l) const;
+
+    std::map<std::string,Teuchos::any> extended_inargs_;
   };
 
   /** \brief The type of an evaluation. */
@@ -702,6 +750,38 @@ public:
    * A client can not directly set what input arguments are supported or not
    * supported.  Only a subclass of <tt>ModelEvaluator</tt> can do that
    * (through the <tt>OutArgsSetup</tt> subclass).
+   *
+   * Extended types: The methods for %supports(), set() and get() that
+   * are templated on the <tt>ObjectType</tt> are used to support what
+   * are called extended types. This functionality allows developers
+   * to inject new objects into the ModelEvaluator evaluations. This
+   * can be used for expermenting with new capabilities that require
+   * adding new/special arguments to the outArgs. This also can be
+   * used to reduce the clutter and complexity of the model evaluator
+   * outArgs object. For example, users could create their own outArgs
+   * for a stochastic computation:
+   *
+   * \code{.cpp}
+   *   struct StochasticOutArgs {
+   *     StochLib::MultiVector<Scalar> stochastic_f;
+   *     ...
+   *   };
+   * \endcode
+   *
+   * This object could then be used in a model evaluator without
+   * changing the base classes in Thyra:
+   *
+   * \code{.cpp}
+   * auto outArgs = model->createOutArgs();
+   * assert(outArgs.template supports<StochasticOutArgs<Scalar>>());
+   *
+   * RCP<StochasticOutArgs> stochOutArgs = rcp(new StochasticOutArgs<Scalar>);
+   * 
+   * stochOutArgs->stochastic_f = ... // create and set objects
+   * ...
+   *
+   * outArgs.set(stochOutArgs);
+   * \endcode
    */
   template<class Scalar>
   class OutArgs : public Teuchos::Describable {
@@ -740,6 +820,16 @@ public:
     void set_W( const RCP<LinearOpWithSolveBase<Scalar> > &W );
     /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
     RCP<LinearOpWithSolveBase<Scalar> > get_W() const;
+
+    /** \brief Determines if an extended output argument of type <tt>ObjectType</tt> is supported. */
+    template<typename ObjectType>
+    bool supports() const;
+    /** \brief Set an extended output argument of type <tt>ObjectType</tt> in OutArgs. Precondition: <tt>supports()==true</tt>. */
+    template<typename ObjectType>
+    void set(const RCP<const ObjectType>& uo);
+    /** \brief Get an extended output argument of type <tt>ObjectType</tt> from OutArgs. Precondition: <tt>supports()==true</tt>. */
+    template<typename ObjectType>
+    RCP<const ObjectType> get() const;
 
     const DerivativeSupport& supports(EOutArgsDfDp_mp arg, int l) const;
     bool supports(EOutArgs_g_mp arg, int j) const;
@@ -863,6 +953,9 @@ public:
     /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
     /** \brief . */
+    template<typename ObjectType>
+    void _setSupports( const bool supports );
+    /** \brief . */
     void _setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& );
     /** \brief . */
     void _setSupports( EOutArgsDgDx_dot arg, int j, const DerivativeSupport& );
@@ -948,6 +1041,9 @@ public:
    RCP<Teuchos::Polynomial< VectorBase<Scalar> > > f_poly_;
 #endif // HAVE_THYRA_ME_POLYNOMIAL
     mutable bool isFailed_;
+
+    std::map<std::string,Teuchos::any> extended_outargs_;
+
     // functions
     void assert_supports(EOutArgsMembers arg) const;
     void assert_supports(
@@ -1021,6 +1117,9 @@ protected:
     void setSupports( EInArgsMembers arg, bool supports = true );
     /** \brief . */
     void setSupports( const InArgs<Scalar>& inputInArgs, const int Np = -1 );
+    /** \brief Set support for specific extended data types. */
+    template<typename ObjectType>
+    void setSupports(const bool supports = true);
     /** \brief . */
     void setUnsupportsAndRelated( EInArgsMembers arg );
 
@@ -1055,6 +1154,9 @@ protected:
     void setSupports(EOutArgsDgDx arg, int j, const DerivativeSupport& );
     /** \brief . */
     void setSupports(EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
+    /** \brief Set support for specific extended data types. */
+    template<typename ObjectType>
+    void setSupports(const bool supports = true);
 
     void setSupports( EOutArgs_g_mp arg, int j, bool supports);
     void setSupports(EOutArgsDfDp_mp arg, int l, const DerivativeSupport& );
@@ -1131,6 +1233,145 @@ getOtherDerivativeMultiVectorOrientation(
 // //////////////////////////////////
 // Inline Defintions
 
+// Extended InArgs
+template<class Scalar>
+template<typename ObjectType>
+bool Thyra::ModelEvaluatorBase::InArgs<Scalar>::supports() const
+{
+  std::map<std::string,Teuchos::any>::const_iterator search =
+    extended_inargs_.find(typeid(ObjectType).name());
+
+  if (search == extended_inargs_.end())
+    return false;
+
+  return true;
+} 
+
+template<class Scalar>
+template<typename ObjectType>
+void Thyra::ModelEvaluatorBase::InArgs<Scalar>::set(const Teuchos::RCP<const ObjectType>& eo)
+{
+  std::map<std::string,Teuchos::any>::iterator search = extended_inargs_.find(typeid(ObjectType).name());
+  TEUCHOS_TEST_FOR_EXCEPTION(search == extended_inargs_.end(),
+                             std::runtime_error,
+                             "ERROR: InArgs::set<ObjectType>() was called with unsupported extended data type \""
+                             << typeid(ObjectType).name() << "\"!");
+
+  search->second = Teuchos::any(eo);
+}
+
+template<class Scalar>
+template<typename ObjectType>
+Teuchos::RCP<const ObjectType>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>::get() const
+{
+  std::map<std::string,Teuchos::any>::const_iterator search = extended_inargs_.find(typeid(ObjectType).name());
+  TEUCHOS_TEST_FOR_EXCEPTION(search == extended_inargs_.end(),
+                             std::runtime_error,
+                             "ERROR: InArgs::get<ObjectType>() was called with unsupported extended data type \""
+                             << typeid(ObjectType).name() << "\"!");
+
+  return Teuchos::any_cast<Teuchos::RCP<const ObjectType>>(search->second);
+}
+
+template<class Scalar>
+template<class ObjectType>
+void Thyra::ModelEvaluatorBase::InArgsSetup<Scalar>::
+setSupports(const bool in_supports)
+{
+  this->template _setSupports<ObjectType>(in_supports);
+}
+
+template<class Scalar>
+template<class ObjectType>
+void Thyra::ModelEvaluatorBase::InArgs<Scalar>::
+_setSupports(const bool in_supports)
+{
+  if (in_supports)
+    // When supports() is called, the map is searched to check for
+    // supporting a type. If we support the type, we will insert an
+    // empty placholder for now so that the search is successful for
+    // support checks.
+    this->extended_inargs_[typeid(ObjectType).name()] = Teuchos::any();
+  else {
+    // if false, remove the entry
+    std::map<std::string,Teuchos::any>::iterator search =
+      this->extended_inargs_.find(typeid(ObjectType).name());
+
+    if (search != this->extended_inargs_.end())
+      this->extended_inargs_.erase(typeid(ObjectType).name());
+  }
+}
+
+// Extended OutArgs
+template<class Scalar>
+template<typename ObjectType>
+bool Thyra::ModelEvaluatorBase::OutArgs<Scalar>::supports() const
+{
+  std::map<std::string,Teuchos::any>::const_iterator search =
+    extended_outargs_.find(typeid(ObjectType).name());
+
+  if (search == extended_outargs_.end())
+    return false;
+
+  return true;
+} 
+
+template<class Scalar>
+template<typename ObjectType>
+void Thyra::ModelEvaluatorBase::OutArgs<Scalar>::set(const Teuchos::RCP<const ObjectType>& eo)
+{
+  std::map<std::string,Teuchos::any>::iterator search = extended_outargs_.find(typeid(ObjectType).name());
+  TEUCHOS_TEST_FOR_EXCEPTION(search == extended_outargs_.end(),
+                             std::runtime_error,
+                             "ERROR: OutArgs::set<ObjectType>() was called with unsupported extended data type \""
+                             << typeid(ObjectType).name() << "\"!");
+
+  search->second = Teuchos::any(eo);
+}
+
+template<class Scalar>
+template<typename ObjectType>
+Teuchos::RCP<const ObjectType>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>::get() const
+{
+  std::map<std::string,Teuchos::any>::const_iterator search = extended_outargs_.find(typeid(ObjectType).name());
+  TEUCHOS_TEST_FOR_EXCEPTION(search == extended_outargs_.end(),
+                             std::runtime_error,
+                             "ERROR: OutArgs::get<ObjectType>() was called with unsupported extended data type \""
+                             << typeid(ObjectType).name() << "\"!");
+
+  return Teuchos::any_cast<Teuchos::RCP<const ObjectType>>(search->second);
+}
+
+template<class Scalar>
+template<class ObjectType>
+void Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar>::
+setSupports(const bool in_supports)
+{
+  this->template _setSupports<ObjectType>(in_supports);
+}
+
+template<class Scalar>
+template<class ObjectType>
+void Thyra::ModelEvaluatorBase::OutArgs<Scalar>::
+_setSupports(const bool in_supports)
+{
+  if (in_supports)
+    // When supports() is called, the map is searched to check for
+    // supporting a type. If we support the type, we will insert an
+    // empty placholder for now so that the search is successful for
+    // support checks.
+    this->extended_outargs_[typeid(ObjectType).name()] = Teuchos::any();
+  else {
+    // if false, remove the entry
+    std::map<std::string,Teuchos::any>::iterator search =
+      this->extended_outargs_.find(typeid(ObjectType).name());
+
+    if (search != this->extended_outargs_.end())
+      this->extended_outargs_.erase(typeid(ObjectType).name());
+  }
+}
 
 //
 // Thyra_MEB_helper_functions_grp

@@ -32,9 +32,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "exodusII.h"     // for ex_get_block_param, etc
-#include "exodusII_int.h" // for EX_NOERR
-#include <stddef.h>       // for size_t
+#include "exodusII.h" // for EX_NOERR, etc
+#include "exodusII_int.h"
+#include <stddef.h> // for size_t
 
 /*!
  * Reads the parameters describing element/face/edge blocks
@@ -51,11 +51,12 @@
 int ex_get_block_params(int exoid, size_t block_count, struct ex_block **blocks)
 {
   size_t i;
+  EX_FUNC_ENTER();
   for (i = 0; i < block_count; i++) {
     int status = ex_get_block_param(exoid, blocks[i]);
     if (status != EX_NOERR) {
-      return status;
+      EX_FUNC_LEAVE(status);
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

@@ -47,6 +47,7 @@
 
 #include <iostream>
 #include <string>
+#include <type_traits>
 #include "Phalanx_any.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
@@ -155,15 +156,28 @@ namespace PHX {
     MDField(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& t);
     
     MDField(const PHX::Tag<DataT>& v);
-    
+
     MDField();
-    
+
+    template<typename CopyDataT,
+             typename T0 = void, typename T1 = void, typename T2 = void, 
+             typename T3 = void, typename T4 = void, typename T5 = void,
+             typename T6 = void, typename T7 = void>
+    MDField(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source);
+
     ~MDField();
 
     static const int ArrayRank=array_type::Rank;
     
     const PHX::FieldTag& fieldTag() const;
 
+    template<typename CopyDataT,
+             typename T0 = void, typename T1 = void, typename T2 = void, 
+             typename T3 = void, typename T4 = void, typename T5 = void,
+             typename T6 = void, typename T7 = void>
+    PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>&
+    operator=(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source);    
+    
     template<typename iType0, typename iType1, typename iType2, typename iType3,
 	     typename iType4, typename iType5, typename iType6, typename iType7>
     KOKKOS_FORCEINLINE_FUNCTION
@@ -317,6 +331,12 @@ namespace PHX {
     static const std::string m_field_data_error_msg;
 #endif
 
+    template<typename ScalarT,
+             typename T0, typename T1, typename T2, 
+             typename T3, typename T4, typename T5,
+             typename T6, typename T7>
+    friend class PHX::MDField;
+    
   };
   
   template<typename DataT,
@@ -327,216 +347,14 @@ namespace PHX {
 			   Tag2, Tag3, Tag4, Tag5, Tag6, Tag7>& h);
 }
 
-  // *************************************
-  // Runtime time checked MDField
-  // *************************************
-#ifdef PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
+// *************************************
+// Runtime time checked MDField
+// *************************************
 
 #include "Phalanx_MDField_DynRank.hpp"
 
-#else
-
-namespace PHX {
-
-  // temporary for bracket op support
-  template <typename ViewType>
-  KOKKOS_FORCEINLINE_FUNCTION
-  unsigned getSacadoSize(const ViewType& view);
-
-  template<typename DataT>
-  class MDField<DataT,void,void,void,void,void,void,void,void> {
-    
-  public:
-
-    typedef DataT value_type;
-    typedef DataT& reference_type;
- 
-    typedef typename Kokkos::View <DataT*******, PHX::Device> array_type;
-      
-    typedef typename PHX::Device::size_type size_type;
-
-    typedef typename array_type::execution_space execution_space;
-
-    KOKKOS_FORCEINLINE_FUNCTION
-    MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
-    
-    KOKKOS_FORCEINLINE_FUNCTION
-    MDField(const PHX::Tag<DataT>& v);
-    
-    KOKKOS_FORCEINLINE_FUNCTION
-    MDField();
-    
-    KOKKOS_FORCEINLINE_FUNCTION
-    ~MDField();
-    
-    const PHX::FieldTag& fieldTag() const;
-    
-    template<typename iType0, typename iType1, typename iType2, typename iType3,
-	     typename iType4, typename iType5, typename iType6, typename iType7>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3, iType4 index4, iType5 index5,
-	       iType6 index6, iType7 index7) const;
-
-    template<typename iType0, typename iType1, typename iType2, typename iType3,
-	     typename iType4, typename iType5, typename iType6>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3, iType4 index4, iType5 index5,
-	       iType6 index6) const;
-
-    template<typename iType0, typename iType1, typename iType2, typename iType3,
-	     typename iType4, typename iType5>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3, iType4 index4, iType5 index5) const;
-    
-    template<typename iType0, typename iType1, typename iType2, typename iType3,
-	     typename iType4>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3, iType4 index4) const;
-    
-    template<typename iType0, typename iType1, typename iType2, typename iType3>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3) const;
-    
-    template<typename iType0, typename iType1, typename iType2>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2) const;
-   
-    template<typename iType0, typename iType1>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1) const;
-    
-    template<typename iType0>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0) const;
-
-    template<typename iType0>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator[](iType0 index0) const;
-
-    KOKKOS_FORCEINLINE_FUNCTION
-    size_type rank() const;
-
-    template< typename iType >
-    KOKKOS_INLINE_FUNCTION constexpr
-    typename std::enable_if< std::is_integral<iType>::value , size_t >::type
-    extent( const iType & r ) const
-    {return m_dimension_rank_size(r);}
-    
-    template< typename iType >
-    KOKKOS_INLINE_FUNCTION constexpr
-    typename std::enable_if< std::is_integral<iType>::value , int >::type
-    extent_int( const iType & r ) const
-    {return m_dimension_rank_size(r);}
-
-    template<typename iType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    size_type dimension(const iType& ord) const;
-
-    /** WARNING: The vector data in this method should be a "size_type" to be consistent with Kokkos, but for backwards compatibility during the transition, needs to be templated in the index type.
-
-     void dimensions(std::vector<size_type>& dims);
-    */
-    template<typename iType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    void dimensions(std::vector<iType>& dims);
-
-    KOKKOS_FORCEINLINE_FUNCTION
-    size_type size() const;
-
-    void setFieldTag(const PHX::Tag<DataT>& t);
-    
-    void setFieldData(const PHX::any& a);
-    
-    void print(std::ostream& os, bool printValues = false) const;
-
-    template<typename MDFieldType>
-    void deep_copy(const MDFieldType& source);
-
-    void deep_copy(const DataT source);
-    
-    template<typename MDFieldTypeA, typename MDFieldTypeB, unsigned int RANK>
-    struct V_MultiplyFunctor{
-      V_MultiplyFunctor(const MDFieldTypeA &base, const MDFieldTypeB &source) :base_(base), source_(source){}
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const int & i) const;
-      MDFieldTypeA base_;
-      MDFieldTypeB source_;
-    };
-  public:
-
-    template<typename MDFieldType>
-    void V_Multiply(const MDFieldType& source);
-    
-  private:
-   
-    PHX::Tag<DataT> m_tag;  
-    typedef Kokkos::View<DataT*, PHX::Device> array_type1;
-    typedef Kokkos::View<DataT**, PHX::Device> array_type2;
-    typedef Kokkos::View<DataT***, PHX::Device> array_type3;
-    typedef Kokkos::View<DataT****, PHX::Device> array_type4;
-    typedef Kokkos::View<DataT*****, PHX::Device> array_type5;
-    typedef Kokkos::View<DataT******, PHX::Device> array_type6;
-    typedef Kokkos::View<DataT*******, PHX::Device> array_type7;
- 
-    Kokkos::View<DataT*, PHX::Device> m_field_data1;
-    Kokkos::View<DataT**, PHX::Device> m_field_data2;
-    Kokkos::View<DataT***, PHX::Device> m_field_data3;
-    Kokkos::View<DataT****, PHX::Device> m_field_data4;
-    Kokkos::View<DataT*****, PHX::Device> m_field_data5;
-    Kokkos::View<DataT******, PHX::Device> m_field_data6;
-    Kokkos::View<DataT*******, PHX::Device> m_field_data7;
-
-    typedef Kokkos::View<DataT*, PHX::Device, Kokkos::MemoryUnmanaged> array_oned_type; 
-    array_oned_type m_field_oned_view;
-
-    //! For fast access to rank/dimension/size data.  Entries 0-6 are dimensions, entry 7 is rank, entry 8 is size. 
-    Kokkos::View<PHX::index_size_type*, PHX::Device> m_dimension_rank_size;
-
-#ifdef PHX_DEBUG
-    bool m_tag_set;
-    bool m_data_set;
-    static const std::string m_field_tag_error_msg;
-    static const std::string m_field_data_error_msg;
-#endif
-
-  };
-  
-  template<typename DataT>
-  std::ostream& operator<<(std::ostream& os, 
-			   const PHX::MDField<DataT, void, void, 
-			   void, void, void, void, void, void>& h);
-
-}
-#endif // PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
-
-namespace Intrepid2 {
-
-  template<typename field>
-  struct is_mdfield;
-
-  template<typename DataT,
-	   typename Tag0 , typename Tag1 , typename Tag2 , 
-	   typename Tag3 , typename Tag4 , typename Tag5 ,
-	   typename Tag6 , typename Tag7 >
-  struct is_mdfield<PHX::MDField<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, Tag6, Tag7> >{ 
-    enum {value=true};
-  };
-}
-
+// Definition file (this will also bring in the DynRank version definitions as
+// well)
 #include "Phalanx_MDField_Def.hpp"
 
 #endif 

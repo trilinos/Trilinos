@@ -3,10 +3,10 @@
 /* ========================================================================== */
 
 /* Linear algebraic diagnostics:
- * KLU_rgrowth:	reciprocal pivot growth, takes O(|A|+|U|) time
- * KLU_condest:	condition number estimator, takes about O(|A|+5*(|L|+|U|)) time
- * KLU_flops:	compute # flops required to factorize A into L*U
- * KLU_rcond:	compute a really cheap estimate of the reciprocal of the
+ * TRILINOS_KLU_rgrowth:	reciprocal pivot growth, takes O(|A|+|U|) time
+ * TRILINOS_KLU_condest:	condition number estimator, takes about O(|A|+5*(|L|+|U|)) time
+ * TRILINOS_KLU_flops:	compute # flops required to factorize A into L*U
+ * TRILINOS_KLU_rcond:	compute a really cheap estimate of the reciprocal of the
  *		condition number, min(abs(diag(U))) / max(abs(diag(U))).
  *		Takes O(n) time.
  */
@@ -14,7 +14,7 @@
 #include "trilinos_klu_internal.h"
 
 /* ========================================================================== */
-/* === KLU_rgrowth ========================================================== */
+/* === TRILINOS_KLU_rgrowth ========================================================== */
 /* ========================================================================== */
 
 /* Compute the reciprocal pivot growth factor.  In MATLAB notation:
@@ -22,14 +22,14 @@
  *   rgrowth = min (max (abs ((R \ A (p,q)) - F))) ./ max (abs (U)))
  */
 
-Int KLU_rgrowth		/* return TRUE if successful, FALSE otherwise */
+Int TRILINOS_KLU_rgrowth		/* return TRUE if successful, FALSE otherwise */
 (
     Int *Ap,
     Int *Ai,
     double *Ax,
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    TRILINOS_KLU_symbolic *Symbolic,
+    TRILINOS_KLU_numeric *Numeric,
+    TRILINOS_KLU_common *Common
 )
 {
     double temp, max_ai, max_ui, min_block_rgrowth ;
@@ -51,7 +51,7 @@ Int KLU_rgrowth		/* return TRUE if successful, FALSE otherwise */
 
     if (Symbolic == NULL || Ap == NULL || Ai == NULL || Ax == NULL)
     {
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (FALSE) ;
     }
 
@@ -59,10 +59,10 @@ Int KLU_rgrowth		/* return TRUE if successful, FALSE otherwise */
     {
 	/* treat this as a singular matrix */
 	Common->rgrowth = 0 ;
-	Common->status = KLU_SINGULAR ;
+	Common->status = TRILINOS_KLU_SINGULAR ;
 	return (TRUE) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
 
     /* ---------------------------------------------------------------------- */
     /* compute the reciprocal pivot growth */
@@ -159,7 +159,7 @@ Int KLU_rgrowth		/* return TRUE if successful, FALSE otherwise */
 
 
 /* ========================================================================== */
-/* === KLU_condest ========================================================== */
+/* === TRILINOS_KLU_condest ========================================================== */
 /* ========================================================================== */
 
 /* Estimate the condition number.  Uses Higham and Tisseur's algorithm
@@ -167,13 +167,13 @@ Int KLU_rgrowth		/* return TRUE if successful, FALSE otherwise */
  * 1-norm pseudospectra, SIAM J. Matrix Anal. Appl., 21(4):1185-1201, 2000.
  */
 
-Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
+Int TRILINOS_KLU_condest		/* return TRUE if successful, FALSE otherwise */
 (
     Int Ap [ ],
     double Ax [ ],
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    TRILINOS_KLU_symbolic *Symbolic,
+    TRILINOS_KLU_numeric *Numeric,
+    TRILINOS_KLU_common *Common
 )
 {
     double xj, Xmax, csum, anorm, ainv_norm, est_old, est_new, abs_value ;
@@ -194,7 +194,7 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
     }
     if (Symbolic == NULL || Ap == NULL || Ax == NULL)
     {
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (FALSE) ;
     }
     abs_value = 0 ;
@@ -202,10 +202,10 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
     {
 	/* treat this as a singular matrix */
 	Common->condest = 1 / abs_value ;
-	Common->status = KLU_SINGULAR ;
+	Common->status = TRILINOS_KLU_SINGULAR ;
 	return (TRUE) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
 
     /* ---------------------------------------------------------------------- */
     /* get inputs */
@@ -226,7 +226,7 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
 	if (SCALAR_IS_ZERO (abs_value))
 	{
 	    Common->condest = 1 / abs_value ;
-	    Common->status = KLU_SINGULAR ;
+	    Common->status = TRILINOS_KLU_SINGULAR ;
 	    return (TRUE) ;
 	}
     }
@@ -257,7 +257,7 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
     /* ---------------------------------------------------------------------- */
 
     /* get workspace (size 2*n Entry's) */
-    X = (double*) Numeric->Xwork ;  /* size n space used in KLU_solve, tsolve */
+    X = (double*) Numeric->Xwork ;  /* size n space used in TRILINOS_KLU_solve, tsolve */
     X += n ;			    /* X is size n */
     S = X + n ;			    /* S is size n */
 
@@ -283,7 +283,7 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
 	    REAL (X [jmax]) = 1 ;
 	}
 
-	KLU_solve (Symbolic, Numeric, n, 1, (double *) X, Common) ;
+	TRILINOS_KLU_solve (Symbolic, Numeric, n, 1, (double *) X, Common) ;
 	est_old = ainv_norm ;
 	ainv_norm = 0.0 ;
 
@@ -339,10 +339,10 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
 
 #ifndef COMPLEX
 	/* do a transpose solve */
-	KLU_tsolve (Symbolic, Numeric, n, 1, X, Common) ;
+	TRILINOS_KLU_tsolve (Symbolic, Numeric, n, 1, X, Common) ;
 #else
 	/* do a conjugate transpose solve */
-	KLU_tsolve (Symbolic, Numeric, n, 1, (double *) X, 1, Common) ;
+	TRILINOS_KLU_tsolve (Symbolic, Numeric, n, 1, (double *) X, 1, Common) ;
 #endif
 
 	/* jnew = the position of the largest entry in X */
@@ -384,7 +384,7 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
 	}
     }
 
-    KLU_solve (Symbolic, Numeric, n, 1, (double *) X, Common) ;
+    TRILINOS_KLU_solve (Symbolic, Numeric, n, 1, (double *) X, Common) ;
 
     est_new = 0.0 ;
     for (j = 0 ; j < n ; j++)
@@ -406,16 +406,16 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
 
 
 /* ========================================================================== */
-/* === KLU_flops ============================================================ */
+/* === TRILINOS_KLU_flops ============================================================ */
 /* ========================================================================== */
 
 /* Compute the flop count for the LU factorization (in Common->flops) */
 
-Int KLU_flops		/* return TRUE if successful, FALSE otherwise */
+Int TRILINOS_KLU_flops		/* return TRUE if successful, FALSE otherwise */
 (
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    TRILINOS_KLU_symbolic *Symbolic,
+    TRILINOS_KLU_numeric *Numeric,
+    TRILINOS_KLU_common *Common
 )
 {
     double flops = 0 ;
@@ -435,10 +435,10 @@ Int KLU_flops		/* return TRUE if successful, FALSE otherwise */
     Common->flops = EMPTY ;
     if (Numeric == NULL || Symbolic == NULL)
     {
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (FALSE) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
 
     /* ---------------------------------------------------------------------- */
     /* get the contents of the Symbolic object */
@@ -488,7 +488,7 @@ Int KLU_flops		/* return TRUE if successful, FALSE otherwise */
 
 
 /* ========================================================================== */
-/* === KLU_rcond ============================================================ */
+/* === TRILINOS_KLU_rcond ============================================================ */
 /* ========================================================================== */
 
 /* Compute a really cheap estimate of the reciprocal of the condition number,
@@ -496,11 +496,11 @@ Int KLU_flops		/* return TRUE if successful, FALSE otherwise */
  * pivot, or a NaN pivot, rcond will be zero.  Takes O(n) time.
  */   
 
-Int KLU_rcond		/* return TRUE if successful, FALSE otherwise */
+Int TRILINOS_KLU_rcond		/* return TRUE if successful, FALSE otherwise */
 (
-    KLU_symbolic *Symbolic,	/* input, not modified */
-    KLU_numeric *Numeric,	/* input, not modified */
-    KLU_common *Common		/* result in Common->rcond */
+    TRILINOS_KLU_symbolic *Symbolic,	/* input, not modified */
+    TRILINOS_KLU_numeric *Numeric,	/* input, not modified */
+    TRILINOS_KLU_common *Common		/* result in Common->rcond */
 )
 {
     double ukk, umin, umax ;
@@ -517,16 +517,16 @@ Int KLU_rcond		/* return TRUE if successful, FALSE otherwise */
     }
     if (Symbolic == NULL)
     {
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (FALSE) ;
     }
     if (Numeric == NULL)
     {
 	Common->rcond = 0 ;
-	Common->status = KLU_SINGULAR ;
+	Common->status = TRILINOS_KLU_SINGULAR ;
 	return (TRUE) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
 
     /* ---------------------------------------------------------------------- */
     /* compute rcond */
@@ -542,7 +542,7 @@ Int KLU_rcond		/* return TRUE if successful, FALSE otherwise */
 	{
 	    /* if NaN, or zero, the rcond is zero */
 	    Common->rcond = 0 ;
-	    Common->status = KLU_SINGULAR ;
+	    Common->status = TRILINOS_KLU_SINGULAR ;
 	    return (TRUE) ;
 	}
 	if (j == 0)
@@ -564,7 +564,7 @@ Int KLU_rcond		/* return TRUE if successful, FALSE otherwise */
     {
 	/* this can occur if umin or umax are Inf or NaN */
 	Common->rcond = 0 ;
-	Common->status = KLU_SINGULAR ;
+	Common->status = TRILINOS_KLU_SINGULAR ;
     }
     return (TRUE) ;
 }

@@ -4,10 +4,7 @@
 #include "basker_types.hpp"
 #include "basker_sswrapper.hpp"
 
-//Depends on SuiteSparse in Amesos
-#ifdef HAVE_AMESOS
 #include "trilinos_btf_decl.h"
-#endif
 
 //#define BASKER_DEBUG_ORDER_BTF
 
@@ -860,7 +857,6 @@ namespace BaskerNS
   }//end break_into_parts2 (based on imbalance)
 
 
-#ifdef HAVE_AMESOS //NDE: Should this be removed following removal of SuiteSparse from Amesos?
   template <class Int,class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::strong_component
@@ -918,8 +914,6 @@ namespace BaskerNS
     
     return 0;
   }//end strong_component <long int>
-#endif // End HAVE_AMESOS
 
 }//end namespace BaskerNS
-
-#endif //end BASKER_ORDER_BTF_HPP
+#endif

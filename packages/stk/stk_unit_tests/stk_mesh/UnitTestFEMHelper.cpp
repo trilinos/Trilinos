@@ -481,7 +481,7 @@ TEST(FEMHelper, test_permutations_for_key_topologies)
                                                                                   {{3,4,5,0}}, {{4,5,1,0}},
                                                                                   {{1,4,3,2}} }};
           std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-          unsigned gold_side_permutations[5] = { 0, 0, 0, 3, 0 };
+          unsigned gold_side_permutations[5] = { 0, 0, 0, 4, 0 };
 
           std::array < std::array <unsigned, 2>, 8 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,4}}, {{4,1}},
                                                                                   {{1,5}}, {{2,5}}, {{5,3}}, {{4,5}} }};

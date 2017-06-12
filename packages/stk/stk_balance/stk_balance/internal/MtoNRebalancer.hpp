@@ -1,6 +1,7 @@
 #ifndef STK_BALANCE_MTONREBALANCER_HPP
 #define STK_BALANCE_MTONREBALANCER_HPP
 
+#include <stk_balance/balanceUtils.hpp>
 #include <string>
 #include <vector>
 #include <stk_mesh/base/Types.hpp>
@@ -18,7 +19,7 @@ namespace internal {
 class MtoNRebalancer
 {
 public:
-    MtoNRebalancer(stk::mesh::BulkData &bulkData, int num_target_procs);
+    MtoNRebalancer(stk::mesh::BulkData &bulkData, stk::mesh::Field<double> &targetField, const stk::balance::BalanceSettings &graphSettings, int num_target_procs);
     ~MtoNRebalancer();
 
     void generate_n_proc_decomp();
@@ -43,8 +44,6 @@ private:
     stk::mesh::EntityVector get_nodes_shared_between_subdomains(int this_subdomain_index, int other_subdomain_index);
     void fill_shared_node_proc_info(stk::mesh::EntityVector& shared_nodes, std::vector<int>& procs_for_shared_nodes, int this_subdomain_num, int other_subdomain_num);
     void fill_shared_node_info_for_this_subdomain(const unsigned this_subdomain_num, stk::mesh::EntityVector& shared_nodes, std::vector<int>& procs_for_shared_nodes);
-    stk::mesh::FieldBase* get_target_decomp_field();
-    const std::string get_target_decomp_field_name();
     stk::mesh::MetaData& get_meta();
     stk::mesh::BulkData& get_bulk();
 
@@ -53,9 +52,9 @@ private:
     MtoNRebalancer& operator=( const MtoNRebalancer& other );
 
     stk::mesh::BulkData &mBulkData;
+    stk::mesh::Field<double> &targetDecompField;
     int mNumTargetProcs;
     stk::mesh::EntityProcVec decomp;
-
 };
 
 }}}

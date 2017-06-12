@@ -47,8 +47,6 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Traits.hpp"

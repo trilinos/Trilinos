@@ -350,13 +350,21 @@ namespace Tpetra {
 
   Distributor::~Distributor()
   {
-    // We shouldn't have any outstanding communication requests at
-    // this point.
-    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      "Tpetra::Distributor: Destructor called with " << requests_.size()
-      << " outstanding posts (unfulfilled communication requests).  There "
-      "should be none at this point.  Please report this bug to the Tpetra "
-      "developers.");
+    // mfh 10 May 2017: We shouldn't have any outstanding
+    // communication requests at this point.  It would be legitimate
+    // to check here, and report an error if requests_.size() != 0.
+    // However, throwing in a destructor is bad form.  See #1303:
+    //
+    // https://github.com/trilinos/Trilinos/issues/1303
+    //
+    // If someone wants to restore the error check, please don't
+    // throw; instead, use MPI_Abort (or exit() in a non-MPI build).
+
+    // TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+    //   "Tpetra::Distributor: Destructor called with " << requests_.size()
+    //   << " outstanding posts (unfulfilled communication requests).  There "
+    //   "should be none at this point.  Please report this bug to the Tpetra "
+    //   "developers.");
   }
 
   void

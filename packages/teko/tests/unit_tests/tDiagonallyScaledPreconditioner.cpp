@@ -398,7 +398,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column_tpetr
    bool result;
    Thyra::LinearOpTester<ST> tester;
    tester.show_all_tests(true);
-   tester.set_all_error_tol(5e-14);
+   tester.set_all_error_tol(5e-13);
 
    // build operators and factories
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();

@@ -131,6 +131,7 @@ namespace Intrepid2 {
 
       typedef Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadBasisType;
 
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder;
       *outStream
         << "\n"
         << "===============================================================================\n"
@@ -138,94 +139,95 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-
-        ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
-        const ordinal_type order = 5;
-        QuadBasisType quadBasis(order);
+        ordinal_type nthrow = 0, ncatch = 0;
+        constexpr  ordinal_type order = 5;
+        if (order <= maxOrder) {
+          QuadBasisType quadBasis(order);
 
-        // Define array containing array of nodes to evaluate
-        DynRankView ConstructWithLabel(quadNodes, 10, 2);
+          // Define array containing array of nodes to evaluate
+          DynRankView ConstructWithLabel(quadNodes, 10, 2);
 
-        // Generic array for the output values; needs to be properly resized depending on the operator type
-        const auto numFields = quadBasis.getCardinality();
-        const auto numPoints = quadNodes.dimension(0);
-        //const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
+          // Generic array for the output values; needs to be properly resized depending on the operator type
+          const auto numFields = quadBasis.getCardinality();
+          const auto numPoints = quadNodes.dimension(0);
+          //const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
-        // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
-        // getDofTag() to access invalid array elements thereby causing bounds check exception
-        {
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(3,0,0) );
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,0,4) );
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,0) );
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(numFields) );
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1) );
-        }
-
-        // Exceptions 6-16 test exception handling with incorrectly dimensioned input/output arrays
-        {
-          DynRankView ConstructWithLabel(vals, numFields, numPoints);
+          // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
+          // getDofTag() to access invalid array elements thereby causing bounds check exception
           {
-            // exception #6: input points array must be of rank-2
-            DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
-            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
+            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(3,0,0) );
+            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,0,4) );
+            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,0) );
+            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(numFields) );
+            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1) );
+          }
+
+          // Exceptions 6-16 test exception handling with incorrectly dimensioned input/output arrays
+          {
+            DynRankView ConstructWithLabel(vals, numFields, numPoints);
+            {
+              // exception #6: input points array must be of rank-2
+              DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
+              INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
+            }
+            {
+              // exception #7: dimension 1 in the input point array must equal space dimension of the cell
+              DynRankView ConstructWithLabel(badPoints, 4, 3);
+              INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
+            }
+            {
+              // exception #8: output values must be of rank-2 for OPERATOR_VALUE
+              DynRankView ConstructWithLabel(badVals, 4, 3, 1);
+              INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
+            }
+            {
+              DynRankView ConstructWithLabel(badVals, 4, 3);
+
+              // exception #9: output values must be of rank-3 for OPERATOR_GRAD
+              INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_GRAD) );
+
+              // exception #10: output values must be of rank-3 for OPERATOR_CURL
+              INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_CURL) );
+
+              // exception #11: output values must be of rank-3 for OPERATOR_DIV
+              INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_CURL) );
+
+              // exception #12: output values must be of rank-3 for OPERATOR_D2
+              INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D2) );
+            }
           }
           {
-            // exception #7: dimension 1 in the input point array must equal space dimension of the cell
-            DynRankView ConstructWithLabel(badPoints, 4, 3);
-            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
-          }
-          {
-            // exception #8: output values must be of rank-2 for OPERATOR_VALUE
-            DynRankView ConstructWithLabel(badVals, 4, 3, 1);
+            // exception #13: incorrect 0th dimension of output array (must equal number of basis functions)
+            DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality() + 1, quadNodes.dimension(0));
             INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
           }
           {
-            DynRankView ConstructWithLabel(badVals, 4, 3);
-
-            // exception #9: output values must be of rank-3 for OPERATOR_GRAD
+            // exception #14: incorrect 1st dimension of output array (must equal number of points)
+            DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0) + 1);
+            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
+          }
+          {
+            // exception #15: incorrect 2nd dimension of output array (must equal spatial dimension)
+            DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 3);
             INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_GRAD) );
+          }
+          {
+            DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 40);
 
-            // exception #10: output values must be of rank-3 for OPERATOR_CURL
-            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_CURL) );
-
-            // exception #11: output values must be of rank-3 for OPERATOR_DIV
-            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_CURL) );
-
-            // exception #12: output values must be of rank-3 for OPERATOR_D2
+            // exception #16: incorrect 2nd dimension of output array (must equal spatial dimension)
             INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D2) );
+
+            // exception #17: incorrect 2nd dimension of output array (must equal spatial dimension)
+            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D3) );
           }
         }
-        {
-          // exception #13: incorrect 0th dimension of output array (must equal number of basis functions)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality() + 1, quadNodes.dimension(0));
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
-        }
-        {
-          // exception #14: incorrect 1st dimension of output array (must equal number of points)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0) + 1);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
-        }
-        {
-          // exception #15: incorrect 2nd dimension of output array (must equal spatial dimension)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 3);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_GRAD) );
-        }
-        {
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 40);
-
-          // exception #16: incorrect 2nd dimension of output array (must equal spatial dimension)
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D2) );
-
-          // exception #17: incorrect 2nd dimension of output array (must equal spatial dimension)
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D3) );
-        }
-#endif
         if (nthrow != ncatch) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
+#endif
       } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
@@ -240,7 +242,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try {
-        const auto order = 5;
+        const auto order = std::min(5, maxOrder);
         QuadBasisType quadBasis(order);
 
         const ordinal_type numFields = quadBasis.getCardinality();
@@ -497,7 +499,8 @@ namespace Intrepid2 {
       };
 
       try {
-        const ordinal_type order = 2;
+        constexpr ordinal_type order = 2;
+        if(order <= maxOrder) {
         QuadBasisType quadBasis(order);
 
         DynRankViewHost ConstructWithLabel(quadNodesHost, 10, 2);
@@ -759,7 +762,7 @@ namespace Intrepid2 {
                 }
           }
         }
-
+        }
       } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';

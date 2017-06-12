@@ -420,7 +420,7 @@ C     .. Set up status arrays for element to nodal variable conversion
      &     IA(KLTESS), IA(KLTSSS), A(KFACSS),
      &     A(KXN), A(KYN), A(KZN),
      &     A(KXEXPL), A(KYEXPL), A(KZEXPL), MODBLK,
-     &     ISATRB, A(KATRSC), IA(KIXNP), IA(KMAPNN),
+     &     ISATRB, A(KATRSC), IA(KIXNP), IA(KMAPNN), IA(KMAPEL),
      &     IA(KIELBS), IA(KINPSS), IA(KIESSS),
      &     NQAREC, C(KQAREC), NINFO, c(kinfo), c(kbktyp),
      *     c(knameb), c(knamnp), c(knamss), c(knamatt),

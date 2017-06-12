@@ -85,8 +85,8 @@ operator()( OriginalTypeRef orig )
   }
 
   // Control and information vector
-  double control[AMD_CONTROL];
-  double info[AMD_INFO];
+  double control[TRILINOS_AMD_CONTROL];
+  double info[TRILINOS_AMD_INFO];
 
   // Storage for the permutation.
   perm_.resize( n );

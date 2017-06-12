@@ -65,7 +65,8 @@ TEST_F(Mesh1x1x4, read2procsWrite4procsFilesUsingGeneratedMesh)
         std::vector<unsigned> targetProc_to_startingProc = stk::balance::internal::assign_target_subdomains_roundrobin_to_procs(stk::parallel_machine_size(get_comm()), get_num_procs_target_decomp());
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
-        stk::balance::internal::MtoNRebalancer rebalancer(get_bulk(), get_num_procs_target_decomp());
+        stk::balance::BasicZoltan2Settings graphSettings;
+        stk::balance::internal::MtoNRebalancer rebalancer(get_bulk(), *targetDecompField, graphSettings, get_num_procs_target_decomp());
 
         std::vector<size_t> counts;
         stk::mesh::comm_mesh_counts(get_bulk(), counts);

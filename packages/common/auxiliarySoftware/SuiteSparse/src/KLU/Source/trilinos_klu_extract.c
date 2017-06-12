@@ -1,5 +1,5 @@
 /* ========================================================================== */
-/* === KLU_extract ========================================================== */
+/* === TRILINOS_KLU_extract ========================================================== */
 /* ========================================================================== */
 
 /* Extract KLU factorization into conventional compressed-column matrices.
@@ -11,11 +11,11 @@
 
 #include "trilinos_klu_internal.h"
 
-Int KLU_extract	    /* returns TRUE if successful, FALSE otherwise */
+Int TRILINOS_KLU_extract	    /* returns TRUE if successful, FALSE otherwise */
 (
     /* inputs: */
-    KLU_numeric *Numeric,
-    KLU_symbolic *Symbolic,
+    TRILINOS_KLU_numeric *Numeric,
+    TRILINOS_KLU_symbolic *Symbolic,
 
     /* outputs, all of which must be allocated on input */
 
@@ -55,7 +55,7 @@ Int KLU_extract	    /* returns TRUE if successful, FALSE otherwise */
     /* R, block boundaries */
     Int *R,	    /* size nblocks+1 */
 
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     Int *Lip, *Llen, *Uip, *Ulen, *Li2, *Ui2 ;
@@ -70,11 +70,11 @@ Int KLU_extract	    /* returns TRUE if successful, FALSE otherwise */
 
     if (Symbolic == NULL || Numeric == NULL)
     {
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (FALSE) ;
     }
 
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
     n = Symbolic->n ;
     nblocks = Symbolic->nblocks ;
 

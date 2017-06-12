@@ -65,10 +65,6 @@
 #include "Ioss_VariableType.h"
 #include "vector3d.h"
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #ifndef NO_XDMF_SUPPORT
 #include <xdmf/Ioxf_Initializer.h>
 #endif

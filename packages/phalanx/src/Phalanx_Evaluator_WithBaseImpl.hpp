@@ -49,7 +49,6 @@
 #include <functional>
 #include <unordered_map>
 #include "Phalanx_Evaluator.hpp"
-#include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
 
 namespace PHX {
@@ -76,9 +75,6 @@ namespace PHX {
 
     virtual void addEvaluatedField(const PHX::FieldTag& ft);
 
-    template<typename DataT>
-    void addEvaluatedField(const PHX::Field<DataT>& f);
-
     template<typename DataT,
 	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
@@ -88,9 +84,6 @@ namespace PHX {
 
     virtual void addContributedField(const PHX::FieldTag& ft);
 
-    template<typename DataT>
-    void addContributedField(const PHX::Field<DataT>& f);
-
     template<typename DataT,
 	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
@@ -98,14 +91,6 @@ namespace PHX {
                              Tag4,Tag5,Tag6,Tag7>& f);
 
     virtual void addDependentField(const PHX::FieldTag& ft);
-
-    // DEPRECATED: use new const version below
-    template<typename DataT>
-    PHALANX_DEPRECATED
-    void addDependentField(const PHX::Field<DataT>& f);
-
-    template<typename DataT>
-    void addDependentField(const PHX::Field<const DataT>& f);
 
     // DEPRECATED: use new const version below
     template<typename DataT,
@@ -166,8 +151,12 @@ namespace PHX {
 
     std::string name_;
 
-    //! functors that bind memory for evaluator fields
-    std::unordered_map<std::string,std::function<void(const PHX::any& f)>> field_binders_;
+    /** \brief Functors that bind memory for evaluator fields. Note
+     *  that two MDFields might point to the same underlying field in
+     *  a single evaluator. For this reason we use
+     *  std::unordered_multimap instead of std::unordered_map.
+     */
+    std::unordered_multimap<std::string,std::function<void(const PHX::any& f)>> field_binders_;
   };
 
 }

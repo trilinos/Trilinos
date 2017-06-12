@@ -398,12 +398,16 @@ namespace BaskerNS
       // NDE: May need to add permutation for this case...
       //new for sfactor_copy2 replacement
       if ( btf_tabs_offset == 0 && BTF_C.nnz > 0 ) {
+        btfc_nnz = BTF_C.nnz;
         MALLOC_INT_1DARRAY(vals_order_ndbtfc_array, BTF_C.nnz); //track nd perms; BTF_A must be declared here, else it does not exist
+        MALLOC_INT_1DARRAY( inv_vals_order_ndbtfc_array, BTF_C.nnz );
         for (Int i = 0; i < BTF_C.nnz; ++i) {
           vals_order_ndbtfc_array(i) = i;
+          inv_vals_order_ndbtfc_array(i) = i;
         }
+        sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
+        permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
       }
-      sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
       
       if(Options.verbose_matrix_out == BASKER_TRUE)
       {
@@ -909,11 +913,13 @@ namespace BaskerNS
       if ( permi < poffset )
       {
       // ND blocks
-        x[i] = xconv(p(i)); 
+        //x[i] = xconv(p(i)); 
+        x[i] = xconv(permi); 
       } 
       else {
       // btf blocks
-        x[i] = yconv(p(i)); 
+        //x[i] = yconv(p(i)); 
+        x[i] = yconv(permi); 
       }
     }
 

@@ -13,6 +13,7 @@
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
 #include "Tempus_StepperNewmark.hpp"
+#include "Tempus_StepperNewmarkExplicit.hpp"
 #include "Tempus_StepperHHTAlpha.hpp"
 #include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperDIRK.hpp"
@@ -68,6 +69,8 @@ private:
       return rcp(new StepperBackwardEuler<Scalar>(model, stepperPL));
     else if (stepperType == "Newmark Beta")
       return rcp(new StepperNewmark<Scalar>(model, stepperPL));
+    else if (stepperType == "Newmark Beta Explicit")
+      return rcp(new StepperNewmarkExplicit<Scalar>(model, stepperPL));
     else if (stepperType == "HHT-Alpha")
       return rcp(new StepperHHTAlpha<Scalar>(model, stepperPL));
     else if (

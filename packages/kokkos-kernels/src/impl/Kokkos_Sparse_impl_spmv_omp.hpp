@@ -60,7 +60,7 @@ void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a, AMatr
   const size_type* KOKKOS_RESTRICT matrixRowOffsets  = A.graph.row_map.data();
   const size_type* KOKKOS_RESTRICT threadStarts     = A.graph.row_block_offsets.data();
 
-#if (KOKKOS_ENABLE_PROFILING)
+#if defined(KOKKOS_ENABLE_PROFILING)
     uint64_t kpID = 0;
      if(Kokkos::Profiling::profileLibraryLoaded()) {
       Kokkos::Profiling::beginParallelFor("KokkosSparse::SPMV_raw_openmp_no_transpose", 0, &kpID);
@@ -97,7 +97,7 @@ void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a, AMatr
       }
    }
   }
-#if (KOKKOS_ENABLE_PROFILING)
+#if defined(KOKKOS_ENABLE_PROFILING)
      if(Kokkos::Profiling::profileLibraryLoaded()) {
         Kokkos::Profiling::endParallelFor(kpID);
      }

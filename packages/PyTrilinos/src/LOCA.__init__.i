@@ -115,32 +115,7 @@ and classes:
 
 // Epetra includes
 #ifdef HAVE_EPETRA
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_Time.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // LOCA includes
@@ -153,6 +128,13 @@ and classes:
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
+%}
+
+%pythoncode
+%{
+# Fix ___init__ ambiguity
+del ___init__
+from . import ___init__
 %}
 
 // Ignore/renames
@@ -306,9 +288,5 @@ from . import AnasaziOperator
 # Epetra namespace
 __all__.append("Epetra")
 from . import Epetra
-
-# Fix ___init__ ambiguity
-del ___init__
-from . import ___init__
 %}
 #endif

@@ -50,7 +50,7 @@ INCLUDE(DualScopeSet)
 INCLUDE(GlobalNullSet)
 INCLUDE(GlobalSet)
 INCLUDE(MultilineSet)
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 INCLUDE(SetNotFound)
 INCLUDE(Split)
 
@@ -260,13 +260,15 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
   # Make sure the right name is used
   ASSERT_DEFINED(TPL_ENABLE_${TPL_NAME})
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
      #prefix
      PARSE
-     #lists
-     "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES"
      #options
      "MUST_FIND_ALL_LIBS;MUST_FIND_ALL_HEADERS;NO_PRINT_ENABLE_SUCCESS_FAIL"
+     #one_value_keywords
+     ""
+     #multi_value_keywords
+     "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES"
      ${ARGN}
      )
 

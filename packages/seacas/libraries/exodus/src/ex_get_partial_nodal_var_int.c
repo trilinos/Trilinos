@@ -56,7 +56,7 @@
 *****************************************************************************/
 
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
-#include <exodusII.h>     // for exerrval, ex_err, etc
+#include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_WARN, ex_comp_ws, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
@@ -77,9 +77,8 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
   size_t start[3], count[3];
   char   errmsg[MAX_ERR_LENGTH];
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
-
-  exerrval = 0; /* clear error code */
 
   /* Verify that time_step is within bounds */
   {
@@ -89,18 +88,17 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
                                        "range is 1 to %d in file id %d",
                time_step, num_time_steps, exoid);
       ex_err("ex_get_partial_nodal_var", errmsg, EX_BADPARAM);
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
   if (ex_large_model(exoid) == 0) {
     /* read values of the nodal variable */
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variables in file id %d",
                exoid);
-      ex_err("ex_get_partial_nodal_var", errmsg, exerrval);
-      return (EX_WARN);
+      ex_err("ex_get_partial_nodal_var", errmsg, status);
+      EX_FUNC_LEAVE(EX_WARN);
     }
 
     start[0] = --time_step;
@@ -115,11 +113,10 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
     /* read values of the nodal variable  -- stored as separate variables... */
     /* Get the varid.... */
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
                nodal_var_index, exoid);
-      ex_err("ex_get_partial_nodal_var", errmsg, exerrval);
-      return (EX_WARN);
+      ex_err("ex_get_partial_nodal_var", errmsg, status);
+      EX_FUNC_LEAVE(EX_WARN);
     }
 
     start[0] = --time_step;
@@ -137,10 +134,9 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get nodal variables in file id %d", exoid);
-    ex_err("ex_get_partial_nodal_var", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_partial_nodal_var", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

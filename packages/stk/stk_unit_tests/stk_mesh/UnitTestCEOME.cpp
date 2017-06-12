@@ -42,15 +42,15 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
-#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string, etc
-#include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
-#include <unit_tests/Setup8Quad4ProcMesh.hpp>
+#include <stk_unit_tests/stk_mesh/UnitTestRingFixture.hpp>  // for test_shift_ring
+#include <stk_unit_tests/stk_mesh/Setup8Quad4ProcMesh.hpp>
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset

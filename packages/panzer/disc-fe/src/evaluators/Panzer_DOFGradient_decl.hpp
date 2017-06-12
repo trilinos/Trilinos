@@ -44,8 +44,7 @@
 #define PANZER_EVALUATOR_DOF_GRADIENT_DECL_HPP
 
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
+#include "Phalanx_MDField.hpp"
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
@@ -54,7 +53,7 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(DOFGradient)
   
   // <cell,point>
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
   // <cell,point,dim>
   PHX::MDField<ScalarT> dof_gradient;
 

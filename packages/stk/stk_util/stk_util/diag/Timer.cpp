@@ -92,23 +92,6 @@ value_now() {
     return 0;
 }
 
-std::vector<std::string> &
-split(
-  const std::string &           path,
-  char                          separator,
-  std::vector<std::string> &    path_vector)
-{
-  for (std::string::const_iterator it = path.begin(); ; ) {
-    std::string::const_iterator it2 = std::find(it, path.end(), separator);
-    path_vector.push_back(std::string(it, it2));
-    if (it2 == path.end())
-      break;
-    it = it2 + 1;
-  }
-  
-  return path_vector;
-}
-
 } // namespace <empty>
 
 
@@ -156,8 +139,6 @@ public:
   static Timer createRootTimer(const std::string &name, const TimerSet &timer_set);
     
   static void deleteRootTimer(TimerImpl *root_timer);
-
-  static std::vector<Timer> &findTimers(TimerImpl *root_timer, const std::string &path_tail, std::vector<Timer> &found_timers);
 
   static void findTimer(TimerImpl *timer, std::vector<std::string> &path_tail_vector, std::vector<Timer> &found_timers);
   
@@ -437,13 +418,6 @@ deleteRootTimer(
 }
 
 
-std::vector<Timer> &
-findTimers(Timer root_timer, const std::string &path_tail, std::vector<Timer> &found_timers) {
-  TimerImpl::findTimers(root_timer.m_timerImpl, path_tail, found_timers);
-  return found_timers;
-}
-
-
 TimerImpl::TimerImpl(
   const std::string &  name,
   TimerMask    timer_mask,
@@ -701,21 +675,6 @@ TimerImpl::findTimer(
     for (TimerList::const_iterator it = timer->begin(); it != timer->end(); ++it)
       findTimer((*it).m_timerImpl, path_tail_vector, found_timers);
 }
-
-
-std::vector<Timer> &
-TimerImpl::findTimers(
-  TimerImpl *                   root_timer,
-  const std::string &           path_tail,
-  std::vector<Timer> &          found_timers)
-{
-  std::vector<std::string> path_tail_vector;
-  
-  findTimer(root_timer, split(path_tail, '.', path_tail_vector), found_timers);
-
-  return found_timers;
-}
-
 
 
 Writer &

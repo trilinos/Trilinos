@@ -79,6 +79,8 @@ PANZER_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
   Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
 
   PointValues2<ScalarT,PHX::MDField> pointValues;
+  PHX::MDField<const ScalarT, Cell, IP, Dim, Dim, void, void, void, void>
+    constJac_;
 
 PANZER_EVALUATOR_CLASS_END
 

@@ -430,10 +430,11 @@ TEST(stk_search, coarse_search_one_point_KDTREE)
     testCoarseSearchOnePoint(stk::search::KDTREE);
 }
 
-void testCoarseSearchForDeterminingSharing(stk::search::SearchMethod searchMethod)
+void testCoarseSearchForDeterminingSharingAllAllCase(stk::search::SearchMethod searchMethod)
 {
     const stk::ParallelMachine comm = MPI_COMM_WORLD;
     const int p_rank = stk::parallel_machine_rank(comm);
+    const int p_size = stk::parallel_machine_size(comm);
 
     typedef std::vector< std::pair<Sphere,Ident> > SphereVector;
 
@@ -442,15 +443,23 @@ void testCoarseSearchForDeterminingSharing(stk::search::SearchMethod searchMetho
     Point coords(1.0, 1.0, 1.0);
     double radius = 1.0e-6;
     Sphere node(coords, radius);
-    uint64_t global_id = 1000;
+    uint64_t global_id = 1000 + p_rank;
     Ident id = Ident(global_id, p_rank);
 
     source_bbox_vector.push_back(std::make_pair(node, id));
 
-    SearchResults searchResults;
-    stk::search::coarse_search(source_bbox_vector, source_bbox_vector, searchMethod, comm, searchResults);
+    const bool communicateRangeBoxInfo = true;
+    const bool dontCommunicateRangeBoxInfo = false;
 
-    EXPECT_GE(static_cast<int>(searchResults.size()), p_rank + 1);
+    SearchResults searchResults;
+    stk::search::coarse_search(source_bbox_vector, source_bbox_vector, searchMethod, comm, searchResults,
+                               communicateRangeBoxInfo);
+    EXPECT_EQ(2*p_size - 1, static_cast<int>(searchResults.size()));
+
+    searchResults.clear();
+    stk::search::coarse_search(source_bbox_vector, source_bbox_vector, searchMethod, comm, searchResults,
+                               dontCommunicateRangeBoxInfo);
+    EXPECT_EQ(p_size, static_cast<int>(searchResults.size()));
 
     std::set<int> procs;
 
@@ -470,15 +479,127 @@ void testCoarseSearchForDeterminingSharing(stk::search::SearchMethod searchMetho
     }
 }
 
-TEST(CoarseSearch, forDeterminingSharing_BOOST_RTREE)
+TEST(CoarseSearch, forDeterminingSharingAllAllCase_BOOST_RTREE)
 {
-  testCoarseSearchForDeterminingSharing(stk::search::BOOST_RTREE);
+  testCoarseSearchForDeterminingSharingAllAllCase(stk::search::BOOST_RTREE);
 }
 
-TEST(CoarseSearch, forDeterminingSharing_KDTREE)
+TEST(CoarseSearch, forDeterminingSharingAllAllCase_KDTREE)
 {
-  testCoarseSearchForDeterminingSharing(stk::search::KDTREE);
+  testCoarseSearchForDeterminingSharingAllAllCase(stk::search::KDTREE);
 }
 
+
+void testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::SearchMethod searchMethod,
+                                                             int numLoops = 1)
+{
+    const stk::ParallelMachine comm = MPI_COMM_WORLD;
+    const int p_rank = stk::parallel_machine_rank(comm);
+    const int p_size = stk::parallel_machine_size(comm);
+
+    typedef std::vector< std::pair<Sphere,Ident> > SphereVector;
+
+    SphereVector source_bbox_vector;
+
+    Point coords(1.0 + p_rank, 1.0, 1.0);
+    double radius = 0.6;
+    Sphere node(coords, radius);
+    uint64_t global_id = 1000 + p_rank;
+    Ident id = Ident(global_id, p_rank);
+
+    source_bbox_vector.push_back(std::make_pair(node, id));
+
+    const bool communicateRangeBoxInfo = true;
+    const bool dontCommunicateRangeBoxInfo = false;
+
+    SearchResults searchResults;
+
+    double markTime, elapsedTime, totalTime;
+    markTime = elapsedTime = totalTime = 0.0;
+
+    for (int count = 0; count < numLoops; ++count) {
+
+      const bool lastLoop = (count + 1 == numLoops);
+
+      searchResults.clear();
+      markTime = stk::wall_time();
+      stk::search::coarse_search(source_bbox_vector, source_bbox_vector, searchMethod, comm, searchResults,
+                                 communicateRangeBoxInfo);
+      totalTime += stk::wall_time() - markTime;
+
+      if (lastLoop) {
+        if (p_size == 1) {
+          EXPECT_EQ(1, static_cast<int>(searchResults.size()));
+        }
+        else {
+          const int expectedSize = ((p_rank == 0) || (p_rank == p_size - 1) ? 3 : 5);
+          EXPECT_EQ(expectedSize, static_cast<int>(searchResults.size()));
+        }
+      }
+
+      searchResults.clear();
+      markTime = stk::wall_time();
+      stk::search::coarse_search(source_bbox_vector, source_bbox_vector, searchMethod, comm, searchResults,
+                                 dontCommunicateRangeBoxInfo);
+      totalTime += stk::wall_time() - markTime;
+
+      if (lastLoop) {
+        if (p_size == 1) {
+          EXPECT_EQ(1, static_cast<int>(searchResults.size()));
+        }
+        else {
+          const int expectedSize = ((p_rank == 0) || (p_rank == p_size - 1) ? 2 : 3);
+          EXPECT_EQ(expectedSize, static_cast<int>(searchResults.size()));
+        }
+      }
+    }
+
+    if (p_rank == 0) {
+      double avgTime =  totalTime / numLoops;
+      std::cout << "Average search time measured on rank 0 of " << p_size << " ranks is " << avgTime << " through " << numLoops << " loops" << std::endl;
+    }
+
+    // Do more correctness checking after the last loop.
+    std::set<int> procs;
+    for(size_t i=0;i<searchResults.size();++i)
+    {
+      procs.insert(searchResults[i].second.proc());
+      procs.insert(searchResults[i].first.proc());
+    }
+    std::set<int>::iterator iter = procs.begin();
+
+    int minNeighbor = p_rank - 1;
+    int maxNeighbor = p_rank + 1;
+
+    int procCounter = 0;
+    for (;iter!=procs.end();++iter)
+    {
+      EXPECT_LE(minNeighbor, *iter);
+      EXPECT_GE(maxNeighbor, *iter);
+      ++procCounter;
+    }
+    if (p_size == 1) {
+      EXPECT_EQ(1, procCounter);
+    }
+    else {
+      const int expectedCount = ((p_rank == 0) || (p_rank == p_size - 1) ? 2 : 3);
+      EXPECT_EQ(expectedCount, static_cast<int>(procCounter));
+    }
+}
+
+TEST(CoarseSearch, forDeterminingSharingLinearAdjacentCase_BOOST_RTREE)
+{
+  testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::BOOST_RTREE);
+}
+
+TEST(CoarseSearch, forDeterminingSharingLinearAdjacentCase_KDTREE)
+{
+  testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::KDTREE);
+}
+
+TEST(CoarseSearchScaling, forDeterminingSharingLinearAdjacentCase_KDTREE)
+{
+  testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::KDTREE, 1000);
+}
 
 } //namespace

@@ -25,7 +25,7 @@ void compute_stats(const stk::mesh::BulkData& mesh, std::vector<Stats>& stats)
 {
     stk::mesh::Part& owned_part = mesh.mesh_meta_data().locally_owned_part();
     stk::mesh::Part& shared_part = mesh.mesh_meta_data().globally_shared_part();
-    stk::mesh::Selector recv_aura = !owned_part & !shared_part;
+    stk::mesh::Selector recv_aura = (!owned_part) & (!shared_part);
 
     int numElems = stk::mesh::count_selected_entities(owned_part, mesh.buckets(stk::topology::ELEM_RANK));
     int numSharedNodes = stk::mesh::count_selected_entities(shared_part, mesh.buckets(stk::topology::NODE_RANK));

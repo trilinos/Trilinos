@@ -76,7 +76,7 @@ private:
 };
 
 template <typename GO>
-STKConnManager<GO>::STKConnManager(const Teuchos::RCP<STK_Interface> & stkMeshDB)
+STKConnManager<GO>::STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB)
    : stkMeshDB_(stkMeshDB), ownedElementCount_(0)
 {
 }

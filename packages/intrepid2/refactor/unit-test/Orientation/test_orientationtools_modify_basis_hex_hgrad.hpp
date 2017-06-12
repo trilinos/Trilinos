@@ -105,14 +105,16 @@ namespace Intrepid2 {
 
       int errorFlag = 0;
       const double tol = 100*tolerence();
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
       typedef OrientationTools<DeviceSpaceType> ots;
       try {
-
+        constexpr ordinal_type order = 3;
+        if(order <= maxOrder)
         {
           *outStream << "\n -- Testing Hexahedron \n\n";
 
-          const ordinal_type order = 3;
+
 
           Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType> cellBasis(order);
           const auto cellTopo = cellBasis.getBaseCellTopology();

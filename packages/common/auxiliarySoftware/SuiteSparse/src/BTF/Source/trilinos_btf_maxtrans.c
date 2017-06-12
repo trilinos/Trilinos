@@ -292,7 +292,7 @@ static Int trilinos_augment
 /* === maxtrans ============================================================= */
 /* ========================================================================== */
 
-Int BTF(maxtrans)   /* returns # of columns in the matching */
+Int TRILINOS_BTF(maxtrans)   /* returns # of columns in the matching */
 (
     /* --- input --- */
     Int nrow,	    /* A is nrow-by-ncol in compressed column form */

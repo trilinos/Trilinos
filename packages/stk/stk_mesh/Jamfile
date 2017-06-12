@@ -110,16 +110,16 @@ alias install-exe-targets : ;
 #
 exe stk_mesh_utest
   :
-    [ glob $(stk_mesh-root)/unit_tests/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/*.cpp 
-           $(stk_mesh-root)/unit_tests/change_parts/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/user_created/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/skin_mesh/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/mesh_diagnostics/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/integration/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/element_graph/*.cpp 
-           $(stk_mesh-root)/unit_tests/custom_ghosting/*.cpp 
-           $(stk_mesh-root)/unit_tests/entity_sorting/*.cpp 
+    [ glob $(stk_mesh-root)/../stk_unit_tests/stk_mesh/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/change_parts/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/user_created/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/skin_mesh/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/mesh_diagnostics/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/integration/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/element_graph/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/custom_ghosting/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/entity_sorting/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_mesh_base
@@ -131,11 +131,12 @@ exe stk_mesh_utest
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
+    <include>$(stk_mesh-root)/../stk_unit_tests/stk_mesh
   ;
 
 exe stk_mesh_utest_field_blas
   :
-    [ glob $(stk_mesh-root)/unit_tests/FieldBlas/*.cpp ]
+    [ glob $(stk_mesh-root)/../stk_unit_tests/stk_mesh/FieldBlas/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_mesh_base
     /sierra/stk_unit_test_utils//stk_unit_test_utils
@@ -146,12 +147,13 @@ exe stk_mesh_utest_field_blas
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
+    <include>$(stk_mesh-root)/../stk_unit_tests/stk_mesh
   ;
 
 
 exe stk_mesh_docs_tests
   :
-    [ glob $(stk_mesh-root)/testsForDocumentation/*.cpp ]
+    [ glob $(stk_mesh-root)/../stk_doc_tests/stk_mesh/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_mesh_base
     /sierra/stk_io//stk_io
@@ -161,6 +163,7 @@ exe stk_mesh_docs_tests
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
+    <include>$(stk_mesh-root)/../stk_doc_tests/stk_mesh
   ;
 
 lib stk_mesh_base
@@ -192,7 +195,7 @@ lib stk_mesh_fixtures
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(stk_mesh-root)/stk_mesh/fixtures/*.cpp ]
+        [ glob $(stk_mesh-root)/../stk_unit_tests/stk_mesh_fixtures/*.cpp ]
     ]
     stk_mesh_base
     /sierra/stk_unit_test_utils//stk_unit_test_utils

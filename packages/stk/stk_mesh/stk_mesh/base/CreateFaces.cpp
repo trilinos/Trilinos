@@ -134,7 +134,7 @@ struct create_face_impl
     for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
       Entity const *elem_nodes = m_bucket.begin_nodes(ielem);
       ThrowRequire(m_bucket.num_nodes(ielem) == Topology::num_nodes);
-      for (int n=0; n != Topology::num_nodes; ++n) {
+      for (unsigned n=0; n != Topology::num_nodes; ++n) {
         elem_node_ids[n] = mesh.identifier(elem_nodes[n]);
       }
 
@@ -150,7 +150,7 @@ struct create_face_impl
         }
       }
 
-      for (int side_ordinal=0; side_ordinal != Topology::num_faces; ++side_ordinal) {
+      for (unsigned side_ordinal=0; side_ordinal != Topology::num_faces; ++side_ordinal) {
 
           if (!face_exists[side_ordinal]) {
               if (m_face_creation_behavior == FaceCreationBehavior::CREATE_FACES_FACE_CREATION_CLASSIC) {

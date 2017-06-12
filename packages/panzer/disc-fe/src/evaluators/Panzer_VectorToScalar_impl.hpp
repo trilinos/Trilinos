@@ -65,7 +65,7 @@ PHX_EVALUATOR_CTOR(VectorToScalar,p)
       PHX::MDField<ScalarT,Cell,Point>(scalar_names[i], scalar_dl);
 
   vector_field = 
-    PHX::MDField<ScalarT,Cell,Point,Dim>(p.get<std::string>
+    PHX::MDField<const ScalarT,Cell,Point,Dim>(p.get<std::string>
 					 ("Vector Name"), vector_dl);
 
   this->addDependentField(vector_field);

@@ -21,6 +21,7 @@ APPEND_SET(SOURCES
   CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
   FineLevelInputDataFactory.cpp
+  GeneralGeometricPFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
   IntrepidPCoarsenFactory.cpp
@@ -39,9 +40,11 @@ APPEND_SET(SOURCES
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp
+  UnsmooshFactory.cpp
   UserData/CreateXpetraPreconditioner.cpp
   Utilities
   VariableContainer.cpp
+  VariableDofLaplacianFactory.cpp
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsUserData_cp

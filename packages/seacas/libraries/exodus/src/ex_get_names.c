@@ -49,7 +49,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_get_dimension, EX_NOERR, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR
 #include <stddef.h>       // for size_t
@@ -67,9 +67,8 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
   char        errmsg[MAX_ERR_LENGTH];
   const char *routine = "ex_get_names";
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
-
-  exerrval = 0; /* clear error code */
 
   /* inquire previously defined dimensions and variables  */
 
@@ -130,16 +129,15 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
 
   /* invalid variable type */
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err(routine, errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err(routine, errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (status == NC_NOERR) {
     if ((status = ex_get_names_internal(exoid, varid, num_entity, names, obj_type,
                                         "ex_get_names")) != EX_NOERR) {
-      return status;
+      EX_FUNC_LEAVE(status);
     }
   }
   else {
@@ -150,5 +148,5 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
       names[i][0] = '\0';
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

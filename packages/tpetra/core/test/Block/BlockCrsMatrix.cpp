@@ -315,7 +315,7 @@ namespace {
         little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
-            TEST_ASSERT( tempBlock(i,j) == STS::zero () );
+            TEST_ASSERT( static_cast<Scalar> (tempBlock(i,j)) == STS::zero () );
           }
         }
       } // for each entry in the row
@@ -351,7 +351,8 @@ namespace {
 
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
-            TEST_ASSERT( curBlk(i,j) == static_cast<Scalar> (static_cast<MT> (j + i * blockSize)) );
+            TEST_ASSERT( static_cast<Scalar> (curBlk(i,j)) ==
+                         static_cast<Scalar> (static_cast<MT> (j + i * blockSize)) );
           }
         }
       } // for each entry in the row
@@ -416,7 +417,8 @@ namespace {
           expectedVal *= static_cast<LO> (2);
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
-          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
+          TEST_ASSERT( static_cast<Scalar> (Y_lcl(i)) ==
+                       static_cast<Scalar> (static_cast<MT> (expectedVal)) );
         }
       }
 
@@ -451,7 +453,8 @@ namespace {
           expectedVal += static_cast<LO> (STS::real (beta));
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
-          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
+          TEST_ASSERT( static_cast<Scalar> (Y_lcl(i)) ==
+                       static_cast<Scalar> (static_cast<MT> (expectedVal)) );
         }
       }
     } // done with single-vector applyBlock test
@@ -524,7 +527,8 @@ namespace {
             expectedVal *= static_cast<LO> (col + 1);
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
-            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
+            TEST_ASSERT( static_cast<Scalar> (Y_lcl(i)) ==
+                         static_cast<Scalar> (static_cast<MT> (expectedVal)) );
           }
         }
       }
@@ -562,7 +566,8 @@ namespace {
             expectedVal += static_cast<LO> (STS::real (beta));
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
-            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
+            TEST_ASSERT( static_cast<Scalar> (Y_lcl(i)) ==
+                         static_cast<Scalar> (static_cast<MT> (expectedVal)) );
           }
         } // for each column (vector) of the BlockMultiVector
       } // for each local (mesh) row of the output BlockMultiVector
@@ -634,7 +639,8 @@ namespace {
           expectedVal *= static_cast<LO> (2);
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
-          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
+          TEST_ASSERT( static_cast<Scalar> (Y_lcl(i)) ==
+                       static_cast<Scalar> (static_cast<MT> (expectedVal)) );
         }
       }
 
@@ -669,7 +675,8 @@ namespace {
           expectedVal += static_cast<LO> (STS::real (beta));
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
-          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
+          TEST_ASSERT( static_cast<Scalar> (Y_lcl(i)) ==
+                       static_cast<Scalar> (static_cast<MT> (expectedVal)) );
         }
       }
     } // done with single-vector apply test
@@ -749,7 +756,8 @@ namespace {
             expectedVal *= static_cast<LO> (col + 1);
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
-            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
+            TEST_ASSERT( static_cast<Scalar> (Y_lcl(i)) ==
+                         static_cast<Scalar> (static_cast<MT> (expectedVal)) );
           }
         }
       }
@@ -787,7 +795,8 @@ namespace {
             expectedVal += static_cast<LO> (STS::real (beta));
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
-            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
+            TEST_ASSERT( static_cast<Scalar> (Y_lcl(i)) ==
+                         static_cast<Scalar> (static_cast<MT> (expectedVal)) );
           }
         } // for each column (vector) of the BlockMultiVector
       } // for each local (mesh) row of the output BlockMultiVector
@@ -1269,7 +1278,7 @@ namespace {
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
       typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
       for (LO i = 0; i < blockSize; ++i) {
-        TEST_EQUALITY( Y_lcl(i), requiredValue );
+        TEST_EQUALITY( static_cast<Scalar> (Y_lcl(i)), requiredValue );
       }
     }
 
@@ -1278,7 +1287,7 @@ namespace {
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
       typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
       for (LO i = 0; i < blockSize; ++i) {
-        TEST_EQUALITY( Y_lcl(i), STS::zero () );
+        TEST_EQUALITY( static_cast<Scalar> (Y_lcl(i)), STS::zero () );
       }
     }
 
@@ -1444,7 +1453,7 @@ namespace {
       for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
         typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
         for (LO i = 0; i < blockSize; ++i) {
-          if (Y_lcl(i) != requiredValue) {
+          if (static_cast<Scalar> (Y_lcl(i)) != requiredValue) {
             valsMatch = false;
           }
         }

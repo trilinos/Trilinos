@@ -36,9 +36,9 @@
 #ifndef _ELB_UTIL_CONST_H_
 #define _ELB_UTIL_CONST_H_
 
-#include <cstdio>
-#include <sys/types.h>
-#include <vector>
+#include <stddef.h>    // for size_t
+#include <sys/types.h> // for ssize_t
+#include <vector>      // for vector
 
 /* Function prototypes */
 extern int token_compare(char *      token, /* The input character string */

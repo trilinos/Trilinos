@@ -65,19 +65,3 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Teuchos::ParameterList> FacadeXYZNAMEXYZ<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
 
-    // obtain ParameterList with default input parameters for this facade class
-    std::string defaultString = FacadeXYZNAMEXYZ<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_;
-    Teuchos::RCP<ParameterList> defaultList = Teuchos::getParametersFromXmlString(defaultString);
-
-    // validate user input parameters (and set defaults if necessary)
-    Teuchos::ParameterList inputParameters = paramList;
-    inputParameters.validateParametersAndSetDefaults(*defaultList);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(inputParameters.get<std::string>("MueLu preconditioner") == "undefined", MueLu::Exceptions::RuntimeError, "FacadeXYZNAMEXYZ: undefined MueLu preconditioner. Set the \"MueLu preconditioner\" parameter correctly in your input file.");
-
-    // create copy of template string which is updated with in-place string replacements
-    std::string finalString = FacadeXYZNAMEXYZ<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_;
-
-    // logical code for more complicated distinctions
-
-

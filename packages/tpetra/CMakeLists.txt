@@ -198,15 +198,18 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 GLOBAL_SET(HAVE_TPETRA_OPENMP ${Tpetra_INST_OPENMP})
 IF (Tpetra_INST_OPENMP)
+  IF (NOT ${PROJECT_NAME}_ENABLE_OpenMP)
+    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must also enable OpenMP in all of Trilinos by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.")
+  ENDIF ()
   IF (NOT Kokkos_ENABLE_OpenMP)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::OpenMP execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_OPENMP=ON.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, you must enable the Kokkos::OpenMP execution space by setting Kokkos_ENABLE_OpenMP=ON.")
+    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must enable OpenMP in Kokkos by setting Kokkos_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  You do not normally need to set Kokkos_ENABLE_OpenMP:BOOL=ON explicitly if you have enabled OpenMP in all of Trilinos (by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON).  Thus, this message likely will only appear if you enabled OpenMP in Trilinos, explicitly disabled OpenMP in Kokkos, and explicitly enabled OpenMP in Tpetra.  ")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_OPENMP
   IF (HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosOpenMPWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake option Tpetra_INST_SERIAL:BOOL=ON.  If that does not work, also add Trilinos_ENABLE_OpenMP:BOOL=ON and possibly also Kokkos_ENABLE_OpenMP:BOOL=ON.")
+    MESSAGE(FATAL_ERROR "Tpetra: The OpenMP Node is disabled, since Tpetra_INST_OPENMP:BOOL=OFF, but you set that as the default Node type.  Please don't do that.  If you want OpenMP in Tpetra, you must set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  If this still does not work, please make sure that you are not disabling OpenMP in Kokkos (by setting Kokkos_ENABLE_OpenMP incorrectly).")
   ENDIF()
   IF (Kokkos_ENABLE_OpenMP)
-    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OpenMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors!")
+    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OpenMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors.  This is not an error unless you actually try using OpenMP in Tpetra.")
   ENDIF ()
 ENDIF ()
 
@@ -632,6 +635,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 ASSERT_DEFINED (Tpetra_INST_COMPLEX_DOUBLE)
 GLOBAL_SET (HAVE_TPETRA_COMPLEX_DOUBLE ${Tpetra_INST_COMPLEX_DOUBLE})
+
+IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT Trilinos_ENABLE_COMPLEX_DOUBLE)
+  MESSAGE(WARNING "Tpetra_INST_COMPLEX_DOUBLE=ON, but Trilinos_ENABLE_COMPLEX_DOUBLE=OFF.  This will work, but it will make builds more expensive, because it turns off explicit instantiation for complex<double> in KokkosKernels.  If you want to use Scalar=complex<double> in Tpetra, just set Trilinos_ENABLE_COMPLEX_DOUBLE=ON.  You do not need to set Tpetra_INST_COMPLEX_DOUBLE explicitly any more.")
+ENDIF ()
 
 # Enabling Scalar = std::complex<T> requires that the corresponding
 # Scalar=T instantiation be enabled as well.  

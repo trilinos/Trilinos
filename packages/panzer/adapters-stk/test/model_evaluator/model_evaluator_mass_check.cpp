@@ -75,8 +75,6 @@ using Teuchos::rcp;
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"

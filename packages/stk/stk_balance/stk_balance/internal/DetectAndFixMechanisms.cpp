@@ -236,7 +236,7 @@ std::vector<stk::mesh::EntityId> get_elements_on_the_move(const stk::mesh::BulkD
         while(buf.remaining())
         {
             stk::mesh::EntityId id;
-            buf.unpack<stk::mesh::EntityId>(id);
+            buf.unpack(id);
             elementsOnTheMove.push_back(id);
         }
     }

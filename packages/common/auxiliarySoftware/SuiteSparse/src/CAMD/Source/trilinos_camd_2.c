@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === CAMD_2 ============================================================== */
+/* === TRILINOS_CAMD_2 ============================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -9,9 +9,9 @@
 /* web: http://www.cise.ufl.edu/research/sparse/camd                         */
 /* ------------------------------------------------------------------------- */
 
-/* CAMD_2:  performs the CAMD ordering on a symmetric sparse matrix A, followed
+/* TRILINOS_CAMD_2:  performs the CAMD ordering on a symmetric sparse matrix A, followed
  * by a postordering (via depth-first search) of the assembly tree using the
- * CAMD_postorder routine.
+ * TRILINOS_CAMD_postorder routine.
  */
 
 /* ========================================================================= */
@@ -47,10 +47,10 @@ static Int trilinos_clear_flag (Int wflg, Int wbig, Int W [ ], Int n)
 
 
 /* ========================================================================= */
-/* === CAMD_2 ============================================================== */
+/* === TRILINOS_CAMD_2 ============================================================== */
 /* ========================================================================= */
 
-GLOBAL void CAMD_2
+GLOBAL void TRILINOS_CAMD_2
 (
     Int n,		/* A is n-by-n, where n > 0 */
     Int Pe [ ],		/* Pe [0..n-1]: index in Iw of row i on input */
@@ -70,8 +70,8 @@ GLOBAL void CAMD_2
     Int W [ ],		/* size n+1 (Note: it was size n in AMD) */
 
     /* control parameters and output statistics */
-    double Control [ ],	/* array of size CAMD_CONTROL */
-    double Info [ ],	/* array of size CAMD_INFO */
+    double Control [ ],	/* array of size TRILINOS_CAMD_CONTROL */
+    double Info [ ],	/* array of size TRILINOS_CAMD_INFO */
 
     /* input, not modified: */
     const Int C [ ],	/* size n, C [i] is the constraint set of node i */
@@ -225,7 +225,7 @@ GLOBAL void CAMD_2
  *	user-callable interface to this routine (camd_order.c).  The algorithm
  *	will not run at all if iwlen < pfree.  Restriction: iwlen >= pfree + n.
  *	Note that this is slightly more restrictive than the actual minimum
- *	(iwlen >= pfree), but CAMD_2 will be very slow with no elbow room.
+ *	(iwlen >= pfree), but TRILINOS_CAMD_2 will be very slow with no elbow room.
  *	Thus, this routine enforces a bare minimum elbow room of size n.
  *
  * pfree: On input the tail end of the array, Iw [pfree..iwlen-1], is empty,
@@ -233,19 +233,19 @@ GLOBAL void CAMD_2
  *	additional data is placed in Iw, and pfree is modified so that
  *	Iw [pfree..iwlen-1] is always the unused part of Iw.
  *
- * Control:  A double array of size CAMD_CONTROL containing input parameters
+ * Control:  A double array of size TRILINOS_CAMD_CONTROL containing input parameters
  *	that affect how the ordering is computed.  If NULL, then default
  *	settings are used.
  *
- *	Control [CAMD_DENSE] is used to determine whether or not a given input
+ *	Control [TRILINOS_CAMD_DENSE] is used to determine whether or not a given input
  *	row is "dense".  A row is "dense" if the number of entries in the row
- *	exceeds Control [CAMD_DENSE] times sqrt (n), except that rows with 16 or
+ *	exceeds Control [TRILINOS_CAMD_DENSE] times sqrt (n), except that rows with 16 or
  *	fewer entries are never considered "dense".  To turn off the detection
- *	of dense rows, set Control [CAMD_DENSE] to a negative number, or to a
- *	number larger than sqrt (n).  The default value of Control [CAMD_DENSE]
- *	is CAMD_DEFAULT_DENSE, which is defined in camd.h as 10.
+ *	of dense rows, set Control [TRILINOS_CAMD_DENSE] to a negative number, or to a
+ *	number larger than sqrt (n).  The default value of Control [TRILINOS_CAMD_DENSE]
+ *	is TRILINOS_CAMD_DEFAULT_DENSE, which is defined in camd.h as 10.
  *
- *	Control [CAMD_AGGRESSIVE] is used to determine whether or not aggressive
+ *	Control [TRILINOS_CAMD_AGGRESSIVE] is used to determine whether or not aggressive
  *	absorption is to be performed.  If nonzero, then aggressive absorption
  *	is performed (this is the default).
  *
@@ -305,7 +305,7 @@ GLOBAL void CAMD_2
  *	assembly tree.  Note that i refers to a row/column in the original
  *	matrix, not the permuted matrix.
  *
- * Info:  A double array of size CAMD_INFO.  If present, (that is, not NULL),
+ * Info:  A double array of size TRILINOS_CAMD_INFO.  If present, (that is, not NULL),
  *	then statistics about the ordering are returned in the Info array.
  *	See camd.h for a description.
 
@@ -619,7 +619,7 @@ GLOBAL void CAMD_2
 /* ========================================================================= */
 
     /* Note that this restriction on iwlen is slightly more restrictive than
-     * what is actually required in CAMD_2.  CAMD_2 can operate with no elbow
+     * what is actually required in TRILINOS_CAMD_2.  TRILINOS_CAMD_2 can operate with no elbow
      * room at all, but it will be slow.  For better performance, at least
      * size-n elbow room is enforced. */
     ASSERT (iwlen >= pfree + n) ;
@@ -673,12 +673,12 @@ GLOBAL void CAMD_2
 	for (j = 0 ; j < n ; j++)
 	{
 	    c = C [j] ;
-	    CAMD_DEBUG1 (("C [%d] = "ID"\n", j, c)) ;
+	    TRILINOS_CAMD_DEBUG1 (("C [%d] = "ID"\n", j, c)) ;
 	    Bucket [c]++ ;
 	    cmax = MAX (cmax, c) ;
 	    ASSERT (c >= 0 && c < n) ;
 	}
-	CAMD_DEBUG1 (("Max constraint set: "ID"\n", cmax)) ;
+	TRILINOS_CAMD_DEBUG1 (("Max constraint set: "ID"\n", cmax)) ;
 	for (i = 1 ; i < n ; i++)
 	{
 	    Bucket [i] += Bucket [i-1] ;
@@ -689,18 +689,18 @@ GLOBAL void CAMD_2
 	}
 
 #ifndef NDEBUG
-	CAMD_DEBUG3 (("\nConstraint Set "ID" :", C [BucketSet [0]]));
+	TRILINOS_CAMD_DEBUG3 (("\nConstraint Set "ID" :", C [BucketSet [0]]));
 	for (i = 0 ; i < n ; i++)
 	{
-	    CAMD_DEBUG3 ((ID" ", BucketSet [i])) ;
+	    TRILINOS_CAMD_DEBUG3 ((ID" ", BucketSet [i])) ;
 	    if (i == n-1)
 	    {
-		CAMD_DEBUG3 (("\n")) ;
+		TRILINOS_CAMD_DEBUG3 (("\n")) ;
 		break ;
 	    }
 	    if (C [BucketSet [i+1]] != C [BucketSet [i]])
 	    {
-		CAMD_DEBUG3 (("\nConstraint Set "ID" :", C [BucketSet [i+1]])) ;
+		TRILINOS_CAMD_DEBUG3 (("\nConstraint Set "ID" :", C [BucketSet [i+1]])) ;
 	    }
 	}
 #endif
@@ -709,13 +709,13 @@ GLOBAL void CAMD_2
     /* get control parameters */
     if (Control != (double *) NULL)
     {
-	alpha = Control [CAMD_DENSE] ;
-	aggressive = (Control [CAMD_AGGRESSIVE] != 0) ;
+	alpha = Control [TRILINOS_CAMD_DENSE] ;
+	aggressive = (Control [TRILINOS_CAMD_AGGRESSIVE] != 0) ;
     }
     else
     {
-	alpha = CAMD_DEFAULT_DENSE ;
-	aggressive = CAMD_DEFAULT_AGGRESSIVE ;
+	alpha = TRILINOS_CAMD_DEFAULT_DENSE ;
+	aggressive = TRILINOS_CAMD_DEFAULT_AGGRESSIVE ;
     }
     /* Note: if alpha is NaN, this is undefined: */
     if (alpha < 0)
@@ -729,7 +729,7 @@ GLOBAL void CAMD_2
     }
     dense = MAX (16, dense) ;
     dense = MIN (n,  dense) ;
-    CAMD_DEBUG1 (("\n\nCAMD (debug), alpha %g, aggr. "ID"\n",
+    TRILINOS_CAMD_DEBUG1 (("\n\nCAMD (debug), alpha %g, aggr. "ID"\n",
 	alpha, aggressive)) ;
 
     for (i = 0 ; i < n ; i++)
@@ -775,13 +775,13 @@ GLOBAL void CAMD_2
 
 	    if (deg > dense)
 	    {
-		CAMD_DEBUG1 (("Dense node "ID" degree "ID" bucket "ID"\n",
+		TRILINOS_CAMD_DEBUG1 (("Dense node "ID" degree "ID" bucket "ID"\n",
 		    i, deg, j)) ;
 		ndense++ ;
 	    }
 	    else
 	    {
-		CAMD_DEBUG1 (("Empty node "ID" degree "ID" bucket "ID"\n",
+		TRILINOS_CAMD_DEBUG1 (("Empty node "ID" degree "ID" bucket "ID"\n",
 		    i, deg, j)) ;
 		nnull++ ;
 	    }
@@ -841,10 +841,10 @@ GLOBAL void CAMD_2
 	}
 
 #ifndef NDEBUG
-	CAMD_DEBUG1 (("\n======Nel "ID"\n", nel)) ;
-	if (CAMD_debug >= 2)
+	TRILINOS_CAMD_DEBUG1 (("\n======Nel "ID"\n", nel)) ;
+	if (TRILINOS_CAMD_debug >= 2)
 	{
-	    CAMD_dump (n, Pe, Iw, Len, iwlen, pfree, Nv, Next,
+	    TRILINOS_CAMD_dump (n, Pe, Iw, Len, iwlen, pfree, Nv, Next,
 		    Last, Head, Elen, Degree, W, nel, BucketSet, C, curC) ;
 	}
 #endif
@@ -865,7 +865,7 @@ GLOBAL void CAMD_2
 	}
 	mindeg = deg ;
 	ASSERT (me >= 0 && me < n) ;
-	CAMD_DEBUG1 (("=================me: "ID"\n", me)) ;
+	TRILINOS_CAMD_DEBUG1 (("=================me: "ID"\n", me)) ;
 
 	/* ----------------------------------------------------------------- */
 	/* remove chosen variable from link list */
@@ -886,7 +886,7 @@ GLOBAL void CAMD_2
 	nvpiv = Nv [me] ;
 	ASSERT (nvpiv > 0) ;
 	nel += nvpiv ;
-	CAMD_DEBUG1 (("nvpiv is initially "ID"\n", nvpiv)) ;
+	TRILINOS_CAMD_DEBUG1 (("nvpiv is initially "ID"\n", nvpiv)) ;
 
 /* ========================================================================= */
 /* CONSTRUCT NEW ELEMENT */
@@ -979,7 +979,7 @@ GLOBAL void CAMD_2
 		    e = me ;
 		    pj = p ;
 		    ln = slenme ;
-		    CAMD_DEBUG2 (("Search sv: "ID" "ID" "ID"\n", me,pj,ln)) ;
+		    TRILINOS_CAMD_DEBUG2 (("Search sv: "ID" "ID" "ID"\n", me,pj,ln)) ;
 		}
 		else
 		{
@@ -988,7 +988,7 @@ GLOBAL void CAMD_2
 		    ASSERT (e >= 0 && e < n) ;
 		    pj = Pe [e] ;
 		    ln = Len [e] ;
-		    CAMD_DEBUG2 (("Search element e "ID" in me "ID"\n", e,me)) ;
+		    TRILINOS_CAMD_DEBUG2 (("Search element e "ID" in me "ID"\n", e,me)) ;
 		    ASSERT (Elen [e] < EMPTY && W [e] > 0 && pj >= 0) ;
 		}
 		ASSERT (ln >= 0 && (ln == 0 || (pj >= 0 && pj < iwlen))) ;
@@ -1005,7 +1005,7 @@ GLOBAL void CAMD_2
 		    i = Iw [pj++] ;
 		    ASSERT (i >= 0 && i < n && (i == me || Elen [i] >= EMPTY));
 		    nvi = Nv [i] ;
-		    CAMD_DEBUG2 ((": "ID" "ID" "ID" "ID"\n",
+		    TRILINOS_CAMD_DEBUG2 ((": "ID" "ID" "ID" "ID"\n",
 				i, Elen [i], Nv [i], wflg)) ;
 
 		    if (nvi > 0)
@@ -1018,7 +1018,7 @@ GLOBAL void CAMD_2
 			if (pfree >= iwlen)
 			{
 
-			    CAMD_DEBUG1 (("GARBAGE COLLECTION\n")) ;
+			    TRILINOS_CAMD_DEBUG1 (("GARBAGE COLLECTION\n")) ;
 
 			    /* prepare for compressing Iw by adjusting pointers
 			     * and lengths so that the lists being searched in
@@ -1060,7 +1060,7 @@ GLOBAL void CAMD_2
 				j = FLIP (Iw [psrc++]) ;
 				if (j >= 0)
 				{
-				    CAMD_DEBUG2 (("Got object j: "ID"\n", j)) ;
+				    TRILINOS_CAMD_DEBUG2 (("Got object j: "ID"\n", j)) ;
 				    Iw [pdst] = Pe [j] ;
 				    Pe [j] = pdst++ ;
 				    lenj = Len [j] ;
@@ -1094,7 +1094,7 @@ GLOBAL void CAMD_2
 			degme += nvi ;
 			Nv [i] = -nvi ;
 			Iw [pfree++] = i ;
-			CAMD_DEBUG2 (("     s: "ID"     nv "ID"\n", i, Nv [i]));
+			TRILINOS_CAMD_DEBUG2 (("     s: "ID"     nv "ID"\n", i, Nv [i]));
 
 			/* ------------------------------------------------- */
 			/* remove variable i from degree link list */
@@ -1130,14 +1130,14 @@ GLOBAL void CAMD_2
 			/* set tree pointer and flag to indicate element e is
 			 * absorbed into new element me (the parent of e is me)
 			 */
-			CAMD_DEBUG1 ((" Element "ID" => "ID"\n", e, me)) ;
+			TRILINOS_CAMD_DEBUG1 ((" Element "ID" => "ID"\n", e, me)) ;
 			Pe [e] = FLIP (me) ;
 			W [e] = 0 ;
 		    }
 		    else
 		    {
 			/* make element a root; kill it if not in same bucket */
-			CAMD_DEBUG1 (("2 Element "ID" => "ID"\n", e, me)) ;
+			TRILINOS_CAMD_DEBUG1 (("2 Element "ID" => "ID"\n", e, me)) ;
 			Pe [e] = EMPTY ;
 			W [e] = 0 ;
 		    }
@@ -1162,9 +1162,9 @@ GLOBAL void CAMD_2
 	 * diagonal part). */
 
 #ifndef NDEBUG
-	CAMD_DEBUG2 (("New element structure: length= "ID"\n", pme2-pme1+1)) ;
-	for (pme = pme1 ; pme <= pme2 ; pme++) CAMD_DEBUG3 ((" "ID"", Iw[pme]));
-	CAMD_DEBUG3 (("\n")) ;
+	TRILINOS_CAMD_DEBUG2 (("New element structure: length= "ID"\n", pme2-pme1+1)) ;
+	for (pme = pme1 ; pme <= pme2 ; pme++) TRILINOS_CAMD_DEBUG3 ((" "ID"", Iw[pme]));
+	TRILINOS_CAMD_DEBUG3 (("\n")) ;
 #endif
 
 	/* ----------------------------------------------------------------- */
@@ -1194,13 +1194,13 @@ GLOBAL void CAMD_2
 	 * in Scan 2.
 	 * ----------------------------------------------------------------- */
 
-	CAMD_DEBUG2 (("me: ")) ;
+	TRILINOS_CAMD_DEBUG2 (("me: ")) ;
 	for (pme = pme1 ; pme <= pme2 ; pme++)
 	{
 	    i = Iw [pme] ;
 	    ASSERT (i >= 0 && i < n) ;
 	    eln = Elen [i] ;
-	    CAMD_DEBUG3 ((""ID" Elen "ID": \n", i, eln)) ;
+	    TRILINOS_CAMD_DEBUG3 ((""ID" Elen "ID": \n", i, eln)) ;
 	    if (eln > 0)
 	    {
 		/* note that Nv [i] has been negated to denote i in Lme: */
@@ -1212,26 +1212,26 @@ GLOBAL void CAMD_2
 		    e = Iw [p] ;
 		    ASSERT (e >= 0 && e < n) ;
 		    we = W [e] ;
-		    CAMD_DEBUG4 (("    e "ID" we "ID" ", e, we)) ;
+		    TRILINOS_CAMD_DEBUG4 (("    e "ID" we "ID" ", e, we)) ;
 		    if (we >= wflg)
 		    {
 			/* unabsorbed element e has been seen in this loop */
-			CAMD_DEBUG4 (("    unabsorbed, first time seen")) ;
+			TRILINOS_CAMD_DEBUG4 (("    unabsorbed, first time seen")) ;
 			we -= nvi ;
 		    }
 		    else if (we != 0)
 		    {
 			/* e is an unabsorbed element */
 			/* this is the first we have seen e in all of Scan 1 */
-			CAMD_DEBUG4 (("    unabsorbed")) ;
+			TRILINOS_CAMD_DEBUG4 (("    unabsorbed")) ;
 			we = Degree [e] + wnvi ;
 		    }
-		    CAMD_DEBUG4 (("\n")) ;
+		    TRILINOS_CAMD_DEBUG4 (("\n")) ;
 		    W [e] = we ;
 		}
 	    }
 	}
-	CAMD_DEBUG2 (("\n")) ;
+	TRILINOS_CAMD_DEBUG2 (("\n")) ;
 
 /* ========================================================================= */
 /* DEGREE UPDATE AND ELEMENT ABSORPTION */
@@ -1248,7 +1248,7 @@ GLOBAL void CAMD_2
 	{
 	    i = Iw [pme] ;
 	    ASSERT (i >= 0 && i < n && Nv [i] < 0 && Elen [i] >= 0) ;
-	    CAMD_DEBUG2 (("Updating: i "ID" "ID" "ID"\n", i, Elen[i], Len [i]));
+	    TRILINOS_CAMD_DEBUG2 (("Updating: i "ID" "ID" "ID"\n", i, Elen[i], Len [i]));
 	    p1 = Pe [i] ;
 	    p2 = p1 + Elen [i] - 1 ;
 	    pn = p1 ;
@@ -1278,7 +1278,7 @@ GLOBAL void CAMD_2
 			    deg += dext ;
 			    Iw [pn++] = e ;
 			    hash += e ;
-			    CAMD_DEBUG4 ((" e: "ID" hash = "ID"\n",e,hash)) ;
+			    TRILINOS_CAMD_DEBUG4 ((" e: "ID" hash = "ID"\n",e,hash)) ;
 			}
 			else
 			{
@@ -1286,7 +1286,7 @@ GLOBAL void CAMD_2
 			    {
 				/* external degree of e is zero and if
 				 * C[e] = curC; absorb e into me */
-				CAMD_DEBUG1 ((" Element "ID" =>"ID" (aggr)\n",
+				TRILINOS_CAMD_DEBUG1 ((" Element "ID" =>"ID" (aggr)\n",
 					e, me)) ;
 				ASSERT (dext == 0) ;
 				Pe [e] = FLIP (me) ;
@@ -1296,7 +1296,7 @@ GLOBAL void CAMD_2
 			    {
 				/* make element a root; kill it if not in same
 				 * bucket */
-				CAMD_DEBUG1 (("2 Element "ID" =>"ID" (aggr)\n",
+				TRILINOS_CAMD_DEBUG1 (("2 Element "ID" =>"ID" (aggr)\n",
 					e, me)) ;
 				ASSERT (dext == 0) ;
 				Pe [e] = EMPTY ;
@@ -1321,7 +1321,7 @@ GLOBAL void CAMD_2
 			deg += dext ;
 			Iw [pn++] = e ;
 			hash += e ;
-			CAMD_DEBUG4 (("	e: "ID" hash = "ID"\n",e,hash)) ;
+			TRILINOS_CAMD_DEBUG4 (("	e: "ID" hash = "ID"\n",e,hash)) ;
 		    }
 		}
 	    }
@@ -1350,7 +1350,7 @@ GLOBAL void CAMD_2
 		    deg += nvj ;
 		    Iw [pn++] = j ;
 		    hash += j ;
-		    CAMD_DEBUG4 (("  s: "ID" hash "ID" Nv[j]= "ID"\n",
+		    TRILINOS_CAMD_DEBUG4 (("  s: "ID" hash "ID" Nv[j]= "ID"\n",
 				j, hash, nvj)) ;
 		}
 	    }
@@ -1390,7 +1390,7 @@ GLOBAL void CAMD_2
 		 * flop count analysis.  It also means that the post-ordering
 		 * is not an exact elimination tree post-ordering. */
 
-		CAMD_DEBUG1 (("  MASS i "ID" => parent e "ID"\n", i, me)) ;
+		TRILINOS_CAMD_DEBUG1 (("  MASS i "ID" => parent e "ID"\n", i, me)) ;
 		Pe [i] = FLIP (me) ;
 		nvi = -Nv [i] ;
 		degme -= nvi ;
@@ -1457,7 +1457,7 @@ GLOBAL void CAMD_2
 		Hhead [hash] = i ;
 		*/
 
-		CAMD_DEBUG4 (("  s: "ID" hash "ID" \n", i, hash)) ;
+		TRILINOS_CAMD_DEBUG4 (("  s: "ID" hash "ID" \n", i, hash)) ;
 		Last [i] = hash ;
 	    }
 	}
@@ -1478,12 +1478,12 @@ GLOBAL void CAMD_2
 /* SUPERVARIABLE DETECTION */
 /* ========================================================================= */
 
-	CAMD_DEBUG1 (("Detecting supervariables:\n")) ;
+	TRILINOS_CAMD_DEBUG1 (("Detecting supervariables:\n")) ;
 	for (pme = pme1 ; pme <= pme2 ; pme++)
 	{
 	    i = Iw [pme] ;
 	    ASSERT (i >= 0 && i < n) ;
-	    CAMD_DEBUG2 (("Consider i "ID" nv "ID"\n", i, Nv [i])) ;
+	    TRILINOS_CAMD_DEBUG2 (("Consider i "ID" nv "ID"\n", i, Nv [i])) ;
 	    if (Nv [i] < 0)
 	    {
 		/* i is a principal variable in Lme */
@@ -1494,7 +1494,7 @@ GLOBAL void CAMD_2
 		 * the pattern Lme of the current element, me
 		 * --------------------------------------------------------- */
 
-		CAMD_DEBUG2 (("Last: "ID"\n", Last [i])) ;
+		TRILINOS_CAMD_DEBUG2 (("Last: "ID"\n", Last [i])) ;
 
 		/* let i = head of hash bucket, and empty the hash bucket */
 		ASSERT (Last [i] >= 0 && Last [i] < n) ;
@@ -1526,7 +1526,7 @@ GLOBAL void CAMD_2
 		*/
 
 		ASSERT (i >= EMPTY && i < n) ;
-		CAMD_DEBUG2 (("----i "ID" hash "ID"\n", i, hash)) ;
+		TRILINOS_CAMD_DEBUG2 (("----i "ID" hash "ID"\n", i, hash)) ;
 
 		while (i != EMPTY && Next [i] != EMPTY)
 		{
@@ -1562,7 +1562,7 @@ GLOBAL void CAMD_2
 			/* check if j and i have identical nonzero pattern */
 			/* ------------------------------------------------- */
 
-			CAMD_DEBUG3 (("compare i "ID" and j "ID"\n", i,j)) ;
+			TRILINOS_CAMD_DEBUG3 (("compare i "ID" and j "ID"\n", i,j)) ;
 
 			/* check if i and j have the same Len and Elen */
 			/* and are in the same bucket */
@@ -1583,7 +1583,7 @@ GLOBAL void CAMD_2
 			    /* found it!  j can be absorbed into i */
 			    /* --------------------------------------------- */
 
-			    CAMD_DEBUG1 (("found it! j "ID" => i "ID"\n", j,i));
+			    TRILINOS_CAMD_DEBUG1 (("found it! j "ID" => i "ID"\n", j,i));
 			    Pe [j] = FLIP (i) ;
 			    /* both Nv [i] and Nv [j] are negated since they */
 			    /* are in Lme, and the absolute values of each */
@@ -1619,7 +1619,7 @@ GLOBAL void CAMD_2
 		}
 	    }
 	}
-	CAMD_DEBUG2 (("detect done\n")) ;
+	TRILINOS_CAMD_DEBUG2 (("detect done\n")) ;
 
 /* ========================================================================= */
 /* RESTORE DEGREE LISTS AND REMOVE NONPRINCIPAL SUPERVARIABLES FROM ELEMENT */
@@ -1632,7 +1632,7 @@ GLOBAL void CAMD_2
 	    i = Iw [pme] ;
 	    ASSERT (i >= 0 && i < n) ;
 	    nvi = -Nv [i] ;
-	    CAMD_DEBUG3 (("Restore i "ID" "ID"\n", i, nvi)) ;
+	    TRILINOS_CAMD_DEBUG3 (("Restore i "ID" "ID"\n", i, nvi)) ;
 	    if (nvi > 0)
 	    {
 		/* i is a principal variable in Lme */
@@ -1676,13 +1676,13 @@ GLOBAL void CAMD_2
 		Iw [p++] = i ;
 	    }
 	}
-	CAMD_DEBUG2 (("restore done\n")) ;
+	TRILINOS_CAMD_DEBUG2 (("restore done\n")) ;
 
 /* ========================================================================= */
 /* FINALIZE THE NEW ELEMENT */
 /* ========================================================================= */
 
-	CAMD_DEBUG2 (("ME = "ID" DONE\n", me)) ;
+	TRILINOS_CAMD_DEBUG2 (("ME = "ID" DONE\n", me)) ;
 	Nv [me] = nvpiv ;
 	/* save the length of the list for the new element me */
 	Len [me] = p - pme1 ;
@@ -1733,12 +1733,12 @@ GLOBAL void CAMD_2
 	}
 
 #ifndef NDEBUG
-	CAMD_DEBUG2 (("finalize done nel "ID" n "ID"\n   ::::\n", nel, n)) ;
+	TRILINOS_CAMD_DEBUG2 (("finalize done nel "ID" n "ID"\n   ::::\n", nel, n)) ;
 	for (pme = Pe [me] ; pme <= Pe [me] + Len [me] - 1 ; pme++)
 	{
-	      CAMD_DEBUG3 ((" "ID"", Iw [pme])) ;
+	      TRILINOS_CAMD_DEBUG3 ((" "ID"", Iw [pme])) ;
 	}
-	CAMD_DEBUG3 (("\n")) ;
+	TRILINOS_CAMD_DEBUG3 (("\n")) ;
 #endif
 
     }
@@ -1769,28 +1769,28 @@ GLOBAL void CAMD_2
 	nms_ldl += (s + lnzme)/2 ;
 
 	/* number of nz's in L (excl. diagonal) */
-	Info [CAMD_LNZ] = lnz ;
+	Info [TRILINOS_CAMD_LNZ] = lnz ;
 
 	/* number of divide ops for LU and LDL' */
-	Info [CAMD_NDIV] = ndiv ;
+	Info [TRILINOS_CAMD_NDIV] = ndiv ;
 
 	/* number of multiply-subtract pairs for LDL' */
-	Info [CAMD_NMULTSUBS_LDL] = nms_ldl ;
+	Info [TRILINOS_CAMD_NMULTSUBS_LDL] = nms_ldl ;
 
 	/* number of multiply-subtract pairs for LU */
-	Info [CAMD_NMULTSUBS_LU] = nms_lu ;
+	Info [TRILINOS_CAMD_NMULTSUBS_LU] = nms_lu ;
 
 	/* number of "dense" rows/columns */
-	Info [CAMD_NDENSE] = ndense ;
+	Info [TRILINOS_CAMD_NDENSE] = ndense ;
 
 	/* largest front is dmax-by-dmax */
-	Info [CAMD_DMAX] = dmax ;
+	Info [TRILINOS_CAMD_DMAX] = dmax ;
 
 	/* number of garbage collections in CAMD */
-	Info [CAMD_NCMPA] = ncmpa ;
+	Info [TRILINOS_CAMD_NCMPA] = ncmpa ;
 
 	/* successful ordering */
-	Info [CAMD_STATUS] = CAMD_OK ;
+	Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_OK ;
     }
 
 /* ========================================================================= */
@@ -1884,14 +1884,14 @@ GLOBAL void CAMD_2
 	ASSERT (j >= 0 && j < n) ;
 	if (Pe [j] == EMPTY)
 	{
-	    k = CAMD_postorder (j, k, n, Head, Next, Perm, W) ;
+	    k = TRILINOS_CAMD_postorder (j, k, n, Head, Next, Perm, W) ;
 	}
     }
 
     /* Perm [0..k-1] now contains a list of the nonempty/nondense nodes,
      * ordered via minimum degree and following the constraints. */
 
-    CAMD_DEBUG1 (("before dense/empty, k = "ID"\n", k)) ;
+    TRILINOS_CAMD_DEBUG1 (("before dense/empty, k = "ID"\n", k)) ;
     fflush (stdout) ;
     ASSERT (k + ndense_or_null == n) ;
 
@@ -1900,7 +1900,7 @@ GLOBAL void CAMD_2
 	if (C == NULL)
 	{
 	    /* postorder the dense/empty nodes (the parent of all these is n) */
-	    CAMD_postorder (n, k, n, Head, Next, Perm, W) ;
+	    TRILINOS_CAMD_postorder (n, k, n, Head, Next, Perm, W) ;
 	}
 	else
 	{
@@ -1921,7 +1921,7 @@ GLOBAL void CAMD_2
 	    i = 0 ;
 	    for (j = Head [n] ; j != EMPTY ; j = Next [j])
 	    {
-		CAMD_DEBUG1 (("Dense/empty node: "ID" : "ID" "ID"\n", j,
+		TRILINOS_CAMD_DEBUG1 (("Dense/empty node: "ID" : "ID" "ID"\n", j,
 		    Pe [j], Elen [j])) ;
 		fflush (stdout) ;
 		ASSERT (Pe [j] == n && Elen [j] == EMPTY) ;
@@ -1938,7 +1938,7 @@ GLOBAL void CAMD_2
 		Bucket [c] = knt1 ;
 		knt1 += i ;
 	    }
-	    CAMD_DEBUG1 (("knt1 "ID" dense/empty "ID"\n", knt1, ndense_or_null));
+	    TRILINOS_CAMD_DEBUG1 (("knt1 "ID" dense/empty "ID"\n", knt1, ndense_or_null));
 	    ASSERT (knt1 == ndense_or_null) ;
 
 	    /* place dense/empty nodes in BucketSet, in constraint order,
@@ -1996,13 +1996,13 @@ GLOBAL void CAMD_2
     }
 
 #ifndef NDEBUG
-    CAMD_DEBUG1 (("\nFinal constrained ordering:\n")) ;
+    TRILINOS_CAMD_DEBUG1 (("\nFinal constrained ordering:\n")) ;
     i = 0 ;
-    CAMD_DEBUG1 (("Last ["ID"] = "ID", C["ID"] = "ID"\n", i, Last [i],
+    TRILINOS_CAMD_DEBUG1 (("Last ["ID"] = "ID", C["ID"] = "ID"\n", i, Last [i],
 	    Last [i], C [Last [i]])) ;
     for (i = 1 ; i < n ; i++)
     {
-	CAMD_DEBUG1 (("Last ["ID"] = "ID", C["ID"] = "ID"\n", i, Last [i],
+	TRILINOS_CAMD_DEBUG1 (("Last ["ID"] = "ID", C["ID"] = "ID"\n", i, Last [i],
 	    Last [i], C [Last [i]])) ;
 
 	/* This is the critical assertion.  It states that the permutation

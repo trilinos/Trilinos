@@ -68,7 +68,6 @@ using Teuchos::rcp;
 #include "user_app_BCStrategy_Factory.hpp"
 
 #include "Panzer_InitialCondition_Builder.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include <vector>
 #include <map>
@@ -99,7 +98,7 @@ namespace panzer {
        pl->set("File Name","block-decomp.exo");
        mesh_factory.setParameterList(pl);
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
-       mesh->writeToExodus("test.exo");
+       mesh->writeToExodus("initial_condition_builder.exo");
     }
 
     // setup physic blocks

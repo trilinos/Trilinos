@@ -5,9 +5,7 @@ namespace simd {
 
 struct Double {
 
-  STK_MATH_FORCE_INLINE Double() 
-    : _data(_mm256_setzero_pd()) {
-  }
+  STK_MATH_FORCE_INLINE Double() {}
 
   STK_MATH_FORCE_INLINE Double(const double* x) 
     : _data(_mm256_loadu_pd(x)) {
@@ -18,7 +16,7 @@ struct Double {
   }
 
   template <typename T>
-  STK_MATH_FORCE_INLINE Double(const T x) 
+  STK_MATH_FORCE_INLINE Double(const T x, typename std::enable_if<std::is_convertible<T,double>::value, void*>::type=0)
     : _data(_mm256_set1_pd(double(x))) {
   }
 
@@ -40,7 +38,7 @@ struct Double {
   }
 
   template <typename T>
-  STK_MATH_FORCE_INLINE Double& operator= (const T x) {
+  STK_MATH_FORCE_INLINE typename std::enable_if<std::is_convertible<T,double>::value, Double&>::type operator= (const T x) {
     _data = _mm256_set1_pd(double(x));
     return *this;
   }

@@ -311,8 +311,49 @@ Int klu_tsolve
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
     Entry B [ ],           /* size ldim*nrhs */
+    Entry Xout [ ],           /* size ldim*1 */
     klu_common<Entry, Int> *Common
 ) ;
+
+
+/* -------------------------------------------------------------------------- */
+/* klu_solve2: solves Ax=b using the Symbolic and Numeric objects */
+/* -------------------------------------------------------------------------- */
+
+template <typename Entry, typename Int>
+Int klu_solve2
+(
+    /* inputs, not modified */
+    klu_symbolic<Entry, Int> *Symbolic,
+    klu_numeric<Entry, Int> *Numeric,
+    Int ldim,               /* leading dimension of B */
+    Int nrhs,               /* number of right-hand-sides */
+
+    /* right-hand-side on input, overwritten with solution to Ax=b on output */
+    Entry B [ ],           /* size ldim*nrhs */
+    Entry Xout [ ],           /* size ldim*1 */
+    klu_common<Entry, Int> *Common
+) ;
+
+
+/* -------------------------------------------------------------------------- */
+/* klu_tsolve2: solves A'x=b using the Symbolic and Numeric objects */
+/* -------------------------------------------------------------------------- */
+
+template <typename Entry, typename Int>
+Int klu_tsolve2
+(
+    /* inputs, not modified */
+    klu_symbolic<Entry, Int> *Symbolic,
+    klu_numeric<Entry, Int> *Numeric,
+    Int ldim,               /* leading dimension of B */
+    Int nrhs,               /* number of right-hand-sides */
+
+    /* right-hand-side on input, overwritten with solution to Ax=b on output */
+    Entry B [ ],           /* size ldim*nrhs */
+    klu_common<Entry, Int> *Common
+) ;
+
 
 /* -------------------------------------------------------------------------- */
 /* klu_refactor: refactorizes matrix with same ordering as klu_factor */

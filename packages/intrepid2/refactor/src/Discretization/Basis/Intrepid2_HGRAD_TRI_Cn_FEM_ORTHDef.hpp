@@ -66,6 +66,7 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0>::generate(
     const inputViewType input,
     const ordinal_type order ) {
 
+  constexpr ordinal_type spaceDim = 2;
   constexpr ordinal_type maxNumPts = Parameters::MaxNumPtsPerBasisEval;
 
   typedef typename outputViewType::value_type value_type;
@@ -80,51 +81,11 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0>::generate(
   // each point needs to be transformed from Pavel's element
   // z(i,0) --> (2.0 * z(i,0) - 1.0)
   // z(i,1) --> (2.0 * z(i,1) - 1.0)
-
-
-  /** \brief function for indexing from orthogonal expansion indices into linear space
-      p+q = the degree of the polynomial.
-      \param p [in] - the first index
-      \param q [in] - the second index*/
-  auto idx = [](const ordinal_type p,
-      const ordinal_type q) {
-    return (p+q)*(p+q+1)/2+q;
-  };
   
-    /** \brief function for computing the Jacobi recurrence coefficients so that
-      \param alpha [in] - the first Jacobi weight
-      \param beta  [in] - the second Jacobi weight
-      \param n     [n]  - the polynomial degree
-      \param an    [out] - the a weight for recurrence
-      \param bn    [out] - the b weight for recurrence
-      \param cn    [out] - the c weight for recurrence
-
-      The recurrence is
-      \f[
-      P^{\alpha,\beta}_{n+1} = \left( a_n + b_n x\right) P^{\alpha,\beta}_n - c_n P^{\alpha,\beta}_{n-1}
-      \f],
-      where
-      \f[
-      P^{\alpha,\beta}_0 = 1
-      \f]
-  */
-  auto jrc = [](const value_type alpha,
-      const value_type beta ,
-      const ordinal_type n ,
-            value_type  &an,
-            value_type  &bn,
-            value_type  &cn) {
-    an = ( (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) /
-        (2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) ) );
-    bn = ( (alpha*alpha-beta*beta)*(2.0*n+1.0+alpha+beta) /
-        (2.0*(n+1.0)*(2.0*n+alpha+beta)*(n+1.0+alpha+beta) ) );
-    cn = ( (n+alpha)*(n+beta)*(2.0*n+2.0+alpha+beta) /
-        ( (n+1.0)*(n+1.0+alpha+beta)*(2.0*n+alpha+beta) ) );
-  };
 
   // set D^{0,0} = 1.0
   {
-    const ordinal_type loc = idx(0,0);
+    const ordinal_type loc = Intrepid2::getPnEnumeration<spaceDim>(0,0);
     for (ordinal_type i=0;i<npts;++i) {
       output0(loc, i) = 1.0;
       if(hasDeriv) {
@@ -150,7 +111,7 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0>::generate(
 
     // set D^{1,0} = f1
     {
-      const ordinal_type loc = idx(1,0);
+      const ordinal_type loc = Intrepid2::getPnEnumeration<spaceDim>(1,0);
       for (ordinal_type i=0;i<npts;++i) {
         output0(loc, i) = f1[i];
         if(hasDeriv) {
@@ -163,9 +124,9 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0>::generate(
     // recurrence in p
     for (ordinal_type p=1;p<order;p++) {
       const ordinal_type
-      loc = idx(p,0),
-      loc_p1 = idx(p+1,0),
-      loc_m1 = idx(p-1,0);
+      loc = Intrepid2::getPnEnumeration<spaceDim>(p,0),
+      loc_p1 = Intrepid2::getPnEnumeration<spaceDim>(p+1,0),
+      loc_m1 = Intrepid2::getPnEnumeration<spaceDim>(p-1,0);
 
       const value_type
       a = (2.0*p+1.0)/(1.0+p),
@@ -186,8 +147,8 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0>::generate(
     // D^{p,1}
     for (ordinal_type p=0;p<order;++p) {
       const ordinal_type
-      loc_p_0 = idx(p,0),
-      loc_p_1 = idx(p,1);
+      loc_p_0 = Intrepid2::getPnEnumeration<spaceDim>(p,0),
+      loc_p_1 = Intrepid2::getPnEnumeration<spaceDim>(p,1);
 
       for (ordinal_type i=0;i<npts;++i) {
         output0(loc_p_1,i) = output0(loc_p_0,i)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
@@ -203,12 +164,12 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0>::generate(
     for (ordinal_type p=0;p<order-1;++p)
       for (ordinal_type q=1;q<order-p;++q) {
         const ordinal_type
-        loc_p_qp1 = idx(p,q+1),
-        loc_p_q = idx(p,q),
-        loc_p_qm1 = idx(p,q-1);
+        loc_p_qp1 = Intrepid2::getPnEnumeration<spaceDim>(p,q+1),
+        loc_p_q = Intrepid2::getPnEnumeration<spaceDim>(p,q),
+        loc_p_qm1 = Intrepid2::getPnEnumeration<spaceDim>(p,q-1);
 
         value_type a,b,c;
-        jrc((value_type)(2*p+1),(value_type)0,q,a,b,c);
+        Intrepid2::getJacobyRecurrenceCoeffs(a,b,c, 2*p+1,0,q);
         for (ordinal_type i=0;i<npts;++i) {
           output0(loc_p_qp1,i) =  (a*(2.0*z(i,1)-1.0)+b)*output0(loc_p_q,i)
               - c*output0(loc_p_qm1,i) ;
@@ -226,10 +187,10 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0>::generate(
   for (ordinal_type p=0;p<=order;++p)
     for (ordinal_type q=0;q<=order-p;++q)
       for (ordinal_type i=0;i<npts;++i) {
-        output0(idx(p,q),i) *= std::sqrt( (p+0.5)*(p+q+1.0));
+        output0(Intrepid2::getPnEnumeration<spaceDim>(p,q),i) *= std::sqrt( (p+0.5)*(p+q+1.0));
         if(hasDeriv) {
-          output(idx(p,q),i,1) *= std::sqrt( (p+0.5)*(p+q+1.0));
-          output(idx(p,q),i,2) *= std::sqrt( (p+0.5)*(p+q+1.0));
+          output(Intrepid2::getPnEnumeration<spaceDim>(p,q),i,1) *= std::sqrt( (p+0.5)*(p+q+1.0));
+          output(Intrepid2::getPnEnumeration<spaceDim>(p,q),i,2) *= std::sqrt( (p+0.5)*(p+q+1.0));
         }
       }
 }
@@ -246,24 +207,24 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,1>::generate(
   typedef typename outputViewType::pointer_type pointer_type;
   typedef typename Kokkos::DynRankView<value_type, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
 
-  constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2;
-  constexpr ordinal_type elemDim = 2;
+  constexpr ordinal_type spaceDim = 2;
+  constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
   const ordinal_type
   npts = input.dimension(0),
   card = output.dimension(0);
 
   // use stack buffer
-  value_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][elemDim+1]; //elemDim for derivatives, 1 for value
- // outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, elemDim+1); // createDynRankViewWithType not KOKKOS_INLINE_FUNCTION
+  value_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][spaceDim+1]; //spaceDim for derivatives, 1 for value
+ // outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, spaceDim+1); // createDynRankViewWithType not KOKKOS_INLINE_FUNCTION
 
   typedef typename Kokkos::View<value_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outHackViewType; // Issue trying to do this directly with DynRankView - no matching ctor
-  outHackViewType hack_view( (pointer_type)&outBuf[0][0][0], card, npts, elemDim+1); // As a hack, wrapped with a View then wrapped the View with a DynRankView
+  outHackViewType hack_view( (pointer_type)&outBuf[0][0][0], card, npts, spaceDim+1); // As a hack, wrapped with a View then wrapped the View with a DynRankView
   outViewType out(hack_view);
 
   OrthPolynomialTri<outViewType,inputViewType,hasDeriv,0>::generate(out, input, order);
   for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
-        for (ordinal_type k=0;k<elemDim;++k)
+        for (ordinal_type k=0;k<spaceDim;++k)
           output(i,j,k) = out(i,j,k+1);
 }
 
@@ -278,30 +239,30 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,n>::generate(
     const inputViewType input,
     const ordinal_type order ) {
 
-  constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2;
-  constexpr ordinal_type elemDim = 2;
+  constexpr ordinal_type spaceDim = 2;
+  constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
   
   typedef typename outputViewType::value_type value_type;
-  typedef Sacado::Fad::SFad<value_type,elemDim> fad_type;
+  typedef Sacado::Fad::SFad<value_type,spaceDim> fad_type;
 
   const ordinal_type
   npts = input.dimension(0),
   card = output.dimension(0);
 
   // use stack buffer
-  fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][elemDim],
+  fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][spaceDim],
            outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n];
 
   typedef typename Kokkos::View<fad_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
   typedef typename Kokkos::View<fad_type**, Kokkos::Impl::ActiveExecutionMemorySpace> inViewType;
 
-  inViewType in((value_type*)(&inBuf[0][0]), npts, elemDim);
+  inViewType in((value_type*)(&inBuf[0][0]), npts, spaceDim);
   outViewType out((value_type*)(&outBuf[0][0][0]), card, npts, n);
 
   for (ordinal_type i=0;i<npts;++i)
-    for (ordinal_type j=0;j<elemDim;++j) {
+    for (ordinal_type j=0;j<spaceDim;++j) {
       in(i,j) = input(i,j);
-      in(i,j).diff(j,elemDim);
+      in(i,j).diff(j,spaceDim);
     }
 
   OrthPolynomialTri<outViewType,inViewType,hasDeriv,n-1>::generate(out, in, order);
@@ -497,7 +458,10 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
 template<typename SpT, typename OT, typename PT>
 Basis_HGRAD_TRI_Cn_FEM_ORTH<SpT,OT,PT>::
 Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
-  this->basisCardinality_  = (order+1)*(order+2)/2;
+
+  constexpr ordinal_type spaceDim = 2;
+
+  this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order);
   this->basisDegree_       = order;
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
   this->basisType_         = BASIS_FEM_HIERARCHICAL;
@@ -511,7 +475,7 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
     const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
     const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-    constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2;
+    constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
     ordinal_type tags[maxCard][tagSize];
     const ordinal_type card = this->basisCardinality_;
     for (ordinal_type i=0;i<card;++i) {

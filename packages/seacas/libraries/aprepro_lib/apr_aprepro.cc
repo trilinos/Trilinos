@@ -31,20 +31,21 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <climits>
-#include <cstring>
-#include <ctime>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <vector>
-
-#include "apr_scanner.h"
-#include "apr_stats.h"
-#include "apr_util.h"
-#include "aprepro.h"
-#include "aprepro_parser.h"
+#include "apr_scanner.h"    // for Scanner
+#include "apr_stats.h"      // for Stats
+#include "apr_util.h"       // for check_valid_var, new_string, etc
+#include "aprepro.h"        // for Aprepro, symrec, file_rec, etc
+#include "aprepro_parser.h" // for Parser, Parser::token, etc
+#include <climits>          // for INT_MAX
+#include <cstring>          // for memset, strcmp
+#include <fstream>          // for operator<<, basic_ostream, etc
+#include <iomanip>          // for operator<<, setw, etc
+#include <iostream>         // for left, cerr, cout, streampos
+#include <stack>            // for stack
+#include <stddef.h>         // for size_t
+#include <stdlib.h>         // for exit, EXIT_SUCCESS, etc
+#include <string>           // for string, operator==, etc
+#include <vector>           // for allocator, vector
 
 namespace {
   const unsigned int HASHSIZE       = 5939;

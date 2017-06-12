@@ -61,10 +61,6 @@
 
 #include "skinner_interface.h"
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #define OUTPUT std::cout
 
 // ========================================================================

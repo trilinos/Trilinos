@@ -1239,9 +1239,9 @@ static int yy_flex_strlen(yyconst char *);
  */
 YY_DECL
 {
-  register yy_state_type yy_current_state;
-  register char *        yy_cp, *yy_bp;
-  register int           yy_act;
+  yy_state_type yy_current_state;
+  char *        yy_cp, *yy_bp;
+  int           yy_act;
 
 /* %% [7.0] user's declarations go here */
 #line 127 "/scratch/gdsjaar/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
@@ -1297,7 +1297,7 @@ YY_DECL
     yy_current_state = (yy_start);
   yy_match:
     do {
-      register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+      YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
       if (yy_accept[yy_current_state]) {
         (yy_last_accepting_state) = yy_current_state;
         (yy_last_accepting_cpos)  = yy_cp;
@@ -2496,10 +2496,10 @@ void yyFlexLexer::LexerOutput(const char *buf, int size) { (void)yyout->write(bu
 int yyFlexLexer::yy_get_next_buffer()
 /* %endif */
 {
-  register char *dest   = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-  register char *source = (yytext_ptr);
-  register int   number_to_move, i;
-  int            ret_val;
+  char *dest   = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+  char *source = (yytext_ptr);
+  int   number_to_move, i;
+  int   ret_val;
 
   if ((yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1])
     YY_FATAL_ERROR("fatal flex scanner internal error--end of buffer missed");
@@ -2621,15 +2621,15 @@ int yyFlexLexer::yy_get_next_buffer()
 yy_state_type yyFlexLexer::yy_get_previous_state()
 /* %endif */
 {
-  register yy_state_type yy_current_state;
-  register char *        yy_cp;
+  yy_state_type yy_current_state;
+  char *        yy_cp;
 
   /* %% [15.0] code to get the start state into yy_current_state goes here */
   yy_current_state = (yy_start);
 
   for (yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp) {
     /* %% [16.0] code to find the next state goes here */
-    register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+    YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
     if (yy_accept[yy_current_state]) {
       (yy_last_accepting_state) = yy_current_state;
       (yy_last_accepting_cpos)  = yy_cp;
@@ -2656,11 +2656,11 @@ yy_state_type yyFlexLexer::yy_get_previous_state()
 yy_state_type yyFlexLexer::yy_try_NUL_trans(yy_state_type yy_current_state)
 /* %endif */
 {
-  register int yy_is_jam;
+  int yy_is_jam;
   /* %% [17.0] code to find the next state, and perhaps do backing up, goes here */
-  register char *yy_cp = (yy_c_buf_p);
+  char *yy_cp = (yy_c_buf_p);
 
-  register YY_CHAR yy_c = 1;
+  YY_CHAR yy_c = 1;
   if (yy_accept[yy_current_state]) {
     (yy_last_accepting_state) = yy_current_state;
     (yy_last_accepting_cpos)  = yy_cp;
@@ -2679,10 +2679,10 @@ yy_state_type yyFlexLexer::yy_try_NUL_trans(yy_state_type yy_current_state)
 /* %if-c-only */
 /* %endif */
 /* %if-c++-only */
-void yyFlexLexer::yyunput(int c, register char *yy_bp)
+void yyFlexLexer::yyunput(int c, char *yy_bp)
 /* %endif */
 {
-  register char *yy_cp;
+  char *yy_cp;
 
   yy_cp = (yy_c_buf_p);
 
@@ -2691,10 +2691,9 @@ void yyFlexLexer::yyunput(int c, register char *yy_bp)
 
   if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2) { /* need to shift things up to make room */
     /* +2 for EOB chars. */
-    register yy_size_t number_to_move = (yy_n_chars) + 2;
-    register char *    dest =
-        &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
-    register char *source = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
+    yy_size_t number_to_move = (yy_n_chars) + 2;
+    char *dest   = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
+    char *source = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
 
     while (source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
       *--dest = *--source;
@@ -3157,7 +3156,7 @@ int yyFlexLexer::yy_top_state()
 /* %if-c++-only */
 void yyFlexLexer::LexerError(yyconst char msg[])
 {
-  std::cerr << msg << std::endl;
+  std::cerr << msg << '\n';
   exit(YY_EXIT_FAILURE);
 }
 /* %endif */
@@ -3206,7 +3205,7 @@ void yyFlexLexer::LexerError(yyconst char msg[])
 #ifndef yytext_ptr
 static void yy_flex_strncpy(char *s1, yyconst char *s2, int n)
 {
-  register int i;
+  int i;
   for (i  = 0; i < n; ++i)
     s1[i] = s2[i];
 }
@@ -3215,7 +3214,7 @@ static void yy_flex_strncpy(char *s1, yyconst char *s2, int n)
 #ifdef YY_NEED_STRLEN
 static int yy_flex_strlen(yyconst char *s)
 {
-  register int n;
+  int n;
   for (n = 0; s[n]; ++n)
     ;
 

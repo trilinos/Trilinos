@@ -61,6 +61,7 @@
 #include <Tpetra_Map.hpp>
 
 #include "Amesos2_TypeDecl.hpp"
+#include "Amesos2_VectorTraits.hpp"
 
 namespace Amesos2 {
 
@@ -207,6 +208,26 @@ namespace Amesos2 {
 
   namespace Util {
 
+    /** \internal
+     *
+     * \brief Helper struct for getting pointers to the MV
+     * data - only used when number of vectors = 1
+     * and single MPI process
+     */
+    template <typename MV, typename V>
+    struct vector_pointer_helper {
+
+      typedef typename VectorTraits<V>::ptr_scalar_type ptr_return_type ;
+
+      static ptr_return_type * get_pointer_to_vector ( const Teuchos::Ptr< MV> &mv ) ;
+
+      static ptr_return_type * get_pointer_to_vector ( Teuchos::Ptr< MV> &mv ) ;
+
+      static ptr_return_type * get_pointer_to_vector ( const Teuchos::Ptr< const MV > &mv ) ;
+
+      static ptr_return_type * get_pointer_to_vector ( Teuchos::Ptr< const MV > &mv ) ;
+    };
+
     /*
      * If the multivector scalar type and the desired scalar tpye are
      * the same, then we can do a simple straight copy.
@@ -216,7 +237,8 @@ namespace Amesos2 {
       static void apply(const Teuchos::Ptr<const MV>& mv,
                         const Teuchos::ArrayView<typename MV::scalar_t>& v,
                         const size_t ldx,
-                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                        EDistribution distribution );
     };
 
     /*
@@ -230,7 +252,8 @@ namespace Amesos2 {
       static void apply(const Teuchos::Ptr<const MV>& mv,
                         const Teuchos::ArrayView<S>& v,
                         const size_t& ldx,
-                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                        EDistribution distribution );
     };
 
     /** \internal
@@ -245,7 +268,8 @@ namespace Amesos2 {
       do_get (const Teuchos::Ptr<const MV>& mv,
               const Teuchos::ArrayView<S>& vals,
               const size_t ldx,
-              Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+              Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+              EDistribution distribution = ROOTED);
 
       static void
       do_get (const Teuchos::Ptr<const MV>& mv,
@@ -269,7 +293,8 @@ namespace Amesos2 {
       static void apply(const Teuchos::Ptr<MV>& mv,
                         const Teuchos::ArrayView<typename MV::scalar_t>& data,
                         const size_t ldx,
-                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                        EDistribution distribution );
     };
 
     /*
@@ -283,7 +308,8 @@ namespace Amesos2 {
       static void apply(const Teuchos::Ptr<MV>& mv,
                         const Teuchos::ArrayView<S>& data,
                         const size_t& ldx,
-                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                        EDistribution distribution );
     };
 
     /** \internal
@@ -297,7 +323,8 @@ namespace Amesos2 {
       static void do_put(const Teuchos::Ptr<MV>& mv,
                          const Teuchos::ArrayView<S>& data,
                          const size_t ldx,
-                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                         EDistribution distribution = ROOTED);
 
       static void do_put(const Teuchos::Ptr<MV>& mv,
                          const Teuchos::ArrayView<S>& data,

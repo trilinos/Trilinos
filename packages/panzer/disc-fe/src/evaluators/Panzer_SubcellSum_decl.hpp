@@ -81,7 +81,7 @@ PANZER_EVALUATOR_CLASS(SubcellSum)
   
   PHX::MDField<ScalarT,Cell> outField;  // result
     
-  PHX::MDField<ScalarT,Cell,BASIS> inField; // function to be integrated
+  PHX::MDField<const ScalarT,Cell,BASIS> inField; // function to be integrated
 
   double multiplier;
 

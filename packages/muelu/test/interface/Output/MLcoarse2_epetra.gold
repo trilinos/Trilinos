@@ -32,6 +32,7 @@ Level 1
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -40,6 +41,7 @@ Level 1
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -94,6 +96,7 @@ Level 2
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -105,6 +108,7 @@ Level 2
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -159,6 +163,7 @@ Level 3
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -170,6 +175,7 @@ Level 3
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -224,6 +230,7 @@ Level 4
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -235,6 +242,7 @@ Level 4
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -289,6 +297,7 @@ Level 5
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
+   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
@@ -300,6 +309,7 @@ Level 5
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   

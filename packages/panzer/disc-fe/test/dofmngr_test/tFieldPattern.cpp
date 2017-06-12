@@ -48,8 +48,6 @@
 #include <string>
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 

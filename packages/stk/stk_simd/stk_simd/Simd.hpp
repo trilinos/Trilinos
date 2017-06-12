@@ -3,11 +3,12 @@
 #ifndef STK_SIMD_FUNCTIONS_H
 #define STK_SIMD_FUNCTIONS_H
 
-#include "stk_simd/SimdConfig.hpp"
+#include "stk_simd/SimdConfig.hpp" // IWYU pragma: export
 #include <iostream>
 
 #include <stk_math/StkMath.hpp>
 
+// IWYU pragma: begin_exports
 #if defined ( STK_SIMD_AVX512 )
 #include "avx512/Avx512.hpp"
 #elif defined ( STK_SIMD_AVX )
@@ -18,8 +19,13 @@
 #include "no_simd/NoSimd.hpp"
 #endif // Check SIMD version
 
+#if defined (USE_STK_SIMD_SSE) || (USE_STK_SIMD_AVX) || (USE_STK_SIMD_AVX512)
+#define STK_HAVE_SIMD
+#endif
+
 #include "AlignedAllocator.hpp"
 #include "Traits.hpp" // has to be included after Double, Bool, Float, Boolf are defined
+// IWYU pragma: end_exports
 
 #include <Kokkos_Macros.hpp>
 #include <sys/time.h>
@@ -71,7 +77,12 @@ STK_MATH_FORCE_INLINE Double load_part(const double* x, const int offset, const 
   return temp;
 }
 
-STK_MATH_FORCE_INLINE double get_data(const Double& z, int index) {
+STK_MATH_FORCE_INLINE const double& get_data(const Double& z, int index) {
+  assert(index < ndoubles);
+  return z[index];
+}
+
+STK_MATH_FORCE_INLINE double& get_data(Double& z, int index) {
   assert(index < ndoubles);
   return z[index];
 }
@@ -101,7 +112,7 @@ STK_MATH_FORCE_INLINE double reduce_sum(const Double& x, const int sumNum) {
   return ret;
 }
 
-STK_MATH_FORCE_INLINE bool if_all(const Bool& a, const int sumNum=ndoubles) {
+STK_MATH_FORCE_INLINE bool are_all(const Bool& a, const int sumNum=ndoubles) {
   assert(sumNum <= ndoubles);
   const Double oneornone = stk::math::if_then_else_zero(a, Double(1.0));
   bool all_true = true;
@@ -111,7 +122,7 @@ STK_MATH_FORCE_INLINE bool if_all(const Bool& a, const int sumNum=ndoubles) {
   return all_true;
 }
 
-STK_MATH_FORCE_INLINE bool if_any(const Bool& a, const int sumNum=ndoubles) {
+STK_MATH_FORCE_INLINE bool are_any(const Bool& a, const int sumNum=ndoubles) {
   assert(sumNum <= ndoubles);
   Double oneornone = stk::math::if_then_else_zero(a, Double(1.0));
   bool any_true = false;
@@ -147,7 +158,12 @@ STK_MATH_FORCE_INLINE Float load_part(const float* x, const int offset, const in
   return temp;
 }
 
-STK_MATH_FORCE_INLINE float get_data(const Float& z, int index) {
+STK_MATH_FORCE_INLINE const float& get_data(const Float& z, int index) {
+  assert(index < nfloats);
+  return z[index];
+}
+
+STK_MATH_FORCE_INLINE float& get_data(Float& z, int index) {
   assert(index < nfloats);
   return z[index];
 }
@@ -177,7 +193,7 @@ STK_MATH_FORCE_INLINE float reduce_sum(const Float& x, const int sumNum ) {
   return ret;
 }
 
-STK_MATH_FORCE_INLINE bool if_all(const Boolf& a, const int sumNum=nfloats) {
+STK_MATH_FORCE_INLINE bool are_all(const Boolf& a, const int sumNum=nfloats) {
   assert(sumNum <= nfloats);
 #ifdef __CUDA_ARCH__
   static_assert(std::is_same<Boolf, bool>::value, "Not the right type");
@@ -190,7 +206,7 @@ STK_MATH_FORCE_INLINE bool if_all(const Boolf& a, const int sumNum=nfloats) {
   return all_true;
 }
 
-STK_MATH_FORCE_INLINE bool if_any(const Boolf& a, const int sumNum=nfloats) {
+STK_MATH_FORCE_INLINE bool are_any(const Boolf& a, const int sumNum=nfloats) {
   assert(sumNum <= nfloats);
   Float oneornone = stk::math::if_then_else_zero(a, Float(1.0f));
   bool any_true = false;
@@ -252,7 +268,12 @@ STK_MATH_FORCE_INLINE Float load_part(const float* x, const int offset, const in
 
 #endif
 
-STK_MATH_FORCE_INLINE double get_data(const double& z, int index) {
+STK_MATH_FORCE_INLINE const double& get_data(const double& z, int index) {
+  assert(index==0);
+  return z;
+}
+
+STK_MATH_FORCE_INLINE double& get_data(double& z, int index) {
   assert(index==0);
   return z;
 }
@@ -262,7 +283,12 @@ STK_MATH_FORCE_INLINE void set_data(double& z, int index, const double val) {
   z = val;
 }
 
-STK_MATH_FORCE_INLINE float get_data(const float& z, int index) {
+STK_MATH_FORCE_INLINE const float& get_data(const float& z, int index) {
+  assert(index==0);
+  return z;
+}
+
+STK_MATH_FORCE_INLINE float& get_data(float& z, int index) {
   assert(index==0);
   return z;
 }
@@ -294,12 +320,12 @@ STK_MATH_FORCE_INLINE int count_true(const bool& x, const int sumNum=1) {
   return x ? 1 : 0;
 }
 
-STK_MATH_FORCE_INLINE bool if_all(bool a, const int sumNum=1) {
+STK_MATH_FORCE_INLINE bool are_all(bool a, const int sumNum=1) {
   assert(sumNum==1);
   return a;
 }
 
-STK_MATH_FORCE_INLINE bool if_any(bool a, const int sumNum=1) {
+STK_MATH_FORCE_INLINE bool are_any(bool a, const int sumNum=1) {
   assert(sumNum==1);
   return a;
 }
@@ -407,6 +433,7 @@ void store_array(float* const to, const Float* const from, const int numValid) {
 }
 
 } // namespace simd
+
 } // namespace stk
 
 #endif // #ifndef SIMD_H__

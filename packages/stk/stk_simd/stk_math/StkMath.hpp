@@ -35,6 +35,10 @@ STK_MATH_FORCE_INLINE double log(const double x) {
   return std::log(x);
 }
 
+STK_MATH_FORCE_INLINE double log10(const double x) {
+  return std::log10(x);
+}
+
 STK_MATH_FORCE_INLINE double exp(const double x) {
   return std::exp(x);
 }
@@ -59,6 +63,18 @@ STK_MATH_FORCE_INLINE double tan(const double a) {
   return std::tan(a);
 }
 
+STK_MATH_FORCE_INLINE double sinh(const double a) {
+  return std::sinh(a);
+}
+
+STK_MATH_FORCE_INLINE double cosh(const double a) {
+  return std::cosh(a);
+}
+
+STK_MATH_FORCE_INLINE double tanh(const double a) {
+  return std::tanh(a);
+}
+
 STK_MATH_FORCE_INLINE double asin(const double a) {
   return std::asin(a);
 }
@@ -73,6 +89,22 @@ STK_MATH_FORCE_INLINE double atan(const double a) {
 
 STK_MATH_FORCE_INLINE double atan2(const double a, const double b) {
   return std::atan2(a, b);
+}
+
+STK_MATH_FORCE_INLINE double asinh(const double a) {
+  return std::asinh(a);
+}
+
+STK_MATH_FORCE_INLINE double acosh(const double a) {
+  return std::acosh(a);
+}
+
+STK_MATH_FORCE_INLINE double atanh(const double a) {
+  return std::atanh(a);
+}
+
+STK_MATH_FORCE_INLINE double erf(const double a) {
+  return std::erf(a);
 }
 
 STK_MATH_FORCE_INLINE double multiplysign(const double x, const double y) { // return x times sign of y
@@ -107,14 +139,6 @@ STK_MATH_FORCE_INLINE double if_then_else_zero(const bool b, const double v) {
   return b ? v : 0.0;
 }
 
-STK_MATH_FORCE_INLINE double if_not_then_else(const bool b, const double v1, const double v2) {
-  return b ? v2 : v1;
-}
-
-STK_MATH_FORCE_INLINE double if_not_then_else_zero(const bool b, const double v) {
-  return b ? 0.0 : v;
-}
-
 // float
 
 STK_MATH_FORCE_INLINE float fmadd(const float a, const float b, const float c) {
@@ -131,6 +155,10 @@ STK_MATH_FORCE_INLINE float cbrt(const float x) {
 
 STK_MATH_FORCE_INLINE float log(const float x) {
   return std::log(x);
+}
+
+STK_MATH_FORCE_INLINE float log10(const float x) {
+  return std::log10(x);
 }
 
 STK_MATH_FORCE_INLINE float exp(const float x) {
@@ -157,6 +185,18 @@ STK_MATH_FORCE_INLINE float tan(const float a) {
   return std::tan(a);
 }
 
+STK_MATH_FORCE_INLINE float sinh(const float a) {
+  return std::sinh(a);
+}
+
+STK_MATH_FORCE_INLINE float cosh(const float a) {
+  return std::cosh(a);
+}
+
+STK_MATH_FORCE_INLINE float tanh(const float a) {
+  return std::tanh(a);
+}
+
 STK_MATH_FORCE_INLINE float asin(const float a) {
   return std::asin(a);
 }
@@ -171,6 +211,22 @@ STK_MATH_FORCE_INLINE float atan(const float a) {
 
 STK_MATH_FORCE_INLINE float atan2(const float a, const float b) {
   return std::atan2(a,b);
+}
+
+STK_MATH_FORCE_INLINE float asinh(const float a) {
+  return std::asinh(a);
+}
+
+STK_MATH_FORCE_INLINE float acosh(const float a) {
+  return std::acosh(a);
+}
+
+STK_MATH_FORCE_INLINE float atanh(const float a) {
+  return std::atanh(a);
+}
+
+STK_MATH_FORCE_INLINE float erf(const float a) {
+  return std::erf(a);
 }
 
 STK_MATH_FORCE_INLINE float multiplysign(const float x, const float y) { // return x times sign of y
@@ -203,14 +259,6 @@ STK_MATH_FORCE_INLINE float if_then_else(const bool b, const float v1, const flo
 
 STK_MATH_FORCE_INLINE float if_then_else_zero(const bool b, const float v) {
   return b ? v : 0.0;
-}
-
-STK_MATH_FORCE_INLINE float if_not_then_else(const bool b, const float v1, const float v2) {
-  return b ? v2 : v1;
-}
-
-STK_MATH_FORCE_INLINE float if_not_then_else_zero(const bool b, const float v) {
-  return b ? 0.0 : v;
 }
 
 } // namespace math

@@ -46,16 +46,11 @@
 #include <string>
 
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
-
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_PureBasis.hpp"
-
 #include "Intrepid2_Basis.hpp"
-
-#include "Panzer_Evaluator_WithBaseImpl.hpp"
-
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
@@ -130,8 +125,8 @@ private:
                   const Teuchos::RCP<PHX::DataLayout> & quadLayout,
                   const std::string & postfixFieldName);
 
-  PHX::MDField<ScalarT,Point,Dim> coordinates; // reference coordinates
-  PHX::MDField<ScalarT> dof_coeff;  // coefficient values   
+  PHX::MDField<const ScalarT,Point,Dim> coordinates; // reference coordinates
+  PHX::MDField<const ScalarT> dof_coeff;  // coefficient values   
   PHX::MDField<ScalarT> dof_field;  // evaluate field
 
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double>> intrepidBasis;

@@ -160,7 +160,7 @@ TEST_F(TestBalanceMxNRebalanceUsingInputFiles, MxN_decompositionWithoutAura)
 {
     set_options();
     setup_initial_mesh_from_last_time_step(stk::mesh::BulkData::NO_AUTO_AURA);
-    stk::balance::internal::rebalanceMtoN(get_bulk(), get_num_procs_target_decomp(), get_output_filename(), numSteps, maxTime);
+    stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename(), numSteps, maxTime);
 }
 
 class BulkDataForBalance : public stk::mesh::BulkData

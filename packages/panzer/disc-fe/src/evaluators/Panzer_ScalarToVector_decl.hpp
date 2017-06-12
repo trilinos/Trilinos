@@ -45,19 +45,18 @@
 
 #include <vector>
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
+#include "Phalanx_MDField.hpp"
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
 PANZER_EVALUATOR_CLASS(ScalarToVector)
-  std::vector< PHX::MDField<ScalarT,Cell,Point> > scalar_fields;
+  std::vector< PHX::MDField<const ScalarT,Cell,Point> > scalar_fields;
   PHX::MDField<ScalarT,Cell,Point,Dim> vector_field;
 
 protected:
-  typedef Kokkos::View<ScalarT**> KokkosScalarFields_t;
+  typedef Kokkos::View<const ScalarT**> KokkosScalarFields_t;
   Kokkos::View<KokkosScalarFields_t*> internal_scalar_fields;
 public:
   void operator()(const size_t &cell) const;

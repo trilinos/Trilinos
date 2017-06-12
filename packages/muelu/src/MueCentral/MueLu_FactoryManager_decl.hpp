@@ -135,6 +135,14 @@ namespace MueLu {
     */
     const RCP<const FactoryBase> GetFactory(const std::string& varName) const;
 
+    /*! @brief Get factory associated with a particular data name (NONCONST version)
+
+       @param[in] varName name of variable.
+
+    */
+    const RCP<FactoryBase> GetFactoryNonConst(const std::string& varName);
+
+
     //!
     const RCP<const FactoryBase> GetDefaultFactory(const std::string& varName) const;
 

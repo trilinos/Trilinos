@@ -31,13 +31,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/RingFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>
 #include <ostream>                      // for ostringstream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityProc, PartVector, etc
-#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"

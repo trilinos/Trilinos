@@ -579,6 +579,64 @@ namespace BaskerNS
     Kokkos::Timer copyperm_timer;
     #endif
 
+    // Summary:
+    // When Symbolic is called, the compressed matrix pointer data is copied into Basker. 
+    // If this is done through Amesos2 with a single process, the CRS format is not converted to CCS; 
+    // that occurs by taking the transpose of the input CRS structure matrix, then performing symbolic factorization.
+    // The results of the Symbolic step are stored as permutation vectors. 
+    // When Factor is called, the input pointers will match those that were passed to Symbolic (i.e. if done through
+    // Amesos2 on a single process, they will be in CRS format). The transpose operation, if applied to the pointers, 
+    // is encoded within the perm_composition arrays. 
+    // Factor starts by copying the input pointer data into the local pointers. This is done by applying the permutations
+    // stored during Symbolic phase to the input pointers and storing the results in the local pointers. 
+    // This permute+copy operation stores the values in the A.val array as well as the blocks BTF_*.val; colptr and rowidx 
+    // are assumed to be unchtetBasis.getValues(dbasisAtLattice, lattice, OPERATOR_D3);anged from the time Symbolic was called, and so do not need to be copied or recomputed.
+    // After this, sfactor_copy2 is called with copies the results from BTF_A to the 2d ND blocks
+    //
+    // This assumes the ColPtr and RowIdx values SHOULD be identical if reusing the Symbolic structure, but if there
+    // is a change, for example reusing the Symbolic structure but a change in the values of the matrix entries and if 
+    // some diagonal entry ends up becoming a zero, then Symbolic should be rerun
+    //
+/*
+    // Look for zeros on the diagonal - an Option / parameter list option should be used to enable this
+    // col_ptr has ncol+1 entries - final entry = nnz
+    // row_idx and val have nnz entries
+    // Scan through the matrix for 0's on the diagonal
+    if ( nrow == ncol ) // square matrices, CRS vs CCS is irrelevant (i.e. transpose does not need to be applied first) - but needs to be known for Symbolic...
+    {
+      std::cout << "  Check diagonal entries..." << std::endl;
+      Int total_diag_found = 0;
+      for ( Int colid = 0; colid < ncol; ++colid ) {
+        Int rowids_start = col_ptr[colid];
+        Int rowids_end = col_ptr[colid+1];
+        Int num_row_entries = rowids_end - rowids_start;
+        Int counter = 0;
+        Int counter_diag_found = 0;
+        for ( Int j = rowids_start; j < rowids_end; ++j ) {
+          Int rowid = row_idx[j];
+          if ( rowid != colid ) {
+            ++counter; // track how many are non-diag entries
+          }
+          if ( rowid == colid ) {
+            ++counter_diag_found;
+            ++total_diag_found;
+            //check non-zero - this assumes there IS an entry for every diagonal
+            if ( val[j] == 0 )
+              std::cout << "ZERO ON DIAG!!!" << std::endl;
+          }
+        }
+        if ( counter == num_row_entries ) { // if this happens, a diag was never found i.e. assumed 0
+          std::cout << " colid = " << colid << "  counter = " << counter << "  num_row_entries = " << num_row_entries << std::endl;
+          std::cout << " ZERO DIAG!" << std::endl;
+        }
+//        std::cout << "colid: " << colid << "   diag_found: " << counter_diag_found << std::endl;
+      }
+      if ( total_diag_found != ncol ) {
+        std::cout << "MISSING DIAG ENTRY!  Found: " << total_diag_found << "  expected: " << ncol << std::endl;
+      }
+    }
+*/
+
     if ( btf_nblks > 1 ) { //non-single block case
     #ifdef KOKKOS_HAVE_OPENMP
     #pragma omp parallel for
@@ -625,6 +683,61 @@ namespace BaskerNS
     std::cout<< "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
     #endif
     //end sfactor_copy2 replacement stuff
+
+
+    #ifdef BASKER_DEBUG_DIAG
+    // Look for zeros on the diagonal - an Option / parameter list option should be used to enable this
+    // col_ptr has ncol+1 entries - final entry = nnz
+    // row_idx and val have nnz entries
+    // Scan through the matrix for 0's on the diagonal
+    if ( nrow == ncol ) // square matrices, CRS vs CCS is irrelevant (i.e. transpose does not need to be applied first) - but needs to be known for Symbolic...
+    {
+      std::cout << "Basker Factor(...) debugging:  Check diagonal entries for zeros" << std::endl;
+      Int total_diag_found = 0;
+      Int total_zero_diag_found = 0;
+      double min = 100000000;
+
+      for ( Int colid = 0; colid < ncol; ++colid ) {
+        Int rowids_start = A.col_ptr[colid];
+        Int rowids_end = A.col_ptr[colid+1];
+        Int num_row_entries = rowids_end - rowids_start;
+        Int counter_off_diag = 0;
+
+        for ( Int j = rowids_start; j < rowids_end; ++j ) {
+          Int rowid = A.row_idx[j];
+          if ( rowid != colid ) {
+            ++counter_off_diag; // track how many are off-diagonal entries
+          }
+          if ( rowid == colid ) {
+            ++total_diag_found; // diagonal entry is present; next check if its value is 0
+
+            //check non-zero - this occurs when there IS an entry for diagonal
+            if ( A.val[j] == static_cast<Entry>(0) ) {
+              ++total_zero_diag_found;
+              std::cout << "ZERO ON DIAG!!!" << std::endl;
+            }
+            if ( std::abs(A.val[j]) < min ) {
+              min = std::abs(A.val[j]); // track minimum values (absolute value taken to see entries close to 0)
+            }
+          }
+        } // end scanning through row entries in column colid
+
+        if ( counter_off_diag + 1 != num_row_entries ) { // if this happens, a diag entry was never found for this column - assumed 0
+          std::cout << "ZERO DIAG Found!" << std::endl;
+          std::cout << " colid = " << colid << "  counter_off_diag = " << counter_off_diag << "  num_row_entries = " << num_row_entries << std::endl;
+        }
+      }
+      if ( total_diag_found == ncol ) {
+        std::cout << "NO MISSING DIAG ENTRY!  Found: " << total_diag_found << "  expected: " << ncol << std::endl;
+      }
+      else {
+        std::cout << "MISSING DIAG ENTRY!  Non-zero entries found: " << total_diag_found << "  expected: " << ncol << std::endl;
+      }
+      std::cout << "Total zero diags found: " << total_zero_diag_found << std::endl;
+      std::cout << "Min diag entry = " << min << std::endl;
+    }
+    #endif
+
 
     #ifdef BASKER_TIMER
     Kokkos::Timer timer_sfactorcopy;

@@ -52,7 +52,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_id_lkup, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR
 #include <inttypes.h>     // for PRId64
@@ -76,9 +76,8 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   const char *routine = "ex_put_name";
   const char *vobj;
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
-
-  exerrval = 0; /* clear error code */
 
   switch (obj_type) {
   case EX_EDGE_BLOCK: vobj = VAR_NAME_ED_BLK; break;
@@ -94,27 +93,25 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   case EX_FACE_MAP: vobj   = VAR_NAME_FAM; break;
   case EX_ELEM_MAP: vobj   = VAR_NAME_EM; break;
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err(routine, errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err(routine, errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, vobj, &varid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s names in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err(routine, errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err(routine, errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   ent_ndx = ex_id_lkup(exoid, obj_type, entity_id);
 
-  if (exerrval == EX_LOOKUPFAIL) { /* could not find the element block id */
+  if (ent_ndx == -EX_LOOKUPFAIL) { /* could not find the element block id */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s id %" PRId64 " not found in file id %d",
              ex_name_of_object(obj_type), entity_id, exoid);
-    ex_err("ex_put_name", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_name", errmsg, EX_LOOKUPFAIL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* If this is a null entity, then 'ent_ndx' will be negative.
@@ -127,5 +124,5 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   /* write EXODUS entityname */
   status = ex_put_name_internal(exoid, varid, ent_ndx - 1, name, obj_type, "", routine);
 
-  return (status);
+  EX_FUNC_LEAVE(status);
 }

@@ -49,68 +49,34 @@ namespace ROL {
 template <class Real>
 SparseGridGenerator<Real>::SparseGridGenerator(const Teuchos::RCP<BatchManager<Real> > &bman, 
                                                const QuadratureInfo &info, const bool adaptive)
-  : SampleGenerator<Real>(bman), info_(info) {
+  : SampleGenerator<Real>(bman), info_(info), isVectorInit_(false) {
   adaptive_ = info.adaptive;
   if ( adaptive_ ) {
-    Real zero(0);
+    indices_   = Teuchos::rcp(new SparseGridIndexSet<Real>(info.dim, info.maxLevel));
+    grid_      = Teuchos::rcp(new Quadrature<Real>(info.dim));
+    error_     = static_cast<Real>(0);
     direction_ = 0;
-    error_ = zero;
-    index_.clear(); activeIndex_.clear(); oldIndex_.clear();
-    //index_.resize(info.dim,1);
-    grid_ = Teuchos::rcp(new Quadrature<Real>(info.dim));
   }
   else {
     grid_ = Teuchos::rcp(new Quadrature<Real>(info));
-    // Split points and weights across processors
-    setSamples(true);
   }
+  // Split points and weights across processors
+  setSamples(true);
 }
 
 template <class Real>
 SparseGridGenerator<Real>::SparseGridGenerator(const Teuchos::RCP<BatchManager<Real> > &bman, 
                                                const char* SGinfo, const char* SGdata, 
                                                const bool isNormalized)
-    : SampleGenerator<Real>(bman), adaptive_(false) {
+    : SampleGenerator<Real>(bman), adaptive_(false), isVectorInit_(false) {
   grid_ = Teuchos::rcp(new Quadrature<Real>(SGinfo,SGdata,isNormalized));
   // Split points and weights across processors
   setSamples(true);
 }
 
-template<class Real>
-bool SparseGridGenerator<Real>::checkMaxLevel(std::vector<int> &index) {
-  int  level = 0;
-  bool useMax = true;
-  for ( unsigned l = 0; l < index.size(); l++ ) {
-    if ( useMax ) {
-      level = std::max(level,index[l]);
-    }
-    else {
-      level += index[l];
-    }
-  }
-  if ( level >= info_.maxLevel ) {
-    return true;
-  }
-  return false;
-}
-
-template<class Real>
-bool SparseGridGenerator<Real>::isAdmissible(std::vector<int> &index, int direction) {
-  for ( int i = 0; i < info_.dim; i++ ) {
-    if ( index[i] > 1 && i != direction ) {
-      index[i]--;
-      if ( !(oldIndex_.count(index)) ) {
-        return false;
-      }
-      index[i]++;
-    }
-  }
-  return true;
-}
-
 template<class Real> 
 void SparseGridGenerator<Real>::buildDiffRule(Quadrature<Real> &outRule,
-                                              std::vector<int> &index) {
+                                              const std::vector<int> &index) const {
   Real one(1);
   int numPoints = 0;
   for ( int i = 0; i < info_.dim; i++ ) {
@@ -129,35 +95,82 @@ template<class Real>
 void SparseGridGenerator<Real>::update(const Vector<Real> &x) {
   SampleGenerator<Real>::update(x);
   if ( adaptive_ ) {
-    Real zero(0);
-    //index_.resize(info_.dim,1);
+    indices_->reset();
+    grid_ = Teuchos::rcp(new Quadrature<Real>(info_.dim));
     index_.clear();
     direction_ = 0;
-    error_ = zero;
-    activeIndex_.clear();
-    oldIndex_.clear();
-    grid_ = Teuchos::rcp(new Quadrature<Real>(info_.dim));
+    error_ = static_cast<Real>(0);
+    // Split points and weights across processors
+    setSamples(true);
+  }
+}
+
+template<class Real>
+void SparseGridGenerator<Real>::refine(void) {
+  if ( adaptive_ ) {
+    npts_ = 0;
+    Teuchos::RCP<Quadrature<Real> > rule;
+//    bool terminate = false;
+//int cnt = 0;
+//    while (!terminate) {
+      // Select index to investigate
+      if ( indices_->isEmpty() ) {
+        // Start from the vector of ones
+        index_.resize(info_.dim,1);
+        search_index_ = index_;
+        direction_    = info_.dim;
+      }
+      else {
+        if (direction_ < (info_.dim-1)) {
+          // Continue investigating forward neighbors
+          direction_++;
+        }
+        else {
+          // Select index corresponding to largest error
+          Real error(0);
+          indices_->get(error,index_);
+          error_    -= error;
+          direction_ = 0;
+        }
+        search_index_ = index_;
+        search_index_[direction_]++;
+      }
+      rule = Teuchos::rcp(new Quadrature<Real>(info_.dim));
+      if (    !(indices_->isMember(search_index_))           // Check if index is old/active
+           && !(indices_->isMaxLevelExceeded(search_index_)) // Check if index violates maxLevel
+           && indices_->isAdmissible(search_index_) ) {      // Check if index is admissible
+        // Build difference rule
+        buildDiffRule(*rule,search_index_);
+        npts_ = rule->getNumPoints();
+//        terminate = true;
+      }
+      else if ( indices_->isActiveEmpty() ) {
+        npts_ = 0;
+//        terminate = true;
+      }
+////if (info_.print) {
+////std::cout << "IN REFINE: CNT = " << cnt << "  ERROR = " << error_ << std::endl;
+////}
+////cnt++;
+//    }
+    // Set values of difference rule as points and weights
+    updateSamples(*rule);
   }
 }
 
 template<class Real>
 Real SparseGridGenerator<Real>::computeError(std::vector<Real> &vals){
   if ( adaptive_ ) {
-    Real myerror(0);
-    for ( int i = 0; i < SampleGenerator<Real>::numMySamples(); i++ ) {
-      myerror += vals[i]*SampleGenerator<Real>::getMyWeight(i);
-    }
-    Real error(0);
-    SampleGenerator<Real>::sumAll(&myerror,&error,1);
-    error = std::abs(error);
-    // Update global error and index sets
-    error_ += error;
-    if ( activeIndex_.end() != activeIndex_.begin() ) {
-      activeIndex_.insert(activeIndex_.end()--,
-        std::pair<Real,std::vector<int> >(error,search_index_));
-    }
-    else {
-      activeIndex_.insert(std::pair<Real,std::vector<int> >(error,search_index_));
+    if (npts_>0) {
+      Real myerror(0), error(0);
+      for ( int i = 0; i < SampleGenerator<Real>::numMySamples(); ++i ) {
+        myerror += vals[i]*SampleGenerator<Real>::getMyWeight(i);
+      }
+      SampleGenerator<Real>::sumAll(&myerror,&error,1);
+      error = std::abs(error);
+      // Update global error and index sets
+      error_ += error;
+      indices_->add(error, search_index_);
     }
     // Return
     return error_;
@@ -171,71 +184,27 @@ template<class Real>
 Real SparseGridGenerator<Real>::computeError(std::vector<Teuchos::RCP<Vector<Real> > > &vals,
                                              const Vector<Real> &x ){
   if ( adaptive_ ) {
-    Teuchos::RCP<Vector<Real> > mydiff = x.clone(); 
-    mydiff->zero();
-    for ( int i = 0; i < SampleGenerator<Real>::numMySamples(); i++ ) {
-      mydiff->axpy(SampleGenerator<Real>::getMyWeight(i),(*vals[i]));
+    if ( !isVectorInit_ ) {
+      mydiff_ = x.dual().clone();
+      diff_   = x.dual().clone();
+      isVectorInit_ = true;
     }
-    Teuchos::RCP<Vector<Real> > diff = mydiff->clone();
-    SampleGenerator<Real>::sumAll(*mydiff,*diff);
-    Real error = diff->norm();
-    // Update global error and index sets
-    error_ += error;
-    if ( activeIndex_.end() != activeIndex_.begin() ) {
-      activeIndex_.insert(activeIndex_.end()--,
-        std::pair<Real,std::vector<int> >(error,search_index_));
-    }
-    else {
-      activeIndex_.insert(std::pair<Real,std::vector<int> >(error,search_index_));
+    if (npts_>0) {
+      mydiff_->zero();
+      for ( int i = 0; i < SampleGenerator<Real>::numMySamples(); ++i ) {
+        mydiff_->axpy(SampleGenerator<Real>::getMyWeight(i),(*vals[i]));
+      }
+      SampleGenerator<Real>::sumAll(*mydiff_,*diff_);
+      Real error = diff_->norm();
+      // Update global error and index sets
+      error_ += error;
+      indices_->add(error, search_index_);
     }
     // Return
     return error_;
   }
   else {
     return static_cast<Real>(0);
-  }
-}
-
-template<class Real>
-void SparseGridGenerator<Real>::refine(void) {
-  if ( adaptive_ ) {
-    // Select index to investigate
-    if ( !(index_.empty()) && (direction_ < (info_.dim-1)) ) {
-      // Select index corresponding to next direction
-      search_index_ = index_;
-      direction_++;
-      search_index_[direction_]++;
-    }
-    else {
-      // Select index corresponding to largest error
-      if ( index_.empty() ) {
-        index_.resize(info_.dim,1);
-        search_index_ = index_;
-        direction_ = info_.dim;
-      }
-      else {
-        typename std::multimap<Real,std::vector<int> >::iterator it = activeIndex_.end(); 
-        it--; 
-        error_ -= it->first;
-        index_  = it->second;
-        activeIndex_.erase(it);
-        oldIndex_.insert(oldIndex_.end(),index_); 
-        search_index_ = index_;
-        direction_ = 0;
-        search_index_[direction_]++;
-      }
-    }
-    // Check to see if maxLevel is violated
-    Quadrature<Real> rule(info_.dim);
-    if ( !checkMaxLevel(search_index_) ) {
-      // Check admissibility of index
-      if ( isAdmissible(search_index_,direction_) ) {
-        // Build difference rule
-        buildDiffRule(rule,search_index_);
-      }
-    }
-    // Set values of difference rule as points and weights
-    updateSamples(rule);
   }
 }
 
@@ -265,9 +234,10 @@ void SparseGridGenerator<Real>::splitSamples(std::vector<std::vector<Real> > &my
 
 template<class Real>
 void SparseGridGenerator<Real>::setSamples(bool inConstructor) {
-//  if ( !(SampleGenerator<Real>::batchID()) && !inConstructor) {
-//    std::cout << "Number of Global Points: " << grid_->getNumPoints() << "\n";
-//  }
+  if (info_.print && !inConstructor) {
+    std::cout << info_.name << ": Number of Sparse-Grid Points: "
+              << grid_->getNumPoints() << std::endl;
+  }
   if ( adaptive_ || inConstructor ) {
     // Split samples based on PID
     std::vector<std::vector<Real> > mypts;
@@ -312,6 +282,13 @@ void SparseGridGenerator<Real>::updateSamples( Quadrature<Real> &grid ) {
   // Set local points and weights
   SampleGenerator<Real>::setPoints(pts_inter);
   SampleGenerator<Real>::setWeights(wts_inter);
+}
+
+template<class Real>
+void SparseGridGenerator<Real>::printIndexSet(void) const {
+  if (indices_ != Teuchos::null) {
+    indices_->print(info_.name,SampleGenerator<Real>::batchID());
+  }
 }
 
 } // namespace ROL

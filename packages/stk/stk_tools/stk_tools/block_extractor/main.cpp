@@ -1,8 +1,9 @@
 #include <mpi.h>
 #include <iosfwd>
 #include <vector>
-#include <stk_util/environment/CommandLineParser.hpp>
 #include <stk_tools/block_extractor/ParseCsv.hpp>
+#include <stk_util/command_line/CommandLineParserParallel.hpp>
+#include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include "ExtractBlocks.hpp"
 
 int main(int argc, const char**argv)
@@ -10,11 +11,13 @@ int main(int argc, const char**argv)
     MPI_Init(&argc, const_cast<char***>(&argv));
     MPI_Comm comm = MPI_COMM_WORLD;
 
-    stk::CommandLineParser commandLine;
-    commandLine.add_option<std::string>("infile,i", "input file");
-    commandLine.add_option<std::string>("outfile,o", "output file");
-    commandLine.add_option<std::string>("extract-blocks,b", "Comma-separated list of blocks to extract");
-    commandLine.parse(argc, argv);
+    stk::CommandLineParserParallel commandLine(comm);
+    commandLine.add_required<std::string>({"infile", "i", "input file"});
+    commandLine.add_required<std::string>({"outfile", "o", "output file"});
+    commandLine.add_required<std::string>({"extract-blocks", "b", "Comma-separated list of blocks to extract"});
+
+    stk::CommandLineParser::ParseState state = commandLine.parse(argc, argv);
+    stk::parallel::require(state == stk::CommandLineParser::ParseComplete, commandLine.get_usage(), comm);
 
     std::string inFile = commandLine.get_option_value<std::string>("infile");
     std::string outFile = commandLine.get_option_value<std::string>("outfile");
