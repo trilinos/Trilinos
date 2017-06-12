@@ -132,11 +132,11 @@ namespace MueLu {
 
     // Reuse pattern if available
     RCP<ParameterList> APparams;
-    if(pL.isSublist("matrixmatrix: kernel params")) 
+    if(pL.isSublist("matrixmatrix: kernel params"))
       APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-    else 
+    else
       APparams= rcp(new ParameterList);
-    
+
     if (coarseLevel.IsAvailable("AP reuse data", this)) {
       GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
@@ -174,7 +174,7 @@ namespace MueLu {
         Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
 
         SC omega = dampingFactor / lambdaMax;
-	
+
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
                     GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs, APparams);

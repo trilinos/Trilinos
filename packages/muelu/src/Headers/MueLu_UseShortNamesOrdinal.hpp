@@ -41,9 +41,6 @@ typedef MueLu::CoupledAggregationCommHelper<LocalOrdinal,GlobalOrdinal,Node> Cou
 #ifdef MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
 typedef MueLu::CoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> CoupledAggregationFactory;
 #endif
-#ifdef MUELU_DEMOFACTORY_SHORT
-typedef MueLu::DemoFactory<LocalOrdinal,GlobalOrdinal,Node> DemoFactory;
-#endif
 #ifdef MUELU_GRAPH_SHORT
 typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node> Graph;
 #endif

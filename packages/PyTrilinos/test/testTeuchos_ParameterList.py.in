@@ -171,8 +171,10 @@ class ParameterListTestCase(unittest.TestCase):
 
     def testConstructor6(self):
         "Test Teuchos.ParameterList copy constructor"
+        self.plist.setParameters(self.dict)
         plist_copy = Teuchos.ParameterList(self.plist)
         self.assertTrue(isinstance(plist_copy,Teuchos.ParameterList))
+        self.assertDictsEqual(plist_copy, self.dict)
 
     def testConstructor7(self):
         "Test Teuchos.ParameterList constructor with bad argument"

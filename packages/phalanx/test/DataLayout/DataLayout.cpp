@@ -41,9 +41,6 @@
 // ************************************************************************
 // @HEADER
 
-
-#include "Phalanx_config.hpp"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 

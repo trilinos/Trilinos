@@ -56,8 +56,6 @@ using Teuchos::rcp;
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"

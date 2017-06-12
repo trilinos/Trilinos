@@ -250,9 +250,10 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
   // Teuchos::ParameterList values
   else if (entry->isList())
   {
-    Teuchos::ParameterList & value = Teuchos::getValue< Teuchos::ParameterList >(*entry);
+    Teuchos::ParameterList value;
     Teuchos::RCP< Teuchos::ParameterList > * valuercp =
-      new Teuchos::RCP< Teuchos::ParameterList >(&value,false);
+      new Teuchos::RCP< Teuchos::ParameterList >(
+        new Teuchos::ParameterList(Teuchos::any_cast< Teuchos::ParameterList >(entry->getAny(false))));
     return SWIG_NewPointerObj((void*)valuercp, swig_TPL_ptr, SWIG_POINTER_OWN);
   }
   // Teuchos::Array values

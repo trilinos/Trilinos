@@ -45,11 +45,9 @@
 
 #include <string>
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
+#include "Phalanx_MDField.hpp"
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_BasisValues2.hpp"
-
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {

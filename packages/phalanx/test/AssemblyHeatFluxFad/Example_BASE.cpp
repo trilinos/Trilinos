@@ -41,10 +41,12 @@
 // ************************************************************************
 // @HEADER
 
-
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
+#include "Phalanx_MDField.hpp"
+#include "Phalanx_FieldManager.hpp"
+#include "Phalanx_Evaluator_Factory.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"

@@ -70,8 +70,6 @@ using Teuchos::rcp;
 #include "Epetra_Export.h"
 #include "Epetra_Import.h"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 using panzer_stk::CoordMatcher;
 using panzer_stk::PlaneMatcher;
 

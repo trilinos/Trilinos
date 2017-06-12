@@ -68,7 +68,6 @@ using Teuchos::rcp;
 #include "user_app_BCStrategy_Factory.hpp"
 
 #include "Panzer_InitialCondition_Builder.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include <vector>
 #include <map>

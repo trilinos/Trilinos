@@ -44,8 +44,7 @@
 #define PANZER_EVALUATOR_DOF_CURL_DECL_HPP
 
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
+#include "Phalanx_MDField.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {

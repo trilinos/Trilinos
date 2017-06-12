@@ -54,8 +54,6 @@
 
 #include "Sacado.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 typedef Sacado::Fad::DFad<double> FadType;
 typedef Sacado::Fad::SFad<FadType,1> HessianType;
 

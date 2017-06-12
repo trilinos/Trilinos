@@ -127,11 +127,11 @@ namespace MueLu {
 
       // Reuse pattern if available (multiple solve)
       RCP<ParameterList> APparams;
-      if(pL.isSublist("matrixmatrix: kernel params")) 
-	APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-      else 
-	APparams= rcp(new ParameterList);
-      
+      if(pL.isSublist("matrixmatrix: kernel params"))
+        APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else
+        APparams= rcp(new ParameterList);
+
       // By default, we don't need global constants for A*P
       APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
       APparams->set("compute global constants",APparams->get("compute global constants",false));
@@ -139,8 +139,8 @@ namespace MueLu {
       if (coarseLevel.IsAvailable("AP reuse data", this)) {
         GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
-        APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);	
-	
+        APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
+
         if (APparams->isParameter("graph"))
           AP = APparams->get< RCP<Matrix> >("graph");
       }

@@ -63,7 +63,6 @@ using Teuchos::rcp;
 #include "Panzer_Normals.hpp"
 
 #include "Phalanx_FieldManager.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Comm.h"

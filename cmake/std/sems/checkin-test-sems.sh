@@ -118,27 +118,41 @@ echo "
 echo "
 " > MPI_RELEASE_DEBUG_SHARED_PT.config
 
+#
 # The following extra build configurations can be run using
 # --st-extra-builds=<build0>,<build1>,...
+#
+# NOTE: Because these build configurations are not under CI testing they may
+# be broken at any time.  Therefore, usage of these builds should just be for
+# local testing and not as a criteria for pushing to the 'develop' branch.
+#
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake
 -DTrilinos_ENABLE_COMPLEX=ON
--DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
+-DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
 -DIntrepid2_refactor_perf-test_DynRankView_Serial_Test_01_MPI_1_DISABLE=ON
 " > MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX.config
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake
 -DTrilinos_ENABLE_DEBUG=OFF
--DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
+-DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
 " > MPI_RELEASE_SHARED_PT.config
+
+echo "
+-DTPL_ENABLE_MPI=OFF
+-DCMAKE_BUILD_TYPE=RELEASE
+-DBUILD_SHARED_LIBS=ON
+-DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
+" > SERIAL_RELEASE_SHARED_PT.config
 
 echo "
 -DTPL_ENABLE_MPI=ON
 -DCMAKE_BUILD_TYPE=RELEASE
 -DTrilinos_ENABLE_DEBUG=ON
 -DBUILD_SHARED_LIBS=ON
+-DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
 -DTrilinos_ENABLE_COMPLEX=OFF
 -DIfpack2_Cheby_belos_MPI_1_DISABLE=ON
 " > MPI_RELEASE_DEBUG_SHARED_ST.config
@@ -147,28 +161,7 @@ echo "
 -DTPL_ENABLE_MPI=OFF
 -DCMAKE_BUILD_TYPE=RELEASE
 -DBUILD_SHARED_LIBS=ON
--DTrilinos_ENABLE_COMPLEX=OFF
 " > SERIAL_RELEASE_SHARED_ST.config
-
-echo "
--DTPL_ENABLE_MPI=ON
--DCMAKE_BUILD_TYPE=RELEASE
--DTrilinos_ENABLE_DEBUG=ON
--DBUILD_SHARED_LIBS=OFF
--DTrilinos_ENABLE_COMPLEX=OFF
--DTPL_FIND_SHARED_LIBS=OFF
--DTrilinos_LINK_SEARCH_START_STATIC=ON
--DIfpack2_Cheby_belos_MPI_1_DISABLE=ON
-" > MPI_RELEASE_DEBUG_STATIC_ST.config
-
-echo "
--DTPL_ENABLE_MPI=OFF
--DCMAKE_BUILD_TYPE=RELEASE
--DBUILD_SHARED_LIBS=OFF
--DTrilinos_ENABLE_COMPLEX=OFF
--DTPL_FIND_SHARED_LIBS=OFF
--DTrilinos_LINK_SEARCH_START_STATIC=ON
-" > SERIAL_RELEASE_STATIC_ST.config
 
 #
 # C) Create a default local defaults file

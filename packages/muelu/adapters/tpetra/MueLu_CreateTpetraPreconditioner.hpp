@@ -41,15 +41,13 @@ namespace MueLu {
     Given a Tpetra::Operator, this function returns a constructed MueLu preconditioner.
     @param[in] inA Matrix
     @param[in] inParamList Parameter list
-    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
-    @param[in] inNullspace (optional) Near nullspace of the matrix.
+    @param[in] dummyList used to avoid duplicate function signature
   */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &inA,
                          Teuchos::ParameterList& inParamList,
-                         const Teuchos::RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node>>& inCoords = Teuchos::null,
-                         const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& inNullspace = Teuchos::null)
+                         Teuchos::ParameterList& dummyList)
   {
     typedef Scalar          SC;
     typedef LocalOrdinal    LO;
@@ -61,7 +59,6 @@ namespace MueLu {
     typedef Xpetra::MultiVector<SC,LO,GO,NO>            MultiVector;
     typedef Xpetra::Matrix<SC,LO,GO,NO>                 Matrix;
     typedef Hierarchy<SC,LO,GO,NO>                      Hierarchy;
-    //typedef HierarchyManager<SC,LO,GO,NO>               HierarchyManager;  // not used
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
 
@@ -89,17 +86,96 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "CreateTpetraPreconditioner: only Tpetra CrsMatrix and BlockCrsMatrix types are supported.");
     }
 
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
-    if (inCoords != Teuchos::null) {
-      coordinates = TpetraMultiVector_To_XpetraMultiVector<double,LO,GO,NO>(inCoords);
+    Teuchos::ParameterList& userList = inParamList.sublist("user data");
+    if (userList.isParameter("Coordinates")) {
+      RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
+      try {
+        coordinates = TpetraMultiVector_To_XpetraMultiVector<double,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates"));
+      } catch(Teuchos::Exceptions::InvalidParameterType) {
+        coordinates = userList.get<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates");
+      }
+      userList.set<RCP<Xpetra::MultiVector<double,LO,GO,NO> > >("Coordinates", coordinates);
     }
     RCP<MultiVector> nullspace = Teuchos::null;
+    if (userList.isParameter("Nullspace")) {
+      try {
+        nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace"));
+      } catch(Teuchos::Exceptions::InvalidParameterType) {
+        nullspace = userList.get<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace");
+      }
+    }
+    if(nullspace == Teuchos::null) {
+      int nPDE = MueLu::MasterList::getDefault<int>("number of equations");
+      if (inParamList.isSublist("Matrix")) {
+        // Factory style parameter list
+        const Teuchos::ParameterList& operatorList = inParamList.sublist("Matrix");
+        if (operatorList.isParameter("PDE equations"))
+          nPDE = operatorList.get<int>("PDE equations");
+
+      } else if (inParamList.isParameter("number of equations")) {
+        // Easy style parameter list
+        nPDE = inParamList.get<int>("number of equations");
+      }
+
+      nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A->getDomainMap(), nPDE);
+      if (nPDE == 1) {
+        nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+
+      } else {
+        for (int i = 0; i < nPDE; i++) {
+          Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
+          for (int j = 0; j < nsData.size(); j++) {
+            GlobalOrdinal GID = A->getDomainMap()->getGlobalElement(j) - A->getDomainMap()->getIndexBase();
+            if ((GID-i) % nPDE == 0)
+              nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
+          }
+        }
+      }
+    }
+    if(nullspace == Teuchos::null) {std::cout << "The nullspace is still Teuchos::null as it is added to the Hierarchy!" << std::endl;}
+    userList.set<RCP<MultiVector> >("Nullspace", nullspace);
+
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,inParamList,inParamList);
+    return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
+  }
+
+
+  /*!
+    @brief Helper function to create a MueLu or AMGX preconditioner that can be used by Tpetra.
+    @ingroup MueLuAdapters
+    Given a Tpetra::Operator, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] inParamList Parameter list
+    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    @param[in] inNullspace (optional) Near nullspace of the matrix.
+  */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &inA,
+                         Teuchos::ParameterList& inParamList,
+                         const Teuchos::RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node>>& inCoords = Teuchos::null,
+                         const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& inNullspace = Teuchos::null)
+  {
+    typedef Scalar          SC;
+    typedef LocalOrdinal    LO;
+    typedef GlobalOrdinal   GO;
+    typedef Node            NO;
+
+    using   Teuchos::ParameterList;
+
+    // Here the assumption is that the nullspace and coordinates passed
+    // as multivectors will overwrite data on the parameter list.
+    // If you want the data on the parameter list to prevail, then call the
+    // specialization that only accept an operator and a parameterList
+    Teuchos::ParameterList& userList = inParamList.sublist("user data");
+    if (inCoords != Teuchos::null) {
+      userList.set<RCP<Tpetra::MultiVector<double,LO,GO,NO> > >("Coordinates", inCoords);
+    }
     if (inNullspace != Teuchos::null) {
-      nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(inNullspace);
+      userList.set<RCP<Tpetra::MultiVector<SC,LO,GO,NO> > >("Nullspace", inNullspace);
     }
 
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,inParamList,coordinates,nullspace);
-    return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
+    return CreateTpetraPreconditioner<SC,LO,GO,NO>(inA,inParamList,inParamList);
   }
 
 

@@ -41,14 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
-
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include <Phalanx_any.hpp>
 #include <unordered_map>
 #include <map>

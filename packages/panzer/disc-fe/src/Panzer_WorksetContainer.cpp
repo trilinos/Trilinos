@@ -177,8 +177,9 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
       worksetVector = wkstFactory_->getWorksets(wd,needs);
 
       // apply orientations to the just constructed worksets
-      if(worksetVector!=Teuchos::null && wd.applyOrientations())
+      if(worksetVector!=Teuchos::null && wd.applyOrientations()) {
         applyOrientations(wd.getElementBlock(),*worksetVector);
+      }
 
       // store vector for reuse in the future
       volWorksets_[wd] = worksetVector;
@@ -209,8 +210,9 @@ WorksetContainer::getSideWorksets(const BC & bc)
       }
 
       // apply orientations to the worksets for this side
-      if(worksetMap!=Teuchos::null)
+      if(worksetMap!=Teuchos::null) {
         applyOrientations(side,*worksetMap);
+      }
 
       // store map for reuse in the future
       sideWorksets_[side] = worksetMap;
@@ -234,8 +236,9 @@ void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & e
       volWorksets_[eBlock] = wkstFactory_->getWorksets(wd,needs);
 
       // apply orientations to the worksets for this side
-      if(volWorksets_[eBlock]!=Teuchos::null)
+      if(volWorksets_[eBlock]!=Teuchos::null) {
         applyOrientations(eBlock,*volWorksets_[eBlock]);
+      }
    }
 }
 
@@ -252,8 +255,9 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
       sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,needs);
 
       // apply orientations to the worksets for this side
-      if(sideWorksets_[side]!=Teuchos::null)
+      if(sideWorksets_[side]!=Teuchos::null) {
         applyOrientations(side,*sideWorksets_[side]);
+      }
    }
 }
 
@@ -291,26 +295,11 @@ applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ug
 
   globalIndexer_ = ugi;
 
-#if defined(__KK__)
   // this should be created once and stored in an appropriate place
-  const auto orientations = buildIntrepidOrientation(globalIndexer_);
+  TEUCHOS_TEST_FOR_EXCEPTION(globalIndexer_ == Teuchos::null, std::logic_error,
+                             "global indexer is not set yet");
+  orientations_ = buildIntrepidOrientation(globalIndexer_);
   
-  // loop over volume worksets, apply orientations to each
-  for(VolumeMap::iterator itr=volWorksets_.begin();
-      itr!=volWorksets_.end();++itr) {
-    std::string eBlock = itr->first.getElementBlock();
-   
-    applyOrientations(*orientations, eBlock, *itr->second);
-  }
-
-  // loop over side worksets, apply orientations to each
-  for(SideMap::iterator itr=sideWorksets_.begin();
-      itr!=sideWorksets_.end();itr++) {
-    SideId sideId = itr->first;
-
-    applyOrientations(*orientations, sideId, *itr->second);
-  }
-#else
   // loop over volume worksets, apply orientations to each
   for(VolumeMap::iterator itr=volWorksets_.begin();
       itr!=volWorksets_.end();++itr) {
@@ -326,14 +315,11 @@ applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ug
 
     applyOrientations(sideId,*itr->second);
   }
-#endif
 }
 
 #if defined(__KK__)
 void WorksetContainer::
-applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
-                  const std::string & eBlock, 
-                  std::vector<Workset> & worksets) const
+applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) const
 {
   using Teuchos::RCP;
 
@@ -352,6 +338,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
     return;
   }
 
+  // this should be matched to global indexer size (not sure how to retrive it)
+  TEUCHOS_TEST_FOR_EXCEPTION(orientations_ == Teuchos::null, std::logic_error,
+                             "intrepid2 orientation is not constructed");
+
   // loop over each basis requiring orientations, then apply them
   //////////////////////////////////////////////////////////////////////////////////
 
@@ -369,7 +359,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
       
       ortsPerBlock.clear();
       for (int k=0;k<worksets[i].num_cells;++k) {
-        ortsPerBlock.push_back(orientations[details.cell_local_ids[k]]);
+        ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
       }
       
       for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
@@ -386,9 +376,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
 }
 
 void WorksetContainer::
-applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
-                  const SideId & sideId,
-                  std::map<unsigned,Workset> & worksets) const
+applyOrientations(const SideId & sideId, std::map<unsigned,Workset> & worksets) const
 {
   using Teuchos::RCP;
 
@@ -406,6 +394,9 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
          << "if those basis functions are used, there will be problems!";
     return;
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(orientations_ == Teuchos::null, std::logic_error,
+                             "intrepid2 orientation is not constructed");
   
   // loop over each basis requiring orientations, then apply them
   //////////////////////////////////////////////////////////////////////////////////
@@ -426,7 +417,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
       
       ortsPerBlock.clear();
       for (int k=0;k<itr->second.num_cells;++k) {
-        ortsPerBlock.push_back(orientations[details.cell_local_ids[k]]);
+        ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
       }
       
       for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
@@ -441,8 +432,8 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
     }
   }
 }
-#endif
 
+#else
 void WorksetContainer::
 applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) const
 {
@@ -594,6 +585,7 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
     }
   }
 }
+#endif
 
 void getVolumeWorksetsFromContainer(WorksetContainer & wc,
                                     const std::vector<std::string> & elementBlockNames,

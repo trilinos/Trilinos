@@ -68,7 +68,7 @@
     <ParameterList name="Belos">
       <Parameter name="Block Size"                type="int"     value="1"             />
       <Parameter name="Maximum Iterations"        type="int"     value="100"           />
-      <Parameter name="Convergence Tolerance"     type="double"  value="1e-3"          />
+      <Parameter name="Convergence Tolerance"     type="double"  value="1e-4"          />
       <Parameter name="Output Style"              type="int"     value="1"             />
       <Parameter name="Output Frequency"          type="int"     value="1"             />
       <Parameter name="Verbosity"                 type="int"     value="0"             />
@@ -78,7 +78,7 @@
   <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
   <ParameterList name="SOL">
     <ParameterList name="Simulated">
-      <Parameter name="Use Constraint Weights" type="bool"    value="false"  />
+      <Parameter name="Use Constraint Weights" type="bool"    value="true"   />
       <Parameter name="Use CVaR"               type="bool"    value="false"  />
       <Parameter name="CVaR Confidence Level"  type="double"  value="0.5"    />
       <ParameterList name="Plus Function">
@@ -220,8 +220,8 @@
     <!-- ===========  COMPOSITE STEP  =========== -->
     <ParameterList name="Composite Step">
       <Parameter name="Output Level" type="int" value="0" />
-      <Parameter name="Initial Radius" type="double" value="1e0" />
-      <Parameter name="Use Constraint Hessian" type="bool" value="false" />
+      <Parameter name="Initial Radius" type="double" value="1e4" />
+      <Parameter name="Use Constraint Hessian" type="bool" value="true" />
       <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
       <ParameterList name="Optimality System Solver">
         <Parameter name="Nominal Relative Tolerance" type="double" value="1e-6"  />

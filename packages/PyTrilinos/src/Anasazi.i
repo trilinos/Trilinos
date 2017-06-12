@@ -299,13 +299,13 @@ __version__ = Anasazi_Version().split()[2]
   {
     return self->Evals;
   }
-  MV & evecs()
+  Teuchos::RCP<MV> evecs()
   {
-    return *(self->Evecs);
+    return self->Evecs;
   }
-  MV & espace()
+  Teuchos::RCP<MV> espace()
   {
-    return *(self->Espace);
+    return self->Espace;
   }
 }
 %ignore Anasazi::Eigensolution::Evals;

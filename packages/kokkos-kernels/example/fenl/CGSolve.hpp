@@ -136,7 +136,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
 
       /* p = r + beta * p ; */ KokkosBlas::axpby( 1.0 , r , beta , p );
 
-      norm_res = sqrt( old_rdot = r_dot );
+      norm_res = std::sqrt( old_rdot = r_dot );
 
       ++iteration ;
     }

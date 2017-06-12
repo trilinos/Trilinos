@@ -55,8 +55,6 @@
 
 #include "Panzer_NodeType.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
@@ -109,7 +107,7 @@ int main(int argc, char *argv[])
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  PHX::InitializeKokkosDevice();
+  Kokkos::initialize(argc,argv);
 
   int status = 0;
 
@@ -350,8 +348,6 @@ int main(int argc, char *argv[])
 
   if (status == 0)
     *out << "panzer::MainDriver run completed." << std::endl;
-
-  PHX::FinalizeKokkosDevice();
 
   return status;
 }
