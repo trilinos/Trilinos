@@ -118,7 +118,7 @@ int main(int argc,char * argv[])
    std::string celltype = "Quad"; // or "Tri"
    Teuchos::CommandLineProcessor clp;
    clp.throwExceptions(false);
-   clp.setDocString("This example solves Poisson problem with Quad and Tri inline mesh with high order.\n");
+   clp.setDocString("This example solves Poisson problem with Quad and Tri mesh inline mesh with high order.\n");
 
    clp.setOption("cell",&celltype);
    clp.setOption("x-elements",&x_elements);
@@ -129,6 +129,8 @@ int main(int argc,char * argv[])
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
    if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return  0;
    if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+
+   //TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
 
    // variable declarations
    ////////////////////////////////////////////////////

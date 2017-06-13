@@ -131,24 +131,16 @@ int main(int argc,char * argv[])
   
      bool useTpetra = false;
      int x_elements=10,y_elements=10,z_elements=10,hgrad_basis_order=1,hdiv_basis_order=1;
-     std::string celltype = "Hex"; // or "Tet"
-
      Teuchos::CommandLineProcessor clp;
-     clp.throwExceptions(false);
-     clp.setDocString("This example solves mixed Poisson problem (div,grad) with Hex and Tet inline mesh with high order.\n");
-
-     clp.setOption("cell",&celltype); // this is place holder for tet (for now hex only)
      clp.setOption("use-tpetra","use-epetra",&useTpetra);
      clp.setOption("x-elements",&x_elements);
      clp.setOption("y-elements",&y_elements);
      clp.setOption("z-elements",&z_elements);
      clp.setOption("hgrad-basis-order",&hgrad_basis_order);
      clp.setOption("hdiv-basis-order",&hdiv_basis_order);
-
+  
      // parse commandline argument
-     Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
-     if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return  0;
-     if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+     TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
   
      // variable declarations
      ////////////////////////////////////////////////////
@@ -504,7 +496,7 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
    // solve the linear system
-   solver.Iterate(1000,1e-9);
+   solver.Iterate(1000,1e-5);
 
    // we have now solved for the residual correction from
    // zero in the context of a Newton solve.
@@ -540,7 +532,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   belosList.set( "Block Size", 1 );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", 1000 );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", 1 );      // Maximum number of restarts allowed
-  belosList.set( "Convergence Tolerance", 1e-9 );         // Relative convergence tolerance requested
+  belosList.set( "Convergence Tolerance", 1e-5 );         // Relative convergence tolerance requested
   belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails );
   belosList.set( "Output Frequency", 1 );
   belosList.set( "Output Style", 1 );
