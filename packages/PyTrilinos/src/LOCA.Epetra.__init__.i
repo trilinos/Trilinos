@@ -131,6 +131,9 @@ from . import ___init__
 %include "Epetra_Base.i"    // For PyExc_EpetraError
 %import "Epetra.i"
 
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
+
 // Teuchos RCP support
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
