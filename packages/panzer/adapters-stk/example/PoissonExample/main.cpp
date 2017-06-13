@@ -73,7 +73,6 @@
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 
@@ -115,9 +114,7 @@ int main(int argc,char * argv[])
    ////////////////////////////////////////////////////
 
    int x_elements=10,y_elements=10,basis_order=1;
-   std::string celltype = "Quad"; // or "Tri"
    Teuchos::CommandLineProcessor clp;
-   clp.setOption("cell",&celltype);
    clp.setOption("x-elements",&x_elements);
    clp.setOption("y-elements",&y_elements);
    clp.setOption("basis-order",&basis_order); 
@@ -133,12 +130,8 @@ int main(int argc,char * argv[])
      Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
    Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
 
-   Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
-   if      (celltype == "Quad") mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
-   else if (celltype == "Tri")  mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
-   else 
-     throw std::runtime_error("not supported celltype argument: try Quad or Tri");
-   
+   panzer_stk::SquareQuadMeshFactory mesh_factory;
+
    // other declarations
    const std::size_t workset_size = 20;
 
@@ -151,9 +144,9 @@ int main(int argc,char * argv[])
    pl->set("Y Blocks",1);
    pl->set("X Elements",x_elements);
    pl->set("Y Elements",y_elements);
-   mesh_factory->setParameterList(pl);
+   mesh_factory.setParameterList(pl);
 
-   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+   RCP<panzer_stk::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
    // construct input physics and physics block
    ////////////////////////////////////////////////////////
@@ -205,8 +198,16 @@ int main(int argc,char * argv[])
       for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
          mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
 
-      mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+      mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
+
+   // build worksets
+   ////////////////////////////////////////////////////////
+
+   Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+   Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
    // build DOF Manager and linear object factory
    /////////////////////////////////////////////////////////////
@@ -222,15 +223,6 @@ int main(int argc,char * argv[])
    // construct some linear algebra object, build object to pass to evaluators
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
-
-   // build worksets
-   ////////////////////////////////////////////////////////
-
-   Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-   Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
-   wkstContainer->setGlobalIndexer(dofManager);   
 
    // Setup response library for checking the error in this manufactered solution
    ////////////////////////////////////////////////////////////////////////
