@@ -64,7 +64,7 @@ try:
       rate_values += [rate]
       diff = rate - basis_order
 
-      if rate > 0.90*basis_order:
+      if rate > 0.95*basis_order:
         print('%s: Convergence rate of %f is within 5 percent of %f: PASSED' % (filename, rate, basis_order)) 
       else:
         print('%s: Convergence rate of %f is not within 5 percent of %f: FAILED' % (filename, rate, basis_order)) 
