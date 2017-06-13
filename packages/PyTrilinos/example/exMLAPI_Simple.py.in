@@ -106,6 +106,9 @@ def main(comm):
   solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
   solver.SetAztecOption(AztecOO.AZ_output, 16);
   err = solver.Iterate(1550, 1e-5)
+  #
+  # The following command will prevent a Teuchos dangling reference error
+  prec.DestroyPreconditioner()
 
   return err
 
