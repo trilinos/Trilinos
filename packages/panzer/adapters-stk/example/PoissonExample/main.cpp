@@ -117,20 +117,13 @@ int main(int argc,char * argv[])
    int x_elements=10,y_elements=10,basis_order=1;
    std::string celltype = "Quad"; // or "Tri"
    Teuchos::CommandLineProcessor clp;
-   clp.throwExceptions(false);
-   clp.setDocString("This example solves Poisson problem with Quad and Tri mesh inline mesh with high order.\n");
-
    clp.setOption("cell",&celltype);
    clp.setOption("x-elements",&x_elements);
    clp.setOption("y-elements",&y_elements);
    clp.setOption("basis-order",&basis_order); 
 
    // parse commandline argument
-   Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
-   if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return  0;
-   if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
-
-   //TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
+   TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -304,8 +297,6 @@ int main(int argc,char * argv[])
    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
                              *linObjFactory,user_data);
 
-   fmb->writeVolumeGraphvizDependencyFiles("Poisson", physicsBlocks);
-
    // setup assembly engine
    /////////////////////////////////////////////////////////////
 
@@ -371,7 +362,7 @@ int main(int argc,char * argv[])
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
    // solve the linear system
-   solver.Iterate(1000,1e-9);
+   solver.Iterate(1000,1e-5);
 
    // we have now solved for the residual correction from
    // zero in the context of a Newton solve.
