@@ -135,8 +135,7 @@ namespace Intrepid2 {
           typedef typename outputValueViewType::pointer_type outputPointerType;
 
           constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*numPtsEval;
-          char buf[bufSize*sizeof(outputValueType)];
-
+          outputValueType buf[bufSize];
           Kokkos::DynRankView<outputValueType,
             Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
             work((outputPointerType)&buf[0], bufSize);
