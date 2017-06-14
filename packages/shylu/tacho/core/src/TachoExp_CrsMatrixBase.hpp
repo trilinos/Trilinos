@@ -49,17 +49,17 @@ namespace Tacho {
         if (static_cast<ordinal_type>(_ap.dimension_0()) < (m+1)) 
           _ap = size_type_array("CrsMatrixBase::RowPtrArray", m+1);
         else 
-          Kokkos::Experimental::Impl::ViewFill<size_type_array>(_ap, size_type());
+          Kokkos::Impl::ViewFill<size_type_array>(_ap, size_type());
 
         if (static_cast<size_type>(_aj.dimension_0()) < nnz) 
           _aj = ordinal_type_array("CrsMatrixBase::ColsArray", nnz);
         else 
-          Kokkos::Experimental::Impl::ViewFill<ordinal_type_array>(_aj, ordinal_type());
+          Kokkos::Impl::ViewFill<ordinal_type_array>(_aj, ordinal_type());
 
         if (static_cast<size_type>(_ax.dimension_0()) < nnz) 
           _ax = value_type_array("CrsMatrixBase::ValuesArray", nnz);
         else 
-          Kokkos::Experimental::Impl::ViewFill<value_type_array>(_ax, value_type());
+          Kokkos::Impl::ViewFill<value_type_array>(_ax, value_type());
       }
     
     public:
