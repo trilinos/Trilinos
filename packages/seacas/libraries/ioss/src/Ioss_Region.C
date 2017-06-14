@@ -128,7 +128,7 @@ namespace {
 
   bool is_input_or_appending_output(const Ioss::DatabaseIO *iodatabase)
   {
-      return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND;
+    return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND;
   }
 } // namespace
 
@@ -508,8 +508,7 @@ namespace Ioss {
 
     // NOTE:  For restart input databases, it is possible that the time
     //        is not monotonically increasing...
-    if (!get_database()->is_input() && !stateTimes.empty() &&
-        time <= stateTimes.back()) {
+    if (!get_database()->is_input() && !stateTimes.empty() && time <= stateTimes.back()) {
       // Check that time is increasing...
       if (!warning_output) {
         std::ostringstream errmsg;

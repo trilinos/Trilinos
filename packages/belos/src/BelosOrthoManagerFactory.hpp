@@ -190,8 +190,7 @@ namespace Belos {
     getDefaultParameters (const std::string& name) const
     {
       if (name == "DGKS") {
-	DGKSOrthoManager<Scalar, MV, OP> orthoMan;
-	return orthoMan.getValidParameters ();
+	return Belos::getDGKSDefaultParameters<Scalar, MV, OP> ();
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
@@ -200,15 +199,13 @@ namespace Belos {
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
-	ICGSOrthoManager<Scalar, MV, OP> orthoMan;
-	return orthoMan.getValidParameters ();
+	return Belos::getICGSDefaultParameters<Scalar, MV, OP> ();
       }
       else if (name == "IMGS") {
-	IMGSOrthoManager<Scalar, MV, OP> orthoMan;
-	return orthoMan.getValidParameters ();
+	return Belos::getIMGSDefaultParameters<Scalar, MV, OP> ();
       }
       else if (name == "Simple") {
-	IMGSOrthoManager<Scalar, MV, OP> orthoMan;
+	SimpleOrthoManager<Scalar, MV> orthoMan;
 	return orthoMan.getValidParameters ();
       }
       else {
@@ -241,8 +238,7 @@ namespace Belos {
     getFastParameters (const std::string& name) const
     {
       if (name == "DGKS") {
-	DGKSOrthoManager<Scalar, MV, OP> orthoMan;
-	return orthoMan.getFastParameters ();
+	return Belos::getDGKSFastParameters<Scalar, MV, OP> ();
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
@@ -251,15 +247,13 @@ namespace Belos {
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
-	ICGSOrthoManager<Scalar, MV, OP> orthoMan;
-	return orthoMan.getFastParameters ();
+	return Belos::getICGSFastParameters<Scalar, MV, OP> ();
       }
       else if (name == "IMGS") {
-	IMGSOrthoManager<Scalar, MV, OP> orthoMan;
-	return orthoMan.getFastParameters ();
+	return Belos::getIMGSFastParameters<Scalar, MV, OP> ();
       }
       else if (name == "Simple") {
-	IMGSOrthoManager<Scalar, MV, OP> orthoMan;
+	SimpleOrthoManager<Scalar, MV> orthoMan;
 	return orthoMan.getFastParameters ();
       }
       else {
@@ -311,8 +305,8 @@ namespace Belos {
       using Teuchos::rcp;
 
       if (ortho == "DGKS") {
-	typedef DGKSOrthoManager<Scalar, MV, OP> dgks_type;
-	return rcp (new dgks_type (params, label, M));
+	typedef DGKSOrthoManager<Scalar, MV, OP> ortho_type;
+	return rcp (new ortho_type (params, label, M));
       }
 #ifdef HAVE_BELOS_TSQR
       else if (ortho == "TSQR") {

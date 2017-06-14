@@ -43,9 +43,7 @@
 
 #include <limits>
 
-#include "Phalanx_config.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
@@ -112,7 +110,6 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
       fm.requireField<MyTraits::Residual>(tag_c);
     }
     
-    fm.postRegistrationSetup(0);
 
     MDField<double,CELL,BASIS> unmanaged_a = allocateUnmanagedMDField<double,CELL,BASIS>("a",dl);
     MDField<double,CELL,BASIS> unmanaged_b = allocateUnmanagedMDField<double,CELL,BASIS>("b",dl);
@@ -132,8 +129,14 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
       }
     }
     
+    // Register some unmanaged fields before postRegistrationSetup()
+    // is called and some unmanaged fields after. There are two
+    // branches through the code base depending on whether
+    // postRegistrationSetup() has been called and we want to cover
+    // both branches in testing.
     fm.setUnmanagedField<MyTraits::Residual>(unmanaged_a);
     fm.setUnmanagedField<MyTraits::Residual>(unmanaged_b);
+    fm.postRegistrationSetup(0);
     fm.setUnmanagedField<MyTraits::Residual>(unmanaged_c);
     fm.setUnmanagedField<MyTraits::Residual>(unmanaged_d);
     fm.evaluateFields<MyTraits::Residual>(0);

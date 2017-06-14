@@ -33,7 +33,8 @@
  *
  */
 
-#include <chrono>
+#include <chrono>                       // for duration, etc
+#include <ratio>                        // for ratio
 double second()
 {
   static auto                   start = std::chrono::high_resolution_clock::now();

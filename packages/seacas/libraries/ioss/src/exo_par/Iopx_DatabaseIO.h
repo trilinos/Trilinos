@@ -34,8 +34,8 @@
 #ifndef IOSS_Iopx_DatabaseIO_h
 #define IOSS_Iopx_DatabaseIO_h
 
-#include "Ioss_State.h"             // for State
-#include "mpi.h"                    // for MPI_Comm
+#include <Ioss_CodeTypes.h>
+#include <Ioss_State.h>             // for State
 #include <Ioss_DBUsage.h>           // for DatabaseUsage
 #include <Ioss_Map.h>               // for Map
 #include <exodus/Ioex_DatabaseIO.h> // for DatabaseIO

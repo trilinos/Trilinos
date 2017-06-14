@@ -40,7 +40,7 @@
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for operator|, Selector
-#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <vector>                       // for vector, vector<>::iterator, etc
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc

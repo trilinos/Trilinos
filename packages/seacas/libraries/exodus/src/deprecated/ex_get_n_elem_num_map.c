@@ -51,8 +51,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"  // for ex_get_partial_id_map, etc
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_get_partial_id_map, etc
 
 /*!
  * \deprecated Use ex_get_partial_id_map() instead

@@ -53,6 +53,7 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 
@@ -1632,8 +1633,10 @@ namespace Tpetra {
                 KokkosBlas::dot (Kokkos::subview(X,Kokkos::ALL(),0),
                                  Kokkos::subview(Y,Kokkos::ALL(),0));
             Kokkos::deep_copy(theDots,result);
-          } else
+          }
+          else {
             KokkosBlas::dot (theDots, X, Y);
+          }
         }
         else { // not constant stride
           // NOTE (mfh 15 Jul 2014) This does a kernel launch for
@@ -1680,15 +1683,23 @@ namespace Tpetra {
       if (distributed && ! comm.is_null ()) {
         // The calling process only participates in the collective if
         // both the Map and its Comm on that process are nonnull.
-        //
-        // MPI doesn't allow aliasing of arguments, so we have to make
-        // a copy of the local sum.
-        typename RV::non_const_type lclDots (Kokkos::ViewAllocateWithoutInitializing ("tmp"), numVecs);
-        Kokkos::deep_copy (lclDots, dotsOut);
-        const dot_type* const lclSum = lclDots.ptr_on_device ();
-        dot_type* const gblSum = dotsOut.ptr_on_device ();
         const int nv = static_cast<int> (numVecs);
-        reduceAll<int, dot_type> (*comm, REDUCE_SUM, nv, lclSum, gblSum);
+        const bool commIsInterComm = Details::isInterComm (*comm);
+
+        if (commIsInterComm) {
+          // If comm is an intercomm, then we may not alias input and
+          // output buffers, so we have to make a copy of the local
+          // sum.
+          typename RV::non_const_type lclDots (Kokkos::ViewAllocateWithoutInitializing ("tmp"), numVecs);
+          Kokkos::deep_copy (lclDots, dotsOut);
+          const dot_type* const lclSum = lclDots.ptr_on_device ();
+          dot_type* const gblSum = dotsOut.ptr_on_device ();
+          reduceAll<int, dot_type> (*comm, REDUCE_SUM, nv, lclSum, gblSum);
+        }
+        else {
+          dot_type* const inout = dotsOut.ptr_on_device ();
+          reduceAll<int, dot_type> (*comm, REDUCE_SUM, nv, inout, inout);
+        }
       }
     }
   } // namespace (anonymous)
@@ -1800,6 +1811,86 @@ namespace Tpetra {
     }
   }
 
+  namespace { // (anonymous)
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+    typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::dot_type
+    multiVectorSingleColumnDot (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& x,
+                                const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& y)
+    {
+      using Teuchos::Comm;
+      using Teuchos::RCP;
+      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+      typedef typename MV::dot_type dot_type;
+      typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;
+      typedef typename MV::dual_view_type::t_host::memory_space host_memory_space;
+      ::Tpetra::Details::ProfilingRegion region ("Tpetra::multiVectorSingleColumnDot");
+
+      RCP<const typename MV::map_type> map = x.getMap ();
+      RCP<const Comm<int> > comm = map.is_null () ? Teuchos::null : map->getComm ();
+      if (comm.is_null ()) {
+        return Kokkos::ArithTraits<dot_type>::zero ();
+      }
+      else {
+        typedef LocalOrdinal LO;
+        // The min just ensures that we don't overwrite memory that
+        // doesn't belong to us, in the erroneous input case where x
+        // and y have different numbers of rows.
+        const LO lclNumRows = static_cast<LO> (std::min (x.getLocalLength (),
+                                                         y.getLocalLength ()));
+        const Kokkos::pair<LO, LO> rowRng (0, lclNumRows);
+        dot_type lclDot = Kokkos::ArithTraits<dot_type>::zero ();
+        dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
+
+        // This function is meant to be called by x.  Therefore, we
+        // can sync x, but we can't sync y.  y is a "guest" of this
+        // method.  Thus, we let y control where execution happens.
+        // If we need sync to device, then data were last modified on
+        // host, so we should run on host.
+
+        auto x_vec = x.getVectorNonConst (0);
+        auto y_vec = y.getVector (0);
+
+        //const bool runOnHost = false;
+        const bool runOnHost = y_vec->template need_sync<dev_memory_space> ();
+        // const_cast<MV&> (y).template sync<dev_memory_space> ();
+        // const_cast<MV&> (x).template sync<dev_memory_space> ();
+
+        if (runOnHost) {
+          typedef host_memory_space cur_memory_space;
+          // x is nonconst, so we may sync x where we need to sync it.
+          x_vec->template sync<cur_memory_space> ();
+          auto x_2d = x_vec->template getLocalView<cur_memory_space> ();
+          auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
+          auto y_2d = y_vec->template getLocalView<cur_memory_space> ();
+          auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
+          lclDot = KokkosBlas::dot (x_1d, y_1d);
+        }
+        else { // run on device
+          typedef dev_memory_space cur_memory_space;
+          // x is nonconst, so we may sync x where we need to sync it.
+          x_vec->template sync<cur_memory_space> ();
+          auto x_2d = x_vec->template getLocalView<cur_memory_space> ();
+          auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
+          auto y_2d = y_vec->template getLocalView<cur_memory_space> ();
+          auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
+          lclDot = KokkosBlas::dot (x_1d, y_1d);
+        }
+
+        if (x.isDistributed ()) {
+          using Teuchos::outArg;
+          using Teuchos::REDUCE_SUM;
+          using Teuchos::reduceAll;
+          reduceAll<int, dot_type> (*comm, REDUCE_SUM, lclDot, outArg (gblDot));
+        }
+        else {
+          gblDot = lclDot;
+        }
+        return gblDot;
+      }
+    }
+  } // namespace (anonymous)
+
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
@@ -1807,85 +1898,51 @@ namespace Tpetra {
   dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
        const Teuchos::ArrayView<dot_type>& dots) const
   {
+    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    const char tfecfFuncName[] = "dot: ";
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Teuchos::ArrayView)");
 
-    //if (this->getNumVectors () == 1 && A.getNumVectors () == 1) {
-    if (false) { // temporary work-around for #1258
-      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
-      const auto& comm = * (this->getMap ()->getComm ());
+    const size_t numVecs = this->getNumVectors ();
+    const size_t lclNumRows = this->getLocalLength ();
+    const size_t numDots = static_cast<size_t> (dots.size ());
 
-      // Special case for a single dot product.  Don't allocate device
-      // buffer, and don't copy to and from device.
+    // FIXME (mfh 11 Jul 2014, 31 May 2017) These exception tests may
+    // not necessarily be thrown on all processes consistently.  We
+    // keep them for now, because MultiVector's unit tests insist on
+    // them.  In the future, we should instead pass along error state
+    // with the inner product.  We could do this by setting an extra
+    // slot to Kokkos::Details::ArithTraits<dot_type>::one() on error.
+    // The final sum should be
+    // Kokkos::Details::ArithTraits<dot_type>::zero() if not error.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lclNumRows != A.getLocalLength (), std::runtime_error,
+       "MultiVectors do not have the same local length.  "
+       "this->getLocalLength() = " << lclNumRows << " != "
+       "A.getLocalLength() = " << A.getLocalLength () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (numVecs != A.getNumVectors (), std::runtime_error,
+       "MultiVectors must have the same number of columns (vectors).  "
+       "this->getNumVectors() = " << numVecs << " != "
+       "A.getNumVectors() = " << A.getNumVectors () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (numDots != numVecs, std::runtime_error,
+       "The output array 'dots' must have the same number of entries as the "
+       "number of columns (vectors) in *this and A.  dots.dimension_0() = " <<
+       numDots << " != this->getNumVectors() = " << numVecs << ".");
 
-      // If we need sync to device, then host has the most recent
-      // version.  A is a guest of this method, so we should sync it.
-      // Thus, let A control where execution happens.
-      const bool useHostVersion = A.template need_sync<device_type> ();
-      if (useHostVersion) {
-        // A was last modified on host, so run the local kernel there.
-        // This means we need a host mirror of the array of norms too.
-        typedef typename dual_view_type::t_host XMV;
-        typedef typename XMV::memory_space cur_memory_space;
-
-        // I consider it more polite to sync *this, then to sync A.
-        // A is a "guest" of this method, and is passed in const.
-        const_cast<MV*> (this)->template sync<cur_memory_space> ();
-        auto thisView = this->template getLocalView<cur_memory_space> ();
-        auto thisView_1d = Kokkos::subview (thisView, Kokkos::ALL (), 0);
-        auto A_view = A.template getLocalView<cur_memory_space> ();
-        auto A_view_1d = Kokkos::subview (A_view, Kokkos::ALL (), 0);
-
-        const dot_type lclDot = KokkosBlas::dot (thisView_1d, A_view_1d);
-        dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
-
-        if (comm.getSize () > 1) {
-          using Teuchos::outArg;
-          using Teuchos::REDUCE_SUM;
-          using Teuchos::reduceAll;
-          reduceAll<int, dot_type> (comm, REDUCE_SUM, lclDot, outArg (gblDot));
-        }
-        else {
-          gblDot = lclDot;
-        }
-        dots[0] = gblDot;
-      }
-      else {
-        // A was last modified on device, so run the local kernel there.
-        typedef typename dual_view_type::t_dev XMV;
-        typedef typename XMV::memory_space cur_memory_space;
-
-        // I consider it more polite to sync *this, then to sync A.
-        // A is a "guest" of this method, and is passed in const.
-        const_cast<MV*> (this)->template sync<cur_memory_space> ();
-        auto thisView = this->template getLocalView<cur_memory_space> ();
-        auto thisView_1d = Kokkos::subview (thisView, Kokkos::ALL (), 0);
-        auto A_view = A.template getLocalView<cur_memory_space> ();
-        auto A_view_1d = Kokkos::subview (A_view, Kokkos::ALL (), 0);
-
-        const dot_type lclDot = KokkosBlas::dot (thisView_1d, A_view_1d);
-        dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
-
-        if (comm.getSize () > 1) {
-          using Teuchos::outArg;
-          using Teuchos::REDUCE_SUM;
-          using Teuchos::reduceAll;
-          reduceAll<int, dot_type> (comm, REDUCE_SUM, lclDot, outArg (gblDot));
-        }
-        else {
-          gblDot = lclDot;
-        }
-        dots[0] = gblDot;
-      }
+    if (numVecs == 1 && this->isConstantStride () && A.isConstantStride ()) {
+      const dot_type gblDot = multiVectorSingleColumnDot (const_cast<MV&> (*this), A);
+      dots[0] = gblDot;
     }
     else {
-      // FIXME (mfh 19 Apr 2017) don't allocate on device here,
-      // esp. not if one entry.
-
+      // FIXME (mfh 02 Jun 2017) Use the version of KokkosBlas::dot
+      // that takes a host View as output (for the dot product
+      // results).  This will avoid the temporary buffer allocation
+      // and the copy from device to host.
       typedef Kokkos::View<dot_type*, device_type> dev_dots_view_type;
       typedef MakeUnmanagedView<dot_type, device_type> view_getter_type;
       typedef typename view_getter_type::view_type host_dots_view_type;
 
-      const size_t numDots = static_cast<size_t> (dots.size ());
       host_dots_view_type dotsHostView (dots.getRawPtr (), numDots);
       dev_dots_view_type dotsDevView ("MV::dot tmp", numDots);
       this->dot (A, dotsDevView); // Do the computation on the device.
@@ -2243,7 +2300,9 @@ namespace Tpetra {
           // results on the device, thus avoiding a copy to the host and
           // back again.
           KokkosBlas::Impl::SquareRootFunctor<RV> f (normsOut);
-          Kokkos::parallel_for (numVecs, f);
+          typedef typename RV::execution_space execution_space;
+          typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+          Kokkos::parallel_for (range_type (0, numVecs), f);
         }
       }
     }

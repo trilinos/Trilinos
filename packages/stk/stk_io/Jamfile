@@ -161,26 +161,26 @@ exe stk_io_mesh_read_write_example
 
 exe stk_io_utest
   :
-    [ glob $(stk_io-root)/unit_tests/*.cpp ]
+    [ glob $(stk_io-root)/../stk_unit_tests/stk_io/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_io
     /sierra/stk_io//stk_io_util
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_util//stk_util_unit_test_support
   : <tag>@sierra-exec-tag
-    <include>$(stk_io-root)/unit_tests
+    <include>$(stk_io-root)/../stk_unit_tests/stk_io
   ;
 
 exe stk_io_doc_test
   :
-    [ glob $(stk_io-root)/testsForDocumentation/*.cpp ]
+    [ glob $(stk_io-root)/../stk_doc_tests/stk_io/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_io
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_unit_test_support
     /sierra/stk_unit_test_utils//stk_unit_test_utils
   : <tag>@sierra-exec-tag
-    <include>$(stk_io-root)/testsForDocumentation
+    <include>$(stk_io-root)/../stk_doc_tests/stk_io
   ;
 
 exe stk_io_lowlevel_example

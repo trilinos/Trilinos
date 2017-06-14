@@ -45,7 +45,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "unit_tests/SetupKeyholeMesh.hpp"
+#include "stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp"
 namespace stk { namespace mesh { class Part; } }
 
 TEST(UnitTestKeyhole, NodeParts_case1)

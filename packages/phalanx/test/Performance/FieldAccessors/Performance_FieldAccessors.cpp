@@ -41,18 +41,15 @@
 // ************************************************************************
 // @HEADER
 
-
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_DimTag.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Kokkos_View.hpp"
 #include "Shards_Array.hpp"
@@ -177,8 +174,6 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
   
   {    
     TimeMonitor tm_total(*total_time);
-
-    PHX::InitializeKokkosDevice();
 
     std::cout << std::endl << std::endl
 	      << "PHX::Device::size_type = " 
@@ -382,11 +377,9 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
 	    }
     }
 
-    delete [] raw_ptr_a;    
-    delete [] raw_ptr_b;    
-    delete [] raw_ptr_c;    
-  
-   PHX::FinalizeKokkosDevice();
+    delete [] raw_ptr_a;
+    delete [] raw_ptr_b;
+    delete [] raw_ptr_c;  
   }
 
   TimeMonitor::summarize();  

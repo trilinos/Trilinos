@@ -9,7 +9,7 @@ else
   exit 1
 fi
 
-sems_mpi_and_version_default=sems-openmpi/1.8.7
+sems_mpi_and_version_default=sems-openmpi/1.6.5
 sems_python_and_version_default=sems-python/2.7.9
 sems_cmake_and_version_default=sems-cmake/3.5.2
 sems_git_and_version_default=sems-git/2.10.1
@@ -21,3 +21,6 @@ sems_netcdf_and_version_default=sems-netcdf/4.3.2/parallel
 sems_parmetis_and_version_default=sems-parmetis/4.0.3/parallel 
 #sems_scotch_and_version_default=sems-scotch/6.0.3/parallel 
 sems_superlu_and_version_default=sems-superlu/4.3/base
+
+# NOTE: The above defaults are what are used for the standard CI dev env so
+# changing these will change the standard CI env.

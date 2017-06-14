@@ -41,8 +41,8 @@
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
-#include <stk_mesh/fixtures/CoordinateMapping.hpp>
-#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/CoordinateMapping.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <vector>                       // for vector
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"

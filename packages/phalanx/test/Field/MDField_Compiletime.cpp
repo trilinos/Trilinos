@@ -41,14 +41,13 @@
 // ************************************************************************
 // @HEADER
 
-
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_DimTag.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
+#include "Phalanx_MDField.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -122,8 +121,6 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
   
   RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
   TimeMonitor tm(*total_time);
-  
-  PHX::InitializeKokkosDevice();
   
   // *********************************************************************
   // Start of MDField Testing
@@ -457,8 +454,6 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     output << a;
     TEST_EQUALITY(output.str(), "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: <Cell,Node>(100,4)"); 
   }
-
-  PHX::FinalizeKokkosDevice();  
 
   TimeMonitor::summarize();
 }

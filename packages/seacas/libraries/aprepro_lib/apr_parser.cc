@@ -118,7 +118,7 @@ namespace SEAMS {
     if (yydebug_) {                                                                                \
       *yycdebug_ << Title << ' ';                                                                  \
       yy_print_(*yycdebug_, Symbol);                                                               \
-      *yycdebug_ << std::endl;                                                                     \
+      *yycdebug_ << '\n';                                                                          \
     }                                                                                              \
   } while (false)
 
@@ -385,7 +385,7 @@ namespace SEAMS {
     // FIXME: This shoud be completely indented.  It is not yet to
     // avoid gratuitous conflicts when merging into the master branch.
     try {
-      YYCDEBUG << "Starting parse" << std::endl;
+      YYCDEBUG << "Starting parse\n";
 
       /* Initialize the stack.  The initial state will be set in
          yynewstate, since the latter expects the semantical and the
@@ -396,7 +396,7 @@ namespace SEAMS {
 
     // A new symbol was pushed on the stack.
     yynewstate:
-      YYCDEBUG << "Entering state " << yystack_[0].state << std::endl;
+      YYCDEBUG << "Entering state " << yystack_[0].state << '\n';
 
       // Accept?
       if (yystack_[0].state == yyfinal_)
@@ -1877,7 +1877,7 @@ namespace SEAMS {
       return yyresult;
     }
     catch (...) {
-      YYCDEBUG << "Exception caught: cleaning lookahead and stack" << std::endl;
+      YYCDEBUG << "Exception caught: cleaning lookahead and stack\n";
       // Do not try to display the values of the reclaimed symbols,
       // as their printer might throw an exception.
       if (!yyla.empty())
@@ -2261,7 +2261,7 @@ namespace SEAMS {
     *yycdebug_ << "Stack now";
     for (stack_type::const_iterator i = yystack_.begin(), i_end = yystack_.end(); i != i_end; ++i)
       *yycdebug_ << ' ' << i->state;
-    *yycdebug_ << std::endl;
+    *yycdebug_ << '\n';
   }
 
   // Report on the debug stream that the rule \a yyrule is going to be reduced.
@@ -2270,8 +2270,7 @@ namespace SEAMS {
     unsigned int yylno  = yyrline_[yyrule];
     int          yynrhs = yyr2_[yyrule];
     // Print the symbols being reduced, and their result.
-    *yycdebug_ << "Reducing stack by rule " << yyrule - 1 << " (line " << yylno
-               << "):" << std::endl;
+    *yycdebug_ << "Reducing stack by rule " << yyrule - 1 << " (line " << yylno << "):\n";
     // The symbols being reduced.
     for (int yyi = 0; yyi < yynrhs; yyi++)
       YY_SYMBOL_PRINT("   $" << yyi + 1 << " =", yystack_[(yynrhs) - (yyi + 1)]);

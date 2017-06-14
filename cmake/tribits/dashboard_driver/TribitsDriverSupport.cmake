@@ -38,7 +38,7 @@
 # @HEADER
 
 INCLUDE(GetCurrentListDir)
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 INCLUDE(SetDefaultAndFromEnv)
 
 # Set if the inner CMake installs are performed or not
@@ -145,17 +145,15 @@ function(TRIBITS_DRIVER_ADD_DASHBOARD testname scriptname)
 
   MESSAGE("TRIBITS_DRIVER_ADD_DASHBOARD:  '${testname}'  '${scriptname}' [${ARGN}]")
 
-  # Uncomment this line to see output of below PARSE_ARGUMENTS:
-  #
-  #set(PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED TRUE)
-
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
     # prefix
     PARSE
-    # args
-    "CTEST_INSTALLER_TYPE;ENVIRONMENT;TIMEOUT_MINUTES;DEPENDS;REQUIRED_FILES"
     # options
     "RUN_SERIAL"
+    # one_value_keywords
+    ""
+    # multi_value_keywords
+    "CTEST_INSTALLER_TYPE;ENVIRONMENT;TIMEOUT_MINUTES;DEPENDS;REQUIRED_FILES"
     # the stuff to parse:
     ${ARGN}
   )

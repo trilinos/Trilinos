@@ -47,6 +47,7 @@ Level 1
       aggregation: enable phase 3 = 1   [default]
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
+      aggregation: error on nodes with no on-rank neighbors = 0   [default]
       OnePt aggregate map name =    [default]
       OnePt aggregate map factory =    [default]
       
@@ -91,7 +92,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x25358b0,node=0x2720660,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x4d67030,node=0x4d61930,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -163,6 +164,7 @@ Level 2
       aggregation: enable phase 3 = 1   [default]
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
+      aggregation: error on nodes with no on-rank neighbors = 0   [default]
       OnePt aggregate map name =    [default]
       OnePt aggregate map factory =    [default]
       
@@ -207,7 +209,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x275cdd0,node=0x275d620,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x4d763e0,node=0x4d77340,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -249,7 +251,7 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
-Smoother (level 2) pre  : SuperLU solver interface, direct solve
+Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother
 
 Level 0
@@ -427,6 +429,6 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
-Smoother (level 2) pre  : SuperLU solver interface, direct solve
+Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother
 

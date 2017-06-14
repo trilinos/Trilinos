@@ -247,6 +247,38 @@ STK_MATH_FORCE_INLINE simd::Double atan2(const simd::Double& a, const simd::Doub
   return tmp;
 }
 
+STK_MATH_FORCE_INLINE simd::Double asinh(const simd::Double &a) {
+  simd::Double tmp;
+  for (int i = 0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::asinh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double acosh(const simd::Double &a) {
+  simd::Double tmp;
+  for (int i = 0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::acosh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double atanh(const simd::Double &a) {
+  simd::Double tmp;
+  for (int i = 0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::atanh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double erf(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::erf(a[i]);
+  }
+  return tmp;
+}
+
 STK_MATH_FORCE_INLINE simd::Double multiplysign(const simd::Double& x, const simd::Double& y) { // return x times sign of y
   return simd::Double(_mm256_xor_pd(x._data, _mm256_and_pd(hidden::SIGN_MASK._data, y._data)));
 }
@@ -285,14 +317,6 @@ STK_MATH_FORCE_INLINE simd::Double if_then_else(const simd::Bool& b, const simd:
 
 STK_MATH_FORCE_INLINE simd::Double if_then_else_zero(const simd::Bool& b, const simd::Double& v) {
   return simd::Double( _mm256_and_pd(b._data, v._data) );
-}
-
-STK_MATH_FORCE_INLINE simd::Double if_not_then_else(const simd::Bool& b, const simd::Double& v1, const simd::Double& v2) {
-  return simd::Double( _mm256_add_pd(_mm256_and_pd(b._data, v2._data),_mm256_andnot_pd(b._data, v1._data)) );
-}
-
-STK_MATH_FORCE_INLINE simd::Double if_not_then_else_zero(const simd::Bool& b, const simd::Double& v) {
-  return simd::Double( _mm256_andnot_pd(b._data, v._data) );
 }
 
 } // namespace math

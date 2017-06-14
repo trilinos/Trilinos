@@ -43,7 +43,7 @@
 #define TPETRA_MAP_DECL_HPP
 
 /// \file Tpetra_Map_decl.hpp
-/// \brief Declarations for the Tpetra::Map class and related
+/// \brief Declaration of the Tpetra::Map class and related
 ///   nonmember constructors.
 
 #include "Tpetra_ConfigDefs.hpp"
@@ -91,13 +91,11 @@ namespace Tpetra {
   }
 
   /// \class Map
-  /// \brief Describes a parallel distribution of objects over processes.
+  /// \brief A parallel distribution of indices over processes.
   ///
-  /// \tparam LocalOrdinal The type of local indices.  This
-  ///   <i>must</i> be a built-in integer type, and <i>must</i> be
-  ///   signed.  A good model of <tt>LocalOrdinal</tt> is
-  ///   <tt>int</tt>, which is also the default.  (In Epetra, this is
-  ///   always just <tt>int</tt>.)
+  /// \tparam LocalOrdinal The type of local indices.  Currently, this
+  ///   <i>must</i> be <tt>int</tt>.  (In Epetra, this is always just
+  ///   <tt>int</tt>.)
   ///
   /// \tparam GlobalOrdinal The type of global indices.  This
   ///   <i>must</i> be a built-in integer type.  We allow either
@@ -110,12 +108,12 @@ namespace Tpetra {
   ///   If <tt>LocalOrdinal</tt> is <tt>int</tt>, good models of
   ///   <tt>GlobalOrdinal</tt> are
   ///   <ul>
-  ///   <li> \c int </li>
-  ///   <li> \c long </li>
+  ///   <li> \c int </li> (if the configure-time option
+  ///        <tt>Tpetra_INST_INT_INT</tt> is set) </li>
+  ///   <li> \c long </li> (if the configure-time option
+  ///        <tt>Tpetra_INST_INT_LONG</tt> is set) </li>
   ///   <li> <tt>long long</tt> (if the configure-time option
-  ///        <tt>Teuchos_ENABLE_LONG_LONG_INT</tt> was set) </li>
-  ///   <li> \c ptrdiff_t (a signed integer type which is 64 bits on
-  ///        64-bit machines) </li>
+  ///        <tt>Tpetra_INST_INT_LONG_LONG</tt> is set) </li>
   ///   </ul>
   ///   If the default <tt>GlobalOrdinal</tt> is <tt>int</tt>, then
   ///   the <i>global</i> number of rows or columns in the matrix may
@@ -124,10 +122,22 @@ namespace Tpetra {
   ///   larger problems, you must use a 64-bit integer type here.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
-  ///   operations.  It must implement the
-  ///   \ref kokkos_node_api "Kokkos Node API."
+  ///   operations.
   ///   The default \c Node type should suffice for most users.
   ///   The actual default type depends on your Trilinos build options.
+  ///   This must be one of the following:
+  ///   <ul>
+  ///   <li> Kokkos::Compat::KokkosCudaWrapperNode </li>
+  ///   <li> Kokkos::Compat::KokkosOpenMPWrapperNode </li>
+  ///   <li> Kokkos::Compat::KokkosThreadsWrapperNode </li>
+  ///   <li> Kokkos::Compat::KokkosSerialWrapperNode </li>
+  ///   </ul>
+  ///   All of the above are just typedefs for
+  ///   Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpaceType,
+  ///   MemorySpaceType>, where ExecutionSpaceType is a Kokkos
+  ///   execution space type, and MemorySpaceType is a Kokkos memory
+  ///   space type.  If you omit MemorySpaceType, Tpetra will use the
+  ///   execution space's default memory space.
   ///
   /// This class describes a distribution of data elements over one or
   /// more processes in a communicator.  Each element has a global
@@ -141,13 +151,18 @@ namespace Tpetra {
   /// \section Tpetra_Map_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
-  /// something about the Teuchos memory management classes, in
-  /// particular Teuchos::RCP, Teuchos::ArrayRCP, and
-  /// Teuchos::ArrayView.  You should also know a little bit about MPI
-  /// (the Message Passing Interface for distributed-memory
-  /// programming).  You won't have to use MPI directly to use Map,
-  /// but it helps to be familiar with the general idea of distributed
-  /// storage of data over a communicator.
+  /// something about the following:
+  /// <ul>
+  /// <li> The Kokkos shared-memory parallel programming model </li>
+  /// <li> The Teuchos memory management classes, especially
+  ///      Teuchos::RCP, Teuchos::ArrayRCP, and Teuchos::ArrayView
+  ///      </li>
+  /// <li> MPI (the Message Passing Interface for distributed-memory
+  ///      parallel programming) </li>
+  /// </ul>
+  /// You will not need to use MPI directly to use Map, but it helps
+  /// to be familiar with the general idea of distributed storage of
+  /// data over a communicator.
   ///
   /// \section Tpetra_Map_concepts Map concepts
   ///

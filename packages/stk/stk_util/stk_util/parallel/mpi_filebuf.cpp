@@ -158,14 +158,6 @@ mpi_filebuf * mpi_filebuf::open(
   if ( root_processor == rank && ! local ) {
     tmp_fp = std::fopen( file_name , ( ( ( mode == 'r' ) ? "r" :
 				    ( mode == 'w' ) ? "w" : "a" ) ) );
-#ifdef REDSTORM_SETVBUF
-    if (tmp_fp) {
-      if (std::setvbuf(tmp_fp, nullptr, _IOFBF, 32768) != 0) {
-	std::fclose(tmp_fp);
-	tmp_fp = 0;
-      }
-    }
-#endif
     local = nullptr == tmp_fp ;
   }
 

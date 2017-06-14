@@ -33,12 +33,13 @@
  *
  */
 
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-
 #include "elb_allo.h"
-#include "elb_format.h"
+#include <stddef.h>                     // for size_t
+#include <cstdarg>                      // for va_end, va_arg, va_list, etc
+#include <cstdio>                       // for fprintf, stderr
+#include <cstdlib>                      // for exit, malloc
+#include "elb_format.h"                 // for ST_ZU
+
 
 static void *smalloc(size_t n);
 

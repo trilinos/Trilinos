@@ -33,8 +33,8 @@
  *
  */
 /* cgismet.c - linker specifiable driver routine for driver Metafile (met) */
-#include "ifdefx.h"
-#include "mdcgi.h"
+#include "mdcgi.h"  // for xcact_, xcoon_
+#include "stdtyp.h" // for anything
 
 void cgimet_(); /* tell linker to load driver */
 

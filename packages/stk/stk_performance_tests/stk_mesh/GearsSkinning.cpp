@@ -38,8 +38,8 @@
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/perf_util.hpp>
 
-#include <stk_mesh/fixtures/GearsFixture.hpp>
-#include <stk_mesh/fixtures/Gear.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/Gear.hpp>
 
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/Selector.hpp>

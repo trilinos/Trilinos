@@ -33,11 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
-#include "exodusII_int.h" // for ex_comp_ws, EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
+#include "exodusII.h"                   // for ex_get_var_time, etc
 
 /*!
 \deprecated Use ex_get_var_time()(exoid, EX_GLOBAL, global_var_index,

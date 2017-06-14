@@ -175,8 +175,8 @@ namespace Ioss {
   Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm)
       : m_comm(comm), m_spatialDimension(3), m_globalElementCount(0), m_elementCount(0),
         m_elementOffset(0), m_importPreLocalElemIndex(0), m_globalNodeCount(0), m_nodeCount(0),
-        m_nodeOffset(0), m_importPreLocalNodeIndex(0), m_retainFreeNodes(true), m_showProgress(false),
-	m_showHWM(false)
+        m_nodeOffset(0), m_importPreLocalNodeIndex(0), m_retainFreeNodes(true),
+        m_showProgress(false), m_showHWM(false)
   {
     MPI_Comm_rank(m_comm, &m_processor);
     MPI_Comm_size(m_comm, &m_processorCount);
@@ -354,7 +354,7 @@ namespace Ioss {
     }
 
     show_progress("\tprior to releasing some temporary decomposition memory");
-    
+
     // Release some memory...
     m_adjacency.resize(0);
     m_adjacency.shrink_to_fit();
@@ -445,8 +445,9 @@ namespace Ioss {
     Ioss::MY_Alltoallv(node_comm_recv, recv_count, recv_disp, node_comm_send, send_count, send_disp,
                        m_comm);
 
-    node_comm_recv.resize(0); node_comm_recv.shrink_to_fit();
-    
+    node_comm_recv.resize(0);
+    node_comm_recv.shrink_to_fit();
+
 // At this point, 'node_comm_send' contains the list of nodes that I
 // need to provide coordinate data for.
 
@@ -1137,49 +1138,51 @@ namespace Ioss {
 
     Ioss::MY_Alltoallv(import_nodes, importNodeCount, importNodeIndex, exportNodeMap,
                        exportNodeCount, exportNodeIndex, m_comm);
-    import_nodes.resize(0); import_nodes.shrink_to_fit();
+    import_nodes.resize(0);
+    import_nodes.shrink_to_fit();
     show_progress("\tCommunication 4 finished");
 
     if (m_retainFreeNodes) {
       // See if all nodes have been accounted for (i.e., process non-connected nodes)
       std::vector<bool> file_nodes(m_nodeCount);
       for (const auto &node : exportNodeMap) {
-	file_nodes[node-m_nodeOffset] = true;
+        file_nodes[node - m_nodeOffset] = true;
       }
       for (const auto &node : localNodeMap) {
-	file_nodes[node-m_nodeOffset] = true;
+        file_nodes[node - m_nodeOffset] = true;
       }
 
       size_t found_count = 0;
-      for (size_t i=0; i < file_nodes.size(); i++) {
-	if (!file_nodes[i]) {
-	  localNodeMap.push_back(i+m_nodeOffset);
-	  nodes.push_back(i+m_nodeOffset);
-	  found_count++;
+      for (size_t i = 0; i < file_nodes.size(); i++) {
+        if (!file_nodes[i]) {
+          localNodeMap.push_back(i + m_nodeOffset);
+          nodes.push_back(i + m_nodeOffset);
+          found_count++;
 #if IOSS_DEBUG_OUTPUT
-	  std::cerr << m_processor << ":Node " << i+m_nodeOffset+1 << " not connected to any elements\n";
+          std::cerr << m_processor << ":Node " << i + m_nodeOffset + 1
+                    << " not connected to any elements\n";
 #endif
-	}
+        }
       }
 
       if (found_count > 0) {
-	nodes.shrink_to_fit();
-	localNodeMap.shrink_to_fit();
-	std::sort(nodes.begin(), nodes.end());
-	std::sort(localNodeMap.begin(), localNodeMap.end());
-	for (int proc = m_processor+1; proc < m_processorCount+1; proc++) {
-	  nodeIndex[proc]+=found_count;
-	}
+        nodes.shrink_to_fit();
+        localNodeMap.shrink_to_fit();
+        std::sort(nodes.begin(), nodes.end());
+        std::sort(localNodeMap.begin(), localNodeMap.end());
+        for (int proc = m_processor + 1; proc < m_processorCount + 1; proc++) {
+          nodeIndex[proc] += found_count;
+        }
 
-	assert((size_t)nodeIndex[m_processorCount] == nodes.size());
+        assert((size_t)nodeIndex[m_processorCount] == nodes.size());
 
-	// Also need to update importNodeMap for all nodes being
-	// imported from processors higher than m_processor...
-	size_t beg = importNodeIndex[m_processor+1];
-	size_t end = importNodeIndex[m_processorCount];
-	for (size_t i=beg; i < end; i++) {
-	  importNodeMap[i] += found_count;
-	}
+        // Also need to update importNodeMap for all nodes being
+        // imported from processors higher than m_processor...
+        size_t beg = importNodeIndex[m_processor + 1];
+        size_t end = importNodeIndex[m_processorCount];
+        for (size_t i = beg; i < end; i++) {
+          importNodeMap[i] += found_count;
+        }
       }
     }
 
@@ -1302,7 +1305,8 @@ namespace Ioss {
                          recv_comm_map_count[m_processorCount - 1]);
     Ioss::MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp, m_nodeCommMap,
                        recv_comm_map_count, recv_comm_map_disp, m_comm);
-    send_comm_map.resize(0); send_comm_map.shrink_to_fit();
+    send_comm_map.resize(0);
+    send_comm_map.shrink_to_fit();
     show_progress("\tCommuniation 2 finished");
 
     // Map global 0-based index to local 1-based index.

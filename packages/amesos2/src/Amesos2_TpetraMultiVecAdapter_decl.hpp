@@ -201,6 +201,8 @@ namespace Amesos2 {
       return mv_->getVectorNonConst(j);
     }
 
+    /// Return pointer to vector when number of vectors == 1 and single MPI process
+    typename multivec_t::impl_scalar_type * getMVPointer_impl() const;
 
     /**
      * \brief Copies the multivector's data into the user-provided vector.

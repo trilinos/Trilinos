@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/GridFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/GridFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
@@ -39,7 +39,7 @@
 #include <vector>                       // for vector
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
-#include "stk_mesh/fixtures/FixtureNodeSharing.hpp"
+#include "stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 

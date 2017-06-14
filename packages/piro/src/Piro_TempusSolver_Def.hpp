@@ -212,6 +212,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     // already constructed as "model". Decorate if needed.
     // IKT, 12/8/16: it may be necessary to expand the list of conditions
     // below, as more explicit schemes get added to Tempus
+    // Explicit time-integrators for 1st order ODEs 
     if (
       stepperType == "RK Forward Euler" ||
       stepperType == "RK Explicit 4 Stage" ||
@@ -225,7 +226,13 @@ void Piro::TempusSolver<Scalar>::initialize(
       stepperType == "RK Explicit Trapezoidal" ||
       stepperType == "General ERK" ) {
 
-      if (tempusPL->get("Invert Mass Matrix", false)) {
+      bool invertMassMatrix = tempusPL->get("Invert Mass Matrix", false); 
+      if (!invertMassMatrix) {
+        *out << "\n WARNING in Piro::TempusSolver!  You are attempting to run \n" 
+             << "Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n" 
+             << "This option should be set to 'true' unless your mass matrix is the identiy.\n"; 
+      }
+      else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
         tempusPL->get("Lump Mass Matrix", false);  //JF line does not do anything
 #ifdef ALBANY_BUILD
@@ -234,6 +241,27 @@ void Piro::TempusSolver<Scalar>::initialize(
         model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
 #endif
         sublist(tempusPL,"Stratimikos", true), origModel, true, tempusPL->get("Lump Mass Matrix", false),false));
+      }
+    }
+
+    //Explicit time-integrators for 2nd order ODEs
+    //IKT, FIXME: fill this in as more explicit integrators for 2nd order ODEs are added to Tempus.
+    else if (stepperType == "Newmark Beta Explicit") {
+      bool invertMassMatrix = tempusPL->get("Invert Mass Matrix", false); 
+      if (!invertMassMatrix) {
+        *out << "\n WARNING in Piro::TempusSolver!  You are attempting to run \n" 
+             << "'Newmark Beta Explicit' Stepper with 'Invert Mass Matrix' set to 'false'. \n" 
+             << "This option should be set to 'true' unless your mass matrix is the identiy.\n"; 
+      }
+      else {
+        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
+        tempusPL->get("Lump Mass Matrix", false);  //JF line does not do anything
+#ifdef ALBANY_BUILD
+        model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
+#else
+        model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+#endif
+        sublist(tempusPL,"Stratimikos", true), origModel, true, tempusPL->get("Lump Mass Matrix", false),true));
       }
     }
     // C.2) Create the Thyra-wrapped ModelEvaluator

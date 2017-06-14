@@ -44,7 +44,6 @@
 
 #include <map>
 
-#include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"

@@ -190,7 +190,6 @@ inline int to_identifier_lower(int c) {
 template <class T>
 inline T &make_upper(T &name) {
   std::transform(name.begin(), name.end(), name.begin(), to_upper);
-
   return name;
 }
 
@@ -205,7 +204,6 @@ inline T &make_upper(T &name) {
 template <class T>
 inline T &make_lower(T &name) {
   std::transform(name.begin(), name.end(), name.begin(), to_lower);
-
   return name;
 }
 
@@ -220,7 +218,6 @@ inline T &make_lower(T &name) {
 template <class T>
 inline T &make_identifier(T &name) {
   std::transform(name.begin(), name.end(), name.begin(), to_identifier_upper);
-
   return name;
 }
 
@@ -236,7 +233,6 @@ inline T &make_identifier(T &name) {
 template <class T>
 inline T &make_lower_identifier(T &name) {
   std::transform(name.begin(), name.end(), name.begin(), to_identifier_lower);
-
   return name;
 }
 
@@ -251,7 +247,6 @@ inline T &make_lower_identifier(T &name) {
 inline char *make_identifier(char *name) {
   for (char *c = name; *c != 0; ++c )
     *c = to_identifier_upper(*c);
-
   return name;
 }
 
@@ -267,7 +262,6 @@ inline char *make_identifier(char *name) {
 inline char *make_lower_identifier(char *name) {
   for (char *c = name; *c != 0; ++c )
     *c = to_identifier_lower(*c);
-
   return name;
 }
 
@@ -435,7 +429,6 @@ inline std::string word_wrap(const std::string &s, unsigned int line_length = 72
   return word_wrap(s, line_length, prefix, prefix);
 }
 
-
 /**
  * @brief Class <b>object_phrase</b> makes a pretty string for those annoying plural or
  * singular noun/verb phrases.
@@ -505,7 +498,6 @@ inline std::ostream &operator<<(std::ostream &os, const object_phrase &phrase) {
   return phrase.print(os);
 }
 
-
 /**
  * @brief Function <b>getline</b> returns a string from the input stream which has been
  * terminated by the newline character.
@@ -550,17 +542,12 @@ struct less_nocase : public std::binary_function<T, T, bool>
 	return i < 0;
     }
 
-    if (lhs_it == lhs_it_end)
-      return rhs_it != rhs_it_end;
-    else
-      return false;
+    return (lhs_it == lhs_it_end) ? (rhs_it != rhs_it_end) : false;
   }
 };
 
-
 /**
  * @brief Class specialization <b>less_nocase</b> for <b>String</b>.
- *
  */
 template <>
 struct less_nocase<String> : public std::binary_function<String, String, bool>
@@ -588,17 +575,12 @@ struct less_nocase<String> : public std::binary_function<String, String, bool>
 	return i < 0;
     }
 
-    if (lhs_it == lhs_it_end)
-      return rhs_it != rhs_it_end;
-    else
-      return false;
+    return (lhs_it == lhs_it_end) ? (rhs_it != rhs_it_end) : false;
   }
 };
 
-
 /**
  * @brief Class specialization <b>less_nocase</b> for <b>std::string</b>.
- *
  */
 template <>
 struct less_nocase<std::string> : public std::binary_function<std::string, std::string, bool>
@@ -626,17 +608,12 @@ struct less_nocase<std::string> : public std::binary_function<std::string, std::
 	return i < 0;
     }
 
-    if (lhs_it == lhs_it_end)
-      return rhs_it != rhs_it_end;
-    else
-      return false;
+    return (lhs_it == lhs_it_end) ? (rhs_it != rhs_it_end) : false;
   }
 };
 
-
 /**
  * @brief Class specialization <b>less_nocase</b> for <b>char const pointer</b>.
- *
  */
 template<>
 struct less_nocase<const char *> : public std::binary_function<const char *, const char *, bool>
@@ -665,10 +642,8 @@ struct less_nocase<const char *> : public std::binary_function<const char *, con
   }
 };
 
-
 /**
  * @brief Class <b>equal_nocase</b> implements a case insensitive compare functor.
- *
  */
 template <class T>
 struct equal_nocase : public std::binary_function<T, T, bool>
@@ -701,7 +676,6 @@ struct equal_nocase : public std::binary_function<T, T, bool>
 
 /**
  * @brief Class specialization <b>equal_nocase</b> for <b>String</b>.
- *
  */
 template <>
 struct equal_nocase<String> : public std::binary_function<String, String, bool>
@@ -734,7 +708,6 @@ struct equal_nocase<String> : public std::binary_function<String, String, bool>
 
 /**
  * @brief Class specialization <b>equal_nocase</b> for <b>std::string</b>.
- *
  */
 template <>
 struct equal_nocase<std::string> : public std::binary_function<std::string, std::string, bool>
@@ -767,7 +740,6 @@ struct equal_nocase<std::string> : public std::binary_function<std::string, std:
 
 /**
  * @brief Class specialization <b>equal_nocase</b> for <b>char const pointer</b>.
- *
  */
 template <>
 struct equal_nocase<const char *> : public std::binary_function<const char *, const char *, bool> {
@@ -823,7 +795,6 @@ size_t hash_string_nocase(
 
 /**
  * @brief Class specialization <b>hash_nocase</b> for <b>std::string</b>.
- *
  */
 template<>
 struct hash_nocase<std::string>
@@ -842,7 +813,6 @@ struct hash_nocase<std::string>
 
 /**
  * @brief Class specialization <b>hash_nocase</b> for <b>String</b>.
- *
  */
 template<>
 struct hash_nocase<String>
@@ -882,7 +852,7 @@ template<typename DATA, typename SEPARATOR>
 std::string join(const std::vector<DATA>& data, const SEPARATOR& sep)
 {
     std::ostringstream os;
-    for(size_t i=0;i<data.size()-1;++i)
+    for(size_t i = 0; i < data.size()-1; ++i)
     {
         os << data[i] << sep;
     }

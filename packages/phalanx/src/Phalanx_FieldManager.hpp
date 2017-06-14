@@ -55,7 +55,6 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_EvaluationContainer_TemplateManager.hpp"
 
@@ -107,11 +106,7 @@ namespace PHX {
 
         NOTE: this is a very dangerous power user capability as the
         user must allocate the field correctly (remember Sacado AD
-        types must have the extra dimensions) and make sure that all
-        uses of that field in all evaluators are rebound correctly
-        using the function callback. They can't store the view off
-        internally since it may change at any time. Only use this
-        after postRegistrationSetup() has been called.
+        types must have the extra dimensions sized correctly).
     */
     template<typename EvalT, typename DataT, 
 	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
@@ -129,11 +124,7 @@ namespace PHX {
 
         NOTE: this is a very dangerous power user capability as the
         user must allocate the field correctly (remember Sacado AD
-        types must have the extra dimensions) and make sure that all
-        uses of that field in all evaluators are rebound correctly
-        using the function callback. They can't store the view off
-        internally since it may change at any time. Only use this
-        after postRegistrationSetup() is called.
+        types must have the extra dimensions sized correctly).
     */
     template<typename EvalT, typename DataT> 
     void setUnmanagedField(PHX::MDField<DataT>& f);

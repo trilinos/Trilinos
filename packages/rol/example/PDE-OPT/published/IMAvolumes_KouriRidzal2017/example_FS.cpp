@@ -74,6 +74,7 @@
 #include "pde_thermal-fluids.hpp"
 #include "obj_thermal-fluids.hpp"
 #include "mesh_thermal-fluids.hpp"
+#include "split_comm_world.hpp"
 
 typedef double RealT;
 
@@ -146,14 +147,24 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
+  /*** Read in XML input ***/
+  std::string filename = "input_FS.xml";
+  Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+  Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
-    = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  Teuchos::RCP<const Teuchos::Comm<int> > serial_comm
-    = Teuchos::rcp(new Teuchos::SerialComm<int>());
-  const int myRank = comm->getRank();
-  if ((iprint > 0) && (myRank == 0)) {
+  Teuchos::RCP<Teuchos::Comm<int> > comm_linalg, comm_sample;
+#ifdef HAVE_MPI
+  int nLinAlg = parlist->sublist("Solver").get("Number of Cores", 4);
+  split_comm_world(comm_linalg, comm_sample, nLinAlg);
+#else
+  comm_sample = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  comm_linalg = Teuchos::rcp(new Teuchos::SerialComm<int>());
+#endif
+  const int myRankLinAlg = comm_linalg->getRank();
+  const int myRankSample = comm_sample->getRank();
+  if ((iprint > 0) && (myRankLinAlg == 0) && (myRankSample == 0)) {
     outStream = Teuchos::rcp(&std::cout, false);
   }
   else {
@@ -164,11 +175,7 @@ int main(int argc, char *argv[]) {
   // *** Example body.
   try {
 
-    /*** Read in XML input ***/
-    std::string filename = "input_FS.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
-    parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History",myRank==0);
+    parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History",((myRankLinAlg == 0) && (myRankSample == 0)));
 
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr
@@ -177,7 +184,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<PDE_ThermalFluids_ex03<RealT> > pde
       = Teuchos::rcp(new PDE_ThermalFluids_ex03<RealT>(*parlist));
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
-      = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
+      = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm_linalg,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
       = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
@@ -235,8 +242,8 @@ int main(int argc, char *argv[]) {
     bool use_sg = parlist->sublist("Problem").get("Use sparse grid",false);
 
     Teuchos::RCP<ROL::BatchManager<RealT> > bman
-      = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
-    //  = Teuchos::rcp(new PDE_OptVector_BatchManager<RealT>(comm));
+      = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm_sample));
+    //  = Teuchos::rcp(new PDE_OptVector_BatchManager<RealT>(comm_sample));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler;
 
     // Build vector of distributions
@@ -257,7 +264,7 @@ int main(int argc, char *argv[]) {
       info.maxLevel   = maxLevel;
       info.normalized = true;
       info.adaptive   = false;
-      info.print      = (printSG&&(myRank==0));
+      info.print      = (printSG&&((myRankLinAlg == 0) && (myRankSample == 0)));
       info.name       = "Full";
       info.rule1D.clear();   info.rule1D.resize(info.dim,ROL::QUAD_CLENSHAWCURTIS);
       info.growth1D.clear(); info.growth1D.resize(info.dim,ROL::GROWTH_DEFAULT);
@@ -382,7 +389,7 @@ int main(int argc, char *argv[]) {
     int nsamp_dist = parlist->sublist("Problem").get("Number of output samples",100);
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler_dist
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp_dist,distVec,bman));
-    print<RealT>(*robj,*zp,*sampler_dist,nsamp_dist,comm,"obj_samples.txt");
+    print<RealT>(*robj,*zp,*sampler_dist,nsamp_dist,comm_sample,"obj_samples.txt");
     // Build vorticity objective function distribution
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj0
       = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[0],assembler));
@@ -390,7 +397,7 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new ROL::SimController<RealT>());
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj0
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj0, con, stateStore0, up, zp, pp, true, false));
-    print<RealT>(*robj0,*zp,*sampler_dist,nsamp_dist,comm,"vort_samples.txt");
+    print<RealT>(*robj0,*zp,*sampler_dist,nsamp_dist,comm_sample,"vort_samples.txt");
 
     *outStream << "Output time: "
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)

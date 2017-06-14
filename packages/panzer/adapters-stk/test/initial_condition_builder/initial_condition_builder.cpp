@@ -67,8 +67,6 @@ using Teuchos::rcp;
 #include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_InitialCondition_Builder.hpp"
 
 #include <vector>

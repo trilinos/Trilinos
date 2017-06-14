@@ -66,95 +66,8 @@ namespace MueLu {
   Teuchos::RCP<Teuchos::ParameterList> FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
 
     // obtain ParameterList with default input parameters for this facade class
-    std::string defaultString = FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_;
-    Teuchos::RCP<ParameterList> defaultList = Teuchos::getParametersFromXmlString(defaultString);
-
-    // validate user input parameters (and set defaults if necessary)
-    Teuchos::ParameterList inputParameters = paramList;
-    inputParameters.validateParametersAndSetDefaults(*defaultList);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(inputParameters.get<std::string>("MueLu preconditioner") == "undefined", MueLu::Exceptions::RuntimeError, "FacadeBGS2x2: undefined MueLu preconditioner. Set the \"MueLu preconditioner\" parameter correctly in your input file.");
-
-    // create copy of template string which is updated with in-place string replacements
-    std::string finalString = FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_;
-
-    // logical code for more complicated distinctions
-
-
-
-    
-    std::string smoother1 = inputParameters.get<std::string>("Block 1: smoother");
-    if(smoother1 == "ILU") {
-      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooILUFact1");
-    } else if (smoother1 == "Symmetric Gauss-Seidel" || smoother1 == "SGS") {
-      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Symmetric Gauss-Seidel");
-      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
-    } else if (smoother1 == "Symmetric Gauss-Seidel" || smoother1 == "GS") {
-      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Gauss-Seidel");
-      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
-    } else if (smoother1 == "Jacobi") {
-      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Jacobi");
-      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
-    } else if (smoother1 == "Direct") {
-      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooDirectFact1");
-    } else {
-      this->GetOStream(Errors) << "Invalid smoother type for block 1: " << smoother1 << ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." << std::endl;
-    }
-    
-    std::string smoother2 = inputParameters.get<std::string>("Block 2: smoother");
-    if(smoother2 == "ILU") {
-      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooILUFact2");
-    } else if (smoother2 == "Symmetric Gauss-Seidel" || smoother2 == "SGS") {
-      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Symmetric Gauss-Seidel");
-      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
-    } else if (smoother2 == "Symmetric Gauss-Seidel" || smoother2 == "GS") {
-      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
-      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
-    } else if (smoother2 == "Jacobi") {
-      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
-      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
-    } else if (smoother2 == "Direct") {
-      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooDirectFact2");
-    } else {
-      this->GetOStream(Errors) << "Invalid smoother type for block 2: " << smoother2 << ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." << std::endl;
-    }
-    
-    if(inputParameters.get<bool>("Block 1: transfer smoothing") == true) {
-      this->ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myPFact1");
-      this->ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myRFact1");
-    } else {
-      this->ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myTentativePFact1");
-      this->ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myTransPFact1");
-    }
-    if(inputParameters.get<bool>("Block 2: transfer smoothing") == true) {
-      this->ReplaceString(finalString, "XXXBlock 2: prolongatorYYY", "myPFact2");
-      this->ReplaceString(finalString, "XXXBlock 2: restrictor YYY", "myRFact2");
-    } else {
-      this->ReplaceString(finalString, "XXXBlock 2: prolongatorYYY", "myTentativePFact2");
-      this->ReplaceString(finalString, "XXXBlock 2: restrictor YYY", "myTransPFact2");
-    }
-      // end logical code
-
-    // loop over all input parameters
-    for(Teuchos::ParameterList::ConstIterator it = inputParameters.begin(); it != inputParameters.end(); it++) {
-      // form replacement string
-      std::string par_name = inputParameters.name(it);
-      std::stringstream ss;
-      ss << "XXX" << par_name << "YYY";
-
-      // update final string with parameters
-      Teuchos::ParameterEntry par_entry = inputParameters.entry(it);
-      this->ReplaceString(finalString,
-              ss.str(), Teuchos::toString(par_entry.getAny()));
-    }
-
-    Teuchos::RCP<ParameterList> ret = Teuchos::getParametersFromXmlString(finalString);
-    return ret;
-  }
-
-  // Note all parameters are of type string (we use it for string replacement)
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const std::string FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_ =
+    // Note all parameters are of type string (we use it for string replacement)
+    std::string defaultString = 
 "<ParameterList name=\"Input\">"
 "<Parameter name=\"MueLu preconditioner\" type=\"string\" value=\"undefined\"/>"
 "<Parameter name=\"Block 1: dofs per node\" type=\"int\" value=\"1\"/>"
@@ -175,9 +88,15 @@ namespace MueLu {
   "<Parameter name=\"verbosity\" type=\"string\" value=\"High\"/>"
   "</ParameterList>"
 ;
-  // template string for preconditioner layout (factory based parameters)
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const std::string FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_ =
+    Teuchos::RCP<ParameterList> defaultList = Teuchos::getParametersFromXmlString(defaultString);
+    // validate user input parameters (and set defaults if necessary)
+    Teuchos::ParameterList inputParameters = paramList;
+    inputParameters.validateParametersAndSetDefaults(*defaultList);
+    TEUCHOS_TEST_FOR_EXCEPTION(inputParameters.get<std::string>("MueLu preconditioner") == "undefined", MueLu::Exceptions::RuntimeError, "FacadeBGS2x2: undefined MueLu preconditioner. Set the \"MueLu preconditioner\" parameter correctly in your input file.");
+
+    // create copy of template string which is updated with in-place string replacements
+    // template string for preconditioner layout (factory based parameters)
+    std::string finalString =
 
 "<ParameterList name=\"MueLu\">"
 "  <ParameterList name=\"Factories\">"
@@ -401,5 +320,79 @@ namespace MueLu {
 "  </ParameterList>"
 "</ParameterList>"
   ;
+
+    // logical code for more complicated distinctions
+
+    
+    std::string smoother1 = inputParameters.get<std::string>("Block 1: smoother");
+    if(smoother1 == "ILU") {
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooILUFact1");
+    } else if (smoother1 == "Symmetric Gauss-Seidel" || smoother1 == "SGS") {
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Symmetric Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
+    } else if (smoother1 == "Symmetric Gauss-Seidel" || smoother1 == "GS") {
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
+    } else if (smoother1 == "Jacobi") {
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Jacobi");
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
+    } else if (smoother1 == "Direct") {
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooDirectFact1");
+    } else {
+      this->GetOStream(Errors) << "Invalid smoother type for block 1: " << smoother1 << ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." << std::endl;
+    }
+    
+    std::string smoother2 = inputParameters.get<std::string>("Block 2: smoother");
+    if(smoother2 == "ILU") {
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooILUFact2");
+    } else if (smoother2 == "Symmetric Gauss-Seidel" || smoother2 == "SGS") {
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Symmetric Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
+    } else if (smoother2 == "Symmetric Gauss-Seidel" || smoother2 == "GS") {
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
+    } else if (smoother2 == "Jacobi") {
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
+    } else if (smoother2 == "Direct") {
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooDirectFact2");
+    } else {
+      this->GetOStream(Errors) << "Invalid smoother type for block 2: " << smoother2 << ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." << std::endl;
+    }
+    
+    if(inputParameters.get<bool>("Block 1: transfer smoothing") == true) {
+      this->ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myPFact1");
+      this->ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myRFact1");
+    } else {
+      this->ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myTentativePFact1");
+      this->ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myTransPFact1");
+    }
+    if(inputParameters.get<bool>("Block 2: transfer smoothing") == true) {
+      this->ReplaceString(finalString, "XXXBlock 2: prolongatorYYY", "myPFact2");
+      this->ReplaceString(finalString, "XXXBlock 2: restrictor YYY", "myRFact2");
+    } else {
+      this->ReplaceString(finalString, "XXXBlock 2: prolongatorYYY", "myTentativePFact2");
+      this->ReplaceString(finalString, "XXXBlock 2: restrictor YYY", "myTransPFact2");
+    }
+  
+    // end logical code
+
+    // loop over all input parameters
+    for(Teuchos::ParameterList::ConstIterator it = inputParameters.begin(); it != inputParameters.end(); it++) {
+      // form replacement string
+      std::string par_name = inputParameters.name(it);
+      std::stringstream ss;
+      ss << "XXX" << par_name << "YYY";
+
+      // update final string with parameters
+      Teuchos::ParameterEntry par_entry = inputParameters.entry(it);
+      this->ReplaceString(finalString,
+              ss.str(), Teuchos::toString(par_entry.getAny()));
+    }
+
+    Teuchos::RCP<ParameterList> ret = Teuchos::getParametersFromXmlString(finalString);
+    return ret;
+  }
+
 } // end namespace MueLu
-#endif
+#endif // PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_BGS2x2_DEF_HPP_

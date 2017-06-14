@@ -33,12 +33,8 @@
  *
  */
 
-#include "exodusII.h"     // for ex_err, exerrval, etc
-#include "exodusII_int.h" // for EX_WARN, ex_comp_ws, etc
-#include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_get_var_time, etc
 
 /*!
 \deprecated Use ex_get_var_time()(exoid, EX_NODAL, nodal_var_index,

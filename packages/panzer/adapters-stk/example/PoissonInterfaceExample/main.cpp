@@ -50,8 +50,6 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -388,7 +386,7 @@ int main (int argc, char* argv[])
   using panzer::StrPureBasisPair;
   using panzer::StrPureBasisComp;
 
-  PHX::InitializeKokkosDevice();
+  Kokkos::initialize(argc,argv);
 
   {
 
@@ -436,7 +434,7 @@ int main (int argc, char* argv[])
       try {
         clp.parse(argc, argv);
       } catch (...) {
-        PHX::FinalizeKokkosDevice();
+        Kokkos::finalize_all();
         return -1;
       }
   
@@ -497,7 +495,7 @@ int main (int argc, char* argv[])
       mesh_factory->completeMeshConstruction(*mesh, MPI_COMM_WORLD);
       mesh->writeToExodus("output.exo");
       out << "Stopping after writing mesh because --generate-mesh-only was requested.\n";
-      PHX::FinalizeKokkosDevice();
+      Kokkos::finalize_all();
       return 0;
     }
   
@@ -818,8 +816,6 @@ int main (int argc, char* argv[])
     /////////////////////////////////////////////////////////////
     out << (pass ? "PASS" : "FAIL") << " BASICS\n";
   }
-
-  PHX::FinalizeKokkosDevice();
 
   return 0;
 }

@@ -46,7 +46,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
 #include <stddef.h>       // for size_t
@@ -67,6 +67,7 @@ int ex_get_id_map(int exoid, ex_entity_type map_type, void_int *map)
   const char *vmap;
   const char *tname;
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
 
   switch (map_type) {
@@ -91,26 +92,23 @@ int ex_get_id_map(int exoid, ex_entity_type map_type, void_int *map)
     vmap        = VAR_ELEM_NUM_MAP;
     break;
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad map type (%d) specified for file id %d", map_type,
              exoid);
-    ex_err("ex_get_id_map", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_id_map", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-  exerrval = 0; /* clear error code */
 
   /* See if any entries are stored in this file */
   if (nc_inq_dimid(exoid, dnumentries, &dimid) != NC_NOERR) {
-    return (EX_NOERR);
+    EX_FUNC_LEAVE(EX_NOERR);
   }
 
   if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
     if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d", tname,
                exoid);
-      ex_err("ex_get_id_map", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_id_map", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /* generate default map of 1..n, where n is num_entries */
@@ -127,7 +125,7 @@ int ex_get_id_map(int exoid, ex_entity_type map_type, void_int *map)
       }
     }
 
-    return (EX_NOERR);
+    EX_FUNC_LEAVE(EX_NOERR);
   }
 
   /* read in the id map  */
@@ -139,11 +137,10 @@ int ex_get_id_map(int exoid, ex_entity_type map_type, void_int *map)
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s id map in file id %d", tname, exoid);
-    ex_err("ex_get_id_map", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_id_map", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

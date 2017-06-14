@@ -53,7 +53,7 @@
 *
 */
 
-#include "exodusII.h"     // for ex_block, exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_block, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_NAME_ELB, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <inttypes.h>     // for PRId64
@@ -79,34 +79,38 @@ int ex_get_block_param(int exoid, ex_block *block)
   const char *ablknam;
   const char *vblkcon;
 
-  struct ex_file_item *file = ex_find_file_item(exoid);
+  struct ex_file_item *file = NULL;
+
+  EX_FUNC_ENTER();
+
+  file = ex_find_file_item(exoid);
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
-    exerrval = EX_BADFILEID;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d in ex_get_block_param().", exoid);
-    ex_err("ex_get_block_param", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_block_param", errmsg, EX_BADFILEID);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-
-  exerrval = 0;
 
   /* First, locate index of element block id in VAR_ID_EL_BLK array */
   blk_id_ndx = ex_id_lkup(exoid, block->type, block->id);
-  if (exerrval != 0) {
-    strcpy(block->topology, "NULL"); /* NULL element type name */
-    block->num_entry           = 0;  /* no elements            */
-    block->num_nodes_per_entry = 0;  /* no nodes               */
-    block->num_edges_per_entry = 0;
-    block->num_faces_per_entry = 0;
-    block->num_attribute       = 0;  /* no attributes          */
-    if (exerrval == EX_NULLENTITY) { /* NULL element block?    */
-      return (EX_NOERR);
+  if (blk_id_ndx <= 0) {
+    ex_get_err(NULL, NULL, &status);
+    if (status != 0) {
+      strcpy(block->topology, "NULL"); /* NULL element type name */
+      block->num_entry           = 0;  /* no elements            */
+      block->num_nodes_per_entry = 0;  /* no nodes               */
+      block->num_edges_per_entry = 0;
+      block->num_faces_per_entry = 0;
+      block->num_attribute       = 0; /* no attributes          */
+      if (status == EX_NULLENTITY) {  /* NULL element block?    */
+        EX_FUNC_LEAVE(EX_NOERR);
+      }
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to locate %s id  %" PRId64 " in id array in file id %d",
+               ex_name_of_object(block->type), block->id, exoid);
+      ex_err("ex_get_block_param", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate %s id  %" PRId64 " in id array in file id %d",
-             ex_name_of_object(block->type), block->id, exoid);
-    ex_err("ex_get_block_param", errmsg, exerrval);
-    return (EX_FATAL);
   }
 
   switch (block->type) {
@@ -138,29 +142,27 @@ int ex_get_block_param(int exoid, ex_block *block)
     ablknam = ATT_NAME_ELB;
     break;
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "Bad block type parameter (%d) specified for file id %d.",
              block->type, exoid);
-    return (EX_FATAL);
+    ex_err("ex_get_block_param", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* inquire values of some dimensions */
   if ((status = nc_inq_dimid(exoid, dnument, &dimid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate number of entities in %s  %" PRId64 " in file id %d",
              ex_name_of_object(block->type), block->id, exoid);
-    ex_err("ex_get_block_param", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_block_param", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of %ss in block  %" PRId64 " in file id %d",
              ex_name_of_object(block->type), block->id, exoid);
-    ex_err("ex_get_block_param", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_block_param", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
   block->num_entry = len;
 
@@ -170,12 +172,11 @@ int ex_get_block_param(int exoid, ex_block *block)
   }
   else {
     if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of nodes/entity in %s  %" PRId64 " in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
-      ex_err("ex_get_block_param", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_block_param", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
   block->num_nodes_per_entry = len;
@@ -190,12 +191,11 @@ int ex_get_block_param(int exoid, ex_block *block)
     }
     else {
       if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get number of edges/entry in %s  %" PRId64 " in file id %d",
                  ex_name_of_object(block->type), block->id, exoid);
-        ex_err("ex_get_block_param", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_get_block_param", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
     block->num_edges_per_entry = len;
@@ -211,12 +211,11 @@ int ex_get_block_param(int exoid, ex_block *block)
     }
     else {
       if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get number of faces/entity in %s  %" PRId64 " in file id %d",
                  ex_name_of_object(block->type), block->id, exoid);
-        ex_err("ex_get_block_param", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_get_block_param", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
     block->num_faces_per_entry = len;
@@ -228,12 +227,11 @@ int ex_get_block_param(int exoid, ex_block *block)
   }
   else {
     if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of attributes in %s  %" PRId64 " in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
-      ex_err("ex_get_block_param", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_block_param", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
     block->num_attribute = len;
   }
@@ -251,20 +249,18 @@ int ex_get_block_param(int exoid, ex_block *block)
   if (vblkcon) {
     /* look up connectivity array for this element block id */
     if ((status = nc_inq_varid(exoid, vblkcon, &connid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate connectivity array for %s  %" PRId64 " in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
-      ex_err("ex_get_block_param", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_block_param", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if ((status = nc_inq_attlen(exoid, connid, ablknam, &len)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s  %" PRId64 " type in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
-      ex_err("ex_get_block_param", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_block_param", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if (len > (MAX_STR_LENGTH + 1)) {
@@ -281,15 +277,14 @@ int ex_get_block_param(int exoid, ex_block *block)
       /* get the element type name */
     }
     if ((status = nc_get_att_text(exoid, connid, ablknam, block->topology)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s  %" PRId64 " type in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
-      ex_err("ex_get_block_param", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_block_param", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /* get rid of trailing blanks */
     ex_trim_internal(block->topology);
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

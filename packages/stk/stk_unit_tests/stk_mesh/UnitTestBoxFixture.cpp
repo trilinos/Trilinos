@@ -37,7 +37,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator|
-#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture::BOX, etc
+#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture::BOX, etc
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Relation.hpp"

@@ -40,7 +40,7 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator&, etc
 #include <stk_mesh/base/Types.hpp>      // for PartOrdinal, BucketVector, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
-#include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
+#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData

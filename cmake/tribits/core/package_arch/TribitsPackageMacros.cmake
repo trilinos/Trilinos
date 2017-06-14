@@ -41,7 +41,7 @@ INCLUDE(TribitsPackageSetupCompilerFlags)
 INCLUDE(TribitsWriteClientExportFiles)
 INCLUDE(TribitsGeneralMacros)
 
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 INCLUDE(GlobalNullSet)
 INCLUDE(AppendGlobalSet)
 INCLUDE(PrintVar)
@@ -192,13 +192,15 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   # A) Parse the input arguments
   #
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
     #prefix
     PARSE
-    #lists
-    ""
     #options
     "CLEANED;ENABLE_SHADOWING_WARNINGS;DISABLE_STRONG_WARNINGS;DISABLE_CIRCULAR_REF_DETECTION_FAILURE"
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    ""
     ${ARGN}
     )
 

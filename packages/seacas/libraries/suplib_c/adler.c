@@ -26,7 +26,6 @@
  */
 
 #include "adler.h"
-#include <stdlib.h>
 
 #define DO1(buf, i)                                                                                \
   {                                                                                                \

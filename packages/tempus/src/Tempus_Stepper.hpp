@@ -134,6 +134,40 @@ public:
       return;
     }
 
+    /// Validate that the model supports explicit second order ODE evaluation, f(x,xdot,t) [=xdotdot]
+    /** Currently the convention to evaluate f(x,xdot,t) is to set xdotdot=null!
+     *  There is no InArgs support to test if xdotdot is null, so we set
+     *  xdotdot=null and hopefully the ModelEvaluator can handle it.
+     */
+    void validSecondOrderExplicitODE(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+      typedef Thyra::ModelEvaluatorBase MEB;
+      const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+      const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+      const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                            inArgs.supports(MEB::IN_ARG_x_dot) and 
+                            outArgs.supports(MEB::OUT_ARG_f);
+
+      TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+        model->description() << "can not support an explicit ODE with\n"
+        << "  IN_ARG_x  = " << inArgs.supports(MEB::IN_ARG_x) << "\n"
+        << "  IN_ARG_x_dot  = " << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+        << "  OUT_ARG_f = " << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+        << "Explicit ODE requires:\n"
+        << "  IN_ARG_x  = true\n"
+        << "  IN_ARG_x_dot  = true\n"
+        << "  OUT_ARG_f = true\n"
+        << "\n"
+        << "NOTE: Currently the convention to evaluate f(x, xdot, t) is to set\n"
+        << "xdotdot=null!  There is no InArgs support to test if xdotdot is null,\n"
+        << "so we set xdotdot=null and hope the ModelEvaluator can handle it.\n");
+
+      return;
+    }
+
+
     /// Validate ME supports implicit ODE/DAE evaluation, f(xdot,x,t) [= 0]
     void validImplicitODE_DAE(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const

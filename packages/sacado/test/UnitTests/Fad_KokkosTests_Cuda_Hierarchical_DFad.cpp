@@ -64,7 +64,10 @@ int main( int argc, char* argv[] ) {
 #if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
   Sacado::createGlobalMemoryPool(
     Kokkos::Cuda(),
-    2*32*global_fad_size*global_num_rows*global_num_cols*sizeof(double));
+    2*32*global_fad_size*global_num_rows*global_num_cols*sizeof(double),
+    global_fad_size*sizeof(double),
+    4*global_fad_size*sizeof(double),
+    128*global_fad_size*sizeof(double));
 #endif
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);

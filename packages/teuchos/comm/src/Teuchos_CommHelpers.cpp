@@ -118,8 +118,19 @@ reduceAllImpl (const Comm<int>& comm,
     MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
     T t;
     MPI_Datatype rawMpiType = MpiTypeTraits<T>::getType (t);
-    const int err = MPI_Allreduce (const_cast<T*> (sendBuffer),
-      globalReducts, count, rawMpiType, rawMpiOp, rawMpiComm);
+
+    int err = MPI_SUCCESS;
+    if (sendBuffer == globalReducts) {
+      // NOTE (mfh 31 May 2017) This is only safe if the communicator
+      // is NOT an intercomm.  The usual case is that communicators
+      // are intracomms.
+      err = MPI_Allreduce (MPI_IN_PLACE, globalReducts,
+                           count, rawMpiType, rawMpiOp, rawMpiComm);
+    }
+    else {
+      err = MPI_Allreduce (const_cast<T*> (sendBuffer), globalReducts,
+                           count, rawMpiType, rawMpiOp, rawMpiComm);
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(
       err != MPI_SUCCESS,
       std::runtime_error,

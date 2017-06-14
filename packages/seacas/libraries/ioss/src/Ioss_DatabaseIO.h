@@ -498,7 +498,7 @@ namespace Ioss {
     Ioss::DatabaseUsage    dbUsage;
     mutable Ioss::DataSize dbIntSizeAPI;
     mutable bool           lowerCaseVariableNames;
-    bool usingParallelIO;
+    bool                   usingParallelIO;
 
     // List of element blocks that should be omitted from this model.
     // Surfaces will take this into account while splitting;

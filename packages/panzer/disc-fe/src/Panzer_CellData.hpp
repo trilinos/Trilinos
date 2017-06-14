@@ -87,7 +87,7 @@ namespace panzer {
     explicit CellData(std::size_t num_cells,
 		      int local_side_id,const Teuchos::RCP<const shards::CellTopology> & ct) :
       m_num_cells(num_cells),
-      m_is_side(true),
+      m_is_side(local_side_id >= 0),
       m_side(local_side_id),
       m_cell_topo(ct)
     { }

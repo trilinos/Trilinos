@@ -55,10 +55,10 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for ex_init_params, void_int, etc
-#include "exodusII_int.h" // for EX_NOERR
-#include <string.h>       // for strcpy
-#include <sys/types.h>    // for int64_t
+#include "exodusII.h" // for ex_init_params, void_int, etc
+#include "exodusII_int.h"
+#include <stdint.h> // for int64_t
+#include <string.h> // for strcpy
 
 /*!
 
@@ -106,10 +106,13 @@ int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes, 
   ex_init_params info;
   int            errval;
 
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
+
   info.title[0] = '\0';
   errval        = ex_get_init_ext(exoid, &info);
   if (errval < 0) {
-    return errval;
+    EX_FUNC_LEAVE(errval);
   }
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -144,5 +147,5 @@ int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes, 
   }
   strcpy(title, info.title);
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

@@ -33,10 +33,8 @@
  *
  */
 
-#include "rf_allo.h" // for array_alloc
-#include <cstddef>   // for size_t
-#include <cstdio>    // for printf, fprintf, nullptr, etc
-#include <cstdlib>   // for exit
+#include <cstdio>                       // for printf, fprintf, stderr
+#include <cstdlib>                      // for exit
 
 /*************************************************************************/
 /*************************************************************************/

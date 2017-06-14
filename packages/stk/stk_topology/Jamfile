@@ -125,7 +125,7 @@ lib stk_topology
 exe stk_topology_utest
   :
     [
-      glob $(stk_topology-root)/unit_tests/*.cpp 
+      glob $(stk_topology-root)/../stk_unit_tests/stk_topology/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_topology
@@ -134,12 +134,13 @@ exe stk_topology_utest
     /sierra/stk_util//stk_util_use_case
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
+    <include>$(stk_topology-root)/../stk_unit_tests/stk_topology
   ;
 
 exe stk_topology_doc_test
   :
     [
-      glob $(stk_topology-root)/tests_for_documentation/*.cpp 
+      glob $(stk_topology-root)/../stk_doc_tests/stk_topology/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_topology
@@ -148,5 +149,6 @@ exe stk_topology_doc_test
     /sierra/stk_util//stk_util_use_case
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
+    <include>$(stk_topology-root)/../stk_doc_tests/stk_topology
   ;
 

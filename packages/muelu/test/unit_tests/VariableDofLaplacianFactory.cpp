@@ -206,7 +206,7 @@ namespace MueLuTests {
     TEST_COMPARE(res->normInf(),<, 1e-13);
 
     Teuchos::ArrayRCP<bool> dofPresent2(3 * lapA->getRowMap()->getNodeNumElements(),true);
-    for(size_t i = 2; i < dofPresent2.size(); i = i+3) {
+    for(decltype(dofPresent2.size()) i = 2; i < dofPresent2.size(); i = i+3) {
       dofPresent2[i] = false;
     }
     l->Set<Teuchos::ArrayRCP<const bool> >("DofPresent", dofPresent2);

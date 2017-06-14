@@ -64,8 +64,6 @@ using Teuchos::rcp;
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_GlobalData.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"

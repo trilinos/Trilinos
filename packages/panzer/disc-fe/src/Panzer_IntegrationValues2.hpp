@@ -51,6 +51,7 @@
 #include "Panzer_ArrayTraits.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Phalanx_MDField.hpp"
+#include "Intrepid2_Cubature.hpp"
 
 namespace panzer {
 
@@ -103,6 +104,9 @@ namespace panzer {
     Array_CellIP weighted_measure;       // <Cell,IP>
     Array_CellIPDim weighted_normals;    // <Cell,IP,Dim>
 
+    Array_CellIPDim surface_normals;    // <Cell,IP,Dim>
+    Array_CellIPDimDim surface_rotation_matrices;    // <Cell,IP,Dim,Dim>
+
     Teuchos::RCP<const panzer::IntegrationRule> int_rule;
 
     Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> intrepid_cubature;
@@ -114,18 +118,27 @@ namespace panzer {
 
     // integration points
     Array_CellIPDim ip_coordinates;      // <Cell,IP,Dim>
-    Array_CellIPDim ref_ip_coordinates;  // <Cell,IP,Dim> for Control Volumes
+    Array_CellIPDim ref_ip_coordinates;  // <Cell,IP,Dim> for Control Volumes or Surface integrals
 
     DblArrayDynamic dyn_cub_points, dyn_side_cub_points, dyn_cub_weights;
     DblArrayDynamic dyn_phys_cub_points, dyn_phys_cub_weights, dyn_phys_cub_norms, dyn_node_coordinates;
 
     Array_Point scratch_for_compute_side_measure; // <Point> size: span() == jac.span()
 
+  protected:
+
+
+
+    // TODO: Make this a utility function that only exists in source file
+    Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> getIntrepidCubature(const panzer::IntegrationRule & ir) const;
+
+
   private:
     bool alloc_arrays;
     std::string prefix;
     std::vector<PHX::index_size_type> ddims_;
 
+    void generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
     void getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
     void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
     void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);

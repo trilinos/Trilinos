@@ -1157,7 +1157,10 @@ init (const keys_type& keys,
   // incur overhead then.
   if (buildInParallel) {
     FHT::CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
-    Kokkos::parallel_for (theNumKeys, functor);
+
+    typedef typename counts_type::execution_space execution_space;
+    typedef Kokkos::RangePolicy<execution_space, offset_type> range_type;
+    Kokkos::parallel_for (range_type (0, theNumKeys), functor);
   }
   else {
     // Access to counts is not necessarily contiguous, but is
@@ -1231,7 +1234,8 @@ init (const keys_type& keys,
   if (buildInParallel) {
     functor_type functor (val, counts, ptr, theKeys, newStartingValue,
                           initMinKey, initMaxKey);
-    Kokkos::parallel_reduce (theNumKeys, functor, result);
+    typedef Kokkos::RangePolicy<execution_space, offset_type> range_type;
+    Kokkos::parallel_reduce (range_type (0, theNumKeys), functor, result);
   }
   else {
     for (offset_type k = 0; k < theNumKeys; ++k) {
@@ -1433,8 +1437,9 @@ checkForDuplicateKeys () const
     typedef FHT::CheckForDuplicateKeys<ptr_type, val_type> functor_type;
     functor_type functor (val_, ptr_);
     int hasDupKeys = 0;
-    Kokkos::parallel_reduce (size, functor, hasDupKeys);
-    return hasDupKeys>0;
+    typedef Kokkos::RangePolicy<execution_space, offset_type> range_type;
+    Kokkos::parallel_reduce (range_type (0, size), functor, hasDupKeys);
+    return hasDupKeys > 0;
   }
 }
 

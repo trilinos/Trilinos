@@ -5,8 +5,8 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   dag_manager
-  SOURCES DagManagerTest.cpp ${PHALANX_UNIT_TEST_MAIN}
-  TESTONLYLIBS phalanx_test_utilities
+  SOURCES DagManagerTest.cpp
+  TESTONLYLIBS phalanx_unit_test_main phalanx_test_utilities
   COMM serial mpi
   NUM_MPI_PROCS 1
 )

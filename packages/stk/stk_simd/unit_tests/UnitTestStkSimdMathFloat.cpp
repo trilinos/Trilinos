@@ -802,10 +802,10 @@ TEST(StkSimd, SimdIfThenBoolFloat)
   typedef stk::Traits<float>::bool_type float_bool;
   typedef stk::Traits<stk::simd::Float>::bool_type Floats_bool;
 
-  ASSERT_TRUE( stk::simd::if_all( stk::Traits<stk::simd::Float>::TRUE_VAL ) );
+  ASSERT_TRUE( stk::simd::are_all( stk::Traits<stk::simd::Float>::TRUE_VAL ) );
   ASSERT_TRUE( stk::Traits<float>::TRUE_VAL );
 
-  ASSERT_FALSE( stk::simd::if_all( stk::Traits<stk::simd::Float>::FALSE_VAL ) );
+  ASSERT_FALSE( stk::simd::are_all( stk::Traits<stk::simd::Float>::FALSE_VAL ) );
   ASSERT_FALSE( stk::Traits<float>::FALSE_VAL );
 
   const int N = 2000;
@@ -1008,56 +1008,6 @@ TEST(StkSimd, SimdIfThenBoolFloat)
   
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
 
-  // if not then zero
-
-  for (int n=0; n < N; n+=stk::simd::nfloats) {
-    for (int i=0; i < stk::simd::nfloats; ++i) {
-      z2[n+i] = x[n+i] < y[n+i] ? 0 : a;
-      float_bool tmp = x[n+i] < y[n+i];
-      z3[n+i] = stk::math::if_not_then_else_zero(tmp, a);
-    }
-    const stk::simd::Float xl = stk::simd::load(&x[n]);
-    const stk::simd::Float yl = stk::simd::load(&y[n]);
-    
-    stk::simd::Float zl = stk::math::if_not_then_else_zero(xl < yl, stk::simd::Float(a));
-    stk::simd::store(&z1[n],zl);
-  }
-  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    float err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-
-  // if not then
-
-  for (int n=0; n < N; n+=stk::simd::nfloats) {
-    for (int i=0; i < stk::simd::nfloats; ++i) {
-      z2[n+i] = x[n+i] < y[n+i] ? b : a;
-      float_bool tmp = x[n+i] < y[n+i];
-      z3[n+i] = stk::math::if_not_then_else(tmp, a, b);
-    }
-    const stk::simd::Float xl = stk::simd::load(&x[n]);
-    const stk::simd::Float yl = stk::simd::load(&y[n]);
-    
-    stk::simd::Float zl = stk::math::if_not_then_else(xl < yl, stk::simd::Float(a), stk::simd::Float(b));
-    stk::simd::store(&z1[n],zl);
-  }
-  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    float err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-
   // if ! then
 
   for (int n=0; n < N; n+=stk::simd::nfloats) {
@@ -1154,7 +1104,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     const stk::simd::Float xl = stk::simd::load(&x[n]);
     const stk::simd::Float yl = stk::simd::load(&y[n]);
     Floats_bool tmp = xl < yl;
-    bool anyl_simd = stk::simd::if_any(tmp,stk::simd::nfloats);
+    bool anyl_simd = stk::simd::are_any(tmp,stk::simd::nfloats);
 
     ASSERT_TRUE(anyl_simd==anyl);
 
@@ -1171,7 +1121,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     const stk::simd::Float xl = stk::simd::load(&x[n]);
     const stk::simd::Float yl = stk::simd::load(&y[n]);
     Floats_bool tmp = xl < yl;
-    bool alll_simd = stk::simd::if_all(tmp,stk::simd::nfloats);
+    bool alll_simd = stk::simd::are_all(tmp,stk::simd::nfloats);
 
     ASSERT_TRUE(alll_simd==alll);
 
@@ -1190,7 +1140,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     const stk::simd::Float xl = stk::simd::load(&x[n]);
     const stk::simd::Float yl = stk::simd::load(&y[n]);
     Floats_bool tmp = xl < yl;
-    bool anyl_simd = stk::simd::if_any(tmp,stk::simd::nfloats-1);
+    bool anyl_simd = stk::simd::are_any(tmp,stk::simd::nfloats-1);
 
     ASSERT_TRUE(anyl_simd==anyl);
 
@@ -1207,7 +1157,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     const stk::simd::Float xl = stk::simd::load(&x[n]);
     const stk::simd::Float yl = stk::simd::load(&y[n]);
     Floats_bool tmp = xl < yl;
-    bool alll_simd = stk::simd::if_all(tmp,stk::simd::nfloats-1);
+    bool alll_simd = stk::simd::are_all(tmp,stk::simd::nfloats-1);
 
     ASSERT_TRUE(alll_simd==alll);
 
@@ -1499,15 +1449,15 @@ TEST(StkSimd, SimdIsnanFloat)
 
   stk::simd::Boolf IsNaN = stk::math::isnan(Y);
 
-  ASSERT_FALSE( stk::simd::if_any(IsNaN) );
-  ASSERT_FALSE( stk::simd::if_all(IsNaN) );
+  ASSERT_FALSE( stk::simd::are_any(IsNaN) );
+  ASSERT_FALSE( stk::simd::are_all(IsNaN) );
 
   Y*= stk::simd::Float(0.0);
 
   IsNaN = stk::math::isnan(Y);
 
-  ASSERT_TRUE( stk::simd::if_any(IsNaN) );
-  ASSERT_TRUE( !stk::simd::if_all(IsNaN) || (stk::simd::nfloats==1) );
+  ASSERT_TRUE( stk::simd::are_any(IsNaN) );
+  ASSERT_TRUE( !stk::simd::are_all(IsNaN) || (stk::simd::nfloats==1) );
   
 }
 

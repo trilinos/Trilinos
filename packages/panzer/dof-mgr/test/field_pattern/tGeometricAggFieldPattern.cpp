@@ -48,8 +48,6 @@
 #include <string>
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Intrepid2_config.h"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 
@@ -78,7 +76,6 @@ typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 // triangle tests
 TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
 {
-
    out << note << std::endl;
 
    // basis to build patterns from

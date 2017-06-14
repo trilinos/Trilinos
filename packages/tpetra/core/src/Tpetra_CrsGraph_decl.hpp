@@ -1378,7 +1378,6 @@ namespace Tpetra {
       // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
       lclInds2D_[rowInfo.localRow].resize (newAllocSize);
       rowVals.resize (newAllocSize);
-      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
 
       RowInfo rowInfoOut = rowInfo;
       rowInfoOut.allocSize = newAllocSize;
@@ -1402,7 +1401,6 @@ namespace Tpetra {
       // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
       gblInds2D_[rowInfo.localRow].resize (newAllocSize);
       rowVals.resize (newAllocSize);
-      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
 
       RowInfo rowInfoOut = rowInfo;
       rowInfoOut.allocSize = newAllocSize;
@@ -2867,11 +2865,33 @@ namespace Tpetra {
     //! Local graph; only initialized after first fillComplete() call.
     local_graph_type lclGraph_;
 
-    // Local and Global Counts
-    // nodeNumEntries_ and nodeNumAllocated_ are required to be always consistent
-    // nodeMaxNumEntries_, nodeNumDiags_ and the global quantities are computed during fillComplete() and only valid when isFillComplete()
-    global_size_t globalNumEntries_, globalNumDiags_, globalMaxNumRowEntries_;
-    size_t          nodeNumEntries_,   nodeNumDiags_,   nodeMaxNumRowEntries_, nodeNumAllocated_;
+    //! Local number of (populated) entries; must always be consistent.
+    size_t nodeNumEntries_;
+
+    /// \brief Local number of (populated) diagonal entries.
+    ///
+    /// Computed in computeLocalConstants(); only valid when isFillComplete().
+    size_t nodeNumDiags_;
+
+    /// \brief Local maximum of the number of entries in each row.
+    ///
+    /// Computed in computeLocalConstants(); only valid when isFillComplete().
+    size_t nodeMaxNumRowEntries_;
+
+    /// \brief Global number of entries in the graph.
+    ///
+    /// Only valid when isFillComplete().
+    global_size_t globalNumEntries_;
+
+    /// \brief Global number of (populated) diagonal entries.
+    ///
+    /// Computed in computeGlobalConstants(); only valid when isFillComplete().
+    global_size_t globalNumDiags_;
+
+    /// \brief Global maximum of the number of entries in each row.
+    ///
+    /// Computed in computeGlobalConstants(); only valid when isFillComplete().
+    global_size_t globalMaxNumRowEntries_;
 
     //! Whether the graph was allocated with static or dynamic profile.
     ProfileType pftype_;

@@ -51,8 +51,6 @@
 #include <vector>
 #include <set>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 
 #include "Panzer_DOFManager.hpp"

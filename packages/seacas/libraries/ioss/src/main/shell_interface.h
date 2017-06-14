@@ -67,6 +67,8 @@ namespace IOShell {
     std::string              compose_output{"none"};
     double                   maximum_time{0.0};
     double                   minimum_time{0.0};
+    double                   append_time{std::numeric_limits<double>::max()};
+    int                      append_step{std::numeric_limits<int>::max()};
     int                      surface_split_type{1};
     int                      data_storage_type{0};
     int                      compression_level{0};

@@ -82,6 +82,9 @@ namespace PHX {
 
     PHX::any getFieldData(const PHX::FieldTag& f);
 
+    //! Set the memory for an unmanaged field
+    void setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a);
+
     //! Bind the memory pointer for a field in all evaluators
     void bindField(const PHX::FieldTag& f, const PHX::any& a);
 
@@ -122,6 +125,8 @@ namespace PHX {
     bool post_registration_setup_called_;
 
     std::unordered_map<std::string,PHX::any> fields_;
+
+    std::unordered_map<std::string,PHX::any> unmanaged_fields_;
 
     std::unordered_map<std::string,std::string> aliased_fields_;
     

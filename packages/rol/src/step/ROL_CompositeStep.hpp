@@ -94,6 +94,7 @@ private:
   Real Delta_;
   Real penalty_;
   Real eta_;
+  bool useConHess_;
 
   Real ared_;
   Real pred_;
@@ -161,6 +162,7 @@ public:
     maxiterCG_   = steplist.sublist("Tangential Subproblem Solver").get("Iteration Limit", 20);
     tolCG_       = steplist.sublist("Tangential Subproblem Solver").get("Relative Tolerance", 1e-2);
     Delta_       = steplist.get("Initial Radius", 1e2);
+    useConHess_  = steplist.get("Use Constraint Hessian", true);
 
     int outLvl   = steplist.get("Output Level", 0);
 
@@ -673,8 +675,10 @@ public:
     r->set(g);
     obj.hessVec(*gtemp, n, x, zerotol);
     r->plus(*gtemp);
-    con.applyAdjointHessian(*gtemp, l, n, x, zerotol);
-    r->plus(*gtemp);
+    if (useConHess_) {
+      con.applyAdjointHessian(*gtemp, l, n, x, zerotol);
+      r->plus(*gtemp);
+    }
     Real normg  = r->norm();
     Real normWg = zero;
     Real pHp    = zero;
@@ -847,9 +851,11 @@ public:
       Hps.push_back(xvec_->clone());
       // change obj.hessVec(*(Hps[iterCG_-1]), *(p[iterCG_-1]), x, zerotol);
       obj.hessVec(*Hp, *(p[iterCG_-1]), x, zerotol);
-      con.applyAdjointHessian(*gtemp, l, *(p[iterCG_-1]), x, zerotol);
-      // change (Hps[iterCG_-1])->plus(*gtemp);
-      Hp->plus(*gtemp);
+      if (useConHess_) {
+        con.applyAdjointHessian(*gtemp, l, *(p[iterCG_-1]), x, zerotol);
+        // change (Hps[iterCG_-1])->plus(*gtemp);
+        Hp->plus(*gtemp);
+      }
       // "Preconditioning" step.
       (Hps[iterCG_-1])->set(Hp->dual());
 
@@ -1087,11 +1093,15 @@ public:
 
         // Compute some quantities before updating the objective and the constraint.
         obj.hessVec(*Hn, n, x, zerotol);
-        con.applyAdjointHessian(*cxxvec, l, n, x, zerotol);
-        Hn->plus(*cxxvec);
+        if (useConHess_) {
+          con.applyAdjointHessian(*cxxvec, l, n, x, zerotol);
+          Hn->plus(*cxxvec);
+        }
         obj.hessVec(*Hto, *t_orig, x, zerotol);
-        con.applyAdjointHessian(*cxxvec, l, *t_orig, x, zerotol);
-        Hto->plus(*cxxvec);
+        if (useConHess_) {
+          con.applyAdjointHessian(*cxxvec, l, *t_orig, x, zerotol);
+          Hto->plus(*cxxvec);
+        }
 
         // Compute objective, constraint, etc. values at the trial point.
         xtrial->set(x);

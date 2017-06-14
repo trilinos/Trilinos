@@ -163,6 +163,38 @@ inline simd::Float atan2(const simd::Float& a, const simd::Float& b) {
   return tmp;
 }
 
+STK_MATH_FORCE_INLINE simd::Float asinh(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::asinh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Float acosh(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::acosh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Float atanh(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::atanh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Float erf(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::erf(a[i]);
+  }
+  return tmp;
+}
+
 inline simd::Float multiplysign(const simd::Float& x, const simd::Float& y) { // return x times sign of y
   return simd::Float(_mm_xor_ps(x._data, _mm_and_ps(hidden::SIGN_MASKf._data,y._data)));
 }
@@ -201,14 +233,6 @@ inline simd::Float if_then_else(const simd::Boolf& b, const simd::Float& v1, con
 
 inline simd::Float if_then_else_zero(const simd::Boolf& b, const simd::Float& v) {
   return simd::Float( _mm_and_ps(b._data,v._data) );
-}
-
-inline simd::Float if_not_then_else(const simd::Boolf& b, const simd::Float& v1, const simd::Float& v2) {
-  return simd::Float( _mm_add_ps(_mm_and_ps(b._data,v2._data),_mm_andnot_ps(b._data,v1._data)) );
-}
-
-inline simd::Float if_not_then_else_zero(const simd::Boolf& b, const simd::Float& v) {
-  return simd::Float( _mm_andnot_ps(b._data,v._data) );
 }
 
 } // namespace math

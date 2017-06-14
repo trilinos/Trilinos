@@ -38,9 +38,9 @@
 #include <stdexcept>                    // for logic_error, runtime_error
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for pack_entity_info, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture, etc
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture, etc
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <string>                       // for string
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector, etc
@@ -56,7 +56,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting, operator<<
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, PartVector, etc
-#include "stk_mesh/fixtures/FixtureNodeSharing.hpp"
+#include "stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc

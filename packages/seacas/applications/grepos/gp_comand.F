@@ -40,7 +40,7 @@ C=======================================================================
      &  IDESS, NEESS, NNESS, IXEESS, IXNESS,
      $  LTEESS, LTSESS, FACESS,
      &  XN, YN, ZN, XEXPL, YEXPL, ZEXPL, MODBLK,
-     *  ISATRB, ATRSCL, IEQUIV, MAPNOD,
+     *  ISATRB, ATRSCL, IEQUIV, MAPNOD, MAPEL, 
      $  IELBST, INPSST, IESSST,
      *  NQAREC, QAREC, NINFO, INFREC, BLKTYP,
      *  ebname, nsname, ssname, atname,
@@ -103,7 +103,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       INTEGER NUMLNK(*)
       INTEGER NUMATR(*)
       INTEGER IELBST(*), INPSST(*), IESSST(*), ITIMST(*)
-      INTEGER IEQUIV(*), MAPNOD(*)
+      INTEGER IEQUIV(*), MAPNOD(*), MAPEL(*)
 
       logical glonod, absolute
       
@@ -1542,7 +1542,21 @@ C========================================================================
      &        .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
 C ... Field is character
               CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD2)
-              IF (MATSTR (WORD2, 'ALL', 2)) THEN
+              IF (MATSTR (WORD2, 'MAP', 3)) THEN
+                IF (MATSTR (WORD, 'NODE', 2)) THEN
+                  do i=1, numnp
+                    mapnod(i) = i
+                  end do
+                ELSE IF (MATSTR (WORD, 'ELEMENT', 2)) THEN
+                  do i=1, numel
+                    mapel(i) = i
+                  end do
+                ELSE
+                  CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
+     &              // '" is an invalid DELETE MAP -- NODE or ELEMENT')
+                  GO TO 333
+                END IF
+              ELSE IF (MATSTR (WORD2, 'ALL', 2)) THEN
                 IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &            MATSTR(WORD, 'BLOCKS',1)) THEN
                   do i=1, nelblk
@@ -2295,27 +2309,27 @@ C========================================================================
       END
 
 C=======================================================================
-      integer function ng2l (type, idglo, numel, mapel)
+      integer function ng2l (type, idglo, num, map)
 C=======================================================================
 
-C   --G2L locates the local node corresponding to the global id
+C   --G2L locates the local node/element corresponding to the global id
 C   --
 C   --Parameters:
 C   --   TYPE - IN - 'node' or 'element'
-C   --   NUMEL - IN - the number of node/elements
-C   --   MAPEL - IN - the node/element number map
+C   --   NUM  - IN - the number of node/elements
+C   --   MAP  - IN - the node/element number map
 
 C ... TYPE = Node or Element
       CHARACTER*(*) TYPE
-      INTEGER MAPEL(*)
+      INTEGER MAP(*)
 
       CHARACTER*128 STRA
       LOGICAL FOUND
 
       ng2l = idglo
       found = .FALSE.
-      do i = 1, numel
-        if (idglo .eq. mapel(i)) then
+      do i = 1, num
+        if (idglo .eq. map(i)) then
           ng2l = i
           return
         end if

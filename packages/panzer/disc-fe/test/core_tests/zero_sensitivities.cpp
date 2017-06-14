@@ -43,7 +43,6 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"

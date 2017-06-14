@@ -141,11 +141,10 @@ StkSearchResults getSearchResultsForFacesParticles(stk::mesh::BulkData& stkMeshB
     stk::balance::internal::StkSearchResults searchResults;
 
     #ifndef __NVCC__
-    stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::BOOST_RTREE, stkMeshBulkData.parallel(), searchResults);
+    stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::KDTREE, stkMeshBulkData.parallel(), searchResults);
     #else
     stk::search::coarse_search_octree(faceBoxes, faceBoxes, stkMeshBulkData.parallel(), searchResults, true);
     #endif
-
 
     stk::balance::internal::StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
     searchResults.resize(iter - searchResults.begin());

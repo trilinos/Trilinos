@@ -83,6 +83,7 @@ int main(int argc, char *argv[]) {
     //
     bool proc_verbose = false;
     bool leftprec = true;      // left preconditioning or right.
+    bool use_single_red = false; // use single reduction CG iteration.
     int frequency = -1; // how often residuals are printed by solver
     int numrhs = 15;  // total number of right-hand sides to solve for
     int blocksize = 10;  // blocksize used by solver
@@ -93,6 +94,7 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
+    cmdp.setOption("use-single-red","use-standard-red",&use_single_red,"Use single reduction CG iteration.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
@@ -185,6 +187,8 @@ int main(int argc, char *argv[]) {
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+    if ((blocksize==1) && use_single_red)
+      belosList.set( "Use Single Reduction", use_single_red ); // Use single reduction CG iteration
     if (verbose) {
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
           Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );

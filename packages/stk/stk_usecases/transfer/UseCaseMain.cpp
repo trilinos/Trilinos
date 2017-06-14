@@ -33,8 +33,12 @@
 
 #include <stk_mesh/base/Comm.hpp>
 
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
+#include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
+#include <stk_util/diag/Timer.hpp>
 
 bool use_case_5_driver(stk::ParallelMachine  comm);
 
@@ -94,17 +98,28 @@ int main(int argc, char **argv)
 
   stk::get_options_description().add(desc);
 
-  use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
-  const std::string working_directory = use_case_environment.m_workingDirectory;
+  stk::ParallelMachine comm = stk::parallel_machine_init(&argc, &argv);
+  
+  stk::BroadcastArg b_arg(comm, argc, argv);
 
+  // Parse broadcast arguments
   bopt::variables_map &vm = stk::get_variables_map();
+  try {
+    bopt::store(bopt::command_line_parser(b_arg.m_argc, b_arg.m_argv).options(stk::get_options_description()).allow_unregistered().run(), vm);
+    bopt::notify(vm);
+  }
+  catch (std::exception &x) {
+    stk::RuntimeDoomedSymmetric() << x.what();
+  }
 
-  stk::ParallelMachine comm = use_case_environment.m_comm;
+  const std::string working_directory("./");
+
 
   if (vm.count("use_case_5")) {
      status = use_case_5_driver(comm);
   }
   if (vm.count("use_case_6")) {
+std::cout<<"use case 6"<<std::endl;
      status = status && use_case_6_driver(comm, working_directory, range_mesh, range_mesh_type, domain_mesh, domain_filetype);
   }
   if (vm.count("use_case_7")) {
@@ -116,7 +131,8 @@ int main(int argc, char **argv)
 
   timer.stop();
 
-  const bool collective_result = use_case::print_status(comm, status);
+  const bool collective_result = stk::is_true_on_all_procs(comm, status);
   const int return_code = collective_result ? 0 : -1;
+  stk::parallel_machine_finalize();
   return return_code;
 }

@@ -1,8 +1,6 @@
 #ifndef PHALANX_CONFIG_HPP
 #define PHALANX_CONFIG_HPP
 
-#cmakedefine HAVE_MPI
-
 #cmakedefine PHX_DEBUG
 
 #cmakedefine PHX_TEUCHOS_TIME_MONITOR
@@ -23,11 +21,6 @@
 #cmakedefine PHX_INDEX_SIZE_TYPE_ULONGINT
 
 #cmakedefine PHX_ENABLE_KOKKOS_AMT
-
-#cmakedefine PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
-
-#cmakedefine PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
-#cmakedefine Phalanx_ENABLE_Intrepid2
 
 @PHALANX_DEPRECATED_DECLARATIONS@
 

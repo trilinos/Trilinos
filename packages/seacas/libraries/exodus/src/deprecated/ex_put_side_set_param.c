@@ -51,8 +51,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"  // for ex_put_set_param, etc
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_put_set_param, etc
 
 /*!
  * writes the side set id and the number of sides (edges or faces)

@@ -54,8 +54,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"  // for ex_put_var, ex_entity_id, etc
-#include <sys/types.h> // for int64_t
+#include <stdint.h>                     // for int64_t
+#include "exodusII.h"                   // for ex_put_var, ex_entity_id, etc
 
 /*!
 \deprecated Use ex_put_var()(exoid, time_step, EX_ELEM_BLOCK, elem_var_index,

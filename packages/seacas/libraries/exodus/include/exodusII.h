@@ -69,8 +69,8 @@
 #endif
 
 /* EXODUS version number */
-#define EX_API_VERS 6.39f
-#define EX_API_VERS_NODOT 639
+#define EX_API_VERS 7.01f
+#define EX_API_VERS_NODOT 701
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT EX_API_VERS_NODOT
@@ -209,6 +209,7 @@ enum ex_inquiry {
   EX_INQ_GROUP_NAME          = 56, /**< inquire name of group exoid. "/" returned for root group */
   EX_INQ_FULL_GROUP_NAME_LEN = 57, /**< inquire length of full path name of this (exoid) group */
   EX_INQ_FULL_GROUP_NAME = 58, /**< inquire full "/"-separated path name of this (exoid) group */
+  EX_INQ_THREADSAFE      = 59, /**< Returns 1 if library is thread-safe; 0 otherwise */
   EX_INQ_INVALID         = -1
 };
 
@@ -610,6 +611,7 @@ EXODUS_EXPORT int ex_large_model(int exoid);
 EXODUS_EXPORT size_t ex_header_size(int exoid);
 
 EXODUS_EXPORT void ex_err(const char *module_name, const char *message, int err_num);
+EXODUS_EXPORT void ex_set_err(const char *module_name, const char *message, int err_num);
 EXODUS_EXPORT const char *ex_strerror(int err_num);
 EXODUS_EXPORT void ex_get_err(const char **msg, const char **func, int *err_num);
 EXODUS_EXPORT int ex_opts(int options);
@@ -1605,8 +1607,24 @@ ex_put_nodal_var_slab(int     exoid,           /* NetCDF/Exodus file ID */
  * ======================================================================== */
 
 /* ERROR CODE DEFINITIONS AND STORAGE                                       */
-EXODUS_EXPORT int exerrval; /**< shared error return value                */
 EXODUS_EXPORT int exoptval; /**< error reporting flag (default is quiet)  */
+#if defined(EXODUS_THREADSAFE)
+#if !defined(exerrval)
+/* In both exodusII.h and exodusII_int.h */
+typedef struct EX_errval
+{
+  int  errval;
+  char last_pname[MAX_ERR_LENGTH];
+  char last_errmsg[MAX_ERR_LENGTH];
+  int  last_err_num;
+} EX_errval_t;
+
+EXODUS_EXPORT EX_errval_t *ex_errval;
+#define exerrval ex_errval->errval
+#endif
+#else
+EXODUS_EXPORT int exerrval; /**< shared error return value                */
+#endif
 
 EXODUS_EXPORT char *ex_name_of_object(ex_entity_type obj_type);
 EXODUS_EXPORT ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
@@ -1634,7 +1652,9 @@ EXODUS_EXPORT int ex_get_idx(int         exoid,       /* NetCDF/Exodus file ID *
 #define EX_MSG -1000          /**< message print code - no error implied    */
 #define EX_PRTLASTMSG -1001   /**< print last error message msg code        */
 #define EX_NOTROOTID -1002    /**< file id is not the root id; it is a subgroup id */
+#define EX_LASTERR -1003      /**< in ex_err, use existing err_num value */
 #define EX_NULLENTITY -1006   /**< null entity found                        */
+#define EX_DUPLICATEID -1007  /**< duplicate id found                        */
 /* @} */
 
 /* Exodus error return codes - function return values:                      */

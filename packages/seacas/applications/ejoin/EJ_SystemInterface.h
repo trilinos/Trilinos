@@ -35,7 +35,6 @@
 #include "EJ_CodeTypes.h" // for StringIdVector, Omissions, etc
 #include "EJ_vector3d.h"  // for vector3d
 #include "GetLongOpt.h"   // for GetLongOption
-#include <iosfwd>         // for ostream
 #include <string>         // for string
 #include <vector>         // for vector
 

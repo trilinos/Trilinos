@@ -72,9 +72,9 @@
 
 #include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
 
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
-#include <stk_mesh/fixtures/degenerate_mesh.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/heterogeneous_mesh.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/degenerate_mesh.hpp>
 
 
 namespace {

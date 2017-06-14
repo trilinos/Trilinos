@@ -8,9 +8,7 @@ struct Double {
   STK_MATH_FORCE_INLINE Double() {}
 
   STK_MATH_FORCE_INLINE Double(const double* x) 
-    //_data(_mm512_loadu_pd(x))
-    : _data(_mm512_setr_pd(x[0],x[1],x[2],x[3],
-                           x[4],x[5],x[6],x[7])) {
+    : _data(_mm512_loadu_pd(x)) {
   }
 
   STK_MATH_FORCE_INLINE Double(const double* x, const int offset) 
@@ -19,7 +17,7 @@ struct Double {
   }
 
   template <typename T>
-  STK_MATH_FORCE_INLINE Double(const T x) 
+  STK_MATH_FORCE_INLINE Double(const T x, typename std::enable_if<std::is_convertible<T,double>::value, void*>::type=0) 
     : _data(_mm512_set1_pd(double(x))) {
   }
 
@@ -41,32 +39,32 @@ struct Double {
   }
 
   template <typename T>
-  STK_MATH_FORCE_INLINE Double& operator= (const T x) {
+  STK_MATH_FORCE_INLINE typename std::enable_if<std::is_convertible<T,double>::value, Double&>::type operator= (const T x) {
     _data = _mm512_set1_pd(double(x));
     return *this;
   }
 
   STK_MATH_FORCE_INLINE Double& operator+= (const Double& a) {
-    _data = _mm512_add_pd(_data,a._data);
+    _data = _mm512_add_pd(_data, a._data);
     return *this;
   }
 
   STK_MATH_FORCE_INLINE void operator+= (const volatile Double& a) volatile {
-    _data = _mm512_add_pd(_data,a._data);
+    _data = _mm512_add_pd(_data, a._data);
   }
 
   STK_MATH_FORCE_INLINE Double& operator-= (const Double& a) {
-    _data = _mm512_sub_pd(_data,a._data);
+    _data = _mm512_sub_pd(_data, a._data);
     return *this;
   }
 
   STK_MATH_FORCE_INLINE Double& operator*= (const Double& a) {
-    _data = _mm512_mul_pd(_data,a._data);
+    _data = _mm512_mul_pd(_data, a._data);
     return *this;
   }
 
   STK_MATH_FORCE_INLINE Double& operator/= (const Double& a) {
-    _data = _mm512_div_pd(_data,a._data);
+    _data = _mm512_div_pd(_data, a._data);
     return *this;
   }
 

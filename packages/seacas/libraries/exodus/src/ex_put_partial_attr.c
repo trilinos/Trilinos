@@ -51,12 +51,12 @@
 *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
-#include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
+#include "exodusII_int.h" // for ex_check_valid_file_id, etc
 #include "netcdf.h"       // for nc_inq_dimid, nc_inq_varid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <stdint.h>       // for int64_t
+#include <stdio.h>        // for snprintf
 
 /*!
  * writes the attributes for an edge/face/element block
@@ -77,25 +77,28 @@ int ex_put_partial_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
   size_t num_attr;
   char   errmsg[MAX_ERR_LENGTH];
 
+  EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid);
-
-  exerrval = 0; /* clear error code */
 
   if (blk_type != EX_NODAL) {
     /* Determine index of blk_id in VAR_ID_EL_BLK array */
     blk_id_ndx = ex_id_lkup(exoid, blk_type, blk_id);
-    if (exerrval != 0) {
-      if (exerrval == EX_NULLENTITY) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "Warning: no attributes allowed for NULL %s %" PRId64 " in file id %d",
+    if (blk_id_ndx <= 0) {
+      ex_get_err(NULL, NULL, &status);
+
+      if (status != 0) {
+        if (status == EX_NULLENTITY) {
+          snprintf(errmsg, MAX_ERR_LENGTH,
+                   "Warning: no attributes allowed for NULL %s %" PRId64 " in file id %d",
+                   ex_name_of_object(blk_type), blk_id, exoid);
+          ex_err("ex_put_partial_attr", errmsg, EX_NULLENTITY);
+          EX_FUNC_LEAVE(EX_WARN); /* no attributes for this block */
+        }
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s id %" PRId64 " in in file id %d",
                  ex_name_of_object(blk_type), blk_id, exoid);
-        ex_err("ex_put_partial_attr", errmsg, EX_NULLENTITY);
-        return (EX_WARN); /* no attributes for this block */
+        ex_err("ex_put_partial_attr", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s id %" PRId64 " in in file id %d",
-               ex_name_of_object(blk_type), blk_id, exoid);
-      ex_err("ex_put_partial_attr", errmsg, exerrval);
-      return (EX_FATAL);
     }
   }
 
@@ -110,21 +113,19 @@ int ex_put_partial_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
   case EX_FACE_BLOCK: status = nc_inq_varid(exoid, VAR_FATTRIB(blk_id_ndx), &attrid); break;
   case EX_ELEM_BLOCK: status = nc_inq_varid(exoid, VAR_ATTRIB(blk_id_ndx), &attrid); break;
   default:
-    exerrval = 1005;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Internal ERROR: unrecognized object type in switch: %d in file id %d", blk_type,
              exoid);
-    ex_err("ex_put_partial_attr", errmsg, EX_MSG);
-    return (EX_FATAL); /* number of attributes not defined */
+    ex_err("ex_put_partial_attr", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate attribute variable for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_partial_attr", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_partial_attr", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Determine number of attributes */
@@ -149,25 +150,23 @@ int ex_put_partial_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
   default:
     /* No need for error message, handled in previous switch; just to quiet
      * compiler. */
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: number of attributes not defined for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_partial_attr", errmsg, EX_MSG);
-    return (EX_FATAL); /* number of attributes not defined */
+    ex_err("ex_put_partial_attr", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
   if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_partial_attr", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_partial_attr", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* write out the attributes  */
@@ -188,12 +187,11 @@ int ex_put_partial_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to put attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_partial_attr", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_partial_attr", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

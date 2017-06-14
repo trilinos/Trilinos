@@ -73,7 +73,7 @@ enum EReductionType {
   REDUCE_MIN, ///< Min
   REDUCE_MAX, ///< Max
   REDUCE_AND, ///< Logical AND
-  REDUCE_BOR, ///< Bitwise OR
+  REDUCE_BOR  ///< Bitwise OR
 };
 
 /// \brief Convert EReductionType to string representation.

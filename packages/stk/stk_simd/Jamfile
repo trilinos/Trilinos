@@ -120,9 +120,18 @@ alias stk_simd_headers
 # SECTION 4: Build configuration
 #
 
+obj stk_simd_test_main 
+  :
+    $(stk_simd-root)/unit_test_main/SimdUnitTestMain.cpp
+    /tpl/trilinos-kokkoscore//kokkoscore
+    /tpl/gtest//gtest
+  :
+  ;
+
 exe stk_simd_unit
   :
     [ glob $(stk_simd-root)/unit_tests/*.cpp ]
+    stk_simd_test_main
     /tpl/trilinos-kokkoscore//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
@@ -145,11 +154,12 @@ exe stk_simd_unit
 
 exe stk_simd_docs_tests
   :
-    [ glob $(stk_simd-root)/testsForDocumentation/*.cpp ]
-    [ glob $(stk_simd-root)/unit_tests/*.cpp ]
+    [ glob $(stk_simd-root)/../stk_doc_tests/stk_simd/*.cpp ]
+    stk_simd_test_main
     /tpl/trilinos-kokkoscore//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
+    <include>$(stk_simd-root)/../stk_doc_tests/stk_simd
     <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
     <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
     <target-os>linux,<toolset>clang,<runtime-link>shared:<linkflags>-Wl,-E

@@ -69,6 +69,14 @@
 
 namespace Belos {
 
+  /// \brief "Default" parameters for robustness and accuracy.
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getDGKSDefaultParameters ();
+
+  /// \brief "Fast" but possibly unsafe or less accurate parameters.
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getDGKSFastParameters();
+
   template<class ScalarType, class MV, class OP>
   class DGKSOrthoManager :
     public MatOrthoManager<ScalarType,MV,OP>,
@@ -88,10 +96,10 @@ namespace Belos {
     //! Constructor specifying re-orthogonalization tolerance.
     DGKSOrthoManager( const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null,
-                      const int max_blk_ortho = 2,
-                      const MagnitudeType blk_tol = 10*MGT::squareroot( MGT::eps() ),
-                      const MagnitudeType dep_tol = MGT::one()/MGT::squareroot( 2*MGT::one() ),
-                      const MagnitudeType sing_tol = 10*MGT::eps() )
+                      const int max_blk_ortho = max_blk_ortho_default_,
+                      const MagnitudeType blk_tol = blk_tol_default_,
+                      const MagnitudeType dep_tol = dep_tol_default_,
+                      const MagnitudeType sing_tol = sing_tol_default_ )
       : MatOrthoManager<ScalarType,MV,OP>(Op),
         max_blk_ortho_( max_blk_ortho ),
         blk_tol_( blk_tol ),
@@ -122,10 +130,10 @@ namespace Belos {
                       const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null)
       : MatOrthoManager<ScalarType,MV,OP>(Op),
-        max_blk_ortho_ (2),
-        blk_tol_ (Teuchos::as<MagnitudeType>(10) * MGT::squareroot(MGT::eps())),
-        dep_tol_ (MGT::one() / MGT::squareroot (Teuchos::as<MagnitudeType>(2))),
-        sing_tol_ (Teuchos::as<MagnitudeType>(10) * MGT::eps()),
+        max_blk_ortho_ ( max_blk_ortho_default_ ),
+        blk_tol_ ( blk_tol_default_ ),
+        dep_tol_ ( dep_tol_default_ ),
+        sing_tol_ ( sing_tol_default_ ),
         label_( label )
     {
       setParameterList (plist);
@@ -193,65 +201,14 @@ namespace Belos {
     Teuchos::RCP<const Teuchos::ParameterList>
     getValidParameters () const
     {
-      using Teuchos::as;
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
       if (defaultParams_.is_null()) {
-        RCP<ParameterList> params = parameterList ("DGKS");
-        const MagnitudeType eps = MGT::eps ();
-
-        // Default parameter values for DGKS orthogonalization.
-        // Documentation will be embedded in the parameter list.
-        const int defaultMaxNumOrthogPasses = 2;
-        const MagnitudeType defaultBlkTol =
-          as<MagnitudeType> (10) * MGT::squareroot (eps);
-        const MagnitudeType defaultDepTol =
-          MGT::one() / MGT::squareroot (as<MagnitudeType> (2));
-
-        const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
-
-        params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
-                     "Maximum number of orthogonalization passes (includes the "
-                     "first).  Default is 2, since \"twice is enough\" for Krylov "
-                     "methods.");
-        params->set ("blkTol", defaultBlkTol, "Block reorthogonalization "
-                     "threshhold.");
-        params->set ("depTol", defaultDepTol,
-                     "(Non-block) reorthogonalization threshold.");
-        params->set ("singTol", defaultSingTol, "Singular block detection "
-                     "threshold.");
-        defaultParams_ = params;
+        defaultParams_ = Belos::getDGKSDefaultParameters<ScalarType, MV, OP>();
       }
+
       return defaultParams_;
     }
 
     //@}
-
-    Teuchos::RCP<const Teuchos::ParameterList>
-    getFastParameters() const
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-
-      RCP<const ParameterList> defaultParams = getValidParameters ();
-      // Start with a clone of the default parameters.
-      RCP<ParameterList> params = rcp (new ParameterList (*defaultParams));
-
-      const int maxBlkOrtho = 1;
-      const MagnitudeType blkTol = MGT::zero();
-      const MagnitudeType depTol = MGT::zero();
-      const MagnitudeType singTol = MGT::zero();
-
-      params->set ("maxNumOrthogPasses", maxBlkOrtho);
-      params->set ("blkTol", blkTol);
-      params->set ("depTol", depTol);
-      params->set ("singTol", singTol);
-
-      return params;
-    }
 
     //! @name Accessor routines
     //@{
@@ -499,6 +456,29 @@ namespace Belos {
 
     //@}
 
+    //! @name Default orthogonalization constants
+    //@{
+
+    //! Max number of (re)orthogonalization steps, including the first (default).
+    static const int max_blk_ortho_default_;
+    //! Block reorthogonalization threshold (default).
+    static const MagnitudeType blk_tol_default_;
+    //! (Non-block) reorthogonalization threshold (default).
+    static const MagnitudeType dep_tol_default_;
+    //! Singular block detection threshold (default).
+    static const MagnitudeType sing_tol_default_;
+
+    //! Max number of (re)orthogonalization steps, including the first (fast).
+    static const int max_blk_ortho_fast_;
+    //! Block reorthogonalization threshold (fast).
+    static const MagnitudeType blk_tol_fast_;
+    //! (Non-block) reorthogonalization threshold (fast).
+    static const MagnitudeType dep_tol_fast_;
+    //! Singular block detection threshold (fast).
+    static const MagnitudeType sing_tol_fast_;
+
+    //@}
+
   private:
 
     //! Max number of (re)orthogonalization steps, including the first.
@@ -552,6 +532,46 @@ namespace Belos {
                        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
                        Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const;
   };
+
+  // Set static variables.
+  template<class ScalarType, class MV, class OP>
+  const int DGKSOrthoManager<ScalarType,MV,OP>::max_blk_ortho_default_ = 2;
+
+  template<class ScalarType, class MV, class OP>
+  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP>::blk_tol_default_
+    = 10*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::squareroot(
+      Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::eps() );
+
+  template<class ScalarType, class MV, class OP>
+  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP>::dep_tol_default_ 
+    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::one()
+      / Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::squareroot( 
+      2*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::one() );
+
+  template<class ScalarType, class MV, class OP>
+  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP>::sing_tol_default_ 
+    = 10*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::eps();
+
+  template<class ScalarType, class MV, class OP>
+  const int DGKSOrthoManager<ScalarType,MV,OP>::max_blk_ortho_fast_ = 1;
+
+  template<class ScalarType, class MV, class OP>
+  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP>::blk_tol_fast_
+    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
+
+  template<class ScalarType, class MV, class OP>
+  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP>::dep_tol_fast_
+    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
+
+  template<class ScalarType, class MV, class OP>
+  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP>::sing_tol_fast_
+    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the label for this orthogonalization manager and create new timers if it's changed
@@ -1741,6 +1761,51 @@ namespace Belos {
     } // for (int j=0; j<xc; j++)
 
     return xc;
+  }
+
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getDGKSDefaultParameters ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    RCP<ParameterList> params = parameterList ("DGKS");
+
+    // Default parameter values for DGKS orthogonalization.
+    // Documentation will be embedded in the parameter list.
+    params->set ("maxNumOrthogPasses", DGKSOrthoManager<ScalarType, MV, OP>::max_blk_ortho_default_,
+                 "Maximum number of orthogonalization passes (includes the "
+                 "first).  Default is 2, since \"twice is enough\" for Krylov "
+                 "methods.");
+    params->set ("blkTol", DGKSOrthoManager<ScalarType, MV, OP>::blk_tol_default_, 
+                 "Block reorthogonalization threshold.");
+    params->set ("depTol", DGKSOrthoManager<ScalarType, MV, OP>::dep_tol_default_,
+                 "(Non-block) reorthogonalization threshold.");
+    params->set ("singTol", DGKSOrthoManager<ScalarType, MV, OP>::sing_tol_default_, 
+                 "Singular block detection threshold.");
+
+    return params;
+  }
+
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getDGKSFastParameters ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+
+    RCP<ParameterList> params = getDGKSDefaultParameters<ScalarType, MV, OP>();
+
+    params->set ("maxNumOrthogPasses", 
+                 DGKSOrthoManager<ScalarType, MV, OP>::max_blk_ortho_fast_);
+    params->set ("blkTol", 
+                 DGKSOrthoManager<ScalarType, MV, OP>::blk_tol_fast_);
+    params->set ("depTol", 
+                 DGKSOrthoManager<ScalarType, MV, OP>::dep_tol_fast_);
+    params->set ("singTol", 
+                 DGKSOrthoManager<ScalarType, MV, OP>::sing_tol_fast_);
+
+    return params;
   }
 
 } // namespace Belos

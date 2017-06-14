@@ -1764,7 +1764,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     const LocalOrdinal * Icol2Ccol_ptr = Icol2Ccol.getRawPtr();
 
     // Use a Kokkos::parallel_scan to build the rowptr
-    Kokkos::parallel_scan(merge_numrows,KOKKOS_LAMBDA(const size_t i, size_t & update, const bool final) {
+    typedef Node::execution_space execution_space;
+    typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+    Kokkos::parallel_scan (range_type (0, merge_numrows),
+      KOKKOS_LAMBDA (const size_t i, size_t& update, const bool final) {
         if(final) Mrowptr(i) = update;
 
         // Get the row count
@@ -1785,7 +1788,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     scalar_view_t Mvalues("Mvals",merge_nnz);
 
     // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
-    Kokkos::parallel_for(merge_numrows,KOKKOS_LAMBDA(const size_t i) {
+    typedef Node::execution_space execution_space;
+    typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+    Kokkos::parallel_for (range_type (0, merge_numrows),
+      KOKKOS_LAMBDA (const size_t i) {
         if(Acol2Brow_ptr[i]!=LO_INVALID) {
           size_t row   = Acol2Brow_ptr[i];
           size_t start = Bk.graph.row_map(row);
@@ -2733,8 +2739,8 @@ void import_and_extract_views(
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
     // Minor speedup tweak - avoid computing the global constants
-    if(!params.is_null()) 
-      labelList.set("compute global constants", params->get("compute global constants",false)); 
+    if(!params.is_null())
+      labelList.set("compute global constants", params->get("compute global constants",false));
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
 
