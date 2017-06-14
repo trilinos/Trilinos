@@ -216,7 +216,7 @@ namespace MueLuTests {
       // Fill elem_to_node using Kirby-style ordering
       // Ownership rule: I own the element if I own the left node in said element
 #     ifdef HAVE_MUELU_INTREPID2_REFACTOR
-      Kokkos::Experimental::resize(elem_to_node,local_num_elements,degree+1);
+      Kokkos::resize(elem_to_node,local_num_elements,degree+1);
 #     else
       elem_to_node.resize(local_num_elements,degree+1);
 #     endif
