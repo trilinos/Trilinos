@@ -51,7 +51,6 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   nemesis_db->setMSI(ms_lt::Mesh_Specification::PROC_ID, imd->my_rank);
 
 
-
   // The strategy is to implement serial with a trivial decomposition.
   // The trivial decomposition is to disperse the elements based on their
   // 'global' ordering in the entire i,j,k domain.
@@ -61,14 +60,24 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   //make up list of global elements on processor
   std::set <long long> global_el_ids;
+  long long local_ijk[3];
+  for(int i=0; i<3; i++) local_ijk[i] = 0;
   {
-    long long error_code = imd->Decompose(global_el_ids);
+    long long error_code;
+    if(imd->inline_geometry_type == RADIAL_TRISECTION){
+      error_code = imd->Decompose(global_el_ids);
+    } else {
+      error_code = imd->Decompose(global_el_ids,local_ijk);
+    }
     if(error_code){
       delete nemesis_db;
       nemesis_db = NULL;
       return NULL;
     }
+    nemesis_db->Set_Local_Num_IJK(local_ijk[0],local_ijk[1],local_ijk[2]);
   }
+  // Set IJK
+  nemesis_db->Set_Total_Num_IJK(nnx,nny,nnz);
 
   // reads in all the serial component of the mesh specification
   // including the maps
@@ -249,6 +258,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
         imd->sideset_list.size(),
         imd->num_processors,
         imd->my_rank);
+
   }
 
   long long* elem_blk_ids_global =    nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_IDS_GLOBAL);//Elem_Blk_Ids_Global();
