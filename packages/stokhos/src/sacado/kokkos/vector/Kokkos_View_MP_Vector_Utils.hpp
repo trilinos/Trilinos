@@ -60,7 +60,7 @@ struct LocalMPVectorView<ViewType, LocalSize, false> {
 
 template <typename D, typename ... P, unsigned LocalSize>
 struct LocalMPVectorView< View<D,P...>, LocalSize, true > {
-  typedef typename Kokkos::Experimental::Impl::ViewMapping< void, typename Kokkos::Experimental::ViewTraits<D,P...>, Sacado::MP::VectorPartition<LocalSize> >::type type;
+  typedef typename Kokkos::Impl::ViewMapping< void, typename Kokkos::ViewTraits<D,P...>, Sacado::MP::VectorPartition<LocalSize> >::type type;
 };
 
 namespace Impl {

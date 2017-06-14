@@ -99,9 +99,9 @@ void deep_copy(
   typedef typename view_type::array_type::value_type scalar_type;
   typedef typename FlatArrayType<view_type>::type flat_array_type;
   if (value == scalar_type(0))
-    Kokkos::Experimental::Impl::ViewFill< flat_array_type >( view , value );
+    Kokkos::Impl::ViewFill< flat_array_type >( view , value );
   else
-    Kokkos::Experimental::Impl::ViewFill< view_type>( view , value );
+    Kokkos::Impl::ViewFill< view_type>( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
@@ -119,7 +119,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Experimental::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
 namespace Experimental {
@@ -747,7 +747,7 @@ class ViewMapping< Traits , /* View internal mapping */
 private:
 
   template< class , class ... > friend class ViewMapping ;
-  template< class , class ... > friend class Kokkos::Experimental::View ;
+  template< class , class ... > friend class Kokkos::View ;
 
 public:
   typedef typename Traits::value_type  sacado_uq_pce_type ;
@@ -1130,7 +1130,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcType ;
 
@@ -1214,7 +1214,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcType ;
 
@@ -1322,7 +1322,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcType ;
 
@@ -1418,24 +1418,24 @@ template< class DataType, class ... P , class Arg0, class ... Args >
 struct ViewMapping
   < typename std::enable_if<(
       // Source view has UQ::PCE only
-      std::is_same< typename Kokkos::Experimental::ViewTraits<DataType,P...>::specialize
+      std::is_same< typename Kokkos::ViewTraits<DataType,P...>::specialize
                   , ViewPCEContiguous >::value
       &&
       (
-        std::is_same< typename Kokkos::Experimental::ViewTraits<DataType,P...>::array_layout
+        std::is_same< typename Kokkos::ViewTraits<DataType,P...>::array_layout
                     , Kokkos::LayoutLeft >::value ||
-        std::is_same< typename Kokkos::Experimental::ViewTraits<DataType,P...>::array_layout
+        std::is_same< typename Kokkos::ViewTraits<DataType,P...>::array_layout
                     , Kokkos::LayoutRight >::value ||
-        std::is_same< typename Kokkos::Experimental::ViewTraits<DataType,P...>::array_layout
+        std::is_same< typename Kokkos::ViewTraits<DataType,P...>::array_layout
                     , Kokkos::LayoutStride >::value
       )
     )>::type
-  , Kokkos::Experimental::ViewTraits<DataType,P...>
+  , Kokkos::ViewTraits<DataType,P...>
   , Arg0, Args ... >
 {
 private:
 
-  typedef Kokkos::Experimental::ViewTraits<DataType,P...> SrcTraits;
+  typedef Kokkos::ViewTraits<DataType,P...> SrcTraits;
 
   //static_assert( SrcTraits::rank == sizeof...(Args) , "" );
 
@@ -1493,13 +1493,13 @@ private:
 
 public:
 
-  typedef Kokkos::Experimental::ViewTraits
+  typedef Kokkos::ViewTraits
     < data_type
     , array_layout
     , typename SrcTraits::device_type
     , typename SrcTraits::memory_traits > traits_type ;
 
-  typedef Kokkos::Experimental::View
+  typedef Kokkos::View
     < data_type
     , array_layout
     , typename SrcTraits::device_type
