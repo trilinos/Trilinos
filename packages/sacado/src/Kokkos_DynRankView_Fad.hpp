@@ -415,13 +415,13 @@ private:
 
 public:
 
-  typedef Kokkos::Experimental::ViewTraits
+  typedef Kokkos::ViewTraits
     < data_type
     , array_layout
     , typename SrcTraits::device_type
     , typename SrcTraits::memory_traits > traits_type ;
 
-  typedef Kokkos::Experimental::View
+  typedef Kokkos::View
     < data_type
     , array_layout
     , typename SrcTraits::device_type
@@ -433,13 +433,13 @@ public:
 
     static_assert( Kokkos::Impl::is_memory_traits< MemoryTraits >::value , "" );
 
-    typedef Kokkos::Experimental::ViewTraits
+    typedef Kokkos::ViewTraits
       < data_type
       , array_layout
       , typename SrcTraits::device_type
       , MemoryTraits > traits_type ;
 
-    typedef Kokkos::Experimental::View
+    typedef Kokkos::View
       < data_type
       , array_layout
       , typename SrcTraits::device_type
@@ -693,7 +693,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
@@ -984,7 +984,7 @@ void deep_copy
 
 } //end Experimental
 
-using Kokkos::Experimental::deep_copy;
+using Kokkos::deep_copy;
 
 }
 
