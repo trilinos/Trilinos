@@ -121,7 +121,7 @@ void deep_copy(
     , "Can only deep copy into non-const type" );
 
   typedef typename FlatArrayType< View<DT,DP...> >::type flat_array_type;
-  Kokkos::Experimental::Impl::ViewFill< flat_array_type >( view , value );
+  Kokkos::Impl::ViewFill< flat_array_type >( view , value );
 }
 
 // Overload of deep_copy for MP::Vector views intializing to a constant MP::Vector
@@ -146,7 +146,7 @@ void deep_copy(
   //               , Kokkos::HostSpace >::value
   //   , "Deep copy from a FAD type must be statically sized or host space" );
 
-  Kokkos::Experimental::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
 /* Specialize for deep copy of MP::Vector */
@@ -529,7 +529,7 @@ class ViewMapping< Traits , /* View internal mapping */
 private:
 
   template< class , class ... > friend class ViewMapping ;
-  template< class , class ... > friend class Kokkos::Experimental::View ;
+  template< class , class ... > friend class Kokkos::View ;
 
   typedef typename Traits::value_type  sacado_mp_vector_type ;
   typedef typename sacado_mp_vector_type::storage_type stokhos_storage_type ;
@@ -906,7 +906,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcType ;
 
@@ -989,7 +989,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcType ;
 
@@ -1098,7 +1098,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcType ;
 
@@ -1195,25 +1195,25 @@ template< class DataType, class ... P , class Arg0, class ... Args >
 struct ViewMapping
   < typename std::enable_if<(
       // Source view has MP::Vector only
-      std::is_same< typename Kokkos::Experimental::ViewTraits<DataType,P...>::specialize
+      std::is_same< typename Kokkos::ViewTraits<DataType,P...>::specialize
                   , ViewMPVectorContiguous >::value
       &&
       (
-        std::is_same< typename Kokkos::Experimental::ViewTraits<DataType,P...>::array_layout
+        std::is_same< typename Kokkos::ViewTraits<DataType,P...>::array_layout
                     , Kokkos::LayoutLeft >::value ||
-        std::is_same< typename Kokkos::Experimental::ViewTraits<DataType,P...>::array_layout
+        std::is_same< typename Kokkos::ViewTraits<DataType,P...>::array_layout
                     , Kokkos::LayoutRight >::value ||
-        std::is_same< typename Kokkos::Experimental::ViewTraits<DataType,P...>::array_layout
+        std::is_same< typename Kokkos::ViewTraits<DataType,P...>::array_layout
                     , Kokkos::LayoutStride >::value
       )
       && !Sacado::MP::is_vector_partition<Arg0>::value
     )>::type
-  , Kokkos::Experimental::ViewTraits<DataType,P...>
+  , Kokkos::ViewTraits<DataType,P...>
   , Arg0, Args ... >
 {
 private:
 
-  typedef Kokkos::Experimental::ViewTraits<DataType,P...> SrcTraits;
+  typedef Kokkos::ViewTraits<DataType,P...> SrcTraits;
 
   //static_assert( SrcTraits::rank == sizeof...(Args) , "" );
 
@@ -1271,13 +1271,13 @@ private:
 
 public:
 
-  typedef Kokkos::Experimental::ViewTraits
+  typedef Kokkos::ViewTraits
     < data_type
     , array_layout
     , typename SrcTraits::device_type
     , typename SrcTraits::memory_traits > traits_type ;
 
-  typedef Kokkos::Experimental::View
+  typedef Kokkos::View
     < data_type
     , array_layout
     , typename SrcTraits::device_type
@@ -1391,12 +1391,12 @@ public:
 
 template< unsigned Size, typename D, typename ... P  >
 KOKKOS_INLINE_FUNCTION
-typename Kokkos::Experimental::Impl::ViewMapping< void, typename Kokkos::Experimental::ViewTraits<D,P...>, Sacado::MP::VectorPartition<Size> >::type
-partition( const Kokkos::Experimental::View<D,P...> & src ,
+typename Kokkos::Impl::ViewMapping< void, typename Kokkos::ViewTraits<D,P...>, Sacado::MP::VectorPartition<Size> >::type
+partition( const Kokkos::View<D,P...> & src ,
            const unsigned beg )
 {
-  typedef Kokkos::Experimental::ViewTraits<D,P...> traits;
-  typedef typename Kokkos::Experimental::Impl::ViewMapping< void, traits, Sacado::MP::VectorPartition<Size> >::type DstViewType;
+  typedef Kokkos::ViewTraits<D,P...> traits;
+  typedef typename Kokkos::Impl::ViewMapping< void, traits, Sacado::MP::VectorPartition<Size> >::type DstViewType;
   const Sacado::MP::VectorPartition<Size> part( beg , beg+Size );
   return DstViewType(src, part);
 }
@@ -1526,7 +1526,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
