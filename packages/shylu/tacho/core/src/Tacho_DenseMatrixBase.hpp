@@ -85,7 +85,7 @@ namespace Tacho {
         _a = value_type_array("DenseMatrixBase::ValueArray", size);
       } else {
         // otherwise initialize it
-        Kokkos::Experimental::Impl::ViewFill<value_type_array>(_a, value_type());
+        Kokkos::Impl::ViewFill<value_type_array>(_a, value_type());
       }
     }
 
