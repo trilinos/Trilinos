@@ -173,7 +173,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Experimental::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
 // Overload of deep_copy for Fad views intializing to a constant Fad
@@ -193,7 +193,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Experimental::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
 /* Specialize for deep copy of FAD */
@@ -507,7 +507,7 @@ class ViewMapping< Traits , /* View internal mapping */
 private:
 
   template< class , class ... > friend class ViewMapping ;
-  template< class , class ... > friend class Kokkos::Experimental::View ;
+  template< class , class ... > friend class Kokkos::View ;
 
   typedef typename Traits::value_type  fad_type ;
   typedef typename Sacado::ValueType< fad_type >::type fad_value_type ;
@@ -875,7 +875,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
@@ -1048,13 +1048,13 @@ private:
 
 public:
 
-  typedef Kokkos::Experimental::ViewTraits
+  typedef Kokkos::ViewTraits
     < data_type
     , array_layout
     , typename SrcTraits::device_type
     , typename SrcTraits::memory_traits > traits_type ;
 
-  typedef Kokkos::Experimental::View
+  typedef Kokkos::View
     < data_type
     , array_layout
     , typename SrcTraits::device_type

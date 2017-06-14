@@ -43,8 +43,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
   using Kokkos::createDynRankViewWithType;
   using Kokkos::createViewWithType;
   using Kokkos::dimension_scalar;
-  using Kokkos::Experimental::view_alloc;
-  using Kokkos::Experimental::WithoutInitializing;
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
   const unsigned derivative_dim_plus_one = 7;
 
   // Test a DynRankView from a DynRankView

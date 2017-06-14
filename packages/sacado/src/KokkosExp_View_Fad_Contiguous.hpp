@@ -288,13 +288,13 @@ namespace Kokkos {
 
 template< unsigned Stride, typename D, typename ... P  >
 KOKKOS_INLINE_FUNCTION
-typename Kokkos::Experimental::Impl::ViewMapping< void, typename Kokkos::Experimental::ViewTraits<D,P...>, Sacado::Fad::Partition<Stride> >::type
-partition( const Kokkos::Experimental::View<D,P...> & src ,
+typename Kokkos::Impl::ViewMapping< void, typename Kokkos::ViewTraits<D,P...>, Sacado::Fad::Partition<Stride> >::type
+partition( const Kokkos::View<D,P...> & src ,
            const unsigned offset ,
            const unsigned stride )
 {
-  typedef Kokkos::Experimental::ViewTraits<D,P...> traits;
-  typedef typename Kokkos::Experimental::Impl::ViewMapping< void, traits, Sacado::Fad::Partition<Stride> >::type DstViewType;
+  typedef Kokkos::ViewTraits<D,P...> traits;
+  typedef typename Kokkos::Impl::ViewMapping< void, traits, Sacado::Fad::Partition<Stride> >::type DstViewType;
   const Sacado::Fad::Partition<Stride> part( offset , stride );
   return DstViewType(src, part);
 }
@@ -498,7 +498,7 @@ class ViewMapping< Traits , /* View internal mapping */
 private:
 
   template< class , class ... > friend class ViewMapping ;
-  template< class , class ... > friend class Kokkos::Experimental::View ;
+  template< class , class ... > friend class Kokkos::View ;
 
   typedef typename Traits::value_type  fad_type ;
   typedef typename Sacado::ValueType< fad_type >::type fad_value_type ;
@@ -1122,7 +1122,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
@@ -1213,7 +1213,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
@@ -1364,13 +1364,13 @@ private:
 
 public:
 
-  typedef Kokkos::Experimental::ViewTraits
+  typedef Kokkos::ViewTraits
     < data_type
     , array_layout
     , typename SrcTraits::device_type
     , typename SrcTraits::memory_traits > traits_type ;
 
-  typedef Kokkos::Experimental::View
+  typedef Kokkos::View
     < data_type
     , array_layout
     , typename SrcTraits::device_type
