@@ -165,8 +165,8 @@ namespace MueLu {
                              const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
                              const Array<LO> lCoarseNodesPerDir) const;
 
-    void redorderStencil(const LO ie, const LO je, const LO ke, const Array<SC> rowValues,
-                         const Array<LO> elementNodesPerDir, Array<LO> stencil) const;
+    void ReorderStencil(const LO ie, const LO je, const LO ke, const ArrayView<const SC> rowValues,
+                        const Array<LO> elementNodesPerDir, Array<SC>& stencil) const;
 
     void sh_sort_permute(
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first1,

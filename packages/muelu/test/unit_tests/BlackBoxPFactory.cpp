@@ -96,6 +96,11 @@ namespace MueLuTests {
                                       gNumCoarseNodes, lNumCoarseNodes, coarseNodes);
     };
 
+    void testReorderStencil(const LO ie, const LO je, const LO ke, const ArrayView<const SC> rowValues, const Array<LO> elementNodesPerDir, Array<SC>& stencil) const {
+      MueLu::BlackBoxPFactory<SC,LO,GO,Node> mybbmgPFactory;
+      mybbmgPFactory.ReorderStencil(ie, je, ke, rowValues, elementNodesPerDir, stencil);
+    };
+
   };
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
@@ -115,7 +120,7 @@ namespace MueLuTests {
     gNodesPerDim[1] = ny;
     gNodesPerDim[2] = nz;
 
-    GO myOffset;
+    GO myOffset = 0;
     if(comm->getSize() == 1) {
       myOffset = 0;
       lNodesPerDim[0] = nx;
@@ -173,7 +178,7 @@ namespace MueLuTests {
       }
     }
 
-    GO myZoffset, myYoffset, myXoffset;
+    GO myZoffset = 0, myYoffset = 0, myXoffset = 0;
     if(numDimensions == 2) {
       myZoffset = 0;
       myYoffset = myOffset / gNodesPerDim[0];
@@ -258,15 +263,15 @@ namespace MueLuTests {
 
   } //Constructor
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, GeometricGhosts, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, BlackBoxGhosts, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
-    fancy->setShowAllFrontMatter(false).setShowProcRank(true);
-    Teuchos::FancyOStream& out2 = *fancy;
+    // RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
+    // fancy->setShowAllFrontMatter(false).setShowProcRank(true);
+    // Teuchos::FancyOStream& out2 = *fancy;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -293,7 +298,6 @@ namespace MueLuTests {
       coarseRate[2] = 2;
     }
 
-    MueLu::BlackBoxPFactory<SC,LO,GO,Node> bbmgPFact;
     BlackBoxPFactoryTester<SC,LO,GO,Node> factTester;
     Array<GO> gIndices(3), gCoarseNodesPerDir(3), ghostGIDs, coarseNodesGIDs, colGIDs;
     Array<LO> myOffset(3), lCoarseNodesPerDir(3), endRate(3);
@@ -396,7 +400,533 @@ namespace MueLuTests {
     TEST_EQUALITY(ghostGIDs_check == ghostGIDs, true);
     TEST_EQUALITY(colGIDs_check == colGIDs, true);
 
-  } //GeometricGhosts
+  } //BlackBoxGhosts
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, StencilReordering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    std::cout << std::endl;
+
+
+    // RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
+    // fancy->setShowAllFrontMatter(false).setShowProcRank(true);
+    // Teuchos::FancyOStream& out2 = *fancy;
+
+    // Creater tester factory
+    BlackBoxPFactoryTester<SC,LO,GO,Node> factTester;
+
+    // Generate input data
+    LO ie, je, ke;
+    Array<LO> elementNodesPerDir(3);
+    elementNodesPerDir[0] = 3;
+    elementNodesPerDir[1] = 3;
+    elementNodesPerDir[2] = 3;
+    {// check reordering for ie = 0, je = 0, ke = 0
+      ie = 0, je = 0, ke = 0;
+      const std::vector<double> v = {13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0, 26.0,
+                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0,
+                                     15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "Corner 1 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 2, je = 0, ke = 0
+      ie = 2, je = 0, ke = 0;
+      const std::vector<double> v = {12.0, 13.0, 15.0, 16.0, 21.0, 22.0, 24.0, 25.0,
+                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0,
+                                     14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      TEST_EQUALITY(checkResult, true);
+      if(!checkResult) {std::cout << "Corner 2 has a problem!" << std::endl;}
+    }
+
+    {// check reordering for ie = 0, je = 2, ke = 0
+      ie = 0, je = 2, ke = 0;
+      const std::vector<double> v = {10.0, 11.0, 13.0, 14.0, 19.0, 20.0, 22.0, 23.0,
+                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,
+                                     12.0, 15.0, 16.0, 17.0, 18.0, 21.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      TEST_EQUALITY(checkResult, true);
+      if(!checkResult) {std::cout << "Corner 3 has a problem!" << std::endl;}
+    }
+
+    {// check reordering for ie = 2, je = 2, ke = 0
+      ie = 2, je = 2, ke = 0;
+      const std::vector<double> v = { 9.0, 10.0, 12.0, 13.0, 18.0, 19.0, 21.0, 22.0,
+                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                     11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "Corner 4 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 0, je = 0, ke = 2
+      ie = 0, je = 0, ke = 2;
+      const std::vector<double> v = { 4.0,  5.0,  7.0,  8.0, 13.0, 14.0, 16.0, 17.0,
+                                      0.0,  1.0,  2.0,  3.0,  6.0,  9.0, 10.0, 11.0, 12.0, 15.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "Corner 5 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 2, je = 0, ke = 2
+      ie = 2, je = 0, ke = 2;
+      const std::vector<double> v = { 3.0,  4.0,  6.0,  7.0, 12.0, 13.0, 15.0, 16.0,
+                                      0.0,  1.0,  2.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 17.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "Corner 6 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 0, je = 2, ke = 2
+      ie = 0, je = 2, ke = 2;
+      const std::vector<double> v = { 1.0,  2.0,  4.0,  5.0, 10.0, 11.0, 13.0, 14.0,
+                                      0.0,  3.0,  6.0,  7.0,  8.0,  9.0, 12.0, 15.0, 16.0, 17.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "Corner 7 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 2, je = 2, ke = 2
+      ie = 2, je = 2, ke = 2;
+      const std::vector<double> v = { 0.0,  1.0,  3.0,  4.0,  9.0, 10.0, 12.0, 13.0,
+                                      2.0,  5.0,  6.0,  7.0,  8.0, 11.0, 14.0, 15.0, 16.0, 17.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "Corner 8 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 0, ke = 0
+      ie = 1, je = 0, ke = 0;
+      const std::vector<double> v = {12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
+                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                      9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "i-Edge 1 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 2, ke = 0
+      ie = 1, je = 2, ke = 0;
+      const std::vector<double> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
+                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                     15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "i-Edge 2 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 0, ke = 2
+      ie = 1, je = 0, ke = 2;
+      const std::vector<double> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
+                                      0.0,  1.0,  2.0,  9.0, 10.0, 11.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "i-Edge 3 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 2, ke = 2
+      ie = 1, je = 2, ke = 2;
+      const std::vector<double> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+                                      6.0,  7.0,  8.0, 15.0, 16.0, 17.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      TEST_EQUALITY(checkResult, true);
+      if(!checkResult) {std::cout << "i-Edge 4 has a problem!" << std::endl;}
+    }
+
+    {// check reordering for ie = 0, je = 1, ke = 0
+      ie = 0, je = 1, ke = 0;
+      const std::vector<double> v = {10.0, 11.0, 13.0, 14.0, 16.0, 17.0, 19.0, 20.0, 22.0, 23.0, 25.0, 26.0,
+                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                      9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "j-Edge 1 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 2, je = 1, ke = 0
+      ie = 2, je = 1, ke = 0;
+      const std::vector<double> v = { 9.0, 10.0, 12.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0, 24.0, 25.0,
+                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                     11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "j-Edge 2 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 0, je = 1, ke = 2
+      ie = 0, je = 1, ke = 2;
+      const std::vector<double> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0, 17.0,
+                                      0.0,  3.0,  6.0,  9.0, 12.0, 15.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "j-Edge 3 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 2, je = 1, ke = 2
+      ie = 2, je = 1, ke = 2;
+      const std::vector<double> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0, 16.0,
+                                      2.0,  5.0,  8.0, 11.0, 14.0, 17.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "j-Edge 4 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 0, je = 0, ke = 1
+      ie = 0, je = 0, ke = 1;
+      const std::vector<double> v = { 4.0,  5.0,  7.0,  8.0, 13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0, 26.0,
+                                      0.0,  1.0,  2.0,  3.0,  6.0,  9.0, 10.0, 11.0, 12.0, 15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "k-Edge 1 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 2, je = 0, ke = 1
+      ie = 2, je = 0, ke = 1;
+      const std::vector<double> v = { 3.0,  4.0,  6.0,  7.0, 12.0, 13.0, 15.0, 16.0, 21.0, 22.0, 24.0, 25.0,
+                                      0.0,  1.0,  2.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "k-Edge 2 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 0, je = 2, ke = 1
+      ie = 0, je = 2, ke = 1;
+      const std::vector<double> v = { 1.0,  2.0,  4.0,  5.0, 10.0, 11.0, 13.0, 14.0, 19.0, 20.0, 22.0, 23.0,
+                                      0.0,  3.0,  6.0,  7.0,  8.0,  9.0, 12.0, 15.0, 16.0, 17.0, 18.0, 21.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "k-Edge 3 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 2, je = 2, ke = 1
+      ie = 2, je = 2, ke = 1;
+      const std::vector<double> v = { 0.0,  1.0,  3.0,  4.0,  9.0, 10.0, 12.0, 13.0, 18.0, 19.0, 21.0, 22.0,
+                                      2.0,  5.0,  6.0,  7.0,  8.0, 11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "k-Edge 4 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 0, je = 1, ke = 1
+      ie = 0, je = 1, ke = 1;
+      const std::vector<double> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0, 17.0, 19.0, 20.0, 22.0, 23.0, 25.0, 26.0,
+                                      0.0,  3.0,  6.0,  9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "i-Face 1 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 2, je = 1, ke = 1
+      ie = 2, je = 1, ke = 1;
+      const std::vector<double> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0, 24.0, 25.0,
+                                      2.0,  5.0,  8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "i-Face 2 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 0, ke = 1
+      ie = 1, je = 0, ke = 1;
+      const std::vector<double> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
+                                      0.0,  1.0,  2.0,  9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "j-Face 1 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 2, ke = 1
+      ie = 1, je = 2, ke = 1;
+      const std::vector<double> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
+                                      6.0,  7.0,  8.0, 15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "j-Face 2 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 1, ke = 0
+      ie = 1, je = 1, ke = 0;
+      const std::vector<double> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
+                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "k-Face 1 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 1, ke = 2
+      ie = 1, je = 1, ke = 2;
+      const std::vector<double> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "k-Face 2 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 1, ke = 1
+      ie = 1, je = 1, ke = 1;
+      const std::vector<double> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                      9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
+                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      Array<double> cornerSWB(v);
+      Array<double> stencil(27);
+      factTester.testReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 27; ++i) {
+        if(stencil[i] != (double) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "Interior has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, CoarseNodes, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -404,9 +934,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
-    fancy->setShowAllFrontMatter(false).setShowProcRank(true);
-    Teuchos::FancyOStream& out2 = *fancy;
+    // RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
+    // fancy->setShowAllFrontMatter(false).setShowProcRank(true);
+    // Teuchos::FancyOStream& out2 = *fancy;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -449,7 +979,7 @@ namespace MueLuTests {
     // create the black box factory
     RCP<BlackBoxPFactory> bbmgPFact = rcp(new BlackBoxPFactory);
     bbmgPFact->SetParameterList(BBParams);
-    coarseLevel.Request("P",            bbmgPFact.get());  // request Ptent
+    coarseLevel.Request("P",            bbmgPFact.get());  // request P
     // coarseLevel.Request("Nullspace",    bbmgPFact.get());
     // coarseLevel.Request("Coordinates",  bbmgPFact.get());
     coarseLevel.Request(*bbmgPFact);
@@ -461,9 +991,10 @@ namespace MueLuTests {
 
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,Constructor,    Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,GeometricGhosts,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,CoarseNodes,    Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,Constructor,       Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,BlackBoxGhosts,    Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,StencilReordering, Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,CoarseNodes,       Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

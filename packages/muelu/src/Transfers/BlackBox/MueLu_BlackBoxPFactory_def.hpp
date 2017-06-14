@@ -388,6 +388,11 @@ namespace MueLu {
                         Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir, Array<GO>& ghostGIDs,
                         Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes, LO& lNumCoarseNodes,
                         ArrayRCP<Array<double> > coarseNodes) const {
+    // This function is extracting the geometric information from the coordinates
+    // and creates the necessary data/formatting to perform locally the calculation
+    // of the pronlongator.
+    //
+    // inputs:
 
     RCP<const Map> coordinatesMap = coordinates->getMap();
     LO numDimensions  = coordinates->getNumVectors();
@@ -1001,7 +1006,7 @@ namespace MueLu {
             // To make life easy, let's reshape and reorder rowValues to
             // process it in a standardized way for both 7 points stencils
             // and 27 points stencil as well as handle ghost data.
-            reorderStencil(ie,je,ke,rowValues,stencil);
+            ReorderStencil(ie, je, ke, rowValues, elementNodesPerDir, stencil);
             // We are handling an interior node, we won't have to handle
             // ghost data but we need to check if entries go to Aif or Aii
             if(itype == 3) {
@@ -1107,9 +1112,9 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::reorderStencil(
-                        LO ie, LO je, LO ke, Array<SC> rowValues,
-                        Array<LO> elementNodesPerDir, Array<SC> stencil) const {
+  void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReorderStencil(
+                        const LO ie, const LO je, const LO ke, const ArrayView<const SC> rowValues,
+                        const Array<LO> elementNodesPerDir, Array<SC>& stencil) const {
     if((ie == 0) && (je == 0) && (ke == 0)) {// corner 1
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[4];
@@ -1130,11 +1135,11 @@ namespace MueLu {
         for(LO i = 0; i < 13; ++i) {
           stencil[i] = rowValues[8 + i];
         }
-        stencil[15] = rowValues[];
+        stencil[15] = rowValues[21];
         for(LO i = 0; i < 4; ++i) {
           stencil[18 + i] = rowValues[22 + i];
         }
-        stencil[24] = rowValues[27];
+        stencil[24] = rowValues[26];
       }
     } else if((ie == elementNodesPerDir[0] - 1) && (je == 0) && (ke == 0)) {// corner 2
       if(rowValues.size() == 7) {
@@ -1157,7 +1162,7 @@ namespace MueLu {
           stencil[i] = rowValues[8 + i];
         }
         stencil[14] = rowValues[20];
-        for(i = 0; i < 4; ++i) {
+        for(LO i = 0; i < 4; ++i) {
           stencil[17 + i] = rowValues[21 + i];
         }
         stencil[23] = rowValues[25];
@@ -1180,7 +1185,7 @@ namespace MueLu {
             }
           }
         }
-        for(i = 0; i < 10; ++i) {
+        for(LO i = 0; i < 10; ++i) {
           stencil[i] = rowValues[8 + i];
         }
         stencil[12] = rowValues[18];
@@ -1209,7 +1214,7 @@ namespace MueLu {
             }
           }
         }
-        for(i = 0; i < 9; ++i) {
+        for(LO i = 0; i < 9; ++i) {
           stencil[i] = rowValues[8 + i];
         }
         stencil[11] = rowValues[17];
@@ -1221,7 +1226,7 @@ namespace MueLu {
           stencil[23 + i] = rowValues[23 + i];
         }
       }
-    } else if((ie == 0) && (je == 1) && (ke == elementNodesPerDir[2] - 1)) {// corner 5
+    } else if((ie == 0) && (je == 0) && (ke == elementNodesPerDir[2] - 1)) {// corner 5
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[0];
         stencil[10] = rowValues[4];
@@ -1246,7 +1251,7 @@ namespace MueLu {
           stencil[9 + i] = rowValues[13 + i];
         }
         stencil[15] = rowValues[17];
-        for(i = 0; i < 9; ++i) {
+        for(LO i = 0; i < 9; ++i) {
           stencil[18 + i] = rowValues[18 + i];
         }
       }
@@ -1275,7 +1280,7 @@ namespace MueLu {
           stencil[8 + i] = rowValues[12 + i];
         }
         stencil[14] = rowValues[16];
-        for(i = 0; i < 11; ++i) {
+        for(LO i = 0; i < 10; ++i) {
           stencil[17 + i] = rowValues[17 + i];
         }
       }
@@ -1302,7 +1307,7 @@ namespace MueLu {
           stencil[6 + i] = rowValues[10 + i];
         }
         stencil[12] = rowValues[14];
-        for(i = 0; i < 13; ++i) {
+        for(LO i = 0; i < 12; ++i) {
           stencil[15 + i] = rowValues[15 + i];
         }
       }
@@ -1327,8 +1332,8 @@ namespace MueLu {
         for(LO i = 0; i < 4; ++i) {
           stencil[5 + i] = rowValues[9 + i];
         }
-        stencil[11] = rowValues[12];
-        for(i = 0; i < 14; ++i) {
+        stencil[11] = rowValues[13];
+        for(LO i = 0; i < 13; ++i) {
           stencil[14 + i] = rowValues[14 + i];
         }
       }
@@ -1374,9 +1379,158 @@ namespace MueLu {
         stencil[iEdgeStencilOffset[2] + 9 + i] = rowValues[iEdgeRowOffset[2] + 3 + i];
       }
     } else if((ie == 0 || ie == elementNodesPerDir[0] - 1) && (ke == 0 || ke == elementNodesPerDir[2] - 1)) {// j-axis edge
-
+      Array<LO> jEdgeStencilOffset(3), jEdgeRowOffset(3);
+      if(ke == 0) {
+        jEdgeStencilOffset[1] = 0;
+        jEdgeRowOffset[1] = 12;
+        if(ie == 0) {
+          jEdgeStencilOffset[0] = 10;
+          jEdgeStencilOffset[2] = 9;
+          jEdgeRowOffset[2] = 21;
+        } else {
+          jEdgeStencilOffset[0] = 9;
+          jEdgeStencilOffset[2] = 11;
+          jEdgeRowOffset[2] = 21;
+        }
+      } else {
+        jEdgeStencilOffset[1] = 18;
+        jEdgeRowOffset[1] = 18;
+        if(ie == 0) {
+          jEdgeStencilOffset[0] = 1;
+          jEdgeStencilOffset[2] = 0;
+          jEdgeRowOffset[2] = 12;
+        } else {
+          jEdgeStencilOffset[0] = 0;
+          jEdgeStencilOffset[2] = 2;
+          jEdgeRowOffset[2] = 12;
+        }
+      }
+      for(LO k = 0; k < 2; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 2; ++i) {
+            stencil[jEdgeStencilOffset[0] + k*9 + j*3 + i] = rowValues[6*k + 2*j + i];
+          }
+        }
+      }
+      for(LO i = 0; i < 9; ++i) {
+        stencil[jEdgeStencilOffset[1] + i] = rowValues[jEdgeRowOffset[1] + i];
+      }
+      for(LO i = 0; i < 3; ++i) {
+        stencil[jEdgeStencilOffset[2] + 3*i]     = rowValues[jEdgeRowOffset[2] + i];
+        stencil[jEdgeStencilOffset[2] + 9 + 3*i] = rowValues[jEdgeRowOffset[2] + 3 + i];
+      }
+    } else if((ie == 0 || ie == elementNodesPerDir[0] - 1) && (je == 0 || je == elementNodesPerDir[1] - 1)) {// k-axis edge
+      Array<LO> kEdgeStencilOffset(3), kEdgeRowOffset(3);
+      if(je == 0) {
+        kEdgeStencilOffset[1] = 0;
+        kEdgeRowOffset[1] = 12;
+        if(ie == 0) {
+          kEdgeStencilOffset[0] = 4;
+          kEdgeStencilOffset[2] = 3;
+          kEdgeRowOffset[2] = 15;
+        } else {
+          kEdgeStencilOffset[0] = 3;
+          kEdgeStencilOffset[2] = 5;
+          kEdgeRowOffset[2] = 15;
+        }
+      } else {
+        kEdgeStencilOffset[1] = 6;
+        kEdgeRowOffset[1] = 14;
+        if(ie == 0) {
+          kEdgeStencilOffset[0] = 1;
+          kEdgeStencilOffset[2] = 0;
+          kEdgeRowOffset[2] = 12;
+        } else {
+          kEdgeStencilOffset[0] = 0;
+          kEdgeStencilOffset[2] = 2;
+          kEdgeRowOffset[2] = 12;
+        }
+      }
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 2; ++j) {
+          for(LO i = 0; i < 2; ++i) {
+            stencil[kEdgeStencilOffset[0] + k*9 + j*3 + i] = rowValues[4*k + 2*j + i];
+          }
+        }
+      }
+      for(LO k = 0; k < 3; ++k) {
+        for(LO i = 0; i < 3; ++i) {
+          stencil[kEdgeStencilOffset[1] + 9*k + i] = rowValues[kEdgeRowOffset[1] + 5*k + i];
+        }
+      }
+      for(LO i = 0; i < 3; ++i) {
+        stencil[kEdgeStencilOffset[2] + 9*i]     = rowValues[kEdgeRowOffset[2] + 5*i];
+        stencil[kEdgeStencilOffset[2] + 3 + 9*i] = rowValues[kEdgeRowOffset[2] + 1 + 5*i];
+      }
+    } else if(ie == 0 || ie == elementNodesPerDir[0] - 1) {// i-axis face
+      Array<LO> iFaceStencilOffset(2);
+      if(ie == 0) {
+        iFaceStencilOffset[0] = 1;
+        iFaceStencilOffset[1] = 0;
+      } else {
+        iFaceStencilOffset[0] = 0;
+        iFaceStencilOffset[1] = 2;
+      }
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 2; ++i) {
+            stencil[iFaceStencilOffset[0] + k*9 + j*3 + i] = rowValues[6*k + 2*j + i];
+          }
+        }
+      }
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          stencil[iFaceStencilOffset[1] + k*9 + j*3] = rowValues[18 + 3*k + j];
+        }
+      }
+    } else if(je == 0 || je == elementNodesPerDir[1] - 1) {// j-axis face
+      Array<LO> jFaceStencilOffset(2);
+      if(je == 0) {
+        jFaceStencilOffset[0] = 3;
+        jFaceStencilOffset[1] = 0;
+      } else {
+        jFaceStencilOffset[0] = 0;
+        jFaceStencilOffset[1] = 6;
+      }
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 2; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            stencil[jFaceStencilOffset[0] + k*9 + j*3 + i] = rowValues[6*k + 3*j + i];
+          }
+        }
+      }
+      for(LO k = 0; k < 3; ++k) {
+        for(LO i = 0; i < 3; ++i) {
+          stencil[jFaceStencilOffset[1] + k*9 + i] = rowValues[18 + 3*k + i];
+        }
+      }
+    } else if(ke == 0 || ke == elementNodesPerDir[2] - 1) {// k-axis face
+      Array<LO> kFaceStencilOffset(2);
+      if(ke == 0) {
+        kFaceStencilOffset[0] =  9;
+        kFaceStencilOffset[1] =  0;
+      } else {
+        kFaceStencilOffset[0] =  0;
+        kFaceStencilOffset[1] = 18;
+      }
+      for(LO k = 0; k < 2; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            stencil[kFaceStencilOffset[0] + k*9 + j*3 + i] = rowValues[9*k + 3*j + i];
+          }
+        }
+      }
+      for(LO j = 0; j < 3; ++j) {
+        for(LO i = 0; i < 3; ++i) {
+          stencil[kFaceStencilOffset[1] + 3*j + i] = rowValues[18 + 3*j + i];
+        }
+      }
+    } else {// the node is "interior" and nothing needs to be reordered
+      for(LO i = 0; i < 27; ++i) {
+        stencil[i] = rowValues[i];
+      }
     }
-  }
+  } // reorderStencil()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sh_sort_permute(
