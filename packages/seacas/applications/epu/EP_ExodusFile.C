@@ -155,7 +155,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
     std::cout << "Single file mode... (Max open = " << max_files << ")\n"
               << "Consider using the -subcycle option for faster execution...\n\n";
   }
-  
+
   fileids_.resize(processorCount_);
   filenames_.resize(processorCount_);
 

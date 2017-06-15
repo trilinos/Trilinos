@@ -17,9 +17,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  SEACASIoss_ENABLE_THREADSAFE
+  IOSS_THREADSAFE
+  "Enable thread-safe version of Ioss."
+  OFF
+  )
+
 ASSERT_DEFINED(TPL_ENABLE_Pthread)
-IF (EXODUS_ENABLE_THREADSAFE AND NOT TPL_ENABLE_Pthread)
-  MESSAGE(FATAL_ERROR "You set EXODUS_ENABLE_THREADSAFE=ON, but TriBITs support for Pthread(s) is not enabled (TPL_ENABLE_Pthread=OFF).  This is not allowed.  Please enable Pthreads before attempting to enable the thread-safe Exodus support.")
+IF (SEACASExodus_ENABLE_THREADSAFE AND NOT TPL_ENABLE_Pthread)
+  MESSAGE(FATAL_ERROR "You set SEACASExodus_ENABLE_THREADSAFE=ON, but TriBITs support for Pthread(s) is not enabled (TPL_ENABLE_Pthread=OFF).  This is not allowed.  Please enable Pthreads before attempting to enable the thread-safe Exodus support.")
+ENDIF ()
+IF (SEACASIoss_ENABLE_THREADSAFE AND NOT TPL_ENABLE_Pthread)
+  MESSAGE(FATAL_ERROR "You set SEACASIoss_ENABLE_THREADSAFE=ON, but TriBITs support for Pthread(s) is not enabled (TPL_ENABLE_Pthread=OFF).  This is not allowed.  Please enable Pthreads before attempting to enable the thread-safe IOSS support.")
 ENDIF ()
 
 # C) Add the libraries, tests, and examples

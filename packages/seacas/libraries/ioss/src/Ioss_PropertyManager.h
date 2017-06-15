@@ -35,21 +35,22 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Property.h> // for Property
+#include <cstddef>         // for size_t
 #include <map>             // for map, map<>::value_compare
-#include <stddef.h>        // for size_t
 #include <string>          // for string, operator<
 #include <vector>          // for vector
 
 namespace Ioss {
   typedef std::map<std::string, Property, std::less<std::string>> PropMapType;
-  typedef PropMapType::value_type ValuePair;
+  using ValuePair = PropMapType::value_type;
 
   /** \brief A collection of Ioss::Property objects
    */
   class PropertyManager
   {
   public:
-    PropertyManager();
+    PropertyManager() = default;
+    PropertyManager(const PropertyManager &from);
     PropertyManager &operator=(const PropertyManager &from) = delete;
     ~PropertyManager();
 
@@ -71,6 +72,9 @@ namespace Ioss {
 
   private:
     PropMapType properties;
+#if defined(IOSS_THREADSAFE)
+    mutable std::mutex m_;
+#endif
   };
-}
+} // namespace Ioss
 #endif

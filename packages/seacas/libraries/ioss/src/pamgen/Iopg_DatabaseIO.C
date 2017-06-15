@@ -146,7 +146,7 @@ namespace Iopg {
 
   DatabaseIO::~DatabaseIO() { Delete_Pamgen_Mesh(); }
 
-  void DatabaseIO::release_memory()
+  void DatabaseIO::release_memory__()
   {
     nodeMap.release_memory();
     elemMap.release_memory();
@@ -194,7 +194,7 @@ namespace Iopg {
     return mesh_description;
   }
 
-  void DatabaseIO::read_meta_data()
+  void DatabaseIO::read_meta_data__()
   {
     // The file for pamgen contains the mesh description.
     // The Iopg routine is expecting the mesh description to be a
@@ -554,7 +554,7 @@ namespace Iopg {
       // the 'nodes_per_element'.
       if (!isdigit(*(type.rbegin()))) {
         if (my_node_count[iblk] > 1) {
-          type += Ioss::Utils::to_string(my_node_count[iblk]);
+          type += std::to_string(my_node_count[iblk]);
         }
       }
 
@@ -952,7 +952,7 @@ namespace Iopg {
 
             if (split_type != Ioss::SPLIT_BY_DONT_SPLIT && side_set_name != "universal_sideset") {
               std::string storage = "Real[";
-              storage += Ioss::Utils::to_string(side_topo->number_nodes());
+              storage += std::to_string(side_topo->number_nodes());
               storage += "]";
               side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage,
                                                 Ioss::Field::MESH, my_side_count));
@@ -970,13 +970,13 @@ namespace Iopg {
   }
 }
 
-bool DatabaseIO::begin(Ioss::State /* state */) { return true; }
+bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
 
-bool DatabaseIO::end(Ioss::State /* state */) { return true; }
+bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
 
-bool DatabaseIO::begin_state(Ioss::Region *region, int /* state */, double time) { return true; }
+bool DatabaseIO::begin_state__(Ioss::Region *region, int /* state */, double time) { return true; }
 
-bool DatabaseIO::end_state(Ioss::Region * /* region */, int /* state */, double /* time */)
+bool DatabaseIO::end_state__(Ioss::Region * /* region */, int /* state */, double /* time */)
 {
   return true;
 }
@@ -1195,7 +1195,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Fiel
           // Convert local node id to global node id and store in 'data'
           int *entity_proc = static_cast<int *>(data);
           if (field.get_name() == "entity_processor") {
-            const Ioss::MapContainer &map = get_node_map().map;
+            const Ioss::MapContainer &map = get_node_map().map();
 
             int j = 0;
             for (i = 0; i < entity_count; i++) {
@@ -1227,7 +1227,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Fiel
 
           int *entity_proc = static_cast<int *>(data);
           if (field.get_name() == "entity_processor") {
-            const Ioss::MapContainer &map = get_element_map().map;
+            const Ioss::MapContainer &map = get_element_map().map();
 
             int j = 0;
             for (i = 0; i < entity_count; i++) {
@@ -1310,7 +1310,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
         // map from local_to_global prior to generating the side  id...
 
         // Get the element number map (1-based)...
-        const Ioss::MapContainer &map = get_element_map().map;
+        const Ioss::MapContainer &map = get_element_map().map();
 
         // Allocate space for local side number, use 'data' as temporary
         // storage for element numbers and overwrite with the side
@@ -1368,7 +1368,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
         // map from local_to_global prior to generating the side  id...
 
         // Get the element number map (1-based)...
-        const Ioss::MapContainer &map = get_element_map().map;
+        const Ioss::MapContainer &map = get_element_map().map();
 
         // Allocate space for local side number and element numbers
         // numbers.
@@ -1529,24 +1529,24 @@ const Ioss::Map &DatabaseIO::get_node_map() const
 {
   // Allocate space for node number map and read it in...
   // Can be called multiple times, allocate 1 time only
-  if (nodeMap.map.empty()) {
-    nodeMap.map.resize(nodeCount + 1);
+  if (nodeMap.map().empty()) {
+    nodeMap.map().resize(nodeCount + 1);
 
     if (is_input()) {
-      std::vector<int> node_map(nodeMap.map.size());
+      std::vector<int> node_map(nodeMap.map().size());
       int              error = im_ex_get_node_num_map(get_file_pointer(), &node_map[1]);
       if (error < 0) {
         // Clear out the vector...
-        Ioss::MapContainer().swap(nodeMap.map);
+        Ioss::MapContainer().swap(nodeMap.map());
         pamgen_error(get_file_pointer(), __LINE__, myProcessor);
       }
-      std::copy(node_map.begin(), node_map.end(), nodeMap.map.begin());
+      std::copy(node_map.begin(), node_map.end(), nodeMap.map().begin());
       // Check for sequential node map.
       // If not, build the reverse G2L node map...
-      nodeMap.map[0] = -1;
+      nodeMap.map()[0] = -1;
       for (int i = 1; i < nodeCount + 1; i++) {
-        if (i != nodeMap.map[i]) {
-          nodeMap.map[0] = 1;
+        if (i != nodeMap.map()[i]) {
+          nodeMap.map()[0] = 1;
           break;
         }
       }
@@ -1564,25 +1564,25 @@ const Ioss::Map &DatabaseIO::get_element_map() const
 {
   // Allocate space for elemente number map and read it in...
   // Can be called multiple times, allocate 1 time only
-  if (elemMap.map.empty()) {
-    elemMap.map.resize(elementCount + 1);
+  if (elemMap.map().empty()) {
+    elemMap.map().resize(elementCount + 1);
 
     if (is_input()) {
-      std::vector<int> elem_map(elemMap.map.size());
+      std::vector<int> elem_map(elemMap.map().size());
       int              error = im_ex_get_elem_num_map(get_file_pointer(), &elem_map[1]);
       if (error < 0) {
         // Clear out the vector...
-        Ioss::MapContainer().swap(elemMap.map);
+        Ioss::MapContainer().swap(elemMap.map());
         pamgen_error(get_file_pointer(), __LINE__, myProcessor);
       }
-      std::copy(elem_map.begin(), elem_map.end(), elemMap.map.begin());
+      std::copy(elem_map.begin(), elem_map.end(), elemMap.map().begin());
 
       // Check for sequential element map.
       // If not, build the reverse G2L element map...
-      elemMap.map[0] = -1;
+      elemMap.map()[0] = -1;
       for (int i = 1; i < elementCount + 1; i++) {
-        if (i != elemMap.map[i]) {
-          elemMap.map[0] = 1;
+        if (i != elemMap.map()[i]) {
+          elemMap.map()[0] = 1;
           break;
         }
       }

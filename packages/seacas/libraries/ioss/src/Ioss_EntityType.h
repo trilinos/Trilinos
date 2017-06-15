@@ -54,5 +54,5 @@ namespace Ioss {
     STRUCTUREDBLOCK = 8192,
     INVALID_TYPE    = 16384
   };
-}
+} // namespace Ioss
 #endif

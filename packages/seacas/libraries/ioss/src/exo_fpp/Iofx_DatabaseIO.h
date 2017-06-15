@@ -88,19 +88,19 @@ namespace Iofx {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO(){};
 
+  private:
+    const std::string &decoded_filename() const;
+
     // Check to see if database state is ok...
     // If 'write_message' true, then output a warning message indicating the problem.
     // If 'error_message' non-null, then put the warning message into the string and return it.
     // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
     //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    bool ok(bool write_message = false, std::string *error_msg = nullptr,
-            int *bad_count = nullptr) const override;
+    bool ok__(bool write_message = false, std::string *error_msg = nullptr,
+              int *bad_count = nullptr) const override;
 
-    void get_step_times() override;
+    void get_step_times__() override;
 
-    const std::string &decoded_filename() const;
-
-  private:
     bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
                          bool abort_if_error) const;
     bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
@@ -186,7 +186,7 @@ namespace Iofx {
     void compute_node_status() const;
 
     // Metadata-related functions.
-    void read_meta_data() override;
+    void read_meta_data__() override;
     void read_communication_metadata();
 
     int64_t read_transient_field(ex_entity_type type, const Ioex::VariableNameMap &variables,
@@ -238,12 +238,12 @@ namespace Iofx {
     const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, ex_entity_type entity_type,
                              ex_inquiry inquiry_type) const;
 
-    int64_t node_global_to_local(int64_t global, bool must_exist) const override
+    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
     {
       return nodeMap.global_to_local(global, must_exist);
     }
 
-    int64_t element_global_to_local(int64_t global) const override
+    int64_t element_global_to_local__(int64_t global) const override
     {
       return elemMap.global_to_local(global);
     }

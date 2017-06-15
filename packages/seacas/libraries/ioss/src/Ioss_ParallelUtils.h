@@ -35,10 +35,10 @@
 
 #include <Ioss_CodeTypes.h> // for Int64Vector, IntVector
 #include <Ioss_Utils.h>
-#include <assert.h>
-#include <stddef.h> // for size_t
-#include <string>   // for string
-#include <vector>   // for vector
+#include <cassert>
+#include <cstddef> // for size_t
+#include <string>  // for string
+#include <vector>  // for vector
 
 namespace Ioss {
 
@@ -91,7 +91,7 @@ namespace Ioss {
      * knowledge of the value should initialize to '0' and the
      * processors with knowledge set the appropriate values.
      */
-    void attribute_reduction(const int length, char buffer[]) const;
+    void attribute_reduction(int length, char buffer[]) const;
 
     /*! Return min, max, average memory used by any process */
     void memory_stats(int64_t &min, int64_t &max, int64_t &avg) const;
@@ -146,7 +146,7 @@ namespace Ioss {
   inline MPI_Datatype mpi_type(unsigned int /*dummy*/) { return MPI_UNSIGNED; }
 
   template <typename T>
-  int MY_Alltoallv64(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts,
+  int MY_Alltoallv64(const std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts,
                      const std::vector<int64_t> &senddisp, std::vector<T> &recvbuf,
                      const std::vector<int64_t> &recvcounts, const std::vector<int64_t> &recvdisp,
                      MPI_Comm comm)
@@ -159,8 +159,8 @@ namespace Ioss {
     // Verify that all 'counts' can fit in an integer. Symmetric
     // communication, so recvcounts are sendcounts on another processor.
     for (int i = 0; i < processor_count; i++) {
-      int snd_cnt = (int)sendcounts[i];
-      if ((int64_t)snd_cnt != sendcounts[i]) {
+      int snd_cnt = static_cast<int>(sendcounts[i]);
+      if (static_cast<int64_t>(snd_cnt) != sendcounts[i]) {
         std::ostringstream errmsg;
         errmsg << "ERROR: The number of items that must be communicated via MPI calls from\n"
                << "       processor " << my_processor << " to processor " << i << " is "
@@ -174,25 +174,25 @@ namespace Ioss {
     size_t pow_2 = power_2(processor_count);
 
     for (size_t i = 1; i < pow_2; i++) {
-      MPI_Status status;
+      MPI_Status status{};
 
       int    tag           = 24713;
       size_t exchange_proc = i ^ my_processor;
-      if (exchange_proc < (size_t)processor_count) {
-        int snd_cnt =
-            (int)sendcounts[exchange_proc]; // Converts from int64_t to int as needed by mpi
-        int rcv_cnt = (int)recvcounts[exchange_proc];
-        if ((size_t)my_processor < exchange_proc) {
-          MPI_Send(&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)), exchange_proc, tag,
-                   comm);
+      if (exchange_proc < static_cast<size_t>(processor_count)) {
+        int snd_cnt = static_cast<int>(
+            sendcounts[exchange_proc]); // Converts from int64_t to int as needed by mpi
+        int rcv_cnt = static_cast<int>(recvcounts[exchange_proc]);
+        if (static_cast<size_t>(my_processor) < exchange_proc) {
+          MPI_Send((void *)&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)),
+                   exchange_proc, tag, comm);
           MPI_Recv(&recvbuf[recvdisp[exchange_proc]], rcv_cnt, mpi_type(T(0)), exchange_proc, tag,
                    comm, &status);
         }
         else {
           MPI_Recv(&recvbuf[recvdisp[exchange_proc]], rcv_cnt, mpi_type(T(0)), exchange_proc, tag,
                    comm, &status);
-          MPI_Send(&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)), exchange_proc, tag,
-                   comm);
+          MPI_Send((void *)&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)),
+                   exchange_proc, tag, comm);
         }
       }
     }
@@ -205,7 +205,7 @@ namespace Ioss {
   }
 
   template <typename T>
-  int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcnts,
+  int MY_Alltoallv(const std::vector<T> &sendbuf, const std::vector<int64_t> &sendcnts,
                    const std::vector<int64_t> &senddisp, std::vector<T> &recvbuf,
                    const std::vector<int64_t> &recvcnts, const std::vector<int64_t> &recvdisp,
                    MPI_Comm comm)
@@ -227,8 +227,9 @@ namespace Ioss {
       std::vector<int> send_dis(senddisp.begin(), senddisp.end());
       std::vector<int> recv_cnt(recvcnts.begin(), recvcnts.end());
       std::vector<int> recv_dis(recvdisp.begin(), recvdisp.end());
-      return MPI_Alltoallv(TOPTR(sendbuf), TOPTR(send_cnt), TOPTR(send_dis), mpi_type(T(0)),
-                           TOPTR(recvbuf), TOPTR(recv_cnt), TOPTR(recv_dis), mpi_type(T(0)), comm);
+      return MPI_Alltoallv((void *)sendbuf.data(), send_cnt.data(), send_dis.data(), mpi_type(T(0)),
+                           (void *)recvbuf.data(), recv_cnt.data(), recv_dis.data(), mpi_type(T(0)),
+                           comm);
     }
     else {
 #endif
@@ -243,7 +244,7 @@ namespace Ioss {
   }
 
   template <typename T>
-  int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int> &sendcnts,
+  int MY_Alltoallv(const std::vector<T> &sendbuf, const std::vector<int> &sendcnts,
                    const std::vector<int> &senddisp, std::vector<T> &recvbuf,
                    const std::vector<int> &recvcnts, const std::vector<int> &recvdisp,
                    MPI_Comm comm)
@@ -254,5 +255,5 @@ namespace Ioss {
                          mpi_type(T(0)), comm);
   }
 #endif
-}
+} // namespace Ioss
 #endif

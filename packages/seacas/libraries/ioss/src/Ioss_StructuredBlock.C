@@ -37,10 +37,10 @@
 #include <Ioss_Property.h>     // for Property
 #include <Ioss_Region.h>
 #include <Ioss_StructuredBlock.h>
+#include <cstddef> // for size_t
 #include <numeric>
-#include <stddef.h> // for size_t
-#include <string>   // for string
-#include <vector>   // for vector
+#include <string> // for string
+#include <vector> // for vector
 
 namespace {
   const std::string SCALAR() { return std::string("scalar"); }
@@ -110,20 +110,21 @@ namespace Ioss {
       global_node_count = global_cell_count == 0 ? 0 : (m_niGlobal + 1);
     }
     else if (index_dim == 2) {
-      cell_count = (int64_t)m_ni * m_nj;
-      node_count = cell_count == 0 ? 0 : (int64_t)(m_ni + 1) * (m_nj + 1);
+      cell_count = static_cast<int64_t>(m_ni) * m_nj;
+      node_count = cell_count == 0 ? 0 : static_cast<int64_t>(m_ni + 1) * (m_nj + 1);
 
-      global_cell_count = (int64_t)m_niGlobal * m_njGlobal;
-      global_node_count = global_cell_count == 0 ? 0 : (int64_t)(m_niGlobal + 1) * (m_njGlobal + 1);
+      global_cell_count = static_cast<int64_t>(m_niGlobal) * m_njGlobal;
+      global_node_count =
+          global_cell_count == 0 ? 0 : static_cast<int64_t>(m_niGlobal + 1) * (m_njGlobal + 1);
     }
     else if (index_dim == 3) {
-      cell_count = (int64_t)m_ni * m_nj * m_nk;
-      node_count = cell_count == 0 ? 0 : (int64_t)(m_ni + 1) * (m_nj + 1) * (m_nk + 1);
+      cell_count = static_cast<int64_t>(m_ni) * m_nj * m_nk;
+      node_count = cell_count == 0 ? 0 : static_cast<int64_t>(m_ni + 1) * (m_nj + 1) * (m_nk + 1);
 
-      global_cell_count = (int64_t)m_niGlobal * m_njGlobal * m_nkGlobal;
-      global_node_count = global_cell_count == 0
-                              ? 0
-                              : (int64_t)(m_niGlobal + 1) * (m_njGlobal + 1) * (m_nkGlobal + 1);
+      global_cell_count = static_cast<int64_t>(m_niGlobal) * m_njGlobal * m_nkGlobal;
+      global_node_count = global_cell_count == 0 ? 0
+                                                 : static_cast<int64_t>(m_niGlobal + 1) *
+                                                       (m_njGlobal + 1) * (m_nkGlobal + 1);
     }
 
     properties.add(Property("component_degree", index_dim));
@@ -179,6 +180,22 @@ namespace Ioss {
 
   StructuredBlock::~StructuredBlock() = default;
 
+  StructuredBlock *StructuredBlock::clone(DatabaseIO *database) const
+  {
+    int index_dim = properties.get("component_degree").get_int();
+
+    IJK_t ijk{{m_ni, m_nj, m_nk}};
+    IJK_t offset{{m_offsetI, m_offsetJ, m_offsetK}};
+    IJK_t ijk_glob{{m_niGlobal, m_njGlobal, m_nkGlobal}};
+
+    auto block = new StructuredBlock(database, name(), index_dim, ijk, offset, ijk_glob);
+
+    block->m_zoneConnectivity   = m_zoneConnectivity;
+    block->m_boundaryConditions = m_boundaryConditions;
+
+    return block;
+  }
+
   Property StructuredBlock::get_implicit_property(const std::string &my_name) const
   {
     return GroupingEntity::get_implicit_property(my_name);
@@ -203,7 +220,7 @@ namespace Ioss {
 
   std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc)
   {
-    std::array<std::string, 7> tf = {{"-k", "-j", "-i", " ", "i", "j", "k"}};
+    std::array<std::string, 7> tf{{"-k", "-j", "-i", " ", "i", "j", "k"}};
 
     // 0 -3 -k
     // 1 -2 -j
@@ -249,7 +266,7 @@ namespace Ioss {
 
   std::array<int, 9> ZoneConnectivity::transform_matrix() const
   {
-    std::array<int, 9> t_matrix;
+    std::array<int, 9> t_matrix{};
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
         t_matrix[3 * i + j] = sign(m_transform[j]) * del(m_transform[j], i + 1);
@@ -262,8 +279,8 @@ namespace Ioss {
   {
     auto t_matrix = transform_matrix();
 
-    Ioss::IJK_t diff;
-    Ioss::IJK_t donor;
+    Ioss::IJK_t diff{};
+    Ioss::IJK_t donor{};
 
     diff[0] = index_1[0] - m_rangeBeg[0];
     diff[1] = index_1[1] - m_rangeBeg[1];
@@ -291,8 +308,8 @@ namespace Ioss {
   {
     auto t_matrix = transform_matrix();
 
-    Ioss::IJK_t diff;
-    Ioss::IJK_t index;
+    Ioss::IJK_t diff{};
+    Ioss::IJK_t index{};
 
     diff[0] = index_1[0] - m_donorRangeBeg[0];
     diff[1] = index_1[1] - m_donorRangeBeg[1];

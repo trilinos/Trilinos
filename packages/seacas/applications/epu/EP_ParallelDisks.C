@@ -39,7 +39,6 @@
 
 #include <EP_Internals.h>
 #include <EP_ParallelDisks.h>
-#include <to_string.h>
 
 #ifdef _WIN32
 #include <Shlwapi.h>
@@ -118,13 +117,13 @@ void Excn::ParallelDisks::create_disk_names()
     int num = i + raid_offset;
     if (num < 10) {
 #ifdef COUGAR
-      disk_names[i] = to_string(num);
+      disk_names[i] = std::to_string(num);
 #else
-      disk_names[i] = "0" + to_string(num);
+      disk_names[i] = "0" + std::to_string(num);
 #endif
     }
     else {
-      disk_names[i] = to_string(num);
+      disk_names[i] = std::to_string(num);
     }
   }
 }
@@ -139,11 +138,11 @@ void Excn::ParallelDisks::Create_IO_Filename(std::string &name, int processor, i
   // Examples: basename.8.1, basename.64.03, basename.128.001
 
   // Create a std::string containing the total number of processors
-  std::string num_proc   = to_string(num_processors);
+  std::string num_proc   = std::to_string(num_processors);
   size_t      proc_width = num_proc.length();
 
   // Create a std::string containing the current processor number
-  std::string cur_proc  = to_string(processor);
+  std::string cur_proc  = std::to_string(processor);
   size_t      cur_width = cur_proc.length();
 
   // Build the filename

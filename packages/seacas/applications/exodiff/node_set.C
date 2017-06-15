@@ -31,14 +31,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include "ED_SystemInterface.h" // for ERROR, SystemInterface, etc
+#include "exodusII.h"           // for ex_set, etc
+#include "iqsort.h"             // for index_qsort
 #include "node_set.h"
-#include <cstdlib>                      // for exit
-#include <iostream>                     // for operator<<, ostream, etc
-#include <vector>                       // for vector
-#include "ED_SystemInterface.h"         // for ERROR, SystemInterface, etc
-#include "exodusII.h"                   // for ex_set, etc
-#include "iqsort.h"                     // for index_qsort
-#include "smart_assert.h"               // for SMART_ASSERT
+#include "smart_assert.h" // for SMART_ASSERT
+#include <cstdlib>        // for exit
+#include <iostream>       // for operator<<, ostream, etc
+#include <vector>         // for vector
 
 template <typename INT>
 Node_Set<INT>::Node_Set()
@@ -157,7 +157,7 @@ template <typename INT> const double *Node_Set<INT>::Distribution_Factors() cons
 template <typename INT> void Node_Set<INT>::Free_Distribution_Factors() const
 {
   if (dist_factors) {
-    delete [] dist_factors;
+    delete[] dist_factors;
     dist_factors = nullptr;
   }
 }
