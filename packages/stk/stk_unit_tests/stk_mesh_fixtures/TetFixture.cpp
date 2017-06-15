@@ -54,6 +54,37 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
+
+TetFixture::TetFixture(   MetaData& meta
+            , BulkData& bulk
+            , size_t nx
+            , size_t ny
+            , size_t nz
+            , size_t nid_start
+            , size_t eid_start
+          )
+: m_spatial_dimension(3),
+  m_nx(nx),
+  m_ny(ny),
+  m_nz(nz),
+  node_id_start(nid_start),
+  elem_id_start(eid_start),
+  m_meta_p( &meta ),
+  m_bulk_p( &bulk ),
+  m_meta( meta ),
+  m_bulk_data( bulk ),
+  m_elem_parts( ),
+  m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+  m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
+  owns_mesh(false)
+{
+  //put coord-field on all nodes:
+  put_field(
+    m_coord_field,
+    m_meta.universal_part(),
+    m_spatial_dimension);
+}
+
   TetFixture::TetFixture(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
@@ -65,15 +96,17 @@ namespace fixtures {
     m_nx(nx),
     m_ny(ny),
     m_nz(nz),
-    m_meta( m_spatial_dimension ),
-    m_bulk_data(  m_meta
+    m_meta_p( new MetaData(m_spatial_dimension) ),
+    m_bulk_p(  new BulkData(*m_meta_p
                 , pm
                 , autoAuraOption
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map
+                , connectivity_map)
                ),
+    m_meta(*m_meta_p),
+    m_bulk_data(*m_bulk_p),
     m_elem_parts( 1, &m_meta.declare_part_with_topology("tet_part", stk::topology::TET_4) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
@@ -85,6 +118,14 @@ namespace fixtures {
     m_meta.universal_part(),
     m_spatial_dimension);
 
+}
+
+TetFixture::~TetFixture()
+{
+  if( owns_mesh ) {
+    delete m_bulk_p;
+    delete m_meta_p;
+  }
 }
 
 void TetFixture::generate_mesh(const CoordinateMapping & coordMap)
@@ -112,7 +153,7 @@ void TetFixture::generate_mesh(const CoordinateMapping & coordMap)
 
 void TetFixture::node_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &z ) const
 {
-  entity_id -= 1;
+  entity_id -= node_id_start;
 
   x = entity_id % (m_nx+1);
   entity_id /= (m_nx+1);
@@ -167,30 +208,30 @@ void TetFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_processor
       elem_nodes[7] = node_id( ix   , iy+1 , iz+1 );
 
       for (size_t tet = 0; tet < 6; tet++) {
-	tet_nodes[0] = elem_nodes[tet_vert[tet][0]];
-	tet_nodes[1] = elem_nodes[tet_vert[tet][1]];
-	tet_nodes[2] = elem_nodes[tet_vert[tet][2]];
-	tet_nodes[3] = elem_nodes[tet_vert[tet][3]];
-	EntityId tet_id = 6*hex_id + tet + 1;
-	stk::mesh::declare_element( m_bulk_data, m_elem_parts, tet_id, tet_nodes);
+        tet_nodes[0] = elem_nodes[tet_vert[tet][0]];
+        tet_nodes[1] = elem_nodes[tet_vert[tet][1]];
+        tet_nodes[2] = elem_nodes[tet_vert[tet][2]];
+        tet_nodes[3] = elem_nodes[tet_vert[tet][3]];
+        EntityId tet_id = 6*hex_id + tet + elem_id_start;
+        stk::mesh::declare_element( m_bulk_data, m_elem_parts, tet_id, tet_nodes);
 
-	for (size_t i = 0; i<4; ++i) {
-	  stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , tet_nodes[i] );
-	  m_bulk_data.change_entity_parts(node, m_node_parts);
+        for (size_t i = 0; i<4; ++i) {
+          stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , tet_nodes[i] );
+          m_bulk_data.change_entity_parts(node, m_node_parts);
 
-	  ThrowRequireMsg( m_bulk_data.is_valid(node),
-			   "This process should know about the nodes that make up its element");
+          ThrowRequireMsg( m_bulk_data.is_valid(node),
+               "This process should know about the nodes that make up its element");
 
-	  DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, tet_nodes[i], node);
+          DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, tet_nodes[i], node);
 
-	  // Compute and assign coordinates to the node
-	  size_t nx = 0, ny = 0, nz = 0;
-	  node_x_y_z(tet_nodes[i], nx, ny, nz);
+          // Compute and assign coordinates to the node
+          size_t nx = 0, ny = 0, nz = 0;
+          node_x_y_z(tet_nodes[i], nx, ny, nz);
 
-	  Scalar * data = stk::mesh::field_data( m_coord_field , node );
+          Scalar * data = stk::mesh::field_data( m_coord_field , node );
 
-	  coordMap.getNodeCoordinates(data, nx, ny, nz);
-	}
+          coordMap.getNodeCoordinates(data, nx, ny, nz);
+        }
       }
     }
   }
@@ -246,9 +287,9 @@ void TetFixture::fill_node_map(int p_rank)
         tet_node[2] = elem_node[tet_vert[tet][2]];
         tet_node[3] = elem_node[tet_vert[tet][3]];
 
-  for (size_t i = 0; i<4; ++i) {
-    AddToNodeProcsMMap(m_nodes_to_procs, tet_node[i] , p_rank);
-  }
+        for (size_t i = 0; i<4; ++i) {
+          AddToNodeProcsMMap(m_nodes_to_procs, tet_node[i] , p_rank);
+        }
       }
     }
   }

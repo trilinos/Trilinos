@@ -35,8 +35,6 @@
 #include <boost/lexical_cast.hpp>       // for lexical_cast
 #include <sstream>                      // for basic_stringbuf<>::int_type, etc
 
-
-
 namespace stk {
 
 std::string
@@ -46,8 +44,6 @@ formatMemorySize(
   std::string           result;
   
   static const double kb = 1024.0;
-  // static const double mb = kb * kb;
-  // static const double gb = kb * kb * kb;
 
   if (size < 0.0) {
     result = "-";
@@ -57,26 +53,6 @@ formatMemorySize(
   // output size in kilo bytes
   result += boost::lexical_cast<std::string>(static_cast<unsigned long>(size / kb));
   result += " KB";
-  // if (size < kb) {
-  //   // output size in bytes
-  //   result += boost::lexical_cast<std::string>(static_cast<unsigned long>(size));
-  //   result += " B";
-  // }
-  // else if (size < mb) {
-  //   // output size in kilo bytes
-  //   result += boost::lexical_cast<std::string>(static_cast<unsigned long>(size / kb));
-  //   result += " KB";
-  // }
-  // else if (size < gb) {
-  //   // output size in mega bytes
-  //   result += boost::lexical_cast<std::string>(static_cast<unsigned long>(size / mb));
-  //   result += " MB";
-  // }
-  // else {
-  //   // everything else output in giga bytes
-  //   result += boost::lexical_cast<std::string>(static_cast<unsigned long>(size / gb));
-  //   result += " GB";
-  // }
   
   return result;
 }
@@ -89,35 +65,13 @@ formatMemorySize(
   std::string           result;
   
   static const MemorySize kb = 1024;
-  // static const MemorySize mb = kb * kb;
-  // static const MemorySize gb = kb * kb * kb;
 
   // output size in kilo bytes
   result = boost::lexical_cast<std::string>(size / kb);
   result += " KB";
   
-  // if (size < kb) {
-  //   // output size in bytes
-  //   result = boost::lexical_cast<std::string>(size);
-  //   result += " B";
-  // }
-  // else if (size < mb) {
-  //   // output size in kilo bytes
-  //   result = boost::lexical_cast<std::string>(size / kb);
-  //   result += " KB";
-  // }
-  // else if (size < gb) {
-  //   // output size in mega bytes
-  //   result = boost::lexical_cast<std::string>(size / mb);
-  //   result += " MB";
-  // }
-  // else {
-  //   // everything else output in giga bytes
-  //   result = boost::lexical_cast<std::string>(size / gb);
-  //   result += " GB";
-  // }
-  
   return result;
 }
 
 } // namespace stk
+

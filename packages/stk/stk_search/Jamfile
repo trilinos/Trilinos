@@ -146,7 +146,6 @@ exe stk_search_integration_tester
     /sierra/mesh//mesh
     /sierra/acme//acme
     /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/trilinos//teuchos
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
@@ -164,7 +163,6 @@ exe stk_search_utest
     /sierra/acme//acme
     /sierra/mesh//mesh
     /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/trilinos//teuchos
     /tpl/gtest//gtest
     /mpi//mpi
 

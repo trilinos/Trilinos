@@ -87,7 +87,12 @@ public:
     }
 
 protected:
-    typedef Kokkos::View<Datatype*> DeviceType;
+#ifdef KOKKOS_HAVE_CUDA
+  using DeviceSpace = Kokkos::CudaSpace;
+#else
+  using DeviceSpace = Kokkos::HostSpace;
+#endif
+  typedef Kokkos::View<Datatype *, DeviceSpace> DeviceType;
     typedef typename DeviceType::HostMirror HostType;
 
     virtual DeviceType get_new_vals_of_size(size_t s)

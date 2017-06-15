@@ -244,7 +244,8 @@ private:
     }
 
 #ifdef KOKKOS_HAVE_CUDA
-    typedef Kokkos::View<T**[bucketSize], Kokkos::LayoutRight> FieldDataType;
+    typedef Kokkos::View<T * * [bucketSize], Kokkos::LayoutRight,
+                         Kokkos::CudaSpace> FieldDataType;
 #else
     typedef Kokkos::View<T***, Kokkos::LayoutRight> FieldDataType;
 #endif
@@ -322,7 +323,9 @@ public:
 private:
 
 #ifdef KOKKOS_HAVE_CUDA
-    typedef Kokkos::View<const T**[bucketSize], Kokkos::LayoutRight, Kokkos::MemoryTraits<Kokkos::RandomAccess> > ConstFieldDataType;
+  typedef Kokkos::View<
+      const T * * [bucketSize], Kokkos::LayoutRight, Kokkos::CudaSpace,
+      Kokkos::MemoryTraits<Kokkos::RandomAccess>> ConstFieldDataType;
 #else
     typedef Kokkos::View<const T***, Kokkos::LayoutRight, Kokkos::MemoryTraits<Kokkos::RandomAccess> > ConstFieldDataType;
 #endif

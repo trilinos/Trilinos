@@ -7,14 +7,6 @@ struct Float {
 
   STK_MATH_FORCE_INLINE Float() {}
 
-  STK_MATH_FORCE_INLINE Float(const float* x) 
-    : _data(_mm256_loadu_ps(x)) {
-  }
-
-  STK_MATH_FORCE_INLINE Float(const float* x, const int offset) 
-    :_data(_mm256_setr_ps(x[0],       x[offset],  x[2*offset],x[3*offset],
-                          x[4*offset],x[5*offset],x[6*offset],x[7*offset])) {
-  }
 
   template <typename T>
   STK_MATH_FORCE_INLINE Float(const T x, typename std::enable_if<std::is_convertible<T,float>::value, void*>::type=0)

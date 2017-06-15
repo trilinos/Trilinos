@@ -71,9 +71,6 @@ class Scheduler
 
     bool set_termination_time(Time time);
 
-
-
-
     bool add_explicit(Time time);
     bool add_explicit(Step step);
     void set_force_schedule(); //!< Force true on next call to scheduler

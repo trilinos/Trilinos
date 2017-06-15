@@ -43,9 +43,12 @@ class ObjectBoundingBoxHierarchy_T {
   //
   //  Right child offset stores one of two things.
   //    If the offset is <= 0 the current object is a terminal node of the tree.  The value is the negative of the 
-  //  index back to the object that the terminal node represents.  If the value is positive it is the offset from
-  //  the current object to the objects right child.  Note that the offset to the left child is always one.  Thus
-  //  for a given object the left child can be found at this[1] and the right child at this[right_child_offset]
+  //  the object number associated with the object represented by the terminal node.  If the tree is created from
+  //  inputBoxes that are not std::search::OblectBoundingBoxes, then the object number is the offset into the
+  //  vector of inputBoxes.
+  //    If the value of right_child_offset is positive it is the offset from the current object to the objects
+  //  right child.  Note that the offset to the left child is always one.  Thus for a given object the left child
+  //  can be found at this[1] and the right child at this[right_child_offset]
   //
  public:
   int right_child_offset;

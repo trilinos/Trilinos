@@ -100,7 +100,7 @@ template <class ZoltanAdapter>
 void print_statistics(const ZoltanAdapter& stkMeshAdapter, int parallel_rank )
 {
     //KDD Expect this interface to change -- I promise!!!
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm(); // This should be our stkMeshBulkData.parallel()
+    auto comm = Teuchos::DefaultComm<int>::getComm(); // This should be our stkMeshBulkData.parallel()
     Teuchos::ParameterList pl;
     Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, comm, nullptr);
     print_zoltan_statistics(stkMeshAdapter, ep, parallel_rank);
@@ -110,7 +110,7 @@ template <class ZoltanAdapter>
 void print_solution_statistics(const ZoltanAdapter& stkMeshAdapter, const Zoltan2::PartitioningSolution<ZoltanAdapter>& solution, int parallel_rank )
 {
     //KDD Expect this interface to change -- I promise!!!
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm(); // This should be our stkMeshBulkData.parallel()
+    auto comm = Teuchos::DefaultComm<int>::getComm(); // This should be our stkMeshBulkData.parallel()
     Teuchos::ParameterList pl;
     Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, comm, &solution);
     print_zoltan_statistics(stkMeshAdapter, ep, parallel_rank);

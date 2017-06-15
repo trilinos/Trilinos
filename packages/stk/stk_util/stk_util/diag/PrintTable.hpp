@@ -136,10 +136,6 @@ public:
     return *this;
   }
 
-  //bool commaSeparatedValues() const {
-  //  return m_flags & COMMA_SEPARATED_VALUES;
-  //}
-
   PrintTable &setCommaSeparatedValues(bool comma_separated_values = true) {
     if (comma_separated_values) {
       m_flags |= COMMA_SEPARATED_VALUES;
@@ -268,17 +264,6 @@ public:
    *  This function prints out the table to it's PrintTable
    */
   diag::Writer & verbose_print(diag::Writer &dout) const;
-
-private:
-  /**
-   * Member function <b>normalize_table</b> makes sure that the table has a field at
-   * <b>row</b> and <b>column</b>.
-   *
-   * @param row an <b>int</b> value of the row to ensure existence.
-   * @param col an <b>int</b> value of the column to ensure existence.
-   */
-  void normalize_table(int row, int col);
-
 private:
   std::string               m_title;
   Table                     m_header;
@@ -292,17 +277,14 @@ private:
   mutable ColumnWidth       m_tableWidth;
 };
 
-
 template<typename T>
 inline PrintTable &operator<<(PrintTable &table, const T &t) {
   table.m_currentString << t;
   if (table.autoEndCol()) {
     table.end_col();
   }
-
   return table;
 }
-
 
 struct cell_width
 {
