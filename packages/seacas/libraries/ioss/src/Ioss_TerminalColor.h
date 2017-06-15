@@ -57,7 +57,7 @@ namespace Ioss {
 
     struct Style
     {
-      Style(uint32_t value) : _value(value) {}
+      explicit Style(uint32_t value) : _value(value) {}
 
       operator uint32_t() const { return _value; }
 

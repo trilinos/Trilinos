@@ -72,6 +72,15 @@ class HexFixture
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
+  HexFixture(   MetaData& meta
+              , BulkData& bulk
+              , size_t nx
+              , size_t ny
+              , size_t nz
+              , size_t nid_start
+              , size_t eid_start
+            );
+
   HexFixture(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
@@ -88,22 +97,41 @@ class HexFixture
             );
 
   const int                     m_spatial_dimension;
-  const size_t                m_nx;
-  const size_t                m_ny;
-  const size_t                m_nz;
-  MetaData                      m_meta;
-  BulkData                      m_bulk_data;
+  const size_t                  m_nx;
+  const size_t                  m_ny;
+  const size_t                  m_nz;
+  const size_t                  node_id_start = 1;
+  const size_t                  elem_id_start = 1;
+
+  size_t num_nodes() const {
+    return (m_nx+1)*(m_ny+1)*(m_nz+1);
+  }
+
+  size_t num_elements() const {
+    return (m_nx)*(m_ny)*(m_nz);
+  }
+
+ private:
+  MetaData*                     m_meta_p;
+  BulkData*                     m_bulk_p;
+ public:
+  MetaData&                     m_meta;
+  BulkData&                     m_bulk_data;
   PartVector                    m_elem_parts;
   PartVector                    m_node_parts;
   CoordFieldType &              m_coord_field ;
+  bool owns_mesh = true;
+  stk::topology     m_elem_topology = stk::topology::HEX_8;
+  stk::topology     m_face_topology = stk::topology::QUAD_4;
 
+  ~HexFixture();
 
   /**
    * Thinking in terms of a 3D grid of nodes, get the id of the node in
    * the (x, y, z) position.
    */
   EntityId node_id( size_t x , size_t y , size_t z ) const  {
-    return 1 + x + ( m_nx + 1 ) * ( y + ( m_ny + 1 ) * z );
+    return node_id_start + x + ( m_nx + 1 ) * ( y + ( m_ny + 1 ) * z );
   }
 
   /**
@@ -111,7 +139,7 @@ class HexFixture
    * element in the (x, y, z) position.
    */
   EntityId elem_id( size_t x , size_t y , size_t z ) const  {
-    return 1 + x + m_nx * ( y + m_ny * z );
+    return elem_id_start + x + m_nx * ( y + m_ny * z );
   }
 
   /**

@@ -45,7 +45,7 @@ namespace Ioss {
     static std::string SEPARATOR("*");
     std::string        name = base;
     name += SEPARATOR;
-    name += Utils::to_string(copies);
+    name += std::to_string(copies);
     return name;
   }
 

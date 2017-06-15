@@ -30,17 +30,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-
-#include <ctype.h>                      // for tolower
-#include <algorithm>                    // for max
-#include <functional>                   // for equal_to
-#include <iostream>                     // for ostream, size_t, cout, endl
+#include <ctype.h>                           // for tolower
+#include <algorithm>                         // for max
+#include <functional>                        // for equal_to
+#include <iostream>                          // for ostream, size_t, cout, endl
 #include <gtest/gtest.h>
-#include <stk_util/util/ci_string.hpp>  // for ci_string, operator<<
-#include <string>                       // for basic_string, operator==, etc
-#include <utility>                      // for pair
-#include <memory>                       // for shared_ptr
-#include "boost/functional/hash/hash.hpp"  // for hash
+#include <stk_util/util/ci_string.hpp>       // for ci_string, operator<<
+#include <string>                            // for basic_string, operator==, etc
+#include <utility>                           // for pair
+#include <memory>                            // for shared_ptr
 #include "boost/smart_ptr/shared_array.hpp"  // for shared_array
   
 TEST(UnitTestBoost, testUnit)

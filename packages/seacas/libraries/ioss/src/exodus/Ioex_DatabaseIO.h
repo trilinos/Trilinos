@@ -103,34 +103,36 @@ namespace Ioex {
 
     virtual ~DatabaseIO();
 
-    // Check to see if database state is ok...
-    // If 'write_message' true, then output a warning message indicating the problem.
-    // If 'error_message' non-null, then put the warning message into the string and return it.
-    // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
-    //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    virtual bool ok(bool write_message = false, std::string *error_message = nullptr,
-                    int *bad_count = nullptr) const override = 0;
-
-    // Eliminate as much memory as possible, but still retain meta data information
-    // Typically, eliminate the maps...
-    virtual void release_memory() override;
-
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
     unsigned entity_field_support() const override;
 
-    bool open_group(const std::string &group_name) override;
-    bool create_subgroup(const std::string &group_name) override;
+  protected:
+    // Check to see if database state is ok...
+    // If 'write_message' true, then output a warning message indicating the problem.
+    // If 'error_message' non-null, then put the warning message into the string and return it.
+    // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
+    //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
+    virtual bool ok__(bool write_message = false, std::string *error_message = nullptr,
+                      int *bad_count = nullptr) const override = 0;
 
-    bool begin(Ioss::State state) override;
-    bool end(Ioss::State state) override;
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    virtual void release_memory__() override;
 
-    bool begin_state(Ioss::Region *region, int state, double time) override;
-    bool end_state(Ioss::Region *region, int state, double time) override;
-    virtual void get_step_times() override = 0;
+    bool open_group__(const std::string &group_name) override;
+    bool create_subgroup__(const std::string &group_name) override;
 
+    bool begin__(Ioss::State state) override;
+    bool end__(Ioss::State state) override;
+
+    bool begin_state__(Ioss::Region *region, int state, double time) override;
+    bool end_state__(Ioss::Region *region, int state, double time) override;
+    virtual void get_step_times__() override = 0;
+
+  public:
     int     spatial_dimension() const { return spatialDimension; }
     int64_t node_count() const { return nodeCount; }
     int64_t side_count() const { return 0; }
@@ -150,13 +152,14 @@ namespace Ioex {
       }
     }
 
-    void get_block_adjacencies(const Ioss::ElementBlock *eb,
-                               std::vector<std::string> &block_adjacency) const override;
-
-    void compute_block_membership(Ioss::SideBlock *         efblock,
-                                  std::vector<std::string> &block_membership) const override;
-
     void set_int_byte_size_api(Ioss::DataSize size) const override;
+
+  private:
+    void get_block_adjacencies__(const Ioss::ElementBlock *eb,
+                                 std::vector<std::string> &block_adjacency) const override;
+
+    void compute_block_membership__(Ioss::SideBlock *         efblock,
+                                    std::vector<std::string> &block_membership) const override;
 
   protected:
     virtual int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field,
@@ -216,9 +219,9 @@ namespace Ioex {
     virtual void write_meta_data() = 0;
     void         write_results_metadata();
 
-    virtual void openDatabase() const override { get_file_pointer(); }
+    virtual void openDatabase__() const override { get_file_pointer(); }
 
-    virtual void closeDatabase() const override { free_file_pointer(); }
+    virtual void closeDatabase__() const override { free_file_pointer(); }
 
   public:
     // Temporarily made public for use during Salinas transition
@@ -270,7 +273,7 @@ namespace Ioex {
     // Given the global region step, return the step on the database...
     int get_database_step(int global_step) const;
 
-    void flush_database() const override;
+    void flush_database__() const override;
     void finalize_write(double sim_time);
 
     // Private member data...

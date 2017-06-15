@@ -32,7 +32,7 @@ struct IndexTraits<int> {
   typedef float float_type;
 };
 
-#ifdef KOKKOS_HAVE_CUDA
+#if defined(KOKKOS_HAVE_CUDA) || defined(USE_STK_SIMD_NONE)
 typedef int DeviceIndex;
 
 template <typename T>

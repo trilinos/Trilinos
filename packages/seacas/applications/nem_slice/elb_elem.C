@@ -34,13 +34,13 @@
  */
 
 #include "elb_elem.h"
-#include <cstddef>                      // for size_t
-#include <cstdio>                       // for sprintf
-#include <cstdlib>                      // for exit
-#include <cstring>                      // for strncasecmp
-#include <vector>                       // for vector
-#include "elb_err.h"                    // for error_report, Gen_Error
-#include "elb_util.h"                   // for in_list
+#include "elb_err.h"  // for error_report, Gen_Error
+#include "elb_util.h" // for in_list
+#include <cstddef>    // for size_t
+#include <cstdio>     // for sprintf
+#include <cstdlib>    // for exit
+#include <cstring>    // for strncasecmp
+#include <vector>     // for vector
 
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
@@ -72,12 +72,12 @@ namespace {
 const char *elem_name_from_enum(const E_Type elem_type)
 {
   static const char *elem_names[NULL_EL] = {
-      "SPHERE",  "BAR2",    "BAR3",    "QUAD4",    "QUAD8",     "QUAD9",  "SHELL4",
-      "SHELL8",  "SHELL9",  "TRI3",    "TRI4",     "TRI6",      "TRI7",   "TSHELL3",
-      "TSHELL4", "TSHELL6", "TSHELL7", "HEX8",     "HEX20",     "HEX27",  "HEXSHELL",
-      "TET4",    "TET10",   "TET8",    "TET14",    "TET15",     "WEDGE6", "WEDGE15",
-      "WEDGE16", "WEDGE20", "WEDGE21", "PYRAMID5", "PYRAMID13", "PYRAMID14", "PYRAMID18", "PYRAMID19",
-      "SHELL2", "SHELL3"};
+      "SPHERE",    "BAR2",    "BAR3",    "QUAD4",    "QUAD8",     "QUAD9",     "SHELL4",
+      "SHELL8",    "SHELL9",  "TRI3",    "TRI4",     "TRI6",      "TRI7",      "TSHELL3",
+      "TSHELL4",   "TSHELL6", "TSHELL7", "HEX8",     "HEX20",     "HEX27",     "HEXSHELL",
+      "TET4",      "TET10",   "TET8",    "TET14",    "TET15",     "WEDGE6",    "WEDGE15",
+      "WEDGE16",   "WEDGE20", "WEDGE21", "PYRAMID5", "PYRAMID13", "PYRAMID14", "PYRAMID18",
+      "PYRAMID19", "SHELL2",  "SHELL3"};
   return elem_names[elem_type];
 }
 
@@ -1610,11 +1610,11 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
 
   /* pyramid */
   static int pyramid_table[5][9] = {
-    {1, 2, 5, 6, 11, 10, 15, 0, 0}, // side 1 (tri)
-    {2, 3, 5, 7, 12, 11, 16, 0, 0}, // side 2 (tri)
-    {3, 4, 5, 8, 13, 12, 17, 0, 0}, // side 3 (tri)
-    {1, 5, 4, 10, 13, 9, 18, 0, 0}, // side 4 (tri)
-    {1, 4, 3, 2, 9, 8, 7, 6, 15}    // side 5 (quad)
+      {1, 2, 5, 6, 11, 10, 15, 0, 0}, // side 1 (tri)
+      {2, 3, 5, 7, 12, 11, 16, 0, 0}, // side 2 (tri)
+      {3, 4, 5, 8, 13, 12, 17, 0, 0}, // side 3 (tri)
+      {1, 5, 4, 10, 13, 9, 18, 0, 0}, // side 4 (tri)
+      {1, 4, 3, 2, 9, 8, 7, 6, 15}    // side 5 (quad)
   };
 
   static int bar_table[1][3] = {{1, 2, 3}};

@@ -39,20 +39,20 @@
  *	find_surnd_elems()
  *	find_adjacency()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+#include "elb.h"        // for Problem_Description, etc
+#include "elb_elem.h"   // for get_elem_info, NNODES, etc
+#include "elb_err.h"    // for Gen_Error
+#include "elb_format.h" // for ST_ZU
 #include "elb_graph.h"
-#include <cassert>                      // for assert
-#include <cstddef>                      // for size_t
-#include <cstdio>                       // for sprintf, printf
-#include <cstdlib>                      // for free, malloc
-#include <cstring>                      // for strcat, strcpy
-#include <iostream>                     // for operator<<, basic_ostream, etc
+#include "elb_util.h" // for in_list, find_inter
+#include <cassert>    // for assert
+#include <cstddef>    // for size_t
+#include <cstdio>     // for sprintf, printf
+#include <cstdlib>    // for free, malloc
+#include <cstring>    // for strcat, strcpy
+#include <iostream>   // for operator<<, basic_ostream, etc
 #include <sstream>
-#include <vector>                       // for vector
-#include "elb.h"                        // for Problem_Description, etc
-#include "elb_elem.h"                   // for get_elem_info, NNODES, etc
-#include "elb_err.h"                    // for Gen_Error
-#include "elb_format.h"                 // for ST_ZU
-#include "elb_util.h"                   // for in_list, find_inter
+#include <vector> // for vector
 
 extern int is_hex(E_Type etype);
 extern int is_tet(E_Type etype);
@@ -120,9 +120,9 @@ namespace {
   template <typename INT>
   int find_surnd_elems(Mesh_Description<INT> *mesh, Graph_Description<INT> *graph)
   {
-    std::vector<int> surround_count(mesh->num_nodes);
+    std::vector<int>    surround_count(mesh->num_nodes);
     std::vector<size_t> last_element(mesh->num_nodes);
-    
+
     size_t sur_elem_total_size = 0;
     /* Find the count of surrounding elements for each node in the mesh */
     // The hope is that this code will speed up the entire routine even
@@ -131,56 +131,59 @@ namespace {
       int nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
       for (int ncnt = 0; ncnt < nnodes; ncnt++) {
         INT node = mesh->connect[ecnt][ncnt];
-	assert(node < (INT)mesh->num_nodes);
+        assert(node < (INT)mesh->num_nodes);
         /*
          * in the case of degenerate elements, where a node can be
          * entered into the connect table twice, need to check to
          * make sure that this element is not already listed as
          * surrounding this node
          */
-        if (last_element[node] != ecnt+1) {
-	  last_element[node] = ecnt+1;
-	  surround_count[node]++;
-	  sur_elem_total_size++;
+        if (last_element[node] != ecnt + 1) {
+          last_element[node] = ecnt + 1;
+          surround_count[node]++;
+          sur_elem_total_size++;
         }
       }
     } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
 
-    size_t v_size = sizeof(std::vector<INT>);
+    size_t v_size  = sizeof(std::vector<INT>);
     size_t vv_size = sizeof(std::vector<std::vector<INT>>);
-    size_t total = vv_size + mesh->num_nodes * v_size + sur_elem_total_size * sizeof(INT);
-    std::cerr << "\ttotal size of reverse connectivity array: " << sur_elem_total_size << " entries ("
-	      << total << " bytes).\n";
-    last_element.resize(0); last_element.shrink_to_fit();
+    size_t total   = vv_size + mesh->num_nodes * v_size + sur_elem_total_size * sizeof(INT);
+    std::cerr << "\ttotal size of reverse connectivity array: " << sur_elem_total_size
+              << " entries (" << total << " bytes).\n";
+    last_element.resize(0);
+    last_element.shrink_to_fit();
 
     // Attempt to reserve an array with this size...
     double time1 = get_time();
     {
-      char *block = (char*)malloc(total);
+      char *block = (char *)malloc(total);
       if (block == nullptr) {
-	std::ostringstream errmsg;
-	errmsg << "fatal: Could not allocate memory for reverse-connectivity array (find_surnd_elems) of size "
-	       <<  total << "bytes.\n";
-	Gen_Error(0, errmsg.str().c_str());
+        std::ostringstream errmsg;
+        errmsg << "fatal: Could not allocate memory for reverse-connectivity array "
+                  "(find_surnd_elems) of size "
+               << total << "bytes.\n";
+        Gen_Error(0, errmsg.str().c_str());
       }
       free(block);
     }
-    
+
     graph->sur_elem.resize(mesh->num_nodes);
-    for (size_t ncnt=0; ncnt < mesh->num_nodes; ncnt++) {
+    for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
       if (surround_count[ncnt] == 0) {
-	std::cerr << "WARNING: Node = " << ncnt+1 << " has no elements\n";
+        std::cerr << "WARNING: Node = " << ncnt + 1 << " has no elements\n";
       }
       else {
-	graph->sur_elem[ncnt].reserve(surround_count[ncnt]);
-	graph->max_nsur = surround_count[ncnt] > graph->max_nsur ? surround_count[ncnt] : graph->max_nsur;
+        graph->sur_elem[ncnt].reserve(surround_count[ncnt]);
+        graph->max_nsur =
+            surround_count[ncnt] > graph->max_nsur ? surround_count[ncnt] : graph->max_nsur;
       }
     }
     double time2 = get_time();
 
     std::cerr << "\tmemory allocated...(" << time2 - time1 << " seconds)\n"
-	      << "\tmax of " << graph->max_nsur << " elements per node\n";
-    
+              << "\tmax of " << graph->max_nsur << " elements per node\n";
+
     /* Find the surrounding elements for each node in the mesh */
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
       int nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
@@ -193,8 +196,7 @@ namespace {
          * make sure that this element is not already listed as
          * surrounding this node
          */
-        if (graph->sur_elem[node].empty() ||
-            ecnt != (size_t)graph->sur_elem[node].back()) {
+        if (graph->sur_elem[node].empty() || ecnt != (size_t)graph->sur_elem[node].back()) {
           /* Add the element to the list */
           graph->sur_elem[node].push_back(ecnt);
         }
@@ -250,7 +252,7 @@ namespace {
       graph->nadj = 0;
       for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
         graph->start[ncnt] = graph->nadj;
-	assert(graph->nadj == graph->adj.size());
+        assert(graph->nadj == graph->adj.size());
         for (size_t ecnt = 0; ecnt < graph->sur_elem[ncnt].size(); ecnt++) {
           size_t elem   = graph->sur_elem[ncnt][ecnt];
           int    nnodes = get_elem_info(NNODES, mesh->elem_type[elem]);
@@ -261,7 +263,7 @@ namespace {
                 in_list(entry, graph->adj.size() - graph->start[ncnt],
                         &graph->adj[graph->start[ncnt]]) < 0) {
               graph->adj.push_back(entry);
-	      graph->nadj++;
+              graph->nadj++;
             }
           }
         } /* End "for(ecnt=0; ecnt < graph->nsur_elem[ncnt]; ecnt++)" */
@@ -317,7 +319,7 @@ namespace {
 
         if (etype != SPHERE || (etype == SPHERE && problem->no_sph == 1)) {
           graph->start[cnt] = graph->nadj;
-	  assert(graph->nadj == graph->adj.size());
+          assert(graph->nadj == graph->adj.size());
 
           /*
            * now have to decide how to determine adjacency

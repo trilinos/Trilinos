@@ -109,7 +109,6 @@ exe stk_expreval_utest
     stk_expreval
     /sierra/stk_util//stk_util_unit_test_support
     /sierra/stk_util//stk_util_use_case
-    /tpl/trilinos//teuchos
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag

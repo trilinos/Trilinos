@@ -126,8 +126,7 @@ namespace {
       std::cout << "Adding " << global_fields.size() << " global fields:\n";
     }
 
-    Teuchos::RCP<Ioss::Region> io_region = mesh_data.get_input_io_region();
-    STKIORequire(!Teuchos::is_null(io_region));
+    auto io_region = mesh_data.get_input_io_region();
       
     for (size_t i=0; i < global_fields.size(); i++) {
       const Ioss::Field &input_field = io_region->get_fieldref(global_fields[i]);

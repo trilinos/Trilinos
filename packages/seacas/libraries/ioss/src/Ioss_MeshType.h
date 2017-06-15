@@ -30,12 +30,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_MeshType_H
-#define IOSS_Ioss_MeshType_H
+#ifndef IOSS_mesh_type_h
+#define IOSS_mesh_type_h
 
 namespace Ioss {
   /** \brief The mesh type -- structured, unstructured, hybrid (future), or unknown
    */
   enum class MeshType { UNKNOWN, STRUCTURED, UNSTRUCTURED, HYBRID };
-}
+} // namespace Ioss
 #endif

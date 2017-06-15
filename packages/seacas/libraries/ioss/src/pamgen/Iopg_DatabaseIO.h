@@ -89,33 +89,11 @@ namespace Iopg {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
-    int64_t node_global_to_local(int64_t global, bool must_exist) const override
-    {
-      return nodeMap.global_to_local(global, must_exist);
-    }
-
-    int64_t element_global_to_local(int64_t global) const override
-    {
-      return elemMap.global_to_local(global);
-    }
-
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
     unsigned entity_field_support() const { return 0; }
-
-    // Eliminate as much memory as possible, but still retain meta data information
-    // Typically, eliminate the maps...
-    void release_memory();
-
-    void read_meta_data();
-
-    bool begin(Ioss::State state);
-    bool end(Ioss::State state);
-
-    bool begin_state(Ioss::Region *region, int state, double time);
-    bool end_state(Ioss::Region *region, int state, double time);
 
     std::string title() const { return databaseTitle; }
     int         spatial_dimension() const { return spatialDimension; }
@@ -135,6 +113,28 @@ namespace Iopg {
                                   std::vector<std::string> &block_membership) const;
 
   private:
+    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
+    {
+      return nodeMap.global_to_local(global, must_exist);
+    }
+
+    int64_t element_global_to_local__(int64_t global) const override
+    {
+      return elemMap.global_to_local(global);
+    }
+
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory__() override;
+
+    void read_meta_data__() override;
+
+    bool begin__(Ioss::State state) override;
+    bool end__(Ioss::State state) override;
+
+    bool begin_state__(Ioss::Region *region, int state, double time) override;
+    bool end_state__(Ioss::Region *region, int state, double time) override;
+
     void read_region();
     void read_communication_metadata();
 

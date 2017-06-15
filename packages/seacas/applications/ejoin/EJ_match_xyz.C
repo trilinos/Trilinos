@@ -29,18 +29,18 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#include "EJ_index_sort.h" // for index_coord_sort
+#include "EJ_mapping.h"    // for eliminate_omitted_nodes
 #include "EJ_match_xyz.h"
-#include <float.h>                      // for FLT_MAX
-#include <stddef.h>                     // for size_t
-#include <algorithm>                    // for max, min
-#include <iostream>                     // for operator<<, cout, ostream, etc
-#include "EJ_index_sort.h"              // for index_coord_sort
-#include "EJ_mapping.h"                 // for eliminate_omitted_nodes
-#include "EJ_vector3d.h"                // for vector3d
-#include "Ioss_NodeBlock.h"             // for NodeBlock
-#include "Ioss_Property.h"              // for Property
-#include "Ioss_Region.h"                // for Region, NodeBlockContainer
-#include "smart_assert.h"               // for SMART_ASSERT
+#include "EJ_vector3d.h"    // for vector3d
+#include "Ioss_NodeBlock.h" // for NodeBlock
+#include "Ioss_Property.h"  // for Property
+#include "Ioss_Region.h"    // for Region, NodeBlockContainer
+#include "smart_assert.h"   // for SMART_ASSERT
+#include <algorithm>        // for max, min
+#include <float.h>          // for FLT_MAX
+#include <iostream>         // for operator<<, cout, ostream, etc
+#include <stddef.h>         // for size_t
 
 namespace {
   template <typename INT>

@@ -33,6 +33,12 @@ public:
   
   virtual ~EqualityConstraint_Partitioned() {}
 
+  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    for ( uint k=0; k<dim_; ++k ) {
+      con_[k]->update(x,flag,iter);
+    }
+  }
+
   virtual void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
     // Downcast c to PartitionedVector
     PV& cpv = Teuchos::dyn_cast<PV>(c);

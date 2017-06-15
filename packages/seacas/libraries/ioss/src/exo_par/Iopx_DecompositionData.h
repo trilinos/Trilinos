@@ -166,9 +166,9 @@ namespace Iopx {
                                 size_t nnpe) const;
     size_t get_commset_node_size() const { return m_decomposition.m_nodeCommMap.size() / 2; }
 
-    int get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, size_t attr_count,
+    int get_attr(int filePtr, ex_entity_type obj_type, ex_entity_id id, size_t attr_count,
                  double *attrib) const;
-    int get_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int attrib_index,
+    int get_one_attr(int filePtr, ex_entity_type obj_type, ex_entity_id id, int attrib_index,
                      double *attrib) const;
 
     int get_var(int filePtr, int step, ex_entity_type type, int var_index, ex_entity_id id,
@@ -208,15 +208,15 @@ namespace Iopx {
     template <typename T>
     int handle_sset_df(int filePtr, ex_entity_id id, const Ioss::Field &field, T *ioss_data) const;
 
-    int get_one_set_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int attrib_index,
-                         double *attrib) const;
-    int get_one_node_attr(int exoid, ex_entity_id obj_id, int attrib_index, double *attrib) const;
-    int get_one_elem_attr(int exoid, ex_entity_id obj_id, int attrib_index, double *attrib) const;
+    int get_one_set_attr(int filePtr, ex_entity_type type, ex_entity_id id, int attr_index,
+                         double *ioss_data) const;
+    int get_one_node_attr(int filePtr, ex_entity_id id, int attr_index, double *ioss_data) const;
+    int get_one_elem_attr(int filePtr, ex_entity_id id, int attr_index, double *ioss_data) const;
 
-    int get_set_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, size_t attr_count,
-                     double *attrib) const;
-    int get_node_attr(int exoid, ex_entity_id obj_id, size_t attr_count, double *attrib) const;
-    int get_elem_attr(int exoid, ex_entity_id obj_id, size_t attr_count, double *attrib) const;
+    int get_set_attr(int filePtr, ex_entity_type type, ex_entity_id id, size_t comp_count,
+                     double *ioss_data) const;
+    int get_node_attr(int filePtr, ex_entity_id id, size_t comp_count, double *ioss_data) const;
+    int get_elem_attr(int filePtr, ex_entity_id id, size_t comp_count, double *ioss_data) const;
 
     int get_node_var(int filePtr, int step, int var_index, ex_entity_id id, int64_t num_entity,
                      std::vector<double> &ioss_data) const;

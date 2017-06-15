@@ -31,27 +31,21 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include "ED_SystemInterface.h" // for ERROR
 #include "exo_entity.h"
-#include <cstdint>                      // for int64_t
-#include <cstdlib>                      // for exit
-#include <cstring>                      // for strlen
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <string>                       // for string, char_traits, etc
-#include <vector>                       // for vector
-#include "ED_SystemInterface.h"         // for ERROR
-#include "exodusII.h"                   // for ex_get_var, EX_INVALID_ID, etc
-#include "smart_assert.h"               // for SMART_ASSERT
-#include "stringx.h"                    // for to_lower
-#include "terminal_color.h"             // for operator<<, normal, red
-#include "util.h"                       // for TOPTR, free_name_array, etc
+#include "exodusII.h"       // for ex_get_var, EX_INVALID_ID, etc
+#include "smart_assert.h"   // for SMART_ASSERT
+#include "stringx.h"        // for to_lower
+#include "terminal_color.h" // for operator<<, normal, red
+#include "util.h"           // for TOPTR, free_name_array, etc
+#include <cstdint>          // for int64_t
+#include <cstdlib>          // for exit
+#include <cstring>          // for strlen
+#include <iostream>         // for operator<<, basic_ostream, etc
+#include <string>           // for string, char_traits, etc
+#include <vector>           // for vector
 
 namespace {
-  template <class T> static std::string to_string(const T &t)
-  {
-    std::ostringstream os;
-    os << t;
-    return os.str();
-  }
   size_t get_index(int file_id, EXOTYPE exo_type, size_t id, const char *label);
   size_t get_num_entities(int file_id, EXOTYPE exo_type);
   size_t get_num_variables(int file_id, EXOTYPE exo_type, const char *label);
@@ -379,7 +373,7 @@ void Exo_Entity::internal_load_params()
     else {
       name_ = short_label();
       name_ += "_";
-      name_ += to_string(id_);
+      name_ += std::to_string(id_);
     }
   }
   numVars = get_num_variables(fileId, exodus_type(), label());
@@ -405,7 +399,7 @@ void Exo_Entity::internal_load_params()
     for (int vg = 0; vg < numAttr; ++vg) {
       SMART_ASSERT(names[vg] != nullptr);
       if (std::strlen(names[vg]) == 0) {
-        std::string name = "attribute_" + to_string(vg + 1);
+        std::string name = "attribute_" + std::to_string(vg + 1);
         attributeNames.push_back(name);
       }
       else if ((int)std::strlen(names[vg]) > name_size) {

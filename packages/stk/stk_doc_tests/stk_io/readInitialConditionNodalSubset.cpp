@@ -75,7 +75,7 @@ namespace {
       // INITIALIZATION
       //+ Create a generated mesh containg hexes and shells with a
       //+ single nodal variable -- NodeBlock_1
-      std::string s_elems_per_edge = Ioss::Utils::to_string(num_elems_per_edge);
+      std::string s_elems_per_edge = std::to_string(num_elems_per_edge);
 
       //+ Create a generated mesh containg hexes and shells.
       std::string input_filename = s_elems_per_edge + "x" +

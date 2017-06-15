@@ -193,6 +193,13 @@ inline T &make_upper(T &name) {
   return name;
 }
 
+template <class T>
+inline T make_upper(const T &name) {
+  T returned_name(name);
+  std::transform(returned_name.begin(), returned_name.end(), returned_name.begin(), to_upper);
+  return returned_name;
+}
+
 /**
  * @brief Function <b>make_lower</b> converts string <b>name</b> to lower case.  The
  * convertion happens in place.
@@ -205,6 +212,13 @@ template <class T>
 inline T &make_lower(T &name) {
   std::transform(name.begin(), name.end(), name.begin(), to_lower);
   return name;
+}
+
+template <class T>
+inline T make_lower(const T &name) {
+  T returned_name(name);
+  std::transform(returned_name.begin(), returned_name.end(), returned_name.begin(), to_lower);
+  return returned_name;
 }
 
 /**

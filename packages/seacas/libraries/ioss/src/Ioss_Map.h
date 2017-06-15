@@ -44,17 +44,17 @@ namespace Ioss {
 
 namespace Ioss {
 
-  typedef std::vector<int64_t> MapContainer;
-  typedef std::pair<int64_t, int64_t> IdPair;
-  typedef std::vector<IdPair> ReverseMapContainer;
+  using MapContainer        = std::vector<int64_t>;
+  using IdPair              = std::pair<int64_t, int64_t>;
+  using ReverseMapContainer = std::vector<IdPair>;
 
   class Map
   {
   public:
-    Map() : entityType("unknown"), filename("undefined"), myProcessor(0), defined(false) {}
+    Map() : m_entityType("unknown"), m_filename("undefined"), m_myProcessor(0), m_defined(false) {}
     Map(std::string entity_type, std::string file_name, int processor)
-        : entityType(std::move(entity_type)), filename(std::move(file_name)),
-          myProcessor(processor), defined(false)
+        : m_entityType(std::move(entity_type)), m_filename(std::move(file_name)),
+          m_myProcessor(processor), m_defined(false)
     {
     }
     Map(const Map &from) = delete;
@@ -84,13 +84,24 @@ namespace Ioss {
 
     void build_reorder_map(int64_t start, int64_t count);
 
-    MapContainer        map;
-    MapContainer        reorder;
-    ReverseMapContainer reverse;
-    std::string         entityType;  // node, element, edge, face
-    std::string         filename;    // For error messages only.
-    int                 myProcessor; // For error messages...
-    bool defined; // For use by some clients; not all, so don't read too much into value...
+    const MapContainer &       map() const { return m_map; }
+    MapContainer &             map() { return m_map; }
+    const ReverseMapContainer &reverse() const { return m_reverse; }
+    bool                       defined() const { return m_defined; }
+    void set_defined(bool yes_no) { m_defined = yes_no; }
+
+  private:
+    int64_t global_to_local__(int64_t global, bool must_exist = true) const;
+#if defined(IOSS_THREADSAFE)
+    mutable std::mutex m_;
+#endif
+    MapContainer        m_map;
+    MapContainer        m_reorder;
+    ReverseMapContainer m_reverse;
+    std::string         m_entityType;  // node, element, edge, face
+    std::string         m_filename;    // For error messages only.
+    int                 m_myProcessor; // For error messages...
+    bool m_defined; // For use by some clients; not all, so don't read too much into value...
   };
 }
 

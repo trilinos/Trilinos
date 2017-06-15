@@ -2,6 +2,7 @@
 #define CONFIG_STK_SIMD_H
 
 #if !defined(__CUDA_ARCH__)
+//#if 0 // to turn off simd
 
 #if ( defined(_M_AMD64) || defined(_M_X64) || defined(__amd64) ) && ! defined(__x86_64__)
 #define __x86_64__

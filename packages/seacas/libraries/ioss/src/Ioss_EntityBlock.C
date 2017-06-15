@@ -35,8 +35,8 @@
 #include <Ioss_EntityBlock.h>
 #include <Ioss_Field.h>
 #include <Ioss_Property.h>
+#include <cstddef>
 #include <ostream>
-#include <stddef.h>
 #include <string>
 
 #include "Ioss_FieldManager.h"

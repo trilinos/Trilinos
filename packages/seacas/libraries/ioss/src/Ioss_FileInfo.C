@@ -115,8 +115,9 @@ namespace Ioss {
       std::ostringstream errmsg;
       for (int i = 0; i < my_size; i++) {
         if (result[i] == 0) {
-          if (!first)
+          if (!first) {
             errmsg << ", ";
+          }
           errmsg << i;
           first = false;
         }
@@ -140,7 +141,9 @@ namespace Ioss {
   //: a file.
   bool FileInfo::is_file() const
   {
-    struct stat s;
+    struct stat s
+    {
+    };
     if (do_stat(filename_, &s)) {
       return S_ISREG(s.st_mode);
     }
@@ -152,7 +155,9 @@ namespace Ioss {
   //: a directory.
   bool FileInfo::is_dir() const
   {
-    struct stat s;
+    struct stat s
+    {
+    };
     if (do_stat(filename_, &s)) {
       return S_ISDIR(s.st_mode);
     }
@@ -163,7 +168,9 @@ namespace Ioss {
   //: Returns TRUE if we are pointing to a symbolic link
   bool FileInfo::is_symlink() const
   {
-    struct stat s;
+    struct stat s
+    {
+    };
     if (lstat(filename_.c_str(), &s) == 0) {
       return S_ISLNK(s.st_mode);
     }
@@ -174,7 +181,9 @@ namespace Ioss {
   //: Time of last data modification. See 'man stat(2)'
   time_t FileInfo::modified() const
   {
-    struct stat s;
+    struct stat s
+    {
+    };
     if (do_stat(filename_, &s)) {
       return s.st_mtime;
     }
@@ -185,7 +194,9 @@ namespace Ioss {
   //: Time of last access
   time_t FileInfo::accessed() const
   {
-    struct stat s;
+    struct stat s
+    {
+    };
     if (do_stat(filename_, &s)) {
       return s.st_atime;
     }
@@ -196,7 +207,9 @@ namespace Ioss {
   //: Time of last status change. (creation, chmod, ...)
   time_t FileInfo::created() const
   {
-    struct stat s;
+    struct stat s
+    {
+    };
     if (do_stat(filename_, &s)) {
       return s.st_ctime;
     }
@@ -207,7 +220,9 @@ namespace Ioss {
   //: File size in bytes. Only if is_file() == true
   off_t FileInfo::size() const
   {
-    struct stat s;
+    struct stat s
+    {
+    };
     if (do_stat(filename_, &s)) {
       return s.st_size;
     }

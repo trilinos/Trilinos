@@ -169,7 +169,7 @@ namespace stk {
 	  return boost::any_cast<T>(p.value);
 	} else {
 	  std::cerr << "ERROR: Parameter named '" << name
-		    << "' has an incorrect type specfied for the get_value"
+		    << "' has an incorrect type specified for the get_value"
 		    << " template type.\n";
 	}
 	return T();

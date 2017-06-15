@@ -45,7 +45,7 @@
 #if 0
 #define ERROR(x) std::cerr << trmclr::red << "exodiff: ERROR: " << x << trmclr::normal
 #else
-#define ERROR(x) std::cerr << "exodiff: ERROR: " << x 
+#define ERROR(x) std::cerr << "exodiff: ERROR: " << x
 #endif
 
 class SystemInterface

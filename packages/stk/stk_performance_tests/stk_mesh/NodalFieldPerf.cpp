@@ -87,8 +87,8 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh
     stk::mesh::MetaData &stkMeshMetaData = exodusFileReader.meta_data();
     createNodalVectorFields(stkMeshMetaData);
 
-    Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, false, NULL, fieldDataManager));
-    exodusFileReader.set_bulk_data(arg_bulk_data);
+    auto arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, false, NULL, fieldDataManager));
+    exodusFileReader.set_bulk_data(*arg_bulk_data);
     stk::mesh::BulkData& stkMeshBulkData = *arg_bulk_data;
 
     bool delay_field_data_allocation = true;

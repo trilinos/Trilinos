@@ -50,13 +50,11 @@ typedef std::ios_base &(*IOSBaseFunctionPtr)(std::ios_base &);
 
 /**
  * @brief Function <b>get_warning_count</b> returns the accumulated warning count.
- *
  */
 unsigned get_warning_count();
 
 /**
  * @brief Function <b>reset_warning_count</b> sets the accumulated warning count to zero.
- *
  */
 void reset_warning_count();
 
@@ -65,7 +63,6 @@ void reset_warning_count();
  * will be displayed.
  *
  * @param max_messages	an <b>int</b> variable ...
- *
  */
 void set_max_warning_count(unsigned int max_messages);
 
@@ -75,7 +72,6 @@ void set_max_warning_count(unsigned int max_messages);
  * @param message		a <b>char</b> const pointer ...
  *
  * @param message_code		a <b>MessageCode</b> const ...
- *
  */
 void report_warning(const char *message, const MessageCode &message_code = MessageCode::s_defaultMessageCode);
 
@@ -92,7 +88,6 @@ void report_warning(const char *message, const MessageCode &message_code = Messa
  * @param message		a <b>char</b> const pointer to a message that is to be displayed.
  *
  * @param message_code		a <b>size_t</b> value of the message id for the message.
- *
  */
 void report_symmetric_warning(const char *message, const MessageCode &message_code = MessageCode::s_defaultMessageCode);
 
@@ -104,14 +99,12 @@ void report_symmetric_warning(const char *message, const MessageCode &message_co
  * @param aggregate		a <b>std::string</b> const ...
  *
  * @param message_code		a <b>MessageCode</b> const ...
- *
  */
 void report_deferred_warning(const char *message, const char *aggregate, const MessageCode &message_code);
 
 /**
  * @brief Class <b>RuntimeWarningAdHoc</b> reports an ad hoc warning message to the
  * report system.
- *
  *
  * For example:
  *
@@ -133,7 +126,6 @@ public:
    *
    * @param message_code	an <b>MessageCode</b> const reference to the message code associated
    *                            with this message.
-   *
    */
   explicit RuntimeWarningAdHoc(MessageCode &message_code = MessageCode::s_defaultMessageCode);
 
@@ -142,20 +134,17 @@ public:
    *
    * The message is displayed by calling the report_warning() function.  However, if the count of
    * remaining messages for this message id is zero, the message is not displayed.
-   *
    */
   ~RuntimeWarningAdHoc();
 
 private:
   /**
    * @brief Make copy of <b>RuntimeWarningAdHoc</b> invalid.
-   *
    */
   RuntimeWarningAdHoc(const RuntimeWarningAdHoc &);
 
   /**
    * @brief Make assignment of <b>RuntimeWarningAdHoc</b> invalid.
-   *
    */
   RuntimeWarningAdHoc &operator=(const RuntimeWarningAdHoc &);
   
@@ -203,7 +192,6 @@ public:
     return *this;
   }
 
-
 public:
   std::ostringstream    message;                ///< Stream to receive message content
 
@@ -235,7 +223,6 @@ public:
    *
    * @param message_code	an <b>MessageCode</b> const reference to the message code associated
    *                            with this message.
-   *
    */
   explicit RuntimeWarningSymmetric(MessageCode &message_code = MessageCode::s_defaultMessageCode);
 
@@ -244,20 +231,17 @@ public:
    *
    * The message is displayed by calling the report_symmetric_warning() function.  However, if the count of
    * remaining messages for this message id is zero, the message is not displayed.
-   *
    */
   ~RuntimeWarningSymmetric();
 
 private:
   /**
    * @brief Make copy of <b>RuntimeWarningSymmetric</b> invalid.
-   *
    */
   RuntimeWarningSymmetric(const RuntimeWarningSymmetric &);
 
   /**
    * @brief Make assignment of <b>RuntimeWarningSymmetric</b> invalid.
-   *
    */
   RuntimeWarningSymmetric &operator=(const RuntimeWarningSymmetric &);
   
@@ -335,7 +319,6 @@ public:
    *
    * @param message_code	an <b>MessageCode</b> const reference to the message code associated
    *                            with this message.
-   *
    */
   explicit RuntimeWarningDeferred(const MessageCode &message_code);
 

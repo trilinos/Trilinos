@@ -685,7 +685,6 @@ TimerImpl::dump(
     dout << "TimerImpl" << push << dendl;
     dout << "m_name, " << m_name << dendl;
     dout << "m_timerMask, " << m_timerMask << dendl;
-//    dout << "m_parentTimer, " << c_ptr_name(m_parentTimer) << dendl;
     dout << "m_subtimerLapCount, " << m_subtimerLapCount << dendl;
     dout << "m_lapStartCount, " << m_lapStartCount << dendl;
 

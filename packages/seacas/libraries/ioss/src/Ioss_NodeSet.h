@@ -36,15 +36,15 @@
 #include "Ioss_EntityType.h" // for EntityType, etc
 #include "Ioss_Property.h"   // for Property
 #include <Ioss_EntitySet.h>  // for EntitySet
-#include <stddef.h>          // for size_t
-#include <stdint.h>          // for int64_t
+#include <cstddef>           // for size_t
+#include <cstdint>           // for int64_t
 #include <string>            // for string
 namespace Ioss {
   class DatabaseIO;
-}
+} // namespace Ioss
 namespace Ioss {
   class Field;
-}
+} // namespace Ioss
 
 namespace Ioss {
 
@@ -72,5 +72,5 @@ namespace Ioss {
     int64_t internal_put_field_data(const Field &field, void *data,
                                     size_t data_size) const override;
   };
-}
+} // namespace Ioss
 #endif

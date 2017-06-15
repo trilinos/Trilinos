@@ -135,7 +135,6 @@ exe stk_search_util_utest
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_util//stk_util_diag
     /sierra/stk_mesh//stk_mesh_fixtures
-    /tpl/trilinos//teuchos
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag

@@ -51,6 +51,6 @@ namespace Ioss {
     double ymax;
     double zmax;
   };
-}
+} // namespace Ioss
 
 #endif

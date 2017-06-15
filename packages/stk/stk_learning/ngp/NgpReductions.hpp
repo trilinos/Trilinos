@@ -104,7 +104,7 @@ struct MaxFunctor
 template <typename Mesh, typename Field>
 typename Field::value_type get_field_max(Mesh &mesh, Field field, const stk::mesh::Selector &selector)
 {
-    return get_field_reduction<Mesh, Field, MaxFunctor<typename Field::value_type>>(mesh, field, selector, std::numeric_limits<typename Field::value_type>::min());
+    return get_field_reduction<Mesh, Field, MaxFunctor<typename Field::value_type>>(mesh, field, selector, std::numeric_limits<typename Field::value_type>::lowest());
 }
 
 template <typename T>
