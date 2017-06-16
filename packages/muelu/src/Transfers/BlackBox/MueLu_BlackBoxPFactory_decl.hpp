@@ -174,7 +174,8 @@ namespace MueLu {
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const;
 
-    int getNodeType(LO ie, LO je, LO ke, Array<LO> elementNodesPerDir) const;
+    void GetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir,
+                     int* type, LO& ind) const;
 
   }; //class BlackBoxPFactory
 

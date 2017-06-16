@@ -263,7 +263,7 @@ namespace MueLu {
     // As usual we need to be careful about any coarsening rate
     // change at the boundary!
 
-    // The ingredients need are an importer, a range map and a domain map
+    // The ingredients needed are an importer, a range map and a domain map
     Array<GO> ghostRowGIDs, nodeSteps(3);
     nodeSteps[0] = 1;
     nodeSteps[1] = gFineNodesPerDir[0];
@@ -992,14 +992,15 @@ namespace MueLu {
 
     ArrayView<const LO> rowIndices;
     ArrayView<const SC> rowValues;
-    LO idof, jdof, itype, jtype;
+    LO idof, jdof, iInd, jInd;
     LO indi, indf, inde, indc;
+    int itype = 0, jtype = 0;
     Array<SC> stencil(std::pow(3,numDimensions));
     // LBV Note: we could skip the extraction of rows corresponding to coarse nodes
     for(LO ke = 0; ke < elementNodesPerDir[2]; ++ke) {
       for(LO je = 0; je < elementNodesPerDir[1]; ++je) {
         for(LO ie = 0; ie < elementNodesPerDir[0]; ++ie) {
-          itype = getNodeType(ie, je, ke, elementNodesPerDir);
+          GetNodeInfo(ie, je, ke, elementNodesPerDir, &itype, iInd);
           for(LO dof0 = 0; dof0 < BlkSize; ++dof0) {
             idof = (ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie)*BlkSize + dof0;
             Aghost->getLocalRowView(idof, rowIndices, rowValues);
@@ -1560,26 +1561,63 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  int BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeType(
-               LO ie, LO je, LO ke, Array<LO> elementNodesPerDir) const {
-    // Corner node
+  void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetNodeInfo(
+                        const LO ie, const LO je, const LO ke,
+                        const Array<LO> elementNodesPerDir, int* type, LO& ind) const {
+    *type = 0, ind = 0;
     if((ke == 0 || ke == elementNodesPerDir[2]-1)
              && (je == 0 || je == elementNodesPerDir[1]-1)
              && (ie == 0 || ie == elementNodesPerDir[0]-1)) {
-      return 0;
-      // Edge node
+      // Corner node
+      *type = 0;
+      ind  = 4*ke / (elementNodesPerDir[2]-1) + 2*je / (elementNodesPerDir[1]-1) + ie / (elementNodesPerDir[0]-1);
     } else if(((ke == 0 || ke == elementNodesPerDir[2]-1) && (je == 0 || je == elementNodesPerDir[1]-1))
                      || ((ke == 0 || ke == elementNodesPerDir[2]-1) && (ie == 0 || ie == elementNodesPerDir[0]-1))
                      || ((je == 0 || je == elementNodesPerDir[1]-1) && (ie == 0 || ie == elementNodesPerDir[0]-1))) {
-      return 1;
-      // Face node
+      // Edge node
+      *type = 1;
+      if(ke > 0) {ind += 2*(elementNodesPerDir[0] - 2 + elementNodesPerDir[1] - 2);}
+      if(ke == elementNodesPerDir[2] - 1) {ind += 4*(elementNodesPerDir[2] - 2);}
+      if((ke == 0) || (ke == elementNodesPerDir[2] - 1)) {
+        if(je == 0) {
+          ind += ie - 1;
+        } else if(je == elementNodesPerDir[1] - 1) {
+          ind += 2*(elementNodesPerDir[1] - 2) + elementNodesPerDir[0] - 2 + ie - 1;
+        } else {
+          ind += elementNodesPerDir[0] - 2 + 2*(je - 1) + ie / (elementNodesPerDir[0] - 1);
+        }
+      } else {
+        ind += 4*(ke - 1) + 2*(je/(elementNodesPerDir[1] - 1)) + ie / (elementNodesPerDir[0] - 1);
+      }
     } else if ((ke == 0 || ke == elementNodesPerDir[2]-1)
                      || (je == 0 || je == elementNodesPerDir[1]-1)
                      || (ie == 0 || ie == elementNodesPerDir[0]-1)) {
-      return 2;
-      // Interior node
+      // Face node
+      *type = 2;
+      if(ke == 0) {// current node is on "bottom" face
+        ind = (je - 1)*(elementNodesPerDir[0] - 2) + ie - 1;
+      } else {
+        // add nodes from "bottom" face
+        ind += (elementNodesPerDir[1] - 2)*(elementNodesPerDir[0] - 2);
+        // add nodes from side faces
+        ind += 2*(ke - 1)*(elementNodesPerDir[1] - 2 + elementNodesPerDir[0] - 2);
+        if(ke == elementNodesPerDir[2]-1) {// current node is on "top" face
+          ind += (je - 1)*(elementNodesPerDir[0] - 2) + ie - 1;
+        } else {// current node is on a side face
+          if(je == 0) {
+            ind += ie - 1;
+          } else if(je == elementNodesPerDir[1] - 1) {
+            ind += 2*(elementNodesPerDir[1] - 2) + elementNodesPerDir[0] - 2 + ie - 1;
+          } else {
+            ind += elementNodesPerDir[0] - 2 + 2*(je - 1) + ie / (elementNodesPerDir[0]-1);
+          }
+        }
+      }
     } else {
-      return 3;
+      // Interior node
+      *type = 3;
+      ind  = (ke - 1)*(elementNodesPerDir[1] - 2)*(elementNodesPerDir[0] - 2)
+        + (je - 1)*(elementNodesPerDir[0] - 2) + ie - 1;
     }
   }
 
