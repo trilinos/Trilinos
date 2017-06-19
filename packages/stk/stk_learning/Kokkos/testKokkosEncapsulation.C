@@ -48,6 +48,12 @@ namespace stk
 #define STK_LAMBDA KOKKOS_LAMBDA
 #define STK_INLINE KOKKOS_INLINE_FUNCTION
 
+#ifdef KOKKOS_HAVE_CUDA
+using DeviceSpace = Kokkos::CudaSpace;
+#else
+using DeviceSpace = Kokkos::HostSpace;
+#endif
+
 class NgpVector
 {
 public:
@@ -75,7 +81,7 @@ public:
         Kokkos::deep_copy(hostVector, vector);
     }
 private:
-    typedef Kokkos::View<double*> KokkosVector;
+  typedef Kokkos::View<double *, DeviceSpace> KokkosVector;
     KokkosVector vector;
     KokkosVector::HostMirror hostVector;
 };
@@ -117,7 +123,7 @@ public:
         Kokkos::deep_copy(hostMatrix, matrix);
     }
 private:
-    typedef Kokkos::View<double**> KokkosMatrix;
+  typedef Kokkos::View<double **, DeviceSpace> KokkosMatrix;
     KokkosMatrix matrix;
     KokkosMatrix::HostMirror hostMatrix;
 };

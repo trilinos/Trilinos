@@ -32,8 +32,8 @@
 #include <Ioss_GroupingEntity.h>
 #include <Ioss_Property.h>
 #include <Ioss_Utils.h>
+#include <cstddef>
 #include <ostream>
-#include <stddef.h>
 #include <string>
 
 namespace {

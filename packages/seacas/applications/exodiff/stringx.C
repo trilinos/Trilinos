@@ -31,13 +31,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include "smart_assert.h" // for SMART_ASSERT
 #include "stringx.h"
-#include <ctype.h>                      // for tolower, isspace
-#include <cstring>                      // for strspn, strcspn
-#include <string>                       // for string, operator==
-#include <vector>                       // for vector
-#include "smart_assert.h"               // for SMART_ASSERT
-
+#include <cstring> // for strspn, strcspn
+#include <ctype.h> // for tolower, isspace
+#include <string>  // for string, operator==
+#include <vector>  // for vector
 
 bool abbreviation(const std::string &s, const std::string &master, unsigned min_length)
 {

@@ -37,7 +37,7 @@
 #include <Ioss_SideBlock.h>
 #include <Ioss_SideSet.h>
 #include <algorithm>
-#include <stddef.h>
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -77,6 +77,7 @@ const Ioss::SideBlockContainer &Ioss::SideSet::get_side_blocks() const { return 
 
 Ioss::SideBlock *Ioss::SideSet::get_block(size_t which) const
 {
+  IOSS_FUNC_ENTER(m_);
   if (which < sideBlocks.size()) {
     return sideBlocks[which];
   }
@@ -86,6 +87,7 @@ Ioss::SideBlock *Ioss::SideSet::get_block(size_t which) const
 
 Ioss::SideBlock *Ioss::SideSet::get_side_block(const std::string &my_name) const
 {
+  IOSS_FUNC_ENTER(m_);
   Ioss::SideBlock *ge = nullptr;
   for (auto sb : sideBlocks) {
     if (sb->name() == my_name) {
@@ -98,6 +100,7 @@ Ioss::SideBlock *Ioss::SideSet::get_side_block(const std::string &my_name) const
 
 bool Ioss::SideSet::add(Ioss::SideBlock *side_block)
 {
+  IOSS_FUNC_ENTER(m_);
   sideBlocks.push_back(side_block);
   side_block->owner_ = this;
   return true;
@@ -129,6 +132,7 @@ Ioss::Property Ioss::SideSet::get_implicit_property(const std::string &my_name) 
 
 int Ioss::SideSet::max_parametric_dimension() const
 {
+  IOSS_FUNC_ENTER(m_);
   int max_par_dim = 0;
   for (auto sideblock : sideBlocks) {
     int parametric_dim = sideblock->topology()->parametric_dimension();
@@ -148,6 +152,7 @@ int Ioss::SideSet::max_parametric_dimension() const
 
 void Ioss::SideSet::block_membership(std::vector<std::string> &block_members)
 {
+  IOSS_FUNC_ENTER(m_);
   if (blockMembership.empty()) {
     for (auto &sb : sideBlocks) {
       std::vector<std::string> blocks;

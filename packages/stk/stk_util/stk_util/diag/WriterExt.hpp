@@ -54,13 +54,6 @@
 #include <vector>                       // for vector
 #include "stk_util/util/FArray.hpp"     // for FArrayContainer, FArray
 #include <stk_util/parallel/MPI.hpp>
-#if defined ( STK_HAS_MPI )
-namespace sierra { namespace MPI { struct TempLoc; } }
-#endif
-
-
-
-
 
 namespace stk {
 namespace diag {
@@ -633,18 +626,6 @@ Writer &operator<<(Writer &dout, const sierra::MPI::Loc<double> &loc);
  */
 Writer &operator<<(Writer &dout, const sierra::MPI::Loc<float> &loc);
 
-/**
- * @brief Function <b>operator<<</b> writes the TempLoc type to the output stream.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to write the
- *			c style string to.
- *
- * @param loc		a <b>sierra::MPI::Loc<int></b> const reference to the
- *			sierra::MPI::MaxLoc/sierra::MPI::MinLoc operator object.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-Writer &operator<<(Writer &dout, const sierra::MPI::TempLoc &loc);
 #endif
 
 /**

@@ -6,35 +6,35 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include "Ioss_DBUsage.h"                  // for DatabaseUsage
+#include "Ioss_IOFactory.h"                // for IOFactory
+#include <stddef.h>                        // for nullptr
+#include <string>                          // for string
+#include <visualization/Iovs_DatabaseIO.h> // for DatabaseIO
 #include <visualization/Iovs_IOFactory.h>
-#include <stddef.h>                     // for nullptr
-#include <visualization/Iovs_DatabaseIO.h>  // for DatabaseIO
-#include <string>                       // for string
-#include "Ioss_DBUsage.h"               // for DatabaseUsage
-#include "Ioss_IOFactory.h"             // for IOFactory
-namespace Ioss { class PropertyManager; }
+namespace Ioss {
+  class PropertyManager;
+}
 // #include <visualization/Iovs_Internals.h>
 
 namespace Iovs {
 
-  const IOFactory* IOFactory::factory()
+  const IOFactory *IOFactory::factory()
   {
     static IOFactory registerThis;
     return &registerThis;
   }
 
-  IOFactory::IOFactory()
-    : Ioss::IOFactory("catalyst")
+  IOFactory::IOFactory() : Ioss::IOFactory("catalyst")
   {
     // Tell the database to register itself with sierra's product registry.
     // XXX exodus doesn't do this, do we need to?
     // register_library_versions();
   }
 
-  Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
-				       Ioss::DatabaseUsage db_usage,
-				       MPI_Comm communicator,
-				       const Ioss::PropertyManager &properties) const
+  Ioss::DatabaseIO *IOFactory::make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
+                                       MPI_Comm                     communicator,
+                                       const Ioss::PropertyManager &properties) const
   {
     return new DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
@@ -46,5 +46,4 @@ namespace Iovs {
   {
     // Internals::register_library_versions();
   }
-
 }

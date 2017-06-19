@@ -37,7 +37,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityBlock.h>
 #include <Ioss_Property.h>
-#include <assert.h>
+#include <cassert>
 #include <string>
 
 namespace Ioss {
@@ -74,5 +74,5 @@ namespace Ioss {
 
   private:
   };
-}
+} // namespace Ioss
 #endif

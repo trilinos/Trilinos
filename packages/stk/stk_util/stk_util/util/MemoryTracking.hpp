@@ -66,11 +66,6 @@ size_t get_high_water_mark_in_bytes()
     return high_water_mark_bytes;
 }
 inline
-size_t get_num_ptrs_currently_allocated()
-{
-    return num_ptrs;
-}
-inline
 size_t get_high_water_mark_in_ptrs()
 {
     return high_water_mark_in_ptrs;

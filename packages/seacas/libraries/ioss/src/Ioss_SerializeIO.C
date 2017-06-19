@@ -51,14 +51,20 @@ namespace Ioss {
 
   int SerializeIO::s_groupFactor = 0;
 
+#if defined(IOSS_THREADSAFE)
+  std::mutex SerializeIO::m_;
+#endif
+
   SerializeIO::SerializeIO(const DatabaseIO *database_io, int manual_owner_processor)
-      : m_databaseIO(database_io), m_activeFallThru(s_owner != -1), m_manualOwner(-1)
+      : m_databaseIO(database_io), m_activeFallThru(true), m_manualOwner(-1)
 
   {
     if (m_databaseIO->using_parallel_io()) {
       return;
     }
+    IOSS_FUNC_ENTER(m_);
 
+    m_activeFallThru               = s_owner != -1;
     const Ioss::ParallelUtils util = m_databaseIO->util();
     if (s_rank == -1) {
       s_rank = util.parallel_rank();
@@ -112,6 +118,7 @@ namespace Ioss {
       return;
     }
     try {
+      IOSS_FUNC_ENTER(m_);
       if (m_activeFallThru) {
         ;
       }
@@ -145,6 +152,7 @@ namespace Ioss {
 
   void SerializeIO::setGroupFactor(int factor)
   {
+    IOSS_FUNC_ENTER(m_);
     if (s_rank != -1) {
       IOSS_WARNING << "Mesh I/O serialization group factor cannot be changed "
                       "once serialized I/O has begun";

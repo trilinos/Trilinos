@@ -21,13 +21,13 @@
  */
 
 #if defined(WIN32) || defined(_WINDOWS)
-#include <windows.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
 #include <conio.h>
-#include <io.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <io.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <windows.h>
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
 #define sleep(a) Sleep(a * 1000)
@@ -76,15 +76,15 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <sys/types.h>
-#include <sys/time.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #ifdef CAN_USE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#include <fcntl.h>
-#include <errno.h>
 #include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <pwd.h>
 #ifdef HAVE_TERMIOS_H /* use HAVE_TERMIOS_H interface */
 #include <termios.h>

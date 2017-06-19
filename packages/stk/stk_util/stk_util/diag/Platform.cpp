@@ -178,22 +178,6 @@ get_heap_info(
 #endif // defined(SIERRA_HEAP_INFO)
 }
 
-
-size_t get_available_memory()
-{
-  // The value returned for _SC_AVPHYS_PAGES is the amount of memory
-  // the application can use without hindering any other process
-  // (given that no other process increases its memory usage).
-#if !defined(__APPLE__) && !defined(__FreeBSD__)
-  static size_t pagesize = getpagesize();
-  size_t avail = sysconf(_SC_AVPHYS_PAGES);
-  return avail * pagesize;
-#else
-  // _SC_AVPHYS_PAGES does not exist on FreeBSD/Apple
-  return 0;
-#endif
-}
-
 void
 get_memory_info(
   size_t &		memory_usage,
@@ -357,22 +341,12 @@ path_exists(
   return path_access(name, F_OK);
 }
 
-
 bool
 path_read_access(
   const std::string &	name)
 {
   return path_access(name, R_OK);
 }
-
-
-bool
-path_write_access(
-  const std::string &	name)
-{
-  return path_access(name, W_OK);
-}
-
 
 namespace {
 

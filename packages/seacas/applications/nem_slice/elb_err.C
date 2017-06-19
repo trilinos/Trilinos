@@ -34,10 +34,9 @@
  */
 
 #include "elb_err.h"
-#include <stddef.h>                     // for size_t
-#include <cstdio>                       // for fprintf, stderr
-#include <vector>                       // for vector
-
+#include <cstdio>   // for fprintf, stderr
+#include <stddef.h> // for size_t
+#include <vector>   // for vector
 
 const int MAX_ERR_MSG = 1024;
 int       error_lev   = 1;

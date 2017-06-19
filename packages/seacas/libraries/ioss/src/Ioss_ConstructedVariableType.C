@@ -43,7 +43,7 @@ Ioss::ConstructedVariableType::ConstructedVariableType(const std::string &my_nam
 }
 
 Ioss::ConstructedVariableType::ConstructedVariableType(int number_components, bool delete_me)
-    : Ioss::VariableType(std::string("Real[") + Utils::to_string(number_components) +
+    : Ioss::VariableType(std::string("Real[") + std::to_string(number_components) +
                              std::string("]"),
                          number_components, delete_me)
 {

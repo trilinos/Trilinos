@@ -62,5 +62,5 @@ namespace Ioss {
     }
     return split_type;
   }
-}
+} // namespace Ioss
 #endif

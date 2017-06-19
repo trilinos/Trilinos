@@ -54,8 +54,8 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdint.h>                     // for int64_t
-#include "exodusII.h"                   // for ex_put_partial_set, etc
+#include "exodusII.h" // for ex_put_partial_set, etc
+#include <stdint.h>   // for int64_t
 
 /*!
  * /deprecated use ex_put_partial_set() instead

@@ -25,7 +25,7 @@
 
    Modified by Gary L. Hennigan, SNL, Dept. 9221, 3 Feb 1997 */
 
-#include <cstring>                      // for strchr, memchr, memcmp
+#include <cstring> // for strchr, memchr, memcmp
 
 /* Parse comma separated suboption from *OPTIONP and match against
    strings in TOKENS.  If found return index and set *VALUEP to

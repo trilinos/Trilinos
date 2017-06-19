@@ -45,14 +45,17 @@ namespace Iovs {
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
-    unsigned entity_field_support() const
+    unsigned entity_field_support() const override
     {
       return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::NODESET | Ioss::SIDESET | Ioss::SIDEBLOCK;
     }
 
+    static int parseCatalystFile(const std::string &filepath, std::string &json_result);
+
+  private:
     // Eliminate as much memory as possible, but still retain meta data information
     // Typically, eliminate the maps...
-    void release_memory();
+    void release_memory__() override;
 
     /*!
      * Determine the local position of the node with the global id
@@ -60,27 +63,24 @@ namespace Iovs {
      * does not exist in the map; otherwise, it must exist and will
      * throw an exception if not found.
      */
-    int64_t node_global_to_local(int64_t global, bool must_exist) const
+    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
     {
       return nodeMap.global_to_local(global, must_exist);
     }
 
-    int64_t element_global_to_local(int64_t global) const
+    int64_t element_global_to_local__(int64_t global) const override
     {
       return elemMap.global_to_local(global);
     }
 
-    bool begin(Ioss::State state);
-    bool end(Ioss::State state);
+    bool begin__(Ioss::State state) override;
+    bool end__(Ioss::State state) override;
 
-    bool begin_state(Ioss::Region *region, int state, double time);
-    bool end_state(Ioss::Region *region, int state, double time);
+    bool begin_state__(Ioss::Region *region, int state, double time) override;
+    bool end_state__(Ioss::Region *region, int state, double time) override;
 
-    void read_meta_data();
+    void read_meta_data__() override;
 
-    static int parseCatalystFile(const std::string &filepath, std::string &json_result);
-
-  private:
     // For the time being, treat vis as write only. Consider glue pipelines.
     int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const

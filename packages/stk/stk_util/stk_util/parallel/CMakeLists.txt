@@ -64,7 +64,6 @@ FILE(GLOB SOURCES *.cpp)
 #ParallelComm.hpp
 #Parallel.hpp
 #ParallelIndex.hpp
-#ParallelInputStream.hpp
 #ParallelReduce.hpp
 #  )
 #
@@ -74,7 +73,6 @@ FILE(GLOB SOURCES *.cpp)
 #ParallelComm.cpp
 #Parallel.cpp
 #ParallelIndex.cpp
-#ParallelInputStream.cpp
 #ParallelReduce.cpp
 #  )
 #
