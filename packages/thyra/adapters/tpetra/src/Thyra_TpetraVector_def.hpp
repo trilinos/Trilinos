@@ -266,7 +266,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyOpImpl(
   for (auto itr = vecs.begin(); itr != vecs.end(); ++itr) {
     auto tv = this->getConstTpetraVector(Teuchos::rcpFromPtr(*itr));
     if (nonnull(tv)) {
-      // Tpetra frequently const_casts to sync, so I'm assuming this is alright
       typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
       Teuchos::rcp_const_cast<TV>(tv)->template sync<Kokkos::HostSpace>();
     }

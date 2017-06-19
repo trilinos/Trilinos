@@ -469,7 +469,6 @@ mvMultiReductApplyOpImpl(
   for (auto itr = multi_vecs.begin(); itr != multi_vecs.end(); ++itr) {
     Ptr<const TMV> tmv = Teuchos::ptr_dynamic_cast<const TMV>(*itr);
     if (nonnull(tmv)) {
-      // Tpetra frequently const_casts to sync, so I'm assuming this is alright
       Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(
       tmv->getConstTpetraMultiVector())-> template sync<Kokkos::HostSpace>();
     }
