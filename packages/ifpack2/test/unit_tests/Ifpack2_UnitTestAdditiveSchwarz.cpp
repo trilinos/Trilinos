@@ -658,13 +658,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
 
   out << "Creating AdditiveSchwarz instance" << endl;
 
-  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (A,1);
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (A);
   ParameterList params, zlist;
 
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
-  params.set ("schwarz: overlap level", 0);  //FIXME Note that this test will fail for overlap>0.
-                                       //See github issue #460.
+  params.set ("schwarz: overlap level", 2);
+
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   params.set ("schwarz: use reordering", true);
 #else
@@ -756,7 +756,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
   }
 
   out << "Generating input and output (multi)vectors" << endl;
-  MV x(rowmap,2), y(rowmap,2);
+  const int numCols = 2;
+  MV x(rowmap, numCols), y(rowmap, numCols);
   x.randomize();
 
   if (gblSuccess == 1) {
@@ -780,8 +781,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
   prec.initialize();
   out << "Calling AdditiveSchwarz::compute()" << endl;
   prec.compute();
+  MV z(rowmap,numCols);
   out << "Calling AdditiveSchwarz::apply()" << endl;
-  MV z(rowmap,2);
+
   prec.apply (x, z);
 
   if (gblSuccess == 1) {
