@@ -232,26 +232,35 @@ int main(int argc, char *argv[]) {
     resv2  = Teuchos::rcp(new ROL::PartitionedVector<RealT>(resvec2));
 
     /*** Initialize compliance objective function. ***/
-    Teuchos::ParameterList list(*parlist);
-    list.sublist("Vector").sublist("Sim").set("Use Riesz Map",true);
-    list.sublist("Vector").sublist("Sim").set("Lump Riesz Map",false);
-    // Has state Riesz map enabled for mesh-independent compliance scaling.
-    Teuchos::RCP<Tpetra::MultiVector<> > f_rcp = assembler->createResidualVector();
-    f_rcp->putScalar(0.0);
-    Teuchos::RCP<ROL::Vector<RealT> > fp
-      = Teuchos::rcp(new PDE_DualSimVector<RealT>(f_rcp,pde,assembler,list));
-    up->zero();
-    pdeWithFilter->value(*fp, *up, *zp, tol);
-    RealT objScaling = objFactor, fnorm2 = fp->dot(*fp);
-    if (fnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
-      objScaling /= fnorm2;
-    }
-    u_rcp->randomize();
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(1,Teuchos::null);
-    qoi_vec[0] = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(),
-                                                     pde->getLoad(),
-                                                     pde->getFieldHelper(),
-                                                     objScaling));
+    bool useEnergy = parlist->sublist("Problem").get("Use Energy Objective",false);
+    if (useEnergy) {
+      RealT objScaling = parlist->sublist("Problem").get("Objective Scaling",1.0);
+      qoi_vec[0] = Teuchos::rcp(new QoI_Energy_TopoOpt<RealT>(pde->getFE(),
+                                                              pde->getMaterialTensor(),
+                                                              pde->getFieldHelper(),
+                                                              objScaling));
+    }
+    else {
+      Teuchos::ParameterList list(*parlist);
+      list.sublist("Vector").sublist("Sim").set("Use Riesz Map",true);
+      list.sublist("Vector").sublist("Sim").set("Lump Riesz Map",false);
+      // Has state Riesz map enabled for mesh-independent compliance scaling.
+      Teuchos::RCP<Tpetra::MultiVector<> > f_rcp = assembler->createResidualVector();
+      Teuchos::RCP<ROL::Vector<RealT> > fp
+        = Teuchos::rcp(new PDE_DualSimVector<RealT>(f_rcp,pde,assembler,list));
+      fp->zero(); up->zero();
+      pdeWithFilter->value(*fp, *up, *zp, tol);
+      RealT objScaling = objFactor, fnorm2 = fp->dot(*fp);
+      if (fnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
+        objScaling /= fnorm2;
+      }
+      u_rcp->randomize();
+      qoi_vec[0] = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(),
+                                                       pde->getLoad(),
+                                                       pde->getFieldHelper(),
+                                                       objScaling));
+    }
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,assembler));
 
@@ -269,7 +278,7 @@ int main(int argc, char *argv[]) {
     // State bounds
     Teuchos::RCP<Tpetra::MultiVector<> > ulo_rcp = assembler->createStateVector();
     Teuchos::RCP<Tpetra::MultiVector<> > uhi_rcp = assembler->createStateVector();
-    ulo_rcp->putScalar(-1e3*std::sqrt(fnorm2)); uhi_rcp->putScalar(1e3*std::sqrt(fnorm2));
+    ulo_rcp->putScalar(ROL::ROL_NINF<RealT>()); uhi_rcp->putScalar(ROL::ROL_INF<RealT>());
     Teuchos::RCP<ROL::Vector<RealT> > ulop
       = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(ulo_rcp,pde,assembler));
     Teuchos::RCP<ROL::Vector<RealT> > uhip
@@ -292,8 +301,20 @@ int main(int argc, char *argv[]) {
 
       *outStream << "\n\nCheck Gradient of Full Objective Function\n";
       obj->checkGradient(*x,*d,true,*outStream);
+      *outStream << "\n\nCheck Gradient_1 of Full Objective Function\n";
+      obj->checkGradient_1(*up,*zp,*dup,true,*outStream);
+      *outStream << "\n\nCheck Gradient_2 of Full Objective Function\n";
+      obj->checkGradient_2(*up,*zp,*dzp,true,*outStream);
       *outStream << "\n\nCheck Hessian of Full Objective Function\n";
       obj->checkHessVec(*x,*d,true,*outStream);
+      *outStream << "\n\nCheck Hessian_11 of Full Objective Function\n";
+      obj->checkHessVec_11(*up,*zp,*dup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_12 of Full Objective Function\n";
+      obj->checkHessVec_12(*up,*zp,*dzp,true,*outStream);
+      *outStream << "\n\nCheck Hessian_21 of Full Objective Function\n";
+      obj->checkHessVec_21(*up,*zp,*dup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_22 of Full Objective Function\n";
+      obj->checkHessVec_22(*up,*zp,*dzp,true,*outStream);
 
       *outStream << "\n\nCheck Full Jacobian of PDE Constraint\n";
       con->checkApplyJacobian(*x,*d,*resv,true,*outStream);

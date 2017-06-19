@@ -8,6 +8,7 @@
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Number of samples"           type="int"     value="4"             />
     <!-- PROBLEM INFORMATION -->
+    <Parameter name="Use Energy Objective"        type="bool"    value="false"         />
     <Parameter name="Young's Modulus"             type="double"  value="1.0"           />
     <Parameter name="Poisson Ratio"               type="double"  value="0.3"           />
     <Parameter name="Minimum Density"             type="double"  value="1e-4"          />

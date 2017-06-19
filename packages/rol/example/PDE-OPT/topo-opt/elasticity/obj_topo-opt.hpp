@@ -173,6 +173,367 @@ public:
 
 
 template <class Real>
+class QoI_Energy_TopoOpt : public QoI<Real> {
+private:
+  const Teuchos::RCP<FE<Real> > fe_;
+  const Teuchos::RCP<MaterialTensor<Real> > matTensor_;
+  const Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
+  const Real scale_;
+
+public:
+  QoI_Energy_TopoOpt(const Teuchos::RCP<FE<Real> > &fe,
+                     const Teuchos::RCP<MaterialTensor<Real> > &matTensor,
+                     const Teuchos::RCP<FieldHelper<Real> > &fieldHelper,
+                     const Real scale = 1.0)
+    : fe_(fe), matTensor_(matTensor), fieldHelper_(fieldHelper), scale_(scale) {}
+
+  Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
+             const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+             const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // Get relevant dimensions
+    int c = fe_->gradN()->dimension(0);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+    int matd = matTensor_->getMatrixDim();
+    // Initialize output val
+    val = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
+    // Get components of the control
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U, Z;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    fieldHelper_->splitFieldCoeff(Z, z_coeff);
+    // Evaluate on FE basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval, UMat, rho, rhoUMat, CUMat;
+    valZ_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rho       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rhoUMat   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    CUMat     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    fe_->evaluateValue(valZ_eval, Z[0]);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradU_eval(d);
+    for (int i=0; i<d; ++i) {
+      gradU_eval[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      fe_->evaluateGradient(gradU_eval[i], U[i]);
+    }
+    // Compute matrices at density rho(z)
+    matTensor_->computeUmat(UMat, gradU_eval);
+    matTensor_->applyTensor(CUMat, UMat);
+    matTensor_->computeDensity(rho, valZ_eval);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rho, *UMat);
+    // Integrate
+    fe_->computeIntegral(val, rhoUMat, CUMat, false);
+    Intrepid::RealSpaceTools<Real>::scale(*val, static_cast<Real>(0.5)*scale_);
+    return static_cast<Real>(0);
+  }
+
+  void gradient_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // Get relevant dimensions
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+    int matd = matTensor_->getMatrixDim();
+    // Initialize output grad
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > G(d);
+    for (int i=0; i<d; ++i) {
+      G[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    }
+    // Get components of the control
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U, Z;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    fieldHelper_->splitFieldCoeff(Z, z_coeff);
+    // Evaluate on FE basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval, UMat, rho, rhoUMat;
+    valZ_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rho       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rhoUMat   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    fe_->evaluateValue(valZ_eval, Z[0]);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradU_eval(d);
+    for (int i=0; i<d; ++i) {
+      gradU_eval[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      fe_->evaluateGradient(gradU_eval[i], U[i]);
+    }
+    // Compute matrices at density rho(z)
+    matTensor_->computeUmat(UMat, gradU_eval);
+    matTensor_->computeDensity(rho, valZ_eval);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rho, *UMat);
+    // Integrate
+    for (int i=0; i<d; ++i) {
+      Intrepid::FunctionSpaceTools::integrate<Real>(*G[i],
+                                                    *rhoUMat,               // rho B U
+                                                    *matTensor_->CBdetJ(i), // B' C
+                                                    Intrepid::COMP_CPP,
+                                                    false);
+    }
+    fieldHelper_->combineFieldCoeff(grad, G);
+    Intrepid::RealSpaceTools<Real>::scale(*grad, scale_);
+  }
+
+  void gradient_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // Retrieve dimensions.
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+    int matd = matTensor_->getMatrixDim();
+    // Initialize Gradients.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > G(d);
+    for (int i=0; i<d; ++i) {
+      G[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    }
+    // Split u_coeff into components.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U, Z;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    fieldHelper_->splitFieldCoeff(Z, z_coeff);
+    // Evaluate/interpolate finite element fields on cells.
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval, rho, UMat, rhoUMat, CUMat, UUMat;
+    valZ_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rho       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rhoUMat   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    CUMat     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    UUMat     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe_->evaluateValue(valZ_eval, Z[0]);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradU_eval(d);
+    for (int i=0; i<d; ++i) {
+      gradU_eval[i] =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      fe_->evaluateGradient(gradU_eval[i], U[i]);
+    }
+    matTensor_->computeUmat(UMat, gradU_eval);
+    matTensor_->applyTensor(CUMat, UMat);
+    matTensor_->computeDensity(rho, valZ_eval, 1);  // first derivative
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rho, *UMat);
+    Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*UUMat, *rhoUMat, *CUMat);
+
+    /*** Evaluate weak form of the residual. ***/
+    Intrepid::FunctionSpaceTools::integrate<Real>(*G[0],
+                                                  *UUMat,        // B' C drho B U
+                                                  *fe_->NdetJ(), // N
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    fieldHelper_->combineFieldCoeff(grad, G);
+    Intrepid::RealSpaceTools<Real>::scale(*grad, static_cast<Real>(0.5)*scale_);
+  }
+
+  void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // Get relevant dimensions
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+    int matd = matTensor_->getMatrixDim();
+    // Initialize output grad
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > H(d);
+    for (int i=0; i<d; ++i) {
+      H[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    }
+    // Get components of the control
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > V, Z;
+    fieldHelper_->splitFieldCoeff(V, v_coeff);
+    fieldHelper_->splitFieldCoeff(Z, z_coeff);
+    // Evaluate on FE basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval, VMat, rho, rhoVMat;
+    valZ_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rho       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rhoVMat   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    fe_->evaluateValue(valZ_eval, Z[0]);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradV_eval(d);
+    for (int i=0; i<d; ++i) {
+      gradV_eval[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      fe_->evaluateGradient(gradV_eval[i], V[i]);
+    }
+    // Compute matrices at density rho(z)
+    matTensor_->computeUmat(VMat, gradV_eval);
+    matTensor_->computeDensity(rho, valZ_eval);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoVMat, *rho, *VMat);
+    // Integrate
+    for (int i=0; i<d; ++i) {
+      Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
+                                                    *rhoVMat,               // rho B U
+                                                    *matTensor_->CBdetJ(i), // B' C
+                                                    Intrepid::COMP_CPP,
+                                                    false);
+    }
+
+    fieldHelper_->combineFieldCoeff(hess, H);
+    Intrepid::RealSpaceTools<Real>::scale(*hess, scale_);
+  }
+
+  void HessVec_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // Retrieve dimensions.
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+    int matd = matTensor_->getMatrixDim();
+    // Initialize Gradients.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > H(d);
+    for (int i=0; i<d; ++i) {
+      H[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    }
+    // Split u_coeff into components.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U, Z, V;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    fieldHelper_->splitFieldCoeff(Z, z_coeff);
+    fieldHelper_->splitFieldCoeff(V, v_coeff);
+    // Evaluate/interpolate finite element fields on cells.
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval, valV_eval,
+      rho, rhoV, UMat, rhoUMat, CUMat, UUMat;
+    valZ_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    valV_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rho       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rhoV      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rhoUMat   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    CUMat     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    UUMat     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe_->evaluateValue(valZ_eval, Z[0]);
+    fe_->evaluateValue(valV_eval, V[0]);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradU_eval(d);
+    for (int i=0; i<d; ++i) {
+      gradU_eval[i] =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      fe_->evaluateGradient(gradU_eval[i], U[i]);
+    }
+    matTensor_->computeUmat(UMat, gradU_eval);
+    matTensor_->applyTensor(CUMat, UMat);
+    matTensor_->computeDensity(rho, valZ_eval, 1);  // first derivative
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoV, *rho, *valV_eval);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rhoV, *UMat);
+    // Evaluate Hessian-times-a-vector.
+    for (int i = 0; i < d; ++i) {
+      Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
+                                                    *rhoUMat,               // drho B U
+                                                    *matTensor_->CBdetJ(i), // B' C
+                                                    Intrepid::COMP_CPP,
+                                                    false);
+    }
+    fieldHelper_->combineFieldCoeff(hess, H);
+    Intrepid::RealSpaceTools<Real>::scale(*hess, scale_);
+  }
+
+  void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // Retrieve dimensions.
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+    int matd = matTensor_->getMatrixDim();
+    // Initialize Gradients.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > H(d);
+    for (int i=0; i<d; ++i) {
+      H[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    }
+    // Split u_coeff into components.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U, Z, V;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    fieldHelper_->splitFieldCoeff(Z, z_coeff);
+    fieldHelper_->splitFieldCoeff(V, v_coeff);
+    // Evaluate/interpolate finite element fields on cells.
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval,
+      rho, UMat, VMat, rhoUMat, CVMat, UVMat;
+    valZ_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rho       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rhoUMat   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    CVMat     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    UVMat     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe_->evaluateValue(valZ_eval, Z[0]);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradU_eval(d);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradV_eval(d);
+    for (int i=0; i<d; ++i) {
+      gradU_eval[i] =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      gradV_eval[i] =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      fe_->evaluateGradient(gradU_eval[i], U[i]);
+      fe_->evaluateGradient(gradV_eval[i], V[i]);
+    }
+    matTensor_->computeUmat(UMat, gradU_eval);
+    matTensor_->computeUmat(VMat, gradV_eval);
+    matTensor_->applyTensor(CVMat, VMat);
+    matTensor_->computeDensity(rho, valZ_eval, 1);  // first derivative
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rho, *UMat);
+    Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*UVMat, *rhoUMat, *CVMat);
+    // Evaluate Hessian-times-a-vector.
+    Intrepid::FunctionSpaceTools::integrate<Real>(*H[0],
+                                                  *UVMat,        // B' C drho B U
+                                                  *fe_->NdetJ(), // N
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    fieldHelper_->combineFieldCoeff(hess, H);
+    Intrepid::RealSpaceTools<Real>::scale(*hess, scale_);
+  }
+
+  void HessVec_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // Retrieve dimensions.
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+    int matd = matTensor_->getMatrixDim();
+    // Initialize Hessians.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > H(d);
+    for (int i=0; i<d; ++i) {
+      H[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    }
+    // Split u_coeff into components.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U, Z, V;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    fieldHelper_->splitFieldCoeff(Z, z_coeff);
+    fieldHelper_->splitFieldCoeff(V, v_coeff);
+    // Evaluate/interpolate finite element fields on cells.
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval, valV_eval,
+      rho, rhoV, UMat, rhoUMat, CUMat, UUMat;
+    valZ_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    valV_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rho       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rhoV      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    rhoUMat   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    CUMat     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
+    UUMat     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe_->evaluateValue(valZ_eval, Z[0]);
+    fe_->evaluateValue(valV_eval, V[0]);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradU_eval(d);
+    for (int i=0; i<d; ++i) {
+      gradU_eval[i] =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      fe_->evaluateGradient(gradU_eval[i], U[i]);
+    }
+    matTensor_->computeUmat(UMat, gradU_eval);
+    matTensor_->applyTensor(CUMat, UMat);
+    matTensor_->computeDensity(rho, valZ_eval, 2);  // second derivative
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoV, *rho, *valV_eval);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rhoV, *UMat);
+    Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*UUMat, *rhoUMat, *CUMat);
+
+    /*** Evaluate weak form of the residual. ***/
+    Intrepid::FunctionSpaceTools::integrate<Real>(*H[0],
+                                                  *UUMat,        // B' C drho B U
+                                                  *fe_->NdetJ(), // N
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    fieldHelper_->combineFieldCoeff(hess, H);
+    Intrepid::RealSpaceTools<Real>::scale(*hess, static_cast<Real>(0.5)*scale_);
+  }
+
+}; // QoI_TopoOpt
+
+template <class Real>
 class QoI_Volume_TopoOpt : public QoI<Real> {
 private:
   const Teuchos::RCP<FE<Real> > fe_;
