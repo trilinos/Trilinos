@@ -756,7 +756,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
   }
 
   out << "Generating input and output (multi)vectors" << endl;
-  int numCols = 2;
+  const int numCols = 2;
   MV x(rowmap, numCols), y(rowmap, numCols);
   x.randomize();
 
