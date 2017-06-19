@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
     // State bounds
     Teuchos::RCP<Tpetra::MultiVector<> > ulo_rcp = assembler->createStateVector();
     Teuchos::RCP<Tpetra::MultiVector<> > uhi_rcp = assembler->createStateVector();
-    ulo_rcp->putScalar(-1e3*std::sqrt(fnorm2)); uhi_rcp->putScalar(1e3*std::sqrt(fnorm2));
+    ulo_rcp->putScalar(ROL::ROL_NINF<RealT>()); uhi_rcp->putScalar(ROL::ROL_INF<RealT>());
     Teuchos::RCP<ROL::Vector<RealT> > ulop
       = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(ulo_rcp,pde,assembler));
     Teuchos::RCP<ROL::Vector<RealT> > uhip
