@@ -232,30 +232,30 @@ int main(int argc, char *argv[]) {
     resv2  = Teuchos::rcp(new ROL::PartitionedVector<RealT>(resvec2));
 
     /*** Initialize compliance objective function. ***/
-    Teuchos::ParameterList list(*parlist);
-    list.sublist("Vector").sublist("Sim").set("Use Riesz Map",true);
-    list.sublist("Vector").sublist("Sim").set("Lump Riesz Map",false);
-    // Has state Riesz map enabled for mesh-independent compliance scaling.
-    Teuchos::RCP<Tpetra::MultiVector<> > f_rcp = assembler->createResidualVector();
-    f_rcp->putScalar(0.0);
-    Teuchos::RCP<ROL::Vector<RealT> > fp
-      = Teuchos::rcp(new PDE_DualSimVector<RealT>(f_rcp,pde,assembler,list));
-    up->zero();
-    pdeWithFilter->value(*fp, *up, *zp, tol);
-    RealT objScaling = objFactor, fnorm2 = fp->dot(*fp);
-    if (fnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
-      objScaling /= fnorm2;
-    }
-    u_rcp->randomize();
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(1,Teuchos::null);
     bool useEnergy = parlist->sublist("Problem").get("Use Energy Objective",false);
     if (useEnergy) {
+      RealT objScaling = parlist->sublist("Problem").get("Objective Scaling",1.0);
       qoi_vec[0] = Teuchos::rcp(new QoI_Energy_TopoOpt<RealT>(pde->getFE(),
                                                               pde->getMaterialTensor(),
                                                               pde->getFieldHelper(),
-                                                              1.0));//objScaling));
+                                                              objScaling));
     }
     else {
+      Teuchos::ParameterList list(*parlist);
+      list.sublist("Vector").sublist("Sim").set("Use Riesz Map",true);
+      list.sublist("Vector").sublist("Sim").set("Lump Riesz Map",false);
+      // Has state Riesz map enabled for mesh-independent compliance scaling.
+      Teuchos::RCP<Tpetra::MultiVector<> > f_rcp = assembler->createResidualVector();
+      Teuchos::RCP<ROL::Vector<RealT> > fp
+        = Teuchos::rcp(new PDE_DualSimVector<RealT>(f_rcp,pde,assembler,list));
+      fp->zero(); up->zero();
+      pdeWithFilter->value(*fp, *up, *zp, tol);
+      RealT objScaling = objFactor, fnorm2 = fp->dot(*fp);
+      if (fnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
+        objScaling /= fnorm2;
+      }
+      u_rcp->randomize();
       qoi_vec[0] = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(),
                                                        pde->getLoad(),
                                                        pde->getFieldHelper(),
