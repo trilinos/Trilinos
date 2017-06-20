@@ -437,7 +437,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // MueLu part
 
     Teuchos::ParameterList paramList;
-    Teuchos::updateParametersFromXmlFileAndBroadcast("driver.xml", Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
     std::cout << paramList << std::endl;
 
