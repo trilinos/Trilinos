@@ -45,6 +45,7 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"
+#include "Thyra_MultiVectorStdOpsTester.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_LinearOpTester.hpp"
@@ -441,25 +442,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, vectorSpaceTester,
 }
 
 
-// ToDo: Fix the default tolerances for below
+//
+// vectorStdOpsTester
+//
 
-/*
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraVectorSpace, vectorStdOpsTester,
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, vectorStdOpsTester,
   Scalar )
 {
   const RCP<const VectorSpaceBase<Scalar> > vs =
     Thyra::createVectorSpace<Scalar>(createTpetraMap(g_localDim));
   Thyra::VectorStdOpsTester<Scalar> vectorStdOpsTester;
-  //vectorStdOpsTester.show_all_tests(showAllTests);
-  //vectorStdOpsTester.dump_all(dumpAll);
+  vectorStdOpsTester.warning_tol(5.0e-13);
+  vectorStdOpsTester.error_tol(5.0e-14);
   TEST_ASSERT(vectorStdOpsTester.checkStdOps(*vs, &out));
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( TpetraVectorSpace,
-  vectorStdOpsTester )
 
-*/
+//
+// multiVectorStdOpsTester
+//
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, multiVectorStdOpsTester,
+  Scalar )
+{
+  const RCP<const VectorSpaceBase<Scalar> > vs =
+    Thyra::createVectorSpace<Scalar>(createTpetraMap(g_localDim));
+  Thyra::MultiVectorStdOpsTester<Scalar> mvStdOpsTester;
+  mvStdOpsTester.warning_tol(5.0e-13);
+  mvStdOpsTester.error_tol(5.0e-14);
+  TEST_ASSERT(mvStdOpsTester.checkStdOps(*vs, &out));
+}
 
 
 //
@@ -1027,6 +1041,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_ScaledLin
    \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
     vectorSpaceTester, SCALAR ) \
+   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
+    vectorStdOpsTester, SCALAR ) \
+   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
+    multiVectorStdOpsTester, SCALAR ) \
    \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
     getTpetraMultiVector, SCALAR ) \
