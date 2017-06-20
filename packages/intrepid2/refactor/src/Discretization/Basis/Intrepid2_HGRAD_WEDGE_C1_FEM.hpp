@@ -87,6 +87,7 @@ namespace Intrepid2 {
 
     class Basis_HGRAD_WEDGE_C1_FEM {
     public:
+      typedef struct Wedge<6> cell_topology_type;
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,

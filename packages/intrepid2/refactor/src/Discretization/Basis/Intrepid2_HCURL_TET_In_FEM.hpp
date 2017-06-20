@@ -93,7 +93,7 @@ namespace Impl {
 
 class Basis_HCURL_TET_In_FEM {
 public:
-
+  typedef struct Tetrahedron<4> cell_topology_type;
   template<EOperator opType>
   struct Serial {
     template<typename outputValueViewType,

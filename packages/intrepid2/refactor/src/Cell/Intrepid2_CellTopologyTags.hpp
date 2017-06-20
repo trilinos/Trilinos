@@ -61,7 +61,7 @@ namespace Intrepid2 {
     /// CellTopologyTags - compile time information
     /// template<int N = # of nodal points>
     /// struct CellTopo {
-    ///   base_cell_topology - base cell topology type
+    ///   base_cell_topology_type - base cell topology type
     ///   dimension - dimension of the topology
     ///   numVert - # of vertices
     ///   numEdge - # of edges
@@ -80,7 +80,7 @@ namespace Intrepid2 {
 
     template<>
     struct Line<2> {
-      typedef struct Line<2> base_cell_topology;
+      typedef struct Line<2> base_cell_topology_type;
       enum : int { dimension = 1,
                    numNode = 2,
                    numVert = 2,
@@ -102,7 +102,7 @@ namespace Intrepid2 {
     
     template<>
     struct Line<3> {
-      typedef struct Line<2> base_cell_topology;
+      typedef struct Line<2> base_cell_topology_type;
       enum : int { dimension = 1,
                    numNode = 3,
                    numVert = 2,
@@ -116,7 +116,7 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
     
@@ -127,7 +127,7 @@ namespace Intrepid2 {
     
     template<>
     struct Triangle<3> {
-      typedef struct Triangle<3> base_cell_topology;
+      typedef struct Triangle<3> base_cell_topology_type;
       enum : int { dimension = 2,
                    numNode = 3,
                    numVert = 3,
@@ -148,7 +148,7 @@ namespace Intrepid2 {
     
     template<>
     struct Triangle<4> {
-      typedef struct Triangle<3> base_cell_topology;
+      typedef struct Triangle<3> base_cell_topology_type;
       enum : int { dimension = 2,
                    numNode = 4,
                    numVert = 3,
@@ -162,13 +162,13 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
     
     template<>
     struct Triangle<6> {
-      typedef struct Triangle<3> base_cell_topology;
+      typedef struct Triangle<3> base_cell_topology_type;
       enum : int { dimension = 2,
                    numNode = 6,
                    numVert = 3,
@@ -183,7 +183,7 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
 
@@ -194,7 +194,7 @@ namespace Intrepid2 {
     
     template<>
     struct Quadrilateral<4> {
-      typedef struct Quadrilateral<4> base_cell_topology;
+      typedef struct Quadrilateral<4> base_cell_topology_type;
       enum : int { dimension = 2,
                    numNode = 4,
                    numVert = 4,
@@ -216,7 +216,7 @@ namespace Intrepid2 {
     
     template<>
     struct Quadrilateral<8> {
-      typedef struct Quadrilateral<4> base_cell_topology;
+      typedef struct Quadrilateral<4> base_cell_topology_type;
       enum : int { dimension = 2,
                    numNode = 8,
                    numVert = 4,
@@ -231,13 +231,13 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
 
     template<>
     struct Quadrilateral<9> {
-      typedef struct Quadrilateral<4> base_cell_topology;
+      typedef struct Quadrilateral<4> base_cell_topology_type;
       enum : int { dimension = 2,
                    numNode = 9,
                    numVert = 4,
@@ -252,7 +252,7 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
 
@@ -263,7 +263,7 @@ namespace Intrepid2 {
     
     template<>
     struct Tetrahedron<4> {
-      typedef struct Tetrahedron<4> base_cell_topology;
+      typedef struct Tetrahedron<4> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 4,
                    numVert = 4,
@@ -286,7 +286,7 @@ namespace Intrepid2 {
 
     template<>
     struct Tetrahedron<8> {
-      typedef struct Tetrahedron<4> base_cell_topology;
+      typedef struct Tetrahedron<4> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 8,
                    numVert = 4,
@@ -301,13 +301,13 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
 
     template<>
     struct Tetrahedron<10> {
-      typedef struct Tetrahedron<4> base_cell_topology;
+      typedef struct Tetrahedron<4> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 10,
                    numVert = 4,
@@ -322,13 +322,13 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
 
     template<>
     struct Tetrahedron<11> {
-      typedef struct Tetrahedron<4> base_cell_topology;
+      typedef struct Tetrahedron<4> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 11,
                    numVert = 4,
@@ -343,7 +343,7 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
 
@@ -354,7 +354,7 @@ namespace Intrepid2 {
     
     template<>
     struct Hexahedron<8> {
-      typedef struct Hexahedron<8> base_cell_topology;
+      typedef struct Hexahedron<8> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 8,
                    numVert = 8,
@@ -378,7 +378,7 @@ namespace Intrepid2 {
 
     template<>
     struct Hexahedron<20> {
-      typedef struct Hexahedron<8> base_cell_topology;
+      typedef struct Hexahedron<8> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 20,
                    numVert = 8,
@@ -396,14 +396,14 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
 
     };
 
     template<>
     struct Hexahedron<27> {
-      typedef struct Hexahedron<8> base_cell_topology;
+      typedef struct Hexahedron<8> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 27,
                    numVert = 8,
@@ -423,7 +423,7 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
 
@@ -434,7 +434,7 @@ namespace Intrepid2 {
 
     template<>
     struct Pyramid<5> {
-      typedef struct Pyramid<5> base_cell_topology;
+      typedef struct Pyramid<5> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 5,
                    numVert = 5,
@@ -459,7 +459,7 @@ namespace Intrepid2 {
 
     template<>
     struct Pyramid<13> {
-      typedef struct Pyramid<5> base_cell_topology;
+      typedef struct Pyramid<5> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 13,
                    numVert = 5,
@@ -475,13 +475,13 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
 
     template<>
     struct Pyramid<14> {
-      typedef struct Pyramid<5> base_cell_topology;
+      typedef struct Pyramid<5> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 14,
                    numVert = 5,
@@ -497,7 +497,7 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
     
@@ -508,7 +508,7 @@ namespace Intrepid2 {
 
     template<>
     struct Wedge<6> {
-      typedef struct Wedge<6> base_cell_topology;
+      typedef struct Wedge<6> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 6,
                    numVert = 6,
@@ -530,7 +530,7 @@ namespace Intrepid2 {
 
     template<>
     struct Wedge<15> {
-      typedef struct Wedge<6> base_cell_topology;
+      typedef struct Wedge<6> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 15,
                    numVert = 6,
@@ -546,13 +546,13 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
     
     template<>
     struct Wedge<18> {
-      typedef struct Wedge<6> base_cell_topology;
+      typedef struct Wedge<6> base_cell_topology_type;
       enum : int { dimension = 3,
                    numNode = 18,
                    numVert = 6,
@@ -570,7 +570,7 @@ namespace Intrepid2 {
       static bool
       checkPointInclusion(const pointViewType &point, 
                           const double threshold) {
-        return base_cell_topology::checkPointInclusion(point, threshold);
+        return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
     };
     

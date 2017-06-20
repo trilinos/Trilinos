@@ -101,6 +101,7 @@ namespace Intrepid2 {
 
     class Basis_HGRAD_TET_C2_FEM {
     public:
+      typedef struct Tetrahedron<10> cell_topology_type;
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,

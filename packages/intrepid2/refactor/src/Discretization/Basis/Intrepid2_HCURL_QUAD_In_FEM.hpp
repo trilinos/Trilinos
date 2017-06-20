@@ -58,6 +58,7 @@ namespace Intrepid2 {
     
     class Basis_HCURL_QUAD_In_FEM {
     public:
+      typedef struct Quadrilateral<4> cell_topology_type;
 
       template<EOperator opType>
       struct Serial {

@@ -82,7 +82,7 @@ namespace Intrepid2 {
 
     class Basis_HGRAD_TRI_Cn_FEM {
     public:
-
+      typedef struct Triangle<3> cell_topology_type;
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
