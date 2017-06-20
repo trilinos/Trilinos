@@ -1,7 +1,11 @@
 #include "Teuchos_Parser.hpp"
+
+#include "Teuchos_Table.hpp"
 #include "Teuchos_make_lalr1_parser.hpp"
 
 namespace Teuchos {
+
+template class Table<Action>;
 
 Parser::Parser(GrammarPtr g, int nstates_reserve):
   grammar(g),

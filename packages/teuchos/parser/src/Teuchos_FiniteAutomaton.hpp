@@ -8,6 +8,10 @@
 
 namespace Teuchos {
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
+extern template class Table<int>;
+#endif
+
 /* This is basically a weird mix between a DFA and
    an NFA-epsilon. It is really a DFA that can have two extra
    epsilon symbols that it accepts transitions with.
@@ -27,7 +31,7 @@ struct FiniteAutomaton {
 };
 
 /* NOTE: this is only needed by Teuchos::any to support its non-standard operator== */
-inline bool operator==(FiniteAutomaton const& a, FiniteAutomaton const& b) {
+inline bool operator==(FiniteAutomaton const&, FiniteAutomaton const&) {
   throw std::logic_error("Teuchos::operator==(FiniteAutomaton) should never be called\n");
   return false;
 }
