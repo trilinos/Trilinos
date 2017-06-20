@@ -99,6 +99,9 @@ class Reader : public Teuchos::Reader {
       case Teuchos::MathExpr::PROD_EQ:
         result = any_cast<double>(rhs.at(0)) == any_cast<double>(rhs.at(3));
         break;
+      case Teuchos::MathExpr::PROD_BOOL_PARENS:
+        result = any_cast<bool>(rhs.at(2));
+        break;
       case Teuchos::MathExpr::PROD_ADD:
         result = any_cast<double>(rhs.at(0)) + any_cast<double>(rhs.at(3));
         break;
@@ -153,7 +156,7 @@ class Reader : public Teuchos::Reader {
       case Teuchos::MathExpr::PROD_NEG:
         result = - any_cast<double>(rhs.at(2));
         break;
-      case Teuchos::MathExpr::PROD_PARENS:
+      case Teuchos::MathExpr::PROD_VAL_PARENS:
         result = any_cast<double>(rhs.at(2));
         break;
       case Teuchos::MathExpr::PROD_CONST:
