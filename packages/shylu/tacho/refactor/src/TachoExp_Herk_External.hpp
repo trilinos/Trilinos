@@ -51,8 +51,8 @@ namespace Tacho {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
             Teuchos::BLAS<ordinal_type,value_type> blas;
             
-            blas.HERK(static_cast<const Teuchos::EUplo>(ArgUplo::teuchos),
-                      static_cast<const Teuchos::ETransp>(ArgTrans::teuchos),
+            blas.HERK(ArgUplo::teuchos_param,
+                      ArgTrans::teuchos_param,
                       n, k,
                       alpha,
                       A.data(), A.stride_1(),
