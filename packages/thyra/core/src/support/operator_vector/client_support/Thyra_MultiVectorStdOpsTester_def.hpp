@@ -141,7 +141,7 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
   {
     norms_2(*V1, mags1());
     for (Ordinal i = 0; i < mags2.size(); ++i)
-      mags2[i] = two*ST::magnitude(ST::squareroot(as<Scalar>(vecSpc.dim())));
+      mags2[i] = ST::magnitude(two * ST::squareroot(as<Scalar>(n)));
     if (!testRelErrors<ScalarMag, ScalarMag, ScalarMag>(
           "norms_2(*V1)", mags1(),
           "2.0*sqrt(n)", mags2(),
@@ -172,7 +172,7 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
     assign(V2.ptr(), three);
     norms_2(*V2, mags1());
     for (Ordinal i = 0; i < mags2.size(); ++i)
-      mags2[i] = ST::magnitude(three*ST::squareroot(as<Scalar>(n)));
+      mags2[i] = ST::magnitude(three * ST::squareroot(as<Scalar>(n)));
     if (!testRelErrors<ScalarMag, ScalarMag, ScalarMag>(
            "norms_2(*V2)", mags1(),
            "3.0*sqrt(n)", mags2(),
@@ -306,8 +306,49 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
   }
 
   // linear_combination
+  if(out) *out << "\n"<<tc<<") linear_combination({alpha,beta,gamma},{V1.ptr(),V2.ptr(),V3.ptr()},0.0,V4.ptr());\n";
+  ++tc;
+  {
+    Scalar alpha = two, beta = -three, gamma = three;
+    Teuchos::RCP<MultiVectorBase<Scalar> > V4 = createMembers(vecSpc,num_mv_cols());
+    assign(V2.ptr(), two);
+    assign(V3.ptr(), four);
+    linear_combination<Scalar>(
+      tuple<Scalar>(alpha, beta, gamma),
+      tuple<Ptr<const MultiVectorBase<Scalar> > >(V1.ptr(), V2.ptr(), V3.ptr()),
+      as<Scalar>(0.0),
+      V4.ptr()); // V4(i,j) = 2.0(-2.0) + (-3.0)(2.0) + 3.0(4.0)
+    norms_2(*V4, mags1());
+    for (Ordinal i = 0; i < mags2.size(); ++i)
+      mags2[i] = ST::magnitude(two * ST::squareroot(as<Scalar>(n)));
+    if (!testRelErrors<ScalarMag, ScalarMag, ScalarMag>(
+           "norms_2(*V4)", mags1(),
+           "2.0*sqrt(n)", mags2(),
+           "error_tol", error_tol(), "warning_tol", warning_tol(), ptr(out)
+         )
+       ) success = false;
+  }
 
-
+  if(out) *out << "\n"<<tc<<") linear_combination({alpha,beta,gamma},{V1.ptr(),V2.ptr(),V3.ptr()},0.5,V4.ptr());\n";
+  ++tc;
+  {
+    Scalar alpha = two, beta = -three, gamma = three;
+    Teuchos::RCP<MultiVectorBase<Scalar> > V4 = createMembers(vecSpc,num_mv_cols());
+    assign(V2.ptr(), two);
+    assign(V3.ptr(), four);
+    assign(V4.ptr(), -four);
+    linear_combination<Scalar>(
+      tuple<Scalar>(alpha, beta, gamma),
+      tuple<Ptr<const MultiVectorBase<Scalar> > >(V1.ptr(), V2.ptr(), V3.ptr()),
+      as<Scalar>(0.5),
+      V4.ptr()); // V4(i,j) = 0.5(-4.0) + 2.0(-2.0) + (-3.0)(2.0) + 3.0(4.0)
+    norms_2(*V4, mags1());
+    if (!testMaxErrors<Scalar>(
+           "norms_2(*V4)", mags1(),
+           "error_tol", error_tol(), "warning_tol", warning_tol(), ptr(out)
+         )
+       ) success = false;
+  }
 
   // Vt_S
   if(out) *out << "\n"<<tc<<") Vt_S(V1.ptr(),alpha);\n";
