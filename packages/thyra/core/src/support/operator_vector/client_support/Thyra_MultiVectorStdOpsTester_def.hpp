@@ -238,11 +238,7 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
     assign(V3.ptr(), *V1);
     scale(alpha, V3.ptr());
     Vp_V(V3.ptr(), *V2);
-    *out << "Before update V2 description" << std::endl;
-    V2->describe(*out, Teuchos::VERB_EXTREME);
     update(alpha, *V1, V2.ptr());
-    *out << "After update V2 description" << std::endl;
-    V2->describe(*out, Teuchos::VERB_EXTREME);
     norms_2(*V2, mags1());
     norms_2(*V3, mags2());
     if (!testRelErrors<ScalarMag, ScalarMag, ScalarMag>(
