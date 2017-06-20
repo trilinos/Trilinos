@@ -85,6 +85,7 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::offset_t    offset_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
@@ -199,7 +200,7 @@ public:
 
   size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
 
-  void getEdgesView(const lno_t *&offsets, const gno_t *&adjIds) const
+  void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const
   {
     offsets = offs_.getRawPtr();
     adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);

@@ -105,7 +105,6 @@ typedef Tpetra::Map<>::node_type znode_t;
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-  typedef size_t zoffset_t;
 # ifdef HAVE_TPETRA_DOUBLE
     typedef double zscalar_t;
 #   define HAVE_EPETRA_SCALAR_TYPE

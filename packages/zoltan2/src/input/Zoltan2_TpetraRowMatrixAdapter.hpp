@@ -78,6 +78,7 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::offset_t offset_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
@@ -167,13 +168,13 @@ public:
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gno_t *&colIds) const
+  void getCRSView(const offset_t *&offsets, const gno_t *&colIds) const
   {
     offsets = offset_.getRawPtr();
     colIds = columnIds_.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gno_t *&colIds,
+  void getCRSView(const offset_t *&offsets, const gno_t *&colIds,
                     const scalar_t *&values) const
   {
     offsets = offset_.getRawPtr();

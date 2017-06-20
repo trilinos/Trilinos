@@ -141,7 +141,7 @@ int main(int narg, char *arg[]) {
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t ia2(*CommT, "vertex");
   inputAdapter_t::gno_t const *adjacencyIds=NULL;
-  inputAdapter_t::lno_t const *offsets=NULL;
+  inputAdapter_t::offset_t const *offsets=NULL;
   ia.print(me);
 
   // Exercise the componentMetrics on the input; make sure the adapter works
@@ -225,7 +225,7 @@ int main(int narg, char *arg[]) {
 	for (int j = 0; j < num_nodes_per_elem[b]; j++) {
 	  ssize_t in_list = -1;
 
-	  for(inputAdapter_t::lno_t k=offsets[telct];k<offsets[telct+1];k++) {
+	  for(inputAdapter_t::offset_t k=offsets[telct];k<offsets[telct+1];k++) {
 	    if(adjacencyIds[k] ==
 	       node_num_map[connect[b][i*num_nodes_per_elem[b]+j]-1]) {
 	      in_list = k;

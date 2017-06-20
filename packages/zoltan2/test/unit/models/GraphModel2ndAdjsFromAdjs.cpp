@@ -143,8 +143,8 @@ int main(int narg, char *arg[]) {
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t ia2(*CommT, "vertex");
   inputAdapter_t::gno_t const *adjacencyIds=NULL;
-  inputAdapter_t::lno_t const *offsets=NULL;
-  Teuchos::ArrayRCP<inputAdapter_t::lno_t> moffsets;
+  inputAdapter_t::offset_t const *offsets=NULL;
+  Teuchos::ArrayRCP<inputAdapter_t::offset_t> moffsets;
   Teuchos::ArrayRCP<inputAdapter_t::gno_t> madjacencyIds;
   ia.print(me);
 
@@ -188,10 +188,10 @@ int main(int narg, char *arg[]) {
         return 3;
       }
 
-      for (inputAdapter_t::lno_t j=moffsets[telct]; j<moffsets[telct+1]; j++) {
+      for (inputAdapter_t::offset_t j=moffsets[telct]; j<moffsets[telct+1]; j++) {
         ssize_t in_list = -1;
 
-        for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
+        for (inputAdapter_t::offset_t k=offsets[telct]; k<offsets[telct+1]; k++) {
           if (adjacencyIds[k] == madjacencyIds[j]) {
             in_list = k;
             break;
@@ -247,10 +247,10 @@ int main(int narg, char *arg[]) {
         return 3;
       }
 
-      for (inputAdapter_t::lno_t j=moffsets[tnoct]; j<moffsets[tnoct+1]; j++) {
+      for (inputAdapter_t::offset_t j=moffsets[tnoct]; j<moffsets[tnoct+1]; j++) {
         ssize_t in_list = -1;
 
-        for (inputAdapter_t::lno_t k=offsets[tnoct]; k<offsets[tnoct+1]; k++) {
+        for (inputAdapter_t::offset_t k=offsets[tnoct]; k<offsets[tnoct+1]; k++) {
           if (adjacencyIds[k] == madjacencyIds[j]) {
             in_list = k;
             break;

@@ -76,6 +76,7 @@ void globalWeightedCutsMessagesHopsByPart(
 
   typedef typename Adapter::lno_t t_lno_t;
   typedef typename Adapter::gno_t t_gno_t;
+  typedef typename Adapter::offset_t t_offset_t;
   typedef typename Adapter::scalar_t t_scalar_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::node_t t_node_t;
@@ -94,7 +95,7 @@ void globalWeightedCutsMessagesHopsByPart(
 
   //get the edge ids, and weights
   ArrayView<const t_gno_t> edgeIds;
-  ArrayView<const t_lno_t> offsets;
+  ArrayView<const t_offset_t> offsets;
   ArrayView<t_input_t> e_wgts;
   graph->getEdgeList(edgeIds, offsets, e_wgts);
 
@@ -211,7 +212,7 @@ void globalWeightedCutsMessagesHopsByPart(
         //get part i, and first vertex in this part v.
         while (v != -1){
           //now get the neightbors of v.
-          for (t_lno_t j = offsets[v]; j < offsets[v+1]; ++j){
+          for (t_offset_t j = offsets[v]; j < offsets[v+1]; ++j){
             //get the part of the second vertex.
             part_t ep = e_parts[j];
 
@@ -391,6 +392,7 @@ void globalWeightedCutsMessagesByPart(
 
   typedef typename Adapter::lno_t t_lno_t;
   typedef typename Adapter::gno_t t_gno_t;
+  typedef typename Adapter::offset_t t_offset_t;
   typedef typename Adapter::scalar_t t_scalar_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::node_t t_node_t;
@@ -409,7 +411,7 @@ void globalWeightedCutsMessagesByPart(
 
   //get the edge ids, and weights
   ArrayView<const t_gno_t> edgeIds;
-  ArrayView<const t_lno_t> offsets;
+  ArrayView<const t_offset_t> offsets;
   ArrayView<t_input_t> e_wgts;
   graph->getEdgeList(edgeIds, offsets, e_wgts);
 
@@ -525,7 +527,7 @@ void globalWeightedCutsMessagesByPart(
         //get part i, and first vertex in this part v.
         while (v != -1){
           //now get the neightbors of v.
-          for (t_lno_t j = offsets[v]; j < offsets[v+1]; ++j){
+          for (t_offset_t j = offsets[v]; j < offsets[v+1]; ++j){
             //get the part of the second vertex.
             part_t ep = e_parts[j];
 
@@ -685,6 +687,7 @@ template <typename Adapter>
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::node_t node_t;
   typedef typename Adapter::part_t part_t;
   typedef StridedData<lno_t, scalar_t> input_t;
@@ -747,7 +750,7 @@ template <typename Adapter>
   graph->getVertexList(Ids, vwgts);
 
   ArrayView<const gno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<input_t> wgts;
   //size_t numLocalEdges =
   graph->getEdgeList(edgeIds, offsets, wgts);
@@ -762,7 +765,7 @@ template <typename Adapter>
   size_t maxcols = 0;
   for (lno_t i = 0; i < localNumObj; ++i) {
     if (Ids[i] < min) min = Ids[i];
-    size_t ncols = offsets[i+1] - offsets[i];
+    offset_t ncols = offsets[i+1] - offsets[i];
     if (ncols > maxcols) maxcols = ncols;
   }
 
@@ -787,7 +790,7 @@ template <typename Adapter>
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement){
     // Insert all columns for global row Ids[localElement]
-    size_t ncols = offsets[localElement+1] - offsets[localElement];
+    offset_t ncols = offsets[localElement+1] - offsets[localElement];
     adjsMatrix->insertGlobalValues(Ids[localElement],
                                    edgeIds(offsets[localElement], ncols),
                                    justOneA(0, ncols));

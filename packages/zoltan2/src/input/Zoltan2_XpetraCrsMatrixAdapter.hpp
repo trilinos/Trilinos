@@ -267,22 +267,11 @@ template <typename User, typename UserCoord>
 
   // Get ArrayRCP pointers to the structures in the underlying matrix
   matrix_->getAllValues(offset_,localColumnIds_,values_);
- 
-  //offset_.resize(nrows+1, 0);
   columnIds_.resize(nnz, 0);
-  lno_t next = 0;
-  // TODO: Refactor the Adapter to use local column ids rather than global ids.
-  // TODO: Refactor the adapter so that offset_ has type size_t, rather than lno_t
-  // This will remove the need for this loop
-  for (size_t i=0; i < nrows; i++){
-    lno_t row = i;
-    nnz = matrix_->getNumEntriesInLocalRow(row);
-    for (size_t j=0; j < nnz; j++){
-      columnIds_[next++] = colMap_->getGlobalElement(localColumnIds_[j+offset_[i]]);
-    }
-    //offset_[i] = (lno_t) myOffset[i];
-    //if (i==(nrows-1)) offset_[i+1]=offset_[i] + nnz;
-  } 
+
+  for(offset_t i = 0; i < offset_[nrows]; i++) {
+    columnIds_[i] = colMap_->getGlobalElement(localColumnIds_[i]);
+  }
 
   if (nWeightsPerRow_ > 0){
     rowWeights_ = arcp(new input_t [nWeightsPerRow_], 0, nWeightsPerRow_, true);

@@ -64,6 +64,7 @@ class EvaluateOrdering : public EvaluateBaseClass<Adapter> {
 private:
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
@@ -183,7 +184,7 @@ public:
     ArrayView<const gno_t> Ids;
     ArrayView<input_t> vwgts;
     ArrayView<const gno_t> edgeIds;
-    ArrayView<const lno_t> offsets;
+    ArrayView<const offset_t> offsets;
     ArrayView<input_t> wgts;
     ArrayView<input_t> vtx;
     graph->getEdgeList(edgeIds, offsets, wgts);
@@ -218,7 +219,7 @@ public:
           std::cout << std::endl;
           // write 1's to old matrix (original form) and new matrix (using solution)
           for (lno_t y = 0; y < numVertex; y++) {
-            for (lno_t n = offsets[y]; n < offsets[y+1]; ++n) {
+            for (offset_t n = offsets[y]; n < offsets[y+1]; ++n) {
               lno_t x = static_cast<lno_t>(edgeIds[n]); // to resolve
               if (x < numVertex && y < numVertex) { // to develop - for MPI this may not be local
                 oldMatrix[x + y*numVertex] = 1;
@@ -259,7 +260,7 @@ public:
 
     for (lno_t j = 0; j < numVertex; j++) {
       lno_t y = Ids[j];
-      for (auto n = offsets[j]; n < offsets[j+1]; ++n) {
+      for (offset_t n = offsets[j]; n < offsets[j+1]; ++n) {
         lno_t x = static_cast<lno_t>(edgeIds[n]); // to resolve
         if(x < numVertex) {
           lno_t x2 = perm[x];

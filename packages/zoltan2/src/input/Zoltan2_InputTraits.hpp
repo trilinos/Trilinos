@@ -250,7 +250,7 @@ struct InputTraits<BasicUserTypes<Scalar, LocalOrdinal, GlobalOrdinal> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal offset_t;
+  typedef LocalOrdinal  offset_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "BasicUserTypes";}
@@ -302,7 +302,6 @@ struct InputTraits<Epetra_CrsMatrix>
   typedef size_t offset_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Zoltan2::default_node_t node_t;
-  typedef Zoltan2::default_offset_t offset_t;
   static inline std::string name() {return "Epetra_CrsMatrix";}
 };
 #endif
@@ -363,7 +362,7 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef default_scalar_t scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal offset_t;
+  typedef size_t offset_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::CrsGraph";}
@@ -379,7 +378,7 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef default_scalar_t scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal offset_t;
+  typedef size_t offset_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::CrsGraph";}
@@ -445,7 +444,7 @@ struct InputTraits<Epetra_Vector>
   typedef double scalar_t;
   typedef int   lno_t;
   typedef int   gno_t;
-  typedef int offset_t;
+  typedef Zoltan2::default_offset_t offset_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_Vector";}
@@ -478,9 +477,9 @@ struct InputTraits<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal offset_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
-  typedef Zoltan2::default_offset_t offset_t;
   static inline std::string name() {return "Tpetra::MultiVector";}
 
   Z2_STATIC_ASSERT_TYPES // validate the types
@@ -493,7 +492,7 @@ struct InputTraits<Epetra_MultiVector>
   typedef double scalar_t;
   typedef int   lno_t;
   typedef int   gno_t;
-  typedef size_t offset_t;
+  typedef Zoltan2::default_offset_t offset_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_MultiVector";}

@@ -67,6 +67,7 @@ class perProcessorComponentMetrics{
 public:
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   perProcessorComponentMetrics(const Adapter &ia,
@@ -132,7 +133,7 @@ perProcessorComponentMetrics<Adapter>::perProcessorComponentMetrics(
   // get graph from model
   const size_t nVtx = graph.getLocalNumVertices();
   ArrayView<const gno_t> adj;
-  ArrayView<const lno_t> offset;
+  ArrayView<const offset_t> offset;
   ArrayView<StridedData<lno_t, scalar_t> > wgts;  // unused
   graph.getEdgeList(adj, offset, wgts);
 
