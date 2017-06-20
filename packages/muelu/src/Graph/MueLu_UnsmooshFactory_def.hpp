@@ -105,7 +105,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(dofStatus.size() == unamalgA->getRowMap()->getNodeNumElements(), MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: User provided dofStatus on level 0 does not fit to size of unamalgamted A");
     } else {
       // dof status is the dirichlet information of unsmooshed/unamalgamated A (fine level)
-      dofStatus = Teuchos::Array<char>(amalgP->getNodeNumEntries() * maxDofPerNode,'s');
+      dofStatus = Teuchos::Array<char>(amalgP->getRowMap()->getNodeNumElements() * maxDofPerNode,'s');
 
       bool bHasZeroDiagonal = false;
       Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*unamalgA,bHasZeroDiagonal,STS::magnitude(0.5));
