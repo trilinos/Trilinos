@@ -303,7 +303,7 @@ void DefaultProductMultiVector<Scalar>::updateImpl(
     = Teuchos::rcp_dynamic_cast<const ProductMultiVectorBase<Scalar> >(Teuchos::rcpFromRef(mv));
   if (nonnull(pv)) {
     for (int k = 0; k < numBlocks_; ++k) {
-      multiVecs_[k].getNonconstObj()->assign(*pv->getMultiVectorBlock(k));
+      multiVecs_[k].getNonconstObj()->update(alpha, *pv->getMultiVectorBlock(k));
     }
   } else {
     MultiVectorDefaultBase<Scalar>::updateImpl(alpha, mv);
