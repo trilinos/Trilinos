@@ -5,9 +5,7 @@
   \brief Declares Teuchos::Parser, ParserFail and make_lalr1_parser.
 */
 
-#include <stack>
-
-#include <Teuchos_Table.hpp>
+#include <Teuchos_TableDecl.hpp>
 #include <Teuchos_Grammar.hpp>
 
 namespace Teuchos {
@@ -25,6 +23,10 @@ struct Action {
     int next_state;
   };
 };
+
+#ifdef HAVE_TEUCHOSCORE_CXX11
+extern template class Table<Action>;
+#endif
 
 struct Parser {
   GrammarPtr grammar;
