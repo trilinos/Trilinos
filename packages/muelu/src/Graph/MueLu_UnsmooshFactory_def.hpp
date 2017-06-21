@@ -136,7 +136,8 @@ namespace MueLu {
     Teuchos::ArrayRCP<Scalar> newPVals(amalgP->getNodeNumEntries() * maxDofPerNode);
 
     size_t rowCount = 0; // actual number of (local) in unamalgamated prolongator
-    if(fineIsPadded == true) {
+    if(fineIsPadded == true || fineLevel.GetLevelID() > 0) {
+
       // build prolongation operator for padded fine level matrices.
       // Note: padded fine level dofs are transfered by injection.
       // That is, these interpolation stencils do not take averages of
@@ -217,7 +218,7 @@ namespace MueLu {
     // Does this work for more than on nullspace vectors?
     // We assume non-overlapping aggreagtes, i.e., colmap = domainmap
     Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(),coarseDomainMap, 1);
-    for (decltype(unamalgA->getRowMap()->getNodeNumElements()) i = 0; i < unamalgA->getRowMap()->getNodeNumElements(); i++) {
+    for (decltype(rowCount) i = 0; i < rowCount; i++) {
       unamalgPCrs->insertLocalValues(i, newPCols.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]),
           newPVals.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]));
     }
