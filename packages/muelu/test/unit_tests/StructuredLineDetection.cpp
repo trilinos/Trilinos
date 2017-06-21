@@ -73,7 +73,7 @@ namespace MueLuTests {
     RCP<StructuredLineDetectionFactory> lineDetectionFact = rcp(new StructuredLineDetectionFactory);
     TEST_EQUALITY(lineDetectionFact != Teuchos::null, true);
 
-  }
+  } // Constructor
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredLineDetectionFactory, LabelLines, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -233,14 +233,15 @@ namespace MueLuTests {
     X->putScalar(1.0);
     X->norm2(norms);
     Op->apply(*X,*RHS,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
-    {
-      X->putScalar( (Scalar) 0.0);
+    X->putScalar( (Scalar) 0.0);
+    for(LO i = 0; i < 10; ++i) {
       H->Iterate(*RHS,*X,maxIter);
       X->norm2(norms);
-      if (comm->getRank() == 0) {out << "||RHS|| = " << norms << std::endl;}
+      if (comm->getRank() == 0) {out << "||RHS[" << i << "]|| = " << norms << std::endl;}
+      Op->apply(*X,*RHS,Teuchos::NO_TRANS,(Scalar)-1.0,(Scalar)1.0);
     }
-
-  }
+    TEST_EQUALITY( (norms[0] < 1.0e-7), true);
+  } // LabelLines
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredLineDetectionFactory,Constructor,Scalar,LO,GO,Node) \
