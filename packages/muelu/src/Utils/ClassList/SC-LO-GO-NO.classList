@@ -84,6 +84,7 @@ SmootherFactory
 SmootherPrototype
 SolverBase
 SteepestDescentSolver
+StructuredLineDetectionFactory
 SubBlockAFactory
 TekoSmoother - #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 TentativePFactory
