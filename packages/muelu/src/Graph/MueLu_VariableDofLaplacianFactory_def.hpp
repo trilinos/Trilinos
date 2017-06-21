@@ -359,7 +359,9 @@ namespace MueLu {
     }
     if(dirOrNot.size() > 0) {
       for(decltype(map.size()) i = 0; i < map.size(); i++) {
-        if(dirOrNot[i]) status[map[i]] = 'd';
+        if(dirOrNot[i] == true){
+          status[map[i]] = 'd';
+        }
       }
     }
     Set(currentLevel,"DofStatus",status);
