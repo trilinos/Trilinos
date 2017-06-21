@@ -429,7 +429,7 @@ BINARYFUNC_MACRO(min, MinOp)
 
 #undef BINARYFUNC_MACRO
 
-#ifdef HAVE_SACADO_CXX11
+#ifdef SACADO_ENABLE_NEW_DESIGN
 #include "Sacado_Fad_Exp_MathFunctions.hpp"
 #endif
 

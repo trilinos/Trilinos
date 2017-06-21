@@ -47,7 +47,7 @@
 
 // Traits for all of the Sacado classes -- Include these first so they are all
 // defined before any nesting of AD classes
-#ifdef  HAVE_SACADO_CXX11
+#ifdef SACADO_ENABLE_NEW_DESIGN
 #include "Sacado_Fad_Exp_ExpressionTraits.hpp"
 #include "Sacado_Fad_Exp_GeneralFadTraits.hpp"
 #endif
@@ -79,7 +79,7 @@
 #endif
 
 // Standard forward AD classes
-#ifdef  HAVE_SACADO_CXX11
+#ifdef SACADO_ENABLE_NEW_DESIGN
 #include "Sacado_Fad_Exp_DFad.hpp"
 #include "Sacado_Fad_Exp_SFad.hpp"
 #include "Sacado_Fad_Exp_SLFad.hpp"
