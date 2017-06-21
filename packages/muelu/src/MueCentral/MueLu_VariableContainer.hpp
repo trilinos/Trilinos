@@ -92,17 +92,25 @@ namespace MueLu {
     template<typename T>
     struct Getter {
       static T& get(DataBase* data_, DataBase*& datah_) {
-        const std::string typeName = Teuchos::TypeNameTraits<T>::name();
-        TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
-                                   "Error, cast to type Data<" << typeName << "> failed since the content is NULL");
-        TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(T), Teuchos::bad_any_cast,
-                                   "Error, cast to type Data<" << typeName << "> failed since the actual underlying type is "
-                                   "\'" << data_->typeName() << "!");
+        if ((data_ == NULL) || (data_->type() != typeid(T))) // NVR added guard to avoid determining typeName unless we will use it
+        {
+          const std::string typeName = Teuchos::TypeNameTraits<T>::name(); // calls Teuchos::demangleName(), which can be expensive
+          TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
+                                     "Error, cast to type Data<" << typeName << "> failed since the content is NULL");
+        
+          TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(T), Teuchos::bad_any_cast,
+                                     "Error, cast to type Data<" << typeName << "> failed since the actual underlying type is "
+                                     "\'" << data_->typeName() << "!");
+        }
 
         Data<T>* data = dynamic_cast<Data<T>*>(data_);
-        TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
-                                   "Error, cast to type Data<" << typeName << "> failed but should not have and the actual underlying type is "
-                                   "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+        if (!data) // NVR added guard to avoid determining typeName unless we will use it
+        {
+          const std::string typeName = Teuchos::TypeNameTraits<T>::name(); // calls Teuchos::demangleName(), which can be expensive
+          TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                     "Error, cast to type Data<" << typeName << "> failed but should not have and the actual underlying type is "
+                                     "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+        }
         return data->data_;
       }
     };
@@ -243,31 +251,45 @@ namespace MueLu {
       typedef Teuchos::RCP<Operator> TO;
       typedef Teuchos::RCP<Matrix>   TM;
 
-      const std::string typeTOName = Teuchos::TypeNameTraits<TO>::name();
-      const std::string typeTMName = Teuchos::TypeNameTraits<TM>::name();
-      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
-                                 "Error, cast to type Data<" << typeTOName << "> failed since the content is NULL");
+      if (data_ == NULL) // NVR added guard to avoid unnecessary call to TypeNameTraits<TO>::name(), which calls Teuchos::demangleName(), which can be expensive
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
+                                   "Error, cast to type Data<" << Teuchos::TypeNameTraits<TO>::name() << "> failed since the content is NULL");
+      }
       if (data_->type() == typeid(TO)) {
         Data<TO>* data = dynamic_cast<Data<TO>*>(data_);
-        TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
-                                   "Error, cast to type Data<" << typeTOName << "> failed but should not have and the actual underlying type is "
-                                   "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+        if (!data) // NVR added guard to avoid unnecessary call to TypeNameTraits<TO>::name(), which calls Teuchos::demangleName(), which can be expensive
+        {
+          TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                     "Error, cast to type Data<" << Teuchos::TypeNameTraits<TO>::name() << "> failed but should not have and the actual underlying type is "
+                                     "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+        }
         return data->data_;
       }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(TM), Teuchos::bad_any_cast,
-                                 "Error, cast to type Data<" << typeTMName << "> failed since the actual underlying type is "
-                                 "\'" << data_->typeName() << "!");
+      if (data_->type() != typeid(TM)) // NVR added guard to avoid unnecessary call to TypeNameTraits<TO>::name(), which calls Teuchos::demangleName(), which can be expensive
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(TM), Teuchos::bad_any_cast,
+                                   "Error, cast to type Data<" << Teuchos::TypeNameTraits<TM>::name() << "> failed since the actual underlying type is "
+                                   "\'" << data_->typeName() << "!");
+      }
       Data<TM>* data = dynamic_cast<Data<TM>*>(data_);
-      TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
-                                 "Error, cast to type Data<" << typeTMName << "> failed but should not have and the actual underlying type is "
-                                 "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      if (!data) // NVR added guard to avoid unnecessary call to TypeNameTraits<TO>::name(), which calls Teuchos::demangleName(), which can be expensive
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                   "Error, cast to type Data<" << Teuchos::TypeNameTraits<TM>::name() << "> failed but should not have and the actual underlying type is "
+                                   "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      }
       if (datah_ == NULL)
         datah_ = new Data<TO>(Teuchos::rcp_dynamic_cast<Operator>(data->data_));
       Data<TO>* datah = dynamic_cast<Data<TO>*>(datah_);
-      TEUCHOS_TEST_FOR_EXCEPTION(!datah, std::logic_error,
-                                 "Error, cast to type Data<" << typeTOName << "> failed but should not have and the actual underlying type is "
-                                 "\'" << datah_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      
+      if (!datah) // NVR added guard to avoid unnecessary call to TypeNameTraits<TO>::name(), which calls Teuchos::demangleName(), which can be expensive
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(!datah, std::logic_error,
+                                   "Error, cast to type Data<" << Teuchos::TypeNameTraits<TO>::name() << "> failed but should not have and the actual underlying type is "
+                                   "\'" << datah_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      }
       return datah->data_;
     }
   };
