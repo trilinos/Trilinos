@@ -372,6 +372,10 @@ namespace MueLu {
     // Epetra/Tpetra mode
     Xpetra::UnderlyingLib lib_;
 
+    // cache these to avoid recreating in each call to Iterate()
+    std::string cachedShortClassName_ = "";
+    std::string cachedDescription_ = "";
+
     //! Graph dumping
     // If enabled, we dump the graph on a specified level into a specified file
     bool isDumpingEnabled_;

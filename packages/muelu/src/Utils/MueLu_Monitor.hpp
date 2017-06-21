@@ -115,6 +115,21 @@ namespace MueLu {
       : printMonitor_(object, msg + " (" + object.description() + ")", msgLevel),
         timerMonitor_(object, object.ShortClassName() + ": " + msg + " (total)",    timerLevel)
     { }
+    
+    /*! @brief Constructor.
+     
+     @param[in] object                Reference to the class instance that is creating this Monitor.
+     @param[in] msg                   String that indicates what the Monitor is monitoring, e.g., "Build"
+     @param[in] objectDescription     Nominally, the result of object.description(), though this is not enforced
+     @param[in] objectShortClassName  Nominally, the result of object.ShortClassName(), though this is not enforced
+     @param[in] msgLevel              Governs whether information should be printed.
+     @param[in] timerLevel            Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
+     */
+    Monitor(const BaseClass& object, const std::string & msg, const std::string &objectDescription, const std::string &objectShortClassName,
+            MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0)
+      : printMonitor_(object, msg + " (" + objectDescription + ")", msgLevel),
+        timerMonitor_(object, objectShortClassName + ": " + msg + " (total)",    timerLevel)
+    { }
 
   private:
     //! Manages printing.

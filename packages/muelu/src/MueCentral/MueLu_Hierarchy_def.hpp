@@ -797,6 +797,14 @@ namespace MueLu {
     // manually before/after a recursive call to Iterate. A side artifact to
     // this approach is that the counts for intermediate level timers are twice
     // the counts for the finest and coarsest levels.
+    if (cachedShortClassName_ == "")
+    {
+      cachedShortClassName_ = this->ShortClassName();
+    }
+    if (cachedDescription_ == "")
+    {
+      cachedDescription_ = this->description();
+    }
     std::string prefix       = this->ShortClassName() + ": ";
     std::string levelSuffix  = " (level=" + toString(startLevel) + ")";
     std::string levelSuffix1 = " (level=" + toString(startLevel+1) + ")";
@@ -804,7 +812,7 @@ namespace MueLu {
     RCP<Monitor>     iterateTime;
     RCP<TimeMonitor> iterateTime1;
     if (startLevel == 0)
-      iterateTime  = rcp(new Monitor(*this, "Solve", (nIts == 1) ? None : Runtime0, Timings0));
+      iterateTime  = rcp(new Monitor(*this, "Solve", cachedDescription_, cachedShortClassName_, (nIts == 1) ? None : Runtime0, Timings0));
     else
       iterateTime1 = rcp(new TimeMonitor(*this, prefix + "Solve (total, level=" + toString(startLevel) + ")", Timings0));
 
