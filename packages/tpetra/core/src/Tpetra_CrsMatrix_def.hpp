@@ -3340,10 +3340,6 @@ namespace Tpetra {
       "diag.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
 
-#ifdef HAVE_TPETRA_DEBUG
-    // Keep a count of the local number of errors.
-    LO lclNumErrs = 0;
-#endif // HAVE_TPETRA_DEBUG
     if (this->isFillComplete ()) {
       diag.template modify<device_type> ();
       const auto D_lcl = diag.template getLocalView<device_type> ();
@@ -3355,42 +3351,13 @@ namespace Tpetra {
       const auto lclColMap = colMap.getLocalMap ();
       const auto lclMatrix = this->lclMatrix_;
       using ::Tpetra::Details::getDiagCopyWithoutOffsets;
-#ifdef HAVE_TPETRA_DEBUG
-      lclNumErrs = getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
-                                              lclColMap, lclMatrix);
-#else
       (void) getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
                                         lclColMap, lclMatrix);
-#endif // HAVE_TPETRA_DEBUG
     }
     else {
       using ::Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete;
-#ifdef HAVE_TPETRA_DEBUG
-      lclNumErrs = getLocalDiagCopyWithoutOffsetsNotFillComplete (diag, *this);
-#else
       (void) getLocalDiagCopyWithoutOffsetsNotFillComplete (diag, *this);
-#endif // HAVE_TPETRA_DEBUG
     }
-
-#ifdef HAVE_TPETRA_DEBUG
-    if (! this->getComm ().is_null ()) {
-      using Teuchos::outArg;
-      using Teuchos::REDUCE_SUM;
-      using Teuchos::reduceAll;
-      typedef global_ordinal_type GO;
-
-      GO gblNumErrs = 0;
-      Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getComm ();
-      if (! comm.is_null ()) {
-        reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclNumErrs),
-                            outArg (gblNumErrs));
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (gblNumErrs != 0, std::logic_error, "Something went wrong on "
-         << gblNumErrs << " out of " << this->getComm ()->getSize ()
-         << " process(es).");
-    }
-#endif // HAVE_TPETRA_DEBUG
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
