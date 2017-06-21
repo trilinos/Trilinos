@@ -2403,7 +2403,8 @@ namespace Tpetra {
     ///
     /// This method returns a Vector with the same Map as this
     /// matrix's row Map.  On each process, it contains the diagonal
-    /// entries owned by the calling process.
+    /// entries owned by the calling process. If the matrix has an empty
+    /// row, the diagonal entry contains a zero.
     void
     getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& diag) const;
 
