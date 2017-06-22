@@ -185,6 +185,10 @@ namespace Tacho {
                              std::is_same<T,Uplo::Lower>::value )
       };
     };
+    template<typename T> struct transpose_uplo_tag;
+    template<>           struct transpose_uplo_tag<Uplo::Lower> { typedef Uplo::Upper type; };
+    template<>           struct transpose_uplo_tag<Uplo::Upper> { typedef Uplo::Lower type; };
+    
 
     struct Side {
       struct Left         { enum : int { tag = 501 }; static constexpr char param = 'L'; static constexpr Teuchos::ESide teuchos_param = Teuchos::LEFT_SIDE; };
@@ -196,6 +200,9 @@ namespace Tacho {
                              std::is_same<T,Side::Right>::value )
       };
     };
+    template<typename T> struct flip_side_tag;
+    template<>           struct flip_side_tag<Side::Left>  { typedef Side::Right type; };
+    template<>           struct flip_side_tag<Side::Right> { typedef Side::Left type; };
 
     struct Diag {
       struct Unit         { enum : int { tag = 601 }; static constexpr char param = 'U'; static constexpr Teuchos::EDiag teuchos_param = Teuchos::UNIT_DIAG; };
@@ -220,6 +227,16 @@ namespace Tacho {
                              std::is_same<T,Trans::NoTranspose>::value)
       };
     };
+    template<typename T> struct      transpose_trans_tag;
+    template<typename T> struct conj_transpose_trans_tag;
+    
+    template<>           struct      transpose_trans_tag<Trans::Transpose>      { typedef Trans::NoTranspose type; };
+    template<>           struct      transpose_trans_tag<Trans::ConjTranspose>  { typedef Trans::NoTranspose type; };
+    template<>           struct      transpose_trans_tag<Trans::NoTranspose>    { typedef Trans::Transpose type; };
+
+    template<>           struct conj_transpose_trans_tag<Trans::Transpose>      { typedef Trans::NoTranspose type; };
+    template<>           struct conj_transpose_trans_tag<Trans::ConjTranspose>  { typedef Trans::NoTranspose type; };
+    template<>           struct conj_transpose_trans_tag<Trans::NoTranspose>    { typedef Trans::ConjTranspose type; };
 
     struct Algo {
       struct External { enum : int { tag = 1001 }; };
