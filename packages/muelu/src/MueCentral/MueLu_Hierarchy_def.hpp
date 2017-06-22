@@ -452,6 +452,8 @@ namespace MueLu {
     if (oldRank != -1)
       SetProcRankVerbose(oldRank);
 
+    // since the # of levels, etc. may have changed, force re-determination of description during next call to description()
+    ResetDescription();
     return isLastLevel;
   }
 
@@ -484,6 +486,9 @@ namespace MueLu {
     // doing that in the future
     Levels_       .resize(levelID);
     levelManagers_.resize(levelID);
+
+    // since the # of levels, etc. may have changed, force re-determination of description during next call to description()
+    ResetDescription();
 
     describe(GetOStream(Statistics0), GetVerbLevel());
   }
@@ -797,14 +802,6 @@ namespace MueLu {
     // manually before/after a recursive call to Iterate. A side artifact to
     // this approach is that the counts for intermediate level timers are twice
     // the counts for the finest and coarsest levels.
-    if (cachedShortClassName_ == "")
-    {
-      cachedShortClassName_ = this->ShortClassName();
-    }
-    if (cachedDescription_ == "")
-    {
-      cachedDescription_ = this->description();
-    }
     std::string prefix       = this->ShortClassName() + ": ";
     std::string levelSuffix  = " (level=" + toString(startLevel) + ")";
     std::string levelSuffix1 = " (level=" + toString(startLevel+1) + ")";
@@ -812,7 +809,7 @@ namespace MueLu {
     RCP<Monitor>     iterateTime;
     RCP<TimeMonitor> iterateTime1;
     if (startLevel == 0)
-      iterateTime  = rcp(new Monitor(*this, "Solve", cachedDescription_, cachedShortClassName_, (nIts == 1) ? None : Runtime0, Timings0));
+      iterateTime  = rcp(new Monitor(*this, "Solve", (nIts == 1) ? None : Runtime0, Timings0));
     else
       iterateTime1 = rcp(new TimeMonitor(*this, prefix + "Solve (total, level=" + toString(startLevel) + ")", Timings0));
 
@@ -1123,10 +1120,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
-    std::ostringstream out;
-    out << BaseClass::description();
-    out << "{#levels = " << GetGlobalNumLevels() << ", complexity = " << GetOperatorComplexity() << "}";
-    return out.str();
+    if (description_ == "")
+    {
+      std::ostringstream out;
+      out << BaseClass::description();
+      out << "{#levels = " << GetGlobalNumLevels() << ", complexity = " << GetOperatorComplexity() << "}";
+      description_ = out.str();
+    }
+    return description_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
