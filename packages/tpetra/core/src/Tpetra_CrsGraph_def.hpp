@@ -2491,7 +2491,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (static_cast<size_t> (this->k_rowPtrs_.dimension_0 ()) !=
          this->getNodeNumRows () + 1,
-         std::logic_error, "Grahp is StaticProfile, indices are allocated, and "
+         std::logic_error, "Graph is StaticProfile, indices are allocated, and "
          "k_rowPtrs_ has nonzero length, but k_rowPtrs_.dimension_0() = "
          << this->k_rowPtrs_.dimension_0 () << " != getNodeNumRows()+1 = "
          << (this->getNodeNumRows () + 1) << "." << suffix);
