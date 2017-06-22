@@ -112,10 +112,21 @@ public:
    std::size_t getWorksetSize() const
    { return worksetSize_; }
 
+   /** Set the needs for an element block. Note any old needs will
+     * be erased, and all worksets will be deleted. This is equivalent
+     * to calling <code>clear();</code> then <code>setNeeds()</code>. This clearing
+     * is required in order to for the worksets to remain consistent.
+     *
+     * \param[in] eBlock Element block associated with the needs object
+     * \param[in] needs Needs for the element block.
+     */
+   void setNeeds(const std::string & eBlock,const WorksetNeeds & needs);
+
    /** Clear all allocated worksets, maintain the workset factory and element to physics
      * block map.
      */ 
    void clear();
+
 
    //! Look up an input physics block, throws an exception if it can not be found.
    const WorksetNeeds & lookupNeeds(const std::string & eBlock) const;

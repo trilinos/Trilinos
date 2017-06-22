@@ -82,6 +82,7 @@ WorksetContainer::WorksetContainer(const WorksetContainer & wc)
    , worksetSize_(wc.worksetSize_)
 {
 }
+
 /** Clear all allocated worksets, maintain the workset factory and element to physics
   * block map.
   */ 
@@ -89,6 +90,13 @@ void WorksetContainer::clear()
 {
    worksets_.clear();
    sideWorksets_.clear();
+}
+
+void WorksetContainer::
+setNeeds(const std::string & eBlock,const WorksetNeeds & needs)
+{
+  clear(); // clear out old worksets
+  ebToNeeds_[eBlock] = needs;
 }
 
 //! Look up an input physics block, throws an exception if it can be found.
