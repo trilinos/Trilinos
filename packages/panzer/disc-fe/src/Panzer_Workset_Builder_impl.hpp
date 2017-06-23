@@ -783,21 +783,23 @@ associateCellsBySideIds(const std::vector<std::size_t>& sia /* local_side_ids_a 
 
 template<typename ArrayT>
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksetForUniqueSideId(const panzer::PhysicsBlock& pb_a,
+buildBCWorksetForUniqueSideId(const panzer::WorksetNeeds & needs_a,
+                              const std::string & blockid_a,
                               const std::vector<std::size_t>& local_cell_ids_a,
                               const std::vector<std::size_t>& local_side_ids_a,
                               const ArrayT& vertex_coordinates_a,
-                              const panzer::PhysicsBlock& pb_b,
+                              const panzer::WorksetNeeds & needs_b,
+                              const std::string & blockid_b,
                               const std::vector<std::size_t>& local_cell_ids_b,
                               const std::vector<std::size_t>& local_side_ids_b,
                               const ArrayT& vertex_coordinates_b,
-                              const WorksetNeeds& needs_b)
+                              const WorksetNeeds& needs_b2)
 {
   TEUCHOS_ASSERT(local_cell_ids_a.size() == local_cell_ids_b.size());
   // Get a and b workset maps separately, but don't populate b's arrays.
   const Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-    mwa = buildBCWorkset(pb_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a),
-    mwb = buildBCWorkset(needs_b, pb_b.elementBlockID(), local_cell_ids_b, local_side_ids_b,
+    mwa = buildBCWorkset(needs_a,blockid_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a),
+    mwb = buildBCWorkset(needs_b2, blockid_b, local_cell_ids_b, local_side_ids_b,
                          vertex_coordinates_b, false /* populate_value_arrays */);
   TEUCHOS_ASSERT(mwa->size() == 1 && mwb->size() == 1);
   for (std::map<unsigned,panzer::Workset>::iterator ait = mwa->begin(), bit = mwb->begin();
@@ -837,6 +839,20 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock& pb_a,
                        const ArrayT& vertex_coordinates_b)
 {
   // Get b's needs.
+  WorksetNeeds needs_a;
+  {
+    needs_a.cellData = pb_a.cellData();
+    const std::map<int,Teuchos::RCP<panzer::IntegrationRule> >& int_rules = pb_a.getIntegrationRules();
+    for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
+         ir_itr != int_rules.end(); ++ir_itr)
+      needs_a.int_rules.push_back(ir_itr->second);  
+    const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= pb_a.getBases();
+    for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
+        b_itr != bases.end(); ++b_itr)
+      needs_a.bases.push_back(b_itr->second);
+  }
+
+  // Get b's needs.
   WorksetNeeds needs_b;
   {
     needs_b.cellData = pb_b.cellData();
@@ -849,6 +865,25 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock& pb_a,
         b_itr != bases.end(); ++b_itr)
       needs_b.bases.push_back(b_itr->second);
   }
+
+  return buildBCWorkset(needs_a,pb_a.elementBlockID(),local_cell_ids_a,local_side_ids_a,vertex_coordinates_a,
+                        needs_b,pb_b.elementBlockID(),local_cell_ids_b,local_side_ids_b,vertex_coordinates_b);
+}
+
+template<typename ArrayT>
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+panzer::buildBCWorkset(const WorksetNeeds & needs_a,
+                       const std::string & blockid_a,
+                       const std::vector<std::size_t>& local_cell_ids_a,
+                       const std::vector<std::size_t>& local_side_ids_a,
+                       const ArrayT& vertex_coordinates_a,
+                       const panzer::WorksetNeeds & needs_b,
+                       const std::string & blockid_b,
+                       const std::vector<std::size_t>& local_cell_ids_b,
+                       const std::vector<std::size_t>& local_side_ids_b,
+                       const ArrayT& vertex_coordinates_b)
+{
+
   // Since Intrepid2 requires all side IDs in a workset to be the same (see
   // Intrepid2 comment above), we break the element list into pieces such that
   // each piece contains elements on each side of the interface L_a and L_b and
@@ -856,8 +891,8 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock& pb_a,
   auto side_id_associations = impl::associateCellsBySideIds(local_side_ids_a, local_side_ids_b);
   if (side_id_associations->size() == 1) {
     // Common case of one workset on each side; optimize for it.
-    return impl::buildBCWorksetForUniqueSideId(pb_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a,
-                                               pb_b, local_cell_ids_b, local_side_ids_b, vertex_coordinates_b,
+    return impl::buildBCWorksetForUniqueSideId(needs_a, blockid_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a,
+                                               needs_b, blockid_b, local_cell_ids_b, local_side_ids_b, vertex_coordinates_b,
                                                needs_b);
   } else {
     // The interface has elements having a mix of side IDs, so deal with each
@@ -883,7 +918,8 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock& pb_a,
             vc_b(i, j, k) = vertex_coordinates_b(ii, j, k);
           }
       }
-      auto mwa_it = impl::buildBCWorksetForUniqueSideId(pb_a, lci_a, lsi_a, vc_a, pb_b, lci_b, lsi_b, vc_b, needs_b);
+      auto mwa_it = impl::buildBCWorksetForUniqueSideId(needs_a,blockid_a, lci_a, lsi_a, vc_a, 
+                                                        needs_b,blockid_b, lci_b, lsi_b, vc_b, needs_b);
       TEUCHOS_ASSERT(mwa_it->size() == 1);
       // Form a unique key that encodes the pair (side ID a, side ID b). We
       // abuse the key here in the sense that it is everywhere else understood
