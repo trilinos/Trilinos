@@ -258,12 +258,7 @@ namespace { // (anonymous)
   template<class DualViewType>
   DualViewType
   takeSubview (const DualViewType& X,
-//We will move the ALL_t to the Kokkos namespace eventually, this is a workaround for testing the new View implementation
-#ifdef KOKKOS_USING_EXPERIMENTAL_VIEW
-               const Kokkos::Experimental::Impl::ALL_t&,
-#else
-               const Kokkos::ALL&,
-#endif
+               const Kokkos::Impl::ALL_t&,
                const std::pair<size_t, size_t>& colRng)
   {
     if (X.dimension_0 () == 0 && X.dimension_1 () != 0) {
