@@ -48,7 +48,7 @@ namespace Experimental {
 namespace Impl {
 
 template <>
-struct DynRankDimTraits<ViewSpecializeSacadoFadContiguous> {
+struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFadContiguous> {
 
   enum : size_t{unspecified = ~size_t(0)};
 
@@ -172,13 +172,18 @@ struct DynRankDimTraits<ViewSpecializeSacadoFadContiguous> {
 
 };
 
+}}} // end Kokkos::Experimental::Impl
+
+namespace Kokkos {
+namespace Impl {
+
 // Specializations for subdynrankview
 
 template< class SrcTraits , class ... Args >
 struct ViewMapping
   < typename std::enable_if<(
       std::is_same< typename SrcTraits::specialize ,
-                    ViewSpecializeSacadoFadContiguous >::value
+                    Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
       &&
       (
         std::is_same< typename SrcTraits::array_layout
@@ -186,7 +191,7 @@ struct ViewMapping
         std::is_same< typename SrcTraits::array_layout
                     , Kokkos::LayoutStride >::value
       )
-    ), DynRankSubviewTag >::type
+    ), Kokkos::Experimental::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
 {
@@ -374,11 +379,11 @@ template< class SrcTraits , class ... Args >
 struct ViewMapping
   < typename std::enable_if<(
       std::is_same< typename SrcTraits::specialize ,
-                    ViewSpecializeSacadoFadContiguous >::value
+                    Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
       &&
       std::is_same< typename SrcTraits::array_layout
                    , Kokkos::LayoutLeft >::value
-    ), DynRankSubviewTag >::type
+    ), Kokkos::Experimental::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
 {
@@ -587,12 +592,12 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Destination view has FAD only
     std::is_same< typename DstTraits::specialize
-                , ViewSpecializeSacadoFadContiguous >::value
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
     &&
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
-                , ViewSpecializeSacadoFadContiguous >::value
-  ), ViewToDynRankViewTag >::type >
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
+  ), Kokkos::Experimental::Impl::ViewToDynRankViewTag >::type >
 {
 public:
 
@@ -673,8 +678,8 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
-                , ViewSpecializeSacadoFadContiguous >::value
-  ), ViewToDynRankViewTag >::type >
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
+  ), Kokkos::Experimental::Impl::ViewToDynRankViewTag >::type >
 {
 public:
 
@@ -724,11 +729,7 @@ public:
     }
 };
 
-} //end Impl
-
-} //end Experimental
-
-}
+}} //end Kokkos::Impl
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
