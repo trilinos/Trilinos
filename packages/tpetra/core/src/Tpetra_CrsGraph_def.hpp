@@ -56,6 +56,7 @@
 #include "Tpetra_Details_getGraphDiagOffsets.hpp"
 #include "Tpetra_Details_makeColMap.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include <algorithm>
@@ -598,8 +599,13 @@ namespace Tpetra {
       ! lclInds2D_.is_null () || ! gblInds2D_.is_null (), std::logic_error,
       ": cannot have 2D data structures allocated.");
 
-    // FIXME (mfh 23 May 2017) This requires UVM.
-    nodeNumEntries_ = k_local_graph_.row_map (getNodeNumRows ());
+    if (this->getNodeNumRows () == 0) {
+      nodeNumEntries_ = 0;
+    }
+    else {
+      nodeNumEntries_ = Details::getEntryOnHost (this->lclGraph_.row_map,
+                                                 this->getNodeNumRows ());
+    }
 
     // NOTE (mfh 17 Mar 2014) We also need a version of this CrsGraph
     // constructor that takes a domain and range Map, as well as a row
@@ -1020,16 +1026,16 @@ namespace Tpetra {
           return static_cast<size_t> (0);
         }
         else {
-          // FIXME (mfh 18 May 2017) This assumes UVM.
-          return this->lclGraph_.row_map (lclNumRows);
+          return Details::getEntryOnHost (this->lclGraph_.row_map, lclNumRows);
         }
       }
       else if (this->storageStatus_ == Details::STORAGE_1D_UNPACKED) {
-        // FIXME (mfh 18 May 2017) Accessing the last entry of
-        // k_rowPtrs_ may assume UVM.
-        return (this->k_rowPtrs_.dimension_0 () == 0) ?
-          static_cast<size_t> (0) :
-          this->k_rowPtrs_(lclNumRows);
+        if (this->k_rowPtrs_.dimension_0 () == 0) {
+          return static_cast<size_t> (0);
+        }
+        else {
+          return Details::getEntryOnHost (this->k_rowPtrs_, lclNumRows);
+        }
       }
       else if (this->storageStatus_ == Details::STORAGE_2D) {
         size_t numAllocated = 0;
@@ -1203,9 +1209,8 @@ namespace Tpetra {
       // "Commit" the resulting row offsets.
       this->k_rowPtrs_ = k_rowPtrs;
 
-      // FIXME (mfh 05,11 Aug 2014) This assumes UVM, since k_rowPtrs_
-      // is currently a device View.  Should instead use a DualView.
-      const size_type numInds = static_cast<size_type> (this->k_rowPtrs_(numRows));
+      const size_type numInds = Details::getEntryOnHost (this->k_rowPtrs_, numRows);
+      // const size_type numInds = static_cast<size_type> (this->k_rowPtrs_(numRows));
       if (lg == LocalIndices) {
         k_lclInds1D_ = lcl_col_inds_type ("Tpetra::CrsGraph::ind", numInds);
       }
