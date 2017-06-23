@@ -47,9 +47,9 @@ struct ThreadLocalScalarType {
 template <typename ViewType>
 struct ViewScalarStride {
   static const unsigned stride =
-    Experimental::Impl::LayoutScalarStride< typename ViewType::array_layout>::stride;
+    Impl::LayoutScalarStride< typename ViewType::array_layout>::stride;
   static const bool is_unit_stride =
-    Experimental::Impl::LayoutScalarStride< typename ViewType::array_layout>::is_unit_stride;
+    Impl::LayoutScalarStride< typename ViewType::array_layout>::is_unit_stride;
 };
 
 } // namespace Kokkos
@@ -168,7 +168,7 @@ namespace Sacado {
 
 #include "Sacado_Traits.hpp"
 #include "Kokkos_Core.hpp"
-#include "impl/KokkosExp_ViewMapping.hpp"
+#include "impl/Kokkos_ViewMapping.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -304,7 +304,7 @@ struct ThreadLocalScalarType<
   ViewType,
   typename std::enable_if< is_view_fad_contiguous<ViewType>::value >::type > {
   typedef typename ViewType::traits TraitsType;
-  typedef Experimental::Impl::ViewMapping<TraitsType, void> MappingType;
+  typedef Impl::ViewMapping<TraitsType, void> MappingType;
   typedef typename MappingType::thread_local_scalar_type type;
 };
 
@@ -383,7 +383,6 @@ struct ViewFill<
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 template< class ... Args >
@@ -400,13 +399,11 @@ struct is_ViewSpecializeSacadoFadContiguous< Kokkos::View<D,P...> , Args... > {
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Compute a partitioned fad size given a stride.  Return 0 if the stride
@@ -1090,13 +1087,11 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 /**\brief  Assign compatible Sacado FAD view mappings.
@@ -1275,13 +1270,11 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Subview mapping
@@ -1431,13 +1424,11 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //---------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Partition mapping
@@ -1492,7 +1483,6 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
