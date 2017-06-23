@@ -1,6 +1,8 @@
 #ifndef TEUCHOS_MATHEXPR_HPP
 #define TEUCHOS_MATHEXPR_HPP
 
+#include <set>
+
 #include <Teuchos_Language.hpp>
 #include <Teuchos_Reader.hpp>
 
@@ -76,6 +78,20 @@ Language make_language();
 LanguagePtr ask_language();
 
 ReaderTablesPtr ask_reader_tables();
+
+class SymbolSetReader : public Reader {
+ public:
+  SymbolSetReader();
+  virtual ~SymbolSetReader();
+ public:
+  std::set<std::string> variable_names;
+  std::set<std::string> function_names;
+ private:
+  virtual void at_shift(any& result, int token, std::string& text);
+  virtual void at_reduce(any& result, int prod, std::vector<any>& rhs);
+};
+
+std::set<std::string> get_variables_used(std::string const& expr);
 
 }  // end namespace MathExpr
 
