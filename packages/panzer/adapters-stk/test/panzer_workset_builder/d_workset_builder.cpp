@@ -132,9 +132,11 @@ namespace panzer {
 
     {
       std::string sideset = "vertical_0";
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[0],physicsBlocks);
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[1],physicsBlocks);
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
-        *mesh, *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
-        *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)), sideset);
+          *mesh, pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
+                 pb_b->getWorksetNeeds(),pb_b->elementBlockID(), sideset);
      
       if(myRank==0) {
         TEST_EQUALITY(worksets->size(),0); // no elements on this processor
@@ -184,9 +186,11 @@ namespace panzer {
 
     {
       std::string sideset = "vertical_0";
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[1],physicsBlocks);
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[0],physicsBlocks);
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
-        *mesh, *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
-        *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)), sideset);
+          *mesh, pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
+                 pb_b->getWorksetNeeds(),pb_b->elementBlockID(), sideset);
      
       if(myRank==1) {
         TEST_EQUALITY(worksets->size(),0); // no elements on this processor

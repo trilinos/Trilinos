@@ -357,8 +357,11 @@ main(
 
     // Build the STK workset factory and attach it to a workset container.
     RCP<WorksetFactory> wkstFactory = rcp(new WorksetFactory(mesh));
-    RCP<WorksetContainer> wkstContainer =
-      rcp(new WorksetContainer(wkstFactory, physicsBlocks, worksetSize));
+    RCP<WorksetContainer> wkstContainer = rcp(new WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(worksetSize);
     wkstContainer->setGlobalIndexer(dofManager);
 
     // Build the linear solver we'll use to solve the system.

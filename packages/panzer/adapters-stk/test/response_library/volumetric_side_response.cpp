@@ -132,7 +132,8 @@ namespace panzer_stk {
     buildPhysicsBlocks(*mesh,physics_blocks,cm_factory,closure_models,user_data);
 
     RCP<std::vector<panzer::Workset> > worksets 
-       = wkstFactory->getWorksets(panzer::blockDescriptor("eblock-1_0"),*physics_blocks[0]);
+       = wkstFactory->getWorksets(panzer::blockDescriptor("eblock-1_0"), 
+                                  physics_blocks[0]->getWorksetNeeds());
 
     {
       TEST_ASSERT(worksets!=Teuchos::null);
@@ -142,7 +143,8 @@ namespace panzer_stk {
 
     {
       RCP<std::vector<panzer::Workset> > worksets 
-         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),*physics_blocks[0]);
+         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),
+                                    physics_blocks[0]->getWorksetNeeds());
  
  
       if(tcomm->getRank()==0) {
@@ -210,7 +212,8 @@ namespace panzer_stk {
 
     {
       RCP<std::vector<panzer::Workset> > worksets 
-         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),*physics_blocks[0]);
+         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),
+                                    physics_blocks[0]->getWorksetNeeds());
  
  
       if(tcomm->getRank()==0) {
