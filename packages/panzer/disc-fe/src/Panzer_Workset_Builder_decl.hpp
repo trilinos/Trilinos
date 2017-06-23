@@ -94,6 +94,19 @@ namespace panzer {
 		 const ArrayT& vertex_coordinates,
                  const bool populate_value_arrays = true);
 
+  template<typename ArrayT>
+  Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+  buildBCWorkset(const WorksetNeeds & needs_a,
+                 const std::string & blockid_a,
+                 const std::vector<std::size_t>& local_cell_ids_a,
+                 const std::vector<std::size_t>& local_side_ids_a,
+                 const ArrayT& vertex_coordinates_a,
+                 const panzer::WorksetNeeds & needs_b,
+                 const std::string & blockid_b,
+                 const std::vector<std::size_t>& local_cell_ids_b,
+                 const std::vector<std::size_t>& local_side_ids_b,
+                 const ArrayT& vertex_coordinates_b);
+
   /** This routine supports construction of worksets that are
     * more DG like. The elements are assumed to shared an
     * edge (or face) and the side id is specified accordingly.
