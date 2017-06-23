@@ -243,8 +243,9 @@ int main(int argc, char *argv[])
   MyPL.set( "In Situ Restarting", insitu );
   //
   // Create the solver manager
-  auto MySolverMan = Anasazi::Factory::create("BLOCK_DAVIDSON", problem, MyPL);
-  // 
+  RCP<Anasazi::SolverManager<ScalarType,MV,OP>> MySolverMan =
+          Anasazi::Factory::create("BLOCK_DAVIDSON", problem, MyPL);
+  //
   // Check that the parameters were all consumed
   if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
       MyPL.getEntryPtr("Which")->isUsed() == false ||

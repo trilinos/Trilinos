@@ -138,7 +138,8 @@ public:
   create ( const std::string& solverType,
            const Teuchos::RCP<BasicEigenproblem<ScalarType,MV,OP> > &problem,
            Teuchos::ParameterList &pl ) {
-    auto eproblem = Teuchos::rcp_static_cast<Eigenproblem<ScalarType,MV,OP>>(problem);
+    Teuchos::RCP<Eigenproblem<ScalarType,MV,OP>> eproblem =
+            Teuchos::rcp_static_cast<Eigenproblem<ScalarType,MV,OP>>(problem);
     return create(solverType, eproblem, pl);
   }
 };

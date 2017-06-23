@@ -179,7 +179,8 @@ int main(int argc, char *argv[])
   MyPL.set( "Convergence Tolerance", tol );
   //
   // Create the solver manager
-  auto MySolverMgr = Anasazi::Factory::create("BLOCK_DAVIDSON", problem, MyPL);
+  RCP<Anasazi::SolverManager<ST,MV,OP>> MySolverMgr =
+          Anasazi::Factory::create("BLOCK_DAVIDSON", problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr->solve();

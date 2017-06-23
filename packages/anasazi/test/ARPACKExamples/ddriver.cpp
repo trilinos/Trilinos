@@ -198,7 +198,8 @@ int main(int argc, char *argv[])
   MyPL.set( "Orthogonalization", "DGKS" );
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Convergence Tolerance", tol );
-  auto BKS = Anasazi::Factory::create("BLOCK_KRYLOV_SCHUR", MyProblem, MyPL);
+  RCP<Anasazi::SolverManager<ST,MV,OP>> BKS =
+          Anasazi::Factory::create("BLOCK_KRYLOV_SCHUR", MyProblem, MyPL);
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType ret = BKS->solve();
