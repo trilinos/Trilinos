@@ -261,7 +261,7 @@ struct ViewOffset< Dimension , stk::simd::LayoutRight<RealType> , void>
       static_assert( DimRHS::rank == 1 && dimension_type::rank == 1 && dimension_type::rank_dynamic == 1
                    , "ViewOffset LayoutRight and LayoutStride are only compatible when rank == 1" );
       if ( rhs.m_stride.S0 != 1 ) {
-        Kokkos::abort("Kokkos::Experimental::ViewOffset assignment of LayoutRight from LayoutStride  requires stride == 1" );
+        Kokkos::abort("Kokkos::ViewOffset assignment of LayoutRight from LayoutStride  requires stride == 1" );
       }
     }
 
@@ -414,7 +414,7 @@ struct ViewOffset< Dimension , stk::simd::LayoutLeft<RealType> , void>
       static_assert( DimRHS::rank == 1 && dimension_type::rank == 1 && dimension_type::rank_dynamic == 1
                    , "ViewOffset LayoutLeft and LayoutStride are only compatible when rank == 1" );
       if ( rhs.m_stride.S0 != 1 ) {
-        Kokkos::abort("Kokkos::Experimental::ViewOffset assignment of LayoutLeft from LayoutStride  requires stride == 1" );
+        Kokkos::abort("Kokkos::ViewOffset assignment of LayoutLeft from LayoutStride  requires stride == 1" );
       }
     }
   
