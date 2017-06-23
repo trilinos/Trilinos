@@ -33,8 +33,8 @@
  *
  */
 
-#include <stdint.h>                     // for int64_t
-#include "exodusII.h"                   // for void_int, etc
+#include "exodusII.h" // for void_int, etc
+#include <stdint.h>   // for int64_t
 
 /*!
  * \deprecated Use ex_get_partial_conn() instead.

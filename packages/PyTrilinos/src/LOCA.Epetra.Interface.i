@@ -157,6 +157,9 @@ LOCA.Epetra.Interface supports the following classes:
   }
 }
 
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
+
 // Teuchos::RCPs typemaps
 %teuchos_rcp(LOCA::Epetra::Interface::Required)
 %teuchos_rcp(LOCA::Epetra::Interface::MassMatrix)

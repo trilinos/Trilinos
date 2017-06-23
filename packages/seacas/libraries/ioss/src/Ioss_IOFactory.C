@@ -33,20 +33,32 @@
 #include "Ioss_DBUsage.h" // for DatabaseUsage
 #include <Ioss_IOFactory.h>
 #include <Ioss_Utils.h> // for IOSS_ERROR
+#include <cstddef>      // for nullptr
 #include <map>          // for _Rb_tree_iterator, etc
 #include <ostream>      // for operator<<, basic_ostream, etc
-#include <stddef.h>     // for nullptr
 #include <string>       // for char_traits, string, etc
 #include <utility>      // for pair
-namespace Ioss {
-  class DatabaseIO;
-}
-namespace Ioss {
-  class PropertyManager;
+namespace {
+#if defined(IOSS_THREADSAFE)
+  std::mutex m_;
+#endif
+
+  int describe__(Ioss::IOFactoryMap *registry, Ioss::NameList *names)
+  {
+    int                                count = 0;
+    Ioss::IOFactoryMap::const_iterator I;
+    for (I = registry->begin(); I != registry->end(); ++I) {
+      names->push_back((*I).first);
+      ++count;
+    }
+    return count;
+  }
 }
 
 namespace Ioss {
-  typedef IOFactoryMap::value_type IOFactoryValuePair;
+  class DatabaseIO;
+  class PropertyManager;
+  using IOFactoryValuePair = IOFactoryMap::value_type;
 } // namespace Ioss
 
 /** \brief Create an IO database.
@@ -75,6 +87,7 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
                                           Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                                           const Ioss::PropertyManager &properties)
 {
+  IOSS_FUNC_ENTER(m_);
   Ioss::DatabaseIO *db   = nullptr;
   auto              iter = registry()->find(type);
   if (iter == registry()->end()) {
@@ -88,7 +101,7 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
       std::ostringstream errmsg;
       errmsg << "ERROR: The database type '" << type << "' is not supported.\n";
       NameList db_types;
-      describe(&db_types);
+      describe__(registry(), &db_types);
       errmsg << "\nSupported database types:\n\t";
       for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
         errmsg << *IF << "  ";
@@ -111,13 +124,8 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
  */
 int Ioss::IOFactory::describe(NameList *names)
 {
-  int                                count = 0;
-  Ioss::IOFactoryMap::const_iterator I;
-  for (I = registry()->begin(); I != registry()->end(); ++I) {
-    names->push_back((*I).first);
-    ++count;
-  }
-  return count;
+  IOSS_FUNC_ENTER(m_);
+  return describe__(registry(), names);
 }
 
 Ioss::IOFactory::IOFactory(const std::string &type)

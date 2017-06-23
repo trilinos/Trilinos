@@ -92,6 +92,7 @@ namespace Intrepid2 {
 
     class Basis_HGRAD_HEX_C1_FEM {
     public:
+      typedef struct Hexahedron<8> cell_topology_type;
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,

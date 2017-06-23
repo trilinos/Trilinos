@@ -54,7 +54,6 @@
 #include <cstdlib>
 
 #include "smart_assert.h"
-#include "to_string.h"
 
 #include <cctype>
 #include <cstring>
@@ -115,7 +114,7 @@ namespace {
     case Excn::SSET: return EX_SIDE_SET;
     case Excn::NSET: return EX_NODE_SET;
     default:
-      throw std::runtime_error("Invalid Object Type in exodus_object_type: " + to_string(epu_type));
+      throw std::runtime_error("Invalid Object Type in exodus_object_type: " + std::to_string(epu_type));
     }
   }
 
@@ -1119,39 +1118,41 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // ========================================================================
     // Extracting sideset transient variable data
     if (!interface.omit_nodesets()) {
-    if (debug_level & 1)
-      std::cout << time_stamp(tsFormat) << "Sideset Variables...\n";
+      if (debug_level & 1)
+        std::cout << time_stamp(tsFormat) << "Sideset Variables...\n";
 
-    if (debug_level & 16) {
-      clear_master_values(sideset_vars, global, glob_ssets, master_sideset_values);
-    }
+      if (debug_level & 16) {
+        clear_master_values(sideset_vars, global, glob_ssets, master_sideset_values);
+      }
 
-    if (sideset_vars.count(IN) > 0) {
-      read_master_values(sideset_vars, global, glob_ssets, local_mesh, sidesets,
-                         master_sideset_values, values, part_count, time_step,
-                         local_element_to_global);
+      if (sideset_vars.count(IN) > 0) {
+        read_master_values(sideset_vars, global, glob_ssets, local_mesh, sidesets,
+                           master_sideset_values, values, part_count, time_step,
+                           local_element_to_global);
 
-      output_master_values(sideset_vars, global, glob_ssets, master_sideset_values, time_step_out);
-    }
+        output_master_values(sideset_vars, global, glob_ssets, master_sideset_values,
+                             time_step_out);
+      }
     }
 
     if (!interface.omit_nodesets()) {
-    // ========================================================================
-    // Extracting nodeset transient variable data
-    if (debug_level & 1)
-      std::cout << time_stamp(tsFormat) << "Nodeset Variables...\n";
+      // ========================================================================
+      // Extracting nodeset transient variable data
+      if (debug_level & 1)
+        std::cout << time_stamp(tsFormat) << "Nodeset Variables...\n";
 
-    if (debug_level & 32) {
-      clear_master_values(nodeset_vars, global, glob_nsets, master_nodeset_values);
-    }
+      if (debug_level & 32) {
+        clear_master_values(nodeset_vars, global, glob_nsets, master_nodeset_values);
+      }
 
-    if (nodeset_vars.count(IN) > 0) {
-      read_master_values(nodeset_vars, global, glob_nsets, local_mesh, nodesets,
-                         master_nodeset_values, values, part_count, time_step,
-                         local_element_to_global);
+      if (nodeset_vars.count(IN) > 0) {
+        read_master_values(nodeset_vars, global, glob_nsets, local_mesh, nodesets,
+                           master_nodeset_values, values, part_count, time_step,
+                           local_element_to_global);
 
-      output_master_values(nodeset_vars, global, glob_nsets, master_nodeset_values, time_step_out);
-    }
+        output_master_values(nodeset_vars, global, glob_nsets, master_nodeset_values,
+                             time_step_out);
+      }
     }
     // ========================================================================
     ex_update(ExodusFile::output());
@@ -1765,9 +1766,8 @@ namespace {
     // the elements back to their original location. Since the elements are
     // sorted and there are no duplicates, we just need to see if the id
     // at global_element_map.size() == global_element_map.size();
-    bool is_contiguous =
-        global_element_map.empty() ||
-      ((size_t)global_element_map.back() == global_element_map.size());
+    bool is_contiguous = global_element_map.empty() ||
+                         ((size_t)global_element_map.back() == global_element_map.size());
     std::cout << "Element id map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
 
   // Create the map that maps from a local processor element to the
@@ -1934,7 +1934,7 @@ namespace {
     // sorted and there are no duplicates, we just need to see if the id
     // at global_node_map.size() == global_node_map.size();
     bool is_contiguous =
-      global_node_map.empty() || ((size_t)global_node_map.back() == global_node_map.size());
+        global_node_map.empty() || ((size_t)global_node_map.back() == global_node_map.size());
     std::cout << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
 
     // Create the map the maps from a local processor node to the

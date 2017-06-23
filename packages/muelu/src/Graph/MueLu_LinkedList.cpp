@@ -73,7 +73,7 @@ namespace MueLu {
   }
 
   int LinkedList::Pop() { // get head and remove first node
-    if (IsEmpty()) throw(1);
+    if (IsEmpty()) return -1;
 
     int iNode = nodeHead->nodeId;
     DeleteHead();
@@ -81,7 +81,7 @@ namespace MueLu {
   }
 
   void LinkedList::DeleteHead() {
-    if (IsEmpty()) throw(1);
+    if (IsEmpty()) return;
 
     MueLu_Node *newNode = nodeHead;
     nodeHead = newNode->next;

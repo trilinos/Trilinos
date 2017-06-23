@@ -894,6 +894,14 @@ void columnAverages(const MultiVector & v,std::vector<double> & averages);
   */
 double average(const MultiVector & v);
 
+/** Is this operator a physically blocked linear op?
+  */
+bool isPhysicallyBlockedLinearOp(const LinearOp & op);
+
+/** Return a physically blocked linear op and whether it is scaled or transpose in its wrapper
+  */
+Teuchos::RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > getPhysicallyBlockedLinearOp(const LinearOp & op, ST *scalar, bool *transp);
+
 } // end namespace Teko
 
 #ifdef _MSC_VER

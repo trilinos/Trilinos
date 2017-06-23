@@ -34,12 +34,10 @@
 #define IOSS_Ioss_Field_h
 
 #include <Ioss_CodeTypes.h>
-#include <stddef.h> // for size_t
-#include <string>   // for string
-#include <vector>   // for vector
-
+#include <cstddef> // for size_t
+#include <string>  // for string
+#include <vector>  // for vector
 namespace Ioss {
-
   class GroupingEntity;
   class Transform;
   class VariableType;
@@ -101,13 +99,13 @@ namespace Ioss {
     // Create a field named 'name' that contains values of type 'type'
     // in a storage format of type 'storage'.  There are 'value_count'
     // items in the field.
-    Field(std::string name, const BasicType type, const std::string &storage, const RoleType role,
+    Field(std::string name, BasicType type, const std::string &storage, RoleType role,
           size_t value_count, size_t index = 0);
 
-    Field(std::string name, const BasicType type, const std::string &storage, int copies,
-          const RoleType role, size_t value_count, size_t index = 0);
+    Field(std::string name, BasicType type, const std::string &storage, int copies, RoleType role,
+          size_t value_count, size_t index = 0);
 
-    Field(std::string name, const BasicType type, const VariableType *storage, const RoleType role,
+    Field(std::string name, BasicType type, const VariableType *storage, RoleType role,
           size_t value_count, size_t index = 0);
 
     // Create a field from another field.
@@ -168,18 +166,18 @@ namespace Ioss {
   private:
     std::string name_;
 
-    size_t         rawCount_;   // Count of items in field before transformation
-    size_t         transCount_; // Count of items in field after transformed
-    size_t         size_;       // maximum data size (in bytes) required to hold entire field
-    mutable size_t index_; // Optional flag that can be used by a client to indicate an ordering.
-                           // Unused by field itself.
+    size_t         rawCount_{};   // Count of items in field before transformation
+    size_t         transCount_{}; // Count of items in field after transformed
+    size_t         size_{};       // maximum data size (in bytes) required to hold entire field
+    mutable size_t index_{}; // Optional flag that can be used by a client to indicate an ordering.
+                             // Unused by field itself.
     BasicType type_;
     RoleType  role_;
 
-    const VariableType *rawStorage_;   // Storage type of raw field
-    const VariableType *transStorage_; // Storage type after transformation
+    const VariableType *rawStorage_{};   // Storage type of raw field
+    const VariableType *transStorage_{}; // Storage type after transformation
 
     std::vector<Transform *> transforms_;
   };
-}
+} // namespace Ioss
 #endif

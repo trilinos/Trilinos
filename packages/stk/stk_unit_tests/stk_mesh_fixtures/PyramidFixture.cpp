@@ -54,6 +54,36 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
+PyramidFixture::PyramidFixture(   MetaData& meta
+            , BulkData& bulk
+            , size_t nx
+            , size_t ny
+            , size_t nz
+            , size_t nid_start
+            , size_t eid_start
+          )
+: m_spatial_dimension(3),
+  m_nx(2*nx),
+  m_ny(2*ny),
+  m_nz(2*nz),
+  node_id_start(nid_start),
+  elem_id_start(eid_start),
+  m_meta_p( &meta ),
+  m_bulk_p( &bulk ),
+  m_meta( meta),
+  m_bulk_data( bulk ),
+  m_elem_parts( ),
+  m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+  m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
+  owns_mesh(false)
+{
+  //put coord-field on all nodes:
+  put_field(
+    m_coord_field,
+    m_meta.universal_part(),
+    m_spatial_dimension);
+}
+
 PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
@@ -65,15 +95,17 @@ PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
     m_nx(2*nx),
     m_ny(2*ny),
     m_nz(2*nz),
-    m_meta( m_spatial_dimension ),
-    m_bulk_data(  m_meta
+    m_meta_p( new MetaData(m_spatial_dimension) ),
+    m_bulk_p(  new BulkData(*m_meta_p
                 , pm
                 , autoAuraOption
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map
+                , connectivity_map)
                ),
+    m_meta(*m_meta_p),
+    m_bulk_data(*m_bulk_p),
     m_elem_parts( 1, &m_meta.declare_part_with_topology("pyramid_part", stk::topology::PYRAMID_5) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
@@ -85,6 +117,14 @@ PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
     m_meta.universal_part(),
     m_spatial_dimension);
 
+}
+
+PyramidFixture::~PyramidFixture()
+{
+  if( owns_mesh ) {
+    delete m_bulk_p;
+    delete m_meta_p;
+  }
 }
 
 void PyramidFixture::generate_mesh(const CoordinateMapping & coordMap)
@@ -112,7 +152,7 @@ void PyramidFixture::generate_mesh(const CoordinateMapping & coordMap)
 
 void PyramidFixture::node_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &z ) const
 {
-  entity_id -= 1;
+  entity_id -= node_id_start;
 
   x = entity_id % (m_nx+1);
   entity_id /= (m_nx+1);
@@ -175,7 +215,7 @@ void PyramidFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_proce
         pyramid_nodes[3] = elem_nodes[pyramid_vert[pyr][3]];
         pyramid_nodes[4] = elem_nodes[pyramid_vert[pyr][4]];
 
-        EntityId pyramid_id = 6*hex_id + pyr + 1;
+        EntityId pyramid_id = 6*hex_id + pyr + elem_id_start;
         stk::mesh::declare_element( m_bulk_data, m_elem_parts, pyramid_id, pyramid_nodes);
 
         for (size_t i = 0; i<5; ++i) {

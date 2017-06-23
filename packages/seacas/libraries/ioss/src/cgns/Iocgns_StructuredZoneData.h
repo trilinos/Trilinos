@@ -46,15 +46,16 @@ namespace Iocgns {
   {
   public:
     StructuredZoneData()
-        : m_ordinal{{0, 0, 0}}, m_offset{{0, 0, 0}}, m_zone(0), m_adam(nullptr), m_parent(nullptr),
-          m_proc(-1), m_splitOrdinal(0), m_child1(nullptr), m_child2(nullptr), m_sibling(nullptr)
+        : m_ordinal{{0, 0, 0}}, m_offset{{0, 0, 0}}, m_preferentialOrdinal(-1), m_zone(0),
+          m_adam(nullptr), m_parent(nullptr), m_proc(-1), m_splitOrdinal(0), m_child1(nullptr),
+          m_child2(nullptr), m_sibling(nullptr)
     {
     }
 
     StructuredZoneData(std::string name, int zone, int ni, int nj, int nk)
-        : m_name(std::move(name)), m_ordinal{{ni, nj, nk}}, m_offset{{0, 0, 0}}, m_zone(zone),
-          m_adam(nullptr), m_parent(nullptr), m_proc(-1), m_splitOrdinal(0), m_child1(nullptr),
-          m_child2(nullptr), m_sibling(nullptr)
+        : m_name(std::move(name)), m_ordinal{{ni, nj, nk}}, m_offset{{0, 0, 0}},
+          m_preferentialOrdinal(-1), m_zone(zone), m_adam(nullptr), m_parent(nullptr), m_proc(-1),
+          m_splitOrdinal(0), m_child1(nullptr), m_child2(nullptr), m_sibling(nullptr)
     {
     }
 
@@ -64,6 +65,9 @@ namespace Iocgns {
     // Offset of this block relative to its
     // adam block. ijk_adam = ijk_me + m_offset[ijk];
     Ioss::IJK_t m_offset;
+
+    // If value is 0, 1, or 2, then do not split along that ordinal
+    int m_preferentialOrdinal;
 
     int m_zone;
 
@@ -101,17 +105,13 @@ namespace Iocgns {
 
     // ========================================================================
     // Assume the "work" or computational effort required for a
-    // block is proportional to the number of nodes.
-    size_t work() const
-    {
-      //     return (m_ordinal[0]+1) * (m_ordinal[1]+1) * (m_ordinal[2]+1);
-      return m_ordinal[0] * m_ordinal[1] * m_ordinal[2];
-    }
+    // block is proportional to the number of cells.
+    size_t work() const { return m_ordinal[0] * m_ordinal[1] * m_ordinal[2]; }
 
     std::pair<StructuredZoneData *, StructuredZoneData *> split(int zone_id, double ratio = 0.5);
     void resolve_zgc_split_donor(std::vector<Iocgns::StructuredZoneData *> &zones);
     void update_zgc_processor(std::vector<Iocgns::StructuredZoneData *> &zones);
   };
-}
+} // namespace Iocgns
 
 #endif

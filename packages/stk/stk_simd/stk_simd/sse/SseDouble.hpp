@@ -7,13 +7,6 @@ struct Double {
 
   STK_MATH_FORCE_INLINE Double() {}
 
-  STK_MATH_FORCE_INLINE Double(const double* x) 
-    : _data(_mm_loadu_pd(x)) {
-  }
-
-  STK_MATH_FORCE_INLINE Double(const double* x, const int offset) 
-    :_data(_mm_setr_pd(x[0],x[offset])) {
-  }
 
   template <typename T>
   STK_MATH_FORCE_INLINE Double(const T x, typename std::enable_if<std::is_convertible<T,double>::value, void*>::type=0)

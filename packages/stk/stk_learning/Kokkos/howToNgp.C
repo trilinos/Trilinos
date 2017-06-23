@@ -85,13 +85,19 @@ unsigned count_num_elems(ngp::Mesh ngpMesh,
                          stk::mesh::EntityRank rank,
                          stk::mesh::Part &part)
 {
-    Kokkos::View<unsigned*> numElems("numElems", 1);
+#ifdef KOKKOS_HAVE_CUDA
+  using DeviceSpace = Kokkos::CudaSpace;
+#else
+  using DeviceSpace = Kokkos::HostSpace;
+#endif
+  Kokkos::View<unsigned *, DeviceSpace> numElems("numElems", 1);
     ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::Mesh::MeshIndex entity)
     {
         unsigned fieldValue = static_cast<unsigned>(ngpField.get(entity, 0));
         Kokkos::atomic_add(&numElems(0), fieldValue);
     });
-    Kokkos::View<unsigned*>::HostMirror numElemsHost = Kokkos::create_mirror_view(numElems);
+    Kokkos::View<unsigned *, DeviceSpace>::HostMirror numElemsHost =
+        Kokkos::create_mirror_view(numElems);
     Kokkos::deep_copy(numElemsHost, numElems);
     return numElemsHost(0);
 }

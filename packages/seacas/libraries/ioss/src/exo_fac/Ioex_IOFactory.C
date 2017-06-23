@@ -47,15 +47,15 @@
 
 namespace Ioss {
   class DatabaseIO;
-}
+} // namespace Ioss
 
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
-  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &props,
+  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
                                            Ioss::DatabaseUsage db_usage);
-  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &props,
+  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
                                   Ioss::DatabaseUsage db_usage);
-}
+} // namespace
 #endif
 
 namespace Ioex {
@@ -155,14 +155,13 @@ namespace {
       // "PROP1=VALUE1:PROP2=VALUE2:..."
       std::vector<std::string> prop_val = Ioss::tokenize(env_props, ":");
 
-      for (size_t i = 0; i < prop_val.size(); i++) {
-        std::vector<std::string> property = Ioss::tokenize(prop_val[i], "=");
+      for (auto &i : prop_val) {
+        std::vector<std::string> property = Ioss::tokenize(i, "=");
         if (property.size() != 2) {
           std::ostringstream errmsg;
           errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment "
                     "variable\n"
-                 << "       Found '" << prop_val[i]
-                 << "' which is not of the correct PROPERTY=VALUE form";
+                 << "       Found '" << i << "' which is not of the correct PROPERTY=VALUE form";
           IOSS_ERROR(errmsg);
         }
         std::string prop = Ioss::Utils::uppercase(property[0]);
@@ -207,8 +206,8 @@ namespace {
       // "PROP1=VALUE1:PROP2=VALUE2:..."
       std::vector<std::string> prop_val = Ioss::tokenize(env_props, ":");
 
-      for (size_t i = 0; i < prop_val.size(); i++) {
-        std::vector<std::string> property = Ioss::tokenize(prop_val[i], "=");
+      for (auto &i : prop_val) {
+        std::vector<std::string> property = Ioss::tokenize(i, "=");
         std::string              prop     = Ioss::Utils::uppercase(property[0]);
         if (prop == compose_property) {
           if (property.size() != 2) {
@@ -238,5 +237,5 @@ namespace {
     }
     return compose;
   }
-}
+} // namespace
 #endif

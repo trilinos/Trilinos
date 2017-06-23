@@ -19,6 +19,30 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/new_design)
+SET(HEADERS ${HEADERS}
+  new_design/Sacado_Fad_Exp_MathFunctions.hpp
+  new_design/Sacado_Fad_Exp_Expression.hpp
+  new_design/Sacado_Fad_Exp_ExpressionTraits.hpp
+  new_design/Sacado_Fad_Exp_ExprAssign.hpp
+  new_design/Sacado_Fad_Exp_Extender.hpp
+  new_design/Sacado_Fad_Exp_GeneralFad.hpp
+  new_design/Sacado_Fad_Exp_GeneralFadTraits.hpp
+  new_design/Sacado_Fad_Exp_Ops.hpp
+  new_design/Sacado_Fad_Exp_DynamicStorage.hpp
+  new_design/Sacado_Fad_Exp_StaticStorage.hpp
+  new_design/Sacado_Fad_Exp_StaticFixedStorage.hpp
+  new_design/Sacado_Fad_Exp_MemPoolStorage.hpp
+  new_design/Sacado_Fad_Exp_VectorDynamicStorage.hpp
+  new_design/Sacado_Fad_Exp_ViewStorage.hpp
+  new_design/Sacado_Fad_Exp_DFad.hpp
+  new_design/Sacado_Fad_Exp_SLFad.hpp
+  new_design/Sacado_Fad_Exp_SFad.hpp
+  new_design/Sacado_Fad_Exp_ViewFad.hpp
+  new_design/Sacado_Fad_Exp_DMFad.hpp
+  new_design/Sacado_Fad_Exp_DVFad.hpp
+  )
+
 # FAD
 SET(HEADERS ${HEADERS}
   Sacado_Fad_GeneralFad.hpp

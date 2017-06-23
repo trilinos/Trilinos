@@ -835,7 +835,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
     size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region)
     {
-      Teuchos::RCP<InputFile> input_file = Teuchos::rcp(new InputFile(ioss_input_region));
+      auto input_file = Teuchos::rcp(new InputFile(ioss_input_region));
       m_input_files.push_back(input_file);
 
       size_t index_of_input_file = m_input_files.size()-1;
@@ -894,8 +894,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                               const std::string &type,
                                               DatabasePurpose purpose)
     {
-      Teuchos::RCP<InputFile> input_file = Teuchos::rcp(new InputFile(filename, m_communicator,
-                                                                      type, purpose, m_property_manager));
+      auto input_file = Teuchos::rcp(new InputFile(filename, m_communicator, type, purpose, m_property_manager));
       m_input_files.push_back(input_file);
 
       size_t index_of_input_file = m_input_files.size()-1;
@@ -1089,7 +1088,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           }
         }
 
-        Teuchos::RCP<impl::OutputFile> output_file = Teuchos::rcp(new impl::OutputFile(out_filename, m_communicator, db_type,
+        auto output_file = Teuchos::rcp(new impl::OutputFile(out_filename, m_communicator, db_type,
                                                                            properties, input_region, type));
         m_output_files.push_back(output_file);
 
@@ -1332,14 +1331,14 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                        bool abort_if_not_found)
       {
         validate_input_file_index(m_active_mesh_index);
-        Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+        auto region = m_input_files[m_active_mesh_index]->get_input_io_region();
         return internal_read_parameter(region, globalVarName, value, type, abort_if_not_found);
       }
 
       size_t StkMeshIoBroker::get_global_variable_length(const std::string& globalVarName)
       {
           validate_input_file_index(m_active_mesh_index);
-          Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+          auto region = m_input_files[m_active_mesh_index]->get_input_io_region();
 
           size_t length = 0;
           if (region->field_exists(globalVarName)) {
@@ -1353,7 +1352,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                        bool abort_if_not_found)
       {
         validate_input_file_index(m_active_mesh_index);
-        Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+        auto region = m_input_files[m_active_mesh_index]->get_input_io_region();
         return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
                                     abort_if_not_found);
       }
@@ -1362,7 +1361,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                        bool abort_if_not_found)
       {
         validate_input_file_index(m_active_mesh_index);
-        Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+        auto region = m_input_files[m_active_mesh_index]->get_input_io_region();
         return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
                                     abort_if_not_found);
       }
@@ -1371,7 +1370,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                        bool abort_if_not_found)
       {
         validate_input_file_index(m_active_mesh_index);
-        Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+        auto region = m_input_files[m_active_mesh_index]->get_input_io_region();
         return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
                                     abort_if_not_found);
       }
@@ -1380,7 +1379,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                        bool abort_if_not_found)
       {
         validate_input_file_index(m_active_mesh_index);
-        Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+        auto region = m_input_files[m_active_mesh_index]->get_input_io_region();
         return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
                                     abort_if_not_found);
       }
@@ -1579,7 +1578,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
       {
         std::string out_filename = filename;
         stk::util::filename_substitution(out_filename);
-        Teuchos::RCP<impl::Heartbeat> heartbeat = Teuchos::rcp(new impl::Heartbeat(out_filename, hb_type,
+        auto heartbeat = Teuchos::rcp(new impl::Heartbeat(out_filename, hb_type,
                                                                        properties, m_communicator));
         m_heartbeat.push_back(heartbeat);
         return m_heartbeat.size()-1;

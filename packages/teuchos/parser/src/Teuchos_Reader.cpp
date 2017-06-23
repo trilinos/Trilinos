@@ -8,6 +8,7 @@
 #include <set>
 
 #include "Teuchos_string.hpp"
+#include "Teuchos_vector.hpp"
 #include "Teuchos_Parser.hpp"
 
 namespace Teuchos {

@@ -45,6 +45,7 @@
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Sacado.hpp"
+#include "Sacado_Fad_MP_Vector.hpp"
 
 // For computing DeviceConfig
 #include "Kokkos_Core.hpp"

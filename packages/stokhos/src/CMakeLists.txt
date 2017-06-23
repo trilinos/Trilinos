@@ -512,6 +512,8 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Fad/Sacado_Fad_SFad_MP_Vector.hpp
       sacado/kokkos/vector/Fad/Sacado_Fad_SLFad_MP_Vector.hpp
       sacado/kokkos/vector/Fad/Sacado_Fad_ViewFad_MP_Vector.hpp
+      sacado/kokkos/vector/Fad/Sacado_Fad_Exp_MP_Vector.hpp
+      sacado/kokkos/vector/Fad/Sacado_Fad_MP_Vector.hpp
       )
   ENDIF()
   IF(Stokhos_ENABLE_PCE_Scalar_Type)

@@ -65,3 +65,6 @@
 #ifndef SACADO_KOKKOS_USE_MEMORY_POOL
 #cmakedefine SACADO_KOKKOS_USE_MEMORY_POOL
 #endif
+
+/* Define if want to make the new Fad design the default, replacing the old one */
+#cmakedefine SACADO_NEW_FAD_DESIGN_IS_DEFAULT

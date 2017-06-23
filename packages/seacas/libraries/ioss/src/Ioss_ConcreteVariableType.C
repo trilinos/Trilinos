@@ -33,7 +33,7 @@
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_VariableType.h>
 
-#include <assert.h>
+#include <cassert>
 #include <string>
 
 namespace {

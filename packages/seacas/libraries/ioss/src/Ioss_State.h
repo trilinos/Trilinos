@@ -57,5 +57,5 @@ namespace Ioss {
     STATE_TRANSIENT,        /**< Outputting the transient bulk data. */
     STATE_LAST_ENTRY
   };
-}
+} // namespace Ioss
 #endif

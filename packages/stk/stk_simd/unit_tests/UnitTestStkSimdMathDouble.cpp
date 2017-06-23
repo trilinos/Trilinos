@@ -819,7 +819,7 @@ TEST(StkSimd, SimdLog)
   std::vector<double> out2(N);
 
   for (int n=0; n < N; ++n) {
-    x[n] = 21*(rand()+1)/RAND_MAX;
+    x[n] = 21*(rand()+1.0)/RAND_MAX+1.0;
   }
   
   t0 = -stk::get_time_in_seconds();
@@ -842,10 +842,11 @@ TEST(StkSimd, SimdLog)
   double maxerr = 0.0;
   for (int n=0; n < N; ++n) {
     double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
+    ASSERT_NEAR( err, 0.0, 0.0) << "n = " << n;
+    maxerr = stk::math::max(err, maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 0.0 ); 
+  //ASSERT_NEAR( maxerr, 0.0, 0.0 ); 
 }
 
 TEST(StkSimd, SimdExp) 
@@ -892,7 +893,7 @@ TEST(StkSimd, SimdExp)
 TEST(StkSimd, SimdPowA) 
 {
 
-  int N = 400000;
+  int N = 2000;
   double t0; // timing variable
 
   std::vector<double> x(N);
@@ -902,10 +903,10 @@ TEST(StkSimd, SimdPowA)
   std::vector<double> out2(N);
 
   for (int n=0; n < N; ++n) {
-    x[n] = 5.4*(rand()/RAND_MAX-0.5);
+    x[n] = 5.4*(rand()/RAND_MAX)+0.002;
   }
   for (int n=0; n < N/stk::simd::ndoubles; ++n) {
-    y[n] = 3.2*(rand()/RAND_MAX-0.5);
+    y[n] = 3.2*(rand()/RAND_MAX-0.5)+0.2;
   }
   
   t0 = -stk::get_time_in_seconds();
@@ -932,6 +933,7 @@ TEST(StkSimd, SimdPowA)
   double maxerr = 0.0;
   for (int n=0; n < N; ++n) {
     double err = stk::math::abs(out1[n]-out2[n]);
+    std::cout << x[n] << " " << out1[n] << " " << out2[n] << "\n";
     maxerr = stk::math::max(err,maxerr);
   }
 
@@ -941,7 +943,7 @@ TEST(StkSimd, SimdPowA)
 TEST(StkSimd, SimdPowB) 
 {
 
-  int N = 100000;
+  int N = 2000;
   double t0; // timing variable
 
   std::vector<double> x(N);
@@ -951,10 +953,10 @@ TEST(StkSimd, SimdPowB)
   std::vector<double> out2(N);
 
   for (int n=0; n < N; ++n) {
-    x[n] = 5.4*(rand()/RAND_MAX-0.5);
+    x[n] = 5.4*(rand()/RAND_MAX)+0.001;
   }
   for (int n=0; n < N; ++n) {
-    y[n] = 3.2*(rand()/RAND_MAX-0.5);
+    y[n] = 3.2*(rand()/RAND_MAX-0.5)+0.1;
   }
   
   t0 = -stk::get_time_in_seconds();

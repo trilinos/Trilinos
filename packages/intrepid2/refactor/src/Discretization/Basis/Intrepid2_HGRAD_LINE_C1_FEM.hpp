@@ -79,6 +79,7 @@ namespace Intrepid2 {
 
     class Basis_HGRAD_LINE_C1_FEM {
     public:
+      typedef struct Line<2> cell_topology_type;
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,

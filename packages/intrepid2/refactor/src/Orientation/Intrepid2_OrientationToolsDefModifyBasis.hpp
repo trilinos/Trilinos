@@ -169,7 +169,7 @@ namespace Intrepid2 {
         numVerts = cellTopo.getVertexCount(), 
         numEdges = cellTopo.getEdgeCount(),
         numFaces = cellTopo.getFaceCount();
-
+      
       const ordinal_type intrDim = ( numEdges == 0 ? 1 : 
                                      numFaces == 0 ? 2 : 
                                      /**/            3 );
@@ -180,7 +180,7 @@ namespace Intrepid2 {
         
         // vertex copy (no orientation)
         for (ordinal_type vertId=0;vertId<numVerts;++vertId) {
-          const ordinal_type i = (static_cast<size_type>(vertId) < tagToOrdinal.dimension(1) ? tagToOrdinal(0, vertId, 0) : -1);
+          const ordinal_type i = tagToOrdinal(0, vertId, 0);
           if (i != -1) // if dof does not exist i returns with -1
             for (ordinal_type j=0;j<numPoints;++j)
               for (ordinal_type k=0;k<dimBasis;++k)
@@ -202,7 +202,6 @@ namespace Intrepid2 {
         }
         
         // edge transformation
-        ordinal_type existEdgeDofs = 0;
         if (numEdges > 0) {
           ordinal_type ortEdges[12];
           orts(cell).getEdgeOrientation(ortEdges, numEdges);
@@ -212,7 +211,6 @@ namespace Intrepid2 {
             const ordinal_type ordEdge = (1 < tagToOrdinal.dimension(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.dimension(1) ? tagToOrdinal(1, edgeId, 0) : -1) : -1);
             
             if (ordEdge != -1) {
-              existEdgeDofs = 1;
               const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
               const auto mat = Kokkos::subview(matData, 
                                                edgeId, ortEdges[edgeId], 
@@ -247,7 +245,7 @@ namespace Intrepid2 {
             if (ordFace != -1) {
               const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
               const auto mat = Kokkos::subview(matData, 
-                                               numEdges*existEdgeDofs+faceId, ortFaces[faceId], 
+                                               numEdges+faceId, ortFaces[faceId], 
                                                Kokkos::ALL(), Kokkos::ALL());
               
               for (ordinal_type j=0;j<numPoints;++j) 

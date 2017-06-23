@@ -181,7 +181,7 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogenous blocks\n"
-                  "\t\tOptions are: TOPOLOGY, BLOCK, NOSPLIT",
+                  "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
                   "TOPOLOGY");
 
 #ifdef SEACAS_HAVE_KOKKOS
@@ -399,6 +399,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
       else if (std::strcmp(temp, "ELEMENT_BLOCK") == 0) {
         surface_split_type = 2;
       }
+      else if (std::strcmp(temp, "BLOCK") == 0) {
+        surface_split_type = 2;
+      }
       else if (std::strcmp(temp, "NO_SPLIT") == 0) {
         surface_split_type = 3;
       }
@@ -431,7 +434,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
         std::cerr << "ERROR: Option data_storage must be one of\n";
 #ifdef SEACAS_HAVE_KOKKOS
         std::cerr << "       POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
-	  "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE\n";
+                     "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE\n";
 #else
         std::cerr << "       POINTER, or STD_VECTOR\n";
 #endif

@@ -214,6 +214,23 @@ namespace Intrepid2 {
 
   };
 
+  template<typename T>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static T min(const T &a, const T &b) {
+    return (a < b ? a : b);
+  }
+
+  template<typename T>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static T max(const T &a, const T &b) {
+    return (a > b ? a : b);
+  }
+
+  template<typename T>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static T abs(const T &a) {
+    return (a > 0 ? a : T(-a));
+  }
 
 } // end namespace Intrepid2
 

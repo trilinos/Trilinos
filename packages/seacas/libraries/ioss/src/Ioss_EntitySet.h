@@ -35,11 +35,11 @@
 
 #include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_Property.h>       // for Property
-#include <stddef.h>              // for size_t
+#include <cstddef>               // for size_t
 #include <string>                // for string
 namespace Ioss {
   class DatabaseIO;
-}
+} // namespace Ioss
 
 namespace Ioss {
   class ElementSet;
@@ -61,16 +61,16 @@ namespace Ioss {
   class EntitySet : public GroupingEntity
   {
   public:
-    virtual Property get_implicit_property(const std::string &my_name) const = 0;
+    Property get_implicit_property(const std::string &my_name) const override = 0;
 
   protected:
     EntitySet(DatabaseIO *io_database, const std::string &my_name, size_t entity_count);
     EntitySet(const EntitySet &) = delete;
     EntitySet &operator=(const EntitySet &) = delete;
-    ~EntitySet()                            = default;
+    ~EntitySet() override                   = default;
 
   protected:
     void count_attributes() const;
   };
-}
+} // namespace Ioss
 #endif

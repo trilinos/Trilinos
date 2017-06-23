@@ -47,12 +47,14 @@
 
 // Traits for all of the Sacado classes -- Include these first so they are all
 // defined before any nesting of AD classes
+#ifdef SACADO_ENABLE_NEW_DESIGN
+#include "Sacado_Fad_Exp_ExpressionTraits.hpp"
+#include "Sacado_Fad_Exp_GeneralFadTraits.hpp"
+#endif
 #include "Sacado_Fad_ExpressionTraits.hpp"
 #include "Sacado_Fad_DFadTraits.hpp"
 #include "Sacado_Fad_SFadTraits.hpp"
 #include "Sacado_Fad_SLFadTraits.hpp"
-#include "Sacado_Fad_DMFadTraits.hpp"
-#include "Sacado_Fad_DVFadTraits.hpp"
 #include "Sacado_ELRFad_ExpressionTraits.hpp"
 #include "Sacado_ELRFad_DFadTraits.hpp"
 #include "Sacado_ELRFad_SFadTraits.hpp"
@@ -77,6 +79,12 @@
 #endif
 
 // Standard forward AD classes
+#ifdef SACADO_ENABLE_NEW_DESIGN
+#include "Sacado_Fad_Exp_DFad.hpp"
+#include "Sacado_Fad_Exp_SFad.hpp"
+#include "Sacado_Fad_Exp_SLFad.hpp"
+#include "Sacado_Fad_Exp_ViewFad.hpp"
+#endif
 #include "Sacado_Fad_DFad.hpp"
 #include "Sacado_Fad_SFad.hpp"
 #include "Sacado_Fad_SLFad.hpp"
@@ -107,9 +115,9 @@
 // Standard forward AD classes
 #include "Sacado_Fad_MemPoolManager.hpp"
 #include "Sacado_Fad_DMFad.hpp"
-#include "Sacado_LFad_LogicalSparse.hpp"
 #include "Sacado_Fad_DVFad.hpp"
 #include "Sacado_Fad_Vector.hpp"
+#include "Sacado_LFad_LogicalSparse.hpp"
 
 // Reverse AD classes
 #include "Sacado_trad.hpp"

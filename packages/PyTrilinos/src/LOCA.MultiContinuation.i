@@ -138,6 +138,9 @@ LOCA.MultiContinuation supports the following classes:
 
 %import "Teuchos.i"
 
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
+
 // Teucho::RCP support
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)

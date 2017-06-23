@@ -52,14 +52,14 @@
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
-  
+
   /** \class  Intrepid2::Basis_HGRAD_QUAD_C2_FEM
       \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Quadrilateral cell
-  
+
       Implements Lagrangian basis of degree 2 on the reference Quadrilateral cell. The basis has
-      cardinality 9 and spans a COMPLETE bi-quadratic polynomial space. Basis functions are dual 
+      cardinality 9 and spans a COMPLETE bi-quadratic polynomial space. Basis functions are dual
       to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
-  
+
       \verbatim
       =================================================================================================
       |         |           degree-of-freedom-tag table                    |                           |
@@ -90,28 +90,29 @@ namespace Intrepid2 {
   */
 
 
-  namespace Impl {                                                                                                                                                       
-                                                                                                                                                                         
-    class Basis_HGRAD_QUAD_C2_FEM {                                                                                                                                       
-    public:                                                                                                                                                              
-      template<EOperator opType>                                                                                                                                         
-      struct Serial {                                                                                                                                                    
-        template<typename outputViewType,                                                                                                                                
-                 typename inputViewType>                                                                                                                                 
-        KOKKOS_INLINE_FUNCTION                                                                                                                                           
-        static void                                                                                                                                                      
-        getValues(       outputViewType output,                                                                                                                          
-                   const inputViewType input );                                                                                                                          
-                                                                                                                                                                         
-      };                                                                                                                                                                 
-                                                                                                                                                                         
-      template<typename ExecSpaceType,                                                                                                                                   
-               typename outputValueValueType, class ...outputValueProperties,                                                                                            
-               typename inputPointValueType,  class ...inputPointProperties>                                                                                             
-      static void                                                                                                                                                        
-      getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,                                                                  
-                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,                                                                   
-                 const EOperator operatorType);  
+  namespace Impl {
+
+    class Basis_HGRAD_QUAD_C2_FEM {
+    public:
+      typedef struct Quadrilateral<9> cell_topology_type;
+      template<EOperator opType>
+      struct Serial {
+        template<typename outputViewType,
+                 typename inputViewType>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        getValues(       outputViewType output,
+                   const inputViewType input );
+
+      };
+
+      template<typename ExecSpaceType,
+               typename outputValueValueType, class ...outputValueProperties,
+               typename inputPointValueType,  class ...inputPointProperties>
+      static void
+      getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+                 const EOperator operatorType);
 
       template<typename outputValueViewType,
                typename inputPointViewType,
@@ -187,35 +188,35 @@ namespace Intrepid2 {
     getValues(       outputViewType outputValues,
                const pointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
-#ifdef HAVE_INTREPID2_DEBUG                                                                                                                                              
-      // Verify arguments                                                                                                                                                
-      Intrepid2::getValues_HGRAD_Args(outputValues,                                                                                                                      
-                                      inputPoints,                                                                                                                       
-                                      operatorType,                                                                                                                      
-                                      this->getBaseCellTopology(),                                                                                                       
-                                      this->getCardinality() );                                                                                                          
-#endif                                                                                                                                                                   
-      Impl::Basis_HGRAD_QUAD_C2_FEM::                                                                                                                                     
-        getValues<ExecSpaceType>( outputValues,                                                                                                                          
-                                  inputPoints,                                                                                                                           
-                                  operatorType );    
+#ifdef HAVE_INTREPID2_DEBUG
+      // Verify arguments
+      Intrepid2::getValues_HGRAD_Args(outputValues,
+                                      inputPoints,
+                                      operatorType,
+                                      this->getBaseCellTopology(),
+                                      this->getCardinality() );
+#endif
+      Impl::Basis_HGRAD_QUAD_C2_FEM::
+        getValues<ExecSpaceType>( outputValues,
+                                  inputPoints,
+                                  operatorType );
     }
 
     virtual
     void
     getDofCoords( scalarViewType dofCoords ) const {
-#ifdef HAVE_INTREPID2_DEBUG                                                                                                                                              
-      // Verify rank of output array.                                                                                                                                    
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,                                                                                        
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) rank = 2 required for dofCoords array");                               
-      // Verify 0th dimension of output array.                                                                                                                           
+#ifdef HAVE_INTREPID2_DEBUG
+      // Verify rank of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) rank = 2 required for dofCoords array");
+      // Verify 0th dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");      
-      // Verify 1st dimension of output array.                                                                                                                           
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,                                         
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");         
-#endif                                                                                                                                                                   
-      Kokkos::deep_copy(dofCoords, this->dofCoords_);    
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
+      // Verify 1st dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
+#endif
+      Kokkos::deep_copy(dofCoords, this->dofCoords_);
     }
 
     virtual

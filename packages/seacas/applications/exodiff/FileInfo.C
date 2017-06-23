@@ -31,16 +31,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "FileInfo.h"
-#include <stddef.h>                     // for size_t
-#include <sys/stat.h>                   // for stat, lstat, S_ISDIR, etc
-#include <sys/types.h>                  // for off_t
-#include <unistd.h>                     // for F_OK, R_OK, access, W_OK, etc
-#include <algorithm>                    // for move
-#include <cstdio>                       // for remove
-#include <cstdlib>                      // for free, realpath
-#include <string>                       // for string
-
-
+#include <algorithm>   // for move
+#include <cstdio>      // for remove
+#include <cstdlib>     // for free, realpath
+#include <stddef.h>    // for size_t
+#include <string>      // for string
+#include <sys/stat.h>  // for stat, lstat, S_ISDIR, etc
+#include <sys/types.h> // for off_t
+#include <unistd.h>    // for F_OK, R_OK, access, W_OK, etc
 
 namespace {
   bool internal_access(const std::string &name, int mode);

@@ -30,7 +30,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <Ioss_CodeTypes.h>
 #include <Ioss_StandardElementTypes.h>
+#if defined IOSS_THREADSAFE
+#include <mutex>
+#endif
 
 Ioss::Initializer::Initializer()
 {

@@ -407,17 +407,24 @@ public:
 //----------------------------------------------------------------------------
 
 namespace Sacado {
+
+namespace Fad         { namespace Exp { template< typename > class GeneralFad ; } }
+
+#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 namespace Fad         { template< typename > class DFad ; }
+namespace Fad         { template< typename , int > class SFad ; }
+namespace Fad         { template< typename , int > class SLFad ; }
+#endif
+
 namespace CacheFad    { template< typename > class DFad ; }
 namespace ELRFad      { template< typename > class DFad ; }
 namespace ELRCacheFad { template< typename > class DFad ; }
 
-namespace Fad         { template< typename , int > class SFad ; }
 namespace CacheFad    { template< typename , int > class SFad ; }
 namespace ELRFad      { template< typename , int > class SFad ; }
 namespace ELRCacheFad { template< typename , int > class SFad ; }
 
-namespace Fad         { template< typename , int > class SLFad ; }
+
 namespace CacheFad    { template< typename , int > class SLFad ; }
 namespace ELRFad      { template< typename , int > class SLFad ; }
 namespace ELRCacheFad { template< typename , int > class SLFad ; }
@@ -453,7 +460,17 @@ struct ViewDataAnalysis \
        int(Sacado::StaticSize< Sacado:: NS ::SLFad< ScalarType , N > >::value) \
        > {}; \
 
+template< class DataType , class ArrayLayout , typename StorageType >
+struct ViewDataAnalysis
+  < DataType     /* Original view data type */
+  , ArrayLayout
+  , Sacado::Fad::Exp::GeneralFad< StorageType >
+    > : public FadViewDataAnalysis< DataType, ArrayLayout, typename StorageType::value_type , 0 > {};
+
+#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 KOKKOS_VIEW_DATA_ANALYSIS_SACADO_FAD( Fad )
+#endif
+
 KOKKOS_VIEW_DATA_ANALYSIS_SACADO_FAD( CacheFad )
 KOKKOS_VIEW_DATA_ANALYSIS_SACADO_FAD( ELRFad )
 KOKKOS_VIEW_DATA_ANALYSIS_SACADO_FAD( ELRCacheFad )

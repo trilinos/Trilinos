@@ -32,28 +32,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include <cassert>                      // for assert
-#include <climits>                      // for INT_MAX
-#include <cstddef>                      // for size_t
-#include <cstdio>                       // for printf, fprintf, stderr
-#include <cstdlib>                      // for exit, free
-#include <cstring>                      // for strncpy, strrchr, strlen
-#include <iostream>                     // for operator<<, cerr, ostream, etc
-#include <string>                       // for string
-#include <vector>                       // for vector
-#include "el_check_monot.h"             // for check_monot
-#include "el_elm.h"                     // for HEXSHELL, NN_SIDE, etc
-#include "exodusII.h"                   // for ex_inquire_int, etc
-#include "nem_spread.h"                 // for NemSpread, second, etc
-#include "netcdf.h"                     // for nc_set_fill, NC_NOFILL
-#include "pe_common.h"                  // for MAX_CHUNK_SIZE
-#include "pe_str_util_const.h"          // for string_to_lower
-#include "ps_pario_const.h"             // for PIO_Time_Array, etc
-#include "rf_allo.h"                    // for safe_free, array_alloc
-#include "rf_format.h"                  // for ST_ZU
-#include "rf_io_const.h"                // for Debug_Flag, etc
-#include "rf_util.h"                    // for print_line, my_sort
-#include "sort_utils.h"                 // for gds_qsort
+#include "el_check_monot.h"    // for check_monot
+#include "el_elm.h"            // for HEXSHELL, NN_SIDE, etc
+#include "exodusII.h"          // for ex_inquire_int, etc
+#include "nem_spread.h"        // for NemSpread, second, etc
+#include "netcdf.h"            // for nc_set_fill, NC_NOFILL
+#include "pe_common.h"         // for MAX_CHUNK_SIZE
+#include "pe_str_util_const.h" // for string_to_lower
+#include "ps_pario_const.h"    // for PIO_Time_Array, etc
+#include "rf_allo.h"           // for safe_free, array_alloc
+#include "rf_format.h"         // for ST_ZU
+#include "rf_io_const.h"       // for Debug_Flag, etc
+#include "rf_util.h"           // for print_line, my_sort
+#include "sort_utils.h"        // for gds_qsort
+#include <cassert>             // for assert
+#include <climits>             // for INT_MAX
+#include <cstddef>             // for size_t
+#include <cstdio>              // for printf, fprintf, stderr
+#include <cstdlib>             // for exit, free
+#include <cstring>             // for strncpy, strrchr, strlen
+#include <iostream>            // for operator<<, cerr, ostream, etc
+#include <string>              // for string
+#include <vector>              // for vector
 template <typename T, typename INT> class Globals;
 
 #if __cplusplus > 199711L
@@ -1331,7 +1331,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
 
         int el_type;
         check_exodus_error(ex_get_partial_conn(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
-                                         (istart_elem + 1), num_to_get, elem_blk, nullptr, nullptr),
+                                               (istart_elem + 1), num_to_get, elem_blk, nullptr,
+                                               nullptr),
                            "ex_get_partial_conn");
         if (Debug_Flag >= 2)
           printf("\t\tread connectivity\n");
@@ -1396,13 +1397,14 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
           iend_attr = istart_attr + num_attr_left_over;
 
         if (num_attr_left_over == 0 || i < (num_attr_messages - 1)) {
-          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
-                                                num_attr_per_message, elem_attr),
+          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
+                                                 (istart_attr + 1), num_attr_per_message,
+                                                 elem_attr),
                              "ex_get_partial_attr");
         }
         else {
-          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
-                                                num_attr_left_over, elem_attr),
+          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
+                                                 (istart_attr + 1), num_attr_left_over, elem_attr),
                              "ex_get_partial_attr");
         }
 
@@ -2112,12 +2114,13 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
 
         /* Read in the part of the node set that will fit in the message */
         check_exodus_error(ex_get_partial_set(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
-					      num_node_per_message, TOPTR(node_set), nullptr),
+                                              num_node_per_message, TOPTR(node_set), nullptr),
                            "ex_get_partial_set");
 
         if (num_df_in_nsets[i] > 0) {
-          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
-                                                  num_node_per_message, TOPTR(node_set_df)),
+          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, Node_Set_Ids[i],
+                                                          (istart_ns + 1), num_node_per_message,
+                                                          TOPTR(node_set_df)),
                              "ex_get_partial_node_set_df");
         }
 
@@ -2508,8 +2511,8 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
         /* Read in the part of the side set that will fit in the message. */
 
         check_exodus_error(ex_get_partial_set(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
-                                             num_elem_per_message, TOPTR(ss_elem_list),
-                                             TOPTR(ss_side_list)),
+                                              num_elem_per_message, TOPTR(ss_elem_list),
+                                              TOPTR(ss_side_list)),
                            "ex_get_partial_set");
 
         /* Fill in the distribution factor pointer vector */
@@ -2680,8 +2683,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
             num_elem_per_message = num_left_over;
 
           /* Read in the part of the side set df's that will fit in the msg. */
-          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
-							  num_elem_per_message, TOPTR(ss_dist_fact)),
+          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_SIDE_SET, Side_Set_Ids[i],
+                                                          (istart_ss + 1), num_elem_per_message,
+                                                          TOPTR(ss_dist_fact)),
                              "ex_get_partial_set_dist_fact");
 
           /*

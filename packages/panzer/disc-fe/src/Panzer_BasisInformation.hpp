@@ -85,7 +85,7 @@ namespace panzer {
     { return element_space_; }
 
     bool requiresOrientations() const
-    { return getElementSpace()==HCURL || getElementSpace()==HDIV || (getElementSpace()==HGRAD && basis_order_ > 2) ; }
+    { return getElementSpace()==HCURL || getElementSpace()==HDIV; }
 
     bool supportsGrad() const
     { return getElementSpace()==HGRAD; }

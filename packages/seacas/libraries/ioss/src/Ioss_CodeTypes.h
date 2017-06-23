@@ -43,20 +43,20 @@ namespace Ioss {
   using Int64Vector = std::vector<int64_t>;
   using NameList    = std::vector<std::string>;
   using IJK_t       = std::array<int, 3>;
-}
+} // namespace Ioss
 
 #if defined(PARALLEL_AWARE_EXODUS)
 #define HAVE_MPI
 #endif
 
-#if !defined(HAVE_MPI)
 #if defined(SIERRA_PARALLEL_MPI)
 #define HAVE_MPI
 #else
-#if !defined(NO_MPI)
 #include <SEACASIoss_config.h>
 #endif
-#endif
+
+#if defined(IOSS_THREADSAFE)
+#include <mutex>
 #endif
 
 #if defined(HAVE_MPI)
@@ -66,10 +66,6 @@ namespace Ioss {
 #define MPI_COMM_WORLD 0
 using MPI_Comm       = int;
 #endif
-#endif
-
-#if !defined(SIERRA_PARALLEL_MPI)
-#include <SEACASIoss_KOKKOS_config.h>
 #endif
 
 #ifdef SEACAS_HAVE_KOKKOS
@@ -91,5 +87,18 @@ using Complex        = std::complex<double>;
 #ifdef SEACAS_HAVE_KOKKOS
 using Kokkos_Complex = Kokkos::complex<double>;
 #endif
+#endif
+#endif
+
+#if defined(IOSS_THREADSAFE)
+#define IOSS_FUNC_ENTER(m) std::lock_guard<std::mutex> guard(m)
+#else
+
+#if defined IOSS_TRACE
+#include <Ioss_Tracer.h>
+#define IOSS_FUNC_ENTER(m) Ioss::Tracer m(__func__)
+
+#else
+#define IOSS_FUNC_ENTER(m)
 #endif
 #endif

@@ -32,6 +32,7 @@
 //
 
 #include <stk_io/IossBridge.hpp>
+#include <stk_util/diag/StringUtil.hpp>
 #include <Ioss_NullEntity.h>            // for NullEntity
 #include <assert.h>                     // for assert
 #include <stdint.h>                     // for int64_t
@@ -722,11 +723,11 @@ namespace stk {
            }
         }
       }
-      std::string tmpCopy = Ioss::Utils::lowercase(topology->name().substr(0,5));
-      if (tmpCopy=="super")
-        {
-          return stk::create_superelement_topology(topology->number_nodes());
-        }
+      std::string tmpCopy = sierra::make_lower(topology->name().substr(0,5));
+      if (tmpCopy == "super")
+      {
+        return stk::create_superelement_topology(topology->number_nodes());
+      }
 
       return stk::topology::INVALID_TOPOLOGY;
     }
@@ -1290,7 +1291,7 @@ namespace stk {
         if (df != NULL) {
           int nodes_per_side = side_topology.num_nodes();
           std::string storage_type = "Real[";
-          storage_type += Ioss::Utils::to_string(nodes_per_side);
+          storage_type += sierra::to_string(nodes_per_side);
           storage_type += "]";
           side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage_type,
                                             Ioss::Field::MESH, side_count));

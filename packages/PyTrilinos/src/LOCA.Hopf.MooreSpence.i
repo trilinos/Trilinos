@@ -140,6 +140,9 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 // Trilinos module imports
 %import "Teuchos.i"
 
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
+
 // Teuchos::RCP support
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
