@@ -1,9 +1,29 @@
 ----------------------------------------
 Release Notes for TriBITS
 ----------------------------------------
+
+2017/06/24:
+
+(*) MINOR: Add new all-at-once more for CTest -S driver scripts using
+    TRIBITS_CTEST_DRIVER() by setting the variable
+    ${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=TRUE.  This works with older versions
+    of CMake/CTest and CDash but, by default, will just return a single glob
+    of results, not breaking results out package-by-package.  Therefore, this
+    is disabled by default and package-by-package mode is used by default.
+    But if ${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES=TRUE is set, then
+    TriBITS will take advantage of new CMake, CTest, and CDash features
+    (currently on a branch) to display the results on CDash broken down
+    package-by-package.  Once these changes are merged to the CMake/CTest and
+    CDash 'master' branches, then the default for
+    ${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES will be set to TRUE
+    automatically when it detects an updated version of CMake/CTest is
+    present.  In the future, at some point, the TriBITS default for
+    ${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE will change from FALSE to TRUE since
+    that is a much more efficient way to drive automated testing.
+
 2017/05/25:
 
-(*) MINOR: PARSE_ARGUMENTS() has been depricated and replaced by
+(*) MINOR: PARSE_ARGUMENTS() has been deprecated and replaced by
     CMAKE_PARSE_ARGUMENTS() everywhere in TriBITS. Any call to
     PARSE_ARGUMENTS() will warn users and tell them to use
     CMAKE_PARSE_ARGUMENTS() instead.
@@ -21,7 +41,7 @@ Release Notes for TriBITS
     <Project>_SCALE_TEST_TIMEOUT even if DART_TESTING_TIMEOUT is not
     explicitly set.
 
-2016/12/7/2016:
+2016/12/07:
 
 (*) MAJOR: The long deprecated variable
     ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE has been removed.  Upgrading
