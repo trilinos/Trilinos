@@ -49,6 +49,14 @@
 #ifndef SACADO_FAD_VIEWFADTRAITS_HPP
 #define SACADO_FAD_VIEWFADTRAITS_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#include "Sacado_Fad_Exp_GeneralFadTraits.hpp"
+
+#else
+
 #include "Sacado_Traits.hpp"
 
 // Forward declarations
@@ -134,5 +142,7 @@ namespace Sacado {
 
 // ViewFad is not a proper scalar type, so we don't define any of the
 // Teuchos traits classes
+
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_DFADTRAITS_HPP

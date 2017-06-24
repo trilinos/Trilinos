@@ -57,6 +57,7 @@ namespace Intrepid2 {
   namespace Impl {
     class Basis_HGRAD_HEX_Cn_FEM {
     public:
+      typedef struct Hexahedron<8> cell_topology_type;
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -113,7 +114,7 @@ namespace Intrepid2 {
 
           constexpr ordinal_type spaceDim = 3;
           constexpr ordinal_type bufSize = (spaceDim+1)*(Parameters::MaxOrder+1)*numPtsEval;
-          char buf[bufSize*sizeof(outputValueType)];
+          outputValueType buf[bufSize];
 
           Kokkos::DynRankView<outputValueType,
             Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);

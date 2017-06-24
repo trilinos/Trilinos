@@ -37,22 +37,22 @@
 #include <Ioss_EntityBlock.h> // for EntityBlock
 #include <Ioss_EntityType.h>  // for EntityType, etc
 #include <Ioss_Property.h>    // for Property
-#include <stddef.h>           // for size_t
-#include <stdint.h>           // for int64_t
+#include <cstddef>            // for size_t
+#include <cstdint>            // for int64_t
 #include <string>             // for string
 #include <vector>             // for vector
 namespace Ioss {
   class DatabaseIO;
-}
+} // namespace Ioss
 namespace Ioss {
   class ElementTopology;
-}
+} // namespace Ioss
 namespace Ioss {
   class Field;
-}
+} // namespace Ioss
 namespace Ioss {
   class SideSet;
-}
+} // namespace Ioss
 
 namespace Ioss {
 
@@ -85,13 +85,16 @@ namespace Ioss {
     // types.
     const ElementBlock *parent_element_block() const
     {
-      return dynamic_cast<ElementBlock *>(parentBlock_);
+      return dynamic_cast<const ElementBlock *>(parentBlock_);
     }
 
-    void set_parent_element_block(ElementBlock *element_block) { parentBlock_ = element_block; }
+    void set_parent_element_block(const ElementBlock *element_block)
+    {
+      parentBlock_ = element_block;
+    }
 
     const EntityBlock *parent_block() const { return parentBlock_; }
-    void set_parent_block(EntityBlock *block) { parentBlock_ = block; }
+    void set_parent_block(const EntityBlock *block) { parentBlock_ = block; }
 
     // Describes the contained entities element block topology
     const ElementTopology *parent_element_topology() const { return parentTopology_; }
@@ -110,14 +113,14 @@ namespace Ioss {
                                     size_t data_size) const override;
 
   private:
-    const SideSet *  owner_;
-    ElementTopology *parentTopology_; // Topology of parent element (if any)
-    EntityBlock *    parentBlock_;
+    const SideSet *    owner_;
+    ElementTopology *  parentTopology_; // Topology of parent element (if any)
+    const EntityBlock *parentBlock_;
 
     // Pointer to the SideSet (if any) that contains this side block.
     std::vector<std::string> blockMembership; // What element blocks do the
                                               // elements in this sideset belong to.
     mutable int consistentSideNumber;
   };
-}
+} // namespace Ioss
 #endif

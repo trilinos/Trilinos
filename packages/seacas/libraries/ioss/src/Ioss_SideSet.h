@@ -36,23 +36,23 @@
 #include "Ioss_EntityType.h"     // for EntityType, etc
 #include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_Property.h>       // for Property
-#include <stddef.h>              // for size_t
-#include <stdint.h>              // for int64_t
+#include <cstddef>               // for size_t
+#include <cstdint>               // for int64_t
 #include <string>                // for string
 #include <vector>                // for vector
 namespace Ioss {
   class DatabaseIO;
-}
+} // namespace Ioss
 namespace Ioss {
   class Field;
-}
+} // namespace Ioss
 namespace Ioss {
   class SideBlock;
-}
+} // namespace Ioss
 
 namespace Ioss {
 
-  typedef std::vector<SideBlock *> SideBlockContainer;
+  using SideBlockContainer = std::vector<SideBlock *>;
 
   /** \brief A collection of element sides.
    */
@@ -95,5 +95,5 @@ namespace Ioss {
     std::vector<std::string> blockMembership; // What element blocks do the
                                               // elements in this sideset belong to.
   };
-}
+} // namespace Ioss
 #endif

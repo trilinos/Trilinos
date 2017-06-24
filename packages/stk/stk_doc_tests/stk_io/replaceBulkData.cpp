@@ -115,8 +115,9 @@ namespace {
 
       stk::mesh::MetaData &md = stkIo.meta_data();
       md.set_mesh_bulk_data(nullptr);
-      Teuchos::RCP<stk::mesh::BulkData> bd = Teuchos::rcp(new stk::mesh::BulkData(md, parallel));
-      stkIo.replace_bulk_data(bd);
+
+      auto bd = new stk::mesh::BulkData(md, parallel);
+      stkIo.replace_bulk_data(*bd);
       
       // ============================================================
       //+ Create results file. By default, all parts created from the input

@@ -39,13 +39,13 @@
 #include <vector> // for vector
 namespace Ioss {
   class ElementTopology;
-}
+} // namespace Ioss
 
 namespace Ioss {
   enum class ElementShape { UNKNOWN, POINT, LINE, TRI, QUAD, TET, PYRAMID, WEDGE, HEX };
 
   typedef std::map<std::string, ElementTopology *, std::less<std::string>> ElementTopologyMap;
-  typedef ElementTopologyMap::value_type ETM_VP;
+  using ETM_VP = ElementTopologyMap::value_type;
 
   class ETRegistry
   {
@@ -148,5 +148,5 @@ namespace Ioss {
 
     static ETRegistry &registry();
   };
-}
+} // namespace Ioss
 #endif

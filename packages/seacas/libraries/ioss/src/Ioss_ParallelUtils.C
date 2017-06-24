@@ -35,15 +35,15 @@
 #include <Ioss_Utils.h>
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <stddef.h>
 #include <string>
 #include <vector>
 
 #ifdef HAVE_MPI
 #include <Ioss_SerializeIO.h>
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 #endif
 
@@ -61,7 +61,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
   int rank = parallel_rank();
   if (rank == 0) {
     result_string = std::getenv(name.c_str());
-    string_length = result_string ? (int)std::strlen(result_string) : 0;
+    string_length = result_string != nullptr ? static_cast<int>(std::strlen(result_string)) : 0;
   }
 
   if (sync_parallel && parallel_size() > 1) {
@@ -70,7 +70,8 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
     if (string_length > 0) {
       broadcast_string.resize(string_length + 1);
       if (rank == 0) {
-        std::strncpy(TOPTR(broadcast_string), result_string, (size_t)string_length + 1);
+        std::strncpy(TOPTR(broadcast_string), result_string,
+                     static_cast<size_t>(string_length) + 1);
       }
       MPI_Bcast(TOPTR(broadcast_string), string_length + 1, MPI_CHAR, 0, communicator_);
       value = std::string(TOPTR(broadcast_string));
@@ -81,10 +82,12 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
   }
   else {
     if (rank == 0) {
-      if (string_length > 0)
+      if (string_length > 0) {
         value = std::string(result_string);
-      else
+      }
+      else {
         value = std::string("");
+      }
     }
   }
   return string_length > 0;
@@ -122,11 +125,12 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_par
   int rank = Ioss::ParallelUtils::parallel_rank();
   if (rank == 0) {
     result_string = std::getenv(name.c_str());
-    string_length = result_string ? (int)std::strlen(result_string) : 0;
+    string_length = result_string != nullptr ? static_cast<int>(std::strlen(result_string)) : 0;
   }
 
-  if (sync_parallel && parallel_size() > 1)
+  if (sync_parallel && parallel_size() > 1) {
     MPI_Bcast(&string_length, 1, MPI_INT, 0, communicator_);
+  }
 
   return string_length > 0;
 #else
@@ -205,7 +209,7 @@ void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) c
 {
 #ifdef HAVE_MPI
   if (1 < parallel_size()) {
-    assert(sizeof(char) == 1);
+    static_assert(sizeof(char) == 1, "");
 
     std::vector<char> recv_buf(length);
     const int         success =
@@ -310,12 +314,15 @@ T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax
     inbuf[0] = local_minmax;
 
     MPI_Op oper = MPI_MAX;
-    if (which == DO_MAX)
+    if (which == DO_MAX) {
       oper = MPI_MAX;
-    else if (which == DO_MIN)
+    }
+    else if (which == DO_MIN) {
       oper = MPI_MIN;
-    else if (which == DO_SUM)
+    }
+    else if (which == DO_SUM) {
       oper = MPI_SUM;
+    }
 
     const int success =
         MPI_Allreduce((void *)&inbuf[0], &outbuf[0], 1, mpi_type(T(1)), oper, communicator_);
@@ -345,12 +352,15 @@ void Ioss::ParallelUtils::global_array_minmax(T *local_minmax, size_t count,
     std::vector<T> maxout(count);
 
     MPI_Op oper = MPI_MAX;
-    if (which == DO_MAX)
+    if (which == DO_MAX) {
       oper = MPI_MAX;
-    else if (which == DO_MIN)
+    }
+    else if (which == DO_MIN) {
       oper = MPI_MIN;
-    else if (which == DO_SUM)
+    }
+    else if (which == DO_SUM) {
       oper = MPI_SUM;
+    }
 
     const int success = MPI_Allreduce((void *)&local_minmax[0], &maxout[0], static_cast<int>(count),
                                       mpi_type(T(1)), oper, communicator_);

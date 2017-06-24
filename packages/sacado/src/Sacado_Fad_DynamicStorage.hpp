@@ -30,6 +30,23 @@
 #ifndef SACADO_FAD_DYNAMICSTORAGE_HPP
 #define SACADO_FAD_DYNAMICSTORAGE_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#include "Sacado_Fad_Exp_DynamicStorage.hpp"
+
+namespace Sacado {
+  namespace Fad {
+
+    template <typename T, typename U = T>
+    using DynamicStorage = Exp::DynamicStorage<T,U>;
+
+  }
+}
+
+#else
+
 #include "Sacado_Traits.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
 
@@ -228,5 +245,7 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
+
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_DYNAMICSTORAGE_HPP

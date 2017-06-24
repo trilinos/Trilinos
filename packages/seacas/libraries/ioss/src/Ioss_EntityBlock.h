@@ -35,14 +35,14 @@
 
 #include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_Property.h>       // for Property
-#include <stddef.h>              // for size_t
+#include <cstddef>               // for size_t
 #include <string>                // for string
 namespace Ioss {
   class DatabaseIO;
-}
+} // namespace Ioss
 namespace Ioss {
   class ElementTopology;
-}
+} // namespace Ioss
 
 namespace Ioss {
   class ElementBlock;
@@ -61,7 +61,7 @@ namespace Ioss {
   class EntityBlock : public GroupingEntity
   {
   public:
-    virtual Property get_implicit_property(const std::string &my_name) const = 0;
+    Property get_implicit_property(const std::string &my_name) const override = 0;
 
     /** \brief Get the topology of the entities in the block.
      *
@@ -124,5 +124,5 @@ namespace Ioss {
   protected:
     size_t idOffset;
   };
-}
+} // namespace Ioss
 #endif

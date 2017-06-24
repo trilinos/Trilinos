@@ -44,5 +44,5 @@ namespace Iocgns {
   private:
     static int useCount;
   };
-}
+} // namespace Iocgns
 #endif

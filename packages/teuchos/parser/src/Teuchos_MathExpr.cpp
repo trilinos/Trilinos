@@ -25,6 +25,7 @@ Teuchos::Language make_language() {
   prods[PROD_GEQ]("comp") >> "add_sub", ">=", "S?", "add_sub";
   prods[PROD_LEQ]("comp") >> "add_sub", "<=", "S?", "add_sub";
   prods[PROD_EQ]("comp") >> "add_sub", "==", "S?", "add_sub";
+  prods[PROD_BOOL_PARENS]("comp") >> "(", "S?", "or", ")", "S?";
   prods[PROD_ADD]("add_sub") >> "add_sub", "+", "S?", "mul_div";
   prods[PROD_SUB]("add_sub") >> "add_sub", "-", "S?", "mul_div";
   prods[PROD_MUL]("mul_div") >> "mul_div", "*", "S?", "pow";
@@ -37,7 +38,7 @@ Teuchos::Language make_language() {
   prods[PROD_FIRST_ARG]("args") >> "ternary";
   prods[PROD_NEXT_ARG]("args") >> "args", ",", "S?", "ternary";
   prods[PROD_NEG]("neg") >> "-", "S?", "neg";
-  prods[PROD_PARENS]("scalar") >> "(", "S?", "ternary", ")", "S?";
+  prods[PROD_VAL_PARENS]("scalar") >> "(", "S?", "ternary", ")", "S?";
   prods[PROD_CONST]("scalar") >> "constant", "S?";
   prods[PROD_VAR]("scalar") >> "name", "S?";
   prods[PROD_NO_SPACES]("S?");
@@ -82,6 +83,36 @@ Teuchos::ReaderTablesPtr ask_reader_tables() {
     ptr = Teuchos::make_reader_tables(*lang);
   }
   return ptr;
+}
+
+SymbolSetReader::SymbolSetReader():
+  Reader(ask_reader_tables())
+{
+}
+
+SymbolSetReader::~SymbolSetReader()
+{
+}
+
+void SymbolSetReader::at_shift(any& result, int token, std::string& text) {
+  if (token == TOK_NAME) result = text;
+}
+
+void SymbolSetReader::at_reduce(any& result, int prod, std::vector<any>& rhs) {
+  if (prod == PROD_VAR) {
+    std::string& name = any_ref_cast<std::string>(rhs.at(0));
+    variable_names.insert(name);
+  } else if (prod == PROD_CALL) {
+    std::string& name = any_ref_cast<std::string>(rhs.at(0));
+    function_names.insert(name);
+  }
+}
+
+std::set<std::string> get_variables_used(std::string const& expr) {
+  SymbolSetReader reader;
+  any result;
+  reader.read_string(result, expr, "get_variables_used");
+  return reader.variable_names;
 }
 
 }  // end namespace MathExpr

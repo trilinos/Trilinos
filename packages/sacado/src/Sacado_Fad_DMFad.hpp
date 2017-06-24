@@ -30,6 +30,22 @@
 #ifndef SACADO_FAD_DMFAD_HPP
 #define SACADO_FAD_DMFAD_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#include "Sacado_Fad_MemPoolStorage.hpp" // For Fad::MemPoolStorage<> alias
+#include "Sacado_Fad_Exp_DMFad.hpp"
+
+namespace Sacado {
+  namespace Fad {
+    template <typename T>
+    using DMFad = Exp::GeneralFad< Exp::MemPoolStorage<T> >;
+  }
+}
+
+#else
+
 #include "Sacado_Fad_GeneralFadExpr.hpp"
 #include "Sacado_Fad_DMFadTraits.hpp"
 #include "Sacado_Fad_MemPoolStorage.hpp"
@@ -280,5 +296,7 @@ namespace Sacado {
   };
 
 } // namespace Sacado
+
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_DMFAD_HPP

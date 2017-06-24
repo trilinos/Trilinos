@@ -176,8 +176,8 @@ namespace Tacho {
     };
 
     struct Uplo {
-      struct Upper        { enum : int { tag = 401 }; static constexpr char param = 'U'; static constexpr int teuchos = Teuchos::UPPER_TRI; };
-      struct Lower        { enum : int { tag = 402 }; static constexpr char param = 'L'; static constexpr int teuchos = Teuchos::LOWER_TRI; };
+      struct Upper        { enum : int { tag = 401 }; static constexpr char param = 'U'; static constexpr Teuchos::EUplo teuchos_param = Teuchos::UPPER_TRI; };
+      struct Lower        { enum : int { tag = 402 }; static constexpr char param = 'L'; static constexpr Teuchos::EUplo teuchos_param = Teuchos::LOWER_TRI; };
     };
     template<typename T>
     struct is_valid_uplo_tag {
@@ -185,10 +185,14 @@ namespace Tacho {
                              std::is_same<T,Uplo::Lower>::value )
       };
     };
+    template<typename T> struct transpose_uplo_tag;
+    template<>           struct transpose_uplo_tag<Uplo::Lower> { typedef Uplo::Upper type; };
+    template<>           struct transpose_uplo_tag<Uplo::Upper> { typedef Uplo::Lower type; };
+    
 
     struct Side {
-      struct Left         { enum : int { tag = 501 }; static constexpr char param = 'L'; static constexpr int teuchos = Teuchos::LEFT_SIDE; };
-      struct Right        { enum : int { tag = 502 }; static constexpr char param = 'R'; static constexpr int teuchos = Teuchos::RIGHT_SIDE; };
+      struct Left         { enum : int { tag = 501 }; static constexpr char param = 'L'; static constexpr Teuchos::ESide teuchos_param = Teuchos::LEFT_SIDE; };
+      struct Right        { enum : int { tag = 502 }; static constexpr char param = 'R'; static constexpr Teuchos::ESide teuchos_param = Teuchos::RIGHT_SIDE; };
     };
     template<typename T>
     struct is_valid_side_tag {
@@ -196,10 +200,13 @@ namespace Tacho {
                              std::is_same<T,Side::Right>::value )
       };
     };
+    template<typename T> struct flip_side_tag;
+    template<>           struct flip_side_tag<Side::Left>  { typedef Side::Right type; };
+    template<>           struct flip_side_tag<Side::Right> { typedef Side::Left type; };
 
     struct Diag {
-      struct Unit         { enum : int { tag = 601 }; static constexpr char param = 'U'; static constexpr int teuchos = Teuchos::UNIT_DIAG; };
-      struct NonUnit      { enum : int { tag = 602 }; static constexpr char param = 'N'; static constexpr int teuchos = Teuchos::NON_UNIT_DIAG; };
+      struct Unit         { enum : int { tag = 601 }; static constexpr char param = 'U'; static constexpr Teuchos::EDiag teuchos_param = Teuchos::UNIT_DIAG; };
+      struct NonUnit      { enum : int { tag = 602 }; static constexpr char param = 'N'; static constexpr Teuchos::EDiag teuchos_param = Teuchos::NON_UNIT_DIAG; };
     };
     template<typename T>
     struct is_valid_diag_tag {
@@ -209,9 +216,9 @@ namespace Tacho {
     };
 
     struct Trans {
-      struct Transpose      { enum : int { tag = 701 }; static constexpr char param = 'T'; static constexpr int teuchos = Teuchos::TRANS; };
-      struct ConjTranspose  { enum : int { tag = 702 }; static constexpr char param = 'C'; static constexpr int teuchos = Teuchos::CONJ_TRANS; };
-      struct NoTranspose    { enum : int { tag = 703 }; static constexpr char param = 'N'; static constexpr int teuchos = Teuchos::NO_TRANS; };
+      struct Transpose      { enum : int { tag = 701 }; static constexpr char param = 'T'; static constexpr Teuchos::ETransp teuchos_param = Teuchos::TRANS; };
+      struct ConjTranspose  { enum : int { tag = 702 }; static constexpr char param = 'C'; static constexpr Teuchos::ETransp teuchos_param = Teuchos::CONJ_TRANS; };
+      struct NoTranspose    { enum : int { tag = 703 }; static constexpr char param = 'N'; static constexpr Teuchos::ETransp teuchos_param = Teuchos::NO_TRANS; };
     };
     template<typename T>
     struct is_valid_trans_tag {
@@ -220,6 +227,16 @@ namespace Tacho {
                              std::is_same<T,Trans::NoTranspose>::value)
       };
     };
+    template<typename T> struct      transpose_trans_tag;
+    template<typename T> struct conj_transpose_trans_tag;
+    
+    template<>           struct      transpose_trans_tag<Trans::Transpose>      { typedef Trans::NoTranspose type; };
+    template<>           struct      transpose_trans_tag<Trans::ConjTranspose>  { typedef Trans::NoTranspose type; };
+    template<>           struct      transpose_trans_tag<Trans::NoTranspose>    { typedef Trans::Transpose type; };
+
+    template<>           struct conj_transpose_trans_tag<Trans::Transpose>      { typedef Trans::NoTranspose type; };
+    template<>           struct conj_transpose_trans_tag<Trans::ConjTranspose>  { typedef Trans::NoTranspose type; };
+    template<>           struct conj_transpose_trans_tag<Trans::NoTranspose>    { typedef Trans::ConjTranspose type; };
 
     struct Algo {
       struct External { enum : int { tag = 1001 }; };

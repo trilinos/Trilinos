@@ -180,7 +180,7 @@ namespace Tacho {
           const ordinal_type m = A.dimension_0();
           const ordinal_type n = A.dimension_1();
 
-          printf("A in TestViewSee: %lu\n", (void*)A.data());
+          printf("A in TestViewSee: %lu\n", (long unsigned int)A.data());
           for (ordinal_type i=0;i<m;++i) {
             for (ordinal_type j=0;j<n;++j)
               printf(" %4d ", int(A(i,j)));

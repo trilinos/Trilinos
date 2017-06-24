@@ -144,6 +144,9 @@ supports the following classes:
 // arguments that conflict with a SWIG director method argument
 #define result loca_result
 
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
+
 // Teuchos::RCP handling
 %teuchos_rcp(LOCA::BorderedSystem::AbstractGroup)
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)

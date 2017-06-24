@@ -210,36 +210,37 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 # @FUNCTION: TRIBITS_CTEST_DRIVER()
 #
-# Platform-independent package-by-package CTest/CDash driver (run by ``ctest``
-# **NOT** ``cmake``).
+# Platform-independent CTest/CDash driver
 #
 # Usage::
 #
 #   TRIBITS_CTEST_DRIVER()
 #
-# This driver code that is platform independent.  This script drives the
-# testing process by doing a version control (VC) source update on all of the
-# VC repos and then configuring and building the top-level TriBITS packages
-# one at a time, in order.  This function gets called from inside of a
-# platform and build-specific ``ctest -S`` driver script.
+# This driver code is platform independent.  CTest -S scripts use this
+# function to drive the testing process for a TriBITS projects by doing a
+# version control (VC) source update on all of the VC repos and then
+# configuring, building, testing, and submitting results to CDash for the
+# TriBITS packages in a project either in package-by-package mode (the
+# default), or in an all-at-once mode (see
+# ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE``).
 #
-# To understand this script, one must understand that it gets run in several
-# different modes:
+# **Source and Binary Directory Locations:**
+#
+# To understand how to set the source and binary directories, one must
+# understand that it gets run in one of two different modes:
 #
 # **Mode 1**: Run where there are already existing source and binary
-# directories (``CTEST_DASHBOARD_ROOT`` is set empty before call).  This is
-# for when the ctest driver script is run on an existing source and binary
-# tree.  In this case, there is one project source tree and
-# ``CTEST_SOURCE_DIRECTORY`` and ``CTEST_BINARY_DIRECTORY`` must be set by the
-# user before calling this function.  This is used to test a local build and
-# post to CDash.
+# directories (i.e. ``CTEST_DASHBOARD_ROOT`` is set empty before call).  In
+# this case, ``CTEST_SOURCE_DIRECTORY`` and ``CTEST_BINARY_DIRECTORY`` must be
+# set by the user before calling this function.  This is used to test a local
+# build and post to CDash (see the custom ``dashboard`` target).
 #
 # **Mode 2**: A new binary directory is created and new sources are cloned (or
-# updated) in a driver directory (``CTEST_DASHBOARD_ROOT`` is set before
+# updated) in a driver directory (i.e. ``CTEST_DASHBOARD_ROOT`` is set before
 # call).  In this case, there are always two (partial) project source tree's,
-# i) a "driver" skeleton source tree (typically embedded with TriBITS
-# directory) that bootstraps the testing process, and ii) a true full "source"
-# that is (optionally) cloned and/or updated.
+# a) a "driver" skeleton source tree (typically embedded with TriBITS
+# directory) that bootstraps the testing process, and b) a true full "source"
+# that is (optionally) cloned and/or updated and tested..
 #
 # There are a few different directory locations are significant for this
 # script:
@@ -247,8 +248,8 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #   ``TRIBITS_PROJECT_ROOT``
 #
 #     The root directory to an existing source tree where the project's
-#     `<projectDir>/ProjectName.cmake`_ (defining ``PROJECT_NAME`` variable)
-#     and ``Version.cmake`` file's can be found.
+#     `<projectDir>/ProjectName.cmake`_ (defining the ``PROJECT_NAME``
+#     variable) and ``Version.cmake`` files can be found.
 #
 #   ``${PROJECT_NAME}_TRIBITS_DIR``
 #
@@ -261,17 +262,17 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #     If set, this is the base directory where this script runs that clones
 #     the sources for the project.  If this directory does not exist, it will
-#     be created.  If provided the special value 'PWD', then the present
-#     working directory is used.  If empty, then has no effect on the script.
+#     be created.  If provided as the special value "PWD", then the present
+#     working directory is used.  If empty, then this var has no effect.
 #
 #   ``CTEST_SOURCE_DIRECTORY``
 #
 #     Determines the location of the sources that are used to define packages,
-#     dependencies and configure and build the software.  This is a variable
-#     that CTest directly reads and must therefore be set. This is used to set
-#     `PROJECT_SOURCE_DIR`_ which is used by the TriBITS system.  If
-#     ``CTEST_DASHBOARD_ROOT`` is set, then this is hard-coded internally to
-#     ``${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}``.
+#     dependencies and configure, build, and test the software.  This is a
+#     variable that CTest directly reads and must therefore be set. This is
+#     used to set `PROJECT_SOURCE_DIR`_ which is used by the TriBITS system.
+#     If ``CTEST_DASHBOARD_ROOT`` is set, then this is hard-coded internally
+#     to ``${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}``.
 #
 #   ``CTEST_BINARY_DIRECTORY``
 #
@@ -279,6 +280,12 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     is put.  This is used to set to `PROJECT_BINARY_DIR`_ which is used by
 #     the TriBITS system.  If ``CTEST_DASHBOARD_ROOT`` is set, then this is
 #     hard-coded internally to ``${CTEST_DASHBOARD_ROOT}/BUILD``.
+#
+# **Determining What Packages Get Tested:**
+#
+# Before any testing is done, the set of packages to be tested is determined
+# are determined.  By default, the set of packages to be tested is determined
+# by the var:
 #
 #   ``${PROJECT_NAME}_PACKAGES``
 #
@@ -289,15 +296,69 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     This variable can also be specified and read from from the env and can
 #     use `,` to separate package names instead of ';'.
 #
-# ToDo: Document input variables that have defaults, to be set before, and can
-# be overridden from the env.
+# ToDo: Document other variables that determine what packages get tested.
 #
-# **Repository updates:**
+# The other mode is to only test the packages that have changes since the last
+# time this build was run and testing packages that previously failed.  That
+# mode is turned on by the var:
+#
+#   ``CTEST_ENABLE_MODIFIED_PACKAGES_ONLY``
+#
+#     If ``TRUE``, then only packages that have changes pulled from the git
+#     repos since the last time the build ran will be tested (in addition to
+#     packages that failed in the last build).  If ``FALSE``, the set of
+#     packages to be tested is determined by ``${PROJECT_NAME}_PACKAGES`` and
+#     other variables as described above.
+#
+# ToDo: Document other input variables that have defaults, to be set before,
+# and can be overridden from the env.
+#
+# **All-at-once vs. package-by-package mode:**
+#
+# This function supports driving the configure, build, testing, and submitting
+# to CDash of the packages in the TriBITS project either all-at-once or
+# package-by-package, based on the value:
+#
+#   ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE``
+#
+#     If ``TRUE``, then single calls to ``CTEST_CONFIGURE()``,
+#     ``CTEST_BUILD()`` and ``CTEST_TEST()` are made for all of the packages
+#     to be tested all at once with ``CTEST_SUBMIT()`` called after each of
+#     these.  If ``FALSE`` then ``CTEST_CONFIGURE()``, ``CTEST_BUILD()`` and
+#     ``CTEST_TEST()` and ``CTEST_SUBMIT()`` are called in a loop, once for
+#     each package to be explicitly tested.
+#
+# Both the all-at-once mode and the package-by-package mode should produce
+# equivalent builds of the project and submits to CDash (for correctly
+# constructed TriBITS projects and package).  But the package-by-package mode
+# will disable failing packages when processing downstream packages, and
+# therefore reduce the propagation of failures to downstream packages.
+#
+# For versions of CMake 3.10.0 and above and newer versions of CDash, the
+# all-at-once mode will break down the build and test results on a
+# package-by-package basis on CDash.  For older versions of CMake or CDash, it
+# will not break down results on a package-by-package basis on CDash and all
+# of the build warnings and errors and test will be all globed together.
+#
+# **Repository Updates:**
 #
 # Like the rest of TriBITS, ``ctest -S`` scripts written using this function
-# supports a collection of extra repositories in addition to the base
+# supports a collection of extra repositories in addition to the base git
 # repository.  The basic clone of the extra repositories requires all repos to
-# use the version control system.
+# use the git version control system.
+#
+# Whether the repos are updated (or left as is) is determined by the var:
+#
+#  ``CTEST_DO_UPDATES``
+#
+#    If set to ``TRUE``, then each of the git repos will be cloned if they are
+#    missing and if already present will be updated as described below (and
+#    will wipe out any local changes).  If ``FALSE``, then the git repos will
+#    be left alone (and must therefore already be cloned and updated at the
+#    desired state).
+#
+# **WARNING:** If you don't want local changes in your git repos to get blown
+# away, then set ``CTEST_DO_UPDATES`` to ``FALSE``!
 #
 # CTest itself is used for handling the cloning and the pull of the base
 # repository by calling ``CTEST_UPDATE()``.  The other extra git repositories
@@ -309,13 +370,14 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   git clone <extrarepo_url>
 # 
-# Therefore, by default, whatever the default branch is set to on clone, that
-# is the branch that will be used.  Also, future repository updates will be
-# done on those branches.
+# Therefore, by default, whatever the default branch is set to on clone in the
+# base repos, that is the branch that will be used.  Also, future repository
+# updates will be done on those branches.
 #
 # However, if ``${PROJECT_NAME}_BRANCH`` is set to non-empty, then that branch
 # will be checked out in all of the repositories.  For the base repository,
-# after the clone or update, that branch is checked out using the command::
+# after the clone or update is performed in the call to ``CTEST_UPDATE()``,
+# then that branch is checked out using the command::
 #
 #   $ git checkout -B ${${PROJECT_NAME}_BRANCH} \
 #       --track origin/${${PROJECT_NAME}_BRANCH}`
@@ -333,9 +395,9 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 # The command ``git clone -fdx`` removes any untracked ignored files that may
 # have been created since the last update (either by the build process or by
-# someone messing around in that git repository).  The command ``git reset
-# --hard HEAD`` removes any untracked non-ignored files, any modified tracked
-# files, and sets ``ORIG_HEAD`` to the current ``HEAD``.  This sets
+# someone messing around in that local git repository).  The command ``git
+# reset --hard HEAD`` removes any untracked non-ignored files, any modified
+# tracked files, and sets ``ORIG_HEAD`` to the current ``HEAD``.  This sets
 # ``ORIG_HEAD`` after the initial clone (as ``ORIG_HEAD`` is not set after a
 # ``git clone``).  This allows using the range ``ORIG_HEAD..HEAD`` with git
 # diff and log commands even after the initial clone.  The ``git fetch``
@@ -367,12 +429,13 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 # Note that the repository updating approach using non-empty
 # ``${PROJECT_NAME}_BRANCH`` is more robust, because it can recover from a
-# state where someone may have put the repo on a detached head or checked out
-# a different branch.  This might occur when a person is messing around in the
-# Nightly build and source directories to try to figure out what happened and
-# forgot to put the repos back on the correct tracking branch.  Therefore, it
-# is recommended to always set ``${PROJECT_NAME}_BRANCH`` to a non-null value
-# like ``master`` for git repos.
+# state where someone may have put A repo on a detached head or checked out a
+# different branch.  One of these repos might get into this state when a
+# person is messing around in the Nightly build and source directories to try
+# to figure out what happened and forgot to put the repos back on the correct
+# tracking branch.  Therefore, it is recommended to always set
+# ``${PROJECT_NAME}_BRANCH`` to a non-null value like ``master`` for git
+# repos.
 #
 # ToDo: Finish Documentation!
 #
@@ -439,7 +502,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Set the default compiler version
   SET_DEFAULT_AND_FROM_ENV(COMPILER_VERSION UNKNOWN)
 
-  # The name of the build that appears in the dashbaord
+  # The name of the build that appears in the dashboard
   SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_NAME
     "${HOST_TYPE}-${COMPILER_VERSION}-${BUILD_DIR_NAME}" )
 
@@ -466,6 +529,20 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # Flags used on update when doing a Git update
   SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "")
+
+  # If doing all-at-one approach, use new CMkae/CTest/CDash features to allow
+  # it to split out results into different rows on CDash like the
+  # package-by-packages appraoch.
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES  FALSE )
+ 
+  # Do all-at-once configure, build, test and submit (or package-by-package)
+  IF (${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES)
+    SET(${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE_DEFAULT TRUE)
+  ELSE()
+    SET(${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE_DEFAULT FALSE)
+  ENDIF()
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE
+    ${${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE_DEFAULT} )
 
   # Flags passed to 'make' assume gnumake with unix makefiles
   IF("${CTEST_CMAKE_GENERATOR}" MATCHES "Unix Makefiles")
@@ -613,7 +690,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Set as part of CI testing in order to only enable modified packages
   SET_DEFAULT_AND_FROM_ENV( CTEST_ENABLE_MODIFIED_PACKAGES_ONLY OFF )
 
-  # Set if implicitly enabled packages should be explicitly processes
+  # Set if implicitly enabled packages should be explicitly processed in
+  # package-by-package mode.
   IF (CTEST_ENABLE_MODIFIED_PACKAGES_ONLY AND NOT CTEST_START_WITH_EMPTY_BINARY_DIRECTORY)
     SET( CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES_DEFAULT FALSE )
   ELSE()
@@ -688,7 +766,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   #
 
   INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
-  SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
   SET(CTEST_USE_LAUNCHERS 1)
 
   # For coverage dashboards, send results to specialized dashboard if
@@ -860,13 +937,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   IF (NOT CTEST_ENABLE_MODIFIED_PACKAGES_ONLY)
     MESSAGE(
       "\n***"
-      "\n*** Determining what packages to enable based what was set in ${PROJECT_NAME}_PACKAGES ..."
+      "\n*** Determining what packages to enable based what was set in ${PROJECT_NAME}_PACKAGES by the user ..."
       "\n***\n")
     ENABLE_USER_SELECTED_PACKAGES()
   ELSE()
     MESSAGE(
       "\n***"
-      "\n*** Determining what packages to enable based on what changed ..."
+      "\n*** Determining what packages to enable based on what changed (and failed last CI iteration) ..."
       "\n***\n")
     ENABLE_ONLY_MODIFIED_PACKAGES()
     SET(${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
@@ -884,11 +961,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET(${PROJECT_NAME}_ENABLE_EXAMPLES ON)
   SET(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES ON)
   SET(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
-  TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
+  TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
+  # Above sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
 
-  SELECT_FINAL_SET_OF_PACKAGES_TO_PROCESS()
+  SELECT_FINAL_SET_OF_PACKAGES_TO_DIRECTLY_TEST()
+  # Above sets ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
 
-  TRIBITS_PRINT_ENABLED_PACKAGE_LIST(
+  TRIBITS_PRINT_ENABLED_PACKAGES_LIST_FROM_VAR( ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
     "\nFinal set of packages to be explicitly processed by CTest/CDash" ON FALSE)
 
   MESSAGE(
@@ -979,302 +1058,22 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     MESSAGE("\nSkipping submitted subproject dependencies XML file on request!")
   ENDIF()
 
-
   MESSAGE(
     "\n***"
-    "\n*** Loop through ${PROJECT_NAME} packages to configure, build, and test ..."
+    "\n*** Configure, build, test, and submit results for ${PROJECT_NAME} packages:"
     "\n***")
 
-  SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
-  SET(${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
+  SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
   SET(${PROJECT_NAME}_FAILED_PACKAGES)
-  SET(PACKAGE_IDX 0)
 
-  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+  IF (${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE)
 
-    MESSAGE("")
-    MESSAGE("${PACKAGE_IDX}) Processing current package ${TRIBITS_PACKAGE}:"
-      " libs='${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}',"
-      " tests='${${TRIBITS_PACKAGE}_ENABLE_TESTS}'")
-    MESSAGE("")
+    TRIBITS_CTEST_ALL_AT_ONCE()
 
-    SET_PROPERTY(GLOBAL PROPERTY SubProject ${TRIBITS_PACKAGE})
-    SET_PROPERTY(GLOBAL PROPERTY Label ${TRIBITS_PACKAGE})
+  ELSE()
 
-    #
-    # A) Configure the package and its dependent packages
-    #
+    TRIBITS_CTEST_PACKAGE_BY_PACKAGE()
 
-    MESSAGE("Configuring TRIBITS_PACKAGE='${TRIBITS_PACKAGE}'")
-
-    # Create CONFIGURE_OPTIONS for this TRIBITS_PACKAGE
-    SET( CONFIGURE_OPTIONS
-	"-D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}"
-      "-DCTEST_USE_LAUNCHERS:BOOL=${CTEST_USE_LAUNCHERS}"
-      "-D${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
-      "-D${PROJECT_NAME}_ENABLE_TESTS:BOOL=${${TRIBITS_PACKAGE}_ENABLE_TESTS}"
-      "-D${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS:STRING=${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS}"
-      "-D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON"
-      "-D${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES}"
-      )
-    IF (NOT CTEST_GENERATE_DEPS_XML_OUTPUT_FILE)
-      LIST(APPEND CONFIGURE_OPTIONS
-      "-D${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE:FILEPATH=")
-    ENDIF()
-    IF (NOT "${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}" STREQUAL "")
-      LIST(APPEND CONFIGURE_OPTIONS
-        "-D${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:BOOL=${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}")
-    ENDIF()
-    IF (NOT MPI_EXEC_MAX_NUMPROCS STREQUAL 0)
-      LIST(APPEND CONFIGURE_OPTIONS
-        "-DMPI_EXEC_MAX_NUMPROCS:STRING=${MPI_EXEC_MAX_NUMPROCS}")
-    ENDIF()
-    IF (CTEST_DO_COVERAGE_TESTING)
-      LIST(APPEND CONFIGURE_OPTIONS
-        "-D${PROJECT_NAME}_ENABLE_COVERAGE_TESTING:BOOL=ON")
-    ENDIF()
-    IF (${PROJECT_NAME}_EXTRAREPOS_FILE STREQUAL "NONE")
-      SET(EXTRAREOS_FILE_PASSED "")
-    ELSE()
-      SET(EXTRAREOS_FILE_PASSED "${${PROJECT_NAME}_EXTRAREPOS_FILE}")
-    ENDIF()
-    LIST(APPEND CONFIGURE_OPTIONS
-      "-D${PROJECT_NAME}_EXTRAREPOS_FILE:STRING=${EXTRAREOS_FILE_PASSED}")
-    LIST(APPEND CONFIGURE_OPTIONS # See TRIBITS_SETUP_PACKAGES
-      "-D${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON")
-    LIST(APPEND CONFIGURE_OPTIONS
-      "-D${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE}")
-    IF (DEFINED ${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
-      LIST(APPEND CONFIGURE_OPTIONS
-        "-D${PROJECT_NAME}_ENABLE_${${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE}:BOOL=")
-      SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
-    ENDIF()
-    FOREACH(FAILED_PACKAGE ${${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES})
-      LIST(APPEND CONFIGURE_OPTIONS
-        "-D${PROJECT_NAME}_ENABLE_${FAILED_PACKAGE}:BOOL=OFF")
-    ENDFOREACH()
-    SET(CONFIGURE_OPTIONS ${CONFIGURE_OPTIONS}
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS} ${EXTRA_CONFIGURE_OPTIONS})
-    LIST(APPEND CONFIGURE_OPTIONS # Package enable must be at the very end to override other stuff!
-       "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}:BOOL=ON" )
-    MESSAGE("\nCONFIGURE_OPTIONS = '${CONFIGURE_OPTIONS}'")
-
-    # Remember this package so we can set its enable to "" next time
-    SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE "${TRIBITS_PACKAGE}")
-
-    #
-    # B) Configure the package and its dependent packages
-    #
-
-    IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-
-      CTEST_CONFIGURE(
-        BUILD "${CTEST_BINARY_DIRECTORY}"
-        OPTIONS "${CONFIGURE_OPTIONS}" # New option!
-        RETURN_VALUE CONFIGURE_RETURN_VAL
-        )
-
-      MESSAGE("Generating the file '${CMAKE_CACHE_CLEAN_FILE}' ...")
-      TRIBITS_STRIP_COMMENTS_FROM_CMAKE_CACHE_FILE(
-        "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt"
-        "${CMAKE_CACHE_CLEAN_FILE}"
-        )
-
-      # If the configure failed, add the package to the list
-      # of failed packages
-      IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
-        MESSAGE("${TRIBITS_PACKAGE} FAILED to configure")
-        LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-        LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-      ELSE()
-        MESSAGE("${TRIBITS_PACKAGE}: Configure passed!")
-        # load target properties and test keywords
-        CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
-        # Overridde from this file!
-        INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
-      ENDIF()
-
-      IF (EXISTS ${CMAKE_CACHE_CLEAN_FILE})
-        SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE};${CMAKE_CACHE_CLEAN_FILE}")
-      ELSE()
-        SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
-      ENDIF()
-
-      SET(REPO_VERSION_FILE "${CTEST_BINARY_DIRECTORY}/${PROJECT_NAME}RepoVersion.txt")
-      IF (EXISTS "${REPO_VERSION_FILE}")
-        SET(CTEST_NOTES_FILES "${REPO_VERSION_FILE};${CTEST_NOTES_FILES}")
-      ENDIF()
-
-      PRINT_VAR(CTEST_NOTES_FILES)
-
-      # Submit configure results and the notes to the dashboard
-      IF (CTEST_DO_SUBMIT)
-        MESSAGE("\nSubmitting configure and notes ...")
-        TRIBITS_CTEST_SUBMIT( PARTS configure notes )
-      ENDIF()
-
-    ENDIF()
-
-    #
-    # C) If configure passed then try the build.  Otherwise, move on to
-    # to the next package.
-    #
-
-    IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND
-      NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND
-      NOT CTEST_CONFIGURATION_UNIT_TESTING
-      )
-
-      # Start by trying to build just the libraries for the current package
-
-      SET( CTEST_BUILD_TARGET ${TRIBITS_PACKAGE}_libs )
-      MESSAGE("\nBuilding target: '${CTEST_BUILD_TARGET}' ...\n")
-      CTEST_BUILD(
-        BUILD "${CTEST_BINARY_DIRECTORY}"
-        RETURN_VALUE  BUILD_LIBS_RETURN_VAL
-        NUMBER_ERRORS  BUILD_LIBS_NUM_ERRORS
-        APPEND
-        )
-      MESSAGE("Build return: RETURN_VALUE=${BUILD_LIBS_RETURN_VAL},"
-        " NUMBER_ERRORS=${BUILD_LIBS_NUM_ERRORS}")
-
-      # Determine if the build failed or not.
-
-      SET(BUILD_LIBS_SUCCESS FALSE)
-      IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0")
-        MESSAGE("${TRIBITS_PACKAGE}: Libs build passed!")
-        SET(BUILD_LIBS_SUCCESS TRUE)
-      ENDIF()
-      # Above: Since make -i is used BUILD_LIBS_RETURN_VAL might be 0, but
-      # if there are errors the build should fail, so both
-      # BUILD_LIBS_RETURN_VAL and BUILD_LIBS_NUM_ERRORS should be 0 for a
-      # good build and for the all target to be built.
-
-      # Submit the library build results to the dashboard
-
-      IF (CTEST_DO_SUBMIT)
-        TRIBITS_CTEST_SUBMIT( PARTS build )
-      ENDIF()
-
-      # If the build of the libraries passed, then go on the build
-      # the tests/examples and run them.
-
-      IF (BUILD_LIBS_SUCCESS)
-
-        SET(BUILD_OR_TEST_FAILED FALSE)
-
-        # Build the ALL target, but append the results to the last build.xml
-        SET(CTEST_BUILD_TARGET)
-        MESSAGE("\nBuild ALL target for '${TRIBITS_PACKAGE}' ...\n")
-        CTEST_BUILD(
-          BUILD "${CTEST_BINARY_DIRECTORY}"
-          RETURN_VALUE  BUILD_ALL_RETURN_VAL
-          NUMBER_ERRORS  BUILD_ALL_NUM_ERRORS
-          APPEND
-          )
-        MESSAGE("Build all: BUILD_ALL_NUM_ERRORS='${BUILD_ALL_NUM_ERRORS}',"
-          "BUILD_ALL_RETURN_VAL='${BUILD_ALL_RETURN_VAL}'" )
-
-        IF (NOT "${BUILD_ALL_NUM_ERRORS}" EQUAL "0")
-          MESSAGE("${TRIBITS_PACKAGE}: All build FAILED!")
-          SET(BUILD_OR_TEST_FAILED TRUE)
-        ELSE()
-          MESSAGE("${TRIBITS_PACKAGE}: All build passed!")
-        ENDIF()
-
-        # Submit the build for all target
-        IF (CTEST_DO_SUBMIT)
-          TRIBITS_CTEST_SUBMIT( PARTS build )
-        ENDIF()
-
-        IF (CTEST_DO_TEST)
-          # Remove the LastTestsFailed log so we can detect if there are any
-          # failed tests.
-          SET(TEST_TMP_DIR "${CTEST_BINARY_DIRECTORY}/Testing/Temporary")
-          FILE(GLOB logfiles "${TEST_TMP_DIR}/LastTestsFailed*.log")
-          FOREACH(logfile ${logfiles})
-            FILE(REMOVE "${logfile}")
-          ENDFOREACH()
-          # Run the tests that match the ${TRIBITS_PACKAGE} name
-          MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}'"
-            " (parallel level ${CTEST_PARALLEL_LEVEL}) ...\n")
-          CTEST_TEST(
-            BUILD "${CTEST_BINARY_DIRECTORY}"
-            PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-            INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
-            #NUMBER_FAILED  TEST_NUM_FAILED
-            )
-          # See if a 'LastTestsFailed*.log' file exists to determine if there
-          # are failed tests
-          FILE(GLOB FAILED_TEST_LOG_FILE "${TEST_TMP_DIR}/LastTestsFailed*.log")
-          IF (FAILED_TEST_LOG_FILE)
-	    MESSAGE("${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
-              " exists so there were failed tests!")
-            SET(BUILD_OR_TEST_FAILED TRUE)
-          ENDIF()
-          # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...)
-          # called something like 'NUMBER_FAILED numFailedTests' to allow us
-          # to detect when the tests have filed.
-          #IF (TEST_NUM_FAILED GREATER 0)
-          #  SET(BUILD_OR_TEST_FAILED TRUE)
-          #ENDIF()
-          IF (CTEST_DO_SUBMIT)
-            TRIBITS_CTEST_SUBMIT( PARTS Test )
-          ENDIF()
-        ENDIF()
-
-        IF (CTEST_DO_COVERAGE_TESTING)
-          MESSAGE("\nRunning coverage for package '${TRIBITS_PACKAGE}' ...\n")
-          CTEST_COVERAGE(
-            BUILD "${CTEST_BINARY_DIRECTORY}"
-            LABELS ${TRIBITS_PACKAGE} ${TRIBITS_PACKAGE}Libs ${TRIBITS_PACKAGE}Exes
-            )
-          IF (CTEST_DO_SUBMIT)
-            TRIBITS_CTEST_SUBMIT( PARTS Coverage )
-          ENDIF()
-        ENDIF()
-
-        IF (CTEST_DO_MEMORY_TESTING)
-          MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
-          PRINT_VAR(CTEST_MEMORYCHECK_COMMAND)
-	    PRINT_VAR(CTEST_MEMORYCHECK_COMMAND_OPTIONS)
-          PRINT_VAR(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE)
-          CTEST_MEMCHECK(
-            BUILD "${CTEST_BINARY_DIRECTORY}"
-            PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-            INCLUDE_LABEL "^${TRIBITS_PACKAGE}$")
-          IF (CTEST_DO_SUBMIT)
-            TRIBITS_CTEST_SUBMIT( PARTS MemCheck )
-          ENDIF()
-        ENDIF()
-
-        IF (BUILD_OR_TEST_FAILED)
-          LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-        ENDIF()
-
-      ELSE()
-
-        MESSAGE("FAILED library build for package '${TRIBITS_PACKAGE}'")
-        LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-        LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-
-      ENDIF()
-
-    ENDIF()
-
-    IF (CTEST_DO_SUBMIT)
-      MESSAGE("\nSubmit the update file that will trigger the notification email ...\n")
-      TRIBITS_CTEST_SUBMIT( PARTS update )
-    ENDIF()
-
-    MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")
-
-  ENDFOREACH(TRIBITS_PACKAGE)
-
-  IF(${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
-    MESSAGE(
-      "\nFinal set packages that failed to configure or have the libraries build:"
-      " '${${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES}'")
   ENDIF()
 
   IF(${PROJECT_NAME}_FAILED_PACKAGES)
@@ -1285,8 +1084,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Write a file listing the packages that failed.  This will be read in on the next CI
   # iteration since these packages must be enabled
   FILE(WRITE "${FAILED_PACKAGES_FILE_NAME}" "${${PROJECT_NAME}_FAILED_PACKAGES}\n")
-
-  MESSAGE("\nDone with the incremental building and testing of ${PROJECT_NAME} packages!\n")
 
   REPORT_QUEUED_ERRORS()
 

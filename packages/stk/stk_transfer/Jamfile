@@ -138,7 +138,6 @@ exe stk_transfer_utest
     /sierra/stk_io//stk_io
     /tpl/gtest//gtest
     /sierra/stk_mesh//stk_mesh_base
-    /tpl/trilinos//teuchos
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;

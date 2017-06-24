@@ -54,6 +54,36 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
+WedgeFixture::WedgeFixture(   MetaData& meta
+            , BulkData& bulk
+            , size_t nx
+            , size_t ny
+            , size_t nz
+            , size_t nid_start
+            , size_t eid_start
+          )
+: m_spatial_dimension(3),
+  m_nx(nx),
+  m_ny(ny),
+  m_nz(nz),
+  node_id_start(nid_start),
+  elem_id_start(eid_start),
+  m_meta_p( &meta ),
+  m_bulk_p( &bulk ),
+  m_meta( meta),
+  m_bulk_data( bulk ),
+  m_elem_parts( ),
+  m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+  m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
+  owns_mesh(false)
+{
+  //put coord-field on all nodes:
+  put_field(
+    m_coord_field,
+    m_meta.universal_part(),
+    m_spatial_dimension);
+}
+
 WedgeFixture::WedgeFixture(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
@@ -65,15 +95,17 @@ WedgeFixture::WedgeFixture(   stk::ParallelMachine pm
     m_nx(nx),
     m_ny(ny),
     m_nz(nz),
-    m_meta( m_spatial_dimension ),
-    m_bulk_data(  m_meta
+    m_meta_p( new MetaData(m_spatial_dimension) ),
+    m_bulk_p( new BulkData( *m_meta_p
                 , pm
                 , autoAuraOption
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map
+                , connectivity_map)
                ),
+    m_meta(*m_meta_p),
+    m_bulk_data(*m_bulk_p),
     m_elem_parts( 1, &m_meta.declare_part_with_topology("wedge_part", stk::topology::WEDGE_6) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
@@ -85,6 +117,14 @@ WedgeFixture::WedgeFixture(   stk::ParallelMachine pm
     m_meta.universal_part(),
     m_spatial_dimension);
 
+}
+
+WedgeFixture::~WedgeFixture()
+{
+  if( owns_mesh ) {
+    delete m_bulk_p;
+    delete m_meta_p;
+  }
 }
 
 void WedgeFixture::generate_mesh(const CoordinateMapping & coordMap)
@@ -112,7 +152,7 @@ void WedgeFixture::generate_mesh(const CoordinateMapping & coordMap)
 
 void WedgeFixture::node_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &z ) const
 {
-  entity_id -= 1;
+  entity_id -= node_id_start;
 
   x = entity_id % (m_nx+1);
   entity_id /= (m_nx+1);
@@ -170,7 +210,7 @@ void WedgeFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_process
          wedge_nodes[4] = elem_nodes[wedge_vert[wed][4]];
          wedge_nodes[5] = elem_nodes[wedge_vert[wed][5]];
 
-         EntityId wedge_id = 2*hex_id + wed + 1;
+         EntityId wedge_id = 2*hex_id + wed + elem_id_start;
          stk::mesh::declare_element( m_bulk_data, m_elem_parts, wedge_id, wedge_nodes);
 
          for (size_t i = 0; i<6; ++i) {

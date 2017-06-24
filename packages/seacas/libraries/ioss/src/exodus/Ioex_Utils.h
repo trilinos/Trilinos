@@ -100,13 +100,6 @@ namespace Ioex {
   bool find_displacement_field(Ioss::NameList &fields, const Ioss::GroupingEntity *block, int ndim,
                                std::string *disp_name);
 
-  char **get_exodus_names(size_t count, int size);
-  void delete_exodus_names(char **names, int count);
-
-  void get_fields(int64_t entity_count, char **names, size_t num_names,
-                  Ioss::Field::RoleType fld_role, const char suffix_separator, int *local_truth,
-                  std::vector<Ioss::Field> &fields);
-
   std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
                               const std::string &basename, int length, bool &db_has_name);
 

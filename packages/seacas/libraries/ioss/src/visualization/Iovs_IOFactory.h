@@ -9,32 +9,31 @@
 #ifndef SIERRA_Iovs_IOFactory_h
 #define SIERRA_Iovs_IOFactory_h
 
-#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_DatabaseIO.h" // for DatabaseIO
 #include <Ioss_CodeTypes.h>
-#include <Ioss_DBUsage.h>               // for DatabaseUsage
-#include <Ioss_IOFactory.h>             // for IOFactory
-#include <string>                       // for string
-namespace Ioss { class PropertyManager; }
+#include <Ioss_DBUsage.h>   // for DatabaseUsage
+#include <Ioss_IOFactory.h> // for IOFactory
+#include <string>           // for string
+namespace Ioss {
+  class PropertyManager;
+}
 
 namespace Iovs {
 
   class IOFactory : public Ioss::IOFactory
-    {
-    public:
-      static const IOFactory* factory();
+  {
+  public:
+    static const IOFactory *factory();
 
+  private:
+    IOFactory();
+    Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
+                              MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
 
-    private:
-      IOFactory();
-      Ioss::DatabaseIO* make_IO(const std::string& filename,
-				Ioss::DatabaseUsage db_usage,
-				MPI_Comm communicator,
-				const Ioss::PropertyManager &properties) const;
-
-      /**
-       * Call the sierra product registry and register all dependent third-party libraries
-       */
-      void register_library_versions() const;
-    };
+    /**
+     * Call the sierra product registry and register all dependent third-party libraries
+     */
+    void register_library_versions() const;
+  };
 }
 #endif // SIERRA_Iovs_IOFactory_h

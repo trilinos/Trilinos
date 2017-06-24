@@ -49,6 +49,14 @@
 #ifndef SACADO_FAD_SFADTRAITS_HPP
 #define SACADO_FAD_SFADTRAITS_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#include "Sacado_Fad_Exp_GeneralFadTraits.hpp"
+
+#else
+
 #include "Sacado_Traits.hpp"
 #include <sstream>
 
@@ -215,5 +223,7 @@ namespace Teuchos {
   };
 }
 #endif // HAVE_SACADO_TEUCHOS
+
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_SFADTRAITS_HPP

@@ -53,8 +53,8 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdint.h>                     // for int64_t
-#include "exodusII.h"                   // for ex_put_partial_attr, etc
+#include "exodusII.h" // for ex_put_partial_attr, etc
+#include <stdint.h>   // for int64_t
 
 /*!
  * \deprecated Use ex_put_partial_attr() instead.

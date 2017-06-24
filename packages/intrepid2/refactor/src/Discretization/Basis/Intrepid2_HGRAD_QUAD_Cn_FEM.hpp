@@ -58,7 +58,7 @@ namespace Intrepid2 {
 
     class Basis_HGRAD_QUAD_Cn_FEM {
     public:
-      
+      typedef struct Quadrilateral<4> cell_topology_type;      
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -116,7 +116,7 @@ namespace Intrepid2 {
           constexpr ordinal_type spaceDim = 2;
           constexpr ordinal_type bufSize = 
             (spaceDim+1) * Intrepid2::getPnCardinality<spaceDim,Parameters::MaxOrder>()*numPtsEval;// :
-          char buf[bufSize*sizeof(outputValueType)];
+          outputValueType buf[bufSize];
           
           Kokkos::DynRankView<outputValueType,
             Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);

@@ -212,7 +212,7 @@ namespace Ioss {
 #if !defined(NO_ZOLTAN_SUPPORT)
         Zoltan &zz,
 #endif
-        std::vector<BlockDecompositionData> &el_blocks);
+        std::vector<BlockDecompositionData> &element_blocks);
 
     void simple_decompose();
 
@@ -258,8 +258,8 @@ namespace Ioss {
     void communicate_node_data(T *file_data, T *ioss_data, size_t comp_count) const;
 
     MPI_Comm    m_comm;
-    int         m_processor;
-    int         m_processorCount;
+    int         m_processor{};
+    int         m_processorCount{};
     std::string m_method;
 
     // Values for the file decomposition

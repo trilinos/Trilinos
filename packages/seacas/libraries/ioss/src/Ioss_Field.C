@@ -34,9 +34,9 @@
 #include <Ioss_Transform.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
+#include <cstddef>
+#include <cstdint>
 #include <iostream>
-#include <stddef.h>
-#include <stdint.h>
 #include <string>
 #include <vector>
 

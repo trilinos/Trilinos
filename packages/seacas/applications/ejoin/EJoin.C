@@ -54,7 +54,6 @@
 
 #include "add_to_log.h"
 #include "smart_assert.h"
-#include "to_string.h"
 
 #include <exodusII.h>
 
@@ -227,7 +226,7 @@ int main(int argc, char *argv[])
       }
 
       // Generate a name for the region based on the part number...
-      std::string name = "p" + to_string(p + 1);
+      std::string name = "p" + std::to_string(p + 1);
       // NOTE: region owns database pointer at this time...
       part_mesh[p] = new Ioss::Region(dbi[p], name);
       part_mesh[p]->property_add(Ioss::Property("block_omission_count", (int)omissions[p].size()));

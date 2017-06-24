@@ -93,7 +93,7 @@ namespace Impl {
 
 class Basis_HCURL_TET_In_FEM {
 public:
-
+  typedef struct Tetrahedron<4> cell_topology_type;
   template<EOperator opType>
   struct Serial {
     template<typename outputValueViewType,
@@ -143,16 +143,15 @@ public:
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
       typedef typename outputValueViewType::value_type outputValueType;
-      typedef typename outputValueViewType::pointer_type outputPointerType;
       constexpr ordinal_type spaceDim = 3;
       constexpr ordinal_type bufSize = (opType == OPERATOR_CURL) ?
                                        spaceDim * CardinalityHCurlTet(Parameters::MaxOrder)*numPtsEval :
                                        CardinalityHCurlTet(Parameters::MaxOrder)*numPtsEval;
 
-      char buf[bufSize*sizeof(outputValueType)];
+      outputValueType buf[bufSize];
 
       Kokkos::DynRankView<outputValueType,
-        Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
+      Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
 
       switch (opType) {
       case OPERATOR_VALUE : {

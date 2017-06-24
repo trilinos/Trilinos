@@ -57,7 +57,6 @@
 #include "add_to_log.h"
 #include "adler.h"
 #include "smart_assert.h"
-#include "to_string.h"
 #include <exodusII.h>
 
 #if EX_API_VERS_NODOT <= 467
@@ -164,7 +163,7 @@ namespace {
     case Excn::NSET: return EX_NODE_SET;
     default:
       throw std::runtime_error("Invalid Object Type in exodus_object_type: " +
-                               to_string(conjoin_type));
+                               std::to_string(conjoin_type));
     }
   }
 
@@ -494,7 +493,7 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
     local_mesh[p - 1].timestepCount = i;
     t_min                           = t_min < times[0] ? t_min : times[0];
     if (!used) {
-      std::string part = "Part " + to_string(p) + ": ";
+      std::string part = "Part " + std::to_string(p) + ": ";
       part += interface.inputFiles_[p - 1];
       std::cerr << "\nWARNING: " << part
                 << " does not contain any time steps which will be used in conjoined file.\n"
@@ -1646,17 +1645,17 @@ namespace {
       char **output_name_list =
           get_name_array(vars.count(Excn::OUT), Excn::ExodusFile::max_name_length());
 
-      int num_vars = vars.index_.size();
-      int extra = vars.addStatus ? 1 : 0;
+      int num_vars       = vars.index_.size();
+      int extra          = vars.addStatus ? 1 : 0;
       int num_input_vars = num_vars - extra;
-      
+
       char **input_name_list = get_name_array(num_vars, Excn::ExodusFile::max_name_length());
       if (num_input_vars > 0) {
-	int error = ex_get_variable_names(id, vars.type(), num_input_vars, input_name_list);
-	if (error != EX_NOERR) {
-	  std::cerr << "ERROR: Cannot get " << vars.label() << " variable names\n";
-	  exit(EXIT_FAILURE);
-	}
+        int error = ex_get_variable_names(id, vars.type(), num_input_vars, input_name_list);
+        if (error != EX_NOERR) {
+          std::cerr << "ERROR: Cannot get " << vars.label() << " variable names\n";
+          exit(EXIT_FAILURE);
+        }
       }
 
       std::string status;
@@ -2362,7 +2361,7 @@ namespace {
   {
     // Allocate space for variable names...
     char **name_list = get_name_array(var_count, Excn::ExodusFile::max_name_length());
-    int error = ex_get_variable_names(id, elType, var_count, name_list);
+    int    error     = ex_get_variable_names(id, elType, var_count, name_list);
     if (error != EX_NOERR) {
       std::cerr << "ERROR: Cannot get variable names\n";
       exit(EXIT_FAILURE);

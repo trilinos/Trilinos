@@ -82,6 +82,7 @@ namespace Impl {
 
 class Basis_HCURL_TRI_In_FEM {
 public:
+  typedef struct Triangle<3> cell_topology_type;
 
   template<EOperator opType>
   struct Serial {
@@ -132,16 +133,15 @@ public:
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
       typedef typename outputValueViewType::value_type outputValueType;
-      typedef typename outputValueViewType::pointer_type outputPointerType;
       constexpr ordinal_type spaceDim = 2;
       constexpr ordinal_type bufSize = (opType == OPERATOR_CURL) ?
                                        spaceDim * CardinalityHCurlTri(Parameters::MaxOrder)*numPtsEval :
                                        CardinalityHCurlTri(Parameters::MaxOrder)*numPtsEval;
 
-      char buf[bufSize*sizeof(outputValueType)];
+      outputValueType buf[bufSize];
 
       Kokkos::DynRankView<outputValueType,
-        Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
+      Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
 
       switch (opType) {
       case OPERATOR_VALUE : {

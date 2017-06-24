@@ -114,7 +114,7 @@ namespace Tacho {
           TACHO_TEST_FOR_ABORT(ABR.span() && ABR.data() != buf, 
                                "memory pool is used in serial factorization");
           
-          Kokkos::pair<size_type,size_type> srows;
+          Kokkos::pair<size_type,size_type> srows(0,0);
           CholSupernodes<Algo::Workflow::Serial>          
             ::update(sched, pool, 
                      member,

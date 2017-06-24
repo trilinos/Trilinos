@@ -50,10 +50,10 @@ namespace Tacho {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
             Teuchos::BLAS<ordinal_type,value_type> blas;
-            blas.TRSM(static_cast<const Teuchos::ESide>(ArgSide::teuchos), 
-                      static_cast<const Teuchos::EUplo>(ArgUplo::teuchos), 
-                      static_cast<const Teuchos::ETransp>(ArgTransA::teuchos), 
-                      static_cast<const Teuchos::EDiag>(diagA.teuchos),
+            blas.TRSM(ArgSide::teuchos_param, 
+                      ArgUplo::teuchos_param, 
+                      ArgTransA::teuchos_param, 
+                      diagA.teuchos_param,
                       m, n,
                       alpha,
                       A.data(), A.stride_1(),

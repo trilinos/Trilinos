@@ -498,10 +498,14 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)                                  \
-    OPNAME (const T1& expr1, const T2& expr2)                           \
+    typename mpl::enable_if_c<                                          \
+       ExprLevel< Expr<T1> >::value == ExprLevel< Expr<T2> >::value,    \
+       Expr< OP< Expr<T1>, Expr<T2> > >                                 \
+     >::type                                                            \
+    /*SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)*/                              \
+    OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)               \
     {                                                                   \
-      typedef OP< T1, T2 > expr_t;                                      \
+      typedef OP< Expr<T1>, Expr<T2> > expr_t;                          \
                                                                         \
       return Expr<expr_t>(expr1, expr2);                                \
     }                                                                   \

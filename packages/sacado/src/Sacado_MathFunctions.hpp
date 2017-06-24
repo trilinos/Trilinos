@@ -45,6 +45,7 @@ namespace Sacado {                                                      \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
+                                                                        \
     template <typename T> class SimpleFad;                              \
     template <typename T>                                               \
     SimpleFad<T> OP (const SimpleFad<T>&);                              \
@@ -145,8 +146,12 @@ namespace Sacado {                                                      \
     template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)                               \
-    OP (const T1&, const T2&);                                          \
+    typename mpl::enable_if_c<                                          \
+       ExprLevel< Expr<T1> >::value == ExprLevel< Expr<T2> >::value,    \
+       Expr< FADOP< Expr<T1>, Expr<T2> > >                              \
+      >::type                                                           \
+    /*SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)*/                           \
+    OP (const Expr<T1>&, const Expr<T2>&);                              \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
@@ -423,5 +428,9 @@ BINARYFUNC_MACRO(max, MaxOp)
 BINARYFUNC_MACRO(min, MinOp)
 
 #undef BINARYFUNC_MACRO
+
+#ifdef SACADO_ENABLE_NEW_DESIGN
+#include "Sacado_Fad_Exp_MathFunctions.hpp"
+#endif
 
 #endif // SACADO_MATHFUNCTIONS_HPP

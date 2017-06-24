@@ -39,9 +39,8 @@
 #include <Ioss_NodeBlock.h>
 #include <Ioss_Property.h>
 #include <array>
-#include <assert.h>
+#include <cassert>
 #include <string>
-
 namespace Ioss {
   class Region;
 
@@ -55,9 +54,24 @@ namespace Ioss {
           m_transform(std::move(p_transform)), m_rangeBeg(std::move(range_beg)),
           m_rangeEnd(std::move(range_end)), m_donorRangeBeg(std::move(donor_beg)),
           m_donorRangeEnd(std::move(donor_end)), m_ownerZone(owner_zone), m_donorZone(donor_zone),
-          m_donorProcessor(-1), m_sameRange(false), m_ownsSharedNodes(owns_nodes),
-          m_intraBlock(intra_block)
+          m_ownerProcessor(-1), m_donorProcessor(-1), m_sameRange(false),
+          m_ownsSharedNodes(owns_nodes), m_intraBlock(intra_block), m_isActive(true)
     {
+      if (!m_intraBlock) {
+        m_ownerRange[0] = m_rangeBeg[0];
+        m_ownerRange[1] = m_rangeBeg[1];
+        m_ownerRange[2] = m_rangeBeg[2];
+        m_ownerRange[3] = m_rangeEnd[0];
+        m_ownerRange[4] = m_rangeEnd[1];
+        m_ownerRange[5] = m_rangeEnd[2];
+
+        m_donorRange[0] = m_donorRangeBeg[0];
+        m_donorRange[1] = m_donorRangeBeg[1];
+        m_donorRange[2] = m_donorRangeBeg[2];
+        m_donorRange[3] = m_donorRangeEnd[0];
+        m_donorRange[4] = m_donorRangeEnd[1];
+        m_donorRange[5] = m_donorRangeEnd[2];
+      }
     }
 
     ZoneConnectivity(const ZoneConnectivity &copy_from) = default;
@@ -80,6 +94,12 @@ namespace Ioss {
 
     std::vector<int> get_range(int ordinal) const;
 
+    // The "original" owner and donor range -- that is, they have not been subsetted
+    // due to block decompositions in a parallel run.  These should be the same on
+    // all processors...  Primarily used to make parallel collective output easier...
+    std::array<int, 6> m_ownerRange;
+    std::array<int, 6> m_donorRange;
+
     std::string m_connectionName;
     std::string m_donorName;
     Ioss::IJK_t m_transform;
@@ -93,12 +113,14 @@ namespace Ioss {
     // NOTE: Shared nodes are "owned" by the zone with the lowest zone id.
     int  m_ownerZone;      // "id" of zone that owns this connection
     int  m_donorZone;      // "id" of zone that is donor of this connection
+    int  m_ownerProcessor; // processor that owns the owner zone
     int  m_donorProcessor; // processor that owns the donor zone
     bool m_sameRange; // True if owner and donor range should always match...(special use during
                       // decomp)
     bool m_ownsSharedNodes;
     bool m_intraBlock; // True if this zc is created due to processor decompositions in a parallel
                        // run.
+    bool m_isActive;   // True if non-zero range...
   };
 
   struct BoundaryCondition
@@ -108,6 +130,13 @@ namespace Ioss {
         : m_bcName(std::move(name)), m_rangeBeg(std::move(range_beg)),
           m_rangeEnd(std::move(range_end))
     {
+      m_ownerRange[0] = m_rangeBeg[0];
+      m_ownerRange[1] = m_rangeBeg[1];
+      m_ownerRange[2] = m_rangeBeg[2];
+      m_ownerRange[3] = m_rangeEnd[0];
+      m_ownerRange[4] = m_rangeEnd[1];
+      m_ownerRange[5] = m_rangeEnd[2];
+
 #ifndef NDEBUG
       int same_count = (m_rangeBeg[0] == m_rangeEnd[0] ? 1 : 0) +
                        (m_rangeBeg[1] == m_rangeEnd[1] ? 1 : 0) +
@@ -137,7 +166,20 @@ namespace Ioss {
       return cell_count;
     }
 
+    bool is_active() const
+    {
+      return (m_rangeBeg[0] != 0 || m_rangeEnd[0] != 0 || m_rangeBeg[1] != 0 ||
+              m_rangeEnd[1] != 0 || m_rangeBeg[2] != 0 || m_rangeEnd[2] != 0);
+    }
+
     std::string m_bcName;
+
+    // The "original" owner range -- that is, is has not been subsetted
+    // due to block decompositions in a parallel run.  It should be the same on
+    // all processors...  Primarily used to make parallel collective output easier...
+    std::array<int, 6> m_ownerRange;
+
+    // These are potentially subsetted due to parallel decompositions...
     Ioss::IJK_t m_rangeBeg;
     Ioss::IJK_t m_rangeEnd;
 
@@ -155,6 +197,8 @@ namespace Ioss {
                     int nj = 0, int nk = 0, int off_i = 0, int off_j = 0, int off_k = 0);
     StructuredBlock(DatabaseIO *io_database, const std::string &my_name, int index_dim,
                     Ioss::IJK_t &ordinal, Ioss::IJK_t &offset, Ioss::IJK_t &global_ordinal);
+
+    StructuredBlock *clone(DatabaseIO *database) const;
 
     ~StructuredBlock() override;
 
@@ -212,7 +256,8 @@ namespace Ioss {
       auto j = jj - m_offsetJ;
       auto k = kk - m_offsetK;
       assert(i > 0 && i <= m_ni + 1 && j > 0 && j <= m_nj + 1 && k > 0 && k <= m_nk + 1);
-      return (size_t)(k - 1) * (m_ni + 1) * (m_nj + 1) + (size_t)(j - 1) * (m_ni + 1) + i;
+      return static_cast<size_t>(k - 1) * (m_ni + 1) * (m_nj + 1) +
+             static_cast<size_t>(j - 1) * (m_ni + 1) + i;
     }
 
     // Get the local (relative to this block on this processor) cell
@@ -223,15 +268,15 @@ namespace Ioss {
       auto j = jj - m_offsetJ;
       auto k = kk - m_offsetK;
       assert(i > 0 && i <= m_ni + 1 && j > 0 && j <= m_nj + 1 && k > 0 && k <= m_nk + 1);
-      return (size_t)(k - 1) * m_ni * m_nj + (size_t)(j - 1) * m_ni + i;
+      return static_cast<size_t>(k - 1) * m_ni * m_nj + static_cast<size_t>(j - 1) * m_ni + i;
     }
 
     // Get the global (over all processors) cell
     // id at the specified i,j,k location (1 <= i,j,k <= ni,nj,nk).  1-based.
     size_t get_global_cell_id(int i, int j, int k) const
     {
-      return m_cellGlobalOffset + (size_t)(k - 1) * m_niGlobal * m_njGlobal +
-             (size_t)(j - 1) * m_niGlobal + i;
+      return m_cellGlobalOffset + static_cast<size_t>(k - 1) * m_niGlobal * m_njGlobal +
+             static_cast<size_t>(j - 1) * m_niGlobal + i;
     }
 
     // Get the global (over all processors) node
@@ -239,8 +284,8 @@ namespace Ioss {
     // for shared nodes.
     size_t get_global_node_offset(int i, int j, int k) const
     {
-      return m_nodeGlobalOffset + (size_t)(k - 1) * (m_niGlobal + 1) * (m_njGlobal + 1) +
-             (size_t)(j - 1) * (m_niGlobal + 1) + i - 1;
+      return m_nodeGlobalOffset + static_cast<size_t>(k - 1) * (m_niGlobal + 1) * (m_njGlobal + 1) +
+             static_cast<size_t>(j - 1) * (m_niGlobal + 1) + i - 1;
     }
 
     // Get the local (relative to this block on this processor) node id at the specified
@@ -251,7 +296,8 @@ namespace Ioss {
       auto j = jj - m_offsetJ;
       auto k = kk - m_offsetK;
       assert(i > 0 && i <= m_ni + 1 && j > 0 && j <= m_nj + 1 && k > 0 && k <= m_nk + 1);
-      return (size_t)(k - 1) * (m_ni + 1) * (m_nj + 1) + (size_t)(j - 1) * (m_ni + 1) + i - 1;
+      return static_cast<size_t>(k - 1) * (m_ni + 1) * (m_nj + 1) +
+             static_cast<size_t>(j - 1) * (m_ni + 1) + i - 1;
     }
 
     // Get the local (on this processor) cell-node offset at the specified
@@ -267,6 +313,14 @@ namespace Ioss {
     size_t get_global_node_id(int i, int j, int k) const
     {
       return get_global_node_offset(i, j, k) + 1;
+    }
+
+    std::vector<int> get_cell_node_ids(bool add_offset) const
+    {
+      size_t           node_count = get_property("node_count").get_int();
+      std::vector<int> ids(node_count);
+      get_cell_node_ids(ids.data(), add_offset);
+      return ids;
     }
 
     template <typename INT> size_t get_cell_node_ids(INT *idata, bool add_offset) const
@@ -385,6 +439,7 @@ namespace Ioss {
     std::vector<BoundaryCondition> m_boundaryConditions;
     std::vector<size_t>            m_blockLocalNodeIndex;
     std::vector<std::pair<size_t, size_t>> m_globalIdMap;
+    std::vector<std::pair<size_t, size_t>> m_sharedNode;
   };
-}
+} // namespace Ioss
 #endif

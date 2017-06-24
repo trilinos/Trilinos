@@ -343,7 +343,7 @@ namespace {
 
         int         nodes_per_side = side_blocks[k]->topology()->number_nodes();
         std::string storage_type   = "Real[";
-        storage_type += Ioss::Utils::to_string(nodes_per_side);
+        storage_type += std::to_string(nodes_per_side);
         storage_type += "]";
         side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage_type,
                                           Ioss::Field::MESH, side_count));

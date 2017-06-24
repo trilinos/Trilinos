@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     }
 
     // Copy constructor from const/non-const MDFields. NOTE: this
-    // tests for assignment from both Compitletime and dynamice
+    // tests for assignment from both Compitletime and DynRank
     // MDFields.
     {
       RCP<DataLayout> ctor_dl_p  = rcp(new MDALayout<Cell,Point>(10,4));
@@ -546,9 +546,10 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     
     out << "passed!" << endl;
       
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // check for array rank enforcement
-    TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+    // Do NOT check for array rank enforcement. DynRank MDField sets
+    // the rank at runtime and we allow it to be changed!
+    //TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // kokkos view accessors

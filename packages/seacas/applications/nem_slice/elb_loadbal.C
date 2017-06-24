@@ -1406,8 +1406,7 @@ namespace {
             ** in the external node list for proc_n I need to check
             ** only the last element in the current list
             */
-            if (lb->ext_nodes[proc_n].empty() ||
-                (lb->ext_nodes[proc_n].back() != (INT)ncnt)) {
+            if (lb->ext_nodes[proc_n].empty() || (lb->ext_nodes[proc_n].back() != (INT)ncnt)) {
               lb->ext_nodes[proc_n].push_back(ncnt);
               lb->ext_procs[proc_n].push_back(proc);
             }
@@ -1438,8 +1437,7 @@ namespace {
         ** already in it. If the element is in the processors list,
         ** then it must be the last element.
         */
-        if ((lb->int_elems[proc].empty()) ||
-            (lb->int_elems[proc].back() != (INT)ecnt)) {
+        if ((lb->int_elems[proc].empty()) || (lb->int_elems[proc].back() != (INT)ecnt)) {
           lb->int_elems[proc].push_back(ecnt);
         }
       }
@@ -1873,8 +1871,7 @@ namespace {
              * already been added to this list. If it has, then it
              * is in the last position in the array
              */
-            if ((lb->bor_nodes[proc2].empty()) ||
-                ((INT)ncnt != lb->bor_nodes[proc2].back())) {
+            if ((lb->bor_nodes[proc2].empty()) || ((INT)ncnt != lb->bor_nodes[proc2].back())) {
               lb->bor_nodes[proc2].push_back(ncnt);
             }
           } /* if (proc != lb->vertex2proc[graph->sur_elem[ncnt][ecnt]]) */

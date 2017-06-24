@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"                   // for ex_get_var_time, etc
+#include "exodusII.h" // for ex_get_var_time, etc
 
 /*!
 \deprecated Use ex_get_var_time()(exoid, EX_GLOBAL, global_var_index,

@@ -367,7 +367,8 @@ namespace Iogn {
                   << "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
                   << "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
                   << "\ttets (split each hex into 6 tets)\n"
-                  << "\tvariables:type,count,...  type=global|element|node|nodal|nodeset|sideset|surface\n"
+                  << "\tvariables:type,count,...  "
+                     "type=global|element|node|nodal|nodeset|sideset|surface\n"
                   << "\ttimes:count (number of timesteps to generate)\n"
                   << "\tshow -- show mesh parameters\n"
                   << "\thelp -- show this list\n\n";

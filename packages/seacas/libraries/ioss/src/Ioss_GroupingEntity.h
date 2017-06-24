@@ -42,8 +42,8 @@
 #include <Ioss_PropertyManager.h> // for PropertyManager
 #include <Ioss_State.h>           // for State
 #include <Ioss_VariableType.h>    // for component_count()
-#include <stddef.h>               // for size_t, nullptr
-#include <stdint.h>               // for int64_t
+#include <cstddef>                // for size_t, nullptr
+#include <cstdint>                // for int64_t
 #include <string>                 // for string
 #include <vector>                 // for vector
 
@@ -95,7 +95,7 @@ namespace Ioss {
   public:
     friend class Property;
 
-    GroupingEntity();
+    GroupingEntity() = default;
     GroupingEntity(DatabaseIO *io_database, const std::string &my_name, int64_t entity_count);
     GroupingEntity(const GroupingEntity &) = delete;
     GroupingEntity &operator=(const GroupingEntity &) = delete;
@@ -146,7 +146,7 @@ namespace Ioss {
      * Entries are pushed onto the "block_members" vector, so it will be
      * appended to if it is not empty at entry to the function.
      */
-    virtual void block_membership(std::vector<std::string> &block_members) {}
+    virtual void block_membership(std::vector<std::string> & /*block_members*/) {}
 
     std::string get_filename() const;
 
@@ -179,6 +179,9 @@ namespace Ioss {
     Property get_property(const std::string &property_name) const;
     int property_describe(NameList *names) const;
     size_t property_count() const;
+    /** Add a property, or change its value if it already exists with
+        a different value */
+    void property_update(const std::string &property, int64_t value) const;
 
     // ========================================================================
     //                                FIELDS
@@ -277,20 +280,24 @@ namespace Ioss {
     virtual int64_t internal_put_field_data(const Field &field, void *data,
                                             size_t data_size = 0) const = 0;
 
-    int64_t entityCount;
+    int64_t entityCount = 0;
+
+#if defined(IOSS_THREADSAFE)
+    mutable std::mutex m_;
+#endif
 
   private:
     void verify_field_exists(const std::string &field_name, const std::string &inout) const;
 
     std::string entityName;
 
-    DatabaseIO *database_;
+    DatabaseIO *database_ = nullptr;
 
-    State           entityState;
-    mutable int64_t attributeCount;
-    unsigned int    hash_;
+    State           entityState    = STATE_CLOSED;
+    mutable int64_t attributeCount = 0;
+    unsigned int    hash_          = 0;
   };
-}
+} // namespace Ioss
 
 /** \brief Add a property to the entity's property manager.
  *

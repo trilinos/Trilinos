@@ -46,6 +46,13 @@
 #define SACADO_FAD_ENABLE_EXPR_FUNC \
   SACADO_ENABLE_IF_SAME(typename Expr<S>::value_type, typename FAD::value_type, FAD&)
 
+#define SACADO_EXP_ENABLE_EXPR_FUNC(RETURN_TYPE) \
+  SACADO_ENABLE_IF_SAME(typename Expr<S>::derived_type::value_type, value_type, RETURN_TYPE)
+#define SACADO_EXP_ENABLE_EXPR_CTOR_DEF SACADO_EXP_ENABLE_EXPR_FUNC(void*)
+#define SACADO_EXP_ENABLE_EXPR_CTOR_DECL SACADO_EXP_ENABLE_EXPR_CTOR_DEF = 0
+#define SACADO_FAD_EXP_ENABLE_EXPR_FUNC \
+  SACADO_ENABLE_IF_SAME(typename Expr<S>::derived_type::value_type, typename FAD::value_type, FAD&)
+
 #define SACADO_ENABLE_IF_CONVERTIBLE(TYPE1, TYPE2, RETURN_TYPE)              \
   typename Sacado::mpl::enable_if<Sacado::mpl::is_convertible< TYPE1 , TYPE2 >, RETURN_TYPE >::type
 #define SACADO_ENABLE_VALUE_FUNC(RETURN_TYPE) \
@@ -58,9 +65,18 @@
                              ExprLevel<T1>::value == ExprLevel<T2>::value, \
                              Expr< OP< T1, T2 > >                       \
                            >::type
+#define SACADO_FAD_EXP_OP_ENABLE_EXPR_EXPR(OP)                              \
+  typename mpl::enable_if_c< IsFadExpr<T1>::value && IsFadExpr<T2>::value && \
+                             ExprLevel<T1>::value == ExprLevel<T2>::value, \
+                             OP< typename Expr<T1>::derived_type, typename Expr<T2>::derived_type, false, false, typename T1::expr_spec_type > \
+                           >::type
 #define SACADO_FAD_OP_ENABLE_SCALAR_EXPR(OP)                            \
   typename mpl::disable_if<mpl::is_same< typename Expr<T>::value_type, typename Expr<T>::scalar_type>, Expr< OP< ConstExpr<typename Expr<T>::scalar_type>, Expr<T> > > >::type
 #define SACADO_FAD_OP_ENABLE_EXPR_SCALAR(OP)                            \
   typename mpl::disable_if<mpl::is_same< typename Expr<T>::value_type, typename Expr<T>::scalar_type>, Expr< OP< Expr<T>, ConstExpr<typename Expr<T>::scalar_type> > > >::type
+#define SACADO_FAD_EXP_OP_ENABLE_SCALAR_EXPR(OP)                            \
+  typename mpl::disable_if<mpl::is_same< typename T::value_type, typename T::scalar_type>, OP< typename T::scalar_type, typename Expr<T>::derived_type, true, false, typename T::expr_spec_type > >::type
+#define SACADO_FAD_EXP_OP_ENABLE_EXPR_SCALAR(OP)                            \
+  typename mpl::disable_if<mpl::is_same< typename T::value_type, typename T::scalar_type>, OP< typename Expr<T>::derived_type, typename T::scalar_type, false, true, typename T::expr_spec_type > >::type
 
 #endif // SACADO_SFINAE_MACROS_H

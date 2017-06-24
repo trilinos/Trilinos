@@ -41,7 +41,7 @@
 
 namespace Ioss {
   class PropertyManager;
-}
+} // namespace Ioss
 
 namespace Iocgns {
 

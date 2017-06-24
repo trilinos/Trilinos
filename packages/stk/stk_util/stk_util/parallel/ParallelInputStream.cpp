@@ -32,7 +32,6 @@
 // 
 
 #include "stk_util/stk_config.h"        // for STK_HAS_MPI
-#include <stk_util/parallel/ParallelInputStream.hpp>
 #include <cstdio>                       // for NULL, EOF, fclose, fopen, etc
 #include <cstring>                      // for memset
 #include <iostream>                     // for cerr
@@ -176,20 +175,6 @@ std::streambuf * ParInBuf::setbuf( char * , std::streamsize )
   return this ;
 }
 
-//----------------------------------------------------------------------
-
 } // namespace
-
-
-ParallelInputStream::ParallelInputStream(
-  ParallelMachine comm ,
-  const char * const file_name )
-  : std::istream( new ParInBuf( comm , file_name ) )
-{}
-
-ParallelInputStream::~ParallelInputStream()
-{ delete rdbuf(); }
-
 } // namespace stk
-
 

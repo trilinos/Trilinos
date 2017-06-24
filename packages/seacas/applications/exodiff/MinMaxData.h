@@ -53,8 +53,8 @@ public:
       diff = d;
       val1 = val_1;
       val2 = val_2;
-      id = id_;
-      blk = blk_;
+      id   = id_;
+      blk  = blk_;
     }
   }
 
@@ -91,15 +91,15 @@ public:
     if (std::fabs(val) < min_val) {
       min_val  = std::fabs(val);
       min_step = step;
-      min_id = id;
-      min_blk = blk;
+      min_id   = id;
+      min_blk  = blk;
     }
 
     if (std::fabs(val) > max_val) {
       max_val  = std::fabs(val);
       max_step = step;
-      max_id = id;
-      max_blk = blk;
+      max_id   = id;
+      max_blk  = blk;
     }
   }
 

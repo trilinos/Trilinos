@@ -13,6 +13,8 @@
 
 namespace Teuchos {
 
+template class Table<int>;
+
 FiniteAutomaton::FiniteAutomaton(int nsymbols_init, bool is_deterministic_init,
     int nstates_reserve):
   table(nsymbols_init + (is_deterministic_init ? 0 : 2), nstates_reserve),
