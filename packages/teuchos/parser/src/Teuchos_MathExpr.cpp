@@ -85,6 +85,36 @@ Teuchos::ReaderTablesPtr ask_reader_tables() {
   return ptr;
 }
 
+SymbolSetReader::SymbolSetReader():
+  Reader(ask_reader_tables())
+{
+}
+
+SymbolSetReader::~SymbolSetReader()
+{
+}
+
+void SymbolSetReader::at_shift(any& result, int token, std::string& text) {
+  if (token == TOK_NAME) result = text;
+}
+
+void SymbolSetReader::at_reduce(any& result, int prod, std::vector<any>& rhs) {
+  if (prod == PROD_VAR) {
+    std::string& name = any_ref_cast<std::string>(rhs.at(0));
+    variable_names.insert(name);
+  } else if (prod == PROD_CALL) {
+    std::string& name = any_ref_cast<std::string>(rhs.at(0));
+    function_names.insert(name);
+  }
+}
+
+std::set<std::string> get_variables_used(std::string const& expr) {
+  SymbolSetReader reader;
+  any result;
+  reader.read_string(result, expr, "get_variables_used");
+  return reader.variable_names;
+}
+
 }  // end namespace MathExpr
 
 }  // end namespace Teuchos
