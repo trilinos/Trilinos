@@ -573,19 +573,25 @@ namespace panzer_stk {
 
     // build worksets
     //////////////////////////////////////////////////////////////
+   
+    // build up needs array for workset container
+    std::map<std::string,panzer::WorksetNeeds> needs;  
+    for(std::size_t i=0;i<physicsBlocks.size();i++)
+      needs[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i]->getWorksetNeeds();
 
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,needs));
+
+    wkstContainer->setWorksetSize(workset_size);
+    wkstContainer->setGlobalIndexer(globalIndexer); // set the global indexer so the orientations are evaluated
 
     m_wkstContainer = wkstContainer;
-
-    // set the global indexer so the orientations are evaluated
-    wkstContainer->setGlobalIndexer(globalIndexer);
 
     // find max number of worksets
     std::size_t max_wksets = 0;
     for(std::size_t p=0;p<physicsBlocks.size();p++) {
-      Teuchos::RCP< std::vector<panzer::Workset> >works = wkstContainer->getVolumeWorksets(physicsBlocks[p]->elementBlockID());
+      const panzer::WorksetDescriptor wd = panzer::blockDescriptor(physicsBlocks[p]->elementBlockID());
+      Teuchos::RCP< std::vector<panzer::Workset> >works = wkstContainer->getWorksets(wd);
       max_wksets = std::max(max_wksets,works->size());
     }
     user_data_params.set<std::size_t>("Max Worksets",max_wksets);

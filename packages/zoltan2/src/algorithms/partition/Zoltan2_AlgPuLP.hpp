@@ -579,6 +579,19 @@ void AlgPuLP<Adapter>::scale_weights(
     if (fw > max_wgt) max_wgt = fw;
   }
 
+  // Get agreement across processors
+  double gmax_wgt;
+  double ltmp[2], gtmp[2];
+  ltmp[0] = nonint;
+  ltmp[1] = sum_wgt;
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, 2,
+                                 ltmp, gtmp);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, 1,
+                                 &max_wgt, &gmax_wgt);
+  nonint = gtmp[0];
+  sum_wgt = gtmp[1];
+  max_wgt = gmax_wgt;
+
   // Scaling needed if weights are not integers or weights' 
   // range is not sufficient
   double scale = 1.0;

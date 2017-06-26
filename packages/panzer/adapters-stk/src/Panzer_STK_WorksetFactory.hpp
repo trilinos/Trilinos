@@ -77,30 +77,16 @@ public:
      */
    virtual
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
-   getSideWorksets(const panzer::BC & bc,
-                 const panzer::PhysicsBlock & pb) const;
-
-   /** Build sets of boundary condition worksets
-     */
-   virtual
-   Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
-   getSideWorksets(const panzer::BC & bc,
+   getSideWorksets(const panzer::WorksetDescriptor & desc,
                    const panzer::WorksetNeeds & needs) const;
 
    /** Build sets of boundary condition worksets for the BCT_Interface case.
      */
    virtual
    Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-   getSideWorksets(const panzer::BC & bc,
-                   const panzer::PhysicsBlock & pb_a,
-                   const panzer::PhysicsBlock & pb_b) const;
-
-   /** Build workssets specified by the workset descriptor.
-     */
-   virtual
-   Teuchos::RCP<std::vector<panzer::Workset> >
-   getWorksets(const panzer::WorksetDescriptor & worksetDesc,
-               const panzer::PhysicsBlock & pb) const;
+   getSideWorksets(const panzer::WorksetDescriptor & desc,
+                   const panzer::WorksetNeeds & needs_a,
+                   const panzer::WorksetNeeds & needs_b) const;
 
    /** Build workssets specified by the workset descriptor.
      */

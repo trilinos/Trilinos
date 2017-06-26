@@ -137,7 +137,8 @@ namespace panzer {
       Teuchos::RCP<shards::CellTopology> topo
          = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-      worksets.push_back(panzer::buildWorksets(*(panzer::findPhysicsBlock(element_blocks[i],physicsBlocks)),
+      Teuchos::RCP<const panzer::PhysicsBlock> pb = panzer::findPhysicsBlock(element_blocks[i],physicsBlocks);
+      worksets.push_back(panzer::buildWorksets(pb->getWorksetNeeds(),pb->elementBlockID(),
 					       local_cell_ids,
 					       cell_vertex_coordinates));
     
@@ -237,11 +238,14 @@ namespace panzer {
       mesh->getElementVertices(local_cell_ids_a,cell_vertex_coordinates_a);
       mesh->getElementVertices(local_cell_ids_b,cell_vertex_coordinates_b);
 
-      worksets = panzer::buildEdgeWorksets(*(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[0],physicsBlocks);
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[1],physicsBlocks);
+      worksets = panzer::buildEdgeWorksets(
+                                 pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
  	                         local_cell_ids_a,
 				 local_side_ids_a,
 				 cell_vertex_coordinates_a,
-                                *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
+                                 pb_b->getWorksetNeeds(),pb_b->elementBlockID(),
 			         local_cell_ids_b,
 			         local_side_ids_b,
 			         cell_vertex_coordinates_b);
@@ -347,9 +351,11 @@ namespace panzer {
 
     {
       std::string sideset = "vertical_0";
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[0],physicsBlocks);
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[1],physicsBlocks);
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
-        *mesh, *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
-        *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)), sideset);
+          *mesh, pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
+                 pb_b->getWorksetNeeds(),pb_b->elementBlockID(), sideset);
 
       std::vector<std::size_t> local_cell_ids_a, local_cell_ids_b;
       std::vector<std::size_t> local_side_ids_a, local_side_ids_b;
@@ -504,8 +510,9 @@ namespace panzer {
 	}
       }
       
+      Teuchos::RCP<const panzer::PhysicsBlock> pb = panzer::findPhysicsBlock(bc->elementBlockID(),physicsBlocks);
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > workset = 
-	buildBCWorkset(*(panzer::findPhysicsBlock(bc->elementBlockID(),physicsBlocks)),
+	buildBCWorkset(pb->getWorksetNeeds(),bc->elementBlockID(),
 		       local_cell_ids,
 		       local_side_ids,
 		       vertices);

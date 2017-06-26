@@ -76,9 +76,9 @@ struct GemmCanUseMkl {
   static constexpr bool value =
     ::Tpetra::Details::Blas::Lib::GemmCanUseLib<ViewType1, ViewType2, ViewType3,
                           CoefficientType, IndexType>::value &&
-    ! std:is_same<typename ViewType1::execution_space, ::Kokkos::Cuda>::value &&
-    ! std:is_same<typename ViewType2::execution_space, ::Kokkos::Cuda>::value &&
-    ! std:is_same<typename ViewType3::execution_space, ::Kokkos::Cuda>::value;
+    ! std::is_same<typename ViewType1::execution_space, ::Kokkos::Cuda>::value &&
+    ! std::is_same<typename ViewType2::execution_space, ::Kokkos::Cuda>::value &&
+    ! std::is_same<typename ViewType3::execution_space, ::Kokkos::Cuda>::value;
 #  else // NOT KOKKOS_HAVE_CUDA
   static constexpr bool value =
     ::Tpetra::Details::Blas::Lib::GemmCanUseLib<ViewType1, ViewType2, ViewType3,

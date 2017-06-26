@@ -341,7 +341,8 @@ evaluateBCs(const panzer::BCType bc_type,
       const std::map<unsigned,PHX::FieldManager<panzer::Traits> > bc_fm = 
         bcfm_it->second;
    
-      Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(bc);
+      panzer::WorksetDescriptor desc = panzer::bcDescriptor(bc);
+      Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(desc);
       TEUCHOS_TEST_FOR_EXCEPTION(bc_wkst_ptr == Teuchos::null, std::logic_error,
                          "Failed to find corresponding bc workset!");
       const std::map<unsigned,panzer::Workset>& bc_wkst = *bc_wkst_ptr;

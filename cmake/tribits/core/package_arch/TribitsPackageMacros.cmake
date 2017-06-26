@@ -241,6 +241,11 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   # Set up parent package linkage varaibles
   TRIBITS_DEFINE_TARGET_VARS(${PACKAGE_NAME})
 
+  IF (${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES)
+    # Define this as a CMake/CTest "Subproject"
+    SET_DIRECTORY_PROPERTIES(PROPERTIES LABELS "${PACKAGE_NAME}")
+  ENDIF()
+
   #
   # Append the local package's cmake directory in order to help pull in
   # configure-time testing macros

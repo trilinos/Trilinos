@@ -7726,6 +7726,7 @@ a given TriBITS project are:
 
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
 * `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
+* `${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE`_
 * `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_
 * `${PROJECT_NAME}_ELEVATE_ST_TO_PT`_
 * `${PROJECT_NAME}_ENABLE_CPACK_PACKAGING`_
@@ -7794,6 +7795,24 @@ These options are described below.
 
   instead of in the base-level ``CMakeLists.txt`` file so that it goes along
   with rest of the project-specific CPack packaging options.
+
+.. _${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE:
+
+**${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE**
+
+  The variable ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE`` determines if the
+  CTest driver scripts using `TRIBITS_CTEST_DRIVER()`_ configure, build, test
+  and submit results to CDash all-at-once for all of the packages being tested
+  or if instead is done package-by-package.  Currently, the default is set to
+  ``FALSE`` for the package-by-package mode (for historical reasons) but the
+  default can be set to ``TRUE`` by setting:
+
+    SET(${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE_DEFAULT "TRUE")
+
+  in the project's `<projectDir>/ProjectName.cmake`_ file.  (This default must
+  be changed in the ``<projectDir>/ProjectName.cmake`` file and **NOT** the
+  `<projectDir>/CMakeLists.txt`_ file because the latter is not directly
+  processed in CTest -S driver scripts using ``TRIBITS_CTEST_DRIVER()``.)
 
 .. _${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES:
 
