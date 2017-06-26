@@ -485,6 +485,9 @@ namespace MueLu {
     Levels_       .resize(levelID);
     levelManagers_.resize(levelID);
 
+    // since the # of levels, etc. may have changed, force re-determination of description during next call to description()
+    ResetDescription();
+
     describe(GetOStream(Statistics0), GetVerbLevel());
   }
 
@@ -1115,10 +1118,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
-    std::ostringstream out;
-    out << BaseClass::description();
-    out << "{#levels = " << GetGlobalNumLevels() << ", complexity = " << GetOperatorComplexity() << "}";
-    return out.str();
+    if ( description_.empty() )
+    {
+      std::ostringstream out;
+      out << BaseClass::description();
+      out << "{#levels = " << GetGlobalNumLevels() << ", complexity = " << GetOperatorComplexity() << "}";
+      description_ = out.str();
+    }
+    return description_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -296,7 +296,7 @@ namespace MueLu {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const;
+    std::string description() const; 
 
     /*! @brief Print the Hierarchy with some verbosity level to a FancyOStream object.
 
@@ -330,6 +330,10 @@ namespace MueLu {
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
 
+    // force recreation of cached description_ next time description() is called: 
+    void ResetDescription() {
+      description_ = "";
+    }
   protected:
     const RCP<const FactoryManagerBase>& GetLevelManager(const int levelID) const {
       return levelManagers_[levelID];
@@ -371,6 +375,9 @@ namespace MueLu {
 
     // Epetra/Tpetra mode
     Xpetra::UnderlyingLib lib_;
+
+    // cache description to avoid recreating in each call to description() - use ResetDescription() to force recreation in Setup, SetupRe, etc.
+    mutable std::string description_ = ""; // mutable so that we can lazily initialize in description(), which is declared const
 
     //! Graph dumping
     // If enabled, we dump the graph on a specified level into a specified file

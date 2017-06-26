@@ -115,7 +115,7 @@ namespace MueLu {
       : printMonitor_(object, msg + " (" + object.description() + ")", msgLevel),
         timerMonitor_(object, object.ShortClassName() + ": " + msg + " (total)",    timerLevel)
     { }
-
+    
   private:
     //! Manages printing.
     PrintMonitor printMonitor_;

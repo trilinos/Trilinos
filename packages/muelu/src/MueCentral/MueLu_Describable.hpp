@@ -64,6 +64,7 @@ namespace MueLu {
   class Describable
     : public Teuchos::Describable
   {
+    mutable std::string shortClassName_ = ""; // cached so that we don't have to call demangleName() every time; mutable so that ShortClassName() can initialize lazily while remaining const
 
   public:
 
