@@ -61,6 +61,19 @@ else
 fi
 echo "Blocking or nonblocking: '$blocking_or_nonblocking'"
 
+enable_all_packages=$4
+if [ "$enable_all_packages" == "" ] ; then
+  # Don't enable all packages
+  enable_all_packages_arg=""
+elif [ "$enable_all_packages" == "all" ] ; then
+  enable_all_packages_arg="--enable-all-packages=on"
+else
+  # Invalid value!
+  echo "Error: Forth argument value '$enable_all_packages' is not acceptable!  Must pass in 'all' or empty ''!"
+  exit 4
+fi
+echo "enable_all_packages_arg = '$enable_all_packages_arg'"
+
 cd $local_trilinos_base_dir/Trilinos/
 local_branch_name=`git rev-parse --abbrev-ref HEAD`
 
@@ -94,7 +107,7 @@ remote_branch_update_cmnds="cd $remote_trilinos_base_dir/Trilinos && git checkou
 # will not allow the enable of the package.  (This actually happened with the
 # Tempus package.)
 
-remote_checkin_test_cmnds="cd $remote_trilinos_base_dir/Trilinos/CHECKIN && ./checkin-test-sems.sh --do-all --no-rebase --push" 
+remote_checkin_test_cmnds="cd $remote_trilinos_base_dir/Trilinos/CHECKIN && ./checkin-test-sems.sh $enable_all_packages_arg --do-all --no-rebase --push" 
 
 cd $local_trilinos_base_dir
 
