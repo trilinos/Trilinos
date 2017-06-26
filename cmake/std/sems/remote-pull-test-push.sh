@@ -77,8 +77,15 @@ git push -f intermediate-repo $local_branch_name:$local_branch_name
 # Run the remote commands blocking or nonblocking mode
 #
 
-remote_branch_update_cmnds="cd $remote_trilinos_base_dir/Trilinos && git checkout develop && git reset --hard @{u} && git fetch intermediate-repo && git merge --no-ff intermediate-repo/$local_branch_name"
-# NOTE: Above, we do the fetch and merge of the branch before running the
+remote_branch_update_cmnds="cd $remote_trilinos_base_dir/Trilinos && git checkout develop && git fetch && git reset --hard @{u} && git fetch intermediate-repo && git merge --no-ff intermediate-repo/$local_branch_name"
+# Some notes about the above commands:
+#
+# First, the remote tracking 'develop' branch is updated to what is in github
+# 'develop'.  That is done with a fetch followed by a reset --hard.  That make
+# sure that helps to avoid another trivial merge commit from github 'develop'
+# when the checkin-test.py script runs.
+#
+# Second, we do the fetch and merge of the new branch before running the
 # checkin-test.py script on the remote machine.  That is needed for some use
 # cases where the checkin-test.py needs to be run given the updated code or it
 # will not have the right result.  For example, when changing a package from
