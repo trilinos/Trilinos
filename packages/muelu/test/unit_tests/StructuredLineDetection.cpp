@@ -62,6 +62,153 @@
 
 namespace MueLuTests {
 
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib, const LocalOrdinal numDimensions,
+                      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
+                      RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& Coordinates,
+                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal> >& map,
+                      Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
+#include "MueLu_UseShortNames.hpp"
+
+    GO nx = 5;
+    GO ny = 5;
+    GO nz = (numDimensions == 2 ? 1 : 5);
+    GO gNumPoints = nx*ny*nz;
+
+    gNodesPerDim[0] = nx;
+    gNodesPerDim[1] = ny;
+    gNodesPerDim[2] = nz;
+
+    GO myOffset = 0;
+    if(comm->getSize() == 1) {
+      myOffset = 0;
+      lNodesPerDim[0] = nx;
+      lNodesPerDim[1] = ny;
+      lNodesPerDim[2] = nz;
+    } else if(comm->getSize() == 4) {
+      if(comm->getRank() == 0) {
+        if(numDimensions == 2) {
+          myOffset = 0;
+          lNodesPerDim[0] = 3;
+          lNodesPerDim[1] = 3;
+          lNodesPerDim[2] = 1;
+        } else if(numDimensions == 3) {
+          myOffset = 0;
+          lNodesPerDim[0] = nx;
+          lNodesPerDim[1] = 3;
+          lNodesPerDim[2] = 3;
+        }
+      } else if(comm->getRank() == 1) {
+        if(numDimensions == 2) {
+          myOffset = 4;
+          lNodesPerDim[0] = 2;
+          lNodesPerDim[1] = 3;
+          lNodesPerDim[2] = 1;
+        } else if(numDimensions == 3) {
+          myOffset = 15;
+          lNodesPerDim[0] = nx;
+          lNodesPerDim[1] = 2;
+          lNodesPerDim[2] = 3;
+        }
+      } else if(comm->getRank() == 2) {
+        if(numDimensions == 2) {
+          myOffset = 21;
+          lNodesPerDim[0] = 3;
+          lNodesPerDim[1] = 2;
+          lNodesPerDim[2] = 1;
+        } else if(numDimensions == 3) {
+          myOffset = 75;
+          lNodesPerDim[0] = nx;
+          lNodesPerDim[1] = 3;
+          lNodesPerDim[2] = 2;
+        }
+      } else if(comm->getRank() == 3) {
+        if(numDimensions == 2) {
+          myOffset = 25;
+          lNodesPerDim[0] = 2;
+          lNodesPerDim[1] = 2;
+          lNodesPerDim[2] = 1;
+        } else if(numDimensions == 3) {
+          myOffset = 90;
+          lNodesPerDim[0] = nx;
+          lNodesPerDim[1] = 2;
+          lNodesPerDim[2] = 2;
+        }
+      }
+    }
+
+    GO myZoffset = 0, myYoffset = 0, myXoffset = 0;
+    if(numDimensions == 2) {
+      myZoffset = 0;
+      myYoffset = myOffset / gNodesPerDim[0];
+      myXoffset = myOffset % gNodesPerDim[0];
+    } else if(numDimensions == 3) {
+      myZoffset = myOffset / (gNodesPerDim[1]*gNodesPerDim[0]);
+      myYoffset = (myOffset - myZoffset*gNodesPerDim[1]*gNodesPerDim[0]) / gNodesPerDim[0];
+      myXoffset = (myOffset - myZoffset*gNodesPerDim[1]*gNodesPerDim[0]) % gNodesPerDim[0];
+    }
+    LO lNumPoints = lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2];
+
+    // Construct map and local coordinates
+    Teuchos::Array<GO>     myGIDs(lNumPoints);
+    Teuchos::Array<double> myXCoords(lNumPoints);
+    Teuchos::Array<double> myYCoords(lNumPoints);
+    Teuchos::Array<double> myZCoords(lNumPoints);
+    for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+          myGIDs[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = myOffset + k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0] + i;
+          myXCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = (i + myXoffset) / Teuchos::as<double>(gNodesPerDim[0] - 1);
+          myYCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = (j + myYoffset) / Teuchos::as<double>(gNodesPerDim[1] - 1);
+          myZCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = (k + myZoffset) / Teuchos::as<double>(gNodesPerDim[2] - 1);
+        }
+      }
+    }
+
+    Teuchos::Array<Teuchos::ArrayView<const double> > myCoordinates(numDimensions);
+    if(numDimensions == 1) {
+      myCoordinates[0] = myXCoords();
+    } else if(numDimensions == 2) {
+      myCoordinates[0] = myXCoords();
+      myCoordinates[1] = myYCoords();
+    } else if(numDimensions == 3) {
+      myCoordinates[0] = myXCoords();
+      myCoordinates[1] = myYCoords();
+      myCoordinates[2] = myZCoords();
+    }
+
+    // Create the map and store coordinates using the above array views
+    map         = MapFactory::Build(lib, gNumPoints, myGIDs(), 0, comm);
+    Coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, myCoordinates(), numDimensions);
+
+    // small parameter list for Galeri
+    Teuchos::ParameterList problemParamList;
+    if(numDimensions == 1) {
+      problemParamList.set("nx",gNodesPerDim[0]);
+    } else if(numDimensions == 2) {
+      problemParamList.set("nx",gNodesPerDim[0]);
+      problemParamList.set("ny",gNodesPerDim[1]);
+    } else if(numDimensions == 3) {
+      problemParamList.set("nx",gNodesPerDim[0]);
+      problemParamList.set("ny",gNodesPerDim[1]);
+      problemParamList.set("nz",gNodesPerDim[2]);
+    }
+    // problemParamList.set("keepBCs", true);
+
+    // create Poisson problem and matrix
+    if(numDimensions == 1) {
+      Galeri::Xpetra::Laplace1DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemParamList, map);
+      Op = Problem.BuildMatrix();
+    } else if(numDimensions == 2) {
+      Galeri::Xpetra::Laplace2DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemParamList, map);
+      Op = Problem.BuildMatrix();
+    } else if(numDimensions == 3) {
+      Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemParamList, map);
+      Op = Problem.BuildMatrix();
+    }
+
+  }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredLineDetectionFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
@@ -90,42 +237,15 @@ namespace MueLuTests {
     // used Xpetra lib (for maps and smoothers)
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
-    // generate problem
-    LO maxLevels = 3;
-    LO maxIter   = 10;
-    GO nx = 4;
-    GO ny = 4;
-    GO nz = 4;
-    GO numPoints = nx*ny*nz;
+    LO numDimensions = 3;
+
+    LO maxLevels = 3, maxIter = 10;
+    RCP<Matrix> Op;
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
+    RCP<Map> map;
     Array<GO> gNodesPerDim(3);
-    gNodesPerDim[0] = 4;
-    gNodesPerDim[1] = 4;
-    gNodesPerDim[2] = 4;
     Array<LO> lNodesPerDim(3);
-    if(comm->getSize() == 1) {
-      lNodesPerDim[0] = nx;
-      lNodesPerDim[1] = ny;
-      lNodesPerDim[2] = nz;
-    } else if(comm->getSize() == 4) {
-      lNodesPerDim[0] = nx;
-      lNodesPerDim[1] = ny;
-      lNodesPerDim[2] = nz/4;
-    }
-
-    const RCP<const Map> map = MapFactory::Build(lib,
-                                                 gNodesPerDim[0]*gNodesPerDim[1]*gNodesPerDim[2],
-                                                 lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2],
-                                                 0, comm);
-
-    Teuchos::ParameterList problemParamList;
-    problemParamList.set("nx",gNodesPerDim[0]);
-    problemParamList.set("ny",gNodesPerDim[1]);
-    problemParamList.set("nz",gNodesPerDim[2]);
-    // problemParamList.set("keepBCs", true);
-
-    // create Poisson problem and matrix
-    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList, map);
-    RCP<Matrix> Op = PoissonOnCube.BuildMatrix();
+    GetProblemData(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim, lNodesPerDim);
 
     // build nullspace
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -135,26 +255,6 @@ namespace MueLuTests {
     if (comm->getRank() == 0) {
       out << "||NS|| = " << norms[0] << std::endl;
     }
-
-    // build coordinates on rank 0
-    global_size_t numGlobalElements = numPoints;
-    size_t numLocalElements = (comm->getRank() == 0 ? numPoints : 0);
-    RCP<const Map> exportMap = MapFactory::Build(lib, numGlobalElements, numLocalElements, 0, comm);
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > source_coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(exportMap, 3);
-    if (comm->getRank() == 0) {
-      for(LO k = 0; k < gNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < gNodesPerDim[1]; ++j) {
-          for(LO i = 0; i < gNodesPerDim[0]; ++i) {
-            source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i] = i / Teuchos::as<double>(gNodesPerDim[0]-1);
-            source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i] = j / Teuchos::as<double>(gNodesPerDim[1]-1);
-            source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i] = k / Teuchos::as<double>(gNodesPerDim[2]-1);
-          }
-        }
-      }
-    }
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map,3);
-    RCP<Xpetra::Export<LO,GO,Node> > coords_exporter = Xpetra::ExportFactory<LO,GO,Node>::Build(exportMap, map);
-    coordinates->doExport(*source_coordinates, *coords_exporter, Xpetra::INSERT);
 
     // fill hierarchy
     RCP<Hierarchy> H = rcp( new Hierarchy() );
@@ -175,6 +275,8 @@ namespace MueLuTests {
     Pfact->SetParameter("axisPermutation", Teuchos::ParameterEntry(std::string("{0,1,2}")));
     Pfact->SetParameter("order", Teuchos::ParameterEntry(1));
 
+    LDfact->SetParameter("orientation", Teuchos::ParameterEntry(std::string("X")));
+
     Tfact->SetParameter("Geometric", Teuchos::ParameterEntry(true));
 
     // Set interfactory dependencies
@@ -194,7 +296,6 @@ namespace MueLuTests {
     M.SetFactory("gCoarseNodesPerDim", Pfact);
     M.SetFactory("lCoarseNodesPerDim", Pfact);
     M.SetFactory("CoarseNumZLayers",          LDfact);
-    M.SetFactory("LineDetection_Layers",      LDfact);
     M.SetFactory("LineDetection_VertLineIds", LDfact);
 
     // setup smoothers
@@ -226,6 +327,8 @@ namespace MueLuTests {
     H->SetMaxCoarseSize(10);
     H->Setup(M, 0, maxLevels);
 
+    out << "MueLu setup done!" << std::endl;
+
     // Define RHS and solution vector
     RCP<MultiVector> X   = MultiVectorFactory::Build(map,1);
     RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
@@ -234,11 +337,13 @@ namespace MueLuTests {
     X->norm2(norms);
     Op->apply(*X,*RHS,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
     X->putScalar( (Scalar) 0.0);
+    out << "Starting solver iterations" << std::endl;
     for(LO i = 0; i < 10; ++i) {
       H->Iterate(*RHS,*X,maxIter);
       X->norm2(norms);
       if (comm->getRank() == 0) {out << "||RHS[" << i << "]|| = " << norms << std::endl;}
       Op->apply(*X,*RHS,Teuchos::NO_TRANS,(Scalar)-1.0,(Scalar)1.0);
+      if(norms[0] < 1.0e-7) { break; }
     }
     TEST_EQUALITY( (norms[0] < 1.0e-7), true);
   } // LabelLines
