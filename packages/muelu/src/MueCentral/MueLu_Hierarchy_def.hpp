@@ -1118,7 +1118,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
-    if (description_ == "")
+    if ( description_.empty() )
     {
       std::ostringstream out;
       out << BaseClass::description();
