@@ -77,7 +77,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # No options to set!  When the SEMS env is loaded correctly, the compilers,
   # MPI, and the TPLs will be found automatically!
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.3")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.4")
 
   TRILINOS_CTEST_DRIVER()
 

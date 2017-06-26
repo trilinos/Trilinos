@@ -10,7 +10,7 @@
 # where:
 #
 #   <compiler-and-version> is the SEMS module name for the compiler and
-#   version, e.g. 'sems-gcc/4.9.3'.  To use the default just pass in "default"
+#   version, e.g. 'sems-gcc/4.8.4'.  To use the default just pass in "default"
 #   (see the default listed below).
 #
 #   <mpi-and-version> is the SEMS module name for the MPI implementation and
