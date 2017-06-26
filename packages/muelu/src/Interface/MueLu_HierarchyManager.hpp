@@ -233,7 +233,6 @@ namespace MueLu {
 
       RCP<Teuchos::FancyOStream> fos = this->getOStream();
       fos->setOutputToRootOnly(0);
-      H.ResetDescription();
       H.describe(*fos, verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't

@@ -452,8 +452,6 @@ namespace MueLu {
     if (oldRank != -1)
       SetProcRankVerbose(oldRank);
 
-    // since the # of levels, etc. may have changed, force re-determination of description during next call to description()
-    ResetDescription();
     return isLastLevel;
   }
 
