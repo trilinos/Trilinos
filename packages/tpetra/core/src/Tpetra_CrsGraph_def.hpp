@@ -4163,13 +4163,13 @@ namespace Tpetra {
         if (ptr_d_const.dimension_0 () != 0) {
           const size_t numOffsets =
             static_cast<size_t> (ptr_d_const.dimension_0 ());
-          const auto valToCheck =
+          const size_t valToCheck =
             Details::getEntryOnHost (ptr_d_const, numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (static_cast<size_t> (valToCheck) != ind_d.dimension_0 (),
+            (valToCheck != static_cast<size_t> (ind_d.dimension_0 ()),
              std::logic_error, "(StaticProfile \"Optimize Storage\"=false "
              "branch) ptr_d_const(" << (numOffsets-1) << ") = " << valToCheck
-             " != ind_d.dimension_0() = " << ind_d.dimension_0 () << ".");
+             << " != ind_d.dimension_0() = " << ind_d.dimension_0 () << ".");
         }
 #endif // HAVE_TPETRA_DEBUG
       }
@@ -4184,7 +4184,7 @@ namespace Tpetra {
        << ".");
     if (ptr_d_const.dimension_0 () != 0) {
       const size_t numOffsets = static_cast<size_t> (ptr_d_const.dimension_0 ());
-      const auto valToCheck = Kokkos::subview (ptr_d_const, numOffsets - 1);
+      const auto valToCheck = Details::getEntryOnHost (ptr_d_const, numOffsets - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (static_cast<size_t> (valToCheck) != ind_d.dimension_0 (),
          std::logic_error, "After packing, ptr_d_const(" << (numOffsets-1)
