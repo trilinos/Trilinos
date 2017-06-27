@@ -292,3 +292,7 @@ if [[ $DEBUGMODE == 1 ]]; then
 else
     cat ${OUTFILE}.html | ${MAILCOMMAND} ${RECIPIENTS[@]}
 fi
+
+#clean up
+bzip2 --best $backupFile
+mv ${backupFile}.bz2 ${OUTFILE}.txt /home/jhu/code/trilinos-test/logs
