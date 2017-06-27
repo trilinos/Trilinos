@@ -20,7 +20,6 @@ namespace Tacho {
       typedef Kokkos::View<value_type*,  exec_space> value_type_array;
 
       typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix;
-      typedef Kokkos::View<UnmanagedViewType<value_type_matrix>*,exec_space> value_type_matrix_array;
 
       typedef Kokkos::Future<int,exec_space> future_type;
       typedef Kokkos::View<future_type*,exec_space> future_type_array;
@@ -53,9 +52,8 @@ namespace Tacho {
       ///
       /// Phase 3: abr (schur complements)
       ///
-      UnmanagedViewType<value_type_matrix_array> supernodes_abr;
-      UnmanagedViewType<future_type_array> supernodes_future;
-      
+      ConstUnmanagedViewType<size_type_array> super_schur_ptr;
+      UnmanagedViewType<value_type_array> super_schur_buf;
       
       KOKKOS_INLINE_FUNCTION
       SupernodeInfo() = default;
@@ -104,6 +102,25 @@ namespace Tacho {
         for (ordinal_type sid=0;sid<nsupernodes;++sid)
           spanel_ptr(sid+1) = spanel_ptr(sid) + work(sid);
         spanel_buf = value_type_array("super_panel_buf", spanel_ptr(nsupernodes));
+      }
+
+      inline
+      void
+      allocateWorkspacePerSupernode(/* */ size_type_array &schur_ptr,
+                                    /* */ value_type_array &schur_buf,
+                                    const ordinal_type_array &work) {
+        const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
+        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+          ordinal_type m, n;
+          getSuperPanelSize(sid, m, n);
+          work(sid) = (m-n)*(m-n);
+        }
+
+        // prefix scan
+        schur_ptr = size_type_array("super_schur_ptr", nsupernodes+1);
+        for (ordinal_type sid=0;sid<nsupernodes;++sid)
+          schur_ptr(sid+1) = schur_ptr(sid) + work(sid);
+        schur_buf = value_type_array("super_schur_buf", schur_ptr(nsupernodes));
       }
 
       inline

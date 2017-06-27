@@ -1,5 +1,5 @@
-#ifndef __TACHOEXP_HERK_HPP__
-#define __TACHOEXP_HERK_HPP__
+#ifndef __TACHOEXP_GEMM_HPP__
+#define __TACHOEXP_GEMM_HPP__
 
 /// \file TachoExp_Herk.hpp
 /// \brief Front interface for Herk operators
@@ -11,8 +11,8 @@ namespace Tacho {
 
   namespace Experimental {
     
-    template<typename ArgUplo, typename ArgTrans, typename ArgAlgo>
-    struct Herk;
+    template<typename ArgTransA, typename ArgTransB, typename ArgAlgo>
+    struct Gemm;
 
   }
 }

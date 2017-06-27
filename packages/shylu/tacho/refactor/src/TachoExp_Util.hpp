@@ -77,7 +77,7 @@ namespace Tacho {
     /// label size used to identify object name
     ///
     enum : int { LabelSize = 64,
-                 MaxDependenceSize = 10 };
+                 MaxDependenceSize = 3 };
 
     ///
     /// complex query

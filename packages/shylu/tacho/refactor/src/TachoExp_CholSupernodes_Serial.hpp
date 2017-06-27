@@ -13,32 +13,29 @@ namespace Tacho {
     template<>
     struct CholSupernodes<Algo::Workflow::Serial> {
       template<typename SchedulerType,
-               typename MemoryPoolType,
                typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int 
       factorize(const SchedulerType &sched,
-                const MemoryPoolType &pool, 
                 const MemberType &member,
                 const SupernodeInfoType &info,
                 const ordinal_type sid,
                 const ordinal_type sidpar,
-                /* */ UnmanagedViewType<typename SupernodeInfoType::value_type_matrix> &ABR,
                 const size_type bufsize,
                 /* */ void *buf) {
         typedef SupernodeInfoType supernode_info_type;
-
+        
         typedef typename supernode_info_type::value_type value_type;
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
+        
         // get supernode panel pointer
         value_type *ptr = info.getSuperPanelPtr(sid);
         
         // characterize the panel size
         ordinal_type pm, pn;
         info.getSuperPanelSize(sid, pm, pn);
-
+        
         // panel is divided into diagonal and interface block (i.e., ATL and ATR)
         const ordinal_type m = pm, n = pn - pm;
 
@@ -46,45 +43,36 @@ namespace Tacho {
         if (m > 0) {
           UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;          
           Chol<Uplo::Upper,Algo::External>
-            ::invoke(sched, /* pool, */ member, ATL);
+            ::invoke(sched, member, ATL);
           
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> ATR(ptr, m, n); // ptr += m*n;
             Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-              ::invoke(sched, /* pool, */ member, Diag::NonUnit(), 1.0, ATL, ATR);
+              ::invoke(sched, member, Diag::NonUnit(), 1.0, ATL, ATR);
             
             const size_type abrsize = n*n*sizeof(value_type);
-            const ordinal_type diff = bufsize - abrsize;
-            if (diff > 0) {
-              ABR = value_type_matrix((value_type*)buf, n, n);
-            } else {
-              //TACHO_TEST_FOR_ABORT(true, "bufsize is smaller than requested");
-              value_type *abrbuf = (value_type*)pool.allocate(abrsize);
-              TACHO_TEST_FOR_ABORT(abrbuf == NULL, "pool allocation fails");
-              ABR = value_type_matrix(abrbuf, n, n);                
-            }
+            if (abrsize) {
+              TACHO_TEST_FOR_ABORT(bufsize < abrsize, "bufsize is smaller than required schur workspace");
+              UnmanagedViewType<value_type_matrix> ABR((value_type*)buf, n, n);
             
-            Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
-              ::invoke(sched, /* pool, */ member, -1.0, ATR, 0.0, ABR);
+              Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+                ::invoke(sched, member, -1.0, ATR, 0.0, ABR);
+            }
           }
         }
         return 0;
       }
 
       template<typename SchedulerType,
-               typename MemoryPoolType,
                typename MemberType,
                typename SupernodeInfoType,
-               typename MatrixViewType,
-               typename PairType>
+               typename MatrixViewType>
       KOKKOS_INLINE_FUNCTION
       static int 
       update(const SchedulerType &sched,
-             const MemoryPoolType &pool, 
              const MemberType &member,
              const SupernodeInfoType &info,
              const MatrixViewType &ABR,
-             /* */ PairType srows,
              const ordinal_type sid,
              const size_type bufsize,
              /* */ void *buf) {
@@ -99,29 +87,16 @@ namespace Tacho {
           sbeg = info.sid_super_panel_ptr(sid)+1,
           send = info.sid_super_panel_ptr(sid+1)-1;
 
-        if (srows.first == srows.second) {
-          srows.first = sbeg; 
-          srows.second = send;
-        }
-        TACHO_TEST_FOR_ABORT(srows.first < sbeg || srows.second > send,
-                             "source rows are not properly setup");
-        
         const ordinal_type
           src_col_beg = info.blk_super_panel_colidx(sbeg),
           src_col_end = info.blk_super_panel_colidx(send),
           src_col_size = src_col_end - src_col_beg;
 
-        UnmanagedViewType<ordinal_type_array> map;
         const size_type mapsize = src_col_size*sizeof(ordinal_type);
-        const ordinal_type diff = bufsize - mapsize;
-        if (diff >= 0) {
-          map = ordinal_type_array((ordinal_type*)buf, src_col_size);
-        } else {
-          //TACHO_TEST_FOR_ABORT(true, "bufsize is smaller than requested");
-          ordinal_type *mapbuf = (ordinal_type*)pool.allocate(mapsize);
-          TACHO_TEST_FOR_ABORT(mapbuf == NULL, "pool allocation fails");
-          map = ordinal_type_array(mapbuf, src_col_size);
-        }
+        TACHO_TEST_FOR_ABORT(bufsize < mapsize, "bufsize is smaller than required map workspace");
+
+        UnmanagedViewType<ordinal_type_array> map((ordinal_type*)buf, src_col_size);
+        
         const ordinal_type smapoff = info.gid_super_panel_ptr(sid);
         auto src_map = Kokkos::subview(info.gid_super_panel_colidx,
                                        range_type(smapoff + src_col_beg,smapoff + src_col_end));
@@ -130,7 +105,7 @@ namespace Tacho {
         UnmanagedViewType<value_type_matrix> A;
         const ordinal_type src_row_offset = info.blk_super_panel_colidx(sbeg);
         //for (size_type i=sbeg;i<send;++i) {
-        for (size_type i=srows.first;i<srows.second;++i) {
+        for (size_type i=sbeg;i<send;++i) {
           /// ** soruce rows
           const ordinal_type
             src_row_beg = info.blk_super_panel_colidx(i),
@@ -177,11 +152,6 @@ namespace Tacho {
           }
         }
 
-        if (diff >= 0) {
-          // do nothing
-        } else {
-          pool.deallocate((void*)map.data(), mapsize);
-        }
         return 0;
       }
 

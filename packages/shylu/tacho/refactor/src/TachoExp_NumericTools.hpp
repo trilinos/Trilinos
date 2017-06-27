@@ -80,12 +80,15 @@ namespace Tacho {
       size_type_array_host _super_panel_ptr;
       value_type_array_host _super_panel_buf;
 
+      // temp : schur arrays (will be replaced with a memory pool)
+      size_type_array_host _super_schur_ptr;
+      value_type_array_host _super_schur_buf;
+
     private:
 
       inline
       void
       recursiveSerialChol(const sched_type_host &sched,
-                          const memory_pool_type_host &pool,
                           const supernode_info_type_host &info,
                           const ordinal_type sid, 
                           const ordinal_type sidpar,
@@ -97,28 +100,29 @@ namespace Tacho {
           iend = info.stree_ptr(sid+1);
 
         for (ordinal_type i=ibeg;i<iend;++i)
-          recursiveSerialChol(sched, pool, 
+          recursiveSerialChol(sched, 
                               info, info.stree_children(i), sid,
                               bufsize, buf);
 
         {
+          // dummy member
           const ordinal_type member = 0;
-          UnmanagedViewType<typename supernode_info_type_host::value_type_matrix> ABR;
+
+          // ABR is needed to separate factorize and update routines
           CholSupernodes<Algo::Workflow::Serial>
-            ::factorize(sched, pool, 
-                        member,
+            ::factorize(sched, member,
                         info, sid, sidpar,
-                        ABR,
                         bufsize, buf);
-          
-          TACHO_TEST_FOR_ABORT(ABR.span() && ABR.data() != buf, 
-                               "memory pool is used in serial factorization");
-          
-          Kokkos::pair<size_type,size_type> srows(0,0);
+
+          typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
+          typedef typename value_type_matrix_host::value_type value_type;
+
+          ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
+          UnmanagedViewType<value_type_matrix_host> ABR((value_type*)buf, n-m, n-m);
+
           CholSupernodes<Algo::Workflow::Serial>          
-            ::update(sched, pool, 
-                     member,
-                     info, ABR, srows, sid, 
+            ::update(sched, member,
+                     info, ABR, sid, 
                      bufsize - ABR.span()*sizeof(value_type), 
                      (void*)((value_type*)buf + ABR.span()));
         }
@@ -209,12 +213,11 @@ namespace Tacho {
           value_type_array_host work("work", worksize);
 
           sched_type_host sched;
-          memory_pool_type_host pool;
 
           /// recursive tree traversal
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
-            recursiveSerialChol(sched, pool, 
+            recursiveSerialChol(sched, 
                                 info, _stree_roots(i), -1,
                                 work.span()*sizeof(value_type), work.data());
         }
@@ -228,12 +231,6 @@ namespace Tacho {
       factorizeCholesky_Parallel() {
         /// supernode info
         supernode_info_type_host info;
-        typename supernode_info_type_host::value_type_matrix_array abrs("abrs", _nsupernodes); 
-
-        //typename supernode_info_type_host::future_type_array futures(Kokkos::ViewAllocateWithoutInitializing("futures"), _nsupernodes); 
-        typename supernode_info_type_host::future_type_array futures("futures", _nsupernodes); 
-
-
         {
           /// symbolic input
           info.supernodes             = _supernodes;
@@ -246,9 +243,6 @@ namespace Tacho {
           
           info.stree_ptr              = _stree_ptr;
           info.stree_children         = _stree_children;
-
-          info.supernodes_abr         = abrs;
-          info.supernodes_future      = futures;
         }
         
         {
@@ -261,24 +255,30 @@ namespace Tacho {
           info.super_panel_buf = _super_panel_buf;
 
           info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
+
+          /// allocate schur complement workspace (this uses maximum preallocated workspace)
+          info.allocateWorkspacePerSupernode(_super_schur_ptr, _super_schur_buf, iwork);
+
+          info.super_schur_ptr = _super_schur_ptr;
+          info.super_schur_buf = _super_schur_buf;
         }
 
         {
           typedef typename sched_type_host::memory_space memory_space;
-
+          typedef TaskFunctor_CholSupernodes<value_type,host_exec_space> chol_supernode_functor_type;
+          
+          // construct scheduler
           sched_type_host sched;
           {
-            const size_type max_functor_size = ( sizeof(supernode_info_type_host) + 
-                                                 sizeof(sched_type_host) + 
-                                                 sizeof(memory_pool_type_host) + 128 );
+            const size_type max_functor_size = sizeof(chol_supernode_functor_type);
             const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
-            const size_type task_queue_capacity = max(estimate_max_numtasks*max_functor_size*1000,
-                                                      2048*400);
             
-            const ordinal_type 
-              min_block_size  = max_functor_size*8,
-              max_block_size  = max_functor_size*8,
-              superblock_size = max_block_size*16;
+            const ordinal_type
+              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size, 
+              min_block_size  = max_functor_size,
+              max_block_size  = max_functor_size,
+              num_superblock  = 32,
+              superblock_size = task_queue_capacity/num_superblock;
             
             sched = sched_type_host(memory_space(),
                                     task_queue_capacity,
@@ -287,99 +287,46 @@ namespace Tacho {
                                     superblock_size);
           }
 
-          memory_pool_type_host pool;
+          // memory pool: used for dependency construction now
+          // this has many superblocks for flexibility
+          memory_pool_type_host workpool;
           {
-            const size_type worksize = info.computeWorkspaceSerialChol() + _m + 1;
-            const size_type pool_memory_capacity = max(worksize*sizeof(value_type)*8, 4096);
+            int nchildren = 0;
+            const int nsupernodes = _stree_ptr.dimension_0() - 1;
 
-            ordinal_type alpha = 10000;
+            for (ordinal_type sid=0;sid<nsupernodes;++sid) 
+              nchildren = max(nchildren, _stree_ptr(sid+1) - _stree_ptr(sid));
+            const size_type max_dep_future_size = sizeof(Kokkos::Future<int,host_exec_space>)*nchildren;
+            const size_type max_num_teams = 512;
+
             const size_type
-              min_block_size  = 64*alpha,
-              max_block_size  = 1024*alpha,
-              superblock_size = 4096*alpha;
+              pool_memory_capacity = max(max_dep_future_size,128)*max_num_teams,
+              min_block_size  = max_dep_future_size,
+              max_block_size  = max_dep_future_size,
+              num_superblock  = 32,
+              superblock_size = pool_memory_capacity/num_superblock;
             
-            pool = memory_pool_type_host(memory_space(), 
-                                         pool_memory_capacity,
-                                         min_block_size,
-                                         max_block_size,
-                                         superblock_size);
+            workpool = memory_pool_type_host(memory_space(), 
+                                             pool_memory_capacity,
+                                             min_block_size,
+                                             max_block_size,
+                                             superblock_size);
           }
-      
-          typedef TaskFunctor_CholSupernodes<value_type,host_exec_space> chol_supernode_functor_type;
+          
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               chol_supernode_functor_type(sched, pool, info, _stree_roots(i), -1));
-          Kokkos::wait(sched);          
+                               chol_supernode_functor_type(sched, workpool, info, _stree_roots(i), -1));
+          Kokkos::wait(sched);
+
+          // std::cout << " -- sched memory pool -- \n";
+          // sched.memory()->print_state(std::cout);
+
+          // std::cout << " -- work memory pool -- \n";
+          // workpool.memory()->print_state(std::cout);          
         }
       }
 
-      
-      // template<typename ArgUplo>
-      // inline
-      // CrsMatrixBase<value_type,host_exec_space> 
-      // Factors() {
-      //   CrsMatrixBase<value_type,host_exec_space> r_val;
-        
-      //   // for (ordinal_type i=0;i<_m;++i)
-      //   //   std::cout << _perm(i) << "  ";
-      //   // std::cout << "\n";
-
-      //   const value_type eps = std::numeric_limits<value_type>::epsilon() * 100;
-      //   if (std::is_same<ArgUplo,Uplo::Upper>::value) {
-      //     size_type_array_host count("count", _m);
-      //     for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-      //       ordinal_type m, n;
-      //       getSuperPanelSize(sid, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx, m, n);
-      //       Kokkos::View<value_type**,Kokkos::LayoutLeft,
-      //         typename value_type_array_host::execution_space,
-      //         Kokkos::MemoryUnmanaged> tgt(&_super_panel_buf(_super_panel_ptr(sid)), m, n);          
-            
-      //       const ordinal_type soffset = _supernodes(sid);            
-      //       for (ordinal_type i=0;i<m;++i) {
-      //         const ordinal_type ii = i+soffset;
-      //         for (ordinal_type j=i;j<n;++j) 
-      //           if (std::abs(tgt(i,j)) > eps)
-      //             ++count(ii);
-      //       }
-      //     }
-          
-      //     size_type_array_host ap("ap", _m+1);          
-      //     for (ordinal_type i=0;i<_m;++i) 
-      //       ap(i+1) = ap(i) + count(i);
-
-      //     ordinal_type_array_host aj("aj", ap(_m));
-      //     value_type_array_host ax("ax", ap(_m));
-
-      //     Kokkos::deep_copy(count, 0);
-          
-      //     for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-      //       ordinal_type m, n;
-      //       getSuperPanelSize(sid, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx, m, n);
-      //       Kokkos::View<value_type**,Kokkos::LayoutLeft,
-      //         typename value_type_array_host::execution_space,
-      //         Kokkos::MemoryUnmanaged> tgt(&_super_panel_buf(_super_panel_ptr(sid)), m, n);          
-            
-      //       const ordinal_type soffset = _supernodes(sid);
-      //       const ordinal_type goffset = _gid_super_panel_ptr(sid);
-      //       for (ordinal_type i=0;i<m;++i) {
-      //         const ordinal_type ii = (i+soffset);
-      //         for (ordinal_type j=i;j<n;++j) { 
-      //           if (std::abs(tgt(i,j)) > eps) {
-      //             aj(ap(ii) + count(ii)) = (_gid_super_panel_colidx(j+goffset));
-      //             ax(ap(ii) + count(ii)) = tgt(i,j);
-      //             ++count(ii);
-      //           }
-      //         }
-      //       }
-      //     }
-      //     r_val.setExternalMatrix(_m, _m, ap(_m), ap, aj, ax);
-      //   } 
-      //   else if (std::is_same<ArgUplo,Uplo::Lower>::value) {
-      //   }
-
-      //   return r_val;
-      // }
       
     };
 
