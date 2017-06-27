@@ -28,7 +28,7 @@ namespace Tacho {
         
         typedef typename supernode_info_type::value_type value_type;
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-        
+
         // get supernode panel pointer
         value_type *ptr = info.getSuperPanelPtr(sid);
         
@@ -104,7 +104,6 @@ namespace Tacho {
         // walk through source rows
         UnmanagedViewType<value_type_matrix> A;
         const ordinal_type src_row_offset = info.blk_super_panel_colidx(sbeg);
-        //for (size_type i=sbeg;i<send;++i) {
         for (size_type i=sbeg;i<send;++i) {
           /// ** soruce rows
           const ordinal_type
@@ -147,7 +146,12 @@ namespace Tacho {
             const ordinal_type mj = map(jj);
             for (ordinal_type ii=src_row_beg;ii<src_row_end;++ii) {
               const ordinal_type mi = map(ii-src_row_beg+mbeg);
-              A(mi, mj) += ABR(ii-src_row_offset,jj);
+              
+              // for parallel assembly, this should be used
+              // TODO:: use row-wise atomic assembly later if this hurts performance on knl
+              //        for gpu, this is the right way to do
+              Kokkos::atomic_fetch_add(&A(mi, mj), ABR(ii-src_row_offset,jj));
+              //A(mi, mj) += ABR(ii-src_row_offset,jj);
             }
           }
         }

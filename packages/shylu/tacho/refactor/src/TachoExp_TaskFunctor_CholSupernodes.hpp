@@ -74,24 +74,27 @@ namespace Tacho {
 
           bool is_execute = (_state == 1 /* respawned */ || isize == 0 /* leaf */);
           if (is_execute) { 
-            if (isize > 0) {
-              // assemble children
-              std::cout << "Self = " << _sid << " Assemble Children : ";
-              for (ordinal_type i=ibeg;i<iend;++i) 
-                std::cout << _info.stree_children(i) << " ";
-              std::cout << " \n";
-            }
+            typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-            // factorize this
-            std::cout << " Factorize : " << _sid << " \n";
-
-            // UnmanagedViewType<typename supernode_info_type::value_type_matrix> ABR;
-            // const ordinal_type bufsize = 
-            // CholSupernodes<Algo::Workflow::Serial>
-            //   ::factorize(_sched, member,
-            //               _info, _sid, _sidpar,
-            //               bufsize, buf);
+            const ordinal_type 
+              bbeg = _info.super_schur_ptr[_sid],
+              bend = _info.super_schur_ptr[_sid+1],
+              bufsize = (bend - bbeg)*sizeof(mat_value_type);
             
+            void *buf = (void*)&_info.super_schur_buf[bbeg];
+            CholSupernodes<Algo::Workflow::Serial>
+              ::factorize(_sched, member,
+                          _info, _sid, _sidpar,
+                          bufsize, buf);
+
+            ordinal_type m, n; _info.getSuperPanelSize(_sid, m, n);
+            UnmanagedViewType<value_type_matrix> ABR((mat_value_type*)buf, n-m, n-m);
+
+            CholSupernodes<Algo::Workflow::Serial>
+              ::update(_sched, member,
+                       _info, ABR, _sid,
+                       bufsize - ABR.span()*sizeof(mat_value_type),
+                       (void*)((mat_value_type*)buf + ABR.span()));
             
             // this is done
             _state = 2;
