@@ -62,7 +62,7 @@
 
 namespace MueLuTests {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib, const LocalOrdinal numDimensions,
                       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
                       RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& Coordinates,
@@ -245,7 +245,7 @@ namespace MueLuTests {
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
-    GetProblemData(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim, lNodesPerDim);
+    GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim, lNodesPerDim);
 
     // build nullspace
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
