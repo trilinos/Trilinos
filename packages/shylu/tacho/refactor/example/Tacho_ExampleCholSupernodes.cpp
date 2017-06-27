@@ -35,6 +35,9 @@ int main (int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("This example program measure the performance of Pardiso Chol algorithms on Kokkos::OpenMP execution space.\n");
 
+  bool serial = false;
+  clp.setOption("enable-serial", "disable-verbose", &serial, "Flag for invoking serial algorithm");
+
   int nthreads = 1;
   clp.setOption("kokkos-threads", &nthreads, "Number of threads");
 
@@ -71,7 +74,7 @@ int main (int argc, char *argv[]) {
     Kokkos::Impl::Timer timer;
     double t = 0.0;
 
-    std::cout << "CholSerial:: import input file = " << file << std::endl;
+    std::cout << "CholSupernodes:: import input file = " << file << std::endl;
     CrsMatrixBaseType A("A");
     timer.reset();
     {
@@ -87,7 +90,7 @@ int main (int argc, char *argv[]) {
     }
     Graph G(A);
     t = timer.seconds();
-    std::cout << "CholSerial:: import input file::time = " << t << std::endl;
+    std::cout << "CholSupernodes:: import input file::time = " << t << std::endl;
     
     DenseMatrixBaseType 
       BB("BB", A.NumRows(), nrhs), 
@@ -116,7 +119,7 @@ int main (int argc, char *argv[]) {
       Kokkos::deep_copy(RR, XX);
     }
 
-    std::cout << "CholSerial:: analyze matrix" << std::endl;
+    std::cout << "CholSupernodes:: analyze matrix" << std::endl;
     timer.reset();
 #if   defined(HAVE_SHYLUTACHO_METIS)
     GraphTools_Metis T(G);
@@ -130,9 +133,9 @@ int main (int argc, char *argv[]) {
     SymbolicTools S(A, T);
     S.symbolicFactorize();
     t = timer.seconds();
-    std::cout << "CholSerial:: analyze matrix::time = " << t << std::endl;
+    std::cout << "CholSupernodes:: analyze matrix::time = " << t << std::endl;
     
-    std::cout << "CholSerial:: factorize matrix" << std::endl;
+    std::cout << "CholSupernodes:: factorize matrix" << std::endl;
     timer.reset();    
     NumericTools<value_type,Kokkos::DefaultHostExecutionSpace> 
       N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
@@ -142,13 +145,13 @@ int main (int argc, char *argv[]) {
         S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
         S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
-    if (nthreads > 1) {
-      N.factorizeCholesky_Parallel();
+    if (serial) {
+      N.factorizeCholesky_Serial();
     } else {
       N.factorizeCholesky_Parallel();
     }
     t = timer.seconds();    
-    std::cout << "CholSerial:: factorize matrix::time = " << t << std::endl;
+    std::cout << "CholSupernodes:: factorize matrix::time = " << t << std::endl;
   }
   Kokkos::finalize();
 
