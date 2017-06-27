@@ -333,11 +333,20 @@ namespace MueLu {
           RCP<Level> L = H.GetLevel(data[i]);
 
           if (L->IsAvailable(name,&*levelManagers_[i]->GetFactory(name))) {
+	    // Try generating factory
             RCP<T> M = L->template Get< RCP<T> >(name,&*levelManagers_[i]->GetFactory(name));
             if (!M.is_null()) {
               Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
             }
-          }
+          }	  
+	  else if (L->IsAvailable(name)) {
+	    // Try nofactory
+            RCP<T> M = L->template Get< RCP<T> >(name);
+            if (!M.is_null()) {
+              Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
+            }
+	  }
+
         }
       }
     }
