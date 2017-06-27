@@ -72,6 +72,7 @@
 #include "MueLu_BlockedCoarseMapFactory.hpp"
 #include "MueLu_BlockedDirectSolver.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
+#include "MueLu_BlockedJacobiSmoother.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
 #include "MueLu_BraessSarazinSmoother.hpp"
@@ -285,6 +286,7 @@ namespace MueLu {
       // Blocked factories
       if (factoryName == "BlockedDirectSolver")             return BuildBlockedDirectSolver(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedGaussSeidelSmoother")      return BuildBlockedSmoother<BlockedGaussSeidelSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedJacobiSmoother")           return BuildBlockedSmoother<BlockedJacobiSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedPFactory")                 return BuildBlockedFactory<BlockedPFactory>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BraessSarazinSmoother")           return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "IndefiniteBlockDiagonalSmoother") return BuildBlockedSmoother<IndefBlockedDiagonalSmoother>(paramList, factoryMapIn, factoryManagersIn);

@@ -6,6 +6,7 @@ AlgebraicPermutationStrategy
 BlockedCoarseMapFactory
 BlockedDirectSolver
 BlockedGaussSeidelSmoother
+BlockedJacobiSmoother
 BlockedPFactory
 BlockedRAPFactory
 BrickAggregationFactory
