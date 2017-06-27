@@ -61,6 +61,7 @@
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
+#include "Tpetra_Details_copyConvert.hpp"
 #include "Tpetra_Details_Environment.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
@@ -5234,119 +5235,34 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   convert () const
   {
-    using Teuchos::ArrayRCP;
     using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, Node, classic> out_mat_type;
-    typedef typename out_mat_type::local_matrix_type out_lcl_mat_type;
-    typedef typename out_lcl_mat_type::values_type out_vals_type;
-    typedef ArrayRCP<size_t>::size_type size_type;
-    const char tfecfFuncName[] = "convert";
+    typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, Node,
+      classic> output_matrix_type;
+    const char tfecfFuncName[] = "convert: ";
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! isFillComplete (), std::runtime_error, "This matrix (the source of "
-      "the conversion) is not fill complete.  You must first call "
-      "fillComplete() (possibly with the domain and range Map) without an "
-      "intervening call to resumeFill(), before you may call this method.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->isFillComplete (), std::runtime_error, "This matrix (the source "
+       "of the conversion) is not fill complete.  You must first call "
+       "fillComplete() (possibly with the domain and range Map) without an "
+       "intervening call to resumeFill(), before you may call this method.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->isStaticGraph (), std::logic_error, "This matrix (the source "
+       "of the conversion) claims to be fill complete, but does not have a "
+       "static (i.e., constant) graph.  Please report this bug to the Tpetra "
+       "developers.");
 
-    // mfh 27 Feb 2014: It seems reasonable that if this matrix has a
-    // const graph, then the returned matrix should also.  However, if
-    // this matrix does not have a const graph, then neither should
-    // the returned matrix.  The code below implements this strategy.
+    RCP<output_matrix_type> newMatrix
+      (new output_matrix_type (this->getCrsGraph ()));
+    // Copy old values into new values.  impl_scalar_type and T may
+    // differ, so we can't use Kokkos::deep_copy.
+    ::Tpetra::Details::copyConvert (newMatrix->lclMatrix_.values,
+                                    this->lclMatrix_.values);
+    // Since newmat has a static (const) graph, the graph already has
+    // a column Map, and Import and Export objects already exist (if
+    // applicable).  Thus, calling fillComplete is cheap.
+    newMatrix->fillComplete (this->getDomainMap (), this->getRangeMap ());
 
-    RCP<out_mat_type> newmat; // the matrix to return
-
-    if (this->isStaticGraph ()) {
-      // This matrix has a const graph, so the returned matrix should too.
-      newmat = rcp (new out_mat_type (this->getCrsGraph ()));
-
-      // Convert the values from Scalar to T, and stuff them directly
-      // into the matrix to return.
-      const size_type numVals =
-        static_cast<size_type> (this->lclMatrix_.values.dimension_0 ());
-
-      // FIXME (mfh 05 Aug 2014) Write a copy kernel (impl_scalar_type and
-      // T differ, so we can't use Kokkos::deep_copy).
-      //
-      // FIXME (mfh 05 Aug 2014) This assumes UVM.
-      out_vals_type newVals1D ("Tpetra::CrsMatrix::val", numVals);
-      for (size_type k = 0; k < numVals; ++k) {
-        newVals1D(k) = static_cast<T> (this->k_values1D_(k));
-      }
-      newmat->lclMatrix_ =
-        out_lcl_mat_type ("Tpetra::CrsMatrix::lclMatrix_",
-                          this->lclMatrix_.numCols (), newVals1D,
-                          this->lclMatrix_.graph);
-      newmat->k_values1D_ = newVals1D;
-      // Since newmat has a static (const) graph, the graph already
-      // has a column Map, and Import and Export objects already exist
-      // (if applicable).  Thus, calling fillComplete is cheap.
-      newmat->fillComplete (this->getDomainMap (), this->getRangeMap ());
-    }
-    else {
-      // This matrix has a nonconst graph, so the returned matrix
-      // should also have a nonconst graph.  However, it's fine for
-      // the returned matrix to have static profile.  This will
-      // certainly speed up its fillComplete.
-
-      //
-      // FIXME (mfh 05 Aug 2014) Instead of the slow stuff below, we
-      // should copy the values and existing graph into a new local
-      // matrix (lclMatrix), and then use the Tpetra::CrsMatrix
-      // constructor that takes (rowMap, colMap, lclMatrix, params).
-      //
-
-      // Get this matrix's local data.
-      ArrayRCP<const size_t> ptr;
-      ArrayRCP<const LocalOrdinal> ind;
-      ArrayRCP<const Scalar> oldVal;
-      this->getAllValues (ptr, ind, oldVal);
-
-      RCP<const map_type> rowMap = this->getRowMap ();
-      RCP<const map_type> colMap = this->getColMap ();
-
-      // Get an array of the number of entries in each (locally owned)
-      // row, so that we can make the new matrix with static profile.
-      const size_type numLocalRows =
-        static_cast<size_type> (rowMap->getNodeNumElements ());
-      ArrayRCP<size_t> numEntriesPerRow (numLocalRows);
-      for (size_type localRow = 0; localRow < numLocalRows; ++localRow) {
-        numEntriesPerRow[localRow] =
-          static_cast<size_type> (getNumEntriesInLocalRow (localRow));
-      }
-
-      newmat = rcp (new out_mat_type (rowMap, colMap, numEntriesPerRow,
-                                      StaticProfile));
-
-      // Convert this matrix's values from Scalar to T.
-      const size_type numVals = this->lclMatrix_.values.dimension_0 ();
-      ArrayRCP<T> newVals1D (numVals);
-      // FIXME (mfh 05 Aug 2014) This assumes UVM.
-      for (size_type k = 0; k < numVals; ++k) {
-        newVals1D[k] = static_cast<T> (this->k_values1D_(k));
-      }
-
-      // Give this matrix all of its local data.  We can all this
-      // method because newmat was _not_ created with a const graph.
-      // The data must be passed in as nonconst, so we have to copy it
-      // first.
-      ArrayRCP<size_t> newPtr (ptr.size ());
-      std::copy (ptr.begin (), ptr.end (), newPtr.begin ());
-      ArrayRCP<LocalOrdinal> newInd (ind.size ());
-      std::copy (ind.begin (), ind.end (), newInd.begin ());
-      newmat->setAllValues (newPtr, newInd, newVals1D);
-
-      // We already have the Import and Export (if applicable) objects
-      // from the graph, so we can save a lot of time by passing them
-      // in to expertStaticFillComplete.
-      RCP<const map_type> domainMap = this->getDomainMap ();
-      RCP<const map_type> rangeMap = this->getRangeMap ();
-      RCP<const import_type> importer = this->getCrsGraphRef ().getImporter ();
-      RCP<const export_type> exporter = this->getCrsGraphRef ().getExporter ();
-      newmat->expertStaticFillComplete (domainMap, rangeMap, importer, exporter);
-    }
-
-    return newmat;
+    return newMatrix;
   }
 
 
