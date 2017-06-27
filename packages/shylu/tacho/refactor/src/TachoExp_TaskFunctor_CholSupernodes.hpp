@@ -23,20 +23,13 @@ namespace Tacho {
       typedef int value_type; // functor return type
       typedef Kokkos::Future<int,exec_space> future_type;
 
-      typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
       typedef MatValueType mat_value_type; // matrix value type
 
       typedef SupernodeInfo<mat_value_type,exec_space> supernode_info_type;
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
     private:
-      // TODO:: for now, we use three memory pool
-      // - sched.memory() - tasking allocation (small/uniform superblocks)
-      // - workpool - misc allocation (small/many superblocks)
-      // - bufpool - large/small number of superblocks
-      // later merge workpool + sched.memory() but keep bufpool
       sched_type _sched;
-      memory_pool_type _workpool, _bufpool;
       
       supernode_info_type _info;
       ordinal_type _sid, _sidpar;
@@ -50,12 +43,10 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       TaskFunctor_CholSupernodes(const sched_type &sched,
-                                 const memory_pool_type &workpool,
                                  const supernode_info_type &info,
                                  const ordinal_type sid,
                                  const ordinal_type sidpar)                                     
         : _sched(sched),
-          _workpool(workpool),
           _info(info),
           _sid(sid),
           _sidpar(sidpar),
@@ -103,8 +94,8 @@ namespace Tacho {
             future_type depbuf[MaxDependenceSize] /* 3 */, *dep = &depbuf[0];
             const size_type depsize = (isize > MaxDependenceSize ? isize*sizeof(future_type) : 0);
             if (depsize) {
-              dep = (future_type*)_workpool.allocate(depsize);
-              TACHO_TEST_FOR_ABORT(dep == NULL, "pool allocation fails");
+              dep = (future_type*)_sched.memory()->allocate(depsize);
+              TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
             }
 
             // spawn children tasks and this (their parent) depends on the children tasks
@@ -114,7 +105,7 @@ namespace Tacho {
               
               const ordinal_type child = _info.stree_children(i+ibeg);
               auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, priority),
-                                          TaskFunctor_CholSupernodes(_sched, _workpool, _info, child, _sid));
+                                          TaskFunctor_CholSupernodes(_sched,_info, child, _sid));
               TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
               dep[i] = f;
             }
@@ -127,7 +118,7 @@ namespace Tacho {
             if (depsize) {
               // manually reset future to decrease the reference count
               for (ordinal_type i=0;i<isize;++i) dep[i] = future_type();
-              _workpool.deallocate((void*)dep, depsize);
+              _sched.memory()->deallocate((void*)dep, depsize);
             }
           } 
 
