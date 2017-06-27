@@ -66,7 +66,7 @@ namespace MueLuTests {
 namespace MueLu {
 
 /*!
-  @class GenearlGeometricPFactory
+  @class GeneralGeometricPFactory
   @ingroup MueLuTransferClasses
   @brief Prolongator factory performing geometric coarsening.
 
