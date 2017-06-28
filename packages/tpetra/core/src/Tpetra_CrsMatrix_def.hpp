@@ -61,9 +61,11 @@
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
+#include "Tpetra_Details_copyConvert.hpp"
+#include "Tpetra_Details_Environment.hpp"
+#include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
 #include "Tpetra_Details_unpackCrsMatrix.hpp"
-#include "Tpetra_Details_Environment.hpp"
 #include <typeinfo>
 #include <vector>
 
@@ -325,14 +327,8 @@ namespace Tpetra {
        "columnIndices.dimension_0() = " << columnIndices.dimension_0 () << ".");
 #ifdef HAVE_TPETRA_DEBUG
     if (rowPointers.dimension_0 () != 0) {
-      using Kokkos::subview;
-      // Don't assume UVM.  Use "0-D" mirror views to get the last
-      // entry.  Only do this in a debug build because it requires an
-      // extra device-to-host copy.
-      auto ptr_last_d = subview (rowPointers, rowPointers.dimension_0 () - 1);
-      auto ptr_last_h = Kokkos::create_mirror_view (ptr_last_d);
-      Kokkos::deep_copy (ptr_last_h, ptr_last_d);
-      const size_t numEnt = static_cast<size_t> (ptr_last_h ());
+      const size_t numEnt =
+        Details::getEntryOnHost (rowPointers, rowPointers.dimension_0 () - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numEnt != static_cast<size_t> (columnIndices.dimension_0 ()) ||
          numEnt != static_cast<size_t> (values.dimension_0 ()),
@@ -874,19 +870,8 @@ namespace Tpetra {
         << k_ptrs.dimension_0 () << " != (lclNumRows+1) = "
         << (lclNumRows+1) << ".");
 
-      // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-      // k_ptrs(lclNumRows), then copy that entry of k_ptrs to host
-      // first.  We can do this with "0-D" subviews.
-      auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, lclNumRows);
-      auto k_ptrs_ent_h = Kokkos::create_mirror_view (k_ptrs_ent_d);
-      Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
-      const size_t lclTotalNumEntries = static_cast<size_t> (k_ptrs_ent_h ());
-
-      // // FIXME (mfh 08 Aug 2014) This assumes UVM.  We could fix this
-      // // either by storing the row offsets in the graph as a DualView,
-      // // or by making a device View of that entry, and copying it back
-      // // to host.
-      // const size_t lclTotalNumEntries = k_ptrs(lclNumRows);
+      const size_t lclTotalNumEntries =
+        Details::getEntryOnHost (k_ptrs, lclNumRows);
 
       // Allocate array of (packed???) matrix values.
       typedef typename local_matrix_type::values_type values_type;
@@ -1110,21 +1095,16 @@ namespace Tpetra {
            "branch) After copying into k_ptrs, k_ptrs.dimension_0() = " <<
            numOffsets << " != (lclNumRows+1) = " << (lclNumRows+1) << ".");
 
-        // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-        // k_ptrs(numOffsets-1), then copy that entry to host first.
-        // We can do this with "0-D" subviews.
-        auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, numOffsets-1);
-        auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
-        Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
+        const auto valToCheck = Details::getEntryOnHost (k_ptrs, numOffsets-1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (k_ptrs_ent_h ()) != k_vals.dimension_0 (),
+          (static_cast<size_t> (valToCheck) != k_vals.dimension_0 (),
           std::logic_error, "(DynamicProfile branch) After packing, k_ptrs("
-           << (numOffsets-1) << ") = " << k_ptrs_ent_h () << " != "
+           << (numOffsets-1) << ") = " << valToCheck << " != "
            "k_vals.dimension_0() = " << k_vals.dimension_0 () << ".");
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (k_ptrs_ent_h ()) != k_inds.dimension_0 (),
+          (static_cast<size_t> (valToCheck) != k_inds.dimension_0 (),
           std::logic_error, "(DynamicProfile branch) After packing, k_ptrs("
-           << (numOffsets-1) << ") = " << k_ptrs_ent_h () << " != "
+           << (numOffsets-1) << ") = " << valToCheck << " != "
            "k_inds.dimension_0() = " << k_inds.dimension_0 () << ".");
       }
 #endif // HAVE_TPETRA_DEBUG
@@ -1150,20 +1130,15 @@ namespace Tpetra {
          << (lclNumRows + 1) << ".")
       {
         const size_t numOffsets = curRowOffsets.dimension_0 ();
-        // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-        // curRowOffsets(numOffsets-1), then copy that entry of the
-        // View to host first.  We can do this with "0-D" subviews.
-        auto curRowOffsets_ent_d =
-          Kokkos::subview (curRowOffsets, numOffsets - 1);
-        auto curRowOffsets_ent_h = create_mirror_view (curRowOffsets_ent_d);
-        Kokkos::deep_copy (curRowOffsets_ent_h, curRowOffsets_ent_d);
+        const auto valToCheck =
+          Details::getEntryOnHost (curRowOffsets, numOffsets - 1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (numOffsets != 0 &&
-           myGraph_->k_lclInds1D_.dimension_0 () != curRowOffsets_ent_h (),
+           myGraph_->k_lclInds1D_.dimension_0 () != valToCheck,
            std::logic_error, "(StaticProfile branch) numOffsets = " <<
            numOffsets << " != 0 and myGraph_->k_lclInds1D_.dimension_0() = "
            << myGraph_->k_lclInds1D_.dimension_0 () << " != curRowOffsets("
-           << numOffsets << ") = " << curRowOffsets_ent_h () << ".");
+           << numOffsets << ") = " << valToCheck << ".");
       }
 #endif // HAVE_TPETRA_DEBUG
 
@@ -1178,25 +1153,21 @@ namespace Tpetra {
         if (curRowOffsets.dimension_0 () != 0) {
           const size_t numOffsets =
             static_cast<size_t> (curRowOffsets.dimension_0 ());
-          // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-          // curRowOffsets(numOffsets-1), then copy that entry to host
-          // first.  We can do this with "0-D" subviews.
-          auto curRowOffsets_ent_d = Kokkos::subview (curRowOffsets, numOffsets-1);
-          auto curRowOffsets_ent_h = create_mirror_view (curRowOffsets_ent_d);
-          Kokkos::deep_copy (curRowOffsets_ent_h, curRowOffsets_ent_d);
+          const auto valToCheck =
+            Details::getEntryOnHost (curRowOffsets, numOffsets-1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (static_cast<size_t> (curRowOffsets_ent_h ()) !=
+            (static_cast<size_t> (valToCheck) !=
              static_cast<size_t> (k_values1D_.dimension_0 ()),
              std::logic_error, "(StaticProfile unpacked branch) Before "
              "allocating or packing, curRowOffsets(" << (numOffsets-1) << ") = "
-             << curRowOffsets_ent_h () << " != k_values1D_.dimension_0()"
+             << valToCheck << " != k_values1D_.dimension_0()"
              " = " << k_values1D_.dimension_0 () << ".");
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (static_cast<size_t> (curRowOffsets_ent_h ()) !=
+            (static_cast<size_t> (valToCheck) !=
              static_cast<size_t> (myGraph_->k_lclInds1D_.dimension_0 ()),
              std::logic_error, "(StaticProfile unpacked branch) Before "
              "allocating or packing, curRowOffsets(" << (numOffsets-1) << ") = "
-             << curRowOffsets_ent_h ()
+             << valToCheck
              << " != myGraph_->k_lclInds1D_.dimension_0() = "
              << myGraph_->k_lclInds1D_.dimension_0 () << ".");
         }
@@ -1237,16 +1208,11 @@ namespace Tpetra {
            "k_ptrs.dimension_0() = " << k_ptrs.dimension_0 () << " != "
            "lclNumRows+1 = " << (lclNumRows+1) << ".");
         {
-          // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-          // k_ptrs(lclNumRows), then copy that entry to host first.
-          // We can do this with "0-D" subviews.
-          auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, lclNumRows);
-          auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
-          Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
+          const auto valToCheck = Details::getEntryOnHost (k_ptrs, lclNumRows);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (k_ptrs_ent_h () != lclTotalNumEntries, std::logic_error,
+            (valToCheck != lclTotalNumEntries, std::logic_error,
              "(StaticProfile unpacked branch) After filling k_ptrs, "
-             "k_ptrs(lclNumRows=" << lclNumRows << ") = " << k_ptrs_ent_h ()
+             "k_ptrs(lclNumRows=" << lclNumRows << ") = " << valToCheck
              << " != total number of entries on the calling process = "
              << lclTotalNumEntries << ".");
         }
@@ -1290,24 +1256,18 @@ namespace Tpetra {
            "probably means that k_rowPtrs_ was never allocated.");
         if (k_ptrs.dimension_0 () != 0) {
           const size_t numOffsets = static_cast<size_t> (k_ptrs.dimension_0 ());
-
-          // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-          // k_ptrs(numOffsets-1), then copy that entry to host first.
-          // We can do this with "0-D" subviews.
-          auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, numOffsets - 1);
-          auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
-          Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
+          const auto valToCheck = Details::getEntryOnHost (k_ptrs, numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (static_cast<size_t> (k_ptrs_ent_h ()) != k_vals.dimension_0 (),
+            (static_cast<size_t> (valToCheck) != k_vals.dimension_0 (),
              std::logic_error,
              "(StaticProfile \"Optimize Storage\"=true branch) After packing, "
-             "k_ptrs(" << (numOffsets-1) << ") = " << k_ptrs_ent_h () <<
+             "k_ptrs(" << (numOffsets-1) << ") = " << valToCheck <<
              " != k_vals.dimension_0() = " << k_vals.dimension_0 () << ".");
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (static_cast<size_t> (k_ptrs_ent_h ()) != k_inds.dimension_0 (),
+            (static_cast<size_t> (valToCheck) != k_inds.dimension_0 (),
              std::logic_error,
              "(StaticProfile \"Optimize Storage\"=true branch) After packing, "
-             "k_ptrs(" << (numOffsets-1) << ") = " << k_ptrs_ent_h () <<
+             "k_ptrs(" << (numOffsets-1) << ") = " << valToCheck <<
              " != k_inds.dimension_0() = " << k_inds.dimension_0 () << ".");
         }
 #endif // HAVE_TPETRA_DEBUG
@@ -1325,24 +1285,18 @@ namespace Tpetra {
           "k_rowPtrs_ was never allocated.");
         if (k_ptrs_const.dimension_0 () != 0) {
           const size_t numOffsets = static_cast<size_t> (k_ptrs_const.dimension_0 ());
-
-          // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-          // k_ptrs_const(numOffsets-1), then copy that entry to host
-          // first.  We can do this with "0-D" subviews.
-          auto k_ptrs_const_ent_d = Kokkos::subview (k_ptrs_const, numOffsets - 1);
-          auto k_ptrs_const_ent_h = create_mirror_view (k_ptrs_const_ent_d);
-          Kokkos::deep_copy (k_ptrs_const_ent_h, k_ptrs_const_ent_d);
+          const auto valToCheck = Details::getEntryOnHost (k_ptrs_const, numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (static_cast<size_t> (k_ptrs_const_ent_h ()) != k_vals.dimension_0 (),
+            (static_cast<size_t> (valToCheck) != k_vals.dimension_0 (),
              std::logic_error,
              "(StaticProfile \"Optimize Storage\"=false branch) "
-             "k_ptrs_const(" << (numOffsets-1) << ") = " << k_ptrs_const_ent_h ()
+             "k_ptrs_const(" << (numOffsets-1) << ") = " << valToCheck
              << " != k_vals.dimension_0() = " << k_vals.dimension_0 () << ".");
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (static_cast<size_t> (k_ptrs_const_ent_h ()) != k_inds.dimension_0 (),
+            (static_cast<size_t> (valToCheck) != k_inds.dimension_0 (),
              std::logic_error,
              "(StaticProfile \"Optimize Storage\" = false branch) "
-             "k_ptrs_const(" << (numOffsets-1) << ") = " << k_ptrs_const_ent_h ()
+             "k_ptrs_const(" << (numOffsets-1) << ") = " << valToCheck
              << " != k_inds.dimension_0() = " << k_inds.dimension_0 () << ".");
         }
 #endif // HAVE_TPETRA_DEBUG
@@ -1358,15 +1312,8 @@ namespace Tpetra {
        << ".");
     if (k_ptrs_const.dimension_0 () != 0) {
       const size_t numOffsets = static_cast<size_t> (k_ptrs_const.dimension_0 ());
-
-      // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-      // k_ptrs_const(numOffsets-1), then copy that entry to host
-      // first.  We can do this with "0-D" subviews.
-      auto k_ptrs_const_ent_d = Kokkos::subview (k_ptrs_const, numOffsets - 1);
-      auto k_ptrs_const_ent_h = create_mirror_view (k_ptrs_const_ent_d);
-      Kokkos::deep_copy (k_ptrs_const_ent_h, k_ptrs_const_ent_d);
-
-      const size_t k_ptrs_const_numOffsetsMinus1 = k_ptrs_const_ent_h ();
+      const size_t k_ptrs_const_numOffsetsMinus1 =
+        Details::getEntryOnHost (k_ptrs_const, numOffsets - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (k_ptrs_const_numOffsetsMinus1 != k_vals.dimension_0 (),
          std::logic_error, "After packing, k_ptrs_const(" << (numOffsets-1) <<
@@ -1556,16 +1503,11 @@ namespace Tpetra {
          "h_ptrs.dimension_0() = " << h_ptrs.dimension_0 () << " != "
          "(lclNumRows+1) = " << (lclNumRows+1) << ".");
       {
-        // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-        // k_ptrs(lclNumRows), then copy that entry to host first.  We
-        // can do this with "0-D" subviews.
-        auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, lclNumRows);
-        auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
-        Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
+        const auto valToCheck = Details::getEntryOnHost (k_ptrs, lclNumRows);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (k_ptrs_ent_h ()) != lclTotalNumEntries,
+          (static_cast<size_t> (valToCheck) != lclTotalNumEntries,
            std::logic_error, "(DynamicProfile branch) After packing k_ptrs, "
-           "k_ptrs(lclNumRows = " << lclNumRows << ") = " << k_ptrs_ent_h ()
+           "k_ptrs(lclNumRows = " << lclNumRows << ") = " << valToCheck
            << " != total number of entries on the calling process = "
            << lclTotalNumEntries << ".");
       }
@@ -1589,17 +1531,12 @@ namespace Tpetra {
       // Sanity check of packed row offsets.
       if (k_ptrs.dimension_0 () != 0) {
         const size_t numOffsets = static_cast<size_t> (k_ptrs.dimension_0 ());
-
-        // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-        // k_ptrs(numOffsets-1), then copy that entry to host first.
-        // We can do this with "0-D" subviews.
-        auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, numOffsets - 1);
-        auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
-        Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
+        const auto valToCheck =
+          Details::getEntryOnHost (k_ptrs, numOffsets - 1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (k_ptrs_ent_h ()) != k_vals.dimension_0 (),
+          (static_cast<size_t> (valToCheck) != k_vals.dimension_0 (),
            std::logic_error, "(DynamicProfile branch) After packing, k_ptrs("
-           << (numOffsets-1) << ") = " << k_ptrs_ent_h () << " != "
+           << (numOffsets-1) << ") = " << valToCheck << " != "
            "k_vals.dimension_0() = " << k_vals.dimension_0 () << ".");
       }
 #endif // HAVE_TPETRA_DEBUG
@@ -5298,119 +5235,34 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   convert () const
   {
-    using Teuchos::ArrayRCP;
     using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, Node, classic> out_mat_type;
-    typedef typename out_mat_type::local_matrix_type out_lcl_mat_type;
-    typedef typename out_lcl_mat_type::values_type out_vals_type;
-    typedef ArrayRCP<size_t>::size_type size_type;
-    const char tfecfFuncName[] = "convert";
+    typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, Node,
+      classic> output_matrix_type;
+    const char tfecfFuncName[] = "convert: ";
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! isFillComplete (), std::runtime_error, "This matrix (the source of "
-      "the conversion) is not fill complete.  You must first call "
-      "fillComplete() (possibly with the domain and range Map) without an "
-      "intervening call to resumeFill(), before you may call this method.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->isFillComplete (), std::runtime_error, "This matrix (the source "
+       "of the conversion) is not fill complete.  You must first call "
+       "fillComplete() (possibly with the domain and range Map) without an "
+       "intervening call to resumeFill(), before you may call this method.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->isStaticGraph (), std::logic_error, "This matrix (the source "
+       "of the conversion) claims to be fill complete, but does not have a "
+       "static (i.e., constant) graph.  Please report this bug to the Tpetra "
+       "developers.");
 
-    // mfh 27 Feb 2014: It seems reasonable that if this matrix has a
-    // const graph, then the returned matrix should also.  However, if
-    // this matrix does not have a const graph, then neither should
-    // the returned matrix.  The code below implements this strategy.
+    RCP<output_matrix_type> newMatrix
+      (new output_matrix_type (this->getCrsGraph ()));
+    // Copy old values into new values.  impl_scalar_type and T may
+    // differ, so we can't use Kokkos::deep_copy.
+    ::Tpetra::Details::copyConvert (newMatrix->lclMatrix_.values,
+                                    this->lclMatrix_.values);
+    // Since newmat has a static (const) graph, the graph already has
+    // a column Map, and Import and Export objects already exist (if
+    // applicable).  Thus, calling fillComplete is cheap.
+    newMatrix->fillComplete (this->getDomainMap (), this->getRangeMap ());
 
-    RCP<out_mat_type> newmat; // the matrix to return
-
-    if (this->isStaticGraph ()) {
-      // This matrix has a const graph, so the returned matrix should too.
-      newmat = rcp (new out_mat_type (this->getCrsGraph ()));
-
-      // Convert the values from Scalar to T, and stuff them directly
-      // into the matrix to return.
-      const size_type numVals =
-        static_cast<size_type> (this->lclMatrix_.values.dimension_0 ());
-
-      // FIXME (mfh 05 Aug 2014) Write a copy kernel (impl_scalar_type and
-      // T differ, so we can't use Kokkos::deep_copy).
-      //
-      // FIXME (mfh 05 Aug 2014) This assumes UVM.
-      out_vals_type newVals1D ("Tpetra::CrsMatrix::val", numVals);
-      for (size_type k = 0; k < numVals; ++k) {
-        newVals1D(k) = static_cast<T> (this->k_values1D_(k));
-      }
-      newmat->lclMatrix_ =
-        out_lcl_mat_type ("Tpetra::CrsMatrix::lclMatrix_",
-                          this->lclMatrix_.numCols (), newVals1D,
-                          this->lclMatrix_.graph);
-      newmat->k_values1D_ = newVals1D;
-      // Since newmat has a static (const) graph, the graph already
-      // has a column Map, and Import and Export objects already exist
-      // (if applicable).  Thus, calling fillComplete is cheap.
-      newmat->fillComplete (this->getDomainMap (), this->getRangeMap ());
-    }
-    else {
-      // This matrix has a nonconst graph, so the returned matrix
-      // should also have a nonconst graph.  However, it's fine for
-      // the returned matrix to have static profile.  This will
-      // certainly speed up its fillComplete.
-
-      //
-      // FIXME (mfh 05 Aug 2014) Instead of the slow stuff below, we
-      // should copy the values and existing graph into a new local
-      // matrix (lclMatrix), and then use the Tpetra::CrsMatrix
-      // constructor that takes (rowMap, colMap, lclMatrix, params).
-      //
-
-      // Get this matrix's local data.
-      ArrayRCP<const size_t> ptr;
-      ArrayRCP<const LocalOrdinal> ind;
-      ArrayRCP<const Scalar> oldVal;
-      this->getAllValues (ptr, ind, oldVal);
-
-      RCP<const map_type> rowMap = this->getRowMap ();
-      RCP<const map_type> colMap = this->getColMap ();
-
-      // Get an array of the number of entries in each (locally owned)
-      // row, so that we can make the new matrix with static profile.
-      const size_type numLocalRows =
-        static_cast<size_type> (rowMap->getNodeNumElements ());
-      ArrayRCP<size_t> numEntriesPerRow (numLocalRows);
-      for (size_type localRow = 0; localRow < numLocalRows; ++localRow) {
-        numEntriesPerRow[localRow] =
-          static_cast<size_type> (getNumEntriesInLocalRow (localRow));
-      }
-
-      newmat = rcp (new out_mat_type (rowMap, colMap, numEntriesPerRow,
-                                      StaticProfile));
-
-      // Convert this matrix's values from Scalar to T.
-      const size_type numVals = this->lclMatrix_.values.dimension_0 ();
-      ArrayRCP<T> newVals1D (numVals);
-      // FIXME (mfh 05 Aug 2014) This assumes UVM.
-      for (size_type k = 0; k < numVals; ++k) {
-        newVals1D[k] = static_cast<T> (this->k_values1D_(k));
-      }
-
-      // Give this matrix all of its local data.  We can all this
-      // method because newmat was _not_ created with a const graph.
-      // The data must be passed in as nonconst, so we have to copy it
-      // first.
-      ArrayRCP<size_t> newPtr (ptr.size ());
-      std::copy (ptr.begin (), ptr.end (), newPtr.begin ());
-      ArrayRCP<LocalOrdinal> newInd (ind.size ());
-      std::copy (ind.begin (), ind.end (), newInd.begin ());
-      newmat->setAllValues (newPtr, newInd, newVals1D);
-
-      // We already have the Import and Export (if applicable) objects
-      // from the graph, so we can save a lot of time by passing them
-      // in to expertStaticFillComplete.
-      RCP<const map_type> domainMap = this->getDomainMap ();
-      RCP<const map_type> rangeMap = this->getRangeMap ();
-      RCP<const import_type> importer = this->getCrsGraphRef ().getImporter ();
-      RCP<const export_type> exporter = this->getCrsGraphRef ().getExporter ();
-      newmat->expertStaticFillComplete (domainMap, rangeMap, importer, exporter);
-    }
-
-    return newmat;
+    return newMatrix;
   }
 
 

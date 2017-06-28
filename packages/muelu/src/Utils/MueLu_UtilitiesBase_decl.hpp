@@ -535,7 +535,7 @@ namespace MueLu {
         A.getLocalRowView(row, indices, vals);
         size_t nnz = 0; // collect nonzeros in row (excluding the diagonal)
         bool bHasDiag = false;
-        for (size_t col = 0; col < nnz; col++) {
+        for (size_t col = 0; col < indices.size(); col++) {
           if ( indices[col] != row) {
             if (STS::magnitude(vals[col] / sqrt(STS::magnitude(diagVecData[row]) * STS::magnitude(diagVecData[col]))   ) > tol) {
               nnz++;

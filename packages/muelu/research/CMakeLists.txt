@@ -9,6 +9,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   ENDIF()
   ADD_SUBDIRECTORY(semicoarsening)
   ADD_SUBDIRECTORY(tawiesn/crada)
+  ADD_SUBDIRECTORY(tawiesn/aria)
 ENDIF()
 
 
