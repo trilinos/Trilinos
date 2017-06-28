@@ -279,7 +279,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       // loop over all local nodes
       for(GlobalOrdinal i = 0; i < nDofs; i++) {
-        fscanf(data_file,"%d",&(dofGlobals[i]));
+        int data;
+        fscanf(data_file,"%d",&data);
+        dofGlobals[i] = Teuchos::as<GlobalOrdinal>(data);
       }
       fclose(data_file);
 
@@ -307,7 +309,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       TEUCHOS_TEST_FOR_EXCEPTION(data_file == NULL, MueLu::Exceptions::RuntimeError,"Problem opening file " << ss.str());
       // loop over all local nodes
       for(GlobalOrdinal i = 0; i < nNodes; i++) {
-        fscanf(data_file,"%d",&(nodalGlobals[i]));
+        int data;
+        fscanf(data_file,"%d",&data);
+        nodalGlobals[i] = Teuchos::as<GlobalOrdinal>(data);
       }
       fclose(data_file);
       for(GlobalOrdinal i = 0; i < nNodes; i++) {
@@ -335,7 +339,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::ArrayRCP< const Scalar > srcY = xpetraYYY->getData(0);
     Teuchos::ArrayRCP< Scalar > dataX = coordinates->getDataNonConst(0);
     Teuchos::ArrayRCP< Scalar > dataY = coordinates->getDataNonConst(1);
-    for(LocalOrdinal i = 0; i < coordinates->getLocalLength(); i++) {
+    for(decltype(coordinates->getLocalLength()) i = 0; i < coordinates->getLocalLength(); i++) {
       dataX[i] = srcX[i];
       dataY[i] = srcY[i];
     }
@@ -408,8 +412,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     // read in global vectors (e.g. rhs)
     GlobalOrdinal nGlobalDof = 0;
+    GlobalOrdinal nLocalDofs = Teuchos::as<GlobalOrdinal>(nDofs);
 
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,comm->getSize(),&nDofs,&nGlobalDof);
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,comm->getSize(),&nLocalDofs,&nGlobalDof);
 
     Teuchos::RCP<const Map> dofLinearMap = Teuchos::null;
     {
