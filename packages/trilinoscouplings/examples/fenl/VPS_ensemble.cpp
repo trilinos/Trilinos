@@ -26,10 +26,9 @@ EnsembleVPS::EnsembleVPS(const size_t dim,
 
   _num_samples = num_samples;      // Sample budget
   _ensemble_size = ensemble_size;     // Ensemble Size
-  _sampling = 0; // MC
-  _surrogate_order = 1;
+  _surrogate_order = 2;
 
-  _MCratio = 5;
+  _MCratio = 10;
 
   _maxMisses = 100;
   _shrinkage_rho = 0.5;
@@ -151,9 +150,9 @@ int EnsembleVPS::generate_WS_points(size_t num_dim, size_t Npoints, double** &x,
   for (size_t idim = 0; idim < num_dim; idim++)
     dart[idim] = _xmin[idim] + generate_a_random_number() * (_xmax[idim] - _xmin[idim]);
 
-  x[0] = dart;
+  for (size_t idim = 0; idim < _num_dim; idim++) x[0][idim] = dart[idim];
+
   num_points++;
-  dart = new double[num_dim];
 
   // ------------------------------
   // Loop until you collect Npoints
@@ -189,8 +188,7 @@ int EnsembleVPS::generate_WS_points(size_t num_dim, size_t Npoints, double** &x,
       if (!dart_in_sphere)
       {
         point_placed = true;
-        x[num_points] = dart;
-        dart = new double[num_dim];
+        for (size_t idim = 0; idim < _num_dim; idim++) x[num_points][idim] = dart[idim];
         num_points++;
         break;
       }
@@ -228,13 +226,14 @@ int EnsembleVPS::pick_MD_points(size_t numIn, double** x, double* g, size_t numO
   size_t i_min = 0;
   double v_min = g_dispersion(gwindow, numOut);
 
+  delete[] gwindow;
   //std::cout << "Window " << i_min << ", variance = " << v_min << std::endl;
 
   // Loop to find window with min variance
   double v_window;
   for (size_t iw = 1; iw < (numIn - numOut + 1); iw++)
   {
-    //gwindow = new double[numOut];
+    gwindow = new double[numOut];
     for (size_t ig = 0; ig < numOut; ig++)
       gwindow[ig] = g[index[iw + ig]];
 
@@ -248,11 +247,12 @@ int EnsembleVPS::pick_MD_points(size_t numIn, double** x, double* g, size_t numO
       i_min = iw;
       v_min = v_window;
     }
+    // clear memory
+    delete[] gwindow;
   }
 
   //std::cout << "Min Variance = " << v_min << std::endl;
-  // clear memory
-  delete[] gwindow;
+
 
   //std::cout << "window_minV: " << i_min << std::endl;
   for (size_t iy = 0; iy < numOut; iy++)
@@ -322,19 +322,18 @@ void EnsembleVPS::save_ei_sur() {
 }
 
 ///////////////////////////////////////////////////////////////////////
-
-void EnsembleVPS::save_ef_max()
-{
+/*
+  void EnsembleVPS::save_ef_max() {
   // uses data stored in _ef_max[]
   std::ofstream txt_error;
   txt_error.open("ef_max.txt");
 
   for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++)
-    txt_error << _ensemble_size*(iEnsemble + 1) << " " << _ef_max[iEnsemble] << std::endl;
+  txt_error << _ensemble_size*(iEnsemble + 1) << " " << _ef_max[iEnsemble] << std::endl;
 
   txt_error.close();
-}
-
+  }
+*/
 ///////////////////////////////////////////////////////////////////////
 
 void EnsembleVPS::save_di() {

@@ -1,4 +1,4 @@
-// 2016/12/13
+// 2016/09/23
 
 #ifndef _TRILINOS_COUPLINGS_FENL_VPS_H_
 #define _TRILINOS_COUPLINGS_FENL_VPS_H_
@@ -24,12 +24,10 @@
 
 #include <time.h>
 
-#include <cfloat>
+#include <cfloat> // ETP
 
 class VPS
 {
-
-
 public:
 
   const double DST_TOL = 1E-10;
@@ -74,13 +72,13 @@ public:
 
 private:
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /////////// VPS               /////////////////////////////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  int sample_voronoi_vertex(size_t seed_index, double* xmin, double* xmax, double diag, double* v);
 
-  int construct_extended_delaunay_graph(size_t seed_index);
+  int sample_voronoi_facet(size_t seed_index, double* xmin, double* xmax, double diag, double* v);
 
-  int retrieve_coefficients(size_t seed_index);
+  int get_normal_component(size_t num_dim, size_t num_basis, double** basis, double* vect, double &norm);
+
+  bool trim_spoke(size_t num_dim, double* xst, double* xend, double* p, double* q);
 
 
 
@@ -107,8 +105,6 @@ private:
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////// kd-tree Methods       /////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  int kd_tree_init_containers();
 
   int kd_tree_build_balanced();
 
@@ -174,10 +170,6 @@ private:
 
   int add_entry(size_t entry, size_t &num_entries, size_t* &I, size_t &capacity);
 
-  int get_normal_component(size_t num_dim, size_t num_basis, double** basis, double* vect, double &norm);
-
-  bool trim_spoke(size_t num_dim, double* xst, double* xend, double* p, double* q);
-
   size_t retrieve_num_permutations(size_t num_dim, size_t upper_bound, bool force_sum_constraint, size_t sum_constraint);
 
   int retrieve_permutations(size_t &num_perm, size_t** &perm, size_t num_dim, size_t upper_bound, bool force_sum_constraint, size_t sum_constraint);
@@ -212,11 +204,6 @@ private:
 
   int sample_voronoi_vertex(double* v);
 
-  int sample_voronoi_vertex(size_t seed_index, double* v);
-
-  int sample_voronoi_facet(size_t seed_index, double* v);
-
-
   int connect_seeds(size_t seed_i, size_t seed_j);
 
   int disconnect_seeds(size_t seed_i, size_t seed_j);
@@ -232,7 +219,6 @@ private:
   double**           _seed_box;                                   // A box around every seed
   double*            _seed_rf;                                    // Seed disk-free Radius
   double*            _seed_rc;                                    // Seed coverage Radius
-
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////// Fitting Methods                          //////////////////////////////////////////////////////////////////////////
@@ -278,14 +264,6 @@ private:
   double evaluate_one_dimensional_basis_function(double x, double xo, double xmin, double xmax, size_t ibasis);
 
   int detect_discontinuities();
-
-  int detect_discontinuities(size_t seed_index);
-
-  bool detect_discontinuities(size_t seed_i, size_t seed_j);
-
-  int form_discontinuity_chain(size_t seed_i, size_t seed_j, size_t function_index, size_t &num_chain_seeds, size_t* chain_seeds);
-
-  int form_discontinuity_spline(size_t num_data_points, double* x, double* f, size_t disc_interv, double** c);
 
 
   ////////////////////////////////////////////////////////////////////////////////
