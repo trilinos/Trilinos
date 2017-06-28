@@ -584,7 +584,7 @@ void DefaultMultiVectorProductVector<Scalar>::norms2Impl(
     typename ST::magnitudeType subNorm = multiVec_.getConstObj()->col(k)->norm_2();
     norms[0] += subNorm*subNorm;
   }
-  norms[0] = ST::squareroot(norms[0]);
+  norms[0] = ST::magnitude(ST::squareroot(norms[0]));
 }
 
 

@@ -126,7 +126,7 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
   {
     norms_1(*V1, mags1());
     for (Ordinal i = 0; i < mags2.size(); ++i)
-      mags2[i] = two*as<ScalarMag>(vecSpc.dim());
+      mags2[i] = ST::magnitude(two)*as<ScalarMag>(vecSpc.dim());
     if (!testRelErrors<ScalarMag, ScalarMag, ScalarMag>(
            "norms_1(*V1)", mags1(),
            "2.0*n", mags2(),
@@ -203,7 +203,7 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
     scale(alpha, V2.ptr());
     norms_2(*V1, mags1());
     for (Ordinal i = 0; i < mags1.size(); ++i)
-      mags1[i] *= as<ScalarMag>(alpha);
+      mags1[i] *= ST::magnitude(alpha);
     norms_2(*V2, mags2());
     if (!testRelErrors<ScalarMag, ScalarMag, ScalarMag>(
            "norms_2(alpha*V1)", mags1(),
@@ -355,7 +355,7 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
     Vt_S(V2.ptr(), alpha);
     norms_2(*V1, mags1());
     for (Ordinal i = 0; i < mags1.size(); ++i)
-      mags1[i] *= as<ScalarMag>(alpha);
+      mags1[i] *= ST::magnitude(alpha);
     norms_2(*V2, mags2());
     if (!testRelErrors<ScalarMag, ScalarMag, ScalarMag>(
            "norms_2(alpha*V1)", mags1(),

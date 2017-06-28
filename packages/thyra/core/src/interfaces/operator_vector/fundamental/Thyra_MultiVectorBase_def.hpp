@@ -175,8 +175,8 @@ absRowSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const
 
   // compute absolute value of multi-vector
   RCP<MultiVectorBase<Scalar> > abs_mv = createMembers(this->range(),this->domain());
-  for (Ordinal col = 0; col < abs_mv->domain()->dim(); ++col)
-    abs_mv->col(col)->abs(*this->col(col));
+  for (Ordinal i = 0; i < abs_mv->domain()->dim(); ++i)
+    abs_mv->col(i)->abs(*this->col(i));
 
   // compute sum over all rows
   RCP<VectorBase<Scalar> > ones = Thyra::createMember(this->domain());
@@ -196,7 +196,10 @@ absColSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const
 
   RTOpPack::SubVectorView<Scalar> view;
   output->acquireDetachedView(Thyra::Range1D(),&view);
-  this->norms_1(view.values()());
+  Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(view.values().size());
+  this->norms_1(norms());
+  for (Ordinal i = 0; i < norms.size(); ++i)
+    view[i] = Teuchos::as<Scalar>(norms[i]);
   output->commitDetachedView(&view);
 }
 

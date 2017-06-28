@@ -427,7 +427,7 @@ void DefaultProductMultiVector<Scalar>::norms2Impl(
   }
 
   for (Ordinal i = 0; i < norms.size(); ++i) {
-    norms[i] = ST::squareroot(norms[i]);
+    norms[i] = ST::magnitude(ST::squareroot(norms[i]));
   }
 }
 
