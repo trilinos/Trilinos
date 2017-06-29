@@ -55,8 +55,8 @@ class Exo_Entity
 {
 public:
   Exo_Entity();
-  Exo_Entity(int file_id, size_t exo_id);
-  Exo_Entity(int file_id, size_t exo_id, size_t num_entity);
+  Exo_Entity(int file_id, size_t id);
+  Exo_Entity(int file_id, size_t id, size_t nnodes);
   virtual ~Exo_Entity();
 
   size_t Size() const { return numEntity; }
@@ -72,7 +72,7 @@ public:
 
   bool is_valid_var(size_t var_index) const;
   size_t      var_count() const { return numVars; }
-  std::string Load_Results(int time_step_num, int var_index);
+  std::string Load_Results(int time_step, int var_index);
   std::string Load_Results(int t1, int t2, double proportion, int var_index); // Interpolation
 
   const double *Get_Results(int var_index) const;

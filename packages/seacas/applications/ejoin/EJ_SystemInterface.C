@@ -20,10 +20,12 @@ namespace {
     const char *c1 = s1.c_str();
     const char *c2 = s2.c_str();
     for (;; c1++, c2++) {
-      if (std::tolower(*c1) != std::tolower(*c2))
+      if (std::tolower(*c1) != std::tolower(*c2)) {
         return (std::tolower(*c1) - std::tolower(*c2));
-      if (*c1 == '\0')
+      }
+      if (*c1 == '\0') {
         return 0;
+      }
     }
   }
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
@@ -164,22 +166,23 @@ void SystemInterface::enroll_options()
 bool SystemInterface::parse_options(int argc, char **argv)
 {
   int option_index = options_.parse(argc, argv);
-  if (option_index < 1)
+  if (option_index < 1) {
     return false;
+  }
 
-  if (options_.retrieve("help")) {
+  if (options_.retrieve("help") != nullptr) {
     options_.usage();
     std::cerr << "\n\tCan also set options via EJOIN_OPTIONS environment variable.\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for ejoin support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
 
-  if (options_.retrieve("version")) {
+  if (options_.retrieve("version") != nullptr) {
     // Version is printed up front, just exit...
     exit(0);
   }
 
-  if (options_.retrieve("copyright")) {
+  if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
               << "Copyright(C) 2010 Sandia Corporation.\n"
               << "\n"
@@ -255,8 +258,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("tolerance");
-    if (temp != nullptr)
+    if (temp != nullptr) {
       tolerance_ = strtod(temp, nullptr);
+    }
   }
 
   {
@@ -290,10 +294,12 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("omit_nodesets");
     if (temp != nullptr) {
-      if (case_strcmp("ALL", temp) == 0)
+      if (case_strcmp("ALL", temp) == 0) {
         omitNodesets_ = true;
-      else
+      }
+      else {
         parse_omissions(temp, &nsetOmissions_, "nodelist", false);
+      }
     }
     else {
       omitNodesets_ = false;
@@ -303,10 +309,12 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("omit_sidesets");
     if (temp != nullptr) {
-      if (case_strcmp("ALL", temp) == 0)
+      if (case_strcmp("ALL", temp) == 0) {
         omitSidesets_ = true;
-      else
+      }
+      else {
         parse_omissions(temp, &ssetOmissions_, "surface", false);
+      }
     }
     else {
       omitSidesets_ = false;
@@ -338,18 +346,18 @@ bool SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
-  if (options_.retrieve("disable_field_recognition")) {
+  if (options_.retrieve("disable_field_recognition") != nullptr) {
     disableFieldRecognition_ = true;
   }
   else {
     disableFieldRecognition_ = false;
   }
 
-  if (options_.retrieve("64-bit")) {
+  if (options_.retrieve("64-bit") != nullptr) {
     ints64bit_ = true;
   }
 
-  if (options_.retrieve("match_node_ids")) {
+  if (options_.retrieve("match_node_ids") != nullptr) {
     matchNodeIds_ = true;
     matchNodeXYZ_ = false;
   }
@@ -357,7 +365,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     matchNodeIds_ = false;
   }
 
-  if (options_.retrieve("match_node_coordinates")) {
+  if (options_.retrieve("match_node_coordinates") != nullptr) {
     matchNodeXYZ_ = true;
     matchNodeIds_ = false;
   }
@@ -386,13 +394,16 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
 bool SystemInterface::convert_nodes_to_nodesets(int part_number) const
 {
-  if (nodesetConvertParts_.empty())
+  if (nodesetConvertParts_.empty()) {
     return false;
-  else if (nodesetConvertParts_[0] == 0)
+  }
+  else if (nodesetConvertParts_[0] == 0) {
     return true;
-  else
+  }
+  else {
     return std::find(nodesetConvertParts_.begin(), nodesetConvertParts_.end(), part_number) !=
            nodesetConvertParts_.end();
+  }
 }
 
 void SystemInterface::parse_step_option(const char *tokens)
@@ -435,8 +446,9 @@ void SystemInterface::parse_step_option(const char *tokens)
         }
 
         tmp_str[k] = '\0';
-        if (strlen(tmp_str) > 0)
+        if (strlen(tmp_str) > 0) {
           val = strtoul(tmp_str, nullptr, 0);
+        }
 
         if (tokens[j++] == '\0') {
           break; // Reached end of string
@@ -611,8 +623,9 @@ namespace {
     // just specify a part number and all entities (typically nset or
     // sset) will be omitted on that part.
 
-    if (tokens == nullptr)
+    if (tokens == nullptr) {
       return;
+    }
 
     std::string  token_string(tokens);
     StringVector part_block_list = SLIB::tokenize(token_string, ",");

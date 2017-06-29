@@ -54,7 +54,7 @@ namespace Ioss {
       return Utils::case_strcmp(s1, s2) < 0;
     }
   };
-  typedef std::map<std::string, Field, StringCmp> FieldMapType;
+  using FieldMapType   = std::map<std::string, Field, StringCmp>;
   using FieldValuePair = FieldMapType::value_type;
 
   /** \brief A collection of Ioss::Field objects.

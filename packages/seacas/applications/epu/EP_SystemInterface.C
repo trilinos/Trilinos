@@ -53,10 +53,12 @@ namespace {
     const char *c1 = s1.c_str();
     const char *c2 = s2.c_str();
     for (;; c1++, c2++) {
-      if (std::tolower(*c1) != std::tolower(*c2))
+      if (std::tolower(*c1) != std::tolower(*c2)) {
         return (std::tolower(*c1) - std::tolower(*c2));
-      if (*c1 == '\0')
+      }
+      if (*c1 == '\0') {
         return 0;
+      }
     }
   }
   void parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list);
@@ -232,10 +234,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   }
 
   int option_index = options_.parse(argc, argv);
-  if (option_index < 1)
+  if (option_index < 1) {
     return false;
+  }
 
-  if (options_.retrieve("help")) {
+  if (options_.retrieve("help") != nullptr) {
     options_.usage();
     std::cout << "\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
               << "\tWrites: current_directory/basename.suf\n"
@@ -245,7 +248,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     exit(EXIT_SUCCESS);
   }
 
-  if (options_.retrieve("version")) {
+  if (options_.retrieve("version") != nullptr) {
     // Version is printed up front, just exit...
     exit(0);
   }
@@ -366,27 +369,27 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
-  if (options_.retrieve("add_processor_id")) {
+  if (options_.retrieve("add_processor_id") != nullptr) {
     addProcessorId_ = true;
   }
   else {
     addProcessorId_ = false;
   }
 
-  if (options_.retrieve("large_model")) {
+  if (options_.retrieve("large_model") != nullptr) {
     useNetcdf4_ = true;
     std::cerr << "\nWARNING: the -large_model option is deprecated; please use -netcdf4 instead.\n";
   }
 
-  if (options_.retrieve("netcdf4")) {
+  if (options_.retrieve("netcdf4") != nullptr) {
     useNetcdf4_ = true;
   }
 
-  if (options_.retrieve("append")) {
+  if (options_.retrieve("append") != nullptr) {
     append_ = true;
   }
 
-  if (options_.retrieve("64")) {
+  if (options_.retrieve("64") != nullptr) {
     intIs64Bit_ = true;
   }
 
@@ -397,11 +400,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("sum_shared_nodes")) {
+  if (options_.retrieve("sum_shared_nodes") != nullptr) {
     sumSharedNodes_ = true;
   }
 
-  if (options_.retrieve("append")) {
+  if (options_.retrieve("append") != nullptr) {
     append_ = true;
   }
 
@@ -419,37 +422,37 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("join_subcycles")) {
+  if (options_.retrieve("join_subcycles") != nullptr) {
     subcycleJoin_ = true;
   }
 
-  if (options_.retrieve("map")) {
+  if (options_.retrieve("map") != nullptr) {
     mapIds_ = true;
   }
 
-  if (options_.retrieve("nomap")) {
+  if (options_.retrieve("nomap") != nullptr) {
     mapIds_ = false;
   }
 
-  if (options_.retrieve("omit_nodesets")) {
+  if (options_.retrieve("omit_nodesets") != nullptr) {
     omitNodesets_ = true;
   }
   else {
     omitNodesets_ = false;
   }
 
-  if (options_.retrieve("omit_sidesets")) {
+  if (options_.retrieve("omit_sidesets") != nullptr) {
     omitSidesets_ = true;
   }
   else {
     omitSidesets_ = false;
   }
 
-  if (options_.retrieve("output_shared_nodes")) {
+  if (options_.retrieve("output_shared_nodes") != nullptr) {
     outputSharedNodes_ = true;
   }
 
-  if (options_.retrieve("copyright")) {
+  if (options_.retrieve("copyright") != nullptr) {
     std::cout << "\n"
               << "Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract\n"
               << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"
@@ -489,7 +492,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   if (option_index < argc) {
     basename_ = argv[option_index];
 
-    if (options_.retrieve("auto")) {
+    if (options_.retrieve("auto") != nullptr) {
       // Determine Root, Proc, Extension, and Basename automatically
       // by parsing the basename_ entered by the user.  Assumed to be
       // in the form: "/directory/sub/basename.ext.#proc.34"
@@ -510,16 +513,15 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   return true;
 }
 
-void Excn::SystemInterface::dump(std::ostream &) const {}
+void Excn::SystemInterface::dump(std::ostream & /*unused*/) const {}
 
 std::string Excn::SystemInterface::output_suffix() const
 {
   if (outExtension_ == "") {
     return inExtension_;
   }
-  else {
-    return outExtension_;
-  }
+
+  return outExtension_;
 }
 
 void Excn::SystemInterface::show_version()
@@ -568,8 +570,9 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
         }
 
         tmp_str[k] = '\0';
-        if (strlen(tmp_str) > 0)
+        if (strlen(tmp_str) > 0) {
           val = strtoul(tmp_str, nullptr, 0);
+        }
 
         if (tokens[j++] == '\0') {
           break; // Reached end of string
@@ -603,14 +606,16 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
 
   // Get rid of the 'nn' which is not used at this time...
   size_t ind = s.find_last_of(".", std::string::npos); // last '.'
-  if (ind == std::string::npos)
+  if (ind == std::string::npos) {
     return false;
+  }
   s.erase(ind);
 
   // Now find the processor count...
   ind = s.find_last_of(".", std::string::npos);
-  if (ind == std::string::npos)
+  if (ind == std::string::npos) {
     return false;
+  }
 
   std::string tmp = s.substr(ind + 1); // Skip the '.'
   processorCount_ = strtol(tmp.c_str(), nullptr, 10);

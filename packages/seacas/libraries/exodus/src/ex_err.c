@@ -131,7 +131,7 @@ void ex_err(const char *module_name, const char *message, int err_num)
     EX_FUNC_VOID();
   }
 
-  else if (err_num == EX_PRTLASTMSG) {
+  if (err_num == EX_PRTLASTMSG) {
     fprintf(stderr, "[%s] %s\n", EX_PNAME, EX_ERRMSG);
     fprintf(stderr, "    exerrval = %d\n", EX_ERR_NUM);
     EX_FUNC_VOID();

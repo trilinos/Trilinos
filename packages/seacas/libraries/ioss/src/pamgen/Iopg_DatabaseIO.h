@@ -67,8 +67,6 @@ namespace Ioss {
 /** \brief A namespace for the pamgen database format.
  */
 namespace Iopg {
-  typedef std::vector<int> IntVector;
-
   class IOFactory : public Ioss::IOFactory
   {
   public:
@@ -96,15 +94,7 @@ namespace Iopg {
     unsigned entity_field_support() const { return 0; }
 
     std::string title() const { return databaseTitle; }
-    int         spatial_dimension() const { return spatialDimension; }
-    int         node_count() const { return nodeCount; }
-    int         side_count() const { return 0; }
-    int         element_count() const { return elementCount; }
-    int         node_block_count() const { return nodeBlockCount; }
-    int         element_block_count() const { return elementBlockCount; }
-    int         sideset_count() const { return sidesetCount; }
-    int         nodeset_count() const { return nodesetCount; }
-    int         maximum_symbol_length() const { return 32; }
+    int         maximum_symbol_length() const override { return 32; }
 
     void get_block_adjacencies(const Ioss::ElementBlock *eb,
                                std::vector<std::string> &block_adjacency) const;
@@ -257,12 +247,12 @@ namespace Iopg {
     int sidesetCount;
 
     // Communication Set Data
-    IntVector nodeCmapIds;
-    IntVector nodeCmapNodeCnts;
-    IntVector elemCmapIds;
-    IntVector elemCmapElemCnts;
-    int       commsetNodeCount;
-    int       commsetElemCount;
+    Ioss::IntVector nodeCmapIds;
+    Ioss::IntVector nodeCmapNodeCnts;
+    Ioss::IntVector elemCmapIds;
+    Ioss::IntVector elemCmapElemCnts;
+    int             commsetNodeCount;
+    int             commsetElemCount;
 
     // MAPS -- Used to convert from local exodusII ids/names to Sierra
     // database global ids/names

@@ -16,7 +16,7 @@
 
 namespace Ioss {
   class GroupingEntity;
-  typedef std::vector<CoordinateFrame> CoordinateFrameContainer;
+  using CoordinateFrameContainer = std::vector<CoordinateFrame>;
 }
 
 namespace Ioex {

@@ -41,8 +41,8 @@
 #include <vector>          // for vector
 
 namespace Ioss {
-  typedef std::map<std::string, Property, std::less<std::string>> PropMapType;
-  using ValuePair = PropMapType::value_type;
+  using PropMapType = std::map<std::string, Property, std::less<std::string>>;
+  using ValuePair   = PropMapType::value_type;
 
   /** \brief A collection of Ioss::Property objects
    */

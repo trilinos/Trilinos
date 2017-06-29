@@ -80,6 +80,9 @@ void Info::Interface::enroll_options()
   options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
                   "Database Type: exodus, generated", "exodusii");
 
+  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue,
+                  "Database Type: exodus, generated (alias for db_type)", nullptr);
+
   options_.enroll("group_name", Ioss::GetLongOption::MandatoryValue,
                   "List information only for the specified group.", nullptr);
 
@@ -160,6 +163,13 @@ bool Info::Interface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("db_type");
+    if (temp != nullptr) {
+      filetype_ = temp;
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("in_type");
     if (temp != nullptr) {
       filetype_ = temp;
     }

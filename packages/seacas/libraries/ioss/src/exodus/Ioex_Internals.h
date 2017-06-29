@@ -72,7 +72,7 @@ namespace Ioss {
   class SideSet;
 }
 
-typedef int64_t entity_id;
+using entity_id = int64_t;
 
 namespace Ioss {
 }

@@ -92,10 +92,12 @@ namespace Iocgns {
     usingParallelIO = true;
     dbState         = Ioss::STATE_UNKNOWN;
 
+#ifdef IOSS_DEBUG_OUTPUT
     if (myProcessor == 0) {
       std::cout << "CGNS ParallelDatabaseIO using " << CG_SIZEOF_SIZE << "-bit integers.\n"
                 << "                        using the parallel CGNS library and API.\n";
     }
+#endif
     if (CG_SIZEOF_SIZE == 64) {
       set_int_byte_size_api(Ioss::USE_INT64_API);
     }
@@ -254,7 +256,7 @@ namespace Iocgns {
     int i    = 0;
     for (auto &block : decomp->m_elementBlocks) {
       std::string element_topo = block.topologyType;
-#if defined(IOSS_DEBUG_OUTPUT)
+#ifdef IOSS_DEBUG_OUTPUT
       std::cout << "Added block " << block.name() << ":, IOSS topology = '" << element_topo
                 << "' with " << block.ioss_count() << " elements\n";
 #endif
@@ -279,7 +281,7 @@ namespace Iocgns {
         block_name += "/";
         block_name += sset.name();
         std::string face_topo = sset.topologyType;
-#if defined(IOSS_DEBUG_OUTPUT)
+#ifdef IOSS_DEBUG_OUTPUT
         std::cout << "Processor " << myProcessor << ": Added sideblock " << block_name
                   << " of topo " << face_topo << " with " << sset.ioss_count() << " faces\n";
 #endif
@@ -1495,9 +1497,7 @@ namespace Iocgns {
         for (size_t i = 0; i < element_nodes * num_to_get; i++) {
           nodes.push_back(idata[i]);
         }
-        std::sort(nodes.begin(), nodes.end());
-        nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
-        nodes.shrink_to_fit();
+	Ioss::Utils::uniquify(nodes);
 
         // Resolve zone-shared nodes (nodes used in this zone, but are
         // shared on processor boundaries).
@@ -1584,8 +1584,7 @@ namespace Iocgns {
           connectivity_map.clear();
           connectivity_map.shrink_to_fit();
 
-          std::sort(nodes.begin(), nodes.end());
-          nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
+	  Ioss::Utils::uniquify(nodes);
           if (nodes.back() == std::numeric_limits<cgsize_t>::max()) {
             nodes.pop_back();
           }

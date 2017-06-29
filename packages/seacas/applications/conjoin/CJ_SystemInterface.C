@@ -112,8 +112,9 @@ void Excn::SystemInterface::enroll_options()
 bool Excn::SystemInterface::parse_options(int argc, char **argv)
 {
   int option_index = options_.parse(argc, argv);
-  if (option_index < 1)
+  if (option_index < 1) {
     return false;
+  }
 
   // Get options from environment variable also...
   char *options = getenv("CONJOIN_OPTIONS");
@@ -124,14 +125,14 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     options_.parse(options, options_.basename(*argv));
   }
 
-  if (options_.retrieve("help")) {
+  if (options_.retrieve("help") != nullptr) {
     options_.usage();
     std::cerr << "\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
 
-  if (options_.retrieve("version")) {
+  if (options_.retrieve("version") != nullptr) {
     // Version is printed up front, just exit...
     exit(0);
   }
@@ -209,25 +210,25 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
-  if (options_.retrieve("64-bit")) {
+  if (options_.retrieve("64-bit") != nullptr) {
     ints64Bit_ = true;
   }
 
-  if (options_.retrieve("omit_nodesets")) {
+  if (options_.retrieve("omit_nodesets") != nullptr) {
     omitNodesets_ = true;
   }
   else {
     omitNodesets_ = false;
   }
 
-  if (options_.retrieve("omit_sidesets")) {
+  if (options_.retrieve("omit_sidesets") != nullptr) {
     omitSidesets_ = true;
   }
   else {
     omitSidesets_ = false;
   }
 
-  if (options_.retrieve("copyright")) {
+  if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
               << "Copyright(C) 2009-2010 Sandia Corporation.\n"
               << "\n"
@@ -276,7 +277,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   return true;
 }
 
-void Excn::SystemInterface::dump(std::ostream &) const {}
+void Excn::SystemInterface::dump(std::ostream & /*unused*/) const {}
 
 void Excn::SystemInterface::show_version()
 {

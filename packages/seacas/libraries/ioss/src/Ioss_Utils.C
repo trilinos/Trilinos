@@ -1544,15 +1544,16 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
 
   if (!appending) {
 
-    if (options.debug && rank == 0)
+    if (options.debug && rank == 0) {
       std::cerr << "DEFINING MODEL ... \n";
-
+    }
     if (memory_stats) {
       dbi->util().progress("DEFINING MODEL");
     }
     if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
-      if (options.verbose && rank == 0)
+      if (options.verbose && rank == 0) {
         std::cerr << "ERROR: Could not put output region into define model state\n";
+      }
       std::exit(EXIT_FAILURE);
     }
 
@@ -1597,12 +1598,13 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
 
     output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
-    if (options.verbose && rank == 0)
+    if (options.verbose && rank == 0) {
       std::cerr << "Maximum Field size = " << max_field_size << " bytes.\n";
+    }
     data.resize(max_field_size);
-    if (options.verbose && rank == 0)
+    if (options.verbose && rank == 0) {
       std::cerr << "Resize finished...\n";
-
+    }
     if (options.debug && rank == 0) {
       std::cerr << "TRANSFERRING MESH FIELD DATA ... " << '\n';
     }
@@ -1889,12 +1891,13 @@ namespace {
       }
       size_t num_nodes = inb->get_property("entity_count").get_int();
       size_t degree    = inb->get_property("component_degree").get_int();
-      if (verbose && rank == 0)
+      if (verbose && rank == 0) {
         std::cerr << " Number of coordinates per node       =" << std::setw(12) << degree << "\n";
-      if (verbose && rank == 0)
+      }
+      if (verbose && rank == 0) {
         std::cerr << " Number of nodes                      =" << std::setw(12) << num_nodes
                   << "\n";
-
+      }
       auto nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
       output_region.add(nb);
 
@@ -1922,8 +1925,9 @@ namespace {
       transfer_fields(inb, nb, Ioss::Field::ATTRIBUTE);
       ++id;
     }
-    if (debug && rank == 0)
+    if (debug && rank == 0) {
       std::cerr << '\n';
+    }
   }
 
   template <typename T>
@@ -2081,11 +2085,13 @@ namespace {
       transfer_fields(ss, surf, Ioss::Field::ATTRIBUTE);
       output_region.add(surf);
     }
-    if (verbose && rank == 0)
+    if (verbose && rank == 0) {
       std::cerr << " Number of        SideSets            =" << std::setw(12) << fss.size() << "\t"
                 << "Number of element sides =" << std::setw(12) << total_sides << "\n";
-    if (debug && rank == 0)
+    }
+    if (debug && rank == 0) {
       std::cerr << '\n';
+    }
   }
 
   template <typename T>
@@ -2108,12 +2114,14 @@ namespace {
         transfer_fields(set, o_set, Ioss::Field::ATTRIBUTE);
       }
 
-      if (verbose && rank == 0)
+      if (verbose && rank == 0) {
         std::cerr << " Number of " << std::setw(14) << (*sets.begin())->type_string()
                   << "s            =" << std::setw(12) << sets.size() << "\t"
                   << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
-      if (debug && rank == 0)
+      }
+      if (debug && rank == 0) {
         std::cerr << '\n';
+      }
     }
   }
 
@@ -2276,6 +2284,15 @@ namespace {
       return;
     }
     if (field_name == "ids" && ige->type() == Ioss::SIDEBLOCK) {
+      return;
+    }
+    if (field_name == "ids" && ige->type() == Ioss::STRUCTUREDBLOCK) {
+      return;
+    }
+    if (field_name == "cell_ids" && ige->type() == Ioss::STRUCTUREDBLOCK) {
+      return;
+    }
+    if (field_name == "cell_node_ids" && ige->type() == Ioss::STRUCTUREDBLOCK) {
       return;
     }
 
@@ -2500,13 +2517,16 @@ namespace {
 
   void show_step(int istep, double time, bool verbose, int rank)
   {
-    if (verbose && rank == 0)
+    if (verbose && rank == 0) {
       std::cerr.setf(std::ios::scientific);
-    if (verbose && rank == 0)
+    }
+    if (verbose && rank == 0) {
       std::cerr.setf(std::ios::showpoint);
-    if (verbose && rank == 0)
+    }
+    if (verbose && rank == 0) {
       std::cerr << "     Time step " << std::setw(5) << istep << " at time " << std::setprecision(5)
                 << time << '\n';
+    }
   }
 
   template <typename INT>

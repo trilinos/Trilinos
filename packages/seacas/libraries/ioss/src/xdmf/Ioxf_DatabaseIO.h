@@ -146,15 +146,7 @@ namespace Ioxf {
     bool end_state__(Ioss::Region *region, int state, double time) override;
 
     std::string title() const { return databaseTitle; }
-    int         spatial_dimension() const { return spatialDimension; }
-    int         node_count() const { return nodeCount; }
-    int         side_count() const { return 0; }
-    int         element_count() const { return elementCount; }
-    int         node_block_count() const { return nodeBlockCount; }
-    int         element_block_count() const { return elementBlockCount; }
-    int         sideset_count() const { return sidesetCount; }
-    int         nodeset_count() const { return nodesetCount; }
-    int         maximum_symbol_length() const { return 32; }
+    int         maximum_symbol_length() const override { return 32; }
 
   private:
     int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,

@@ -762,18 +762,24 @@ int cpy_var_val(int in_id, int out_id, char *var_nm)
   return (EX_NOERR);
 
 err_ret:
-  if (dim_cnt)
+  if (dim_cnt) {
     free(dim_cnt);
-  if (dim_id_in)
+  }
+  if (dim_id_in) {
     free(dim_id_in);
-  if (dim_id_out)
+  }
+  if (dim_id_out) {
     free(dim_id_out);
-  if (dim_sz)
+  }
+  if (dim_sz) {
     free(dim_sz);
-  if (dim_srt)
+  }
+  if (dim_srt) {
     free(dim_srt);
-  if (void_ptr)
+  }
+  if (void_ptr) {
     free(void_ptr);
+  }
 
   return (EX_FATAL);
 
@@ -908,7 +914,7 @@ size_t type_size(nc_type type)
   if (type == NC_CHAR) {
     return sizeof(char); /* OK */
   }
-  else if (type == NC_INT) {
+  if (type == NC_INT) {
     return sizeof(int); /* OK */
   }
   else if (type == NC_INT64) {

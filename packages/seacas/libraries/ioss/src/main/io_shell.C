@@ -64,8 +64,8 @@ namespace {
   struct my_numpunct : std::numpunct<char>
   {
   protected:
-    char        do_thousands_sep() const { return ','; }
-    std::string do_grouping() const { return "\3"; }
+    char        do_thousands_sep() const override { return ','; }
+    std::string do_grouping() const override { return "\3"; }
   };
 
   std::string codename;

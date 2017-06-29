@@ -49,7 +49,7 @@ namespace {
 
   int sign(int value) { return value < 0 ? -1 : 1; }
 
-  int del(int v1, int v2) { return (std::abs(v1) == std::abs(v2)); }
+  int del(int v1, int v2) { return static_cast<int>(std::abs(v1) == std::abs(v2)); }
 
 } // namespace
 

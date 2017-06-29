@@ -180,6 +180,12 @@ Ioss::Property::~Property()
   }
 }
 
+Ioss::Property &Ioss::Property::operator=(Ioss::Property rhs)
+{
+  std::swap(*this, rhs);
+  return *this;
+}
+
 /** \brief Get the property value if it is of type STRING.
  *
  *  \returns The STRING-type property value

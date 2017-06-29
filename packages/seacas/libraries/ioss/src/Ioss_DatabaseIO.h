@@ -71,7 +71,7 @@ namespace Ioss {
   class EntityBlock;
 
   // Contains (parent_element, side) topology pairs
-  typedef std::vector<std::pair<const ElementTopology *, const ElementTopology *>> TopoContainer;
+  using TopoContainer = std::vector<std::pair<const ElementTopology *, const ElementTopology *>>;
 
   /** \brief An input or output Database.
    *
