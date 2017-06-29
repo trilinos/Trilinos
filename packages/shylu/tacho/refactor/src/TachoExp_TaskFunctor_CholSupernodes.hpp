@@ -32,7 +32,7 @@ namespace Tacho {
       sched_type _sched;
       
       supernode_info_type _info;
-      ordinal_type _sid, _sidpar;
+      ordinal_type _sid;
       
       // respawn control
       ordinal_type _state;
@@ -44,12 +44,10 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       TaskFunctor_CholSupernodes(const sched_type &sched,
                                  const supernode_info_type &info,
-                                 const ordinal_type sid,
-                                 const ordinal_type sidpar)                                     
+                                 const ordinal_type sid)                                     
         : _sched(sched),
           _info(info),
           _sid(sid),
-          _sidpar(sidpar),
           _state(0) {}
       
       KOKKOS_INLINE_FUNCTION
@@ -75,7 +73,7 @@ namespace Tacho {
             void *buf = (void*)&_info.super_schur_buf[bbeg];
             CholSupernodes<Algo::Workflow::Serial>
               ::factorize(_sched, member,
-                          _info, _sid, _sidpar,
+                          _info, _sid, 
                           bufsize, buf);
 
             ordinal_type m, n; _info.getSuperPanelSize(_sid, m, n);
@@ -105,7 +103,7 @@ namespace Tacho {
               
               const ordinal_type child = _info.stree_children(i+ibeg);
               auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, priority),
-                                          TaskFunctor_CholSupernodes(_sched,_info, child, _sid));
+                                          TaskFunctor_CholSupernodes(_sched,_info, child));
               TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
               dep[i] = f;
             }

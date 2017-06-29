@@ -136,13 +136,24 @@ namespace Tacho {
         const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
         size_type workspace = 0;
         for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          // supernodes are myself, parent, empty one (range is used for blocks it requires end point)
-          const bool is_direct_update = (sid_super_panel_ptr(sid+1) - sid_super_panel_ptr(sid)) == 3;
-          if (!is_direct_update) {
-            ordinal_type m, n;
-            getSuperPanelSize(sid, m, n);
-            workspace = max(workspace, (n-m)*(n-m));
-          }
+          ordinal_type m, n;
+          getSuperPanelSize(sid, m, n);
+          workspace = max(workspace, (n-m)*(n-m));
+        }
+        return workspace;
+      }
+
+      inline
+      size_type
+      computeWorkspaceCholByBlocks(const ordinal_type mb) {
+        const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
+        size_type workspace = 0;
+        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+          ordinal_type m, n;
+          getSuperPanelSize(sid, m, n);
+
+          const ordinal_type bm = m/mb + 1, bn = (n-m)/mb + 1;
+          workspace = max(workspace, bm*bm + bm*bn + bn*bn);
         }
         return workspace;
       }

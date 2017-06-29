@@ -21,7 +21,6 @@ namespace Tacho {
                 const MemberType &member,
                 const SupernodeInfoType &info,
                 const ordinal_type sid,
-                const ordinal_type sidpar,
                 const size_type bufsize,
                 /* */ void *buf) {
         typedef SupernodeInfoType supernode_info_type;
