@@ -39,10 +39,10 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP
-#define THYRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP
+#ifndef THYRA_TPETRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP
+#define THYRA_TPETRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP
 
-#include "Thyra_EuclideanScalarProd_decl.hpp"
+#include "Thyra_TpetraEuclideanScalarProd_decl.hpp"
 #include "Thyra_TpetraMultiVector.hpp"
 #include "Thyra_TpetraVector.hpp"
 

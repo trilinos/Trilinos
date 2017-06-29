@@ -643,7 +643,7 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::euclideanApply(
       std::logic_error,
       "Error, conjugation without transposition is not allowed for complex scalar types!");
 
-    Teuchos::ETransp trans;
+    Teuchos::ETransp trans = Teuchos::NO_TRANS;
     switch (M_trans) {
       case NOTRANS:
         trans = Teuchos::NO_TRANS;
