@@ -58,13 +58,13 @@ namespace Thyra {
 template<class Scalar>
 struct MockExtendedInArgs
 {
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> a;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > a;
 };
 
 template<class Scalar>
 struct MockExtendedOutArgs
 {
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> b;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > b;
 };
 
 

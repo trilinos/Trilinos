@@ -263,7 +263,7 @@ void VectorDefaultBase<Scalar>::linearCombinationVecImpl(
   const Scalar& beta
   )
 {
-  Array<Ptr<const MultiVectorBase<Scalar> >> mv(x.size());
+  Array<Ptr<const MultiVectorBase<Scalar> > > mv(x.size());
   for (Ordinal i = 0; i < x.size(); ++i)
     mv[i] = Teuchos::ptr_static_cast<const MultiVectorBase<Scalar> >(x[i]);
   this->linear_combination(alpha, mv(), beta);
