@@ -2160,7 +2160,9 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
                 {
                     p_e = ((eMesh.parallel_owner_rank(entity) + 1) * 100 + id);
                     if(sync_aura)
+                    {
                         ASSERT_EQ(p[0], p_e);
+                    }
                 }
             }
         }

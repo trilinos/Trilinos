@@ -96,19 +96,16 @@ STK_MATH_FORCE_INLINE simd::Double cbrt(const simd::Double& x) {
   for (int n=0; n < simd::ndoubles; ++n) {
     tmp[n] = hidden::CBRT(x[n]);
   }
+  return tmp;
 #endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double log(const simd::Double& x) {
-// #if defined(__INTEL_COMPILER)
-//     return simd::Double(_mm256_log_pd(x._data));
-// #else
   simd::Double tmp;
   for (int n=0; n < simd::ndoubles; ++n) {
     tmp[n] = std::log(x[n]);
   }
   return tmp;
-// #endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double log10(const simd::Double& x) {
@@ -132,39 +129,27 @@ STK_MATH_FORCE_INLINE simd::Double exp(const simd::Double& x) {
 }
 
 STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const simd::Double& y) {
-// #if defined(__INTEL_COMPILER)
-//     return simd::Double(_mm256_pow_pd(x._data, y._data));
-// #else
   simd::Double tmp;
   for (int n=0; n < simd::ndoubles; ++n) {
     tmp[n] = std::pow(x[n],y[n]);
   }
   return tmp;
-// #endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const double y) {
-// #if defined(__INTEL_COMPILER)
-//     return simd::Double(_mm256_pow_pd(x._data, _mm256_set1_pd(y)));
-// #else
   simd::Double tmp;
   for (int n=0; n < simd::ndoubles; ++n) {
     tmp[n] = std::pow(x[n],y);
   }
   return tmp;
-// #endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const int y) {
-// #if defined(__INTEL_COMPILER)
-//     return simd::Double(_mm256_pow_pd(x._data, _mm256_set1_pd(y)));
-// #else
   simd::Double tmp;
   for (int n=0; n < simd::ndoubles; ++n) {
     tmp[n] = std::pow(x[n],y);
   }
   return tmp;
-// #endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double sin(const simd::Double& a) {

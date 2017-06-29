@@ -356,9 +356,9 @@ TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
   }
 
   if (fixture.m_bulk_data.parallel_size() > 1)
+  {
     EXPECT_LE(1u, num_ghosted_faces);
-
-
+  }
 }
 
 TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
@@ -475,9 +475,9 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
   }
 
   if (fixture.m_bulk_data.parallel_size() > 1)
+  {
     EXPECT_LE(1u, num_ghosted_faces);
-
-
+  }
 }
 
 TEST ( UnitTestCreateFaces, Gears )

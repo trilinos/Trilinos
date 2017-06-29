@@ -1,5 +1,5 @@
 #ifndef COMMON_SEARCH_UTILS_INSTRUMENTED_H_
-#define COMMON_SEARCH_UTILS_INSTURMENTED_H_
+#define COMMON_SEARCH_UTILS_INSTRUMENTED_H_
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -269,4 +269,4 @@ namespace stk {
   } } }
 }
 
-#endif /* GEOMETRY_TOOLKIT_INCLUDE_GEOM_COARSESEARCHMULTIALG_IMPL_H_ */
+#endif

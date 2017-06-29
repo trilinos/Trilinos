@@ -257,7 +257,9 @@ void verify_data(stk::mesh::BulkData& bulk, stk::mesh::Field<double>& field, stk
         double *data = stk::mesh::field_data(field, entity);
         double goldValue = getValue(bulk.identifier(entity), stepNum);
         if(*data != initialValue())
+        {
             EXPECT_EQ(goldValue, *data);
+        }
     }
 }
 
