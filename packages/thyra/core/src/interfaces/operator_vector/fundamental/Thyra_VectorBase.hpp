@@ -178,34 +178,6 @@ public:
   void randomize(Scalar l, Scalar u)
     { randomizeImpl(l,u); }
 
-  /** \brief Element-wise absolute value:
-   *
-   * <tt>y(i) = abs(x(i)), i = 0...y->space()->dim()-1</tt>.
-   *
-   * NVI function.
-   */
-  void abs(const VectorBase<Scalar>& x)
-    { absImpl(x); }
-
-  /** \brief Element-wise reciprocal:
-   *
-   * <tt>y(i) = 1/x(i), i = 0...y->space()->dim()-1</tt>.
-   *
-   * NVI function.
-   */
-  void reciprocal(const VectorBase<Scalar>& x)
-    { reciprocalImpl(x); }
-
-  /** \brief Element-wise scaling:
-   *
-   * <tt>y(i) *= x(i), i = 0...y->space()->dim()-1</tt>.
-   *
-   * NVI function.
-   */
-  void ele_wise_scale(const VectorBase<Scalar>& x)
-    { eleWiseScaleImpl(x); }
-
-
   // Overloading update for VectorBase argument.
   using MultiVectorBase<Scalar>::update;
 
@@ -685,6 +657,29 @@ private:
   // Not defined and not to be called
   VectorBase<Scalar>&
   operator=(const VectorBase<Scalar>&);
+
+public:
+
+  // These are functions that may be removed in the future and should not be
+  // called by client code.
+
+  // Don't call this directly.  Use non-member Thyra::abs().  This is because
+  // this member function may disappear in the future. (see Trilinos GitHub
+  // issue #330)
+  void abs(const VectorBase<Scalar>& x)
+    { absImpl(x); }
+
+  // Don't call this directly.  Use non-member Thyra::reciprocal().  This is because
+  // this member function may disappear in the future. (see Trilinos GitHub
+  // issue #330)
+  void reciprocal(const VectorBase<Scalar>& x)
+    { reciprocalImpl(x); }
+
+  // Don't call this directly.  Use non-member Thyra::ele_wise_scale().  This
+  // is because this member function may disappear in the future. (see
+  // Trilinos GitHub issue #330)
+  void ele_wise_scale(const VectorBase<Scalar>& x)
+    { eleWiseScaleImpl(x); }
 
 };
 
