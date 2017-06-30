@@ -383,7 +383,7 @@ private:
     Real CGtol = std::min(tol,TOL*rg);
     unsigned cnt = 0;
     while (rg > CGtol && cnt < 2*n+1) {
-      applyMatrix(Ad,d);
+      Bundle<Real>::applyMatrix(Ad,d);
       kappa = dot(d,Ad);
       alpha = rg/kappa;
       axpy(alpha,d,x);
@@ -484,7 +484,7 @@ private:
         alpha = computeStepSize(ind,dualVariables,s);
         if ( alpha > zero ) {
           axpy(alpha,s,dualVariables);
-          applyFullMatrix(Hs,s);
+          Bundle<Real>::applyFullMatrix(Hs,s);
           axpy(alpha,Hs,g);
         }
         if (ind < Bundle<Real>::size()) {
