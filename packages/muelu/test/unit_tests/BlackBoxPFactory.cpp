@@ -69,7 +69,7 @@
 
 namespace MueLuTests {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class BlackBoxPFactoryTester {
 #include "MueLu_UseShortNames.hpp"
 
@@ -108,7 +108,7 @@ namespace MueLuTests {
 
   };
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib, const LocalOrdinal numDimensions,
                       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
                       RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& Coordinates,
@@ -292,7 +292,7 @@ namespace MueLuTests {
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
-    GetProblemData(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim, lNodesPerDim);
+    GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim, lNodesPerDim);
 
     Array<LO> coarseRate(3);
     coarseRate[0] = 2;
@@ -430,16 +430,16 @@ namespace MueLuTests {
     elementNodesPerDir[2] = 3;
     {// check reordering for ie = 0, je = 0, ke = 0
       ie = 0, je = 0, ke = 0;
-      const std::vector<double> v = {13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0, 26.0,
+      const std::vector<SC> v = {13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0, 26.0,
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0,
                                      15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -449,16 +449,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 0, ke = 0
       ie = 2, je = 0, ke = 0;
-      const std::vector<double> v = {12.0, 13.0, 15.0, 16.0, 21.0, 22.0, 24.0, 25.0,
+      const std::vector<SC> v = {12.0, 13.0, 15.0, 16.0, 21.0, 22.0, 24.0, 25.0,
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0,
                                      14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -468,16 +468,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 2, ke = 0
       ie = 0, je = 2, ke = 0;
-      const std::vector<double> v = {10.0, 11.0, 13.0, 14.0, 19.0, 20.0, 22.0, 23.0,
+      const std::vector<SC> v = {10.0, 11.0, 13.0, 14.0, 19.0, 20.0, 22.0, 23.0,
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,
                                      12.0, 15.0, 16.0, 17.0, 18.0, 21.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -487,16 +487,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 2, ke = 0
       ie = 2, je = 2, ke = 0;
-      const std::vector<double> v = { 9.0, 10.0, 12.0, 13.0, 18.0, 19.0, 21.0, 22.0,
+      const std::vector<SC> v = { 9.0, 10.0, 12.0, 13.0, 18.0, 19.0, 21.0, 22.0,
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
                                      11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -506,16 +506,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 0, ke = 2
       ie = 0, je = 0, ke = 2;
-      const std::vector<double> v = { 4.0,  5.0,  7.0,  8.0, 13.0, 14.0, 16.0, 17.0,
+      const std::vector<SC> v = { 4.0,  5.0,  7.0,  8.0, 13.0, 14.0, 16.0, 17.0,
                                       0.0,  1.0,  2.0,  3.0,  6.0,  9.0, 10.0, 11.0, 12.0, 15.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -525,16 +525,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 0, ke = 2
       ie = 2, je = 0, ke = 2;
-      const std::vector<double> v = { 3.0,  4.0,  6.0,  7.0, 12.0, 13.0, 15.0, 16.0,
+      const std::vector<SC> v = { 3.0,  4.0,  6.0,  7.0, 12.0, 13.0, 15.0, 16.0,
                                       0.0,  1.0,  2.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 17.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -544,16 +544,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 2, ke = 2
       ie = 0, je = 2, ke = 2;
-      const std::vector<double> v = { 1.0,  2.0,  4.0,  5.0, 10.0, 11.0, 13.0, 14.0,
+      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0, 10.0, 11.0, 13.0, 14.0,
                                       0.0,  3.0,  6.0,  7.0,  8.0,  9.0, 12.0, 15.0, 16.0, 17.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -563,16 +563,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 2, ke = 2
       ie = 2, je = 2, ke = 2;
-      const std::vector<double> v = { 0.0,  1.0,  3.0,  4.0,  9.0, 10.0, 12.0, 13.0,
+      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  9.0, 10.0, 12.0, 13.0,
                                       2.0,  5.0,  6.0,  7.0,  8.0, 11.0, 14.0, 15.0, 16.0, 17.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -582,16 +582,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 0, ke = 0
       ie = 1, je = 0, ke = 0;
-      const std::vector<double> v = {12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
+      const std::vector<SC> v = {12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
                                       9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -601,16 +601,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 2, ke = 0
       ie = 1, je = 2, ke = 0;
-      const std::vector<double> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
+      const std::vector<SC> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
                                      15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -620,16 +620,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 0, ke = 2
       ie = 1, je = 0, ke = 2;
-      const std::vector<double> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
+      const std::vector<SC> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
                                       0.0,  1.0,  2.0,  9.0, 10.0, 11.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -639,16 +639,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 2, ke = 2
       ie = 1, je = 2, ke = 2;
-      const std::vector<double> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
                                       6.0,  7.0,  8.0, 15.0, 16.0, 17.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -658,16 +658,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 1, ke = 0
       ie = 0, je = 1, ke = 0;
-      const std::vector<double> v = {10.0, 11.0, 13.0, 14.0, 16.0, 17.0, 19.0, 20.0, 22.0, 23.0, 25.0, 26.0,
+      const std::vector<SC> v = {10.0, 11.0, 13.0, 14.0, 16.0, 17.0, 19.0, 20.0, 22.0, 23.0, 25.0, 26.0,
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
                                       9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -677,16 +677,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 1, ke = 0
       ie = 2, je = 1, ke = 0;
-      const std::vector<double> v = { 9.0, 10.0, 12.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0, 24.0, 25.0,
+      const std::vector<SC> v = { 9.0, 10.0, 12.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0, 24.0, 25.0,
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
                                      11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -696,16 +696,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 1, ke = 2
       ie = 0, je = 1, ke = 2;
-      const std::vector<double> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0, 17.0,
+      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0, 17.0,
                                       0.0,  3.0,  6.0,  9.0, 12.0, 15.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -715,16 +715,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 1, ke = 2
       ie = 2, je = 1, ke = 2;
-      const std::vector<double> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0, 16.0,
+      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0, 16.0,
                                       2.0,  5.0,  8.0, 11.0, 14.0, 17.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -734,15 +734,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 0, ke = 1
       ie = 0, je = 0, ke = 1;
-      const std::vector<double> v = { 4.0,  5.0,  7.0,  8.0, 13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0, 26.0,
+      const std::vector<SC> v = { 4.0,  5.0,  7.0,  8.0, 13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0, 26.0,
                                       0.0,  1.0,  2.0,  3.0,  6.0,  9.0, 10.0, 11.0, 12.0, 15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -752,15 +752,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 0, ke = 1
       ie = 2, je = 0, ke = 1;
-      const std::vector<double> v = { 3.0,  4.0,  6.0,  7.0, 12.0, 13.0, 15.0, 16.0, 21.0, 22.0, 24.0, 25.0,
+      const std::vector<SC> v = { 3.0,  4.0,  6.0,  7.0, 12.0, 13.0, 15.0, 16.0, 21.0, 22.0, 24.0, 25.0,
                                       0.0,  1.0,  2.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -770,15 +770,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 2, ke = 1
       ie = 0, je = 2, ke = 1;
-      const std::vector<double> v = { 1.0,  2.0,  4.0,  5.0, 10.0, 11.0, 13.0, 14.0, 19.0, 20.0, 22.0, 23.0,
+      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0, 10.0, 11.0, 13.0, 14.0, 19.0, 20.0, 22.0, 23.0,
                                       0.0,  3.0,  6.0,  7.0,  8.0,  9.0, 12.0, 15.0, 16.0, 17.0, 18.0, 21.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -788,15 +788,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 2, ke = 1
       ie = 2, je = 2, ke = 1;
-      const std::vector<double> v = { 0.0,  1.0,  3.0,  4.0,  9.0, 10.0, 12.0, 13.0, 18.0, 19.0, 21.0, 22.0,
+      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  9.0, 10.0, 12.0, 13.0, 18.0, 19.0, 21.0, 22.0,
                                       2.0,  5.0,  6.0,  7.0,  8.0, 11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -806,15 +806,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 1, ke = 1
       ie = 0, je = 1, ke = 1;
-      const std::vector<double> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0, 17.0, 19.0, 20.0, 22.0, 23.0, 25.0, 26.0,
+      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0, 17.0, 19.0, 20.0, 22.0, 23.0, 25.0, 26.0,
                                       0.0,  3.0,  6.0,  9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -824,15 +824,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 1, ke = 1
       ie = 2, je = 1, ke = 1;
-      const std::vector<double> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0, 24.0, 25.0,
+      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0, 24.0, 25.0,
                                       2.0,  5.0,  8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -842,15 +842,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 0, ke = 1
       ie = 1, je = 0, ke = 1;
-      const std::vector<double> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
+      const std::vector<SC> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
                                       0.0,  1.0,  2.0,  9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -860,15 +860,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 2, ke = 1
       ie = 1, je = 2, ke = 1;
-      const std::vector<double> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
+      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
                                       6.0,  7.0,  8.0, 15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -878,15 +878,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 1, ke = 0
       ie = 1, je = 1, ke = 0;
-      const std::vector<double> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
+      const std::vector<SC> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -896,15 +896,15 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 1, ke = 2
       ie = 1, je = 1, ke = 2;
-      const std::vector<double> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
+      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }
@@ -914,16 +914,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 1, ke = 1
       ie = 1, je = 1, ke = 1;
-      const std::vector<double> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
                                       9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
-      Array<double> cornerSWB(v);
-      Array<double> stencil(27);
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(27);
       factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
-        if(stencil[i] != (double) i) {
+        if(stencil[i] != (SC) i) {
           checkResult = false;
         }
       }

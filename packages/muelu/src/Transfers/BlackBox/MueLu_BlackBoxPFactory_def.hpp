@@ -962,33 +962,33 @@ namespace MueLu {
     }
 
     // Diagonal blocks
-    Teuchos::SerialDenseMatrix<LO,double> Aii(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2],
+    Teuchos::SerialDenseMatrix<LO,SC> Aii(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2],
                                               BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2]);
-    Teuchos::SerialDenseMatrix<LO,double> Aff(2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
+    Teuchos::SerialDenseMatrix<LO,SC> Aff(2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
                                                          + elementNodesPerDir[1]*elementNodesPerDir[2]
                                                          + elementNodesPerDir[0]*elementNodesPerDir[2]),
                                               2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
                                                          + elementNodesPerDir[1]*elementNodesPerDir[2]
                                                          + elementNodesPerDir[0]*elementNodesPerDir[2]));
-    Teuchos::SerialDenseMatrix<LO,double> Aee(4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]),
+    Teuchos::SerialDenseMatrix<LO,SC> Aee(4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]),
                                               4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]));
     // Upper triangular blocks
-    Teuchos::SerialDenseMatrix<LO,double> Aif(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2],
+    Teuchos::SerialDenseMatrix<LO,SC> Aif(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2],
                                               2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
                                                          + elementNodesPerDir[1]*elementNodesPerDir[2]
                                                          + elementNodesPerDir[0]*elementNodesPerDir[2]));
-    Teuchos::SerialDenseMatrix<LO,double> Aie(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2],
+    Teuchos::SerialDenseMatrix<LO,SC> Aie(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2],
                                               4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]));
-    Teuchos::SerialDenseMatrix<LO,double> Afe(2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
+    Teuchos::SerialDenseMatrix<LO,SC> Afe(2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
                                                          + elementNodesPerDir[1]*elementNodesPerDir[2]
                                                          + elementNodesPerDir[0]*elementNodesPerDir[2]),
                                               4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]));
     // Coarse nodes "right hand sides"
-    Teuchos::SerialDenseMatrix<LO,double> Aic(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2], 8);
-    Teuchos::SerialDenseMatrix<LO,double> Afc(2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
+    Teuchos::SerialDenseMatrix<LO,SC> Aic(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2], 8);
+    Teuchos::SerialDenseMatrix<LO,SC> Afc(2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
                                                          + elementNodesPerDir[1]*elementNodesPerDir[2]
                                                          + elementNodesPerDir[0]*elementNodesPerDir[2]), 8);
-    Teuchos::SerialDenseMatrix<LO,double> Aec(4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]), 8);
+    Teuchos::SerialDenseMatrix<LO,SC> Aec(4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]), 8);
 
     ArrayView<const LO> rowIndices;
     ArrayView<const SC> rowValues;
