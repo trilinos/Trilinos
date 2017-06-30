@@ -183,7 +183,7 @@ protected:
   //@{
 
   /** \brief . */
-  virtual void randomizeImpl(Scalar l, Scalar u);
+  //virtual void randomizeImpl(Scalar l, Scalar u);
   /** \brief . */
   virtual void absImpl(const VectorBase<Scalar>& x);
   /** \brief . */

@@ -295,7 +295,7 @@ DefaultProductVector<Scalar>::space() const
 }
 
 
-template <class Scalar>
+/*template <class Scalar>
 void DefaultProductVector<Scalar>::randomizeImpl(
   Scalar l,
   Scalar u
@@ -304,7 +304,7 @@ void DefaultProductVector<Scalar>::randomizeImpl(
   for(int k = 0; k < numBlocks_; ++k) {
     vecs_[k].getNonconstObj()->randomize(l, u);
   }
-}
+}*/
 
 
 template <class Scalar>
