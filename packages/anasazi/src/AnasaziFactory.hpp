@@ -61,11 +61,27 @@
 #include <algorithm>
 #include <string>
 
+/*! \class Anasazi::Factory
+  \brief This provides a factory to build Anasazi solvers using parameter lists.
+*/
+
+
 namespace Anasazi {
 
 class Factory {
 public:
 
+  /** \brief Create an instance of Anasazi::SolverManager given the string
+   * name of the solver type.
+   *
+   * \param solverType [in] Name of solver type to be created.
+   * \param problem [in] Anasazi eigenproblem used to define the solver
+   *
+   * Throw an exception if the solver with that input name does not exist.
+   * Otherwise, return a newly created solver object.
+   *
+   * \note Some of the solver managers cannot be used with std::complex.
+   */
   template<class ScalarType, class MV, class OP>
   static
   Teuchos::RCP<SolverManager<ScalarType,MV,OP> >
@@ -97,7 +113,6 @@ public:
         "Anasazi::Factory::create: Invalid solver type \"" << solverType << "\".");
   }
 
-  // Some of the solver managers cannot be instantiated on std::complex.
   template<class MV, class OP>
   static
   Teuchos::RCP<SolverManager<double,MV,OP> >
@@ -139,6 +154,7 @@ public:
         "Anasazi::Factory::create: Invalid solverType type \"" << solverType << "\".");
   }
 
+  //! Specialize create for BasicEigenproblem type.
   template<class ScalarType, class MV, class OP>
   static
   Teuchos::RCP<SolverManager<ScalarType,MV,OP> >
