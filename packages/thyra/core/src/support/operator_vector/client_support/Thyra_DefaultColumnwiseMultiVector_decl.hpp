@@ -181,7 +181,47 @@ protected:
   //@{
 
   /** \brief . */
-  void assignImpl(Scalar alpha);
+  virtual void assignImpl(Scalar alpha);
+
+  /** \brief . */
+  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar>& mv);
+
+  /** \brief . */
+  virtual void scaleImpl(Scalar alpha);
+
+  /** \brief . */
+  virtual void updateImpl(
+    Scalar alpha,
+    const MultiVectorBase<Scalar>& mv
+    );
+
+  /** \brief . */
+  virtual void linearCombinationImpl(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+    const Scalar& beta
+    );
+
+  /** \brief . */
+  virtual void dotsImpl(
+    const MultiVectorBase<Scalar>& mv,
+    const ArrayView<Scalar>& prods
+    ) const;
+
+  /** \brief . */
+  virtual void norms1Impl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const;
+
+  /** \brief . */
+  virtual void norms2Impl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const;
+
+  /** \brief . */
+  virtual void normsInfImpl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const;
 
   //@}
 

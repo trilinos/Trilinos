@@ -1271,7 +1271,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>::get() const
                              "ERROR: InArgs::get<ObjectType>() was called with unsupported extended data type \""
                              << typeid(ObjectType).name() << "\"!");
 
-  return Teuchos::any_cast<Teuchos::RCP<const ObjectType>>(search->second);
+  return Teuchos::any_cast<Teuchos::RCP<const ObjectType> >(search->second);
 }
 
 template<class Scalar>
@@ -1341,7 +1341,7 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar>::get() const
                              "ERROR: OutArgs::get<ObjectType>() was called with unsupported extended data type \""
                              << typeid(ObjectType).name() << "\"!");
 
-  return Teuchos::any_cast<Teuchos::RCP<const ObjectType>>(search->second);
+  return Teuchos::any_cast<Teuchos::RCP<const ObjectType> >(search->second);
 }
 
 template<class Scalar>

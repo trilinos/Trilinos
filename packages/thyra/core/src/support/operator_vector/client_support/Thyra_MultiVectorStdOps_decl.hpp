@@ -91,9 +91,6 @@ void reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
  * one-norms <tt>dot[j] = norm_1(*V.col(j))</tt>, for <tt>j=0...m-1</tt>,
  * computed using a single reduction.
  *
- * This function simply calls <tt>reductions()</tt> using
- * <tt>RTOpPack::ROpNorm1</tt>.
- *
  * \relates MultiVectorBase
  */
 template<class Scalar>
@@ -109,9 +106,6 @@ void norms_1( const MultiVectorBase<Scalar>& V,
  * one-norms <tt>dot[j] = norm_2(*V.col(j))</tt>, for <tt>j=0...m-1</tt>,
  * computed using a single reduction.
  *
- * This function simply calls <tt>reductions()</tt> using
- * <tt>RTOpPack::ROpNorm2</tt>.
- *
  * \relates MultiVectorBase
  */
 template<class Scalar>
@@ -126,9 +120,6 @@ void norms_2( const MultiVectorBase<Scalar>& V,
  * \param norms [out] Array (size <tt>m = V1->domain()->dim()</tt>) of
  * one-norms <tt>dot[j] = norm_inf(*V.col(j))</tt>, for <tt>j=0...m-1</tt>,
  * computed using a single reduction.
- *
- * This function simply calls <tt>reductions()</tt> using
- * <tt>RTOpPack::ROpNormInf</tt>.
  *
  * \relates MultiVectorBase
  */
@@ -377,7 +368,7 @@ inline
 void Thyra::norms_1( const MultiVectorBase<Scalar>& V,
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
 {
-  reductions<Scalar>(V, RTOpPack::ROpNorm1<Scalar>(), norms);
+  V.norms_1(norms);
 }
 
 
@@ -386,7 +377,7 @@ inline
 void Thyra::norms_2( const MultiVectorBase<Scalar>& V,
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
 {
-  reductions<Scalar>(V, RTOpPack::ROpNorm2<Scalar>(), norms);
+  V.norms_2(norms);
 }
 
 
@@ -395,7 +386,7 @@ inline
 void Thyra::norms_inf( const MultiVectorBase<Scalar>& V,
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
 {
-  reductions<Scalar>(V, RTOpPack::ROpNormInf<Scalar>(), norms);
+  V.norms_inf(norms);
 }
 
 
