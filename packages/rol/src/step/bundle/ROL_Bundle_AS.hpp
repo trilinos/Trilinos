@@ -58,6 +58,10 @@ class Bundle_AS : public Bundle<Real> {
 /***************** BUNDLE STORAGE **************************************************************/
 /***********************************************************************************************/
 private:
+
+  Teuchos::RCP<Vector<Real> > tG_;
+  Teuchos::RCP<Vector<Real> > eG_;
+  Teuchos::RCP<Vector<Real> > yG_;
   Teuchos::RCP<Vector<Real> > gx_;
   Teuchos::RCP<Vector<Real> > ge_;
 
@@ -65,18 +69,6 @@ private:
   std::set<unsigned> nworkingSet_;
 
   bool isInitialized_;
-
-  const Real GiGj(const unsigned i, const unsigned j) const {
-    return Bundle<Real>::subgradient(i).dot(Bundle<Real>::subgradient(j));
-  }
-
-  const Real dotGi(const unsigned i, const Vector<Real> &x) const {
-    return x.dot(Bundle<Real>::subgradient(i));
-  }
-
-  void addGi(const unsigned i, const Real a, Vector<Real> &x) const {
-    x.axpy(a,Bundle<Real>::subgradient(i));
-  }
   
 /***********************************************************************************************/
 /***************** BUNDLE MODIFICATION AND ACCESS ROUTINES *************************************/
@@ -91,6 +83,9 @@ public:
   void initialize(const Vector<Real> &g) {
     Bundle<Real>::initialize(g);
     if ( !isInitialized_ ) {
+      tG_ = g.clone();
+      yG_ = g.clone();
+      eG_ = g.clone();
       gx_ = g.clone();
       ge_ = g.clone();
       isInitialized_ = true;
@@ -261,7 +256,7 @@ private:
     std::vector<Real> gg(dim,zero);
     typename std::set<unsigned>::iterator it = nworkingSet_.begin(); 
     for (unsigned i = 0; i < dim; ++i) {
-      gg[i] = one/std::abs(GiGj(*it,*it)); it++;
+      gg[i] = one/std::abs(Bundle<Real>::GiGj(*it,*it)); it++;
       // Compute sum of inv(D)x using Kahan's aggregated sum
       //sum += x[i]*gg[i];
       yX   = x[i]*gg[i] - errX;
@@ -285,7 +280,7 @@ private:
     unsigned dim = nworkingSet_.size();
     typename std::set<unsigned>::iterator it = nworkingSet_.begin();
     for (unsigned i = 0; i < dim; ++i) {
-      Gx[i] = std::abs(GiGj(*it,*it))*x[i]; it++;
+      Gx[i] = std::abs(Bundle<Real>::GiGj(*it,*it))*x[i]; it++;
     }
   }
 
@@ -301,13 +296,13 @@ private:
     for (int i = 0; i < dim; ++i) {
       gx_->zero(); ge_->zero(); jt = nworkingSet_.begin();
       for (int j = 0; j < i; ++j) {
-        addGi(*jt,x1[j],*gx_);
-        addGi(*jt,e1[j],*ge_);
+        Bundle<Real>::addGi(*jt,x1[j],*gx_);
+        Bundle<Real>::addGi(*jt,e1[j],*ge_);
         jt++;
       }
-      gg[i] = GiGj(*it,*it);
-      x1[i] = (x[i] - dotGi(*it,*gx_))/gg[i];
-      e1[i] = (one  - dotGi(*it,*ge_))/gg[i];
+      gg[i] = Bundle<Real>::GiGj(*it,*it);
+      x1[i] = (x[i] - Bundle<Real>::dotGi(*it,*gx_))/gg[i];
+      e1[i] = (one  - Bundle<Real>::dotGi(*it,*ge_))/gg[i];
       it++;
     }
     // Apply diagonal
@@ -322,11 +317,11 @@ private:
       gx_->zero(); ge_->zero(); jt = nworkingSet_.end();
       for (int j = dim-1; j >= i+1; --j) {
         jt--;
-        addGi(*jt,Hx[j],*gx_);
-        addGi(*jt,He[j],*ge_);
+        Bundle<Real>::addGi(*jt,Hx[j],*gx_);
+        Bundle<Real>::addGi(*jt,He[j],*ge_);
       }
-      Hx[i] = (x1[i] - dotGi(*it,*gx_))/gg[i];
-      He[i] = (e1[i] - dotGi(*it,*ge_))/gg[i];
+      Hx[i] = (x1[i] - Bundle<Real>::dotGi(*it,*gx_))/gg[i];
+      He[i] = (e1[i] - Bundle<Real>::dotGi(*it,*ge_))/gg[i];
       // Compute sums
       eHx += Hx[i];
       eHe += He[i];
@@ -341,7 +336,7 @@ private:
     unsigned dim = nworkingSet_.size();
     typename std::set<unsigned>::iterator it = nworkingSet_.begin();
     for (unsigned i = 0; i < dim; ++i) {
-      Gx[i] = std::abs(GiGj(*it,*it))*x[i]; it++;
+      Gx[i] = std::abs(Bundle<Real>::GiGj(*it,*it))*x[i]; it++;
     }
   }
 
@@ -366,6 +361,44 @@ private:
     applyPreconditioner(g,r);
   }
 
+  void applyFullMatrix(std::vector<Real> &Hx, const std::vector<Real> &x) const {
+    Real one(1);
+    gx_->zero(); eG_->zero();
+    for (unsigned i = 0; i < Bundle<Real>::size(); ++i) {
+      // Compute Gx using Kahan's compensated sum
+      //gx_->axpy(x[i],Bundle<Real>::subgradient(i));
+      yG_->set(Bundle<Real>::subgradient(i)); yG_->scale(x[i]); yG_->axpy(-one,*eG_);
+      tG_->set(*gx_); tG_->plus(*yG_);
+      eG_->set(*tG_); eG_->axpy(-one,*gx_); eG_->axpy(-one,*yG_);
+      gx_->set(*tG_);
+    }
+    for (unsigned i = 0; i < Bundle<Real>::size(); ++i) {
+      // Compute < g_i, Gx >
+      Hx[i] = Bundle<Real>::dotGi(i,*gx_);
+    }
+  }
+
+  void applyMatrix(std::vector<Real> &Hx, const std::vector<Real> &x) const {
+    Real one(1);
+    gx_->zero(); eG_->zero();
+    unsigned n = nworkingSet_.size();
+    typename std::set<unsigned>::iterator it = nworkingSet_.begin(); 
+    for (unsigned i = 0; i < n; ++i) {
+      // Compute Gx using Kahan's compensated sum
+      //gx_->axpy(x[i],Bundle<Real>::subgradient(*it));
+      yG_->set(Bundle<Real>::subgradient(*it)); yG_->scale(x[i]); yG_->axpy(-one,*eG_);
+      tG_->set(*gx_); tG_->plus(*yG_);
+      eG_->set(*tG_); eG_->axpy(-one,*gx_); eG_->axpy(-one,*yG_);
+      gx_->set(*tG_);
+      it++;
+    }
+    it = nworkingSet_.begin();
+    for (unsigned i = 0; i < n; ++i) {
+      // Compute < g_i, Gx >
+      Hx[i] = Bundle<Real>::dotGi(*it,*gx_); it++;
+    }
+  }
+
   unsigned projectedCG(std::vector<Real> &x, Real &mu, const std::vector<Real> &b, const Real tol) const {
     Real one(1), zero(0);
     unsigned n = nworkingSet_.size();
@@ -383,7 +416,7 @@ private:
     Real CGtol = std::min(tol,TOL*rg);
     unsigned cnt = 0;
     while (rg > CGtol && cnt < 2*n+1) {
-      Bundle<Real>::applyMatrix(Ad,d);
+      applyMatrix(Ad,d);
       kappa = dot(d,Ad);
       alpha = rg/kappa;
       axpy(alpha,d,x);
@@ -484,7 +517,7 @@ private:
         alpha = computeStepSize(ind,dualVariables,s);
         if ( alpha > zero ) {
           axpy(alpha,s,dualVariables);
-          Bundle<Real>::applyFullMatrix(Hs,s);
+          applyFullMatrix(Hs,s);
           axpy(alpha,Hs,g);
         }
         if (ind < Bundle<Real>::size()) {

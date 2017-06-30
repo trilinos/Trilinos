@@ -285,69 +285,43 @@ public:
   }
 
 protected:
+  const Real GiGj(const unsigned i, const unsigned j) const {
+    return subgradient(i).dot(subgradient(j));
+  }
+
+  const Real dotGi(const unsigned i, const Vector<Real> &x) const {
+    return x.dot(subgradient(i));
+  }
+
+  void addGi(const unsigned i, const Real a, Vector<Real> &x) const {
+    x.axpy(a,subgradient(i));
+  }
+
   Real evaluateObjective(std::vector<Real> &g, const std::vector<Real> &x, const Real t) const {
     Real one(1), half(0.5);
     gx_->zero(); eG_->zero();
     for (unsigned i = 0; i < Bundle<Real>::size(); ++i) {
       // Compute Gx using Kahan's compensated sum
       //gx_->axpy(x[i],*Bundle<Real>::subgradients_[i]);
-      yG_->set(Bundle<Real>::subgradient(i)); yG_->scale(x[i]); yG_->axpy(-one,*eG_);
+      yG_->set(subgradient(i)); yG_->scale(x[i]); yG_->axpy(-one,*eG_);
       tG_->set(*gx_); tG_->plus(*yG_);
       eG_->set(*tG_); eG_->axpy(-one,*gx_); eG_->axpy(-one,*yG_);
       gx_->set(*tG_);
     }
     Real Hx(0), val(0), err(0), tmp(0), y(0);
-    for (unsigned i = 0; i < Bundle<Real>::size(); ++i) {
+    for (unsigned i = 0; i < size(); ++i) {
       // Compute < g_i, Gx >
       Hx   = dotGi(i,*gx_);
       // Add to the objective function value using Kahan's compensated sum
       //val += x[i]*(half*Hx + Bundle<Real>::alpha(i)/t);
-      y    = x[i]*(half*Hx + Bundle<Real>::alpha(i)/t) - err;
+      y    = x[i]*(half*Hx + alpha(i)/t) - err;
       tmp  = val + y;
       err  = (tmp - val) - y;
       val  = tmp;
       // Add gradient component
-      g[i] = Hx + Bundle<Real>::alpha(i)/t;
+      g[i] = Hx + alpha(i)/t;
     }
     return val;
-  }
-
-  void applyFullMatrix(std::vector<Real> &Hx, const std::vector<Real> &x) const {
-    Real one(1);
-    gx_->zero(); eG_->zero();
-    for (unsigned i = 0; i < Bundle<Real>::size(); ++i) {
-      // Compute Gx using Kahan's compensated sum
-      //gx_->axpy(x[i],Bundle<Real>::subgradient(i));
-      yG_->set(Bundle<Real>::subgradient(i)); yG_->scale(x[i]); yG_->axpy(-one,*eG_);
-      tG_->set(*gx_); tG_->plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-one,*gx_); eG_->axpy(-one,*yG_);
-      gx_->set(*tG_);
-    }
-    for (unsigned i = 0; i < Bundle<Real>::size(); ++i) {
-      // Compute < g_i, Gx >
-      Hx[i] = dotGi(i,*gx_);
-    }
-  }
-
-  void applyMatrix(std::vector<Real> &Hx, const std::vector<Real> &x) const {
-    Real one(1);
-    gx_->zero(); eG_->zero();
-    unsigned n = nworkingSet_.size();
-    typename std::set<unsigned>::iterator it = nworkingSet_.begin(); 
-    for (unsigned i = 0; i < n; ++i) {
-      // Compute Gx using Kahan's compensated sum
-      //gx_->axpy(x[i],Bundle<Real>::subgradient(*it));
-      yG_->set(Bundle<Real>::subgradient(*it)); yG_->scale(x[i]); yG_->axpy(-one,*eG_);
-      tG_->set(*gx_); tG_->plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-one,*gx_); eG_->axpy(-one,*yG_);
-      gx_->set(*tG_);
-      it++;
-    }
-    it = nworkingSet_.begin();
-    for (unsigned i = 0; i < n; ++i) {
-      // Compute < g_i, Gx >
-      Hx[i] = dotGi(*it,*gx_); it++;
-    }
   }
 
   unsigned solveDual_dim1(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
@@ -358,19 +332,19 @@ protected:
 
   unsigned solveDual_dim2(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
     Real diffg  = gx_->dot(*gx_), zero(0), one(1), half(0.5);
-    gx_->set(Bundle<Real>::subgradient(0)); addGi(1,-one,*gx_);
+    gx_->set(subgradient(0)); addGi(1,-one,*gx_);
     if ( std::abs(diffg) > ROL_EPSILON<Real>() ) {
-      Real diffa  = (Bundle<Real>::alpha(0)-Bundle<Real>::alpha(1))/t;
+      Real diffa  = (alpha(0)-alpha(1))/t;
       Real gdiffg = dotGi(1,*gx_);
       setDualVariable(0,std::min(one,std::max(zero,-(gdiffg+diffa)/diffg)));
-      setDualVariable(1,one-Bundle<Real>::getDualVariable(0));
+      setDualVariable(1,one-getDualVariable(0));
     }
     else {
-      if ( std::abs(Bundle<Real>::alpha(0)-Bundle<Real>::alpha(1)) > ROL_EPSILON<Real>() ) {
-        if ( Bundle<Real>::alpha(0) < Bundle<Real>::alpha(1) ) {
+      if ( std::abs(alpha(0)-alpha(1)) > ROL_EPSILON<Real>() ) {
+        if ( alpha(0) < alpha(1) ) {
           setDualVariable(0,one); setDualVariable(1,zero);
         }
-        else if ( Bundle<Real>::alpha(0) > Bundle<Real>::alpha(1) ) {
+        else if ( alpha(0) > alpha(1) ) {
           setDualVariable(0,zero); setDualVariable(1,one);
         }
       }
