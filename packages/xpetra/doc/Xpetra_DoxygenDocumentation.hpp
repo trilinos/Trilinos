@@ -33,10 +33,11 @@ Xpetra is used by the MueLu and Zoltan2 projects.
   - Jeremie Gaidamour, Sandia National Labs
   - Axel Gerstenberger, Sandia National Labs
   - Jonathan Hu, Sandia National Labs
+  - Matthias Mayr, Sandia National Labs
   - Andrey Prokopenko, Sandia National Labs
   - Chris Siefert, Sandia National Labs
   - Ray Tuminaro, Sandia National Labs
-  - Tobias Wiesner, Technical University Munich
+  - Tobias Wiesner, Sandia National Labs
 
 \section xpetra_copyright Copyright and License
 
