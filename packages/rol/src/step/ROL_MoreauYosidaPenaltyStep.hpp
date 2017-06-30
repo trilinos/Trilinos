@@ -139,7 +139,7 @@ private:
                    AlgorithmState<Real> &algo_state) {
     MoreauYosidaPenalty<Real> &myPen
       = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
-    Real zerotol = std::sqrt(ROL_EPSILON<Real>()), one(1);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     // Update objective and constraint.
     myPen.update(x,true,algo_state.iter);
@@ -195,8 +195,8 @@ public:
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
                    Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
-    MoreauYosidaPenalty<Real> &myPen
-      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
+    // MoreauYosidaPenalty<Real> &myPen
+    //   = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
     // Initialize step state
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
