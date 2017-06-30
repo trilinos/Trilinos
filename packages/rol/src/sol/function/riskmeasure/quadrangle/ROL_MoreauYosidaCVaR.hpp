@@ -164,14 +164,16 @@ public:
 
   Real regret(Real x, int deriv = 0) {
     Real zero(0), half(0.5), one(1), reg(0);
-    int region = ((x <= 0) ? -1 : ((x >= ub_) ? 1 : 0));
-    if ( region == 0 ) {
-      reg  = ((deriv == 0) ? half*x*x : ((deriv == 1) ? x : one));
-      reg /= eps_;
+    if ( x <= zero ) {
+      reg = 0;
     }
-    else if ( region == 1 ) {
-      reg  = ((deriv == 0) ? (x-half*ub_) : ((deriv == 1) ? one : zero));
-      reg /= omp_;
+    else if ( x >= ub_ ) {
+      reg  = ((deriv == 0) ? (x-half*ub_)/omp_
+           : ((deriv == 1) ? one/omp_ : zero));
+    }
+    else {
+      reg  = ((deriv == 0) ? half/eps_*x*x
+           : ((deriv == 1) ? x/eps_ : one/eps_));
     }
     return reg;
   }

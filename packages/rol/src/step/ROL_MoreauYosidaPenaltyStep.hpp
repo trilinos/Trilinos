@@ -125,6 +125,8 @@ private:
   Teuchos::RCP<Vector<Real> > g_; 
   Teuchos::RCP<Vector<Real> > l_; 
 
+  Real compViolation_;
+  Real gLnorm_;
   Real tau_;
   bool print_;
 
@@ -142,24 +144,17 @@ private:
     // Update objective and constraint.
     myPen.update(x,true,algo_state.iter);
     con.update(x,true,algo_state.iter);
-    // Compute objective value, constraint value, & gradient of Lagrangian
+    // Compute norm of the gradient of the Lagrangian
     algo_state.value = myPen.value(x, zerotol);
-    con.value(*(state->constraintVec),x, zerotol);
     myPen.gradient(*(state->gradientVec), x, zerotol);
     con.applyAdjointJacobian(*g_,l,x,zerotol);
     state->gradientVec->plus(*g_);
-    // Compute criticality measure
-    if (bnd.isActivated()) {
-      x_->set(x);
-      x_->axpy(-one,(state->gradientVec)->dual());
-      bnd.project(*x_);
-      x_->axpy(-one,x);
-      algo_state.gnorm = x_->norm();
-    }
-    else {
-      algo_state.gnorm = (state->gradientVec)->norm();
-    }
+    gLnorm_ = (state->gradientVec)->norm();
+    // Compute constraint violation
+    con.value(*(state->constraintVec),x, zerotol);
     algo_state.cnorm = (state->constraintVec)->norm();
+    compViolation_ = myPen.testComplementarity(x);
+    algo_state.gnorm = std::max(gLnorm_,compViolation_);
     // Update state
     algo_state.nfval++;
     algo_state.ngrad++;
@@ -216,7 +211,7 @@ public:
       bnd.project(x);
     }
     // Update the Lagrangian
-    myPen.updateMultipliers(state->searchSize,x);
+    //myPen.updateMultipliers(state->searchSize,x);
     // Initialize the algorithm state
     algo_state.nfval = 0;
     algo_state.ncval = 0;
@@ -257,11 +252,11 @@ public:
     algo_state.iter++;
     con.update(x,true,algo_state.iter);
     myPen.update(x,true,algo_state.iter);
+    // Update state
+    updateState(x,l,obj,con,bnd,algo_state);
     // Update multipliers
     state->searchSize *= tau_;
     myPen.updateMultipliers(state->searchSize,x);
-    // Update state
-    updateState(x,l,obj,con,bnd,algo_state);
     algo_state.nfval += myPen.getNumberFunctionEvaluations() + ((algo_->getState())->nfval);
     algo_state.ngrad += myPen.getNumberGradientEvaluations() + ((algo_->getState())->ngrad);
     algo_state.ncval += (algo_->getState())->ncval;
@@ -279,6 +274,7 @@ public:
     hist << std::setw(15) << std::left << "fval";
     hist << std::setw(15) << std::left << "cnorm";
     hist << std::setw(15) << std::left << "gnorm";
+    hist << std::setw(15) << std::left << "ifeas";
     hist << std::setw(15) << std::left << "snorm";
     hist << std::setw(10) << std::left << "penalty";
     hist << std::setw(8) << std::left << "#fval";
@@ -314,7 +310,8 @@ public:
       hist << std::setw(6)  << std::left << algo_state.iter;
       hist << std::setw(15) << std::left << algo_state.value;
       hist << std::setw(15) << std::left << algo_state.cnorm;
-      hist << std::setw(15) << std::left << algo_state.gnorm;
+      hist << std::setw(15) << std::left << gLnorm_;
+      hist << std::setw(15) << std::left << compViolation_;
       hist << std::setw(15) << std::left << " ";
       hist << std::scientific << std::setprecision(2);
       hist << std::setw(10) << std::left << Step<Real>::getStepState()->searchSize;
@@ -325,7 +322,8 @@ public:
       hist << std::setw(6)  << std::left << algo_state.iter;
       hist << std::setw(15) << std::left << algo_state.value;
       hist << std::setw(15) << std::left << algo_state.cnorm;
-      hist << std::setw(15) << std::left << algo_state.gnorm;
+      hist << std::setw(15) << std::left << gLnorm_;
+      hist << std::setw(15) << std::left << compViolation_;
       hist << std::setw(15) << std::left << algo_state.snorm;
       hist << std::scientific << std::setprecision(2);
       hist << std::setw(10) << std::left << Step<Real>::getStepState()->searchSize;

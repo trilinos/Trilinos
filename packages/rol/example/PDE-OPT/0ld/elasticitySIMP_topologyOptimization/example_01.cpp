@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     ROL::AugmentedLagrangian<RealT> augLag(objReduced,volcon,*vc_lamp,1.0,*zp,*vcp,*parlist);
     ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
     algo.run(*zp,*vc_lamp,augLag,*volcon,*bnd,true,*outStream);
-    //ROL::MoreauYosidaPenalty<RealT> MYpen(objReduced,bnd,*zp,1.0);
+    //ROL::MoreauYosidaPenalty<RealT> MYpen(objReduced,bnd,*zp,*parlist);
     //ROL::Algorithm<RealT> algo("Moreau-Yosida Penalty",*parlist,false);
     //algo.run(*zp,*vc_lamp,MYpen,*volcon,*bnd,true,*outStream);
 
