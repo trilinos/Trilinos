@@ -25,6 +25,7 @@ namespace Tacho {
 
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
       typedef MatValueType mat_value_type; // matrix value type
+      typedef Kokkos::View<mat_value_type**,Kokkos::LayoutLeft,exec_space> mat_value_type_matrix;
 
       typedef SupernodeInfo<mat_value_type,exec_space> supernode_info_type;
 
@@ -36,14 +37,16 @@ namespace Tacho {
       memory_pool_type _bufpool;
       
       supernode_info_type _info;
-      ordinal_type _sid, _sidpar;
+      ordinal_type _sid;
 
       // respawn control
       ordinal_type _state;
 
-      // temporary future matrix
+      // blocksize
       ordinal_type _mb;
-      UnmanagedViewType<future_type_matrix> _atl, _atr, _abr;
+
+      // matrix of blocks
+      UnmanagedViewType<dense_block_type_matrix> _abr;
 
     public:
       KOKKOS_INLINE_FUNCTION
@@ -54,13 +57,11 @@ namespace Tacho {
                                           const memory_pool_type &bufpool,
                                           const supernode_info_type &info,
                                           const ordinal_type sid,
-                                          const ordinal_type sidpar,
                                           const ordinal_type mb)                                     
         : _sched(sched),
           _bufpool(bufpool),
           _info(info),
           _sid(sid),
-          _sidpar(sidpar),
           _state(0),
           _mb(mb) {}
       
@@ -78,73 +79,101 @@ namespace Tacho {
           
           switch (_state) {
           case 2: {
+            ///
+            /// atomic update to its parent 
+            ///
+            if (_abr.span() > 0) {
+              const ordinal_type bm = _abr.dimension_0(), bn = _abr.dimension_1();
+              deallocateStorageByBlocks(_abr, _bufpool);
+
+              for (ordinal_type j=0;j<bn;++j)
+                for (ordinal_type i=0;i<bm;++i)
+                  _abr(i,j).future.~future_type();
+              
+              _sched.memory()->deallocate(_abr.data(), bm*bn*sizeof(dense_block_type));            
+            }
+            _state = 3; // done
             break;
           }
           case 1: {
             ///
             /// matrix parallelism
             ///
-            std::cout << " state 1, sid = " << _sid << " Allocate matrix of blocks \n";
-            ordinal_type m, tmp; _info.getSuperPanelSize(_sid, m, tmp);
+
+            // get supernode panel pointer
+            mat_value_type *ptr = info.getSuperPanelPtr(sid);
+
+            // characterize the panel size
+            ordinal_type pm, pn;
+            info.getSuperPanelSize(sid, pm, pn);
+
+            // panel is divided into diagonal and interface block (i.e., ATL and ATR)
+            const ordinal_type m = pm, n = pn - pm;
             
-            const ordinal_type 
-              n = tmp - m,
-              bm = m/_mb + (m%_mb > 0),
-              bn = n/_mb + (n%_mb > 0);
-            
-            dense_block_type
-              *atl_buf = (dense_block_type*)_sched.memory()->allocate(bm*bm*sizeof(dense_block_type)),
-              *atr_buf = (dense_block_type*)_sched.memory()->allocate(bm*bn*sizeof(dense_block_type)),
-              *abr_buf = (dense_block_type*)_sched.memory()->allocate(bn*bn*sizeof(dense_block_type));
+            // block matrix size
+            const ordinal_type bm = m/_mb + (m%_mb > 0), bn = n/_mb + (n%_mb > 0);
 
-            TACHO_TEST_FOR_ABORT(atl_buf == NULL || atr_buf == NULL || abr_buf == NULL, 
-                                 "sched memory pool allocation fails");            
+            // m and n are available, then factorize the supernode block
+            if (m > 0) {
+              dense_block_type
+                *atl_buf = (dense_block_type*)_sched.memory()->allocate(bm*bm*sizeof(dense_block_type));
+              TACHO_TEST_FOR_ABORT(atl_buf == NULL, "sched memory pool allocation fails");
 
-            _atl = UnmanagedViewType<dense_block_type_matrix>(atl_buf, bm, bm);
-            _atr = UnmanagedViewType<dense_block_type_matrix>(atr_buf, bm, bn);
-            _abr = UnmanagedViewType<dense_block_type_matrix>(abr_buf, bn, bn);
+              _atl = UnmanagedViewType<dense_block_type_matrix>(atl_buf, bm, bm);
+              setMatrixOfBlocks(_atl, m, m, _mb);
+              attachBaseBuffer(_atl, ptr, m, m, _mb); ptr += m*m;
 
-            auto set_matrix_of_blocks = [&](const UnmanagedViewType<dense_block_type_matrix> &mat) {
-              dense_block_type blk; blk.rs = 1;
-              const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();              
-              for (ordinal_type j=0;j<nn;++j) {
-                const ordinal_type 
-                  col_beg = j*_mb, col_tmp = col_beg + _mb, 
-                  ncols = col_tmp > m ? m - col_beg : _mb; 
-                blk.n = ncols;
-                for (ordinal_type i=0;i<mm;++i) {
-                  const ordinal_type 
-                    row_beg = i*_mb, row_tmp = row_beg + _mb, 
-                    nrows = row_tmp > m ? m - row_beg : _mb; 
-                  blk.cs = blk.m = nrows;
-                  blk.buf = (mat_value_type*)_bufpool.allocate(blk.m*blk.n*sizeof(mat_value_type));
-                  TACHO_TEST_FOR_ABORT(blk.buf == NULL, "buf memory pool allocation fails");
+              if (n > 0) {
+                dense_block_type
+                  *atr_buf = (dense_block_type*)_sched.memory()->allocate(bm*bn*sizeof(dense_block_type));
+                TACHO_TEST_FOR_ABORT(atr_buf == NULL, "sched memory pool allocation fails");
 
-                  mat(i,j) = blk;
-                }
+                UnmanagedViewType<dense_block_type_matrix> atr(atr_buf, bm, bn);
+                setMatrixOfBlocks(atr, m, n, _mb);
+                attachBaseBuffer(atr, ptr, m, n, _mb);
+              
+                dense_block_type
+                  *abr_buf = (dense_block_type*)_sched.memory()->allocate(bn*bn*sizeof(dense_block_type));
+
+                _abr = UnmanagedViewType<dense_block_type_matrix>(abr_buf, bn, bn);
+                setMatrixOfBlocks(_abr, n, n, _mb);
+                allocateStorageByBlocks(_abr, _bufpool);
+
+                // in place destruction of atr
+                for (ordinal_type j=0;j<bn;++j)
+                  for (ordinal_type i=0;i<bm;++i)
+                    atr(i,j).future.~future_type();
+
+                _sched.memory()->deallocate(atr_buf, bm*bn*sizeof(dense_block_type));
               }
-            };
-            set_matrix_of_blocks(_atl);
-            set_matrix_of_blocks(_atr);
-            set_matrix_of_blocks(_abr);
 
-            std::cout << " state 1, sid = " << _sid << " Spawn algorithm by blocks  \n";              
-            std::cout << " state 1, sid = " << _sid << " Respawn this with dependences  \n";              
+              // in place destruction of atl
+              for (ordinal_type j=0;j<bm;++j)
+                for (ordinal_type i=0;i<bm;++i)
+                  atl(i,j).future.~future_type();
 
-            const size_type depsize = _abr.span()*sizeof(future_type);
-            future_type *dep = (future_type*)_sched.memory()->allocate(depsize);
-            TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
-            
-            ordinal_type cnt = 0;
-            for (ordinal_type j=0;j<_abr.dimension_1();++j)
-              for (ordinal_type i=0;i<_abr.dimension_0();++i)
-                dep[cnt++] = _abr(i,j).future;
+              _sched.memory()->deallocate(atl_buf, bm*bm*sizeof(dense_block_type));
+            }
 
-            _state = 2;
-            Kokkos::respawn(this, Kokkos::when_all(dep, cnt), Kokkos::TaskPriority::Regular);
-
-            for (ordinal_type k=0;k<cnd;++k) dep[k] = future_type();
-            _sched.memory()->deallocate((void*)dep, depsize);
+            if (_abr.span() > 0) {
+              const size_type depsize = _abr.span()*sizeof(future_type);
+              future_type *dep = (future_type*)_sched.memory()->allocate(depsize);
+              TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
+              
+              ordinal_type cnt = 0;
+              for (ordinal_type j=0;j<_abr.dimension_1();++j)
+                for (ordinal_type i=0;i<_abr.dimension_0();++i)
+                  dep[cnt++] = _abr(i,j).future;
+              
+              _state = 2;
+              Kokkos::respawn(this, Kokkos::when_all(dep, cnt), Kokkos::TaskPriority::Regular);
+              
+              // depedences
+              for (ordinal_type k=0;k<cnt;++k) (dep+k)->~future_type();
+              _sched.memory()->deallocate((void*)dep, depsize);
+            } else {
+              _state = 3; // done
+            }
             break;
           }
           case 0: {
