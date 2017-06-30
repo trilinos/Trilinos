@@ -122,7 +122,7 @@ private:
     }
     for (unsigned i = 0; i < Bundle<Real>::size(); ++i) {
       tmp = Bundle<Real>::getDualVariable(i)/sum;
-      setDualVariable(i,tmp);
+      Bundle<Real>::setDualVariable(i,tmp);
     }
     nworkingSet_.clear();
     workingSet_.clear();
@@ -531,7 +531,7 @@ private:
     //std::cout << "Criticality Measure: " << crit << "\n";
     //std::cout << "dim = " << Bundle<Real>::size() << "  iter = " << i << "   CGiter = " << CGiter << "  CONVERGED!\n";
     for (unsigned j = 0; j < Bundle<Real>::size(); ++j) {
-      setDualVariable(j,dualVariables[j]);
+      Bundle<Real>::setDualVariable(j,dualVariables[j]);
     }
     return i;
   }
