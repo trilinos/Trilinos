@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Objective<RealT> > obj_ptr = Teuchos::rcpFromRef(obj);
     Teuchos::RCP<ROL::EqualityConstraint<RealT> > con_ptr = Teuchos::rcpFromRef(con);
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd_ptr = Teuchos::rcpFromRef(bnd);
-    ROL::MoreauYosidaPenalty<RealT> myPen(obj_ptr,bnd_ptr,x,10.0);
+    ROL::MoreauYosidaPenalty<RealT> myPen(obj_ptr,bnd_ptr,x,*parlist);
     myPen.checkGradient(x, y, true, *outStream);
     myPen.checkHessVec(x, g, y, true, *outStream);
     ROL::AugmentedLagrangian<RealT> myAugLag(obj_ptr,con_ptr,l,1.,x,c,*parlist);

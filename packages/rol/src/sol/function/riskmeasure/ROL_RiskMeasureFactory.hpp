@@ -71,6 +71,7 @@
 #include "ROL_QuantileRadiusQuadrangle.hpp"
 #include "ROL_SmoothedWorstCaseQuadrangle.hpp"
 #include "ROL_TruncatedMeanQuadrangle.hpp"
+#include "ROL_GenMoreauYosidaCVaR.hpp"
 
 // F-Divergence Distributionally Robust Risk Measure Implementations
 #include "ROL_Chi2Divergence.hpp"
@@ -88,6 +89,7 @@ namespace ROL {
     RISKMEASURE_MEANVARIANCEFROMTARGET,
     RISKMEASURE_MEANVARIANCE,
     RISKMEASURE_MOREAUYOSIDACVAR,
+    RISKMEASURE_GENMOREAUYOSIDACVAR,
     RISKMEASURE_LOGEXPONENTIALQUADRANGLE,
     RISKMEASURE_LOGQUANTILEQUADRANGLE,
     RISKMEASURE_MEANVARIANCEQUADRANGLE,
@@ -125,6 +127,8 @@ namespace ROL {
              retString = "Mean Plus Variance";                      break;
       case RISKMEASURE_MOREAUYOSIDACVAR:
              retString = "Moreau-Yosida CVaR";                      break;
+      case RISKMEASURE_GENMOREAUYOSIDACVAR:
+             retString = "Generalized Moreau-Yosida CVaR";          break;
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
              retString = "Log-Exponential Quadrangle";              break;
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
@@ -169,6 +173,7 @@ namespace ROL {
             (ed == RISKMEASURE_MEANVARIANCEFROMTARGET) ||
             (ed == RISKMEASURE_MEANVARIANCE) ||
             (ed == RISKMEASURE_MOREAUYOSIDACVAR) ||
+            (ed == RISKMEASURE_GENMOREAUYOSIDACVAR) ||
             (ed == RISKMEASURE_LOGEXPONENTIALQUADRANGLE) ||
             (ed == RISKMEASURE_LOGQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_MEANVARIANCEQUADRANGLE) ||
@@ -237,6 +242,8 @@ namespace ROL {
              return Teuchos::rcp(new MeanVariance<Real>(parlist));
       case RISKMEASURE_MOREAUYOSIDACVAR:
              return Teuchos::rcp(new MoreauYosidaCVaR<Real>(parlist));
+      case RISKMEASURE_GENMOREAUYOSIDACVAR:
+             return Teuchos::rcp(new GenMoreauYosidaCVaR<Real>(parlist));
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
              return Teuchos::rcp(new LogExponentialQuadrangle<Real>(parlist));
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:

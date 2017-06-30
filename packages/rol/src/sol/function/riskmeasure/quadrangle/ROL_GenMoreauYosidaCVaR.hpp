@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_MOREAUYOSIDACVAR_HPP
-#define ROL_MOREAUYOSIDACVAR_HPP
+#ifndef ROL_GENMOREAUYOSIDACVAR_HPP
+#define ROL_GENMOREAUYOSIDACVAR_HPP
 
 #include "ROL_ExpectationQuad.hpp"
 
@@ -85,7 +85,7 @@
     \f[
        \mathcal{R}(X) = \sup_{\vartheta\in\mathfrak{A}}
          \left\{\mathbb{E}[\vartheta X]
-          - \frac{\gamma}{2}\mathbb{E}[\vartheta^2]\right\}
+          - \frac{\gamma}{2}\mathbb{E}[(\vartheta-1)^2]\right\}
     \f]
     for \f$\gamma > 0\f$.  This is implemented using the expectation risk
     quadrangle interface.  Thus, we represent \f$\mathcal{R}\f$ as
@@ -102,27 +102,41 @@
 namespace ROL {
 
 template<class Real>
-class MoreauYosidaCVaR : public ExpectationQuad<Real> {
+class GenMoreauYosidaCVaR : public ExpectationQuad<Real> {
 private:
 
   Real prob_;
+  Real lam_;
   Real eps_;
 
+  Real alpha_;
+  Real beta_;
+
   Real omp_;
+  Real oma_;
+  Real bmo_;
+  Real lb_;
   Real ub_;
 
   void checkInputs(void) const {
     Real zero(0), one(1);
     TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
-      ">>> ERROR (ROL::MoreauYosidaCVaR): Confidence level must be between 0 and 1!");
+      ">>> ERROR (ROL::GenMoreauYosidaCVaR): Confidence level must be between 0 and 1!");
+    TEUCHOS_TEST_FOR_EXCEPTION((lam_ < zero) || (lam_ > one), std::invalid_argument,
+      ">>> ERROR (ROL::GenMoreauYosidaCVaR): Convex combination parameter must be positive!");
     TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
-      ">>> ERROR (ROL::MoreauYosidaCVaR): Smoothing parameter must be positive!");
+      ">>> ERROR (ROL::GenMoreauYosidaCVaR): Smoothing parameter must be positive!");
   }
 
   void setParameters(void) {
-    Real one(1);
-    omp_  = one-prob_;
-    ub_   = eps_/omp_;
+    const Real one(1);
+    omp_   = one-prob_;
+    alpha_ = lam_;
+    beta_  = (one-alpha_*prob_)/omp_;
+    oma_   = one-alpha_;
+    bmo_   = beta_-one;
+    lb_    = -eps_*oma_;
+    ub_    =  eps_*bmo_;
   }
 
 public:
@@ -131,8 +145,20 @@ public:
       @param[in]     prob    is the confidence level
       @param[in]     eps     is the regularization parameter
   */
-  MoreauYosidaCVaR(Real prob, Real eps )
-    : ExpectationQuad<Real>(), prob_(prob), eps_(eps) {
+  GenMoreauYosidaCVaR(Real prob, Real eps )
+    : ExpectationQuad<Real>(), prob_(prob), lam_(0), eps_(eps) {
+    checkInputs();
+    setParameters();
+  }
+
+  /** \brief Constructor.
+
+      @param[in]     prob    is the confidence level
+      @param[in]     lam     is the convex combination parameter
+      @param[in]     eps     is the regularization parameter
+  */
+  GenMoreauYosidaCVaR(Real prob, Real lam, Real eps )
+    : ExpectationQuad<Real>(), prob_(prob), lam_(lam), eps_(eps) {
     checkInputs();
     setParameters();
   }
@@ -144,13 +170,15 @@ public:
       parlist should contain sublists "SOL"->"Risk Measure"->"Moreau-Yosida CVaR" and
       within the "Moreau-Yosida CVaR" sublist should have the following parameters
       \li "Confidence Level" (between 0 and 1)
+      \li "Convex Combination Parameter" (between 0 and 1)
       \li "Smoothing Parameter" (must be positive)
   */
-  MoreauYosidaCVaR(Teuchos::ParameterList &parlist)
+  GenMoreauYosidaCVaR(Teuchos::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     Teuchos::ParameterList& list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Moreau-Yosida CVaR");
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Generalized Moreau-Yosida CVaR");
     prob_ = list.get<Real>("Confidence Level");
+    lam_  = list.get<Real>("Convex Combination Parameter");
     eps_  = list.get<Real>("Smoothing Parameter");
     checkInputs();
     setParameters();
@@ -164,16 +192,17 @@ public:
 
   Real regret(Real x, int deriv = 0) {
     Real zero(0), half(0.5), one(1), reg(0);
-    if ( x <= zero ) {
-      reg = 0;
+    if ( x <= lb_ ) {
+      reg = ((deriv == 0) ? alpha_*x + half*lb_*oma_
+          : ((deriv == 1) ? alpha_ : zero));
     }
     else if ( x >= ub_ ) {
-      reg  = ((deriv == 0) ? (x-half*ub_)/omp_
-           : ((deriv == 1) ? one/omp_ : zero));
+      reg = ((deriv == 0) ? beta_*x - half*ub_*bmo_
+          : ((deriv == 1) ? beta_ : zero));
     }
     else {
-      reg  = ((deriv == 0) ? half/eps_*x*x
-           : ((deriv == 1) ? x/eps_ : one/eps_));
+      reg = ((deriv == 0) ? half/eps_*x*x + x
+          : ((deriv == 1) ? x/eps_ + one : one/eps_));
     }
     return reg;
   }
@@ -181,14 +210,14 @@ public:
   void checkRegret(void) {
     ExpectationQuad<Real>::checkRegret();
     Real zero(0), one(1), two(2), p1(0.1);
-    // Check v'(eps)
-    Real x = eps_;
+    // Check v'(ub)
+    Real x = ub_;
     Real vx = zero, vy = zero;
     Real dv = regret(x,1);
     Real t = one;
     Real diff = zero;
     Real err = zero;
-    std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(eps) is correct? \n";
+    std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(ub) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v'(x)"
                             << std::setw(20) << "(v(x+t)-v(x-t))/2t"
@@ -208,14 +237,14 @@ public:
       t *= p1;
     }
     std::cout << "\n";
-    // check v''(eps) 
+    // check v''(ub) 
     vx = zero;
     vy = zero;
     dv = regret(x,2);
     t = one;
     diff = zero;
     err = zero;
-    std::cout << std::right << std::setw(20) << "CHECK REGRET: v''(eps) is correct? \n";
+    std::cout << std::right << std::setw(20) << "CHECK REGRET: v''(ub) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v''(x)"
                             << std::setw(20) << "(v'(x+t)-v'(x-t))/2t"
@@ -263,7 +292,7 @@ public:
       t *= p1;
     }
     std::cout << "\n";
-    // check v''(eps) 
+    // check v''(0) 
     vx = zero;
     vy = zero;
     dv = regret(x,2);
@@ -290,15 +319,15 @@ public:
       t *= p1;
     }
     std::cout << "\n"; 
-    // Check v'(0)
-    x = -eps_;
+    // Check v'(lb)
+    x = lb_;
     vx = zero;
     vy = zero;
     dv = regret(x,1);
     t = one;
     diff = zero;
     err = zero;
-    std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(-eps) is correct? \n";
+    std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(lb) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v'(x)"
                             << std::setw(20) << "(v(x+t)-v(x-t))/2t"
@@ -318,14 +347,14 @@ public:
       t *= p1;
     }
     std::cout << "\n";
-    // check v''(eps) 
+    // check v''(lb) 
     vx = zero;
     vy = zero;
     dv = regret(x,2);
     t = one;
     diff = zero;
     err = zero;
-    std::cout << std::right << std::setw(20) << "CHECK REGRET: v''(-eps) is correct? \n";
+    std::cout << std::right << std::setw(20) << "CHECK REGRET: v''(lb) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v''(x)"
                             << std::setw(20) << "(v'(x+t)-v'(x-t))/2t"

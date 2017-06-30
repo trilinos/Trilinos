@@ -139,7 +139,7 @@ public:
       eqcon_ = opt.getEqualityConstraint(); 
 
       // TODO: Provide access to change initial penalty
-      obj_ = rcp( new MoreauYosidaPenalty<Real>(raw_obj,bnd_,*x_,1.0) );
+      obj_ = rcp( new MoreauYosidaPenalty<Real>(raw_obj,bnd_,*x_,parlist) );
     }
     else {
       obj_   = opt.getObjective();   

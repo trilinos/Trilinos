@@ -202,7 +202,7 @@ public:
         }
         else if (type == "Moreau-Yosida Penalty") {
           Teuchos::RCP<Objective<Real> > myPen
-            = Teuchos::rcp(new MoreauYosidaPenalty<Real>(obj,bnd,*x,10.0));
+            = Teuchos::rcp(new MoreauYosidaPenalty<Real>(obj,bnd,*x,parlist));
           optProblem = Teuchos::rcp(new OptimizationProblem<Real>(myPen,x,bnd,con,l,plist));
         }
         else {

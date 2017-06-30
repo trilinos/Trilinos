@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
     }
     else {
       /*** Solve using Moreau-Yosida. ***/
-      ROL::MoreauYosidaPenalty<RealT> myPen(obj,bnd,*x,10.0);
+      ROL::MoreauYosidaPenalty<RealT> myPen(obj,bnd,*x,*parlist);
       ROL::Algorithm<RealT> algo("Moreau-Yosida Penalty",*parlist,false);
       Teuchos::Time algoTimer("Algorithm Time", true);
       algo.run(*x,*multv,myPen,*con,*bnd,true,*outStream);

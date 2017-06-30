@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
     data->outputTpetraVector(u_rcp, "state.txt");
     data->outputTpetraVector(z_rcp, "control.txt");
 
-    ROL::MoreauYosidaPenalty<RealT> obj_my(obj, bcon_simopt, x, 10.0);
+    ROL::MoreauYosidaPenalty<RealT> obj_my(obj, bcon_simopt, x, *parlist);
     ROL::Algorithm<RealT> algo_my("Moreau-Yosida Penalty", *parlist, false);
     x.zero(); // set zero initial guess
     std::vector<std::string> algo_output;
