@@ -58,6 +58,9 @@
 #include "AnasaziTraceMinDavidsonSolMgr.hpp"
 #include "AnasaziTraceMinSolMgr.hpp"
 
+#include <algorithm>
+#include <string>
+
 namespace Anasazi {
 
 class Factory {
@@ -71,25 +74,27 @@ public:
            Teuchos::ParameterList &pl ) {
     using Teuchos::rcp;
 
-    if (solverType == "BLOCK_DAVIDSON")
+    std::string type = solverType;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+
+    if (type == "block_davidson" || type == "block davidson")
       return rcp(new BlockDavidsonSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "BLOCK_KRYLOV_SCHUR")
+    else if (type == "block_krylov_schur" || type == "block krylov schur")
       return rcp(new BlockKrylovSchurSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "LOBPCG")
+    else if (type == "lobpcg")
       return rcp(new LOBPCGSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "RTR")
+    else if (type == "rtr")
       return rcp(new RTRSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "SIMPLE_LOBPCG")
+    else if (type == "simple_lobpcg" || type == "simple lobpcg")
       return rcp(new SimpleLOBPCGSolMgr<ScalarType,MV,OP>(problem, pl));
 
     else
-      TEUCHOS_TEST_FOR_EXCEPTION(
-                                 true, std::invalid_argument, "Anasazi::Factory::create: "
-                                 "Invalid solver type \"" << solverType << "\".");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        "Anasazi::Factory::create: Invalid solver type \"" << solverType << "\".");
   }
 
   // Some of the solver managers cannot be instantiated on std::complex.
@@ -102,34 +107,36 @@ public:
     using Teuchos::rcp;
     using ScalarType = double;
 
-    if (solverType == "BLOCK_DAVIDSON")
+    std::string type = solverType;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+
+    if (type == "block_davidson" || type == "block davidson")
       return rcp(new BlockDavidsonSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "BLOCK_KRYLOV_SCHUR")
+    else if (type == "block_krylov_schur" || type == "block krylov schur")
       return rcp(new BlockKrylovSchurSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "GENERALIZED_DAVIDSON")
+    else if (type == "generalized_davidson" || type == "generalized davidson")
       return rcp(new GeneralizedDavidsonSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "LOBPCG")
+    else if (type == "lobpcg")
       return rcp(new LOBPCGSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "RTR")
+    else if (type == "rtr")
       return rcp(new RTRSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "SIMPLE_LOBPCG")
+    else if (type == "simple_lobpcg" || type == "simple lobpcg")
       return rcp(new SimpleLOBPCGSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "TRACE_MIN")
+    else if (type == "TRACE_MIN" || type == "trace min")
       return rcp(new Experimental::TraceMinSolMgr<ScalarType,MV,OP>(problem, pl));
 
-    else if (solverType == "TRACE_MIN_DAVIDSON")
+    else if (type == "trace_min_davidson" || type == "trace min davidson")
       return rcp(new Experimental::TraceMinDavidsonSolMgr<ScalarType,MV,OP>(problem, pl));
 
     else
-      TEUCHOS_TEST_FOR_EXCEPTION(
-                                 true, std::invalid_argument, "Anasazi::Factory::create: "
-                                 "Invalid solverType type \"" << solverType << "\".");
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        "Anasazi::Factory::create: Invalid solverType type \"" << solverType << "\".");
   }
 
   template<class ScalarType, class MV, class OP>
