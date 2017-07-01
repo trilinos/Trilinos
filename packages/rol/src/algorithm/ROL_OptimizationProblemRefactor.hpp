@@ -202,12 +202,12 @@ public:
      OptimizationProblem( obj, x, bnd, eqcon, le, Teuchos::null, Teuchos::null ) { } 
 
   // No equality constructor [3]
-  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
-                       const Teuchos::RCP<Vector<Real> >               &x,
-                       const Teuchos::RCP<BoundConstraint<Real> >      &bnd,
-                       const Teuchos::RCP<InequalityConstraint<Real> > &incon,
-                       const Teuchos::RCP<Vector<Real> >               &li ): 
-     OptimizationProblem( obj, x, bnd, Teuchos::null, Teuchos::null, incon, li ) { } 
+//  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
+//                       const Teuchos::RCP<Vector<Real> >               &x,
+//                       const Teuchos::RCP<BoundConstraint<Real> >      &bnd,
+//                       const Teuchos::RCP<InequalityConstraint<Real> > &incon,
+//                       const Teuchos::RCP<Vector<Real> >               &li ): 
+//     OptimizationProblem( obj, x, bnd, Teuchos::null, Teuchos::null, incon, li ) { } 
 
   // No bound constuctor [4]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
@@ -231,11 +231,11 @@ public:
      OptimizationProblem( obj, x, Teuchos::null, eqcon, le, Teuchos::null, Teuchos::null ) { } 
 
   // No equality or bound [7]
-  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
-                       const Teuchos::RCP<Vector<Real> >               &x,
-                       const Teuchos::RCP<InequalityConstraint<Real> > &incon,
-                       const Teuchos::RCP<Vector<Real> >               &li ) :
-     OptimizationProblem( obj, x, Teuchos::null, Teuchos::null, Teuchos::null, incon, li ) { } 
+//  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
+//                       const Teuchos::RCP<Vector<Real> >               &x,
+//                       const Teuchos::RCP<InequalityConstraint<Real> > &incon,
+//                       const Teuchos::RCP<Vector<Real> >               &li ) :
+//    OptimizationProblem( obj, x, Teuchos::null, Teuchos::null, Teuchos::null, incon, li ) { } 
 
   // Unconstrained problem [8]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
