@@ -149,6 +149,7 @@ public:
 
    ////////////////////////////////////////////////////////////////////////////////////////////////
 
+#if 1
    /** Instantiate a workset object with a specified factory and input physics block
      * map.
      *
@@ -197,6 +198,7 @@ public:
    inline std::map<unsigned,Workset>::iterator end(const BC & bc)
    { WorksetDescriptor desc = bcDescriptor(bc);
      return getSideWorksets(desc)->end(); }
+#endif
 
    ////////////////////////////////////////////////////////////////////////////////////////////////
 
