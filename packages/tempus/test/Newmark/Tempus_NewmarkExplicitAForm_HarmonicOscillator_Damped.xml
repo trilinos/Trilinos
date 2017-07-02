@@ -1,8 +1,8 @@
 <ParameterList name="Newmark_HarmonicOscillator">
   <ParameterList name="HarmonicOscillatorModel">
-    <Parameter name="Damping coeff c" type="double" value="0.0"/>
-    <Parameter name="Forcing coeff f" type="double" value="0.0"/>
-    <Parameter name="x coeff k" type="double" value="39.4784176"/>
+    <Parameter name="Damping coeff c" type="double" value="1.0"/>
+    <Parameter name="Forcing coeff f" type="double" value="-1.0"/>
+    <Parameter name="x coeff k" type="double" value="0.0"/>
     <Parameter name="Mass coeff m" type="double" value="1.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
@@ -19,10 +19,10 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value="2.2"/>
+        <Parameter name="Final Time"             type="double" value="2.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
-        <Parameter name="Initial Time Step"      type="double" value="0.1"/>
+        <Parameter name="Initial Time Step"      type="double" value="1.0"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
@@ -36,9 +36,9 @@
     </ParameterList>
 
     <ParameterList name="Default Stepper">
-      <Parameter name="Stepper Type"   type="string" value="Newmark Beta Explicit"/>
-      <ParameterList name="Newmark Beta Explicit Parameters">
-        <Parameter name="Gamma"    type="double" value="0.5"/>
+      <Parameter name="Stepper Type"   type="string" value="Newmark Explicit a-Form"/>
+      <ParameterList name="Newmark Explicit Parameters">
+        <Parameter name="Gamma"    type="double" value="0.33"/>
       </ParameterList>
     </ParameterList>
 
