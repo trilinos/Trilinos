@@ -51,8 +51,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -205,10 +203,12 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
   const int eb_idxs[2][2] = {{0,1}, {1,0}};
   for (int ebi = 0; ebi < 2; ++ebi) {
     std::string sideset = "vertical_0";
+    Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][0]], physicsBlocks);
+    Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][1]], physicsBlocks);
     Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
       *mesh,
-      *(panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][0]], physicsBlocks)),
-      *(panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][1]], physicsBlocks)),
+      pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
+      pb_b->getWorksetNeeds(),pb_b->elementBlockID(), 
       sideset);
 
     TEST_EQUALITY(worksets->size(), 1);

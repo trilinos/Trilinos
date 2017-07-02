@@ -66,7 +66,7 @@ namespace MueLuTests {
 namespace MueLu {
 
 /*!
-  @class GenearlGeometricPFactory
+  @class GeneralGeometricPFactory
   @ingroup MueLuTransferClasses
   @brief Prolongator factory performing geometric coarsening.
 
@@ -154,9 +154,13 @@ namespace MueLu {
                                ArrayRCP<LO> const coarseRate, LO const endRate[3], LO const offsets[6], bool const ghostInterface[6],
                                const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords, LO const nnzP, LO const dofsPerNode,
                                RCP<const Map>& stridedDomainMapP, RCP<Matrix> & Amat, RCP<Matrix>& P,
-                               RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords, Array<GO> ghostsGIDs) const;
+                               RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords, Array<GO> ghostsGIDs, int interpolationOrder) const;
 
-    void ComputeStencil(const LO numDimension, const double coord[9][3], SC stencil[8]) const;
+    void ComputeStencil(const LO numDimension, const Array<GO> currentNodeIndices, const Array<GO> coarseNodeIndices,
+                        const LO rate[3], const double coord[9][3], const int interpolationOrder, SC stencil[8]) const;
+
+    void ComputeConstantInterpolationStencil(const LO numDimension, const Array<GO> currentNodeIndices, const Array<GO> coarseNodeIndices,
+                                             const LO rate[3], SC stencil[8]) const;
 
     void ComputeLinearInterpolationStencil(const LO numDimension, const double coord[9][3], SC stencil[8]) const;
     void GetInterpolationFunctions(const LO numDimension, const Teuchos::SerialDenseVector<LO,double> parameters, double functions[4][8]) const;

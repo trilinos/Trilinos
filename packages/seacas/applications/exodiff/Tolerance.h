@@ -85,8 +85,8 @@ public:
   static bool use_old_floor;
 
 private:
-  double UlpsDiffFloat(double v1, double v2) const;
-  double UlpsDiffDouble(double v1, double v2) const;
+  double UlpsDiffFloat(double A, double B) const;
+  double UlpsDiffDouble(double A, double B) const;
 };
 
 inline double Tolerance::Delta(double v1, double v2) const

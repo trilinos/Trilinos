@@ -117,7 +117,7 @@ namespace Excn {
 
      The count and step must always be >= 0
     */
-    void parse_step_option(const char *token);
+    void parse_step_option(const char *tokens);
 
     GetLongOption options_; //!< Options parsing
 

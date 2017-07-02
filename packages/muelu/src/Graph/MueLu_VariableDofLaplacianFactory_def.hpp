@@ -71,6 +71,8 @@ namespace MueLu {
     validParamList->set< bool >                  ("lightweight wrap",           true, "Experimental option for lightweight graph access");
 */
 
+    validParamList->set< double >                ("Advanced Dirichlet: threshold", 1e-5, "Drop tolerance for Dirichlet detection");
+    validParamList->set< double >                ("Variable DOF amalgamation: threshold", 1.8e-9, "Drop tolerance for amalgamation process");
     validParamList->set< int >                   ("maxDofPerNode", 1, "Maximum number of DOFs per node");
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -84,7 +86,6 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
-    //const ParameterList& pL = GetParameterList();
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
 
@@ -110,14 +111,14 @@ namespace MueLu {
     RCP<dxMV> Coords = Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(currentLevel, "Coordinates");
 
     int maxDofPerNode = pL.get<int>("maxDofPerNode");
-    Scalar dirDropTol = 1e-5; // TODO parameter from parameter list ("ML advnaced Dirichlet: threshold"), should be magnitude type?
-    Scalar amalgDropTol = 1.8e-9; // TODO parameter from parameter list ("variable DOF amalgamation: threshold")
+    Scalar dirDropTol = Teuchos::as<Scalar>(pL.get<double>("Advanced Dirichlet: threshold")); // "ML advnaced Dirichlet: threshold"
+    Scalar amalgDropTol = Teuchos::as<Scalar>(pL.get<double>("Variable DOF amalgamation: threshold")); //"variable DOF amalgamation: threshold")
 
     bool bHasZeroDiagonal = false;
     Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*A,bHasZeroDiagonal,STS::magnitude(dirDropTol));
 
     // TODO check availability + content (length)
-    Teuchos::ArrayRCP<const bool> dofPresent = currentLevel.Get< Teuchos::ArrayRCP<const bool> >("DofPresent", NoFactory::get());
+    Teuchos::ArrayRCP<bool> dofPresent = currentLevel.Get< Teuchos::ArrayRCP<bool> >("DofPresent", NoFactory::get());
 
     // map[k] indicates that the kth dof in the variable dof matrix A would
     // correspond to the map[k]th dof in the padded system. If, i.e., it is
@@ -127,8 +128,6 @@ namespace MueLu {
     // every node had maxDofPerNode dofs.
     std::vector<LocalOrdinal> map(A->getNodeNumRows());
     this->buildPaddedMap(dofPresent, map, A->getNodeNumRows());
-
-    //GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
     // map of size of number of DOFs containing local node id (dof id -> node id, inclusive ghosted dofs/nodes)
     std::vector<LocalOrdinal> myLocalNodeIds(A->getColMap()->getNodeNumElements()); // possible maximum (we need the ghost nodes, too)
@@ -211,7 +210,6 @@ namespace MueLu {
     // create arrays for amalgamated matrix
     Teuchos::ArrayRCP<size_t> amalgRowPtr(nLocalNodes+1);
     Teuchos::ArrayRCP<LocalOrdinal> amalgCols(rowptr[rowptr.size()-1]);
-    //Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
 
     size_t nNonZeros = 0;
     std::vector<bool> isNonZero(nLocalPlusGhostDofs,false);
@@ -348,6 +346,25 @@ namespace MueLu {
     }
 
     // TODO status array?
+
+    Teuchos::Array<char> status(nLocalNodes * maxDofPerNode);
+
+    //std::vector<LocalOrdinal> map (size ndofs)
+    // dir or not Teuchos::ArrayRCP<const bool> dirOrNot
+    for(decltype(status.size()) i = 0; i < status.size(); i++) status[i] = 's';
+    for(decltype(status.size()) i = 0; i < status.size(); i++) {
+      if(dofPresent[i] == false) status[i] = 'p';
+    }
+    if(dirOrNot.size() > 0) {
+      for(decltype(map.size()) i = 0; i < map.size(); i++) {
+        if(dirOrNot[i] == true){
+          status[map[i]] = 'd';
+        }
+      }
+    }
+    Set(currentLevel,"DofStatus",status);
+
+    // end status array
 
     Teuchos::RCP<CrsMatrix> lapCrsMat = CrsMatrixFactory::Build(amalgRowMap, amalgColMap, 10); // TODO better approx for max nnz per row
 

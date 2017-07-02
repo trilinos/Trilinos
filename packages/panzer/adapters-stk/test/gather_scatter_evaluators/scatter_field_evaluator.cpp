@@ -68,8 +68,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_ScatterFields.hpp"
 #include "Panzer_STK_ScatterCellAvgQuantity.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -78,7 +76,7 @@ using Teuchos::rcp;
 #include "Teuchos_OpaqueWrapper.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Phalanx_MDField.hpp"
 
 #include "Epetra_MpiComm.h"
 
@@ -190,7 +188,8 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
 
-    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,*physics_block_one);
+    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,physics_block_one->elementBlockID(),
+                                                                                            physics_block_one->getWorksetNeeds()); 
 
     panzer::Traits::SetupData sd;
     sd.worksets_ = volume_worksets;
@@ -308,7 +307,8 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
-    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,*physics_block_one);
+    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,physics_block_one->elementBlockID(),
+                                                                                            physics_block_one->getWorksetNeeds()); 
 
 
     panzer::Traits::SetupData sd;

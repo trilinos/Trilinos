@@ -31,32 +31,25 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "EJ_mapping.h"
-#include <smart_assert.h>               // for SMART_ASSERT
-#include <stddef.h>                     // for size_t
-#include <algorithm>                    // for sort, unique
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <utility>                      // for make_pair, pair
-#include "Ioss_ElementBlock.h"          // for ElementBlock
-#include "Ioss_GroupingEntity.h"        // for GroupingEntity
-#include "Ioss_NodeBlock.h"             // for NodeBlock
-#include "Ioss_Property.h"              // for Property
-#include "Ioss_Region.h"                // for Region, etc
+#include "Ioss_ElementBlock.h"   // for ElementBlock
+#include "Ioss_GroupingEntity.h" // for GroupingEntity
+#include "Ioss_NodeBlock.h"      // for NodeBlock
+#include "Ioss_Property.h"       // for Property
+#include "Ioss_Region.h"         // for Region, etc
+#include <algorithm>             // for sort, unique
+#include <iostream>              // for operator<<, basic_ostream, etc
+#include <smart_assert.h>        // for SMART_ASSERT
+#include <stddef.h>              // for size_t
+#include <utility>               // for make_pair, pair
 
 namespace {
   bool entity_is_omitted(Ioss::GroupingEntity *block)
   {
     bool omitted = false;
-    if (block->property_exists("omitted"))
+    if (block->property_exists("omitted")) {
       omitted = (block->get_property("omitted").get_int() == 1);
+    }
     return omitted;
-  }
-
-  template <typename T> void uniqify(std::vector<T> &map)
-  {
-    std::sort(map.begin(), map.end());
-    map.erase(std::unique(map.begin(), map.end()), map.end());
-    // shrink-to-fit...
-    std::vector<T>(map).swap(map);
   }
 }
 
@@ -156,7 +149,7 @@ void build_reverse_node_map(Ioss::Region &global, RegionVector &part_mesh,
   }
 
   // Now, sort the global_node_map array and remove duplicates...
-  uniqify(global_node_map);
+  Ioss::Utils::uniquify(global_node_map);
 
   // If any omitted nodes, remove them from the global_node_map.
   // The id will be 0
@@ -308,8 +301,9 @@ void generate_element_ids(RegionVector &part_mesh, const std::vector<INT> &local
 
         for (INT j = 0; j < num_elem; j++) {
           INT gpos = local_element_map[offset + j];
-          if (gpos >= 0)
+          if (gpos >= 0) {
             global_element_map[gpos] = part_ids[j];
+          }
         }
       }
       offset += num_elem;

@@ -3,7 +3,7 @@
   <ParameterList name="Problem">
     <!-- OUTPUT -->
     <Parameter name="Check derivatives"                  type="bool"    value="false"       />
-    <Parameter name="Number of output samples"           type="int"     value="9600"        />
+    <Parameter name="Number of output samples"           type="int"     value="10000"       />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Print Sparse Grid Size"             type="bool"    value="true"        />
     <Parameter name="Maximum Sparse Grid Level"          type="int"     value="3"           />

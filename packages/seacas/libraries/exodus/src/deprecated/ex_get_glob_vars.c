@@ -50,7 +50,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"                   // for ex_get_var, etc
+#include "exodusII.h" // for ex_get_var, etc
 
 /*!
 \deprecated Use ex_get_var()(exoid, time_step, EX_GLOBAL, 1, 1, num_glob_vars, global_var_vals)

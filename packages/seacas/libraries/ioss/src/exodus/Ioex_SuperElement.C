@@ -37,9 +37,9 @@
 #include <Ioss_Utils.h>    // for IOSS_ERROR, Utils
 
 #include <cassert>  // for assert
+#include <cstddef>  // for size_t, nullptr
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <netcdf.h> // for NC_NOERR, nc_close, etc
-#include <stddef.h> // for size_t, nullptr
 #include <string>   // for char_traits, operator<<, etc
 
 #include <Ioss_FieldManager.h>    // for FieldManager
@@ -265,7 +265,7 @@ Ioss::Property Ioex::SuperElement::get_implicit_property(const std::string &the_
   if (Ioss::Utils::case_strcmp(the_name, "num_dim") == 0) {
     return Ioss::Property(the_name, static_cast<int>(num_dim));
   }
-  else if (Ioss::Utils::case_strcmp(the_name, "numConstraints") == 0) {
+  if (Ioss::Utils::case_strcmp(the_name, "numConstraints") == 0) {
     return Ioss::Property(the_name, static_cast<int>(numDOF) - static_cast<int>(numEIG));
   }
   else {

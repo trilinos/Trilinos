@@ -41,14 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
-
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include <Phalanx_any.hpp>
 #include <unordered_map>
 #include <map>
@@ -695,5 +690,31 @@ namespace phalanx_test {
       }
     }
   }
- 
+
+  // Check that padding is included in span() but not in size(). No
+  // asserts here as padding depends on the layout and at runtime on
+  // actual array extents. Will not pad if extent is to too small to
+  // make sense.
+  TEUCHOS_UNIT_TEST(kokkos, Padding)
+  {
+    Kokkos::View<double**> a(Kokkos::view_alloc("a",Kokkos::AllowPadding),100,100);
+    out << "size=" << a.size() << std::endl;
+    out << "span=" << a.span() << std::endl;
+  }
+
+  // Check that an empty view can still return size and extents.
+  TEUCHOS_UNIT_TEST(kokkos, EmptyView)
+  {
+    // Rank 2 view has zero size for first two extents, then 1 for the
+    // invalid extents
+    Kokkos::View<double**> a;
+    TEST_EQUALITY(a.size(), 0);
+    TEST_EQUALITY(a.extent(0),0);
+    TEST_EQUALITY(a.extent(1),0);
+    TEST_EQUALITY(a.extent(2),1);
+    TEST_EQUALITY(a.extent(3),1);
+    TEST_EQUALITY(a.extent(4),1);
+    TEST_EQUALITY(a.extent(5),1);
+  }
+
 }

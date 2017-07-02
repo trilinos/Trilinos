@@ -43,11 +43,11 @@ template <typename INT> class Side_Set : public Exo_Entity
 {
 public:
   Side_Set();
-  Side_Set(int file_id, size_t exo_set_id);
-  Side_Set(int file_id, size_t exo_set_id, size_t num_sides, size_t num_dist_factors_x = 0);
+  Side_Set(int file_id, size_t id);
+  Side_Set(int file_id, size_t id, size_t ns, size_t ndf = 0);
   ~Side_Set() override;
 
-  void apply_map(const INT *node_map);
+  void apply_map(const INT *elmt_map);
   const INT *Elements() const;
   const INT *Sides() const;
   std::pair<INT, INT> Side_Id(size_t position) const;

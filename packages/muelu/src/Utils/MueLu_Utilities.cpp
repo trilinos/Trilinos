@@ -233,7 +233,9 @@ bool IsParamValidVariable(const std::string& name)
        strstr(firstWord, "complex") ||
        strstr(firstWord, "string") ||
        strstr(firstWord, "array<go>") ||
-       strstr(firstWord, "array<lo>"))
+       strstr(firstWord, "array<lo>") ||
+       strstr(firstWord, "array<lo>") ||
+       strstr(firstWord, "arrayrcp<bool>"))
       //Add name to list of keys to remove
     {
       free(str);

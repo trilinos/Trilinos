@@ -84,6 +84,31 @@ namespace Intrepid2 {
               C(i,j) += alpha*A(l,i)*B(l,j);
           }
       }
+
+      template<typename ScalarType,
+               typename AViewType,
+               typename BViewType,
+               typename CViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      gemm_notrans_trans(const ScalarType alpha,
+                         const AViewType &A,
+                         const BViewType &B,
+                         const ScalarType beta,
+                         const CViewType &C) {
+        //C = beta*C + alpha * A*B'
+        const ordinal_type 
+          m = C.dimension_0(),
+          n = C.dimension_1(),
+          k = A.dimension_1();
+        
+        for (ordinal_type i=0;i<m;++i)
+          for (ordinal_type j=0;j<n;++j) {
+            C(i,j) *= beta;
+            for (ordinal_type l=0;l<k;++l)
+              C(i,j) += alpha*A(i,l)*B(j,l);
+          }
+      }
       
       template<typename ScalarType,
                typename AViewType,

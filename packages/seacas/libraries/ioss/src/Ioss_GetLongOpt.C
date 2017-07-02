@@ -1,6 +1,6 @@
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 #include <Ioss_GetLongOpt.h>
-#include <string.h>
+#include <cstring>
 
 namespace Ioss {
   /** \brief Create an empty options database.
@@ -369,4 +369,4 @@ namespace Ioss {
     }
     outfile.flush();
   }
-}
+} // namespace Ioss

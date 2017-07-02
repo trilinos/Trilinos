@@ -43,13 +43,12 @@
 
 
 #include "Kokkos_DynRankView_Fad.hpp"
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_DimTag.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_MDField.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -124,8 +123,6 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
   
   RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
   TimeMonitor tm(*total_time);
-  
-  PHX::InitializeKokkosDevice();
 
   // *********************************************************************
   // Start of MDField Testing
@@ -186,7 +183,7 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     }
 
     // Copy constructor from const/non-const MDFields. NOTE: this
-    // tests for assignment from both Compitletime and dynamice
+    // tests for assignment from both Compitletime and DynRank
     // MDFields.
     {
       RCP<DataLayout> ctor_dl_p  = rcp(new MDALayout<Cell,Point>(10,4));
@@ -549,13 +546,13 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     
     out << "passed!" << endl;
       
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // check for array rank enforcement
-    TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+    // Do NOT check for array rank enforcement. DynRank MDField sets
+    // the rank at runtime and we allow it to be changed!
+    //TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // kokkos view accessors
-#ifdef PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
     {
       // non-const view
       auto kva = a.get_view(); 
@@ -568,9 +565,6 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
       const auto const_kvc = c.get_view(); 
       const_kvc(0,0) = MyTraits::FadType(1.0);
     }
-#else
-    // unsupported on the deprecated runtime view
-#endif
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // ostream
@@ -582,6 +576,5 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     out << output.str() << endl;
   }
 
-  PHX::FinalizeKokkosDevice();  
   TimeMonitor::summarize();
 }

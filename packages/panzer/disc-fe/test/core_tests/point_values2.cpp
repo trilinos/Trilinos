@@ -53,7 +53,6 @@
 
 #include "Kokkos_DynRankView.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 
 using Teuchos::RCP;

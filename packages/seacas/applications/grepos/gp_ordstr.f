@@ -32,7 +32,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
 C=======================================================================
-      SUBROUTINE ORDSTR (NORD, IXORD, LOLD, IOLD, ISCR, INEW)
+      SUBROUTINE ORDSTR (NORD, IXORD, LOLD, NAME, ISCR)
 C=======================================================================
 C   --*** ORDSTR *** (GJOIN) Order a list of strings according to indices
 C   --   Written by Greg Sjaardema - revised 07/11/90
@@ -43,21 +43,20 @@ C   --
 C   --Parameters:
 C   --   NORD - IN - the number of indices
 C   --   IXORD - IN - the indices of the ordered items
-C   --   LOLD - IN - the length of IOLD
-C   --   IOLD - IN - the unordered string list
+C   --   LOLD - IN - the length of NAME
+C   --   NAME - IN - the unordered string list
 C   --   ISCR - SCRATCH - size = LOLD
 C   --   INEW - OUT - the ordered string list
 
       INTEGER IXORD(*)
-      CHARACTER*(*) IOLD(*)
+      CHARACTER*(*) NAME(*)
       CHARACTER*(*) ISCR(*)
-      CHARACTER*(*) INEW(*)
 
       DO 100 I = 1, LOLD
-         ISCR(I) = IOLD(I)
+         ISCR(I) = NAME(I)
   100 CONTINUE
       DO 110 I = 1, NORD
-         INEW(I) = ISCR(IXORD(I))
+         NAME(I) = ISCR(IXORD(I))
   110 CONTINUE
 
       RETURN

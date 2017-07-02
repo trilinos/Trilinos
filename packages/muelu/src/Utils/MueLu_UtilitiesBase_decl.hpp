@@ -535,7 +535,7 @@ namespace MueLu {
         A.getLocalRowView(row, indices, vals);
         size_t nnz = 0; // collect nonzeros in row (excluding the diagonal)
         bool bHasDiag = false;
-        for (size_t col = 0; col < nnz; col++) {
+        for (decltype(indices.size()) col = 0; col < indices.size(); col++) {
           if ( indices[col] != row) {
             if (STS::magnitude(vals[col] / sqrt(STS::magnitude(diagVecData[row]) * STS::magnitude(diagVecData[col]))   ) > tol) {
               nnz++;
@@ -709,8 +709,8 @@ namespace MueLu {
 
     // Finds the OAZ Dirichlet rows for this matrix
     static void FindDirichletRowsAndPropagateToCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
-						    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletRow,
-						    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletCol) {
+                                                    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletRow,
+                                                    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletCol) {
 
       // Make sure A's RowMap == DomainMap
       if(!A->getRowMap()->isSameAs(*A->getDomainMap())) {
@@ -726,7 +726,7 @@ namespace MueLu {
 #if 0
     printf("[%d] DirichletRow Ids = ",A->getRowMap()->getComm()->getRank());
       for(size_t i=0; i<(size_t) dirichletRows.size(); i++)
-	printf("%d ",dirichletRows[i]);
+        printf("%d ",dirichletRows[i]);
     printf("\n");
     fflush(stdout);
 #endif
@@ -739,12 +739,12 @@ namespace MueLu {
       Teuchos::ArrayRCP<int> dc_rcp = isDirichletCol->getDataNonConst(0);
       Teuchos::ArrayView<int> dc    = dc_rcp();
       for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
-	dr[dirichletRows[i]] = 1;
-	if(!has_import) dc[dirichletRows[i]] = 1;
+        dr[dirichletRows[i]] = 1;
+        if(!has_import) dc[dirichletRows[i]] = 1;
       }
 
       if(has_import)
-	isDirichletCol->doImport(*isDirichletRow,*importer,Xpetra::CombineMode::ADD);
+        isDirichletCol->doImport(*isDirichletRow,*importer,Xpetra::CombineMode::ADD);
 
     }
 

@@ -491,7 +491,11 @@ TEST(BulkDataSize, sizeChanges_needToUpdateCopyMesh)
 #if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
     EXPECT_EQ(1200u, sizeof(bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";
 #else
+#if defined(__clang__)
+    EXPECT_EQ(1200u, sizeof(bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";
+#else
     EXPECT_EQ(1224u, sizeof(bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";
+#endif
 #endif
 }
 

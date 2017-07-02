@@ -69,10 +69,12 @@
 #include "Galeri_XpetraMaps.hpp"
 #endif // HAVE_IFPACK2_XPETRA
 
+#include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_UnitTestHelpers.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_CommHelpers.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 namespace { // (anonymous)
 
@@ -656,13 +658,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
 
   out << "Creating AdditiveSchwarz instance" << endl;
 
-  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (A,1);
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (A);
   ParameterList params, zlist;
 
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
-  params.set ("schwarz: overlap level", 0);  //FIXME Note that this test will fail for overlap>0.
-                                       //See github issue #460.
+  params.set ("schwarz: overlap level", 2);
+
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   params.set ("schwarz: use reordering", true);
 #else
@@ -754,7 +756,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
   }
 
   out << "Generating input and output (multi)vectors" << endl;
-  MV x(rowmap,2), y(rowmap,2);
+  const int numCols = 2;
+  MV x(rowmap, numCols), y(rowmap, numCols);
   x.randomize();
 
   if (gblSuccess == 1) {
@@ -778,8 +781,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
   prec.initialize();
   out << "Calling AdditiveSchwarz::compute()" << endl;
   prec.compute();
+  MV z(rowmap,numCols);
   out << "Calling AdditiveSchwarz::apply()" << endl;
-  MV z(rowmap,2);
+
   prec.apply (x, z);
 
   if (gblSuccess == 1) {
@@ -965,6 +969,286 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
 # endif
 }
 
+//test correctness with ILU subdomain solver
+//use MATLAB implementation as gold standard
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, ILU_Overlap, Scalar, LocalOrdinal, GlobalOrdinal)
+{ 
+  using std::string;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node>   crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node>   row_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node>                map_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
+  typedef Teuchos::ScalarTraits<Scalar>          STS;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
+
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+
+  //this test can only be run on 4 procs
+  if(comm->getSize() != 4)
+  {
+    out << "AdditiveSchwarz/ILU correctness test must be run on 4 procs.\n";
+    return;
+  }
+
+  string rowMapFile = "AdditiveSchwarzMatlab_rowmap.mm";
+  RCP<const map_type> rowMap = Reader::readMapFile(rowMapFile, comm);
+  string matrixFile = "AdditiveSchwarzMatlab_A.mm";
+  RCP<crs_matrix_type> A = Reader::readSparseFile(matrixFile, comm);
+  string rhsFile = "AdditiveSchwarzMatlab_rhs.mm";
+  RCP<multivector_type> rhs = Reader::readDenseFile(rhsFile, comm, rowMap);
+  string solFile = "AdditiveSchwarzILU_O_sol.mm";
+  RCP<multivector_type> sol = Reader::readDenseFile(solFile, comm, rowMap);
+  RCP<multivector_type> x = rcp(new multivector_type(rowMap, 1));
+
+  //set up additive schwarz
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (A);
+  Teuchos::ParameterList params;
+
+  out << "Filling in ParameterList for AdditiveSchwarz with ILU" << endl;
+
+  //ILU(0) by using RILUK with fill level = 0 and drop tol = 0
+  params.set ("inner preconditioner name", "RILUK");
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("fact: ilut level-of-fill", 0.0);
+    innerParams.set ("fact: drop tolerance", 0.0);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
+  params.set ("schwarz: zero starting solution", true);
+  params.set ("schwarz: overlap level", 1);
+  params.set ("schwarz: combine mode", "ZERO");
+  params.set ("schwarz: num iterations", 5);
+  params.set ("schwarz: use reordering", false);
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
+  prec.compute();
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  prec.apply(*rhs, *x);
+
+  TEST_COMPARE_FLOATING_ARRAYS(sol->get1dView(), x->get1dView(), 4*STS::eps ());
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, ILU_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal)
+{ 
+  using std::string;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node>   crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node>   row_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node>                map_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
+  typedef Teuchos::ScalarTraits<Scalar>          STS;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
+
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+
+  //this test can only be run on 4 procs
+  if(comm->getSize() != 4)
+  {
+    out << "AdditiveSchwarz/ILU correctness test must be run on 4 procs.\n";
+    return;
+  }
+
+  string mapFile = "AdditiveSchwarzMatlab_rowmap.mm";
+  RCP<const map_type> rowMap = Reader::readMapFile(mapFile, comm);
+  string matrixFile = "AdditiveSchwarzMatlab_A.mm";
+  RCP<crs_matrix_type> A = Reader::readSparseFile(matrixFile, comm);
+  string rhsFile = "AdditiveSchwarzMatlab_rhs.mm";
+  RCP<multivector_type> rhs = Reader::readDenseFile(rhsFile, comm, rowMap);
+  string solFile = "AdditiveSchwarzILU_NO_sol.mm";
+  RCP<multivector_type> sol = Reader::readDenseFile(solFile, comm, rowMap);
+  RCP<multivector_type> x = rcp(new multivector_type(rowMap, 1));
+
+  //set up additive schwarz
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (A);
+  Teuchos::ParameterList params;
+
+  out << "Filling in ParameterList for AdditiveSchwarz with ILU" << endl;
+
+  //RILUK with fill = 0 is ILU(0)
+  params.set ("inner preconditioner name", "RILUK");
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("fact: ilut level-of-fill", 0.0);
+    innerParams.set ("fact: drop tolerance", 0.0);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
+  params.set ("schwarz: zero starting solution", true);
+  params.set ("schwarz: overlap level", 0);
+  params.set ("schwarz: combine mode", "ZERO");
+  params.set ("schwarz: num iterations", 5);
+  params.set ("schwarz: use reordering", false);
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
+  prec.compute();
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  prec.apply(*rhs, *x);
+
+  auto solView = sol->get1dView();
+  auto xView = x->get1dView();
+
+  TEST_COMPARE_FLOATING_ARRAYS(solView, xView, 4 * STS::eps ());
+}
+
+//test correctness with SGS subdomain solver (overlap = 0)
+//use MATLAB implementation as gold standard
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal)
+{ 
+  using std::string;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node>   crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node>   row_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node>                map_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
+  typedef Teuchos::ScalarTraits<Scalar>          STS;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
+
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+
+  //this test can only be run on 4 procs
+  if(comm->getSize() != 4)
+  {
+    out << "AdditiveSchwarz/SGS correctness test must be run on 4 procs.\n";
+    return;
+  }
+
+  string rowMapFile = "AdditiveSchwarzMatlab_rowmap.mm";
+  RCP<const map_type> rowMap = Reader::readMapFile(rowMapFile, comm);
+  string matrixFile = "AdditiveSchwarzMatlab_A.mm";
+  RCP<crs_matrix_type> A = Reader::readSparseFile(matrixFile, comm);
+  string rhsFile = "AdditiveSchwarzMatlab_rhs.mm";
+  RCP<multivector_type> rhs = Reader::readDenseFile(rhsFile, comm, rowMap);
+  string solFile = "AdditiveSchwarzSGS_NO_sol.mm";
+  RCP<multivector_type> sol = Reader::readDenseFile(solFile, comm, rowMap);
+  RCP<multivector_type> x = rcp(new multivector_type(rowMap, 1));
+
+  //set up additive schwarz
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (A);
+  Teuchos::ParameterList params;
+
+  out << "Filling in ParameterList for AdditiveSchwarz with SGS" << endl;
+
+  //Inner solver is 1 SGS sweep 
+  params.set ("inner preconditioner name", "RELAXATION");
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("relaxation: type", "Symmetric Gauss-Seidel");
+    innerParams.set ("relaxation: sweeps", 1);
+    innerParams.set ("relaxation: zero starting solution", true);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
+  params.set ("schwarz: zero starting solution", false);
+  params.set ("schwarz: overlap level", 0);
+  params.set ("schwarz: combine mode", "ZERO");
+  params.set ("schwarz: num iterations", 5);
+  params.set ("schwarz: use reordering", false);
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
+  prec.compute();
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  prec.apply(*rhs, *x);
+
+  TEST_COMPARE_FLOATING_ARRAYS(sol->get1dView(), x->get1dView(), 4*STS::eps ());
+}
+
+//test correctness with SGS subdomain solver (overlap = 1)
+//use MATLAB implementation as gold standard
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, LocalOrdinal, GlobalOrdinal)
+{ 
+  using std::string;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node>   crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node>   row_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node>                map_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
+  typedef Teuchos::ScalarTraits<Scalar>          STS;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
+
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+
+  //this test can only be run on 4 procs
+  if(comm->getSize() != 4)
+  {
+    out << "AdditiveSchwarz/SGS correctness test must be run on 4 procs.\n";
+    return;
+  }
+
+  string rowMapFile = "AdditiveSchwarzMatlab_rowmap.mm";
+  RCP<const map_type> rowMap = Reader::readMapFile(rowMapFile, comm);
+  string matrixFile = "AdditiveSchwarzMatlab_A.mm";
+  RCP<crs_matrix_type> A = Reader::readSparseFile(matrixFile, comm);
+  string rhsFile = "AdditiveSchwarzMatlab_rhs.mm";
+  RCP<multivector_type> rhs = Reader::readDenseFile(rhsFile, comm, rowMap);
+  string solFile = "AdditiveSchwarzSGS_O_sol.mm";
+  RCP<multivector_type> sol = Reader::readDenseFile(solFile, comm, rowMap);
+  RCP<multivector_type> x = rcp(new multivector_type(rowMap, 1));
+
+  //set up additive schwarz
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (A);
+  Teuchos::ParameterList params;
+
+  out << "Filling in ParameterList for AdditiveSchwarz with SGS" << endl;
+
+  //Inner solver is 1 SGS sweep 
+  params.set ("inner preconditioner name", "RELAXATION");
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("relaxation: type", "Symmetric Gauss-Seidel");
+    innerParams.set ("relaxation: sweeps", 1);
+    innerParams.set ("relaxation: zero starting solution", true);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
+  params.set ("schwarz: zero starting solution", false);
+  params.set ("schwarz: overlap level", 1);
+  params.set ("schwarz: combine mode", "ZERO");
+  params.set ("schwarz: num iterations", 5);
+  params.set ("schwarz: use reordering", false);
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
+  prec.compute();
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  prec.apply(*rhs, *x);
+
+  TEST_COMPARE_FLOATING_ARRAYS(sol->get1dView(), x->get1dView(), 4*STS::eps ());
+}
+
 #if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
 
 #  define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
@@ -981,6 +1265,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, RILUK_UserOrdering, Scalar, LocalOrdinal,GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestOverlap, Scalar, LocalOrdinal, GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar, LocalOrdinal, GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, ILU_Overlap, Scalar, LocalOrdinal, GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, ILU_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SGS_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, LocalOrdinal, GlobalOrdinal) \
      IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
 
 // mfh 26 Aug 2015: Ifpack2::AdditiveSchwarz was only getting tested

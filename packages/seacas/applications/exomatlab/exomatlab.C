@@ -97,8 +97,9 @@ int main(int argc, char *argv[])
   bool ok    = false;
   codename   = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
-  if (ind != std::string::npos)
+  if (ind != std::string::npos) {
     codename = codename.substr(ind + 1, codename.size());
+  }
 
   try {
     SystemInterface::show_version();
@@ -213,8 +214,9 @@ namespace {
     Ioss::NameList::const_iterator IF;
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string field_name = *IF;
-      if (field_name.length() > namelen)
+      if (field_name.length() > namelen) {
         namelen = field_name.length();
+      }
     }
 
     out_stream << "names= [\n";
@@ -244,8 +246,9 @@ namespace {
 
     double tmin = interface.minimum_time();
     double tmax = interface.maximum_time();
-    if (tmax == -1.0)
+    if (tmax == -1.0) {
       tmax = region.get_max_time().second;
+    }
 
     if (tmin > 0.0 || tmax != region.get_max_time().second) {
       st_min = 0;

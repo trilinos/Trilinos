@@ -174,7 +174,6 @@ exe stk_transfer_use_cases
     /sierra/stk_util//stk_util_diag
     /tpl/operating_system//pthread
     /tpl/trilinos//shards
-    /tpl/trilinos//teuchos
     /tpl/trilinos//intrepid
   : <tag>@sierra-exec-tag
   ;

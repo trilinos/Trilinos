@@ -54,7 +54,7 @@
 #include "AnasaziTypes.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziRTRSolMgr.hpp"
+#include "AnasaziFactory.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 
 #ifdef HAVE_MPI
@@ -227,10 +227,10 @@ int main(int argc, char *argv[])
   MyPL.set( "Convergence Tolerance", tol );
   //
   // Create the solver manager
-  Anasazi::RTRSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
+  auto MySolverMan = Anasazi::Factory::create("RTR", problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  Anasazi::ReturnType returnCode = MySolverMan.solve();
+  Anasazi::ReturnType returnCode = MySolverMan->solve();
   testFailed = false;
   if (returnCode != Anasazi::Converged) {
     testFailed = true;

@@ -48,8 +48,8 @@ namespace Ioss {
 
   class IOFactory;
 
-  typedef std::vector<std::string> NameList;
-  typedef std::map<std::string, IOFactory *, std::less<std::string>> IOFactoryMap;
+  using NameList     = std::vector<std::string>;
+  using IOFactoryMap = std::map<std::string, IOFactory *, std::less<std::string>>;
 
   class DatabaseIO;
 
@@ -78,5 +78,5 @@ namespace Ioss {
   private:
     static IOFactoryMap *registry();
   };
-}
+} // namespace Ioss
 #endif

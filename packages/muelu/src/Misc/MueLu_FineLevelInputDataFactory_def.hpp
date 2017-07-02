@@ -60,17 +60,17 @@ namespace MueLu {
   RCP<const ParameterList> FineLevelInputDataFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< std::string >("Fine level variable", std::string("A"), "Variable name on finest level.");
+    // Variable name (e.g. A or P or Coordinates)
     validParamList->set< std::string >("Variable", std::string("A"), "Variable name on all coarse levels (except the finest level).");
 
-    validParamList->set< std::string >("Fine level factory", std::string("NoFactory"), "Generating factory of the fine level variable");
-    validParamList->set< std::string >("Coarse level factory", std::string("NoFactory"), "Generating factory for data on all coarse levels (except the finest)");
+    // Names of generating factories (on finest level and coarse levels)
+    validParamList->set< RCP<const FactoryBase> >("Fine level factory", Teuchos::null, "Generating factory of the fine level variable");
+    validParamList->set< RCP<const FactoryBase> >("Coarse level factory", Teuchos::null, "Generating factory for data on all coarse levels (except the finest)");
 
-    validParamList->set< RCP<const FactoryBase> >("FinestLevelDataFactory", Teuchos::null, "Generating factory for level data on finest level");
-    validParamList->set< RCP<const FactoryBase> >("CoarseLevelDataFactory", Teuchos::null, "Generating factory for coarse level data");
+    // Type of variable (see source code for a complete list of all available types)
+    validParamList->set<std::string> ("Variable type", std::string("Matrix"), "Type of varible");
 
-    //return validParamList;
-    return Teuchos::null;
+    return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -83,19 +83,16 @@ namespace MueLu {
       variableName = pL.get<std::string>("Variable");
 
     std::string factoryName  = "NoFactory";
-
     if (currentLevel.GetLevelID() == 0) {
-      if(pL.isParameter("Fine level factory"))
-        factoryName = pL.get<std::string>("Fine level factory");
+      factoryName = "Fine level factory";
     } else {
-      if(pL.isParameter("Coarse level factory"))
-        factoryName = pL.get<std::string>("Coarse level factory");
+      factoryName = "Coarse level factory";
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(variableName == "", MueLu::Exceptions::RuntimeError, "FineLevelInputDataFactory: no variable name provided. Please set \'Variable\' parameter in your input deck.");
 
+    // data must be specified in factory! (not in factory manager)
     RCP<const FactoryBase> fact = GetFactory(factoryName);
-    if (fact == Teuchos::null) { fact = currentLevel.GetFactoryManager()->GetFactory(factoryName); }
     currentLevel.DeclareInput(variableName, fact.get(), this);
   }
 
@@ -108,77 +105,78 @@ namespace MueLu {
     std::string variableName       = "";
     if (pL.isParameter("Variable"))
       variableName = pL.get<std::string>("Variable");
-    std::string factoryName        = "NoFactory";
 
+    std::string variableType = "";
+    if(pL.isParameter("Variable type"))
+      variableType = pL.get<std::string>("Variable type");
+
+    std::string factoryName        = "NoFactory";
     if (currentLevel.GetLevelID() == 0) {
-      if(pL.isParameter("Fine level factory"))
-        factoryName        = pL.get<std::string>("Fine level factory");
+      factoryName        = "Fine level factory";
     } else {
-      if(pL.isParameter("Coarse level factory"))
-        factoryName        = pL.get<std::string>("Coarse level factory");
+      factoryName        = "Coarse level factory";
     }
     RCP<const FactoryBase> fact = GetFactory(factoryName);
-    if (fact == Teuchos::null) { fact = currentLevel.GetFactoryManager()->GetFactory(factoryName); }
 
-    GetOStream(Debug) << "Use " << variableName << " from " << factoryName << "(" << fact.get() << ")" << std::endl;
+    GetOStream(Debug) << "Use " << variableName << " of type " << variableType << " from " << factoryName << "(" << fact.get() << ")" << std::endl;
 
     // check data type
-    std::string strType = currentLevel.GetTypeName(variableName, fact.get());
-    if        (strType == "int") {
+    //std::string strType = currentLevel.GetTypeName(variableName, fact.get());
+    if        (variableType == "int") {
       int data = currentLevel.Get<int>(variableName, fact.get());
       Set(currentLevel, variableName, data);
-    } else if (strType == "double") {
+    } else if (variableType == "double") {
       double data = currentLevel.Get<double>(variableName, fact.get());
       Set(currentLevel, variableName, data);
-    } else if (strType == "string") {
+    } else if (variableType == "string") {
       std::string data = currentLevel.Get<std::string>(variableName, fact.get());
       Set(currentLevel, variableName, data);
     } else {
       size_t npos = std::string::npos;
 
-      if      (strType.find("MueLu") != npos && strType.find("Aggregates") != npos) {
+      if      (variableType.find("Aggregates") != npos) {
         RCP<Aggregates> data = currentLevel.Get<RCP<Aggregates> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("MueLu") != npos && strType.find("Graph") != npos) {
+      else if (variableType.find("Graph") != npos) {
         RCP<Graph> data = currentLevel.Get<RCP<Graph> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("MueLu") != npos && strType.find("SmootherBase") != npos) {
+      else if (variableType.find("SmootherBase") != npos) {
         RCP<SmootherBase> data = currentLevel.Get<RCP<SmootherBase> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("MueLu") != npos && strType.find("SmootherPrototype") != npos) {
+      else if (variableType.find("SmootherPrototype") != npos) {
         RCP<SmootherPrototype> data = currentLevel.Get<RCP<SmootherPrototype> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra") != npos && strType.find("Export") != npos) {
+      else if (variableType.find("Export") != npos) {
         RCP<Export> data = currentLevel.Get<RCP<Export> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra") != npos && strType.find("Import") != npos) {
+      else if (variableType.find("Import") != npos) {
         RCP<Import> data = currentLevel.Get<RCP<Import> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra") != npos && strType.find("Map") != npos) {
+      else if (variableType.find("Map") != npos) {
         RCP<Map> data = currentLevel.Get<RCP<Map> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra") != npos && strType.find("Matrix") != npos) {
+      else if (variableType.find("Matrix") != npos) {
         RCP<Matrix> data = currentLevel.Get<RCP<Matrix> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra") != npos && strType.find("MultiVector") != npos) {
+      else if (variableType.find("MultiVector") != npos) {
         RCP<MultiVector> data = currentLevel.Get<RCP<MultiVector> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra") != npos && strType.find("Operator") != npos) {
+      else if (variableType.find("Operator") != npos) {
         RCP<Operator> data = currentLevel.Get<RCP<Operator> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
       else {
         // TAW: is this working with empty procs?
-        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "FineLevelInputDataFactory: cannot detect type of variable " << variableName << " generated by " << fact.get() << ". Found type " << strType );
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "FineLevelInputDataFactory: cannot detect type of variable " << variableName << " generated by " << fact.get() << ". User provided type " << variableType );
       }
     }
   }

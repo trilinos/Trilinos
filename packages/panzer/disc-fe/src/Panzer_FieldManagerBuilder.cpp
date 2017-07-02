@@ -196,8 +196,9 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
   // ***************************
   std::vector<panzer::BC>::const_iterator bc;
   for (bc=bcs.begin(); bc != bcs.end(); ++bc) {
+    WorksetDescriptor wd = panzer::bcDescriptor(*bc);
     const Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-      currentWkst = getWorksetContainer()->getSideWorksets(*bc);
+      currentWkst = getWorksetContainer()->getSideWorksets(wd);
     if (currentWkst.is_null()) continue;
 
     BCType bc_type = bc->bcType();

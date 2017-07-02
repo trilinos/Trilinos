@@ -105,6 +105,7 @@ namespace Intrepid2 {
 
     class Basis_HDIV_QUAD_I1_FEM {
     public:
+      typedef struct Quadrilateral<4> cell_topology_type;
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,

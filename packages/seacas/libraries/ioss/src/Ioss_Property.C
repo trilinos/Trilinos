@@ -32,8 +32,8 @@
 #include <Ioss_GroupingEntity.h>
 #include <Ioss_Property.h>
 #include <Ioss_Utils.h>
+#include <cstddef>
 #include <ostream>
-#include <stddef.h>
 #include <string>
 
 namespace {
@@ -178,6 +178,12 @@ Ioss::Property::~Property()
   if (!isImplicit_ && type_ == STRING) {
     delete data_.sval;
   }
+}
+
+Ioss::Property &Ioss::Property::operator=(Ioss::Property rhs)
+{
+  std::swap(*this, rhs);
+  return *this;
 }
 
 /** \brief Get the property value if it is of type STRING.

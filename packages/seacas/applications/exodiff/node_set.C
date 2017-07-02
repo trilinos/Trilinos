@@ -31,14 +31,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include "ED_SystemInterface.h" // for ERROR, SystemInterface, etc
+#include "exodusII.h"           // for ex_set, etc
+#include "iqsort.h"             // for index_qsort
 #include "node_set.h"
-#include <cstdlib>                      // for exit
-#include <iostream>                     // for operator<<, ostream, etc
-#include <vector>                       // for vector
-#include "ED_SystemInterface.h"         // for ERROR, SystemInterface, etc
-#include "exodusII.h"                   // for ex_set, etc
-#include "iqsort.h"                     // for index_qsort
-#include "smart_assert.h"               // for SMART_ASSERT
+#include "smart_assert.h" // for SMART_ASSERT
+#include <cstdlib>        // for exit
+#include <iostream>       // for operator<<, ostream, etc
+#include <vector>         // for vector
 
 template <typename INT>
 Node_Set<INT>::Node_Set()
@@ -83,14 +83,13 @@ template <typename INT> size_t Node_Set<INT>::Node_Id(size_t position) const
   if (numEntity <= 0) {
     return 0;
   }
-  else {
-    // See if already loaded...
-    if (!nodes) {
-      load_nodes();
-    }
-    SMART_ASSERT(position < numEntity);
-    return nodes[nodeIndex[position]];
+
+  // See if already loaded...
+  if (!nodes) {
+    load_nodes();
   }
+  SMART_ASSERT(position < numEntity);
+  return nodes[nodeIndex[position]];
 }
 
 template <typename INT> size_t Node_Set<INT>::Node_Index(size_t position) const
@@ -98,15 +97,14 @@ template <typename INT> size_t Node_Set<INT>::Node_Index(size_t position) const
   if (numEntity <= 0) {
     return 0;
   }
-  else {
-    // See if already loaded...
-    if (!nodes) {
-      load_nodes();
-    }
-    SMART_ASSERT(position < numEntity);
-    SMART_ASSERT(nodeIndex != nullptr);
-    return nodeIndex[position];
+
+  // See if already loaded...
+  if (!nodes) {
+    load_nodes();
   }
+  SMART_ASSERT(position < numEntity);
+  SMART_ASSERT(nodeIndex != nullptr);
+  return nodeIndex[position];
 }
 
 template <typename INT> void Node_Set<INT>::apply_map(const INT *node_map)
@@ -139,14 +137,15 @@ template <typename INT> void Node_Set<INT>::load_nodes(const INT *node_map) cons
     for (size_t i = 0; i < numEntity; i++) {
       nodeIndex[i] = i;
     }
-    if (interface.nsmap_flag)
+    if (interface.nsmap_flag) {
       index_qsort(nodes, nodeIndex, numEntity);
+    }
   }
 }
 
 template <typename INT> const double *Node_Set<INT>::Distribution_Factors() const
 {
-  if (!dist_factors && num_dist_factors > 0) {
+  if ((dist_factors == nullptr) && num_dist_factors > 0) {
     dist_factors = new double[num_dist_factors];
     SMART_ASSERT(dist_factors != nullptr);
     ex_get_set_dist_fact(fileId, EX_NODE_SET, id_, dist_factors);
@@ -157,7 +156,7 @@ template <typename INT> const double *Node_Set<INT>::Distribution_Factors() cons
 template <typename INT> void Node_Set<INT>::Free_Distribution_Factors() const
 {
   if (dist_factors) {
-    delete [] dist_factors;
+    delete[] dist_factors;
     dist_factors = nullptr;
   }
 }

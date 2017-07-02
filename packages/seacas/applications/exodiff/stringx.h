@@ -41,7 +41,7 @@
 //! can be abbreiviated to as little as min_length characters.  Returns true
 //! only if str has at least min_length characters and those that it does
 //! have match the master string exactly.
-bool abbreviation(const std::string &str, const std::string &master, unsigned min_length);
+bool abbreviation(const std::string &s, const std::string &master, unsigned min_length);
 
 //! Compares two string ignoring letter case.  Returns true if they are equal.
 bool no_case_equals(const std::string &s1, const std::string &s2);

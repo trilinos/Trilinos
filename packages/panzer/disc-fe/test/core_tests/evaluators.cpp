@@ -46,8 +46,6 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"

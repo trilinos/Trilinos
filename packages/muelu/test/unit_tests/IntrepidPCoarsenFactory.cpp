@@ -1143,29 +1143,29 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #define FIND_SEEDS_MACROS \
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;         \
-  typedef typename Node::device_type::execution_space ES;	            \
+  typedef typename Node::device_type::execution_space ES;                   \
   typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;            \
   typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; \
-  typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ES,MT,MT> LineBasis;	    \
-  typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> QuadBasis;	    \
+  typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ES,MT,MT> LineBasis;           \
+  typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> QuadBasis;           \
   typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ES,MT,MT> HexBasis;
 #else
 #define FIND_SEEDS_MACROS \
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;         \
-  typedef typename Node::device_type::execution_space ES;	            \
-  typedef Intrepid2::FieldContainer<MT> FC;    				    \
+  typedef typename Node::device_type::execution_space ES;                   \
+  typedef Intrepid2::FieldContainer<MT> FC;                                 \
   typedef Intrepid2::FieldContainer<LocalOrdinal> FCO;                      \
-  typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ES,MT,MT> LineBasis;	    \
-  typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> QuadBasis;	    \
+  typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ES,MT,MT> LineBasis;           \
+  typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> QuadBasis;           \
   typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ES,MT,MT> HexBasis;
 #endif
 
   /******* End typedefs for FindSeeds tests by Nate ********/
-  
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, FindSeeds_Equispaced_Line, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);      
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     FIND_SEEDS_MACROS;
     testFindSeedsParallel<LocalOrdinal,GlobalOrdinal,Node,LineBasis,ES,FC,FCO>(MueLuTests::TestHelpers::Parameters::getLib(),MAX_LINE_DEGREE,Intrepid2::POINTTYPE_EQUISPACED,out,success);
     testFindSeedsSerial<LocalOrdinal,GlobalOrdinal,Node,LineBasis,ES,FC,FCO>  (MueLuTests::TestHelpers::Parameters::getLib(),MAX_LINE_DEGREE,Intrepid2::POINTTYPE_EQUISPACED,out,success);
@@ -1174,7 +1174,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, FindSeeds_Spectral_Line, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);      
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     FIND_SEEDS_MACROS;
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
     testFindSeedsParallel<LocalOrdinal,GlobalOrdinal,Node,LineBasis,ES,FC,FCO>(MueLuTests::TestHelpers::Parameters::getLib(),MAX_LINE_DEGREE,POINTTYPE_SPECTRAL,out,success);
@@ -1185,7 +1185,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, FindSeeds_Equispaced_Quad, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);      
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     FIND_SEEDS_MACROS;
     testFindSeedsParallel<LocalOrdinal,GlobalOrdinal,Node,QuadBasis,ES,FC,FCO>(MueLuTests::TestHelpers::Parameters::getLib(),MAX_QUAD_DEGREE,Intrepid2::POINTTYPE_EQUISPACED,out,success);
     testFindSeedsSerial<LocalOrdinal,GlobalOrdinal,Node,QuadBasis,ES,FC,FCO>  (MueLuTests::TestHelpers::Parameters::getLib(),MAX_QUAD_DEGREE,Intrepid2::POINTTYPE_EQUISPACED,out,success);
@@ -1194,7 +1194,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, FindSeeds_Spectral_Quad, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);      
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     FIND_SEEDS_MACROS;
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
     testFindSeedsParallel<LocalOrdinal,GlobalOrdinal,Node,QuadBasis,ES,FC,FCO>(MueLuTests::TestHelpers::Parameters::getLib(),MAX_QUAD_DEGREE,POINTTYPE_SPECTRAL,out,success);
@@ -1204,7 +1204,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, FindSeeds_Equispaced_Hex, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);      
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     FIND_SEEDS_MACROS;
     testFindSeedsParallel<LocalOrdinal,GlobalOrdinal,Node,HexBasis,ES,FC,FCO>(MueLuTests::TestHelpers::Parameters::getLib(),MAX_QUAD_DEGREE,Intrepid2::POINTTYPE_EQUISPACED,out,success);
     testFindSeedsSerial<LocalOrdinal,GlobalOrdinal,Node,HexBasis,ES,FC,FCO>  (MueLuTests::TestHelpers::Parameters::getLib(),MAX_QUAD_DEGREE,Intrepid2::POINTTYPE_EQUISPACED,out,success);
@@ -1213,7 +1213,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, FindSeeds_Spectral_Hex, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);      
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     FIND_SEEDS_MACROS;
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
     testFindSeedsParallel<LocalOrdinal,GlobalOrdinal,Node,HexBasis,ES,FC,FCO>(MueLuTests::TestHelpers::Parameters::getLib(),MAX_HEX_DEGREE,POINTTYPE_SPECTRAL,out,success);

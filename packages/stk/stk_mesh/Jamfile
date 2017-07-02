@@ -127,7 +127,6 @@ exe stk_mesh_utest
     /sierra/stk_io//stk_io
     stk_mesh_fixtures
     /sierra/stk_util//stk_util_use_case
-    /tpl/trilinos//teuchos
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
@@ -143,7 +142,6 @@ exe stk_mesh_utest_field_blas
     /sierra/stk_io//stk_io
     stk_mesh_fixtures
     /sierra/stk_util//stk_util_use_case
-    /tpl/trilinos//teuchos
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag

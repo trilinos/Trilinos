@@ -1,6 +1,6 @@
 """
 
-exodus.py v 1.04 (beta) is a python wrapper of some of the exodus II library
+exodus.py v 1.05 (beta) is a python wrapper of some of the exodus II library
 
 Copyright (c) 2013, 2014, 2015, 2016 Sandia Corporation.
 
@@ -40,16 +40,19 @@ POSSIBILITY OF SUCH DAMAGE.
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.04 (beta-cmake)"
+EXODUS_PY_VERSION = "1.05 (beta-cmake)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.04 (beta-cmake), a python wrapper of some of the exodus II library.
-Copyright (c) 2013, 2014, 2015, 2016 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000
-with Sandia Corporation, the U.S. Government retains certain rights in this software.
+You are using exodus.py v 1.05 (beta-cmake), a python wrapper of some of the exodus II library.
+
+Copyright (c) 2013, 2014, 2015, 2016, 2017 Sandia Corporation. Under
+the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the
+U.S. Government retains certain rights in this software.
 """
 
 EXODUS_PY_CONTACTS = """
-Authors:  Timothy Shelton  (trshelt@sandia.gov)
+Authors:
+  Timothy Shelton  (trshelt@sandia.gov)
   Michael Veilleux (mgveill@sandia.gov)
   David Littlewood (djlittl@sandia.gov)
   Greg Sjaardema   (gdsjaar@sandia.gov)
@@ -269,6 +272,12 @@ class exodus:
       <string>  title       database title
       <string>  array_type  'ctype' for c-type arrays,
         'numpy' for numpy arrays
+      <int>     num_dims    number of model dimensions ('w' mode only)
+      <int>     num_nodes   number of model nodes ('w' mode only)
+      <int>     num_elems   number of model elements ('w' mode only)
+      <int>     num_blocks  number of model element blocks ('w' mode only)
+      <int>     num_ns      number of model node sets ('w' mode only)
+      <int>     num_ss      number of model side sets ('w' mode only)
 
       <ex_init_params>
                 init_params see ex_init_params for more info.
@@ -291,6 +300,10 @@ class exodus:
       mode = 'r'
     if array_type == 'numpy':
       #Import numpy to convert from c-type arrays to numpy arrays
+        #(Numpy is imported here rather than at the module level, so that
+        #the import only occurs if the user specifies a numpy array type.
+        #This way, platforms without numpy installed can still import the 
+        #exodus.py module and just use ctype arrays.)
       import numpy as np
       self.np = np
       self.use_numpy = True
@@ -1243,8 +1256,8 @@ class exodus:
 
   # --------------------------------------------------------------------
 
-  def put_elem_blk_info(self, id, elemType, numElems,
-                        numNodesPerElem, numAttrsPerElem):
+  def put_elem_blk_info(self, elem_blk_id, elem_type, num_blk_elems,
+                        num_elem_nodes, num_elem_attrs):
     """
     exo.put_elem_blk_info(elem_blk_id, \\
       elem_type, \\
@@ -1261,13 +1274,13 @@ class exodus:
         <int>     num_elem_nodes   number of nodes per element
         <int>     num_elem_attrs   number of attributes per element
     """
-    self.__ex_put_elem_block(id, elemType, numElems,
-                             numNodesPerElem, numAttrsPerElem)
+    self.__ex_put_elem_block(elem_blk_id, elem_type, num_blk_elems,
+                               num_elem_nodes, num_elem_attrs)
 
   # --------------------------------------------------------------------
 
-  def put_concat_elem_blk(self, elemBlkIDs, elemType, numElemThisBlk, \
-                          numNodesPerElem, numAttr, defineMaps):
+  def put_concat_elem_blk(self,elem_blk_ids, elem_type, num_blk_elems,\
+                          num_elem_nodes, num_elem_attrs, defineMaps):
     """
     status = exo.put_concat_elem_blk(elem_blk_ids, \\
       elem_types, \\
@@ -1291,8 +1304,8 @@ class exodus:
       return value(s):
         <bool>  status  True = successful execution
     """
-    self.__ex_put_concat_elem_blk(elemBlkIDs, elemType, numElemThisBlk, \
-               numNodesPerElem, numAttr, defineMaps)
+    self.__ex_put_concat_elem_blk(elem_blk_ids, elem_type, num_blk_elems, \
+               num_elem_nodes, num_elem_attrs, defineMaps)
     return True
 
   # --------------------------------------------------------------------
@@ -1357,16 +1370,17 @@ class exodus:
 
   # --------------------------------------------------------------------
 
-  def get_elem_attr(self, elemBlkID):
+  def get_elem_attr(self, elem_blk_id):
     """
     elem_attrs = exo.get_elem_attr(elem_blk_id)
 
-      -> get attributes of all elements in a block
+      -> get all attributes for each element in a block
 
       input value(s):
         <int>  elem_blk_id  element block *ID* (not *INDEX*)
 
       return value(s):
+        if array_type == 'ctype':
         <list<float>>  elem_attrs  list of attribute values for all
           elements in the block; the list cycles
           through all attributes of the first
@@ -1375,21 +1389,71 @@ class exodus:
           ordered by the ordering of the names
           returned by
           exo.get_element_attribute_names()
+        if array_type == 'numpy':
+          <np_array<float>>  elem_attrs  array of attribute values for all
+                                         elements in the block; the list cycles
+                                         through all attributes of the first
+                                         element, then all attributes of the
+                                         second element, etc. Attributes are
+                                         ordered by the ordering of the names
+                                         returned by 
+                                         exo.get_element_attribute_names()
     """
-    attribute = self.__ex_get_elem_attr(elemBlkID)
-    return attribute
+    elem_attrs = self.__ex_get_elem_attr(elem_blk_id)
+    if self.use_numpy:
+        elem_attrs = ctype_to_numpy(self, elem_attrs)
+    return elem_attrs
 
   # --------------------------------------------------------------------
 
-  def put_elem_attr(self, elemBlkID, Attr):
+  def get_elem_attr_values(self, elem_blk_id, elem_attr_name):
     """
+    elem_attrs = exo.get_elem_attr(elem_blk_id)
+
+      -> get an attribute for each element in a block
+
+      input value(s):
+        <int>    elem_blk_id     element block *ID* (not *INDEX*)
+        <string> elem_attr_name  element attribute name
+
+      return value(s):
+        if array_type == 'ctype':
+          <list<float>>  values      list of values for the requested 
+                                     attribute.  List has dimensions of 
+                                     1 x num_elem, where num_elem is the 
+                                     number of elements on the element block.
+        if array_type == 'numpy':
+          <np_array<float>>  values  array of values for the requested 
+                                     attribute.  Array has dimensions of 
+                                     1 x num_elem, where num_elem is the 
+                                     number of elements on the element block.
+    """
+    #The exo.get_elem_attr() method dumps all the element attributes in one 
+    #monolithic list.  This can be cumbersome for the user, and 
+    #prompted the following convenience function, which grabs a single set 
+    #of element attribute values from the proper location in the monolithic 
+    #list.
+    elem_attr_names = self.get_element_attribute_names(elem_blk_id)
+    a_ndx = elem_attr_names.index(elem_attr_name)
+    num_attr = len(elem_attr_names)
+    all_values = self.get_elem_attr(elem_blk_id)
+    values = all_values[a_ndx::num_attr]
+    if self.use_numpy:
+        values = ctype_to_numpy(self, values)
+    return values
+
+  # --------------------------------------------------------------------
+
+  def put_elem_attr(self, elem_blk_id, elem_attrs):
+    """
+    
     exo.put_elem_attr(elem_blk_id, elem_attrs)
 
-      -> store attributes of all elements in a block
+      -> store all attributes for each element in a block
 
       input value(s):
         <int>          elem_blk_id  element block *ID* (not *INDEX*)
-        <list<float>>  elem_attrs   list of attribute values for all
+        <list<float>>  elem_attrs     list of all attribute values for all
           elements in the block; the list
           cycles through all attributes of
           the first element, then all attributes
@@ -1398,7 +1462,38 @@ class exodus:
           names returned by
           exo.get_element_attribute_names()
     """
-    self.__ex_put_elem_attr(elemBlkID, Attr)
+    self.__ex_put_elem_attr(elem_blk_id, elem_attrs)
+
+  # --------------------------------------------------------------------
+
+  def put_elem_attr_values(self, elem_blk_id, elem_attr_name, values):
+    """
+    
+    exo.put_elem_attr_values(elem_blk_id, elem_attr_name, values)
+
+      -> store an attribute for each element in a block
+
+      input value(s):
+        <int>          elem_blk_id    element block *ID* (not *INDEX*)
+        <string>       elem_attr_name element attribute name
+        <list<float>>  values         list of values for a single attribute
+                                      on a element block.  List dimensions 
+                                      should be 1 x N_elem, where N_elem is 
+                                      the number of elements on the element 
+                                      block.
+    """
+    #The exo.put_elem_attr() method requires the user to specify all the 
+    #element attributes in one monolithic list, even if the user is only
+    #specifying one element attribute.  This is cumbersome for the user, and 
+    #prompted the following convenience function, which inserts a single set 
+    #of element attribute values into the proper location in the monolithic 
+    #list and then puts them onto the database.
+    elem_attr_names = self.get_element_attribute_names(elem_blk_id)
+    a_ndx = elem_attr_names.index(elem_attr_name)
+    num_attr = len(elem_attr_names)
+    all_values = self.get_elem_attr(elem_blk_id)
+    all_values[a_ndx::num_attr] = values
+    self.put_elem_attr(elem_blk_id, all_values)
 
   # --------------------------------------------------------------------
 
@@ -3916,14 +4011,13 @@ class exodus:
 
   def __ex_put_elem_block(self, id, eType, numElems, numNodesPerElem, numAttrsPerElem):
     elem_block_id      = c_longlong(id)
-    elem_type          = create_string_buffer(eType.upper(), MAX_STR_LENGTH+1)
+    elem_type          = create_string_buffer(eType.upper(),MAX_NAME_LENGTH+1)
     num_elem_this_blk  = c_longlong(numElems)
     num_nodes_per_elem = c_longlong(numNodesPerElem)
     num_attr           = c_longlong(numAttrsPerElem)
-    EXODUS_LIB.ex_put_block(self.fileId, ex_entity_type('EX_ELEM_BLOCK'),
-                            elem_block_id, elem_type,
-                            num_elem_this_blk, num_nodes_per_elem,
-                            0, 0, num_attr)
+    EXODUS_LIB.ex_put_elem_block(self.fileId,elem_block_id,elem_type,
+                                 num_elem_this_blk,num_nodes_per_elem,
+                                 num_attr)
 
   # --------------------------------------------------------------------
 
@@ -4444,12 +4538,44 @@ def collectLocalElemToLocalElems(exodusHandle, connectivity, localNodeToLocalEle
 
 # --------------------------------------------------------------------
 
-def copy_mesh(fromFileName, toFileName, exoFromObj=None, array_type='ctype'):
+def copy_mesh(fromFileName, toFileName, exoFromObj = None, \
+              additionalElementAttributes = [], array_type = 'ctype'):
   """
-    This function creates an exodus file toFileName and copies only the mesh
-    data from exodus file fromFileName, returning a file handle to toFileName.
-    The user can either supply an exodus filename (fromFileName) or an exodus
-    object (exoFromObj) to copy the mesh data from.
+  Copies the mesh data from an existing exodus database to a new exodus 
+  database.   
+    
+  Parameters
+  ----------
+  fromFileName : string
+      File name of the exodus mesh to be copied
+  toFileName : string
+      File name of the new exodus mesh
+  exoFromObj : exodus object, optional
+      Exodus object to be copied from.  If an exodus object is supplied, the
+      fromFileName string will be ignored.
+  additionalElementAttributes : list
+      list of element attribute names to add to all blocks or tuples 
+      ( name, blkIds ) where name is the element attribute to add and blkIds is 
+      a list of blkIds to add it to.  
+  array_type : 'ctype' | 'numpy'
+      Specifies whether arrays will be imported and copied as ctype or numpy 
+      arrays.  (This option should make no difference to the user, but it can
+      be used by developers to test whether the commands within this function
+      handle both array types correctly.)
+      
+  Returns
+  -------
+  exoTo : exodus object
+      New exodus mesh
+      
+  Notes
+  -----
+  This function also allows one to add new element attributes during the copy 
+  process.  The number of element attributes is permanently set when the
+  block is created, meaning new element attributes can only be added to an
+  existing mesh by copying it to a new mesh.  The values of the element 
+  attributes are set to their defaults so that the user can populate them 
+  later.
   """
   debugPrint = False
 
@@ -4460,7 +4586,7 @@ def copy_mesh(fromFileName, toFileName, exoFromObj=None, array_type='ctype'):
   else:
     exoFrom = exoFromObj
 
-  if os.path.isfile(toFileName):
+  if ( os.path.isfile(toFileName) ):
     raise Exception, ("ERROR: ", toFileName, " file already exists cowardly exiting instead of overwriting in call to copy_mesh().")
 
   title = exoFrom.title()
@@ -4474,30 +4600,72 @@ def copy_mesh(fromFileName, toFileName, exoFromObj=None, array_type='ctype'):
   exoTo = exodus(toFileName, mode="w", array_type=array_type, \
                  title=title, init_params=ex_pars)
 
-  if debugPrint: print "Transfer QA records"
+  if debugPrint: 
+    print("Transfer QA records")
   qaRecords = exoFrom.get_qa_records()
   exoTo.put_qa_records(qaRecords)
 
-  if debugPrint: print "Transfer Nodal Coordinates and Names"
+  if debugPrint: 
+    print("Transfer Nodal Coordinates and Names")
   exoTo.put_coord_names(exoFrom.get_coord_names())
   (xCoords, yCoords, zCoords) = exoFrom.get_coords()
   exoTo.put_coords(xCoords, yCoords, zCoords)
 
-  if debugPrint: print "Transfer Node Id Map"
+  if debugPrint:
+    print("Transfer Node Id Map")
   nodeIdMap = exoFrom.get_node_id_map()
   exoTo.put_node_id_map(nodeIdMap)
 
+  if debugPrint: 
+    print("Construct mapping from block ID to element attribute data")
+  #The exodus library does not provide a way to add only new element 
+  #attributes, so we must collect both the new and the old element attributes
+  e_attr_names = dict()
+  e_attr_vals = dict()
+  #Collect the old element attribute names and the number of elements in each 
+  #block
+  blk_ids = exoFrom.get_elem_blk_ids()
+  blk_num_elem = dict()
+  for blk_id in blk_ids:
+    (elemType,numElem,nodesPerElem,numAttr) = exoFrom.elem_blk_info(blk_id)
+    e_attr_names[blk_id] = []
+    e_attr_vals[blk_id] = []
+    if numAttr > 0:
+      e_attr_names[blk_id].extend(exoFrom.get_element_attribute_names(blk_id))
+      e_attr_vals[blk_id].extend(exoFrom.get_elem_attr(blk_id))
+    blk_num_elem[blk_id] = numElem
+  #Collect the new element attribute names
+  #(The new names are mapped from "attribute name" to "list of block IDs that
+  #contain that attribute".  We need to have them be mapped as "block ID" to
+  #"list of attribute names contained in that block".)
+  for item in additionalElementAttributes:
+    if type(item) is tuple:
+      e_attr_name = item[0]
+      e_attr_blk_ids = item[1]
+    elif type(item) is str:
+      e_attr_name = item
+      e_attr_blk_ids = blk_ids
+    else:
+      print("Warning additional element attribute item " + item + " is not right type to add.")
+      print("should be a string or tuple, skipping")
+    for blk_id in e_attr_blk_ids:
+      if blk_id in blk_ids:
+        e_attr_names[blk_id].append(e_attr_name)
+        #Concatenate all element attribute values into a single big list, 
+        #because that is format required by exo.put_elem_attr().
+        e_attr_vals[blk_id].extend([0.0] * blk_num_elem[blk_id])
+  
   if debugPrint: print "Transfer Element Data"
   blkIds = exoFrom.get_elem_blk_ids()
   for blkId in blkIds:
-    (elemType, numElem, nodesPerElem, numAttr) = exoFrom.elem_blk_info(blkId)
+    (elemType,numElem,nodesPerElem,oldnumAttr) = exoFrom.elem_blk_info(blkId)
+    numAttr = len(e_attr_names[blkId])
     exoTo.put_elem_blk_info(blkId, elemType, numElem, nodesPerElem, numAttr)
     (connectivity, numElem, nodesPerElem) = exoFrom.get_elem_connectivity(blkId)
     exoTo.put_elem_connectivity(blkId, connectivity)
     if numAttr > 0:
-      attrNames = exoFrom.get_element_attribute_names(blkId)
-      exoTo.put_element_attribute_names(blkId, attrNames)
-      exoTo.put_elem_attr(blkId, exoFrom.get_elem_attr(blkId))
+      exoTo.put_element_attribute_names(blkId,e_attr_names[blk_id])
+      exoTo.put_elem_attr(blkId, e_attr_vals[blkId])
     elemProps = exoFrom.get_element_property_names()
     for elemProp in elemProps:
       propVal = exoFrom.get_element_property_value(blkId, elemProp)
@@ -4584,7 +4752,10 @@ def transfer_variables(exoFrom, exoTo, array_type='ctype',
       and blkIds is a list of blkIds to add it to.
   """
   ## IDEA: It may make sense to make transfer_variables() strictly transfer
-  ## variables, and use add_variables() to add new variables.
+  ## variables, and use add_variables() to add new variables.  Alternatively,
+  ## add_variables() could be called within transfer_variables() to add
+  ## new variables to the exoTo database.  Either way, we should minimize
+  ## duplicate code if possible.
 
   debugPrint = False
 
@@ -4647,7 +4818,8 @@ def transfer_variables(exoFrom, exoTo, array_type='ctype',
           nValues = exoFrom.get_node_variable_values(nodalVarName, step+1)
           exoTo.put_node_variable_values(nodalVarName, step+1, nValues)
 
-  if debugPrint: print "Construct Truth Table for additionalElementVariables"
+  if debugPrint:
+    print "Construct Truth Table for additionalElementVariables"
   blkIds = exoFrom.get_elem_blk_ids()
   numBlks = exoFrom.num_blks()
   newElemVariableNames = []
@@ -4709,23 +4881,36 @@ def transfer_variables(exoFrom, exoTo, array_type='ctype',
 
   ## TODO: Transfer Sideset Variables
 
-  return exoTo
+  return(exoTo)
 
-def add_variables(exo, global_vars=[], nodal_vars=[], element_vars=[], \
-  array_type='ctype'):
+def add_variables(exo, global_vars = [], nodal_vars = [], element_vars = []):
   """
-    This function adds variables to the exodus object.  The values of the variables
-    are set to their defaults so that the user can populate them later.
+  This function adds variables to the exodus object.  The values of the 
+  variables are set to their defaults so that the user can populate them later.
 
+  Parameters
+  ----------
     exo: exodus database object
+      Exodus database that variables will be added to.
+  global_vars : list
+      global variable names to add.
+  nodal_vars : list
+      nodal variable names to add.   
+  element_vars : list
+      list of element variable names to add to all blocks or tuples 
+      ( name, blkIds ) where name is the element variable to add and blkIds is 
+      a list of blkIds to add it to.      
 
-    global_vars: list of global variable names to add.
+  Returns
+  -------
+  exo : exodus database object
+      Exodus database with variables added to it.  (The values of the variables 
+      are set to their defaults so that the user can populate them later.)
 
-    nodal_vars: list of nodal variable names to add.
-
-    element_vars: should be a list of element variable names to add to all blocks or
-      tuples (name, blkIds) where name is the element variable to add
-      and blkIds is a list of blkIds to add it to.
+  See Also
+  --------
+  This function does not allow one to add element attributes to an exodus 
+  database.  See the copy_mesh() function for that capability.
   """
   debugPrint = False
 
@@ -4739,7 +4924,8 @@ def add_variables(exo, global_vars=[], nodal_vars=[], element_vars=[], \
   if (exo.modeChar is 'r'):
     raise Exception, ("ERROR: variables cannot be added to an exodus object in read only mode")
 
-  if debugPrint: print "Add Global Variables"
+  if debugPrint: 
+    print("Add Global Variables")
   n_new_vars = len(global_vars)
   n_old_vars = exo.get_global_variable_number()
   n_vars = n_old_vars + n_new_vars
@@ -4755,13 +4941,14 @@ def add_variables(exo, global_vars=[], nodal_vars=[], element_vars=[], \
     nSteps = exo.num_times()
     for step in xrange(nSteps):
       gValues = exo.get_all_global_variable_values(step+1)
-      if array_type == 'numpy':
+      if exo.use_numpy:
         gValues = exo.np.append(gValues, default_vals)
       else:
         gValues.extend(default_vals)
       exo.put_all_global_variable_values(step+1, gValues)
 
-  if debugPrint: print "Add Nodal Variables"
+  if debugPrint: 
+    print("Add Nodal Variables")
   n_new_vars = len(nodal_vars)
   n_old_vars = exo.get_node_variable_number()
   n_vars = n_old_vars + n_new_vars
@@ -4770,7 +4957,8 @@ def add_variables(exo, global_vars=[], nodal_vars=[], element_vars=[], \
     for i, var_name in enumerate(nodal_vars):
       exo.put_node_variable_name(var_name, i + n_old_vars + 1)
 
-  if debugPrint: print "Construct Truth Table for additionalElementVariables"
+  if debugPrint:
+    print "Construct Truth Table for additionalElementVariables"
   new_e_var_names = []
   new_e_var_blks = []
   blk_ids = exo.get_elem_blk_ids()
@@ -4786,10 +4974,11 @@ def add_variables(exo, global_vars=[], nodal_vars=[], element_vars=[], \
       new_e_var_names.append(item)
       new_e_var_blks.append(blk_ids)
     else:
-      print "Warning additionalElementVariable item ", item, " is not right type to add."
-      print "should be a string or tuple, skipping"
+      print("Warning additionalElementVariable item " + item + " is not right type to add.")
+      print("should be a string or tuple, skipping")
 
-  if debugPrint: print "Add Element Variables"
+  if debugPrint: 
+    print("Add Element Variables")
   n_new_vars = len(new_e_var_names)
   n_old_vars = exo.get_element_variable_number()
   n_vars = n_old_vars + n_new_vars
@@ -4817,34 +5006,44 @@ def add_variables(exo, global_vars=[], nodal_vars=[], element_vars=[], \
 
   ## TODO: Add Sideset Variables
 
-  return exo
+  return(exo)
 
 # --------------------------------------------------------------------
 
 def copyTransfer(fromFileName, toFileName, array_type='ctype', \
-    additionalGlobalVariables=[], additionalNodalVariables=[], additionalElementVariables=[]):
+    additionalGlobalVariables=[], additionalNodalVariables=[], \
+    additionalElementVariables=[], additionalElementAttributes=[]):
   """
-    This function creates an exodus file toFileName and copies everything from exodus file fromFileName returning
-    a file handle to toFileName.
+    This function creates an exodus file toFileName and copies
+    everything from exodus file fromFileName returning a file handle
+    to toFileName.
 
-    Additional space is allocated for additionalGlobalVariables, additionalNodalVariables and additionalElementVariables if specified.
+    Additional space is allocated for additionalGlobalVariables,
+    additionalNodalVariables and additionalElementVariables if
+    specified.
 
     additionalGlobalVariables: list of global variable names to add.
 
     additionalNodalVaraibles: list of nodal variable names to add.
 
-    additionalElementVariables: should be a list of element variable names to add to all blocks or
-      tuples (name, blkIds) where name is the element variable to add
-      and blkIds is a list of blkIds to add it to.
-    Usage:
+    additionalElementVariables: should be a list of element variable
+    names to add to all blocks or tuples (name, blkIds) where name is
+    the element variable to add and blkIds is a list of blkIds to add
+    it to.
+                                
+    additionalElementAttributes: list of element attribute names to
+    add to all blocks or tuples ( name, blkIds ) where name is the
+    element attribute to add and blkIds is a list of blkIds to add it
+    to.  Usage:
 
     fromFileName = "input.e"
     toFileName = "output.e"
     addGlobalVariables = [] ## Do not add any new global variables
     addNodeVariables = ["node_dummy1", "node_dummy2"] ## Add node_dummy1 and node_dummy2 as new node variables
     addElementVariables = [ ("elem_dummy1", [1, 2, 3]), "elem_dummy2" ] ## Add elem_dummy1 on blkIds 1, 2, 3 and elem_dummy2 on all blocks
+    addElementAttributes = [ ("elem_attr_dummy1",[1,2,3]), "elem_attr_dummy2" ] ## Add elem_attr_dummy1 on blkIds 1,2,3 and elem_attr_dummy2 on all blocks
 
-    toFileHandle = copyTranfer(fromFileName, toFileName, addGlobalVariables, addNodeVariables, addElementVariables)
+    toFileHandle = copyTranfer(fromFileName,toFileName,addGlobalVariables,addNodeVariables,addElementVariables,addElementAttributes)
 
     ## Fill in new variables
 
@@ -4856,7 +5055,9 @@ def copyTransfer(fromFileName, toFileName, array_type='ctype', \
 
   exoFrom = exodus(fromFileName, "r", array_type=array_type)
 
-  exoTo = copy_mesh(fromFileName, toFileName, exoFromObj=exoFrom, array_type=array_type)
+  exoTo = copy_mesh(fromFileName, toFileName, exoFromObj = exoFrom, \
+                    additionalElementAttributes = additionalElementAttributes, \
+                    array_type = array_type)
 
   exoTo = transfer_variables(exoFrom, exoTo, \
       additionalGlobalVariables=additionalGlobalVariables, \
@@ -4867,14 +5068,26 @@ def copyTransfer(fromFileName, toFileName, array_type='ctype', \
   exoFrom.close()
   return exoTo
 
-def ctype_to_numpy(self, c_array):
+def ctype_to_numpy(exo, c_array):
   """
   Converts a c-type array into a numpy array
+    
+    Parameters
+    ----------
+    exo : exodus object
+        exodus database object initialized with the option array_type = 'numpy'
+    c_array : c-type array
+        c-type array to be converted into a numpy array
+        
+    Returns
+    -------
+    np_array : numpy array
+        Numpy array converted from c-type array
   """
   #ctypes currently produce invalid PEP 3118 type codes, which causes numpy
   #to issue a warning.  This is a bug and can be ignored.
   #http://stackoverflow.com/questions/4964101/pep-3118-warning-when-using-ctypes-array-as-numpy-array
-  with self.warnings.catch_warnings():
-    self.warnings.simplefilter('ignore')
-    np_array = self.np.ctypeslib.as_array(c_array)
-  return np_array
+  with exo.warnings.catch_warnings():
+      exo.warnings.simplefilter('ignore')
+      np_array = exo.np.ctypeslib.as_array(c_array)
+  return(np_array)

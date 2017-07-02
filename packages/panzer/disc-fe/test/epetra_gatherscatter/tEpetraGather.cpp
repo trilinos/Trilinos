@@ -49,10 +49,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_GatherSolution_Epetra.hpp"
-
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"

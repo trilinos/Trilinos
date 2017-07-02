@@ -120,11 +120,11 @@ STK_MATH_FORCE_INLINE double abs(const double x) {
 }
 
 STK_MATH_FORCE_INLINE double max(const double x, const double y) {
-  return x > y ? x : y;
+  return y > x ? y : x;
 }
 
 STK_MATH_FORCE_INLINE double min(const double x, const double y) {
-  return x < y ? x : y;
+  return y < x ? y : x;
 }
 
 STK_MATH_FORCE_INLINE bool isnan(const double a) {

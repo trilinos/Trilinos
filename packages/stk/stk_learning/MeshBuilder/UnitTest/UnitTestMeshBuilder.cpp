@@ -659,9 +659,13 @@ TEST(MeshBuilder, 4ProcQuadFillAreaLayers)
         Mesh.end_modification();
 
         if (0 == procRank || 1 == procRank)
+        {
             EXPECT_EQ(8u, Mesh.num_elems());
+        }
         else if (2 == procRank || 3 == procRank)
+        {
             EXPECT_EQ(4u, Mesh.num_elems());
+        }
 
         stk::mesh::EntityIdVector elemIds;
 
@@ -897,9 +901,13 @@ TEST(MeshBuilder, 4ProcHexFillAreaLayers)
         Mesh.end_modification();
 
         if (0 == numProcs || 1 == numProcs)
+        {
             EXPECT_EQ(12u, Mesh.num_elems());
+        }
         else if (2 == numProcs || 3 == numProcs)
+        {
             EXPECT_EQ(6u, Mesh.num_elems());
+        }
 
         stk::mesh::EntityIdVector elemIds;
         if (0 == procRank)
@@ -1001,9 +1009,13 @@ TEST(MeshBuilder, 4ProcQuadRemove)
         Mesh.end_modification();
 
         if (0 == procRank)
+        {
             EXPECT_EQ(3u, Mesh.num_elems());
+        }
         else
+        {
             EXPECT_EQ(4u, Mesh.num_elems());
+        }
 
         Mesh.begin_modification();
         Mesh.remove_element(1, 2);
@@ -1061,9 +1073,13 @@ TEST(MeshBuilder, 4ProcHexRemove)
         stk::mesh::get_entities(Mesh.bulk_data(), stk::topology::ELEM_RANK, elements);
 
         if (0 == procRank)
+        {
             EXPECT_EQ(15u, Mesh.num_elems());
+        }
         else
+        {
             EXPECT_EQ(16u, Mesh.num_elems());
+        }
 
         Mesh.begin_modification();
         Mesh.remove_element(1, 1, 2);
@@ -1118,9 +1134,13 @@ TEST(MeshBuilder, 4ProcQuadRemoveArea)
         Mesh.end_modification();
 
         if (3 == procRank)
+        {
             EXPECT_EQ(4u, Mesh.num_elems());
+        }
         else
+        {
             EXPECT_EQ(1u, Mesh.num_elems());
+        }
     }
 }
 TEST(MeshBuilder, 1ProcHexRemoveArea)

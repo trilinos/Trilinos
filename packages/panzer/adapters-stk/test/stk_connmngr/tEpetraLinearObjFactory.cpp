@@ -56,8 +56,6 @@
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 #ifdef HAVE_MPI

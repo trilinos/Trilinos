@@ -46,6 +46,9 @@
 #include <sstream>
 #include <fstream>
 
+#define TEST_GRID_DIAMETER 1024
+// #define TEST_GRID_DIAMETER 8
+
 namespace std {
 template <typename Ident, typename Proc>
 std::ostream & operator<<(std::ostream & out, std::pair<stk::search::IdentProc<Ident,Proc>,stk::search::IdentProc<Ident,Proc> > const& ip)
@@ -56,6 +59,56 @@ std::ostream & operator<<(std::ostream & out, std::pair<stk::search::IdentProc<I
 
 
 namespace {
+
+const double TestSphereSpacing = 1.0;
+const double TestSphereRadius  = 0.85;
+
+void checkTile3DExpected(const stk::search::experimental::SuperTile3D &tile, double xLen, double yLen, double zLen,
+                         int numXTiles, int numYTiles, int numZTiles) {
+  EXPECT_FLOAT_EQ(xLen, tile.xLen);
+  EXPECT_FLOAT_EQ(yLen, tile.yLen);
+  EXPECT_FLOAT_EQ(zLen, tile.zLen);
+  EXPECT_EQ(numXTiles, tile.numXTiles);
+  EXPECT_EQ(numYTiles, tile.numYTiles);
+  EXPECT_EQ(numZTiles, tile.numZTiles);
+}
+
+TEST(PrototypeGhostingSearch, OptimizeTile3D) {
+
+  stk::search::experimental::SuperTile3D tile_4_1_1 = {4, 1, 1, 1, 1, 1};
+  optimizeTile3D(tile_4_1_1, 4);
+  checkTile3DExpected(tile_4_1_1, 1, 1, 1, 4, 1, 1);
+
+  stk::search::experimental::SuperTile3D tile_1_4_1 = {1, 4, 1, 1, 1, 1};
+  optimizeTile3D(tile_1_4_1, 4);
+  checkTile3DExpected(tile_1_4_1, 1, 1, 1, 1, 4, 1);
+
+  stk::search::experimental::SuperTile3D tile_1_1_4 = {1, 1, 4, 1, 1, 1};
+  optimizeTile3D(tile_1_1_4, 4);
+  checkTile3DExpected(tile_1_1_4, 1, 1, 1, 1, 1, 4);
+
+  stk::search::experimental::SuperTile3D tile_3_4_5 = {3, 4, 5, 1, 1, 1};
+  optimizeTile3D(tile_3_4_5, 60);
+  checkTile3DExpected(tile_3_4_5, 1, 1, 1, 3, 4, 5);
+
+  stk::search::experimental::SuperTile3D tile_6_4_5 = {6, 4, 5, 1, 1, 1};
+  optimizeTile3D(tile_6_4_5, 120);
+  checkTile3DExpected(tile_6_4_5, 1, 1, 1, 6, 4, 5);
+
+  stk::search::experimental::SuperTile3D tile_3_4_2 = {3, 4, 2, 1, 1, 1};
+  optimizeTile3D(tile_3_4_2, 24);
+  checkTile3DExpected(tile_3_4_2, 1, 1, 1, 3, 4, 2);
+}
+
+
+TEST(PrototypeGhostingSearch, findGhostingRegionResidents)
+{
+//  const stk::ParallelMachine comm = MPI_COMM_WORLD;
+//  const int p_rank = stk::parallel_machine_rank(comm);
+//  const int p_size = stk::parallel_machine_size(comm);
+
+
+}
 
 
 void testGhostingSearchLinearAdjacentCase(stk::search::SearchMethod searchMethod,
@@ -256,19 +309,28 @@ enum GhostingSearchScalableTestType {
 
 void setupProblemForSinglePlateGhostingSearchScalingTest(int xDim, int yDim,
                                                       SphereVector &source_bbox_vector,
-                                                      Tiling2D &tiling)
+                                                      Tiling2D &tiling,
+                                                      Point offset = Point(),
+                                                      int idOffset = 0)
 {
   const stk::ParallelMachine comm = MPI_COMM_WORLD;
   const int p_rank = stk::parallel_machine_rank(comm);
   const int p_size = stk::parallel_machine_size(comm);
 
-  const double spacing = 1.1;
-  const double sphereRadius = 1.0;
+  const double spacing      = TestSphereSpacing;
+  const double sphereRadius = TestSphereRadius;
 
   tiling = computeTileSizeForPow2Ranks(xDim, yDim, p_size);
-  const int myFirstGid  = p_size * tiling.tileXSize * tiling.tileYSize;
-  double myFirstX       = p_rank / tiling.yCount * tiling.tileXSize * spacing;
-  double myFirstY       = p_rank % tiling.yCount * tiling.tileYSize * spacing;
+  const int myFirstGid  = p_size * tiling.tileXSize * tiling.tileYSize + idOffset;
+  double myFirstX       = p_rank / tiling.yCount * tiling.tileXSize * spacing + offset[0];
+  double myFirstY       = p_rank % tiling.yCount * tiling.tileYSize * spacing + offset[1];
+
+  // if ((p_rank == 0) || (p_rank == 63)) {
+  //   std::cout << "p_" << p_rank << ": tiling xCount=" << tiling.xCount << " yCount=" << tiling.xCount
+  //             << "   LL sph ctr_xy is (" << myFirstX << " " << myFirstY
+  //             << ")  UR sph ctr_xy is (" << (myFirstX + spacing * (tiling.tileXSize - 1))
+  //             << " " << (myFirstY + spacing * (tiling.tileYSize - 1)) << ")" << std::endl;
+  // }
 
   int global_id = myFirstGid;
   for (int i = 0; i < tiling.tileXSize; ++i) {
@@ -290,6 +352,20 @@ void printGhostingSearchTestTiming(
     double totalTime, int numLoops, const int p_size, int xDim, int yDim,
     const Tiling2D& tiling,
     stk::search::instrumented::GhostingSearchTimeBreakdown timeBreakdown) {
+  double avgTime = totalTime / numLoops;
+  std::cout << "Average ghosting search time measured on rank 0 of " << p_size
+            << " ranks is " << avgTime << " through " << numLoops
+            << " loops on problem size " << xDim << "x" << yDim << " with "
+            << tiling.tileXSize << "x" << tiling.tileYSize << " domains"
+            << std::endl;
+  std::cout << "Accumulated splits:" << std::endl;
+  timeBreakdown.streamit(std::cout);
+}
+
+void printGhostingSearchTestTiming(
+    double totalTime, int numLoops, const int p_size, int xDim, int yDim,
+    const Tiling2D& tiling,
+    stk::search::experimental::GhostingSearchTimeBreakdown timeBreakdown) {
   double avgTime = totalTime / numLoops;
   std::cout << "Average ghosting search time measured on rank 0 of " << p_size
             << " ranks is " << avgTime << " through " << numLoops
@@ -331,7 +407,9 @@ int computeExpectedTwoPlateRangeGhostIdentifiersSize(const Tiling2D &tiling, con
 
 void setupProblemForTwoPlateGhostingSearchScalingTest(int xDim, int yDim,
                                                       SphereVector &source_bbox_vector,
-                                                      Tiling2D &tiling)
+                                                      Tiling2D &tiling,
+                                                      Point offset = Point(),
+                                                      int idOffset = 0)
 {
   const stk::ParallelMachine comm = MPI_COMM_WORLD;
   const int p_rank = stk::parallel_machine_rank(comm);
@@ -339,21 +417,21 @@ void setupProblemForTwoPlateGhostingSearchScalingTest(int xDim, int yDim,
 
   if (p_size < 2) {
     std::cout << "Trivial pass!  testGhostingTwoPlateSearchStrongScalable(.) requires # of MPI ranks >= 2"
-              << " and to be an odd power of 2, i.e., 2, 8, 32,..." << std::endl;
+              << std::endl;
     return;
   }
 
   const int pRankDiv2 = p_rank / 2;
   const int pSizeDiv2 = p_size / 2;
 
-  const double spacing = 1.1;
-  const double sphereRadius  = 1.0;
+  const double spacing       = TestSphereSpacing;
+  const double sphereRadius  = TestSphereRadius;
 
   tiling = computeTileSizeForPow2Ranks(xDim, yDim, pSizeDiv2);
-  const int myFirstGid  = p_size * tiling.tileXSize * tiling.tileYSize;
-  double myFirstX       = pRankDiv2 / tiling.yCount * tiling.tileXSize * spacing;
-  double myFirstY       = pRankDiv2 % tiling.yCount * tiling.tileYSize * spacing;
-  double myZ            = spacing * (p_rank % 2);
+  const int myFirstGid  = p_size * tiling.tileXSize * tiling.tileYSize + idOffset;
+  double myFirstX       = pRankDiv2 / tiling.yCount * tiling.tileXSize * spacing + offset[0];
+  double myFirstY       = pRankDiv2 % tiling.yCount * tiling.tileYSize * spacing + offset[1];
+  double myZ            = spacing * (p_rank % 2) + offset[2];
 
   int global_id = myFirstGid;
   for (int i = 0; i < tiling.tileXSize; ++i) {
@@ -371,7 +449,7 @@ void setupProblemForTwoPlateGhostingSearchScalingTest(int xDim, int yDim,
   }
 }
 
-void testGhostingSearchStrongScalable(GhostingSearchScalableTestType testType,
+void testGhostingSearchFindRangeStrongScalable(GhostingSearchScalableTestType testType,
                                       stk::search::SearchMethod searchMethod,
                                       int xDim, int yDim,
                                       int numLoops = 1)
@@ -428,20 +506,21 @@ void testGhostingSearchStrongScalable(GhostingSearchScalableTestType testType,
     }
 }
 
-TEST(InstrumentedGhostingSearch, StrongScalable_KDTREE)
+TEST(InstrumentedGhostingSearch, FindRangeStrongScalable_KDTREE)
 {
-  testGhostingSearchStrongScalable(SINGLE_PLATE_TEST, stk::search::KDTREE, 1024, 1024);
+  testGhostingSearchFindRangeStrongScalable(SINGLE_PLATE_TEST, stk::search::KDTREE, TEST_GRID_DIAMETER, TEST_GRID_DIAMETER);
 }
 
 
-TEST(InstrumentedGhostingSearch, TwoPlateStrongScalable_KDTREE)
+TEST(InstrumentedGhostingSearch, TwoPlateFindRangeStrongScalable_KDTREE)
 {
-  testGhostingSearchStrongScalable(TWO_PLATE_TEST, stk::search::KDTREE, 1024, 1024);
+  testGhostingSearchFindRangeStrongScalable(TWO_PLATE_TEST, stk::search::KDTREE, TEST_GRID_DIAMETER, TEST_GRID_DIAMETER);
 }
 
-void testPrototypeGhostingSearchStrongScalable(GhostingSearchScalableTestType testType,
+void testPrototypeGhostingSearchFindRangeStrongScalable(GhostingSearchScalableTestType testType,
                                                stk::search::SearchMethod searchMethod,
                                                int xDim, int yDim,
+                                               stk::search::experimental::FindNeighborsAlgorithmChoice findNeighborsAlg,
                                                int numLoops = 1)
 {
     const stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -462,7 +541,7 @@ void testPrototypeGhostingSearchStrongScalable(GhostingSearchScalableTestType te
     std::vector<Ident> rangeGhostIdentifiers;
 
     stk::search::SplitTimer timer;
-    stk::search::instrumented::GhostingSearchTimeBreakdown timeBreakdown;
+    stk::search::experimental::GhostingSearchTimeBreakdown timeBreakdown;
     timeBreakdown.reset();
 
     stk::search::experimental::GhostingSearcher<Ident, Ident, Sphere, Sphere>
@@ -476,7 +555,7 @@ void testPrototypeGhostingSearchStrongScalable(GhostingSearchScalableTestType te
       rangeGhostIdentifiers.clear();
       timer.split();
       ghostSearcher.searchFromScratch(source_bbox_vector, source_bbox_vector,
-                                      rangeBoxes, rangeGhostIdentifiers,timeBreakdown);
+                                      rangeBoxes, rangeGhostIdentifiers, timeBreakdown, findNeighborsAlg);
       totalTime += timer.split();
       if (lastLoop) {
         if (pSize == 1) {
@@ -499,15 +578,159 @@ void testPrototypeGhostingSearchStrongScalable(GhostingSearchScalableTestType te
     }
 }
 
-TEST(PrototypeGhostingSearch, StrongScalable_KDTREE)
+TEST(PrototypeGhostingSearch, FindRangeStrongScalable_KDTREE)
 {
-  testPrototypeGhostingSearchStrongScalable(SINGLE_PLATE_TEST, stk::search::KDTREE, 1024, 1024);
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeStrongScalable(SINGLE_PLATE_TEST, stk::search::KDTREE,
+                                                     TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                     SCALABLE_FIND_NEIGHBORS);
+}
+
+TEST(PrototypeGhostingSearch, TwoPlateFindFangeStrongScalable_KDTREE)
+{
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeStrongScalable(TWO_PLATE_TEST, stk::search::KDTREE,
+                                                     TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                     SCALABLE_FIND_NEIGHBORS);
+}
+
+TEST(PrototypeGhostingSearch, FindRangeStrongScalableUseDDRobust_KDTREE)
+{
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeStrongScalable(SINGLE_PLATE_TEST, stk::search::KDTREE,
+                                                     TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                     SCALABLE_AND_DISCONTINUOUS_DECOMP_ROBUST_FIND_NEIGHBORS);
+}
+
+TEST(PrototypeGhostingSearch, TwoPlateFindFangeStrongScalableUseDDRobust_KDTREE)
+{
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeStrongScalable(TWO_PLATE_TEST, stk::search::KDTREE,
+                                                     TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                     SCALABLE_AND_DISCONTINUOUS_DECOMP_ROBUST_FIND_NEIGHBORS);
 }
 
 
-TEST(PrototypeGhostingSearch, TwoPlateStrongScalable_KDTREE)
+void testPrototypeGhostingSearchFindRangeDecompRobust(GhostingSearchScalableTestType testType,
+                                                          stk::search::SearchMethod searchMethod,
+                                                          int xDim, int yDim,
+                                                          stk::search::experimental::FindNeighborsAlgorithmChoice findNeighborsAlg,
+                                                          int numLoops = 1)
 {
-  testPrototypeGhostingSearchStrongScalable(TWO_PLATE_TEST, stk::search::KDTREE, 1024, 1024);
+    const stk::ParallelMachine comm = MPI_COMM_WORLD;
+    const int pRank = stk::parallel_machine_rank(comm);
+    const int pSize = stk::parallel_machine_size(comm);
+    const int pRankDiv2 = pRank / 2;
+
+    if (pSize <= 8) {
+      if (pRank == 0) {
+        std::cout << "p_0:  Test body skipped (all ranks): > 8 mpi ranks required for real test." << std::endl;
+      }
+      return;
+    }
+
+    const Point cloneOffset(xDim * TestSphereSpacing + 10, yDim + 10, 0.0);
+    const int   cloneIdOffset = 2 * xDim * yDim + 1000000;
+
+    SphereVector source_bbox_vector;
+    Tiling2D tiling = {0, 0, 0, 0};
+    if (testType == SINGLE_PLATE_TEST) {
+      setupProblemForSinglePlateGhostingSearchScalingTest(xDim, yDim, source_bbox_vector, tiling);
+      setupProblemForSinglePlateGhostingSearchScalingTest(xDim, yDim, source_bbox_vector, tiling,
+                                                          cloneOffset, cloneIdOffset);
+    }
+    else if (testType == TWO_PLATE_TEST) {
+      setupProblemForTwoPlateGhostingSearchScalingTest(xDim, yDim, source_bbox_vector, tiling);
+      setupProblemForTwoPlateGhostingSearchScalingTest(xDim, yDim, source_bbox_vector, tiling,
+                                                       cloneOffset, cloneIdOffset);
+    }
+
+    std::vector<Sphere> rangeBoxes( source_bbox_vector.size() );
+    std::vector<Ident> rangeGhostIdentifiers;
+
+    stk::search::SplitTimer timer;
+    stk::search::experimental::GhostingSearchTimeBreakdown timeBreakdown;
+    timeBreakdown.reset();
+
+    stk::search::experimental::GhostingSearcher<Ident, Ident, Sphere, Sphere>
+      ghostSearcher(source_bbox_vector, source_bbox_vector,
+                    rangeBoxes, rangeGhostIdentifiers, comm, timeBreakdown);
+
+    double totalTime = 0;
+
+    for (int count = 0; count < numLoops; ++count) {
+      const bool lastLoop = (count + 1 == numLoops);
+      rangeGhostIdentifiers.clear();
+      timer.split();
+      ghostSearcher.searchFromScratch(source_bbox_vector, source_bbox_vector,
+                                      rangeBoxes, rangeGhostIdentifiers,timeBreakdown, findNeighborsAlg);
+      totalTime += timer.split();
+      if (lastLoop) {
+        if (pSize == 1) {
+          EXPECT_EQ(0, static_cast<int>(rangeGhostIdentifiers.size()));
+        }
+        else {
+          int expectedSize = 0;
+          if (testType == SINGLE_PLATE_TEST) {
+            expectedSize = 2 * computeExpectedRangeGhostIdentifiersSize(tiling, pRank);
+          }
+          else if (testType == TWO_PLATE_TEST) {
+            expectedSize = 2 * computeExpectedTwoPlateRangeGhostIdentifiersSize(tiling, pRankDiv2);
+          }
+          if (findNeighborsAlg == stk::search::experimental::SCALABLE_AND_DISCONTINUOUS_DECOMP_ROBUST_FIND_NEIGHBORS) {
+            EXPECT_EQ(expectedSize, static_cast<int>(rangeGhostIdentifiers.size()));
+          }
+          else { // Verify that non-robust algorithm finds more neighbors than necessary.
+            EXPECT_LT(expectedSize, static_cast<int>(rangeGhostIdentifiers.size()));
+          }
+        }
+      }
+    }
+    if (pRank == 0) {
+      printGhostingSearchTestTiming(totalTime, numLoops, pSize, xDim, yDim, tiling, timeBreakdown);
+    }
+}
+
+TEST(PrototypeGhostingSearch, FindRangeDecompRobust_KDTREE)
+{
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeDecompRobust(SINGLE_PLATE_TEST, stk::search::KDTREE, TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                   SCALABLE_AND_DISCONTINUOUS_DECOMP_ROBUST_FIND_NEIGHBORS);
+}
+
+TEST(PrototypeGhostingSearch, TwoPlateFindRangeDecompRobust_KDTREE)
+{
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeDecompRobust(TWO_PLATE_TEST, stk::search::KDTREE, TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                   SCALABLE_AND_DISCONTINUOUS_DECOMP_ROBUST_FIND_NEIGHBORS);
+}
+
+TEST(PrototypeGhostingSearch, FindRangeNonDecompRobustFindsMoreNeighbors_KDTREE)
+{
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeDecompRobust(SINGLE_PLATE_TEST, stk::search::KDTREE, TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                   SCALABLE_FIND_NEIGHBORS);
+}
+
+TEST(PrototypeGhostingSearch, TwoPlateFindRangeNonDecompRobustFindsMoreNeighbors_KDTREE)
+{
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeDecompRobust(TWO_PLATE_TEST, stk::search::KDTREE, TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                   SCALABLE_FIND_NEIGHBORS);
+}
+
+TEST(PrototypeGhostingSearch, FindRangeNonDecompRobustFindsMoreNeighborsOrigAlg_KDTREE)
+{
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeDecompRobust(SINGLE_PLATE_TEST, stk::search::KDTREE, TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                   ORIGINAL_FIND_NEIGHBORS);
+}
+
+TEST(PrototypeGhostingSearch, TwoPlateFindRangeNonDecompRobustFindsMoreNeighborsOrigAlg_KDTREE)
+{
+  using namespace stk::search::experimental;
+  testPrototypeGhostingSearchFindRangeDecompRobust(TWO_PLATE_TEST, stk::search::KDTREE, TEST_GRID_DIAMETER, TEST_GRID_DIAMETER,
+                                                   ORIGINAL_FIND_NEIGHBORS);
 }
 
 }

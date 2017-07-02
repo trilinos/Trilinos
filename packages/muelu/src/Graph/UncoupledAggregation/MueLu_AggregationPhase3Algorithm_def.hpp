@@ -124,13 +124,13 @@ namespace MueLu {
            // Assign to an adjacent aggregate
            vertex2AggId[i] = vertex2AggId[neighOfINode[j]];
          } else if (error_on_isolated) {
-	   // Error on this isolated node, as the user has requested
-	   std::ostringstream oss;
-	   oss<<"MueLu::AggregationPhase3Algorithm::BuildAggregates: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). "<<std::endl;
-	   oss<<"If this error is being generated at level 0, this is due to an initial partitioning problem in your matrix."<<std::endl;
-	   oss<<"If this error is being generated at any other level, try turning on repartitioning, which may fix this problem."<<std::endl;
-	   throw Exceptions::RuntimeError(oss.str());
-	 } else {
+           // Error on this isolated node, as the user has requested
+           std::ostringstream oss;
+           oss<<"MueLu::AggregationPhase3Algorithm::BuildAggregates: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). "<<std::endl;
+           oss<<"If this error is being generated at level 0, this is due to an initial partitioning problem in your matrix."<<std::endl;
+           oss<<"If this error is being generated at any other level, try turning on repartitioning, which may fix this problem."<<std::endl;
+           throw Exceptions::RuntimeError(oss.str());
+         } else {
            // Create new aggregate (singleton)
            this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
 

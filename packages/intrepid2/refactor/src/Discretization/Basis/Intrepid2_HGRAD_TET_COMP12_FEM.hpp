@@ -101,7 +101,7 @@ namespace Intrepid2 {
 
     class Basis_HGRAD_TET_COMP12_FEM {
     public:
-      
+      typedef struct Tetrahedron<4> cell_topology_type;
       template<typename pointValueType>
       KOKKOS_INLINE_FUNCTION
       static ordinal_type

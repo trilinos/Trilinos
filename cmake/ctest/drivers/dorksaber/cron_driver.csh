@@ -16,8 +16,6 @@ setenv TDD_PARALLEL_LEVEL 2
 # Submission mode for the *TrilinosDriver* dashboard
 setenv TDD_CTEST_TEST_TYPE Nightly
 
-#export CTEST_DO_SUBMIT=FALSE
-#export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
 
 # Machine specific environment
 #
@@ -28,13 +26,8 @@ setenv TDD_FORCE_CMAKE_INSTALL 1
 
 source ~/.cshrc
 
-module load gcc/4.7.2
-
 # Get a new git further up in the path
 setenv PATH "/usr/local/bin":"$PATH"
-
-# Matlab goodies
-setenv LD_PRELOAD "/usr/local/gcc/gcc-4.7.2/lib64/libstdc++.so.6 /usr/local/gcc/gcc-4.7.2/lib64/libgcc_s.so.1 /usr/local/gcc/gcc-4.7.2/lib64/libgfortran.so.3"
 
 env
 

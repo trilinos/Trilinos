@@ -67,12 +67,15 @@ namespace {
     size_t center;
     center = ((ssize_t)left + (ssize_t)right) / 2;
 
-    if (v[iv[left]] > v[iv[center]])
+    if (v[iv[left]] > v[iv[center]]) {
       ex_swap(iv, left, center);
-    if (v[iv[left]] > v[iv[right]])
+    }
+    if (v[iv[left]] > v[iv[right]]) {
       ex_swap(iv, left, right);
-    if (v[iv[center]] > v[iv[right]])
+    }
+    if (v[iv[center]] > v[iv[right]]) {
       ex_swap(iv, center, right);
+    }
 
     ex_swap(iv, center, right - 1);
     return iv[right - 1];
@@ -89,10 +92,12 @@ namespace {
       j     = right - 1;
 
       for (;;) {
-        while (v[iv[++i]] < v[pivot])
+        while (v[iv[++i]] < v[pivot]) {
           ;
-        while (v[iv[--j]] > v[pivot])
+        }
+        while (v[iv[--j]] > v[pivot]) {
           ;
+        }
         if (i < j) {
           ex_swap(iv, i, j);
         }
@@ -112,8 +117,9 @@ namespace {
     size_t ndx = 0;
     size_t j;
 
-    if (N == 0)
+    if (N == 0) {
       return;
+    }
 
     double small = v[iv[0]];
     for (size_t i = 1; i < N; i++) {
@@ -136,8 +142,9 @@ namespace {
 
   template <typename T, typename INT> void ex_iqsort(T *v, INT iv[], size_t N)
   {
-    if (N <= 1)
+    if (N <= 1) {
       return;
+    }
 
     ex_int_iqsort(v, iv, 0, N - 1);
     ex_int_iisort(v, iv, N);
@@ -158,16 +165,18 @@ void index_coord_sort(const std::vector<double> &xyz, std::vector<INT> &index, i
   // For now, let's extract the component we want to sort on into a separate vector.
   std::vector<double> comp(xyz.size() / 3);
   size_t              j = 0;
-  for (size_t i = axis; i < xyz.size(); i += 3)
-    comp[j++]   = xyz[i];
+  for (size_t i = axis; i < xyz.size(); i += 3) {
+    comp[j++] = xyz[i];
+  }
   ex_iqsort(&comp[0], &index[0], index.size());
 }
 
 template <typename INT> void index_sort(const std::vector<INT> &ids, std::vector<INT> &index)
 {
   index.resize(ids.size());
-  for (size_t i = 0; i < index.size(); i++)
-    index[i]    = i;
+  for (size_t i = 0; i < index.size(); i++) {
+    index[i] = i;
+  }
 
   ex_iqsort(&ids[0], &index[0], index.size());
 }

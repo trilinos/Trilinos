@@ -1,5 +1,6 @@
 #
-# Purge the modules and load the standard Trilinos SEMS develoment environment
+# Purge the modules and load the standard Trilinos SEMS development
+# environment
 #
 # USAGE:
 #
@@ -9,20 +10,20 @@
 # where:
 #
 #   <compiler-and-version> is the SEMS module name for the compiler and
-#   version, e.g. sems-gcc/4.8.4.  To use the default just pass in "default"
+#   version, e.g. 'sems-gcc/4.8.4'.  To use the default just pass in "default"
 #   (see the default listed below).
 #
 #   <mpi-and-version> is the SEMS module name for the MPI implementation and
-#   version, e.g. sems-openmpi/1.8.7.  To use the default just pass in
+#   version, e.g. 'sems-openmpi/1.6.5'.  To use the default just pass in
 #   "default" (see the default listed below).
 #
 #   <cmake-and-version> is the SEMS module name for the CMake and its version,
-#   e.g. sems-cmake/3.5.2.  To use the default just pass in "default" (see the
-#   default listed below).
+#   e.g. 'sems-cmake/3.5.2'.  To use the default just pass in "default" (see
+#   the default listed below).
 #
-# Once sourced, this script also laods the SEMS modules for all of the TPLs
-# and tools that Trilinos can use that are provided by SEMS (see below for for
-# the list of TPLs that get loaded).
+# Once sourced, this script also loads the SEMS modules for all of the TPLs
+# and tools that Trilinos can use that are provided by SEMS (see below for the
+# list of TPLs that get loaded).
 #
 # One can use the defaults with just:
 #
@@ -60,10 +61,7 @@
 #
 # NOTE: After sourcing this script one can safely unload the current modules
 # and load different modules for CMake, git, and Python since these are just
-# tools that don't depend on the selected compiler or MPI.  Also, one can
-# unload the default Boost module and load a different version since Boost
-# does not depend on the MPI implementation and no other loaded TPLs depend on
-# Boost.
+# tools that don't depend on the selected compiler or MPI.
 #
 
 # Get the base dir for the sourced script
@@ -72,6 +70,11 @@ called=$_
 #echo "\$BASH_SOURCE ${BASH_SOURCE[@]}"
 _SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 #echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
+
+if [ "$4" != "" ] ; then
+  echo "ERROR, the source script 'load_sems_dev_env.sh' does not take more than 3 args! (Remove '$4' ...)"
+  return 1
+fi
 
 source $_SCRIPT_DIR/std/sems/get_default_modules.sh
 

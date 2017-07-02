@@ -45,10 +45,8 @@
 
 #include <vector>
 #include <string>
-
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
+#include "Phalanx_MDField.hpp"
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {

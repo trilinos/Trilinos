@@ -150,8 +150,8 @@ namespace MueLuTests {
     fineLevel.Set("Coordinates",coordinates);
 
     // DofPresent for VariableDofLaplacianFactory
-    Teuchos::ArrayRCP<const bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
-    fineLevel.Set<Teuchos::ArrayRCP<const bool> >("DofPresent", dofPresent);
+    Teuchos::ArrayRCP<bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
+    fineLevel.Set<Teuchos::ArrayRCP<bool> >("DofPresent", dofPresent);
     // DofStatus for UnsmooshFactory
     Teuchos::Array<char> dofStatus = Teuchos::Array<char>(A->getRangeMap()->getNodeNumElements() * maxDofPerNode,'s');
     fineLevel.Set("DofStatus", dofStatus);

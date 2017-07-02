@@ -135,13 +135,6 @@ public:
     if (debug) {
       const size_t numRowsToPack = static_cast<size_t> (lclRowInds_.dimension_0 ());
 
-      if (static_cast<size_t> (numRowsToPack + 1) != static_cast<size_t> (rowOffsets_.dimension_0 ())) {
-        std::ostringstream os;
-        os << "lclRowInds.dimension_0() + 1 = " << (numRowsToPack + 1)
-           << " != rowOffsets.dimension_0() = " << rowOffsets_.dimension_0 ()
-           << ".";
-        throw std::invalid_argument (os.str ());
-      }
       if (numRowsToPack != static_cast<size_t> (counts_.dimension_0 ())) {
         std::ostringstream os;
         os << "lclRowInds.dimension_0() = " << numRowsToPack
@@ -183,12 +176,10 @@ public:
 
     if (curInd < static_cast<local_row_index_type> (counts_.dimension_0 ())) {
       const auto lclRow = lclRowInds_(curInd);
-      if (debug) {
-        if (static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (rowOffsets_.dimension_0 ()) ||
-            static_cast<local_row_index_type> (lclRow) < static_cast<local_row_index_type> (0)) {
-          error_ () = 3;
-          return;
-        }
+      if (static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (rowOffsets_.dimension_0 ()) ||
+          static_cast<local_row_index_type> (lclRow) < static_cast<local_row_index_type> (0)) {
+        error_ () = 3;
+        return;
       }
       // count_type could differ from the type of each row offset.
       // For example, row offsets might each be 64 bits, but if their
@@ -211,19 +202,9 @@ public:
     }
   }
 
-  //! Set the initial value of the reduction result.
-  KOKKOS_INLINE_FUNCTION void init (output_offset_type& dst) const
-  {
-    dst = static_cast<output_offset_type> (0);
-  }
-
-  //! Combine intermedate reduction results across threads.
-  KOKKOS_INLINE_FUNCTION void
-  join (volatile output_offset_type& dst,
-        const volatile output_offset_type& src) const
-  {
-    dst += src;
-  }
+  // mfh 31 May 2017: Don't need init or join.  If you have join, MUST
+  // have join both with and without volatile!  Otherwise intrawarp
+  // joins are really slow on GPUs.
 
   //! Host function for getting the error.
   int getError () const {

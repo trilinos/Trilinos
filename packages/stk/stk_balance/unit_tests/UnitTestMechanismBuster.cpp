@@ -52,7 +52,9 @@ TEST_F(MechanismMesh2x2, detection_with_aura)
         stk::io::write_mesh("before_junk.g", get_bulk());
         stk::balance::GraphCreationSettings graphSettings;
         if(graphSettings.shouldFixMechanisms())
+        {
             EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
+        }
         stk::io::write_mesh("after_junk.g", get_bulk());
     }
 }
@@ -65,7 +67,9 @@ TEST_F(MechanismMesh2x2, detection_without_aura)
         stk::io::write_mesh("junk.g", get_bulk());
         stk::balance::GraphCreationSettings graphSettings;
         if(graphSettings.shouldFixMechanisms())
+        {
             EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
+        }
     }
 }
 
@@ -146,7 +150,9 @@ TEST_F(LotsOfComponentsMesh, detection_with_aura)
         stk::io::write_mesh("before_junk.g", get_bulk());
         stk::balance::GraphCreationSettings graphSettings;
         if(graphSettings.shouldFixMechanisms())
+        {
             EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
+        }
         stk::io::write_mesh("after_junk.g", get_bulk());
     }
 }
@@ -159,7 +165,9 @@ TEST_F(LotsOfComponentsMesh, detection_without_aura)
         stk::io::write_mesh("junk.g", get_bulk());
         stk::balance::GraphCreationSettings graphSettings;
         if(graphSettings.shouldFixMechanisms())
+        {
             EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
+        }
     }
 }
 
@@ -198,7 +206,9 @@ TEST_F(GlobalMeshWithMechanism, detection_with_aura)
         stk::io::write_mesh("junk.g", get_bulk());
         stk::balance::GraphCreationSettings graphSettings;
         if(graphSettings.shouldFixMechanisms())
+        {
             EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
+        }
     }
 }
 
@@ -210,7 +220,9 @@ TEST_F(GlobalMeshWithMechanism, detection_without_aura)
         stk::io::write_mesh("junk.g", get_bulk());
         stk::balance::GraphCreationSettings graphSettings;
         if(graphSettings.shouldFixMechanisms())
+        {
             EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
+        }
     }
 }
 

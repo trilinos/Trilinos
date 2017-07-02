@@ -266,6 +266,21 @@ class TribitsDependencies:
     # packages because subpackages are listed before packages!
 
 
+  def getPackageNameFromTestName(self, testName):
+    for packageDep in self.__packagesList:
+      startTestName = packageDep.packageName+"_"
+      #print("\nstartTestName="+startTestName)
+      testNameStartIdx = testName.find(startTestName, 0)
+      if testNameStartIdx == 0:
+        #print("MATCH!")
+        if packageDep.parentPackage:
+          #print("Subpackage match!")
+          return self.getPackageByName(packageDep.parentPackage).packageName
+        # Else, is not a subpackage
+        return packageDep.packageName
+    return u""
+
+
   def filterPackageNameList(self, inputPackagesList, keepTypesList, verbose=False):
     i = 0
     outputPackagesList = []

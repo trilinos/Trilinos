@@ -39,7 +39,6 @@
 
 #include <EP_Internals.h>
 #include <EP_ParallelDisks.h>
-#include <to_string.h>
 
 #ifdef _WIN32
 #include <Shlwapi.h>
@@ -49,7 +48,7 @@
 Excn::ParallelDisks::ParallelDisks() : number_of_raids(0), raid_offset(0) {}
 
 /*****************************************************************************/
-Excn::ParallelDisks::~ParallelDisks() {}
+Excn::ParallelDisks::~ParallelDisks() = default;
 
 /*****************************************************************************/
 void Excn::ParallelDisks::Number_of_Raids(int i)
@@ -80,7 +79,7 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   // Possible to have node layout without parallel disks
 
   std::string prepend;
-  if (rootdir.length()) {
+  if (rootdir.length() != 0u) {
     prepend = rootdir + "/";
   }
   else if (Excn::is_path_absolute(name)) {
@@ -91,14 +90,14 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   }
 
   int lnn = node;
-  if (number_of_raids) {
+  if (number_of_raids != 0) {
     int diskn = lnn % number_of_raids;
     Create_IO_Filename(name, lnn, numproc);
     name = disk_names[diskn] + "/" + subdir + "/" + name;
   }
   else {
     Create_IO_Filename(name, lnn, numproc);
-    if (subdir.length()) {
+    if (subdir.length() != 0u) {
       name = subdir + "/" + name;
     }
   }
@@ -110,21 +109,22 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
 void Excn::ParallelDisks::create_disk_names()
 {
 
-  if (!number_of_raids)
+  if (number_of_raids == 0) {
     return;
+  }
 
   disk_names.resize(number_of_raids);
   for (int i = 0; i < number_of_raids; i++) {
     int num = i + raid_offset;
     if (num < 10) {
 #ifdef COUGAR
-      disk_names[i] = to_string(num);
+      disk_names[i] = std::to_string(num);
 #else
-      disk_names[i] = "0" + to_string(num);
+      disk_names[i] = "0" + std::to_string(num);
 #endif
     }
     else {
-      disk_names[i] = to_string(num);
+      disk_names[i] = std::to_string(num);
     }
   }
 }
@@ -139,11 +139,11 @@ void Excn::ParallelDisks::Create_IO_Filename(std::string &name, int processor, i
   // Examples: basename.8.1, basename.64.03, basename.128.001
 
   // Create a std::string containing the total number of processors
-  std::string num_proc   = to_string(num_processors);
+  std::string num_proc   = std::to_string(num_processors);
   size_t      proc_width = num_proc.length();
 
   // Create a std::string containing the current processor number
-  std::string cur_proc  = to_string(processor);
+  std::string cur_proc  = std::to_string(processor);
   size_t      cur_width = cur_proc.length();
 
   // Build the filename

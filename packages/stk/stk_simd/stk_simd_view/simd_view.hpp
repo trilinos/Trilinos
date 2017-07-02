@@ -150,8 +150,8 @@ class View
   typedef typename ViewTraits<DataType,Prop...>::ExecutionSpace execution_space;
   typedef typename ViewTraits<DataType,Prop...>::MemoryTraits memory_traits;
 
-  typedef typename Kokkos::Experimental::View< DataType, array_layout, execution_space, memory_traits >::traits traits;
-  typedef typename Kokkos::Experimental::View< DataType, array_layout, execution_space, memory_traits >::reference_type reference_type;
+  typedef typename Kokkos::View< DataType, array_layout, execution_space, memory_traits >::traits traits;
+  typedef typename Kokkos::View< DataType, array_layout, execution_space, memory_traits >::reference_type reference_type;
 
   typedef typename stk::SimdT<reference_type>::type simd_reference_type;
 

@@ -37,8 +37,8 @@
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
 #include <cassert>
+#include <cstddef>
 #include <iostream>
-#include <stddef.h>
 #include <string>
 #include <vector>
 
@@ -48,12 +48,6 @@
 #include "Ioss_FieldManager.h"
 #include "Ioss_PropertyManager.h"
 #include "Ioss_State.h"
-
-Ioss::GroupingEntity::GroupingEntity()
-    : entityCount(0), entityName("invalid"), database_(nullptr), entityState(STATE_CLOSED),
-      attributeCount(0), hash_(0)
-{
-}
 
 /** \brief Base class constructor adds "name" and "entity_count" properties to the entity.
  *
@@ -65,7 +59,7 @@ Ioss::GroupingEntity::GroupingEntity()
 Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database, const std::string &my_name,
                                      int64_t entity_count)
     : entityCount(entity_count), entityName(my_name), database_(io_database),
-      entityState(STATE_CLOSED), attributeCount(0), hash_(Ioss::Utils::hash(my_name))
+      hash_(Ioss::Utils::hash(my_name))
 {
   properties.add(Ioss::Property("name", my_name));
 
@@ -221,6 +215,7 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
 int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *data,
                                          size_t data_size) const
 {
+  IOSS_FUNC_ENTER(m_);
   verify_field_exists(field_name, "input");
 
   Ioss::Field field  = get_field(field_name);
@@ -245,6 +240,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *da
 int Ioss::GroupingEntity::put_field_data(const std::string &field_name, void *data,
                                          size_t data_size) const
 {
+  IOSS_FUNC_ENTER(m_);
   verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
@@ -260,6 +256,7 @@ int Ioss::GroupingEntity::put_field_data(const std::string &field_name, void *da
  */
 size_t Ioss::GroupingEntity::field_count(Ioss::Field::RoleType role) const
 {
+  IOSS_FUNC_ENTER(m_);
   Ioss::NameList names;
   fields.describe(role, &names);
   return names.size();
@@ -277,13 +274,15 @@ void Ioss::GroupingEntity::count_attributes() const
   field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
 
   Ioss::NameList::const_iterator IF;
+  int64_t                        attribute_count = 0;
   for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
     std::string field_name = *IF;
     if (field_name != "attribute" || (field_name == "attribute" && results_fields.size() == 1)) {
       Ioss::Field field = get_field(field_name);
-      attributeCount += field.raw_storage()->component_count();
+      attribute_count += field.raw_storage()->component_count();
     }
   }
+  attributeCount = attribute_count;
 }
 
 void Ioss::GroupingEntity::verify_field_exists(const std::string &field_name,
@@ -296,5 +295,20 @@ void Ioss::GroupingEntity::verify_field_exists(const std::string &field_name,
            << "' does not exist for " << inout << " on " << type_string() << " " << name()
            << "\n\n";
     IOSS_ERROR(errmsg);
+  }
+}
+
+void Ioss::GroupingEntity::property_update(const std::string &property, int64_t value) const
+{
+  if (property_exists(property)) {
+    if (get_property(property).get_int() != value) {
+      auto *nge = const_cast<Ioss::GroupingEntity *>(this);
+      nge->property_erase(property);
+      nge->property_add(Ioss::Property(property, value));
+    }
+  }
+  else {
+    auto *nge = const_cast<Ioss::GroupingEntity *>(this);
+    nge->property_add(Ioss::Property(property, value));
   }
 }

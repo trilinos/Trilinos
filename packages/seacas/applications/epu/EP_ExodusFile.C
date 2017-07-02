@@ -147,15 +147,16 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   int max_files = get_free_descriptor_count();
   if (partCount_ <= max_files) {
     keepOpen_ = true;
-    if (si.debug() & 1)
+    if ((si.debug() & 1) != 0) {
       std::cout << "Files kept open... (Max open = " << max_files << ")\n\n";
+    }
   }
   else {
     keepOpen_ = false;
     std::cout << "Single file mode... (Max open = " << max_files << ")\n"
               << "Consider using the -subcycle option for faster execution...\n\n";
   }
-  
+
   fileids_.resize(processorCount_);
   filenames_.resize(processorCount_);
 
@@ -195,7 +196,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       }
 
       int int64db = ex_int64_status(exoid) & EX_ALL_INT64_DB;
-      if (int64db) {
+      if (int64db != 0) {
         // If anything stored on input db as 64-bit int, then output db will have
         // everything stored as 64-bit ints and all API functions will use 64-bit
         mode64bit_ |= EX_ALL_INT64_API;
@@ -203,13 +204,15 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       }
 
       int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      if (max_name_length > maximumNameLength_)
+      if (max_name_length > maximumNameLength_) {
         maximumNameLength_ = max_name_length;
+      }
 
       ex_close(exoid);
 
-      if (io_word_size_var < (int)sizeof(float))
+      if (io_word_size_var < (int)sizeof(float)) {
         io_word_size_var = sizeof(float);
+      }
 
       ioWordSize_  = io_word_size_var;
       cpuWordSize_ = io_word_size_var;
@@ -230,14 +233,15 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       SMART_ASSERT(ioWordSize_ == io_word_size_var)(ioWordSize_)(io_word_size_var);
     }
 
-    if (si.debug() & 64 || p == 0 || p == partCount_ - 1) {
+    if (((si.debug() & 64) != 0) || p == 0 || p == partCount_ - 1) {
       std::cout << "Input(" << p << "): '" << name.c_str() << "'" << '\n';
-      if (!(si.debug() & 64) && p == 0)
+      if (((si.debug() & 64) == 0) && p == 0) {
         std::cout << "..." << '\n';
+      }
     }
   }
 
-  if (mode64bit_ & EX_ALL_INT64_DB) {
+  if ((mode64bit_ & EX_ALL_INT64_DB) != 0) {
     std::cout << "Input files contain 8-byte integers.\n";
     si.set_int64();
   }
@@ -257,7 +261,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
     outputFilename_ += "." + output_suffix;
   }
 
-  if (curdir.length() && !Excn::is_path_absolute(outputFilename_)) {
+  if ((curdir.length() != 0u) && !Excn::is_path_absolute(outputFilename_)) {
     outputFilename_ = curdir + "/" + outputFilename_;
   }
 
@@ -311,8 +315,9 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   // EPU Can add a name of "processor_id_epu" which is 16 characters long.
   // Make sure maximumNameLength_ is at least that long...
 
-  if (maximumNameLength_ < 16)
+  if (maximumNameLength_ < 16) {
     maximumNameLength_ = 16;
+  }
   ex_set_option(outputId_, EX_OPT_MAX_NAME_LENGTH, maximumNameLength_);
 
   int int_size = si.int64() ? 8 : 4;

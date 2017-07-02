@@ -175,6 +175,8 @@ namespace MueLu {
       }
     };
 
+    //      CreateAgg2RowMapLOFunctor<decltype(agg2RowMapLO), decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> createAgg2RowMap (agg2RowMapLO, sizes, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
+
     template<class agg2RowMapType, class aggSizesType, class vertex2AggIdType, class procWinnerType, class nodeGlobalEltsType, class isNodeGlobalEltsType, class LOType, class GOType>
     class CreateAgg2RowMapLOFunctor {
     private:
@@ -183,6 +185,7 @@ namespace MueLu {
 
       agg2RowMapType       agg2RowMap;      //< view containing row map entries associated with aggregate
       aggSizesType         aggSizes;        //< view containing size of aggregate
+      aggSizesType         aggDofCount;     //< view containing current count of "found" vertices in aggregate
       vertex2AggIdType     vertex2AggId;    //< view containing vertex2AggId information
       procWinnerType       procWinner;      //< view containing processor ids
       nodeGlobalEltsType   nodeGlobalElts;  //< view containing global node ids of current proc
@@ -192,9 +195,10 @@ namespace MueLu {
       LO fullBlockSize, blockID, stridingOffset, stridedBlockSize;
       GO indexBase, globalOffset;
     public:
-      CreateAgg2RowMapLOFunctor(agg2RowMapType agg2RowMap_, aggSizesType aggSizes_, vertex2AggIdType vertex2AggId_, procWinnerType procWinner_, nodeGlobalEltsType nodeGlobalElts_, isNodeGlobalEltsType isNodeGlobalElement_, LO fullBlockSize_, LOType blockID_, LOType stridingOffset_, LOType stridedBlockSize_, GOType indexBase_, GOType globalOffset_, int myPID_ ) :
+      CreateAgg2RowMapLOFunctor(agg2RowMapType agg2RowMap_, aggSizesType aggSizes_, aggSizesType aggDofCount_, vertex2AggIdType vertex2AggId_, procWinnerType procWinner_, nodeGlobalEltsType nodeGlobalElts_, isNodeGlobalEltsType isNodeGlobalElement_, LO fullBlockSize_, LOType blockID_, LOType stridingOffset_, LOType stridedBlockSize_, GOType indexBase_, GOType globalOffset_, int myPID_ ) :
         agg2RowMap(agg2RowMap_),
         aggSizes(aggSizes_),
+        aggDofCount(aggDofCount_),
         vertex2AggId(vertex2AggId_),
         procWinner(procWinner_),
         nodeGlobalElts(nodeGlobalElts_),
@@ -209,37 +213,21 @@ namespace MueLu {
       }
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const LO aggId) const {
-        LO myAggDofSize  = 0;
+      void operator()(const LO lnode) const {
         if(stridedBlockSize == 1) {
-          // loop over all nodes
-          for (decltype(vertex2AggId.dimension_0()) lnode = 0; lnode < vertex2AggId.dimension_0(); lnode++) {
-            if(procWinner(lnode,0) == myPid) {
-              auto myAgg = vertex2AggId(lnode,0);
-              LO myAggDofStart = aggSizes(myAgg);
-              if(myAgg == aggId) {
-                agg2RowMap(myAggDofStart + myAggDofSize) = lnode;
-                myAggDofSize++; // would need atomic increase
-              }
-            }
+          if(procWinner(lnode,0) == myPid) {
+            auto myAgg = vertex2AggId(lnode,0);
+            LO myAggDofStart = aggSizes(myAgg);
+            auto idx = Kokkos::atomic_fetch_add( &aggDofCount(myAgg), 1 );
+            agg2RowMap(myAggDofStart + idx) = lnode;
           }
         } else {
-          // loop over all nodes
-          for (decltype(vertex2AggId.dimension_0()) lnode = 0; lnode < vertex2AggId.dimension_0(); lnode++) {
-            if(procWinner(lnode,0) == myPid) {
-              auto myAgg = vertex2AggId(lnode,0);
-              LO myAggDofStart = aggSizes(myAgg);
-              if(myAgg == aggId) {
-                GO gnodeid = nodeGlobalElts[lnode];
-
-                for (LO k = 0; k< stridedBlockSize; k++) {
-                  GO gDofIndex = globalOffset + (gnodeid - indexBase) * fullBlockSize + stridingOffset + k + indexBase;
-                  if(isNodeGlobalElement.value_at(isNodeGlobalElement.find(gDofIndex)) == true) {
-                    agg2RowMap(myAggDofStart + myAggDofSize) = lnode * stridedBlockSize + k;
-                    myAggDofSize++; // would need atomic increase
-                  }
-                }
-              }
+          if(procWinner(lnode,0) == myPid) {
+            auto myAgg = vertex2AggId(lnode,0);
+            LO myAggDofStart = aggSizes(myAgg);
+            auto idx = Kokkos::atomic_fetch_add( &aggDofCount(myAgg), stridedBlockSize );
+            for (LO k = 0; k< stridedBlockSize; k++) {
+              agg2RowMap(myAggDofStart + idx + k) = lnode * stridedBlockSize +k;
             }
           }
         }
@@ -299,7 +287,7 @@ namespace MueLu {
         typedef Kokkos::ArithTraits<SC>     ATS;
         typedef typename ATS::magnitudeType Magnitude;
 
-        Magnitude norm = ATS::zero();
+        Magnitude norm = Kokkos::ArithTraits<Magnitude>::zero();
         for (decltype(aggSize) k = 0; k < aggSize; k++) {
           Magnitude dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
           norm += dnorm*dnorm;
@@ -423,6 +411,9 @@ namespace MueLu {
           // do local QR decomposition
           matrix_copy(localQR,z);
 
+          typedef typename ATS::magnitudeType Magnitude;
+          Magnitude zeroMagnitude = Kokkos::ArithTraits<Magnitude>::zero();
+
           for(decltype(localQR.dimension_0()) k = 0; k < localQR.dimension_0() && k < localQR.dimension_1()/*-1*/; k++) {
             // extract minor parts from mat
             matrix_clear(r);  // zero out temporary matrix (there is some potential to speed this up by avoiding this)
@@ -433,7 +424,7 @@ namespace MueLu {
             for(decltype(x.dimension_0()) i = 0; i < x.dimension_0(); i++)
               x(i) = r(i,k);
             SC   xn = vnorm(x); // calculate 2-norm of current column vector
-            if(localQR(k,k) > 0) xn = -xn;
+            if(ATS::magnitude(localQR(k,k)) > zeroMagnitude) xn = -xn;
 
             // build k-th unit vector
             for(decltype(e.dimension_0()) i = 0; i < e.dimension_0(); i++)
@@ -613,7 +604,7 @@ namespace MueLu {
         SC one = ATS::one();
         for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
           for(decltype(v.dimension_0()) j = 0; j < v.dimension_0(); j++) {
-            vmuldata(i,j) = -2 * v(i) * v(j);
+            vmuldata(i,j) = -2. * v(i) * v(j);
           }
         }
         for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
@@ -831,9 +822,10 @@ namespace MueLu {
 
     // Create Kokkos::View (on the device) to store the aggreate dof size
     // Later used to get aggregate dof offsets
+    // NOTE: This zeros itself on construction
     typedef Kokkos::View<LO*, DeviceType> aggSizeType;
     aggSizeType sizes("agg_dof_sizes", numAggregates + 1);
-    sizes(0) = 0;
+    //    sizes(0) = 0;
 
 #if 1
 
@@ -894,10 +886,15 @@ namespace MueLu {
 
     {
       SubFactoryMonitor m2(*this, "Create Agg2RowMap", coarseLevel);
+      // NOTE: This zeros itself on construction
+      aggSizeType aggDofCount("aggDofCount", numAggregates);
+
+
       // atomic data access for agg2RowMapLO view
       //typename AppendTrait<decltype(agg2RowMapLO), Kokkos::Atomic>::type agg2RowMapLOAtomic = agg2RowMapLO;
-      CreateAgg2RowMapLOFunctor<decltype(agg2RowMapLO), decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> createAgg2RowMap (agg2RowMapLO, sizes, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
-      Kokkos::parallel_for("MueLu:TentativePF:Build:createAgg2RowMap", range_type(0,numAggregates), createAgg2RowMap);
+
+      CreateAgg2RowMapLOFunctor<decltype(agg2RowMapLO), decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> createAgg2RowMap (agg2RowMapLO, sizes, aggDofCount,vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
+      Kokkos::parallel_for("MueLu:TentativePF:Build:createAgg2RowMap", range_type(0,vertex2AggId.dimension_0()), createAgg2RowMap);
     }
 #else
     Kokkos::View<LO*, DeviceType> numDofs("countDofsPerAggregate", numAggregates); // helper view. We probably don't need that

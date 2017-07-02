@@ -8,6 +8,7 @@ EXTRA_ARGS =
 
 BASE_NAME = TribitsDevelopersGuide
 EXTRA_FILES = \
+  TribitsGitVersion.txt \
   generate-dev-guide.sh \
   Makefile \
   TribitsDevelopersGuide.rst \

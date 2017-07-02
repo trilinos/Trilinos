@@ -110,7 +110,7 @@ INCLUDE(PrintVar)
 #        | PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"
 #        | STANDARD_PASS_OUTPUT ]
 #      [FAIL_REGULAR_EXPRESSION "<regex>"]
-#      [ALWAYS_FAIL_ON_NONZERO_RETURN]
+#      [ALWAYS_FAIL_ON_NONZERO_RETURN | ALWAYS_FAIL_ON_ZERO_RETURN]
 #      [WILL_FAIL]
 #
 # By default, each and every atomic test or command needs to pass (as defined below) in
@@ -436,9 +436,18 @@ INCLUDE(PrintVar)
 #     If specified, then the test case will be marked as failed if the test
 #     command returns nonzero, independent of the other pass/fail criteria.
 #     This option is used in cases where one wants to grep for strings in the
+#     output but still wants to require a zero return code.  This make for a
+#     stronger test by requiring that both the strings are found and that the
+#     command returns 0.
+#
+#   ``ALWAYS_FAIL_ON_ZERO_RETURN``
+#
+#     If specified, then the test case will be marked as failed if the test
+#     command returns zero '0', independent of the other pass/fail criteria.
+#     This option is used in cases where one wants to grep for strings in the
 #     output but still wants to require a nonzero return code.  This make for
 #     a stronger test by requiring that both the strings are found and that
-#     the command returns 0.
+#     the command returns != 0.
 #
 #   ``WILL_FAIL``
 #
@@ -487,8 +496,10 @@ INCLUDE(PrintVar)
 #     TEST_CASE_PASSED = FALSE
 #   Endif
 #
-#   # C) Check for return code always 0?
+#   # C) Check for return code always 0 or !=0?
 #   If ALWAYS_FAIL_ON_NONZERO_RETURN specified and return code != 0:
+#     TEST_CASE_PASSED = FALSE
+#   ElseIf ALWAYS_FAIL_ON_ZERO_RETURN specified and return code == 0:
 #     TEST_CASE_PASSED = FALSE
 #   Endif
 #
@@ -526,15 +537,15 @@ INCLUDE(PrintVar)
 # **Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # The basic tool used for parsing the arguments to this function is the macro
-# `PARSE_ARGUMENTS()`_ which has a certain set of behaviors.  The parsing
-# using `PARSE_ARGUMENTS()`_ is actually done in two phases.  There is a
-# top-level parsing of the "overall" arguments listed in `Overall Arguments
-# (TRIBITS_ADD_ADVANCED_TEST())`_ that also pulls out the test blocks.  Then
-# there is a second level of parsing using ``PARSE_ARGUMENTS()`` for each of
-# the ``TEST_<idx>`` blocks.  Because of this usage, there are a few
-# restrictions that one needs to be aware of when using
-# ``TRIBITS_ADD_ADVANCED_TEST()``.  This short sections tries to explain the
-# behaviors and what is allowed and what is not allowed.
+# ``CMAKE_PARSE_ARGUMENTS()`` which has a certain set of behaviors.  The
+# parsing using ``CMAKE_PARSE_ARGUMENTS()`` is actually done in two phases.
+# There is a top-level parsing of the "overall" arguments listed in `Overall
+# Arguments (TRIBITS_ADD_ADVANCED_TEST())`_ that also pulls out the test
+# blocks.  Then there is a second level of parsing using
+# ``CMAKE_PARSE_ARGUMENTS()`` for each of the ``TEST_<idx>`` blocks.  Because
+# of this usage, there are a few restrictions that one needs to be aware of
+# when using ``TRIBITS_ADD_ADVANCED_TEST()``.  This short sections tries to
+# explain the behaviors and what is allowed and what is not allowed.
 #
 # For the most part, the "overall" arguments and the arguments inside of any
 # individual ``TEST_<idx>`` blocks can be listed in any order but there are
@@ -709,13 +720,15 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   ENDFOREACH()
   #PRINT_VAR(TEST_IDX_LIST)
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
      #prefix
      PARSE
-     #lists
-     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      #options
      "FAIL_FAST;RUN_SERIAL;SKIP_CLEAN_OVERALL_WORKING_DIRECTORY"
+     # one_value_keywords
+     ""
+     # multi_value_keywords
+     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      ${ARGN}
      )
 
@@ -820,13 +833,15 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
     #PRINT_VAR(PARSE_TEST_${TEST_CMND_IDX})
 
-    PARSE_ARGUMENTS(
+    CMAKE_PARSE_ARGUMENTS(
        #prefix
        PARSE
-       #lists
-       "EXEC;CMND;ARGS;DIRECTORY;MESSAGE;WORKING_DIRECTORY;OUTPUT_FILE;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;PASS_REGULAR_EXPRESSION_ALL;FAIL_REGULAR_EXPRESSION;PASS_REGULAR_EXPRESSION"
        #options
-       "NOEXEPREFIX;NOEXESUFFIX;NO_ECHO_OUTPUT;PASS_ANY;STANDARD_PASS_OUTPUT;ALWAYS_FAIL_ON_NONZERO_RETURN;WILL_FAIL;ADD_DIR_TO_NAME;SKIP_CLEAN_WORKING_DIRECTORY"
+        "NOEXEPREFIX;NOEXESUFFIX;NO_ECHO_OUTPUT;PASS_ANY;STANDARD_PASS_OUTPUT;ALWAYS_FAIL_ON_NONZERO_RETURN;ALWAYS_FAIL_ON_ZERO_RETURN;WILL_FAIL;ADD_DIR_TO_NAME;SKIP_CLEAN_WORKING_DIRECTORY"
+       # one_value_keywords
+       ""
+       # multi_value_keywords
+       "EXEC;CMND;ARGS;DIRECTORY;MESSAGE;WORKING_DIRECTORY;OUTPUT_FILE;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;PASS_REGULAR_EXPRESSION_ALL;FAIL_REGULAR_EXPRESSION;PASS_REGULAR_EXPRESSION"
        ${PARSE_TEST_${TEST_CMND_IDX}}
        )
 
@@ -1034,6 +1049,13 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       APPEND_STRING_VAR( TEST_SCRIPT_STR
         "\n"
         "SET( TEST_${TEST_CMND_IDX}_ALWAYS_FAIL_ON_NONZERO_RETURN TRUE )\n"
+        )
+    ENDIF()
+
+    IF (PARSE_ALWAYS_FAIL_ON_ZERO_RETURN)
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_ALWAYS_FAIL_ON_ZERO_RETURN TRUE )\n"
         )
     ENDIF()
 

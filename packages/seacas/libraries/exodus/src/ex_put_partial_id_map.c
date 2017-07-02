@@ -126,13 +126,12 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
     if (num_entities == 0) { /* Parallel run with no entities OK */
       EX_FUNC_LEAVE(EX_NOERR);
     }
-    else {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: The %s count is %" PRId64
-                                       ", but the %s dimension is not defined on file id %d.",
-               tname, num_entities, dnumentries, exoid);
-      ex_err("ex_put_partial_id_map", errmsg, EX_BADPARAM);
-      EX_FUNC_LEAVE(EX_FATAL);
-    }
+
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: The %s count is %" PRId64
+                                     ", but the %s dimension is not defined on file id %d.",
+             tname, num_entities, dnumentries, exoid);
+    ex_err("ex_put_partial_id_map", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* define the map if it doesn't already exist... */

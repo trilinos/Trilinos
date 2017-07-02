@@ -102,6 +102,19 @@ namespace Sacado {
   //
   // For SLFad, divde the array size by the given stride
   namespace Fad {
+  namespace Exp {
+    template <typename T, int N> class StaticStorage;
+    template <typename S> class GeneralFad;
+  }
+  }
+  template <typename T, int N, unsigned Stride>
+  struct LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,N> >,
+                          Stride > {
+    static const int Ns = (N+Stride-1) / Stride;
+    typedef Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,Ns> > type;
+  };
+#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+  namespace Fad {
     template <typename T, int N> class SLFad;
   }
   template <typename T, int N, unsigned Stride>
@@ -109,11 +122,31 @@ namespace Sacado {
     static const int Ns = (N+Stride-1) / Stride;
     typedef Fad::SLFad<T,Ns> type;
   };
+#endif
 
   // Type of local scalar type when partitioning a view
   //
   // For SFad, divde the array size by the given stride.  If it divides evenly,
   // use SFad, otherwise use SLFad
+  namespace Fad {
+  namespace Exp {
+    template <typename T, int N> class StaticFixedStorage;
+    template <typename T, int N> class StaticStorage;
+    template <typename S> class GeneralFad;
+  }
+  }
+  template <typename T, int N, unsigned Stride>
+  struct LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticFixedStorage<T,N> >,
+                          Stride > {
+    static const int Ns = (N+Stride-1) / Stride;
+    typedef typename std::conditional<
+      Ns == N/Stride ,
+      Fad::Exp::GeneralFad< Fad::Exp::StaticFixedStorage<T,Ns> > ,
+      Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,Ns> >
+    >::type type;
+  };
+
+#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
   namespace Fad {
     template <typename T, int N> class SFad;
   }
@@ -122,6 +155,7 @@ namespace Sacado {
     static const int Ns = (N+Stride-1) / Stride;
     typedef typename std::conditional< Ns == N/Stride , Fad::SFad<T,Ns> , Fad::SLFad<T,Ns> >::type type;
   };
+#endif
 
   template <unsigned Stride, typename T>
   KOKKOS_INLINE_FUNCTION
@@ -141,6 +175,64 @@ namespace Sacado {
 namespace Sacado {
 
 #if defined(__CUDA_ARCH__)
+  namespace Fad {
+  namespace Exp {
+    template <typename T, typename U> class DynamicStorage;
+    template <typename T, int N> class StaticFixedStorage;
+    template <typename T, int N> class StaticStorage;
+    template <typename S> class GeneralFad;
+  }
+  }
+  template <unsigned Stride, typename T, typename U>
+  KOKKOS_INLINE_FUNCTION
+  typename LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::DynamicStorage<T,U> >, Stride >::type
+  partition_scalar(const Fad::Exp::GeneralFad< Fad::Exp::DynamicStorage<T,U> >& x) {
+    typedef typename LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::DynamicStorage<T,U> >, Stride >::type ret_type;
+    const int size = (x.size()+blockDim.x-threadIdx.x-1) / blockDim.x;
+    const int offset = threadIdx.x;
+    ret_type xp(size, x.val());
+
+    // Note:  we can't use x.dx(offset+i*Stride) if
+    // SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED is defined because it already
+    // uses blockDim.x in its index calculation.  This approach should work
+    // regardless
+    const T* dx = x.dx();
+    for (int i=0; i<size; ++i)
+      xp.fastAccessDx(i) = dx[offset+i*Stride];
+
+    return xp;
+  }
+  template <unsigned Stride, typename T, int N>
+  KOKKOS_INLINE_FUNCTION
+  typename LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,N> >, Stride >::type
+  partition_scalar(const Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,N> >& x) {
+    typedef typename LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,N> >, Stride >::type ret_type;
+    const int size = (x.size()+blockDim.x-threadIdx.x-1) / blockDim.x;
+    const int offset = threadIdx.x;
+    ret_type xp(size, x.val());
+    for (int i=0; i<size; ++i)
+      xp.fastAccessDx(i) = x.fastAccessDx(offset+i*Stride);
+    return xp;
+  }
+  template <unsigned Stride, typename T, int N>
+  KOKKOS_INLINE_FUNCTION
+  typename LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticFixedStorage<T,N> >, Stride >::type
+  partition_scalar(const Fad::Exp::GeneralFad< Fad::Exp::StaticFixedStorage<T,N> >& x) {
+    typedef typename LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticFixedStorage<T,N> >, Stride >::type ret_type;
+    const int size = (x.size()+blockDim.x-threadIdx.x-1) / blockDim.x;
+    const int offset = threadIdx.x;
+    ret_type xp(size, x.val());
+    for (int i=0; i<size; ++i)
+      xp.fastAccessDx(i) = x.fastAccessDx(offset+i*Stride);
+    return xp;
+  }
+
+#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+  namespace Fad {
+    template <typename T> class DFad;
+    template <typename T, int N> class SLFad;
+    template <typename T, int N> class SFad;
+  }
   template <unsigned Stride, typename T>
   KOKKOS_INLINE_FUNCTION
   typename LocalScalarType< Fad::DFad<T>, Stride >::type
@@ -184,7 +276,9 @@ namespace Sacado {
       xp.fastAccessDx(i) = x.fastAccessDx(offset+i*Stride);
     return xp;
   }
-#endif
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#endif // defined(__CUDA_ARCH__)
 
 } // namespace Sacado
 

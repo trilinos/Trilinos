@@ -61,7 +61,6 @@ namespace stk {
  * executable (assuming the executable is mapped into the same memory location for each process).
  * In order to remove the pointer-ness of the static memory location, the address is cast to a
  * pointer difference type which is an integral type by subtracting the zero pointer from it.
- *
  */
 typedef ptrdiff_t MessageId;
 
@@ -71,7 +70,6 @@ typedef ptrdiff_t MessageId;
  * Currently warning and doomed (error) message types are defined.  Additional type may be added
  * after MSG_DOOMED.  The MSG_SYMMETRIC bit indicates that the message was generated identically
  * across all processors.
- *
  */
 enum MessageType {
   MSG_WARNING           = 0,                    ///< Message is a warning
@@ -93,7 +91,6 @@ enum MessageType {
  * application run.  Some throttles defined for the application, while other may be reset at each
  * time step or other interval.  This allows warnings to be repeated at each time step rather than
  * cut off.
- *
  */
 enum ThrottleGroup {
   MSG_APPLICATION       = 0,
@@ -102,7 +99,6 @@ enum ThrottleGroup {
 
 /**
  * @brief Class <b>Throttle</b> describes the cutoff limits for a message throttle.
- *
  */
 struct Throttle
 {
@@ -114,7 +110,6 @@ struct Throttle
    *
    * @param group		an <b>int</b> value to identify the throttle group that this message
    *                            belongs to. 
-   *
    */
   Throttle(size_t cutoff, int group)
     : m_cutoff(cutoff),
@@ -142,7 +137,6 @@ struct Throttle
  * executable (assuming the executable is mapped into the same memory location for each process).
  * In order to remove the pointer-ness of the static memory location, the address is cast to a
  * pointer difference type which is an integral type by subtracting the zero pointer from it.
- *
  */
 struct MessageCode
 {
@@ -174,7 +168,6 @@ struct MessageCode
    *
    * @param throttle_group	an <b>int</b> value to identify the throttle group that this message
    *                            belongs to. 
-   *
    */
   MessageCode(MessageId message_id, size_t throttle_cutoff, int throttle_group)
     : m_id(message_id),
@@ -200,7 +193,6 @@ unsigned get_message_count(unsigned message_type);
  * @brief Member function <b>reset_message_count</b> ...
  *
  * @param message_type		an <b>unsigned int</b> ...
- *
  */
 void reset_message_count(unsigned message_type);
 
@@ -210,7 +202,6 @@ void reset_message_count(unsigned message_type);
  * @param message_type		an <b>unsigned int</b> ...
  *
  * @param max_count		an <b>unsigned int</b> ...
- *
  */
 void set_max_message_count(unsigned message_type, unsigned max_count);
 
@@ -281,7 +272,6 @@ void add_deferred_message(int message_type, MessageId message_id, size_t throttl
  * processor. 
  *
  * @param comm			a <b>ParallelMachine</b> communicator.
- *
  */
 void report_deferred_messages(MPI_Comm comm);
 

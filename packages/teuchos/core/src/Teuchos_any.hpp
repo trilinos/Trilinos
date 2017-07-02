@@ -304,6 +304,19 @@ const ValueType& any_cast(const any &operand)
 }
 
 /*! \relates any
+    \brief Keep the convenient behavior of Teuchos::any_cast w.r.t. references, but don't confuse it
+      with the behavior for C++17 std::any_cast.
+
+    \note In C++17, one must use std::any_cast<T&> to get a reference. This function will ensure
+    that uses of Teuchos::any_ref_cast<T> are consciously replaced with std::any_cast<T&> when C++17 is used.
+*/
+template<typename ValueType>
+ValueType& any_ref_cast(any &operand)
+{
+  return Teuchos::any_cast<ValueType>(operand);
+}
+
+/*! \relates any
     \brief Converts the value in <tt>any</tt> to a std::string.
 */
 inline std::string toString(const any &rhs)
@@ -336,6 +349,23 @@ inline std::ostream & operator<<(std::ostream & os, const any &rhs)
 {
   rhs.print(os);
   return os;
+}
+
+/*! \relates any
+    \brief Special swap for other code to find via Argument Dependent Lookup
+*/
+inline void swap(Teuchos::any& a, Teuchos::any& b) {
+  a.swap(b);
+}
+
+/*! \relates any
+    \brief Default constructs a new T value and returns a reference to it.
+*/
+template <typename T>
+T & make_any_ref(any &rhs)
+{
+  any(T()).swap(rhs);
+  return any_cast<T>(rhs);
 }
 
 } // namespace Teuchos

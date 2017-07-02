@@ -416,7 +416,9 @@ protected:
     void expect_element_on_proc(stk::mesh::EntityId id, int proc)
     {
         if(get_bulk().parallel_rank() == proc)
+        {
             EXPECT_TRUE(is_owned_on_this_proc(get_bulk().get_entity(stk::topology::ELEMENT_RANK, id)));
+        }
     }
     void expect_graph_correct_after_moving_neighbors_to_different_procs()
     {

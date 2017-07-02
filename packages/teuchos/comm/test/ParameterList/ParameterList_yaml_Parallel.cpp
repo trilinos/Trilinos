@@ -56,6 +56,9 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
+#include <sstream>
+#include <iomanip>
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ParameterList;
@@ -75,7 +78,7 @@ namespace TeuchosTests
     Teuchos::updateParametersFromXmlFileAndBroadcast(n1, xmlList.ptr(), *comm, true);
     const std::string n2("Match1.yaml");
     Teuchos::updateParametersFromYamlFileAndBroadcast(n2, yamlList.ptr(), *comm, true);
-    TEST_EQUALITY(Teuchos::haveSameValuesUnordered(*xmlList, *yamlList), true);
+    TEST_EQUALITY(Teuchos::haveSameValuesUnordered(*xmlList, *yamlList, true), true);
   }
   TEUCHOS_UNIT_TEST(YAML, ConvertFromXML)
   {
@@ -87,14 +90,19 @@ namespace TeuchosTests
     std::vector<string> xmlFiles = {"Match1.xml", "Match2.xml", "Match3.xml", "Match4.xml", "input_restingHydrostatic_RK4.xml", "plasma_oscillation_rtc.xml"};
     for(size_t i = 0; i < xmlFiles.size(); i++)
     {
-      std::string xmlFile = xmlFiles[i];
-      std::string yamlFile = std::string("Proc") + std::to_string(comm->getRank()) + '-' + xmlFiles[i];
-      yamlFile = yamlFile.substr(0, yamlFile.length() - 4) + ".yaml";
-      Teuchos::convertXmlToYaml(xmlFile, yamlFile);
-      RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFile);
-      RCP<ParameterList> yamlList = Teuchos::getParametersFromYamlFile(yamlFile);
+      //reading from XML
+      std::ifstream xmlStream(xmlFiles[i]);
+      //emitting converted YAML
+      std::ostringstream yamlStream;
+      yamlStream << std::setprecision(17) << std::scientific;
+      Teuchos::convertXmlToYaml(xmlStream, yamlStream);
+      //now read back both formats to compare
+      RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFiles[i]);
+      string yamlText = yamlStream.str();
+      RCP<ParameterList> yamlList = Teuchos::YAMLParameterList::parseYamlText(yamlText);
       TEST_EQUALITY(Teuchos::haveSameValuesUnordered(*xmlList, *yamlList, true), true);
     }
   }
 
 } //namespace TeuchosTests
+

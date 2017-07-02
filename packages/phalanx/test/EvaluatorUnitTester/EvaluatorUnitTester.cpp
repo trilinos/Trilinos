@@ -41,9 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-#include "Phalanx_config.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldManager.hpp"

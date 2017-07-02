@@ -1872,7 +1872,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
             if (validParamList->isType< RCP<const FactoryBase> >(pName)) {
               // Generate or get factory described by pName and set dependency
               RCP<const FactoryBase> generatingFact = factFact_->BuildFactory(paramList1.getEntry(pName), factoryMapIn, factoryManagers);
-              factory->SetFactory(pName, generatingFact);
+              factory->SetFactory(pName, generatingFact.create_weak());
             } else if (validParamList->isType<RCP<const ParameterList> >(pName)) {
               if (pName == "ParameterList") {
                 // NOTE: we cannot use

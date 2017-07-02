@@ -640,6 +640,16 @@ IF(Stokhos_ENABLE_Sacado)
           NUM_MPI_PROCS 1
           RUN_SERIAL
           )
+
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          KokkosViewFadMPVectorUnitTest_Threads
+          SOURCES Stokhos_KokkosViewFadMPVectorUnitTest.hpp
+                  Stokhos_KokkosViewFadMPVectorUnitTest_Threads.cpp
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          NUM_MPI_PROCS 1
+          RUN_SERIAL
+          )
       ENDIF()
 
       IF (HAVE_TPETRA_SERIAL)
@@ -650,6 +660,16 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
+          )
+
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          KokkosViewFadMPVectorUnitTest_Serial
+          SOURCES Stokhos_KokkosViewFadMPVectorUnitTest.hpp
+                  Stokhos_KokkosViewFadMPVectorUnitTest_Serial.cpp
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          NUM_MPI_PROCS 1
+          RUN_SERIAL
           )
       ENDIF()
 
@@ -680,6 +700,16 @@ IF(Stokhos_ENABLE_Sacado)
           KokkosCrsMatrixMPVectorUnitTest_Cuda
           SOURCES Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp
                   Stokhos_KokkosCrsMatrixMPVectorUnitTest_Cuda.cpp
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          NUM_MPI_PROCS 1
+          RUN_SERIAL
+          )
+
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          KokkosViewFadMPVectorUnitTest_Cuda
+          SOURCES Stokhos_KokkosViewFadMPVectorUnitTest.hpp
+                  Stokhos_KokkosViewFadMPVectorUnitTest_Cuda.cpp
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1

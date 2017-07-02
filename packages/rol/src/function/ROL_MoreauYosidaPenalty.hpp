@@ -86,6 +86,8 @@ private:
   bool isConEvaluated_;
   int nfval_;
   int ngval_;
+  bool updateMultiplier_;
+  bool updatePenalty_;
 
   void computePenalty(const Vector<Real> &x) {
     if ( con_->isActivated() ) {
@@ -127,15 +129,8 @@ private:
     }
   }
 
-public:
-  ~MoreauYosidaPenalty() {}
-
-  MoreauYosidaPenalty(const Teuchos::RCP<Objective<Real> > &obj,
-                      const Teuchos::RCP<BoundConstraint<Real> > &con, 
-                      const ROL::Vector<Real> &x, const Real mu = 1.0)
-    : obj_(obj), con_(con), mu_(mu),
-      fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0) {
-
+  void initialize(const ROL::Vector<Real> &x,
+                  const Teuchos::RCP<ROL::BoundConstraint<Real> > &con) {
     g_    = x.dual().clone();
     l_    = x.clone();
     l1_   = x.clone();
@@ -159,20 +154,85 @@ public:
     //lam_->scale(0.5);
   }
 
+public:
+  ~MoreauYosidaPenalty() {}
+
+  MoreauYosidaPenalty(const Teuchos::RCP<Objective<Real> > &obj,
+                      const Teuchos::RCP<BoundConstraint<Real> > &con, 
+                      const ROL::Vector<Real> &x,
+                      const Real mu = 1e1)
+    : obj_(obj), con_(con), mu_(mu),
+      fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0),
+      updateMultiplier_(true), updatePenalty_(true) {
+    initialize(x,con);
+  }
+
+  MoreauYosidaPenalty(const Teuchos::RCP<Objective<Real> > &obj,
+                      const Teuchos::RCP<BoundConstraint<Real> > &con, 
+                      const ROL::Vector<Real> &x,
+                      Teuchos::ParameterList &parlist)
+    : obj_(obj), con_(con),
+      fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0) {
+    initialize(x,con);
+    Teuchos::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    updateMultiplier_ = list.get("Update Multiplier",true);
+    updatePenalty_    = list.get("Update Penalty",true);
+    mu_               = list.get("Initial Penalty Parameter",1e1);
+  }
+
+  MoreauYosidaPenalty(const Teuchos::RCP<Objective<Real> > &obj,
+                      const Teuchos::RCP<BoundConstraint<Real> > &con, 
+                      const ROL::Vector<Real> &x,
+                      const ROL::Vector<Real> &lam,
+                      Teuchos::ParameterList &parlist)
+    : obj_(obj), con_(con),
+      fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0) {
+    initialize(x,con);
+    lam_->set(lam);
+    Teuchos::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    updateMultiplier_ = list.get("Update Multiplier",true);
+    updatePenalty_    = list.get("Update Penalty",true);
+    mu_               = list.get("Initial Penalty Parameter",1e1);
+  }
+
   void updateMultipliers(Real mu, const ROL::Vector<Real> &x) {
     if ( con_->isActivated() ) {
-      Real one = 1.0;
-      computePenalty(x);
-
-      lam_->set(*u1_);
-      lam_->axpy(-one,*l1_);
-      lam_->scale(mu_);
-
-      mu_ = mu;
+      if ( updateMultiplier_ ) {
+        const Real one(1);
+        computePenalty(x);
+        lam_->set(*u1_);
+        lam_->axpy(-one,*l1_);
+        lam_->scale(mu_);
+      }
+      if ( updatePenalty_ ) {
+        mu_ = mu;
+      }
     }
-
     nfval_ = 0; ngval_ = 0;
     isConEvaluated_ = false;
+  }
+
+  Real testComplementarity(const ROL::Vector<Real> &x) {
+    Real val(0);
+    if (con_->isActivated()) {
+      computePenalty(x);
+
+      tmp_->set(x);
+      tmp_->axpy(static_cast<Real>(-1), *l_);
+      Real lower = mu_*std::abs(tmp_->dot(*l1_));
+
+      tmp_->set(x);
+      tmp_->axpy(static_cast<Real>(-1), *u_);
+      Real upper = mu_*std::abs(tmp_->dot(*u1_));
+
+      tmp_->set(x);
+      con_->project(*tmp_);
+      tmp_->axpy(static_cast<Real>(-1), x);
+      Real xnorm = tmp_->norm();
+
+      val = std::max(xnorm,std::max(lower,upper));
+    }
+    return val;
   }
 
   Real getObjectiveValue(void) const {

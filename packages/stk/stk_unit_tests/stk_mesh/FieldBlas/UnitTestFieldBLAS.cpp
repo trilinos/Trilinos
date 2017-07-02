@@ -1350,11 +1350,11 @@ void test_eamax(Scalar low_val,Scalar high_val)
 
     stk::mesh::Entity field_result = stk::mesh::field_eamax(*Fixture.field1);
     EXPECT_EQ(MPI_frac==1.0,field_result.is_local_offset_valid());
-    if (field_result.is_local_offset_valid()) EXPECT_EQ(*stk::mesh::field_data(*Fixture.field1,field_result),high_val);
+    if (field_result.is_local_offset_valid()) { EXPECT_EQ(*stk::mesh::field_data(*Fixture.field1,field_result),high_val); }
 
     stk::mesh::Entity fieldBase_result=stk::mesh::field_eamax(*Fixture.fieldBase1);
     EXPECT_EQ(MPI_frac==1.0,fieldBase_result.is_local_offset_valid());
-    if (fieldBase_result.is_local_offset_valid()) EXPECT_EQ(*stk::mesh::field_data(*Fixture.field1,fieldBase_result),high_val);
+    if (fieldBase_result.is_local_offset_valid()) { EXPECT_EQ(*stk::mesh::field_data(*Fixture.field1,fieldBase_result),high_val); }
 }
 
 TEST(FieldBLAS,eamax_double)
@@ -1402,19 +1402,19 @@ void test_eamax_selector(Scalar low_value,Scalar high_valueA,Scalar high_valueAB
     xA[bA.size()/3u]=high_valueA*std::abs(low_value/high_valueA)+Scalar(high_valueA-high_valueA*std::abs(low_value/high_valueA))*MPI_frac;
 
     tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1);
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     const stk::mesh::BucketVector bucketsB = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
                                                                                   stk::mesh::Selector(*Fixture.pPartB) &
@@ -1424,19 +1424,19 @@ void test_eamax_selector(Scalar low_value,Scalar high_valueA,Scalar high_valueAB
     xB[bB.size()/3]=high_valueAB*std::abs(low_value/high_valueAB)+Scalar(high_valueAB-high_valueAB*std::abs(low_value/high_valueAB))*MPI_frac;
 
     tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1);
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     const stk::mesh::BucketVector bucketsABc = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
                                                                                     stk::mesh::Selector(*Fixture.pPartA).complement() &
@@ -1447,19 +1447,19 @@ void test_eamax_selector(Scalar low_value,Scalar high_valueA,Scalar high_valueAB
     xABc[bABc.size()/3]=high_valueABc*std::abs(low_value/high_valueABc)+Scalar(high_valueABc-high_valueABc*std::abs(low_value/high_valueABc))*MPI_frac;
 
     tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1);
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 }
 
 TEST(FieldBLAS,eamax_selector_double)
@@ -1666,10 +1666,10 @@ void test_eamin(Scalar low_val,Scalar high_val,const double TOL = 1.5e-4)
     x[b.size()/3u]=low_val*std::abs(high_val/low_val)+Scalar(low_val-low_val*std::abs(high_val/low_val))*MPI_frac;
 
     stk::mesh::Entity field_result = stk::mesh::field_eamin(*Fixture.field1);
-    if (field_result.is_local_offset_valid()) EXPECT_LT(std::abs(*stk::mesh::field_data(*Fixture.field1,field_result)-low_val),TOL);
+    if (field_result.is_local_offset_valid()) { EXPECT_LT(std::abs(*stk::mesh::field_data(*Fixture.field1,field_result)-low_val),TOL); }
 
     stk::mesh::Entity fieldBase_result=stk::mesh::field_eamin(*Fixture.fieldBase1);
-    if (fieldBase_result.is_local_offset_valid()) EXPECT_LT(std::abs(*stk::mesh::field_data(*Fixture.field1,fieldBase_result)-low_val),TOL);
+    if (fieldBase_result.is_local_offset_valid()) { EXPECT_LT(std::abs(*stk::mesh::field_data(*Fixture.field1,fieldBase_result)-low_val),TOL); }
 }
 
 TEST(FieldBLAS,eamin_double)
@@ -1718,19 +1718,19 @@ void test_eamin_selector(Scalar high_value,Scalar low_valueA,Scalar low_valueAB,
     xA[bA.size()/3u]=temp+Scalar(low_valueA-temp)*MPI_frac;
 
     tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1);
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     const stk::mesh::BucketVector bucketsB = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
                                                                                   stk::mesh::Selector(*Fixture.pPartB) &
@@ -1740,19 +1740,19 @@ void test_eamin_selector(Scalar high_value,Scalar low_valueA,Scalar low_valueAB,
     xB[bB.size()/3]=low_valueAB*std::abs(high_value/low_valueAB)+Scalar(low_valueAB-low_valueAB*std::abs(high_value/low_valueAB))*MPI_frac;
 
     tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(high_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1);
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     const stk::mesh::BucketVector bucketsABc = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
                                                                                     stk::mesh::Selector(*Fixture.pPartA).complement() &
@@ -1763,19 +1763,19 @@ void test_eamin_selector(Scalar high_value,Scalar low_valueA,Scalar low_valueAB,
     xABc[bABc.size()/3]=low_valueABc*std::abs(high_value/low_valueABc)+Scalar(low_valueABc-low_valueABc*std::abs(high_value/low_valueABc))*MPI_frac;
 
     tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 
     tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1);
-    if (tmp_result.is_local_offset_valid()) EXPECT_LT(std::abs(low_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL);
+    if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
 }
 
 TEST(FieldBLAS,eamin_selector_double)
@@ -1936,7 +1936,6 @@ bool test3dfield(const stk::mesh::Field<std::complex<A>,T1,T2,T3,T4,T5,T6,T7> & 
             {
                 for (unsigned int k=0;k<3u;k++)
                 {
-
                     EXPECT_LT(std::abs(expected_value[k]-field_value[k]),tol);
                     if (std::abs(expected_value[k]-field_value[k])>tol) result=false;
                 }
@@ -2401,11 +2400,11 @@ TEST(FieldBLAS,coordinate_swap_int)
 template<class Scalar>
 void test_coordinate_nrm2(BLASFixture3d<Scalar> &fixture,const double tol=1.5e-3)
 {
-    double result1=0.0;
-    for (int i=0;i<3;i++) result1+=pow(std::abs(fixture.init1[i]),2.0);
+    double result1 = 0.0;
+    for (int i=0; i<3; i++) result1+=pow(std::abs(fixture.init1[i]),2.0);
     result1=sqrt(result1);
     double result2=0.0;
-    for (int i=0;i<3;i++) result2+=pow(std::abs(fixture.init2[i]),2.0);
+    for (int i=0; i<3; i++) result2+=pow(std::abs(fixture.init2[i]),2.0);
     result2=sqrt(result2);
 
     EXPECT_LT(std::abs(stk::mesh::field_nrm2(*fixture.field1)-Scalar(result1*sqrt(double(fixture.numEntitiesGlobal)))),tol);

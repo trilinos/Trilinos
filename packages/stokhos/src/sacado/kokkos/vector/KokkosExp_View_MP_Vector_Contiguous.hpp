@@ -354,6 +354,7 @@ struct MPVectorAllocation<ValueType, true> {
 
   // Assign scalar_type pointer to give ptr
   template <typename T>
+  KOKKOS_INLINE_FUNCTION
   void assign(T * ptr) {
     value_ptr  = reinterpret_cast<value_type*>(ptr);
     scalar_ptr = reinterpret_cast<scalar_type*>(ptr);
@@ -500,6 +501,7 @@ struct MPVectorAllocation<ValueType, false> {
   // Assign scalar_type pointer to give ptr
   // This makes BIG assumption on how the data was allocated
   template <typename T>
+  KOKKOS_INLINE_FUNCTION
   void assign(T * ptr) {
     value_ptr  = reinterpret_cast<value_type*>(ptr);
     if (ptr != 0)

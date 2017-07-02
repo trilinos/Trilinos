@@ -2133,6 +2133,7 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   using Teuchos::rcpFromRef;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
+
   // Tpetra's GS implementation for CrsMatrix handles zeroing out the
   // starting multivector itself.  The generic RowMatrix version here
   // does not, so we have to zero out Y here.
@@ -2149,7 +2150,7 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   const size_t numMyRows             = A_->getNodeNumRows();
   const local_ordinal_type * rowInd  = 0;
   size_t numActive                   = numMyRows;
-  bool do_local = localSmoothingIndices_.is_null();
+  bool do_local = !localSmoothingIndices_.is_null();
   if(do_local) {
     rowInd    = localSmoothingIndices_.getRawPtr();
     numActive = localSmoothingIndices_.size();
@@ -2188,8 +2189,9 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
     ArrayView<scalar_type>      y2_ptr = y2_rcp();
     ArrayView<const scalar_type> x_ptr = x_rcp();
     Array<scalar_type> dtemp(NumVectors,STS::zero());
-    for (int iter = 0; iter < NumSweeps_; ++iter) {
-      // only one data exchange per sweep
+
+    for (int j = 0; j < NumSweeps_; j++) {
+      // data exchange is here, once per sweep
       if (IsParallel_) {
         if (Importer_.is_null ()) {
           // just copy, since domain and column Maps are the same
@@ -2198,54 +2200,41 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
           Y2->doImport (Y, *Importer_, Tpetra::INSERT);
         }
       }
+      for (size_t ii = 0; ii < numActive; ++ii) {
+        local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
+        size_t NumEntries;
+        A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
+        dtemp.assign(NumVectors,STS::zero());
 
-      for (int j = 0; j < NumSweeps_; j++) {
-        // data exchange is here, once per sweep
-        if (IsParallel_) {
-          if (Importer_.is_null ()) {
-            // just copy, since domain and column Maps are the same
-            Tpetra::deep_copy (*Y2, Y);
-          } else {
-            Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+        for (size_t k = 0; k < NumEntries; ++k) {
+          const local_ordinal_type col = Indices[k];
+          for (size_t m = 0; m < NumVectors; ++m) {
+            dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
           }
         }
 
-        for (size_t ii = 0; ii < numActive; ++ii) {
-          local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-          size_t NumEntries;
-          A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
-          dtemp.assign(NumVectors,STS::zero());
+        for (size_t m = 0; m < NumVectors; ++m) {
+          y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
+        }
+      }
 
-          for (size_t k = 0; k < NumEntries; ++k) {
-            const local_ordinal_type col = Indices[k];
-            for (size_t m = 0; m < NumVectors; ++m) {
-              dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
-            }
-          }
+      // ptrdiff_t is the same size as size_t, but is signed.  Being
+      // signed is important so that i >= 0 is not trivially true.
+      for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
+        local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
+        size_t NumEntries;
+        A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
+        dtemp.assign(NumVectors,STS::zero());
 
+        for (size_t k = 0; k < NumEntries; ++k) {
+          const local_ordinal_type col = Indices[k];
           for (size_t m = 0; m < NumVectors; ++m) {
-            y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
+            dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
           }
         }
 
-        // ptrdiff_t is the same size as size_t, but is signed.  Being
-        // signed is important so that i >= 0 is not trivially true.
-        for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
-          local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-          size_t NumEntries;
-          A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
-          dtemp.assign(NumVectors,STS::zero());
-
-          for (size_t k = 0; k < NumEntries; ++k) {
-            const local_ordinal_type col = Indices[k];
-            for (size_t m = 0; m < NumVectors; ++m) {
-              dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
-            }
-          }
-
-          for (size_t m = 0; m < NumVectors; ++m) {
-            y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
-          }
+        for (size_t m = 0; m < NumVectors; ++m) {
+          y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
         }
       }
 

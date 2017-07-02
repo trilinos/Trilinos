@@ -67,7 +67,7 @@ namespace MueLu {
 
   /*!
     @class DirectSolver
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief Class that encapsulates direct solvers. Autoselection of AmesosSmoother or Amesos2Smoother according to the compile time configuration of Trilinos
   */
 
@@ -127,9 +127,9 @@ namespace MueLu {
 
     //! Get a rough estimate of cost per iteration
     size_t getNodeSmootherComplexity() const {
-	if(!s_.is_null())
-	  return s_->getNodeSmootherComplexity();
-	else return 0.0;
+        if(!s_.is_null())
+          return s_->getNodeSmootherComplexity();
+        else return 0.0;
     }
 
     //@}

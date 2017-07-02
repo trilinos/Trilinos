@@ -177,8 +177,8 @@ void EpetraExtAddTransformer::transform(
          epetra_op = Teuchos::rcp(epetra_op_raw);
       
       TEUCHOS_ASSERT_EQUALITY( add_epetra_B_err, 0 );
-      
-      epetra_op->FillComplete();
+     
+      epetra_op->FillComplete(epetra_A->DomainMap(),epetra_A->RangeMap()); 
    
       // set output operator to use newly create epetra_op
       thyra_epetra_op_inout.initialize(epetra_op);

@@ -48,7 +48,7 @@
 #include "AnasaziTypes.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCGSolMgr.hpp"
+#include "AnasaziFactory.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef HAVE_MPI
@@ -178,10 +178,10 @@ int main(int argc, char *argv[])
   MyPL.set( "Full Ortho", true );
   //
   // Create the solver manager
-  Anasazi::LOBPCGSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
+  auto MySolverMgr = Anasazi::Factory::create("LOBPCG", problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  Anasazi::ReturnType returnCode = MySolverMgr.solve();
+  Anasazi::ReturnType returnCode = MySolverMgr->solve();
   testFailed = false;
   if (returnCode != Anasazi::Converged) {
     testFailed = true;

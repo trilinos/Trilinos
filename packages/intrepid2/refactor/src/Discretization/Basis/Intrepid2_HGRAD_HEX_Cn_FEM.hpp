@@ -57,6 +57,7 @@ namespace Intrepid2 {
   namespace Impl {
     class Basis_HGRAD_HEX_Cn_FEM {
     public:
+      typedef struct Hexahedron<8> cell_topology_type;
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,

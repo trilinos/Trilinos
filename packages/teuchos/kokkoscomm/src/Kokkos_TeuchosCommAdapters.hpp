@@ -104,7 +104,9 @@ isend (const ViewType& sendBuffer,
        const Comm<Ordinal>& comm)
 {
   using Kokkos::Compat::persistingView;
-  return isend(persistingView(sendBuffer), destRank, tag, comm);
+  // See Issue #1454: https://github.com/trilinos/Trilinos/issues/1454
+  typename ViewType::const_type sendBuffer_const = sendBuffer;
+  return isend (persistingView (sendBuffer_const), destRank, tag, comm);
 }
 
 //! Variant of ireceive that takes a tag argument (and restores the correct order of arguments).

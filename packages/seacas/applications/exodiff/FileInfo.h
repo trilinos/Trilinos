@@ -58,11 +58,11 @@ public:
 
   //! Create object referring to file with name \a filename
   //! \param filename name of file
-  explicit FileInfo(std::string filename);
+  explicit FileInfo(std::string my_filename);
 
   //! Create object referring to file with name \a filename
   //! \param filename name of file
-  explicit FileInfo(const char *filename);
+  explicit FileInfo(const char *my_filename);
 
   //! Copy constructor
   FileInfo(const FileInfo &);
@@ -70,7 +70,7 @@ public:
   //! Constructor
   //! \param dirpath Directory Path
   //! \param filename base filename
-  FileInfo(const std::string &dirpath, const std::string &filename);
+  FileInfo(const std::string &dirpath, const std::string &my_filename);
 
   ~FileInfo();
 

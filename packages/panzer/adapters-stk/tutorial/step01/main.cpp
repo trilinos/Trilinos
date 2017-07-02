@@ -55,8 +55,6 @@
 
 #include "Panzer_NodeType.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
@@ -109,7 +107,7 @@ int main(int argc, char *argv[])
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  PHX::InitializeKokkosDevice();
+  Kokkos::initialize(argc,argv);
 
   int status = 0;
 
@@ -258,9 +256,13 @@ int main(int argc, char *argv[])
     // build WorksetContainer
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer             // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setGlobalIndexer(dofManager);
+    wkstContainer->setWorksetSize(workset_size);
 
     // build linear solver 
     /////////////////////////////////////////////////////////////
@@ -350,8 +352,6 @@ int main(int argc, char *argv[])
 
   if (status == 0)
     *out << "panzer::MainDriver run completed." << std::endl;
-
-  PHX::FinalizeKokkosDevice();
 
   return status;
 }

@@ -67,8 +67,6 @@ namespace Ioss {
 /** \brief A namespace for the pamgen database format.
  */
 namespace Iopg {
-  typedef std::vector<int> IntVector;
-
   class IOFactory : public Ioss::IOFactory
   {
   public:
@@ -89,44 +87,14 @@ namespace Iopg {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
-    int64_t node_global_to_local(int64_t global, bool must_exist) const override
-    {
-      return nodeMap.global_to_local(global, must_exist);
-    }
-
-    int64_t element_global_to_local(int64_t global) const override
-    {
-      return elemMap.global_to_local(global);
-    }
-
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
     unsigned entity_field_support() const { return 0; }
 
-    // Eliminate as much memory as possible, but still retain meta data information
-    // Typically, eliminate the maps...
-    void release_memory();
-
-    void read_meta_data();
-
-    bool begin(Ioss::State state);
-    bool end(Ioss::State state);
-
-    bool begin_state(Ioss::Region *region, int state, double time);
-    bool end_state(Ioss::Region *region, int state, double time);
-
     std::string title() const { return databaseTitle; }
-    int         spatial_dimension() const { return spatialDimension; }
-    int         node_count() const { return nodeCount; }
-    int         side_count() const { return 0; }
-    int         element_count() const { return elementCount; }
-    int         node_block_count() const { return nodeBlockCount; }
-    int         element_block_count() const { return elementBlockCount; }
-    int         sideset_count() const { return sidesetCount; }
-    int         nodeset_count() const { return nodesetCount; }
-    int         maximum_symbol_length() const { return 32; }
+    int         maximum_symbol_length() const override { return 32; }
 
     void get_block_adjacencies(const Ioss::ElementBlock *eb,
                                std::vector<std::string> &block_adjacency) const;
@@ -135,6 +103,28 @@ namespace Iopg {
                                   std::vector<std::string> &block_membership) const;
 
   private:
+    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
+    {
+      return nodeMap.global_to_local(global, must_exist);
+    }
+
+    int64_t element_global_to_local__(int64_t global) const override
+    {
+      return elemMap.global_to_local(global);
+    }
+
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory__() override;
+
+    void read_meta_data__() override;
+
+    bool begin__(Ioss::State state) override;
+    bool end__(Ioss::State state) override;
+
+    bool begin_state__(Ioss::Region *region, int state, double time) override;
+    bool end_state__(Ioss::Region *region, int state, double time) override;
+
     void read_region();
     void read_communication_metadata();
 
@@ -257,12 +247,12 @@ namespace Iopg {
     int sidesetCount;
 
     // Communication Set Data
-    IntVector nodeCmapIds;
-    IntVector nodeCmapNodeCnts;
-    IntVector elemCmapIds;
-    IntVector elemCmapElemCnts;
-    int       commsetNodeCount;
-    int       commsetElemCount;
+    Ioss::IntVector nodeCmapIds;
+    Ioss::IntVector nodeCmapNodeCnts;
+    Ioss::IntVector elemCmapIds;
+    Ioss::IntVector elemCmapElemCnts;
+    int             commsetNodeCount;
+    int             commsetElemCount;
 
     // MAPS -- Used to convert from local exodusII ids/names to Sierra
     // database global ids/names

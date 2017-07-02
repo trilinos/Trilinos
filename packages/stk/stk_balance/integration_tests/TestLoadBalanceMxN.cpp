@@ -231,7 +231,9 @@ TEST_F(MxNRebalanceOnNProcs, testHexplateFrom4to8procs)
         setup_mesh(filename, stk::mesh::BulkData::NO_AUTO_AURA);
 
         if(running_as_unit_test)
+        {
             EXPECT_TRUE(thereAre16ElementsIn(get_bulk()));
+        }
 
         bulk_ptr = &get_bulk();
         meta_ptr = &get_meta();
@@ -260,7 +262,9 @@ TEST_F(MxNRebalanceOnNProcs, testHexplateFrom4to8procs)
     read_and_rebalance_mesh(*bulkDataBalance, outputFilename);
 
     if(running_as_unit_test)
+    {
         EXPECT_TRUE(thereAre16ElementsIn(*bulkDataBalance));
+    }
 
     bool doesProcHaveLocallyAllocatedMesh = color == 1;
     if(doesProcHaveLocallyAllocatedMesh)

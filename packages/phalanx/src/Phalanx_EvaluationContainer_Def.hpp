@@ -157,14 +157,18 @@ postRegistrationSetup(typename Traits::SetupData d,
   for (const auto& field : var_list)
     this->bindField(*field,fields_[field->identifier()]);
 
+  // This needs to be set before the dag_manager calls each
+  // evaluator's postRegistrationSetup() so that the evaluators can
+  // use functions that are only valid after post registration setup
+  // is called (e.g query for kokkos extended data type dimensions).
+  post_registration_setup_called_ = true;
+
   // Allow users to perform special setup. This used to include
   // manually binding memory for all fields in the evaluators via
   // setFieldData(). NOTE: users should not have to bind memory
   // anymore in the postRegistrationSetup() as we now do it for them
   // above.
   this->dag_manager_.postRegistrationSetup(d,fm);
-
-  post_registration_setup_called_ = true;
 }
 
 // *************************************************************************

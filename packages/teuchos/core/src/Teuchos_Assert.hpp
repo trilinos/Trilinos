@@ -54,6 +54,16 @@
  */
 #define TEUCHOS_ASSERT(assertion_test) TEUCHOS_TEST_FOR_EXCEPT(!(assertion_test))
 
+#ifdef TEUCHOS_DEBUG
+/** \brief Behaves as TEUCHOS_ASSERT only if debugging is enabled.
+ *
+ * \ingroup TestForException_grp
+ */
+#define TEUCHOS_DEBUG_ASSERT(assertion_test) TEUCHOS_ASSERT(assertion_test)
+#else
+#define TEUCHOS_DEBUG_ASSERT(assertion_test)
+#endif
+
 
 /** \brief This macro asserts that an integral number fallis in the range
  * <tt>[lower_inclusive,upper_exclusive)</tt>

@@ -229,10 +229,10 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_build_workset)
   FaceToElems rel(conn_manager);
 
   Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = createPhysicsBlock(mesh);
-  Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock);
-
-
+  Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                          physicsBlock->getWorksetNeeds());                    
 }
+
 TEUCHOS_UNIT_TEST(tFullRelations, test_tet_normals)
 {
   int nx=3, ny=2, nz=4;
@@ -250,7 +250,8 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tet_normals)
   FaceToElems rel(conn_manager);
 
   Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = createPhysicsBlock(mesh);
-  Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock);
+  Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                          physicsBlock->getWorksetNeeds());                    
 
   rel.setNormals(work_sets);
 
@@ -294,7 +295,8 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tri_normals)
   FaceToElems rel(conn_manager);
 
   Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = createPhysicsBlock(mesh);
-  Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock);
+  Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                          physicsBlock->getWorksetNeeds());                    
 
   rel.setNormals(work_sets);
   std::vector<double> norm;

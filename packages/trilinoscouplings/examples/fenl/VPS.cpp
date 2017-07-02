@@ -1,4 +1,5 @@
-// 2016/12/13
+// 2016/09/23
+// Automatic Discontinuity Detection using Spline Extrapolation
 
 #include "VPS.hpp"
 
@@ -10,7 +11,7 @@ VPS::VPS()
   /////////// Delaunay Graph  Variables //////////////////////////////////////////
   _seed_box = 0; _seed_rf = 0; _seed_rc = 0; _seed_neighbors = 0;
 
-  _seed_disc_neighbors = 0;
+  _seed_disc_neighbors = 0; // ETP
 
   /////////// Surrogate  Variables //////////////////////////////////////////
   _p = 0; _basis_coef = 0; _basis_index = 0;
@@ -21,37 +22,7 @@ VPS::VPS()
   seed = 1473364284;
   initiate_random_number_generator(seed);
   //std::cout << "RNG seed = " << seed << std::endl;
-
   _num_vs = 0;
-
-  /*
-    size_t n = 10;
-    double* t = new double[n];
-    double* f = new double[n];
-    for (size_t i = 0; i < n; i++)
-    {
-    t[i] = i * 1.0 / (n - 1);
-    if (i < n / 2) f[i] = 0.0;
-    else           f[i] = 1.0;
-    }
-
-    size_t num_basis = 50;
-    double* a = new double[num_basis];
-    double* b = new double[num_basis];
-
-    double** c = new double*[n - 1];
-    for (size_t i = 0; i < n - 1; i++) c[i] = new double[4];
-
-    form_discontinuity_spline(n, t, f, 4, c);
-
-    FourierExpansion(n, 0.0, 1.0, t, f, c, num_basis, a, b);
-
-    plot_FourierExpansion("Fourier.ps", num_basis, 0.0, 1.0, a, b, n, t, f);
-
-    int bug(0);
-    bug++;
-  */
-
 }
 
 VPS::~VPS()
@@ -84,29 +55,31 @@ int VPS::clear_memory()
   {
     for (size_t i = 0; i < _num_samples; i++) delete[] _seed_neighbors[i];
     delete[] _seed_neighbors;
+    _seed_neighbors = 0;
   }
-
   if (_seed_disc_neighbors != 0)
   {
-    for (size_t i = 0; i < _num_samples; i++)
+    for (size_t iseed = 0; iseed < _num_samples; iseed++)
     {
-      if (_seed_disc_neighbors[i] != 0)
+      if (_seed_disc_neighbors[iseed] != 0)
       {
         for (size_t ifunc = 0; ifunc < _num_functions; ifunc++)
         {
-          delete[] _seed_disc_neighbors[i][ifunc];
+          if (_seed_disc_neighbors[iseed][ifunc] != 0) delete[] _seed_disc_neighbors[iseed][ifunc];
         }
-        delete[] _seed_disc_neighbors[i];
+        delete[] _seed_disc_neighbors[iseed];
       }
+
     }
     delete[] _seed_disc_neighbors;
+    _seed_disc_neighbors = 0;
   }
 
   /////////// Surrogate  Variables //////////////////////////////////////////
 
   if (_p != 0)
   {
-    for (size_t ibasis = 0; ibasis < _num_basis; ibasis++) delete[] _p[ibasis];
+    for (size_t ibasis = 0; ibasis < _num_basis_pool; ibasis++) delete[] _p[ibasis];
     delete[] _p;
     _p = 0;
   }
@@ -153,7 +126,7 @@ int VPS::get_initial_well_spaced_samples(size_t num_dim, double* xmin, double* x
     r_sq += dx * dx;
   }
 
-  //double sf(0.81);
+  //double sf(0.81); // ETP
   size_t isample(0);
   size_t num_successive_misses(0), max_num_successive_misses(100);
   while (isample < num_samples)
@@ -224,23 +197,12 @@ int VPS::build_surrogate(size_t num_dim,
   // 3. Detect Discontinuites
   detect_discontinuities();
 
-  //plot_delaunay_graph("graph_wdisc.ps");
+  //plot_delaunay_graph("graph_disc.ps");
 
   // 3. Construct local surrogates
   construct_local_surrogates();
 
   //plot_vps_surrogate("vps_with_disc_detect.ps", 0, 21, true);
-
-  _vs = new double*[100];
-  for (size_t i = 0; i < 100; i++) _vs[i] = 0;
-
-  for (size_t i = 0; i < 100; i++)
-  {
-    _vs[i] = new double[_num_dim];
-    sample_voronoi_vertex(_vs[i]);
-    int bug(0);
-    bug++;
-  }
 
   return 0;
 }
@@ -253,7 +215,6 @@ int VPS::evaluate_surrogate(double* x, double* fs)
 
   evaluate_surrogate(closest_seed, x, fs);
 
-  //fs[0] = closest_seed * 1.0 / _num_samples;
   return 0;
 //#pragma endregion
 }
@@ -280,6 +241,8 @@ int VPS::suggest_new_sample(double* x)
 
   return 0;
 }
+
+//size_t bug(0); // ETP
 
 int VPS::suggest_new_sample(double* xmc, double* x, double &err_est)
 {
@@ -314,8 +277,8 @@ int VPS::suggest_new_sample(double* xmc, double* x, double &err_est)
   }
   else
   {
-    //sample_voronoi_vertex(closest_seed, x);
-    sample_voronoi_facet(closest_seed, x);
+    sample_voronoi_facet(closest_seed, _xmin, _xmax, _diag, x);
+    //sample_voronoi_vertex(closest_seed, _xmin, _xmax, _diag, x);
 
     double rv(0.0);
     for (size_t idim = 0; idim < _num_dim; idim++)
@@ -1040,80 +1003,6 @@ int VPS::add_entry(size_t entry, size_t &num_entries, size_t* &I, size_t &capaci
 }
 
 
-int VPS::get_normal_component(size_t num_dim, size_t num_basis, double** basis, double* vect, double &norm)
-{
-//#pragma region Get Normal component to some basis:
-
-
-  double* comp = new double[num_basis];
-
-  // project point to current basis
-  for (size_t ibasis = 0; ibasis < num_basis; ibasis++)
-  {
-    comp[ibasis] = 0.0;
-    for (size_t idim = 0; idim < num_dim; idim++) comp[ibasis] += vect[idim] * basis[ibasis][idim];
-  }
-
-  // get vector component orthogonal to current basis
-  for (size_t ibasis = 0; ibasis < num_basis; ibasis++)
-  {
-    for (size_t idim = 0; idim < num_dim; idim++) vect[idim] -= comp[ibasis] * basis[ibasis][idim];
-  }
-
-  norm = 0.0;
-  for (size_t idim = 0; idim < num_dim; idim++) norm += vect[idim] * vect[idim];
-
-  delete[] comp;
-
-  if (fabs(norm) < 1E-10) return 1;
-
-  norm = 1.0 / sqrt(norm);
-  for (size_t idim = 0; idim < num_dim; idim++) vect[idim] *= norm;
-
-  return 0;
-//#pragma endregion
-}
-
-bool VPS::trim_spoke(size_t num_dim, double* xst, double* xend, double* p, double* q)
-{
-//#pragma region Trim a Spoke:
-
-  double* nH = new double[num_dim];
-  double* xH = new double[num_dim];
-
-  // trim spoke using Voronoi hyperplane between ipoint and iclosest
-  //double norm(0.0);
-  for (size_t idim = 0; idim < num_dim; idim++)
-  {
-    nH[idim] = q[idim] - p[idim];
-    xH[idim] = 0.5 * (q[idim] + p[idim]);
-  }
-
-  double dotv(0.0), dote(0.0);
-  for (size_t idim = 0; idim < num_dim; idim++)
-  {
-    double dxv = xH[idim] - xst[idim];
-    double dxe = xend[idim] - xst[idim];
-    dotv += dxv * nH[idim];
-    dote += dxe * nH[idim];
-  }
-  delete[] nH; delete[] xH;
-
-  bool trimmed = false;
-  if (fabs(dote) > 1E-10)
-  {
-    double u = dotv / dote;
-    if (u > -1.0E-10 && u < 1.0 + 1.0E-10)
-    {
-      for (size_t idim = 0; idim < num_dim; idim++) xend[idim] = xst[idim] + u * (xend[idim] - xst[idim]);
-      trimmed = true;
-    }
-  }
-
-  return trimmed;
-//#pragma endregion
-}
-
 
 size_t VPS::retrieve_num_permutations(size_t num_dim, size_t upper_bound, bool force_sum_constraint, size_t sum_constraint)
 {
@@ -1488,7 +1377,7 @@ void VPS::plot_polynomial(std::string file_name, size_t num_basis, double* c, do
   double ymin(DBL_MAX), ymax(-DBL_MAX);
   for (size_t ipoint = 0; ipoint < num_p_points - 1; ipoint++)
   {
-    //size_t jpoint = ipoint + 1;
+    //size_t jpoint = ipoint + 1; // ETP
 
     double x = xmin + ipoint * dx;
     double f = 0.0;
@@ -1570,7 +1459,7 @@ void VPS::plot_polynomial(std::string file_name, size_t num_basis, double* c, do
 
   for (size_t ipoint = 0; ipoint < num_p_points - 1; ipoint++)
   {
-    //size_t jpoint = ipoint + 1;
+    //size_t jpoint = ipoint + 1; // ETP
 
     double x = xmin + ipoint * dx;
     double f = 0.0;
@@ -1761,7 +1650,7 @@ void VPS::plot_FourierExpansion(std::string file_name, size_t num_basis, double 
   double ymin(DBL_MAX), ymax(-DBL_MAX);
   for (size_t ipoint = 0; ipoint < num_p_points; ipoint++)
   {
-    //size_t jpoint = ipoint + 1;
+    // size_t jpoint = ipoint + 1; // ETP
 
     double x = xmin + ipoint * dx;
     double f = 0.5 * a[0];
@@ -1982,11 +1871,6 @@ void VPS::plot_delaunay_graph(const std::string outFile)
   {
     for (size_t j = 0; j < _seed_neighbors[i][1]; j++)
     {
-      if (_seed_disc_neighbors != 0 && _seed_disc_neighbors[i] != 0)
-      {
-        if (_seed_disc_neighbors[i][0][j]) continue;
-      }
-
       size_t neighbor = _seed_neighbors[i][2 + j];
 
       file << "newpath" << std::endl;
@@ -2532,7 +2416,7 @@ void VPS::plot_vps_surrogate(std::string file_name, size_t function_index, size_
       }
     }
   }
-  delete[] xx;
+  delete[] xx; delete[] f;
 
   if (plot_graph)
   {
@@ -2731,7 +2615,7 @@ int VPS::update_delaunay_graph(size_t seed_index)
   get_num_seed_neighbors(seed_index, old_neighbors);
   while (num_misses < max_num_misses)
   {
-    sample_voronoi_vertex(seed_index, v);
+    sample_voronoi_vertex(seed_index, _xmin, _xmax, _diag, v);
 
     // update Coverage radius
     double rc(0.0);
@@ -2767,6 +2651,8 @@ int VPS::update_delaunay_graph(size_t seed_index)
       }
     }
 
+    delete[] neighbors;
+
     size_t new_neighbors;
     get_num_seed_neighbors(seed_index, new_neighbors);
 
@@ -2791,295 +2677,9 @@ int VPS::sample_voronoi_vertex(double* v)
   double closest_distance = _diag; size_t closest_seed;
   get_closest_seed_tree(dart, closest_seed, closest_distance);
 
-  sample_voronoi_vertex(closest_seed, v);
+  sample_voronoi_vertex(closest_seed, _xmin, _xmax, _diag, v);
 
   delete[] dart;
-  return 0;
-//#pragma endregion
-}
-
-int VPS::sample_voronoi_vertex(size_t seed_index, double* v)
-{
-//#pragma region Sample A Voronoi Vertex bounding Cell with seed_index:
-
-  size_t num_basis(0);
-  double** basis = new double*[_num_dim];
-  for (size_t idim = 0; idim < _num_dim; idim++)
-  {
-    basis[idim] = new double[_num_dim];
-    for (size_t jdim = 0; jdim < _num_dim; jdim++) basis[idim][jdim] = 0.0;
-    basis[idim][idim] = 1.0;
-  }
-
-  double* xst = new double[_num_dim];
-  double* xend = new double[_num_dim];
-  double* dart = new double[_num_dim];
-  size_t* simplex = new size_t[_num_dim + 1];
-
-  double* vect = new double[_num_dim];
-
-  for (size_t idim = 0; idim < _num_dim; idim++) xst[idim] = _x[seed_index][idim];
-
-  double closest_distance = 0.0;
-
-  // add first point
-  size_t num_simplex_seeds(0);
-  simplex[num_simplex_seeds] = seed_index; num_simplex_seeds++;
-
-  while (num_simplex_seeds <= _num_dim)
-  {
-    // Throw a random spoke
-    sample_uniformly_from_unit_sphere(dart, _num_dim - num_basis);
-
-    for (size_t idim = 0; idim < _num_dim; idim++) xend[idim] = xst[idim];
-
-    for (size_t ibasis = num_basis; ibasis < _num_dim; ibasis++)
-    {
-      for (size_t idim = 0; idim < _num_dim; idim++) xend[idim] += _diag * dart[ibasis - num_basis] * basis[ibasis][idim];
-    }
-
-    closest_distance = 0.0;
-    for (size_t idim = 0; idim < _num_dim; idim++)
-    {
-      double dx = xend[idim] - _x[seed_index][idim];
-      closest_distance += dx * dx;
-    }
-    closest_distance = sqrt(closest_distance);
-
-    size_t neighbor(seed_index);
-    while (true)
-    {
-      // get closest point to xend
-      size_t closest_seed(seed_index);
-      double excluded_closest_distance = closest_distance + 1E-10;
-      get_closest_seed_tree(xend, num_simplex_seeds, simplex, closest_seed, excluded_closest_distance);
-
-      bool vertex_out_of_bounding_box(false);
-      if (neighbor == closest_seed)
-      {
-        for (size_t idim = 0; idim < _num_dim; idim++)
-        {
-          if (xend[idim] > _xmin[idim] - 1E-10 && xend[idim] < _xmax[idim] + 1E-10) continue;
-          vertex_out_of_bounding_box = true;
-          break;
-        }
-      }
-
-      if (closest_seed == _budget || (neighbor == closest_seed && vertex_out_of_bounding_box))
-      {
-//#pragma region A boundary Vertex mirror seed:
-        bool done(false);
-        for (size_t idim = 0; idim < _num_dim; idim++)
-        {
-          double t;
-          for (size_t ib = 0; ib < 2; ib++)
-          {
-            if (fabs(xend[idim] - xst[idim]) < 1E-10) continue;
-
-            if (ib == 0) t = (_xmin[idim] - xst[idim]) / (xend[idim] - xst[idim]);
-            else         t = (_xmax[idim] - xst[idim]) / (xend[idim] - xst[idim]);
-
-
-            bool trimming_bound(false);
-            if (t > 0.0 && t < 1.0)
-            {
-              trimming_bound = true;
-              for (size_t jdim = 0; jdim < _num_dim; jdim++)
-              {
-                if (fabs(xend[jdim] - xst[jdim]) < 1E-10) continue;
-                if (jdim == idim) continue;
-
-                double xx = xst[jdim] + t * (xend[jdim] - xst[jdim]);
-
-                if (xx < _xmin[jdim] || xx > _xmax[jdim])
-                {
-                  trimming_bound = false; break;
-                }
-              }
-            }
-
-            if (trimming_bound)
-            {
-              double* mirrored_seed = new double[_num_dim];
-              for (size_t jdim = 0; jdim < _num_dim; jdim++) mirrored_seed[jdim] = _x[seed_index][jdim];
-              if (ib == 0) mirrored_seed[idim] = _xmin[idim] - (_x[seed_index][idim] - _xmin[idim]); // 3.0;
-              else         mirrored_seed[idim] = _xmax[idim] + (_xmax[idim] - _x[seed_index][idim]); // 3.0;
-
-              trim_spoke(_num_dim, xst, xend, _x[seed_index], mirrored_seed);
-
-              // apply recursion
-              simplex[num_simplex_seeds] = seed_index; num_simplex_seeds++;
-
-              // update spoke start
-              for (size_t idim = 0; idim < _num_dim; idim++) xst[idim] = xend[idim];
-
-              // update basis
-              for (size_t idim = 0; idim < _num_dim; idim++) vect[idim] = mirrored_seed[idim] - _x[seed_index][idim];
-              double norm;
-              get_normal_component(_num_dim, num_basis, basis, vect, norm);
-              for (size_t idim = 0; idim < _num_dim; idim++) basis[num_basis][idim] = vect[idim];
-              num_basis++;
-
-              // update remaining basis
-              for (size_t ibasis = num_basis; ibasis < _num_dim; ibasis++)
-              {
-                for (size_t idim = 0; idim < _num_dim; idim++)
-                {
-                  for (size_t jdim = 0; jdim < _num_dim; jdim++) vect[jdim] = 0.0;
-                  vect[idim] = 1.0;
-                  get_normal_component(_num_dim, ibasis, basis, vect, norm);
-                  if (norm > 0.1) break;
-                }
-                for (size_t idim = 0; idim < _num_dim; idim++) basis[ibasis][idim] = vect[idim];
-              }
-              delete[] mirrored_seed;
-              done = true; break;
-            }
-          }
-          if (done) break;
-        }
-        if (done) break;
-//#pragma endregion
-      }
-      else if (neighbor == closest_seed || fabs(excluded_closest_distance - closest_distance) < 1E-10)
-      {
-//#pragma region A voronoi neighbor apply recursion:
-        simplex[num_simplex_seeds] = neighbor; num_simplex_seeds++;
-
-        // update spoke start
-        for (size_t idim = 0; idim < _num_dim; idim++) xst[idim] = xend[idim];
-
-        // update basis
-        for (size_t idim = 0; idim < _num_dim; idim++) vect[idim] = _x[closest_seed][idim] - _x[seed_index][idim];
-        double norm;
-        get_normal_component(_num_dim, num_basis, basis, vect, norm);
-        for (size_t idim = 0; idim < _num_dim; idim++) basis[num_basis][idim] = vect[idim];
-        num_basis++;
-
-        // update remaining basis
-        for (size_t ibasis = num_basis; ibasis < _num_dim; ibasis++)
-        {
-          for (size_t idim = 0; idim < _num_dim; idim++)
-          {
-            for (size_t jdim = 0; jdim < _num_dim; jdim++) vect[jdim] = 0.0;
-            vect[idim] = 1.0;
-            get_normal_component(_num_dim, ibasis, basis, vect, norm);
-            if (norm > 0.1) break;
-          }
-          for (size_t idim = 0; idim < _num_dim; idim++) basis[ibasis][idim] = vect[idim];
-        }
-        break;
-//#pragma endregion
-      }
-      else
-      {
-        neighbor = closest_seed;
-        trim_spoke(_num_dim, xst, xend, _x[seed_index], _x[neighbor]);
-        closest_distance = 0.0;
-        for (size_t idim = 0; idim < _num_dim; idim++)
-        {
-          double dx = xend[idim] - _x[seed_index][idim];
-          closest_distance += dx * dx;
-        }
-        closest_distance = sqrt(closest_distance);
-      }
-    }
-  }
-
-  if (closest_distance > _seed_rc[seed_index]) _seed_rc[seed_index] = closest_distance;
-
-  for (size_t idim = 0; idim < _num_dim; idim++) v[idim] = xend[idim];
-
-
-  for (size_t idim = 0; idim < _num_dim; idim++) delete[] basis[idim];
-  delete[] basis;
-
-  delete[] xst; delete[] xend; delete[] dart; delete[] simplex; delete[] vect;
-
-  return 0;
-//#pragma endregion
-}
-
-int VPS::sample_voronoi_facet(size_t seed_index, double* v)
-{
-//#pragma region Sample A Voronoi Vertex bounding Cell with seed_index:
-
-  double* xst = new double[_num_dim];
-  double* xend = new double[_num_dim];
-  double* dart = new double[_num_dim];
-
-  for (size_t idim = 0; idim < _num_dim; idim++)
-    xst[idim] = _x[seed_index][idim]; // Start at seed
-
-  size_t num_ex = 1;
-  size_t* ex_seeds = new size_t[1];
-  ex_seeds[0] = seed_index;
-
-  while (true)
-  {
-    // Throw a random spoke
-    sample_uniformly_from_unit_sphere(dart, _num_dim);
-
-    for (size_t idim = 0; idim < _num_dim; idim++)
-      xend[idim] = xst[idim];
-
-    for (size_t idim = 0; idim < _num_dim; idim++)
-      xend[idim] += _diag * dart[idim];
-
-    bool valid_spoke;
-
-    while (true)
-    {
-      // get closest point to xend
-      size_t closest_seed(seed_index);
-      double closest_dst(DBL_MAX);
-
-      get_closest_seed_tree(xend, num_ex, ex_seeds, closest_seed, closest_dst);
-
-      double d1(0.0), d2(0.0);
-
-      for (size_t idim = 0; idim < _num_dim; idim++)
-      {
-        double dx1 = xend[idim] - _x[seed_index][idim];
-        double dx2 = xend[idim] - _x[closest_seed][idim];
-
-        d1 += dx1 * dx1;
-        d2 += dx2 * dx2;
-      }
-
-      if (fabs(d1 - d2) < 1E-10)
-      {
-        valid_spoke = true;
-        break;
-      }
-
-      if (closest_seed == _budget)
-      {
-        valid_spoke = false; break;
-      }
-
-      if (!trim_spoke(_num_dim, xst, xend, _x[seed_index], _x[closest_seed]))
-      {
-        valid_spoke = false; break;
-      }
-    }
-
-    for (size_t idim = 0; idim < _num_dim; idim++)
-    {
-      if (xend[idim]< _xmin[idim] || xend[idim] > _xmax[idim])
-      {
-        valid_spoke = false;
-        break;
-      }
-    }
-
-    if (valid_spoke) break;
-  }
-
-  for (size_t idim = 0; idim < _num_dim; idim++) v[idim] = xend[idim];
-
-  delete[] xst; delete[] xend; delete[] dart; delete[] ex_seeds;
-
   return 0;
 //#pragma endregion
 }
@@ -3271,7 +2871,7 @@ int VPS::FourierExpansion(size_t num_data_points, double xmin, double xmax, doub
 {
 //#pragma region Fourier Expansion of a function:
 
-  //size_t num_pieces(num_data_points - 1);
+  //size_t num_pieces(num_data_points - 1); // ETP
 
   double P = xmax - xmin;
 
@@ -3768,7 +3368,7 @@ int VPS::retrieve_weights_regression(size_t cell_index)
       }
     }
 
-    LS_QR_Solver(num_data_points, num_basis, A, b, _basis_coef[cell_index][ifunc]);
+    LS_QR_Solver(num_data_points, /*_*/num_basis, A, b, _basis_coef[cell_index][ifunc]); // ETP
 
 
     delete[] data_points;
@@ -3879,491 +3479,452 @@ int VPS::detect_discontinuities()
 //#pragma region Detect Discontinuities:
   for (size_t iseed = 0; iseed < _num_samples; iseed++)
   {
-    detect_discontinuities(iseed);
-  }
-  for (size_t iseed = 0; iseed < _num_samples; iseed++)
-  {
-    //detect_discontinuities(iseed);
-  }
-  return 0;
-//#pragma endregion
-}
+    size_t num_neighbors; get_num_seed_neighbors(iseed, num_neighbors);
 
-int VPS::detect_discontinuities(size_t seed_index)
-{
-//#pragma region Detect Discontinuities:
-  size_t num_neighbors; get_num_seed_neighbors(seed_index, num_neighbors);
+    if (num_neighbors == 0) return 0;
 
-  if (num_neighbors == 0) return 0;
-
-  for (size_t ifunc = 0; ifunc < _num_functions; ifunc++)
-  {
-    for (size_t i = 0; i < num_neighbors; i++)
+    for (size_t ifunc = 0; ifunc < _num_functions; ifunc++)
     {
-      if (_seed_disc_neighbors[seed_index][ifunc][i]) continue;
-
-      size_t neighbor = _seed_neighbors[seed_index][2 + i];
-      if (seed_index < neighbor) detect_discontinuities(seed_index, neighbor);
-    }
-  }
-  return 0;
-//#pragma endregion
-}
-
-
-bool VPS::detect_discontinuities(size_t seed_i, size_t seed_j)
-{
-
-  if (fabs(_f[seed_i][0] - _f[seed_j][0]) > 0.5)
-  {
-    // A discontinous edge.
-    size_t num_neighbors;
-    get_num_seed_neighbors(seed_i, num_neighbors);
-    for (size_t i = 0; i < num_neighbors; i++)
-    {
-      size_t neighbor = _seed_neighbors[seed_i][2 + i];
-      if (neighbor != seed_j) continue;
-
-      _seed_disc_neighbors[seed_i][0][i] = true;
-
-      break;
-    }
-
-    get_num_seed_neighbors(seed_j, num_neighbors);
-    for (size_t i = 0; i < num_neighbors; i++)
-    {
-      size_t neighbor = _seed_neighbors[seed_j][2 + i];
-      if (neighbor != seed_i) continue;
-
-      _seed_disc_neighbors[seed_j][0][i] = true;
-
-      break;
-    }
-    return true;
-  }
-
-
-
-  if (seed_i == 7 && seed_j == 16)
-  {
-    int bug(0);
-    bug++;
-  }
-
-  for (size_t ifunc = 0; ifunc < _num_functions; ifunc++)
-  {
-    size_t num_chain_seeds; size_t* chain_seeds = new size_t[10];
-    form_discontinuity_chain(seed_i, seed_j, ifunc, num_chain_seeds, chain_seeds);
-
-    size_t disc_interv = 0;
-    for (size_t i = 1; i < num_chain_seeds; i++)
-    {
-      size_t cs = chain_seeds[i];
-      size_t csm = chain_seeds[i - 1];
-
-      if (csm == seed_i && cs == seed_j) disc_interv = i - 1;
-      if (csm == seed_j && cs == seed_i) disc_interv = i - 1;
-    }
-    size_t num_pieces(num_chain_seeds - 1);
-
-    if (disc_interv < 2 || disc_interv >= num_pieces - 2)
-    {
-      int bug(0);
-      bug++;
-    }
-
-    double* t = new double[num_chain_seeds];
-    double* f = new double[num_chain_seeds];
-
-    double **c = new double*[num_pieces];
-    for (size_t i = 0; i < num_pieces; i++) c[i] = new double[4];
-
-    //size_t cso = chain_seeds[0];
-    t[0] = 0.0;
-    for (size_t i = 1; i < num_chain_seeds; i++)
-    {
-      size_t cs = chain_seeds[i];
-      size_t csm = chain_seeds[i - 1];
-      double dst(0.0);
-      for (size_t idim = 0; idim < _num_dim; idim++)
-      {
-        double dx = _x[cs][idim] - _x[csm][idim];
-        dst += dx * dx;
-      }
-      dst = sqrt(dst);
-      t[i] = t[i - 1] + dst;
-    }
-
-    for (size_t i = 1; i < num_chain_seeds; i++) t[i] /= t[num_chain_seeds - 1];
-
-    for (size_t i = 1; i < num_chain_seeds - 1; i++)
-    {
-      // Adjust too close points
-      double dt = t[i + 1] - t[i - 1];
-      if (t[i] - t[i - 1] < 0.1 * dt)      t[i] = t[i - 1] + 0.1 * dt;
-      else if (t[i + 1] - t[i] < 0.1 * dt) t[i] = t[i + 1] - 0.1 * dt;
-    }
-
-    for (size_t i = 0; i < num_chain_seeds; i++)
-    {
-      size_t cs = chain_seeds[i];
-      f[i] = _f[cs][ifunc];
-    }
-
-    double xdm = t[disc_interv]; double xdp = t[disc_interv + 1];
-
-
-    form_discontinuity_spline(num_chain_seeds, t, f, disc_interv, c);
-
-
-    size_t* nb = new size_t[num_pieces]; double* tmin = new double[num_pieces]; double* tmax = new double[num_pieces];
-    for (size_t i = 0; i < num_pieces; i++)
-    {
-      nb[i] = 4; tmin[i] = t[i]; tmax[i] = t[i + 1];
-    }
-    //plot_piecewise_polynomial("disc_cubic_spline.ps", num_pieces, tmin, tmax, nb, c, num_chain_seeds, t, f);
-    delete[] nb; delete[] tmin; delete[] tmax;
-
-
-    double tsm = t[disc_interv]; double tsp = t[disc_interv + 1];
-    double fsm = f[disc_interv]; double fsp = f[disc_interv + 1];
-
-    double fsmS(fsm);
-    if (disc_interv > 0)
-    {
-      fsmS = 0.0;
-      for (size_t ibasis = 0; ibasis < 4; ibasis++) fsmS += c[disc_interv - 1][ibasis] * pow(tsm, ibasis);
-    }
-
-    double fspS(fsp);
-    if (disc_interv + 1 < num_pieces)
-    {
-      fspS = 0.0;
-      for (size_t ibasis = 0; ibasis < 4; ibasis++) fspS += c[disc_interv + 1][ibasis] * pow(tsp, ibasis);
-    }
-
-    double overlap(0.0);
-    if (fsmS > fspS){ double tmp = fsmS; fsmS = fspS; fspS = tmp;}
-    if (fsm > fsp){ double tmp = fsm; fsm = fsp; fsp = tmp; }
-
-    if (fsm > fspS || fsmS > fsp) overlap = 0.0;
-    else if (fsm >= fsmS && fsp <= fspS) overlap = fsp - fsm;
-    else if (fsmS >= fsm && fspS <= fsp) overlap = fspS - fsmS;
-    else if (fsm >= fsmS && fsp >= fspS) overlap = fspS - fsm;
-    else if (fsmS >= fsm && fspS >= fsp) overlap = fsp - fsmS;
-
-    double JS = fspS - fsmS;
-    double J = fsp - fsm;
-
-    if (overlap > 0.8 * J  && JS < 1.2 * J)
-    {
-      // A discontinous edge.
-      size_t num_neighbors;
-      get_num_seed_neighbors(seed_i, num_neighbors);
       for (size_t i = 0; i < num_neighbors; i++)
       {
-        size_t neighbor = _seed_neighbors[seed_i][2 + i];
-        if (neighbor != seed_j) continue;
+        if (_seed_disc_neighbors[iseed][ifunc][i]) continue;
+        size_t neighbor_i = _seed_neighbors[iseed][2 + i];
 
-        _seed_disc_neighbors[seed_i][ifunc][i] = true;
+        for (size_t j = i + 1; j < num_neighbors; j++)
+        {
+          if (_seed_disc_neighbors[iseed][ifunc][j]) continue;
+          size_t neighbor_j = _seed_neighbors[iseed][2 + j];
 
+          // Asser that neighbor_i and neighbor_j lie on opposite direction with regard to iseed
+
+          double hi(0.0), hj(0.0), dot(0.0);
+          for (size_t idim = 0; idim < _num_dim; idim++)
+          {
+            double dxi = _x[neighbor_i][idim] - _x[iseed][idim];
+            double dxj = _x[neighbor_j][idim] - _x[iseed][idim];
+            hi += dxi * dxi;
+            hj += dxj * dxj;
+            dot += dxi * dxj;
+          }
+          hi = sqrt(hi); hj = sqrt(hj);
+          dot /= hi; dot /= hj;
+          if (dot > -0.5) continue;
+
+          double dfi = _f[neighbor_i][ifunc] - _f[iseed][ifunc];
+          double dfj = _f[neighbor_j][ifunc] - _f[iseed][ifunc];
+
+          double norm_hfi = sqrt(hi * hi + dfi * dfi);
+          double norm_hfj = sqrt(hj * hj + dfj * dfj);
+          double dot_hf = -hi * hj + dfi * dfj;
+
+          dot_hf /= norm_hfi; dot_hf /= norm_hfj;
+
+          if (dot_hf < -0.5) continue;
+
+          double si = fabs(dfi) / hi;
+          double sj = fabs(dfj) / hj;
+
+          if (si > sj)
+          {
+            _seed_disc_neighbors[iseed][ifunc][i] = true;
+            size_t num_ii_neighbors; get_num_seed_neighbors(neighbor_i, num_ii_neighbors);
+            for (size_t ii = 0; ii < num_ii_neighbors; ii++)
+            {
+              if (_seed_neighbors[neighbor_i][2 + ii] == iseed) _seed_disc_neighbors[neighbor_i][ifunc][ii] = true;
+            }
+          }
+          else
+          {
+            _seed_disc_neighbors[iseed][ifunc][j] = true;
+            size_t num_jj_neighbors; get_num_seed_neighbors(neighbor_j, num_jj_neighbors);
+            for (size_t jj = 0; jj < num_jj_neighbors; jj++)
+            {
+              if (_seed_neighbors[neighbor_j][2 + jj] == iseed) _seed_disc_neighbors[neighbor_j][ifunc][jj] = true;
+            }
+          }
+        }
+      }
+    }
+  }
+  return 0;
+//#pragma endregion
+}
+
+int VPS::sample_voronoi_facet(size_t seed_index, double* xmin, double* xmax, double diag, double* v)
+{
+
+//#pragma region Sample A Voronoi facet bounding Cell with seed_index:
+
+  size_t num_basis(0);
+  double** basis = new double*[_num_dim];
+  for (size_t idim = 0; idim < _num_dim; idim++)
+  {
+
+    basis[idim] = new double[_num_dim];
+
+    for (size_t jdim = 0; jdim < _num_dim; jdim++) basis[idim][jdim] = 0.0;
+
+    basis[idim][idim] = 1.0;
+
+  }
+
+  double* xst = new double[_num_dim];
+  double* xend = new double[_num_dim];
+  double* dart = new double[_num_dim];
+  size_t* simplex = new size_t[_num_dim + 1];
+  double* vect = new double[_num_dim];
+  for (size_t idim = 0; idim < _num_dim; idim++) xst[idim] = _x[seed_index][idim];
+
+  double closest_distance = 0.0;
+  // add first point
+  size_t num_simplex_seeds(0);
+  simplex[num_simplex_seeds] = seed_index; num_simplex_seeds++;
+
+  size_t num_misses(0); size_t vertex_dim(0);
+
+  while (num_simplex_seeds <= _num_dim - vertex_dim)
+  {
+    // Throw a random spoke
+    sample_uniformly_from_unit_sphere(dart, _num_dim - num_basis);
+
+    for (size_t idim = 0; idim < _num_dim; idim++) xend[idim] = xst[idim];
+
+    for (size_t ibasis = num_basis; ibasis < _num_dim; ibasis++)
+    {
+      for (size_t idim = 0; idim < _num_dim; idim++) xend[idim] += diag * dart[ibasis - num_basis] * basis[ibasis][idim];
+    }
+
+    closest_distance = 0.0;
+
+    for (size_t idim = 0; idim < _num_dim; idim++)
+    {
+      double dx = xend[idim] - _x[seed_index][idim];
+      closest_distance += dx * dx;
+    }
+    closest_distance = sqrt(closest_distance);
+
+    bool done(true);
+    size_t neighbor(seed_index);
+    while (true)
+    {
+      // get closest point to xend
+      size_t closest_seed(seed_index);
+
+      double excluded_closest_distance = closest_distance + 1E-10;
+
+      get_closest_seed_tree(xend, num_simplex_seeds, simplex, closest_seed, excluded_closest_distance);
+
+      bool vertex_out_of_bounding_box(false);
+
+      if (neighbor == closest_seed)
+      {
+        for (size_t idim = 0; idim < _num_dim; idim++)
+        {
+          if (xend[idim] > xmin[idim] - 1E-10 && xend[idim] < xmax[idim] + 1E-10) continue;
+          vertex_out_of_bounding_box = true;
+          break;
+        }
+      }
+
+      if (closest_seed == _num_samples || (neighbor == closest_seed && vertex_out_of_bounding_box))
+      {
+        // reset sampling
+        num_simplex_seeds = 1;
+        for (size_t idim = 0; idim < _num_dim; idim++) xst[idim] = _x[seed_index][idim];
+
+        num_basis = 0;
+        for (size_t idim = 0; idim < _num_dim; idim++)
+        {
+          for (size_t jdim = 0; jdim < _num_dim; jdim++) basis[idim][jdim] = 0.0;
+          basis[idim][idim] = 1.0;
+        }
+        num_misses++;
+
+        if (num_misses == 100)
+        {
+          vertex_dim++; num_misses = 0;
+        }
+        done = false;
         break;
       }
 
-      get_num_seed_neighbors(seed_j, num_neighbors);
-      for (size_t i = 0; i < num_neighbors; i++)
+      if (neighbor == closest_seed || fabs(excluded_closest_distance - closest_distance) < 1E-10)
       {
-        size_t neighbor = _seed_neighbors[seed_j][2 + i];
-        if (neighbor != seed_i) continue;
+//#pragma region A voronoi neighbor apply recursion:
+        simplex[num_simplex_seeds] = neighbor; num_simplex_seeds++;
 
-        _seed_disc_neighbors[seed_j][ifunc][i] = true;
+        // update spoke start
+        for (size_t idim = 0; idim < _num_dim; idim++) xst[idim] = xend[idim];
 
+        // update basis
+        for (size_t idim = 0; idim < _num_dim; idim++) vect[idim] = _x[closest_seed][idim] - _x[seed_index][idim];
+
+        double norm;
+        get_normal_component(_num_dim, num_basis, basis, vect, norm);
+        for (size_t idim = 0; idim < _num_dim; idim++) basis[num_basis][idim] = vect[idim];
+        num_basis++;
+
+        // update remaining basis
+        for (size_t ibasis = num_basis; ibasis < _num_dim; ibasis++)
+        {
+          for (size_t idim = 0; idim < _num_dim; idim++)
+          {
+            for (size_t jdim = 0; jdim < _num_dim; jdim++) vect[jdim] = 0.0;
+            vect[idim] = 1.0;
+            get_normal_component(_num_dim, num_basis, basis, vect, norm);
+            if (norm > 0.1) break;
+          }
+
+          for (size_t idim = 0; idim < _num_dim; idim++) basis[ibasis][idim] = vect[idim];
+        }
         break;
+//#pragma endregion
       }
-    }
-
-    t[disc_interv] = xdm; t[disc_interv + 1] = xdp;
-
-    for (size_t i = 0; i < num_pieces; i++) delete[] c[i];
-    delete[] c; delete[] chain_seeds; delete[] t; delete[] f;
-  }
-  return 0;
-}
-
-int VPS::form_discontinuity_chain(size_t seed_i, size_t seed_j, size_t function_index, size_t &num_chain_seeds, size_t* chain_seeds)
-{
-//#pragma region Form Discontinuity Chain:
-  if (seed_i > seed_j){size_t tmp = seed_i; seed_i = seed_j; seed_j = tmp;}
-
-  double* vect = new double[_num_dim]; double vnorm(0.0);
-  for (size_t idim = 0; idim < _num_dim; idim++)
-  {
-    vect[idim] = _x[seed_j][idim] - _x[seed_i][idim];
-    vnorm += vect[idim] * vect[idim];
-  }
-  vnorm = sqrt(vnorm);
-  for (size_t idim = 0; idim < _num_dim; idim++) vect[idim] /= vnorm;
-
-  double ref_slope = (_f[seed_i][function_index] - _f[seed_j][function_index]) / vnorm;
-
-  size_t active_seed(seed_i); size_t num_back_chain_seeds(1);
-  size_t* back_chain = new size_t[9]; back_chain[0] = seed_i;
-  for (size_t i = 1; i <= 8; i++)
-  {
-    // best neighbor is the one with less functional and directional variation
-    size_t best_neighbor(active_seed); double best_var(2.0);
-    size_t num_neighbors(0);
-    get_num_seed_neighbors(active_seed, num_neighbors);
-
-    double dsmax(0.0);
-    double* ds = new double[num_neighbors];
-    for (size_t i = 0; i < num_neighbors; i++)
-    {
-      ds[i] = 0.0;
-
-      size_t seed_k = _seed_neighbors[active_seed][2 + i];
-      if (find_brute(seed_k, back_chain, num_back_chain_seeds)) continue;
-      if (seed_k == seed_j) continue;
-
-      double df = _f[seed_k][function_index] - _f[active_seed][function_index];
-      double dst = 0.0;
-      for (size_t idim = 0; idim < _num_dim; idim++)
+      else
       {
-        double dx = _x[seed_j][idim] - _x[seed_i][idim];
-        dst += dx * dx;
-      }
-      dst = sqrt(dst);
-      double slope = df / dst;
-
-      ds[i] = fabs(slope - ref_slope);
-
-      if (ds[i] > dsmax) dsmax = ds[i];
-    }
-
-    if (dsmax > 1E-10)
-    {
-      for (size_t i = 0; i < num_neighbors; i++) ds[i] /= dsmax;
-    }
-
-    for (size_t i = 0; i < num_neighbors; i++)
-    {
-      size_t seed_k = _seed_neighbors[active_seed][2 + i];
-      if (find_brute(seed_k, back_chain, num_back_chain_seeds)) continue;
-      if (seed_k == seed_j) continue;
-
-      double cos_ang(0.0), norm(0.0);
-      for (size_t idim = 0; idim < _num_dim; idim++)
-      {
-        double dx = _x[seed_k][idim] - _x[active_seed][idim];
-        norm += dx * dx;
-        cos_ang += dx * vect[idim];
-      }
-      norm = sqrt(norm); cos_ang /= norm;
-
-      if (cos_ang > 0.0) continue;
-
-      double ang = 1 - acos(cos_ang) / PI;
-
-      double var = ang + ds[i];
-      if (var < best_var)
-      {
-        best_var = var; best_neighbor = seed_k;
+        neighbor = closest_seed;
+        trim_spoke(_num_dim, xst, xend, _x[seed_index], _x[neighbor]);
+        closest_distance = 0.0;
+        for (size_t idim = 0; idim < _num_dim; idim++)
+        {
+          double dx = xend[idim] - _x[seed_index][idim];
+          closest_distance += dx * dx;
+        }
+        closest_distance = sqrt(closest_distance);
       }
     }
-    delete[] ds;
-    if (best_neighbor == active_seed) break;
-
-    vnorm = 0.0;
-    for (size_t idim = 0; idim < _num_dim; idim++)
-    {
-      vect[idim] = _x[active_seed][idim] - _x[best_neighbor][idim];
-      vnorm += vect[idim] * vect[idim];
-    }
-    vnorm = sqrt(vnorm);
-    for (size_t idim = 0; idim < _num_dim; idim++) vect[idim] /= vnorm;
-
-    ref_slope = (_f[best_neighbor][function_index] - _f[active_seed][function_index]) / vnorm;
-
-    back_chain[num_back_chain_seeds] = best_neighbor;
-    active_seed = best_neighbor;
-    num_back_chain_seeds++;
+    if (done) break;
   }
 
-  vnorm = 0.0;
-  for (size_t idim = 0; idim < _num_dim; idim++)
-  {
-    vect[idim] = _x[seed_j][idim] - _x[seed_i][idim];
-    vnorm += vect[idim] * vect[idim];
-  }
-  vnorm = sqrt(vnorm);
-  for (size_t idim = 0; idim < _num_dim; idim++) vect[idim] /= vnorm;
+  for (size_t idim = 0; idim < _num_dim; idim++) v[idim] = xend[idim];
+  for (size_t idim = 0; idim < _num_dim; idim++) delete[] basis[idim];
+  delete[] basis;
 
-  ref_slope = (_f[seed_j][function_index] - _f[seed_i][function_index]) / vnorm;
-
-  active_seed = seed_j; size_t num_fwd_chain_seeds(1);
-  size_t* fwd_chain = new size_t[9]; fwd_chain[0] = seed_j;
-  for (size_t i = 1; i <= 8; i++)
-  {
-    size_t best_neighbor(active_seed); double best_var(2.0);
-    size_t num_neighbors(0);
-    get_num_seed_neighbors(active_seed, num_neighbors);
-
-    double dsmax(0.0);
-    double* ds = new double[num_neighbors];
-    for (size_t i = 0; i < num_neighbors; i++)
-    {
-      ds[i] = 0.0;
-
-      size_t seed_k = _seed_neighbors[active_seed][2 + i];
-      if (find_brute(seed_k, back_chain, num_back_chain_seeds)) continue;
-      if (seed_k == seed_j) continue;
-
-      double df = _f[seed_k][function_index] - _f[active_seed][function_index];
-      double dst = 0.0;
-      for (size_t idim = 0; idim < _num_dim; idim++)
-      {
-        double dx = _x[seed_j][idim] - _x[seed_i][idim];
-        dst += dx * dx;
-      }
-      dst = sqrt(dst);
-      double slope = df / dst;
-
-      ds[i] = fabs(slope - ref_slope);
-
-      if (ds[i] > dsmax) dsmax = ds[i];
-    }
-
-    if (dsmax > 1E-10)
-    {
-      for (size_t i = 0; i < num_neighbors; i++) ds[i] /= dsmax;
-    }
-
-    for (size_t i = 0; i < num_neighbors; i++)
-    {
-      size_t seed_k = _seed_neighbors[active_seed][2 + i];
-      if (find_brute(seed_k, back_chain, num_back_chain_seeds)) continue;
-      if (find_brute(seed_k, fwd_chain, num_fwd_chain_seeds)) continue;
-
-      double cos_ang(0.0), norm(0.0);
-      for (size_t idim = 0; idim < _num_dim; idim++)
-      {
-        double dx = _x[seed_k][idim] - _x[active_seed][idim];
-        norm += dx * dx;
-        cos_ang -= dx * vect[idim];
-      }
-      norm = sqrt(norm); cos_ang /= norm;
-
-      if (cos_ang > 0.0) continue;
-
-      double ang = 1.0 - acos(cos_ang) / PI;
-
-      double var = ang + ds[i];
-      if (var < best_var)
-      {
-        best_var = var; best_neighbor = seed_k;
-      }
-    }
-    delete[] ds;
-    if (best_neighbor == active_seed) break;
-
-    vnorm = 0.0;
-    for (size_t idim = 0; idim < _num_dim; idim++)
-    {
-      vect[idim] = _x[best_neighbor][idim] - _x[active_seed][idim];
-      vnorm += vect[idim] * vect[idim];
-    }
-    vnorm = sqrt(vnorm);
-    for (size_t idim = 0; idim < _num_dim; idim++) vect[idim] /= vnorm;
-
-    ref_slope = (_f[best_neighbor][function_index] - _f[active_seed][function_index]) / vnorm;
-
-    fwd_chain[num_fwd_chain_seeds] = best_neighbor;
-    active_seed = best_neighbor;
-    num_fwd_chain_seeds++;
-  }
-
-  if      (num_back_chain_seeds < 5 && num_back_chain_seeds + num_fwd_chain_seeds >= 10)    num_fwd_chain_seeds = 10 - num_back_chain_seeds;
-  else if (num_fwd_chain_seeds < 5 && num_back_chain_seeds + num_fwd_chain_seeds >= 10)     num_back_chain_seeds = 10 - num_fwd_chain_seeds;
-  else if (num_back_chain_seeds + num_fwd_chain_seeds >= 10) { num_fwd_chain_seeds = 5;     num_back_chain_seeds = 5; }
-
-  num_chain_seeds = 0;
-  for (size_t i = 0; i < num_back_chain_seeds; i++)
-  {
-    chain_seeds[num_chain_seeds] = back_chain[num_back_chain_seeds - i - 1];
-    num_chain_seeds++;
-  }
-
-  for (size_t i = 0; i < num_fwd_chain_seeds; i++)
-  {
-    chain_seeds[num_chain_seeds] = fwd_chain[i];
-    num_chain_seeds++;
-  }
-  delete[] back_chain; delete[] fwd_chain;
+  delete[] xst; delete[] xend; delete[] dart; delete[] simplex; delete[] vect;
   return 0;
 //#pragma endregion
 }
 
-int VPS::form_discontinuity_spline(size_t num_data_points, double* x, double* f, size_t disc_interv, double** c)
+int VPS::sample_voronoi_vertex(size_t seed_index, double* xmin, double* xmax, double diag, double* v)
 {
-//#pragma region Form Discontinuity Spline:
-  size_t num_pieces(num_data_points - 1);
-  double* co = new double[num_pieces]; double* c1 = new double[num_pieces];
-  double* c2 = new double[num_pieces]; double* c3 = new double[num_pieces];
 
-  double xmid(0.5*(x[0] + x[1]));
+//#pragma region Sample A Voronoi Vertex bounding Cell with seed_index:
 
-  if (disc_interv > 0)
+  size_t num_basis(0);
+  double** basis = new double*[_num_dim];
+  for (size_t idim = 0; idim < _num_dim; idim++)
   {
-    size_t nL(disc_interv);
-    double* coL = new double[nL]; double* c1L = new double[nL];
-    double* c2L = new double[nL]; double* c3L = new double[nL];
-    double* xL = new double[nL + 1]; double* fL = new double[nL + 1];
 
-    for (size_t i = 0; i <= nL; i++)
+    basis[idim] = new double[_num_dim];
+
+    for (size_t jdim = 0; jdim < _num_dim; jdim++) basis[idim][jdim] = 0.0;
+
+    basis[idim][idim] = 1.0;
+
+  }
+
+  double* xst = new double[_num_dim];
+  double* xend = new double[_num_dim];
+  double* dart = new double[_num_dim];
+  size_t* simplex = new size_t[_num_dim + 1];
+  double* vect = new double[_num_dim];
+  for (size_t idim = 0; idim < _num_dim; idim++) xst[idim] = _x[seed_index][idim];
+
+  double closest_distance = 0.0;
+  // add first point
+  size_t num_simplex_seeds(0);
+  simplex[num_simplex_seeds] = seed_index; num_simplex_seeds++;
+
+  size_t num_misses(0); size_t vertex_dim(0);
+
+  while (num_simplex_seeds <= _num_dim - vertex_dim)
+  {
+    // Throw a random spoke
+    sample_uniformly_from_unit_sphere(dart, _num_dim - num_basis);
+
+    for (size_t idim = 0; idim < _num_dim; idim++) xend[idim] = xst[idim];
+
+    for (size_t ibasis = num_basis; ibasis < _num_dim; ibasis++)
     {
-      xL[i] = x[i]; fL[i] = f[i];
-      if (i == disc_interv) xmid = 0.5 * (x[i] + x[i + 1]);
+      for (size_t idim = 0; idim < _num_dim; idim++) xend[idim] += diag * dart[ibasis - num_basis] * basis[ibasis][idim];
     }
 
-    NaturalCubicSplineInterpolation(nL + 1, xL, fL, coL, c1L, c2L, c3L);
+    closest_distance = 0.0;
 
-    for (size_t i = 0; i < nL; i++){ co[i] = coL[i]; c1[i] = c1L[i]; c2[i] = c2L[i]; c3[i] = c3L[i]; }
-
-    delete[] coL; delete[] c1L; delete[] c2L; delete[] c3L; delete[] xL; delete[] fL;
-  }
-
-  co[disc_interv] = 0.0; c1[disc_interv] = 0.0; c2[disc_interv] = 0.0; c3[disc_interv] = 0.0;
-
-  if (disc_interv < num_pieces - 1)
-  {
-    size_t nR(num_pieces - 1 - disc_interv);
-    double* coR = new double[nR]; double* c1R = new double[nR];
-    double* c2R = new double[nR]; double* c3R = new double[nR];
-    double* xR = new double[nR + 1]; double* fR = new double[nR + 1];
-
-    for (size_t i = 0; i <= nR; i++)
+    for (size_t idim = 0; idim < _num_dim; idim++)
     {
-      xR[i] = x[disc_interv + 1 + i]; fR[i] = f[disc_interv + 1 + i];
+      double dx = xend[idim] - _x[seed_index][idim];
+      closest_distance += dx * dx;
     }
-    NaturalCubicSplineInterpolation(nR + 1, xR, fR, coR, c1R, c2R, c3R);
+    closest_distance = sqrt(closest_distance);
 
-    for (size_t i = 0; i < nR; i++){ co[disc_interv + 1 + i] = coR[i]; c1[disc_interv + 1 + i] = c1R[i]; c2[disc_interv + 1 + i] = c2R[i]; c3[disc_interv + 1 + i] = c3R[i]; }
+    size_t neighbor(seed_index);
+    while (true)
+    {
+      // get closest point to xend
+      size_t closest_seed(seed_index);
 
-    delete[] coR; delete[] c1R; delete[] c2R; delete[] c3R; delete[] xR; delete[] fR;
+      double excluded_closest_distance = closest_distance + 1E-10;
+
+      get_closest_seed_tree(xend, num_simplex_seeds, simplex, closest_seed, excluded_closest_distance);
+
+      bool vertex_out_of_bounding_box(false);
+
+      if (neighbor == closest_seed)
+      {
+        for (size_t idim = 0; idim < _num_dim; idim++)
+        {
+          if (xend[idim] > xmin[idim] - 1E-10 && xend[idim] < xmax[idim] + 1E-10) continue;
+          vertex_out_of_bounding_box = true;
+          break;
+        }
+      }
+
+      if (closest_seed == _num_samples || (neighbor == closest_seed && vertex_out_of_bounding_box))
+      {
+        // reset sampling
+        num_simplex_seeds = 1;
+        for (size_t idim = 0; idim < _num_dim; idim++) xst[idim] = _x[seed_index][idim];
+
+        num_basis = 0;
+        for (size_t idim = 0; idim < _num_dim; idim++)
+        {
+          for (size_t jdim = 0; jdim < _num_dim; jdim++) basis[idim][jdim] = 0.0;
+          basis[idim][idim] = 1.0;
+        }
+        num_misses++;
+
+        if (num_misses == 100)
+        {
+          vertex_dim++; num_misses = 0;
+        }
+        break;
+      }
+
+      if (neighbor == closest_seed || fabs(excluded_closest_distance - closest_distance) < 1E-10)
+      {
+//#pragma region A voronoi neighbor apply recursion:
+        simplex[num_simplex_seeds] = neighbor; num_simplex_seeds++;
+
+        // update spoke start
+        for (size_t idim = 0; idim < _num_dim; idim++) xst[idim] = xend[idim];
+
+        // update basis
+        for (size_t idim = 0; idim < _num_dim; idim++) vect[idim] = _x[closest_seed][idim] - _x[seed_index][idim];
+
+        double norm;
+        get_normal_component(_num_dim, num_basis, basis, vect, norm);
+        for (size_t idim = 0; idim < _num_dim; idim++) basis[num_basis][idim] = vect[idim];
+        num_basis++;
+
+        // update remaining basis
+        for (size_t ibasis = num_basis; ibasis < _num_dim; ibasis++)
+        {
+          for (size_t idim = 0; idim < _num_dim; idim++)
+          {
+            for (size_t jdim = 0; jdim < _num_dim; jdim++) vect[jdim] = 0.0;
+            vect[idim] = 1.0;
+            get_normal_component(_num_dim, num_basis, basis, vect, norm);
+            if (norm > 0.1) break;
+          }
+
+          for (size_t idim = 0; idim < _num_dim; idim++) basis[ibasis][idim] = vect[idim];
+        }
+        break;
+//#pragma endregion
+      }
+      else
+      {
+        neighbor = closest_seed;
+        trim_spoke(_num_dim, xst, xend, _x[seed_index], _x[neighbor]);
+        closest_distance = 0.0;
+        for (size_t idim = 0; idim < _num_dim; idim++)
+        {
+          double dx = xend[idim] - _x[seed_index][idim];
+          closest_distance += dx * dx;
+        }
+        closest_distance = sqrt(closest_distance);
+      }
+    }
   }
 
-  x[disc_interv] = xmid; x[disc_interv + 1] = xmid;
+  for (size_t idim = 0; idim < _num_dim; idim++) v[idim] = xend[idim];
+  for (size_t idim = 0; idim < _num_dim; idim++) delete[] basis[idim];
+  delete[] basis;
 
-  for (size_t ipiece = 0; ipiece < num_pieces; ipiece++)
+  delete[] xst; delete[] xend; delete[] dart; delete[] simplex; delete[] vect;
+  return 0;
+//#pragma endregion
+}
+
+bool VPS::trim_spoke(size_t num_dim, double* xst, double* xend, double* p, double* q)
+{
+
+//#pragma region Trim a Spoke:
+  double* nH = new double[num_dim];
+  double* xH = new double[num_dim];
+
+  // trim spoke using Voronoi hyperplane between ipoint and iclosest
+  double norm(0.0);
+  for (size_t idim = 0; idim < num_dim; idim++)
   {
-    c[ipiece][0] = co[ipiece];
-    c[ipiece][1] = c1[ipiece];
-    c[ipiece][2] = c2[ipiece];
-    c[ipiece][3] = c3[ipiece];
+    nH[idim] = q[idim] - p[idim];
+    xH[idim] = 0.5 * (q[idim] + p[idim]);
   }
 
-  delete[] co; delete[] c1; delete[] c2; delete[] c3;
+  double dotv(0.0), dote(0.0);
+  for (size_t idim = 0; idim < num_dim; idim++)
+  {
+    double dxv = xH[idim] - xst[idim];
+    double dxe = xend[idim] - xst[idim];
+    dotv += dxv * nH[idim];
+    dote += dxe * nH[idim];
+  }
+  delete[] nH; delete[] xH;
+  bool trimmed = false;
+
+  if (fabs(dote) > 1E-10)
+  {
+    double u = dotv / dote;
+    if (u < 0.0) u = 0.0;
+    if (u > -1.0E-10 && u < 1.0 - 1.0E-10)
+    {
+      for (size_t idim = 0; idim < num_dim; idim++) xend[idim] = xst[idim] + u * (xend[idim] - xst[idim]);
+      trimmed = true;
+    }
+  }
+  return trimmed;
+//#pragma endregion
+}
+
+int VPS::get_normal_component(size_t num_dim, size_t num_basis, double** basis, double* vect, double &norm)
+{
+//#pragma region Get Normal component to some basis:
+  double* comp = new double[num_basis];
+
+  // project point to current basis
+  for (size_t ibasis = 0; ibasis < num_basis; ibasis++)
+  {
+    comp[ibasis] = 0.0;
+    for (size_t idim = 0; idim < num_dim; idim++) comp[ibasis] += vect[idim] * basis[ibasis][idim];
+  }
+  // get vector component orthogonal to current basis
+  for (size_t ibasis = 0; ibasis < num_basis; ibasis++)
+  {
+    for (size_t idim = 0; idim < num_dim; idim++) vect[idim] -= comp[ibasis] * basis[ibasis][idim];
+  }
+  delete[] comp;
+
+  norm = 0.0;
+  for (size_t idim = 0; idim < num_dim; idim++) norm += vect[idim] * vect[idim];
+
+  if (fabs(norm) < 1E-10) return 1;
+
+  norm = 1.0 / sqrt(norm);
+
+  for (size_t idim = 0; idim < num_dim; idim++) vect[idim] *= norm;
 
   return 0;
+
 //#pragma endregion
 }

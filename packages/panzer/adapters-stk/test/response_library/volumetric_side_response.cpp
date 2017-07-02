@@ -51,8 +51,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -134,7 +132,8 @@ namespace panzer_stk {
     buildPhysicsBlocks(*mesh,physics_blocks,cm_factory,closure_models,user_data);
 
     RCP<std::vector<panzer::Workset> > worksets 
-       = wkstFactory->getWorksets(panzer::blockDescriptor("eblock-1_0"),*physics_blocks[0]);
+       = wkstFactory->getWorksets(panzer::blockDescriptor("eblock-1_0"), 
+                                  physics_blocks[0]->getWorksetNeeds());
 
     {
       TEST_ASSERT(worksets!=Teuchos::null);
@@ -144,7 +143,8 @@ namespace panzer_stk {
 
     {
       RCP<std::vector<panzer::Workset> > worksets 
-         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),*physics_blocks[0]);
+         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),
+                                    physics_blocks[0]->getWorksetNeeds());
  
  
       if(tcomm->getRank()==0) {
@@ -212,7 +212,8 @@ namespace panzer_stk {
 
     {
       RCP<std::vector<panzer::Workset> > worksets 
-         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),*physics_blocks[0]);
+         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),
+                                    physics_blocks[0]->getWorksetNeeds());
  
  
       if(tcomm->getRank()==0) {

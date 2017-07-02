@@ -65,7 +65,7 @@ SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME RELEASE_DEV_MueLu_Matlab)
 SET(CTEST_PARALLEL_LEVEL 3)
 SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK Nightly)       # set the CDash track
+SET(Trilinos_TRACK Specialized)       # set the CDash track
 SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES Amesos Epetra Ifpack Teuchos Tpetra ML MueLu Zoltan)

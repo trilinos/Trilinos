@@ -234,6 +234,7 @@ getLinearSolver (const std::string& packageName, const std::string& solverName);
 template<class MV, class OP, class NormType>
 class LinearSolverFactory {
 public:
+  virtual ~LinearSolverFactory() {}
   /// \brief Get an instance of a solver from a particular package.
   ///
   /// \param solverName [in] The solver's name.  Names are case

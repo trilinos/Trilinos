@@ -79,7 +79,10 @@ namespace Sacado {
      * This template class serves as a wrapper for all Fad expression
      * template classes.
      */
-    template <typename ExprT, typename Spec> class Expr {};
+    template <typename ExprT, typename Spec>
+    struct Expr {
+      typedef ExprT value_type;
+    };
 
     template <typename ExprT, typename Spec>
     struct ExprSpec< Expr<ExprT,Spec> > {

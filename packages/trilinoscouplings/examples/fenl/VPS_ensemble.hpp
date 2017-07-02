@@ -28,7 +28,7 @@ private:
 
   size_t _num_samples;     // Budget
   size_t _ensemble_size;   // Ensemble size
-  size_t _sampling;
+  //size_t _sampling;
   size_t _surrogate_order;
 
   size_t _MCratio;        // MC candidates ratio
@@ -37,7 +37,7 @@ private:
   double _shrinkage_rho;   // Well-spacedness parameter
 
   double* _ei_sur;          // Interpolation error
-  double* _ef_max;          // maximum error estimate on a facet
+  //double* _ef_max;          // maximum error estimate on a facet
 
   double* _di;             // iterations dispersion
   double* _Ri;             // Grouping efficiency
@@ -72,8 +72,8 @@ public:
     _ei_sur = new double[_num_samples / _ensemble_size];
     for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++) _ei_sur[iEnsemble] = 0.0;
 
-    _ef_max = new double[_num_samples / _ensemble_size];
-    for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++) _ef_max[iEnsemble] = 0.0;
+    //_ef_max = new double[_num_samples / _ensemble_size];
+    //for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++) _ef_max[iEnsemble] = 0.0;
 
     _di = new double[_num_samples / _ensemble_size];
     for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++) _di[iEnsemble] = 0.0;
@@ -139,7 +139,7 @@ public:
       VPS g_surrogate;
 
       f_surrogate.build_surrogate(_num_dim, _xmin, _xmax, 1, VPS::Regression, VPS::monomials, _surrogate_order, (iEnsemble + 1)*_ensemble_size, (iEnsemble + 1)*_ensemble_size, _x, _f, 0, 0);
-      g_surrogate.build_surrogate(_num_dim, _xmin, _xmax, 1, VPS::Regression, VPS::monomials, 0, (iEnsemble + 1)*_ensemble_size, (iEnsemble + 1)*_ensemble_size, _x, _g, 0, 0);
+      g_surrogate.build_surrogate(_num_dim, _xmin, _xmax, 1, VPS::Regression, VPS::monomials, _surrogate_order, (iEnsemble + 1)*_ensemble_size, (iEnsemble + 1)*_ensemble_size, _x, _g, 0, 0);
 
       // -------------------------
       // ADAPTATION: Start collecting Candidates
@@ -150,7 +150,7 @@ public:
       double*  yMC_ErrorEst = new double[_numMC];
 
       double rsphere = _diag;
-      double* dart = new double[_num_dim];
+      double* dart = new double[_num_dim]; // ETP
       double* p_facet = new double[_num_dim];
       double p_errest;
 
@@ -167,7 +167,7 @@ public:
         if (p_errest > facetMaxErrEst) facetMaxErrEst = p_errest;
         iMCp++;
       }
-      _ef_max[iEnsemble] += facetMaxErrEst;
+      //_ef_max[iEnsemble] += facetMaxErrEst;
 
       // --------------------------
       // Now loop to collect points
@@ -230,6 +230,7 @@ public:
               if ((dstsq - (rsphere * rsphere)) > 1E-10)
                 continue;
 
+              delete[] yMC[ip];
               yMC[ip] = yMC[num_points - 1];
               yMC_ErrorEst[ip] = yMC_ErrorEst[num_points - 1];
               num_points--;
@@ -289,11 +290,11 @@ public:
       // ----------------------
       // ----------------------
       // ----------------------
-      double* fs = new double[1];
+      double* fs = new double[1]; // ETP
       for (size_t ix = 0; ix < _ensemble_size; ix++)
       {
         for (size_t idim = 0; idim < _num_dim; idim++)
-          _xens[ix][idim] = yMD[ix][idim];
+          _xens[ix][idim] = yMC[ix][idim];
 
         f_surrogate.evaluate_surrogate(_xens[ix], fs);
         _fsur[ix][0] = fs[0];
@@ -359,6 +360,7 @@ public:
       save_ei_sur();
     }
 
+    /*
     if (_proc_rank == 0) {
       std::cout << "ef_max" << std::endl;
       std::cout << "=======" << std::endl;
@@ -369,6 +371,7 @@ public:
       std::cout << std::endl;
       save_ef_max();
     }
+    */
 
     // -----------------------------------------------------
     // Average d over experiments and save
@@ -409,10 +412,10 @@ public:
     // ---------------------
     // Clear metrics memory
     // ---------------------
-    delete [] _ei_sur;
-    delete [] _ef_max;
-    delete [] _di;
-    delete [] _Ri;
+    delete [] _ei_sur; // ETP
+    //delete [] _ef_max; // ETP
+    delete [] _di; // ETP
+    delete [] _Ri; // ETP
   }
 
   int generate_MC_points(size_t num_dim, size_t Npoints, double** &x);
@@ -429,7 +432,7 @@ public:
 
   void save_ei_sur();
 
-  void save_ef_max();
+  //void save_ef_max();
 
   void save_di();
 

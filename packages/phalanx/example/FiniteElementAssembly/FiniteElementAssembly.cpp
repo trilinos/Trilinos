@@ -41,11 +41,6 @@
 // ************************************************************************
 // @HEADER
 
-
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -55,6 +50,9 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
+#include "Phalanx_MDField.hpp"
+#include "Phalanx_FieldManager.hpp"
 
 #include "Mesh.hpp"
 #include "WorksetBuilder.hpp"
@@ -90,7 +88,7 @@ int main(int argc, char *argv[])
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
 
-    PHX::InitializeKokkosDevice(argc,argv);
+    Kokkos::initialize(argc,argv);
     PHX::exec_space::print_configuration(std::cout);
 
     // *********************************************************

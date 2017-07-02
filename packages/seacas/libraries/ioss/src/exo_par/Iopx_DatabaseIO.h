@@ -35,9 +35,9 @@
 #define IOSS_Iopx_DatabaseIO_h
 
 #include <Ioss_CodeTypes.h>
-#include <Ioss_State.h>             // for State
 #include <Ioss_DBUsage.h>           // for DatabaseUsage
 #include <Ioss_Map.h>               // for Map
+#include <Ioss_State.h>             // for State
 #include <exodus/Ioex_DatabaseIO.h> // for DatabaseIO
 #include <exodusII.h>               // for ex_entity_type, etc
 #include <functional>               // for less
@@ -92,23 +92,25 @@ namespace Iopx {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
-    void release_memory() override;
     bool needs_shared_node_information() const override { return true; }
+
+  private:
     void compute_node_status() const;
 
-    void compute_block_adjacencies() const override;
+    void release_memory__() override;
 
     // Check to see if database state is ok...
     // If 'write_message' true, then output a warning message indicating the problem.
     // If 'error_message' non-null, then put the warning message into the string and return it.
     // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
     //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    bool ok(bool write_message = false, std::string *error_message = nullptr,
-            int *bad_count = nullptr) const override;
+    bool ok__(bool write_message = false, std::string *error_message = nullptr,
+              int *bad_count = nullptr) const override;
 
-    void get_step_times() override;
+    void get_step_times__() override;
 
-  private:
+    void compute_block_adjacencies() const override;
+
     bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
                          bool abort_if_error) const;
     bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
@@ -120,9 +122,9 @@ namespace Iopx {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
+    int64_t get_field_internal(const Ioss::EdgeBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
+    int64_t get_field_internal(const Ioss::FaceBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -150,9 +152,9 @@ namespace Iopx {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
+    int64_t put_field_internal(const Ioss::EdgeBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
+    int64_t put_field_internal(const Ioss::FaceBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -191,17 +193,17 @@ namespace Iopx {
     void output_node_map() const;
 
     // Metadata-related functions.
-    void read_meta_data() override;
+    void read_meta_data__() override;
 
     int64_t read_transient_field(ex_entity_type type, const Ioex::VariableNameMap &variables,
                                  const Ioss::Field &field, const Ioss::GroupingEntity *ge,
                                  void *data) const;
 
     int64_t read_attribute_field(ex_entity_type type, const Ioss::Field &field,
-                                 const Ioss::GroupingEntity *ge, void *variables) const;
+                                 const Ioss::GroupingEntity *ge, void *data) const;
 
     int64_t write_attribute_field(ex_entity_type type, const Ioss::Field &field,
-                                  const Ioss::GroupingEntity *ge, void *variables) const;
+                                  const Ioss::GroupingEntity *ge, void *data) const;
 
     // Handles subsetting of side blocks.
     int64_t read_ss_transient_field(const Ioss::Field &field, int64_t id, void *variables,
@@ -209,7 +211,7 @@ namespace Iopx {
 
     // Should be made more generic again so can rejoin with write_element_transient field
     void write_nodal_transient_field(ex_entity_type type, const Ioss::Field &field,
-                                     const Ioss::NodeBlock *ge, int64_t count,
+                                     const Ioss::NodeBlock *nb, int64_t count,
                                      void *variables) const;
     // Should be made more generic again so can rejoin with write_nodal_transient field
     void write_entity_transient_field(ex_entity_type type, const Ioss::Field &field,
@@ -222,7 +224,7 @@ namespace Iopx {
     void get_edgeblocks();
     void get_faceblocks();
     void get_elemblocks();
-    void get_blocks(ex_entity_type type, int rank_offset, const std::string &basename);
+    void get_blocks(ex_entity_type entity_type, int rank_offset, const std::string &basename);
 
     void get_sidesets();
 
@@ -241,12 +243,12 @@ namespace Iopx {
                              int64_t file_count, ex_entity_type entity_type,
                              ex_inquiry inquiry_type) const;
 
-    int64_t node_global_to_local(int64_t global, bool must_exist) const override
+    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
     {
       return nodeMap.global_to_local(global, must_exist);
     }
 
-    int64_t element_global_to_local(int64_t global) const override
+    int64_t element_global_to_local__(int64_t global) const override
     {
       return elemMap.global_to_local(global);
     }
@@ -260,7 +262,7 @@ namespace Iopx {
 
     int64_t get_side_connectivity(const Ioss::SideBlock *fb, int64_t id, int64_t side_count,
                                   void *fconnect, bool map_ids) const;
-    int64_t get_side_distributions(const Ioss::SideBlock *fb, int64_t id, int64_t side_count,
+    int64_t get_side_distributions(const Ioss::SideBlock *fb, int64_t id, int64_t my_side_count,
                                    double *dist_fact, size_t data_size) const;
 
     int64_t get_side_field(const Ioss::SideBlock *ef_blk, const Ioss::Field &field, void *data,

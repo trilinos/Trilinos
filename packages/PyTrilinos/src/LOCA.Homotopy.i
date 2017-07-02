@@ -120,6 +120,9 @@ the following classes:
 
 %import "Teuchos.i"
 
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
+
 // Teuchos::RCP handling
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)

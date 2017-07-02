@@ -58,6 +58,7 @@ namespace Intrepid2 {
 
     class Basis_HCURL_HEX_In_FEM {
     public:
+      typedef struct Hexahedron<8> cell_topology_type;
 
       template<EOperator opType>
       struct Serial {

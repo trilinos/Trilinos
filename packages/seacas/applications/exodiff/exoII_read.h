@@ -60,7 +60,7 @@ template <typename INT> class ExoII_Read
 {
 public:
   ExoII_Read();
-  explicit ExoII_Read(const char *file_name_x);
+  explicit ExoII_Read(const char *fname);
   virtual ~ExoII_Read();
   const ExoII_Read &operator=(const ExoII_Read &); // Not written.
 
@@ -117,7 +117,7 @@ public:
   std::string Free_Elmt_Blocks() const;                  // Frees all blocks.
 
   // Moves array of connectivities from the block to the conn array.
-  std::string Give_Connectivity(size_t block_index, size_t &num_e, size_t &npe, INT *&conn);
+  std::string Give_Connectivity(size_t block_index, size_t &num_e, size_t &npe, INT *&new_conn);
 
   // Number maps:
   std::string Load_Node_Map();
@@ -166,12 +166,12 @@ public:
 
   // Node/Side sets:
 
-  Exo_Entity *Get_Entity_by_Index(EXOTYPE type, size_t index) const;
+  Exo_Entity *Get_Entity_by_Index(EXOTYPE type, size_t block_index) const;
   Exo_Entity *Get_Entity_by_Id(EXOTYPE type, size_t id) const;
   Exo_Entity *Get_Entity_by_Name(EXOTYPE type, const std::string &name) const;
 
   size_t Block_Id(size_t block_index) const; // Returns associated block id.
-  Exo_Block<INT> *Get_Elmt_Block_by_Id(size_t block_id) const;
+  Exo_Block<INT> *Get_Elmt_Block_by_Id(size_t id) const;
   Exo_Block<INT> *Get_Elmt_Block_by_Index(size_t block_index) const;
   Exo_Block<INT> *Get_Elmt_Block_by_Name(const std::string &name) const;
 
@@ -180,7 +180,7 @@ public:
   Side_Set<INT> *Get_Side_Set_by_Name(const std::string &name) const;
 
   Node_Set<INT> *Get_Node_Set_by_Id(size_t set_id) const;
-  Node_Set<INT> *Get_Node_Set_by_Index(size_t side_set_index) const;
+  Node_Set<INT> *Get_Node_Set_by_Index(size_t set_index) const;
   Node_Set<INT> *Get_Node_Set_by_Name(const std::string &name) const;
 
   // Misc functions:

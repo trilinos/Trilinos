@@ -103,10 +103,11 @@ TRIBITS_ADD_ADVANCED_TEST(
  TEST_2 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test_standard.out
 		       ${CMAKE_CURRENT_BINARY_DIR}/test.output
- TEST_2 CMND diff ARGS -w
+ TEST_3 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test.stderr.gold
 		       ${CMAKE_CURRENT_BINARY_DIR}/filtered.output
- COMM serial		      
+ COMM mpi serial		      
+ OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION 
 )
 
@@ -123,7 +124,8 @@ TRIBITS_ADD_ADVANCED_TEST(
  TEST_2 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-array.stderr.gold
 		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.stderr
- COMM serial		      
+ COMM mpi serial		      
+ OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION 
 )
 endif()

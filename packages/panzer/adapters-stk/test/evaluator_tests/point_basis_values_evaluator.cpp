@@ -72,8 +72,6 @@ using Teuchos::rcp;
 
 #include "RandomFieldEvaluator.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
@@ -118,7 +116,8 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cell_data,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     TEST_EQUALITY(work_sets->size(),1);
 
     int num_points = 3;
@@ -270,7 +269,8 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     panzer::Workset & workset = (*work_sets)[0];
     TEST_EQUALITY(work_sets->size(),1);
 
@@ -366,7 +366,8 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,integration_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     panzer::Workset & workset = (*work_sets)[0];
     TEST_EQUALITY(work_sets->size(),1);
 
@@ -494,7 +495,8 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     panzer::Workset & workset = (*work_sets)[0];
     TEST_EQUALITY(work_sets->size(),1);
 

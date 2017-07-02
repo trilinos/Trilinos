@@ -186,16 +186,16 @@ namespace MueLu {
 
     // Get smoother complexity at each level
     for (int i = 0; i < GetNumLevels(); ++i) {
-      size_t level_sc=0;      
+      size_t level_sc=0;
       if(!Levels_[i]->IsAvailable("PreSmoother")) continue;
       RCP<SmootherBase> S = Levels_[i]->template Get<RCP<SmootherBase> >("PreSmoother");
       if (S.is_null()) continue;
       level_sc = S->getNodeSmootherComplexity();
       if(level_sc == INVALID) {global_sc=-1.0;break;}
-      
+
       node_sc += as<double>(level_sc);
     }
-     
+
     double min_sc=0.0;
     RCP<const Teuchos::Comm<int> > comm =A->getDomainMap()->getComm();
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,node_sc,Teuchos::ptr(&global_sc));
@@ -484,6 +484,9 @@ namespace MueLu {
     // doing that in the future
     Levels_       .resize(levelID);
     levelManagers_.resize(levelID);
+
+    // since the # of levels, etc. may have changed, force re-determination of description during next call to description()
+    ResetDescription();
 
     describe(GetOStream(Statistics0), GetVerbLevel());
   }
@@ -1081,10 +1084,10 @@ namespace MueLu {
 
       if (!A.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A_" + toString(i) + suffix + ".m", *A);
       if (!P.is_null()) {
-	Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P_" + toString(i) + suffix + ".m", *P);
+        Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P_" + toString(i) + suffix + ".m", *P);
       }
       if (!R.is_null()) {
-	Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("R_" + toString(i) + suffix + ".m", *R);
+        Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("R_" + toString(i) + suffix + ".m", *R);
       }
     }
   }
@@ -1115,10 +1118,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
-    std::ostringstream out;
-    out << BaseClass::description();
-    out << "{#levels = " << GetGlobalNumLevels() << ", complexity = " << GetOperatorComplexity() << "}";
-    return out.str();
+    if ( description_.empty() )
+    {
+      std::ostringstream out;
+      out << BaseClass::description();
+      out << "{#levels = " << GetGlobalNumLevels() << ", complexity = " << GetOperatorComplexity() << "}";
+      description_ = out.str();
+    }
+    return description_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1146,7 +1153,7 @@ namespace MueLu {
     reduceAll(*comm, Teuchos::REDUCE_MAX, smartData, Teuchos::ptr(&maxSmartData));
     root = maxSmartData % comm->getSize();
 #endif
-    
+
     // Compute smoother complexity, if needed
     double smoother_comp =-1.0;
     if (verbLevel & (Statistics0 | Test))
@@ -1188,10 +1195,10 @@ namespace MueLu {
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
 
-	if(smoother_comp!=-1.0) {
-	  oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-	      << smoother_comp << std::endl;
-	}
+        if(smoother_comp!=-1.0) {
+          oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+              << smoother_comp << std::endl;
+        }
 
         switch (Cycle_) {
            case VCYCLE:
@@ -1368,6 +1375,15 @@ namespace MueLu {
 
       Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
       nodeMap = MapFactory::Build(dofMap->lib(), INVALID, nodeGIDs(), indexBase, dofMap->getComm());
+    } else {
+      // blkSize == 1
+      // Check whether the length of vectors fits to the size of A
+      // If yes, make sure that the maps are matching
+      // If no, throw a warning but do not touch the Coordinates
+      if(coords->getLocalLength() != A->getRowMap()->getNodeNumElements()) {
+        GetOStream(Warnings) << "Coordinate vector does not match row map of matrix A!" << std::endl;
+        return;
+      }
     }
 
     Array<ArrayView<const double> >      coordDataView;

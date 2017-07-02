@@ -56,10 +56,10 @@ namespace Excn {
     int Number_of_Raids() const;
     int Raid_Offset() const;
 
-    static void Create_IO_Filename(std::string &, int num, int total_num);
+    static void Create_IO_Filename(std::string &, int processor, int num_processors);
 
     void rename_file_for_mp(const std::string &rootdir, const std::string &subdir,
-                            std::string &name, int num, int total_num) const;
+                            std::string &name, int node, int numproc) const;
 
   private:
     std::vector<std::string> disk_names;

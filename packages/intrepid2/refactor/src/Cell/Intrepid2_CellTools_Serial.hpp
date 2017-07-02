@@ -406,25 +406,26 @@ namespace Intrepid2 {
       struct Serial {
 
         // output: 
-        //   jacobian (D,D) - jacobian matrix evaluated at a single point 
+        //   jacobian (D,sD) - jacobian matrix evaluated at a single point 
         // input: 
-        //   grads    (N,D) - hgrad basis grad values evaluated at a single point (C1/C2 element only)
+        //   grads    (N,sD) - hgrad basis grad values evaluated at a single point (C1/C2 element only)
         //   nodes    (N,D) - cell element-to-node connectivity
         template<typename jacobianViewType,
                  typename basisGradViewType,
                  typename nodeViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        computeJacobian(const jacobianViewType  &jacobian, // D,D
-                        const basisGradViewType &grads,    // N,D
+        computeJacobian(const jacobianViewType  &jacobian, // D,sD
+                        const basisGradViewType &grads,    // N,sD
                         const nodeViewType      &nodes) {  // N,D
           const auto N = nodes.dimension_0();
-          const auto D = jacobian.dimension_0();
+
+          const auto  D = jacobian.dimension_0();
+          const auto sD = jacobian.dimension_1();
           
-          INTREPID2_TEST_FOR_ABORT(jacobian.dimension_0() != jacobian.dimension_1(), "jacobian is not a square matrix.");
-          INTREPID2_TEST_FOR_ABORT(N != grads.dimension_0(), "grad dimension_0 does not match to cardinality.");
-          INTREPID2_TEST_FOR_ABORT(D != grads.dimension_1(), "grad dimension_1 does not match to space dim.");
-          INTREPID2_TEST_FOR_ABORT(D != nodes.dimension_1(), "node dimension_1 does not match to space dim.");
+          INTREPID2_TEST_FOR_ABORT( N != grads.dimension_0(), "grad dimension_0 does not match to cardinality.");
+          INTREPID2_TEST_FOR_ABORT(sD != grads.dimension_1(), "grad dimension_1 does not match to space dim.");
+          INTREPID2_TEST_FOR_ABORT( D != nodes.dimension_1(), "node dimension_1 does not match to space dim.");
 
           Kernels::Serial::gemm_trans_notrans(1.0, nodes, grads, 0.0, jacobian);
         }
@@ -454,7 +455,7 @@ namespace Intrepid2 {
         // template:
         //   implBasisType - impl basis function type e.g., Impl::Basis_HGRAD_QUAD_C1_FEM
         // output: 
-        //   xref (D)    - point mapped to reference frame
+        //   xref (sD)   - point mapped to reference frame (subcell Dim)
         // input: 
         //   xphy  (D)   - point in physical frame
         //   nodes (N,D) - cell element-to-node connectivity
@@ -464,23 +465,24 @@ namespace Intrepid2 {
                  typename nodeViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        mapToReferenceFrame(const refPointViewType &xref, // D
+        mapToReferenceFrame(const refPointViewType &xref, // sD 
                             const phyPointViewType &xphy, // D
                             const nodeViewType &nodes) {  // N,D
+          const ordinal_type sD = xref.dimension_0();
+          const ordinal_type D = xphy.dimension_0();
           const ordinal_type N = nodes.dimension_0();
-          const ordinal_type D = nodes.dimension_1();
-          
-          INTREPID2_TEST_FOR_ABORT(D != static_cast<ordinal_type>(xref.dimension_0()), "xref dimension_0 does not match to space dim.");
-          INTREPID2_TEST_FOR_ABORT(D != static_cast<ordinal_type>(xphy.dimension_0()), "xphy dimension_0 does not match to space dim.");
+
+          INTREPID2_TEST_FOR_ABORT(sD > D, "subcell dimension is greater than physical cell dimension.");
+          INTREPID2_TEST_FOR_ABORT(D != static_cast<ordinal_type>(nodes.dimension_1()), "xphy dimension_0 does not match to space dim.");
           
           typedef typename refPointViewType::non_const_value_type value_type;
           
           // I want to use view instead of dynrankview
           // NMAX = 28, MAXDIM = 3
-          value_type buf[27*3 + 27 + 9 + 9 + 3 + 3] = {}, *ptr = &buf[0];
+          value_type buf[27*3 + 27 + 9 + 9 + 9 + 9 + 3 + 3] = {}, *ptr = &buf[0];
           Kokkos::DynRankView<value_type,
             Kokkos::Impl::ActiveExecutionMemorySpace,
-            Kokkos::MemoryUnmanaged> grads(ptr, N, D); ptr += N*D;
+            Kokkos::MemoryUnmanaged> grads(ptr, N, sD); ptr += N*sD;
           
           Kokkos::DynRankView<value_type,
             Kokkos::Impl::ActiveExecutionMemorySpace,
@@ -488,19 +490,27 @@ namespace Intrepid2 {
 
           Kokkos::DynRankView<value_type,
             Kokkos::Impl::ActiveExecutionMemorySpace,
-            Kokkos::MemoryUnmanaged> jac(ptr, D, D); ptr += D*D;
+            Kokkos::MemoryUnmanaged> jac(ptr, D, sD); ptr += D*sD; 
 
           Kokkos::DynRankView<value_type,
             Kokkos::Impl::ActiveExecutionMemorySpace,
-            Kokkos::MemoryUnmanaged> invjac(ptr, D, D); ptr += D*D;
+            Kokkos::MemoryUnmanaged> metric(ptr, sD, sD); ptr += sD*sD;
 
           Kokkos::DynRankView<value_type,
             Kokkos::Impl::ActiveExecutionMemorySpace,
-            Kokkos::MemoryUnmanaged> xtmp(ptr, D); ptr += D;
+            Kokkos::MemoryUnmanaged> invmetric(ptr, sD, sD); ptr += sD*sD;
 
           Kokkos::DynRankView<value_type,
             Kokkos::Impl::ActiveExecutionMemorySpace,
-            Kokkos::MemoryUnmanaged> xold(ptr, D); ptr += D;
+            Kokkos::MemoryUnmanaged> invdf(ptr, sD, D); ptr += sD*D;
+
+          Kokkos::DynRankView<value_type,
+            Kokkos::Impl::ActiveExecutionMemorySpace,
+            Kokkos::MemoryUnmanaged> xtmp(ptr, sD); ptr += sD;
+
+          Kokkos::DynRankView<value_type,
+            Kokkos::Impl::ActiveExecutionMemorySpace,
+            Kokkos::MemoryUnmanaged> xold(ptr, sD); ptr += sD;
    
           // set initial guess
           for (ordinal_type j=0;j<D;++j) xold(j) = 0;
@@ -514,11 +524,14 @@ namespace Intrepid2 {
             // DF^{-1}
             implBasisType::template Serial<OPERATOR_GRAD>::getValues(grads, xold);
             CellTools::Serial::computeJacobian(jac, grads, nodes);
-            Kernels::Serial::inverse(invjac, jac);
-            
+
+            Kernels::Serial::gemm_trans_notrans(1.0, jac, jac, 0.0, metric);
+            Kernels::Serial::inverse(invmetric, metric);
+            Kernels::Serial::gemm_notrans_trans(1.0, invmetric, jac, 0.0, invdf);
+
             // Newton
             Kernels::Serial::z_is_axby(xtmp, 1.0, xphy, -1.0, xtmp);  // xtmp := xphy - F(xold);
-            Kernels::Serial::gemv_notrans(1.0, invjac, xtmp, 0.0, xref); // xref := DF^{-1}( xphy - F(xold))
+            Kernels::Serial::gemv_notrans(1.0, invdf, xtmp, 0.0, xref); // xref := DF^{-1}( xphy - F(xold))
             Kernels::Serial::z_is_axby(xref, 1.0, xold,  1.0, xref); // xref += xold
             
             // l2 error

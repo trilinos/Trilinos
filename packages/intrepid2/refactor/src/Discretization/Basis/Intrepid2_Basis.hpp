@@ -53,6 +53,7 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
+#include "Intrepid2_CellTopologyTags.hpp"
 #include "Shards_CellTopology.hpp"
 
 namespace Intrepid2 {

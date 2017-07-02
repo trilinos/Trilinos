@@ -72,9 +72,6 @@
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_String_Utilities.hpp"
 
-// Phalanx
-#include "Phalanx_KokkosUtilities.hpp"
-
 // Seacass
 #include <Ioss_SerializeIO.h>
 
@@ -192,7 +189,6 @@ main(
   using   panzer_stk::STK_Interface;
   using   panzer_stk::STK_MeshFactory;
   using   panzer_stk::WorksetFactory;
-  using   PHX::InitializeKokkosDevice;
   using   shards::CellTopology;
   using   std::cout;
   using   std::endl;
@@ -232,7 +228,7 @@ main(
   int status(0);
 
   // Initialize Kokkos/MPI.
-  InitializeKokkosDevice();
+  Kokkos::initialize(argc, argv);
   oblackholestream blackhole;
   GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
@@ -361,8 +357,11 @@ main(
 
     // Build the STK workset factory and attach it to a workset container.
     RCP<WorksetFactory> wkstFactory = rcp(new WorksetFactory(mesh));
-    RCP<WorksetContainer> wkstContainer =
-      rcp(new WorksetContainer(wkstFactory, physicsBlocks, worksetSize));
+    RCP<WorksetContainer> wkstContainer = rcp(new WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(worksetSize);
     wkstContainer->setGlobalIndexer(dofManager);
 
     // Build the linear solver we'll use to solve the system.
@@ -446,7 +445,7 @@ main(
     *out << "Run completed." << endl;
 
   // Shut things down.
-  PHX::FinalizeKokkosDevice();
+  Kokkos::finalize_all();
   return status;
 } // end of main()
 
