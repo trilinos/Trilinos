@@ -13,6 +13,7 @@
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
 #include "Tempus_StepperNewmarkImplicitAForm.hpp"
+#include "Tempus_StepperNewmarkImplicitDForm.hpp"
 #include "Tempus_StepperNewmarkExplicitAForm.hpp"
 #include "Tempus_StepperHHTAlpha.hpp"
 #include "Tempus_StepperExplicitRK.hpp"
@@ -69,6 +70,8 @@ private:
       return rcp(new StepperBackwardEuler<Scalar>(model, stepperPL));
     else if (stepperType == "Newmark Implicit a-Form")
       return rcp(new StepperNewmarkImplicitAForm<Scalar>(model, stepperPL));
+    else if (stepperType == "Newmark Implicit d-Form")
+      return rcp(new StepperNewmarkImplicitDForm<Scalar>(model, stepperPL));
     else if (stepperType == "Newmark Explicit a-Form")
       return rcp(new StepperNewmarkExplicitAForm<Scalar>(model, stepperPL));
     else if (stepperType == "HHT-Alpha")
