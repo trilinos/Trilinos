@@ -53,13 +53,13 @@ using Tempus::SolutionState;
 
 #ifdef TEST_BALL_PARABOLIC
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkExplicit, BallParabolic)
+TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
 {
   //Tolerance to check if test passed 
   double tolerance = 1.0e-14;
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_NewmarkExplicit_BallParabolic.xml");
+    getParametersFromXmlFile("Tempus_NewmarkExplicitAForm_BallParabolic.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -88,7 +88,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, BallParabolic)
     model->getExactSolution(time).get_x();
 
   // Plot sample solution and exact solution
-  std::ofstream ftmp("Tempus_NewmarkExplicit_BallParabolic.dat");
+  std::ofstream ftmp("Tempus_NewmarkExplicitAForm_BallParabolic.dat");
   ftmp.precision(16);
   RCP<SolutionHistory<double> > solutionHistory =
     integrator->getSolutionHistory();
@@ -119,7 +119,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, BallParabolic)
 
 #ifdef TEST_SINCOS_EXPLICIT
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos)
+TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
@@ -128,7 +128,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos)
 
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_NewmarkExplicit_SinCos.xml");
+    getParametersFromXmlFile("Tempus_NewmarkExplicitAForm_SinCos.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -173,7 +173,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos)
 
     // Plot sample solution and exact solution at most-refined resolution 
     if (n == nTimeStepSizes-1) {
-      std::ofstream ftmp("Tempus_NewmarkExplicit_SinCos.dat");
+      std::ofstream ftmp("Tempus_NewmarkExplicitAForm_SinCos.dat");
       ftmp.precision(16); 
       RCP<SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
@@ -200,7 +200,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = Newmark Beta Explicit" << std::endl;
+  std::cout << "  Stepper = Newmark Explicit a-Form" << std::endl;
   std::cout << "  =========================" << std::endl;
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos)
   TEST_FLOATING_EQUALITY( slope, order, 0.01 );
   //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
-  std::ofstream ftmp("Tempus_NewmarkExplicit-Error_SinCos.dat");
+  std::ofstream ftmp("Tempus_NewmarkExplicitAForm-Error_SinCos.dat");
   ftmp.precision(16); 
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
@@ -221,7 +221,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos)
 
 #ifdef TEST_HARMONIC_OSCILLATOR_DAMPED_EXPLICIT
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkExplicit, HarmonicOscillatorDamped)
+TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
@@ -230,7 +230,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, HarmonicOscillatorDamped)
 
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_NewmarkExplicit_HarmonicOscillator_Damped.xml");
+    getParametersFromXmlFile("Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -275,7 +275,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, HarmonicOscillatorDamped)
 
     // Plot sample solution and exact solution at most-refined resolution 
     if (n == nTimeStepSizes-1) {
-      std::ofstream ftmp("Tempus_NewmarkExplicit_HarmonicOscillator_Damped.dat");
+      std::ofstream ftmp("Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.dat");
       ftmp.precision(16);
       RCP<SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
@@ -302,7 +302,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, HarmonicOscillatorDamped)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = Newmark Beta" << std::endl;
+  std::cout << "  Stepper = Newmark Implicit a-Form" << std::endl;
   std::cout << "  =========================" << std::endl;
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
@@ -310,7 +310,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, HarmonicOscillatorDamped)
   TEST_FLOATING_EQUALITY( slope, order, 0.01 );
   //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
-  std::ofstream ftmp("Tempus_NewmarkExplicit-Error_HarmonicOscillator_Damped.dat");
+  std::ofstream ftmp("Tempus_NewmarkExplicitAForm-Error_HarmonicOscillator_Damped.dat");
   ftmp.precision(16);
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
@@ -324,7 +324,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, HarmonicOscillatorDamped)
 
 #ifdef TEST_HARMONIC_OSCILLATOR_DAMPED
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_SecondOrder)
+TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
@@ -333,7 +333,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_SecondOrder)
 
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Newmark_HarmonicOscillator_Damped_SecondOrder.xml");
+    getParametersFromXmlFile("Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -378,7 +378,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_SecondOrder)
 
     // Plot sample solution and exact solution at most-refined resolution 
     if (n == nTimeStepSizes-1) {
-      std::ofstream ftmp("Tempus_Newmark_HarmonicOscillator_Damped_SecondOrder.dat");
+      std::ofstream ftmp("Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.dat");
       ftmp.precision(16); 
       RCP<SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
@@ -405,7 +405,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_SecondOrder)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = Newmark Beta" << std::endl;
+  std::cout << "  Stepper = Newmark Implicit a-Form" << std::endl;
   std::cout << "  =========================" << std::endl;
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
@@ -424,7 +424,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_SecondOrder)
 }
 
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_FirstOrder)
+TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_FirstOrder)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
@@ -433,7 +433,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_FirstOrder)
 
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Newmark_HarmonicOscillator_Damped_FirstOrder.xml");
+    getParametersFromXmlFile("Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_FirstOrder.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -478,7 +478,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_FirstOrder)
 
     // Plot sample solution and exact solution at most-refined resolution 
     if (n == nTimeStepSizes-1) {
-      std::ofstream ftmp("Tempus_Newmark_HarmonicOscillator_Damped_FirstOrder.dat");
+      std::ofstream ftmp("Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_FirstOrder.dat");
       ftmp.precision(16); 
       RCP<SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
@@ -505,7 +505,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_FirstOrder)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = Newmark Beta" << std::endl;
+  std::cout << "  Stepper = Newmark Implicit a-Form" << std::endl;
   std::cout << "  =========================" << std::endl;
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;

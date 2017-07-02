@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepperNewmarkExplicit_decl_hpp
-#define Tempus_StepperNewmarkExplicit_decl_hpp
+#ifndef Tempus_StepperNewmarkExplicitAForm_decl_hpp
+#define Tempus_StepperNewmarkExplicitAForm_decl_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
@@ -20,12 +20,12 @@ namespace Tempus {
  *  Newmark Explicit is hence an explicit time stepper (i.e., no solver used).
  */
 template<class Scalar>
-class StepperNewmarkExplicit : virtual public Tempus::Stepper<Scalar>
+class StepperNewmarkExplicitAForm : virtual public Tempus::Stepper<Scalar>
 {
 public:
 
   /// Constructor
-  StepperNewmarkExplicit(
+  StepperNewmarkExplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
@@ -101,7 +101,7 @@ private:
 private:
 
   /// Default Constructor -- not allowed
-  StepperNewmarkExplicit();
+  StepperNewmarkExplicitAForm();
 
 protected:
 
@@ -119,4 +119,4 @@ protected:
 };
 } // namespace Tempus
 
-#endif // Tempus_StepperNewmarkExplicit_decl_hpp
+#endif // Tempus_StepperNewmarkExplicitAForm_decl_hpp

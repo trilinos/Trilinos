@@ -9,11 +9,11 @@
 #include "Tempus_ExplicitTemplateInstantiation.hpp"
 
 #ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
-#include "Tempus_StepperNewmarkExplicit.hpp"
-#include "Tempus_StepperNewmarkExplicit_impl.hpp"
+#include "Tempus_StepperNewmarkExplicitAForm.hpp"
+#include "Tempus_StepperNewmarkExplicitAForm_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperNewmarkExplicit)
+  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperNewmarkExplicitAForm)
 }
 
 #endif

@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepperNewmark_decl_hpp
-#define Tempus_StepperNewmark_decl_hpp
+#ifndef Tempus_StepperNewmarkImplicitAForm_decl_hpp
+#define Tempus_StepperNewmarkImplicitAForm_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_SecondOrderResidualModelEvaluator.hpp"
@@ -15,33 +15,33 @@
 namespace Tempus {
 
 
-/** \brief Newmark Beta time stepper.  
+/** \brief Newmark time stepper in acceleration form (a-form).  
  *
- *  Here, we implement the Newmark Beta scheme in predictor/corrector form;
+ *  Here, we implement the Newmark scheme in predictor/corrector form;
  *  see equations (34)-(35) in: A. Mota, W. Klug, M. Ortiz,  "Finite element simulation
  *  of firearm injury to the human cranium",  Computational Mechanics 31(1) 115-121 (2003). 
  *
- *  Newmark Beta has two parameters: \f$\beta\f$ 
+ *  Newmark has two parameters: \f$\beta\f$ 
  *  and \f$\gamma\f$, both of which need to be in the range \f$[0,1]\f$. 
- *  Newmark Beta can be an explicit or implicit method, depending on 
+ *  Newmark can be an explicit or implicit method, depending on 
  *  the value of the \f$\beta\f$ parameter. If \f$\beta = 0\f$, the method 
  *  is explicit.  Regardless of whether the method is implicit 
  *  or explicit, a linear solve is required.  This linear solve can be 
  *  optimized, however, for the explicit case by lumping the mass matrix.
- *  This optimization has not been implemented in the Tempus::StepperNewmark
+ *  This optimization has not been implemented in the Tempus::StepperNewmarkImplicitAForm
  *  class at the present time.
  *
- *  Newmark Beta is second order accurate if \f$\gamma =  0.5\f$; otherwise it is first order 
- *  accurate.  Some additional properties about the Newmark Beta scheme
+ *  Newmark is second order accurate if \f$\gamma =  0.5\f$; otherwise it is first order 
+ *  accurate.  Some additional properties about the Newmark scheme
  *  can be found <a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.   
  */
 template<class Scalar>
-class StepperNewmark : virtual public Tempus::StepperImplicit<Scalar>
+class StepperNewmarkImplicitAForm : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
   /// Constructor
-  StepperNewmark(
+  StepperNewmarkImplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
@@ -119,7 +119,7 @@ public:
 private:
 
   /// Default Constructor -- not allowed
-  StepperNewmark();
+  StepperNewmarkImplicitAForm();
 
 private:
 
@@ -139,4 +139,4 @@ private:
 };
 } // namespace Tempus
 
-#endif // Tempus_StepperNewmark_decl_hpp
+#endif // Tempus_StepperNewmarkImplicitAForm_decl_hpp

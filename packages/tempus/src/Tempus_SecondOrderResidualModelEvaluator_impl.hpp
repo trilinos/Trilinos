@@ -69,8 +69,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   switch (schemeType_) 
   {
-    case NEWMARK_IMPLICIT: 
-      //Specific for the Newmark-Beta stepper.  May want to redesign this for a generic 
+    case NEWMARK_IMPLICIT_AFORM: 
+      //Specific for the Newmark Implicit a-Form stepper.  May want to redesign this for a generic 
       //second order scheme to not have an if statement here... 
       //IKT, 3/14/17: this is effectively the same as the Piro::NewmarkDecorator::evalModel function.  
       //the solution variable in NOX is the acceleration, a_{n+1} 
