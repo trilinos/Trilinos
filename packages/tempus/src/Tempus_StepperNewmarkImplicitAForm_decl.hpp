@@ -28,8 +28,8 @@ namespace Tempus {
  *  is explicit.  Regardless of whether the method is implicit 
  *  or explicit, a linear solve is required.  This linear solve can be 
  *  optimized, however, for the explicit case by lumping the mass matrix.
- *  This optimization has not been implemented in the Tempus::StepperNewmarkImplicitAForm
- *  class at the present time.
+ *  This optimization can be invoked by running "Newmark Explicit d-Form" Stepper
+ *  through the Piro::TempusSolver class. 
  *
  *  Newmark is second order accurate if \f$\gamma =  0.5\f$; otherwise it is first order 
  *  accurate.  Some additional properties about the Newmark scheme

@@ -48,6 +48,9 @@ public:
     if (schemeName == "Newmark Implicit a-Form" || schemeName == "HHT-Alpha") {
       schemeType_ = NEWMARK_IMPLICIT_AFORM;
     }
+    else if (schemeName == "Newmark Implicit d-Form") {
+      schemeType_ = NEWMARK_IMPLICIT_DFORM;
+    }
     else {
        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
        "Error: SecondOrderResidualModelEvaluator called with unsopported schemeName = " << schemeName  
@@ -155,7 +158,7 @@ public:
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
   //@}
     
-    enum SCHEME_TYPE {NEWMARK_IMPLICIT_AFORM}; 
+    enum SCHEME_TYPE {NEWMARK_IMPLICIT_AFORM, NEWMARK_IMPLICIT_DFORM}; 
   
 private:
 
