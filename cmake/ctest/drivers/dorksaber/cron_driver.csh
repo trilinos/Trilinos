@@ -23,6 +23,7 @@ setenv TDD_CTEST_TEST_TYPE Nightly
 setenv TDD_HTTP_PROXY "http://wwwproxy.sandia.gov:80"
 setenv http_proxy "http://wwwproxy.sandia.gov:80"
 setenv TDD_FORCE_CMAKE_INSTALL 1
+setenv TDD_DEBUG_VERBOSE 1
 
 source ~/.cshrc
 
