@@ -160,8 +160,8 @@ int main(int argc, char *argv[]) {
     (*xu_rcp)[0] = 1.0;   (*xu_rcp)[1] = INF;  
     (*xu_rcp)[2] = 1.0;   (*xu_rcp)[3] = INF;
 
-    ROL::BoundConstraint<RealT> bnd(xl,xu);
-
+//    ROL::BoundConstraint<RealT> bnd(xl,xu);
+    auto bnd = rcp( new ROL::BoundConstraint<RealT>(xl,xu) );
 
     /*---- Equality Constraint and Lagrange Multiplier -----*/
 
@@ -169,24 +169,52 @@ int main(int argc, char *argv[]) {
 
     // Lagrange multiplier
     auto l = x->dual().clone();
+    ROL::Elementwise::Fill<RealT> FillWithOnes(1.0);
     l->applyUnary( ROL::Elementwise::Fill<RealT>(1.0) );
 
     // Constrained minimizer set X = { [ 0, 0, 1, 0.125 ], [ 1, 0, 1, 0.125 ] }
    
-    // Create Optimization problem
-    ROL::OptimizationProblem<RealT> problem( obj, x, con, l ); 
+    // Create Optimization problems
+    ROL::OptimizationProblem<RealT> problem_E( obj, x, Teuchos::null, con, l ); 
+    ROL::OptimizationProblem<RealT> problem_EB( obj, x, bnd, con, l ); 
    
     // Perform linear algebra and finite difference checks
-    problem.check( *outStream );
- 
-
-    // Make a solver using Composite Step
-    parlist->sublist("Step").set("Type","Composite Step");
-    ROL::OptimizationSolver<RealT> solver_cs( problem, *parlist );
-    solver_cs.solve( *outStream );
+    problem_E.check( *outStream );
     
+
+    // Solve using Composite Step where the bound is not enforced and
+    // equality constraints are satisfied asymptotically
+    parlist->sublist("Step").set("Type","Composite Step");
+    ROL::OptimizationSolver<RealT> solver_cs( problem_E, *parlist );
+    solver_cs.solve( *outStream );    
     *outStream << "\n\nFinal optimization vector:";
     x->print(*outStream);
+
+    // Reset optimization vector and Lagrange multiplier to initial values 
+    x->set(*x0); l->applyUnary(FillWithOnes);
+  
+
+    // Solve using Augmented Lagrangian where the bound is enforced explicitly 
+    // and equality constraints are enforced through penalization
+    parlist->sublist("Step").set("Type","Augmented Lagrangian");
+    ROL::OptimizationSolver<RealT> solver_al( problem_EB, *parlist );
+    solver_al.solve( *outStream );    
+    *outStream << "\n\nFinal optimization vector:";
+    x->print(*outStream);
+    
+
+    // Reset optimization vector and Lagrange multiplier to initial values 
+    x->set(*x0); l->applyUnary(FillWithOnes);
+
+
+    // Solve using Moreau-Yosida where the bound is enforced through penalization 
+    // and equality constraints are satisfied asymptotically
+    parlist->sublist("Step").set("Type","Moreau-Yosida Penalty");
+    ROL::OptimizationSolver<RealT> solver_my( problem_EB, *parlist );
+    solver_my.solve( *outStream );    
+    *outStream << "\n\nFinal optimization vector:";
+    x->print(*outStream);
+    
 
   }
   

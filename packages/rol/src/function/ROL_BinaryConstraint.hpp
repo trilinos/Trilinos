@@ -127,12 +127,15 @@ private:
 
 public:
 
+  BinaryConstraint( const RCP<const V> &lo, const RCP<const V> &up, Real gamma ) :
+    lo_( lo ), up_( up ), d_( lo_->clone() ), gamma_( gamma ) {} 
+
   BinaryConstraint( const BoundConstraint<Real> &bnd, Real gamma ) :
-    lo_( bnd.getLowerVectorRCP() ), 
-    up_( bnd.getUpperVectorRCP() ), 
-    d_( lo_->clone() ),
-    gamma_(gamma) {
-  }
+     BinaryConstraint( bnd.getLowerVectorRCP(), bnd.getUpperVectorRCP(), gamma ) {}  
+
+  BinaryConstraint( const RCP<const BoundConstraint<Real>> &bnd, Real gamma ) :
+     BinaryConstraint( bnd->getLowerVectorRCP(), bnd->getUpperVectorRCP(), gamma ) {}  
+     
 
   /** \brief Evaluate constraint
     \f[ c_i(x) = \begin{cases}
