@@ -43,6 +43,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_Details_shortSort.hpp"
+#include "Tpetra_Details_radixSort.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <iterator>
 #include <utility> // std::swap
@@ -243,6 +244,20 @@ test_fixedTypes_fixedArrayLength (bool& success,
     const bool equalValues3 = isEqual (valuesCopy2, valuesCopy3, arrayLength);
     TEST_ASSERT( equalValues3 );
   }
+
+  // Compare against Tpetra::Details::radixSortKeysAndValues.
+  // LSB-first radix sort is always stable and can always handle duplicate keys
+  KeyType keysCopy4[arrayLength];
+  KeyType keysCopy4Aux[arrayLength];
+  ValueType valuesCopy4[arrayLength];
+  ValueType valuesCopy4Aux[arrayLength];
+  copyArray (keysCopy4, keys, arrayLength);
+  copyArray (valuesCopy4, values, arrayLength);
+  ::Tpetra::Details::radixSortKeysAndValues (keysCopy4, keysCopy4Aux, valuesCopy4, valuesCopy4Aux, arrayLength);
+  const bool equalKeys4 = isEqual (keysCopy2, keysCopy4, arrayLength);
+  TEST_ASSERT( equalKeys4 );
+  const bool equalValues4 = isEqual (valuesCopy2, valuesCopy4, arrayLength);
+  TEST_ASSERT( equalValues4 );
 }
 
 // Fill the given array with distinct values.
