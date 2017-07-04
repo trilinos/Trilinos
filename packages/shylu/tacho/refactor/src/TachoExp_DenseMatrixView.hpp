@@ -66,6 +66,13 @@ namespace Tacho {
       }
 
       KOKKOS_INLINE_FUNCTION
+      void set_view(const ordinal_type m, 
+                    const ordinal_type n) {
+        _offm = 0; _m = m; 
+        _offn = 0; _n = n;
+      }
+
+      KOKKOS_INLINE_FUNCTION
       void attach_buffer(const ordinal_type rs, 
                          const ordinal_type cs, 
                          const value_type *buf) { 
