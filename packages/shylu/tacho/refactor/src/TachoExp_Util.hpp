@@ -38,6 +38,8 @@ namespace Tacho {
     // #define MSG_INVALID_INPUT(what) "Invaid input argument: " #what
 #define MSG_NOT_HAVE_PACKAGE(what) "Tacho does not have a package or library: " #what
 #define MSG_INVALID_TEMPLATE_ARGS "Invaid template arguments"
+#define MSG_INVALID_INPUT "Invaid input arguments"
+#define MSG_NOT_IMPLEMENTED "Not yet implemented"
 
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                 \
     if ((ierr) != 0) {                                                  \
@@ -146,34 +148,71 @@ namespace Tacho {
       Ta c(a); a = b; b = c;
     }
 
+    template<typename ValueType>
+    struct Random;
+
+    template<>
+    struct Random<double> {
+      Random(const unsigned int seed = 0) { srand(seed); }
+      double value() { return rand()/((double) RAND_MAX + 1.0); }
+    };
+
+    template<>
+    struct Random<std::complex<double> > {
+      Random(const unsigned int seed = 0) { srand(seed); }
+      std::complex<double> value() {
+        return std::complex<double>(rand()/((double) RAND_MAX + 1.0),
+                                    rand()/((double) RAND_MAX + 1.0));
+      }
+    };
+
+    template<>
+    struct Random<Kokkos::complex<double> > {
+      Random(const unsigned int seed = 0) { srand(seed); }
+      Kokkos::complex<double> value() {
+        return Kokkos::complex<double>(rand()/((double) RAND_MAX + 1.0),
+                                       rand()/((double) RAND_MAX + 1.0));
+      }
+    };
+
+
     ///
     /// Tag struct
     ///
     struct NullTag { enum : int { tag = 0 }; };
     struct Partition {
-      struct Top          { enum : int { tag = 101 }; };
-      struct Bottom       { enum : int { tag = 102 }; };
-
-      struct Left         { enum : int { tag = 201 }; };
-      struct Right        { enum : int { tag = 202 }; };
-
-      struct TopLeft      { enum : int { tag = 301 }; };
-      struct TopRight     { enum : int { tag = 302 }; };
-      struct BottomLeft   { enum : int { tag = 303 }; };
-      struct BottomRight  { enum : int { tag = 304 }; };
+      enum : int { Top = 101,
+                   Bottom,
+                   Left = 201,
+                   Right,
+                   TopLeft = 301,
+                   TopRight,
+                   BottomLeft,
+                   BottomRight };
+      
+      // struct Top          { enum : int { tag = 101 }; };
+      // struct Bottom       { enum : int { tag = 102 }; };
+      
+      // struct Left         { enum : int { tag = 201 }; };
+      // struct Right        { enum : int { tag = 202 }; };
+      
+      // struct TopLeft      { enum : int { tag = 301 }; };
+      // struct TopRight     { enum : int { tag = 302 }; };
+      // struct BottomLeft   { enum : int { tag = 303 }; };
+      // struct BottomRight  { enum : int { tag = 304 }; };
     };
-    template<typename T>
-    struct is_valid_partition_tag {
-      enum : bool { value = (std::is_same<T,Partition::Top>::value        ||
-                             std::is_same<T,Partition::Bottom>::value     ||
-                             std::is_same<T,Partition::Left>::value       ||
-                             std::is_same<T,Partition::Right>::value      ||
-                             std::is_same<T,Partition::TopLeft>::value    ||
-                             std::is_same<T,Partition::TopRight>::value   ||
-                             std::is_same<T,Partition::BottomLeft>::value ||
-                             std::is_same<T,Partition::BottomRight>::value)
-      };
-    };
+    // template<typename T>
+    // struct is_valid_partition_tag {
+    //   enum : bool { value = (std::is_same<T,Partition::Top>::value        ||
+    //                          std::is_same<T,Partition::Bottom>::value     ||
+    //                          std::is_same<T,Partition::Left>::value       ||
+    //                          std::is_same<T,Partition::Right>::value      ||
+    //                          std::is_same<T,Partition::TopLeft>::value    ||
+    //                          std::is_same<T,Partition::TopRight>::value   ||
+    //                          std::is_same<T,Partition::BottomLeft>::value ||
+    //                          std::is_same<T,Partition::BottomRight>::value)
+    //   };
+    // };
 
     struct Uplo {
       struct Upper        { enum : int { tag = 401 }; static constexpr char param = 'U'; static constexpr Teuchos::EUplo teuchos_param = Teuchos::UPPER_TRI; };
@@ -241,6 +280,7 @@ namespace Tacho {
     struct Algo {
       struct External { enum : int { tag = 1001 }; };
       struct Internal { enum : int { tag = 1002 }; };
+      struct ByBlocks { enum : int { tag = 1003 }; };
 
       struct Workflow {
         struct Serial { enum : int { tag = 2001 }; };

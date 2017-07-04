@@ -63,7 +63,7 @@ namespace Tacho {
           ::invoke(_sched, member, _alpha, _A, _beta, _C);
 
         if (member.team_rank() == 0) {
-          _C.future.~future();
+          _C.set_future();
           r_val = ierr;
         }
       }

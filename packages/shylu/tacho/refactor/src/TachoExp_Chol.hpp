@@ -20,7 +20,6 @@ namespace Tacho {
     template<typename ArgUplo, 
              typename ArgAlgo>
     struct Chol;
-
     
     /// task construction for the above chol implementation
     // Chol<ArgUplo,ArgAlgo>::invoke(_sched, member, _A);
@@ -57,7 +56,7 @@ namespace Tacho {
           ::invoke(_sched, member, _A);
 
         if (member.team_rank() == 0) {
-          _A.future.~future();
+          _A.set_future();
           r_val = ierr;
         }
       }

@@ -23,13 +23,13 @@ typedef DenseMatrixView<DenseMatrixViewHostType,DeviceSpaceType> DenseMatrixOfBl
 TEST( DenseMatrixView, flat ) {
   const ordinal_type m = 10, n = 10;
 
-  Kokkos::View<ValueType*,HostSpaceType> buf("buf", m*n);
+  Kokkos::View<ValueType*,HostSpaceType> a("a", m*n);
   DenseMatrixViewHostType A;
 
   A.set_view(0, m,
              0, n);
   
-  A.attach_buffer(1, m, buf.data());
+  A.attach_buffer(1, m, a.data());
 
   {
     ordinal_type cnt = 0;
@@ -39,20 +39,20 @@ TEST( DenseMatrixView, flat ) {
   }
 
   for (ordinal_type k=0;k<(m*n);++k) {
-    EXPECT_TRUE(buf[k] == k);
+    EXPECT_TRUE(a[k] == k);
   }  
 }
 
 TEST( DenseMatrixView, hier ) {
   const ordinal_type m = 5, n = 5, mb = 3;
 
-  Kokkos::View<ValueType*,HostSpaceType> abuf("abuf", m*n);
+  Kokkos::View<ValueType*,HostSpaceType> a("a", m*n), a1("a1", m*n);
   DenseMatrixViewHostType A;
 
   A.set_view(0, m,
              0, n);
   
-  A.attach_buffer(1, m, abuf.data());
+  A.attach_buffer(1, m, a.data());
 
   {
     ordinal_type cnt = 0;
@@ -71,39 +71,31 @@ TEST( DenseMatrixView, hier ) {
   
   H.attach_buffer(1, bm, hbuf.data());
 
-  setMatrixOfPartitionedBlocks(H, m, n, mb);
+  setMatrixOfBlocks(H, m, n, mb);
   attachBaseBuffer(H, A.data(), A.stride_0(), A.stride_1());
 
-  for (ordinal_type k=0;k<(bm*bn);++k) {
-    auto &blk = hbuf[k];
-    printf("block k = %d, offset (%d,%d), dim (%d,%d), stride (%d,%d)\n",
-           k, 
-           blk.offset_0(),blk.offset_1(),
-           blk.dimension_0(),blk.dimension_1(),
-           blk.stride_0(),blk.stride_1());
-    
-    if (blk.dimension_0() > 0 && blk.dimension_1()) {
-      for (ordinal_type i=0;i<blk.dimension_0();++i) {
-        for (ordinal_type j=0;j<blk.dimension_1();++j)
-          printf(" %4.2f ", blk(i,j));
-        printf("\n");
-      }
-    } else {
-      printf("this block is empty\n");
-    }
-  }  
+  DenseMatrixViewHostType A1;
+  A1.set_view(0, m,
+             0, n);
+  
+  A1.attach_buffer(1, m, a1.data());
+
+  copyElementwise(A1, H);
+
+  for (ordinal_type k=0;k<(m*n);++k) 
+    EXPECT_EQ(a(k), a1(k));
 }
 
 TEST( DenseMatrixView, memorypool ) {
   const ordinal_type m = 5, n = 5, mb = 3;
 
-  Kokkos::View<ValueType*,HostSpaceType> abuf("abuf", m*n);
+  Kokkos::View<ValueType*,HostSpaceType> a("a", m*n), a1("a1", m*n);
   DenseMatrixViewHostType A;
 
   A.set_view(0, m,
              0, n);
   
-  A.attach_buffer(1, m, abuf.data());
+  A.attach_buffer(1, m, a.data());
 
   {
     ordinal_type cnt = 0;
@@ -122,7 +114,7 @@ TEST( DenseMatrixView, memorypool ) {
   
   H.attach_buffer(1, bm, hbuf.data());
 
-  setMatrixOfPartitionedBlocks(H, m, n, mb);
+  setMatrixOfBlocks(H, m, n, mb);
 
   Kokkos::MemoryPool<HostSpaceType> pool(typename HostSpaceType::memory_space(),
                                          1024*sizeof(ValueType),
@@ -131,38 +123,19 @@ TEST( DenseMatrixView, memorypool ) {
                                          512*sizeof(ValueType));
   allocateStorageByBlocks(H, pool);
 
+  DenseMatrixViewHostType A1;
+  A1.set_view(0, m,
+              0, n);
+  
+  A1.attach_buffer(1, m, a1.data());
 
-  ordinal_type cnt = 0;
-  for (ordinal_type j=0;j<bn;++j) 
-    for (ordinal_type i=0;i<bm;++i) {
-      auto &blk = H(i,j);
-      for (ordinal_type ii=0;ii<blk.dimension_0();++ii)
-        for (ordinal_type jj=0;jj<blk.dimension_1();++jj)
-          blk(ii,jj) = cnt++;
-    }
-
-  for (ordinal_type k=0;k<(bm*bn);++k) {
-    auto &blk = hbuf[k];
-    printf("block k = %d, offset (%d,%d), dim (%d,%d), stride (%d,%d)\n",
-           k, 
-           blk.offset_0(),blk.offset_1(),
-           blk.dimension_0(),blk.dimension_1(),
-           blk.stride_0(),blk.stride_1());
-    
-    if (blk.dimension_0() > 0 && blk.dimension_1()) {
-      for (ordinal_type i=0;i<blk.dimension_0();++i) {
-        for (ordinal_type j=0;j<blk.dimension_1();++j)
-          printf(" %4.2f ", blk(i,j));
-        printf("\n");
-      }
-    } else {
-      printf("this block is empty\n");
-    }
-  }  
+  copyElementwise(H, A);
+  copyElementwise(A1, H);
 
   deallocateStorageByBlocks(H, pool);
 
-  
+  for (ordinal_type k=0;k<(m*n);++k) 
+    EXPECT_EQ(a(k), a1(k));  
 }
 
 

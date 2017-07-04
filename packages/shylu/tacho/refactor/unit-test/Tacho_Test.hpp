@@ -8,6 +8,6 @@
 // #include "Tacho_TestTaskFunctor.hpp"
 
 #include "Tacho_TestDenseMatrixView.hpp"
-
+#include "Tacho_TestDenseByBlocks.hpp"
 
 #endif

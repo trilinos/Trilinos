@@ -13,7 +13,11 @@ namespace Tacho {
     template<typename ValueType, typename ExecSpace>
     struct DenseMatrixView {
     public:
+      enum : ordinal_type { rank = 2 };
+
       typedef ValueType value_type;
+      typedef value_type non_const_value_type;
+
       typedef ExecSpace exec_space;
 
       typedef Kokkos::Future<int,exec_space> future_type;
@@ -45,6 +49,16 @@ namespace Tacho {
       }
 
       KOKKOS_INLINE_FUNCTION
+      void set_view(const DenseMatrixView &base,
+                    const ordinal_type offm, const ordinal_type m, 
+                    const ordinal_type offn, const ordinal_type n) {
+        _rs = base._rs; _cs = base._cs; _buf = base._buf;
+
+        _offm = offm; _m = m; 
+        _offn = offn; _n = n;
+      }
+
+      KOKKOS_INLINE_FUNCTION
       void set_view(const ordinal_type offm, const ordinal_type m, 
                     const ordinal_type offn, const ordinal_type n) {
         _offm = offm; _m = m; 
@@ -60,6 +74,9 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void set_future(const future_type &f) { _future = f; }
+
+      KOKKOS_INLINE_FUNCTION
+      void set_future() { _future.~future_type(); }
 
       /// get methods
 
@@ -82,19 +99,29 @@ namespace Tacho {
       ordinal_type stride_1() const { return _cs; }
 
       KOKKOS_INLINE_FUNCTION
-      value_type* data() const { return _buf; }
+      value_type* data() const { return _buf+_offm*_rs+_offn*_cs; }
 
       KOKKOS_INLINE_FUNCTION
-      ordinal_type future() const { return _future; } 
+      future_type future() const { return _future; } 
     };
+ 
+    template<typename MatrixOfBlocksViewType>
+    KOKKOS_INLINE_FUNCTION
+    void 
+    clearFutureOfBlocks(const MatrixOfBlocksViewType &H) {
+      const ordinal_type m = H.dimension_0(), n = H.dimension_1();
+      for (ordinal_type j=0;j<n;++j)
+        for (ordinal_type i=0;i<m;++i)
+          H(i,j).set_future();
+    }
 
     template<typename MatrixOfBlocksViewType>
     KOKKOS_INLINE_FUNCTION
     void 
-    setMatrixOfPartitionedBlocks(const MatrixOfBlocksViewType &H,
-                                 const ordinal_type m,
-                                 const ordinal_type n,
-                                 const ordinal_type mb) {     
+    setMatrixOfBlocks(const MatrixOfBlocksViewType &H,
+                      const ordinal_type m,
+                      const ordinal_type n,
+                      const ordinal_type mb) {     
       const ordinal_type 
         bm = H.dimension_0(),
         bn = H.dimension_1();
@@ -148,6 +175,7 @@ namespace Tacho {
             auto ptr = (value_type*)pool.allocate(mm*nn*sizeof(value_type));
             TACHO_TEST_FOR_ABORT(ptr == NULL, "memory pool allocation fails");          
 
+            H(i,j).set_view(0, mm, 0, nn); // whatever offsets are defined here, they are gone.
             H(i,j).attach_buffer(1, mm, ptr);
           }
         }
@@ -165,12 +193,78 @@ namespace Tacho {
       const ordinal_type m = H.dimension_0(), n = H.dimension_1();
       for (ordinal_type j=0;j<n;++j)
         for (ordinal_type i=0;i<m;++i) {
-          const ordinal_type mm = H(i,j).dimension_0(), nn = H(i,j).dimension_1();
+          auto &blk = H(i,j);
+          const ordinal_type mm = blk.dimension_0(), nn = blk.dimension_1();
           if (mm > 0 && nn > 0) 
-            pool.deallocate(H(i,j).data(), mm*nn*sizeof(value_type));
+            pool.deallocate(blk.data(), mm*nn*sizeof(value_type));
         }
     }
-    
+
+    template<typename ValueType, typename ExecSpace>  
+    KOKKOS_INLINE_FUNCTION
+    void
+    copyElementwise(const DenseMatrixView<ValueType,ExecSpace> &F,
+                    const DenseMatrixView<DenseMatrixView<ValueType,ExecSpace>,ExecSpace> &H) {
+      const ordinal_type 
+        hm = H.dimension_0(), hn = H.dimension_0(),
+        fm = F.dimension_0(), fn = F.dimension_0();
+        
+      if (hm > 0 && hn > 0) {
+        ordinal_type offj = 0;
+        for (ordinal_type j=0;j<hn;++j) {
+          ordinal_type offi = 0;
+          for (ordinal_type i=0;i<hm;++i) {
+            const auto &blk = H(i,j);
+            const ordinal_type 
+              mm = blk.dimension_0(), nn = blk.dimension_1();
+            for(ordinal_type jj=0;jj<nn;++jj) {
+              const ordinal_type jjj = offj+jj;
+              for(ordinal_type ii=0;ii<mm;++ii) {
+                const ordinal_type iii = offi+ii;
+                if (iii < fm && jjj < fn) 
+                  F(iii, jjj) = blk(ii,jj);
+              }
+            }
+            offi += mm;
+          }
+          offj += H(0,j).dimension_1();
+        }
+      }
+    }
+
+    template<typename ValueType, typename ExecSpace>  
+    KOKKOS_INLINE_FUNCTION
+    void
+    copyElementwise(const DenseMatrixView<DenseMatrixView<ValueType,ExecSpace>,ExecSpace> &H,
+                    const DenseMatrixView<ValueType,ExecSpace> &F) {
+      const ordinal_type 
+        hm = H.dimension_0(), hn = H.dimension_0(),
+        fm = F.dimension_0(), fn = F.dimension_0();
+        
+      if (hm > 0 && hn > 0) {
+        ordinal_type offj = 0;
+        for (ordinal_type j=0;j<hn;++j) {
+          ordinal_type offi = 0;
+          for (ordinal_type i=0;i<hm;++i) {
+            const auto &blk = H(i,j);
+            const ordinal_type 
+              mm = blk.dimension_0(), nn = blk.dimension_1();
+            for(ordinal_type jj=0;jj<nn;++jj) {
+              const ordinal_type jjj = offj+jj;
+              for(ordinal_type ii=0;ii<mm;++ii) {
+                const ordinal_type iii = offi+ii;
+                if (iii < fm && jjj < fn) 
+                  blk(ii,jj) = F(iii, jjj);
+              }
+            }
+            offi += mm;
+          }
+          offj += H(0,j).dimension_1();
+        }
+      }
+    }
+
+
   }
 }
 

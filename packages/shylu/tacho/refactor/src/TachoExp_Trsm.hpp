@@ -65,7 +65,7 @@ namespace Tacho {
           ::invoke(_sched, member, ArgDiag(), _alpha, _A, _B);
 
         if (member.team_rank() == 0) {
-          _B.future.~future();
+          _B.set_future();
           r_val = ierr;
         }
       }

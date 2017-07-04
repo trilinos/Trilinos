@@ -26,7 +26,7 @@ namespace Tacho {
              typename ArgTransA,
              typename ArgTransB,
              typename ArgAlgo>
-    struct TaskFunctor_Herk {
+    struct TaskFunctor_Gemm {
     public:
       typedef SchedType sched_type;
       typedef typename sched_type::member_type member_type;
@@ -65,7 +65,7 @@ namespace Tacho {
           ::invoke(_sched, member, _alpha, _A, _B, _beta, _C);
 
         if (member.team_rank() == 0) {
-          _C.future.~future();
+          _C.set_future();
           r_val = ierr;
         }
       }
