@@ -18,10 +18,11 @@ namespace Tacho {
     /// various implementation for different uplo and algo parameters    
     template<typename ArgUplo, typename ArgTrans, typename ArgAlgo>
     struct Herk;
-
+    
     /// task construction for the above chol implementation
     /// Herk<ArgUplo,ArgTrans,ArgAlgo> ::invoke(_sched, member, _alpha, _A, _beta, _C);
     template<typename SchedType,
+             typename ScalarType,
              typename DenseMatrixViewType,
              typename ArgUplo,
              typename ArgTrans,
@@ -31,14 +32,15 @@ namespace Tacho {
       typedef SchedType sched_type;
       typedef typename sched_type::member_type member_type;
 
+      typedef ScalarType scalar_type;
+
       typedef DenseMatrixViewType dense_block_type;
       typedef typename dense_block_type::future_type future_type;
-      typedef typename dense_block_type::value_type mat_value_type;
       typedef typename future_type::value_type value_type;
 
     private:
       sched_type _sched;
-      mat_value_type _alpha, _beta;
+      scalar_type _alpha, _beta;
       dense_block_type _A, _C;
 
     public:
@@ -47,9 +49,9 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       TaskFunctor_Herk(const sched_type &sched,
-                       const mat_value_type alpha,
+                       const scalar_type alpha,
                        const dense_block_type &A,
-                       const mat_value_type beta,
+                       const scalar_type beta,
                        const dense_block_type &C)
         : _sched(sched),
           _alpha(alpha),

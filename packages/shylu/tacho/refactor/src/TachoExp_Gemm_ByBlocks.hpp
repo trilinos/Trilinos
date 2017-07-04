@@ -2,7 +2,7 @@
 #define __TACHOEXP_GEMM_BYBLOCKS_HPP__
 
 
-/// \file  Tacho_Gemm_External.hpp
+/// \file  Tacho_Gemm_ByBlocks.hpp
 /// \brief BLAS general matrix matrix multiplication
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 

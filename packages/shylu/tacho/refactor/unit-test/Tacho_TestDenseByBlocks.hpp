@@ -11,6 +11,7 @@
 
 #include "TachoExp_Chol_ByBlocks.hpp"
 #include "TachoExp_Gemm_ByBlocks.hpp"
+#include "TachoExp_Herk_ByBlocks.hpp"
 
 using namespace Tacho::Experimental;
 
@@ -266,6 +267,110 @@ TEST( DenseByBlocks, gemm ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type k=0;k<(m*m);++k) {
+      norm += c(k)*c(k);
+      diff += (c(k) - c1(k))*(c(k) - c1(k));
+    }
+    
+    const double eps = std::numeric_limits<double>::epsilon()*100;
+    EXPECT_TRUE(sqrt(diff/norm) < eps);
+  }
+}
+
+TEST( DenseByBlocks, herk ) {
+  double alpha = 2.0, beta = 0.5;
+  const ordinal_type n = 100, k = 100, mb = 32; 
+
+  Kokkos::View<ValueType*,HostSpaceType> a("a", k*n), c("c", n*n), c1("c1", n*n);
+  DenseMatrixViewHostType A, C;
+
+  // use random matrix for testing
+  {
+    A.set_view(k, n);
+    A.attach_buffer(1, k, a.data());
+
+    C.set_view(n, n);
+    C.attach_buffer(1, n, c.data());
+
+    Random<ValueType> random;
+    auto randomize = [&](const DenseMatrixViewHostType &mat) {
+      const ordinal_type m = mat.dimension_0(), n = mat.dimension_1();
+      for (ordinal_type j=0;j<n;++j)
+        for (ordinal_type i=0;i<m;++i)
+          mat(i,j) = random.value();
+    };
+    randomize(A);
+    randomize(C);
+
+    Kokkos::deep_copy(c1, c);
+  }
+  
+  // referece: blas gemm
+  {    
+    int dummy;
+    Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+      ::invoke(dummy, dummy, alpha, A, beta, C);
+  }
+
+
+  // test: herk by blocks with attached base buffer
+  const ordinal_type 
+    bn = (n/mb) + (n%mb>0),
+    bk = (k/mb) + (k%mb>0);
+
+  Kokkos::View<DenseMatrixViewHostType*,HostSpaceType> ha("ha", bk*bn), hc("hc", bn*bn);
+  DenseMatrixOfBlocksHostType HA, HC;
+
+  typedef Kokkos::TaskScheduler<HostSpaceType> sched_type_host;
+  sched_type_host sched;
+  
+  typedef TaskFunctor_Herk<sched_type_host,double,DenseMatrixOfBlocksHostType,
+    Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks> task_functor_herk_u_ct;
+
+  const ordinal_type max_functor_size = 4*sizeof(task_functor_herk_u_ct);
+  
+  {
+    const ordinal_type
+      task_queue_capacity = 1024*max_functor_size,
+      min_block_size  = 16,
+      max_block_size  = 4*max_functor_size,
+      num_superblock  = 4,
+      superblock_size = task_queue_capacity/num_superblock;
+    
+    sched = sched_type_host(typename HostSpaceType::memory_space(),
+                            task_queue_capacity,
+                            min_block_size,
+                            max_block_size,
+                            superblock_size);
+  }
+
+  // compute gemm with byblocks - attached buffer
+  C.attach_buffer(1, n, c1.data());
+
+  HA.set_view(bk, bn);
+  HC.set_view(bn, bn);
+  
+  HA.attach_buffer(1, bk, ha.data());
+  HC.attach_buffer(1, bn, hc.data());
+  {
+    setMatrixOfBlocks(HA, k, n, mb);
+    setMatrixOfBlocks(HC, n, n, mb);
+
+    attachBaseBuffer(HA, A.data(), A.stride_0(), A.stride_1());
+    attachBaseBuffer(HC, C.data(), C.stride_0(), C.stride_1());
+    
+    Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
+                       task_functor_herk_u_ct(sched, alpha, HA, beta, HC));
+    
+    Kokkos::wait(sched);
+
+    clearFutureOfBlocks(HA);
+    clearFutureOfBlocks(HC);
+  }
+
+
+  {
+    double diff = 0.0, norm = 0.0;
+    for (ordinal_type k=0;k<(n*n);++k) {
       norm += c(k)*c(k);
       diff += (c(k) - c1(k))*(c(k) - c1(k));
     }

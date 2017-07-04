@@ -102,7 +102,7 @@ namespace Tacho {
                   future_type f = 
                     Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 2), Kokkos::TaskPriority::High),
                                        TaskFunctor_Herk
-                                       <sched_type,dense_block_type,                                       
+                                       <sched_type,double,dense_block_type,
                                        Uplo::Upper,Trans::ConjTranspose,Algo::External>(sched, -1.0, aa, 1.0, cc));
                   TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
                   cc.set_future(f);

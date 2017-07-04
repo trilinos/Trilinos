@@ -13,14 +13,14 @@ namespace Tacho {
 
     template<typename ArgUplo, typename ArgTrans>
     struct Herk<ArgUplo,ArgTrans,Algo::External> {
-      template<typename PolicyType,
+      template<typename SchedType,
                typename MemberType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeC>
       inline
       static int
-      invoke(const PolicyType &policy,
+      invoke(const SchedType &sched,
              const MemberType &member,
              const ScalarType alpha,
              const ViewTypeA &A,
