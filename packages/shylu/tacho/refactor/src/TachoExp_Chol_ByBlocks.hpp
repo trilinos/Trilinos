@@ -38,8 +38,8 @@ namespace Tacho {
              const MemberType &member,
              const MatrixOfDenseBlocksType &A) {
         typedef SchedType sched_type;
+        typedef double scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
-        //typedef typename dense_block_type::value_type value_type;
         typedef typename dense_block_type::future_type future_type;
         
         int r_val = 0;      
@@ -82,7 +82,7 @@ namespace Tacho {
                 future_type f = 
                   Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 2), Kokkos::TaskPriority::High),
                                      TaskFunctor_Trsm
-                                     <sched_type,dense_block_type,
+                                     <sched_type,scalar_type,dense_block_type,
                                      Side::Left,Uplo::Upper,Trans::ConjTranspose,Diag::NonUnit,Algo::External>
                                      (sched, 1.0, aa, bb));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
@@ -102,7 +102,7 @@ namespace Tacho {
                   future_type f = 
                     Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 2), Kokkos::TaskPriority::High),
                                        TaskFunctor_Herk
-                                       <sched_type,double,dense_block_type,
+                                       <sched_type,scalar_type,dense_block_type,
                                        Uplo::Upper,Trans::ConjTranspose,Algo::External>(sched, -1.0, aa, 1.0, cc));
                   TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
                   cc.set_future(f);
@@ -116,7 +116,7 @@ namespace Tacho {
                   future_type f = 
                     Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 3), Kokkos::TaskPriority::High),
                                        TaskFunctor_Gemm
-                                       <sched_type,double,dense_block_type,
+                                       <sched_type,scalar_type,dense_block_type,
                                        Trans::ConjTranspose,Trans::NoTranspose,Algo::External>(sched, -1.0, aa, bb, 1.0, cc));
                   TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
                   cc.set_future(f);
