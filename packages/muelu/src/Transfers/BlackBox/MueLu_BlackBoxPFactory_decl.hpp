@@ -165,17 +165,20 @@ namespace MueLu {
                              const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
                              const Array<LO> lCoarseNodesPerDir) const;
 
-    void ReorderStencil(const LO ie, const LO je, const LO ke, const ArrayView<const SC> rowValues,
+    void CollapseStencil(const int type, const int orientation, Array<SC>& stencil) const ;
+
+    void ReorderStencil(const LO BlkSize, const LO ie, const LO je, const LO ke,
+                        const ArrayView<const SC> rowValues,
                         const Array<LO> elementNodesPerDir, Array<SC>& stencil) const;
+
+    void GetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir,
+                     int* type, LO& ind, int* orientation) const;
 
     void sh_sort_permute(
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const;
-
-    void GetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir,
-                     int* type, LO& ind) const;
 
   }; //class BlackBoxPFactory
 

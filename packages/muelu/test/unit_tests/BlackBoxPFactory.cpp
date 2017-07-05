@@ -96,14 +96,15 @@ namespace MueLuTests {
                                       gNumCoarseNodes, lNumCoarseNodes, coarseNodes);
     };
 
-    void TestReorderStencil(const LO ie, const LO je, const LO ke, const ArrayView<const SC> rowValues, const Array<LO> elementNodesPerDir, Array<SC>& stencil) const {
+    void TestReorderStencil(const LO BlkSize, const LO ie, const LO je, const LO ke, const ArrayView<const SC> rowValues, const Array<LO> elementNodesPerDir, Array<SC>& stencil) const {
       MueLu::BlackBoxPFactory<SC,LO,GO,Node> mybbmgPFactory;
-      mybbmgPFactory.ReorderStencil(ie, je, ke, rowValues, elementNodesPerDir, stencil);
+      mybbmgPFactory.ReorderStencil(BlkSize, ie, je, ke, rowValues, elementNodesPerDir, stencil);
     };
 
     void TestGetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir, int* nodeType, LO& nodeIndex) const {
       MueLu::BlackBoxPFactory<SC,LO,GO,Node> mybbmgPFactory;
-      mybbmgPFactory.GetNodeInfo(ie, je, ke, elementNodesPerDir, nodeType, nodeIndex);
+      int dummy;
+      mybbmgPFactory.GetNodeInfo(ie, je, ke, elementNodesPerDir, nodeType, nodeIndex, &dummy);
     };
 
   };
@@ -428,6 +429,8 @@ namespace MueLuTests {
     elementNodesPerDir[0] = 3;
     elementNodesPerDir[1] = 3;
     elementNodesPerDir[2] = 3;
+    LO BlkSize = 1;
+
     {// check reordering for ie = 0, je = 0, ke = 0
       ie = 0, je = 0, ke = 0;
       const std::vector<SC> v = {13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0, 26.0,
@@ -435,7 +438,7 @@ namespace MueLuTests {
                                      15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -454,7 +457,7 @@ namespace MueLuTests {
                                      14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -473,7 +476,7 @@ namespace MueLuTests {
                                      12.0, 15.0, 16.0, 17.0, 18.0, 21.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -492,7 +495,7 @@ namespace MueLuTests {
                                      11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -511,7 +514,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -530,7 +533,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -549,7 +552,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -568,7 +571,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -587,7 +590,7 @@ namespace MueLuTests {
                                       9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -606,7 +609,7 @@ namespace MueLuTests {
                                      15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -625,7 +628,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -644,7 +647,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -663,7 +666,7 @@ namespace MueLuTests {
                                       9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -682,7 +685,7 @@ namespace MueLuTests {
                                      11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -701,7 +704,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -720,7 +723,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -738,7 +741,7 @@ namespace MueLuTests {
                                       0.0,  1.0,  2.0,  3.0,  6.0,  9.0, 10.0, 11.0, 12.0, 15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -756,7 +759,7 @@ namespace MueLuTests {
                                       0.0,  1.0,  2.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -774,7 +777,7 @@ namespace MueLuTests {
                                       0.0,  3.0,  6.0,  7.0,  8.0,  9.0, 12.0, 15.0, 16.0, 17.0, 18.0, 21.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -792,7 +795,7 @@ namespace MueLuTests {
                                       2.0,  5.0,  6.0,  7.0,  8.0, 11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -810,7 +813,7 @@ namespace MueLuTests {
                                       0.0,  3.0,  6.0,  9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -828,7 +831,7 @@ namespace MueLuTests {
                                       2.0,  5.0,  8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -846,7 +849,7 @@ namespace MueLuTests {
                                       0.0,  1.0,  2.0,  9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -864,7 +867,7 @@ namespace MueLuTests {
                                       6.0,  7.0,  8.0, 15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -882,7 +885,7 @@ namespace MueLuTests {
                                       0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -900,7 +903,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -919,7 +922,7 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -928,6 +931,49 @@ namespace MueLuTests {
         }
       }
       if(!checkResult) {std::cout << "Interior has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+
+    // Randomly trying two of the cases for ndofs == 2
+    BlkSize = 2;
+
+    {// check reordering for ie = 0, je = 1, ke = 2
+      ie = 0, je = 1, ke = 2;
+      const std::vector<SC> v = { 2.0,  3.0,  4.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 21.0, 22.0, 23.0, 26.0, 27.0, 28.0, 29.0, 32.0, 33.0, 34.0, 35.0,
+                                  0.0,  1.0,  6.0,  7.0, 12.0, 13.0, 18.0, 19.0, 24.0, 25.0, 30.0, 31.0,
+                                 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0};
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(54);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 54; ++i) {
+        if(stencil[i] != (SC) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "j-Edge 3 has a problem!" << std::endl;}
+      TEST_EQUALITY(checkResult, true);
+    }
+
+    {// check reordering for ie = 1, je = 1, ke = 0
+      ie = 1, je = 1, ke = 0;
+      const std::vector<SC> v = {18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0,
+                                 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0,
+                                  0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0};
+      Array<SC> cornerSWB(v);
+      Array<SC> stencil(54);
+      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+
+      bool checkResult = true;
+      for(int i = 0; i < 54; ++i) {
+        if(stencil[i] != (SC) i) {
+          checkResult = false;
+        }
+      }
+      if(!checkResult) {std::cout << "2 dofs per node has a problem!" << std::endl;}
       TEST_EQUALITY(checkResult, true);
     }
 
