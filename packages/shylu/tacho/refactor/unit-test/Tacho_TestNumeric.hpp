@@ -63,7 +63,7 @@ TEST( Numeric, constructor ) {
                                             S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 }
 
-TEST( Numeric, factorizeCholesky_Serial ) {
+TEST( Numeric, Cholesky_Serial ) {
   CrsMatrixBaseHostType A("A");
   A = MatrixMarket<ValueType>::read("test.mtx");
 
@@ -93,6 +93,12 @@ TEST( Numeric, factorizeCholesky_Serial ) {
 
   std::ofstream out("test_numeric_factorize_serial.mtx");
   MatrixMarket<ValueType>::write(out, F);
+
+  const ordinal_type m = A.NumRows(), n = 2;
+  Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceSpaceType> x("x", m, n), b("b", m, n);
+
+  Kokkos::deep_copy(b, 1.0);
+  N.solveCholesky_Serial(x, b);
 }
 
 // TEST( Numeric, factorizeCholesky_Parallel ) {

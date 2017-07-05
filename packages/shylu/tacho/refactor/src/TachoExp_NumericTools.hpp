@@ -128,6 +128,98 @@ namespace Tacho {
                      (void*)((value_type*)buf + ABR.span()));
         }
       }
+
+      template<typename MultiVectorViewType>
+      inline
+      void
+      recursiveSerialSolveLower(const sched_type_host &sched,
+                                const supernode_info_type_host &info,
+                                const ordinal_type sid, 
+                                const MultiVectorViewType &x,
+                                const size_type bufsize,
+                                /* */ void *buf) {
+        // // recursion
+        // const ordinal_type 
+        //   ibeg = info.stree_ptr(sid), 
+        //   iend = info.stree_ptr(sid+1);
+
+        // for (ordinal_type i=ibeg;i<iend;++i)
+        //   recursiveSerialCholSolveFirst(sched, 
+        //                                 info, info.stree_children(i), 
+        //                                 x, 
+        //                                 bufsize, buf);
+
+        // {
+        //   // dummy member
+        //   const ordinal_type member = 0;
+
+        //   // ABR is needed to separate factorize and update routines
+        //   CholSupernodes<Algo::Workflow::Serial>
+        //     ::solve_lower(sched, member,
+        //                   info, sid, 
+        //                   x,
+        //                   bufsize, buf);
+
+        //   typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
+        //   typedef typename value_type_matrix_host::value_type value_type;
+
+        //   ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
+        //   UnmanagedViewType<value_type_multi_vector_host> xB((value_type*)buf, n-m, x.dimension_1());
+
+        //   CholSupernodes<Algo::Workflow::Serial>          
+        //     ::update_solve_lower(sched, member,
+        //                          info, xB, sid,
+        //                          x,
+        //                          bufsize - xB.span()*sizeof(value_type), 
+        //                          (void*)((value_type*)buf + xB.span()));
+        // }
+      }
+
+      template<typename MultiVectorViewType>
+      inline
+      void
+      recursiveSerialSolveUpper(const sched_type_host &sched,
+                                const supernode_info_type_host &info,
+                                const ordinal_type sid, 
+                                const MultiVectorViewType &x,
+                                const size_type bufsize,
+                                /* */ void *buf) {
+        // // recursion
+        // const ordinal_type 
+        //   ibeg = info.stree_ptr(sid), 
+        //   iend = info.stree_ptr(sid+1);
+
+        // for (ordinal_type i=ibeg;i<iend;++i)
+        //   recursiveSerialCholSolveFirst(sched, 
+        //                                 info, info.stree_children(i), 
+        //                                 x, 
+        //                                 bufsize, buf);
+
+        // {
+        //   // dummy member
+        //   const ordinal_type member = 0;
+
+        //   // ABR is needed to separate factorize and update routines
+        //   CholSupernodes<Algo::Workflow::Serial>
+        //     ::solve_lower(sched, member,
+        //                   info, sid, 
+        //                   x,
+        //                   bufsize, buf);
+
+        //   typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
+        //   typedef typename value_type_matrix_host::value_type value_type;
+
+        //   ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
+        //   UnmanagedViewType<value_type_multi_vector_host> xB((value_type*)buf, n-m, x.dimension_1());
+
+        //   CholSupernodes<Algo::Workflow::Serial>          
+        //     ::update_solve_lower(sched, member,
+        //                          info, xB, sid,
+        //                          x,
+        //                          bufsize - xB.span()*sizeof(value_type), 
+        //                          (void*)((value_type*)buf + xB.span()));
+        // }
+      }
       
     public:
       NumericTools() = default;
@@ -174,9 +266,6 @@ namespace Tacho {
           _stree_children(stree_children),
           _stree_roots(stree_roots) {}
 
-      ///
-      /// host only input (value array can be rewritten in the same sparse structure)
-      ///
       inline
       void
       factorizeCholesky_Serial() {
@@ -224,9 +313,60 @@ namespace Tacho {
         }
       }
 
-      ///
-      /// host only input (value array can be rewritten in the same sparse structure)
-      ///
+      template<typename MultiVectorViewType>
+      inline
+      void
+      solveCholesky_Serial(const MultiVectorViewType &x,
+                           const MultiVectorViewType &b) {
+        /// supernode info
+        supernode_info_type_host info;
+        {
+          /// symbolic input
+          info.supernodes             = _supernodes;
+          info.gid_super_panel_ptr    = _gid_super_panel_ptr;
+          info.gid_super_panel_colidx = _gid_super_panel_colidx;
+          
+          info.sid_super_panel_ptr    = _sid_super_panel_ptr;
+          info.sid_super_panel_colidx = _sid_super_panel_colidx;
+          info.blk_super_panel_colidx = _blk_super_panel_colidx;
+          
+          info.stree_ptr              = _stree_ptr;
+          info.stree_children         = _stree_children;
+
+          info.super_panel_ptr        = _super_panel_ptr;
+          info.super_panel_buf        = _super_panel_buf;
+        }
+        
+        // copy b -> x
+        TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
+                                 x.dimension_1() != b.dimension_1(), std::logic_error,
+                                 "supernode data structure is not allocated");
+        if (x.data() != b.data())
+          Kokkos::deep_copy(x, b);
+        
+        {
+          /// maximum workspace size for serial run
+          const size_type worksize = sqrt(info.computeWorkspaceSerialChol())*x.dimension_1() + _m;
+          value_type_array_host work("work", worksize);
+
+          sched_type_host sched;
+
+          /// recursive tree traversal
+          const ordinal_type nroots = _stree_roots.dimension_0();
+          for (ordinal_type i=0;i<nroots;++i)
+            recursiveSerialSolveLower(sched, 
+                                      info, _stree_roots(i), 
+                                      x,
+                                      work.span()*sizeof(value_type), work.data());
+
+          for (ordinal_type i=0;i<nroots;++i)
+            recursiveSerialSolveUpper(sched, 
+                                      info, _stree_roots(i), 
+                                      x,
+                                      work.span()*sizeof(value_type), work.data());
+        }
+      }
+
       inline
       void
       factorizeCholesky_Parallel() {
@@ -304,7 +444,7 @@ namespace Tacho {
       }
 
       ///
-      /// 
+      /// utility
       ///
       inline
       CrsMatrixBase<value_type,host_exec_space>
