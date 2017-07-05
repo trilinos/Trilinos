@@ -304,6 +304,34 @@ namespace Tacho {
       }
 
       ///
+      /// 
+      ///
+      inline
+      CrsMatrixBase<value_type,host_exec_space>
+      exportFactorsToCrsMatrixBase(const bool replace_value_with_one = false) {
+        /// this only avail after factorization is done
+        TACHO_TEST_FOR_EXCEPTION(_super_panel_ptr.dimension_0() == 0, std::logic_error,
+                                 "supernode data structure is not allocated");
+        
+        /// supernode info
+        supernode_info_type_host info;
+        {
+          /// symbolic input
+          info.supernodes             = _supernodes;
+          info.gid_super_panel_ptr    = _gid_super_panel_ptr;
+          info.gid_super_panel_colidx = _gid_super_panel_colidx;
+          
+          info.sid_super_panel_ptr    = _sid_super_panel_ptr;
+          info.sid_super_panel_colidx = _sid_super_panel_colidx;
+          info.blk_super_panel_colidx = _blk_super_panel_colidx;
+          
+          info.super_panel_ptr        = _super_panel_ptr;
+          info.super_panel_buf        = _super_panel_buf;
+        }
+        return info.createCrsMatrixBase(replace_value_with_one);
+      }
+
+      ///
       /// host only input (value array can be rewritten in the same sparse structure)
       ///
       // inline

@@ -23,7 +23,7 @@ namespace Tacho {
 
       typedef Kokkos::Future<int,exec_space> future_type;
       typedef Kokkos::View<future_type*,exec_space> future_type_array;
-      
+
       ///
       /// Phase 1: symbolic
       ///
@@ -54,7 +54,7 @@ namespace Tacho {
       ///
       ConstUnmanagedViewType<size_type_array> super_schur_ptr;
       UnmanagedViewType<value_type_array> super_schur_buf;
-      
+
       KOKKOS_INLINE_FUNCTION
       SupernodeInfo() = default;
 
@@ -119,8 +119,8 @@ namespace Tacho {
           const ordinal_type
             cbeg = blk_super_panel_colidx(sid_super_panel_ptr(sid)+1),
             cend = blk_super_panel_colidx(sid_super_panel_ptr(sid+1)-1);
-          
-          work(sid) = (m-n)*(m-n) + (cend - cbeg);          
+
+          work(sid) = (m-n)*(m-n) + (cend - cbeg);
         }
 
         // prefix scan
@@ -170,7 +170,6 @@ namespace Tacho {
                               const ordinal_type_array &work) {
         const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
 
-
         Kokkos::deep_copy(work, -1);
 
         for (ordinal_type sid=0;sid<nsupernodes;++sid) {
@@ -206,6 +205,67 @@ namespace Tacho {
             work(col) = -1;
           }
         }
+      }
+
+      inline
+      CrsMatrixBase<value_type,exec_space>
+      createCrsMatrixBase(const bool replace_value_with_one = false) {
+        // count m, n, nnz
+        const ordinal_type
+          nsupernodes = supernodes.dimension_0() - 1,
+          mm = supernodes(nsupernodes),
+          nn = mm;
+
+        size_type cnt = 0;
+        size_type_array ap("ap", mm+1);
+        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+          // grab super panel
+          ordinal_type m, n;
+          getSuperPanelSize(sid, m, n);
+
+          // row major access to sparse src
+          const ordinal_type soffset = supernodes(sid);
+          for (ordinal_type i=0;i<m;++i) {
+            const ordinal_type row = i+soffset; // row in sparse matrix
+            ap(row) = cnt;
+            cnt += (n - i); // upper triangular only
+          }
+        }
+        ap(mm) = cnt;
+
+        // fill the matrix
+        const size_type nnz = cnt; cnt = 0;
+        ordinal_type_array aj("aj", nnz);
+        value_type_array ax("ax", nnz);
+        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+
+          // grab super panel
+          ordinal_type m, n;
+          getSuperPanelSize(sid, m, n);
+
+          UnmanagedViewType<value_type_matrix>
+            src(&super_panel_buf(super_panel_ptr(sid)), m, n);
+
+          // row major access to sparse src
+          const ordinal_type
+            soffset = supernodes(sid),
+            goffset = gid_super_panel_ptr(sid);
+
+          for (ordinal_type i=0;i<m;++i) {
+            const size_type beg = ap(i+soffset);
+            for (ordinal_type j=i,k=0;j<n;++j,++k) {
+              const ordinal_type col = gid_super_panel_colidx(j+goffset);
+              aj(beg+k) = col;
+              ax(beg+k) = replace_value_with_one ? 1.0 : src(i, j);
+            }
+          }
+        }
+
+        // set triple to crs matrix
+        CrsMatrixBase<value_type,exec_space> r_val;
+        r_val.setExternalMatrix(mm, nn, nnz, ap, aj, ax);
+
+        return r_val;
       }
     };
 
