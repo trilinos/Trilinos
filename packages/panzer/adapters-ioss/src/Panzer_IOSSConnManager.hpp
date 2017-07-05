@@ -271,6 +271,16 @@ protected:
    LocalOrdinal addSubcellConnectivities(const panzer::FieldPattern & fp, std::string & blockId, std::size_t elmtIdInBlock,unsigned subcellRank,
                                          LocalOrdinal idCnt,GlobalOrdinal offset);
 
+   /* Determine whether a FieldPattern object is compatible with the Ioss::ElementTopology
+    * of every block in the mesh.
+    *
+    *  \param[in] fp The field pattern
+    *
+    *  \returns true if the field pattern is compatible with all element topologies in the mesh.
+    *
+    */
+   bool compatibleTopology(const panzer::FieldPattern & fp) const;
+
 
    Ioss::DatabaseIO * iossMeshDB_;
    Teuchos::RCP<Ioss::Region> iossRegion_;
@@ -278,6 +288,7 @@ protected:
    ElementBlockContainer iossElementBlocks_;
    std::map<std::string,Teuchos::RCP<std::vector<GlobalOrdinal>>> iossConnectivity_;
    std::map<std::string,shards::CellTopology> iossToShardsTopology_;
+   std::map<std::string, const Ioss::ElementTopology *> iossElementBlockTopologies_;
 
    // element block information
    std::map<std::string,Teuchos::RCP<std::vector<LocalOrdinal> > > elementBlocks_;

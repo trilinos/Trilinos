@@ -54,6 +54,7 @@
 #include "Teuchos_EReductionType.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TestForException.hpp"
 
 // Kokkos includes
@@ -73,6 +74,9 @@
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_IOSSDatabaseTypeManager.hpp"
 
+// Zoltan includes
+#include "Zoltan2_findUniqueGids.hpp"
+
 // Ioss includes
 #include "Ioss_CodeTypes.h"
 #include "Ioss_ParallelUtils.h"
@@ -91,10 +95,12 @@ namespace panzer_ioss {
 
 template <typename GO>
 IOSSConnManager<GO>::IOSSConnManager(Ioss::DatabaseIO * iossMeshDB)
-   : iossMeshDB_(iossMeshDB), elementBlocks_(), neighborElementBlocks_(),
+   : iossMeshDB_(iossMeshDB), iossRegion_(), iossNodeBlocks_(), iossElementBlocks_(),
+	 iossConnectivity_(), iossToShardsTopology_(), iossElementBlockTopologies_(),
+	 elementBlocks_(), neighborElementBlocks_(),
 	 elmtLidToGid_(), elmtLidToConn_(), connSize_(),
 	 connectivity_(), ownedElementCount_(0), sidesetsToAssociate_(),
-	 sidesetYieldedAssociations_(), elmtToAssociatedElmts_()
+	 sidesetYieldedAssociations_(), elmtToAssociatedElmts_(), placeholder_()
 {
 
   std::string error_message;
@@ -111,11 +117,14 @@ IOSSConnManager<GO>::IOSSConnManager(Ioss::DatabaseIO * iossMeshDB)
 		  << error_message << "\nbad_count = " << bad_count << "\n");
 
   // Get the metadata
-
   iossRegion_ = rcp(new Ioss::Region(iossMeshDB_, "iossRegion_"));
   iossNodeBlocks_ = iossRegion_->get_node_blocks();
   iossElementBlocks_ = iossRegion_->get_element_blocks();
 
+  // Get element block topologies
+  for (Ioss::ElementBlock * iossElementBlock : iossElementBlocks_) {
+    iossElementBlockTopologies_[iossElementBlock->name()] = iossElementBlock->topology();
+  }
 
   // Create iossToShardsTopology_ map;
   createTopologyMapping();
@@ -193,6 +202,10 @@ void IOSSConnManager<GO>::getDofCoords(const std::string & blockId,
   //       this method will need to be rewritten, since only nodal information is obtained
   //       from IOSS.
 
+  // Check that the FieldPattern has a topology that is compatible with all elements;
+  TEUCHOS_TEST_FOR_EXCEPTION(!compatibleTopology(coordProvider), std::logic_error,
+		     		            "Error, coordProvider must have a topology compatible with all elements.");
+
   int dim = coordProvider.getDimension();
   int numIdsPerElement = coordProvider.numberIds();
 
@@ -262,7 +275,7 @@ template <typename GO>
 void IOSSConnManager<GO>::buildLocalElementMapping() {
 
   std::string name;
-  std::vector<LocalOrdinal> indices;
+  std::vector<GlobalOrdinal> indices;
   std::size_t element_count = 0;
 
   // Initialize
@@ -279,7 +292,7 @@ void IOSSConnManager<GO>::buildLocalElementMapping() {
 	ownedElementCount_ += indices.size();
 
     elementBlocks_[name] = rcp(new std::vector<LocalOrdinal>);
-    for (LocalOrdinal element : indices) {
+    for (GlobalOrdinal element : indices) {
       elementBlocks_[name]->push_back(element_count);
       elmtLidToGid_.push_back(element);
       ++element_count;
@@ -301,13 +314,21 @@ void IOSSConnManager<GO>::buildLocalElementMapping() {
 template <typename GO>
 void IOSSConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp) {
 
-
   //Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   //out.setShowProcRank(true);
 
   std::string blockName;
   int blockConnectivitySize = 0;
   std::vector<GlobalOrdinal> blockConnectivity;
+
+  // Check that the FieldPattern has a topology that is compatible with all elements;
+  TEUCHOS_TEST_FOR_EXCEPTION(!compatibleTopology(fp), std::logic_error,
+		     		            "Error, fp must have a topology compatible with all elements.");
+
+  // Determine whether the field pattern has more nodes than the base element topology.
+  const CellTopologyData * baseTopologyData = fp.getCellTopology().getBaseCellTopologyData();
+  int num_nodes = fp.getSubcellCount(0);
+  bool extended = num_nodes > int(baseTopologyData->subcell_count[0]);
 
   // Get element info from IOSS database and build a local element mapping.
   buildLocalElementMapping();
@@ -327,6 +348,8 @@ void IOSSConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp) {
     std::copy(blockConnectivity.begin(), blockConnectivity.end(), iossConnectivity_[blockName]->begin());
 
   }
+
+  // Need to create iossBaseConnectivity, which contains the corner nodes for each element.
 
   // Build sub cell ID counts and offsets
   //    ID counts = How many IDs belong on each subcell (number of mesh DOF used)
@@ -471,6 +494,45 @@ typename IOSSConnManager<GO>::LocalOrdinal IOSSConnManager<GO>::addSubcellConnec
    }
 
    return numIds;
+}
+
+template <typename GO>
+bool IOSSConnManager<GO>::compatibleTopology(const panzer::FieldPattern & fp) const {
+
+   bool compatible = true;
+
+   //RCP<IossElementInfo> elementInfo;
+
+   const CellTopologyData * baseTopologyData = fp.getCellTopology().getBaseCellTopologyData();
+
+
+   int num_nodes = fp.getSubcellCount(0);
+   bool extended = num_nodes > int(baseTopologyData->subcell_count[0]);
+
+   for (Ioss::ElementBlock * iossElementBlock : iossElementBlocks_) {
+
+	 const Ioss::ElementTopology * topology = iossElementBlockTopologies_.find(iossElementBlock->name())->second;
+
+     // test same dimension
+     std::size_t dim = topology->spatial_dimension();
+     compatible &= (dim==(std::size_t) baseTopologyData->dimension);
+
+     compatible &= topology->number_corner_nodes()==int(baseTopologyData->subcell_count[0]);
+     compatible &= topology->number_edges()==int(baseTopologyData->subcell_count[1]);
+     if (dim > 2) {
+       compatible &= topology->number_faces()==int(baseTopologyData->subcell_count[2]);
+     }
+
+     // If the field pattern has more nodes than the base cell topology,
+     // make sure the iossElement has the same number of nodes.
+     if (extended) {
+    	 compatible &= topology->number_nodes()==num_nodes;
+     }
+
+
+   }
+
+   return compatible;
 }
 
 template <typename GO>
