@@ -2,7 +2,6 @@
 #define __TACHOEXP_CHOL_BYBLOCKS_HPP__
 
 /// \file  TachoExp_Chol_ByBlocks.hpp
-/// \brief LAPACK upper Cholesky factorization
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Teuchos_LAPACK.hpp"
@@ -38,9 +37,12 @@ namespace Tacho {
              const MemberType &member,
              const MatrixOfDenseBlocksType &A) {
         typedef SchedType sched_type;
-        typedef double scalar_type;
+
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
+        typedef typename dense_block_type::value_type value_type;
         typedef typename dense_block_type::future_type future_type;
+
+        typedef typename TypeTraits<value_type>::magnitude_type scalar_type;
         
         int r_val = 0;      
 

@@ -3,7 +3,6 @@
 
 
 /// \file  Tacho_Gemm_ByBlocks.hpp
-/// \brief BLAS general matrix matrix multiplication
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Teuchos_BLAS.hpp"

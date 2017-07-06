@@ -20,9 +20,8 @@ namespace Tacho {
       factorize(const SchedulerType &sched,
                 const MemberType &member,
                 const SupernodeInfoType &info,
-                const ordinal_type sid,
-                const size_type bufsize,
-                /* */ void *buf) {
+                const typename SupernodeInfoType::value_type_matrix &ABR,
+                const ordinal_type sid) {
         typedef SupernodeInfoType supernode_info_type;
 
         typedef typename supernode_info_type::value_type value_type;
@@ -49,14 +48,11 @@ namespace Tacho {
             Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
               ::invoke(sched, member, Diag::NonUnit(), 1.0, ATL, ATR);
 
-            const size_type abrsize = n*n*sizeof(value_type);
-            if (abrsize) {
-              TACHO_TEST_FOR_ABORT(bufsize < abrsize, "bufsize is smaller than required schur workspace");
-              UnmanagedViewType<value_type_matrix> ABR((value_type*)buf, n, n);
-
-              Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
-                ::invoke(sched, member, -1.0, ATR, 0.0, ABR);
-            }
+            TACHO_TEST_FOR_ABORT(ABR.dimension_0() != n ||
+                                 ABR.dimension_1() != n, 
+                                 "ABR dimension does not match to supernodes");
+            Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+              ::invoke(sched, member, -1.0, ATR, 0.0, ABR);
           }
         }
         return 0;
@@ -64,14 +60,13 @@ namespace Tacho {
 
       template<typename SchedulerType,
                typename MemberType,
-               typename SupernodeInfoType,
-               typename MatrixViewType>
+               typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
       update(const SchedulerType &sched,
              const MemberType &member,
              const SupernodeInfoType &info,
-             const MatrixViewType &ABR,
+             const typename SupernodeInfoType::value_type_matrix &ABR,
              const ordinal_type sid,
              const size_type bufsize,
              /* */ void *buf) {

@@ -81,6 +81,61 @@ namespace Tacho {
     enum : int { LabelSize = 64,
                  MaxDependenceSize = 3 };
 
+    template<typename T>
+    struct TypeTraits;
+
+    template<>
+    struct TypeTraits<float> {
+      typedef float type;
+      typedef float value_type;
+      typedef float magnitude_type;
+    };
+
+    template<>
+    struct TypeTraits<double> {
+      typedef double type;
+      typedef double value_type;
+      typedef double magnitude_type;
+    };
+
+    template<>
+    struct TypeTraits<std::complex<float> > {
+      typedef std::complex<float> type;
+      typedef std::complex<float> value_type;
+      typedef std::complex<float> magnitude_type;
+    };
+
+    template<>
+    struct TypeTraits<std::complex<double> > {
+      typedef std::complex<double> type;
+      typedef std::complex<double> value_type;
+      typedef double magnitude_type;
+    };
+    
+    template<>
+    struct TypeTraits<Kokkos::complex<float> > {
+      typedef Kokkos::complex<float> type;
+      typedef Kokkos::complex<float> value_type;
+      typedef float magnitude_type;
+    };
+
+    template<>
+    struct TypeTraits<Kokkos::complex<double> > {
+      typedef Kokkos::complex<double> type;
+      typedef Kokkos::complex<double> value_type;
+      typedef double magnitude_type;
+    };
+
+    // template<typename ValueType, typename ExecSpace>
+    // struct DenseMatrixView;
+
+    // template<typename ValueType, typename ExecSpace>
+    // struct TypeTraits<DenseMatrixView<ValueType,ExecSpace> > {
+    //   typedef DenseMatrixView<ValueType,ExecSpace> type;
+    //   typedef ValueType value_type;
+    //   typedef typename TypeTraits<value_type>::magnitude_type magnitude_type;
+    // };
+
     ///
     /// complex query
     ///

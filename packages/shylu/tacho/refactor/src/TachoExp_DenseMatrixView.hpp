@@ -182,7 +182,7 @@ namespace Tacho {
             auto ptr = (value_type*)pool.allocate(mm*nn*sizeof(value_type));
             TACHO_TEST_FOR_ABORT(ptr == NULL, "memory pool allocation fails");          
 
-            H(i,j).set_view(0, mm, 0, nn); // whatever offsets are defined here, they are gone.
+            H(i,j).set_view(mm, nn); // whatever offsets are defined here, they are gone.
             H(i,j).attach_buffer(1, mm, ptr);
           }
         }
@@ -271,7 +271,19 @@ namespace Tacho {
       }
     }
 
-
+    template<typename DenseMatrixViewTypeA, 
+             typename DenseMatrixViewTypeB, 
+             typename OrdinalTypeArray>
+    KOKKOS_INLINE_FUNCTION
+    void
+    applyRowPermutation(const DenseMatrixViewTypeA &A, 
+                        const DenseMatrixViewTypeB &B,
+                        const OrdinalTypeArray &p) {
+      const ordinal_type m = A.dimension_0(), n = A.dimension_1();
+      for (ordinal_type j=0;j<n;++j)
+        for (ordinal_type i=0;i<m;++i)
+          A(p(i), j) = B(i, j);
+    }
   }
 }
 

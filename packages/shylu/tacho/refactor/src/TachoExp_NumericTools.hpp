@@ -6,6 +6,9 @@
 
 #include "TachoExp_Util.hpp"
 
+#include "TachoExp_CrsMatrixBase.hpp"
+#include "TachoExp_DenseMatrixView.hpp"
+
 #include "TachoExp_Chol.hpp"
 #include "TachoExp_Chol_External.hpp"
 
@@ -115,13 +118,12 @@ namespace Tacho {
           // dummy member
           const ordinal_type member = 0;
 
-          CholSupernodes<Algo::Workflow::Serial>
-            ::factorize(sched, member,
-                        info, sid, 
-                        bufsize, buf);
-
           ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
           UnmanagedViewType<value_type_matrix_host> ABR((value_type*)buf, n-m, n-m);
+
+          CholSupernodes<Algo::Workflow::Serial>
+            ::factorize(sched, member,
+                        info, ABR, sid);
 
           CholSupernodes<Algo::Workflow::Serial>          
             ::update(sched, member,
@@ -329,12 +331,7 @@ namespace Tacho {
         }
         
         // copy b -> t
-        {
-          const ordinal_type m = t.dimension_0(), n = t.dimension_1();
-          for (ordinal_type j=0;j<n;++j)
-            for (ordinal_type i=0;i<m;++i) 
-              t(_peri(i), j) = b(i, j);
-        }
+        applyRowPermutation(t, b, _peri);
         
         {
           /// maximum workspace size for serial run
@@ -357,13 +354,7 @@ namespace Tacho {
         }
 
         // copy t -> x
-        {
-          const ordinal_type m = t.dimension_0(), n = t.dimension_1();
-          for (ordinal_type j=0;j<n;++j)
-            for (ordinal_type i=0;i<m;++i) 
-              x(_perm(i), j) = t(i, j);
-        }
-
+        applyRowPermutation(x, t, _perm);
       }
 
       inline

@@ -3,7 +3,6 @@
 
 
 /// \file  TachoExp_Trsm_ByBlocks.hpp
-/// \brief BLAS triangular solve matrix
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Teuchos_BLAS.hpp"
