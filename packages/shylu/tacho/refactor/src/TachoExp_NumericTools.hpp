@@ -152,15 +152,14 @@ namespace Tacho {
           // dummy member
           const ordinal_type member = 0;
 
-          CholSupernodes<Algo::Workflow::Serial>
-            ::solve_lower(sched, member,
-                          info, sid, 
-                          bufsize, buf);
-          
           const ordinal_type nrhs = info.x.dimension_1();
           ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
           UnmanagedViewType<value_type_matrix_host> xB((value_type*)buf, n-m, nrhs);
 
+          CholSupernodes<Algo::Workflow::Serial>
+            ::solve_lower(sched, member,
+                          info, xB, sid);
+          
           CholSupernodes<Algo::Workflow::Serial>          
             ::update_solve_lower(sched, member,
                                  info, xB, sid);

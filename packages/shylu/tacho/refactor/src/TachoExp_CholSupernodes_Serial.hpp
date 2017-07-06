@@ -166,9 +166,8 @@ namespace Tacho {
       solve_lower(const SchedulerType &sched,
                   const MemberType &member,
                   const SupernodeInfoType &info,
-                  const ordinal_type sid,
-                  const size_type bufsize,
-                  /* */ void *buf) {
+                  const typename SupernodeInfoType::value_type_matrix &xB,
+                  const ordinal_type sid) {
         typedef SupernodeInfoType supernode_info_type;
 
         typedef typename supernode_info_type::value_type value_type;
@@ -185,7 +184,7 @@ namespace Tacho {
         info.getSuperPanelSize(sid, pm, pn);
 
         // panel is divided into diagonal and interface block
-        const ordinal_type m = pm, n = pn - pm, nrhs = x.dimension_1();
+        const ordinal_type m = pm, n = pn - pm;
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
@@ -199,14 +198,12 @@ namespace Tacho {
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
 
-            const size_type xbsize = n*nrhs*sizeof(value_type);
-            if (xbsize) {
-              TACHO_TEST_FOR_ABORT(bufsize < xbsize, "bufsize is smaller than required temporary buffer");
-              UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
+            TACHO_TEST_FOR_ABORT(n != xB.dimension_0(), "# of rows in xB does not match to super blocksize in sid");
+            TACHO_TEST_FOR_ABORT(xB.dimension_1() != x.dimension_1(), 
+                                 "# of cols in xB does not match to rhs in supernodesinfo");
 
-              Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
-                ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
-            }
+            Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
+              ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
           }
         }
         return 0;
@@ -214,14 +211,13 @@ namespace Tacho {
 
       template<typename SchedulerType,
                typename MemberType,
-               typename SupernodeInfoType,
-               typename MatrixViewType>
+               typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
       update_solve_lower(const SchedulerType &sched,
                          const MemberType &member,
                          const SupernodeInfoType &info,
-                         const MatrixViewType &xB,
+                         const typename SupernodeInfoType::value_type_matrix &xB,
                          const ordinal_type sid) {
         typedef SupernodeInfoType supernode_info_type;
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
@@ -237,13 +233,13 @@ namespace Tacho {
         TACHO_TEST_FOR_ABORT(n != x.dimension_1(), "# of cols in xB does not match to rhs in supernodesinfo");
 
         const ordinal_type goffset = info.gid_super_panel_ptr(sid) + pm;
-        for (ordinal_type j=0;j<n;++j) {
+        for (ordinal_type j=0;j<n;++j) 
           for (ordinal_type i=0;i<m;++i) {
             const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
             Kokkos::atomic_fetch_add(&x(row, j), xB(i,j));
             //x(row,j) += xB(i,j);
           }
-        }
+
         return 0;
       }
 
@@ -279,15 +275,16 @@ namespace Tacho {
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
-          TACHO_TEST_FOR_ABORT(xB.dimension_1() != x.dimension_1(), "# of cols in xB does not match to rhs in supernodesinfo");
+          TACHO_TEST_FOR_ABORT(xB.dimension_1() != x.dimension_1(), 
+                               "# of cols in xB does not match to rhs in supernodesinfo");
 
-          UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
+          const UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
 
           const ordinal_type offm = info.supernodes(sid);
-          auto xT = Kokkos::subview(x, range_type(offm, offm+m), Kokkos::ALL());
+          const auto xT = Kokkos::subview(x, range_type(offm, offm+m), Kokkos::ALL());
 
           if (n > 0) {
-            UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
+            const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
             Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
               ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
           }
@@ -321,12 +318,12 @@ namespace Tacho {
         const UnmanagedViewType<value_type_matrix> &x = info.x;
         
         const ordinal_type goffset = info.gid_super_panel_ptr(sid) + pm;
-        for (ordinal_type j=0;j<n;++j) {
+        for (ordinal_type j=0;j<n;++j) 
           for (ordinal_type i=0;i<m;++i) {
             const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
             xB(i,j) = x(row,j);
           }
-        }
+        
         return 0;
       }
 
