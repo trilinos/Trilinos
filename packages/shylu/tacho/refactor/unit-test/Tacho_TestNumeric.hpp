@@ -95,10 +95,18 @@ TEST( Numeric, Cholesky_Serial ) {
   MatrixMarket<ValueType>::write(out, F);
 
   const ordinal_type m = A.NumRows(), n = 2;
-  Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceSpaceType> x("x", m, n), b("b", m, n);
+  Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceSpaceType> 
+    x("x", m, n), b("b", m, n), t("t", m, n);
 
-  Kokkos::deep_copy(b, 1.0);
-  N.solveCholesky_Serial(x, b);
+  Random<ValueType> random;
+  for (ordinal_type j=0;j<n;++j)
+    for (ordinal_type i=0;i<m;++i) 
+      b(i,j) = random.value();
+
+  N.solveCholesky_Serial(x, b, t);
+
+  const double eps = std::numeric_limits<double>::epsilon()*100;
+  EXPECT_TRUE(N.residual(A,x,b) < eps);
 }
 
 // TEST( Numeric, factorizeCholesky_Parallel ) {

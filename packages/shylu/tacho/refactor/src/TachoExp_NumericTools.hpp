@@ -299,7 +299,14 @@ namespace Tacho {
       inline
       void
       solveCholesky_Serial(const value_type_matrix_host &x,
-                           const value_type_matrix_host &b) {
+                           const value_type_matrix_host &b,
+                           const value_type_matrix_host &t) {
+        TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
+                                 x.dimension_1() != b.dimension_1(), std::logic_error,
+                                 "supernode data structure is not allocated");
+        TACHO_TEST_FOR_EXCEPTION(x.data() == b.data(), std::logic_error,
+                                 "x and b have the same data pointer");
+        
         /// supernode info
         supernode_info_type_host info;
         {
@@ -318,15 +325,16 @@ namespace Tacho {
           info.super_panel_ptr        = _super_panel_ptr;
           info.super_panel_buf        = _super_panel_buf;
 
-          info.x                      = x;
+          info.x                      = t;
         }
         
-        // copy b -> x
-        TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
-                                 x.dimension_1() != b.dimension_1(), std::logic_error,
-                                 "supernode data structure is not allocated");
-        if (x.data() != b.data())
-          Kokkos::deep_copy(x, b);
+        // copy b -> t
+        {
+          const ordinal_type m = t.dimension_0(), n = t.dimension_1();
+          for (ordinal_type j=0;j<n;++j)
+            for (ordinal_type i=0;i<m;++i) 
+              t(_peri(i), j) = b(i, j);
+        }
         
         {
           /// maximum workspace size for serial run
@@ -347,6 +355,15 @@ namespace Tacho {
                                       info, _stree_roots(i), 
                                       work.span()*sizeof(value_type), work.data());
         }
+
+        // copy t -> x
+        {
+          const ordinal_type m = t.dimension_0(), n = t.dimension_1();
+          for (ordinal_type j=0;j<n;++j)
+            for (ordinal_type i=0;i<m;++i) 
+              x(_perm(i), j) = t(i, j);
+        }
+
       }
 
       inline
@@ -428,6 +445,33 @@ namespace Tacho {
       ///
       /// utility
       ///
+      inline
+      double 
+      residual(const CrsMatrixBase<value_type,host_exec_space> &A, 
+               const value_type_matrix_host &x,
+               const value_type_matrix_host &b) {
+        const ordinal_type m = A.NumRows(), k = b.dimension_1();
+
+        TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
+                                 x.dimension_1() != b.dimension_1() ||
+                                 x.dimension_0() != m, std::logic_error,
+                                 "A,x and b dimensions are not compatible");
+        double diff = 0, norm = 0;
+        for (ordinal_type p=0;p<k;++p) {
+          for (ordinal_type i=0;i<m;++i) {
+            value_type s = 0;
+            const ordinal_type jbeg = A.RowPtrBegin(i), jend = A.RowPtrEnd(i);
+            for (ordinal_type j=jbeg;j<jend;++j) {
+              const ordinal_type col = A.Col(j);
+              s += A.Value(j)*x(col,p);
+            }
+            norm += b(i,p)*b(i,p);
+            diff += (b(i,p) - s)*(b(i,p) - s);
+          }
+        }
+        return sqrt(diff/norm);
+      }
+
       inline
       CrsMatrixBase<value_type,host_exec_space>
       exportFactorsToCrsMatrixBase(const bool replace_value_with_one = false) {
