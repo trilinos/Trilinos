@@ -91,6 +91,25 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
                       , layout.dimension[7] );
   }
 
+  // Compute the rank of the view from the nonzero layout arguments and possible hidden dim
+  template <typename Layout, typename ... P>
+  KOKKOS_INLINE_FUNCTION
+  static size_t computeRank( const ViewCtorProp<P...>& prop, const Layout& layout )
+  {
+    size_t rank = computeRank( layout.dimension[0]
+                      , layout.dimension[1]
+                      , layout.dimension[2]
+                      , layout.dimension[3]
+                      , layout.dimension[4]
+                      , layout.dimension[5]
+                      , layout.dimension[6]
+                      , layout.dimension[7] );
+
+    // Check if has_common_view_alloc_prop; if so, return rank+1, else rank
+    enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+    return (test_traits_check == true) ? rank+1 : rank;
+  }
+
   // Create the layout for the rank-7 view.
   // For Fad we have to move the fad dimension to the last (rank 8 since the DynRankView is rank-7)
   // LayoutLeft or LayoutRight
@@ -140,6 +159,81 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
     const size_t fad_size = layout.dimension[fad_dim];
     l.dimension[fad_dim] = 1;
     l.dimension[7] = fad_size;
+
+    return l;
+  }
+
+  // If fad_dim is stored in ViewCtorProp
+  // LayoutLeft or LayoutRight
+  template <typename Traits, typename ... P>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if< (std::is_same<typename Traits::array_layout , Kokkos::LayoutRight>::value || std::is_same<typename Traits::array_layout , Kokkos::LayoutLeft>::value) , typename Traits::array_layout >::type createLayout( const ViewCtorProp<P...> & arg_prop, const typename Traits::array_layout& layout )
+  {
+    using Layout = typename Traits::array_layout;
+
+    Layout l( layout.dimension[0] != unspecified ? layout.dimension[0] : 1
+            , layout.dimension[1] != unspecified ? layout.dimension[1] : 1
+            , layout.dimension[2] != unspecified ? layout.dimension[2] : 1
+            , layout.dimension[3] != unspecified ? layout.dimension[3] : 1
+            , layout.dimension[4] != unspecified ? layout.dimension[4] : 1
+            , layout.dimension[5] != unspecified ? layout.dimension[5] : 1
+            , layout.dimension[6] != unspecified ? layout.dimension[6] : 1
+            , layout.dimension[7] != unspecified ? layout.dimension[7] : 1 );
+
+    enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+    if (test_traits_check == true) {
+      using CVTR_type = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad, typename Traits::value_type >;
+      auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVTR_type> const &)arg_prop).value;
+      l.dimension[7] = cast_prop.fad_dim;
+    }
+    else {
+      const unsigned fad_dim = computeRank(layout);
+      const size_t fad_size = layout.dimension[fad_dim];
+      l.dimension[fad_dim] = 1;
+      l.dimension[7] = fad_size;
+    }
+
+    return l;
+  }
+
+  // If fad_dim is stored in ViewCtorProp
+  //LayoutStride
+  template <typename Traits, typename ... P>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if< (std::is_same<typename Traits::array_layout , Kokkos::LayoutStride>::value) , typename Traits::array_layout>::type createLayout( const ViewCtorProp<P...> & arg_prop, const typename Traits::array_layout& layout )
+  {
+    using Layout = typename Traits::array_layout;
+
+    Layout      l( layout.dimension[0] != unspecified ? layout.dimension[0] : 1
+                 , layout.stride[0]
+                 , layout.dimension[1] != unspecified ? layout.dimension[1] : 1
+                 , layout.stride[1]
+                 , layout.dimension[2] != unspecified ? layout.dimension[2] : 1
+                 , layout.stride[2]
+                 , layout.dimension[3] != unspecified ? layout.dimension[3] : 1
+                 , layout.stride[3]
+                 , layout.dimension[4] != unspecified ? layout.dimension[4] : 1
+                 , layout.stride[4]
+                 , layout.dimension[5] != unspecified ? layout.dimension[5] : 1
+                 , layout.stride[5]
+                 , layout.dimension[6] != unspecified ? layout.dimension[6] : 1
+                 , layout.stride[6]
+                 , layout.dimension[7] != unspecified ? layout.dimension[7] : 1
+                 , layout.stride[7]
+                 );
+
+    enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+    if (test_traits_check == true) {
+      using CVTR_type = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad, typename Traits::value_type >;
+      auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVTR_type> const &)arg_prop).value;
+      l.dimension[7] = cast_prop.fad_dim;
+    }
+    else {
+      const unsigned fad_dim = computeRank(layout);
+      const size_t fad_size = layout.dimension[fad_dim];
+      l.dimension[fad_dim] = 1;
+      l.dimension[7] = fad_size;
+    }
 
     return l;
   }
@@ -801,7 +895,7 @@ dimension_scalar(const DynRankView<T,P...>& view) {
   return view.implementation_map().dimension_scalar();
 }
 
-namespace Experimental {
+
 // Overload of deep_copy for Fad views intializing to a constant scalar
 
 template< class DT, class ... DP >
@@ -986,8 +1080,6 @@ void deep_copy
     }
   }
 }
-
-} //end Experimental
 
 using Kokkos::deep_copy;
 

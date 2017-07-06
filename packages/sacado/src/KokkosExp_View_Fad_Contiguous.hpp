@@ -1041,10 +1041,23 @@ public:
     // Disallow padding
     typedef std::integral_constant< unsigned , 0 > padding ;
 
-    m_offset = offset_type( padding(), local_layout );
+    // Check if ViewCtorProp has CommonViewAllocProp - if so, retrieve the fad_size and append to layout
+    using CVTR = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFadContiguous 
+                                                           , typename Traits::value_type>;
+
+    enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+
+    typename Traits::array_layout internal_layout = 
+                            (test_traits_check == true
+                             && ((Kokkos::Impl::ViewCtorProp<void, CVTR> const &)prop).value.is_view_type) 
+                            ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, ctor_prop >::returnNewLayoutPlusFad(prop, local_layout) 
+                            : local_layout;
+
+    m_offset = offset_type( padding(), internal_layout );
+
     m_array_offset =
       array_offset_type( padding() ,
-                         create_fad_array_layout<unsigned(Rank), unsigned(FadStaticDimension)>( local_layout ) );
+                         create_fad_array_layout<unsigned(Rank), unsigned(FadStaticDimension)>( internal_layout ) );
     const unsigned fad_dim =
       getFadDimension<unsigned(Rank)>( m_array_offset );
     if (unsigned(FadStaticDimension) == 0 && fad_dim == 0)

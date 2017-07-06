@@ -480,6 +480,160 @@ KOKKOS_VIEW_DATA_ANALYSIS_SACADO_FAD( ELRCacheFad )
 namespace Kokkos {
 namespace Impl {
 
+// Copied from Sacado_ViewFactory
+template <class View, class ... ViewPack>
+unsigned dimension_scalar(const View& v, const ViewPack&... views) {
+  const unsigned dim0 = dimension_scalar(v);
+  const unsigned dim1 = dimension_scalar(views...);
+  return dim0 >= dim1 ? dim0 : dim1 ;
+}
+
+} } // namespace Kokkos::Impl
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos { namespace Impl {
+
+template < typename Specialize, typename A, typename B >
+struct CommonViewValueType;
+
+template < typename A, typename B >
+struct CommonViewValueType< Kokkos::Impl::ViewSpecializeSacadoFad, A, B >
+{
+  using value_type = typename Sacado::Promote<A,B>::type ;
+};
+
+template < typename A, typename B >
+struct CommonViewValueType< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, A, B >
+{
+  using value_type = typename Sacado::Promote<A,B>::type ;
+};
+
+
+template < class Specialize, class ValueType >
+struct CommonViewAllocProp;
+
+template < class ValueType >
+struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFad, ValueType >
+{
+  using value_type = ValueType;
+  unsigned fad_dim;
+  bool is_view_type;
+
+  CommonViewAllocProp()
+  : fad_dim(0) , is_view_type(false) {}
+
+  // Assume all views are View or DynRankView
+  // TODO If assumption is insufficient, better deduction on is_view...
+  template < class View >
+  CommonViewAllocProp( const View & view )
+  : fad_dim ( dimension_scalar(view) )
+  {
+    is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
+    printf(" fad_dim = %i\n",fad_dim);
+  }
+
+  // TODO If assumption is insufficient, better deduction on is_view...
+  template < class View, class ... Views >
+  CommonViewAllocProp( const View & view,  const Views & ... views ) 
+  : fad_dim ( dimension_scalar(view, views... ) )
+  {
+    is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
+    printf(" fad_dim = %i\n",fad_dim);
+  }
+
+};
+
+template < class ValueType >
+struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, ValueType >
+{
+  using value_type = ValueType;
+  unsigned fad_dim;
+  bool is_view_type;
+
+  CommonViewAllocProp()
+  : fad_dim(0) , is_view_type(false) {}
+
+  // Assume all views are View or DynRankView
+  // TODO If assumption is insufficient, better deduction on is_view...
+  template < class View >
+  CommonViewAllocProp( const View & view )
+  : fad_dim ( dimension_scalar(view) )
+  {
+    is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
+    printf(" fad_dim = %i\n",fad_dim);
+  }
+
+  // TODO If assumption is insufficient, better deduction on is_view...
+  template < class View, class ... Views >
+  CommonViewAllocProp( const View & view,  const Views & ... views ) 
+  : fad_dim ( dimension_scalar(view, views... ) )
+  {
+    is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
+    printf(" fad_dim = %i\n",fad_dim);
+  }
+};
+
+// Detect if a ViewCtorProp contains a CommonViewAllocProp
+template < typename ... >
+struct has_common_view_alloc_prop : public std::false_type {};
+
+template < class Specialize, class ValueType >
+struct has_common_view_alloc_prop< CommonViewAllocProp<Specialize, ValueType> > : public std::true_type {};
+
+
+// Check for CommonViewAllocProp in pack of properties
+template < typename ... >
+struct check_has_common_view_alloc_prop;
+
+template <>
+struct check_has_common_view_alloc_prop<>
+{
+  enum { value = false };
+};
+
+template < typename P >
+struct check_has_common_view_alloc_prop<P>
+{
+  enum { value = has_common_view_alloc_prop< P >::value };
+};
+
+template < typename P0, typename ... P >
+struct check_has_common_view_alloc_prop<P0, P...>
+{
+  enum { value = ( (has_common_view_alloc_prop<P0>::value == true) ? true : check_has_common_view_alloc_prop<P...>::value ) };
+};
+
+template <typename Traits, typename CtorProp >
+struct appendFadToLayoutViewAllocHelper 
+{
+  using layout_type = typename Traits::array_layout;
+  using specialize = typename Traits::specialize;
+  
+  static layout_type returnNewLayoutPlusFad( const CtorProp & arg_prop, const layout_type & arg_layout ) {
+
+    using CVAP_type = CommonViewAllocProp< specialize, typename Traits::value_type >;
+
+    auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVAP_type> const &)arg_prop).value;
+
+    layout_type appended_layout( arg_layout );
+
+    // Static View case - DynRankView layout handled within createLayout calls
+    appended_layout.dimension[ Traits::rank ] = (cast_prop.fad_dim > 0) ? cast_prop.fad_dim : 1;
+
+    return appended_layout;
+  }
+};
+
+} } // namespace Kokkos::Impl
+
+
+//----------------------------------------------------------------------------
+
+
+namespace Kokkos {
+namespace Impl {
+
 template< class Traits >
 class ViewMapping< Traits , /* View internal mapping */
   typename std::enable_if<
@@ -774,7 +928,16 @@ public:
     // Disallow padding
     typedef std::integral_constant< unsigned , 0 > padding ;
 
-    m_offset = offset_type( padding(), local_layout );
+    // Check if ViewCtorProp has CommonViewAllocProp - if so, retrieve the fad_size and append to layout
+    enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+    using CVTR = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad 
+                                                           , typename Traits::value_type >;
+    m_offset = offset_type( padding(), 
+                            ( test_traits_check == true
+                             && ((Kokkos::Impl::ViewCtorProp<void, CVTR> const &)prop).value.is_view_type) 
+                            ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, ctor_prop >::returnNewLayoutPlusFad(prop, local_layout) 
+                            : local_layout );
+
     const unsigned fad_dim =
       ( Rank == 0 ? m_offset.dimension_0() :
       ( Rank == 1 ? m_offset.dimension_1() :
