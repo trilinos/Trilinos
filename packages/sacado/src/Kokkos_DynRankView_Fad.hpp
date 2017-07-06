@@ -1081,8 +1081,6 @@ void deep_copy
   }
 }
 
-using Kokkos::deep_copy;
-
 } // end Kokkos
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
