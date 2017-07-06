@@ -1150,8 +1150,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             if (crmat1.is_null() || crmat2.is_null())
               continue;
-            if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
-              continue;
+	    //            if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
+	    //              continue;
 
             RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
             RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
