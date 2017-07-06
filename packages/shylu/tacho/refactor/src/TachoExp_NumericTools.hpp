@@ -115,14 +115,10 @@ namespace Tacho {
           // dummy member
           const ordinal_type member = 0;
 
-          // ABR is needed to separate factorize and update routines
           CholSupernodes<Algo::Workflow::Serial>
             ::factorize(sched, member,
                         info, sid, 
                         bufsize, buf);
-
-          // typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
-          // typedef typename value_type_matrix_host::value_type value_type;
 
           ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
           UnmanagedViewType<value_type_matrix_host> ABR((value_type*)buf, n-m, n-m);
@@ -156,7 +152,6 @@ namespace Tacho {
           // dummy member
           const ordinal_type member = 0;
 
-          // ABR is needed to separate factorize and update routines
           CholSupernodes<Algo::Workflow::Serial>
             ::solve_lower(sched, member,
                           info, sid, 
@@ -168,9 +163,7 @@ namespace Tacho {
 
           CholSupernodes<Algo::Workflow::Serial>          
             ::update_solve_lower(sched, member,
-                                 info, xB, sid,
-                                 bufsize - xB.span()*sizeof(value_type), 
-                                 (void*)((value_type*)buf + xB.span()));
+                                 info, xB, sid);
         }
       }
 
@@ -181,42 +174,36 @@ namespace Tacho {
                                 const ordinal_type sid, 
                                 const size_type bufsize,
                                 /* */ void *buf) {
-        // // recursion
-        // const ordinal_type 
-        //   ibeg = info.stree_ptr(sid), 
-        //   iend = info.stree_ptr(sid+1);
+        {
+          // dummy member
+          const ordinal_type member = 0;
 
-        // for (ordinal_type i=ibeg;i<iend;++i)
-        //   recursiveSerialCholSolveFirst(sched, 
-        //                                 info, info.stree_children(i), 
-        //                                 x, 
-        //                                 bufsize, buf);
+          const ordinal_type nrhs = info.x.dimension_1();
+          ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
 
-        // {
-        //   // dummy member
-        //   const ordinal_type member = 0;
+          UnmanagedViewType<value_type_matrix_host> xB((value_type*)buf, n-m, nrhs);
+          TACHO_TEST_FOR_ABORT(xB.span()*sizeof(value_type) > bufsize,
+                               "xB uses greater than bufsize");
 
-        //   // ABR is needed to separate factorize and update routines
-        //   CholSupernodes<Algo::Workflow::Serial>
-        //     ::solve_lower(sched, member,
-        //                   info, sid, 
-        //                   x,
-        //                   bufsize, buf);
+          CholSupernodes<Algo::Workflow::Serial>          
+            ::update_solve_upper(sched, member,
+                                 info, xB, sid);
 
-        //   typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
-        //   typedef typename value_type_matrix_host::value_type value_type;
+          CholSupernodes<Algo::Workflow::Serial>
+            ::solve_upper(sched, member,
+                          info, xB, sid);          
+        }
 
-        //   ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
-        //   UnmanagedViewType<value_type_multi_vector_host> xB((value_type*)buf, n-m, x.dimension_1());
-
-        //   CholSupernodes<Algo::Workflow::Serial>          
-        //     ::update_solve_lower(sched, member,
-        //                          info, xB, sid,
-        //                          x,
-        //                          bufsize - xB.span()*sizeof(value_type), 
-        //                          (void*)((value_type*)buf + xB.span()));
-        // }
-      }
+        // recursion
+        const ordinal_type 
+          ibeg = info.stree_ptr(sid), 
+          iend = info.stree_ptr(sid+1);
+        
+        for (ordinal_type i=ibeg;i<iend;++i)
+          recursiveSerialSolveUpper(sched, 
+                                    info, info.stree_children(i), 
+                                    bufsize, buf);
+    }
       
     public:
       NumericTools() = default;
@@ -356,10 +343,10 @@ namespace Tacho {
                                       info, _stree_roots(i), 
                                       work.span()*sizeof(value_type), work.data());
 
-          // for (ordinal_type i=0;i<nroots;++i)
-          //   recursiveSerialSolveUpper(sched, 
-          //                             info, _stree_roots(i), 
-          //                             work.span()*sizeof(value_type), work.data());
+          for (ordinal_type i=0;i<nroots;++i)
+            recursiveSerialSolveUpper(sched, 
+                                      info, _stree_roots(i), 
+                                      work.span()*sizeof(value_type), work.data());
         }
       }
 

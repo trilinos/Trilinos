@@ -222,9 +222,7 @@ namespace Tacho {
                          const MemberType &member,
                          const SupernodeInfoType &info,
                          const MatrixViewType &xB,
-                         const ordinal_type sid,
-                         const size_type bufsize,
-                         /* */ void *buf) {
+                         const ordinal_type sid) {
         typedef SupernodeInfoType supernode_info_type;
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
@@ -236,12 +234,97 @@ namespace Tacho {
         TACHO_TEST_FOR_ABORT(m != (pn-pm), "# of rows in xB does not match to super blocksize in sid");
 
         const UnmanagedViewType<value_type_matrix> &x = info.x;
+        TACHO_TEST_FOR_ABORT(n != x.dimension_1(), "# of cols in xB does not match to rhs in supernodesinfo");
 
         const ordinal_type goffset = info.gid_super_panel_ptr(sid) + pm;
         for (ordinal_type j=0;j<n;++j) {
           for (ordinal_type i=0;i<m;++i) {
             const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
-            x(row,j) += xB(i,j);
+            Kokkos::atomic_fetch_add(&x(row, j), xB(i,j));
+            //x(row,j) += xB(i,j);
+          }
+        }
+        return 0;
+      }
+
+
+
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_upper(const SchedulerType &sched,
+                  const MemberType &member,
+                  const SupernodeInfoType &info,
+                  const typename SupernodeInfoType::value_type_matrix &xB,
+                  const ordinal_type sid) {
+        typedef SupernodeInfoType supernode_info_type;
+
+        typedef typename supernode_info_type::value_type value_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+
+        typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+
+        // get supernode panel pointer
+        value_type *ptr = info.getSuperPanelPtr(sid);
+        const UnmanagedViewType<value_type_matrix> &x = info.x;
+
+        // characterize the panel size
+        ordinal_type pm, pn;
+        info.getSuperPanelSize(sid, pm, pn);
+
+        // panel is divided into diagonal and interface block
+        const ordinal_type m = pm, n = pn - pm;
+
+        // m and n are available, then factorize the supernode block
+        if (m > 0) {
+          TACHO_TEST_FOR_ABORT(xB.dimension_1() != x.dimension_1(), "# of cols in xB does not match to rhs in supernodesinfo");
+
+          UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
+
+          const ordinal_type offm = info.supernodes(sid);
+          auto xT = Kokkos::subview(x, range_type(offm, offm+m), Kokkos::ALL());
+
+          if (n > 0) {
+            UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
+            Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
+              ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
+          }
+          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
+            ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+        }
+        return 0;
+      }
+
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      update_solve_upper(const SchedulerType &sched,
+                         const MemberType &member,
+                         const SupernodeInfoType &info,
+                         const typename SupernodeInfoType::value_type_matrix &xB,
+                         const ordinal_type sid) {
+
+        typedef SupernodeInfoType supernode_info_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+        
+        // grab super panel
+        ordinal_type pm, pn;
+        info.getSuperPanelSize(sid, pm, pn);
+
+        const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
+        TACHO_TEST_FOR_ABORT(m != (pn-pm), "# of rows in xB does not match to super blocksize in sid");
+
+        const UnmanagedViewType<value_type_matrix> &x = info.x;
+        
+        const ordinal_type goffset = info.gid_super_panel_ptr(sid) + pm;
+        for (ordinal_type j=0;j<n;++j) {
+          for (ordinal_type i=0;i<m;++i) {
+            const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
+            xB(i,j) = x(row,j);
           }
         }
         return 0;
