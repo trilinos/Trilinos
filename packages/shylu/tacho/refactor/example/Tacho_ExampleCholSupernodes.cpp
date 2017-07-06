@@ -91,33 +91,6 @@ int main (int argc, char *argv[]) {
     Graph G(A);
     t = timer.seconds();
     std::cout << "CholSupernodes:: import input file::time = " << t << std::endl;
-    
-    DenseMatrixBaseType 
-      BB("BB", A.NumRows(), nrhs), 
-      XX("XX", A.NumRows(), nrhs), 
-      RR("RR", A.NumRows(), nrhs),
-      PP("PP",  A.NumRows(), 1);
-    
-    {
-      const auto m = A.NumRows();
-      srand(time(NULL));
-      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-        for (ordinal_type i=0;i<m;++i) 
-          XX(i, rhs) = ((value_type)rand()/(RAND_MAX));
-        
-        // matvec
-        Kokkos::DefaultHostExecutionSpace::fence();
-        Kokkos::parallel_for(Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, m),
-                             [&](const ordinal_type i) {
-                               value_type tmp = 0;
-                               for (size_type j=A.RowPtrBegin(i);j<A.RowPtrEnd(i);++j)
-                                 tmp += A.Value(j)*XX(A.Col(j), rhs);
-                               BB(i, rhs) = tmp;
-                             } );
-        Kokkos::DefaultHostExecutionSpace::fence();
-      }
-      Kokkos::deep_copy(RR, XX);
-    }
 
     std::cout << "CholSupernodes:: analyze matrix" << std::endl;
     timer.reset();
@@ -134,24 +107,52 @@ int main (int argc, char *argv[]) {
     S.symbolicFactorize();
     t = timer.seconds();
     std::cout << "CholSupernodes:: analyze matrix::time = " << t << std::endl;
-    
-    std::cout << "CholSupernodes:: factorize matrix" << std::endl;
-    timer.reset();    
+
     NumericTools<value_type,Kokkos::DefaultHostExecutionSpace> 
-      N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
+      N(A.NumRows(), A.RowPtr(), A.Cols(), // A.Values(),
         T.PermVector(), T.InvPermVector(),
         S.NumSupernodes(), S.Supernodes(),
         S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
         S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
         S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
-
+    
+    std::cout << "CholSupernodes:: factorize matrix" << std::endl;
+    timer.reset();    
     if (serial) {
-      N.factorizeCholesky_Serial();
+      N.factorizeCholesky_Serial(A.Values());
     } else {
-      N.factorizeCholesky_Parallel();
+      N.factorizeCholesky_Serial(A.Values());
     }
     t = timer.seconds();    
     std::cout << "CholSupernodes:: factorize matrix::time = " << t << std::endl;
+    
+    DenseMatrixBaseType 
+      B("B", A.NumRows(), nrhs), 
+      X("X", A.NumRows(), nrhs), 
+      Y("Y", A.NumRows(), nrhs);
+    
+    {
+      Random<value_type> random;
+      const ordinal_type m = A.NumRows();
+      for (ordinal_type rhs=0;rhs<nrhs;++rhs)
+        for (ordinal_type i=0;i<m;++i) 
+          B(i, rhs) = random.value();
+    }
+
+    std::cout << "CholSupernodes:: solve matrix" << std::endl;
+    timer.reset();    
+    if (serial) {
+      N.solveCholesky_Serial(X, B, Y);
+    } else {
+      N.solveCholesky_Serial(X, B, Y);
+    }
+    t = timer.seconds();    
+    std::cout << "CholSupernodes:: solve matrix::time = " << t << std::endl;
+
+    const double res = N.residual(X, B);
+    //const double eps = std::numeric_limits<double>::epsilon()*100;
+
+    std::cout << "CholSupernodes:: residual = " << res << std::endl;
   }
   Kokkos::finalize();
 
