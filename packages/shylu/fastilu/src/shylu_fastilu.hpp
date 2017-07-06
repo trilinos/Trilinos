@@ -56,8 +56,11 @@
 
 #include <assert.h>
 #include <Kokkos_Core.hpp>
-//#include <Kokkos_ArithTraits.hpp>
 #include <impl/Kokkos_Timer.hpp>
+
+//whether to print extra debug output at runtime to stdout
+//comment out next line to disable
+//#define FASTILU_DEBUG_OUTPUT
 
 //forward declaration
 template<class Ordinal, class Scalar, class ExecSpace>
@@ -372,30 +375,33 @@ class FastILUPrec
                 iau[i+1] = knzu;
             }
 
-            //std::cout << "knzl =" << knzl;
-            //std::cout << "knzu =" << knzu;
-
             *nzl = knzl;
             *nzu = knzu;
 
+            #ifdef FASTILU_DEBUG_OUTPUT
+            std::cout << "knzl =" << knzl;
+            std::cout << "knzu =" << knzu;
+
             std::cout << "ILU: nnz = "<< knzl + knzu << std::endl;
-#if 0
-            cout << "Actual nnz for ILU: " << *nzl + *nzu << endl;
-#endif
+            std::cout << "Actual nnz for ILU: " << *nzl + *nzu << std::endl;
+            #endif
             //Initialize the A matrix that is to be used in the computation
             aRowMap = OrdinalArray("aRowMap", nRows + 1);
             aColIdx = OrdinalArray("aColIdx", knzl + knzu);
             aRowIdx = OrdinalArray("aRowIds", knzl + knzu);
-            aVal = ScalarArray("aVal", knzl + knzu);
             Ordinal aRowPtr = 0;
 
             aRowMap[0] = 0;
             for (Ordinal i = 0; i < nRows; i++) 
             {
-                //std::cout << "***row:" << i << std::endl;
+                #ifdef FASTILU_DEBUG_OUTPUT
+                std::cout << "***row:" << i << std::endl;
+                #endif
                 for(Ordinal k = ial[i]; k < ial[i+1]; k++)
                 {
-                    //std::cout << "jal[k]=" << jal[k] << std::endl;
+                    #ifdef FASTILU_DEBUG_OUTPUT
+                    std::cout << "jal[k]=" << jal[k] << std::endl;
+                    #endif
                     aColIdx[aRowPtr] = jal[k];
                     aRowIdx[aRowPtr] = i;
                     aRowPtr++;
@@ -408,17 +414,46 @@ class FastILUPrec
                 }
                 aRowMap[i+1] = aRowPtr;
             }
+
+            #ifdef FASTILU_DEBUG_OUTPUT
+            std::cout << "**Finished initializing A" << std::endl;
+            #endif
+            //Now allocate memory for L and U. 
+            //
+            lRowMap = OrdinalArray("lRowMap", nRows + 1);
+            uRowMap = OrdinalArray("uRowMap", nRows + 1);
+            utRowMap = OrdinalArray("utRowMap", nRows + 1);
+            countL();
+            #ifdef FASTILU_DEBUG_OUTPUT
+            std::cout << "**Finished counting L" << std::endl;
+            #endif
+            
+            countU();
+            #ifdef FASTILU_DEBUG_OUTPUT
+            std::cout << "**Finished counting U" << std::endl;
+            #endif
+
+            //Allocate memory and initialize pattern for L, U (transpose).
+            lColIdx = OrdinalArray("lColIdx", lRowMap[nRows]);
+            uColIdx = OrdinalArray("uColIdx", uRowMap[nRows]);
+            utColIdx = OrdinalArray("utColIdx", uRowMap[nRows]);
+        }
+
+        void numericILU()
+        {
+            aVal = ScalarArray("aVal", aColIdx.dimension_0());
             //Copy the host matrix into the initialized a;
             Ordinal aHostPtr = 0;
             Ordinal check = 0;
             for (Ordinal i = 0; i < nRows; i++)
             {
                 check = aHostPtr;
-                //std::cout 
                 for(Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     Ordinal col = aColIdx[k];
-                    //std::cout << "col =" << col << std::endl;
+                    #ifdef FASTILU_DEBUG_OUTPUT
+                    std::cout << "col =" << col << std::endl;
+                    #endif
                     
                     if (col == aColIdxHost[aHostPtr])
                     {
@@ -428,35 +463,24 @@ class FastILUPrec
                 }
                 assert((aHostPtr - check) == (aRowMapHost[i+1] - aRowMapHost[i]));
             }
-
-            std::cout << "**Finished initializing A" << std::endl;
-            //Now allocate memory for L and U. 
-            //
-            lRowMap = OrdinalArray("lRowMap", nRows + 1);
-            uRowMap = OrdinalArray("uRowMap", nRows + 1);
-            utRowMap = OrdinalArray("utRowMap", nRows + 1);
-            countL();
-            std::cout << "**Finished counting L" << std::endl;
-            
-            countU();
-            std::cout << "**Finished counting U" << std::endl;
-
-            //Allocate memory and initialize pattern for L, U (transpose).
-            lColIdx = OrdinalArray("lColIdx", lRowMap[nRows]);
             lVal = ScalarArray("lVal", lRowMap[nRows]);
-            uColIdx = OrdinalArray("uColIdx", uRowMap[nRows]);
             uVal = ScalarArray("uVal", uRowMap[nRows]);
-            utColIdx = OrdinalArray("utColIdx", uRowMap[nRows]);
             utVal = ScalarArray("utVal", uRowMap[nRows]);
             applyDiagonalScaling();
             applyManteuffelShift();
+            #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "**Finished diagonal scaling" << std::endl;
+            #endif
             fillL();
+            #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "**Finished copying L" << std::endl;
+            #endif
             fillU();
+            #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "**Finished copying U" << std::endl;
             std::cout << "nnz L = " << lRowMap[nRows] << std::endl;
             std::cout << "nnz U = " << uRowMap[nRows] << std::endl;
+            #endif
         }
 
         //Initialize the rowMap (rowPtr) and colIdx arrays for L
@@ -532,7 +556,7 @@ class FastILUPrec
                     check = lGPtr;
                     for (Ordinal k = lRowMap[i]; k < lRowMap[i+1]; k++)
                     {
-                        Ordinal row = i;
+                        //Ordinal row = i;
                         Ordinal col = lColIdx[k];
 
                         if (col == lGColIdx[lGPtr])
@@ -620,7 +644,7 @@ class FastILUPrec
                     check = uGPtr;
                     for (Ordinal k = uRowMap[i]; k < uRowMap[i+1]; k++)
                     {
-                        Ordinal row = i;
+                        //unused: Ordinal row = i;
                         Ordinal col = uColIdx[k];
 
                         if (col == uGColIdx[uGPtr])
@@ -670,7 +694,9 @@ class FastILUPrec
                     {
                         diagFact[i] = 1.0/std::sqrt(std::fabs(aVal[k]));
                         //diagFact[i] = std::sqrt(std::fabs(aVal[k]));
-                        //std::cout << "diagFact["<<i<<"]="<<aVal[k]<<std::endl;
+                        #ifdef FASTILU_DEBUG_OUTPUT
+                        std::cout << "diagFact["<<i<<"]="<<aVal[k]<<std::endl;
+                        #endif
                     }
                 }
             }
@@ -824,11 +850,11 @@ class FastILUPrec
             if ((level > 0) && (guessFlag !=0))
             {
                 initGuessPrec->initialize();
-                initGuessPrec->compute();
             }
             symbolicILU();
             //Allocate memory for the local A.
             //initialize L, U, A patterns
+            #ifdef SHYLU_DEBUG
             Ordinal nnzU = uRowMap[nRows];
             MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace> copyFunc1(aRowMap, lRowMap, uRowMap, diagElems);
             MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc4(uColIdx, uVal); 
@@ -849,13 +875,25 @@ class FastILUPrec
             Kokkos::parallel_for(nRows, copyFunc1);
             Kokkos::parallel_for(nnzA, copyFunc2);
             Kokkos::parallel_for(nnzL, copyFunc3);
+            #endif
             double t = timer.seconds();
 
+            #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "Symbolic phase complete." << std::endl;
             std::cout << "Init time: "<< t << "s" << std::endl;
+            #endif
             initTime = t;
             return;
             
+        }
+
+        void setValues(ScalarArray& aValsIn)
+        {
+          this->aValHost = aValsIn;
+          if(!initGuessPrec.is_null())
+          {
+            initGuessPrec->setValues(aValsIn);
+          }
         }
 
         //Actual computation phase.
@@ -864,6 +902,12 @@ class FastILUPrec
         //
         void compute()
         {
+            Kokkos::Impl::Timer timer;
+            if ((level > 0) && (guessFlag !=0))
+            {
+                initGuessPrec->compute();
+            }
+            numericILU();
             Ordinal blkSzILU = 4096;
             FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap[nRows], blkSzILU, aRowMap, 
                     aColIdx, aRowIdx, aVal, 
@@ -876,7 +920,6 @@ class FastILUPrec
             
             //Ordinal extent = aRowMap[nRows];
             ExecSpace::fence();
-            Kokkos::Impl::Timer timer;
 
             for (int i = 0; i < nFact; i++) 
             {
@@ -916,38 +959,38 @@ class FastILUPrec
             return;
         }
 
-        Ordinal getNFact()
+        Ordinal getNFact() const
         {
             return nFact;
         }
         
-        Ordinal getNTrisol()
+        Ordinal getNTrisol() const
         {
             return nTrisol;
         }
 
-        Ordinal getNRows()
+        Ordinal getNRows() const
         {
             return nRows;
         }
 
-        double getComputeTime()
+        double getComputeTime() const
         {
             return computeTime;
         }
 
-        double getInitializeTime()
+        double getInitializeTime() const
         {
             return initTime;
         }
 
-        double getApplyTime()
+        double getApplyTime() const
         {
             return applyTime;
         }
 
         //Compute the L2 norm of the nonlinear residual (A - LU) on sparsity pattern
-        void checkILU()
+        void checkILU() const
         {
             Scalar sum = 0.0;
             Scalar sum_diag = 0.0;
@@ -985,7 +1028,7 @@ class FastILUPrec
             std::cout << "l2 norm of diag. of U = " << std::sqrt(sum_diag) << std::endl;
         }
 
-        void checkIC()
+        void checkIC() const
         {
             //Compute the L2 norm of the nonlinear residual (A - LLt) on sparsity pattern
             //
@@ -1021,7 +1064,9 @@ class FastILUPrec
                     }
                 }
             }
+            #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "l2 norm of nonlinear residual = " << std::sqrt(sum) << std::endl;
+            #endif
         }
         friend class FastILUFunctor<Ordinal, Scalar, ExecSpace>;
         friend class FastICFunctor<Ordinal, Scalar, ExecSpace>;
@@ -1124,12 +1169,8 @@ class MemoryPrimeFunctorNnzCsr
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal index) const
             {
-                Ordinal v1; 
-                Scalar v2;
-                 
-                v1 = _Ai[index];
-                v2 = _Ax[index];
-                
+                _Ai[index];
+                _Ax[index];
             }
 
         ordinal_array_type _Ai; 
@@ -1154,13 +1195,14 @@ class MemoryPrimeFunctorNnzCoo
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal index) const
             {
+                /*
                 Ordinal v1, v2;
                 Scalar v3;
-                 
-                v1 = _Ai[index];
-                v2 = _Aj[index];
-                v3 = _Ax[index];
+                */
                 
+                _Ai[index];
+                _Aj[index];
+                _Ax[index];
             }
 
         ordinal_array_type _Ai, _Aj; 
@@ -1187,14 +1229,17 @@ class MemoryPrimeFunctorN
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal index) const
             {
+                //bmk: fix unused warnings?
+                //does this functor actually have any side effects, or is it just incomplete?
+                /*
                 Ordinal v1, v2, v3;
                 Scalar v4;
+                */
                  
-                v1 = _Ap[index];
-                v2 = _Lp[index];
-                v3 = _Up[index];
-                v4 = _diag[index];
-                
+                _Ap[index];
+                _Lp[index];
+                _Up[index];
+                _diag[index];
             }
 
         ordinal_array_type _Ap, _Lp, _Up;

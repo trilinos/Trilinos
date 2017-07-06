@@ -97,6 +97,9 @@
 /* Define if we have the QD extended-precision TPL */
 #cmakedefine HAVE_IFPACK2_QD
 
+/* Define if we have ShyLU FastILU (an inner preconditioner for Additive Schwarz) */
+#cmakedefine HAVE_IFPACK2_SHYLUFASTILU
+
 /*
  * If deprecated warnings are on, and the compiler supports them, then
  * define IFPACK2_DEPRECATED to emit deprecated warnings.  Otherwise,
