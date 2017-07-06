@@ -15,6 +15,9 @@
 #include "TachoExp_Herk.hpp"
 #include "TachoExp_Herk_External.hpp"
 
+#include "TachoExp_Gemm.hpp"
+#include "TachoExp_Gemm_External.hpp"
+
 #include "TachoExp_SupernodeInfo.hpp"
 
 #include "TachoExp_CholSupernodes.hpp"
@@ -47,6 +50,9 @@ namespace Tacho {
 
       typedef SupernodeInfo<value_type,host_exec_space> supernode_info_type_host;
       typedef SupernodeInfo<value_type,device_exec_space> supernode_info_type_device;
+
+      typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
+      typedef typename supernode_info_type_device::value_type_matrix value_type_matrix_device;
 
       typedef Kokkos::TaskScheduler<host_exec_space> sched_type_host;
       typedef Kokkos::MemoryPool<host_exec_space> memory_pool_type_host;
@@ -115,8 +121,8 @@ namespace Tacho {
                         info, sid, 
                         bufsize, buf);
 
-          typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
-          typedef typename value_type_matrix_host::value_type value_type;
+          // typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
+          // typedef typename value_type_matrix_host::value_type value_type;
 
           ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
           UnmanagedViewType<value_type_matrix_host> ABR((value_type*)buf, n-m, n-m);
@@ -129,59 +135,50 @@ namespace Tacho {
         }
       }
 
-      template<typename MultiVectorViewType>
       inline
       void
       recursiveSerialSolveLower(const sched_type_host &sched,
                                 const supernode_info_type_host &info,
                                 const ordinal_type sid, 
-                                const MultiVectorViewType &x,
                                 const size_type bufsize,
                                 /* */ void *buf) {
-        // // recursion
-        // const ordinal_type 
-        //   ibeg = info.stree_ptr(sid), 
-        //   iend = info.stree_ptr(sid+1);
+        // recursion
+        const ordinal_type 
+          ibeg = info.stree_ptr(sid), 
+          iend = info.stree_ptr(sid+1);
+        
+        for (ordinal_type i=ibeg;i<iend;++i)
+          recursiveSerialSolveLower(sched, 
+                                    info, info.stree_children(i), 
+                                    bufsize, buf);
 
-        // for (ordinal_type i=ibeg;i<iend;++i)
-        //   recursiveSerialCholSolveFirst(sched, 
-        //                                 info, info.stree_children(i), 
-        //                                 x, 
-        //                                 bufsize, buf);
+        {
+          // dummy member
+          const ordinal_type member = 0;
 
-        // {
-        //   // dummy member
-        //   const ordinal_type member = 0;
+          // ABR is needed to separate factorize and update routines
+          CholSupernodes<Algo::Workflow::Serial>
+            ::solve_lower(sched, member,
+                          info, sid, 
+                          bufsize, buf);
+          
+          const ordinal_type nrhs = info.x.dimension_1();
+          ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
+          UnmanagedViewType<value_type_matrix_host> xB((value_type*)buf, n-m, nrhs);
 
-        //   // ABR is needed to separate factorize and update routines
-        //   CholSupernodes<Algo::Workflow::Serial>
-        //     ::solve_lower(sched, member,
-        //                   info, sid, 
-        //                   x,
-        //                   bufsize, buf);
-
-        //   typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
-        //   typedef typename value_type_matrix_host::value_type value_type;
-
-        //   ordinal_type m, n; info.getSuperPanelSize(sid, m, n);          
-        //   UnmanagedViewType<value_type_multi_vector_host> xB((value_type*)buf, n-m, x.dimension_1());
-
-        //   CholSupernodes<Algo::Workflow::Serial>          
-        //     ::update_solve_lower(sched, member,
-        //                          info, xB, sid,
-        //                          x,
-        //                          bufsize - xB.span()*sizeof(value_type), 
-        //                          (void*)((value_type*)buf + xB.span()));
-        // }
+          CholSupernodes<Algo::Workflow::Serial>          
+            ::update_solve_lower(sched, member,
+                                 info, xB, sid,
+                                 bufsize - xB.span()*sizeof(value_type), 
+                                 (void*)((value_type*)buf + xB.span()));
+        }
       }
 
-      template<typename MultiVectorViewType>
       inline
       void
       recursiveSerialSolveUpper(const sched_type_host &sched,
                                 const supernode_info_type_host &info,
                                 const ordinal_type sid, 
-                                const MultiVectorViewType &x,
                                 const size_type bufsize,
                                 /* */ void *buf) {
         // // recursion
@@ -313,11 +310,10 @@ namespace Tacho {
         }
       }
 
-      template<typename MultiVectorViewType>
       inline
       void
-      solveCholesky_Serial(const MultiVectorViewType &x,
-                           const MultiVectorViewType &b) {
+      solveCholesky_Serial(const value_type_matrix_host &x,
+                           const value_type_matrix_host &b) {
         /// supernode info
         supernode_info_type_host info;
         {
@@ -335,6 +331,8 @@ namespace Tacho {
 
           info.super_panel_ptr        = _super_panel_ptr;
           info.super_panel_buf        = _super_panel_buf;
+
+          info.x                      = x;
         }
         
         // copy b -> x
@@ -356,14 +354,12 @@ namespace Tacho {
           for (ordinal_type i=0;i<nroots;++i)
             recursiveSerialSolveLower(sched, 
                                       info, _stree_roots(i), 
-                                      x,
                                       work.span()*sizeof(value_type), work.data());
 
-          for (ordinal_type i=0;i<nroots;++i)
-            recursiveSerialSolveUpper(sched, 
-                                      info, _stree_roots(i), 
-                                      x,
-                                      work.span()*sizeof(value_type), work.data());
+          // for (ordinal_type i=0;i<nroots;++i)
+          //   recursiveSerialSolveUpper(sched, 
+          //                             info, _stree_roots(i), 
+          //                             work.span()*sizeof(value_type), work.data());
         }
       }
 

@@ -55,6 +55,10 @@ namespace Tacho {
       ConstUnmanagedViewType<size_type_array> super_schur_ptr;
       UnmanagedViewType<value_type_array> super_schur_buf;
 
+      ///
+      /// Phase 4: solve (rhs multivector)
+      UnmanagedViewType<value_type_matrix> x;
+
       KOKKOS_INLINE_FUNCTION
       SupernodeInfo() = default;
 
