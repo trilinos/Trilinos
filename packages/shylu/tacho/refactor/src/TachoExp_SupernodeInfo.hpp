@@ -15,9 +15,11 @@ namespace Tacho {
       typedef ValueType value_type;
       typedef ExecSpace exec_space;
 
-      typedef Kokkos::View<ordinal_type*,exec_space> ordinal_type_array;
-      typedef Kokkos::View<size_type*,   exec_space> size_type_array;
-      typedef Kokkos::View<value_type*,  exec_space> value_type_array;
+      typedef CrsMatrixBase<value_type,exec_space> crs_matrix_type;
+
+      typedef typename crs_matrix_type::ordinal_type_array ordinal_type_array;
+      typedef typename crs_matrix_type::size_type_array size_type_array;
+      typedef typename crs_matrix_type::value_type_array value_type_array;
 
       typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix;
 
@@ -212,8 +214,8 @@ namespace Tacho {
       }
 
       inline
-      CrsMatrixBase<value_type,exec_space>
-      createCrsMatrixBase(const bool replace_value_with_one = false) {
+      crs_matrix_type
+      createCrsMatrix(const bool replace_value_with_one = false) {
         // count m, n, nnz
         const ordinal_type
           nsupernodes = supernodes.dimension_0() - 1,
@@ -266,7 +268,7 @@ namespace Tacho {
         }
 
         // set triple to crs matrix
-        CrsMatrixBase<value_type,exec_space> r_val;
+        crs_matrix_type r_val;
         r_val.setExternalMatrix(mm, nn, nnz, ap, aj, ax);
 
         return r_val;

@@ -55,7 +55,7 @@ TEST( Numeric, constructor ) {
   SymbolicTools S(m, A.RowPtr(), A.Cols(), idx, idx);
   S.symbolicFactorize();
 
-  NumericTools<ValueType,DeviceSpaceType> N(m, A.RowPtr(), A.Cols(), A.Values(),
+  NumericTools<ValueType,DeviceSpaceType> N(m, A.RowPtr(), A.Cols(), //A.Values(),
                                             idx, idx,
                                             S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
@@ -81,15 +81,15 @@ TEST( Numeric, Cholesky_Serial ) {
   SymbolicTools S(A, T);
   S.symbolicFactorize();
 
-  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
+  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), //A.Values(),
                                             T.PermVector(), T.InvPermVector(),
                                             S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
                                             S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
                                             S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
-  N.factorizeCholesky_Serial();
-  auto F = N.exportFactorsToCrsMatrixBase();
+  N.factorizeCholesky_Serial(A.Values());
+  auto F = N.exportFactorsToCrsMatrix();
 
   std::ofstream out("test_numeric_factorize_serial.mtx");
   MatrixMarket<ValueType>::write(out, F);
@@ -106,7 +106,7 @@ TEST( Numeric, Cholesky_Serial ) {
   N.solveCholesky_Serial(x, b, t);
 
   const double eps = std::numeric_limits<double>::epsilon()*100;
-  EXPECT_TRUE(N.residual(A,x,b) < eps);
+  EXPECT_TRUE(N.residual(x,b) < eps);
 }
 
 // TEST( Numeric, factorizeCholesky_Parallel ) {
