@@ -155,9 +155,9 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
-  ParameterList xmlParams;
-  ParameterList mueluParams;
-  ParameterList problemParams;
+  Teuchos::ParameterList xmlParams;
+  Teuchos::ParameterList mueluParams;
+  Teuchos::ParameterList problemParams;
   Teuchos::updateParametersFromXmlFile(solverOptionsFile, Teuchos::inoutArg(xmlParams));
   mueluParams   = xmlParams.sublist(static_cast<const std::string>("MueLu"));
   problemParams = xmlParams.sublist(static_cast<const std::string>("Problem"));
@@ -252,7 +252,7 @@ for(int iter = 1; iter <= number_runs; ++iter)
   Problem_muelu->setRightPrec(M);
   Problem_muelu->setProblem();
 
-  RCP<ParameterList> belosList = rcp(new ParameterList());
+  RCP<Teuchos::ParameterList> belosList = rcp(new Teuchos::ParameterList());
   belosList->set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
   belosList->set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
   //belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);

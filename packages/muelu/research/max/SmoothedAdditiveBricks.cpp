@@ -159,9 +159,9 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
-  ParameterList xmlParams;
-  ParameterList mueluParams;
-  ParameterList problemParams;
+  Teuchos::ParameterList xmlParams;
+  Teuchos::ParameterList mueluParams;
+  Teuchos::ParameterList problemParams;
   Teuchos::updateParametersFromXmlFile(solverOptionsFile, Teuchos::inoutArg(xmlParams));
   mueluParams   = xmlParams.sublist(static_cast<const std::string>("MueLu"));
   problemParams = xmlParams.sublist(static_cast<const std::string>("Problem"));
@@ -250,19 +250,19 @@ int main(int argc, char *argv[]) {
  // 	===================================
 
   //Creation of the MueLu list for the DD preconditioner
-  RCP<ParameterList> dd_list = rcp(new Teuchos::ParameterList());
+  RCP<Teuchos::ParameterList> dd_list = rcp(new Teuchos::ParameterList());
   dd_list->setName("MueLu");
   dd_list->set("verbosity", "low"); 
   dd_list->set("number of equations", 1);
   dd_list->set("max levels", 1);
   dd_list->set("coarse: type", "SCHWARZ"); //FOR A ONE LEVEL PRECONDITIONER THE COARSE LEVEL IS INTERPRETED AS SMOOTHING LEVEL
 		
-  ParameterList& dd_smooth_sublist = dd_list->sublist("coarse: params");
+  Teuchos::ParameterList& dd_smooth_sublist = dd_list->sublist("coarse: params");
   dd_smooth_sublist.set("schwarz: overlap level", 0);
   dd_smooth_sublist.set("schwarz: combine mode", "Zero");
   dd_smooth_sublist.set("subdomain solver name", "RILUK");
 
-  ParameterList& coarse_subdomain_solver = dd_smooth_sublist.sublist("subdomain solver parameters");
+  Teuchos::ParameterList& coarse_subdomain_solver = dd_smooth_sublist.sublist("subdomain solver parameters");
   coarse_subdomain_solver.set("fact: iluk level-of-fill", 10);
   coarse_subdomain_solver.set("fact: absolute thresh/old", 0.);
   coarse_subdomain_solver.set("fact: relative threshold", 1.);
@@ -438,7 +438,7 @@ int main(int argc, char *argv[]) {
 
   Problem_muelu = rcp(new linear_problem_type(A, X_muelu, B));
 
-  RCP<ParameterList> belosList = rcp(new ParameterList());
+  RCP<Teuchos::ParameterList> belosList = rcp(new Teuchos::ParameterList());
   belosList->set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
   belosList->set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
   //belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
