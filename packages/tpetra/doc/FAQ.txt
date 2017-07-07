@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2017-07-07 13:19:40 mhoemme"
+#+DATE: Time-stamp: "2017-07-07 13:37:52 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -54,6 +54,13 @@ and Intel compilers; other compilers are supported too.  If Trilinos
 cannot figure out the OpenMP compiler or linker flags, the
 configuration process will fail with an informative error message.  In
 that case, you must add the required flags yourself.
+
+If you enable OpenMP using the above instructions, Kokkos will enable
+its OpenMP support by default.  If Kokkos enables its OpenMP support,
+Tpetra will enable its OpenMP support by default.  (See "How does
+Tpetra pick its default Kokkos execution space?" below.)  Avoid
+setting CMake options explicitly; this hinders portability and makes
+your build configuration unnecessarily complicated.
 
 ** How do I build and run Tpetra for NVIDIA GPUs (CUDA)?
 *** Introduction
@@ -112,6 +119,57 @@ variables that you would normally set:
 
 If the versions of ~nvcc~ and ~mpicxx~ that live in your path are
 correct, then this should work.
+
+If you enable CUDA using the above instructions, Kokkos will enable
+its CUDA support by default.  If Kokkos enables its CUDA support,
+Tpetra will enable its CUDA support by default.  (See "How does Tpetra
+pick its default Kokkos execution space?" below.)  Avoid setting CMake
+options explicitly; this hinders portability and makes your build
+configuration unnecessarily complicated.
+
+** What about Pthreads?  Does Tpetra support that?
+
+Tpetra does have an option to use Pthreads (POSIX Threads) for thread
+parallelism.  It does so through Kokkos, using the ~Kokkos::Threads~
+execution space.  However, Trilinos disables this option by default.
+This is for the following reasons:
+
+  1. Trilinos automatically enables Pthreads if it finds the library
+     on your system.  This surprises users who did not intend to run
+     with threads enabled.
+  2. Kokkos' Pthreads back-end is slower than its OpenMP back-end.
+  3. Use of OpenMP and Kokkos' Pthreads back-end in the same
+     application can hurt performance of both.  This is because
+     compilers' OpenMP implementations often set up their own threads
+     that keep running continuously to reserve hardware resources.
+     These threads fight the threads that Kokkos' Pthreads back-end
+     launches.
+  4. It is possible for multiple OpenMP libraries to work correctly
+     and performantly, as long as they share a common OpenMP run-time
+     environment.  It is /not/ possible for multiple libraries that
+     each launch their own Pthreads to work correctly and
+     performantly, for reasons analogous to those in (3) above.
+
+If you really /really/ want Tpetra to use Pthreads, you will need to
+do the following:
+
+  1. Make sure that Trilinos enables the Pthreads TPL, by checking
+     that the CMake variable ~TPL_ENABLE_Pthread~ is ~ON~.  If not,
+     you may need to tell Trilinos where to find the Pthreads library
+     and header file.
+  2. Enable Kokkos' Pthreads support, by setting
+     ~Kokkos_ENABLE_Pthread:BOOL=OFF~.
+  3. Enable Tpetra's Pthreads support, by setting 
+     ~Tpetra_INST_PTHREAD:BOOL=OFF~.
+  4. Make Tpetra use Pthreads by default, by setting
+     ~Tpetra_INST_SERIAL:BOOL=OFF~.
+
+If you choose to do this, we /highly/ recommend turning off OpenMP.
+Step 4 is optional, but if you do not do Step 3, Pthreads will not be
+Tpetra's default execution space.  In that case, if you want to use
+Pthreads in Tpetra, you must set the ~Node~ template parameter
+explicitly to
+~Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads>~.
 
 ** Weird C++ errors with Intel compiler
 
@@ -192,7 +250,7 @@ the Kokkos execution space that Tpetra objects use for thread-parallel
 operations, and the Kokkos memory space that Tpetra objects use for
 memory allocations.
 
-The only valid Node types as of Trilinos 12.4 are specializations of
+The only valid Node types as of Trilinos 12.x are specializations of
 ~Kokkos::Compat::KokkosDeviceWrapperNode~, which lives in
 ~teuchos/kokkoscompat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp~.
 You do /not/ need to include this header file or worry about the
