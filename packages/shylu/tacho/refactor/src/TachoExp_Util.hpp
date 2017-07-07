@@ -21,6 +21,9 @@
 
 #include <limits>
 
+#include "Kokkos_Core.hpp"
+#include "impl/Kokkos_Timer.hpp"
+
 #include "Teuchos_BLAS_types.hpp"
 
 /// \file TachoExp_Util.hpp

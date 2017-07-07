@@ -104,7 +104,7 @@ namespace Tacho {
             src_row_beg = info.blk_super_panel_colidx(i),
             src_row_end = info.blk_super_panel_colidx(i+1);
 
-          /// ** target rows
+          /// ** target rows: TODO: later put spin lock here on row instead of critical
           const ordinal_type row = info.sid_super_panel_colidx(i);
 
           ordinal_type m, n;
@@ -134,20 +134,31 @@ namespace Tacho {
               }
           }
 
-          // release future info._supernodes_future(row) done; task spawn
           ordinal_type mbeg = 0; for (;map(mbeg) == -1; ++mbeg) ;
-          for (ordinal_type jj=mbeg;jj<src_col_size;++jj) {
-            const ordinal_type mj = map(jj);
-            for (ordinal_type ii=src_row_beg;ii<src_row_end;++ii) {
-              const ordinal_type mi = map(ii-src_row_beg+mbeg);
-
-              // for parallel assembly, this should be used
-              // TODO:: use row-wise atomic assembly later if this hurts performance on knl
-              //        for gpu, this is the right way to do
-              Kokkos::atomic_fetch_add(&A(mi, mj), ABR(ii-src_row_offset,jj));
-              //A(mi, mj) += ABR(ii-src_row_offset,jj);
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+#pragma omp critical
+          {
+            for (ordinal_type jj=mbeg;jj<src_col_size;++jj) {
+              const ordinal_type mj = map(jj);
+              for (ordinal_type ii=src_row_beg;ii<src_row_end;++ii) {
+                const ordinal_type mi = map(ii-src_row_beg+mbeg);
+                //Kokkos::atomic_fetch_add(&A(mi, mj), ABR(ii-src_row_offset,jj));
+                A(mi, mj) += ABR(ii-src_row_offset,jj);
+              }
             }
           }
+#else
+          {
+            for (ordinal_type jj=mbeg;jj<src_col_size;++jj) {
+              const ordinal_type mj = map(jj);
+              for (ordinal_type ii=src_row_beg;ii<src_row_end;++ii) {
+                const ordinal_type mi = map(ii-src_row_beg+mbeg);
+                Kokkos::atomic_fetch_add(&A(mi, mj), ABR(ii-src_row_offset,jj));
+                //A(mi, mj) += ABR(ii-src_row_offset,jj);
+              }
+            }
+          }
+#endif
         }
 
         return 0;
@@ -228,17 +239,29 @@ namespace Tacho {
         TACHO_TEST_FOR_ABORT(n != x.dimension_1(), "# of cols in xB does not match to rhs in supernodesinfo");
 
         const ordinal_type goffset = info.gid_super_panel_ptr(sid) + pm;
-        for (ordinal_type j=0;j<n;++j) 
-          for (ordinal_type i=0;i<m;++i) {
-            const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
-            Kokkos::atomic_fetch_add(&x(row, j), xB(i,j));
-            //x(row,j) += xB(i,j);
-          }
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+#pragma omp critical
+        {
+          for (ordinal_type j=0;j<n;++j) 
+            for (ordinal_type i=0;i<m;++i) {
+              const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
+              //Kokkos::atomic_fetch_add(&x(row, j), xB(i,j));
+              x(row,j) += xB(i,j);
+            }
+        }
+#else
+        {
+          for (ordinal_type j=0;j<n;++j) 
+            for (ordinal_type i=0;i<m;++i) {
+              const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
+              Kokkos::atomic_fetch_add(&x(row, j), xB(i,j));
+              //x(row,j) += xB(i,j);
+            }
+        }
+#endif
 
         return 0;
       }
-
-
 
       template<typename SchedulerType,
                typename MemberType,

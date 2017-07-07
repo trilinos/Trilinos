@@ -101,10 +101,10 @@ int main (int argc, char *argv[]) {
 #else
     GraphTools_CAMD T(G);
 #endif
-    T.reorder();
+    T.reorder(verbose);
     
     SymbolicTools S(A, T);
-    S.symbolicFactorize();
+    S.symbolicFactorize(verbose);
     t = timer.seconds();
     std::cout << "CholSupernodes:: analyze matrix::time = " << t << std::endl;
 
@@ -119,9 +119,9 @@ int main (int argc, char *argv[]) {
     std::cout << "CholSupernodes:: factorize matrix" << std::endl;
     timer.reset();    
     if (serial) {
-      N.factorizeCholesky_Serial(A.Values());
+      N.factorizeCholesky_Serial(A.Values(), verbose);
     } else {
-      N.factorizeCholesky_Serial(A.Values());
+      N.factorizeCholesky_Serial(A.Values(), verbose);
     }
     t = timer.seconds();    
     std::cout << "CholSupernodes:: factorize matrix::time = " << t << std::endl;
@@ -142,9 +142,9 @@ int main (int argc, char *argv[]) {
     std::cout << "CholSupernodes:: solve matrix" << std::endl;
     timer.reset();    
     if (serial) {
-      N.solveCholesky_Serial(X, B, Y);
+      N.solveCholesky_Serial(X, B, Y, verbose);
     } else {
-      N.solveCholesky_Serial(X, B, Y);
+      N.solveCholesky_Serial(X, B, Y, verbose);
     }
     t = timer.seconds();    
     std::cout << "CholSupernodes:: solve matrix::time = " << t << std::endl;

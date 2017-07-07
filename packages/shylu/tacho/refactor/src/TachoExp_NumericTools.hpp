@@ -116,8 +116,63 @@ namespace Tacho {
       /// this is passed into computation algorithm without reference counting
       ///
       supernode_info_type_host _info;
+
+      ///
+      ///
+      ///
+      struct {
+        double t_factor, t_solve, t_copy, t_extra;
+        double m_used, m_peak;
+      } stat;
       
     private:
+
+      inline 
+      void
+      track_alloc(const double in) {
+        stat.m_used += in;
+        stat.m_peak  = max(stat.m_peak, stat.m_used);
+      }
+
+      inline 
+      void
+      track_free(const double out) {
+        stat.m_used -= out;
+      }
+
+      inline 
+      void
+      reset_stat() {
+        stat.t_factor = 0;
+        stat.t_solve = 0;
+        stat.t_copy = 0;
+        stat.t_extra = 0;
+        stat.m_used = 0;
+        stat.m_peak = 0;
+      }
+
+      inline 
+      void 
+      print_stat_factor() {
+        printf("  Time\n");
+        printf("             time for copying A into U:         %10.6f s\n", stat.t_copy);
+        printf("             time for numeric factorization:    %10.6f s\n", stat.t_factor);
+        printf("             total time spent:                  %10.6f s\n", (stat.t_copy+stat.t_factor));
+        printf("\n");
+        printf("  Memory\n");
+        printf("             memory used in factorization:      %10.2f MB\n", stat.m_used/1024/1024);
+        printf("             peak memory used in factorization: %10.2f MB\n", stat.m_peak/1024/1024);
+      }
+
+      inline 
+      void 
+      print_stat_solve() {
+        printf("  Time\n");
+        printf("             time for extra work e.g.,copy rhs: %10.6f s\n", stat.t_extra);
+        printf("             time for numeric solve:            %10.6f s\n", stat.t_solve);
+        printf("             total time spent:                  %10.6f s\n", (stat.t_solve+stat.t_extra));
+        printf("\n");
+      }
 
       inline
       void
@@ -125,12 +180,14 @@ namespace Tacho {
                           const size_type bufsize,
                           /* */ void *buf) {
         // recursion
-        const ordinal_type 
-          ibeg = _info.stree_ptr(sid), 
-          iend = _info.stree_ptr(sid+1);
-
-        for (ordinal_type i=ibeg;i<iend;++i)
-          recursiveSerialChol(_info.stree_children(i), bufsize, buf);
+        {
+          const ordinal_type 
+            ibeg = _info.stree_ptr(sid), 
+            iend = _info.stree_ptr(sid+1);
+          
+          for (ordinal_type i=ibeg;i<iend;++i)
+            recursiveSerialChol(_info.stree_children(i), bufsize, buf);
+        }
 
         {
           // dummy member
@@ -153,14 +210,19 @@ namespace Tacho {
       void
       recursiveSerialSolveLower(const ordinal_type sid, 
                                 const size_type bufsize,
-                                /* */ void *buf) {
+                                /* */ void *buf,
+                                const bool final = false) {
         // recursion
-        const ordinal_type 
-          ibeg = _info.stree_ptr(sid), 
-          iend = _info.stree_ptr(sid+1);
-        
-        for (ordinal_type i=ibeg;i<iend;++i)
-          recursiveSerialSolveLower(_info.stree_children(i), bufsize, buf);
+        if (final) {
+          // do nothing
+        } else {
+          const ordinal_type 
+            ibeg = _info.stree_ptr(sid), 
+            iend = _info.stree_ptr(sid+1);
+          
+          for (ordinal_type i=ibeg;i<iend;++i)
+            recursiveSerialSolveLower(_info.stree_children(i), bufsize, buf);
+        }
 
         {
           // dummy member
@@ -182,7 +244,8 @@ namespace Tacho {
       void
       recursiveSerialSolveUpper(const ordinal_type sid, 
                                 const size_type bufsize,
-                                /* */ void *buf) {
+                                /* */ void *buf,
+                                const bool final = false) {
         {
           // dummy member
           const ordinal_type sched = 0, member = 0;
@@ -202,13 +265,17 @@ namespace Tacho {
         }
 
         // recursion
-        const ordinal_type 
-          ibeg = _info.stree_ptr(sid), 
-          iend = _info.stree_ptr(sid+1);
-        
-        for (ordinal_type i=ibeg;i<iend;++i)
-          recursiveSerialSolveUpper(_info.stree_children(i), bufsize, buf);
-    }
+        if (final) {
+          // do nothing
+        } else {
+          const ordinal_type 
+            ibeg = _info.stree_ptr(sid), 
+            iend = _info.stree_ptr(sid+1);
+          
+          for (ordinal_type i=ibeg;i<iend;++i)
+            recursiveSerialSolveUpper(_info.stree_children(i), bufsize, buf);
+        }
+      }
       
     public:
       NumericTools() = default;
@@ -271,32 +338,58 @@ namespace Tacho {
 
       inline
       void
-      factorizeCholesky_Serial(const value_type_array_host &ax) {
+      factorizeCholesky_Serial(const value_type_array_host &ax,
+                               const ordinal_type verbose = 0) {
+        Kokkos::Impl::Timer timer;
+
+        reset_stat();
+
+        timer.reset();
         {
           /// matrix values
           _ax = ax;
 
           /// allocate super panels 
-          ordinal_type_array_host iwork("work", _m+1);
+          ordinal_type_array_host iwork("work", _m+1); 
           _info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
 
+          track_alloc(iwork.span()*sizeof(ordinal_type));
+          track_alloc(_super_panel_ptr.span()*sizeof(size_type));
+          track_alloc(_super_panel_buf.span()*sizeof(value_type));
+        
           /// assign data structure into info
           _info.super_panel_ptr = _super_panel_ptr;
           _info.super_panel_buf = _super_panel_buf;
           
           /// copy the input matrix into super panels
           _info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
-        }
 
+          track_free(iwork.span()*sizeof(ordinal_type));
+        }
+        stat.t_copy += timer.seconds();
+                
+        timer.reset();
         {
           /// maximum workspace size for serial run
           const size_type worksize = _info.computeWorkspaceSerialChol() + _m + 1;
           value_type_array_host work("work", worksize);
 
+          track_alloc(work.span()*sizeof(value_type));
+
           /// recursive tree traversal
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
             recursiveSerialChol(_stree_roots(i), work.span()*sizeof(value_type), work.data());
+
+          track_free(work.span()*sizeof(value_type));
+        }
+        stat.t_factor += timer.seconds();
+        
+        if (verbose) {
+          printf("Summary: NumericTools (SerialFactorization)\n");
+          printf("===========================================\n");
+
+          print_stat_factor();
         }
       }
 
@@ -304,7 +397,8 @@ namespace Tacho {
       void
       solveCholesky_Serial(const value_type_matrix_host &x,   // solution
                            const value_type_matrix_host &b,   // right hand side
-                           const value_type_matrix_host &t) { // temporary workspace (store permuted vectors)
+                           const value_type_matrix_host &t,
+                           const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
         TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
                                  x.dimension_1() != b.dimension_1() || 
                                  x.dimension_0() != t.dimension_0() ||
@@ -320,27 +414,50 @@ namespace Tacho {
                                  _info.super_panel_buf.data() == NULL, std::logic_error,
                                  "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
 
+        Kokkos::Impl::Timer timer;
+
         _info.x = t;
 
         // copy b -> t
+        timer.reset();
         applyRowPermutation(t, b, _peri);
-        
+        stat.t_extra += timer.seconds();
+
+        timer.reset();
         {
           /// maximum workspace size for serial run
           const size_type worksize = sqrt(_info.computeWorkspaceSerialChol())*x.dimension_1() + _m;
           value_type_array_host work("work", worksize);
 
           /// recursive tree traversal
-          const ordinal_type nroots = _stree_roots.dimension_0();
-          for (ordinal_type i=0;i<nroots;++i)
-            recursiveSerialSolveLower(_stree_roots(i), work.span()*sizeof(value_type), work.data());
-
-          for (ordinal_type i=0;i<nroots;++i)
-            recursiveSerialSolveUpper(_stree_roots(i), work.span()*sizeof(value_type), work.data());
+          constexpr bool final = false;
+          if (final) {
+            const ordinal_type bufsize = work.span()*sizeof(value_type);
+            for (ordinal_type sid=0;sid<_nsupernodes;++sid)
+              recursiveSerialSolveLower(sid, bufsize, work.data(), true);
+            for (ordinal_type sid=(_nsupernodes-1);sid>=0;--sid)
+              recursiveSerialSolveUpper(sid, bufsize, work.data(), true);
+          } else {
+            const ordinal_type nroots = _stree_roots.dimension_0();
+            for (ordinal_type i=0;i<nroots;++i)
+              recursiveSerialSolveLower(_stree_roots(i), work.span()*sizeof(value_type), work.data());            
+            for (ordinal_type i=0;i<nroots;++i)
+              recursiveSerialSolveUpper(_stree_roots(i), work.span()*sizeof(value_type), work.data());
+          }
         }
+        stat.t_solve += timer.seconds();
         
         // copy t -> x
+        timer.reset();
         applyRowPermutation(x, t, _perm);
+        stat.t_extra += timer.seconds();
+
+        if (verbose) {
+          printf("Summary: NumericTools (SerialSolve)\n");
+          printf("===================================\n");
+
+          print_stat_solve();
+        }
       }
 
       // inline
