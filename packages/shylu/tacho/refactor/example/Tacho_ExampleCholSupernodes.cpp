@@ -149,7 +149,7 @@ int main (int argc, char *argv[]) {
     t = timer.seconds();    
     std::cout << "CholSupernodes:: solve matrix::time = " << t << std::endl;
 
-    const double res = N.residual(X, B);
+    const double res = N.computeResidual(X, B);
     //const double eps = std::numeric_limits<double>::epsilon()*100;
 
     std::cout << "CholSupernodes:: residual = " << res << std::endl;

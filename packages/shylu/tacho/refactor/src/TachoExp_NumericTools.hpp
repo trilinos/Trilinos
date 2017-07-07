@@ -422,24 +422,22 @@ namespace Tacho {
       ///
       /// utility
       ///
+      static 
       inline
       double 
-      residual(const value_type_matrix_host &x,
-               const value_type_matrix_host &b) {
-        crs_matrix_type_host A;
-        A.setExternalMatrix(_m, _m, _ap(_m),
-                            _ap, _aj, _ax);
-                            
-        const ordinal_type k = b.dimension_1();
-
-        TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
-                                 x.dimension_1() != b.dimension_1() ||
-                                 x.dimension_0() != _m, std::logic_error,
+      computeResidual(const crs_matrix_type_host &A,
+                      const value_type_matrix_host &x,
+                      const value_type_matrix_host &b) {
+        TACHO_TEST_FOR_EXCEPTION(A.NumRows() != A.NumCols() ||
+                                 A.NumRows() != b.dimension_0() ||
+                                 x.dimension_0() != b.dimension_0() ||
+                                 x.dimension_1() != b.dimension_1(), std::logic_error,
                                  "A,x and b dimensions are not compatible");
-        
+
+        const ordinal_type m = A.NumRows(), k = b.dimension_1();        
         double diff = 0, norm = 0;
         for (ordinal_type p=0;p<k;++p) {
-          for (ordinal_type i=0;i<_m;++i) {
+          for (ordinal_type i=0;i<m;++i) {
             value_type s = 0;
             const ordinal_type jbeg = A.RowPtrBegin(i), jend = A.RowPtrEnd(i);
             for (ordinal_type j=jbeg;j<jend;++j) {
@@ -451,6 +449,17 @@ namespace Tacho {
           }
         }
         return sqrt(diff/norm);
+      }
+
+      inline
+      double 
+      computeResidual(const value_type_matrix_host &x,
+                      const value_type_matrix_host &b) {
+        crs_matrix_type_host A;
+        A.setExternalMatrix(_m, _m, _ap(_m),
+                            _ap, _aj, _ax);
+                            
+        return computeResidual(A, x, b);
       }
 
       inline

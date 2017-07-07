@@ -106,7 +106,7 @@ TEST( Numeric, Cholesky_Serial ) {
   N.solveCholesky_Serial(x, b, t);
 
   const double eps = std::numeric_limits<double>::epsilon()*100;
-  EXPECT_TRUE(N.residual(x,b) < eps);
+  EXPECT_TRUE(N.computeResidual(x,b) < eps);
 }
 
 // TEST( Numeric, factorizeCholesky_Parallel ) {
