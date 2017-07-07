@@ -1763,19 +1763,17 @@ std::cout << blocked_opr->getBlock(m,c)->range()->dim() << " x " << blocked_opr-
   *
   * \returns Matrix sum with a Epetra_CrsMatrix implementation
   */
-const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr)
+const LinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & opr_in)
 {
-   // if blocked, add block by block
-   if(isPhysicallyBlockedLinearOp(opl)){
-     TEUCHOS_ASSERT(isPhysicallyBlockedLinearOp(opr));
- 
+   // if both blocked, add block by block
+   if(isPhysicallyBlockedLinearOp(opl_in) && isPhysicallyBlockedLinearOp(opr_in)){
      double scalarl = 0.0;
      bool transpl = false;
-     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opl = getPhysicallyBlockedLinearOp(opl, &scalarl, &transpl);
+     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opl = getPhysicallyBlockedLinearOp(opl_in, &scalarl, &transpl);
 
      double scalarr = 0.0;
      bool transpr = false;
-     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opr = getPhysicallyBlockedLinearOp(opr, &scalarr, &transpr);
+     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opr = getPhysicallyBlockedLinearOp(opr_in, &scalarr, &transpr);
 
      int numRows = blocked_opl->productRange()->numBlocks();
      int numCols = blocked_opl->productDomain()->numBlocks();
@@ -1789,6 +1787,26 @@ const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr)
          blocked_sum->setBlock(r,c,explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c))));
      blocked_sum->endBlockFill();
      return blocked_sum;
+   }
+  
+   // if only one is blocked, it must be 1x1
+   LinearOp opl = opl_in;
+   LinearOp opr = opr_in;
+   if(isPhysicallyBlockedLinearOp(opl_in)){
+     double scalarl = 0.0;
+     bool transpl = false;
+     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opl = getPhysicallyBlockedLinearOp(opl_in, &scalarl, &transpl);
+     TEUCHOS_ASSERT(blocked_opl->productRange()->numBlocks() == 1);
+     TEUCHOS_ASSERT(blocked_opl->productDomain()->numBlocks() == 1);
+     opl = Thyra::scale(scalarl,blocked_opl->getBlock(0,0));
+   }
+   if(isPhysicallyBlockedLinearOp(opr_in)){
+     double scalarr = 0.0;
+     bool transpr = false;
+     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opr = getPhysicallyBlockedLinearOp(opr_in, &scalarr, &transpr);
+     TEUCHOS_ASSERT(blocked_opr->productRange()->numBlocks() == 1);
+     TEUCHOS_ASSERT(blocked_opr->productDomain()->numBlocks() == 1);
+     opr = Thyra::scale(scalarr,blocked_opr->getBlock(0,0));
    }
 
    bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
