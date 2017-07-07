@@ -323,7 +323,7 @@ struct FlatArrayType< View<D,P...>,
   typedef View<D,P...> view_type;
   typedef typename view_type::traits::dimension dimension;
   typedef typename view_type::array_type::value_type flat_value_type;
-  typedef typename Kokkos::Experimental::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
+  typedef typename Kokkos::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
   typedef View<flat_data_type,P...> type;
 };
 
@@ -490,7 +490,6 @@ extract_cijk(const AllocProp& prop)
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 template< class DataType , class ArrayLayout , typename StorageType >
@@ -506,7 +505,7 @@ private:
 public:
 
   // Specialized view data mapping:
-  typedef ViewPCEContiguous specialize ;
+  typedef Kokkos::Experimental::Impl::ViewPCEContiguous specialize ;
 
   typedef typename array_analysis::dimension             dimension ;
   typedef typename array_analysis::value_type            value_type ;
@@ -562,7 +561,6 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -655,7 +653,7 @@ struct PCEAllocation {
 
   template <class ExecSpace>
   struct ConstructDestructFunctor {
-    typedef ViewValueFunctor< ExecSpace, scalar_type > ScalarFunctorType ;
+    typedef Kokkos::Impl::ViewValueFunctor< ExecSpace, scalar_type > ScalarFunctorType ;
     typedef PCEConstruct< ExecSpace > PCEFunctorType ;
     ScalarFunctorType m_scalar_functor;
     PCEFunctorType m_pce_functor;
@@ -727,11 +725,16 @@ struct PCEAllocation {
   }
 };
 
+}}} // namespace Kokkos::Experimental::Impl
+
+namespace Kokkos {
+namespace Impl {
+
 template< class Traits >
 class ViewMapping< Traits , /* View internal mapping */
   typename std::enable_if<
     ( std::is_same< typename Traits::specialize
-                  , ViewPCEContiguous >::value
+                  , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
       &&
       ( std::is_same< typename Traits::array_layout
                     , Kokkos::LayoutLeft >::value
@@ -758,7 +761,7 @@ public:
   typedef typename sacado_uq_pce_type::cijk_type        cijk_type ;
 private:
 
-  typedef Impl::PCEAllocation<sacado_uq_pce_type> handle_type;
+  typedef Kokkos::Experimental::Impl::PCEAllocation<sacado_uq_pce_type> handle_type;
 
   typedef ViewOffset< typename Traits::dimension
                     , typename Traits::array_layout
@@ -1098,13 +1101,11 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 /**\brief  Assign compatible Sacado::UQ::PCE view mappings.
@@ -1119,11 +1120,11 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Destination view has UQ::PCE
     std::is_same< typename DstTraits::specialize
-                , ViewPCEContiguous >::value
+                , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
     &&
     // Source view has UQ::PCE only
     std::is_same< typename SrcTraits::specialize
-                , ViewPCEContiguous >::value
+                , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
   )>::type >
 {
 public:
@@ -1204,7 +1205,7 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Source view has UQ::PCE only
     std::is_same< typename SrcTraits::specialize
-                , ViewPCEContiguous >::value
+                , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
     &&
     // Ranks match
     unsigned(DstTraits::dimension::rank) == unsigned(SrcTraits::dimension::rank)+1
@@ -1312,7 +1313,7 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Source view has UQ::PCE only
     std::is_same< typename SrcTraits::specialize
-                , ViewPCEContiguous >::value
+                , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
     &&
     // Ranks match
     unsigned(DstTraits::dimension::rank) == unsigned(SrcTraits::dimension::rank)
@@ -1403,13 +1404,11 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Subview mapping
@@ -1419,7 +1418,7 @@ struct ViewMapping
   < typename std::enable_if<(
       // Source view has UQ::PCE only
       std::is_same< typename Kokkos::ViewTraits<DataType,P...>::specialize
-                  , ViewPCEContiguous >::value
+                  , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
       &&
       (
         std::is_same< typename Kokkos::ViewTraits<DataType,P...>::array_layout
@@ -1545,7 +1544,6 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

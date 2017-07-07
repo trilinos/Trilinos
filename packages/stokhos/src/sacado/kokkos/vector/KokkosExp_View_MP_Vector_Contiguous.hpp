@@ -101,7 +101,7 @@ struct FlatArrayType< View<D,P...>,
   typedef View<D,P...> view_type;
   typedef typename view_type::traits::dimension dimension;
   typedef typename view_type::array_type::value_type flat_value_type;
-  typedef typename Kokkos::Experimental::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
+  typedef typename Kokkos::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
   typedef View<flat_data_type,P...> type;
 };
 
@@ -192,7 +192,6 @@ void deep_copy( const View<DT,DP...> & dst ,
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 template< class DataType , class ArrayLayout , typename StorageType >
@@ -209,7 +208,7 @@ private:
 public:
 
   // Specialized view data mapping:
-  typedef ViewMPVectorContiguous specialize ;
+  typedef Kokkos::Experimental::Impl::ViewMPVectorContiguous specialize ;
 
   typedef typename array_analysis::dimension             dimension ;
   typedef typename array_analysis::value_type            value_type ;
@@ -266,7 +265,6 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -315,7 +313,7 @@ struct MPVectorAllocation<ValueType, true> {
 
   template <class ExecSpace>
   struct ConstructDestructFunctor {
-    typedef ViewValueFunctor< ExecSpace, scalar_type > FunctorType ;
+    typedef Kokkos::Impl::ViewValueFunctor< ExecSpace, scalar_type > FunctorType ;
     FunctorType m_functor;
     bool m_initialize;
 
@@ -442,7 +440,7 @@ struct MPVectorAllocation<ValueType, false> {
 
   template <class ExecSpace>
   struct ConstructDestructFunctor {
-    typedef ViewValueFunctor< ExecSpace, scalar_type > ScalarFunctorType ;
+    typedef Kokkos::Impl::ViewValueFunctor< ExecSpace, scalar_type > ScalarFunctorType ;
     typedef VectorConstruct< ExecSpace > VectorFunctorType ;
     ScalarFunctorType m_scalar_functor;
     VectorFunctorType m_vector_functor;
@@ -511,11 +509,16 @@ struct MPVectorAllocation<ValueType, false> {
   }
 };
 
+}}} // namespace Kokkos::Experimental::Impl
+
+namespace Kokkos {
+namespace Impl {
+
 template< class Traits >
 class ViewMapping< Traits , /* View internal mapping */
   typename std::enable_if<
     ( std::is_same< typename Traits::specialize
-                  , ViewMPVectorContiguous >::value
+                  , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
       &&
       ( std::is_same< typename Traits::array_layout
                     , Kokkos::LayoutLeft >::value
@@ -542,7 +545,7 @@ private:
   enum { StokhosStorageStaticDimension = stokhos_storage_type::static_size };
   typedef Sacado::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
 
-  typedef Impl::MPVectorAllocation<sacado_mp_vector_type> handle_type;
+  typedef Kokkos::Experimental::Impl::MPVectorAllocation<sacado_mp_vector_type> handle_type;
 
   typedef ViewOffset< typename Traits::dimension
                     , typename Traits::array_layout
@@ -876,13 +879,11 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 /**\brief  Assign compatible Sacado::MP::Vector view mappings.
@@ -897,11 +898,11 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Destination view has MP::Vector
     std::is_same< typename DstTraits::specialize
-                , ViewMPVectorContiguous >::value
+                , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
     &&
     // Source view has MP::Vector only
     std::is_same< typename SrcTraits::specialize
-                , ViewMPVectorContiguous >::value
+                , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
   )>::type >
 {
 public:
@@ -981,7 +982,7 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Source view has MP::Vector only
     std::is_same< typename SrcTraits::specialize
-                , ViewMPVectorContiguous >::value
+                , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
     &&
     // Ranks match
     unsigned(DstTraits::dimension::rank) == unsigned(SrcTraits::dimension::rank)+1
@@ -1090,7 +1091,7 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Source view has MP::Vector only
     std::is_same< typename SrcTraits::specialize
-                , ViewMPVectorContiguous >::value
+                , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
     &&
     // Ranks match
     unsigned(DstTraits::dimension::rank) == unsigned(SrcTraits::dimension::rank)
@@ -1182,13 +1183,11 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Subview mapping
@@ -1198,7 +1197,7 @@ struct ViewMapping
   < typename std::enable_if<(
       // Source view has MP::Vector only
       std::is_same< typename Kokkos::ViewTraits<DataType,P...>::specialize
-                  , ViewMPVectorContiguous >::value
+                  , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
       &&
       (
         std::is_same< typename Kokkos::ViewTraits<DataType,P...>::array_layout
@@ -1324,7 +1323,6 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -1332,7 +1330,6 @@ public:
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Partition mapping
@@ -1389,7 +1386,9 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
+} // namespace Kokkos
+
+namespace Kokkos {
 
 template< unsigned Size, typename D, typename ... P  >
 KOKKOS_INLINE_FUNCTION
@@ -1498,7 +1497,6 @@ struct ViewFill< OutputView ,
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 struct ViewSpecializeSacadoFad;
@@ -1517,7 +1515,7 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Destination view has MP::Vector only
     std::is_same< typename DstTraits::specialize
-                , ViewMPVectorContiguous >::value
+                , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
     &&
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
@@ -1591,7 +1589,6 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
