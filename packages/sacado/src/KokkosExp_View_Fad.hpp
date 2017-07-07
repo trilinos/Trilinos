@@ -478,7 +478,6 @@ KOKKOS_VIEW_DATA_ANALYSIS_SACADO_FAD( ELRCacheFad )
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Impl {
 
 // Copied from Sacado_ViewFactory
 template <class View, class ... ViewPack>
@@ -488,7 +487,7 @@ unsigned dimension_scalar(const View& v, const ViewPack&... views) {
   return dim0 >= dim1 ? dim0 : dim1 ;
 }
 
-} } // namespace Kokkos::Impl
+} // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
