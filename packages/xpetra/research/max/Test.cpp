@@ -14,6 +14,7 @@
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_IO.hpp"
+#include "Xpetra_SplittingDriver_def.hpp"
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
 #endif
@@ -81,6 +82,10 @@ int main(int argc, char* argv[])
 	Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpetraMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[1], Xpetra::UseEpetra, comm);
 	//Export matrix from an Xpetra wrapper into an .mtx file
 	Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("A_write.mtx", *xpetraMatrix);
+
+	//SplittingDriver
+	Xpetra::SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> driver("node.txt", comm);
+	driver.printView();
 
 	//Teuchos::RCP<const Xpetra::Map<int,GlobalOrdinal,Xpetra::EpetraNode> > epmap = Xpetra::MapFactory<int,GlobalOrdinal,Xpetra::EpetraNode>::createUniformContigMap(Xpetra::UseEpetra, 100, comm);	
 
