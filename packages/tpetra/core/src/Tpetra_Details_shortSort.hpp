@@ -54,6 +54,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Macros.hpp"
+#include <type_traits>
 
 namespace Tpetra {
 namespace Details {
