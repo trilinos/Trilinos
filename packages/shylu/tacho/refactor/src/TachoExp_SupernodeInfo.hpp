@@ -51,11 +51,10 @@ namespace Tacho {
       ConstUnmanagedViewType<size_type_array> super_panel_ptr;
       UnmanagedViewType<value_type_array> super_panel_buf;
 
-      ///
-      /// Phase 3: abr (schur complements)
-      ///
-      ConstUnmanagedViewType<size_type_array> super_schur_ptr;
-      UnmanagedViewType<value_type_array> super_schur_buf;
+      // ///
+      // /// Phase 3: abr (schur complements)
+      // ///
+      ordinal_type max_supernode_size, max_schur_size;
 
       ///
       /// Phase 4: solve (rhs multivector)
@@ -96,11 +95,16 @@ namespace Tacho {
       allocateSuperPanels(/* */ size_type_array &spanel_ptr,
                           /* */ value_type_array &spanel_buf,
                           const ordinal_type_array &work) {
+
+        max_schur_size = 0; 
+        max_supernode_size = 0;
         const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
         for (ordinal_type sid=0;sid<nsupernodes;++sid) {
           ordinal_type m, n;
           getSuperPanelSize(sid, m, n);
           work(sid) = m*n;
+          max_supernode_size = max(max_supernode_size, m);
+          max_schur_size = max(max_schur_size, n-m);
         }
 
         // prefix scan
@@ -110,59 +114,72 @@ namespace Tacho {
         spanel_buf = value_type_array("super_panel_buf", spanel_ptr(nsupernodes));
       }
 
-      inline
-      void
-      allocateWorkspacePerSupernode(/* */ size_type_array &schur_ptr,
-                                    /* */ value_type_array &schur_buf,
-                                    const ordinal_type_array &work) {
-        const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
-        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          // workspace for schur complement
-          ordinal_type m, n;
-          getSuperPanelSize(sid, m, n);
+      // inline
+      // void
+      // allocateWorkspacePerSupernode(/* */ size_type_array &schur_ptr,
+      //                               /* */ value_type_array &schur_buf,
+      //                               const ordinal_type_array &work) {
+      //   const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
+      //   for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+      //     // workspace for schur complement
+      //     ordinal_type m, n;
+      //     getSuperPanelSize(sid, m, n);
 
-          // workspace for update map
-          const ordinal_type
-            cbeg = blk_super_panel_colidx(sid_super_panel_ptr(sid)+1),
-            cend = blk_super_panel_colidx(sid_super_panel_ptr(sid+1)-1);
+      //     // workspace for update map
+      //     const ordinal_type
+      //       cbeg = blk_super_panel_colidx(sid_super_panel_ptr(sid)+1),
+      //       cend = blk_super_panel_colidx(sid_super_panel_ptr(sid+1)-1);
 
-          work(sid) = (m-n)*(m-n) + (cend - cbeg);
-        }
+      //     work(sid) = (m-n)*(m-n) + (cend - cbeg);
+      //   }
 
-        // prefix scan
-        schur_ptr = size_type_array("super_schur_ptr", nsupernodes+1);
-        for (ordinal_type sid=0;sid<nsupernodes;++sid)
-          schur_ptr(sid+1) = schur_ptr(sid) + work(sid);
-        schur_buf = value_type_array("super_schur_buf", schur_ptr(nsupernodes) + 1);
-      }
+      //   // prefix scan
+      //   schur_ptr = size_type_array("super_schur_ptr", nsupernodes+1);
+      //   for (ordinal_type sid=0;sid<nsupernodes;++sid)
+      //     schur_ptr(sid+1) = schur_ptr(sid) + work(sid);
+      //   schur_buf = value_type_array("super_schur_buf", schur_ptr(nsupernodes) + 1);
+      // }
 
-      inline
-      size_type
-      computeWorkspaceSerialChol() {
-        const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
-        size_type workspace = 0;
-        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          ordinal_type m, n;
-          getSuperPanelSize(sid, m, n);
-          workspace = max(workspace, (n-m)*(n-m));
-        }
-        return workspace;
-      }
+      // inline
+      // ordinal_type
+      // computeMaxSchurDimension() {
+      //   const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
+      //   ordinal_type max_schur_dimension = 0;
+      //   for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+      //     ordinal_type m, n;
+      //     getSuperPanelSize(sid, m, n);
+      //     max_schur_dimension = max(max_schur_dimension, (n-m));
+      //   }
+      //   return max_schur_dimension;
+      // }
 
-      inline
-      size_type
-      computeWorkspaceCholByBlocks(const ordinal_type mb) {
-        const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
-        size_type workspace = 0;
-        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          ordinal_type m, n;
-          getSuperPanelSize(sid, m, n);
+      // inline
+      // size_type
+      // computeWorkspaceSerialChol() {
+      //   const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
+      //   size_type workspace = 0;
+      //   for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+      //     ordinal_type m, n;
+      //     getSuperPanelSize(sid, m, n);
+      //     workspace = max(workspace, (n-m)*(n-m));
+      //   }
+      //   return workspace;
+      // }
 
-          const ordinal_type bm = m/mb + 1, bn = (n-m)/mb + 1;
-          workspace = max(workspace, bm*bm + bm*bn + bn*bn);
-        }
-        return workspace;
-      }
+      // inline
+      // size_type
+      // computeWorkspaceCholByBlocks(const ordinal_type mb) {
+      //   const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
+      //   size_type workspace = 0;
+      //   for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+      //     ordinal_type m, n;
+      //     getSuperPanelSize(sid, m, n);
+
+      //     const ordinal_type bm = m/mb + 1, bn = (n-m)/mb + 1;
+      //     workspace = max(workspace, bm*bm + bm*bn + bn*bn);
+      //   }
+      //   return workspace;
+      // }
 
       inline
       void

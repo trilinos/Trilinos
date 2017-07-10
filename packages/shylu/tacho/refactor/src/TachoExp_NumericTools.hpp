@@ -69,12 +69,12 @@ namespace Tacho {
 
       typedef Kokkos::TaskScheduler<device_exec_space> sched_type_device;
       typedef Kokkos::MemoryPool<device_exec_space> memory_pool_type_device;
-    
+
     private:
 
       ///
       /// supernode data structure memory "managed"
-      /// this holds all necessary connectivity data 
+      /// this holds all necessary connectivity data
       ///
 
       // matrix input
@@ -89,7 +89,7 @@ namespace Tacho {
       // supernodes input
       ordinal_type _nsupernodes;
       ordinal_type_array_host _supernodes;
-      
+
       // dof mapping to sparse matrix
       size_type_array_host _gid_super_panel_ptr;
       ordinal_type_array_host _gid_super_panel_colidx;
@@ -122,25 +122,25 @@ namespace Tacho {
       ///
       struct {
         double t_factor, t_solve, t_copy, t_extra;
-        double m_used, m_peak, m_sched;
+        double m_used, m_peak;
       } stat;
-      
+
     private:
 
-      inline 
+      inline
       void
       track_alloc(const double in) {
         stat.m_used += in;
         stat.m_peak  = max(stat.m_peak, stat.m_used);
       }
 
-      inline 
+      inline
       void
       track_free(const double out) {
         stat.m_used -= out;
       }
 
-      inline 
+      inline
       void
       reset_stat() {
         stat.t_factor = 0;
@@ -151,132 +151,148 @@ namespace Tacho {
         stat.m_peak = 0;
       }
 
-      inline 
-      void 
+      inline
+      void
       print_stat_factor() {
         printf("  Time\n");
-        printf("             time for copying A into U:         %10.6f s\n", stat.t_copy);
-        printf("             time for numeric factorization:    %10.6f s\n", stat.t_factor);
-        printf("             total time spent:                  %10.6f s\n", (stat.t_copy+stat.t_factor));
+        printf("             time for copying A into U:                       %10.6f s\n", stat.t_copy);
+        printf("             time for numeric factorization:                  %10.6f s\n", stat.t_factor);
+        printf("             total time spent:                                %10.6f s\n", (stat.t_copy+stat.t_factor));
         printf("\n");
         printf("  Memory\n");
-        printf("             memory used in factorization:      %10.2f MB\n", stat.m_used/1024/1024);
-        printf("             peak memory used in factorization: %10.2f MB\n", stat.m_peak/1024/1024);
+        printf("             memory used in factorization:                    %10.2f MB\n", stat.m_used/1024/1024);
+        printf("             peak memory used in factorization:               %10.2f MB\n", stat.m_peak/1024/1024);
       }
 
-      inline 
-      void 
+      inline
+      void
       print_stat_solve() {
         printf("  Time\n");
-        printf("             time for extra work e.g.,copy rhs: %10.6f s\n", stat.t_extra);
-        printf("             time for numeric solve:            %10.6f s\n", stat.t_solve);
-        printf("             total time spent:                  %10.6f s\n", (stat.t_solve+stat.t_extra));
+        printf("             time for extra work e.g.,copy rhs:               %10.6f s\n", stat.t_extra);
+        printf("             time for numeric solve:                          %10.6f s\n", stat.t_solve);
+        printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
         printf("\n");
       }
 
       inline
       void
-      recursiveSerialChol(const ordinal_type sid, 
-                          const size_type bufsize,
-                          /* */ void *buf) {
+      recursiveSerialChol(const ordinal_type sid,
+                          const memory_pool_type_host &bufpool) {
         // recursion
         {
-          const ordinal_type 
-            ibeg = _info.stree_ptr(sid), 
+          const ordinal_type
+            ibeg = _info.stree_ptr(sid),
             iend = _info.stree_ptr(sid+1);
-          
+
           for (ordinal_type i=ibeg;i<iend;++i)
-            recursiveSerialChol(_info.stree_children(i), bufsize, buf);
+            recursiveSerialChol(_info.stree_children(i), bufpool);
         }
 
         {
           // dummy member
           const ordinal_type sched = 0, member = 0;
 
-          ordinal_type m, n; _info.getSuperPanelSize(sid, m, n);          
-          UnmanagedViewType<value_type_matrix_host> ABR((value_type*)buf, n-m, n-m);
+          ordinal_type pm, pn; _info.getSuperPanelSize(sid, pm, pn);
+          const ordinal_type n = pn - pm;
+          const size_type bufsize = (n*n + _info.max_schur_size)*sizeof(value_type);
+
+          value_type *buf = (value_type*)bufpool.allocate(bufsize);
+          TACHO_TEST_FOR_ABORT(buf == NULL, "bufmemory pool allocation fails");                                   
+
+          UnmanagedViewType<value_type_matrix_host> ABR((value_type*)buf, n, n);
 
           CholSupernodes<Algo::Workflow::Serial>
             ::factorize(sched, member, _info, ABR, sid);
 
-          CholSupernodes<Algo::Workflow::Serial>          
-            ::update(sched, member, _info, ABR, sid, 
-                     bufsize - ABR.span()*sizeof(value_type), 
+          CholSupernodes<Algo::Workflow::Serial>
+            ::update(sched, member, _info, ABR, sid,
+                     bufsize - ABR.span()*sizeof(value_type),
                      (void*)((value_type*)buf + ABR.span()));
+
+          bufpool.deallocate(buf, bufsize);
         }
       }
 
       inline
       void
-      recursiveSerialSolveLower(const ordinal_type sid, 
-                                const size_type bufsize,
-                                /* */ void *buf,
+      recursiveSerialSolveLower(const ordinal_type sid,
+                                const memory_pool_type_host &bufpool,
                                 const bool final = false) {
         // recursion
         if (final) {
           // do nothing
         } else {
-          const ordinal_type 
-            ibeg = _info.stree_ptr(sid), 
+          const ordinal_type
+            ibeg = _info.stree_ptr(sid),
             iend = _info.stree_ptr(sid+1);
-          
+
           for (ordinal_type i=ibeg;i<iend;++i)
-            recursiveSerialSolveLower(_info.stree_children(i), bufsize, buf);
+            recursiveSerialSolveLower(_info.stree_children(i), bufpool);
         }
 
         {
           // dummy member
           const ordinal_type sched = 0, member = 0;
 
-          const ordinal_type nrhs = _info.x.dimension_1();
-          ordinal_type m, n; _info.getSuperPanelSize(sid, m, n);          
-          UnmanagedViewType<value_type_matrix_host> xB((value_type*)buf, n-m, nrhs);
+          ordinal_type pm, pn; _info.getSuperPanelSize(sid, pm, pn);
+          const ordinal_type n = pn - pm, nrhs = _info.x.dimension_1();
+          const size_type bufsize = max(n*nrhs,1)*sizeof(value_type);
+
+          value_type *buf = (value_type*)bufpool.allocate(bufsize);
+          TACHO_TEST_FOR_ABORT(buf == NULL, "bufmemory pool allocation fails");                                   
+
+          UnmanagedViewType<value_type_matrix_host> xB((value_type*)buf, n, nrhs);
 
           CholSupernodes<Algo::Workflow::Serial>
             ::solve_lower(sched, member, _info, xB, sid);
-          
-          CholSupernodes<Algo::Workflow::Serial>          
+
+          CholSupernodes<Algo::Workflow::Serial>
             ::update_solve_lower(sched, member, _info, xB, sid);
+
+          bufpool.deallocate(buf, bufsize);
         }
       }
 
       inline
       void
-      recursiveSerialSolveUpper(const ordinal_type sid, 
-                                const size_type bufsize,
-                                /* */ void *buf,
+      recursiveSerialSolveUpper(const ordinal_type sid,
+                                const memory_pool_type_host &bufpool,
                                 const bool final = false) {
         {
           // dummy member
           const ordinal_type sched = 0, member = 0;
 
-          const ordinal_type nrhs = _info.x.dimension_1();
-          ordinal_type m, n; _info.getSuperPanelSize(sid, m, n);          
+          ordinal_type pm, pn; _info.getSuperPanelSize(sid, pm, pn);
+          const ordinal_type n = pn - pm, nrhs = _info.x.dimension_1();
+          const size_type bufsize = max(n*nrhs,1)*sizeof(value_type);
 
-          UnmanagedViewType<value_type_matrix_host> xB((value_type*)buf, n-m, nrhs);
-          TACHO_TEST_FOR_ABORT(xB.span()*sizeof(value_type) > bufsize,
-                               "xB uses greater than bufsize");
+          value_type *buf = (value_type*)bufpool.allocate(bufsize);
+          TACHO_TEST_FOR_ABORT(buf == NULL, "bufmemory pool allocation fails");                                   
 
-          CholSupernodes<Algo::Workflow::Serial>          
+          UnmanagedViewType<value_type_matrix_host> xB((value_type*)buf, n, nrhs);
+
+          CholSupernodes<Algo::Workflow::Serial>
             ::update_solve_upper(sched, member, _info, xB, sid);
 
           CholSupernodes<Algo::Workflow::Serial>
-            ::solve_upper(sched, member, _info, xB, sid);          
+            ::solve_upper(sched, member, _info, xB, sid);
+
+          bufpool.deallocate(buf, bufsize);
         }
 
         // recursion
         if (final) {
           // do nothing
         } else {
-          const ordinal_type 
-            ibeg = _info.stree_ptr(sid), 
+          const ordinal_type
+            ibeg = _info.stree_ptr(sid),
             iend = _info.stree_ptr(sid+1);
-          
+
           for (ordinal_type i=ibeg;i<iend;++i)
-            recursiveSerialSolveUpper(_info.stree_children(i), bufsize, buf);
+            recursiveSerialSolveUpper(_info.stree_children(i), bufpool);
         }
       }
-      
+
     public:
       NumericTools() = default;
       NumericTools(const NumericTools &b) = default;
@@ -323,18 +339,22 @@ namespace Tacho {
           _stree_roots(stree_roots) {
         ///
         /// symbolic input
-        /// 
+        ///
         _info.supernodes             = _supernodes;
         _info.gid_super_panel_ptr    = _gid_super_panel_ptr;
         _info.gid_super_panel_colidx = _gid_super_panel_colidx;
-        
+
         _info.sid_super_panel_ptr    = _sid_super_panel_ptr;
         _info.sid_super_panel_colidx = _sid_super_panel_colidx;
         _info.blk_super_panel_colidx = _blk_super_panel_colidx;
-        
+
         _info.stree_ptr              = _stree_ptr;
         _info.stree_children         = _stree_children;
       }
+
+      ///
+      /// Serial
+      /// ------
 
       inline
       void
@@ -349,39 +369,49 @@ namespace Tacho {
           /// matrix values
           _ax = ax;
 
-          /// allocate super panels 
-          ordinal_type_array_host iwork("work", _m+1); 
+          /// allocate super panels
+          ordinal_type_array_host iwork("work", _m+1);
           _info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
 
           track_alloc(iwork.span()*sizeof(ordinal_type));
           track_alloc(_super_panel_ptr.span()*sizeof(size_type));
           track_alloc(_super_panel_buf.span()*sizeof(value_type));
-        
+
           /// assign data structure into info
           _info.super_panel_ptr = _super_panel_ptr;
           _info.super_panel_buf = _super_panel_buf;
-          
+
           /// copy the input matrix into super panels
           _info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
 
           track_free(iwork.span()*sizeof(ordinal_type));
         }
         stat.t_copy += timer.seconds();
-                
-        timer.reset();
-        {
-          /// maximum workspace size for serial run
-          const size_type worksize = _info.computeWorkspaceSerialChol() + _m + 1;
-          value_type_array_host work("work", worksize);
 
-          track_alloc(work.span()*sizeof(value_type));
+        timer.reset();
+        memory_pool_type_host bufpool;
+        typedef typename host_exec_space::memory_space memory_space;          
+        {
+          const size_type
+            min_block_size  = 1,
+            max_block_size  = _info.max_schur_size*(_info.max_schur_size + 1)*sizeof(value_type),
+            memory_capacity = max_block_size,
+            superblock_size = max_block_size;
+
+          bufpool = memory_pool_type_host(memory_space(),
+                                          memory_capacity,
+                                          min_block_size,
+                                          max_block_size,
+                                          superblock_size);
+          
+          track_alloc(bufpool.capacity());
 
           /// recursive tree traversal
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
-            recursiveSerialChol(_stree_roots(i), work.span()*sizeof(value_type), work.data());
+            recursiveSerialChol(_stree_roots(i), bufpool);
 
-          track_free(work.span()*sizeof(value_type));
+          track_free(bufpool.capacity());
         }
         stat.t_factor += timer.seconds();
         
@@ -400,17 +430,17 @@ namespace Tacho {
                            const value_type_matrix_host &t,
                            const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
         TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
-                                 x.dimension_1() != b.dimension_1() || 
+                                 x.dimension_1() != b.dimension_1() ||
                                  x.dimension_0() != t.dimension_0() ||
                                  x.dimension_1() != t.dimension_1(), std::logic_error,
                                  "supernode data structure is not allocated");
 
-        TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() || 
+        TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
                                  x.data() == t.data() ||
                                  t.data() == b.data(), std::logic_error,
                                  "x, b and t have the same data pointer");
 
-        TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL || 
+        TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
                                  _info.super_panel_buf.data() == NULL, std::logic_error,
                                  "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
 
@@ -424,29 +454,40 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         timer.reset();
+        memory_pool_type_host bufpool;
+        typedef typename host_exec_space::memory_space memory_space;          
         {
-          /// maximum workspace size for serial run
-          const size_type worksize = sqrt(_info.computeWorkspaceSerialChol())*x.dimension_1() + _m;
-          value_type_array_host work("work", worksize);
+          const size_type
+            min_block_size  = 1,
+            max_block_size  = (_info.max_schur_size)*(x.dimension_1())*sizeof(value_type),
+            memory_capacity = max_block_size,
+            superblock_size = max_block_size;
+          
+          bufpool = memory_pool_type_host(memory_space(),
+                                          memory_capacity,
+                                          min_block_size,
+                                          max_block_size,
+                                          superblock_size);
 
+          track_alloc(bufpool.capacity());
+          
           /// recursive tree traversal
           constexpr bool final = false;
           if (final) {
-            const ordinal_type bufsize = work.span()*sizeof(value_type);
             for (ordinal_type sid=0;sid<_nsupernodes;++sid)
-              recursiveSerialSolveLower(sid, bufsize, work.data(), true);
+              recursiveSerialSolveLower(sid, bufpool, true);
             for (ordinal_type sid=(_nsupernodes-1);sid>=0;--sid)
-              recursiveSerialSolveUpper(sid, bufsize, work.data(), true);
+              recursiveSerialSolveUpper(sid, bufpool, true);
           } else {
             const ordinal_type nroots = _stree_roots.dimension_0();
             for (ordinal_type i=0;i<nroots;++i)
-              recursiveSerialSolveLower(_stree_roots(i), work.span()*sizeof(value_type), work.data());            
+              recursiveSerialSolveLower(_stree_roots(i), bufpool);
             for (ordinal_type i=0;i<nroots;++i)
-              recursiveSerialSolveUpper(_stree_roots(i), work.span()*sizeof(value_type), work.data());
+              recursiveSerialSolveUpper(_stree_roots(i), bufpool);
           }
         }
         stat.t_solve += timer.seconds();
-        
+
         // copy t -> x
         timer.reset();
         applyRowPermutation(x, t, _perm);
@@ -459,6 +500,10 @@ namespace Tacho {
           print_stat_solve();
         }
       }
+
+      ///
+      /// Kokkos Tasking
+      /// --------------
 
       inline
       void
@@ -479,8 +524,8 @@ namespace Tacho {
 
           track_alloc(iwork.span()*sizeof(ordinal_type));
           track_alloc(_super_panel_ptr.span()*sizeof(size_type));
-          track_alloc(_super_panel_buf.span()*sizeof(value_type));        
-          
+          track_alloc(_super_panel_buf.span()*sizeof(value_type));
+
           /// assign data structure into info
           _info.super_panel_ptr = _super_panel_ptr;
           _info.super_panel_buf = _super_panel_buf;
@@ -488,16 +533,7 @@ namespace Tacho {
           /// copy the input matrix into super panels
           _info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
 
-          /// allocate schur complement workspace (this uses maximum preallocated workspace)
-          _info.allocateWorkspacePerSupernode(_super_schur_ptr, _super_schur_buf, iwork);
-
-          track_alloc(_super_schur_ptr.span()*sizeof(size_type));
-          track_alloc(_super_schur_buf.span()*sizeof(value_type));        
-
-          _info.super_schur_ptr = _super_schur_ptr;
-          _info.super_schur_buf = _super_schur_buf;
-
-          track_free(iwork.span()*sizeof(ordinal_type));          
+          track_free(iwork.span()*sizeof(ordinal_type));
         }
         stat.t_copy += timer.seconds();
 
@@ -505,35 +541,56 @@ namespace Tacho {
           timer.reset();
           typedef typename sched_type_host::memory_space memory_space;
           typedef TaskFunctor_CholSupernodes<value_type,host_exec_space> chol_supernode_functor_type;
-          
+          typedef Kokkos::Future<int,host_exec_space> future_type;
+
           sched_type_host sched;
           {
-            int nchildren = 0;
-            const int nsupernodes = _stree_ptr.dimension_0() - 1;
-            for (ordinal_type sid=0;sid<nsupernodes;++sid)
-              nchildren = max(nchildren, _stree_ptr(sid+1) - _stree_ptr(sid));
+            ordinal_type max_children_size = 0;
+            for (ordinal_type sid=0;sid<_nsupernodes;++sid)
+              max_children_size = max(max_children_size, _stree_ptr(sid+1) - _stree_ptr(sid));
 
-            const size_type max_dep_future_size 
-              = nchildren > MaxDependenceSize ? sizeof(Kokkos::Future<int,host_exec_space>)*nchildren : 16;
-            
+            const size_type max_dep_future_size = max_children_size*sizeof(future_type);
             const size_type max_functor_size = sizeof(chol_supernode_functor_type);
             const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
-            
-            const ordinal_type
-              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size, 
-              min_block_size  = min(max_dep_future_size,max_functor_size),
-              max_block_size  = max(max_dep_future_size,max_functor_size),
-              num_superblock  = 32,
+
+            const size_type
+              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+              min_block_size  = 1,
+              max_block_size  = ( max_dep_future_size +
+                                  max_functor_size ),
+              num_superblock  = 32, // various small size blocks
               superblock_size = task_queue_capacity/num_superblock;
-            
+
             sched = sched_type_host(memory_space(),
                                     task_queue_capacity,
                                     min_block_size,
                                     max_block_size,
                                     superblock_size);
 
-            track_alloc(task_queue_capacity);
-            stat.m_sched = task_queue_capacity;
+            track_alloc(sched.memory()->capacity());
+          }
+
+          memory_pool_type_host bufpool;
+          {
+            size_type superblock_size = 1;
+            const size_type
+              min_block_size  = 1,
+              max_block_size  = (_info.max_schur_size*_info.max_schur_size +
+                                 _info.max_schur_size)*sizeof(value_type)*2;
+            for ( ;superblock_size<max_block_size;superblock_size*=2);
+
+            const size_type
+              num_superblock  = host_exec_space::thread_pool_size(0), // , 4), // # of threads is safe number
+              //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // # of threads is safe number
+              memory_capacity = num_superblock*superblock_size;
+
+            bufpool = memory_pool_type_host(memory_space(),
+                                            memory_capacity,
+                                            min_block_size,
+                                            max_block_size,
+                                            superblock_size);
+
+            track_alloc(bufpool.capacity());
           }
           stat.t_extra += timer.seconds();
 
@@ -541,20 +598,12 @@ namespace Tacho {
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               chol_supernode_functor_type(sched, _info, _stree_roots(i)));
+                               chol_supernode_functor_type(sched, bufpool, _info, _stree_roots(i)));
           Kokkos::wait(sched);
           stat.t_factor = timer.seconds();
 
-          track_free(_super_schur_ptr.span()*sizeof(size_type));
-          track_free(_super_schur_buf.span()*sizeof(value_type));        
-
-          _info.super_schur_ptr = size_type_array_host();
-          _info.super_schur_buf = value_type_array_host();
-          
-          _super_schur_ptr = size_type_array_host();
-          _super_schur_buf = value_type_array_host();
-
-          track_free(stat.m_sched); 
+          track_free(bufpool.capacity());
+          track_free(sched.memory()->capacity());
         }
 
         if (verbose) {
@@ -565,12 +614,13 @@ namespace Tacho {
         }
       }
 
+
       ///
       /// utility
       ///
-      static 
+      static
       inline
-      double 
+      double
       computeResidual(const crs_matrix_type_host &A,
                       const value_type_matrix_host &x,
                       const value_type_matrix_host &b) {
@@ -580,7 +630,7 @@ namespace Tacho {
                                  x.dimension_1() != b.dimension_1(), std::logic_error,
                                  "A,x and b dimensions are not compatible");
 
-        const ordinal_type m = A.NumRows(), k = b.dimension_1();        
+        const ordinal_type m = A.NumRows(), k = b.dimension_1();
         double diff = 0, norm = 0;
         for (ordinal_type p=0;p<k;++p) {
           for (ordinal_type i=0;i<m;++i) {
@@ -598,13 +648,13 @@ namespace Tacho {
       }
 
       inline
-      double 
+      double
       computeResidual(const value_type_matrix_host &x,
                       const value_type_matrix_host &b) {
         crs_matrix_type_host A;
         A.setExternalMatrix(_m, _m, _ap(_m),
                             _ap, _aj, _ax);
-                            
+
         return computeResidual(A, x, b);
       }
 
@@ -612,7 +662,7 @@ namespace Tacho {
       crs_matrix_type_host
       exportFactorsToCrsMatrix(const bool replace_value_with_one = false) {
         /// this only avail after factorization is done
-        TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL || 
+        TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
                                  _info.super_panel_buf.data() == NULL, std::logic_error,
                                  "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
 
@@ -632,21 +682,21 @@ namespace Tacho {
       //     info.supernodes             = _supernodes;
       //     info.gid_super_panel_ptr    = _gid_super_panel_ptr;
       //     info.gid_super_panel_colidx = _gid_super_panel_colidx;
-          
+
       //     info.sid_super_panel_ptr    = _sid_super_panel_ptr;
       //     info.sid_super_panel_colidx = _sid_super_panel_colidx;
       //     info.blk_super_panel_colidx = _blk_super_panel_colidx;
-          
+
       //     info.stree_ptr              = _stree_ptr;
       //     info.stree_children         = _stree_children;
       //   }
-        
+
       //   {
       //     /// factor allocation and copy the matrix
       //     ordinal_type_array_host iwork("work", _m+1);
 
       //     info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
-          
+
       //     info.super_panel_ptr = _super_panel_ptr;
       //     info.super_panel_buf = _super_panel_buf;
 
@@ -657,23 +707,23 @@ namespace Tacho {
       //     typedef typename sched_type_host::memory_space memory_space;
       //     typedef TaskFunctor_CholSupernodes_ByBlocks<value_type,host_exec_space> chol_supernode_byblocks_functor_type;
 
-      //     const ordinal_type 
-      //       small = 32, 
-      //       blksize = (mb < small ? small : mb), 
+      //     const ordinal_type
+      //       small = 32,
+      //       blksize = (mb < small ? small : mb),
       //       max_future_array_size = info.computeWorkspaceCholByBlocks(blksize)*sizeof(Kokkos::Future<int,exec_space>);
 
       //     sched_type_host sched;
       //     {
       //       const size_type max_functor_size = sizeof(chol_supernode_byblocks_functor_type);
       //       const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
-            
+
       //       const ordinal_type
-      //         task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size, 
+      //         task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
       //         min_block_size  = min(max_future_array_size,max_functor_size),
       //         max_block_size  = max(max_future_array_size,max_functor_size),
       //         num_superblock  = 32,
       //         superblock_size = task_queue_capacity/num_superblock;
-            
+
       //       sched = sched_type_host(memory_space(),
       //                               task_queue_capacity,
       //                               min_block_size,
@@ -689,14 +739,14 @@ namespace Tacho {
       //         superblock_size = info.computeWorkspaceSerialChol()*sizeof(value_type),
       //         num_superblock  = 4,
       //         pool_memory_capacity = num_superblock*superblock_size;
-            
-      //       bufpool = memory_pool_type_host(memory_space(), 
+
+      //       bufpool = memory_pool_type_host(memory_space(),
       //                                       pool_memory_capacity,
       //                                       min_block_size,
       //                                       max_block_size,
       //                                       superblock_size);
       //     }
-          
+
       //     const ordinal_type nroots = _stree_roots.dimension_0();
       //     for (ordinal_type i=0;i<nroots;++i)
       //       Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
@@ -707,11 +757,11 @@ namespace Tacho {
       //     sched.memory()->print_state(std::cout);
 
       //     std::cout << " -- buffer memory pool -- \n";
-      //     bufpool.memory()->print_state(std::cout);          
+      //     bufpool.memory()->print_state(std::cout);
       //   }
       // }
 
-      
+
     };
 
   }

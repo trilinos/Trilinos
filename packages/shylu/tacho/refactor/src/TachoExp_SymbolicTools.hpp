@@ -483,7 +483,7 @@ namespace Tacho {
       struct {
         ordinal_type nrows, nroots;
         ordinal_type nnz_a, nnz_u;
-        ordinal_type nsupernodes, largest_supernode;
+        ordinal_type nsupernodes, largest_supernode, largest_schur;
       } stat;
 
     public:
@@ -618,9 +618,14 @@ namespace Tacho {
         stat.nnz_u = ap(_m);
         stat.nsupernodes = _supernodes.dimension_0() - 1;
         stat.largest_supernode = 0;
-        for (ordinal_type k=0;k<stat.nsupernodes;++k)
-          stat.largest_supernode = max(stat.largest_supernode, _supernodes(k+1) - _supernodes(k));
-
+        stat.largest_schur = 0;
+        for (ordinal_type sid=0;sid<stat.nsupernodes;++sid) {
+          const ordinal_type m = _supernodes(sid+1) - _supernodes(sid);
+          const ordinal_type n = _blk_super_panel_colidx(_sid_super_panel_ptr(sid+1)-1);
+ 
+          stat.largest_supernode = max(stat.largest_supernode, m);
+          stat.largest_schur     = max(stat.largest_schur,     n-m);
+        }
         track_alloc(ap.span()*sizeof(size_type));
         track_alloc(aj.span()*sizeof(ordinal_type));
 
@@ -671,18 +676,19 @@ namespace Tacho {
             printf("             total time spent:                                %10.6f s\n", (t_symfact+t_supernode+t_extra));
             printf("\n");            
             printf("  Linear system A\n");
-            printf("             number of equations:       %10d\n", stat.nrows);
-            printf("             number of nonzeros:        %10d (%5.2f %% )\n", stat.nnz_a, double(stat.nnz_a)/double(stat.nrows*stat.nrows)*100);
+            printf("             number of equations:                             %10d\n", stat.nrows);
+            printf("             number of nonzeros:                              %10d (%5.2f %% )\n", stat.nnz_a, double(stat.nnz_a)/double(stat.nrows*stat.nrows)*100);
             printf("\n");
             printf("  Factors U\n");
-            printf("             number of nonzeros:        %10d (%5.2f %% )\n", stat.nnz_u, double(stat.nnz_u)/double(stat.nrows*stat.nrows)/2.0*100);
-            printf("             number of subgraphs:       %10d\n", stat.nroots);
-            printf("             number of supernodes:      %10d\n", stat.nsupernodes);
-            printf("             size of largest supernode: %10d\n", stat.largest_supernode);
+            printf("             number of nonzeros:                              %10d (%5.2f %% )\n", stat.nnz_u, double(stat.nnz_u)/double(stat.nrows*stat.nrows)/2.0*100);
+            printf("             number of subgraphs:                             %10d\n", stat.nroots);
+            printf("             number of supernodes:                            %10d\n", stat.nsupernodes);
+            printf("             size of largest supernode:                       %10d\n", stat.largest_supernode);
+            printf("             size of largest schur size:                      %10d\n", stat.largest_schur);
             printf("\n");
             printf("  Memory\n");
-            printf("             memory used:      %10.2f MB\n", m_used/1024/1024);
-            printf("             peak memory used: %10.2f MB\n", m_peak/1024/1024);
+            printf("             memory used:                                     %10.2f MB\n", m_used/1024/1024);
+            printf("             peak memory used:                                %10.2f MB\n", m_peak/1024/1024);
             printf("\n");
           }          
           }

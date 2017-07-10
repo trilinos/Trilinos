@@ -20,6 +20,9 @@ namespace Tacho {
 
       typedef Kokkos::TaskScheduler<exec_space> sched_type;
       typedef typename sched_type::member_type member_type;
+
+      typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
+
       typedef int value_type; // functor return type
       typedef Kokkos::Future<int,exec_space> future_type;
 
@@ -30,7 +33,8 @@ namespace Tacho {
 
     private:
       sched_type _sched;
-      
+      memory_pool_type _bufpool;
+
       supernode_info_type _info;
       ordinal_type _sid;
       
@@ -43,9 +47,11 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       TaskFunctor_CholSupernodes(const sched_type &sched,
+                                 const memory_pool_type &bufpool,
                                  const supernode_info_type &info,
                                  const ordinal_type sid)                                     
         : _sched(sched),
+          _bufpool(bufpool),
           _info(info),
           _sid(sid),
           _state(0) {}
@@ -65,16 +71,19 @@ namespace Tacho {
           if (is_execute) { 
             typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-            const ordinal_type 
-              bbeg = _info.super_schur_ptr[_sid],
-              bend = _info.super_schur_ptr[_sid+1],
-              bufsize = (bend - bbeg)*sizeof(mat_value_type);
-
-            void *buf = (void*)&_info.super_schur_buf[bbeg];
-
-            ordinal_type m, n; _info.getSuperPanelSize(_sid, m, n);
-            UnmanagedViewType<value_type_matrix> ABR((mat_value_type*)buf, n-m, n-m);
-
+            ordinal_type pm, pn; _info.getSuperPanelSize(_sid, pm, pn);
+            const ordinal_type n = pn - pm;
+            const size_type bufsize = (n*n + 
+                                       _info.max_schur_size)*sizeof(mat_value_type);
+            
+            mat_value_type *buf = (mat_value_type*)_bufpool.allocate(bufsize);
+            // if (buf == NULL) {
+            //   printf("requested = %u", bufsize);
+            //   _bufpool.print_state(std::cout);
+            // }
+            TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
+            
+            UnmanagedViewType<value_type_matrix> ABR((mat_value_type*)buf, n, n);
             CholSupernodes<Algo::Workflow::Serial>
               ::factorize(_sched, member,
                           _info, ABR, _sid);
@@ -82,8 +91,10 @@ namespace Tacho {
             CholSupernodes<Algo::Workflow::Serial>
               ::update(_sched, member,
                        _info, ABR, _sid,
-                       bufsize - ABR.span()*sizeof(mat_value_type),
+                       (bufsize - ABR.span()*sizeof(mat_value_type)),
                        (void*)((mat_value_type*)buf + ABR.span()));
+            
+            _bufpool.deallocate(buf, bufsize);
             
             // this is done
             _state = 2;
@@ -103,7 +114,7 @@ namespace Tacho {
               
               const ordinal_type child = _info.stree_children(i+ibeg);
               auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, priority),
-                                          TaskFunctor_CholSupernodes(_sched,_info, child));
+                                          TaskFunctor_CholSupernodes(_sched, _bufpool, _info, child));
               TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
               dep[i] = f;
             }
