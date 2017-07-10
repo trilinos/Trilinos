@@ -95,6 +95,14 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   "-DMueLu_INST_DOUBLE_INT_LONGINT:BOOL=ON"
   "-DTPL_ENABLE_Matio:BOOL=OFF"
+
+  # wcmclen: 2017-07-10: Disabling tests Anasazi_Epetra_OrthoManagerGenTester_1_MPI_4 and
+  #                      Anasazi_Epetra_ModalSolversTester_MPI_4 due to unstable behaviour
+  #                      in testing.  Heidi has been looking into it but it appears that
+  #                      it's not an easy fix.
+  #                      Reference: Trilinos issue #1393 (https://github.com/trilinos/Trilinos/issues/1393)
+  "-DAnasazi_Epetra_ModalSolversTester_MPI_4_DISABLE:BOOL=ON"
+  "-DAnasazi_Epetra_OrthoManagerGenTester_1_MPI_4_DISABLE:BOOL=ON"
 )
 
 #"-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"
