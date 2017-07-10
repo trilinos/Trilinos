@@ -36,11 +36,25 @@ namespace Tacho {
           _buf(NULL), _future() {}
 
       KOKKOS_INLINE_FUNCTION
+      DenseMatrixView(      value_type *buf, 
+                      const ordinal_type m,
+                      const ordinal_type n)
+        : _offm(0), _offn(0), 
+          _m(m), _n(n), 
+          _rs(1), _cs(m),
+          _buf(buf), _future() {}
+
+      KOKKOS_INLINE_FUNCTION
       DenseMatrixView(const DenseMatrixView &b) 
         : _offm(b._offm), _offn(b._offn), 
           _m(b._m), _n(b._n), 
           _rs(b._rs), _cs(b._cs),
           _buf(b._buf), _future() {}
+
+      KOKKOS_INLINE_FUNCTION
+      value_type& operator[](const ordinal_type k) const {
+        return _buf[k];
+      }
 
       KOKKOS_INLINE_FUNCTION
       value_type& operator()(const ordinal_type i,
@@ -84,7 +98,7 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void set_future() { _future.~future_type(); }
-
+      
       /// get methods
 
       KOKKOS_INLINE_FUNCTION

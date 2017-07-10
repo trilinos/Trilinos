@@ -50,6 +50,9 @@ int main (int argc, char *argv[]) {
   int nrhs = 1;
   clp.setOption("nrhs", &nrhs, "Number of RHS vectors");
 
+  int mb = 0;
+  clp.setOption("mb", &mb, "Blocksize");
+
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -121,7 +124,10 @@ int main (int argc, char *argv[]) {
     if (serial) {
       N.factorizeCholesky_Serial(A.Values(), verbose);
     } else {
-      N.factorizeCholesky_Parallel(A.Values(), verbose);
+      if (mb > 0) 
+        N.factorizeCholesky_ParallelByBlocks(A.Values(), mb, verbose);
+      else
+        N.factorizeCholesky_Parallel(A.Values(), verbose);
     }
     t = timer.seconds();    
     std::cout << "CholSupernodes:: factorize matrix::time = " << t << std::endl;

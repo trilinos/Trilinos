@@ -23,6 +23,9 @@ namespace Tacho {
 
       typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix;
 
+      typedef DenseMatrixView<value_type,exec_space> dense_block_type;
+      typedef DenseMatrixView<dense_block_type,exec_space> dense_matrix_of_blocks_type;
+      
       typedef Kokkos::Future<int,exec_space> future_type;
       typedef Kokkos::View<future_type*,exec_space> future_type_array;
 

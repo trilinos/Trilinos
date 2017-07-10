@@ -6,8 +6,8 @@
 
 #include "TachoExp_Util.hpp"
 
-#include "TachoExp_CholSupernodes.hpp"
-#include "TachoExp_CholSupernodes_ByBlocks.hpp"
+// #include "TachoExp_CholSupernodes.hpp"
+// #include "TachoExp_CholSupernodes_ByBlocks.hpp"
 
 namespace Tacho {
   
@@ -20,17 +20,18 @@ namespace Tacho {
 
       typedef Kokkos::TaskScheduler<exec_space> sched_type;
       typedef typename sched_type::member_type member_type;
+
+      typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
+
       typedef int value_type; // functor return type
       typedef Kokkos::Future<int,exec_space> future_type;
 
-      typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
       typedef MatValueType mat_value_type; // matrix value type
-      typedef Kokkos::View<mat_value_type**,Kokkos::LayoutLeft,exec_space> mat_value_type_matrix;
 
       typedef SupernodeInfo<mat_value_type,exec_space> supernode_info_type;
-
-      typedef DenseBlock<mat_value_type,exec_space> dense_block_type;
-      typedef Kokkos::View<dense_block_type**,Kokkos::LayoutLeft,exec_space> dense_block_type_matrix;
+      typedef typename supernode_info_type::value_type_matrix mat_value_type_matrix;
+      typedef typename supernode_info_type::dense_block_type dense_block_type;
+      typedef typename supernode_info_type::dense_matrix_of_blocks_type dense_matrix_of_blocks_type;
 
     private:
       sched_type _sched;
@@ -45,8 +46,9 @@ namespace Tacho {
       // blocksize
       ordinal_type _mb;
 
-      // matrix of blocks
-      UnmanagedViewType<dense_block_type_matrix> _abr;
+      // abr and matrix of blocks
+      void *_buf;
+      size_type _bufsize;
 
     public:
       KOKKOS_INLINE_FUNCTION
@@ -63,11 +65,15 @@ namespace Tacho {
           _info(info),
           _sid(sid),
           _state(0),
-          _mb(mb) {}
+          _mb(mb),
+          _buf(NULL),
+          _bufsize(0) {}
       
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
         if (get_team_rank(member) == 0) {
+          TACHO_TEST_FOR_ABORT(_state > 2, "dead lock");
+
           // children information
           const ordinal_type 
             ibeg = _info.stree_ptr(_sid), 
@@ -82,16 +88,11 @@ namespace Tacho {
             ///
             /// atomic update to its parent 
             ///
-            if (_abr.span() > 0) {
-              const ordinal_type bm = _abr.dimension_0(), bn = _abr.dimension_1();
-              deallocateStorageByBlocks(_abr, _bufpool);
+            if (_bufsize) 
+              _bufpool.deallocate(_buf, _bufsize);
 
-              for (ordinal_type j=0;j<bn;++j)
-                for (ordinal_type i=0;i<bm;++i)
-                  _abr(i,j).future.~future_type();
-              
-              _sched.memory()->deallocate(_abr.data(), bm*bn*sizeof(dense_block_type));            
-            }
+            // update critical
+
             _state = 3; // done
             break;
           }
@@ -101,11 +102,11 @@ namespace Tacho {
             ///
 
             // get supernode panel pointer
-            mat_value_type *ptr = info.getSuperPanelPtr(sid);
+            mat_value_type *ptr = _info.getSuperPanelPtr(_sid);
 
             // characterize the panel size
             ordinal_type pm, pn;
-            info.getSuperPanelSize(sid, pm, pn);
+            _info.getSuperPanelSize(_sid, pm, pn);
 
             // panel is divided into diagonal and interface block (i.e., ATL and ATR)
             const ordinal_type m = pm, n = pn - pm;
@@ -113,66 +114,70 @@ namespace Tacho {
             // block matrix size
             const ordinal_type bm = m/_mb + (m%_mb > 0), bn = n/_mb + (n%_mb > 0);
 
+            // allocation for matrix of blocks
+            const size_type 
+              matrix_of_blocks_bufsize = (bm*bm + bm*bn + bn*bn)*sizeof(dense_block_type),
+              abr_bufsize = (n*n + _info.max_schur_size)*sizeof(mat_value_type),
+              bufsize = matrix_of_blocks_bufsize + abr_bufsize;
+            
+            char *buf = (char*)_bufpool.allocate(bufsize); 
+            TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufpool allocation fails");
+            clear((char*)buf, matrix_of_blocks_bufsize);
+
+            // assign buf information for deallocation
+            _buf = buf; _bufsize = bufsize;
+            
+            dense_matrix_of_blocks_type hbr;
+            
             // m and n are available, then factorize the supernode block
-            if (m > 0) {
-              dense_block_type
-                *atl_buf = (dense_block_type*)_sched.memory()->allocate(bm*bm*sizeof(dense_block_type));
-              TACHO_TEST_FOR_ABORT(atl_buf == NULL, "sched memory pool allocation fails");
-
-              _atl = UnmanagedViewType<dense_block_type_matrix>(atl_buf, bm, bm);
-              setMatrixOfBlocks(_atl, m, m, _mb);
-              attachBaseBuffer(_atl, ptr, m, m, _mb); ptr += m*m;
-
-              if (n > 0) {
-                dense_block_type
-                  *atr_buf = (dense_block_type*)_sched.memory()->allocate(bm*bn*sizeof(dense_block_type));
-                TACHO_TEST_FOR_ABORT(atr_buf == NULL, "sched memory pool allocation fails");
-
-                UnmanagedViewType<dense_block_type_matrix> atr(atr_buf, bm, bn);
-                setMatrixOfBlocks(atr, m, n, _mb);
-                attachBaseBuffer(atr, ptr, m, n, _mb);
+            if (m > 0) {              
+              dense_matrix_of_blocks_type htl((dense_block_type*)buf, bm, bm); 
+              buf += (bm*bm)*sizeof(dense_block_type);
               
-                dense_block_type
-                  *abr_buf = (dense_block_type*)_sched.memory()->allocate(bn*bn*sizeof(dense_block_type));
+              setMatrixOfBlocks(htl, m, m, _mb);
+              attachBaseBuffer(htl, ptr, m, m); ptr += m*m;
 
-                _abr = UnmanagedViewType<dense_block_type_matrix>(abr_buf, bn, bn);
-                setMatrixOfBlocks(_abr, n, n, _mb);
-                allocateStorageByBlocks(_abr, _bufpool);
+              // chol
+              
+              if (n > 0) {
+                dense_matrix_of_blocks_type htr((dense_block_type*)buf, bm, bn);
+                buf += (bm*bn)*sizeof(dense_block_type);
+                
+                setMatrixOfBlocks(htr, m, n, _mb);
+                attachBaseBuffer(htr, ptr, m, n); 
 
-                // in place destruction of atr
-                for (ordinal_type j=0;j<bn;++j)
-                  for (ordinal_type i=0;i<bm;++i)
-                    atr(i,j).future.~future_type();
-
-                _sched.memory()->deallocate(atr_buf, bm*bn*sizeof(dense_block_type));
+                // trsm
+                                
+                hbr = dense_matrix_of_blocks_type((dense_block_type*)buf, bn, bn);
+                buf += (bn*bn)*sizeof(dense_block_type);
+                
+                setMatrixOfBlocks(hbr, n, n, _mb);
+                attachBaseBuffer(hbr, (mat_value_type*)buf, n, n); 
+                
+                // herk
+                
+                for (ordinal_type k=0;k<(bm*bn);++k) htr[k].set_future();
               }
-
-              // in place destruction of atl
-              for (ordinal_type j=0;j<bm;++j)
-                for (ordinal_type i=0;i<bm;++i)
-                  atl(i,j).future.~future_type();
-
-              _sched.memory()->deallocate(atl_buf, bm*bm*sizeof(dense_block_type));
+              for (ordinal_type k=0;k<(bm*bm);++k) htl[k].set_future(future_type());
             }
 
-            if (_abr.span() > 0) {
-              const size_type depsize = _abr.span()*sizeof(future_type);
+            _state = 2;              
+            if (bn > 0) {
+              const size_type bn2 = bn*bn, depsize = bn2*sizeof(future_type);
               future_type *dep = (future_type*)_sched.memory()->allocate(depsize);
               TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
+              clear((char*)dep, depsize);
               
-              ordinal_type cnt = 0;
-              for (ordinal_type j=0;j<_abr.dimension_1();++j)
-                for (ordinal_type i=0;i<_abr.dimension_0();++i)
-                  dep[cnt++] = _abr(i,j).future;
-              
-              _state = 2;
-              Kokkos::respawn(this, Kokkos::when_all(dep, cnt), Kokkos::TaskPriority::Regular);
-              
-              // depedences
-              for (ordinal_type k=0;k<cnt;++k) (dep+k)->~future_type();
+              for (ordinal_type k=0;k<bn2;++k) { 
+                dep[k] = hbr[k].future();
+                hbr[k].set_future();
+              }
+              Kokkos::respawn(this, Kokkos::when_all(dep, bn2), Kokkos::TaskPriority::Regular);
+            
+              for (ordinal_type k=0;k<bn2;++k) (dep+k)->~future_type();
               _sched.memory()->deallocate((void*)dep, depsize);
             } else {
-              _state = 3; // done
+              Kokkos::respawn(this, future_type(), Kokkos::TaskPriority::Regular);
             }
             break;
           }
@@ -185,6 +190,7 @@ namespace Tacho {
             if (depsize) {
               dep = (future_type*)_sched.memory()->allocate(depsize);
               TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
+              clear((char*)dep, depsize);
             }
             
             // spawn children tasks and this (their parent) depends on the children tasks
@@ -194,7 +200,7 @@ namespace Tacho {
               
               const ordinal_type child = _info.stree_children(i+ibeg);
               auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, priority),
-                                          TaskFunctor_CholSupernodes_ByBlocks(_sched, _bufpool, _info, child, _sid, _mb));
+                                          TaskFunctor_CholSupernodes_ByBlocks(_sched, _bufpool, _info, child, _mb));
               TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
               dep[i] = f;
             }
@@ -206,7 +212,7 @@ namespace Tacho {
             // deallocate dependence array
             if (depsize) {
               // manually reset future to decrease the reference count
-              for (ordinal_type i=0;i<isize;++i) dep[i] = future_type();
+              for (ordinal_type i=0;i<isize;++i) (dep+i)->~future_type();
               _sched.memory()->deallocate((void*)dep, depsize);
             }            
             break;

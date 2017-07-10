@@ -73,14 +73,18 @@ namespace Tacho {
 
             ordinal_type pm, pn; _info.getSuperPanelSize(_sid, pm, pn);
             const ordinal_type n = pn - pm;
-            const size_type bufsize = (n*n + 
-                                       _info.max_schur_size)*sizeof(mat_value_type);
-            
-            mat_value_type *buf = (mat_value_type*)_bufpool.allocate(bufsize);
-            // if (buf == NULL) {
-            //   printf("requested = %u", bufsize);
-            //   _bufpool.print_state(std::cout);
-            // }
+            const size_type bufrequest = (n*n + _info.max_schur_size)*sizeof(mat_value_type);
+            const size_type bufsize = bufrequest > 0 ? max(bufrequest, _bufpool.min_block_size()) : 0;
+            mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
+//             if (buf == NULL && bufsize > 0) 
+//                {
+//               //Kokkos::respawn(this, Kokkos::TaskPriority::Regular);              
+// #pragma omp critical 
+//               {
+//                 std::cout << "requested = " << bufsize << " , min block size = " << _bufpool.min_block_size() << "\n";
+//                 _bufpool.print_state(std::cout);
+//               }
+//             }
             TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
             
             UnmanagedViewType<value_type_matrix> ABR((mat_value_type*)buf, n, n);
@@ -105,6 +109,7 @@ namespace Tacho {
             if (depsize) {
               dep = (future_type*)_sched.memory()->allocate(depsize);
               TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
+              clear((char*)dep, depsize);
             }
 
             // spawn children tasks and this (their parent) depends on the children tasks
@@ -126,7 +131,7 @@ namespace Tacho {
             // deallocate dependence array
             if (depsize) {
               // manually reset future to decrease the reference count
-              for (ordinal_type i=0;i<isize;++i) dep[i] = future_type();
+              for (ordinal_type i=0;i<isize;++i) (dep+i)->~future_type();
               _sched.memory()->deallocate((void*)dep, depsize);
             }
           } 

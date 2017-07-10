@@ -206,6 +206,15 @@ namespace Tacho {
       Ta c(a); a = b; b = c;
     }
 
+    KOKKOS_FORCEINLINE_FUNCTION
+    static void clear(char *buf, size_type bufsize) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      memset(buf, 0, bufsize);
+#else
+      for (size_type i=0;i<bufsize;++i) buf[i] = 0;
+#endif
+    } 
+
     template<typename ValueType>
     struct Random;
 
