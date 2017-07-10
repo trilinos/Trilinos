@@ -222,11 +222,13 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
         // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
         LO myBlkSize = 0, blkSize = 0;
-        MUELU_TEST_FOR_EXCEPTION(nodeNumElts == 0 || rebalanceImporter->getSourceMap()->getNodeNumElements() % nodeNumElts != 0,
-                Exceptions::RuntimeError,
-                "MueLu::RebalanceBlockInterpolationFactory::Build: block size. " << rebalanceImporter->getSourceMap()->getNodeNumElements() << " not divisable by " << nodeNumElts);
-        if (nodeNumElts > 0)
+
+        if (nodeNumElts > 0) {
+          MUELU_TEST_FOR_EXCEPTION(rebalanceImporter->getSourceMap()->getNodeNumElements() % nodeNumElts != 0,
+                          Exceptions::RuntimeError,
+                          "MueLu::RebalanceBlockInterpolationFactory::Build: block size. " << rebalanceImporter->getSourceMap()->getNodeNumElements() << " not divisable by " << nodeNumElts);
           myBlkSize = rebalanceImporter->getSourceMap()->getNodeNumElements() / nodeNumElts;
+        }
 
         MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
