@@ -174,6 +174,8 @@ Piro::Epetra::NOXSolver::NOXSolver(
   globalData = LOCA::createGlobalData(piroParams, epetraFactory);
   LOCA::Epetra::TransposeLinearSystem::Factory tls_factory(globalData);
   tls_strategy = tls_factory.create(piroParams, linsys);
+  current_iteration = -1;
+  writeOnlyConvergedSol = piroParams->get("Write Only Converged Solution", true);
 }
 
 Piro::Epetra::NOXSolver::~NOXSolver()
@@ -303,6 +305,47 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::NOXSolver::createOutArgs() cons
 void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 				const OutArgs& outArgs ) const
 {
+  bool observeFinalSolution = true;
+
+  //For Analysis problems we typically do not want to write the solution at each NOX solver.
+  //Instead we write at every "write interval" iterations of optimization solver.
+  //If write_interval == -1, we print after every successful NOX solver
+  //If write_inteval == 0 we ever print.
+  //This relies on the fact that sensitivities are always called by ROL at each iteration to asses whether the solver is converged 
+  //TODO: when write_interval>1, at the moment there is no guarantee that the final iteration of the optimization (i.e. the converged solution) gets printed
+
+  //When write_interval>0 we print only after computing the sensitivities, 
+  //to make sure to print them updated if required. 
+  bool solving_sensitivities = false;
+  for (int i=0; i<num_p; i++) {
+    for (int j=0; j<num_g; j++) {
+      if (!outArgs.supports(OUT_ARG_DgDp, j, i).none() && !outArgs.get_DgDp(j,i).isEmpty()) {
+        solving_sensitivities = true;
+        break;
+      }
+    }
+  }
+  if(piroParams->isSublist("Analysis")){
+  auto analysisParams = piroParams->sublist("Analysis");
+    if(analysisParams.isSublist("Optimization Status")){
+      auto optimizationParams = analysisParams.sublist("Optimization Status");
+      if(optimizationParams.isParameter("Optimizer Iteration Number")) {
+        int iteration = optimizationParams.get<int>("Optimizer Iteration Number");
+        int write_interval = analysisParams.get("Write Interval",1);
+        Teuchos::RCP<Teuchos::ParameterList> writeParams = Teuchos::rcp(new Teuchos::ParameterList());
+        if (write_interval > 0) {
+          observeFinalSolution = (iteration >= 0 && solving_sensitivities && iteration != current_iteration) ? (iteration%write_interval == 0) : false;
+          if(observeFinalSolution)
+            current_iteration = iteration;
+        }
+        else if (write_interval == 0)
+          observeFinalSolution = false;
+        else if (write_interval == -1)
+          observeFinalSolution = true;
+      }
+    }
+  }
+
   // Parse input parameters
   for (int i=0; i<num_p; i++) {
     Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(i);
@@ -944,7 +987,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
     linSys->destroyPreconditioner();
   }
 
-  if (status == NOX::StatusTest::Converged) 
+  if ((status == NOX::StatusTest::Converged || !writeOnlyConvergedSol) && observeFinalSolution)
     if (observer != Teuchos::null)
       observer->observeSolution(*finalSolution);
 

@@ -130,7 +130,7 @@ Piro::PerformAnalysis(
   else if (analysis == "ROL") {
     *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
     status = Piro::PerformROLAnalysis(piroModel,
-                          analysisParams.sublist("ROL"), result);
+                          analysisParams, result);
 
   }
 #endif
@@ -297,9 +297,10 @@ Piro::PerformOptiPackAnalysis(
 int
 Piro::PerformROLAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& rolParams,
+    Teuchos::ParameterList& analysisParams,
     RCP< Thyra::VectorBase<double> >& p)
 {
+  auto rolParams = analysisParams.sublist("ROL");
 #ifdef HAVE_PIRO_ROL
   using std::string;
 
@@ -333,7 +334,7 @@ Piro::PerformROLAnalysis(
   ROL::ThyraVector<double> rol_p(p_prod);
 
 
-  ROL::ThyraProductME_Objective<double> obj(piroModel, g_index, p_indices);
+  ROL::ThyraProductME_Objective<double> obj(piroModel, g_index, p_indices, Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false));
 
   bool print = rolParams.get<bool>("Print Output", false);
 
@@ -472,6 +473,7 @@ Piro::getValidPiroAnalysisParameters()
   validPL->sublist("GlobiPack", false, "");
   validPL->sublist("Dakota",    false, "");
   validPL->sublist("ROL",       false, "");
+  validPL->set<int>("Write Interval", 1, "Iterval between writes to mesh");
 
   return validPL;
 }
