@@ -37,6 +37,7 @@ export http_proxy="http://sonproxy.sandia.gov:80"
 export CUDA_LAUNCH_BLOCKING=1
 export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 export OMP_NUM_THREADS=2
+export OMP_PROC_BIND=false
 
 # Machine independent cron_driver:
 #
