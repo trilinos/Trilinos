@@ -72,7 +72,7 @@ namespace Tacho {
       /// reorder by metis
       ///
 
-      void reorder(const ordinal_type verbose) {
+      void reorder(const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
         double t_metis = 0; 
 

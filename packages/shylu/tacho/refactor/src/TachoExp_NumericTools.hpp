@@ -122,7 +122,7 @@ namespace Tacho {
       ///
       struct {
         double t_factor, t_solve, t_copy, t_extra;
-        double m_used, m_peak;
+        double m_used, m_peak, m_sched;
       } stat;
       
     private:
@@ -460,81 +460,110 @@ namespace Tacho {
         }
       }
 
-      // inline
-      // void
-      // factorizeCholesky_Parallel() {
-      //   /// supernode info
-      //   supernode_info_type_host info;
-      //   {
-      //     /// symbolic input
-      //     info.supernodes             = _supernodes;
-      //     info.gid_super_panel_ptr    = _gid_super_panel_ptr;
-      //     info.gid_super_panel_colidx = _gid_super_panel_colidx;
+      inline
+      void
+      factorizeCholesky_Parallel(const value_type_array_host &ax,
+                                 const ordinal_type verbose = 0) {
+        Kokkos::Impl::Timer timer;
+
+        reset_stat();
+
+        timer.reset();
+        {
+          /// matrix values
+          _ax = ax;
+
+          /// factor allocation and copy the matrix
+          ordinal_type_array_host iwork("work", _m+1);
+          _info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
+
+          track_alloc(iwork.span()*sizeof(ordinal_type));
+          track_alloc(_super_panel_ptr.span()*sizeof(size_type));
+          track_alloc(_super_panel_buf.span()*sizeof(value_type));        
           
-      //     info.sid_super_panel_ptr    = _sid_super_panel_ptr;
-      //     info.sid_super_panel_colidx = _sid_super_panel_colidx;
-      //     info.blk_super_panel_colidx = _blk_super_panel_colidx;
+          /// assign data structure into info
+          _info.super_panel_ptr = _super_panel_ptr;
+          _info.super_panel_buf = _super_panel_buf;
+
+          /// copy the input matrix into super panels
+          _info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
+
+          /// allocate schur complement workspace (this uses maximum preallocated workspace)
+          _info.allocateWorkspacePerSupernode(_super_schur_ptr, _super_schur_buf, iwork);
+
+          track_alloc(_super_schur_ptr.span()*sizeof(size_type));
+          track_alloc(_super_schur_buf.span()*sizeof(value_type));        
+
+          _info.super_schur_ptr = _super_schur_ptr;
+          _info.super_schur_buf = _super_schur_buf;
+
+          track_free(iwork.span()*sizeof(ordinal_type));          
+        }
+        stat.t_copy += timer.seconds();
+
+        {
+          timer.reset();
+          typedef typename sched_type_host::memory_space memory_space;
+          typedef TaskFunctor_CholSupernodes<value_type,host_exec_space> chol_supernode_functor_type;
           
-      //     info.stree_ptr              = _stree_ptr;
-      //     info.stree_children         = _stree_children;
-      //   }
-        
-      //   {
-      //     /// factor allocation and copy the matrix
-      //     ordinal_type_array_host iwork("work", _m+1);
+          sched_type_host sched;
+          {
+            int nchildren = 0;
+            const int nsupernodes = _stree_ptr.dimension_0() - 1;
+            for (ordinal_type sid=0;sid<nsupernodes;++sid)
+              nchildren = max(nchildren, _stree_ptr(sid+1) - _stree_ptr(sid));
 
-      //     info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
-          
-      //     info.super_panel_ptr = _super_panel_ptr;
-      //     info.super_panel_buf = _super_panel_buf;
-
-      //     info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
-
-      //     /// allocate schur complement workspace (this uses maximum preallocated workspace)
-      //     info.allocateWorkspacePerSupernode(_super_schur_ptr, _super_schur_buf, iwork);
-
-      //     info.super_schur_ptr = _super_schur_ptr;
-      //     info.super_schur_buf = _super_schur_buf;
-      //   }
-
-      //   {
-      //     typedef typename sched_type_host::memory_space memory_space;
-      //     typedef TaskFunctor_CholSupernodes<value_type,host_exec_space> chol_supernode_functor_type;
-          
-      //     sched_type_host sched;
-      //     {
-      //       int nchildren = 0;
-      //       const int nsupernodes = _stree_ptr.dimension_0() - 1;
-      //       for (ordinal_type sid=0;sid<nsupernodes;++sid)
-      //         nchildren = max(nchildren, _stree_ptr(sid+1) - _stree_ptr(sid));
-
-      //       const size_type max_dep_future_size 
-      //         = nchildren > MaxDependenceSize ? sizeof(Kokkos::Future<int,host_exec_space>)*nchildren : 16;
+            const size_type max_dep_future_size 
+              = nchildren > MaxDependenceSize ? sizeof(Kokkos::Future<int,host_exec_space>)*nchildren : 16;
             
-      //       const size_type max_functor_size = sizeof(chol_supernode_functor_type);
-      //       const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
+            const size_type max_functor_size = sizeof(chol_supernode_functor_type);
+            const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
             
-      //       const ordinal_type
-      //         task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size, 
-      //         min_block_size  = min(max_dep_future_size,max_functor_size),
-      //         max_block_size  = max(max_dep_future_size,max_functor_size),
-      //         num_superblock  = 32,
-      //         superblock_size = task_queue_capacity/num_superblock;
+            const ordinal_type
+              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size, 
+              min_block_size  = min(max_dep_future_size,max_functor_size),
+              max_block_size  = max(max_dep_future_size,max_functor_size),
+              num_superblock  = 32,
+              superblock_size = task_queue_capacity/num_superblock;
             
-      //       sched = sched_type_host(memory_space(),
-      //                               task_queue_capacity,
-      //                               min_block_size,
-      //                               max_block_size,
-      //                               superblock_size);
-      //     }
+            sched = sched_type_host(memory_space(),
+                                    task_queue_capacity,
+                                    min_block_size,
+                                    max_block_size,
+                                    superblock_size);
 
-      //     const ordinal_type nroots = _stree_roots.dimension_0();
-      //     for (ordinal_type i=0;i<nroots;++i)
-      //       Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-      //                          chol_supernode_functor_type(sched, info, _stree_roots(i)));
-      //     Kokkos::wait(sched);
-      //   }
-      // }
+            track_alloc(task_queue_capacity);
+            stat.m_sched = task_queue_capacity;
+          }
+          stat.t_extra += timer.seconds();
+
+          timer.reset();
+          const ordinal_type nroots = _stree_roots.dimension_0();
+          for (ordinal_type i=0;i<nroots;++i)
+            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                               chol_supernode_functor_type(sched, _info, _stree_roots(i)));
+          Kokkos::wait(sched);
+          stat.t_factor = timer.seconds();
+
+          track_free(_super_schur_ptr.span()*sizeof(size_type));
+          track_free(_super_schur_buf.span()*sizeof(value_type));        
+
+          _info.super_schur_ptr = size_type_array_host();
+          _info.super_schur_buf = value_type_array_host();
+          
+          _super_schur_ptr = size_type_array_host();
+          _super_schur_buf = value_type_array_host();
+
+          track_free(stat.m_sched); 
+        }
+
+        if (verbose) {
+          printf("Summary: NumericTools (ParallelFactorization)\n");
+          printf("=============================================\n");
+
+          print_stat_factor();
+        }
+      }
 
       ///
       /// utility

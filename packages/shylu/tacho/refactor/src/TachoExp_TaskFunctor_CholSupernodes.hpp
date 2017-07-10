@@ -69,15 +69,15 @@ namespace Tacho {
               bbeg = _info.super_schur_ptr[_sid],
               bend = _info.super_schur_ptr[_sid+1],
               bufsize = (bend - bbeg)*sizeof(mat_value_type);
-            
+
             void *buf = (void*)&_info.super_schur_buf[bbeg];
-            CholSupernodes<Algo::Workflow::Serial>
-              ::factorize(_sched, member,
-                          _info, _sid, 
-                          bufsize, buf);
 
             ordinal_type m, n; _info.getSuperPanelSize(_sid, m, n);
             UnmanagedViewType<value_type_matrix> ABR((mat_value_type*)buf, n-m, n-m);
+
+            CholSupernodes<Algo::Workflow::Serial>
+              ::factorize(_sched, member,
+                          _info, ABR, _sid);
 
             CholSupernodes<Algo::Workflow::Serial>
               ::update(_sched, member,

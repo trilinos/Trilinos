@@ -482,7 +482,7 @@ namespace Tacho {
       // stat
       struct {
         ordinal_type nrows, nroots;
-        size_type nnz_a, nnz_u;
+        ordinal_type nnz_a, nnz_u;
         ordinal_type nsupernodes, largest_supernode;
       } stat;
 

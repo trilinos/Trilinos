@@ -121,7 +121,7 @@ int main (int argc, char *argv[]) {
     if (serial) {
       N.factorizeCholesky_Serial(A.Values(), verbose);
     } else {
-      N.factorizeCholesky_Serial(A.Values(), verbose);
+      N.factorizeCholesky_Parallel(A.Values(), verbose);
     }
     t = timer.seconds();    
     std::cout << "CholSupernodes:: factorize matrix::time = " << t << std::endl;
