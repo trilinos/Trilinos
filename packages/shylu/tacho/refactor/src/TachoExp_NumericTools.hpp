@@ -720,14 +720,11 @@ namespace Tacho {
           stat.t_extra += timer.seconds();
 
           timer.reset();
-          std::cout << " begin ...\n";
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
                                chol_supernode_byblocks_functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
           Kokkos::wait(sched);
-
-          std::cout << " end ...\n";
           stat.t_factor = timer.seconds();
 
           track_free(bufpool.capacity());

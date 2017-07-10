@@ -6,8 +6,13 @@
 
 #include "TachoExp_Util.hpp"
 
-// #include "TachoExp_CholSupernodes.hpp"
-// #include "TachoExp_CholSupernodes_ByBlocks.hpp"
+#include "TachoExp_Chol_ByBlocks.hpp"
+#include "TachoExp_Trsm_ByBlocks.hpp"
+#include "TachoExp_Herk_ByBlocks.hpp"
+#include "TachoExp_Gemm_ByBlocks.hpp"
+
+#include "TachoExp_CholSupernodes.hpp"
+#include "TachoExp_CholSupernodes_Serial.hpp"
 
 namespace Tacho {
   
@@ -47,7 +52,7 @@ namespace Tacho {
       ordinal_type _mb;
 
       // abr and matrix of blocks
-      void *_buf;
+      char *_buf;
       size_type _bufsize;
 
     public:
@@ -88,10 +93,27 @@ namespace Tacho {
             ///
             /// atomic update to its parent 
             ///
+            ordinal_type pm, pn; _info.getSuperPanelSize(_sid, pm, pn);
+
+            const ordinal_type 
+              m = pm, n = pn - pm,
+              bm = m/_mb + (m%_mb > 0), bn = n/_mb + (n%_mb > 0);
+            
+            const size_type 
+              matrix_of_blocks_bufsize = (bm*bm + bm*bn + bn*bn)*sizeof(dense_block_type);
+
+            char *buf = _buf + matrix_of_blocks_bufsize;
+            const size_type bufsize = _bufsize - matrix_of_blocks_bufsize;
+
+            UnmanagedViewType<mat_value_type_matrix> ABR((mat_value_type*)buf, n, n);
+            CholSupernodes<Algo::Workflow::Serial>
+              ::update(_sched, member,
+                       _info, ABR, _sid,
+                       (bufsize - ABR.span()*sizeof(mat_value_type)),
+                       (void*)((mat_value_type*)buf + ABR.span()));
+
             if (_bufsize) 
               _bufpool.deallocate(_buf, _bufsize);
-
-            // update critical
 
             _state = 3; // done
             break;
@@ -135,26 +157,31 @@ namespace Tacho {
               buf += (bm*bm)*sizeof(dense_block_type);
               
               setMatrixOfBlocks(htl, m, m, _mb);
-              attachBaseBuffer(htl, ptr, m, m); ptr += m*m;
+              attachBaseBuffer(htl, ptr, 1, m); ptr += m*m;
 
               // chol
+              Chol<Uplo::Upper,Algo::ByBlocks>::invoke(_sched, member, htl);
               
               if (n > 0) {
                 dense_matrix_of_blocks_type htr((dense_block_type*)buf, bm, bn);
                 buf += (bm*bn)*sizeof(dense_block_type);
                 
                 setMatrixOfBlocks(htr, m, n, _mb);
-                attachBaseBuffer(htr, ptr, m, n); 
+                attachBaseBuffer(htr, ptr, 1, m); 
 
                 // trsm
+                Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks>
+                  ::invoke(_sched, member, Diag::NonUnit(), 1.0, htl, htr);
                                 
                 hbr = dense_matrix_of_blocks_type((dense_block_type*)buf, bn, bn);
                 buf += (bn*bn)*sizeof(dense_block_type);
                 
                 setMatrixOfBlocks(hbr, n, n, _mb);
-                attachBaseBuffer(hbr, (mat_value_type*)buf, n, n); 
+                attachBaseBuffer(hbr, (mat_value_type*)buf, 1, n); 
                 
                 // herk
+                Herk<Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks>
+                  ::invoke(_sched, member, -1.0, htr, 0.0, hbr);
                 
                 for (ordinal_type k=0;k<(bm*bn);++k) htr[k].set_future();
               }
@@ -163,17 +190,19 @@ namespace Tacho {
 
             _state = 2;              
             if (bn > 0) {
-              const size_type bn2 = bn*bn, depsize = bn2*sizeof(future_type);
+              const size_type bn2 = bn*(bn+1)/2, depsize = bn2*sizeof(future_type);
               future_type *dep = (future_type*)_sched.memory()->allocate(depsize);
               TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
               clear((char*)dep, depsize);
               
-              for (ordinal_type k=0;k<bn2;++k) { 
-                dep[k] = hbr[k].future();
-                hbr[k].set_future();
+              ordinal_type k = 0;
+              for (ordinal_type j=0;j<bn;++j)
+                for (ordinal_type i=0;i<=j;++i,++k) {
+                  dep[k] = hbr(i,j).future();
+                  hbr(i,j).set_future();
               }
               Kokkos::respawn(this, Kokkos::when_all(dep, bn2), Kokkos::TaskPriority::Regular);
-            
+              
               for (ordinal_type k=0;k<bn2;++k) (dep+k)->~future_type();
               _sched.memory()->deallocate((void*)dep, depsize);
             } else {
