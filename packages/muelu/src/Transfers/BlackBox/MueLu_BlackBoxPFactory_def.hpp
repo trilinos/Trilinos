@@ -76,9 +76,11 @@ namespace MueLu {
   RCP<const ParameterList> BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    // Coarsen can come in two forms, either a single char that will be interpreted as an integer which is used as the coarsening
-    // rate in every spatial dimentions, or it can be a longer string that will then be interpreted as an array of integers.
-    // By default coarsen is set as "{2}", hence a coarsening rate of 2 in every spatial dimension is the default setting!
+    // Coarsen can come in two forms, either a single char that will be interpreted as an integer
+    // which is used as the coarsening rate in every spatial dimentions, 
+    // or it can be a longer string that will then be interpreted as an array of integers.
+    // By default coarsen is set as "{2}", hence a coarsening rate of 2 in every spatial dimension
+    // is the default setting!
     validParamList->set<std::string >           ("Coarsen",                 "{2}", "Coarsening rate in all spatial dimensions");
     validParamList->set<RCP<const FactoryBase> >("A",                         Teuchos::null, "Generating factory of the matrix A");
     validParamList->set<RCP<const FactoryBase> >("Nullspace",                 Teuchos::null, "Generating factory of the nullspace");
@@ -91,7 +93,9 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel,
+                                                                                 Level& coarseLevel)
+    const {
     Input(fineLevel, "A");
     Input(fineLevel, "Nullspace");
     Input(fineLevel, "Coordinates");
@@ -123,13 +127,15 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+  void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel,
+                                                                          Level& coarseLevel) const{
     return BuildP(fineLevel, coarseLevel);
 
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel,
+                                                                           Level& coarseLevel)const{
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     // Print from all processes
@@ -150,11 +156,12 @@ namespace MueLu {
     // obtain general variables
     RCP<Matrix>      A             = Get< RCP<Matrix> >      (fineLevel, "A");
     RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(fineLevel, "Coordinates");
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates =
+      Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(fineLevel, "Coordinates");
     LO numDimensions  = coordinates->getNumVectors();
     LO BlkSize = A->GetFixedBlockSize();
 
-    //  Get fine level geometric data: g(l)FineNodesPerDir and g(l)NumFineNodes
+    // Get fine level geometric data: g(l)FineNodesPerDir and g(l)NumFineNodes
     Array<GO> gFineNodesPerDir(3);
     Array<LO> lFineNodesPerDir(3);
     // Get the number of points in each direction
@@ -170,11 +177,13 @@ namespace MueLu {
     }
     for(LO i = 0; i < 3; ++i) {
       if(gFineNodesPerDir[i] == 0) {
-        GetOStream(Runtime0) << "gNodesPerDim in direction " << i << " is set to 1 from 0" << std::endl;
+        GetOStream(Runtime0) << "gNodesPerDim in direction " << i << " is set to 1 from 0"
+                             << std::endl;
         gFineNodesPerDir[i] = 1;
       }
       if(lFineNodesPerDir[i] == 0) {
-        GetOStream(Runtime0) << "lNodesPerDim in direction " << i << " is set to 1 from 0" << std::endl;
+        GetOStream(Runtime0) << "lNodesPerDim in direction " << i << " is set to 1 from 0"
+                             << std::endl;
         lFineNodesPerDir[i] = 1;
       }
     }
@@ -189,12 +198,14 @@ namespace MueLu {
       try {
         crates = Teuchos::fromStringToArray<LO>(coarsenRate);
       } catch(const Teuchos::InvalidArrayStringRepresentation e) {
-        GetOStream(Errors,-1) << " *** Coarsen must be a string convertible into an array! *** " << std::endl;
+        GetOStream(Errors,-1) << " *** Coarsen must be a string convertible into an array! *** "
+                              << std::endl;
         throw e;
       }
       TEUCHOS_TEST_FOR_EXCEPTION((crates.size() > 1) && (crates.size() < numDimensions),
                                  Exceptions::RuntimeError,
-                                 "Coarsen must have at least as many components as the number of spatial dimensions in the problem.");
+                                 "Coarsen must have at least as many components as the number of"
+                                 " spatial dimensions in the problem.");
       for(LO i = 0; i < 3; ++i) {
         if(i < numDimensions) {
           if(crates.size() == 1) {
@@ -202,8 +213,10 @@ namespace MueLu {
           } else if(i < crates.size()) {
             coarseRate[i] = crates[i];
           } else {
-            GetOStream(Errors,-1) << " *** Coarsen must be at least as long as the number of spatial dimensions! *** " << std::endl;
-            throw Exceptions::RuntimeError(" *** Coarsen must be at least as long as the number of spatial dimensions! *** \n");
+            GetOStream(Errors,-1) << " *** Coarsen must be at least as long as the number of"
+              " spatial dimensions! *** " << std::endl;
+            throw Exceptions::RuntimeError(" *** Coarsen must be at least as long as the number of"
+                                           " spatial dimensions! *** \n");
           }
         } else {
           coarseRate[i] = 1;
@@ -220,10 +233,12 @@ namespace MueLu {
     Array<ArrayView<const double> > fineNodes(numDimensions);
     for(LO dim = 0; dim < numDimensions; ++dim) {fineNodes[dim] = coordinates->getData(dim)();}
 
-    GetGeometricData(coordinates, coarseRate, gFineNodesPerDir, lFineNodesPerDir, BlkSize,   // inputs (const)
-                     gIndices, myOffset, ghostInterface, endRate, gCoarseNodesPerDir,        // outputs
+    GetGeometricData(coordinates, coarseRate, gFineNodesPerDir, lFineNodesPerDir, BlkSize,// inputs
+                     gIndices, myOffset, ghostInterface, endRate, gCoarseNodesPerDir,     // outputs
                      lCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs, colGIDs,
                      gNumCoarseNodes, lNumCoarseNodes, coarseNodes);
+
+    out << "Creating maps" << std::endl;
 
     // Create the MultiVector of coarse coordinates
     Xpetra::UnderlyingLib lib = coordinates->getMap()->lib();
@@ -236,7 +251,9 @@ namespace MueLu {
     for(LO dim = 0; dim < numDimensions; ++dim) {
       coarseCoords[dim] = coarseNodes[dim]();
     }
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coarseCoordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordsMap, coarseCoords(), numDimensions);
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coarseCoordinates =
+      Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordsMap, coarseCoords(),
+                                                         numDimensions);
 
     // Now create a new matrix: Aghost that contains all the data
     // locally needed to compute the prolongator on the node.
@@ -298,36 +315,42 @@ namespace MueLu {
       }
     }
     RCP<const Map> ghostedRowMap = Xpetra::MapFactory<LO,GO,NO>::Build(A->getRowMap()->lib(),
-                                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                                       ghostRowGIDs(),
-                                                                       A->getRowMap()->getIndexBase(),
-                                                                       A->getRowMap()->getComm());
-    RCP<const Import> ghostImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(A->getRowMap(), ghostedRowMap);
-    RCP<const Matrix> Aghost        = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(A, *ghostImporter, ghostedRowMap, ghostedRowMap);
+                                           Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                           ghostRowGIDs(),
+                                           A->getRowMap()->getIndexBase(),
+                                           A->getRowMap()->getComm());
+    RCP<const Import> ghostImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(A->getRowMap(),
+                                                                             ghostedRowMap);
+    RCP<const Matrix> Aghost        = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(A, *ghostImporter,
+                                                                                ghostedRowMap,
+                                                                                ghostedRowMap);
 
     // Create the maps and data structures for the projection matrix
     RCP<const Map> rowMapP    = A->getDomainMap();
     RCP<const Map> domainMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
                                                                     BlkSize*gNumCoarseNodes,
-                                                                    colGIDs.view(0, BlkSize*lNumCoarseNodes),
+                                                                    colGIDs.view(0, BlkSize
+                                                                                 *lNumCoarseNodes),
                                                                     rowMapP->getIndexBase(),
                                                                     rowMapP->getComm());
 
     RCP<const Map> colMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
-                                                                 Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                                 colGIDs.view(0, colGIDs.size()),
-                                                                 rowMapP->getIndexBase(),
-                                                                 rowMapP->getComm());
+                                           Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                           colGIDs.view(0, colGIDs.size()),
+                                           rowMapP->getIndexBase(),
+                                           rowMapP->getComm());
 
     std::vector<size_t> strideInfo(1);
     strideInfo[0] = BlkSize;
-    RCP<const Map> stridedDomainMapP = Xpetra::StridedMapFactory<LO,GO,NO>::Build(domainMapP, strideInfo);
+    RCP<const Map> stridedDomainMapP = Xpetra::StridedMapFactory<LO,GO,NO>::Build(domainMapP,
+                                                                                  strideInfo);
 
     GO gNumEdgeNodes = 0, gNumInteriorNodes = 1;
     LO complementaryIndices[3][2] = {{1,2}, {0,2}, {0,1}};
     for(LO dim = 0; dim < numDimensions; ++dim) {
       gNumEdgeNodes += (coarseRate[dim] - 1)*(gCoarseNodesPerDir[dim] - 1)
-        *gCoarseNodesPerDir[complementaryIndices[dim][0]]*gCoarseNodesPerDir[complementaryIndices[dim][1]];
+        *gCoarseNodesPerDir[complementaryIndices[dim][0]]
+        *gCoarseNodesPerDir[complementaryIndices[dim][1]];
       gNumInteriorNodes = gNumInteriorNodes*(coarseRate[dim] - 1)*(gCoarseNodesPerDir[dim] - 1);
     }
 
@@ -365,15 +388,17 @@ namespace MueLu {
     }
 
     out << "numCoarseElements=" << numCoarseElements << std::endl;
-    out << "lCoarseElementsPerDir=(" << lCoarseElementsPerDir[0] << ", " << lCoarseElementsPerDir[1] << ", " << lCoarseElementsPerDir[2] << ")" << std::endl;
+    out << "lCoarseElementsPerDir=(" << lCoarseElementsPerDir[0] << ", " << lCoarseElementsPerDir[1]
+        << ", " << lCoarseElementsPerDir[2] << ")" << std::endl;
 
     // Loop over the coarse elements
     Array<LO> elemInds(3);
     for(elemInds[2] = 0; elemInds[2] < lCoarseElementsPerDir[2]; ++elemInds[2]) {
       for(elemInds[1] = 0; elemInds[1] < lCoarseElementsPerDir[1]; ++elemInds[1]) {
         for(elemInds[0] = 0; elemInds[0] < lCoarseElementsPerDir[0]; ++elemInds[0]) {
-          ComputeLocalEntries(Aghost, coarseRate, endRate, BlkSize, elemInds, lCoarseElementsPerDir, range,
-                              numDimensions, lFineNodesPerDir, gFineNodesPerDir, gIndices, lCoarseNodesPerDir);
+          ComputeLocalEntries(Aghost, coarseRate, endRate, BlkSize, elemInds, lCoarseElementsPerDir,
+                              numDimensions, range, gFineNodesPerDir, gIndices,
+                              lCoarseNodesPerDir, ghostInterface);
         }
       }
     }
@@ -382,11 +407,13 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetGeometricData(
-                        RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates, const Array<LO> coarseRate,
-                        const Array<GO> gFineNodesPerDir, const Array<LO> lFineNodesPerDir, const LO BlkSize,
-                        Array<GO>& gIndices, Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
-                        Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir, Array<GO>& ghostGIDs,
-                        Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes, LO& lNumCoarseNodes,
+                        RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates,
+                        const Array<LO> coarseRate, const Array<GO> gFineNodesPerDir,
+                        const Array<LO> lFineNodesPerDir, const LO BlkSize, Array<GO>& gIndices,
+                        Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
+                        Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir,
+                        Array<GO>& ghostGIDs, Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs,
+                        GO& gNumCoarseNodes, LO& lNumCoarseNodes,
                         ArrayRCP<Array<double> > coarseNodes) const {
     // This function is extracting the geometric information from the coordinates
     // and creates the necessary data/formatting to perform locally the calculation
@@ -424,7 +451,8 @@ namespace MueLu {
       if((gIndices[i] != 0) && (gIndices[i] % coarseRate[i] > 0)) {
         ghostInterface[2*i] = true;
       }
-      if(((gIndices[i] + lFineNodesPerDir[i]) != gFineNodesPerDir[i]) && ((gIndices[i] + lFineNodesPerDir[i] - 1) % coarseRate[i] > 0)) {
+      if(((gIndices[i] + lFineNodesPerDir[i]) != gFineNodesPerDir[i])
+         && ((gIndices[i] + lFineNodesPerDir[i] - 1) % coarseRate[i] > 0)) {
         ghostInterface[2*i + 1] = true;
       }
     }
@@ -472,7 +500,8 @@ namespace MueLu {
         for(LO j = 0; j < 2; ++j) {
           for(LO k = 0; k < 2; ++k) {
             // Check if two adjoining faces need ghost nodes and then add their common edge
-            if(ghostInterface[2*complementaryIndices[i][0]+j] && ghostInterface[2*complementaryIndices[i][1]+k]) {
+            if(ghostInterface[2*complementaryIndices[i][0]+j]
+               && ghostInterface[2*complementaryIndices[i][1]+k]) {
               lNumGhostNodes += lCoarseNodesPerDir[i];
               // Add corners if three adjoining faces need ghost nodes,
               // but add them only once! Hence when i == 0.
@@ -492,8 +521,8 @@ namespace MueLu {
     // i.e. it should follow the GID ordering of the mesh.                //
     // ------------------------------------------------------------------ //
 
-    // Saddly we have to more or less redo what was just done to figure out the value of lNumGhostNodes,
-    // there might be some optimization possibility here...
+    // Saddly we have to more or less redo what was just done to figure out the value of
+    // lNumGhostNodes, there might be some optimization possibility here...
     ghostGIDs.resize(lNumGhostNodes);
     LO countGhosts = 0;
     // Get the GID of the first point on the current partition.
@@ -552,18 +581,21 @@ namespace MueLu {
     if(ghostInterface[4]) {
       ghostOffset[2] = startingGID;
       for(LO j = 0; j < lengthOne; ++j) {
-        if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
+        if( (j == lengthOne-1)
+            && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
           ghostOffset[1] = ((j-1)*coarseRate[1] + endRate[1])*gFineNodesPerDir[0];
         } else {
           ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
         }
         for(LO k = 0; k < lengthZero; ++k) {
-          if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+          if( (k == lengthZero-1)
+              && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
             ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
           } else {
             ghostOffset[0] = k*coarseRate[0];
           }
-          // If the partition includes a changed rate at the edge, ghost nodes need to be picked carefully.
+          // If the partition includes a changed rate at the edge, ghost nodes need to be picked
+          // carefully.
           // This if statement is repeated each time a ghost node is selected.
           ghostGIDs[countGhosts] = ghostOffset[2] + ghostOffset[1] + ghostOffset[0];
           ++countGhosts;
@@ -571,23 +603,25 @@ namespace MueLu {
       }
     }
 
-    // Sweep over the lCoarseNodesPerDir[2] coarse layers in direction 2 and gather necessary ghost nodes
-    // located on these layers.
+    // Sweep over the lCoarseNodesPerDir[2] coarse layers in direction 2 and gather necessary ghost
+    // nodes located on these layers.
     for(LO i = 0; i < lengthTwo; ++i) {
-      // Exclude the cases where ghost nodes exists on the faces in directions 2, these faces are swept
-      // seperatly for efficiency.
+      // Exclude the cases where ghost nodes exists on the faces in directions 2, these faces are
+      // swept seperatly for efficiency.
       if( !((i == lengthTwo-1) && ghostInterface[5]) && !((i == 0) && ghostInterface[4]) ) {
         // Set the ghostOffset in direction 2 taking into account a possible endRate different
         // from the regular coarseRate.
         if( (i == lengthTwo-1) && !ghostInterface[5] ) {
-          ghostOffset[2] = startingGID + ((i-1)*coarseRate[2] + endRate[2])*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+          ghostOffset[2] = startingGID + ((i-1)*coarseRate[2] + endRate[2])
+            *gFineNodesPerDir[1]*gFineNodesPerDir[0];
         } else {
           ghostOffset[2] = startingGID + i*coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
         }
         for(LO j = 0; j < lengthOne; ++j) {
           if( (j == 0) && ghostInterface[2] ) {
             for(LO k = 0; k < lengthZero; ++k) {
-              if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+              if( (k == lengthZero-1)
+                  && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
                 if(k == 0) {
                   ghostOffset[0] = endRate[0];
                 } else {
@@ -603,13 +637,15 @@ namespace MueLu {
           } else if( (j == lengthOne-1) && ghostInterface[3] ) {
             // Set the ghostOffset in direction 1 taking into account a possible endRate different
             // from the regular coarseRate.
-            if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
+            if( (j == lengthOne-1)
+                && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
               ghostOffset[1] = ((j-1)*coarseRate[1] + endRate[1])*gFineNodesPerDir[0];
             } else {
               ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
             }
             for(LO k = 0; k < lengthZero; ++k) {
-              if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+              if( (k == lengthZero-1)
+                  && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
                 ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
               } else {
                 ghostOffset[0] = k*coarseRate[0];
@@ -619,7 +655,8 @@ namespace MueLu {
             }
           } else {
             // Set ghostOffset[1] for side faces sweep
-            if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
+            if( (j == lengthOne-1)
+                && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
               ghostOffset[1] = ( (j-1)*coarseRate[1] + endRate[1] )*gFineNodesPerDir[0];
             } else {
               ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
@@ -651,18 +688,22 @@ namespace MueLu {
     // Finally check the top face
     if(ghostInterface[5]) {
       if( startingIndices[2] + (lengthTwo-1)*coarseRate[2] + 1 > gFineNodesPerDir[2] ) {
-        ghostOffset[2] = startingGID + ((lengthTwo-2)*coarseRate[2] + endRate[2])*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+        ghostOffset[2] = startingGID
+          + ((lengthTwo-2)*coarseRate[2] + endRate[2])*gFineNodesPerDir[1]*gFineNodesPerDir[0];
       } else {
-        ghostOffset[2] = startingGID + (lengthTwo-1)*coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+        ghostOffset[2] = startingGID
+          + (lengthTwo-1)*coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
       }
       for(LO j = 0; j < lengthOne; ++j) {
-        if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) { // && !ghostInterface[3] ) {
+        if( (j == lengthOne-1)
+            && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
           ghostOffset[1] = ( (j-1)*coarseRate[1] + endRate[1] )*gFineNodesPerDir[0];
         } else {
           ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
         }
         for(LO k = 0; k < lengthZero; ++k) {
-          if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+          if( (k == lengthZero-1)
+              && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
             ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
           } else {
             ghostOffset[0] = k*coarseRate[0];
@@ -758,7 +799,8 @@ namespace MueLu {
       // Loop over the coarse nodes of the partition and add them to colGIDs
       // that will be used to construct the column and domain maps of P as well
       // as to construct the coarse coordinates map.
-      // for(LO col = 0; col < lNumCoarseNodes; ++col) { // This should most likely be replaced by loops of lCoarseNodesPerDir[] to simplify arithmetics
+      // for(LO col = 0; col < lNumCoarseNodes; ++col) { // This should most likely be replaced
+      // by loops of lCoarseNodesPerDir[] to simplify arithmetics
       LO col = 0;
       LO firstCoarseNodeInds[3], currentCoarseNode;
       for(LO dim = 0; dim < 3; ++dim) {
@@ -783,30 +825,39 @@ namespace MueLu {
               currentCoarseNode += firstCoarseNodeInds[0] + i*coarseRate[0];
             }
             if(firstCoarseNodeInds[1] + j*coarseRate[1] > lFineNodesPerDir[1] - 1) {
-              currentCoarseNode += (firstCoarseNodeInds[1] + (j-1)*coarseRate[1] + endRate[1])*lFineNodesPerDir[0];
+              currentCoarseNode += (firstCoarseNodeInds[1] + (j-1)*coarseRate[1] + endRate[1])
+                *lFineNodesPerDir[0];
             } else {
               currentCoarseNode += (firstCoarseNodeInds[1] + j*coarseRate[1])*lFineNodesPerDir[0];
             }
             if(firstCoarseNodeInds[2] + k*coarseRate[2] > lFineNodesPerDir[2] - 1) {
-              currentCoarseNode += (firstCoarseNodeInds[2] + (k-1)*coarseRate[2] + endRate[2])*lFineNodesPerDir[1]*lFineNodesPerDir[0];
+              currentCoarseNode += (firstCoarseNodeInds[2] + (k-1)*coarseRate[2] + endRate[2])
+                *lFineNodesPerDir[1]*lFineNodesPerDir[0];
             } else {
-              currentCoarseNode += (firstCoarseNodeInds[2] + k*coarseRate[2])*lFineNodesPerDir[1]*lFineNodesPerDir[0];
+              currentCoarseNode += (firstCoarseNodeInds[2] + k*coarseRate[2])
+                *lFineNodesPerDir[1]*lFineNodesPerDir[0];
             }
             // Load coordinates
             for(LO dim = 0; dim < numDimensions; ++dim) {
               coarseNodes[dim][col] = fineNodes[dim][currentCoarseNode];
             }
 
-            if((endRate[2] != coarseRate[2]) && (gCoarseNodesGIDs[col] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
+            if((endRate[2] != coarseRate[2])
+               && (gCoarseNodesGIDs[col] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab
+                   + fineNodesEndCoarseSlab - 1)) {
               tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab + 1;
-              tmpVars[0] = gCoarseNodesGIDs[col] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
+              tmpVars[0] = gCoarseNodesGIDs[col] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab
+                - fineNodesEndCoarseSlab;
             } else {
               tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab;
               tmpVars[0] = gCoarseNodesGIDs[col] % fineNodesPerCoarseSlab;
             }
-            if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane + fineNodesEndCoarsePlane - 1)) {
+            if((endRate[1] != coarseRate[1])
+               && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane
+                   + fineNodesEndCoarsePlane - 1)) {
               tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
-              tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane - fineNodesEndCoarsePlane;
+              tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane
+                - fineNodesEndCoarsePlane;
             } else {
               tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
               tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
@@ -820,8 +871,10 @@ namespace MueLu {
             tmp     = col % (lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]);
             gInd[1] = tmp / lCoarseNodesPerDir[0];
             gInd[0] = tmp % lCoarseNodesPerDir[0];
-            lCol = gInd[2]*(lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]) + gInd[1]*lCoarseNodesPerDir[0] + gInd[0];
-            gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
+            lCol = gInd[2]*(lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0])
+              + gInd[1]*lCoarseNodesPerDir[0] + gInd[0];
+            gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer
+              + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
             coarseNodesGIDs[lCol] = gCoarseNodeOnCoarseGridGID;
             for(LO dof = 0; dof < BlkSize; ++dof) {
               colGIDs[BlkSize*lCol + dof] = BlkSize*gCoarseNodeOnCoarseGridGID + dof;
@@ -832,16 +885,22 @@ namespace MueLu {
       // Now loop over the ghost nodes of the partition to add them to colGIDs
       // since they will need to be included in the column map of P
       for(col = lNumCoarseNodes; col < lNumCoarseNodes + lNumGhostNodes; ++col) {
-        if((endRate[2] != coarseRate[2]) && (ghostGIDs[ghostPermut[col - lNumCoarseNodes]] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
+        if((endRate[2] != coarseRate[2])
+           && (ghostGIDs[ghostPermut[col - lNumCoarseNodes]] > (gCoarseNodesPerDir[2] - 2)
+               *fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
           tmpInds[2] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] / fineNodesPerCoarseSlab + 1;
-          tmpVars[0] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
+          tmpVars[0] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]]
+            - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
         } else {
           tmpInds[2] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] / fineNodesPerCoarseSlab;
           tmpVars[0] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] % fineNodesPerCoarseSlab;
         }
-        if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane + fineNodesEndCoarsePlane - 1)) {
+        if((endRate[1] != coarseRate[1])
+           && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane
+               + fineNodesEndCoarsePlane - 1)) {
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
-          tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane - fineNodesEndCoarsePlane;
+          tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane
+            - fineNodesEndCoarsePlane;
         } else {
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
           tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
@@ -851,7 +910,8 @@ namespace MueLu {
         } else {
           tmpInds[0] = tmpVars[1] / coarseRate[0];
         }
-        gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
+        gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer
+          + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
         for(LO dof = 0; dof < BlkSize; ++dof) {
           colGIDs[BlkSize*col + dof] = BlkSize*gCoarseNodeOnCoarseGridGID + dof;
         }
@@ -864,10 +924,10 @@ namespace MueLu {
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeLocalEntries(
                         const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,
                         const Array<LO> endRate, const LO BlkSize, const Array<LO> elemInds,
-                        const Array<LO> lCoarseElementsPerDir, const Array<LO> range,
-                        const LO numDimensions, const Array<LO> lFineNodesPerDir,
-                        const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
-                        const Array<LO> lCoarseNodesPerDir) const {
+                        const Array<LO> lCoarseElementsPerDir, const LO numDimensions,
+                        const Array<LO> lFineNodesPerDir, const Array<GO> gFineNodesPerDir,
+                        const Array<GO> gIndices, const Array<LO> lCoarseNodesPerDir,
+                        const Array<bool> ghostInterface) const {
 
     // Print from all processes
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -889,7 +949,8 @@ namespace MueLu {
     Array<LO> elementNodesPerDir(3);
     for(LO dim = 0; dim < 3; ++dim) {
       if(dim < numDimensions) {
-        if((elemInds[dim] == lCoarseElementsPerDir[dim]) && (gIndices[dim] + lFineNodesPerDir[dim] == gFineNodesPerDir[dim])) {
+        if((elemInds[dim] == lCoarseElementsPerDir[dim])
+           && (gIndices[dim] + lFineNodesPerDir[dim] == gFineNodesPerDir[dim])) {
           elementNodesPerDir[dim] = endRate[dim] + 1;
         } else {
           elementNodesPerDir[dim] = coarseRate[dim] + 1;
@@ -910,24 +971,37 @@ namespace MueLu {
              && (je == 0 || je == elementNodesPerDir[1]-1)
              && (ie == 0 || ie == elementNodesPerDir[0]-1)) {
             for(LO dof = 0; dof < BlkSize; ++dof) {
-              dofType[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 0;
-              lDofInd[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = BlkSize*countCorner + dof;
+              dofType[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                               + je*elementNodesPerDir[0] + ie) + dof] = 0;
+              lDofInd[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                               + je*elementNodesPerDir[0] + ie) + dof] = BlkSize*countCorner + dof;
             }
             ++countCorner;
 
           // Check for edge node
-          } else if (((ke == 0 || ke == elementNodesPerDir[2]-1) && (je == 0 || je == elementNodesPerDir[1]-1))
-                     || ((ke == 0 || ke == elementNodesPerDir[2]-1) && (ie == 0 || ie == elementNodesPerDir[0]-1))
-                     || ((je == 0 || je == elementNodesPerDir[1]-1) && (ie == 0 || ie == elementNodesPerDir[0]-1))) {
+          } else if (((ke == 0 || ke == elementNodesPerDir[2]-1)
+                      && (je == 0 || je == elementNodesPerDir[1]-1))
+                     || ((ke == 0 || ke == elementNodesPerDir[2]-1)
+                         && (ie == 0 || ie == elementNodesPerDir[0]-1))
+                     || ((je == 0 || je == elementNodesPerDir[1]-1)
+                         && (ie == 0 || ie == elementNodesPerDir[0]-1))) {
             for(LO dof = 0; dof < BlkSize; ++dof) {
-              dofType[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 1;
-              lDofInd[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = BlkSize*countEdge + dof;
-              if((ke == 0 || ke == elementNodesPerDir[2]-1) && (je == 0 || je == elementNodesPerDir[1]-1)) {
-                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 0;
-              } else if((ke == 0 || ke == elementNodesPerDir[2]-1) && (ie == 0 || ie == elementNodesPerDir[0]-1)) {
-                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 1;
-              } else if((je == 0 || je == elementNodesPerDir[1]-1) && (ie == 0 || ie == elementNodesPerDir[0]-1)) {
-                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 2;
+              dofType[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                               + je*elementNodesPerDir[0] + ie) + dof] = 1;
+              lDofInd[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                               + je*elementNodesPerDir[0] + ie) + dof] = BlkSize*countEdge + dof;
+              if((ke == 0 || ke == elementNodesPerDir[2]-1)
+                 && (je == 0 || je == elementNodesPerDir[1]-1)) {
+                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                                     + je*elementNodesPerDir[0] + ie) + dof] = 0;
+              } else if((ke == 0 || ke == elementNodesPerDir[2]-1)
+                        && (ie == 0 || ie == elementNodesPerDir[0]-1)) {
+                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                                     + je*elementNodesPerDir[0] + ie) + dof] = 1;
+              } else if((je == 0 || je == elementNodesPerDir[1]-1
+                         ) && (ie == 0 || ie == elementNodesPerDir[0]-1)) {
+                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                                     + je*elementNodesPerDir[0] + ie) + dof] = 2;
               }
             }
             ++countEdge;
@@ -937,14 +1011,19 @@ namespace MueLu {
                      || (je == 0 || je == elementNodesPerDir[1]-1)
                      || (ie == 0 || ie == elementNodesPerDir[0]-1)) {
             for(LO dof = 0; dof < BlkSize; ++dof) {
-              dofType[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 2;
-              lDofInd[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = BlkSize*countFace + dof;
+              dofType[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                               + je*elementNodesPerDir[0] + ie) + dof] = 2;
+              lDofInd[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                               + je*elementNodesPerDir[0] + ie) + dof] = BlkSize*countFace + dof;
               if(ke == 0 || ke == elementNodesPerDir[2]-1) {
-                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 2;
+                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                                     + je*elementNodesPerDir[0] + ie) + dof] = 2;
               } else if(je == 0 || je == elementNodesPerDir[1]-1) {
-                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 1;
+                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                                     + je*elementNodesPerDir[0] + ie) + dof] = 1;
               } else if(ie == 0 || ie == elementNodesPerDir[0]-1) {
-                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 0;
+                collapseDir[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                                     + je*elementNodesPerDir[0] + ie) + dof] = 0;
               }
             }
             ++countFace;
@@ -952,8 +1031,10 @@ namespace MueLu {
           // Otherwise it is an interior node
           } else {
             for(LO dof = 0; dof < BlkSize; ++dof) {
-              dofType[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = 3;
-              lDofInd[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie) + dof] = BlkSize*countInterior + dof;
+              dofType[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                               + je*elementNodesPerDir[0] + ie) + dof] = 3;
+              lDofInd[BlkSize*(ke*elementNodesPerDir[1]*elementNodesPerDir[0]
+                               + je*elementNodesPerDir[0] + ie) + dof] = BlkSize*countInterior +dof;
             }
             ++countInterior;
           }
@@ -961,39 +1042,41 @@ namespace MueLu {
       }
     }
 
+    out << "Number of entries in local matrices computed" << std::endl;
+    out << "Interior Nodes: " << countInterior << std::endl;
+    out << "Face Nodes:     " << countFace << std::endl;
+    out << "Edge Nodes:     " << countEdge << std::endl;
+    out << "Corner Nodes:   " << countCorner << std::endl;
+
+    LO numInteriorNodes = 0, numFaceNodes = 0, numEdgeNodes = 0, numCornerNodes = 8;
+    numInteriorNodes = (elementNodesPerDir[0] - 2)*(elementNodesPerDir[1] - 2)
+      *(elementNodesPerDir[2] - 2);
+    numFaceNodes = 2*(elementNodesPerDir[0] - 2)*(elementNodesPerDir[1] - 2)
+      + 2*(elementNodesPerDir[0] - 2)*(elementNodesPerDir[2] - 2)
+      + 2*(elementNodesPerDir[1] - 2)*(elementNodesPerDir[2] - 2);
+    numEdgeNodes = 4*(elementNodesPerDir[0] - 2) + 4*(elementNodesPerDir[1] - 2)
+      + 4*(elementNodesPerDir[2] - 2);
     // Diagonal blocks
-    Teuchos::SerialDenseMatrix<LO,SC> Aii(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2],
-                                              BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2]);
-    Teuchos::SerialDenseMatrix<LO,SC> Aff(2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
-                                                         + elementNodesPerDir[1]*elementNodesPerDir[2]
-                                                         + elementNodesPerDir[0]*elementNodesPerDir[2]),
-                                              2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
-                                                         + elementNodesPerDir[1]*elementNodesPerDir[2]
-                                                         + elementNodesPerDir[0]*elementNodesPerDir[2]));
-    Teuchos::SerialDenseMatrix<LO,SC> Aee(4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]),
-                                              4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]));
+    Teuchos::SerialDenseMatrix<LO,SC> Aii(BlkSize*numInteriorNodes, BlkSize*numInteriorNodes);
+    Teuchos::SerialDenseMatrix<LO,SC> Aff(BlkSize*numFaceNodes,     BlkSize*numFaceNodes);
+    Teuchos::SerialDenseMatrix<LO,SC> Aee(BlkSize*numEdgeNodes,     BlkSize*numEdgeNodes);
     // Upper triangular blocks
-    Teuchos::SerialDenseMatrix<LO,SC> Aif(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2],
-                                              2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
-                                                         + elementNodesPerDir[1]*elementNodesPerDir[2]
-                                                         + elementNodesPerDir[0]*elementNodesPerDir[2]));
-    Teuchos::SerialDenseMatrix<LO,SC> Aie(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2],
-                                              4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]));
-    Teuchos::SerialDenseMatrix<LO,SC> Afe(2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
-                                                         + elementNodesPerDir[1]*elementNodesPerDir[2]
-                                                         + elementNodesPerDir[0]*elementNodesPerDir[2]),
-                                              4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]));
+    Teuchos::SerialDenseMatrix<LO,SC> Aif(BlkSize*numInteriorNodes, BlkSize*numFaceNodes);
+    Teuchos::SerialDenseMatrix<LO,SC> Aie(BlkSize*numInteriorNodes, BlkSize*numEdgeNodes);
+    Teuchos::SerialDenseMatrix<LO,SC> Afe(BlkSize*numFaceNodes,     BlkSize*numEdgeNodes);
     // Coarse nodes "right hand sides" and local prolongators
-    Teuchos::SerialDenseMatrix<LO,SC> Aic(BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2], 8);
-    Teuchos::SerialDenseMatrix<LO,SC> Pi( BlkSize*elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2], 8);
-    Teuchos::SerialDenseMatrix<LO,SC> Afc(2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
-                                                         + elementNodesPerDir[1]*elementNodesPerDir[2]
-                                                         + elementNodesPerDir[0]*elementNodesPerDir[2]), 8);
-    Teuchos::SerialDenseMatrix<LO,SC> Pf( 2*BlkSize*(elementNodesPerDir[0]*elementNodesPerDir[1]
-                                                         + elementNodesPerDir[1]*elementNodesPerDir[2]
-                                                         + elementNodesPerDir[0]*elementNodesPerDir[2]), 8);
-    Teuchos::SerialDenseMatrix<LO,SC> Aec(4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]), 8);
-    Teuchos::SerialDenseMatrix<LO,SC> Pe( 4*BlkSize*(elementNodesPerDir[0] + elementNodesPerDir[1] + elementNodesPerDir[2]), 8);
+    Teuchos::SerialDenseMatrix<LO,SC> Aic(BlkSize*numInteriorNodes, BlkSize*numCornerNodes);
+    Teuchos::SerialDenseMatrix<LO,SC> Pi( BlkSize*numInteriorNodes, BlkSize*numCornerNodes);
+    Teuchos::SerialDenseMatrix<LO,SC> Afc(BlkSize*numFaceNodes,     BlkSize*numCornerNodes);
+    Teuchos::SerialDenseMatrix<LO,SC> Pf( BlkSize*numFaceNodes,     BlkSize*numCornerNodes);
+    Teuchos::SerialDenseMatrix<LO,SC> Aec(BlkSize*numEdgeNodes,     BlkSize*numCornerNodes);
+    Teuchos::SerialDenseMatrix<LO,SC> Pe( BlkSize*numEdgeNodes,     BlkSize*numCornerNodes);
+
+    out << "Local matrices initialized" << std::endl;
+    out << "Aii: " << Aii.numRows() << "x" << Aii.numCols() << std::endl;
+    out << "Aff: " << Aff.numRows() << "x" << Aff.numCols() << std::endl;
+    out << "Aee: " << Aee.numRows() << "x" << Aee.numCols() << std::endl;
+    out << "Aec: " << Aec.numRows() << "x" << Aec.numCols() << std::endl;
 
     ArrayView<const LO> rowIndices;
     ArrayView<const SC> rowValues;
@@ -1001,74 +1084,189 @@ namespace MueLu {
     LO indi, indf, inde, indc;
     int iType = 0, jType = 0;
     int orientation = -1;
-    Array<SC> stencil(std::pow(3,numDimensions));
+    Array<SC> stencil((std::pow(3,numDimensions))*BlkSize);
     // LBV Note: we could skip the extraction of rows corresponding to coarse nodes
     //           we might want to fuse the first three loops and do integer arithmetic
     //           to have more optimization during compilation...
     for(LO ke = 0; ke < elementNodesPerDir[2]; ++ke) {
       for(LO je = 0; je < elementNodesPerDir[1]; ++je) {
         for(LO ie = 0; ie < elementNodesPerDir[0]; ++ie) {
+          out << "Hello (ie, je, ke)=(" << ie << ", " << je << ", " << ke << ")" << std::endl;
           // Based on (ie, je, ke) we detect the type of node we are dealing with
           GetNodeInfo(ie, je, ke, elementNodesPerDir, &iType, iInd, &orientation);
           for(LO dof0 = 0; dof0 < BlkSize; ++dof0) {
             // Compute the dof index for each dof at point (ie, je, ke)
-            idof = (ke*elementNodesPerDir[1]*elementNodesPerDir[0] + je*elementNodesPerDir[0] + ie)*BlkSize + dof0;
+            idof = ((elemInds[2]*coarseRate[2] + ke)*lFineNodesPerDir[1]*lFineNodesPerDir[0]
+                    + (elemInds[1]*coarseRate[1] + je)*lFineNodesPerDir[0]
+                    + elemInds[0]*coarseRate[0] + ie)*BlkSize + dof0;
             Aghost->getLocalRowView(idof, rowIndices, rowValues);
             // To make life easy, let's reshape and reorder rowValues to
             // process it in a standardized way for both 7 points stencils
             // and 27 points stencil as well as handle ghost data.
-            ReorderStencil(BlkSize, ie, je, ke, rowValues, elementNodesPerDir, stencil);
+            out << "lFineNodesPerDir: (" << lFineNodesPerDir[0] << ", " << lFineNodesPerDir[1]
+                << ", " << lFineNodesPerDir[2] << ")" << std::endl;
+            out << "idof=" << idof << std::endl;
+            ReorderStencil(BlkSize, ghostInterface, ie, je, ke, rowValues,
+                           elementNodesPerDir, stencil);
+            out << "Reordered the stencil as: [";
+            for(LO tmp = 0; tmp < stencil.size() - 1; ++tmp) { out << stencil[tmp] << ", ";}
+            out << stencil[stencil.size() - 1] << "]" << std::endl;
             LO io, jo, ko;
-            for(LO interactingNode = 0; interactingNode < 27; ++interactingNode) {
-              // Find (if, jf, kf) the indices associated with the interacting node
-              ko = ke + (interactingNode / 9 - 1);
-              {
-                LO tmp = interactingNode % 9;
-                jo = je + (tmp / 3 - 1);
-                io = ie + (tmp % 3 - 1);
+            if(iType == 3) {// interior node, no stencil collapse needed
+              if(iInd*BlkSize + dof0 > numInteriorNodes - 1)
+                {out << "Ai*: iInd*BlkSize + dof0 = " << iInd*BlkSize + dof0 << std::endl;}
+              for(LO interactingNode = 0; interactingNode < 27; ++interactingNode) {
+                // Find (if, jf, kf) the indices associated with the interacting node
+                ko = ke + (interactingNode / 9 - 1);
+                {
+                  LO tmp = interactingNode % 9;
+                  jo = je + (tmp / 3 - 1);
+                  io = ie + (tmp % 3 - 1);
+                  int dummy;
+                  GetNodeInfo(io, jo, ko, elementNodesPerDir, &jType, jInd, &dummy);
+                }
+                if((io > -1 && io < elementNodesPerDir[0]) &&
+                   (jo > -1 && jo < elementNodesPerDir[1]) &&
+                   (ko > -1 && ko < elementNodesPerDir[2])) {
+                  out << "interactingNode = " << interactingNode << ", iType = " << iType
+                      << ", iInd = " << iInd << ", jType = " << jType << ", jInd = " << jInd
+                      << std::endl;
+                  for(LO dof1 = 0; dof1 < BlkSize; ++dof1) {
+                    if(interactingNode*BlkSize + dof1 > stencil.size() - 1)
+                      {out << "Ai*: interactingNode*BlkSize + dof1 = "
+                           << interactingNode*BlkSize + dof1 << std::endl;}
+                    if (jType == 3) {
+                      if(jInd*BlkSize + dof1 > numInteriorNodes - 1)
+                        {out << "Aii: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
+                      Aii(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
+                        stencil[interactingNode*BlkSize + dof1];
+                    } else if(jType == 2) {
+                      if(jInd*BlkSize + dof1 > numFaceNodes - 1)
+                        {out << "Aif: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
+                      Aif(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
+                        stencil[interactingNode*BlkSize + dof1];
+                    } else if(jType == 1) {
+                      if(jInd*BlkSize + dof1 > numEdgeNodes - 1)
+                        {out << "Aie: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
+                      Aie(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
+                        stencil[interactingNode*BlkSize + dof1];
+                    } else if(jType == 0) {
+                      if(jInd*BlkSize + dof1 > numCornerNodes - 1)
+                        {out << "Aic: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
+                      Aic(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
+                        -stencil[interactingNode*BlkSize + dof1];
+                    }
+                  }
+                }
               }
-              {
-                int dummy;
-                GetNodeInfo(io, jo, ko, elementNodesPerDir, &jType, jInd, &dummy);
+            } else if(iType == 2) {// Face node, collapse stencil along face normal (*orientation)
+              if(iInd*BlkSize + dof0 > numFaceNodes - 1)
+                {out << "Af*: iInd*BlkSize + dof0 = " << iInd*BlkSize + dof0 << std::endl;}
+              CollapseStencil(2, orientation, stencil);
+              for(LO interactingNode = 0; interactingNode < 27; ++interactingNode) {
+                // Find (if, jf, kf) the indices associated with the interacting node
+                ko = ke + (interactingNode / 9 - 1);
+                {
+                  LO tmp = interactingNode % 9;
+                  jo = je + (tmp / 3 - 1);
+                  io = ie + (tmp % 3 - 1);
+                  int dummy;
+                  GetNodeInfo(io, jo, ko, elementNodesPerDir, &jType, jInd, &dummy);
+                }
+                if((io > -1 && io < elementNodesPerDir[0]) &&
+                   (jo > -1 && jo < elementNodesPerDir[1]) &&
+                   (ko > -1 && ko < elementNodesPerDir[2])) {
+                  out << "interactingNode = " << interactingNode << ", iType = " << iType
+                      << ", iInd = " << iInd << ", jType = " << jType << ", jInd = " << jInd
+                      << std::endl;
+                  for(LO dof1 = 0; dof1 < BlkSize; ++dof1) {
+                    if(interactingNode*BlkSize + dof1 > stencil.size() - 1) {
+                      out << "Af*: interactingNode*BlkSize + dof1 = "
+                          << interactingNode*BlkSize + dof1 << std::endl;
+                    }
+                    if(jType == 2) {
+                      if(jInd*BlkSize + dof1 > numFaceNodes - 1) {
+                        out << "Aff: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;
+                      }
+                      Aff(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
+                        stencil[interactingNode*BlkSize + dof1];
+                    } else if(jType == 1) {
+                      if(jInd*BlkSize + dof1 > numEdgeNodes - 1)
+                        {out << "Afe: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
+                      Afe(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
+                        stencil[interactingNode*BlkSize + dof1];
+                    } else if(jType == 0) {
+                      if(jInd*BlkSize + dof1 > numCornerNodes - 1)
+                        {out << "Afc: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
+                      Afc(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
+                        -stencil[interactingNode*BlkSize + dof1];
+                    }
+                  }
+                }
               }
-              if(iType == 3) {// interior node, no stencil collapse needed
-                for(LO dof1 = 0; dof1 < BlkSize; ++dof1) {
-                  if (jType == 3) {
-                    Aii(iInd*BlkSize + dof0, jInd*BlkSize + dof1) = stencil[interactingNode*BlkSize + dof1];
-                  } else if(jType == 2) {
-                    Aif(iInd*BlkSize + dof0, jInd*BlkSize + dof1) = stencil[interactingNode*BlkSize + dof1];
-                  } else if(jType == 1) {
-                    Aie(iInd*BlkSize + dof0, jInd*BlkSize + dof1) = stencil[interactingNode*BlkSize + dof1];
-                  } else if(jType == 0) {
-                    Aic(iInd*BlkSize + dof0, jInd*BlkSize + dof1) = stencil[interactingNode*BlkSize + dof1];
-                  }
+            } else if(iType == 1) {// Edge node, collapse stencil perpendicular to edge direction
+              CollapseStencil(1, orientation, stencil);
+              for(LO interactingNode = 0; interactingNode < 27; ++interactingNode) {
+                // Find (if, jf, kf) the indices associated with the interacting node
+                ko = ke + (interactingNode / 9 - 1);
+                {
+                  LO tmp = interactingNode % 9;
+                  jo = je + (tmp / 3 - 1);
+                  io = ie + (tmp % 3 - 1);
+                  int dummy;
+                  GetNodeInfo(io, jo, ko, elementNodesPerDir, &jType, jInd, &dummy);
                 }
-              } else if(iType == 2) {// Face node, collapse stencil along face normal (*orientation)
-                for(LO dof1 = 0; dof1 < BlkSize; ++dof1) {
-                  if(jType == 2) {
-                    Aff(iInd*BlkSize + dof0, jInd*BlkSize + dof1) = stencil[interactingNode*BlkSize + dof1];
-                  } else if(jType == 1) {
-                    Afe(iInd*BlkSize + dof0, jInd*BlkSize + dof1) = stencil[interactingNode*BlkSize + dof1];
-                  } else if(jType == 0) {
-                    Afc(iInd*BlkSize + dof0, jInd*BlkSize + dof1) = stencil[interactingNode*BlkSize + dof1];
-                  }
-                }
-              } else if(iType == 1) {// Edge node, collapse stencil perpendicular to edge direction (*orientation)
-                for(LO dof1 = 0; dof1 < BlkSize; ++dof1) {
-                  if(jType == 1) {
-                    Aee(iInd*BlkSize + dof0, jInd*BlkSize + dof1) = stencil[interactingNode*BlkSize + dof1];
-                  } else if(jType == 0) {
-                    Aec(iInd*BlkSize + dof0, jInd*BlkSize + dof1) = stencil[interactingNode*BlkSize + dof1];
-                  }
-                }
-              } // Pc is the identity so no need to treat iType == 0
-            } // Loop over interacting nodes within a row
+                if((io > -1 && io < elementNodesPerDir[0]) &&
+                   (jo > -1 && jo < elementNodesPerDir[1]) &&
+                   (ko > -1 && ko < elementNodesPerDir[2])) {
+                  out << "interactingNode = " << interactingNode << ", iType = " << iType
+                      << ", iInd = " << iInd << ", jType = " << jType << ", jInd = " << jInd
+                      << std::endl;
+                  if(iInd*BlkSize + dof0 > numEdgeNodes - 1)
+                    {out << "Ae*: iInd*BlkSize + dof0 = " << iInd*BlkSize + dof0 << std::endl;}
+                  for(LO dof1 = 0; dof1 < BlkSize; ++dof1) {
+                    if(interactingNode*BlkSize + dof1 > stencil.size() - 1) {
+                      out << "Ae*: interactingNode*BlkSize + dof1 = "
+                          << interactingNode*BlkSize + dof1 << std::endl;
+                    }
+                    if(jType == 1) {
+                      if(jInd*BlkSize + dof1 > numEdgeNodes - 1)
+                        {out << "Aee: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
+                      Aee(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
+                        stencil[interactingNode*BlkSize + dof1];
+                    } else if(jType == 0) {
+                      if(jInd*BlkSize + dof1 > numCornerNodes - 1)
+                        {out << "Aec: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
+                      Aec(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
+                        -stencil[interactingNode*BlkSize + dof1];
+                    }
+                  } // Check if interacting node is in element or not
+                } // Pc is the identity so no need to treat iType == 0
+              } // Loop over interacting nodes within a row
+            } // Check for current node type
           } // Loop over degrees of freedom associated to a given node
         } // Loop over i
       } // Loop over j
     } // Loop over k
 
+    out << "Local matrices filled" << std::endl;
+    out << "Aee: " << std::endl;
+    Aee.print(out);
 
+    out << "Aec: " << std::endl;
+    Aec.print(out);
+
+    out << "Aff: " << std::endl;
+    Aff.print(out);
+
+    out << "Afe: " << std::endl;
+    Afe.print(out);
+
+    out << "Aii: " << std::endl;
+    Aii.print(out);
+
+    out << "Aif: " << std::endl;
+    Aif.print(out);
 
     // Compute the projection operators for edge and interior nodes
     //
@@ -1088,6 +1286,9 @@ namespace MueLu {
       problem.unequilibrateLHS();
     }
 
+    out << "Pe is computed" << std::endl;
+    Pe.print(out);
+
     { // Compute P_f
       // We need to solve for P_f in: A_{ff}*P_f + A_{fe}*P_e = A_{fc}
       // Step one: A_{fc} = 1.0*A_{fc} + (-1.0)*A_{fe}*P_e
@@ -1101,12 +1302,15 @@ namespace MueLu {
       problem.unequilibrateLHS();
     }
 
+    out << "Pf is computed" << std::endl;
+    Pf.print(out);
+
     { // Compute P_i
       // We need to solve for P_i in: A_{ii}*P_i + A_{if}*P_f + A_{ie}*P_e = A_{ic}
       // Step one: A_{ic} = 1.0*A_{ic} + (-1.0)*A_{ie}*P_e
-      Afc.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -1.0, Aie, Pe, 1.0);
+      Aic.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -1.0, Aie, Pe, 1.0);
       // Step one: A_{ic} = 1.0*A_{ic} + (-1.0)*A_{if}*P_f
-      Afc.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -1.0, Aif, Pf, 1.0);
+      Aic.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -1.0, Aif, Pf, 1.0);
       // Step two: P_i = A_{ii}^{-1}*A_{ic}
       Teuchos::SerialDenseSolver<LO,SC> problem;
       problem.setMatrix(Teuchos::rcp(&Aii, false));
@@ -1115,6 +1319,9 @@ namespace MueLu {
       problem.solve();
       problem.unequilibrateLHS();
     }
+
+    out << "Pi is computed" << std::endl;
+    Pi.print(out);
 
   }
 
@@ -1199,10 +1406,15 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReorderStencil(
-                        const LO BlkSize, const LO ie, const LO je, const LO ke,
-                        const ArrayView<const SC> rowValues,
+                        const LO BlkSize, const Array<bool> ghostInterface, const LO ie,
+                        const LO je, const LO ke,const ArrayView<const SC> rowValues,
                         const Array<LO> elementNodesPerDir, Array<SC>& stencil) const {
-    if((ie == 0) && (je == 0) && (ke == 0)) {// corner 1
+
+    std::cout << "Hello again: (" << ie << ", " << je << ", " << ke << ")" << std::endl;
+    std::cout << "row length: " << rowValues.size() << std::endl;
+
+    if((ie == 0 && je == 0 && ke == 0)
+       && (ghostInterface[0] && ghostInterface[2] && ghostInterface[4])) {// corner 1
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[4];
         stencil[10] = rowValues[5];
@@ -1238,7 +1450,8 @@ namespace MueLu {
           stencil[24*BlkSize + d] = rowValues[26*BlkSize + d];
         }
       }
-    } else if((ie == elementNodesPerDir[0] - 1) && (je == 0) && (ke == 0)) {// corner 2
+    } else if((ie == elementNodesPerDir[0] - 1 && je == 0 && ke == 0)
+              && (ghostInterface[1] && ghostInterface[2] && ghostInterface[4])) {// corner 2
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[4];
         stencil[10] = rowValues[5];
@@ -1275,7 +1488,8 @@ namespace MueLu {
           stencil[26*BlkSize + d] = rowValues[26*BlkSize + d];
         }
       }
-    } else if((ie == 0) && (je == elementNodesPerDir[1] - 1) && (ke == 0)) {// corner 3
+    } else if((ie == 0 && je == elementNodesPerDir[1] - 1 && ke == 0)
+              && (ghostInterface[0] && ghostInterface[3] && ghostInterface[4])) {// corner 3
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[4];
         stencil[10] = rowValues[0];
@@ -1316,7 +1530,8 @@ namespace MueLu {
           }
         }
       }
-    } else if((ie == elementNodesPerDir[0] - 1) && (je == elementNodesPerDir[1] - 1) && (ke == 0)) {// corner 4
+    } else if((ie == elementNodesPerDir[0] - 1 && je == elementNodesPerDir[1] - 1 && ke == 0)
+              && (ghostInterface[1] && ghostInterface[3] && ghostInterface[4])) {// corner 4
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[4];
         stencil[10] = rowValues[0];
@@ -1357,7 +1572,8 @@ namespace MueLu {
           }
         }
       }
-    } else if((ie == 0) && (je == 0) && (ke == elementNodesPerDir[2] - 1)) {// corner 5
+    } else if((ie == 0 && je == 0 && ke == elementNodesPerDir[2] - 1)
+              && (ghostInterface[0] && ghostInterface[2] && ghostInterface[5])) {// corner 5
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[0];
         stencil[10] = rowValues[4];
@@ -1398,7 +1614,8 @@ namespace MueLu {
           }
         }
       }
-    } else if((ie == elementNodesPerDir[0] - 1) && (je == 0) && (ke == elementNodesPerDir[2] - 1)) {// corner 6
+    } else if((ie == elementNodesPerDir[0] - 1 && je == 0 && ke == elementNodesPerDir[2] - 1)
+              && (ghostInterface[1] && ghostInterface[2] && ghostInterface[5])) {// corner 6
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[0];
         stencil[10] = rowValues[4];
@@ -1439,7 +1656,8 @@ namespace MueLu {
           }
         }
       }
-    } else if((ie == 0) && (je == elementNodesPerDir[1] - 1) && (ke == elementNodesPerDir[2] - 1)) {// corner 7
+    } else if((ie == 0 && je == elementNodesPerDir[1] - 1 && ke == elementNodesPerDir[2] - 1)
+              && (ghostInterface[0] && ghostInterface[3] && ghostInterface[5])) {// corner 7
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[0];
         stencil[10] = rowValues[1];
@@ -1476,7 +1694,9 @@ namespace MueLu {
           }
         }
       }
-    } else if((ie == elementNodesPerDir[0] - 1) && (je == elementNodesPerDir[1] - 1) && (ke == elementNodesPerDir[2] - 1)) {// corner 8
+    } else if((ie == elementNodesPerDir[0] - 1 && je == elementNodesPerDir[1] - 1
+               && ke == elementNodesPerDir[2] - 1)
+              && (ghostInterface[1] && ghostInterface[3] && ghostInterface[5])) {// corner 8
       if(rowValues.size() == 7) {
         stencil[ 4] = rowValues[0];
         stencil[10] = rowValues[1];
@@ -1512,227 +1732,446 @@ namespace MueLu {
           }
         }
       }
-    } else if((je == 0 || je == elementNodesPerDir[1] - 1) && (ke == 0 || ke == elementNodesPerDir[2] - 1)) {// i-axis edge
-      Array<LO> iEdgeStencilOffset(3), iEdgeRowOffset(3);
-      if(ke == 0) {
-        iEdgeStencilOffset[1] =  0;
-        iEdgeRowOffset[1] = 12;
-        if(je == 0) {
-          iEdgeStencilOffset[0] = 12;
-          iEdgeStencilOffset[2] =  9;
-          iEdgeRowOffset[2] = 21;
-        } else {
-          iEdgeStencilOffset[0] = 9;
-          iEdgeStencilOffset[2] =  15;
-          iEdgeRowOffset[2] = 21;
+    } else if(((je == 0 && ghostInterface[2]) ||
+               (je == elementNodesPerDir[1] - 1 && ghostInterface[3]))
+              && ((ke == 0 && ghostInterface[4]) ||
+                  (ke == elementNodesPerDir[2] - 1 && ghostInterface[5]))) {// i-axis edge
+      if(rowValues.size() == 7) {
+        if((ke == 0 && ghostInterface[4]) && (je == 0 && ghostInterface[2])) {
+          stencil[ 4] = rowValues[5];
+          stencil[10] = rowValues[6];
+          stencil[12] = rowValues[0];
+          stencil[13] = rowValues[1];
+          stencil[14] = rowValues[2];
+          stencil[16] = rowValues[3];
+          stencil[22] = rowValues[4];
+        } else if((ke == 0 && ghostInterface[4])
+                  && (je == elementNodesPerDir[1] - 1 && ghostInterface[3])) {
+          stencil[ 4] = rowValues[5];
+          stencil[10] = rowValues[0];
+          stencil[12] = rowValues[1];
+          stencil[13] = rowValues[2];
+          stencil[14] = rowValues[3];
+          stencil[16] = rowValues[6];
+          stencil[22] = rowValues[4];
+        } else if((ke == elementNodesPerDir[2] - 1 && ghostInterface[5])
+                  && (je == 0 && ghostInterface[2])) {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[5];
+          stencil[12] = rowValues[1];
+          stencil[13] = rowValues[2];
+          stencil[14] = rowValues[3];
+          stencil[16] = rowValues[4];
+          stencil[22] = rowValues[6];
+        } else if((ke == elementNodesPerDir[2] - 1 && ghostInterface[5])
+                  && (je == elementNodesPerDir[1] - 1 && ghostInterface[3])) {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[1];
+          stencil[12] = rowValues[2];
+          stencil[13] = rowValues[3];
+          stencil[14] = rowValues[4];
+          stencil[16] = rowValues[5];
+          stencil[22] = rowValues[6];
         }
       } else {
-        iEdgeStencilOffset[1] =  18;
-        iEdgeRowOffset[1] = 18;
-        if(je == 0) {
-          iEdgeStencilOffset[0] =  3;
-          iEdgeStencilOffset[2] =  0;
-          iEdgeRowOffset[2] = 12;
+        Array<LO> iEdgeStencilOffset(3), iEdgeRowOffset(3);
+        if(ke == 0 && ghostInterface[4]) {
+          iEdgeStencilOffset[1] =  0;
+          iEdgeRowOffset[1] = 12;
+          if(je == 0 && ghostInterface[2]) {
+            iEdgeStencilOffset[0] = 12;
+            iEdgeStencilOffset[2] =  9;
+            iEdgeRowOffset[2] = 21;
+          } else {
+            iEdgeStencilOffset[0] = 9;
+            iEdgeStencilOffset[2] =  15;
+            iEdgeRowOffset[2] = 21;
+          }
         } else {
-          iEdgeStencilOffset[0] = 0;
-          iEdgeStencilOffset[2] = 6;
-          iEdgeRowOffset[2] = 12;
+          iEdgeStencilOffset[1] =  18;
+          iEdgeRowOffset[1] = 18;
+          if(je == 0 && ghostInterface[2]) {
+            iEdgeStencilOffset[0] =  3;
+            iEdgeStencilOffset[2] =  0;
+            iEdgeRowOffset[2] = 12;
+          } else {
+            iEdgeStencilOffset[0] = 0;
+            iEdgeStencilOffset[2] = 6;
+            iEdgeRowOffset[2] = 12;
+          }
         }
-      }
-      for(LO k = 0; k < 2; ++k) {
-        for(LO j = 0; j < 2; ++j) {
-          for(LO i = 0; i < 3; ++i) {
-            for(LO d = 0; d < BlkSize; ++d) {
-              stencil[(iEdgeStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] = rowValues[(6*k + 3*j + i)*BlkSize + d];
+        for(LO k = 0; k < 2; ++k) {
+          for(LO j = 0; j < 2; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO d = 0; d < BlkSize; ++d) {
+                stencil[(iEdgeStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] =
+                  rowValues[(6*k + 3*j + i)*BlkSize + d];
+              }
             }
           }
         }
-      }
-      for(LO i = 0; i < 9; ++i) {
-        for(LO d = 0; d < BlkSize; ++d) {
-          stencil[(iEdgeStencilOffset[1] + i)*BlkSize + d] = rowValues[(iEdgeRowOffset[1] + i)*BlkSize + d];
-        }
-      }
-      for(LO i = 0; i < 3; ++i) {
-        for(LO d = 0; d < BlkSize; ++d) {
-          stencil[(iEdgeStencilOffset[2] + i)*BlkSize + d]     = rowValues[(iEdgeRowOffset[2] + i)*BlkSize + d];
-          stencil[(iEdgeStencilOffset[2] + 9 + i)*BlkSize + d] = rowValues[(iEdgeRowOffset[2] + 3 + i)*BlkSize + d];
-        }
-      }
-    } else if((ie == 0 || ie == elementNodesPerDir[0] - 1) && (ke == 0 || ke == elementNodesPerDir[2] - 1)) {// j-axis edge
-      Array<LO> jEdgeStencilOffset(3), jEdgeRowOffset(3);
-      if(ke == 0) {
-        jEdgeStencilOffset[1] = 0;
-        jEdgeRowOffset[1] = 12;
-        if(ie == 0) {
-          jEdgeStencilOffset[0] = 10;
-          jEdgeStencilOffset[2] = 9;
-          jEdgeRowOffset[2] = 21;
-        } else {
-          jEdgeStencilOffset[0] = 9;
-          jEdgeStencilOffset[2] = 11;
-          jEdgeRowOffset[2] = 21;
-        }
-      } else {
-        jEdgeStencilOffset[1] = 18;
-        jEdgeRowOffset[1] = 18;
-        if(ie == 0) {
-          jEdgeStencilOffset[0] = 1;
-          jEdgeStencilOffset[2] = 0;
-          jEdgeRowOffset[2] = 12;
-        } else {
-          jEdgeStencilOffset[0] = 0;
-          jEdgeStencilOffset[2] = 2;
-          jEdgeRowOffset[2] = 12;
-        }
-      }
-      for(LO k = 0; k < 2; ++k) {
-        for(LO j = 0; j < 3; ++j) {
-          for(LO i = 0; i < 2; ++i) {
-            for(LO d = 0; d < BlkSize; ++d) {
-              stencil[(jEdgeStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] = rowValues[(6*k + 2*j + i)*BlkSize + d];
-            }
+        for(LO i = 0; i < 9; ++i) {
+          for(LO d = 0; d < BlkSize; ++d) {
+            stencil[(iEdgeStencilOffset[1] + i)*BlkSize + d] =
+              rowValues[(iEdgeRowOffset[1] + i)*BlkSize + d];
           }
         }
-      }
-      for(LO i = 0; i < 9; ++i) {
-        for(LO d = 0; d < BlkSize; ++d) {
-          stencil[(jEdgeStencilOffset[1] + i)*BlkSize + d] = rowValues[(jEdgeRowOffset[1] + i)*BlkSize + d];
-        }
-      }
-      for(LO i = 0; i < 3; ++i) {
-        for(LO d = 0; d < BlkSize; ++d) {
-          stencil[(jEdgeStencilOffset[2] + 3*i)*BlkSize + d]     = rowValues[(jEdgeRowOffset[2] + i)*BlkSize + d];
-          stencil[(jEdgeStencilOffset[2] + 9 + 3*i)*BlkSize + d] = rowValues[(jEdgeRowOffset[2] + 3 + i)*BlkSize + d];
-        }
-      }
-    } else if((ie == 0 || ie == elementNodesPerDir[0] - 1) && (je == 0 || je == elementNodesPerDir[1] - 1)) {// k-axis edge
-      Array<LO> kEdgeStencilOffset(3), kEdgeRowOffset(3);
-      if(je == 0) {
-        kEdgeStencilOffset[1] = 0;
-        kEdgeRowOffset[1] = 12;
-        if(ie == 0) {
-          kEdgeStencilOffset[0] = 4;
-          kEdgeStencilOffset[2] = 3;
-          kEdgeRowOffset[2] = 15;
-        } else {
-          kEdgeStencilOffset[0] = 3;
-          kEdgeStencilOffset[2] = 5;
-          kEdgeRowOffset[2] = 15;
-        }
-      } else {
-        kEdgeStencilOffset[1] = 6;
-        kEdgeRowOffset[1] = 14;
-        if(ie == 0) {
-          kEdgeStencilOffset[0] = 1;
-          kEdgeStencilOffset[2] = 0;
-          kEdgeRowOffset[2] = 12;
-        } else {
-          kEdgeStencilOffset[0] = 0;
-          kEdgeStencilOffset[2] = 2;
-          kEdgeRowOffset[2] = 12;
-        }
-      }
-      for(LO k = 0; k < 3; ++k) {
-        for(LO j = 0; j < 2; ++j) {
-          for(LO i = 0; i < 2; ++i) {
-            for(LO d = 0; d < BlkSize; ++d) {
-              stencil[(kEdgeStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] = rowValues[(4*k + 2*j + i)*BlkSize + d];
-            }
-          }
-        }
-      }
-      for(LO k = 0; k < 3; ++k) {
         for(LO i = 0; i < 3; ++i) {
           for(LO d = 0; d < BlkSize; ++d) {
-            stencil[(kEdgeStencilOffset[1] + 9*k + i)*BlkSize + d] = rowValues[(kEdgeRowOffset[1] + 5*k + i)*BlkSize + d];
+            stencil[(iEdgeStencilOffset[2] + i)*BlkSize + d]     =
+              rowValues[(iEdgeRowOffset[2] + i)*BlkSize + d];
+            stencil[(iEdgeStencilOffset[2] + 9 + i)*BlkSize + d] =
+              rowValues[(iEdgeRowOffset[2] + 3 + i)*BlkSize + d];
           }
         }
       }
-      for(LO i = 0; i < 3; ++i) {
-        for(LO d = 0; d < BlkSize; ++d) {
-          stencil[(kEdgeStencilOffset[2] + 9*i)*BlkSize + d]     = rowValues[(kEdgeRowOffset[2] + 5*i)*BlkSize + d];
-          stencil[(kEdgeStencilOffset[2] + 3 + 9*i)*BlkSize + d] = rowValues[(kEdgeRowOffset[2] + 1 + 5*i)*BlkSize + d];
+    } else if(((ie == 0 && ghostInterface[0])
+               || (ie == elementNodesPerDir[0] - 1 && ghostInterface[1]))
+              && ((ke == 0 && ghostInterface[4])
+                  || (ke == elementNodesPerDir[2] - 1 && ghostInterface[5]))) {// j-axis edge
+      if(rowValues.size() == 7) {
+        if((ke == 0 && ghostInterface[4]) && (ie == 0 && ghostInterface[0])) {
+          std::cout << "Reordering for ke == 0 && je == 0" << std::endl;
+          stencil[ 4] = rowValues[5];
+          stencil[10] = rowValues[0];
+          stencil[12] = rowValues[6];
+          stencil[13] = rowValues[1];
+          stencil[14] = rowValues[2];
+          stencil[16] = rowValues[3];
+          stencil[22] = rowValues[4];
+        } else if((ke == 0 && ghostInterface[4])
+                  && (ie == elementNodesPerDir[0] - 1 && ghostInterface[1])) {
+          stencil[ 4] = rowValues[5];
+          stencil[10] = rowValues[0];
+          stencil[12] = rowValues[1];
+          stencil[13] = rowValues[2];
+          stencil[14] = rowValues[6];
+          stencil[16] = rowValues[3];
+          stencil[22] = rowValues[4];
+        } else if((ke == elementNodesPerDir[2] - 1 && ghostInterface[5])
+                  && (ie == 0 && ghostInterface[0])) {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[1];
+          stencil[12] = rowValues[5];
+          stencil[13] = rowValues[2];
+          stencil[14] = rowValues[3];
+          stencil[16] = rowValues[4];
+          stencil[22] = rowValues[6];
+        } else if((ke == elementNodesPerDir[2] - 1 && ghostInterface[5])
+                  && (ie == elementNodesPerDir[0] - 1 && ghostInterface[1])) {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[1];
+          stencil[12] = rowValues[2];
+          stencil[13] = rowValues[3];
+          stencil[14] = rowValues[5];
+          stencil[16] = rowValues[4];
+          stencil[22] = rowValues[6];
         }
-      }
-    } else if(ie == 0 || ie == elementNodesPerDir[0] - 1) {// i-axis face
-      Array<LO> iFaceStencilOffset(2);
-      if(ie == 0) {
-        iFaceStencilOffset[0] = 1;
-        iFaceStencilOffset[1] = 0;
       } else {
-        iFaceStencilOffset[0] = 0;
-        iFaceStencilOffset[1] = 2;
-      }
-      for(LO k = 0; k < 3; ++k) {
-        for(LO j = 0; j < 3; ++j) {
-          for(LO i = 0; i < 2; ++i) {
-            for(LO d = 0; d < BlkSize; ++d) {
-              stencil[(iFaceStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] = rowValues[(6*k + 2*j + i)*BlkSize + d];
+        Array<LO> jEdgeStencilOffset(3), jEdgeRowOffset(3);
+        if(ke == 0 && ghostInterface[4]) {
+          jEdgeStencilOffset[1] = 0;
+          jEdgeRowOffset[1] = 12;
+          if(ie == 0 && ghostInterface[0]) {
+            jEdgeStencilOffset[0] = 10;
+            jEdgeStencilOffset[2] = 9;
+            jEdgeRowOffset[2] = 21;
+          } else {
+            jEdgeStencilOffset[0] = 9;
+            jEdgeStencilOffset[2] = 11;
+            jEdgeRowOffset[2] = 21;
+          }
+        } else {
+          jEdgeStencilOffset[1] = 18;
+          jEdgeRowOffset[1] = 18;
+          if(ie == 0 && ghostInterface[0]) {
+            jEdgeStencilOffset[0] = 1;
+            jEdgeStencilOffset[2] = 0;
+            jEdgeRowOffset[2] = 12;
+          } else {
+            jEdgeStencilOffset[0] = 0;
+            jEdgeStencilOffset[2] = 2;
+            jEdgeRowOffset[2] = 12;
+          }
+        }
+        for(LO k = 0; k < 2; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 2; ++i) {
+              for(LO d = 0; d < BlkSize; ++d) {
+                stencil[(jEdgeStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] =
+                  rowValues[(6*k + 2*j + i)*BlkSize + d];
+              }
             }
           }
         }
-      }
-      for(LO k = 0; k < 3; ++k) {
-        for(LO j = 0; j < 3; ++j) {
+        for(LO i = 0; i < 9; ++i) {
           for(LO d = 0; d < BlkSize; ++d) {
-            stencil[(iFaceStencilOffset[1] + k*9 + j*3)*BlkSize + d] = rowValues[(18 + 3*k + j)*BlkSize + d];
+            stencil[(jEdgeStencilOffset[1] + i)*BlkSize + d] =
+              rowValues[(jEdgeRowOffset[1] + i)*BlkSize + d];
           }
         }
-      }
-    } else if(je == 0 || je == elementNodesPerDir[1] - 1) {// j-axis face
-      Array<LO> jFaceStencilOffset(2);
-      if(je == 0) {
-        jFaceStencilOffset[0] = 3;
-        jFaceStencilOffset[1] = 0;
-      } else {
-        jFaceStencilOffset[0] = 0;
-        jFaceStencilOffset[1] = 6;
-      }
-      for(LO k = 0; k < 3; ++k) {
-        for(LO j = 0; j < 2; ++j) {
-          for(LO i = 0; i < 3; ++i) {
-            for(LO d = 0; d < BlkSize; ++d) {
-              stencil[(jFaceStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] = rowValues[(6*k + 3*j + i)*BlkSize + d];
-            }
-          }
-        }
-      }
-      for(LO k = 0; k < 3; ++k) {
         for(LO i = 0; i < 3; ++i) {
           for(LO d = 0; d < BlkSize; ++d) {
-            stencil[(jFaceStencilOffset[1] + k*9 + i)*BlkSize + d] = rowValues[(18 + 3*k + i)*BlkSize + d];
+            stencil[(jEdgeStencilOffset[2] + 3*i)*BlkSize + d]     =
+              rowValues[(jEdgeRowOffset[2] + i)*BlkSize + d];
+            stencil[(jEdgeStencilOffset[2] + 9 + 3*i)*BlkSize + d] =
+              rowValues[(jEdgeRowOffset[2] + 3 + i)*BlkSize + d];
           }
         }
       }
-    } else if(ke == 0 || ke == elementNodesPerDir[2] - 1) {// k-axis face
-      Array<LO> kFaceStencilOffset(2);
-      if(ke == 0) {
-        kFaceStencilOffset[0] =  9;
-        kFaceStencilOffset[1] =  0;
+    } else if(((ie == 0 && ghostInterface[0])
+               || (ie == elementNodesPerDir[0] - 1 && ghostInterface[1]))
+              && ((je == 0 && ghostInterface[2])
+                  || (je == elementNodesPerDir[1] - 1 && ghostInterface[3]))) {// k-axis edge
+      if(rowValues.size() == 7) {
+        if((je == 0 && ghostInterface[2]) && (ie == 0 && ghostInterface[0])) {
+          std::cout << "Reordering for ke == 0 && je == 0" << std::endl;
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[5];
+          stencil[12] = rowValues[6];
+          stencil[13] = rowValues[1];
+          stencil[14] = rowValues[2];
+          stencil[16] = rowValues[3];
+          stencil[22] = rowValues[4];
+        } else if((je == 0 && ghostInterface[2])
+                  && (ie == elementNodesPerDir[0] - 1 && ghostInterface[1])) {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[5];
+          stencil[12] = rowValues[1];
+          stencil[13] = rowValues[2];
+          stencil[14] = rowValues[6];
+          stencil[16] = rowValues[3];
+          stencil[22] = rowValues[4];
+        } else if((je == elementNodesPerDir[1] - 1 && ghostInterface[3])
+                  && (ie == 0 && ghostInterface[0])) {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[1];
+          stencil[12] = rowValues[5];
+          stencil[13] = rowValues[2];
+          stencil[14] = rowValues[3];
+          stencil[16] = rowValues[6];
+          stencil[22] = rowValues[4];
+        } else if((je == elementNodesPerDir[1] - 1 && ghostInterface[3])
+                  && (ie == elementNodesPerDir[0] - 1 && ghostInterface[1])) {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[1];
+          stencil[12] = rowValues[2];
+          stencil[13] = rowValues[3];
+          stencil[14] = rowValues[5];
+          stencil[16] = rowValues[6];
+          stencil[22] = rowValues[4];
+        }
       } else {
-        kFaceStencilOffset[0] =  0;
-        kFaceStencilOffset[1] = 18;
-      }
-      for(LO k = 0; k < 2; ++k) {
-        for(LO j = 0; j < 3; ++j) {
+        Array<LO> kEdgeStencilOffset(3), kEdgeRowOffset(3);
+        if(je == 0 && ghostInterface[2]) {
+          kEdgeStencilOffset[1] = 0;
+          kEdgeRowOffset[1] = 12;
+          if(ie == 0 && ghostInterface[0]) {
+            kEdgeStencilOffset[0] = 4;
+            kEdgeStencilOffset[2] = 3;
+            kEdgeRowOffset[2] = 15;
+          } else {
+            kEdgeStencilOffset[0] = 3;
+            kEdgeStencilOffset[2] = 5;
+            kEdgeRowOffset[2] = 15;
+          }
+        } else {
+          kEdgeStencilOffset[1] = 6;
+          kEdgeRowOffset[1] = 14;
+          if(ie == 0 && ghostInterface[0]) {
+            kEdgeStencilOffset[0] = 1;
+            kEdgeStencilOffset[2] = 0;
+            kEdgeRowOffset[2] = 12;
+          } else {
+            kEdgeStencilOffset[0] = 0;
+            kEdgeStencilOffset[2] = 2;
+            kEdgeRowOffset[2] = 12;
+          }
+        }
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 2; ++j) {
+            for(LO i = 0; i < 2; ++i) {
+              for(LO d = 0; d < BlkSize; ++d) {
+                stencil[(kEdgeStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] =
+                  rowValues[(4*k + 2*j + i)*BlkSize + d];
+              }
+            }
+          }
+        }
+        for(LO k = 0; k < 3; ++k) {
           for(LO i = 0; i < 3; ++i) {
             for(LO d = 0; d < BlkSize; ++d) {
-              stencil[(kFaceStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] = rowValues[(9*k + 3*j + i)*BlkSize + d];
+              stencil[(kEdgeStencilOffset[1] + 9*k + i)*BlkSize + d] =
+                rowValues[(kEdgeRowOffset[1] + 5*k + i)*BlkSize + d];
+            }
+          }
+        }
+        for(LO i = 0; i < 3; ++i) {
+          for(LO d = 0; d < BlkSize; ++d) {
+            stencil[(kEdgeStencilOffset[2] + 9*i)*BlkSize + d]     =
+              rowValues[(kEdgeRowOffset[2] + 5*i)*BlkSize + d];
+            stencil[(kEdgeStencilOffset[2] + 3 + 9*i)*BlkSize + d] =
+              rowValues[(kEdgeRowOffset[2] + 1 + 5*i)*BlkSize + d];
+          }
+        }
+      }
+    } else if((ie == 0 && ghostInterface[0])
+              || (ie == elementNodesPerDir[0] - 1 && ghostInterface[1])) {// i-axis face
+      if(rowValues.size() == 7) {
+        if(ie == 0 && ghostInterface[0]) {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[6];
+          stencil[12] = rowValues[1];
+          stencil[13] = rowValues[2];
+          stencil[14] = rowValues[3];
+          stencil[16] = rowValues[4];
+          stencil[22] = rowValues[5];
+        } else {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[1];
+          stencil[12] = rowValues[2];
+          stencil[13] = rowValues[3];
+          stencil[14] = rowValues[4];
+          stencil[16] = rowValues[6];
+          stencil[22] = rowValues[5];
+        }
+      } else {
+        Array<LO> iFaceStencilOffset(2);
+        if(ie == 0 && ghostInterface[0]) {
+          iFaceStencilOffset[0] = 1;
+          iFaceStencilOffset[1] = 0;
+        } else {
+          iFaceStencilOffset[0] = 0;
+          iFaceStencilOffset[1] = 2;
+        }
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 2; ++i) {
+              for(LO d = 0; d < BlkSize; ++d) {
+                stencil[(iFaceStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] =
+                  rowValues[(6*k + 2*j + i)*BlkSize + d];
+              }
+            }
+          }
+        }
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO d = 0; d < BlkSize; ++d) {
+              stencil[(iFaceStencilOffset[1] + k*9 + j*3)*BlkSize + d] =
+                rowValues[(18 + 3*k + j)*BlkSize + d];
             }
           }
         }
       }
-      for(LO j = 0; j < 3; ++j) {
-        for(LO i = 0; i < 3; ++i) {
-          for(LO d = 0; d < BlkSize; ++d) {
-            stencil[(kFaceStencilOffset[1] + 3*j + i)*BlkSize + d] = rowValues[(18 + 3*j + i)*BlkSize + d];
+    } else if((je == 0 && ghostInterface[2])
+              || (je == elementNodesPerDir[1] - 1 && ghostInterface[3])) {// j-axis face
+      if(rowValues.size() == 7) {
+        if(je == 0 && ghostInterface[2]) {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[1];
+          stencil[12] = rowValues[6];
+          stencil[13] = rowValues[2];
+          stencil[14] = rowValues[3];
+          stencil[16] = rowValues[4];
+          stencil[22] = rowValues[5];
+        } else {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[1];
+          stencil[12] = rowValues[2];
+          stencil[13] = rowValues[3];
+          stencil[14] = rowValues[6];
+          stencil[16] = rowValues[4];
+          stencil[22] = rowValues[5];
+        }
+      } else {
+        Array<LO> jFaceStencilOffset(2);
+        if(je == 0 && ghostInterface[2]) {
+          jFaceStencilOffset[0] = 3;
+          jFaceStencilOffset[1] = 0;
+        } else {
+          jFaceStencilOffset[0] = 0;
+          jFaceStencilOffset[1] = 6;
+        }
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 2; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO d = 0; d < BlkSize; ++d) {
+                stencil[(jFaceStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] =
+                  rowValues[(6*k + 3*j + i)*BlkSize + d];
+              }
+            }
+          }
+        }
+        for(LO k = 0; k < 3; ++k) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO d = 0; d < BlkSize; ++d) {
+              stencil[(jFaceStencilOffset[1] + k*9 + i)*BlkSize + d] =
+                rowValues[(18 + 3*k + i)*BlkSize + d];
+            }
+          }
+        }
+      }
+    } else if((ke == 0 && ghostInterface[4])
+              || (ke == elementNodesPerDir[2] - 1 && ghostInterface[5])) {// k-axis face
+      if(rowValues.size() == 7) {
+        if(ke == 0 && ghostInterface[4]) {
+          stencil[ 4] = rowValues[6];
+          stencil[10] = rowValues[0];
+          stencil[12] = rowValues[1];
+          stencil[13] = rowValues[2];
+          stencil[14] = rowValues[3];
+          stencil[16] = rowValues[4];
+          stencil[22] = rowValues[5];
+        } else {
+          stencil[ 4] = rowValues[0];
+          stencil[10] = rowValues[1];
+          stencil[12] = rowValues[2];
+          stencil[13] = rowValues[3];
+          stencil[14] = rowValues[4];
+          stencil[16] = rowValues[5];
+          stencil[22] = rowValues[6];
+        }
+      } else {
+        Array<LO> kFaceStencilOffset(2);
+        if(ke == 0 && ghostInterface[4]) {
+          kFaceStencilOffset[0] =  9;
+          kFaceStencilOffset[1] =  0;
+        } else {
+          kFaceStencilOffset[0] =  0;
+          kFaceStencilOffset[1] = 18;
+        }
+        for(LO k = 0; k < 2; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO d = 0; d < BlkSize; ++d) {
+                stencil[(kFaceStencilOffset[0] + k*9 + j*3 + i)*BlkSize + d] =
+                  rowValues[(9*k + 3*j + i)*BlkSize + d];
+              }
+            }
+          }
+        }
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO d = 0; d < BlkSize; ++d) {
+              stencil[(kFaceStencilOffset[1] + 3*j + i)*BlkSize + d] =
+                rowValues[(18 + 3*j + i)*BlkSize + d];
+            }
           }
         }
       }
     } else {// the node is "interior" and nothing needs to be reordered
-      for(LO i = 0; i < 27*BlkSize; ++i) {
-        stencil[i] = rowValues[i];
+      if(rowValues.size() == 7) {
+        stencil[4] = rowValues[0];
+        stencil[10] = rowValues[1];
+        stencil[12] = rowValues[2];
+        stencil[13] = rowValues[3];
+        stencil[14] = rowValues[4];
+        stencil[16] = rowValues[5];
+        stencil[22] = rowValues[6];
+      } else {
+        for(LO i = 0; i < 27*BlkSize; ++i) {
+          stencil[i] = rowValues[i];
+        }
       }
     }
   } // ReorderStencil()
@@ -1750,10 +2189,14 @@ namespace MueLu {
              && (ie == 0 || ie == elementNodesPerDir[0]-1)) {
       // Corner node
       *type = 0;
-      ind  = 4*ke / (elementNodesPerDir[2]-1) + 2*je / (elementNodesPerDir[1]-1) + ie / (elementNodesPerDir[0]-1);
-    } else if(((ke == 0 || ke == elementNodesPerDir[2]-1) && (je == 0 || je == elementNodesPerDir[1]-1))
-                     || ((ke == 0 || ke == elementNodesPerDir[2]-1) && (ie == 0 || ie == elementNodesPerDir[0]-1))
-                     || ((je == 0 || je == elementNodesPerDir[1]-1) && (ie == 0 || ie == elementNodesPerDir[0]-1))) {
+      ind  = 4*ke / (elementNodesPerDir[2]-1) + 2*je / (elementNodesPerDir[1]-1)
+        + ie / (elementNodesPerDir[0]-1);
+    } else if(((ke == 0 || ke == elementNodesPerDir[2]-1)
+               && (je == 0 || je == elementNodesPerDir[1]-1))
+              || ((ke == 0 || ke == elementNodesPerDir[2]-1)
+                  && (ie == 0 || ie == elementNodesPerDir[0]-1))
+              || ((je == 0 || je == elementNodesPerDir[1]-1)
+                  && (ie == 0 || ie == elementNodesPerDir[0]-1))) {
       // Edge node
       *type = 1;
       if(ke > 0) {ind += 2*(elementNodesPerDir[0] - 2 + elementNodesPerDir[1] - 2);}

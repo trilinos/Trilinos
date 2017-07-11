@@ -84,24 +84,47 @@ namespace MueLuTests {
     virtual ~BlackBoxPFactoryTester() { }
     //@}
 
-    void TestGetGeometricData(Teuchos::RCP<Xpetra::MultiVector<double, LO, GO, NO> >& coordinates, Array<LO> coarseRate, Array<GO> gNodesPerDim, Array<LO> lNodesPerDim, LO BlkSize,
-                              Array<GO>& gIndices, Array<GO>& gCoarseNodesPerDir, Array<GO>& ghostGIDs, Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes,
-                              Array<LO>& myOffset, Array<LO>& lCoarseNodesPerDir, Array<LO>& endRate, LO& lNumCoarseNodes,
-                              Array<bool>& ghostInterface, ArrayRCP<Array<double> > coarseNodes) const{
+    void TestGetGeometricData(Teuchos::RCP<Xpetra::MultiVector<double, LO, GO, NO> >& coordinates,
+                              Array<LO> coarseRate, Array<GO> gNodesPerDim, Array<LO> lNodesPerDim,
+                              LO BlkSize, Array<GO>& gIndices, Array<GO>& gCoarseNodesPerDir,
+                              Array<GO>& ghostGIDs, Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs,
+                              GO& gNumCoarseNodes, Array<LO>& myOffset,
+                              Array<LO>& lCoarseNodesPerDir, Array<LO>& endRate,LO& lNumCoarseNodes,
+                              Array<bool>& ghostInterface, ArrayRCP<Array<double> > coarseNodes)
+    const{
       // Call the method to be tested.
       MueLu::BlackBoxPFactory<SC,LO,GO,Node> mybbmgPFactory;
       mybbmgPFactory.GetGeometricData(coordinates, coarseRate, gNodesPerDim, lNodesPerDim, BlkSize,
-                                      gIndices, myOffset, ghostInterface, endRate, gCoarseNodesPerDir,
-                                      lCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs, colGIDs,
-                                      gNumCoarseNodes, lNumCoarseNodes, coarseNodes);
+                                      gIndices, myOffset, ghostInterface, endRate,
+                                      gCoarseNodesPerDir, lCoarseNodesPerDir, ghostGIDs,
+                                      coarseNodesGIDs, colGIDs, gNumCoarseNodes, lNumCoarseNodes,
+                                      coarseNodes);
     };
 
-    void TestReorderStencil(const LO BlkSize, const LO ie, const LO je, const LO ke, const ArrayView<const SC> rowValues, const Array<LO> elementNodesPerDir, Array<SC>& stencil) const {
+    void TestComputeLocalEntries(const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,
+                                 const Array<LO> endRate, const LO BlkSize,const Array<LO> elemInds,
+                                 const Array<LO> lCoarseElementsPerDir,
+                                 const LO numDimensions, const Array<LO> lFineNodesPerDir,
+                                 const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
+                                 const Array<LO> lCoarseNodesPerDir,
+                                 const Array<bool> ghostInterface) const {
+      MueLu::BlackBoxPFactory<SC,LO,GO,NO> mybbmgPFactory;
+      mybbmgPFactory.ComputeLocalEntries(Aghost, coarseRate, endRate, BlkSize, elemInds,
+                                         lCoarseElementsPerDir, numDimensions,
+                                         lFineNodesPerDir, gFineNodesPerDir, gIndices,
+                                         lCoarseNodesPerDir, ghostInterface);
+    };
+
+    void TestReorderStencil(const LO BlkSize, const Array<bool> ghostInterface, const LO ie,
+                            const LO je, const LO ke, const ArrayView<const SC> rowValues,
+                            const Array<LO> elementNodesPerDir, Array<SC>& stencil) const {
       MueLu::BlackBoxPFactory<SC,LO,GO,Node> mybbmgPFactory;
-      mybbmgPFactory.ReorderStencil(BlkSize, ie, je, ke, rowValues, elementNodesPerDir, stencil);
+      mybbmgPFactory.ReorderStencil(BlkSize, ghostInterface, ie, je, ke, rowValues,
+                                    elementNodesPerDir, stencil);
     };
 
-    void TestGetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir, int* nodeType, LO& nodeIndex) const {
+    void TestGetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir,
+                         int* nodeType, LO& nodeIndex) const {
       MueLu::BlackBoxPFactory<SC,LO,GO,Node> mybbmgPFactory;
       int dummy;
       mybbmgPFactory.GetNodeInfo(ie, je, ke, elementNodesPerDir, nodeType, nodeIndex, &dummy);
@@ -109,17 +132,18 @@ namespace MueLuTests {
 
   };
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib, const LocalOrdinal numDimensions,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib,
+                      const LocalOrdinal numDimensions,
                       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
-                      RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& Coordinates,
+                      RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
                       RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal> >& map,
                       Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
 #include "MueLu_UseShortNames.hpp"
 
     GO nx = 7;
     GO ny = 7;
-    GO nz = (numDimensions == 2 ? 1 : 7);
+    GO nz = (numDimensions < 3 ? 1 : 7);
     GO gNumPoints = nx*ny*nz;
 
     gNodesPerDim[0] = nx;
@@ -152,7 +176,7 @@ namespace MueLuTests {
           lNodesPerDim[1] = 4;
           lNodesPerDim[2] = 1;
         } else if(numDimensions == 3) {
-          myOffset = 15;
+          myOffset = 28;
           lNodesPerDim[0] = nx;
           lNodesPerDim[1] = 3;
           lNodesPerDim[2] = 4;
@@ -164,10 +188,10 @@ namespace MueLuTests {
           lNodesPerDim[1] = 3;
           lNodesPerDim[2] = 1;
         } else if(numDimensions == 3) {
-          myOffset = 75;
+          myOffset = 196;
           lNodesPerDim[0] = nx;
-          lNodesPerDim[1] = 3;
-          lNodesPerDim[2] = 2;
+          lNodesPerDim[1] = 4;
+          lNodesPerDim[2] = 3;
         }
       } else if(comm->getRank() == 3) {
         if(numDimensions == 2) {
@@ -176,10 +200,10 @@ namespace MueLuTests {
           lNodesPerDim[1] = 3;
           lNodesPerDim[2] = 1;
         } else if(numDimensions == 3) {
-          myOffset = 90;
+          myOffset = 224;
           lNodesPerDim[0] = nx;
-          lNodesPerDim[1] = 2;
-          lNodesPerDim[2] = 2;
+          lNodesPerDim[1] = 3;
+          lNodesPerDim[2] = 3;
         }
       }
     }
@@ -204,10 +228,14 @@ namespace MueLuTests {
     for(LO k = 0; k < lNodesPerDim[2]; ++k) {
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          myGIDs[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = myOffset + k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0] + i;
-          myXCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = (i + myXoffset) / Teuchos::as<double>(gNodesPerDim[0] - 1);
-          myYCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = (j + myYoffset) / Teuchos::as<double>(gNodesPerDim[1] - 1);
-          myZCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = (k + myZoffset) / Teuchos::as<double>(gNodesPerDim[2] - 1);
+          myGIDs[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = myOffset
+            + k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0] + i;
+          myXCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
+            (i + myXoffset) / Teuchos::as<double>(gNodesPerDim[0] - 1);
+          myYCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
+            (j + myYoffset) / Teuchos::as<double>(gNodesPerDim[1] - 1);
+          myZCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
+            (k + myZoffset) / Teuchos::as<double>(gNodesPerDim[2] - 1);
         }
       }
     }
@@ -226,37 +254,42 @@ namespace MueLuTests {
 
     // Create the map and store coordinates using the above array views
     map         = MapFactory::Build(lib, gNumPoints, myGIDs(), 0, comm);
-    Coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, myCoordinates(), numDimensions);
+    Coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, myCoordinates(),
+                                                                     numDimensions);
 
     // small parameter list for Galeri
-    Teuchos::ParameterList problemParamList;
+    Teuchos::ParameterList problemList;
     if(numDimensions == 1) {
-      problemParamList.set("nx",gNodesPerDim[0]);
+      problemList.set("nx",gNodesPerDim[0]);
     } else if(numDimensions == 2) {
-      problemParamList.set("nx",gNodesPerDim[0]);
-      problemParamList.set("ny",gNodesPerDim[1]);
+      problemList.set("nx",gNodesPerDim[0]);
+      problemList.set("ny",gNodesPerDim[1]);
     } else if(numDimensions == 3) {
-      problemParamList.set("nx",gNodesPerDim[0]);
-      problemParamList.set("ny",gNodesPerDim[1]);
-      problemParamList.set("nz",gNodesPerDim[2]);
+      problemList.set("nx",gNodesPerDim[0]);
+      problemList.set("ny",gNodesPerDim[1]);
+      problemList.set("nz",gNodesPerDim[2]);
     }
-    // problemParamList.set("keepBCs", true);
+    // problemList.set("keepBCs", true);
 
     // create Poisson problem and matrix
     if(numDimensions == 1) {
-      Galeri::Xpetra::Laplace1DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemParamList, map);
+      Galeri::Xpetra::Laplace1DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList,
+                                                                                       map);
       Op = Problem.BuildMatrix();
     } else if(numDimensions == 2) {
-      Galeri::Xpetra::Laplace2DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemParamList, map);
+      Galeri::Xpetra::Laplace2DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList,
+                                                                                       map);
       Op = Problem.BuildMatrix();
     } else if(numDimensions == 3) {
-      Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemParamList, map);
+      Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList,
+                                                                                       map);
       Op = Problem.BuildMatrix();
     }
 
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, Constructor, Scalar, LocalOrdinal,
+                                    GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -269,7 +302,8 @@ namespace MueLuTests {
 
   } //Constructor
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, BlackBoxGhosts, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, BlackBoxGhosts, Scalar, LocalOrdinal,
+                                    GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -293,7 +327,8 @@ namespace MueLuTests {
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
-    GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim, lNodesPerDim);
+    GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim,
+                                lNodesPerDim);
 
     Array<LO> coarseRate(3);
     coarseRate[0] = 2;
@@ -408,7 +443,8 @@ namespace MueLuTests {
 
   } //BlackBoxGhosts
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, StencilReordering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, StencilReordering, Scalar, LocalOrdinal,
+                                    GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -425,20 +461,27 @@ namespace MueLuTests {
 
     // Generate input data
     LO ie, je, ke;
-    Array<LO> elementNodesPerDir(3);
+    Array<LO> elementNodesPerDir(3), lCoarseElementsPerDir(3), elemInds(3);
     elementNodesPerDir[0] = 3;
     elementNodesPerDir[1] = 3;
     elementNodesPerDir[2] = 3;
     LO BlkSize = 1;
 
+    Array<bool> ghostInterface(6);
+    for(int i = 0; i < 6; ++i) {
+      ghostInterface[i] = false;
+    }
+
     {// check reordering for ie = 0, je = 0, ke = 0
       ie = 0, je = 0, ke = 0;
       const std::vector<SC> v = {13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0, 26.0,
-                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0,
-                                     15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
+                                  0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0,
+                                 11.0, 12.0,
+                                 15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -453,11 +496,13 @@ namespace MueLuTests {
     {// check reordering for ie = 2, je = 0, ke = 0
       ie = 2, je = 0, ke = 0;
       const std::vector<SC> v = {12.0, 13.0, 15.0, 16.0, 21.0, 22.0, 24.0, 25.0,
-                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0,
-                                     14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
+                                  0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,
+                                 10.0, 11.0,
+                                 14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -476,7 +521,8 @@ namespace MueLuTests {
                                      12.0, 15.0, 16.0, 17.0, 18.0, 21.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -495,7 +541,8 @@ namespace MueLuTests {
                                      11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -514,7 +561,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -533,7 +581,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -552,7 +601,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -571,7 +621,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -585,12 +636,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 0, ke = 0
       ie = 1, je = 0, ke = 0;
-      const std::vector<SC> v = {12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
-                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
-                                      9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
+      const std::vector<SC> v = {12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 21.0, 22.0, 23.0, 24.0, 25.0,
+                                 26.0,
+                                  0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                  9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -604,12 +657,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 2, ke = 0
       ie = 1, je = 2, ke = 0;
-      const std::vector<SC> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
-                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
-                                     15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
+      const std::vector<SC> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 18.0, 19.0, 20.0, 21.0, 22.0,
+                                 23.0,
+                                  0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                 15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -623,12 +678,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 0, ke = 2
       ie = 1, je = 0, ke = 2;
-      const std::vector<SC> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
-                                      0.0,  1.0,  2.0,  9.0, 10.0, 11.0,
-                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      const std::vector<SC> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+                                 17.0,
+                                  0.0,  1.0,  2.0,  9.0, 10.0, 11.0,
+                                 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -642,12 +699,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 2, ke = 2
       ie = 1, je = 2, ke = 2;
-      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
-                                      6.0,  7.0,  8.0, 15.0, 16.0, 17.0,
-                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0,
+                                 14.0,
+                                  6.0,  7.0,  8.0, 15.0, 16.0, 17.0,
+                                 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -661,12 +720,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 1, ke = 0
       ie = 0, je = 1, ke = 0;
-      const std::vector<SC> v = {10.0, 11.0, 13.0, 14.0, 16.0, 17.0, 19.0, 20.0, 22.0, 23.0, 25.0, 26.0,
-                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
-                                      9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
+      const std::vector<SC> v = {10.0, 11.0, 13.0, 14.0, 16.0, 17.0, 19.0, 20.0, 22.0, 23.0, 25.0,
+                                 26.0,
+                                  0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                  9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -680,12 +741,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 1, ke = 0
       ie = 2, je = 1, ke = 0;
-      const std::vector<SC> v = { 9.0, 10.0, 12.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0, 24.0, 25.0,
-                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
-                                     11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
+      const std::vector<SC> v = { 9.0, 10.0, 12.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0, 24.0,
+                                 25.0,
+                                  0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                 11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -699,12 +762,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 1, ke = 2
       ie = 0, je = 1, ke = 2;
-      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0, 17.0,
-                                      0.0,  3.0,  6.0,  9.0, 12.0, 15.0,
-                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0,
+                                 17.0,
+                                  0.0,  3.0,  6.0,  9.0, 12.0, 15.0,
+                                 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -718,12 +783,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 1, ke = 2
       ie = 2, je = 1, ke = 2;
-      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0, 16.0,
-                                      2.0,  5.0,  8.0, 11.0, 14.0, 17.0,
-                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0,
+                                 16.0,
+                                  2.0,  5.0,  8.0, 11.0, 14.0, 17.0,
+                                 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -737,11 +804,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 0, ke = 1
       ie = 0, je = 0, ke = 1;
-      const std::vector<SC> v = { 4.0,  5.0,  7.0,  8.0, 13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0, 26.0,
-                                      0.0,  1.0,  2.0,  3.0,  6.0,  9.0, 10.0, 11.0, 12.0, 15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
+      const std::vector<SC> v = { 4.0,  5.0,  7.0,  8.0, 13.0, 14.0, 16.0, 17.0, 22.0, 23.0, 25.0,
+                                 26.0,
+                                  0.0,  1.0,  2.0,  3.0,  6.0,  9.0, 10.0, 11.0, 12.0, 15.0,
+                                 18.0, 19.0, 20.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -755,11 +825,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 0, ke = 1
       ie = 2, je = 0, ke = 1;
-      const std::vector<SC> v = { 3.0,  4.0,  6.0,  7.0, 12.0, 13.0, 15.0, 16.0, 21.0, 22.0, 24.0, 25.0,
-                                      0.0,  1.0,  2.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
+      const std::vector<SC> v = { 3.0,  4.0,  6.0,  7.0, 12.0, 13.0, 15.0, 16.0, 21.0, 22.0, 24.0,
+                                 25.0,
+                                  0.0,  1.0,  2.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 17.0,
+                                 18.0, 19.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -773,11 +846,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 2, ke = 1
       ie = 0, je = 2, ke = 1;
-      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0, 10.0, 11.0, 13.0, 14.0, 19.0, 20.0, 22.0, 23.0,
-                                      0.0,  3.0,  6.0,  7.0,  8.0,  9.0, 12.0, 15.0, 16.0, 17.0, 18.0, 21.0, 24.0, 25.0, 26.0};
+      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0, 10.0, 11.0, 13.0, 14.0, 19.0, 20.0, 22.0,
+                                 23.0,
+                                  0.0,  3.0,  6.0,  7.0,  8.0,  9.0, 12.0, 15.0, 16.0, 17.0, 18.0,
+                                 21.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -791,11 +867,14 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 2, ke = 1
       ie = 2, je = 2, ke = 1;
-      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  9.0, 10.0, 12.0, 13.0, 18.0, 19.0, 21.0, 22.0,
-                                      2.0,  5.0,  6.0,  7.0,  8.0, 11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 23.0, 24.0, 25.0, 26.0};
+      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  9.0, 10.0, 12.0, 13.0, 18.0, 19.0, 21.0,
+                                 22.0,
+                                  2.0,  5.0,  6.0,  7.0,  8.0, 11.0, 14.0, 15.0, 16.0, 17.0, 20.0,
+                                 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -809,11 +888,13 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 1, ke = 1
       ie = 0, je = 1, ke = 1;
-      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0, 17.0, 19.0, 20.0, 22.0, 23.0, 25.0, 26.0,
-                                      0.0,  3.0,  6.0,  9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
+      const std::vector<SC> v = { 1.0,  2.0,  4.0,  5.0,  7.0,  8.0, 10.0, 11.0, 13.0, 14.0, 16.0,
+                                 17.0, 19.0, 20.0, 22.0, 23.0, 25.0, 26.0,
+                                  0.0,  3.0,  6.0,  9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -827,11 +908,13 @@ namespace MueLuTests {
 
     {// check reordering for ie = 2, je = 1, ke = 1
       ie = 2, je = 1, ke = 1;
-      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0, 24.0, 25.0,
-                                      2.0,  5.0,  8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
+      const std::vector<SC> v = { 0.0,  1.0,  3.0,  4.0,  6.0,  7.0,  9.0, 10.0, 12.0, 13.0, 15.0,
+                                 16.0, 18.0, 19.0, 21.0, 22.0, 24.0, 25.0,
+                                  2.0,  5.0,  8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -845,11 +928,13 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 0, ke = 1
       ie = 1, je = 0, ke = 1;
-      const std::vector<SC> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
-                                      0.0,  1.0,  2.0,  9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
+      const std::vector<SC> v = { 3.0,  4.0,  5.0,  6.0,  7.0,  8.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+                                 17.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
+                                  0.0,  1.0,  2.0,  9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -863,11 +948,13 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 2, ke = 1
       ie = 1, je = 2, ke = 1;
-      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
-                                      6.0,  7.0,  8.0, 15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
+      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  9.0, 10.0, 11.0, 12.0, 13.0,
+                                 14.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
+                                  6.0,  7.0,  8.0, 15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -881,11 +968,13 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 1, ke = 0
       ie = 1, je = 1, ke = 0;
-      const std::vector<SC> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
-                                      0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0};
+      const std::vector<SC> v = { 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0,
+                                 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0,
+                                  0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -899,11 +988,13 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 1, ke = 2
       ie = 1, je = 1, ke = 2;
-      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
-                                     18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
+      const std::vector<SC> v = { 0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0,
+                                 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
+                                 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -922,7 +1013,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -940,12 +1032,17 @@ namespace MueLuTests {
 
     {// check reordering for ie = 0, je = 1, ke = 2
       ie = 0, je = 1, ke = 2;
-      const std::vector<SC> v = { 2.0,  3.0,  4.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 21.0, 22.0, 23.0, 26.0, 27.0, 28.0, 29.0, 32.0, 33.0, 34.0, 35.0,
-                                  0.0,  1.0,  6.0,  7.0, 12.0, 13.0, 18.0, 19.0, 24.0, 25.0, 30.0, 31.0,
-                                 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0};
+      const std::vector<SC> v = { 2.0,  3.0,  4.0,  5.0,  8.0,  9.0, 10.0, 11.0, 14.0, 15.0, 16.0,
+                                 17.0, 20.0, 21.0, 22.0, 23.0, 26.0, 27.0, 28.0, 29.0, 32.0, 33.0,
+                                 34.0, 35.0,
+                                  0.0,  1.0,  6.0,  7.0, 12.0, 13.0, 18.0, 19.0, 24.0, 25.0, 30.0,
+                                 31.0,
+                                 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0,
+                                 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(54);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 54; ++i) {
@@ -959,13 +1056,16 @@ namespace MueLuTests {
 
     {// check reordering for ie = 1, je = 1, ke = 0
       ie = 1, je = 1, ke = 0;
-      const std::vector<SC> v = {18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0,
-                                 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0,
+      const std::vector<SC> v = {18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0,
+                                 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0,
+                                 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0,
+                                 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0,
                                   0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
                                   9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(54);
-      factTester.TestReorderStencil(BlkSize, ie, je, ke, cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
+                                    cornerSWB(), elementNodesPerDir, stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 54; ++i) {
@@ -979,7 +1079,8 @@ namespace MueLuTests {
 
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, GetNodeInfo, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, GetNodeInfo, Scalar, LocalOrdinal,
+                                    GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -1012,11 +1113,13 @@ namespace MueLuTests {
     for(LO k = 0; k < elementNodesPerDir[2]; ++k) {
       for(LO j = 0; j < elementNodesPerDir[1]; ++j) {
         for(LO i = 0; i < elementNodesPerDir[0]; ++i) {
-          currentIndex = k*elementNodesPerDir[1]*elementNodesPerDir[0] + j*elementNodesPerDir[0] + i;
+          currentIndex = k*elementNodesPerDir[1]*elementNodesPerDir[0] + j*elementNodesPerDir[0] +i;
           factTester.TestGetNodeInfo(i, j, k, elementNodesPerDir, &nodeType, nodeIndex);
           if((nodeTypes[currentIndex] != nodeType) || (nodeIndices[currentIndex] != nodeIndex)) {
             checkResult = false;
-            if(!checkResult) {std::cout << "There is a problem at point " << currentIndex << std::endl;}
+            if(!checkResult) {
+              std::cout << "There is a problem at point " << currentIndex << std::endl;
+            }
           }
         }
       }
@@ -1024,7 +1127,126 @@ namespace MueLuTests {
     TEST_EQUALITY(checkResult, true);
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, CoarseNodes, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, Prolongator, Scalar, LocalOrdinal,
+                                    GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    // RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
+    // fancy->setShowAllFrontMatter(false).setShowProcRank(true);
+    // Teuchos::FancyOStream& out2 = *fancy;
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    // used Xpetra lib (for maps and smoothers)
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+    LO numDimensions = 3;
+
+    RCP<Matrix> A;
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
+    RCP<Map> map;
+    Array<GO> gNodesPerDim(3);
+    Array<LO> lNodesPerDim(3);
+    out << "Problem Data Generation" << std::endl;
+    GetProblemData(comm, lib, numDimensions, A, coordinates, map, gNodesPerDim, lNodesPerDim);
+
+    out << "Problem Data Generated" << std::endl;
+
+    // Creater tester factory
+    BlackBoxPFactoryTester<SC,LO,GO,Node> factTester;
+
+    LO BlkSize = 1;
+    Array<GO> gIndices(3), gCoarseNodesPerDir(3), ghostGIDs, coarseNodesGIDs, colGIDs;
+    Array<LO> myOffset(3), coarseRate(3), endRate(3), lCoarseNodesPerDir(3),
+      lCoarseElementsPerDir(3);
+    Array<bool> ghostInterface(6);
+    ArrayRCP<Array<double> > coarseNodes(numDimensions);
+    for(int i = 0; i < numDimensions; ++i) {
+      coarseRate[i] = 2;
+    }
+    GO gNumCoarseNodes = 0;
+    LO lNumCoarseNodes = 0;
+    factTester.TestGetGeometricData(coordinates, coarseRate, gNodesPerDim, lNodesPerDim, 1,
+                                    gIndices, gCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs,
+                                    colGIDs, gNumCoarseNodes, myOffset, lCoarseNodesPerDir,
+                                    endRate, lNumCoarseNodes, ghostInterface, coarseNodes);
+
+    out << "Geometric Data Generated" << std::endl;
+
+    // From A on local rank, let us construct Aghost
+    Array<GO> ghostRowGIDs, nodeSteps(3);
+    nodeSteps[0] = 1;
+    nodeSteps[1] = gNodesPerDim[0];
+    nodeSteps[2] = gNodesPerDim[0]*gNodesPerDim[1];
+    Array<LO> range(3);
+    GO startingGID = A->getRowMap()->getMinGlobalIndex();
+    for(LO dim = 0; dim < 3; ++dim) {
+      LO numCoarseNodes = 0;
+      if(dim < numDimensions) {
+        startingGID -= myOffset[dim]*nodeSteps[dim];
+        numCoarseNodes = lCoarseNodesPerDir[dim];
+        if(ghostInterface[2*dim]) {++numCoarseNodes;}
+        if(ghostInterface[2*dim+1]) {++numCoarseNodes;}
+        if(gIndices[dim] + lNodesPerDim[dim] == gNodesPerDim[dim]) {
+          range[dim] = (numCoarseNodes - 2)*coarseRate[dim] + endRate[dim] + 1;
+        } else {
+          range[dim] = (numCoarseNodes - 1)*coarseRate[dim] + 1;
+        }
+      } else {
+        range[dim] = 1;
+      }
+    }
+    ghostRowGIDs.resize(range[0]*range[1]*range[2]*BlkSize);
+    for(LO k = 0; k < range[2]; ++k) {
+      for(LO j = 0; j < range[1]; ++j) {
+        for(LO i = 0; i < range[0]; ++i) {
+          for(LO l = 0; l < BlkSize; ++l) {
+            ghostRowGIDs[(k*range[1]*range[0] + j*range[0] + i)*BlkSize + l] = startingGID
+              + (k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0] + i)*BlkSize + l;
+          }
+        }
+      }
+    }
+    RCP<const Map> ghostedRowMap = Xpetra::MapFactory<LO,GO,NO>::Build(A->getRowMap()->lib(),
+                                           Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                           ghostRowGIDs(),
+                                           A->getRowMap()->getIndexBase(),
+                                           A->getRowMap()->getComm());
+    RCP<const Import> ghostImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(A->getRowMap(),
+                                                                             ghostedRowMap);
+    RCP<const Matrix> Aghost        = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(A, *ghostImporter,
+                                                                                ghostedRowMap,
+                                                                                ghostedRowMap);
+
+    out << "Ghost Matrix Generated" << std::endl;
+
+    // Pick on which coarse element the algorithm is tested
+    Array<LO> elemInds(3);
+    elemInds[0] = 1;
+    elemInds[1] = 1;
+    elemInds[2] = 1;
+
+    out << "ghostInterface=[" <<  ghostInterface[0] << ", " << ghostInterface[1] << ", "
+        << ghostInterface[2] << ", " << ghostInterface[3] << ", "
+        << ghostInterface[4] << ", " << ghostInterface[5] << "]" << std::endl;
+
+    if(comm->getRank() == 0) {
+      factTester.TestComputeLocalEntries(Aghost, coarseRate, endRate, BlkSize, elemInds,
+                                         lCoarseElementsPerDir, numDimensions, range, gNodesPerDim,
+                                         gIndices, lCoarseNodesPerDir, ghostInterface);
+    }
+
+    out << "Local P operator computed" << std::endl;
+
+  } // Prolongator
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, CoarseNodes, Scalar, LocalOrdinal,
+                                    GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -1091,6 +1313,7 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,BlackBoxGhosts,    Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,StencilReordering, Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,GetNodeInfo,       Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,Prolongator,       Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,CoarseNodes,       Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>

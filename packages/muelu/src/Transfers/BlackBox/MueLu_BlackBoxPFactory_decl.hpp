@@ -84,7 +84,7 @@ namespace MueLu {
   | Parameter   | type    | default   | master.xml | validated | requested | description                                                                      |
   | ------------|---------|-----------|:----------:|:---------:|:---------:|----------------------------------------------------------------------------------|
   | Coarsen     | string  | -1        |            |           |           | A string that specify the coarsening rate, if it is a single character, it will  |
-  |             |         |           |            |           |           | indicate a unique coarsening rate in each direction, if it is longer, it will be | 
+  |             |         |           |            |           |           | indicate a unique coarsening rate in each direction, if it is longer, it will be |
   |             |         |           |            |           |           | processed as a vector with 3 entries, one for each spatial direction             |
   | A           | Factory | null      |            | *         | *         | Generating factory of the matrix A used during the prolongator smoothing process |
   | Nullspace   | Factory | null      |            | *         | *         | Generating factory of the nullspace. The GeneralGeometricPFactory provides       |
@@ -151,24 +151,26 @@ namespace MueLu {
 
   private:
 
-    void GetGeometricData(RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates, const Array<LO> coarseRate,
-                          const Array<GO> gFineNodesPerDir, const Array<LO> lFineNodesPerDir, const LO BlkSize,
-                          Array<GO>& gIndices, Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
-                          Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir, Array<GO>& ghostGIDs,
-                          Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes, LO& lNumCoarseNodes,
+    void GetGeometricData(RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates,
+                          const Array<LO> coarseRate, const Array<GO> gFineNodesPerDir,
+                          const Array<LO> lFineNodesPerDir, const LO BlkSize, Array<GO>& gIndices,
+                          Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
+                          Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir,
+                          Array<GO>& ghostGIDs, Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs,
+                          GO& gNumCoarseNodes, LO& lNumCoarseNodes,
                           ArrayRCP<Array<double> > coarseNodes) const;
 
     void ComputeLocalEntries(const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,
                              const Array<LO> endRate, const LO BlkSize, const Array<LO> elemInds,
-                             const Array<LO> lCoarseElementsPerDir, const Array<LO> range,
+                             const Array<LO> lCoarseElementsPerDir,
                              const LO numDimensions, const Array<LO> lFineNodesPerDir,
                              const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
-                             const Array<LO> lCoarseNodesPerDir) const;
+                             const Array<LO> lCoarseNodesPerDir, Array<bool> ghostInterface) const;
 
     void CollapseStencil(const int type, const int orientation, Array<SC>& stencil) const ;
 
-    void ReorderStencil(const LO BlkSize, const LO ie, const LO je, const LO ke,
-                        const ArrayView<const SC> rowValues,
+    void ReorderStencil(const LO BlkSize, const Array<bool> ghostInterface, const LO ie,
+                        const LO je, const LO ke, const ArrayView<const SC> rowValues,
                         const Array<LO> elementNodesPerDir, Array<SC>& stencil) const;
 
     void GetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir,
