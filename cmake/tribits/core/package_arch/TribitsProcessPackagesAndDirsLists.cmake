@@ -77,7 +77,7 @@ INCLUDE(TribitsListHelpers)
 #    TriBITS repo that might be combined into a single TriBITS project
 #    meta-build (see `Globally unique TriBITS package names`_).  The name
 #    should be a valid identifier (e.g. matches the regex
-#    ``[a-zA-Z_][a-zA-Z0-9_]*``).  The package names tend to used mixed case
+#    ``[a-zA-Z_][a-zA-Z0-9_]*``).  The package names tend to use mixed case
 #    (e.g. ```SomePackge`` not ``SOMEPACKGE``).
 #
 # 1. **DIR** (``<pkgi_dir>``): The relative directory for the package

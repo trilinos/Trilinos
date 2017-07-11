@@ -89,6 +89,12 @@ INCLUDE(PrintVar)
 # than just grepping STDOUT (e.g. by running separate post-processing programs
 # to examine output files).
 #
+# The test is only added if tests are enabled for the SE package
+# (i.e. `${PACKAGE_NAME}_ENABLE_TESTS`_) or the parent package (if this is a
+# subpackage) (i.e. ``${PARENT_PACKAGE_NAME}_ENABLE_TESTS``).  (NOTE: A more
+# efficient way to optionally enable tests is to put them in a ``test/``
+# subdir and then include that subdir with `TRIBITS_ADD_TEST_DIRECTORIES()`_.)
+#
 # Each atomic test case is either a package-built executable or just a basic
 # command.  An atomic test command block ``TEST_<idx>`` (i.e. ``TEST_0``,
 # ``TEST_1``, ..., up to ``TEST_19``) takes the form::
@@ -404,7 +410,7 @@ INCLUDE(PrintVar)
 #
 #     If specified, the test command will be assumed to pass if it matches the
 #     given regular expression.  Otherwise, it is assumed to fail.  TIPS:
-#     Replace ';' with '[;]' or CMake will interpretet this as a array eleemnt
+#     Replace ';' with '[;]' or CMake will interpret this as an array elemnt
 #     boundary.  To match '.', use '[.]'.
 #
 #   ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
@@ -413,7 +419,7 @@ INCLUDE(PrintVar)
 #     matches all of the provided regular expressions.  Note that this is not
 #     a capability of raw ctest and represents an extension provided by
 #     TriBITS.  NOTE: It is critical that you replace ';' with '[;]' or CMake
-#     will interpretet this as a array eleemnt boundary.
+#     will interpret this as an array elemnt boundary.
 #
 #   ``STANDARD_PASS_OUTPUT``
 #
@@ -739,6 +745,12 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   #
   # B) Add or don't add tests based on a number of criteria
   #
+
+  SET(ADD_THE_TEST FALSE)
+  TRIBITS_ADD_TEST_PROCESS_ENABLE_TESTS(ADD_THE_TEST)
+  IF (NOT ADD_THE_TEST)
+    RETURN()
+  ENDIF()
 
   SET(ADD_THE_TEST FALSE)
   TRIBITS_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
