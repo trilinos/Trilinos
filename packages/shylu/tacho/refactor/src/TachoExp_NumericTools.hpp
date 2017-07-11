@@ -5,6 +5,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "TachoExp_Util.hpp"
+#include "TachoExp_DenseFlopCount.hpp"
 
 #include "TachoExp_CrsMatrixBase.hpp"
 #include "TachoExp_DenseMatrixView.hpp"
@@ -161,6 +162,14 @@ namespace Tacho {
       inline
       void
       print_stat_factor() {
+        double flop = 0;
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+          ordinal_type pm, pn; _info.getSuperPanelSize(sid, pm, pn);
+          const ordinal_type m = pm, n = pn - pm;
+          flop += DenseFlopCount<value_type>::Chol(m);
+          flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
+          flop += DenseFlopCount<value_type>::Syrk(m, n);
+        }
         printf("  Time\n");
         printf("             time for copying A into U:                       %10.6f s\n", stat.t_copy);
         printf("             time for numeric factorization:                  %10.6f s\n", stat.t_factor);
@@ -169,6 +178,10 @@ namespace Tacho {
         printf("  Memory\n");
         printf("             memory used in factorization:                    %10.2f MB\n", stat.m_used/1024/1024);
         printf("             peak memory used in factorization:               %10.2f MB\n", stat.m_peak/1024/1024);
+        printf("\n");
+        printf("  FLOPs\n");
+        printf("             gflop   for numeric factorization:               %10.2f GFLOP\n", flop/1024/1024/1024);
+        printf("             gflop/s for numeric factorization:               %10.2f GFLOP/s\n", flop/stat.t_factor/1024/1024/1024);
         printf("\n");
       }
 
