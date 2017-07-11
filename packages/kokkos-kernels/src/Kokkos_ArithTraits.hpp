@@ -644,6 +644,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION float nan () {
 #ifdef __CUDA_ARCH__
     return CUDART_NAN_F;
+    //return nan (); //this returns 0???
 #else
     return std::numeric_limits<float>::quiet_NaN();
 #endif // __CUDA_ARCH__
@@ -883,6 +884,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
 #ifdef __CUDA_ARCH__
     return CUDART_NAN;
+    //return nan (); // this returns 0 ???
 #else
     return std::numeric_limits<val_type>::quiet_NaN();
 #endif // __CUDA_ARCH__
