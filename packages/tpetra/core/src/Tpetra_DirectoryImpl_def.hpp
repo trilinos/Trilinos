@@ -56,7 +56,7 @@
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
 #ifdef HAVE_MPI
-#  include "mpi.h"
+#  include <mpi.h>
 #endif // HAVE_MPI
 // FIXME (mfh 16 Apr 2013) GIANT HACK ABOVE
 
