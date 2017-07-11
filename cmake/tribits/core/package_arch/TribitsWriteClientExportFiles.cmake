@@ -124,7 +124,7 @@ ENDFUNCTION()
 # Usage::
 #
 #   TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(
-#     PACKAGE_NAME <pakageName>
+#     PACKAGE_NAME <packageName>
 #     [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
 #     [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
 #     [WRITE_EXPORT_MAKEFILE <exportMakefileFileFullPath>]
@@ -134,7 +134,7 @@ ENDFUNCTION()
 #
 # The arguments are:
 #
-#   ``PACKAGE_NAME <pakageName>``
+#   ``PACKAGE_NAME <packageName>``
 #
 #     Gives the name of the TriBITS package for which the export files should
 #     be created.
@@ -143,7 +143,7 @@ ENDFUNCTION()
 #
 #     If specified, then all of the variables in the generated export files
 #     will be prefixed with ``<exportFileVarPrefix>_`` instead of
-#     ``<pakageName>_``.
+#     ``<packageName>_``.
 #
 #   ``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
 #

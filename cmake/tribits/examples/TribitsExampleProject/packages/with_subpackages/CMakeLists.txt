@@ -16,7 +16,7 @@ TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_PROCESS_SUBPACKAGES()
 
 #
-# D) Define the package now and perform standard postprocessing
+# D) Define the package now and perform standard post processing
 #
 TRIBITS_PACKAGE_DEF()
 TRIBITS_PACKAGE_POSTPROCESS()

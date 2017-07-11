@@ -756,7 +756,7 @@ def getUsageHelpStr(helpTopicArg):
 
 def filterWarningsGen(lines): 
   for line in lines:
-    if not line.startswith(b('warning')) and not line.startswith(b('error')): yield line
+    if not line.startswith(s('warning')) and not line.startswith(s('error')): yield line
 
 
 # Filter warning and error lines from output
@@ -774,8 +774,8 @@ def getCmndOutput(cmnd, rtnCode=False):
   output = child.stdout.read()
   child.wait()
   if rtnCode:
-    return (output, child.returncode)
-  return output
+    return (s(output), child.returncode)
+  return s(output)
 
 
 # Run a command and syncronize the output
@@ -788,7 +788,7 @@ def runCmnd(options, cmnd):
     child = subprocess.Popen(cmnd, stdout=subprocess.PIPE).stdout
     output = child.read()
     sys.stdout.flush()
-    print(output)
+    print(s(output))
     sys.stdout.flush()
 
 
@@ -1262,19 +1262,19 @@ def getNumModifiedAndUntracked(options, getCmndOutputFunc):
     numModified = 0
     numUntracked = 0
     for line in rawStatusOutput.splitlines():
-      if matchFieldOneOrTwo(line.find(b("M"))):
+      if matchFieldOneOrTwo(line.find(s("M"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find(b("A"))):
+      elif matchFieldOneOrTwo(line.find(s("A"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find(b("D"))):
+      elif matchFieldOneOrTwo(line.find(s("D"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find(b("T"))):
+      elif matchFieldOneOrTwo(line.find(s("T"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find(b("U"))):
+      elif matchFieldOneOrTwo(line.find(s("U"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find(b("R"))):
+      elif matchFieldOneOrTwo(line.find(s("R"))):
         numModified += 1
-      elif line.find(b("??")) == 0:
+      elif line.find(s("??")) == 0:
         numUntracked += 1
     return (str(numModified), str(numUntracked))
   return ("", "")

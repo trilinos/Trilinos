@@ -40,7 +40,7 @@
 #
 # @MACRO: PREPEND_SET()
 #
-# Utility macro to prepend elements to a varible (reduces boiler-plate code).
+# Utility macro to prepend elements to a variable (reduces boiler-plate code).
 #
 # Usage::
 #

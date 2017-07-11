@@ -151,7 +151,7 @@ ENDFUNCTION()
 #
 # Function that sets up cache variables for users to specify where to find a
 # `TriBITS TPL`_'s headers and libraries.  This function is typically called
-# inside of a ``FindTPL<tplName>.cmake`` moulde file (see
+# inside of a ``FindTPL<tplName>.cmake`` module file (see
 # `${TPL_NAME}_FINDMOD`_).
 #
 # Usage::
@@ -692,7 +692,7 @@ ENDFUNCTION()
 #   TRIBITS_TPL_TENTATIVELY_ENABLE(<tplName>)
 # 
 # This function can be called from any CMakeLists.txt file to put a TPL in
-# tentative enable mode.  But typically, it is called from an SE Pakcage's
+# tentative enable mode.  But typically, it is called from an SE Package's
 # `<packageDir>/cmake/Dependencies.cmake`_ file (see `How to tentatively
 # enable a TPL`_).
 #
@@ -704,7 +704,7 @@ ENDFUNCTION()
 # not already been set, and sets ``TPL_TENTATIVE_ENABLE_<tplName>=ON`` in the
 # cache.
 #
-# NOTE: This function will only tentatively enable a TPL it its enable has not
+# NOTE: This function will only tentatively enable a TPL if its enable has not
 # be explicitly set on input, i.e. if ``-D TPL_ENABLE_<tplName>=""``.  If the
 # TPL has been explicitly enabled (i.e. ``-D TPL_ENABLE_<tplName>=ON``) or
 # disabled (i.e. ``-D TPL_ENABLE_<tplName>=OFF``), then this function has no

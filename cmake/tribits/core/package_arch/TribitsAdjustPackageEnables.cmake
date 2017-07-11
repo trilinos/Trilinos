@@ -135,6 +135,8 @@ FUNCTION(TRIBITS_ABORT_ON_MISSING_PACKAGE   DEP_PKG  PACKAGE_NAME  DEP_PKG_LIST_
     "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
     " '${PACKAGE_NAME}' is in the list '${DEP_PKG_LIST_NAME}' but the package"
     " '${DEP_PKG}' is either not defined or is listed later in the package order."
+    "  This may also be an attempt to create a cicular dependency between"
+    " the packages '${DEP_PKG}' and '${PACKAGE_NAME}' (which is not allowed)."
     "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
     " ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to"
     " '${PACKAGE_NAME}'.")
@@ -460,7 +462,7 @@ ENDMACRO()
 # directly setting the variables is that an SE package only needs to list
 # dependencies that exist.  Otherwise, the ``Dependencies.cmake`` file will
 # need to set all of the above local variables, even those that are empty.
-# This is a error checking property of the TriBITS system to avoid misspelling
+# This is an error checking property of the TriBITS system to avoid misspelling
 # the names of these variables.
 #
 MACRO(TRIBITS_PACKAGE_DEFINE_DEPENDENCIES)
