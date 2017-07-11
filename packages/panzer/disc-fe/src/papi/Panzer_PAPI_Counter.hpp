@@ -45,7 +45,7 @@
 
 #include <string>
 #include <map>
-#include "mpi.h"
+#include <mpi.h>
 
 namespace panzer {
 
