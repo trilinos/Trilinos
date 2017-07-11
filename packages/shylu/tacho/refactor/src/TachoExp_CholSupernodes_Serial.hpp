@@ -391,6 +391,98 @@ namespace Tacho {
         return 0;
       }
 
+
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_lower_recursive_serial(const SchedulerType &sched,
+                                   const MemberType &member,
+                                   const SupernodeInfoType &info,
+                                   const ordinal_type sid,
+                                   const bool final,
+                                   typename SupernodeInfoType::value_type *buf,
+                                   const ordinal_type bufsize) {
+        typedef SupernodeInfoType supernode_info_type;
+        
+        typedef typename supernode_info_type::value_type value_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+
+        if (final) {
+          // serial recursion
+          const ordinal_type
+            ibeg = info.stree_ptr(sid),
+            iend = info.stree_ptr(sid+1);
+
+          for (ordinal_type i=ibeg;i<iend;++i)
+            solve_lower_recursive_serial(sched, member, info, info.stree_children(i), final, buf, bufsize);
+        }
+
+        {
+          ordinal_type pm, pn; info.getSuperPanelSize(sid, pm, pn);                                             
+          const size_type n = pn - pm, nrhs = info.x.dimension_1(), 
+            bufsize_required = n*nrhs*sizeof(value_type);
+          
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+
+          UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
+
+          CholSupernodes<Algo::Workflow::Serial>
+            ::solve_lower(sched, member, info, xB, sid);
+
+          CholSupernodes<Algo::Workflow::Serial>
+            ::update_solve_lower(sched, member, info, xB, sid);
+        }
+        return 0;
+      }
+
+
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_upper_recursive_serial(const SchedulerType &sched,
+                                   const MemberType &member,
+                                   const SupernodeInfoType &info,
+                                   const ordinal_type sid,
+                                   const bool final,
+                                   typename SupernodeInfoType::value_type *buf,
+                                   const ordinal_type bufsize) {
+        typedef SupernodeInfoType supernode_info_type;
+        
+        typedef typename supernode_info_type::value_type value_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+
+        {
+          ordinal_type pm, pn; info.getSuperPanelSize(sid, pm, pn);                                             
+          const size_type n = pn - pm, nrhs = info.x.dimension_1(), 
+            bufsize_required = n*nrhs*sizeof(value_type);
+          
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+
+          UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
+
+          CholSupernodes<Algo::Workflow::Serial>
+            ::update_solve_upper(sched, member, info, xB, sid);
+
+          CholSupernodes<Algo::Workflow::Serial>
+            ::solve_upper(sched, member, info, xB, sid);
+        }
+
+        if (final) {
+          // serial recursion
+          const ordinal_type
+            ibeg = info.stree_ptr(sid),
+            iend = info.stree_ptr(sid+1);
+
+          for (ordinal_type i=ibeg;i<iend;++i)
+            solve_upper_recursive_serial(sched, member, info, info.stree_children(i), final, buf, bufsize);
+        }
+        return 0;
+      }
+
     };
   }
 }

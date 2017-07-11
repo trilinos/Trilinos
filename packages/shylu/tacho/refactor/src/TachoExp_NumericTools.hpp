@@ -175,125 +175,6 @@ namespace Tacho {
         printf("\n");
       }
 
-      inline
-      void
-      recursiveSerialChol(const ordinal_type sid,
-                          const memory_pool_type_host &bufpool) {
-        // recursion
-        {
-          const ordinal_type
-            ibeg = _info.stree_ptr(sid),
-            iend = _info.stree_ptr(sid+1);
-
-          for (ordinal_type i=ibeg;i<iend;++i)
-            recursiveSerialChol(_info.stree_children(i), bufpool);
-        }
-
-        {
-          // dummy member
-          const ordinal_type sched = 0, member = 0;
-
-          ordinal_type pm, pn; _info.getSuperPanelSize(sid, pm, pn);
-          const ordinal_type n = pn - pm;
-          const size_type bufsize = (n*n + _info.max_schur_size)*sizeof(value_type);
-
-          value_type *buf = (value_type*)bufpool.allocate(bufsize);
-          TACHO_TEST_FOR_ABORT(buf == NULL, "bufmemory pool allocation fails");                                   
-
-          UnmanagedViewType<value_type_matrix_host> ABR((value_type*)buf, n, n);
-
-          CholSupernodes<Algo::Workflow::Serial>
-            ::factorize(sched, member, _info, ABR, sid);
-
-          CholSupernodes<Algo::Workflow::Serial>
-            ::update(sched, member, _info, ABR, sid,
-                     bufsize - ABR.span()*sizeof(value_type),
-                     (void*)((value_type*)buf + ABR.span()));
-
-          bufpool.deallocate(buf, bufsize);
-        }
-      }
-
-      inline
-      void
-      recursiveSerialSolveLower(const ordinal_type sid,
-                                const memory_pool_type_host &bufpool,
-                                const bool final = false) {
-        // recursion
-        if (final) {
-          // do nothing
-        } else {
-          const ordinal_type
-            ibeg = _info.stree_ptr(sid),
-            iend = _info.stree_ptr(sid+1);
-
-          for (ordinal_type i=ibeg;i<iend;++i)
-            recursiveSerialSolveLower(_info.stree_children(i), bufpool);
-        }
-
-        {
-          // dummy member
-          const ordinal_type sched = 0, member = 0;
-
-          ordinal_type pm, pn; _info.getSuperPanelSize(sid, pm, pn);
-          const ordinal_type n = pn - pm, nrhs = _info.x.dimension_1();
-          const size_type bufsize = max(n*nrhs,1)*sizeof(value_type);
-
-          value_type *buf = (value_type*)bufpool.allocate(bufsize);
-          TACHO_TEST_FOR_ABORT(buf == NULL, "bufmemory pool allocation fails");                                   
-
-          UnmanagedViewType<value_type_matrix_host> xB((value_type*)buf, n, nrhs);
-
-          CholSupernodes<Algo::Workflow::Serial>
-            ::solve_lower(sched, member, _info, xB, sid);
-
-          CholSupernodes<Algo::Workflow::Serial>
-            ::update_solve_lower(sched, member, _info, xB, sid);
-
-          bufpool.deallocate(buf, bufsize);
-        }
-      }
-
-      inline
-      void
-      recursiveSerialSolveUpper(const ordinal_type sid,
-                                const memory_pool_type_host &bufpool,
-                                const bool final = false) {
-        {
-          // dummy member
-          const ordinal_type sched = 0, member = 0;
-
-          ordinal_type pm, pn; _info.getSuperPanelSize(sid, pm, pn);
-          const ordinal_type n = pn - pm, nrhs = _info.x.dimension_1();
-          const size_type bufsize = max(n*nrhs,1)*sizeof(value_type);
-
-          value_type *buf = (value_type*)bufpool.allocate(bufsize);
-          TACHO_TEST_FOR_ABORT(buf == NULL, "bufmemory pool allocation fails");                                   
-
-          UnmanagedViewType<value_type_matrix_host> xB((value_type*)buf, n, nrhs);
-
-          CholSupernodes<Algo::Workflow::Serial>
-            ::update_solve_upper(sched, member, _info, xB, sid);
-
-          CholSupernodes<Algo::Workflow::Serial>
-            ::solve_upper(sched, member, _info, xB, sid);
-
-          bufpool.deallocate(buf, bufsize);
-        }
-
-        // recursion
-        if (final) {
-          // do nothing
-        } else {
-          const ordinal_type
-            ibeg = _info.stree_ptr(sid),
-            iend = _info.stree_ptr(sid+1);
-
-          for (ordinal_type i=ibeg;i<iend;++i)
-            recursiveSerialSolveUpper(_info.stree_children(i), bufpool);
-        }
-      }
-
     public:
       NumericTools() = default;
       NumericTools(const NumericTools &b) = default;
@@ -396,29 +277,18 @@ namespace Tacho {
         stat.t_copy += timer.seconds();
 
         timer.reset();
-        memory_pool_type_host bufpool;
-        typedef typename host_exec_space::memory_space memory_space;          
         {
-          const size_type
-            min_block_size  = 1,
-            max_block_size  = _info.max_schur_size*(_info.max_schur_size + 1)*sizeof(value_type),
-            memory_capacity = max_block_size,
-            superblock_size = max_block_size;
-
-          bufpool = memory_pool_type_host(memory_space(),
-                                          memory_capacity,
-                                          min_block_size,
-                                          max_block_size,
-                                          superblock_size);
+          value_type_array_host buf("buf", _info.max_schur_size*(_info.max_schur_size + 1));
+          const size_type bufsize = buf.span()*sizeof(value_type);
+          track_alloc(bufsize);
           
-          track_alloc(bufpool.capacity());
-
           /// recursive tree traversal
-          const ordinal_type nroots = _stree_roots.dimension_0();
+          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
-            recursiveSerialChol(_stree_roots(i), bufpool);
+            CholSupernodes<Algo::Workflow::Serial>
+              ::factorize_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
 
-          track_free(bufpool.capacity());
+          track_free(bufsize);
         }
         stat.t_factor += timer.seconds();
         
@@ -464,34 +334,20 @@ namespace Tacho {
         memory_pool_type_host bufpool;
         typedef typename host_exec_space::memory_space memory_space;          
         {
-          const size_type
-            min_block_size  = 1,
-            max_block_size  = (_info.max_schur_size)*(x.dimension_1())*sizeof(value_type),
-            memory_capacity = max_block_size,
-            superblock_size = max_block_size;
-          
-          bufpool = memory_pool_type_host(memory_space(),
-                                          memory_capacity,
-                                          min_block_size,
-                                          max_block_size,
-                                          superblock_size);
+          value_type_array_host buf("buf", _info.max_schur_size*(x.dimension_1()));
+          const size_type bufsize = buf.span()*sizeof(value_type);
+          track_alloc(bufsize);
 
-          track_alloc(bufpool.capacity());
-          
           /// recursive tree traversal
-          constexpr bool final = false;
-          if (final) {
-            for (ordinal_type sid=0;sid<_nsupernodes;++sid)
-              recursiveSerialSolveLower(sid, bufpool, true);
-            for (ordinal_type sid=(_nsupernodes-1);sid>=0;--sid)
-              recursiveSerialSolveUpper(sid, bufpool, true);
-          } else {
-            const ordinal_type nroots = _stree_roots.dimension_0();
-            for (ordinal_type i=0;i<nroots;++i)
-              recursiveSerialSolveLower(_stree_roots(i), bufpool);
-            for (ordinal_type i=0;i<nroots;++i)
-              recursiveSerialSolveUpper(_stree_roots(i), bufpool);
-          }
+          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.dimension_0();
+          for (ordinal_type i=0;i<nroots;++i)
+            CholSupernodes<Algo::Workflow::Serial>
+              ::solve_lower_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
+          for (ordinal_type i=0;i<nroots;++i)
+            CholSupernodes<Algo::Workflow::Serial>
+              ::solve_upper_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
+
+          track_free(bufsize);
         }
         stat.t_solve += timer.seconds();
 
