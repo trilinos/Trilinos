@@ -14,6 +14,7 @@
 
 #include "TachoExp_Gemm.hpp"
 #include "TachoExp_Gemm_External.hpp"
+#include "TachoExp_Gemm_ByBlocks.hpp"
 
 namespace Tacho {
   

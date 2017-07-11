@@ -332,7 +332,6 @@ namespace Tacho {
 
         timer.reset();
         memory_pool_type_host bufpool;
-        typedef typename host_exec_space::memory_space memory_space;          
         {
           value_type_array_host buf("buf", _info.max_schur_size*(x.dimension_1()));
           const size_type bufsize = buf.span()*sizeof(value_type);
@@ -511,38 +510,38 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         timer.reset();
-        memory_pool_type_host bufpool;
-        typedef typename host_exec_space::memory_space memory_space;          
-        {
-          const size_type
-            min_block_size  = 1,
-            max_block_size  = (_info.max_schur_size)*(x.dimension_1())*sizeof(value_type),
-            memory_capacity = max_block_size,
-            superblock_size = max_block_size;
+        // memory_pool_type_host bufpool;
+        // typedef typename host_exec_space::memory_space memory_space;          
+        // {
+        //   const size_type
+        //     min_block_size  = 1,
+        //     max_block_size  = (_info.max_schur_size)*(x.dimension_1())*sizeof(value_type),
+        //     memory_capacity = max_block_size,
+        //     superblock_size = max_block_size;
           
-          bufpool = memory_pool_type_host(memory_space(),
-                                          memory_capacity,
-                                          min_block_size,
-                                          max_block_size,
-                                          superblock_size);
+        //   bufpool = memory_pool_type_host(memory_space(),
+        //                                   memory_capacity,
+        //                                   min_block_size,
+        //                                   max_block_size,
+        //                                   superblock_size);
 
-          track_alloc(bufpool.capacity());
+        //   track_alloc(bufpool.capacity());
           
-          /// recursive tree traversal
-          constexpr bool final = false;
-          if (final) {
-            for (ordinal_type sid=0;sid<_nsupernodes;++sid)
-              recursiveSerialSolveLower(sid, bufpool, true);
-            for (ordinal_type sid=(_nsupernodes-1);sid>=0;--sid)
-              recursiveSerialSolveUpper(sid, bufpool, true);
-          } else {
-            const ordinal_type nroots = _stree_roots.dimension_0();
-            for (ordinal_type i=0;i<nroots;++i)
-              recursiveSerialSolveLower(_stree_roots(i), bufpool);
-            for (ordinal_type i=0;i<nroots;++i)
-              recursiveSerialSolveUpper(_stree_roots(i), bufpool);
-          }
-        }
+        //   /// recursive tree traversal
+        //   constexpr bool final = false;
+        //   if (final) {
+        //     for (ordinal_type sid=0;sid<_nsupernodes;++sid)
+        //       recursiveSerialSolveLower(sid, bufpool, true);
+        //     for (ordinal_type sid=(_nsupernodes-1);sid>=0;--sid)
+        //       recursiveSerialSolveUpper(sid, bufpool, true);
+        //   } else {
+        //     const ordinal_type nroots = _stree_roots.dimension_0();
+        //     for (ordinal_type i=0;i<nroots;++i)
+        //       recursiveSerialSolveLower(_stree_roots(i), bufpool);
+        //     for (ordinal_type i=0;i<nroots;++i)
+        //       recursiveSerialSolveUpper(_stree_roots(i), bufpool);
+        //   }
+        // }
         stat.t_solve += timer.seconds();
 
         // copy t -> x
