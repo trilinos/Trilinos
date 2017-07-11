@@ -1,7 +1,7 @@
-#ifndef __TACHOEXP_TASKFUNCTOR_CHOLESKY_SUPERNODES_BYBLOCKS_HPP__
-#define __TACHOEXP_TASKFUNCTOR_CHOLESKY_SUPERNODES_BYBLOCKS_HPP__
+#ifndef __TACHOEXP_TASKFUNCTOR_FACTORIZE_CHOLBYBLOCKS_HPP__
+#define __TACHOEXP_TASKFUNCTOR_FACTORIZE_CHOLBYBLOCKS_HPP__
 
-/// \file TachoExp_TaskFunctor_FactorizeSupernodes.hpp
+/// \file TachoExp_TaskFunctor_FactorizeCholByBlocks.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "TachoExp_Util.hpp"
@@ -19,7 +19,7 @@ namespace Tacho {
   namespace Experimental {
     
     template<typename MatValueType, typename ExecSpace>
-    struct TaskFunctor_CholSupernodes_ByBlocks {
+    struct TaskFunctor_FactorizeCholByBlocks {
     public:
       typedef ExecSpace exec_space;
 
@@ -57,10 +57,10 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_CholSupernodes_ByBlocks() = delete;
+      TaskFunctor_FactorizeCholByBlocks() = delete;
 
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_CholSupernodes_ByBlocks(const sched_type &sched,
+      TaskFunctor_FactorizeCholByBlocks(const sched_type &sched,
                                           const memory_pool_type &bufpool,
                                           const supernode_info_type &info,
                                           const ordinal_type sid,
@@ -229,7 +229,7 @@ namespace Tacho {
               
               const ordinal_type child = _info.stree_children(i+ibeg);
               auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, priority),
-                                          TaskFunctor_CholSupernodes_ByBlocks(_sched, _bufpool, _info, child, _mb));
+                                          TaskFunctor_FactorizeCholByBlocks(_sched, _bufpool, _info, child, _mb));
               TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
               dep[i] = f;
             }

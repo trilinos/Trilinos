@@ -26,8 +26,8 @@
 #include "TachoExp_CholSupernodes.hpp"
 #include "TachoExp_CholSupernodes_Serial.hpp"
 
-#include "TachoExp_TaskFunctor_CholSupernodes.hpp"
-#include "TachoExp_TaskFunctor_CholSupernodes_ByBlocks.hpp"
+#include "TachoExp_TaskFunctor_FactorizeChol.hpp"
+#include "TachoExp_TaskFunctor_FactorizeCholByBlocks.hpp"
 
 namespace Tacho {
 
@@ -112,6 +112,9 @@ namespace Tacho {
       // this is filled when superpanel is allocated
       ordinal_type_array_host _max_decendant_supernode_size, _max_decendant_schur_size;
 
+      // 
+      ordinal_type max_children_size;
+
       ///
       /// supernode info: supernode data structure with "unamanged" view
       /// this is passed into computation algorithm without reference counting
@@ -119,7 +122,7 @@ namespace Tacho {
       supernode_info_type_host _info;
 
       ///
-      ///
+      /// statistics
       ///
       struct {
         double t_factor, t_solve, t_copy, t_extra;
@@ -238,6 +241,10 @@ namespace Tacho {
 
         _info.max_decendant_supernode_size  = _max_decendant_supernode_size;
         _info.max_decendant_schur_size      = _max_decendant_schur_size;
+
+        max_children_size = 0;
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid)
+          max_children_size = max(max_children_size, _stree_ptr(sid+1) - _stree_ptr(sid));
       }
 
       ///
@@ -403,17 +410,13 @@ namespace Tacho {
         {
           timer.reset();
           typedef typename sched_type_host::memory_space memory_space;
-          typedef TaskFunctor_CholSupernodes<value_type,host_exec_space> chol_supernode_functor_type;
+          typedef TaskFunctor_FactorizeChol<value_type,host_exec_space> functor_type;
           typedef Kokkos::Future<int,host_exec_space> future_type;
 
           sched_type_host sched;
           {
-            ordinal_type max_children_size = 0;
-            for (ordinal_type sid=0;sid<_nsupernodes;++sid)
-              max_children_size = max(max_children_size, _stree_ptr(sid+1) - _stree_ptr(sid));
-
             const size_type max_dep_future_size = max_children_size*sizeof(future_type);
-            const size_type max_functor_size = sizeof(chol_supernode_functor_type);
+            const size_type max_functor_size = sizeof(functor_type);
             const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
 
             const size_type
@@ -463,7 +466,7 @@ namespace Tacho {
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               chol_supernode_functor_type(sched, bufpool, _info, _stree_roots(i)));
+                               functor_type(sched, bufpool, _info, _stree_roots(i)));
           Kokkos::wait(sched);
           stat.t_factor = timer.seconds();
 
@@ -510,38 +513,98 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         timer.reset();
-        // memory_pool_type_host bufpool;
-        // typedef typename host_exec_space::memory_space memory_space;          
-        // {
-        //   const size_type
-        //     min_block_size  = 1,
-        //     max_block_size  = (_info.max_schur_size)*(x.dimension_1())*sizeof(value_type),
-        //     memory_capacity = max_block_size,
-        //     superblock_size = max_block_size;
-          
-        //   bufpool = memory_pool_type_host(memory_space(),
-        //                                   memory_capacity,
-        //                                   min_block_size,
-        //                                   max_block_size,
-        //                                   superblock_size);
+        sched_type_host sched;
+        {
+            const size_type max_dep_future_size = max_children_size*sizeof(future_type);
+            const size_type max_functor_size = sizeof(functor_type);
+            const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
 
-        //   track_alloc(bufpool.capacity());
+            const size_type
+              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+              min_block_size  = 1,
+              max_block_size  = ( max_dep_future_size +
+                                  max_functor_size ),
+              num_superblock  = 32, // various small size blocks
+              superblock_size = task_queue_capacity/num_superblock;
+
+            sched = sched_type_host(memory_space(),
+                                    task_queue_capacity,
+                                    min_block_size,
+                                    max_block_size,
+                                    superblock_size);
+
+            track_alloc(sched.memory()->capacity());
+          }
+
+          memory_pool_type_host bufpool;
+          {
+            const size_type
+              min_block_size  = 1,
+              max_block_size  = (_info.max_schur_size*_info.max_schur_size +
+                                 _info.max_schur_size)*sizeof(value_type);
+
+            size_type superblock_size = 1;
+            for ( ;superblock_size<max_block_size;superblock_size*=2);
+
+            const size_type
+              num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+              //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // restrict memory pool
+              memory_capacity = num_superblock*superblock_size;
+
+            bufpool = memory_pool_type_host(memory_space(),
+                                            memory_capacity,
+                                            min_block_size,
+                                            max_block_size,
+                                            superblock_size);
+
+            track_alloc(bufpool.capacity());
+          }
+          stat.t_extra += timer.seconds();
+
+          timer.reset();
+          _info.serial_thres_size = serial_thres_size;
+          const ordinal_type nroots = _stree_roots.dimension_0();
+          for (ordinal_type i=0;i<nroots;++i)
+            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                               functor_type(sched, bufpool, _info, _stree_roots(i)));
+          Kokkos::wait(sched);
+          stat.t_factor = timer.seconds();
+
+          track_free(bufpool.capacity());
+          track_free(sched.memory()->capacity());
+
+        memory_pool_type_host bufpool;
+        typedef typename host_exec_space::memory_space memory_space;          
+        {
+          const size_type
+            min_block_size  = 1,
+            max_block_size  = (_info.max_schur_size)*(x.dimension_1())*sizeof(value_type),
+            memory_capacity = max_block_size,
+            superblock_size = max_block_size;
           
-        //   /// recursive tree traversal
-        //   constexpr bool final = false;
-        //   if (final) {
-        //     for (ordinal_type sid=0;sid<_nsupernodes;++sid)
-        //       recursiveSerialSolveLower(sid, bufpool, true);
-        //     for (ordinal_type sid=(_nsupernodes-1);sid>=0;--sid)
-        //       recursiveSerialSolveUpper(sid, bufpool, true);
-        //   } else {
-        //     const ordinal_type nroots = _stree_roots.dimension_0();
-        //     for (ordinal_type i=0;i<nroots;++i)
-        //       recursiveSerialSolveLower(_stree_roots(i), bufpool);
-        //     for (ordinal_type i=0;i<nroots;++i)
-        //       recursiveSerialSolveUpper(_stree_roots(i), bufpool);
-        //   }
-        // }
+          bufpool = memory_pool_type_host(memory_space(),
+                                          memory_capacity,
+                                          min_block_size,
+                                          max_block_size,
+                                          superblock_size);
+
+          track_alloc(bufpool.capacity());
+          
+          /// recursive tree traversal
+          constexpr bool final = false;
+          if (final) {
+            for (ordinal_type sid=0;sid<_nsupernodes;++sid)
+              recursiveSerialSolveLower(sid, bufpool, true);
+            for (ordinal_type sid=(_nsupernodes-1);sid>=0;--sid)
+              recursiveSerialSolveUpper(sid, bufpool, true);
+          } else {
+            const ordinal_type nroots = _stree_roots.dimension_0();
+            for (ordinal_type i=0;i<nroots;++i)
+              recursiveSerialSolveLower(_stree_roots(i), bufpool);
+            for (ordinal_type i=0;i<nroots;++i)
+              recursiveSerialSolveUpper(_stree_roots(i), bufpool);
+          }
+        }
         stat.t_solve += timer.seconds();
 
         // copy t -> x
@@ -597,7 +660,7 @@ namespace Tacho {
         {
           timer.reset();
           typedef typename sched_type_host::memory_space memory_space;
-          typedef TaskFunctor_CholSupernodes_ByBlocks<value_type,host_exec_space> chol_supernode_byblocks_functor_type;
+          typedef TaskFunctor_FactorizeCholByBlocks<value_type,host_exec_space> functor_type;
           typedef Kokkos::Future<int,host_exec_space> future_type;
 
           const size_type 
@@ -612,7 +675,7 @@ namespace Tacho {
 
             const size_type max_dep_future_size = max(max_ncols_of_blocks*max_ncols_of_blocks,
                                                       max_children_size)*sizeof(future_type);
-            const size_type max_functor_size = sizeof(chol_supernode_byblocks_functor_type);
+            const size_type max_functor_size = sizeof(functor_type);
             const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
 
             const size_type
@@ -663,7 +726,7 @@ namespace Tacho {
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               chol_supernode_byblocks_functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
+                               functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
           Kokkos::wait(sched);
           stat.t_factor = timer.seconds();
 
