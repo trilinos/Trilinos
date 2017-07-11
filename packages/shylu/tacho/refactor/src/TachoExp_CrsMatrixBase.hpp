@@ -68,7 +68,7 @@ namespace Tacho {
       /// ------------------------------------------------------------------
       void setExternalMatrix(const ordinal_type m, 
                              const ordinal_type n, 
-                             const ordinal_type nnz,
+                             const size_type nnz,
                              const size_type_array &ap,
                              const ordinal_type_array &aj,
                              const value_type_array &ax) {

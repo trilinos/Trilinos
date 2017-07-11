@@ -169,6 +169,7 @@ namespace Tacho {
         printf("  Memory\n");
         printf("             memory used in factorization:                    %10.2f MB\n", stat.m_used/1024/1024);
         printf("             peak memory used in factorization:               %10.2f MB\n", stat.m_peak/1024/1024);
+        printf("\n");
       }
 
       inline
