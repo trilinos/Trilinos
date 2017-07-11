@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit tests for the Intrepid2::Basis_HGRAD_LINE_Cn_FEM class.
+    \brief  Unit tests for the Intrepid2::Basis_L2_LINE_Cn_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson, Kyungjoo Kim
 */
 
@@ -58,7 +58,7 @@
 //#include "Intrepid2_FunctionSpaceTools.hpp"
 
 //#include "Intrepid2_PointTools.hpp"
-#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
+#include "Intrepid2_L2_LINE_Cn_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -81,7 +81,7 @@ namespace Intrepid2 {
     
 
     template<typename ValueType, typename DeviceSpaceType>
-    int HGRAD_LINE_Cn_FEM_Test01(const bool verbose) {
+    int L2_LINE_Cn_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -103,7 +103,7 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|               Unit Test (Basis_HGRAD_LINE_Cn_FEM)                           |\n"
+        << "|               Unit Test (Basis_L2_LINE_Cn_FEM)                              |\n"
         << "|                                                                             |\n"
         << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
         << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n"
@@ -130,7 +130,7 @@ namespace Intrepid2 {
       typedef ValueType pointValueType;
       //typedef ValueType weightValueType;
 
-      typedef Basis_HGRAD_LINE_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> LineBasisType;
+      typedef Basis_L2_LINE_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> LineBasisType;
       //typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
       //typedef FunctionSpaceTools<DeviceSpaceType> fst;
 
@@ -248,7 +248,7 @@ namespace Intrepid2 {
         const EPointType pts[3] = { POINTTYPE_EQUISPACED, POINTTYPE_WARPBLEND, POINTTYPE_GAUSS };
         for (auto idx=0;idx<3;++idx) {
           *outStream << " -- Testing " << EPointTypeToString(pts[idx]) << " -- \n";
-          for (auto ip=1;ip<maxOrder;++ip) {
+          for (auto ip=0;ip<maxOrder;++ip) {
 
             LineBasisType lineBasis(ip, pts[idx]);
 
