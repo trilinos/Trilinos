@@ -45,6 +45,7 @@ namespace Tacho {
       ConstUnmanagedViewType<ordinal_type_array> sid_super_panel_colidx, blk_super_panel_colidx;
 
       // supernode tree
+      ConstUnmanagedViewType<ordinal_type_array> stree_parent;
       ConstUnmanagedViewType<size_type_array> stree_ptr;
       ConstUnmanagedViewType<ordinal_type_array> stree_children;
 
@@ -54,10 +55,11 @@ namespace Tacho {
       ConstUnmanagedViewType<size_type_array> super_panel_ptr;
       UnmanagedViewType<value_type_array> super_panel_buf;
 
-      // ///
-      // /// Phase 3: abr (schur complements)
-      // ///
-      ordinal_type max_supernode_size, max_schur_size;
+      ///
+      /// Phase 3: abr (supernodes/schur complements)
+      ///
+      ordinal_type max_supernode_size, max_schur_size, serial_thres_size;
+      UnmanagedViewType<ordinal_type_array> max_decendant_schur_size, max_decendant_supernode_size;
 
       ///
       /// Phase 4: solve (rhs multivector)
@@ -103,13 +105,23 @@ namespace Tacho {
         max_supernode_size = 0;
         const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
         for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          ordinal_type m, n;
-          getSuperPanelSize(sid, m, n);
+          ordinal_type m, n; getSuperPanelSize(sid, m, n);
           work(sid) = m*n;
+
           max_supernode_size = max(max_supernode_size, m);
           max_schur_size = max(max_schur_size, n-m);
-        }
 
+          max_decendant_supernode_size(sid) = max(m, max_decendant_supernode_size(sid));
+          max_decendant_schur_size(sid) = max(n-m, max_decendant_schur_size(sid));
+          const ordinal_type sidpar = stree_parent(sid);
+          if (sidpar != -1) {
+            max_decendant_supernode_size(sidpar) = max(max_decendant_supernode_size(sid),  
+                                                       max_decendant_supernode_size(sidpar));
+            max_decendant_schur_size(sidpar) = max(max_decendant_schur_size(sid),  
+                                                   max_decendant_schur_size(sidpar));
+          }
+        }
+        
         // prefix scan
         spanel_ptr = size_type_array("super_panel_ptr", nsupernodes+1);
         for (ordinal_type sid=0;sid<nsupernodes;++sid)

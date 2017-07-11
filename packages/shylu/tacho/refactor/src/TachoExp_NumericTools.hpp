@@ -109,9 +109,8 @@ namespace Tacho {
       size_type_array_host _super_panel_ptr;
       value_type_array_host _super_panel_buf;
 
-      // temp : schur arrays (will be replaced with a memory pool)
-      size_type_array_host _super_schur_ptr;
-      value_type_array_host _super_schur_buf;
+      // this is filled when superpanel is allocated
+      ordinal_type_array_host _max_decendant_supernode_size, _max_decendant_schur_size;
 
       ///
       /// supernode info: supernode data structure with "unamanged" view
@@ -338,20 +337,26 @@ namespace Tacho {
           _stree_parent(stree_parent),
           _stree_ptr(stree_ptr),
           _stree_children(stree_children),
-          _stree_roots(stree_roots) {
+          _stree_roots(stree_roots),
+          _max_decendant_supernode_size("max_decendant_supernode_size", nsupernodes),
+          _max_decendant_schur_size("max_decendant_size", nsupernodes) {
         ///
         /// symbolic input
         ///
-        _info.supernodes             = _supernodes;
-        _info.gid_super_panel_ptr    = _gid_super_panel_ptr;
-        _info.gid_super_panel_colidx = _gid_super_panel_colidx;
+        _info.supernodes                    = _supernodes;
+        _info.gid_super_panel_ptr           = _gid_super_panel_ptr;
+        _info.gid_super_panel_colidx        = _gid_super_panel_colidx;
 
-        _info.sid_super_panel_ptr    = _sid_super_panel_ptr;
-        _info.sid_super_panel_colidx = _sid_super_panel_colidx;
-        _info.blk_super_panel_colidx = _blk_super_panel_colidx;
+        _info.sid_super_panel_ptr           = _sid_super_panel_ptr;
+        _info.sid_super_panel_colidx        = _sid_super_panel_colidx;
+        _info.blk_super_panel_colidx        = _blk_super_panel_colidx;
 
-        _info.stree_ptr              = _stree_ptr;
-        _info.stree_children         = _stree_children;
+        _info.stree_parent                  = _stree_parent;
+        _info.stree_ptr                     = _stree_ptr;
+        _info.stree_children                = _stree_children;
+
+        _info.max_decendant_supernode_size  = _max_decendant_supernode_size;
+        _info.max_decendant_schur_size      = _max_decendant_schur_size;
       }
 
       ///
@@ -510,6 +515,7 @@ namespace Tacho {
       inline
       void
       factorizeCholesky_Parallel(const value_type_array_host &ax,
+                                 const ordinal_type serial_thres_size,
                                  const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
 
@@ -598,6 +604,7 @@ namespace Tacho {
           stat.t_extra += timer.seconds();
 
           timer.reset();
+          _info.serial_thres_size = serial_thres_size;
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
@@ -614,6 +621,84 @@ namespace Tacho {
           printf("=============================================\n");
 
           print_stat_factor();
+        }
+      }
+
+      inline
+      void
+      solveCholesky_Parallel(const value_type_matrix_host &x,   // solution
+                             const value_type_matrix_host &b,   // right hand side
+                             const value_type_matrix_host &t,
+                             const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
+        TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
+                                 x.dimension_1() != b.dimension_1() ||
+                                 x.dimension_0() != t.dimension_0() ||
+                                 x.dimension_1() != t.dimension_1(), std::logic_error,
+                                 "supernode data structure is not allocated");
+
+        TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
+                                 x.data() == t.data() ||
+                                 t.data() == b.data(), std::logic_error,
+                                 "x, b and t have the same data pointer");
+
+        TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
+                                 _info.super_panel_buf.data() == NULL, std::logic_error,
+                                 "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
+
+        Kokkos::Impl::Timer timer;
+
+        _info.x = t;
+
+        // copy b -> t
+        timer.reset();
+        applyRowPermutation(t, b, _peri);
+        stat.t_extra += timer.seconds();
+
+        timer.reset();
+        memory_pool_type_host bufpool;
+        typedef typename host_exec_space::memory_space memory_space;          
+        {
+          const size_type
+            min_block_size  = 1,
+            max_block_size  = (_info.max_schur_size)*(x.dimension_1())*sizeof(value_type),
+            memory_capacity = max_block_size,
+            superblock_size = max_block_size;
+          
+          bufpool = memory_pool_type_host(memory_space(),
+                                          memory_capacity,
+                                          min_block_size,
+                                          max_block_size,
+                                          superblock_size);
+
+          track_alloc(bufpool.capacity());
+          
+          /// recursive tree traversal
+          constexpr bool final = false;
+          if (final) {
+            for (ordinal_type sid=0;sid<_nsupernodes;++sid)
+              recursiveSerialSolveLower(sid, bufpool, true);
+            for (ordinal_type sid=(_nsupernodes-1);sid>=0;--sid)
+              recursiveSerialSolveUpper(sid, bufpool, true);
+          } else {
+            const ordinal_type nroots = _stree_roots.dimension_0();
+            for (ordinal_type i=0;i<nroots;++i)
+              recursiveSerialSolveLower(_stree_roots(i), bufpool);
+            for (ordinal_type i=0;i<nroots;++i)
+              recursiveSerialSolveUpper(_stree_roots(i), bufpool);
+          }
+        }
+        stat.t_solve += timer.seconds();
+
+        // copy t -> x
+        timer.reset();
+        applyRowPermutation(x, t, _perm);
+        stat.t_extra += timer.seconds();
+
+        if (verbose) {
+          printf("Summary: NumericTools (SerialSolve)\n");
+          printf("===================================\n");
+
+          print_stat_solve();
         }
       }
 
