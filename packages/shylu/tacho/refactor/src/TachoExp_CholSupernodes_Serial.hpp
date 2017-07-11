@@ -380,8 +380,8 @@ namespace Tacho {
 
           UnmanagedViewType<value_type_matrix> ABR((value_type*)buf, n, n);
 
-          // CholSupernodes<Algo::Workflow::Serial>
-          //   ::factorize(sched, member, info, ABR, sid);
+          CholSupernodes<Algo::Workflow::Serial>
+            ::factorize(sched, member, info, ABR, sid);
 
           CholSupernodes<Algo::Workflow::Serial>
             ::update(sched, member, info, ABR, sid,
