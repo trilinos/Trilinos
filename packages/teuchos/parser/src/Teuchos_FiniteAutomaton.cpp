@@ -5,7 +5,6 @@
 #include <queue>
 #include <utility>
 #include <memory>
-#include <iostream>
 #include <limits>
 
 #include "Teuchos_chartab.hpp"
@@ -452,7 +451,7 @@ struct GetSymbol;
 
 template <typename T>
 struct GetSymbol<T, true> {
-  static bool eval(T c) {
+  static int eval(T c) {
     TEUCHOS_ASSERT(0 <= c);
     int symbol = Teuchos::chartab[int(c)];
     TEUCHOS_ASSERT(0 <= symbol);
@@ -462,7 +461,7 @@ struct GetSymbol<T, true> {
 
 template <typename T>
 struct GetSymbol<T, false> {
-  static bool eval(T c) {
+  static int eval(T c) {
     int symbol = Teuchos::chartab[int(c)];
     TEUCHOS_ASSERT(0 <= symbol);
     return symbol;
