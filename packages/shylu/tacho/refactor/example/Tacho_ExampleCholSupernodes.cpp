@@ -50,7 +50,7 @@ int main (int argc, char *argv[]) {
   int nrhs = 1;
   clp.setOption("nrhs", &nrhs, "Number of RHS vectors");
 
-  int serial_thres_size = 256;
+  int serial_thres_size = -1;
   clp.setOption("serial-thres", &serial_thres_size, "Serial threshold");  
   
   int mb = 0;
@@ -121,7 +121,8 @@ int main (int argc, char *argv[]) {
         S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
         S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
         S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
-    
+    N.setSerialThresholdSize(serial_thres_size);
+
     std::cout << "CholSupernodes:: factorize matrix" << std::endl;
     timer.reset();    
     if (serial) {
@@ -130,7 +131,7 @@ int main (int argc, char *argv[]) {
       if (mb > 0) 
         N.factorizeCholesky_ParallelByBlocks(A.Values(), mb, verbose);
       else
-        N.factorizeCholesky_Parallel(A.Values(), serial_thres_size, verbose);
+        N.factorizeCholesky_Parallel(A.Values(), verbose);
     }
     t = timer.seconds();    
     std::cout << "CholSupernodes:: factorize matrix::time = " << t << std::endl;
@@ -153,7 +154,7 @@ int main (int argc, char *argv[]) {
     if (serial) {
       N.solveCholesky_Serial(X, B, Y, verbose);
     } else {
-      N.solveCholesky_Serial(X, B, Y, verbose);
+      N.solveCholesky_Parallel(X, B, Y, verbose);
     }
     t = timer.seconds();    
     std::cout << "CholSupernodes:: solve matrix::time = " << t << std::endl;
