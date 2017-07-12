@@ -610,7 +610,6 @@ Teuchos::ParameterList::values
   // ** give ParameterList a PyDict "feel" ** //
   //////////////////////////////////////////////
 
-#if PY_VERSION_HEX >= 0x03000000
   /******************************************************************/
   // Comparison operators
   int __cmp__(PyObject * obj) const
@@ -642,7 +641,6 @@ Teuchos::ParameterList::values
     Py_XDECREF(dict2);
     return -2;
   }
-#endif
  
   /******************************************************************/
   // Contains operator
