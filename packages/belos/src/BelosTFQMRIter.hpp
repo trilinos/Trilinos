@@ -62,7 +62,6 @@
 #include "BelosTypes.hpp"	
 
 #include "BelosLinearProblem.hpp"
-#include "BelosMatOrthoManager.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
@@ -168,32 +167,21 @@ namespace Belos {
     //! @name Solver methods
     //@{ 
     
-    /*! \brief This method performs block TFQMR iterations until the status
+    /*! \brief This method performs TFQMR iterations until the status
      * test indicates the need to stop or an error occurs (in which case, an
      * std::exception is thrown).
      *
-     * iterate() will first determine whether the solver is inintialized; if
+     * iterate() will first determine whether the solver is initialized; if
      * not, it will call initialize() using default arguments. After
-     * initialization, the solver performs block TFQMR iterations until the
+     * initialization, the solver performs TFQMR iterations until the
      * status test evaluates as ::Passed, at which point the method returns to
      * the caller. 
-     *
-     * The block TFQMR iteration proceeds as follows:
-     * -# The operator problem->applyOp() is applied to the newest \c blockSize vectors in the Krylov basis.
-     * -# The resulting vectors are orthogonalized against the previous basis vectors, and made orthonormal.
-     * -# The Hessenberg matrix is updated.
-     * -# The least squares system is updated.
-     *
-     * The status test is queried at the beginning of the iteration.
-     *
-     * Possible exceptions thrown include the TFQMRIterOrthoFailure.
-     *
      */
     void iterate();
 
     /*! \brief Initialize the solver to an iterate, providing a complete state.
      *
-     * The %BlockTFQMRIter contains a certain amount of state, consisting of the current 
+     * The %TFQMRIter contains a certain amount of state, consisting of the current 
      * Krylov basis and the associated Hessenberg matrix.
      *
      * initialize() gives the user the opportunity to manually set these,
@@ -434,8 +422,6 @@ namespace Belos {
     std::string errstr("Belos::TFQMRIter::initialize(): Specified multivectors must have a consistent length and width.");
 
     // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType STzero = Teuchos::ScalarTraits<ScalarType>::zero();
     const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
     if (newstate.R != Teuchos::null) {
@@ -448,7 +434,7 @@ namespace Belos {
       // Copy basis vectors from newstate into V
       if (newstate.R != R_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.R, STzero, *newstate.R, *R_ );
+        MVT::Assign( *newstate.R, *R_ );
       }
 
       // Compute initial vectors
@@ -497,6 +483,7 @@ namespace Belos {
     // Create convenience variables for zero and one.
     const ScalarType STone = Teuchos::ScalarTraits<ScalarType>::one();
     const MagnitudeType MTone = Teuchos::ScalarTraits<MagnitudeType>::one();
+    const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     const ScalarType STzero = Teuchos::ScalarTraits<ScalarType>::zero();
     ScalarType eta = STzero, beta = STzero;
     //
@@ -566,7 +553,6 @@ namespace Belos {
         cs_[0] = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[0]*theta_[0]);  
         tau_[0] *= theta_[0]*cs_[0];     // tau = tau * theta * cs
         eta = cs_[0]*cs_[0]*alpha_[0];     // eta = cs^2 * alpha
-      
         //
         //--------------------------------------------------------
         // Update the solution.
@@ -574,6 +560,13 @@ namespace Belos {
         //--------------------------------------------------------
         //
         MVT::MvAddMv( STone, *solnUpdate_, eta, *D_, *solnUpdate_ );
+        //
+        //--------------------------------------------------------
+        // Check for breakdown before continuing.
+        //--------------------------------------------------------
+        if ( tau_[0] == MTzero ) {
+          break;
+        } 
         //
         if (iIter == 1) {
   	  //
