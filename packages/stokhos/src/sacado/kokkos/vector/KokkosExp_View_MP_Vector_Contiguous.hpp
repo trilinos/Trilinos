@@ -84,7 +84,7 @@ struct is_view_mp_vector< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewMPVectorContiguous >::value;
+                  Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value;
 };
 
 template <typename T, typename ... P>
@@ -1416,7 +1416,7 @@ namespace Impl {
 template< class OutputView >
 struct ViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
-                                                        Experimental::Impl::ViewMPVectorContiguous >::value &&
+                                                        Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
                                                    Cuda >::value >::type >
 {
