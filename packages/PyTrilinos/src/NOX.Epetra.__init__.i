@@ -251,18 +251,18 @@ from .. import Abstract
 from .  import Interface
 %}
 
-// This might need to be deleted?
-// ==============================
-
-// Allow import from the parent directory
+// Allow import from the parent directory, and force correct import of
+// ___init__
 %pythoncode
 %{
 import sys, os.path as op
-thisDir   = op.dirname(op.abspath(__file__))
-parentDir = op.normpath(op.join(thisDir,".."))
-if not thisDir   in sys.path: sys.path.append(thisDir  )
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
+from .. import Abstract
+if "delete_Group" not in dir(___init__):
+    del ___init__
+    from . import ___init__
 %}
 
 %teuchos_rcp(NOX::Abstract::Group)
@@ -282,7 +282,6 @@ del sys, op
 {
   Interface = Epetra.Interface
 }
-// ==============================
 
 //////////////////////////////
 // NOX.Epetra.Group support //
