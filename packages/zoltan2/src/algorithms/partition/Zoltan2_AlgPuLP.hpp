@@ -472,6 +472,7 @@ void AlgPuLP<Adapter>::partition(
 			scale_weights(num_verts, vwgts[i], vertex_weights, nVwgts, i, scale_option, global_wgt_sum[i], global_max_wgt[i], global_wgt_sum[nVwgts]);
 		}
 
+    //TODO: Is this necessary? 
 		if(nVwgts == 1)
         {
             vertex_weights_sum = global_wgt_sum[0];
@@ -531,20 +532,10 @@ void AlgPuLP<Adapter>::partition(
 
   dist_graph_t g;
 
-	if (nVwgts == 1)
-	{
-	    create_xtrapulp_dist_graph(&g, num_verts_global, num_edges_global,
-			(unsigned long)num_verts, (unsigned long)num_edges,
-			out_edges, out_offsets, global_ids, verts_per_rank,
-			vertex_weights, edge_weights);
-	}
-	else
-	{
-		create_xtrapulp_dist_graph2(&g, num_verts_global, num_edges_global,
+	create_xtrapulp_dist_graph(&g, num_verts_global, num_edges_global,
 			(unsigned long)num_verts, (unsigned long)num_edges,
 			out_edges, out_offsets, global_ids, verts_per_rank,
 			vertex_weights, edge_weights, nVwgts, norm_option, multiweight_option);
-	}
 
 #endif
 
@@ -579,7 +570,7 @@ void AlgPuLP<Adapter>::partition(
     !ierr, BASIC_ASSERTION, problemComm);
 #else
   //What does graph look like here?
-  ierr = xtrapulp_run(&g, &ppc, parts, num_parts);
+  ierr = xtrapulp_run(&g, &ppc, parts, num_parts, nVwgts, multiweight_option);
   env->globalInputAssertion(__FILE__, __LINE__, "xtrapulp_run",
     !ierr, BASIC_ASSERTION, problemComm);//If any of the weights are not integers, extremely small (< INT_EPSILON), or extremely large (> MAX_NUM), then scale ALL the weights
 
@@ -719,7 +710,6 @@ void AlgPuLP<Adapter>::scale_weights(
 	std::cout << std::endl;
 }
 
-
 template <typename Adapter>
 void AlgPuLP<Adapter>::aggregate_weights(
   size_t nVtx,
@@ -760,10 +750,11 @@ void AlgPuLP<Adapter>::aggregate_weights(
     Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, nVwgts, local_max_wgt, global_max_wgt);
 }
 
-
-
 } // namespace Zoltan2
 
 #endif // HAVE_ZOLTAN2_PULP
+
 ////////////////////////////////////////////////////////////////////////
+
+
 #endif
