@@ -27,11 +27,11 @@
 #include "TachoExp_CholSupernodes.hpp"
 #include "TachoExp_CholSupernodes_Serial.hpp"
 
-#include "TachoExp_TaskFunctor_FactorizeChol.hpp"
-#include "TachoExp_TaskFunctor_FactorizeCholByBlocks.hpp"
+// #include "TachoExp_TaskFunctor_FactorizeChol.hpp"
+// #include "TachoExp_TaskFunctor_FactorizeCholByBlocks.hpp"
 
-#include "TachoExp_TaskFunctor_SolveLowerChol.hpp"
-#include "TachoExp_TaskFunctor_SolveUpperChol.hpp"
+// #include "TachoExp_TaskFunctor_SolveLowerChol.hpp"
+// #include "TachoExp_TaskFunctor_SolveUpperChol.hpp"
 
 namespace Tacho {
 
@@ -49,11 +49,14 @@ namespace Tacho {
       typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
       typedef SupernodeInfo<value_type,host_exec_space> supernode_info_type_host;
       typedef typename supernode_info_type_host::crs_matrix_type crs_matrix_type_host;
-      typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
 
-      typedef typename crs_matrix_type_host::ordinal_type_array ordinal_type_array_host;
-      typedef typename crs_matrix_type_host::size_type_array size_type_array_host;
-      typedef typename crs_matrix_type_host::value_type_array value_type_array_host;
+      typedef typename supernode_info_type_host::ordinal_type_array ordinal_type_array_host;
+      typedef typename supernode_info_type_host::size_type_array size_type_array_host;
+      typedef typename supernode_info_type_host::value_type_array value_type_array_host;
+
+      typedef typename supernode_info_type_host::ordinal_pair_type_array ordinal_pair_type_array_host;
+      typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
+      typedef typename supernode_info_type_host::supernode_type_array supernode_type_array_host;
 
       typedef typename supernode_info_type_host::dense_block_type dense_block_type_host;
       typedef typename supernode_info_type_host::dense_matrix_of_blocks_type dense_matrix_of_blocks_type_host;
@@ -67,11 +70,14 @@ namespace Tacho {
       typedef ExecSpace device_exec_space;
       typedef SupernodeInfo<value_type,device_exec_space> supernode_info_type_device;
       typedef typename supernode_info_type_device::crs_matrix_type crs_matrix_type_device;
-      typedef typename supernode_info_type_device::value_type_matrix value_type_matrix_device;
 
-      typedef typename crs_matrix_type_device::ordinal_type_array ordinal_type_array_device;
-      typedef typename crs_matrix_type_device::size_type_array size_type_array_device;
-      typedef typename crs_matrix_type_device::value_type_array value_type_array_device;
+      typedef typename supernode_info_type_device::ordinal_type_array ordinal_type_array_device;
+      typedef typename supernode_info_type_device::size_type_array size_type_array_device;
+      typedef typename supernode_info_type_device::value_type_array value_type_array_device;
+
+      typedef typename supernode_info_type_device::ordinal_pair_type_array ordinal_pair_type_array_device;
+      typedef typename supernode_info_type_device::value_type_matrix value_type_matrix_device;
+      typedef typename supernode_info_type_device::supernode_type_array supernode_type_array_device;
 
       typedef Kokkos::TaskScheduler<device_exec_space> sched_type_device;
       typedef Kokkos::MemoryPool<device_exec_space> memory_pool_type_device;
@@ -92,32 +98,21 @@ namespace Tacho {
       // graph ordering input
       ordinal_type_array_host _perm, _peri;
 
-      // supernodes input
+      // supernodes       
       ordinal_type _nsupernodes;
-      ordinal_type_array_host _supernodes;
+      supernode_type_array_host _supernodes;
 
       // dof mapping to sparse matrix
-      size_type_array_host _gid_super_panel_ptr;
-      ordinal_type_array_host _gid_super_panel_colidx;
+      ordinal_type_array_host _gid_colidx;
 
-      // supernode map and panel size configuration
-      size_type_array_host _sid_super_panel_ptr;
-      ordinal_type_array_host _sid_super_panel_colidx, _blk_super_panel_colidx;
+      // supernode map and panel size configuration (sid and column blksize)
+      ordinal_pair_type_array_host _sid_block_colidx;
 
       // supernode tree
-      ordinal_type_array_host _stree_parent;
-      size_type_array_host _stree_ptr;
-      ordinal_type_array_host _stree_children, _stree_roots;
+      ordinal_type_array_host _stree_roots;
 
       // output : factors
-      size_type_array_host _super_panel_ptr;
-      value_type_array_host _super_panel_buf;
-
-      // this is filled when superpanel is allocated
-      ordinal_type_array_host _max_decendant_supernode_size, _max_decendant_schur_size;
-
-      // 
-      ordinal_type max_children_size;
+      value_type_array_host _superpanel_buf;
 
       ///
       /// supernode info: supernode data structure with "unamanged" view
@@ -164,8 +159,8 @@ namespace Tacho {
       print_stat_factor() {
         double flop = 0;
         for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-          ordinal_type pm, pn; _info.getSuperPanelSize(sid, pm, pn);
-          const ordinal_type m = pm, n = pn - pm;
+          auto &s = _supernodes(sid);
+          const ordinal_type m = s.m, n = s.n - s.m;
           flop += DenseFlopCount<value_type>::Chol(m);
           flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
           flop += DenseFlopCount<value_type>::Syrk(m, n);
@@ -184,7 +179,7 @@ namespace Tacho {
         printf("             gflop/s for numeric factorization:               %10.2f GFLOP/s\n", flop/stat.t_factor/1024/1024/1024);
         printf("\n");
       }
-
+      
       inline
       void
       print_stat_solve() {
@@ -194,11 +189,11 @@ namespace Tacho {
         printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
         printf("\n");
       }
-
+      
     public:
       NumericTools() = default;
       NumericTools(const NumericTools &b) = default;
-
+      
       ///
       /// construction (assume input matrix and symbolic are from host)
       ///
@@ -206,62 +201,43 @@ namespace Tacho {
                    const ordinal_type m,
                    const size_type_array_host &ap,
                    const ordinal_type_array_host &aj,
-                   //const value_type_array_host &ax, // ax is given in factorization
                    // input permutation
                    const ordinal_type_array_host &perm,
                    const ordinal_type_array_host &peri,
                    // supernodes
                    const ordinal_type nsupernodes,
                    const ordinal_type_array_host &supernodes,
-                   const size_type_array_host &gid_super_panel_ptr,
-                   const ordinal_type_array_host &gid_super_panel_colidx,
-                   const size_type_array_host &sid_super_panel_ptr,
-                   const ordinal_type_array_host &sid_super_panel_colidx,
-                   const ordinal_type_array_host &blk_super_panel_colidx,
+                   const size_type_array_host &gid_ptr,
+                   const ordinal_type_array_host &gid_colidx,
+                   const size_type_array_host &sid_ptr,
+                   const ordinal_type_array_host &sid_colidx,
+                   const ordinal_type_array_host &blk_colidx,
                    const ordinal_type_array_host &stree_parent,
                    const size_type_array_host &stree_ptr,
                    const ordinal_type_array_host &stree_children,
                    const ordinal_type_array_host &stree_roots)
-        : _m(m),
-          _ap(ap),
-          _aj(aj),
-          //_ax(ax),
-          _perm(perm),
-          _peri(peri),
-          _nsupernodes(nsupernodes),
-          _supernodes(supernodes),
-          _gid_super_panel_ptr(gid_super_panel_ptr),
-          _gid_super_panel_colidx(gid_super_panel_colidx),
-          _sid_super_panel_ptr(sid_super_panel_ptr),
-          _sid_super_panel_colidx(sid_super_panel_colidx),
-          _blk_super_panel_colidx(blk_super_panel_colidx),
-          _stree_parent(stree_parent),
-          _stree_ptr(stree_ptr),
-          _stree_children(stree_children),
-          _stree_roots(stree_roots),
-          _max_decendant_supernode_size("max_decendant_supernode_size", nsupernodes),
-          _max_decendant_schur_size("max_decendant_size", nsupernodes) {
+      : _m(m), _ap(ap), _aj(aj),
+        _perm(perm), _peri(peri),
+        _nsupernodes(nsupernodes),
+        _gid_colidx(gid_colidx),
+        _stree_roots(stree_roots) {        
+
         ///
         /// symbolic input
         ///
-        _info.supernodes                    = _supernodes;
-        _info.gid_super_panel_ptr           = _gid_super_panel_ptr;
-        _info.gid_super_panel_colidx        = _gid_super_panel_colidx;
-
-        _info.sid_super_panel_ptr           = _sid_super_panel_ptr;
-        _info.sid_super_panel_colidx        = _sid_super_panel_colidx;
-        _info.blk_super_panel_colidx        = _blk_super_panel_colidx;
-
-        _info.stree_parent                  = _stree_parent;
-        _info.stree_ptr                     = _stree_ptr;
-        _info.stree_children                = _stree_children;
-
-        _info.max_decendant_supernode_size  = _max_decendant_supernode_size;
-        _info.max_decendant_schur_size      = _max_decendant_schur_size;
-
-        max_children_size = 0;
-        for (ordinal_type sid=0;sid<_nsupernodes;++sid)
-          max_children_size = max(max_children_size, _stree_ptr(sid+1) - _stree_ptr(sid));
+        _info.initialize(_supernodes,      
+                         _sid_block_colidx,
+                         _superpanel_buf,
+                         supernodes,
+                         gid_ptr,
+                         gid_colidx,
+                         sid_ptr,
+                         sid_colidx,
+                         blk_colidx,
+                         stree_parent,
+                         stree_ptr,
+                         stree_children);
+        track_alloc(_superpanel_buf.span()*sizeof(value_type));
       }
 
       inline
@@ -280,27 +256,16 @@ namespace Tacho {
                                const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
 
-        reset_stat();
-
         timer.reset();
         {
           /// matrix values
           _ax = ax;
 
-          /// allocate super panels
           ordinal_type_array_host iwork("work", _m+1);
-          _info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
-
           track_alloc(iwork.span()*sizeof(ordinal_type));
-          track_alloc(_super_panel_ptr.span()*sizeof(size_type));
-          track_alloc(_super_panel_buf.span()*sizeof(value_type));
-
-          /// assign data structure into info
-          _info.super_panel_ptr = _super_panel_ptr;
-          _info.super_panel_buf = _super_panel_buf;
-
+          
           /// copy the input matrix into super panels
-          _info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
+          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, iwork);
 
           track_free(iwork.span()*sizeof(ordinal_type));
         }
@@ -317,7 +282,7 @@ namespace Tacho {
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::Serial>
               ::factorize_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
-
+          
           track_free(bufsize);
         }
         stat.t_factor += timer.seconds();
@@ -347,10 +312,6 @@ namespace Tacho {
                                  t.data() == b.data(), std::logic_error,
                                  "x, b and t have the same data pointer");
 
-        TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
-                                 _info.super_panel_buf.data() == NULL, std::logic_error,
-                                 "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
-
         Kokkos::Impl::Timer timer;
 
         _info.x = t;
@@ -359,14 +320,13 @@ namespace Tacho {
         timer.reset();
         applyRowPermutation(t, b, _peri);
         stat.t_extra += timer.seconds();
-
+        
         timer.reset();
-        memory_pool_type_host bufpool;
         {
-          value_type_array_host buf("buf", _info.max_schur_size*(x.dimension_1()));
+          value_type_array_host buf("buf", _info.max_schur_size*x.dimension_1());
           const size_type bufsize = buf.span()*sizeof(value_type);
           track_alloc(bufsize);
-
+          
           /// recursive tree traversal
           const ordinal_type sched = 0, member = 0, nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i)
@@ -375,11 +335,11 @@ namespace Tacho {
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::Serial>
               ::solve_upper_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
-
+          
           track_free(bufsize);
         }
         stat.t_solve += timer.seconds();
-
+        
         // copy t -> x
         timer.reset();
         applyRowPermutation(x, t, _perm);
@@ -393,353 +353,353 @@ namespace Tacho {
         }
       }
 
-      ///
-      /// Kokkos Tasking
-      /// --------------
+      // ///
+      // /// Kokkos Tasking
+      // /// --------------
 
-      inline
-      void
-      factorizeCholesky_Parallel(const value_type_array_host &ax,
-                                 const ordinal_type verbose = 0) {
-        Kokkos::Impl::Timer timer;
+      // inline
+      // void
+      // factorizeCholesky_Parallel(const value_type_array_host &ax,
+      //                            const ordinal_type verbose = 0) {
+      //   Kokkos::Impl::Timer timer;
 
-        reset_stat();
+      //   reset_stat();
 
-        timer.reset();
-        {
-          /// matrix values
-          _ax = ax;
+      //   timer.reset();
+      //   {
+      //     /// matrix values
+      //     _ax = ax;
 
-          /// factor allocation and copy the matrix
-          ordinal_type_array_host iwork("work", _m+1);
-          _info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
+      //     /// factor allocation and copy the matrix
+      //     ordinal_type_array_host iwork("work", _m+1);
+      //     _info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
 
-          track_alloc(iwork.span()*sizeof(ordinal_type));
-          track_alloc(_super_panel_ptr.span()*sizeof(size_type));
-          track_alloc(_super_panel_buf.span()*sizeof(value_type));
+      //     track_alloc(iwork.span()*sizeof(ordinal_type));
+      //     track_alloc(_super_panel_ptr.span()*sizeof(size_type));
+      //     track_alloc(_super_panel_buf.span()*sizeof(value_type));
 
-          /// assign data structure into info
-          _info.super_panel_ptr = _super_panel_ptr;
-          _info.super_panel_buf = _super_panel_buf;
+      //     /// assign data structure into info
+      //     _info.super_panel_ptr = _super_panel_ptr;
+      //     _info.super_panel_buf = _super_panel_buf;
 
-          /// copy the input matrix into super panels
-          _info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
+      //     /// copy the input matrix into super panels
+      //     _info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
           
-          /// serial parameter is reset if it is minus (auto value)
-          if (_info.serial_thres_size < 0) 
-            _info.serial_thres_size = max(_info.max_supernode_size/4, 256);
+      //     /// serial parameter is reset if it is minus (auto value)
+      //     if (_info.serial_thres_size < 0) 
+      //       _info.serial_thres_size = max(_info.max_supernode_size/4, 256);
 
-          track_free(iwork.span()*sizeof(ordinal_type));
-        }
-        stat.t_copy += timer.seconds();
+      //     track_free(iwork.span()*sizeof(ordinal_type));
+      //   }
+      //   stat.t_copy += timer.seconds();
 
-        {
-          timer.reset();
-          typedef typename sched_type_host::memory_space memory_space;
-          typedef TaskFunctor_FactorizeChol<value_type,host_exec_space> functor_type;
-          typedef Kokkos::Future<int,host_exec_space> future_type;
+      //   {
+      //     timer.reset();
+      //     typedef typename sched_type_host::memory_space memory_space;
+      //     typedef TaskFunctor_FactorizeChol<value_type,host_exec_space> functor_type;
+      //     typedef Kokkos::Future<int,host_exec_space> future_type;
 
-          sched_type_host sched;
-          {
-            const size_type max_dep_future_size = max_children_size*sizeof(future_type);
-            const size_type max_functor_size = sizeof(functor_type);
-            const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
+      //     sched_type_host sched;
+      //     {
+      //       const size_type max_dep_future_size = max_children_size*sizeof(future_type);
+      //       const size_type max_functor_size = sizeof(functor_type);
+      //       const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
 
-            const size_type
-              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-              min_block_size  = 1,
-              max_block_size  = ( max_dep_future_size +
-                                  max_functor_size ),
-              num_superblock  = 32, // various small size blocks
-              superblock_size = task_queue_capacity/num_superblock;
+      //       const size_type
+      //         task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+      //         min_block_size  = 1,
+      //         max_block_size  = ( max_dep_future_size +
+      //                             max_functor_size ),
+      //         num_superblock  = 32, // various small size blocks
+      //         superblock_size = task_queue_capacity/num_superblock;
 
-            sched = sched_type_host(memory_space(),
-                                    task_queue_capacity,
-                                    min_block_size,
-                                    max_block_size,
-                                    superblock_size);
+      //       sched = sched_type_host(memory_space(),
+      //                               task_queue_capacity,
+      //                               min_block_size,
+      //                               max_block_size,
+      //                               superblock_size);
 
-            track_alloc(sched.memory()->capacity());
-          }
+      //       track_alloc(sched.memory()->capacity());
+      //     }
 
-          memory_pool_type_host bufpool;
-          {
-            const size_type
-              min_block_size  = 1,
-              max_block_size  = (_info.max_schur_size*_info.max_schur_size +
-                                 _info.max_schur_size)*sizeof(value_type);
+      //     memory_pool_type_host bufpool;
+      //     {
+      //       const size_type
+      //         min_block_size  = 1,
+      //         max_block_size  = (_info.max_schur_size*_info.max_schur_size +
+      //                            _info.max_schur_size)*sizeof(value_type);
 
-            size_type superblock_size = 1;
-            for ( ;superblock_size<max_block_size;superblock_size*=2);
+      //       size_type superblock_size = 1;
+      //       for ( ;superblock_size<max_block_size;superblock_size*=2);
 
-            const size_type
-              num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-              //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // restrict memory pool
-              memory_capacity = num_superblock*superblock_size;
+      //       const size_type
+      //         num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+      //         //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // restrict memory pool
+      //         memory_capacity = num_superblock*superblock_size;
 
-            bufpool = memory_pool_type_host(memory_space(),
-                                            memory_capacity,
-                                            min_block_size,
-                                            max_block_size,
-                                            superblock_size);
+      //       bufpool = memory_pool_type_host(memory_space(),
+      //                                       memory_capacity,
+      //                                       min_block_size,
+      //                                       max_block_size,
+      //                                       superblock_size);
 
-            track_alloc(bufpool.capacity());
-          }
-          stat.t_extra += timer.seconds();
+      //       track_alloc(bufpool.capacity());
+      //     }
+      //     stat.t_extra += timer.seconds();
 
-          timer.reset();
-          const ordinal_type nroots = _stree_roots.dimension_0();
-          for (ordinal_type i=0;i<nroots;++i)
-            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               functor_type(sched, bufpool, _info, _stree_roots(i)));
-          Kokkos::wait(sched);
-          stat.t_factor = timer.seconds();
+      //     timer.reset();
+      //     const ordinal_type nroots = _stree_roots.dimension_0();
+      //     for (ordinal_type i=0;i<nroots;++i)
+      //       Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+      //                          functor_type(sched, bufpool, _info, _stree_roots(i)));
+      //     Kokkos::wait(sched);
+      //     stat.t_factor = timer.seconds();
 
-          track_free(bufpool.capacity());
-          track_free(sched.memory()->capacity());
-        }
+      //     track_free(bufpool.capacity());
+      //     track_free(sched.memory()->capacity());
+      //   }
 
-        if (verbose) {
-          printf("Summary: NumericTools (ParallelFactorization)\n");
-          printf("=============================================\n");
+      //   if (verbose) {
+      //     printf("Summary: NumericTools (ParallelFactorization)\n");
+      //     printf("=============================================\n");
 
-          print_stat_factor();
-        }
-      }
+      //     print_stat_factor();
+      //   }
+      // }
 
-      inline
-      void
-      solveCholesky_Parallel(const value_type_matrix_host &x,   // solution
-                             const value_type_matrix_host &b,   // right hand side
-                             const value_type_matrix_host &t,
-                             const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
-        TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
-                                 x.dimension_1() != b.dimension_1() ||
-                                 x.dimension_0() != t.dimension_0() ||
-                                 x.dimension_1() != t.dimension_1(), std::logic_error,
-                                 "supernode data structure is not allocated");
+      // inline
+      // void
+      // solveCholesky_Parallel(const value_type_matrix_host &x,   // solution
+      //                        const value_type_matrix_host &b,   // right hand side
+      //                        const value_type_matrix_host &t,
+      //                        const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
+      //   TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
+      //                            x.dimension_1() != b.dimension_1() ||
+      //                            x.dimension_0() != t.dimension_0() ||
+      //                            x.dimension_1() != t.dimension_1(), std::logic_error,
+      //                            "supernode data structure is not allocated");
 
-        TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
-                                 x.data() == t.data() ||
-                                 t.data() == b.data(), std::logic_error,
-                                 "x, b and t have the same data pointer");
+      //   TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
+      //                            x.data() == t.data() ||
+      //                            t.data() == b.data(), std::logic_error,
+      //                            "x, b and t have the same data pointer");
 
-        TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
-                                 _info.super_panel_buf.data() == NULL, std::logic_error,
-                                 "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
+      //   TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
+      //                            _info.super_panel_buf.data() == NULL, std::logic_error,
+      //                            "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
 
-        Kokkos::Impl::Timer timer;
+      //   Kokkos::Impl::Timer timer;
 
-        _info.x = t;
+      //   _info.x = t;
 
-        // copy b -> t
-        timer.reset();
-        applyRowPermutation(t, b, _peri);
-        stat.t_extra += timer.seconds();
+      //   // copy b -> t
+      //   timer.reset();
+      //   applyRowPermutation(t, b, _peri);
+      //   stat.t_extra += timer.seconds();
 
-        {
-          timer.reset();
-          typedef typename sched_type_host::memory_space memory_space;
-          typedef TaskFunctor_SolveLowerChol<value_type,host_exec_space> functor_lower_type;
-          typedef TaskFunctor_SolveUpperChol<value_type,host_exec_space> functor_upper_type;
-          typedef Kokkos::Future<int,host_exec_space> future_type;
+      //   {
+      //     timer.reset();
+      //     typedef typename sched_type_host::memory_space memory_space;
+      //     typedef TaskFunctor_SolveLowerChol<value_type,host_exec_space> functor_lower_type;
+      //     typedef TaskFunctor_SolveUpperChol<value_type,host_exec_space> functor_upper_type;
+      //     typedef Kokkos::Future<int,host_exec_space> future_type;
 
-          sched_type_host sched;
-          {
-            const size_type max_dep_future_size = max_children_size*sizeof(future_type);
-            const size_type max_functor_size = max(sizeof(functor_lower_type), sizeof(functor_upper_type));
-            const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
+      //     sched_type_host sched;
+      //     {
+      //       const size_type max_dep_future_size = max_children_size*sizeof(future_type);
+      //       const size_type max_functor_size = max(sizeof(functor_lower_type), sizeof(functor_upper_type));
+      //       const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
             
-            const size_type
-              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-              min_block_size  = 1,
-              max_block_size  = ( max_dep_future_size +
-                                  max_functor_size ),
-              num_superblock  = 32, // various small size blocks
-              superblock_size = task_queue_capacity/num_superblock;
+      //       const size_type
+      //         task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+      //         min_block_size  = 1,
+      //         max_block_size  = ( max_dep_future_size +
+      //                             max_functor_size ),
+      //         num_superblock  = 32, // various small size blocks
+      //         superblock_size = task_queue_capacity/num_superblock;
             
-            sched = sched_type_host(memory_space(),
-                                    task_queue_capacity,
-                                    min_block_size,
-                                    max_block_size,
-                                    superblock_size);
+      //       sched = sched_type_host(memory_space(),
+      //                               task_queue_capacity,
+      //                               min_block_size,
+      //                               max_block_size,
+      //                               superblock_size);
             
-            track_alloc(sched.memory()->capacity());
-          }
+      //       track_alloc(sched.memory()->capacity());
+      //     }
           
-          memory_pool_type_host bufpool;
-          {
-            const size_type
-              min_block_size  = 1,
-              max_block_size  = 2*_info.max_schur_size*sizeof(value_type);
+      //     memory_pool_type_host bufpool;
+      //     {
+      //       const size_type
+      //         min_block_size  = 1,
+      //         max_block_size  = 2*_info.max_schur_size*sizeof(value_type);
 
-            size_type superblock_size = 1;
-            for ( ;superblock_size<max_block_size;superblock_size*=2);
+      //       size_type superblock_size = 1;
+      //       for ( ;superblock_size<max_block_size;superblock_size*=2);
             
-            const size_type
-              num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-              //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // restrict memory pool
-              memory_capacity = num_superblock*superblock_size;
+      //       const size_type
+      //         num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+      //         //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // restrict memory pool
+      //         memory_capacity = num_superblock*superblock_size;
 
-            bufpool = memory_pool_type_host(memory_space(),
-                                            memory_capacity,
-                                            min_block_size,
-                                            max_block_size,
-                                            superblock_size);
+      //       bufpool = memory_pool_type_host(memory_space(),
+      //                                       memory_capacity,
+      //                                       min_block_size,
+      //                                       max_block_size,
+      //                                       superblock_size);
 
-            track_alloc(bufpool.capacity());
-          }
-          stat.t_extra += timer.seconds();
+      //       track_alloc(bufpool.capacity());
+      //     }
+      //     stat.t_extra += timer.seconds();
           
-          timer.reset();
-          const ordinal_type nroots = _stree_roots.dimension_0();
-          for (ordinal_type i=0;i<nroots;++i) {
-            auto fl = Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                                         functor_lower_type(sched, bufpool, _info, _stree_roots(i)));
-            auto fu = Kokkos::host_spawn(Kokkos::TaskSingle(fl,    Kokkos::TaskPriority::High),
-                                         functor_upper_type(sched, bufpool, _info, _stree_roots(i)));
-          }
-          Kokkos::wait(sched);
-          stat.t_solve = timer.seconds();
+      //     timer.reset();
+      //     const ordinal_type nroots = _stree_roots.dimension_0();
+      //     for (ordinal_type i=0;i<nroots;++i) {
+      //       auto fl = Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+      //                                    functor_lower_type(sched, bufpool, _info, _stree_roots(i)));
+      //       auto fu = Kokkos::host_spawn(Kokkos::TaskSingle(fl,    Kokkos::TaskPriority::High),
+      //                                    functor_upper_type(sched, bufpool, _info, _stree_roots(i)));
+      //     }
+      //     Kokkos::wait(sched);
+      //     stat.t_solve = timer.seconds();
 
-          track_free(bufpool.capacity());
-          track_free(sched.memory()->capacity());
-        }
+      //     track_free(bufpool.capacity());
+      //     track_free(sched.memory()->capacity());
+      //   }
 
-        // copy t -> x
-        timer.reset();
-        applyRowPermutation(x, t, _perm);
-        stat.t_extra += timer.seconds();
+      //   // copy t -> x
+      //   timer.reset();
+      //   applyRowPermutation(x, t, _perm);
+      //   stat.t_extra += timer.seconds();
 
-        if (verbose) {
-          printf("Summary: NumericTools (ParallelSolve)\n");
-          printf("=====================================\n");
+      //   if (verbose) {
+      //     printf("Summary: NumericTools (ParallelSolve)\n");
+      //     printf("=====================================\n");
 
-          print_stat_solve();
-        }
-      }
+      //     print_stat_solve();
+      //   }
+      // }
 
-      ///
-      /// Kokkos Tasking ByBlocks
-      /// -----------------------
+      // ///
+      // /// Kokkos Tasking ByBlocks
+      // /// -----------------------
 
-      inline
-      void
-      factorizeCholesky_ParallelByBlocks(const value_type_array_host &ax,
-                                         const ordinal_type blksize,
-                                         const ordinal_type verbose = 0) {
-        Kokkos::Impl::Timer timer;
+      // inline
+      // void
+      // factorizeCholesky_ParallelByBlocks(const value_type_array_host &ax,
+      //                                    const ordinal_type blksize,
+      //                                    const ordinal_type verbose = 0) {
+      //   Kokkos::Impl::Timer timer;
 
-        reset_stat();
+      //   reset_stat();
 
-        timer.reset();
-        {
-          /// matrix values
-          _ax = ax;
+      //   timer.reset();
+      //   {
+      //     /// matrix values
+      //     _ax = ax;
 
-          /// factor allocation and copy the matrix
-          ordinal_type_array_host iwork("work", _m+1);
-          _info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
+      //     /// factor allocation and copy the matrix
+      //     ordinal_type_array_host iwork("work", _m+1);
+      //     _info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
 
-          track_alloc(iwork.span()*sizeof(ordinal_type));
-          track_alloc(_super_panel_ptr.span()*sizeof(size_type));
-          track_alloc(_super_panel_buf.span()*sizeof(value_type));
+      //     track_alloc(iwork.span()*sizeof(ordinal_type));
+      //     track_alloc(_super_panel_ptr.span()*sizeof(size_type));
+      //     track_alloc(_super_panel_buf.span()*sizeof(value_type));
 
-          /// assign data structure into info
-          _info.super_panel_ptr = _super_panel_ptr;
-          _info.super_panel_buf = _super_panel_buf;
+      //     /// assign data structure into info
+      //     _info.super_panel_ptr = _super_panel_ptr;
+      //     _info.super_panel_buf = _super_panel_buf;
 
-          /// copy the input matrix into super panels
-          _info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
+      //     /// copy the input matrix into super panels
+      //     _info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
 
-          track_free(iwork.span()*sizeof(ordinal_type));
-        }
-        stat.t_copy += timer.seconds();
+      //     track_free(iwork.span()*sizeof(ordinal_type));
+      //   }
+      //   stat.t_copy += timer.seconds();
 
-        {
-          timer.reset();
-          typedef typename sched_type_host::memory_space memory_space;
-          typedef TaskFunctor_FactorizeCholByBlocks<value_type,host_exec_space> functor_type;
-          typedef Kokkos::Future<int,host_exec_space> future_type;
+      //   {
+      //     timer.reset();
+      //     typedef typename sched_type_host::memory_space memory_space;
+      //     typedef TaskFunctor_FactorizeCholByBlocks<value_type,host_exec_space> functor_type;
+      //     typedef Kokkos::Future<int,host_exec_space> future_type;
 
-          const size_type 
-            max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
-            max_ncols_of_blocks = _info.max_schur_size/blksize + 1;
+      //     const size_type 
+      //       max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
+      //       max_ncols_of_blocks = _info.max_schur_size/blksize + 1;
           
-          sched_type_host sched;
-          {
-            ordinal_type max_children_size = 0;
-            for (ordinal_type sid=0;sid<_nsupernodes;++sid)
-              max_children_size = max(max_children_size, _stree_ptr(sid+1) - _stree_ptr(sid));
+      //     sched_type_host sched;
+      //     {
+      //       ordinal_type max_children_size = 0;
+      //       for (ordinal_type sid=0;sid<_nsupernodes;++sid)
+      //         max_children_size = max(max_children_size, _stree_ptr(sid+1) - _stree_ptr(sid));
 
-            const size_type max_dep_future_size = max(max_ncols_of_blocks*max_ncols_of_blocks,
-                                                      max_children_size)*sizeof(future_type);
-            const size_type max_functor_size = sizeof(functor_type);
-            const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
+      //       const size_type max_dep_future_size = max(max_ncols_of_blocks*max_ncols_of_blocks,
+      //                                                 max_children_size)*sizeof(future_type);
+      //       const size_type max_functor_size = sizeof(functor_type);
+      //       const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
 
-            const size_type
-              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-              min_block_size  = 1,
-              max_block_size  = ( max_dep_future_size + max_functor_size ),
-              num_superblock  = 32, // various small size blocks
-              superblock_size = task_queue_capacity/num_superblock;
+      //       const size_type
+      //         task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+      //         min_block_size  = 1,
+      //         max_block_size  = ( max_dep_future_size + max_functor_size ),
+      //         num_superblock  = 32, // various small size blocks
+      //         superblock_size = task_queue_capacity/num_superblock;
 
-            sched = sched_type_host(memory_space(),
-                                    task_queue_capacity,
-                                    min_block_size,
-                                    max_block_size,
-                                    superblock_size);
+      //       sched = sched_type_host(memory_space(),
+      //                               task_queue_capacity,
+      //                               min_block_size,
+      //                               max_block_size,
+      //                               superblock_size);
 
-            track_alloc(sched.memory()->capacity());
-          }
+      //       track_alloc(sched.memory()->capacity());
+      //     }
 
-          memory_pool_type_host bufpool;
-          {
-            const size_type
-              min_block_size  = 1,
-              max_block_size  = ( (_info.max_schur_size*_info.max_schur_size +
-                                   _info.max_schur_size)*sizeof(value_type) +
-                                  (max_nrows_of_blocks*max_nrows_of_blocks +
-                                   max_nrows_of_blocks*max_ncols_of_blocks +
-                                   max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(dense_block_type_host) );
+      //     memory_pool_type_host bufpool;
+      //     {
+      //       const size_type
+      //         min_block_size  = 1,
+      //         max_block_size  = ( (_info.max_schur_size*_info.max_schur_size +
+      //                              _info.max_schur_size)*sizeof(value_type) +
+      //                             (max_nrows_of_blocks*max_nrows_of_blocks +
+      //                              max_nrows_of_blocks*max_ncols_of_blocks +
+      //                              max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(dense_block_type_host) );
             
-            size_type superblock_size = 1;
-            for ( ;superblock_size<max_block_size;superblock_size*=2);
+      //       size_type superblock_size = 1;
+      //       for ( ;superblock_size<max_block_size;superblock_size*=2);
 
-            const size_type
-              num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-              //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // # of threads is safe number
-              memory_capacity = num_superblock*superblock_size;
+      //       const size_type
+      //         num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+      //         //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // # of threads is safe number
+      //         memory_capacity = num_superblock*superblock_size;
 
-            bufpool = memory_pool_type_host(memory_space(),
-                                            memory_capacity,
-                                            min_block_size,
-                                            max_block_size,
-                                            superblock_size);
+      //       bufpool = memory_pool_type_host(memory_space(),
+      //                                       memory_capacity,
+      //                                       min_block_size,
+      //                                       max_block_size,
+      //                                       superblock_size);
 
-            track_alloc(bufpool.capacity());
-          }
-          stat.t_extra += timer.seconds();
+      //       track_alloc(bufpool.capacity());
+      //     }
+      //     stat.t_extra += timer.seconds();
 
-          timer.reset();
-          const ordinal_type nroots = _stree_roots.dimension_0();
-          for (ordinal_type i=0;i<nroots;++i)
-            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
-          Kokkos::wait(sched);
-          stat.t_factor = timer.seconds();
+      //     timer.reset();
+      //     const ordinal_type nroots = _stree_roots.dimension_0();
+      //     for (ordinal_type i=0;i<nroots;++i)
+      //       Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+      //                          functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
+      //     Kokkos::wait(sched);
+      //     stat.t_factor = timer.seconds();
 
-          track_free(bufpool.capacity());
-          track_free(sched.memory()->capacity());
-        }
+      //     track_free(bufpool.capacity());
+      //     track_free(sched.memory()->capacity());
+      //   }
 
-        if (verbose) {
-          printf("Summary: NumericTools (ParallelFactorizationByBlocks)\n");
-          printf("=====================================================\n");
+      //   if (verbose) {
+      //     printf("Summary: NumericTools (ParallelFactorizationByBlocks)\n");
+      //     printf("=====================================================\n");
 
-          print_stat_factor();
-        }
-      }
+      //     print_stat_factor();
+      //   }
+      // }
 
 
       ///
@@ -789,9 +749,9 @@ namespace Tacho {
       crs_matrix_type_host
       exportFactorsToCrsMatrix(const bool replace_value_with_one = false) {
         /// this only avail after factorization is done
-        TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
-                                 _info.super_panel_buf.data() == NULL, std::logic_error,
-                                 "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
+        // TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
+        //                          _info.super_panel_buf.data() == NULL, std::logic_error,
+        //                          "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
 
         return _info.createCrsMatrix(replace_value_with_one);
       }
