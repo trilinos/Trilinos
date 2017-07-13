@@ -29,6 +29,13 @@ IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
     SOURCES Tacho_ExampleSolver.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseByBlocks
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseByBlocks.cpp
+    COMM serial mpi
+  )
+
 
 ENDIF()
 

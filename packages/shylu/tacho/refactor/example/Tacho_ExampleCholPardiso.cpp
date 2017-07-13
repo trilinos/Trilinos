@@ -26,7 +26,7 @@ int main (int argc, char *argv[]) {
   int nthreads = 1;
   clp.setOption("kokkos-threads", &nthreads, "Number of threads");
 
-  bool verbose = false;
+  bool verbose = true;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
   std::string file_input = "test.mtx";
