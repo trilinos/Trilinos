@@ -60,55 +60,34 @@ namespace Tacho {
       void operator()(member_type &member, value_type &r_val) {
         if (get_team_rank(member) == 0) {
           TACHO_TEST_FOR_ABORT(_state > 2, "dead lock");
-          
-          // children information
-          const ordinal_type 
-            ibeg = _info.stree_ptr(_sid), 
-            iend = _info.stree_ptr(_sid+1),
-            isize = iend - ibeg;
+
+          const auto &s = _info.supernodes(_sid);
 
           switch (_state) {
           case 0: { // tree parallelsim
-            if (_info.serial_thres_size > _info.max_decendant_supernode_size(_sid)) {
+            if (_info.serial_thres_size > s.max_decendant_supernode_size) {
               _state = 1; 
               Kokkos::respawn(this, future_type(), Kokkos::TaskPriority::Regular);
             } else {
               // allocate dependence array to handle variable number of children schur contributions
-              future_type depbuf[MaxDependenceSize] /* 3 */, *dep = &depbuf[0];
-              const size_type depsize = (isize > MaxDependenceSize ? isize*sizeof(future_type) : 0);
-              if (depsize) {
-                dep = (future_type*)_sched.memory()->allocate(depsize);
-                TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
-                clear((char*)dep, depsize);
-              }
+              future_type dep[MaxDependenceSize]; /* 4 */
               
               // spawn children tasks and this (their parent) depends on the children tasks
-              for (ordinal_type i=0;i<isize;++i) {
-                // the first child has a higher priority
-                const auto priority = (i ? Kokkos::TaskPriority::Low : Kokkos::TaskPriority::High);
-                
-                const ordinal_type child = _info.stree_children(i+ibeg);
-                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, priority),
-                                            TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, child));
+              for (ordinal_type i=0;i<s.nchildren;++i) {
+                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                                            TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, s.children[i]));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 dep[i] = f;
               }
               
               // respawn with updating state
               _state = 2;
-              Kokkos::respawn(this, Kokkos::when_all(dep, isize), Kokkos::TaskPriority::Regular);
-              
-              // deallocate dependence array
-              if (depsize) {
-                // manually reset future to decrease the reference count
-                for (ordinal_type i=0;i<isize;++i) (dep+i)->~future_type();
-                _sched.memory()->deallocate((void*)dep, depsize);
-              }
+              Kokkos::respawn(this, Kokkos::when_all(dep, s.nchildren), Kokkos::TaskPriority::Regular);              
             }
             break;
           }
           case 1: { 
-            const ordinal_type n = _info.max_decendant_schur_size(_sid), nrhs = _info.x.dimension_1();
+            const ordinal_type n = s.max_decendant_schur_size, nrhs = _info.x.dimension_1();
             const size_type bufsize = n*nrhs*sizeof(mat_value_type);
 
             mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
@@ -124,8 +103,7 @@ namespace Tacho {
             break;
           }
           case 2: {
-            ordinal_type pm, pn; _info.getSuperPanelSize(_sid, pm, pn);
-            const ordinal_type n = pn - pm, nrhs = _info.x.dimension_1();
+            const ordinal_type n = s.n - s.m, nrhs = _info.x.dimension_1();
             const size_type bufsize = n*nrhs*sizeof(mat_value_type);
             mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
             TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
