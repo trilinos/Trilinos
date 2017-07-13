@@ -210,6 +210,11 @@ namespace MueLu {
     //! Returns the Xpetra::Map object associated with the range of this operator.
     Teuchos::RCP<const Map> getRangeMap() const;
 
+    //! Returns Jacobian matrix SM
+    const Teuchos::RCP<Matrix> & getJacobian() const {
+      return SM_Matrix_;
+    }
+
     //! Set parameters
     void setParameters(Teuchos::ParameterList& list);
 
