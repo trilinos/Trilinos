@@ -29,6 +29,8 @@ namespace Tacho {
       typedef MatValueType mat_value_type; // matrix value type
 
       typedef SupernodeInfo<mat_value_type,exec_space> supernode_info_type;
+      typedef typename supernode_info_type::supernode_type supernode_type;
+
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
       
     private:
@@ -38,7 +40,8 @@ namespace Tacho {
       supernode_info_type _info;
       ordinal_type _sid;
       
-      // respawn control
+      supernode_type _s;
+
       ordinal_type _state;
 
     public:
@@ -54,67 +57,57 @@ namespace Tacho {
           _bufpool(bufpool),
           _info(info),
           _sid(sid),
+          _s(info.supernodes(sid)),
           _state(0) {}
       
+      
+      KOKKOS_INLINE_FUNCTION
+      void solve_internal(member_type &member, const ordinal_type n, const bool final) {
+        const ordinal_type nrhs = _info.x.dimension_1();
+        const size_type bufsize = n*nrhs*sizeof(mat_value_type);
+        
+        mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
+        TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
+        
+        CholSupernodes<Algo::Workflow::Serial>
+          ::solve_lower_recursive_serial(_sched, member, _info, _sid, final, buf, bufsize);
+        
+        if (bufsize > 0)
+          _bufpool.deallocate(buf, bufsize);
+      }
+
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
         if (get_team_rank(member) == 0) {
-          TACHO_TEST_FOR_ABORT(_state > 2, "dead lock");
-
-          const auto &s = _info.supernodes(_sid);
+          constexpr ordinal_type done = 2;
+          TACHO_TEST_FOR_ABORT(_state == done, "dead lock");
 
           switch (_state) {
           case 0: { // tree parallelsim
-            if (_info.serial_thres_size > s.max_decendant_supernode_size) {
-              _state = 1; 
-              Kokkos::respawn(this, future_type(), Kokkos::TaskPriority::Regular);
+            if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
+              solve_internal(member, _s.max_decendant_schur_size, true);
+              _state = done; 
             } else {
               // allocate dependence array to handle variable number of children schur contributions
               future_type dep[MaxDependenceSize]; /* 4 */
               
               // spawn children tasks and this (their parent) depends on the children tasks
-              for (ordinal_type i=0;i<s.nchildren;++i) {
+              for (ordinal_type i=0;i<_s.nchildren;++i) {
                 auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
-                                            TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, s.children[i]));
+                                            TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, _s.children[i]));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 dep[i] = f;
               }
               
               // respawn with updating state
-              _state = 2;
-              Kokkos::respawn(this, Kokkos::when_all(dep, s.nchildren), Kokkos::TaskPriority::Regular);              
+              _state = 1;
+              Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
             }
             break;
           }
-          case 1: { 
-            const ordinal_type n = s.max_decendant_schur_size, nrhs = _info.x.dimension_1();
-            const size_type bufsize = n*nrhs*sizeof(mat_value_type);
-
-            mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
-            TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
-
-            CholSupernodes<Algo::Workflow::Serial>
-              ::solve_lower_recursive_serial(_sched, member, _info, _sid, true, buf, bufsize);
-
-            if (bufsize > 0)
-              _bufpool.deallocate(buf, bufsize);
-
-            _state = 3; // done
-            break;
-          }
-          case 2: {
-            const ordinal_type n = s.n - s.m, nrhs = _info.x.dimension_1();
-            const size_type bufsize = n*nrhs*sizeof(mat_value_type);
-            mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
-            TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
-
-            CholSupernodes<Algo::Workflow::Serial>
-              ::solve_lower_recursive_serial(_sched, member, _info, _sid, false, buf, bufsize);
-
-            if (bufsize > 0)
-              _bufpool.deallocate(buf, bufsize);
-
-            _state = 3; // done 
+          case 1: {
+            solve_internal(member, _s.n - _s.m, false);
+            _state = done; 
             break;
           }
           }         
