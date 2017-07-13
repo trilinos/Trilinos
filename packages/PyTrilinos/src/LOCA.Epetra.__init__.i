@@ -166,7 +166,8 @@ from . import ___init__
 %import "NOX.Epetra.__init__.i"
 %import "NOX.Epetra.Interface.i"
 
-// Allow import from this and parent directory
+// Allow import from this and parent directory. Force Interface to be
+// LOCA.Interface
 %pythoncode
 %{
 import sys, os.path as op
@@ -174,6 +175,9 @@ thisDir   = op.dirname(op.abspath(__file__))
 parentDir = op.normpath(op.join(thisDir,".."))
 if not thisDir   in sys.path: sys.path.append(thisDir  )
 if not parentDir in sys.path: sys.path.append(parentDir)
+if "NOX" in Interface.__file__:
+    del Interface
+    from . import Interface
 del sys, op
 %}
 
