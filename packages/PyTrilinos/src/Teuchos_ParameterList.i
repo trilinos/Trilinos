@@ -610,22 +610,8 @@ Teuchos::ParameterList::values
   // ** give ParameterList a PyDict "feel" ** //
   //////////////////////////////////////////////
 
-#if PY_VERSION_HEX >= 0x03000000
   /******************************************************************/
   // Comparison operators
-  int __cmp__(PyObject * obj) const
-  {
-    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
-    int result = 0;
-    if (dict == NULL) goto fail;
-    result = PyObject_Compare(dict,obj);
-    Py_DECREF(dict);
-    return result;
-  fail:
-    Py_XDECREF(dict);
-    return -2;
-  }
-
   int __cmp__(const ParameterList & plist) const
   {
     PyObject * dict1 = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
@@ -633,7 +619,7 @@ Teuchos::ParameterList::values
     int result = 0;
     if (dict1 == NULL) goto fail;
     if (dict2 == NULL) goto fail;
-    result = PyObject_Compare(dict1,dict2);
+    result = PyObject_RichCompareBool(dict1,dict2,Py_EQ) - 1;
     Py_DECREF(dict1);
     Py_DECREF(dict2);
     return result;
@@ -642,7 +628,19 @@ Teuchos::ParameterList::values
     Py_XDECREF(dict2);
     return -2;
   }
-#endif
+
+  int __cmp__(PyObject * obj) const
+  {
+    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
+    int result = 0;
+    if (dict == NULL) goto fail;
+    result = PyObject_RichCompareBool(dict,obj,Py_EQ) - 1;
+    Py_DECREF(dict);
+    return result;
+  fail:
+    Py_XDECREF(dict);
+    return -2;
+  }
  
   /******************************************************************/
   // Contains operator

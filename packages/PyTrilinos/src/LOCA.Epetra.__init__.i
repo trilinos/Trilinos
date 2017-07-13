@@ -210,14 +210,11 @@ del sys, op
 // The above %import(module="Abstract") ... directives can cause an
 // "import Abstract" to appear in the .py file, causing Abstract to
 // point to NOX.Abstract.  Force it back to LOCA.Abstract.  Also,
-// ___init__ was pointing to Pitchfork/___init__.so (?!?), and
-// Interface was pointing to NOX/Epetra/Interface, so I fix those, too.
+// Interface was pointing to NOX/Epetra/Interface, so I fix that, too.
 %pythoncode
 %{
 del Abstract
 from .. import Abstract
-del ___init__
-from . import ___init__
 if 'NOX' in Interface.__file__:
   del Interface
   from . import Interface
