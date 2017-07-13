@@ -256,6 +256,8 @@ namespace Tacho {
                                const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
 
+        reset_stat();
+
         timer.reset();
         {
           /// matrix values
@@ -708,9 +710,9 @@ namespace Tacho {
       static
       inline
       double
-      computeResidual(const crs_matrix_type_host &A,
-                      const value_type_matrix_host &x,
-                      const value_type_matrix_host &b) {
+      computeRelativeResidual(const crs_matrix_type_host &A,
+                              const value_type_matrix_host &x,
+                              const value_type_matrix_host &b) {
         TACHO_TEST_FOR_EXCEPTION(A.NumRows() != A.NumCols() ||
                                  A.NumRows() != b.dimension_0() ||
                                  x.dimension_0() != b.dimension_0() ||
@@ -736,13 +738,13 @@ namespace Tacho {
 
       inline
       double
-      computeResidual(const value_type_matrix_host &x,
-                      const value_type_matrix_host &b) {
+      computeRelativeResidual(const value_type_matrix_host &x,
+                              const value_type_matrix_host &b) {
         crs_matrix_type_host A;
         A.setExternalMatrix(_m, _m, _ap(_m),
                             _ap, _aj, _ax);
 
-        return computeResidual(A, x, b);
+        return computeRelativeResidual(A, x, b);
       }
 
       inline

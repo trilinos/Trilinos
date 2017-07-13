@@ -94,26 +94,27 @@ namespace Tacho {
         const ordinal_type *s_colidx = sbeg < send ? &info.gid_colidx(cur.gid_col_begin + srcbeg) : NULL;
         for (ordinal_type i=sbeg;i<send;++i) {
           const auto &s = info.supernodes(info.sid_block_colidx(i).first);
-
-          A.set_view(s.m, s.n);
-          A.attach_buffer(1, s.m, s.buf);
-
-          const ordinal_type 
-            tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
-            tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
-            tgtsize = tgtend - tgtbeg;
-          
-          const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
-          for (ordinal_type k=0,l=0;k<srcsize;++k) {
-            s2t[k] = -1;
-            for (;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
-              if (s_colidx[k] == t_colidx[l]) {
-                s2t[k] = l; 
-                break;
-              }
+          {
+            const ordinal_type 
+              tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
+              tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
+              tgtsize = tgtend - tgtbeg;
+            
+            const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
+            for (ordinal_type k=0,l=0;k<srcsize;++k) {
+              s2t[k] = -1;
+              for (;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
+                if (s_colidx[k] == t_colidx[l]) {
+                  s2t[k] = l; 
+                  break;
+                }
+            }
           }
 
           {
+            A.set_view(s.m, s.n);
+            A.attach_buffer(1, s.m, s.buf);
+            
             ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
             for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
               for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
@@ -149,186 +150,148 @@ namespace Tacho {
         return 0;
       }
 
-//       template<typename SchedulerType,
-//                typename MemberType,
-//                typename SupernodeInfoType>
-//       KOKKOS_INLINE_FUNCTION
-//       static int
-//       solve_lower(const SchedulerType &sched,
-//                   const MemberType &member,
-//                   const SupernodeInfoType &info,
-//                   const typename SupernodeInfoType::value_type_matrix &xB,
-//                   const ordinal_type sid) {
-//         typedef SupernodeInfoType supernode_info_type;
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_lower(const SchedulerType &sched,
+                  const MemberType &member,
+                  const SupernodeInfoType &info,
+                  const typename SupernodeInfoType::value_type_matrix &xB,
+                  const ordinal_type sid) {
+        typedef SupernodeInfoType supernode_info_type;
 
-//         typedef typename supernode_info_type::value_type value_type;
-//         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+        typedef typename supernode_info_type::value_type value_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-//         typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+        typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
-//         // get supernode panel pointer
-//         value_type *ptr = info.getSuperPanelPtr(sid);
-//         const UnmanagedViewType<value_type_matrix> &x = info.x;
+        const auto &s = info.supernodes(sid);
 
-//         // characterize the panel size
-//         ordinal_type pm, pn;
-//         info.getSuperPanelSize(sid, pm, pn);
+        // get panel pointer
+        value_type *ptr = s.buf; 
 
-//         // panel is divided into diagonal and interface block
-//         const ordinal_type m = pm, n = pn - pm;
+        // panel is divided into diagonal and interface block
+        const ordinal_type m = s.m, n = s.n - s.m;
 
-//         // m and n are available, then factorize the supernode block
-//         if (m > 0) {
-//           const ordinal_type offm = info.supernodes(sid);
-//           UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
-//           auto xT = Kokkos::subview(x, range_type(offm, offm+m), Kokkos::ALL());
+        // m and n are available, then factorize the supernode block
+        if (m > 0) {
+          const ordinal_type offm = s.row_begin;
+          UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
+          auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
 
-//           Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-//             ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+          Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
+            ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
 
-//           if (n > 0) {
-//             UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
+          if (n > 0) {
+            UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
+            Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
+              ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
+          }
+        }
+        return 0;
+      }
 
-//             TACHO_TEST_FOR_ABORT(n != xB.dimension_0(), "# of rows in xB does not match to super blocksize in sid");
-//             TACHO_TEST_FOR_ABORT(xB.dimension_1() != x.dimension_1(),
-//                                  "# of cols in xB does not match to rhs in supernodesinfo");
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      update_solve_lower(const SchedulerType &sched,
+                         const MemberType &member,
+                         const SupernodeInfoType &info,
+                         const typename SupernodeInfoType::value_type_matrix &xB,
+                         const ordinal_type sid) {
+        typedef SupernodeInfoType supernode_info_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-//             Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
-//               ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
-//           }
-//         }
-//         return 0;
-//       }
+        const auto &s = info.supernodes(sid);
+        
+        const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
+        TACHO_TEST_FOR_ABORT(m != (s.n-s.m), "# of rows in xB does not match to super blocksize in sid");
 
-//       template<typename SchedulerType,
-//                typename MemberType,
-//                typename SupernodeInfoType>
-//       KOKKOS_INLINE_FUNCTION
-//       static int
-//       update_solve_lower(const SchedulerType &sched,
-//                          const MemberType &member,
-//                          const SupernodeInfoType &info,
-//                          const typename SupernodeInfoType::value_type_matrix &xB,
-//                          const ordinal_type sid) {
-//         typedef SupernodeInfoType supernode_info_type;
-//         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+        const ordinal_type goffset = s.gid_col_begin + s.m;
+        for (ordinal_type j=0;j<n;++j)
+          for (ordinal_type i=0;i<m;++i) {
+            const ordinal_type row = info.gid_colidx(i+goffset);
+            Kokkos::atomic_fetch_add(&info.x(row, j), xB(i,j));
+            //x(row,j) += xB(i,j);
+          }
+        return 0;
+      }
+      
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_upper(const SchedulerType &sched,
+                  const MemberType &member,
+                  const SupernodeInfoType &info,
+                  const typename SupernodeInfoType::value_type_matrix &xB,
+                  const ordinal_type sid) {
+        typedef SupernodeInfoType supernode_info_type;
 
-//         // grab super panel
-//         ordinal_type pm, pn;
-//         info.getSuperPanelSize(sid, pm, pn);
+        typedef typename supernode_info_type::value_type value_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-//         const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
-//         TACHO_TEST_FOR_ABORT(m != (pn-pm), "# of rows in xB does not match to super blocksize in sid");
+        typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
-//         const UnmanagedViewType<value_type_matrix> &x = info.x;
-//         TACHO_TEST_FOR_ABORT(n != x.dimension_1(), "# of cols in xB does not match to rhs in supernodesinfo");
+        // get current supernode
+        const auto &s = info.supernodes(sid);
 
-//         const ordinal_type goffset = info.gid_super_panel_ptr(sid) + pm;
-// #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-// #pragma omp critical
-//         {
-//           for (ordinal_type j=0;j<n;++j)
-//             for (ordinal_type i=0;i<m;++i) {
-//               const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
-//               //Kokkos::atomic_fetch_add(&x(row, j), xB(i,j));
-//               x(row,j) += xB(i,j);
-//             }
-//         }
-// #else
-//         {
-//           for (ordinal_type j=0;j<n;++j)
-//             for (ordinal_type i=0;i<m;++i) {
-//               const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
-//               Kokkos::atomic_fetch_add(&x(row, j), xB(i,j));
-//               //x(row,j) += xB(i,j);
-//             }
-//         }
-// #endif
+        // get supernode panel pointer
+        value_type *ptr = s.buf;
 
-//         return 0;
-//       }
+        // panel is divided into diagonal and interface block
+        const ordinal_type m = s.m, n = s.n - s.m;
 
-//       template<typename SchedulerType,
-//                typename MemberType,
-//                typename SupernodeInfoType>
-//       KOKKOS_INLINE_FUNCTION
-//       static int
-//       solve_upper(const SchedulerType &sched,
-//                   const MemberType &member,
-//                   const SupernodeInfoType &info,
-//                   const typename SupernodeInfoType::value_type_matrix &xB,
-//                   const ordinal_type sid) {
-//         typedef SupernodeInfoType supernode_info_type;
+        // m and n are available, then factorize the supernode block
+        if (m > 0) {
+          const UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
 
-//         typedef typename supernode_info_type::value_type value_type;
-//         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+          const ordinal_type offm = s.row_begin;
+          const auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
 
-//         typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+          if (n > 0) {
+            const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
+            Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
+              ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
+          }
+          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
+            ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+        }
+        return 0;
+      }
 
-//         // get supernode panel pointer
-//         value_type *ptr = info.getSuperPanelPtr(sid);
-//         const UnmanagedViewType<value_type_matrix> &x = info.x;
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      update_solve_upper(const SchedulerType &sched,
+                         const MemberType &member,
+                         const SupernodeInfoType &info,
+                         const typename SupernodeInfoType::value_type_matrix &xB,
+                         const ordinal_type sid) {
 
-//         // characterize the panel size
-//         ordinal_type pm, pn;
-//         info.getSuperPanelSize(sid, pm, pn);
+        typedef SupernodeInfoType supernode_info_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-//         // panel is divided into diagonal and interface block
-//         const ordinal_type m = pm, n = pn - pm;
+        const auto &s = info.supernodes(sid);
 
-//         // m and n are available, then factorize the supernode block
-//         if (m > 0) {
-//           TACHO_TEST_FOR_ABORT(xB.dimension_1() != x.dimension_1(),
-//                                "# of cols in xB does not match to rhs in supernodesinfo");
+        const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
+        TACHO_TEST_FOR_ABORT(m != (s.n-s.m), "# of rows in xB does not match to super blocksize in sid");
 
-//           const UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
-
-//           const ordinal_type offm = info.supernodes(sid);
-//           const auto xT = Kokkos::subview(x, range_type(offm, offm+m), Kokkos::ALL());
-
-//           if (n > 0) {
-//             const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-//             Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
-//               ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
-//           }
-//           Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
-//             ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
-//         }
-//         return 0;
-//       }
-
-//       template<typename SchedulerType,
-//                typename MemberType,
-//                typename SupernodeInfoType>
-//       KOKKOS_INLINE_FUNCTION
-//       static int
-//       update_solve_upper(const SchedulerType &sched,
-//                          const MemberType &member,
-//                          const SupernodeInfoType &info,
-//                          const typename SupernodeInfoType::value_type_matrix &xB,
-//                          const ordinal_type sid) {
-
-//         typedef SupernodeInfoType supernode_info_type;
-//         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
-//         // grab super panel
-//         ordinal_type pm, pn;
-//         info.getSuperPanelSize(sid, pm, pn);
-
-//         const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
-//         TACHO_TEST_FOR_ABORT(m != (pn-pm), "# of rows in xB does not match to super blocksize in sid");
-
-//         const UnmanagedViewType<value_type_matrix> &x = info.x;
-
-//         const ordinal_type goffset = info.gid_super_panel_ptr(sid) + pm;
-//         for (ordinal_type j=0;j<n;++j)
-//           for (ordinal_type i=0;i<m;++i) {
-//             const ordinal_type row = info.gid_super_panel_colidx(i+goffset);
-//             xB(i,j) = x(row,j);
-//           }
-
-//         return 0;
-//       }
+        const ordinal_type goffset = s.gid_col_begin + s.m;
+        for (ordinal_type j=0;j<n;++j)
+          for (ordinal_type i=0;i<m;++i) {
+            const ordinal_type row = info.gid_colidx(i+goffset);
+            xB(i,j) = info.x(row,j);
+          }
+        return 0;
+      }
 
       template<typename SchedulerType,
                typename MemberType,
@@ -375,96 +338,92 @@ namespace Tacho {
       }
 
 
-      // template<typename SchedulerType,
-      //          typename MemberType,
-      //          typename SupernodeInfoType>
-      // KOKKOS_INLINE_FUNCTION
-      // static int
-      // solve_lower_recursive_serial(const SchedulerType &sched,
-      //                              const MemberType &member,
-      //                              const SupernodeInfoType &info,
-      //                              const ordinal_type sid,
-      //                              const bool final,
-      //                              typename SupernodeInfoType::value_type *buf,
-      //                              const ordinal_type bufsize) {
-      //   typedef SupernodeInfoType supernode_info_type;
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_lower_recursive_serial(const SchedulerType &sched,
+                                   const MemberType &member,
+                                   const SupernodeInfoType &info,
+                                   const ordinal_type sid,
+                                   const bool final,
+                                   typename SupernodeInfoType::value_type *buf,
+                                   const ordinal_type bufsize) {
+        typedef SupernodeInfoType supernode_info_type;
         
-      //   typedef typename supernode_info_type::value_type value_type;
-      //   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
-      //   if (final) {
-      //     // serial recursion
-      //     const ordinal_type
-      //       ibeg = info.stree_ptr(sid),
-      //       iend = info.stree_ptr(sid+1);
-
-      //     for (ordinal_type i=ibeg;i<iend;++i)
-      //       solve_lower_recursive_serial(sched, member, info, info.stree_children(i), final, buf, bufsize);
-      //   }
-
-      //   {
-      //     ordinal_type pm, pn; info.getSuperPanelSize(sid, pm, pn);                                             
-      //     const size_type n = pn - pm, nrhs = info.x.dimension_1(), 
-      //       bufsize_required = n*nrhs*sizeof(value_type);
-          
-      //     TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
-
-      //     UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
-
-      //     CholSupernodes<Algo::Workflow::Serial>
-      //       ::solve_lower(sched, member, info, xB, sid);
-
-      //     CholSupernodes<Algo::Workflow::Serial>
-      //       ::update_solve_lower(sched, member, info, xB, sid);
-      //   }
-      //   return 0;
-      // }
-
-
-      // template<typename SchedulerType,
-      //          typename MemberType,
-      //          typename SupernodeInfoType>
-      // KOKKOS_INLINE_FUNCTION
-      // static int
-      // solve_upper_recursive_serial(const SchedulerType &sched,
-      //                              const MemberType &member,
-      //                              const SupernodeInfoType &info,
-      //                              const ordinal_type sid,
-      //                              const bool final,
-      //                              typename SupernodeInfoType::value_type *buf,
-      //                              const ordinal_type bufsize) {
-      //   typedef SupernodeInfoType supernode_info_type;
+        typedef typename supernode_info_type::value_type value_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
         
-      //   typedef typename supernode_info_type::value_type value_type;
-      //   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+        const auto &s = info.supernodes(sid);
+        
+        if (final) {
+          // serial recursion
+          for (ordinal_type i=0;i<s.nchildren;++i)
+            solve_lower_recursive_serial(sched, member, info, 
+                                         s.children[i], final, buf, bufsize);
+        }
 
-      //   {
-      //     ordinal_type pm, pn; info.getSuperPanelSize(sid, pm, pn);                                             
-      //     const size_type n = pn - pm, nrhs = info.x.dimension_1(), 
-      //       bufsize_required = n*nrhs*sizeof(value_type);
-          
-      //     TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+        {
+          const size_type n = s.n - s.m, nrhs = info.x.dimension_1(), 
+            bufsize_required = n*nrhs*sizeof(value_type);
 
-      //     UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
 
-      //     CholSupernodes<Algo::Workflow::Serial>
-      //       ::update_solve_upper(sched, member, info, xB, sid);
+          UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
 
-      //     CholSupernodes<Algo::Workflow::Serial>
-      //       ::solve_upper(sched, member, info, xB, sid);
-      //   }
+          CholSupernodes<Algo::Workflow::Serial>
+            ::solve_lower(sched, member, info, xB, sid);
 
-      //   if (final) {
-      //     // serial recursion
-      //     const ordinal_type
-      //       ibeg = info.stree_ptr(sid),
-      //       iend = info.stree_ptr(sid+1);
+          CholSupernodes<Algo::Workflow::Serial>
+            ::update_solve_lower(sched, member, info, xB, sid);
+        }
+        return 0;
+      }
 
-      //     for (ordinal_type i=ibeg;i<iend;++i)
-      //       solve_upper_recursive_serial(sched, member, info, info.stree_children(i), final, buf, bufsize);
-      //   }
-      //   return 0;
-      // }
+
+      template<typename SchedulerType,
+               typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_upper_recursive_serial(const SchedulerType &sched,
+                                   const MemberType &member,
+                                   const SupernodeInfoType &info,
+                                   const ordinal_type sid,
+                                   const bool final,
+                                   typename SupernodeInfoType::value_type *buf,
+                                   const ordinal_type bufsize) {
+        typedef SupernodeInfoType supernode_info_type;
+        
+        typedef typename supernode_info_type::value_type value_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+
+
+        const auto &s = info.supernodes(sid);        
+        {
+          const size_type n = s.n - s.m, nrhs = info.x.dimension_1(), 
+            bufsize_required = n*nrhs*sizeof(value_type);
+
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+
+          UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
+
+          CholSupernodes<Algo::Workflow::Serial>
+            ::update_solve_upper(sched, member, info, xB, sid);
+
+          CholSupernodes<Algo::Workflow::Serial>
+            ::solve_upper(sched, member, info, xB, sid);
+        }
+
+        if (final) {
+          // serial recursion
+          for (ordinal_type i=0;i<s.nchildren;++i)
+            solve_upper_recursive_serial(sched, member, info, 
+                                         s.children[i], final, buf, bufsize);
+        }
+        return 0;
+      }
 
     };
   }

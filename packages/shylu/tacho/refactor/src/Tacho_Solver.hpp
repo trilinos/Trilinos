@@ -226,7 +226,7 @@ namespace Tacho {
       crs_matrix_type A;
       A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
-      return _N.computeResidual(A, x, b);
+      return _N.computeRelativeResidual(A, x, b);
     }
   };
 

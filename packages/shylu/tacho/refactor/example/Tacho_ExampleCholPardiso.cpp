@@ -191,7 +191,7 @@ int main (int argc, char *argv[]) {
     }
     
     {
-      const double res = NumericTools<value_type,Kokkos::DefaultHostExecutionSpace>::computeResidual(A, X, B);
+      const double res = NumericTools<value_type,Kokkos::DefaultHostExecutionSpace>::computeRelativeResidual(A, X, B);
       std::cout << "PardisoChol:: residual = " << res << std::endl;
     }
     
