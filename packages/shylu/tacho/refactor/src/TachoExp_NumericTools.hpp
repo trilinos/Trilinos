@@ -248,6 +248,18 @@ namespace Tacho {
         _info.serial_thres_size = serial_thres_size;
       }
 
+      inline
+      ordinal_type
+      getMaxSupernodeSize() const {
+        return _info.max_supernode_size;
+      }
+
+      inline
+      ordinal_type
+      getMaxSchurSize() const {
+        return _info.max_schur_size;
+      }
+
       ///
       /// Serial
       /// ------
@@ -657,8 +669,8 @@ namespace Tacho {
         }
 
         if (verbose) {
-          printf("Summary: NumericTools (ParallelFactorizationByBlocks)\n");
-          printf("=====================================================\n");
+          printf("Summary: NumericTools (ParallelFactorizationByBlocks: %3d)\n", blksize);
+          printf("==========================================================\n");
 
           print_stat_factor();
         }
