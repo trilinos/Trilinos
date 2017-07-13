@@ -64,6 +64,7 @@
 #define PyString_InternFromString(key) PyUnicode_InternFromString(key)
 #define Py_TPFLAGS_HAVE_CLASS Py_TPFLAGS_BASETYPE
 #define PyString_AS_STRING(x) PyUnicode_AS_STRING(x)
+#define PyObject_Compare(x, y) (1-PyObject_RichCompareBool(x, y, Py_EQ))
 #define _PyLong_FromSsize_t(x) PyLong_FromSsize_t(x)
 
 #endif

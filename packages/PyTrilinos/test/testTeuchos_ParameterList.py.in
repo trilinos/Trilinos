@@ -424,20 +424,24 @@ class ParameterListTestCase(unittest.TestCase):
 
     def test__cmp__1(self):
         "Test Teuchos.ParameterList __cmp__ method with dictionary"
-        d1 = { "a" : 2 }
-        d2 = { "a" : 2, "b" : 1 }
-        plist = Teuchos.ParameterList(d1)
-        self.assertEqual(cmp(plist, d1), 0)
-        self.assertEqual(cmp(plist, d2),-1)
+        # Note: Python 3 does not support the cmp() function
+        if self.py_version < 3:
+            d1 = { "a" : 2 }
+            d2 = { "a" : 2, "b" : 1 }
+            plist = Teuchos.ParameterList(d1)
+            self.assertEqual(cmp(plist, d1), 0)
+            self.assertEqual(cmp(plist, d2),-1)
 
     def test__cmp__2(self):
         "Test Teuchos.ParameterList __cmp__ method with ParameterList"
-        d = { "a" : 2, "b" : 1 }
-        plist1 = Teuchos.ParameterList(d)
-        plist2 = Teuchos.ParameterList(d)
-        self.assertEqual(cmp(plist1, plist2), 0)
-        plist1.set("c",3)
-        self.assertEqual(cmp(plist1, plist2), 1)
+        # Note: Python 3 does not support the cmp() function
+        if self.py_version < 3:
+            d = { "a" : 2, "b" : 1 }
+            plist1 = Teuchos.ParameterList(d)
+            plist2 = Teuchos.ParameterList(d)
+            self.assertEqual(cmp(plist1, plist2), 0)
+            plist1.set("c",3)
+            self.assertEqual(cmp(plist1, plist2), 1)
 
     def test__contains__(self):
         "Test Teuchos.ParameterList __contains__ method"
