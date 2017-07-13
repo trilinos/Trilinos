@@ -50,7 +50,7 @@ int main (int argc, char *argv[]) {
   int nrhs = 1;
   clp.setOption("nrhs", &nrhs, "Number of RHS vectors");
 
-  int serial_thres_size = -1;
+  int serial_thres_size = -1; // 32 is better
   clp.setOption("serial-thres", &serial_thres_size, "Serial threshold");  
   
   int mb = 0;
@@ -159,7 +159,7 @@ int main (int argc, char *argv[]) {
     t = timer.seconds();    
     std::cout << "CholSupernodes:: solve matrix::time = " << t << std::endl;
 
-    const double res = N.computeResidual(X, B);
+    const double res = N.computeRelativeResidual(X, B);
     //const double eps = std::numeric_limits<double>::epsilon()*100;
 
     std::cout << "CholSupernodes:: residual = " << res << std::endl;

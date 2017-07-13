@@ -14,6 +14,8 @@
 #include "TachoExp_CholSupernodes.hpp"
 #include "TachoExp_CholSupernodes_Serial.hpp"
 
+#include "TachoExp_TaskFunctor_FactorizeChol.hpp"
+
 namespace Tacho {
   
   namespace Experimental {
@@ -58,13 +60,13 @@ namespace Tacho {
     public:
       KOKKOS_INLINE_FUNCTION
       TaskFunctor_FactorizeCholByBlocks() = delete;
-
+      
       KOKKOS_INLINE_FUNCTION
       TaskFunctor_FactorizeCholByBlocks(const sched_type &sched,
-                                          const memory_pool_type &bufpool,
-                                          const supernode_info_type &info,
-                                          const ordinal_type sid,
-                                          const ordinal_type mb)                                     
+                                        const memory_pool_type &bufpool,
+                                        const supernode_info_type &info,
+                                        const ordinal_type sid,
+                                        const ordinal_type mb)                                     
         : _sched(sched),
           _bufpool(bufpool),
           _info(info),
@@ -79,24 +81,18 @@ namespace Tacho {
         if (get_team_rank(member) == 0) {
           TACHO_TEST_FOR_ABORT(_state > 2, "dead lock");
 
-          // children information
-          const ordinal_type 
-            ibeg = _info.stree_ptr(_sid), 
-            iend = _info.stree_ptr(_sid+1),
-            isize = iend - ibeg;
-          
+          const auto &s = _info.supernodes(_sid);
+
           // no children, skip spawning
-          if (isize == 0 && _state == 0) _state = 1;
+          if (s.nchildren == 0 && _state == 0) _state = 1;
           
           switch (_state) {
           case 2: {
             ///
-            /// atomic update to its parent 
+            /// update to its parent 
             ///
-            ordinal_type pm, pn; _info.getSuperPanelSize(_sid, pm, pn);
-
             const ordinal_type 
-              m = pm, n = pn - pm,
+              m = s.m, n = s.n - s.m,
               bm = m/_mb + (m%_mb > 0), bn = n/_mb + (n%_mb > 0);
             
             const size_type 
@@ -124,14 +120,10 @@ namespace Tacho {
             ///
 
             // get supernode panel pointer
-            mat_value_type *ptr = _info.getSuperPanelPtr(_sid);
-
-            // characterize the panel size
-            ordinal_type pm, pn;
-            _info.getSuperPanelSize(_sid, pm, pn);
+            mat_value_type *ptr = s.buf;
 
             // panel is divided into diagonal and interface block (i.e., ATL and ATR)
-            const ordinal_type m = pm, n = pn - pm;
+            const ordinal_type m = s.m, n = s.n - s.m;
             
             // block matrix size
             const ordinal_type bm = m/_mb + (m%_mb > 0), bn = n/_mb + (n%_mb > 0);
@@ -143,6 +135,10 @@ namespace Tacho {
               bufsize = matrix_of_blocks_bufsize + abr_bufsize;
             
             char *buf = (char*)_bufpool.allocate(bufsize); 
+            if (buf == NULL && bufsize != 0) {
+              std::cout << " bufsize requested = " << bufsize << "\n";
+              _bufpool.print_state(std::cout);
+            }
             TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufpool allocation fails");
             clear((char*)buf, matrix_of_blocks_bufsize);
 
@@ -185,7 +181,7 @@ namespace Tacho {
                 
                 for (ordinal_type k=0;k<(bm*bn);++k) htr[k].set_future();
               }
-              for (ordinal_type k=0;k<(bm*bm);++k) htl[k].set_future(future_type());
+              for (ordinal_type k=0;k<(bm*bm);++k) htl[k].set_future();
             }
 
             _state = 2;              
@@ -214,36 +210,28 @@ namespace Tacho {
             ///
             /// tree parallelism
             ///
-            future_type depbuf[MaxDependenceSize] /* 3 */, *dep = &depbuf[0];
-            const size_type depsize = (isize > MaxDependenceSize ? isize*sizeof(future_type) : 0);
-            if (depsize) {
-              dep = (future_type*)_sched.memory()->allocate(depsize);
-              TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
-              clear((char*)dep, depsize);
-            }
-            
-            // spawn children tasks and this (their parent) depends on the children tasks
-            for (ordinal_type i=0;i<isize;++i) {
-              // the first child has a higher priority
-              const auto priority = (i ? Kokkos::TaskPriority::Low : Kokkos::TaskPriority::High);
-              
-              const ordinal_type child = _info.stree_children(i+ibeg);
-              auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, priority),
-                                          TaskFunctor_FactorizeCholByBlocks(_sched, _bufpool, _info, child, _mb));
-              TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
-              dep[i] = f;
-            }
-            
+            future_type dep[MaxDependenceSize];
+
+            if (_mb > s.max_decendant_supernode_size) {
+              // spawn children tasks and this (their parent) depends on the children tasks
+              for (ordinal_type i=0;i<s.nchildren;++i) {
+                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                                            TaskFunctor_FactorizeChol<mat_value_type,exec_space>(_sched, _bufpool, _info, s.children[i]));
+                TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
+                dep[i] = f;
+              }
+            } else {            
+              // spawn children tasks and this (their parent) depends on the children tasks
+              for (ordinal_type i=0;i<s.nchildren;++i) {
+                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                                            TaskFunctor_FactorizeCholByBlocks(_sched, _bufpool, _info, s.children[i], _mb));
+                TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
+                dep[i] = f;
+              }
+            }  
             // respawn with updating state
             _state = 1;
-            Kokkos::respawn(this, Kokkos::when_all(dep, isize), Kokkos::TaskPriority::Regular);
-              
-            // deallocate dependence array
-            if (depsize) {
-              // manually reset future to decrease the reference count
-              for (ordinal_type i=0;i<isize;++i) (dep+i)->~future_type();
-              _sched.memory()->deallocate((void*)dep, depsize);
-            }            
+            Kokkos::respawn(this, Kokkos::when_all(dep, s.nchildren), Kokkos::TaskPriority::Regular);              
             break;
           }
           }
