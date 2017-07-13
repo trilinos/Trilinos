@@ -116,6 +116,11 @@ namespace Tacho {
             A.attach_buffer(1, s.m, s.buf);
             
             ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
+            
+            // lock
+            while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) ; // asm volatile("pause\n": : :"memory");
+            Kokkos::memory_fence();            
+
             for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
               for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
                 const ordinal_type row = s2t[ii];
@@ -124,28 +129,11 @@ namespace Tacho {
                 else
                   break;
               }
+
+            // unlock
+            s.lock = 0;
+            Kokkos::memory_fence();
           }
-
-          // ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
-          // for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
-          //   const ordinal_type row = s2t[ii];
-          //   if (row < s.m) 
-          //     for (ordinal_type jj=ijbeg;jj<srcsize;++jj) ;
-          //   A(row, s2t[jj]) += ABR(ii, jj);
-          //   else
-          //     break;
-          // }
-
-          // for (ordinal_type ii=0;ii<srcsize;++ii) {
-          //   const ordinal_type row = s2t[ii];
-          //   if (row < s.m && row != -1) {
-          //     for (ordinal_type jj=0;jj<srcsize;++jj) {
-          //       const ordinal_type col = s2t[jj];
-          //       if (col != -1) 
-          //         A(row, col) += ABR(ii, jj);
-          //     }
-          //   }
-          // }
         }
         return 0;
       }

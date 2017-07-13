@@ -31,6 +31,8 @@ namespace Tacho {
       typedef Kokkos::Future<int,exec_space> future_type;
 
       struct Supernode {
+        mutable int lock;
+
         ordinal_type row_begin;                     // beginning row
         ordinal_type m, n;                          // panel dimension
 
@@ -45,7 +47,7 @@ namespace Tacho {
 
         KOKKOS_INLINE_FUNCTION
         Supernode() 
-          : row_begin(0), m(0), n(0), 
+          : lock(0), row_begin(0), m(0), n(0), 
             gid_col_begin(0), sid_col_begin(0), nchildren(0),
             max_decendant_schur_size(0),
             max_decendant_supernode_size(0),
@@ -53,7 +55,7 @@ namespace Tacho {
 
         KOKKOS_INLINE_FUNCTION
         Supernode(const Supernode &b) 
-          : row_begin(b.row_begin), m(b.m), n(b.n), 
+          : lock(0), row_begin(b.row_begin), m(b.m), n(b.n), 
             gid_col_begin(b.gid_col_begin), sid_col_begin(b.sid_col_begin), nchildren(b.nchildren),
             max_decendant_schur_size(b.max_decendant_schur_size),
             max_decendant_supernode_size(b.max_decendant_supernode_size),
