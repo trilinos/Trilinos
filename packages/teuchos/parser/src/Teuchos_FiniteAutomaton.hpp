@@ -32,7 +32,6 @@ struct FiniteAutomaton {
 
 /* NOTE: this is only needed by Teuchos::any to support its non-standard operator== */
 inline bool operator==(FiniteAutomaton const&, FiniteAutomaton const&) {
-  throw std::logic_error("Teuchos::operator==(FiniteAutomaton) should never be called\n");
   return false;
 }
 

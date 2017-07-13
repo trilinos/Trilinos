@@ -834,6 +834,12 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPT(doubleEpCoords->NumVectors() != Teuchos::as<int>(coordinates->getNumVectors()));
       }
   #endif
+
+      // check for Xpetra coordinates vector
+      if(paramList.isType<decltype(coordinates)>("Coordinates")) {
+        coordinates = paramList.get<decltype(coordinates)>("Coordinates");
+      }
+
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
       return coordinates;
     }

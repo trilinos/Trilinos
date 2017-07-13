@@ -39,6 +39,7 @@ PATTERN="(Xpetra|MueLu)"
 OUTFILE="test-summary-${timeStamp}"
 MAILCOMMAND="/usr/sbin/sendmail"
 RECIPIENTS=(
+"caglusa@sandia.gov"
 "csiefer@sandia.gov"
 "jhu@sandia.gov"
 "lberge@sandia.gov"
@@ -296,3 +297,4 @@ fi
 #clean up
 bzip2 --best $backupFile
 mv ${backupFile}.bz2 ${OUTFILE}.txt /home/jhu/code/trilinos-test/logs
+rm -f ${OUTFILE}.html

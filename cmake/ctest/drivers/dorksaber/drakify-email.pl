@@ -191,8 +191,8 @@ my $cdashDate = $ARGV[1];
 $theDate =~ s/_/ /g;
 
 print <<EOF;
-From: jhu\@sandia.gov
-Subject: geminga test summary, $theDate
+From: csiefer\@sandia.gov
+Subject: dorksaber test summary, $theDate
 Mime-Version: 1.0
 Content-Type: text/html
 
@@ -316,11 +316,11 @@ Content-Type: text/html
   <body>
 
 Go to the <a
-href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueLu&filtercount=1&showfilters=1&field1=site&compare1=63&value1=geminga&date=$cdashDate">full report</a>
+href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueLu&filtercount=1&showfilters=1&field1=site&compare1=63&value1=dorksaber&date=$cdashDate">full report</a>
 <br>
 
 
-<h2>Geminga Test Summary</h2>
+<h2>Dorksaber Test Summary</h2>
 <h2>$gitFailure</h2>
 EOF
 

@@ -93,7 +93,7 @@ INCLUDE(CMakeParseArguments)
 #
 #   ``<exeRootName>``
 #
-#     The root name of the exectuable (and CMake target) (see `Executable and
+#     The root name of the executable (and CMake target) (see `Executable and
 #     Target Name (TRIBITS_ADD_EXECUTABLE())`_).  This must be the first
 #     argument.
 #
@@ -114,7 +114,7 @@ INCLUDE(CMakeParseArguments)
 #     If passed in, the directory path relative to the package's base
 #     directory (with "/" replaced by "_") is added to the executable name
 #     (see `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_).  This
-#     provides a simple way to create unique test exectuable names inside of a
+#     provides a simple way to create unique test executable names inside of a
 #     given TriBITS package.  Only test executables in the same directory
 #     would need to have unique ``<execRootName>`` passed in.
 #
@@ -253,7 +253,7 @@ INCLUDE(CMakeParseArguments)
 #     set with the name of the executable target passed to
 #     ``ADD_EXECUTABLE(<exeTargetName> ... )``.  Having this name allows the
 #     calling ``CMakeLists.txt`` file access and set additional target
-#     propeties (see `Additional Executable and Source File Properties
+#     properties (see `Additional Executable and Source File Properties
 #     (TRIBITS_ADD_EXECUTABLE())`_).
 #
 # .. _Executable and Target Name (TRIBITS_ADD_EXECUTABLE()):
@@ -278,7 +278,7 @@ INCLUDE(CMakeParseArguments)
 # added to the actual executable file name if the option ``NOEXESUFFIX`` is
 # *not* passed in but this suffix is never added to the target name.
 # (However, note that on Windows platforms, the default ``*.exe`` extension is
-# always added because windows will not run an exectuable in many contexts
+# always added because windows will not run an executable in many contexts
 # unless it has the ``*.exe`` extension.)
 #
 # The reason that a default prefix is prepended to the executable and target
@@ -355,7 +355,7 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     SET(${PARSE_ADDED_EXE_TARGET_NAME_OUT} PARENT_SCOPE)
   ENDIF()
   #
-  # B) Exclude building the test executable based on some several criteria
+  # B) Exclude building the test executable based on some criteria
   #
 
   SET(ADD_THE_TEST FALSE)

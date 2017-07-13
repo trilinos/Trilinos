@@ -249,9 +249,9 @@ namespace Intrepid2 {
     // so we transpose on copy below.
     const ordinal_type lwork = card*card;
     Kokkos::DynRankView<scalarType,Kokkos::LayoutLeft,Kokkos::HostSpace>
-      vmat("Hgrad::Tet::Cn::vmat", card, card),
-      work("Hgrad::Tet::Cn::work", lwork),
-      ipiv("Hgrad::Tet::Cn::ipiv", card);
+      vmat("Hgrad::Tri::Cn::vmat", card, card),
+      work("Hgrad::Tri::Cn::work", lwork),
+      ipiv("Hgrad::Tri::Cn::ipiv", card);
   
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(vmat, dofCoords, order, OPERATOR_VALUE);
 

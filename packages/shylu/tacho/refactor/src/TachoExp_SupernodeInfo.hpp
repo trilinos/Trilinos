@@ -15,117 +15,174 @@ namespace Tacho {
       typedef ValueType value_type;
       typedef ExecSpace exec_space;
 
+      typedef CrsMatrixBase<value_type,exec_space> crs_matrix_type;
+
       typedef Kokkos::View<ordinal_type*,exec_space> ordinal_type_array;
-      typedef Kokkos::View<size_type*,   exec_space> size_type_array;
-      typedef Kokkos::View<value_type*,  exec_space> value_type_array;
+      typedef Kokkos::View<size_type*,exec_space> size_type_array;
+      typedef Kokkos::View<value_type*,exec_space> value_type_array;
 
+      typedef Kokkos::pair<ordinal_type,ordinal_type> ordinal_pair_type;
+      typedef Kokkos::View<ordinal_pair_type*,exec_space> ordinal_pair_type_array;
       typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix;
-      typedef Kokkos::View<UnmanagedViewType<value_type_matrix>*,exec_space> value_type_matrix_array;
 
-      typedef Kokkos::Future<int,exec_space> future_type;
-      typedef Kokkos::View<future_type*,exec_space> future_type_array;
+      typedef DenseMatrixView<value_type,exec_space> dense_block_type;
+      typedef DenseMatrixView<dense_block_type,exec_space> dense_matrix_of_blocks_type;
       
+      typedef Kokkos::Future<int,exec_space> future_type;
+
+      struct Supernode {
+        mutable int lock;
+
+        ordinal_type row_begin;                     // beginning row
+        ordinal_type m, n;                          // panel dimension
+
+        // column connectivity (gid - dof, sid - supernode)
+        ordinal_type gid_col_begin, gid_col_end, sid_col_begin, sid_col_end;  
+        ordinal_type nchildren, children[MaxDependenceSize]; // hierarchy
+
+        ordinal_type max_decendant_schur_size;      // workspace
+        ordinal_type max_decendant_supernode_size;  // workspace
+
+        value_type *buf;
+
+        KOKKOS_INLINE_FUNCTION
+        Supernode() 
+          : lock(0), row_begin(0), m(0), n(0), 
+            gid_col_begin(0), sid_col_begin(0), nchildren(0),
+            max_decendant_schur_size(0),
+            max_decendant_supernode_size(0),
+            buf(NULL) {}
+
+        KOKKOS_INLINE_FUNCTION
+        Supernode(const Supernode &b) 
+          : lock(0), row_begin(b.row_begin), m(b.m), n(b.n), 
+            gid_col_begin(b.gid_col_begin), sid_col_begin(b.sid_col_begin), nchildren(b.nchildren),
+            max_decendant_schur_size(b.max_decendant_schur_size),
+            max_decendant_supernode_size(b.max_decendant_supernode_size),
+            buf(b.buf) {
+          for (ordinal_type i=0;i<b.nchildren;++i) children[i] = b.children[i];
+        }
+      };
+      typedef struct Supernode supernode_type;
+      typedef Kokkos::View<supernode_type*,exec_space> supernode_type_array;
+
       ///
       /// Phase 1: symbolic
       ///
+      ConstUnmanagedViewType<supernode_type_array> supernodes;;
 
-      // supernodes input
-      ConstUnmanagedViewType<ordinal_type_array> supernodes;
+      /// dof mapping to sparse matrix
+      ConstUnmanagedViewType<ordinal_type_array> gid_colidx;
 
-      // dof mapping to sparse matrix
-      ConstUnmanagedViewType<size_type_array> gid_super_panel_ptr;
-      ConstUnmanagedViewType<ordinal_type_array> gid_super_panel_colidx;
-
-      // supernode map and panel size configuration
-      ConstUnmanagedViewType<size_type_array> sid_super_panel_ptr;
-      ConstUnmanagedViewType<ordinal_type_array> sid_super_panel_colidx, blk_super_panel_colidx;
-
-      // supernode tree
-      ConstUnmanagedViewType<size_type_array> stree_ptr;
-      ConstUnmanagedViewType<ordinal_type_array> stree_children;
+      /// supernode map and panel size configuration 
+      /// first - sid, second - blk , blk_superpanel_colidx;
+      /// the last sid is dummy but last blk is ending point of the block
+      ConstUnmanagedViewType<ordinal_pair_type_array> sid_block_colidx; 
 
       ///
-      /// Phase 2: factors
+      /// Phase 2: max parameter
       ///
-      ConstUnmanagedViewType<size_type_array> super_panel_ptr;
-      UnmanagedViewType<value_type_array> super_panel_buf;
+      ordinal_type max_supernode_size, max_schur_size, serial_thres_size;
 
       ///
-      /// Phase 3: abr (schur complements)
-      ///
-      UnmanagedViewType<value_type_matrix_array> supernodes_abr;
-      UnmanagedViewType<future_type_array> supernodes_future;
-      
-      
+      /// Phase 3: solve (rhs multivector)
+      UnmanagedViewType<value_type_matrix> x;
+
       KOKKOS_INLINE_FUNCTION
       SupernodeInfo() = default;
 
       KOKKOS_INLINE_FUNCTION
       SupernodeInfo(const SupernodeInfo &b) = default;
 
-      KOKKOS_INLINE_FUNCTION
-      void
-      getSuperPanelSize(const ordinal_type sid,
-                        /* */ ordinal_type &m,
-                        /* */ ordinal_type &n) const {
-        m = supernodes(sid+1) - supernodes(sid);
-        n = blk_super_panel_colidx(sid_super_panel_ptr(sid+1)-1);
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void
-      getSuperPanel(const ordinal_type sid,
-                    const ordinal_type m,
-                    const ordinal_type n,
-                    /* */ UnmanagedViewType<value_type_matrix> &A) const {
-        A = value_type_matrix(&super_panel_buf(super_panel_ptr(sid)), m, n);
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      value_type*
-      getSuperPanelPtr(const ordinal_type sid) const {
-        return &super_panel_buf(super_panel_ptr(sid));
-      }
-
       inline
       void
-      allocateSuperPanels(/* */ size_type_array &spanel_ptr,
-                          /* */ value_type_array &spanel_buf,
-                          const ordinal_type_array &work) {
-        const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
-        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          ordinal_type m, n;
-          getSuperPanelSize(sid, m, n);
-          work(sid) = m*n;
-        }
+      initialize(/* */ supernode_type_array &supernodes_,
+                 /* */ ordinal_pair_type_array &sid_block_colidx_,
+                 /* */ value_type_array &superpanel_buf_,
+                 // symbolic input
+                 const ordinal_type_array &snodes_,
+                 const size_type_array &gid_ptr_,
+                 const ordinal_type_array &gid_colidx_,
+                 const size_type_array &sid_ptr_,
+                 const ordinal_type_array &sid_colidx_,
+                 const ordinal_type_array &blk_colidx_,
+                 // tree hierarchy
+                 const ordinal_type_array &stree_parent_,
+                 const size_type_array &stree_ptr_,
+                 const ordinal_type_array &stree_children_) {
+        const ordinal_type nsupernodes = snodes_.dimension_0() - 1;
 
-        // prefix scan
-        spanel_ptr = size_type_array("super_panel_ptr", nsupernodes+1);
-        for (ordinal_type sid=0;sid<nsupernodes;++sid)
-          spanel_ptr(sid+1) = spanel_ptr(sid) + work(sid);
-        spanel_buf = value_type_array("super_panel_buf", spanel_ptr(nsupernodes));
-      }
+        /// allocate and assign supernodes
+        supernodes_ = supernode_type_array("supernodes", nsupernodes); // managed view
+        supernodes  = supernodes_;  // unmanaged view, data is held outside
 
-      inline
-      size_type
-      computeWorkspaceSerialChol() {
-        const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
-        size_type workspace = 0;
-        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          // supernodes are myself, parent, empty one (range is used for blocks it requires end point)
-          const bool is_direct_update = (sid_super_panel_ptr(sid+1) - sid_super_panel_ptr(sid)) == 3;
-          if (!is_direct_update) {
-            ordinal_type m, n;
-            getSuperPanelSize(sid, m, n);
-            workspace = max(workspace, (n-m)*(n-m));
+        gid_colidx        = gid_colidx_;
+
+        sid_block_colidx_ = ordinal_pair_type_array("sid_block_colidx", sid_colidx_.span());
+        sid_block_colidx  = sid_block_colidx_;
+
+        /// workspace parameter initialization
+        max_schur_size = 0; 
+        max_supernode_size = 0;
+        serial_thres_size = 0;
+
+        size_type nnz = 0;
+        for (ordinal_type sid=0;sid<nsupernodes;++sid) { 
+          auto &s = supernodes_(sid);
+
+          s.row_begin = snodes_(sid);
+          s.m = snodes_(sid+1) - snodes_(sid);
+          s.n = blk_colidx_(sid_ptr_(sid+1)-1);
+
+          s.gid_col_begin = gid_ptr_(sid); s.gid_col_end = gid_ptr_(sid+1);
+          s.sid_col_begin = sid_ptr_(sid); s.sid_col_end = sid_ptr_(sid+1);
+
+          for (ordinal_type i=s.sid_col_begin;i<sid_ptr_(sid+1);++i) {
+            sid_block_colidx_(i).first  = sid_colidx_(i);
+            sid_block_colidx_(i).second = blk_colidx_(i);
           }
-        }
-        return workspace;
-      }
 
+          s.nchildren = stree_ptr_(sid+1) - stree_ptr_(sid);
+          TACHO_TEST_FOR_EXCEPTION(s.nchildren > MaxDependenceSize, std::runtime_error,
+                                   "# of children is greater than max dependence (children) size");
+
+          const ordinal_type offset = stree_ptr_(sid);
+          for (ordinal_type i=0;i<s.nchildren;++i) 
+            s.children[i] = stree_children_(offset + i);
+
+          max_supernode_size = max(max_supernode_size, s.m);
+          max_schur_size = max(max_schur_size, s.n-s.m);
+
+          s.max_decendant_supernode_size = max(s.m, s.max_decendant_supernode_size);
+          s.max_decendant_schur_size = max(s.n-s.m, s.max_decendant_schur_size);
+
+          const ordinal_type sidpar = stree_parent_(sid);
+          if (sidpar != -1) {
+            auto &spar = supernodes_(sidpar);
+            spar.max_decendant_supernode_size = max(s.max_decendant_supernode_size,  
+                                                    spar.max_decendant_supernode_size);
+            spar.max_decendant_schur_size = max(s.max_decendant_schur_size,  
+                                                spar.max_decendant_schur_size);
+          }
+          nnz += s.m * s.n;
+        }
+        
+        // by default, serialization is made when supernode is smaller than max/4
+        //serial_thres_size = max(max_supernode_size, max_schur_size)/4;
+
+        // supernodal factor array; data is held outside with a managed view 
+        // supernode does not include this view
+        superpanel_buf_ = value_type_array("superpanel_buf", nnz); nnz = 0;
+        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+          auto &s = supernodes_(sid);
+          s.buf = &superpanel_buf_(nnz);
+          nnz += s.m * s.n;
+        }
+      }
+      
       inline
       void
-      copySparseToSuperPanels(// input from sparse matrix
+      copySparseToSuperpanels(// input from sparse matrix
                               const size_type_array &ap,
                               const ordinal_type_array &aj,
                               const value_type_array &ax,
@@ -133,47 +190,91 @@ namespace Tacho {
                               const ordinal_type_array &peri,
                               // work array to store map
                               const ordinal_type_array &work) {
-        const ordinal_type nsupernodes = supernodes.dimension_0() - 1;
-
-
-        Kokkos::deep_copy(work, -1);
-
+        dense_block_type tgt;        
+        const ordinal_type nsupernodes = supernodes.dimension_0();
         for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          // grab super panel
-          ordinal_type m, n;
-          getSuperPanelSize(sid, m, n);
-
-          UnmanagedViewType<value_type_matrix>
-            tgt(&super_panel_buf(super_panel_ptr(sid)), m, n);
-
+          const auto &s = supernodes(sid);
+          
+          tgt.set_view(s.m, s.n);
+          tgt.attach_buffer(1, s.m, s.buf);
+          
           // local to global map
-          const ordinal_type goffset = gid_super_panel_ptr(sid);
-          for (ordinal_type j=0;j<n;++j) {
-            const ordinal_type col = perm(gid_super_panel_colidx(j+goffset));
-            work(col) = j;
-          }
-
+          for (ordinal_type j=0;j<s.n;++j) 
+            work(gid_colidx(j+s.gid_col_begin) /* = col */) = j;
+          
           // row major access to sparse src
-          const ordinal_type soffset = supernodes(sid);
-          for (ordinal_type i=0;i<m;++i) {
-            const ordinal_type row = perm(i+soffset); // row in sparse matrix
-            for (ordinal_type k=ap(row);k<ap(row+1);++k) {
-              const ordinal_type col = aj(k);
-              const ordinal_type j = work(col);
-              if (j != -1 && i <= j)  // upper triangular
-                tgt(i, work(col)) = ax(k);
+          for (ordinal_type i=0;i<s.m;++i) {
+            const ordinal_type 
+              ii = i + s.row_begin,  // row in U
+              row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
+            for (ordinal_type k=kbeg;k<kend;++k) {
+              const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
+              if (ii <= jj) 
+                tgt(i, work(jj)) = ax(k);
             }
-          }
-
-          // reset workspace
-          for (ordinal_type j=0;j<n;++j) {
-            const ordinal_type col = perm(gid_super_panel_colidx(j+goffset));
-            work(col) = -1;
           }
         }
       }
-    };
+      
+      inline
+      crs_matrix_type
+      createCrsMatrix(const bool replace_value_with_one = false) {
+        // count m, n, nnz
+        const ordinal_type nsupernodes = supernodes.dimension_0();
+        auto &last = supernodes(nsupernodes - 1);
+        
+        const ordinal_type mm = last.row_begin + last.m, nn = mm;
 
+        size_type cnt = 0;
+        size_type_array ap("ap", mm+1);
+        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+          const auto &s = supernodes(sid);
+
+          // row major access to sparse src
+          const ordinal_type soffset = s.row_begin;
+          for (ordinal_type i=0;i<s.m;++i) {
+            const ordinal_type row = i+soffset; // row in sparse matrix
+            ap(row) = cnt;
+            cnt += (s.n - i); // upper triangular only
+          }
+        }
+        ap(mm) = cnt;
+        
+        // fill the matrix
+        const size_type nnz = cnt; cnt = 0;
+        ordinal_type_array aj("aj", nnz);
+        value_type_array ax("ax", nnz);
+
+        dense_block_type src;
+        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+          const auto &s = supernodes(sid);
+
+          src.set_view(s.m, s.n);
+          src.attach_buffer(1, s.m, s.buf);
+
+          // row major access to sparse src
+          const ordinal_type
+            soffset = s.row_begin,
+            goffset = s.gid_col_begin;
+
+          for (ordinal_type i=0;i<s.m;++i) {
+            const size_type beg = ap(i+soffset);
+            for (ordinal_type j=i,k=0;j<s.n;++j,++k) {
+              const ordinal_type col = gid_colidx(j+goffset);
+              aj(beg+k) = col;
+              ax(beg+k) = replace_value_with_one ? 1.0 : src(i, j);
+            }
+          }
+        }
+        
+        // set triple to crs matrix
+        crs_matrix_type r_val;
+        r_val.setExternalMatrix(mm, nn, nnz, ap, aj, ax);
+
+        return r_val;
+      }
+    };
+    
   }
 }
 

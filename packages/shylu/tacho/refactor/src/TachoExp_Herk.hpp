@@ -10,28 +10,67 @@
 namespace Tacho {
 
   namespace Experimental {
+
+    ///
+    /// Herk:
+    /// 
     
+    /// various implementation for different uplo and algo parameters    
     template<typename ArgUplo, typename ArgTrans, typename ArgAlgo>
     struct Herk;
-    //{
-      // template<typename PolicyType,
-      //          typename MemberType,
-      //          typename ScalarType,
-      //          typename ViewTypeA,
-      //          typename ViewTypeC>
-      // KOKKOS_INLINE_FUNCTION
-      // static int invoke(const PolicyType &policy,
-      //                   const MemberType &member,
-      //                   const ScalarType alpha,
-      //                   const ViewTypeA &A,
-      //                   const ScalarType beta,
-      //                   const ViewTypeC &C) { 
-      //   printf(">> Template Args - Uplo %d, Trans %d, Algo %d\n", 
-      //          ArgUplo::tag, ArgTrans::tag, ArgAlgo::tag);  
-      //   TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
-      //   return -1;
-      // }
-    //};
+    
+    /// task construction for the above chol implementation
+    /// Herk<ArgUplo,ArgTrans,ArgAlgo> ::invoke(_sched, member, _alpha, _A, _beta, _C);
+    template<typename SchedType,
+             typename ScalarType,
+             typename DenseMatrixViewType,
+             typename ArgUplo,
+             typename ArgTrans,
+             typename ArgAlgo>
+    struct TaskFunctor_Herk {
+    public:
+      typedef SchedType sched_type;
+      typedef typename sched_type::member_type member_type;
+
+      typedef ScalarType scalar_type;
+
+      typedef DenseMatrixViewType dense_block_type;
+      typedef typename dense_block_type::future_type future_type;
+      typedef typename future_type::value_type value_type;
+
+    private:
+      sched_type _sched;
+      scalar_type _alpha, _beta;
+      dense_block_type _A, _C;
+
+    public:
+      KOKKOS_INLINE_FUNCTION
+      TaskFunctor_Herk() = delete;
+
+      KOKKOS_INLINE_FUNCTION
+      TaskFunctor_Herk(const sched_type &sched,
+                       const scalar_type alpha,
+                       const dense_block_type &A,
+                       const scalar_type beta,
+                       const dense_block_type &C)
+        : _sched(sched),
+          _alpha(alpha),
+          _beta(beta),
+          _A(A),
+          _C(C) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(member_type &member, value_type &r_val) {
+        const int ierr = Herk<ArgUplo,ArgTrans,ArgAlgo>
+          ::invoke(_sched, member, _alpha, _A, _beta, _C);
+
+        if (member.team_rank() == 0) {
+          _C.set_future();
+          r_val = ierr;
+        }
+      }
+    };
+    
   }
 }
 

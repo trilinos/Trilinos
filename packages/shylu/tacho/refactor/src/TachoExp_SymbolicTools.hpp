@@ -478,7 +478,14 @@ namespace Tacho {
 
       // supernode elimination tree (child - parent)
       ordinal_type_array _stree_parent;
-      
+
+      // stat
+      struct {
+        ordinal_type nrows, nroots;
+        size_type    nnz_a, nnz_u;
+        ordinal_type nsupernodes, largest_supernode, largest_schur;
+      } stat;
+
     public:
       SymbolicTools() = default;
       SymbolicTools(const SymbolicTools &b) = default;
@@ -548,10 +555,28 @@ namespace Tacho {
       
       inline
       void
-      symbolicFactorize() {
+      symbolicFactorize(const ordinal_type verbose = 0) {
+        Kokkos::Impl::Timer timer;
+        double t_symfact = 0, t_supernode = 0, t_extra = 0, m_used =0, m_peak = 0;
+
+        auto track_alloc = [&](const double in) {
+          m_used += in;
+          m_peak  = max(m_used, m_peak);
+        };
+        auto track_free = [&](const double out) {
+          m_used -= out;
+        };
+
+        stat.nrows = _m;
+        stat.nnz_a = _ap(_m);
+
         // compute elimination tree
-        ordinal_type_array work("work", _m*4);
-        ordinal_type_array parent("parent", _m);
+        timer.reset();
+        ordinal_type_array work("work", _m*4); 
+        ordinal_type_array parent("parent", _m); 
+
+        track_alloc(work.span()*sizeof(ordinal_type));
+        track_alloc(parent.span()*sizeof(ordinal_type));
         {
           auto post = Kokkos::subview(work, range_type(0*_m, 1*_m));
           auto w    = Kokkos::subview(work, range_type(1*_m, 4*_m));
@@ -568,34 +593,108 @@ namespace Tacho {
           // update elimination tree according to the updated permutation vector
           computeEliminationTree(_m, _ap, _aj, _perm, _peri, parent, w);
         }
-
-        // compute super node structure
-        computeSupernodes(_m, _ap, _aj, _perm, _peri, parent, _supernodes, work);
-
-        // compute fill pattern
+        t_symfact += timer.seconds();
+        
+        timer.reset();
         size_type_array ap;
-        ordinal_type_array aj;
-        computeFillPatternUpper(_m, _ap, _aj, _perm, _peri, ap, aj, work);          
+        ordinal_type_array aj;        
+        {
+          // compute super node structure
+          computeSupernodes(_m, _ap, _aj, _perm, _peri, parent, _supernodes, work);
+          
+          // compute fill pattern
+          computeFillPatternUpper(_m, _ap, _aj, _perm, _peri, ap, aj, work);          
+          
+          // allocate supernodes
+          allocateSupernodes(_m, ap, aj, _supernodes, work, 
+                             _gid_super_panel_ptr,
+                             _gid_super_panel_colidx,
+                             _sid_super_panel_ptr,
+                             _sid_super_panel_colidx,
+                             _blk_super_panel_colidx);
+        }
+        t_supernode += timer.seconds();
 
-        // allocate supernodes
-        allocateSupernodes(_m, ap, aj, _supernodes, work, 
-                           _gid_super_panel_ptr,
-                           _gid_super_panel_colidx,
-                           _sid_super_panel_ptr,
-                           _sid_super_panel_colidx,
-                           _blk_super_panel_colidx);
+        stat.nnz_u = ap(_m);
+        stat.nsupernodes = _supernodes.dimension_0() - 1;
+        stat.largest_supernode = 0;
+        stat.largest_schur = 0;
+        for (ordinal_type sid=0;sid<stat.nsupernodes;++sid) {
+          const ordinal_type m = _supernodes(sid+1) - _supernodes(sid);
+          const ordinal_type n = _blk_super_panel_colidx(_sid_super_panel_ptr(sid+1)-1);
+ 
+          stat.largest_supernode = max(stat.largest_supernode, m);
+          stat.largest_schur     = max(stat.largest_schur,     n-m);
+        }
+        track_alloc(ap.span()*sizeof(size_type));
+        track_alloc(aj.span()*sizeof(ordinal_type));
 
-        // supernode assembly tree
-        computeSupernodesAssemblyTree(parent,                                                 
-                                      _supernodes,                                             
-                                      _stree_parent,
-                                      _stree_ptr,                                                 
-                                      _stree_children,
-                                      _stree_roots,
-                                      work);              
-      }            
-    };
+        track_alloc(_supernodes.span()*sizeof(ordinal_type));        
+        track_alloc(_gid_super_panel_ptr.span()*sizeof(size_type));
+        track_alloc(_gid_super_panel_colidx.span()*sizeof(ordinal_type));
+        track_alloc(_sid_super_panel_ptr.span()*sizeof(size_type));
+        track_alloc(_sid_super_panel_colidx.span()*sizeof(ordinal_type));
+        track_alloc(_blk_super_panel_colidx.span()*sizeof(ordinal_type));
+        
+        timer.reset();
+        {
+          // supernode assembly tree
+          computeSupernodesAssemblyTree(parent,                                                 
+                                        _supernodes,                                             
+                                        _stree_parent,
+                                        _stree_ptr,                                                 
+                                        _stree_children,
+                                        _stree_roots,
+                                        work);                        
+        }
+        t_extra += timer.seconds();
 
+        stat.nroots = _stree_roots.dimension_0();
+
+        track_alloc(_stree_parent.span()*sizeof(ordinal_type));
+        track_alloc(_stree_ptr.span()*sizeof(size_type));
+        track_alloc(_stree_children.span()*sizeof(ordinal_type));
+        track_alloc(_stree_roots.span()*sizeof(ordinal_type));
+        
+        track_free(ap.span()*sizeof(size_type));
+        track_free(aj.span()*sizeof(ordinal_type));
+
+        track_free(work.span()*sizeof(ordinal_type));
+        track_free(parent.span()*sizeof(ordinal_type));
+        
+        if (verbose) {
+          printf("Summary: SymbolicTools\n");
+          printf("======================\n");
+
+          
+          switch (verbose) {
+          case 1: {
+            printf("  Time\n");
+            printf("             time for symbolic factorization:                 %10.6f s\n", t_symfact);
+            printf("             time for allocation of supernode data structure: %10.6f s\n", t_supernode);
+            printf("             time for additional calculations:                %10.6f s\n", t_extra);
+            printf("             total time spent:                                %10.6f s\n", (t_symfact+t_supernode+t_extra));
+            printf("\n");            
+            printf("  Linear system A\n");
+            printf("             number of equations:                             %10d\n", stat.nrows);
+            printf("             number of nonzeros:                              %10zu (%5.2f %% )\n", stat.nnz_a, double(stat.nnz_a)/(double(stat.nrows)*double(stat.nrows))*100.0);
+            printf("\n");
+            printf("  Factors U\n");
+            printf("             number of nonzeros:                              %10zu (%5.2f %% )\n", stat.nnz_u, double(stat.nnz_u)/(double(stat.nrows)*double(stat.nrows))*50.0);
+            printf("             number of subgraphs:                             %10d\n", stat.nroots);
+            printf("             number of supernodes:                            %10d\n", stat.nsupernodes);
+            printf("             size of largest supernode:                       %10d\n", stat.largest_supernode);
+            printf("             size of largest schur size:                      %10d\n", stat.largest_schur);
+            printf("\n");
+            printf("  Memory\n");
+            printf("             memory used:                                     %10.2f MB\n", m_used/1024/1024);
+            printf("             peak memory used:                                %10.2f MB\n", m_peak/1024/1024);
+            printf("\n");
+          }          
+          }
+        }
+      }  
+    };        
   }
 }
 #endif

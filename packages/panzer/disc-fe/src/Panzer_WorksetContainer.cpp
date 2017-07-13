@@ -57,15 +57,6 @@ namespace panzer {
 WorksetContainer::WorksetContainer()
    : worksetSize_(1)
 {}
-
-WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
-                                   const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
-                                   std::size_t wkstSz)
-   : wkstFactory_(factory), worksetSize_(wkstSz)
-{
-   setPhysicsBlockVector(physicsBlocks);
-}
-
 WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
                                    const std::map<std::string,WorksetNeeds> & needs)
    : wkstFactory_(factory), worksetSize_(-1)
@@ -506,6 +497,9 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+#if 1
+
 //! Access, and construction of side worksets
 Teuchos::RCP<std::map<unsigned,Workset> > 
 WorksetContainer::getSideWorksets(const BC & bc)
@@ -534,6 +528,16 @@ void WorksetContainer::setPhysicsBlockVector(const std::vector<Teuchos::RCP<Phys
      ebToNeeds_[physicsBlocks[i]->elementBlockID()] = needs;
    }
 }
+
+WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
+                                   const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
+                                   std::size_t wkstSz)
+   : wkstFactory_(factory), worksetSize_(wkstSz)
+{
+   setPhysicsBlockVector(physicsBlocks);
+}
+
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

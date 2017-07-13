@@ -16,7 +16,11 @@ namespace Tacho {
  
       /// \brief matrix market reader
       static CrsMatrixBase<ValueType,Kokkos::DefaultHostExecutionSpace>
-      read(const std::string &filename) {
+      read(const std::string &filename, const ordinal_type verbose = 0) {
+        Kokkos::Impl::Timer timer;
+
+        timer.reset();
+
         std::ifstream file;
         file.open(filename);
         // TACHO_TEST_FOR_EXCEPTION(!file.good(), std::runtime_error, 
@@ -100,7 +104,22 @@ namespace Tacho {
         // create crs matrix view
         CrsMatrixBase<value_type,host_space> A;
         A.setExternalMatrix(m, n, nnz, ap, aj, ax);
-        
+
+        const double t = timer.seconds();
+        if (verbose) {
+
+          printf("Summary: MatrixMarket\n");
+          printf("=====================\n");
+          printf("  File:      %s\n", filename.c_str());
+          printf("  Time\n");
+          printf("             time for reading A:                              %10.6f s\n", t);
+          printf("\n");
+          printf("  Sparse Matrix (%s) \n", (symmetry ? "symmetric" : "non-symmetric"));
+          printf("             number of rows:                                  %10d\n", m);
+          printf("             number of cols:                                  %10d\n", n);
+          printf("             number of nonzeros:                              %10d\n", ordinal_type(nnz));
+          printf("\n");
+        }
         return A;
       }
 

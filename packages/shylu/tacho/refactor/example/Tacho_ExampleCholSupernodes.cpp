@@ -35,6 +35,9 @@ int main (int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("This example program measure the performance of Pardiso Chol algorithms on Kokkos::OpenMP execution space.\n");
 
+  bool serial = false;
+  clp.setOption("enable-serial", "disable-verbose", &serial, "Flag for invoking serial algorithm");
+
   int nthreads = 1;
   clp.setOption("kokkos-threads", &nthreads, "Number of threads");
 
@@ -46,6 +49,12 @@ int main (int argc, char *argv[]) {
 
   int nrhs = 1;
   clp.setOption("nrhs", &nrhs, "Number of RHS vectors");
+
+  int serial_thres_size = -1; // 32 is better
+  clp.setOption("serial-thres", &serial_thres_size, "Serial threshold");  
+  
+  int mb = 0;
+  clp.setOption("mb", &mb, "Blocksize");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -71,7 +80,7 @@ int main (int argc, char *argv[]) {
     Kokkos::Impl::Timer timer;
     double t = 0.0;
 
-    std::cout << "CholSerial:: import input file = " << file << std::endl;
+    std::cout << "CholSupernodes:: import input file = " << file << std::endl;
     CrsMatrixBaseType A("A");
     timer.reset();
     {
@@ -87,36 +96,9 @@ int main (int argc, char *argv[]) {
     }
     Graph G(A);
     t = timer.seconds();
-    std::cout << "CholSerial:: import input file::time = " << t << std::endl;
-    
-    DenseMatrixBaseType 
-      BB("BB", A.NumRows(), nrhs), 
-      XX("XX", A.NumRows(), nrhs), 
-      RR("RR", A.NumRows(), nrhs),
-      PP("PP",  A.NumRows(), 1);
-    
-    {
-      const auto m = A.NumRows();
-      srand(time(NULL));
-      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-        for (ordinal_type i=0;i<m;++i) 
-          XX(i, rhs) = ((value_type)rand()/(RAND_MAX));
-        
-        // matvec
-        Kokkos::DefaultHostExecutionSpace::fence();
-        Kokkos::parallel_for(Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, m),
-                             [&](const ordinal_type i) {
-                               value_type tmp = 0;
-                               for (size_type j=A.RowPtrBegin(i);j<A.RowPtrEnd(i);++j)
-                                 tmp += A.Value(j)*XX(A.Col(j), rhs);
-                               BB(i, rhs) = tmp;
-                             } );
-        Kokkos::DefaultHostExecutionSpace::fence();
-      }
-      Kokkos::deep_copy(RR, XX);
-    }
+    std::cout << "CholSupernodes:: import input file::time = " << t << std::endl;
 
-    std::cout << "CholSerial:: analyze matrix" << std::endl;
+    std::cout << "CholSupernodes:: analyze matrix" << std::endl;
     timer.reset();
 #if   defined(HAVE_SHYLUTACHO_METIS)
     GraphTools_Metis T(G);
@@ -125,30 +107,62 @@ int main (int argc, char *argv[]) {
 #else
     GraphTools_CAMD T(G);
 #endif
-    T.reorder();
+    T.reorder(verbose);
     
     SymbolicTools S(A, T);
-    S.symbolicFactorize();
+    S.symbolicFactorize(verbose);
     t = timer.seconds();
-    std::cout << "CholSerial:: analyze matrix::time = " << t << std::endl;
-    
-    std::cout << "CholSerial:: factorize matrix" << std::endl;
-    timer.reset();    
+    std::cout << "CholSupernodes:: analyze matrix::time = " << t << std::endl;
+
     NumericTools<value_type,Kokkos::DefaultHostExecutionSpace> 
-      N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
+      N(A.NumRows(), A.RowPtr(), A.Cols(), // A.Values(),
         T.PermVector(), T.InvPermVector(),
         S.NumSupernodes(), S.Supernodes(),
         S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
         S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
         S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
+    N.setSerialThresholdSize(serial_thres_size);
 
-    if (nthreads > 1) {
-      N.factorizeCholesky_Parallel();
+    std::cout << "CholSupernodes:: factorize matrix" << std::endl;
+    timer.reset();    
+    if (serial) {
+      N.factorizeCholesky_Serial(A.Values(), verbose);
     } else {
-      N.factorizeCholesky_Parallel();
+      if (mb > 0) 
+        N.factorizeCholesky_ParallelByBlocks(A.Values(), mb, verbose);
+      else
+        N.factorizeCholesky_Parallel(A.Values(), verbose);
     }
     t = timer.seconds();    
-    std::cout << "CholSerial:: factorize matrix::time = " << t << std::endl;
+    std::cout << "CholSupernodes:: factorize matrix::time = " << t << std::endl;
+    
+    DenseMatrixBaseType 
+      B("B", A.NumRows(), nrhs), 
+      X("X", A.NumRows(), nrhs), 
+      Y("Y", A.NumRows(), nrhs);
+    
+    {
+      Random<value_type> random;
+      const ordinal_type m = A.NumRows();
+      for (ordinal_type rhs=0;rhs<nrhs;++rhs)
+        for (ordinal_type i=0;i<m;++i) 
+          B(i, rhs) = random.value();
+    }
+
+    std::cout << "CholSupernodes:: solve matrix" << std::endl;
+    timer.reset();    
+    if (serial) {
+      N.solveCholesky_Serial(X, B, Y, verbose);
+    } else {
+      N.solveCholesky_Parallel(X, B, Y, verbose);
+    }
+    t = timer.seconds();    
+    std::cout << "CholSupernodes:: solve matrix::time = " << t << std::endl;
+
+    const double res = N.computeRelativeResidual(X, B);
+    //const double eps = std::numeric_limits<double>::epsilon()*100;
+
+    std::cout << "CholSupernodes:: residual = " << res << std::endl;
   }
   Kokkos::finalize();
 

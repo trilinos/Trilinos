@@ -234,7 +234,7 @@ ENDFUNCTION()
 #
 #   ``<libBaseName>``
 #
-#     Required base name of the library.  The name of the actual libray name
+#     Required base name of the library.  The name of the actual library name
 #     will be prefixed by ``${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}`` to
 #     produce::
 #     
@@ -355,7 +355,7 @@ ENDFUNCTION()
 #     If specified, then on output the variable ``<libTargetName>`` will be
 #     set with the name of the library passed to ``ADD_LIBRARY()``.  Having
 #     this name allows the calling ``CMakeLists.txt`` file access and set
-#     additional target propeties (see `Additional Library and Source File
+#     additional target properties (see `Additional Library and Source File
 #     Properties (TRIBITS_ADD_LIBRARY())`_).
 #
 # .. _Include Directories (TRIBITS_ADD_LIBRARY()):

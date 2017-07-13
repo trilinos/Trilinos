@@ -15,20 +15,18 @@ namespace Tacho {
     /// ===========
     template<typename ArgUplo>
     struct Chol<ArgUplo,Algo::External> {
-      template<typename PolicyType,
+      template<typename SchedType,
                typename MemberType,
                typename ViewTypeA>
       inline
       static int
-      invoke(const PolicyType &policy,
+      invoke(const SchedType &sched,
              const MemberType &member,
              const ViewTypeA &A) {
         typedef typename ViewTypeA::non_const_value_type value_type;
-        typedef typename ViewTypeA::array_layout array_layout;
         
         static_assert(ViewTypeA::rank == 2,"A is not rank 2 view.");
-        static_assert(std::is_same<array_layout,Kokkos::LayoutLeft>::value, 
-                      "A does not have Kokkos::LayoutLeft.");
+
         int r_val = 0;      
         
         const ordinal_type m = A.dimension_0();

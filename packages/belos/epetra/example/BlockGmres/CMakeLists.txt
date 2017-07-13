@@ -69,5 +69,20 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     STANDARD_PASS_OUTPUT
     )
 
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
+  IF(${PACKAGE_NAME}_ENABLE_Ifpack)
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      BlockPrecGmres_Galeri_Ex
+      SOURCES BlockPrecGmresEpetraGaleriEx.cpp
+      COMM serial mpi
+      ARGS "--verbose --nx=10 --ortho=DGKS"
+           "--verbose --nx=10 --ortho=ICGS"
+           "--verbose --nx=10 --ortho=IMGS"
+      STANDARD_PASS_OUTPUT
+      )
+
+  ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
+
 ENDIF (${PACKAGE_NAME}_ENABLE_Galeri)
 

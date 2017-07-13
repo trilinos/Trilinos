@@ -12,8 +12,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
-#include "Tempus_StepperNewmark.hpp"
-#include "Tempus_StepperNewmarkExplicit.hpp"
+#include "Tempus_StepperNewmarkImplicitAForm.hpp"
+#include "Tempus_StepperNewmarkImplicitDForm.hpp"
+#include "Tempus_StepperNewmarkExplicitAForm.hpp"
 #include "Tempus_StepperHHTAlpha.hpp"
 #include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperDIRK.hpp"
@@ -67,10 +68,12 @@ private:
       return rcp(new StepperForwardEuler<Scalar>(model, stepperPL));
     else if (stepperType == "Backward Euler")
       return rcp(new StepperBackwardEuler<Scalar>(model, stepperPL));
-    else if (stepperType == "Newmark Beta")
-      return rcp(new StepperNewmark<Scalar>(model, stepperPL));
-    else if (stepperType == "Newmark Beta Explicit")
-      return rcp(new StepperNewmarkExplicit<Scalar>(model, stepperPL));
+    else if (stepperType == "Newmark Implicit a-Form")
+      return rcp(new StepperNewmarkImplicitAForm<Scalar>(model, stepperPL));
+    else if (stepperType == "Newmark Implicit d-Form")
+      return rcp(new StepperNewmarkImplicitDForm<Scalar>(model, stepperPL));
+    else if (stepperType == "Newmark Explicit a-Form")
+      return rcp(new StepperNewmarkExplicitAForm<Scalar>(model, stepperPL));
     else if (stepperType == "HHT-Alpha")
       return rcp(new StepperHHTAlpha<Scalar>(model, stepperPL));
     else if (

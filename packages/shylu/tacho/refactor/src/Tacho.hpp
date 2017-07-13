@@ -7,33 +7,59 @@
 
 #include "ShyLUTacho_config.h"
 
-#include "Tacho_Util.hpp"
-#include "Tacho_Control.hpp"
-#include "Tacho_Partition.hpp"
+#include <Kokkos_Core.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho_CrsMatrixBase.hpp"
-#include "Tacho_CrsMatrixView.hpp"
-#include "Tacho_CrsRowView.hpp"
-#include "Tacho_CrsMatrixTools.hpp"
+#include "TachoExp_Util.hpp"
+#include "TachoExp_Partition.hpp"
 
-#include "Tacho_MatrixMarket.hpp"
+#include "TachoExp_CrsMatrixBase.hpp"
+#include "TachoExp_DenseMatrixView.hpp"
 
-#include "Tacho_GraphTools.hpp"
+#include "TachoExp_MatrixMarket.hpp"           
 
-#include "Tacho_GraphTools_Scotch.hpp"
-#include "Tacho_GraphTools_CAMD.hpp"
+#include "TachoExp_Graph.hpp"
+#include "TachoExp_GraphTools_CAMD.hpp"        
+#include "TachoExp_GraphTools_Metis.hpp"       
+#include "TachoExp_GraphTools_Scotch.hpp"      
 
-#include "Tacho_SymbolicFactorization.hpp"
+#include "TachoExp_SupernodeInfo.hpp"
+#include "TachoExp_SymbolicTools.hpp"
 
-#include "Tacho_TaskView.hpp"
-#include "Tacho_TaskFactory.hpp"
+#include "TachoExp_Chol.hpp"
+#include "TachoExp_Chol_External.hpp"
+#include "TachoExp_Chol_ByBlocks.hpp"
 
-#include "Tacho_ScaleCrsMatrix.hpp"
-#include "Tacho_ScaleDenseMatrix.hpp"
+#include "TachoExp_Trsm.hpp"
+#include "TachoExp_Trsm_External.hpp"
+#include "TachoExp_Trsm_ByBlocks.hpp"
 
-#include "Tacho_Gemm.hpp"
-#include "Tacho_Herk.hpp"
-#include "Tacho_Trsm.hpp"
-#include "Tacho_Chol.hpp"
+#include "TachoExp_Herk.hpp"
+#include "TachoExp_Herk_External.hpp"
+#include "TachoExp_Herk_ByBlocks.hpp"          
+
+#include "TachoExp_Gemm.hpp"
+#include "TachoExp_Gemm_External.hpp"
+#include "TachoExp_Gemm_ByBlocks.hpp"
+
+#include "TachoExp_CholSupernodes.hpp"
+#include "TachoExp_CholSupernodes_Serial.hpp"
+
+#include "TachoExp_TaskFunctor_FactorizeChol.hpp"
+#include "TachoExp_TaskFunctor_FactorizeCholByBlocks.hpp"
+
+#include "TachoExp_TaskFunctor_SolveLowerChol.hpp"
+#include "TachoExp_TaskFunctor_SolveUpperChol.hpp"
+
+#include "TachoExp_NumericTools.hpp"
 
 #endif
+
+
+
+
+
+
+
+
+

@@ -13,14 +13,14 @@ namespace Tacho {
 
     template<typename ArgUplo, typename ArgTrans>
     struct Herk<ArgUplo,ArgTrans,Algo::External> {
-      template<typename PolicyType,
+      template<typename SchedType,
                typename MemberType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeC>
       inline
       static int
-      invoke(const PolicyType &policy,
+      invoke(const SchedType &sched,
              const MemberType &member,
              const ScalarType alpha,
              const ViewTypeA &A,
@@ -29,16 +29,9 @@ namespace Tacho {
         
         typedef typename ViewTypeA::non_const_value_type value_type;
         typedef typename ViewTypeC::non_const_value_type value_type_c;
-        typedef typename ViewTypeA::array_layout array_layout_a;
-        typedef typename ViewTypeC::array_layout array_layout_c;
         
         static_assert(ViewTypeA::rank == 2,"A is not rank 2 view.");
         static_assert(ViewTypeC::rank == 2,"B is not rank 2 view.");
-        
-        static_assert(std::is_same<array_layout_a,Kokkos::LayoutLeft>::value,
-                      "A does not have Kokkos::LayoutLeft.");
-        static_assert(std::is_same<array_layout_c,Kokkos::LayoutLeft>::value,
-                      "C does not have Kokkos::LayoutLeft.");
         
         static_assert(std::is_same<value_type,value_type_c>::value,
                       "A and C do not have the same value type.");

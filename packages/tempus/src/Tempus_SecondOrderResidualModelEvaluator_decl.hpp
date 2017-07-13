@@ -45,13 +45,16 @@ public:
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
     *out_ << "    schemeName = " << schemeName << "\n"; 
 #endif
-    if (schemeName == "Newmark Beta" || schemeName == "HHT-Alpha") {
-      schemeType_ = NEWMARK_IMPLICIT;
+    if (schemeName == "Newmark Implicit a-Form" || schemeName == "HHT-Alpha") {
+      schemeType_ = NEWMARK_IMPLICIT_AFORM;
+    }
+    else if (schemeName == "Newmark Implicit d-Form") {
+      schemeType_ = NEWMARK_IMPLICIT_DFORM;
     }
     else {
        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
        "Error: SecondOrderResidualModelEvaluator called with unsopported schemeName = " << schemeName  
-       <<"!  Supported schemeNames are: 'Newmark Beta' and 'HHT-Alpha'.\n"); 
+       <<"!  Supported schemeNames are: 'Newmark Implicit a-Form' and 'HHT-Alpha'.\n"); 
     }
   }
 
@@ -155,7 +158,7 @@ public:
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
   //@}
     
-    enum SCHEME_TYPE {NEWMARK_IMPLICIT}; 
+    enum SCHEME_TYPE {NEWMARK_IMPLICIT_AFORM, NEWMARK_IMPLICIT_DFORM}; 
   
 private:
 

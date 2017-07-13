@@ -600,8 +600,8 @@ namespace Intrepid2 {
         for (ordinal_type j=0;j<cardLine;++j) { // y
           for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
             dofCoordsHost(idx,0) = dofCoordsLineHost(i,0);
-            dofCoordsHost(idx,2) = dofCoordsLineHost(j,0);
-            dofCoordsHost(idx,1) = dofCoordsBubbleHost(k,0);
+            dofCoordsHost(idx,1) = dofCoordsLineHost(j,0);
+            dofCoordsHost(idx,2) = dofCoordsBubbleHost(k,0);
           }
         }
       }

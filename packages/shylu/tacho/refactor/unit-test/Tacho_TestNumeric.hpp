@@ -55,7 +55,7 @@ TEST( Numeric, constructor ) {
   SymbolicTools S(m, A.RowPtr(), A.Cols(), idx, idx);
   S.symbolicFactorize();
 
-  NumericTools<ValueType,DeviceSpaceType> N(m, A.RowPtr(), A.Cols(), A.Values(),
+  NumericTools<ValueType,DeviceSpaceType> N(m, A.RowPtr(), A.Cols(), //A.Values(),
                                             idx, idx,
                                             S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
@@ -63,7 +63,7 @@ TEST( Numeric, constructor ) {
                                             S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 }
 
-TEST( Numeric, factorizeCholesky_Serial ) {
+TEST( Numeric, Cholesky_Serial ) {
   CrsMatrixBaseHostType A("A");
   A = MatrixMarket<ValueType>::read("test.mtx");
 
@@ -81,43 +81,61 @@ TEST( Numeric, factorizeCholesky_Serial ) {
   SymbolicTools S(A, T);
   S.symbolicFactorize();
 
-  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
+  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), //A.Values(),
                                             T.PermVector(), T.InvPermVector(),
                                             S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
                                             S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
                                             S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
-  N.factorizeCholesky_Serial();
+  N.factorizeCholesky_Serial(A.Values());
+  auto F = N.exportFactorsToCrsMatrix();
+
+  std::ofstream out("test_numeric_factorize_serial.mtx");
+  MatrixMarket<ValueType>::write(out, F);
+
+  const ordinal_type m = A.NumRows(), n = 2;
+  Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceSpaceType> 
+    x("x", m, n), b("b", m, n), t("t", m, n);
+
+  Random<ValueType> random;
+  for (ordinal_type j=0;j<n;++j)
+    for (ordinal_type i=0;i<m;++i) 
+      b(i,j) = random.value();
+
+  N.solveCholesky_Serial(x, b, t);
+
+  const double eps = std::numeric_limits<double>::epsilon()*100;
+  EXPECT_TRUE(N.computeRelativeResidual(x,b) < eps);
 }
 
-TEST( Numeric, factorizeCholesky_Parallel ) {
-  CrsMatrixBaseHostType A("A");
-  A = MatrixMarket<ValueType>::read("test.mtx");
+// TEST( Numeric, factorizeCholesky_Parallel ) {
+//   CrsMatrixBaseHostType A("A");
+//   A = MatrixMarket<ValueType>::read("test.mtx");
 
-  Graph G(A);
+//   Graph G(A);
 
-#if   defined(HAVE_SHYLUTACHO_METIS)
-  GraphTools_Metis T(G);
-#elif defined(HAVE_SHYLUTACHO_SCOTCH)
-  GraphTools_Scotch T(G);
-#else
-  GraphTools_CAMD T(G);
-#endif
-  T.reorder();
+// #if   defined(HAVE_SHYLUTACHO_METIS)
+//   GraphTools_Metis T(G);
+// #elif defined(HAVE_SHYLUTACHO_SCOTCH)
+//   GraphTools_Scotch T(G);
+// #else
+//   GraphTools_CAMD T(G);
+// #endif
+//   T.reorder();
 
-  SymbolicTools S(A, T);
-  S.symbolicFactorize();
+//   SymbolicTools S(A, T);
+//   S.symbolicFactorize();
 
-  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
-                                            T.PermVector(), T.InvPermVector(),
-                                            S.NumSupernodes(), S.Supernodes(),
-                                            S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
-                                            S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-                                            S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
+//   NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
+//                                             T.PermVector(), T.InvPermVector(),
+//                                             S.NumSupernodes(), S.Supernodes(),
+//                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
+//                                             S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
+//                                             S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
-  N.factorizeCholesky_Parallel();
-}
+//   N.factorizeCholesky_Parallel();
+// }
 
 #endif
 

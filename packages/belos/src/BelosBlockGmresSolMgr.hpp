@@ -231,6 +231,9 @@ public:
   //! Set the parameters the solver manager should use to solve the linear problem.
   void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
 
+  //! Set a debug status test that will be checked at the same time as the top-level status test.
+  void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest );
+
   //@}
 
   //! @name Reset methods
@@ -298,6 +301,7 @@ private:
   Teuchos::RCP<std::ostream> outputStream_;
 
   // Status test.
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugStatusTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
   Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
@@ -900,6 +904,12 @@ bool BlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   // Create the status test.
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
+  // Add debug status test, if one is provided by the user
+  if (nonnull(debugStatusTest_) ) {
+    // Add debug convergence test
+    Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(sTest_)->addStatusTest( debugStatusTest_ );
+  }
+
   // Create the status test output class.
   // This class manages and formats the output from the status test.
   StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
@@ -916,6 +926,15 @@ bool BlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
   return false;
 }
+
+template<class ScalarType, class MV, class OP>
+void BlockGmresSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest
+  )
+{
+  debugStatusTest_ = debugStatusTest;
+}
+
 
 // solve()
 template<class ScalarType, class MV, class OP>

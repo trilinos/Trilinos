@@ -46,14 +46,18 @@
 #ifndef MUELU_REFMAXWELL_DEF_HPP
 #define MUELU_REFMAXWELL_DEF_HPP
 
+// TODO move this file to xpetra subfolder
+
 #include "MueLu_ConfigDefs.hpp"
 
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-
 #include "MueLu_RefMaxwell_decl.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SaPFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MLParameterListInterpreter.hpp"
@@ -507,7 +511,6 @@ initialize(const Teuchos::RCP<Matrix> & D0_Matrix,
 }
 
 } // namespace
-#endif //ifdef HAVE_MUELU_TPETRA
 
 #define MUELU_REFMAXWELL_SHORT
 #endif //ifdef MUELU_REFMAXWELL_DEF_HPP

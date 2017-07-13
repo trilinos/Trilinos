@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp
+/** \file   Intrepid_HGRAD_LINE_Cn_FEM.hpp
     \brief  Header file for the Intrepid2::HGRAD_LINE_Cn_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim

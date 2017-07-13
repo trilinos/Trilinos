@@ -1,13 +1,13 @@
 TriBITS/tribits/ Directory Contents
 +++++++++++++++++++++++++++++++++++
 
-This directory contains the implementation for the varous parts of TriBITS
+This directory contains the implementation for the various parts of TriBITS
 that are used by TriBITS projects to implement TriBITS functionality.  It also
 contains basic documentation in the subdirectory doc/ that is very close to
 the TriBITS implementation.  Files and directories from here are what get
 installed on the system or will be snapshotted into
 ``<projectDir>/cmake/tribits/``.  Each TriBITS Project decides what parts of
-TriBITS it wants to install or shapshot using the script
+TriBITS it wants to install or snapshot using the script
 ``tribits/snapshot_tribits.py`` (which takes arguments for what dirs to
 snapshot). This directory contains no tests at all. All of the tests for
 TriBITS are in the ``test/`` directory in the parent TriBITS repository.
@@ -46,7 +46,7 @@ If you have a better way to manage multiple builds (e.g. Jenkins) then use
 that instead.
 
 **common_tpls/**: TPLs that are very common and are used by several different
-TriBITS projects but are not built into the TriBITS system itslef. Having some
+TriBITS projects but are not built into the TriBITS system itself. Having some
 of these common TPLs in a central location enhances uniformity, reuse, and
 makes it easier to pull TriBITS packages out of a repo and build them
 independently.
