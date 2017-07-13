@@ -225,6 +225,30 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
                                            double & TotalErrorResidual,
                                            double & TotalErrorExactSol);
 
+/** \brief  MueLu Preconditioner
+
+    \param  ProblemType        [in]    problem type
+    \param  MLList             [in]    ML parameter list
+    \param  CurlCurl           [in]    H(curl) stiffness matrix
+    \param  D0clean            [in]    Edge to node stiffness matrix
+    \param  M0inv              [in]    H(grad) mass matrix inverse
+    \param  M1                 [in]    H(curl) mass matrix
+    \param  xh                 [out]   solution vector
+    \param  b                  [in]    right-hand-side vector
+    \param  TotalErrorResidual [out]   error residual
+    \param  TotalErrorExactSol [out]   error in xh
+
+ */
+void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
+                                           Teuchos::ParameterList   & MLList,
+                                           Epetra_CrsMatrix   & CurlCurl,
+                                           Epetra_CrsMatrix   & D0clean,
+                                           Epetra_CrsMatrix   & M0inv,
+                                           Epetra_CrsMatrix   & M1,
+                                           Epetra_MultiVector & xh,
+                                           Epetra_MultiVector & b,
+                                           double & TotalErrorResidual,
+                                           double & TotalErrorExactSol);
 
 
 
@@ -1804,11 +1828,18 @@ int main(int argc, char *argv[]) {
    // Form the Stiffness+Mass Matrix
    StiffMatrixC.SetLabel("CurlCurl+Mass");
 
-
+   // ML version
    TestMultiLevelPreconditioner_Maxwell(probType,MLList,StiffMatrixC,
                                           DGrad,MassMatrixGinv,MassMatrixC,
                                           xh,rhsVector,
                                           TotalErrorResidual, TotalErrorExactSol);
+
+   // MueLu RefMaxwell
+   TestMueLuMultiLevelPreconditioner_Maxwell(probType,MLList,StiffMatrixC,
+                                          DGrad,MassMatrixGinv,MassMatrixC,
+                                          xh,rhsVector,
+                                          TotalErrorResidual, TotalErrorExactSol);
+
 
    // Nothing like solving twice!
 #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
@@ -2147,9 +2178,9 @@ void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector
 }
 
 /*************************************************************************************/
-/*************************** ML PRECONDITIONER****************************************/
+/*************************** MueLu PRECONDITIONER ************************************/
 /*************************************************************************************/
-void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
+void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
                                            Teuchos::ParameterList   & MLList,
                                            Epetra_CrsMatrix   & CurlCurl,
                                            Epetra_CrsMatrix   & D0clean,
@@ -2199,8 +2230,6 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
 
 
 
-  std::cout << m0invMat->getRowMap()->getNodeNumElements() << std::endl;
-
   Teuchos::RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > coords = Xpetra::MultiVectorFactory<double,LocalOrdinal, GlobalOrdinal, Node>::Build(m0invMat->getRowMap(),3);
   Teuchos::ArrayRCP< double > xx = coords->getDataNonConst(0);
   Teuchos::ArrayRCP< double > yy = coords->getDataNonConst(1);
@@ -2233,7 +2262,10 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
   Epetra_MultiVector x(xh);
   x.PutScalar(0.0);
   Epetra_LinearProblem Problem(&CurlCurl,&x,&b);
+  Epetra_MultiVector* lhs = Problem.GetLHS();
+  Epetra_MultiVector* rhs = Problem.GetRHS();
 
+  Epetra_Time Time(CurlCurl.Comm());
 
   AztecOO solver(Problem);
   solver.SetAztecOption(AZ_solver, AZ_cg);
@@ -2241,8 +2273,31 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
   solver.SetPrecOperator(&prec);
   solver.Iterate(500, 1e-10);
 
+  // accuracy check
+  Epetra_MultiVector xexact(xh);
+  xexact.PutScalar(0.0);
 
-#else
+  string msg = ProblemType;
+  solution_test(msg,CurlCurl,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
+
+  xh = *lhs;
+#endif
+}
+
+
+/*************************************************************************************/
+/*************************** ML PRECONDITIONER****************************************/
+/*************************************************************************************/
+void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
+                                           Teuchos::ParameterList   & MLList,
+                                           Epetra_CrsMatrix   & CurlCurl,
+                                           Epetra_CrsMatrix   & D0clean,
+                                           Epetra_CrsMatrix   & M0inv,
+                                           Epetra_CrsMatrix   & M1,
+                                           Epetra_MultiVector & xh,
+                                           Epetra_MultiVector & b,
+                                           double & TotalErrorResidual,
+                                           double & TotalErrorExactSol){
   /* Build RMP */
 
   ML_Epetra::RefMaxwellPreconditioner RMP(CurlCurl,D0clean,M1,M0inv,M1,MLList);
@@ -2272,7 +2327,6 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
   solution_test(msg,CurlCurl,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
 
   xh = *lhs;
-#endif
 }
 
 
