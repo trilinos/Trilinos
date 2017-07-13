@@ -2,7 +2,10 @@
 #define XPETRA_MATRIXSPLITTING_HPP
 
 #include "Xpetra_Map.hpp"
+#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_Matrix.hpp"
+#include "Xpetra_IO.hpp"
+#include "Xpetra_SplittingDriver_def.hpp"
 
 /** \file Xpetra_MatrixSplitting.hpp
 
@@ -10,121 +13,57 @@ Declarations for the class Xpetra::MatrixSplitting.
 */
 namespace Xpetra {
 
-    /*!
-     @class Xpetra::MatrixSplitting class.
-     @brief Xpetra-specific matrix class.
+	/*!
+	@class Xpetra::MatrixSplitting class.
+	@brief Xpetra-specific matrix class.
 
-     This class is specific to Xpetra and has no analogue in Epetra or Tpetra.  The main motivation for this class is to be able to access matrix data in a manner different than how it is stored.
-     For example, it might be more convenient to treat ("view") a matrix stored in compressed row storage as if it were a block matrix.  The Xpetra::MatrixSplitting class is intended to manage these "views".
+	This class is specific to Xpetra and has no analogue in Epetra or Tpetra.  The main motivation for this class is to be able to access matrix data in a manner different than how it is stored.
+	For example, it might be more convenient to treat ("view") a matrix stored in compressed row storage as if it were a block matrix.  The Xpetra::MatrixSplitting class is intended to manage these "views".
 
-     <B>How to create a Matrix from an existing CrsMatrix</B>
+	<B>How to create a Matrix from an existing CrsMatrix</B>
 
-    */
+	*/
 
-  typedef std::string viewLabel_t;
+	typedef std::string viewLabel_t;
 
-  template <class Scalar        = Operator<>::scalar_type,
-            class LocalOrdinal  = Operator<>::local_ordinal_type,
-            class GlobalOrdinal = typename Operator<LocalOrdinal>::global_ordinal_type,
-            class Node          = typename Operator<LocalOrdinal, GlobalOrdinal>::node_type>
-  class MatrixSplitting : public Matrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
+	template <class Scalar        = Operator<>::scalar_type,
+	    class LocalOrdinal  = Operator<>::local_ordinal_type,
+	    class GlobalOrdinal = typename Operator<LocalOrdinal>::global_ordinal_type,
+	    class Node          = typename Operator<LocalOrdinal, GlobalOrdinal>::node_type,
+				UnderlyingLib lib		= Xpetra::UseEpetra>
+	class MatrixSplitting : public Matrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
 
-    typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-		typedef Xpetra::Matrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > Matrix;
-    typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
-    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
-    typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
-    typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
+	typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+	typedef Xpetra::Matrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > Matrix;
+	typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
+	typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
+	typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
+	typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
-    //! @name Constructor/Destructor Methods
-    //@{
+	//! @name Constructor/Destructor Methods
+	//@{
+
+	public:
 
 		//! Constructor specifying fixed number of entries for each row.
-		MatrixSplitting (const RCP<const Map>& rowMap,
-		               size_t maxNumEntriesPerRow,
-		               Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
-		  : finalDefaultView_ (false)
+		MatrixSplitting(const char* matrix_file_name, const char* elements_file_name, Teuchos::RCP<const Teuchos::Comm<int> > comm)
 		{
-		  matrixData_ = CrsMatrixFactory::Build (rowMap, maxNumEntriesPerRow, pftype);
-		  CreateDefaultView ();
+			driver_ = Teuchos::rcp( new Xpetra::SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> (elements_file_name, comm) );
+			Teuchos::Array<GlobalOrdinal> elementlist = driver_->GetGlobalRowMap();
+			int numGlobalElements = driver_->GetNumGlobalElements();
+
+			//Create Xpetra map
+			Teuchos::RCP<const Xpetra::Map<int,GlobalOrdinal,Node> > xpetraMap;
+			xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Node>::Build(lib, numGlobalElements, elementlist, 0, comm); 
+
+			//Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
+			matrixData_ = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matrix_file_name, xpetraMap);
 		}
 
-		//! Constructor specifying (possibly different) number of entries in each row.
-		MatrixSplitting (const RCP<const Map>& rowMap,
-		               const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-		               ProfileType pftype = Xpetra::DynamicProfile)
-		  : finalDefaultView_ (false)
-		{
-		  matrixData_ = CrsMatrixFactory::Build(rowMap, NumEntriesPerRowToAlloc, pftype);
-		  CreateDefaultView ();
-		}
+		//! Destructor
+		virtual ~MatrixSplitting() { }
 
-		//! Constructor specifying fixed number of entries for each row and column map
-		MatrixSplitting(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
-		  : finalDefaultView_(false)
-		{
-		  // Set matrix data
-		  matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, maxNumEntriesPerRow, pftype);
-
-		  // Default view
-		  CreateDefaultView();
-		}
-
-		//! Constructor specifying fixed number of entries for each row and column map
-		MatrixSplitting(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
-		  : finalDefaultView_(false)
-		{
-		  // Set matrix data
-		  matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, NumEntriesPerRowToAlloc, pftype);
-
-		  // Default view
-		  CreateDefaultView();
-		}
-
-	#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-	#ifdef HAVE_XPETRA_TPETRA
-		//! Constructor specifying fixed number of entries for each row and column map
-		MatrixSplitting(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params = null)
-		  : finalDefaultView_(false)
-		{
-		  // Set matrix data
-		  matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, lclMatrix, params);
-
-		  // Default view
-		  CreateDefaultView();
-		}
-	#else
-	#ifdef __GNUC__
-	#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-	#endif
-	#endif
-	#endif
-
-		MatrixSplitting(RCP<CrsMatrix> matrix)
-		  : finalDefaultView_(matrix->isFillComplete())
-		{
-		  // Set matrix data
-		  matrixData_ = matrix;
-
-		  // Default view
-		  CreateDefaultView();
-		}
-
-		MatrixSplitting(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null)
-		  : finalDefaultView_(false)
-		{
-		  // Set matrix data
-		  matrixData_ = CrsMatrixFactory::Build(graph, paramList);
-
-		  // Default view
-		  CreateDefaultView();
-		}
-
-
-    //! Destructor
-    virtual ~MatrixSplitting() { }
-
-    //@}
+		//@}
 
 		//! @name Insertion/Removal Methods
 		//@{
@@ -407,37 +346,163 @@ namespace Xpetra {
 
 		//@}
 
-	private:
+		//! @name Methods implementing Matrix
+		//@{
 
-		// Default view is created after fillComplete()
-		// Because ColMap might not be available before fillComplete().
-		void CreateDefaultView() {
+		//! \brief Computes the sparse matrix-multivector multiplication.
+		/*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
+		- if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
+		*/
+		virtual void apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+			   Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+			   Teuchos::ETransp mode = Teuchos::NO_TRANS,
+			   Scalar alpha = ScalarTraits<Scalar>::one(),
+			   Scalar beta = ScalarTraits<Scalar>::zero()) const {
 
-		  // Create default view
-		  this->defaultViewLabel_ = "point";
-		  this->CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());
-
-		  // Set current view
-		  this->currentViewLabel_ = this->GetDefaultViewLabel();
+			matrixData_->apply(X,Y,mode,alpha,beta);
 		}
 
-		// The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Matrix have to be updated when fillComplete() is called.
-		// If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated when getColMap() is called.
-		void updateDefaultView() const {
-		  if ((finalDefaultView_ == false) &&  matrixData_->isFillComplete() ) {
-		    // Update default view with the colMap
-		    Matrix::operatorViewTable_.get(Matrix::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
-		    finalDefaultView_ = true;
-		  }
+		//! \brief Returns the Map associated with the domain of this operator.
+		//! This will be <tt>null</tt> until fillComplete() is called.
+		RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
+		return matrixData_->getDomainMap();
 		}
 
-  // The boolean finalDefaultView_ keep track of the status of the default view (= already updated or not)
-  // See also MatrixSplitting::updateDefaultView()
-  mutable bool finalDefaultView_;
+		//! Returns the Map associated with the domain of this operator.
+		//! This will be <tt>null</tt> until fillComplete() is called.
+		RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
+		return matrixData_->getRangeMap();
+		}
 
-	RCP<CrsMatrix> matrixData_;
+		//! \brief Returns the Map that describes the column distribution in this matrix.
+		//! This might be <tt>null</tt> until fillComplete() is called.
+		const RCP<const Map> & getColMap() const { return getColMap(Matrix::GetCurrentViewLabel()); }
 
-  }; //class MatrixSplitting
+		//! \brief Returns the Map that describes the column distribution in this matrix.
+		const RCP<const Map> & getColMap(viewLabel_t viewLabel) const {
+		TEUCHOS_TEST_FOR_EXCEPTION(Matrix::operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetColMap(): view '" + viewLabel + "' does not exist.");
+		updateDefaultView(); // If CrsMatrix::fillComplete() have been used instead of MatrixSplitting::fillComplete(), the default view is updated.
+		return Matrix::operatorViewTable_.get(viewLabel)->GetColMap();
+		}
+
+		void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap) {
+		matrixData_->removeEmptyProcessesInPlace(newMap);
+		this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetRowMap(matrixData_->getRowMap());
+		this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetColMap(matrixData_->getColMap());
+		}
+
+		//@}
+
+		//! Implements DistObject interface
+		//{@
+
+		//! Access function for the Tpetra::Map this DistObject was constructed with.
+		const Teuchos::RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const {
+		return matrixData_->getMap();
+		}
+
+		//! Import.
+		void doImport(const Matrix &source,
+			const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {
+			std::cout<<"Import not implemented"<<std::endl;
+		//const MatrixSplitting & sourceWrp = dynamic_cast<const MatrixSplitting &>(source);
+		//matrixData_->doImport(*sourceWrp.getCrsMatrix(), importer, CM);
+		}
+
+		//! Export.
+		void doExport(const Matrix &dest,
+			const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
+			std::cout<<"Export not implemented"<<std::endl;
+		//const MatrixSplitting & destWrp = dynamic_cast<const MatrixSplitting &>(dest);
+		//matrixData_->doExport(*destWrp.getCrsMatrix(), importer, CM);
+		}
+
+		//! Import (using an Exporter).
+		void doImport(const Matrix &source,
+			const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+			std::cout<<"Import not implemented"<<std::endl;
+		//const MatrixSplitting & sourceWrp = dynamic_cast<const MatrixSplitting &>(source);
+		//matrixData_->doImport(*sourceWrp.getCrsMatrix(), exporter, CM);
+		}
+
+		//! Export (using an Importer).
+		void doExport(const Matrix &dest,
+			const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+			std::cout<<"Export not implemented"<<std::endl;
+		//const MatrixSplitting & destWrp = dynamic_cast<const MatrixSplitting &>(dest);
+		//matrixData_->doExport(*destWrp.getCrsMatrix(), exporter, CM);
+		}
+
+		// @}
+
+
+		//! @name Overridden from Teuchos::Describable
+		//@{
+
+		/** \brief Return a simple one-line description of this object. */
+		std::string description() const {
+		return "Xpetra::MatrixSplitting";
+		}
+
+		/** \brief Print the object with some verbosity level to an FancyOStream object. */
+		void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+		//     Teuchos::EVerbosityLevel vl = verbLevel;
+		//     if (vl == VERB_DEFAULT) vl = VERB_LOW;
+		//     RCP<const Comm<int> > comm = this->getComm();
+		//     const int myImageID = comm->getRank(),
+		//       numImages = comm->getSize();
+
+		//     if (myImageID == 0) out << this->description() << std::endl;
+
+		matrixData_->describe(out,verbLevel);
+		}
+
+		//! Returns the CrsGraph associated with this matrix.
+		RCP<const CrsGraph> getCrsGraph() const { return matrixData_->getCrsGraph(); }
+
+		RCP<CrsMatrix> getCrsMatrix() const {  return matrixData_; }
+
+
+		//! Implements DistObject interface
+		//{@
+		void write(const char* output_file_name)
+		{
+                	Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(output_file_name, *matrixData_);
+		}
+		// @}
+
+		private:
+
+			// Default view is created after fillComplete()
+			// Because ColMap might not be available before fillComplete().
+			void CreateDefaultView() {
+
+			  // Create default view
+			  this->defaultViewLabel_ = "point";
+			  this->CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());
+
+			  // Set current view
+			  this->currentViewLabel_ = this->GetDefaultViewLabel();
+			}
+
+			// The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Matrix have to be updated when fillComplete() is called.
+			// If CrsMatrix::fillComplete() have been used instead of MatrixSplitting::fillComplete(), the default view is updated when getColMap() is called.
+			void updateDefaultView() const {
+			  if ((finalDefaultView_ == false) &&  matrixData_->isFillComplete() ) {
+			    // Update default view with the colMap
+			    Matrix::operatorViewTable_.get(Matrix::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
+			    finalDefaultView_ = true;
+			  }
+			}
+
+		// The boolean finalDefaultView_ keep track of the status of the default view (= already updated or not)
+		// See also MatrixSplitting::updateDefaultView()
+		mutable bool finalDefaultView_;
+
+		Teuchos::RCP<SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> > driver_;
+		RCP<Matrix> matrixData_;
+
+	}; //class MatrixSplitting
 
 } //namespace Xpetra
 

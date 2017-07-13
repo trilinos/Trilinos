@@ -14,7 +14,7 @@
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_IO.hpp"
-#include "Xpetra_SplittingDriver_def.hpp"
+#include "Xpetra_MatrixSplitting.hpp"
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
 #endif
@@ -43,99 +43,55 @@ int main(int argc, char* argv[])
 {
 
 
-  typedef double                                      scalar_type;
-  typedef int                                         local_ordinal_type;
-  typedef int                                         global_ordinal_type;
-  typedef scalar_type         												Scalar;
-  typedef local_ordinal_type  												LocalOrdinal;
-  typedef global_ordinal_type 												GlobalOrdinal;
+	typedef double                                      scalar_type;
+	typedef int                                         local_ordinal_type;
+	typedef int                                         global_ordinal_type;
+	typedef scalar_type         												Scalar;
+	typedef local_ordinal_type  												LocalOrdinal;
+	typedef global_ordinal_type 												GlobalOrdinal;
 	typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-  Epetra_MpiComm CommEpetra(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm CommEpetra;
-#endif
+	#ifdef HAVE_MPI
+	  MPI_Init(&argc, &argv);
+	  Epetra_MpiComm CommEpetra(MPI_COMM_WORLD);
+	#else
+	  Epetra_SerialComm CommEpetra;
+	#endif
 
-  // Here we create the linear problem
-  //
-  //   Matrix * LHS = RHS
-  //
-  // with Matrix arising from a 5-point formula discretization.
+	// Here we create the linear problem
+	//
+	//   Matrix * LHS = RHS
+	//
+	// with Matrix arising from a 5-point formula discretization.
   
-	TEUCHOS_TEST_FOR_EXCEPT_MSG(argc<2, "\nInvalid name for input matrix\n");
+	TEUCHOS_TEST_FOR_EXCEPT_MSG(argc<3, "\nInvalid name for input matrix and output file\n");
 
-	int numGlobalElements = 1;
-
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+	Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 	if (CommEpetra.MyPID() == 0)
 		std::cout<<"Number of processors: "<<CommEpetra.NumProc()<<std::endl;
 
-	typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Xpetra::EpetraNode> EpCrsMatrix;
-
-	//Create Xpetra map
-  Teuchos::RCP<const Xpetra::Map<int,GlobalOrdinal,Xpetra::EpetraNode> > xpetraMap;
-	xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Xpetra::EpetraNode>::Build(Xpetra::UseEpetra, numGlobalElements, 0, comm); 
-
-	//Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
-	Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpetraMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[1], Xpetra::UseEpetra, comm);
-	//Export matrix from an Xpetra wrapper into an .mtx file
-	Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("A_write.mtx", *xpetraMatrix);
-
 	//SplittingDriver
 	Xpetra::SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> driver("node.txt", comm);
-	driver.printView();
+	Teuchos::Array<GlobalOrdinal> elementlist = driver.GetGlobalRowMap();
+	Teuchos::Array<GlobalOrdinal> elementlist_region1 = driver.GetLocalRowMap(1);
+	/*driver.printView();
+	driver.printNodesToRegion();*/
+	driver.printInactive();
+	std::cout<<"PID: "<<comm->getRank()<<" beginning map: "<<elementlist[0]<<std::endl;
+	std::cout<<"PID: "<<comm->getRank()<<" end of map: "<<*(elementlist.end()-1)<<std::endl;
+	if( elementlist_region1.size()>0 )
+		std::cout<<"PID: "<<comm->getRank()<<" num local nodes in region 1: "<<elementlist_region1.size()<<" min_index= "<<*(std::min_element(elementlist_region1.begin(), elementlist_region1.end()))<<" max_index= "<<*(std::max_element(elementlist_region1.begin(), elementlist_region1.end()))<<std::endl;
+	else
+		std::cout<<"PID: "<<comm->getRank()<<" num local nodes in region 1: "<<elementlist_region1.size()<<std::endl;
 
-	//Teuchos::RCP<const Xpetra::Map<int,GlobalOrdinal,Xpetra::EpetraNode> > epmap = Xpetra::MapFactory<int,GlobalOrdinal,Xpetra::EpetraNode>::createUniformContigMap(Xpetra::UseEpetra, 100, comm);	
+	Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseEpetra> xpetraWrapper( argv[1], argv[2], comm );
+	std::string output_file="A_write.mtx";
+	xpetraWrapper.write(output_file.c_str());
 
-	const Epetra_Map epetraMap = Xpetra::toEpetra(xpetraMap);
+	#ifdef HAVE_MPI
+ 	  MPI_Finalize();
+	#endif
 
-
-  Teuchos::ParameterList GaleriList;
- 
-/*
-  try
-  {
-    Map = CreateMap("Cartesian2D", Comm, GaleriList);
-    Matrix = CreateCrsMatrix("Laplace2D", Map, GaleriList);
-    Epetra_Vector ExactSolution(*Map); ExactSolution.Random();
-    Epetra_Vector LHS(*Map); LHS.PutScalar(0.0);
-    Epetra_Vector RHS(*Map);
-
-    Matrix->Multiply(false, ExactSolution, RHS);
-
-    Epetra_LinearProblem Problem(Matrix, &LHS, &RHS);
-
-    // at this point any object that understand Epetra_LinearProblem can be
-    // used, for example AztecOO, Amesos. IFPACK and ML can be used to define a
-    // preconditioner for Matrix. Here we use a simple solver, based on
-    // LAPACK, that is meant for simple testing only.
-    
-    Solve(Problem);
-
-    // and we compute the norm of the true residual. 
-    double ResidualNorm = ComputeNorm(Matrix, &LHS, &RHS);
-
-    if (Comm.MyPID() == 0)
-      cout << ResidualNorm << endl;
-
-    delete Map;
-    delete Matrix;
-  }
-  catch (Galeri::Exception& rhs)
-  {
-    if (Comm.MyPID() == 0)
-      rhs.Print();
-    exit(EXIT_FAILURE);
-  }
-
-*/
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-
-  return(EXIT_SUCCESS);
+	return(EXIT_SUCCESS);
 }
 
