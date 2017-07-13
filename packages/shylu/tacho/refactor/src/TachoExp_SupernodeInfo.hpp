@@ -168,7 +168,7 @@ namespace Tacho {
         }
         
         // by default, serialization is made when supernode is smaller than max/4
-        serial_thres_size = max(max_supernode_size, max_schur_size)/4;
+        //serial_thres_size = max(max_supernode_size, max_schur_size)/4;
 
         // supernodal factor array; data is held outside with a managed view 
         // supernode does not include this view

@@ -482,7 +482,7 @@ namespace Tacho {
       // stat
       struct {
         ordinal_type nrows, nroots;
-        ordinal_type nnz_a, nnz_u;
+        size_type    nnz_a, nnz_u;
         ordinal_type nsupernodes, largest_supernode, largest_schur;
       } stat;
 
@@ -677,10 +677,10 @@ namespace Tacho {
             printf("\n");            
             printf("  Linear system A\n");
             printf("             number of equations:                             %10d\n", stat.nrows);
-            printf("             number of nonzeros:                              %10d (%5.2f %% )\n", stat.nnz_a, double(stat.nnz_a)/double(stat.nrows*stat.nrows)*100);
+            printf("             number of nonzeros:                              %10zu (%5.2f %% )\n", stat.nnz_a, double(stat.nnz_a)/(double(stat.nrows)*double(stat.nrows))*100.0);
             printf("\n");
             printf("  Factors U\n");
-            printf("             number of nonzeros:                              %10d (%5.2f %% )\n", stat.nnz_u, double(stat.nnz_u)/double(stat.nrows*stat.nrows)/2.0*100);
+            printf("             number of nonzeros:                              %10zu (%5.2f %% )\n", stat.nnz_u, double(stat.nnz_u)/(double(stat.nrows)*double(stat.nrows))*50.0);
             printf("             number of subgraphs:                             %10d\n", stat.nroots);
             printf("             number of supernodes:                            %10d\n", stat.nsupernodes);
             printf("             size of largest supernode:                       %10d\n", stat.largest_supernode);
