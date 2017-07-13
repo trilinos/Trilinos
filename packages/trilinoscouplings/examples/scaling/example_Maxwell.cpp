@@ -68,7 +68,7 @@
         inputfile.xml (optional)  -  xml input file containing Pamgen mesh description
                                      and material parameters for each Pamgen block,
                                      if not present code attempts to read Maxwell.xml.
-                                      
+
      \endverbatim
 
       Input files available in Trilinos for use with the Maxwell driver:
@@ -139,6 +139,25 @@
 #include "ml_EdgeMatrixFreePreconditioner.h"
 #include "ml_epetra_utils.h"
 
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+// Xpetra
+//#include <Xpetra_Map.hpp>
+//#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_Matrix.hpp>
+
+// MueLu
+#include <MueLu_RefMaxwell.hpp>
+#include <MueLu_AztecEpetraOperator.hpp>
+//#include <MueLu_TpetraOperator.hpp>
+//#include <MueLu_TestHelpers_Common.hpp>
+#include <MueLu_Exceptions.hpp>
+
+#endif
+
 // Pamgen includes
 #include "create_inline_mesh.h"
 #include "pamgen_im_exodusII_l.h"
@@ -185,7 +204,7 @@ struct fecomp{
 
     \param  ProblemType        [in]    problem type
     \param  MLList             [in]    ML parameter list
-    \param  CurlCurl           [in]    H(curl) stiffness matrix 
+    \param  CurlCurl           [in]    H(curl) stiffness matrix
     \param  D0clean            [in]    Edge to node stiffness matrix
     \param  M0inv              [in]    H(grad) mass matrix inverse
     \param  M1                 [in]    H(curl) mass matrix
@@ -213,7 +232,7 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
 
     \param  ProblemType        [in]    problem type
     \param  MLList             [in]    ML parameter list
-    \param  CurlCurl           [in]    H(curl) stiffness matrix 
+    \param  CurlCurl           [in]    H(curl) stiffness matrix
     \param  D0clean            [in]    Edge to node stiffness matrix
     \param  M0inv              [in]    H(grad) mass matrix inverse
     \param  M1                 [in]    H(curl) mass matrix
@@ -249,11 +268,11 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
     \param  y                  [in]    y coordinate
     \param  z                  [in]    z coordinate
  */
-int evalu(double & uExact0, 
-          double & uExact1, 
-          double & uExact2,  
-          double & x, 
-          double & y, 
+int evalu(double & uExact0,
+          double & uExact1,
+          double & uExact2,
+          double & x,
+          double & y,
           double & z);
 
 /** \brief  Curl of exact solution.
@@ -266,12 +285,12 @@ int evalu(double & uExact0,
     \param  z                  [in]    z coordinate
     \param  mu                 [in]    material parameter
  */
-int evalCurlu(double & curlu0, 
-              double & curlu1, 
-              double & curlu2, 
-              double & x, 
-              double & y, 
-              double & z,  
+int evalCurlu(double & curlu0,
+              double & curlu1,
+              double & curlu2,
+              double & x,
+              double & y,
+              double & z,
               double & mu);
 
 /** \brief  CurlCurl of exact solution.
@@ -284,12 +303,12 @@ int evalCurlu(double & curlu0,
     \param  z                  [in]    z coordinate
     \param  mu                 [in]    material parameter
  */
-int evalCurlCurlu(double & curlcurlu0, 
-              double & curlcurlu1, 
-              double & curlcurlu2, 
-              double & x, 
-              double & y, 
-              double & z,  
+int evalCurlCurlu(double & curlcurlu0,
+              double & curlcurlu1,
+              double & curlcurlu2,
+              double & x,
+              double & y,
+              double & z,
               double & mu);
 
 /**********************************************************************************/
@@ -327,7 +346,7 @@ int main(int argc, char *argv[]) {
       std::cout <<"                             and material parameters for each block \nn";
       exit(1);
    }
-  
+
  if (MyPID == 0) {
   std::cout \
     << "===============================================================================\n" \
@@ -393,7 +412,7 @@ int main(int argc, char *argv[]) {
 
   // Get pamgen mesh definition
     std::string meshInput = Teuchos::getParameter<std::string>(inputList,"meshInput");
-    
+
 
 /**********************************************************************************/
 /***************************** GET CELL TOPOLOGY **********************************/
@@ -402,7 +421,7 @@ int main(int argc, char *argv[]) {
    // Get cell topology for base hexahedron
     shards::CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
-   // Get dimensions 
+   // Get dimensions
     int numNodesPerElem = cellType.getNodeCount();
     int numEdgesPerElem = cellType.getEdgeCount();
     int numFacesPerElem = cellType.getSideCount();
@@ -429,7 +448,7 @@ int main(int argc, char *argv[]) {
 
    // Build reference element face to edge map (Hardcoded for now)
     FieldContainer<int> refFaceToEdge(numFacesPerElem,numEdgesPerFace);
-        refFaceToEdge(0,0)=0; refFaceToEdge(0,1)=9; 
+        refFaceToEdge(0,0)=0; refFaceToEdge(0,1)=9;
         refFaceToEdge(0,2)=4; refFaceToEdge(0,3)=8;
         refFaceToEdge(1,0)=1; refFaceToEdge(1,1)=10;
         refFaceToEdge(1,2)=5; refFaceToEdge(1,3)=9;
@@ -441,7 +460,7 @@ int main(int argc, char *argv[]) {
         refFaceToEdge(4,2)=2; refFaceToEdge(4,3)=3;
         refFaceToEdge(5,0)=4; refFaceToEdge(5,1)=5;
         refFaceToEdge(5,2)=6; refFaceToEdge(5,3)=7;
-        
+
 
 /**********************************************************************************/
 /******************************* GENERATE MESH ************************************/
@@ -738,7 +757,7 @@ int main(int argc, char *argv[]) {
                num_node_comm_maps,
                rank,
                doing_type);
-     
+
 
     doing_type = "FACES";
     calc_global_ids(face_vector,
@@ -851,7 +870,7 @@ int main(int argc, char *argv[]) {
            nodeOnBoundary(edgeToNode(i,1))=1;
            numEdgeOnBndy++;
         }
-     }   
+     }
 
 
 #ifdef RANDOM_GRID
@@ -888,9 +907,9 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
    // Get numerical integration points and weights for cell
-    DefaultCubatureFactory<double>  cubFactory;                                   
+    DefaultCubatureFactory<double>  cubFactory;
     int cubDegree = 2;
-    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree); 
+    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree);
 
     int cubDim       = hexCub->getDimension();
     int numCubPoints = hexCub->getNumPoints();
@@ -908,7 +927,7 @@ int main(int argc, char *argv[]) {
     // Define topology of the face parametrization domain as [-1,1]x[-1,1]
     shards::CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
 
-    // Define cubature 
+    // Define cubature
     DefaultCubatureFactory<double>  cubFactoryFace;
     Teuchos::RCP<Cubature<double> > hexFaceCubature = cubFactoryFace.create(paramQuadFace, 3);
     int cubFaceDim    = hexFaceCubature -> getDimension();
@@ -950,7 +969,7 @@ int main(int argc, char *argv[]) {
 /*********************************** GET BASIS ************************************/
 /**********************************************************************************/
 
-   // Define basis 
+   // Define basis
     Basis_HCURL_HEX_I1_FEM<double, FieldContainer<double> > hexHCurlBasis;
     Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
 
@@ -958,10 +977,10 @@ int main(int argc, char *argv[]) {
     int numFieldsG = hexHGradBasis.getCardinality();
 
   // Evaluate basis at cubature points
-     FieldContainer<double> HGVals(numFieldsG, numCubPoints); 
-     FieldContainer<double> HCVals(numFieldsC, numCubPoints, spaceDim); 
-     FieldContainer<double> HCurls(numFieldsC, numCubPoints, spaceDim); 
-     FieldContainer<double> worksetCVals(numFieldsC, numFacePoints, spaceDim); 
+     FieldContainer<double> HGVals(numFieldsG, numCubPoints);
+     FieldContainer<double> HCVals(numFieldsC, numCubPoints, spaceDim);
+     FieldContainer<double> HCurls(numFieldsC, numCubPoints, spaceDim);
+     FieldContainer<double> worksetCVals(numFieldsC, numFacePoints, spaceDim);
 
      hexHCurlBasis.getValues(HCVals, cubPoints, OPERATOR_VALUE);
      hexHCurlBasis.getValues(HCurls, cubPoints, OPERATOR_CURL);
@@ -1088,8 +1107,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    DGrad.GlobalAssemble(globalMapG,globalMapC); 
-    DGrad.FillComplete(MassMatrixG.RowMap(),MassMatrixC.RowMap()); 
+    DGrad.GlobalAssemble(globalMapG,globalMapC);
+    DGrad.FillComplete(MassMatrixG.RowMap(),MassMatrixC.RowMap());
 
   if(MyPID==0) {std::cout << "Building incidence matrix                   "
                  << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
@@ -1243,7 +1262,7 @@ int main(int argc, char *argv[]) {
           if (elemToNode(cell,refEdgeToNode(iedge,0))==edgeToNode(elemToEdge(cell,iedge),0) &&
               elemToNode(cell,refEdgeToNode(iedge,1))==edgeToNode(elemToEdge(cell,iedge),1))
               worksetEdgeSigns(cellCounter,iedge) = 1.0;
-          else 
+          else
               worksetEdgeSigns(cellCounter,iedge) = -1.0;
         }
 
@@ -1268,7 +1287,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef DUMP_DATA_MORE
        for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
-          edgeSign[iedge][cell] = worksetEdgeSigns(cellCounter,iedge); 
+          edgeSign[iedge][cell] = worksetEdgeSigns(cellCounter,iedge);
        }
 #endif
 
@@ -1370,7 +1389,7 @@ int main(int argc, char *argv[]) {
    if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   "
                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
-      
+
  /**********************************************************************************/
  /*                          Compute HCURL Mass Matrix                             */
  /**********************************************************************************/
@@ -1378,7 +1397,7 @@ int main(int argc, char *argv[]) {
      // transform to physical coordinates
       IntrepidFSTools::HCURLtransformVALUE<double>(HCValsTransformed, worksetJacobInv,
                                    HCVals);
-      
+
     // combine sigma value with weighted measure
       cellCounter = 0;
       for(int cell = worksetBegin; cell < worksetEnd; cell++){
@@ -1387,7 +1406,7 @@ int main(int argc, char *argv[]) {
         }
         cellCounter++;
       }
-      
+
      // multiply by weighted measure
       IntrepidFSTools::multiplyMeasure<double>(HCValsTransformedWeighted,
                                    weightedMeasureSigma, HCValsTransformed);
@@ -1509,7 +1528,7 @@ int main(int argc, char *argv[]) {
               for (int iedge =0; iedge < numEdgesPerElem; iedge++){
                   bcEdgeSigns(0,iedge) = worksetEdgeSigns(worksetCellOrdinal,iedge);
               }
-           
+
             // map Gauss points on quad to reference face: paramFacePoints -> refFacePoints
               IntrepidCTools::mapToReferenceSubcell(refFacePoints,
                                    paramFacePoints,
@@ -1524,8 +1543,8 @@ int main(int argc, char *argv[]) {
                                           cellNodes, cellType);
               IntrepidCTools::setJacobianInv(faceJacobInv, faceJacobians );
 
-            // transform to physical coordinates 
-              IntrepidFSTools::HCURLtransformVALUE<double>(bcCValsTransformed, faceJacobInv, 
+            // transform to physical coordinates
+              IntrepidFSTools::HCURLtransformVALUE<double>(bcCValsTransformed, faceJacobInv,
                                                            bcFaceCVals);
 
             // map Gauss points on quad from ref. face to face workset: refFacePoints -> worksetFacePoints
@@ -1549,7 +1568,7 @@ int main(int argc, char *argv[]) {
                     } //nPt
                 } //nF
 
-            // integrate 
+            // integrate
 	       //               IntrepidFSTools::integrate<double>(hCBoundary, divuFace, bcFieldDotNormal,
 	       //                             COMP_CPP);
 
@@ -1560,7 +1579,7 @@ int main(int argc, char *argv[]) {
 	       //              for (int nF = 0; nF < numFieldsC; nF++){
 	       //                  hC(worksetCellOrdinal,nF) = hC(worksetCellOrdinal,nF) - hCBoundary(0,nF);
 	       //              }
-          
+
              } // if faceOnBoundary
 
          } // numFaces
@@ -1657,11 +1676,11 @@ int main(int argc, char *argv[]) {
     EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
     EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
     EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz,0,0,false);
-    
+
     // Edge Coordinates
     EpetraExt::VectorToMatrixMarketFile("ecoordx.dat",EDGE_X);
     EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
-    EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);     
+    EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);
 
 
     // Edge signs
@@ -1671,14 +1690,14 @@ int main(int argc, char *argv[]) {
 
     EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffMatrixC);
     EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassMatrixC);
-    EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad); 
+    EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
 #endif
 
 
 /**********************************************************************************/
 /*********************** ADJUST MATRICES AND RHS FOR BCs **************************/
 /**********************************************************************************/
-  
+
    // Build the inverse diagonal for MassMatrixG
    Epetra_Vector DiagG(MassMatrixG.RowMap());
    DiagG.PutScalar(1.0);
@@ -1692,7 +1711,7 @@ int main(int argc, char *argv[]) {
      MassMatrixGinv.InsertGlobalValues(MassMatrixG.GRID(i),1,&(DiagG[i]),&CID);
    }
    MassMatrixGinv.FillComplete();
-   
+
    // Zero out entries that correspond to boundary nodes
    for(int i=0;i<numNodes;i++) {
      if (nodeOnBoundary(i)){
@@ -1705,7 +1724,7 @@ int main(int argc, char *argv[]) {
   // Get the full matrix operator Kc += Mc
   int rv=EpetraExt::MatrixMatrix::Add(MassMatrixC,false,1.0,StiffMatrixC,1.0);
   if(rv!=0) {printf("EpetraExt::MatrixMatrix:Add FAILED\n"); exit(1);}
-   
+
 
   // Apply it to v
    Epetra_MultiVector rhsDir(globalMapC,true);
@@ -1747,20 +1766,26 @@ int main(int argc, char *argv[]) {
 /*********************************** SOLVE ****************************************/
 /**********************************************************************************/
 
+
+
+   std::cout << Nx.MyLength() << std::endl;
+   std::cout << MassMatrixGinv.RowMap().NumMyElements() << std::endl;
+
+
    // Parameter list for ML
    Teuchos::ParameterList MLList;
    ML_Epetra::SetDefaultsRefMaxwell(MLList);
    Teuchos::ParameterList &List11=MLList.sublist("refmaxwell: 11list");
    Teuchos::ParameterList &List11c=List11.sublist("edge matrix free: coarse");
    Teuchos::ParameterList &List22=MLList.sublist("refmaxwell: 22list");
-   double TotalErrorResidual=0, TotalErrorExactSol=0;   
+   double TotalErrorResidual=0, TotalErrorExactSol=0;
    MLList.set("aggregation: type","Uncoupled-MIS");
    MLList.set("ML output",10);
    MLList.set("smoother: type","Chebyshev");
    List11.set("x-coordinates",&Nx[0]);
    List11.set("y-coordinates",&Ny[0]);
    List11.set("ML output",10);
-   List11.set("z-coordinates",&Nz[0]);   
+   List11.set("z-coordinates",&Nz[0]);
    List22.set("coarse: type","Amesos-KLU");
    List22.set("ML output",10);
    List11c.set("coarse: type","Amesos-KLU");
@@ -1772,10 +1797,10 @@ int main(int argc, char *argv[]) {
    StiffMatrixC.SetLabel("K1");
    DGrad.SetLabel("D0");
    MassMatrixGinv.SetLabel("M0^{-1}");
-   
+
    char probType[12] = "maxwell";
 
-   
+
    // Form the Stiffness+Mass Matrix
    StiffMatrixC.SetLabel("CurlCurl+Mass");
 
@@ -1813,7 +1838,7 @@ int main(int argc, char *argv[]) {
      Epetra_FEVector  uCoeff(solnMap);
      uCoeff.Import(xh, solnImporter, Insert);
 #endif
-     
+
      int numCells = 1;
      FieldContainer<double> hexEdgeSigns(numCells, numFieldsC);
      FieldContainer<double> hexNodes(numCells, numFieldsG, spaceDim);
@@ -1862,9 +1887,9 @@ int main(int argc, char *argv[]) {
           if (elemToNode(k,refEdgeToNode(j,0))==edgeToNode(elemToEdge(k,j),0) &&
               elemToNode(k,refEdgeToNode(j,1))==edgeToNode(elemToEdge(k,j),1))
               hexEdgeSigns(0,j) = 1.0;
-          else 
+          else
               hexEdgeSigns(0,j) = -1.0;
-      } 
+      }
 
       // modify signs for edges whose signs were defined on another processor
        if (!faceIsOwned[elemToFace(k,0)]) {
@@ -2024,7 +2049,7 @@ int main(int argc, char *argv[]) {
     \param  y                [in]    vector
  */
 int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y){
-  if(!A.Filled()) 
+  if(!A.Filled())
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
   double* xp = (double*) x.Values();
@@ -2041,27 +2066,27 @@ int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector
     ImportVector_ = new Epetra_Vector(Importer_->TargetMap());
   else if (Exporter_)
     ExportVector_ = new Epetra_Vector(Exporter_->SourceMap());
-  
+
 
   // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
   if(Importer_ != 0) {
     EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer_, Insert));
     xp = (double*) ImportVector_->Values();
     }
-  
+
   // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
   if(Exporter_ != 0)  yp = (double*) ExportVector_->Values();
-  
+
   // Do actual computation
   for(int i = 0; i < A.NumMyRows(); i++) {
     int NumEntries,*RowIndices;
     A.Graph().ExtractMyRowView(i,NumEntries,RowIndices);
     double sum = 0.0;
-    for(int j = 0; j < NumEntries; j++) 
-      sum += xp[*RowIndices++];    
-    yp[i] = sum;    
+    for(int j = 0; j < NumEntries; j++)
+      sum += xp[*RowIndices++];
+    yp[i] = sum;
   }
-  
+
   if(Exporter_ != 0) {
     y.PutScalar(0.0); // Make sure target is zero
     EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter_, Add)); // Fill y with Values from export vector
@@ -2087,19 +2112,19 @@ int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector
     \param  rhs                [in]    right hand side vector
     \param  Time               [in]    elapsed time for output
     \param  TotalErrorResidual [out]   error residual
-    \param  TotalErrorExactSol [out]   error in xh (not an appropriate measure 
+    \param  TotalErrorExactSol [out]   error in xh (not an appropriate measure
                                                     for H(curl) basis functions)
  */
 void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector &lhs,const Epetra_MultiVector &rhs,const Epetra_MultiVector &xexact,Epetra_Time & Time, double & TotalErrorExactSol, double& TotalErrorResidual){
-  // ==================================================== //  
+  // ==================================================== //
   // compute difference between exact solution and ML one //
-  // ==================================================== //  
-  double d = 0.0, d_tot = 0.0;  
+  // ==================================================== //
+  double d = 0.0, d_tot = 0.0;
   for( int i=0 ; i<lhs.Map().NumMyElements() ; ++i )
     d += (lhs[0][i] - xexact[0][i]) * (lhs[0][i] - xexact[0][i]);
-  
+
   A.Comm().SumAll(&d,&d_tot,1);
-  
+
   // ================== //
   // compute ||Ax - b|| //
   // ================== //
@@ -2108,7 +2133,7 @@ void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector
   A.Apply(lhs, Ax);
   Ax.Update(1.0, rhs, -1.0);
   Ax.Norm2(&Norm);
-  
+
 // NOTE: (x_exact - x) does not make sense for H(curl) or H(grad) basis functions
   if (A.Comm().MyPID() == 0) {
     cout << msg << "......Using " << A.Comm().NumProc() << " processes" << endl;
@@ -2116,7 +2141,7 @@ void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector
 //    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
   }
-  
+
   TotalErrorExactSol += sqrt(d_tot);
   TotalErrorResidual += Norm;
 }
@@ -2134,28 +2159,111 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
                                            Epetra_MultiVector & b,
                                            double & TotalErrorResidual,
                                            double & TotalErrorExactSol){
-  
+
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+  typedef double Scalar;
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Xpetra::EpetraNode Node;
+#include "MueLu_UseShortNames.hpp"
+
+  Teuchos::RCP<CrsMatrix> ccMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(CurlCurl)));
+  Teuchos::RCP<CrsMatrixWrap> ccOp = Teuchos::rcp(new CrsMatrixWrap(ccMat));
+  Teuchos::RCP<Matrix> curlcurlOp = Teuchos::rcp_dynamic_cast<Matrix>(ccOp);
+
+  Teuchos::RCP<CrsMatrix> d0cMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(D0clean)));
+  Teuchos::RCP<CrsMatrixWrap> d0cOp = Teuchos::rcp(new CrsMatrixWrap(d0cMat));
+  Teuchos::RCP<Matrix> D0cleanOp = Teuchos::rcp_dynamic_cast<Matrix>(d0cOp);
+
+  Teuchos::RCP<CrsMatrix> m0invMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(M0inv)));
+  Teuchos::RCP<CrsMatrixWrap> m0invOp = Teuchos::rcp(new CrsMatrixWrap(m0invMat));
+  Teuchos::RCP<Matrix> M0invOp = Teuchos::rcp_dynamic_cast<Matrix>(m0invOp);
+
+  Teuchos::RCP<CrsMatrix> m1Mat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(M1)));
+  Teuchos::RCP<CrsMatrixWrap> m1Op = Teuchos::rcp(new CrsMatrixWrap(m1Mat));
+  Teuchos::RCP<Matrix> M1Op = Teuchos::rcp_dynamic_cast<Matrix>(m1Op);
+
+  Teuchos::RCP<MultiVector> xxh = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(xh)));
+  Teuchos::RCP<MultiVector> xb  = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(b)));
+
+  // TODO use ML parameters???
+  std::cout << MLList << std::endl;
+
+  // extract coordinates
+  Teuchos::ParameterList& ref11list = MLList.sublist("refmaxwell: 11list");
+  double* xc = ref11list.get<double*>("x-coordinates");
+  double* yc = ref11list.get<double*>("y-coordinates");
+  double* zc = ref11list.get<double*>("z-coordinates");
+
+
+
+  std::cout << m0invMat->getRowMap()->getNodeNumElements() << std::endl;
+
+  Teuchos::RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > coords = Xpetra::MultiVectorFactory<double,LocalOrdinal, GlobalOrdinal, Node>::Build(m0invMat->getRowMap(),3);
+  Teuchos::ArrayRCP< double > xx = coords->getDataNonConst(0);
+  Teuchos::ArrayRCP< double > yy = coords->getDataNonConst(1);
+  Teuchos::ArrayRCP< double > zz = coords->getDataNonConst(2);
+
+  for(size_t i = 0; i < m0invMat->getRowMap()->getNodeNumElements(); ++i) {
+    xx[i] = xc[i];
+    yy[i] = yc[i];
+    zz[i] = zc[i];
+  }
+
+  // set parameters
+  Teuchos::ParameterList params, params11, params22;
+  params.set("refmaxwell: disable add-on",false);
+  params.set("refmaxwell: max coarse size",25);
+  params.set("refmaxwell: max levels",4);
+  params.set("smoother: type","CHEBYSHEV");
+  //    params11.set("smoother: sweeps",3);
+  //    params22.set("smoother: sweeps",2);
+  params.set("refmaxwell: 11 list",params11);
+  params.set("refmaxwell: 22 list",params22);
+
+  // construct preconditioner
+  Teuchos::RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
+    = Teuchos::rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(curlcurlOp,d0cOp,M0invOp,
+        M1Op,Teuchos::null,coords,params) );
+
+  MueLu::AztecEpetraOperator prec(preconditioner);
+
+  Epetra_MultiVector x(xh);
+  x.PutScalar(0.0);
+  Epetra_LinearProblem Problem(&CurlCurl,&x,&b);
+
+
+  AztecOO solver(Problem);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_output, 10);
+  solver.SetPrecOperator(&prec);
+  solver.Iterate(500, 1e-10);
+
+
+#else
   /* Build RMP */
 
   ML_Epetra::RefMaxwellPreconditioner RMP(CurlCurl,D0clean,M1,M0inv,M1,MLList);
-  
+
   /* Build the AztecOO stuff */
   Epetra_MultiVector x(xh);
   x.PutScalar(0.0);
-  
-  Epetra_LinearProblem Problem(&CurlCurl,&x,&b); 
+
+  Epetra_LinearProblem Problem(&CurlCurl,&x,&b);
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
-  
+
   Epetra_Time Time(CurlCurl.Comm());
-    
+
   /* Solve! */
-  AztecOO solver(Problem);  
+  AztecOO solver(Problem);
   solver.SetPrecOperator(&RMP);
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 10);
   solver.Iterate(500, 1e-10);
-  
+
   // accuracy check
   Epetra_MultiVector xexact(xh);
   xexact.PutScalar(0.0);
@@ -2164,7 +2272,7 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
   solution_test(msg,CurlCurl,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
 
   xh = *lhs;
-
+#endif
 }
 
 
@@ -2184,16 +2292,16 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
                                            double & TotalErrorExactSol){
   using Teuchos::rcp;
   using Teuchos::RCP;
-  
+
   /* Add matrices to parameterlist */
   MLList.set("D0",rcp((const Epetra_CrsMatrix*) &D0clean,false));
   MLList.set("M0inv",rcp((const Epetra_CrsMatrix*) &M0inv,false));
-  MLList.set("M1",rcp((const Epetra_CrsMatrix*) &M1,false));  
-  
+  MLList.set("M1",rcp((const Epetra_CrsMatrix*) &M1,false));
+
   // Double up with Ms = M1
-  MLList.set("Ms",rcp((const Epetra_CrsMatrix*) &M1,false));  
-  
-  
+  MLList.set("Ms",rcp((const Epetra_CrsMatrix*) &M1,false));
+
+
   /* Build the rest of the Stratimikos list */
   Teuchos::ParameterList SList;
   SList.set("Linear Solver Type","AztecOO");
@@ -2205,13 +2313,13 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
   SList.set("Preconditioner Type","ML");
   SList.sublist("Preconditioner Types").sublist("ML").set("Base Method Defaults","refmaxwell");
   SList.sublist("Preconditioner Types").sublist("ML").set("ML Settings",MLList);
-  
+
   Epetra_Time Time(CurlCurl.Comm());
-  
+
   /* Thyra Wrappers */
   Epetra_MultiVector x(xh);
   x.PutScalar(0.0);
-  
+
   RCP<const Thyra::LinearOpBase<double> > At = Thyra::epetraLinearOp( rcp(&CurlCurl,false) );
   RCP<Thyra::MultiVectorBase<double> > xt         = Thyra::create_MultiVector( rcp(&x,false), At->domain() );
   RCP<const Thyra::MultiVectorBase<double> > bt   = Thyra::create_MultiVector( rcp(&b,false), At->range() );
@@ -2224,7 +2332,7 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
 
   /* Solve */
   Thyra::SolveStatus<double> status = Thyra::solve<double>(*lows, Thyra::NOTRANS, *bt, xt.ptr());
-    
+
   // accuracy check
   Epetra_MultiVector xexact(xh);
   xexact.PutScalar(0.0);
@@ -2243,7 +2351,7 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
  {
-   
+
    // Exact solution 1 - homogeneous boundary conditions
    uExact0 = sin(M_PI*x)*sin(M_PI*y);
    uExact1 = y;
@@ -2254,7 +2362,7 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
 
 // Calculates curl of exact solution u
  int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z, double &mu)
- {  
+ {
    // Exact solution 1 - homogeneous boundary conditions
    curlu0 = 0;
    curlu1 = 0;
@@ -2267,7 +2375,7 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
 
 // Calculates curl of exact solution u
  int evalCurlCurlu(double & curlcurlu0, double & curlcurlu1, double & curlcurlu2, double & x, double & y, double & z, double &mu)
- {  
+ {
    // Exact solution 1 - homogeneous boundary conditions
    curlcurlu0 = mu*M_PI*M_PI*(sin(M_PI*x)*sin(M_PI*y));
    curlcurlu1 = mu*M_PI*M_PI*(cos(M_PI*x)*cos(M_PI*y));
