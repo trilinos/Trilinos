@@ -8,6 +8,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# This test only makes sense in an MPI build with > 1 processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ImportExport_ImportConstructExpert
+  SOURCES
+    ImportExport_ImportConstructExpert
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2-4
+  STANDARD_PASS_OUTPUT
+  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Import_Union
   SOURCES
@@ -100,4 +111,37 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 8
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ReverseCommunication_Issue227
+  SOURCES
+    ReverseCommunication_Issue227.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 2
+  )
+
+IF (Tpetra_INST_INT_INT)
+  # mfh 17 May 2016: Test for Github Issue #114.
+  # Test originally written by Chris Siefert.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Issue_114
+    SOURCES Issue_114.cpp
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 4
+    )
+ENDIF ()
+
+# mfh 13 Sep 2016: Test for Github Issue #607.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue_607
+  SOURCES
+    Issue_607
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1-4
   )

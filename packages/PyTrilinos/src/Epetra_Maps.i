@@ -198,6 +198,12 @@ Epetra_BlockMap::ElementSizeList
 Epetra_BlockMap::PointToElementList
 "Returns a numpy array of integers such that for each local point, it
 indicates the local element ID that the point belongs to."
+%feature("docstring")
+Epetra_BlockMap::AsMap
+"Attempt to convert an Epetra.BlockMap to an Epetra.Map. If the
+BlockMap can be downcast, that is what will be done. If not, but the
+element size is one, a new Epetra.Map will be constructed from the
+BlockMap data."
 %ignore Epetra_BlockMap::Epetra_BlockMap(int,int,const int*,const int*,int,
 					 const Epetra_Comm&);
 %ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*) const;
@@ -386,6 +392,47 @@ indicates the local element ID that the point belongs to."
   fail:
     Py_XDECREF(pteArray );
     return NULL;
+  }
+
+  Teuchos::RCP< Epetra_Map > AsMap()
+  {
+    // Try to convert Epetra_BlockMap* to Epetra_Map* by downcasting
+    bool has_ownership = false;
+    Epetra_Map * result = dynamic_cast< Epetra_Map * >(self);
+    if (!result)
+    {
+      // If downcasting failed, check to see if Epetra_BlockMap has a
+      // element size of 1
+      if (self->ElementSize() == 1)
+      {
+        if (self->LinearMap())
+        {
+          // Construct a linear map
+          result = new Epetra_Map(-1,
+                                  self->NumMyElements(),
+                                  self->IndexBase(),
+                                  self->Comm());
+          has_ownership = true;
+        }
+        else
+        {
+          // Construct a general map
+          result = new Epetra_Map(-1,
+                                  self->NumMyElements(),
+                                  self->MyGlobalElements(),
+                                  self->IndexBase(),
+                                  self->Comm());
+          has_ownership = true;
+        }
+      }
+      else
+      {
+        PyErr_SetString(PyExc_TypeError,
+                        "Cannot convert Epetra.BlockMap to Epetra.Map");
+        throw PyTrilinos::PythonException();
+      }
+    }
+    return Teuchos::RCP< Epetra_Map >(result, has_ownership);
   }
 }
 %include "Epetra_BlockMap.h"

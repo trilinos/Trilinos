@@ -1,6 +1,10 @@
 #ifndef BASKER_TYPES_HPP
 #define BASKER_TYPES_HPP
 
+#include <exception>
+
+#define BASKER_DEBUG
+
 //MACRO TURN ON FUCNTIONS
 #define BASKER_KOKKOS         //Use Kokkos
 #define BASKER_ATOMIC         //Use Atomics (OLD)
@@ -24,8 +28,12 @@
 #define BASKER_ERROR_RETRY    -2
 #define BASKER_SUCCESS        0
 
+#define BASKER_RESTART       gn
 
 #define BASKER_EPSILON       1e-6
+
+#define BASKER_PIVOT_TOL     .0001
+#define BASKER_PIVOT_BIAS    1.001
 
 //Error Codes
 enum BASKER_ERROR_CODE 
@@ -37,13 +45,46 @@ enum BASKER_ERROR_CODE
   BASKER_ERROR_OTHER
 };
 
+//Matching Types
+enum BASKER_MATCHING_CODE
+{
+  BASKER_MATCHING_COMMON,
+  BASKER_MATCHING_BN,
+  BASKER_MATCHING_SUM,
+  BASKER_MATCHING_PRODUCT,
+  BASKER_MATCHING_EXP
+};
+
 //MACRO BTF METHOD
 #define BASKER_BTF_MAX_PERCENT  1.00
 #define BASKER_BTF_LARGE        500  //Made smaller for unit test
 #define BASKER_BTF_IMBALANCE     0.10
 #define BASKER_BTF_SMALL         100
-#define BASKER_BTF_NNZ_OVER      1.20
+#define BASKER_BTF_NNZ_OVER      2.0 //Upped from 1.20
 #define BASKER_BTF_PRUNE_SIZE    100
+
+enum BASKER_INCOMPLETE_CODE
+{
+  BASKER_INCOMPLETE_LVL,           //ilu(k) 
+  BASKER_INCOMPLETE_RLVL,          //milu(k)
+  BASKER_INCOMPLETE_RLVL_LIMITED,  //milu(k) -- no float on offd
+  BASKER_INCOMPLETE_TOL,
+  BASKER_INCOMPLETE_LVL_TOL,
+  BASKER_INCOMPLETE_EXP
+};
+
+//MACRO DEFAULT INC SETTINGS
+#define BASKER_INC_LVL_VALUE        0
+#define BASKER_INC_TOL_VALUE      0.0001
+
+//MACRO INC FILL (this will become dynamic in the future)
+#define BASKER_FILL_USER           1.00
+#define BASKER_FILL_LESTIMATE      1.50
+#define BASKER_FILL_UESTIMATE      1.50
+#define BASKER_FILL_LLOWERESTIMATE 2.00
+#define BASKER_FILL_UUPPERESTIMATE 2.00
+#define BASKER_FILL_LSEPESTIMATE   2.00
+#define BASKER_FILL_USEPESTIMATE   2.00
 
 //MACRO SYSTEM FUNCTIONS
 #ifdef BASKER_DEBUG
@@ -55,12 +96,22 @@ enum BASKER_ERROR_CODE
 #define ASSERT(a)           assert(a)
 #endif
 
+#ifdef BASKER_DEBUG
 #define BASKER_ASSERT(a,s)       \
   {                              \
     if(!(a))                     \
-      {printf("\n\n%s\n\n", s);}  \				 
+      {printf("\n\n%s \nLINE: %d \nFILE: %s\n\n", s, __LINE__, __FILE__);} \
     ASSERT(a);                   \
+    assert(a);			 \
+    if(!(a))                     \
+      exit(0);                  \
   }
+#else
+#define BASKER_ASSERT(a,s)      \
+  {                             \
+    BASKER_NO_OP;               \
+  }
+#endif
 
 
 //Note:  Should see if Kokkos has a fast memory cpy in place of for-loop
@@ -92,67 +143,100 @@ enum BASKER_ERROR_CODE
 #define MATRIX_VIEW_2DARRAY       Kokkos::View<MATRIX_VIEW_1DARRAY*, BASKER_EXE_SPACE>
 #define THREAD_1DARRAY            Kokkos::View<BASKER_THREAD*,       BASKER_EXE_SPACE>
 #define THREAD_2DARRAY            Kokkos::View<THREAD_1DARRAY*,      BASKER_EXE_SPACE>
+
+#define INT_1DARRAY_PAIRS        Kokkos::View<std::pair<Int,Int>*,  BASKER_EXE_SPACE>
 //Macro Memory Calls
 //MALLOC
-#define MALLOC_INT_1DARRAY(a,s)         \
+#define MALLOC_INT_1DARRAY_PAIRS(a,s)   \
   { \
-    BASKER_ASSERT(s>0, "init_1d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC malloc_pairs_1d: size to alloc > 0 fails"); \
+    a = INT_1DARRAY_PAIRS(KOKKOS_NOINIT("pairs_1d"),s); \
+    if(a.data() == NULL)           \
+      throw std::bad_alloc();	   \
+  }
+#define MALLOC_INT_1DARRAY(a,s)   \
+  { \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC int_1d: size to alloc > 0 fails"); \
     a = INT_1DARRAY(KOKKOS_NOINIT("int_1d"),s); \
+    if(a.data() == NULL)           \
+      throw std::bad_alloc();	   \
   }
 #define MALLOC_INT_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0,"int_2d"); \
+    BASKER_ASSERT(s>0,"BASKER ASSERT MALLOC int_2d: size to alloc > 0 fails"); \
     a = INT_2DARRAY("int_2d",s); \
+    if(a.data() == NULL)         \
+      throw std::bad_alloc();    \
   }
 #define MALLOC_ENTRY_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "entry_1d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC entry_1d: size to alloc > 0 fails"); \
     a = ENTRY_1DARRAY(KOKKOS_NOINIT("entry_1d"),s); \
+    if(a.data() == NULL)           \
+      throw std::bad_alloc();      \
   }
 #define MALLOC_ENTRY_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "entry_2d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC entry_2d: size to alloc > 0 fails"); \
     a = ENTRY_2DARRAY("entry_2d",s); \
+    if(a.data() == NULL)             \
+      throw std::bad_alloc();        \
   }
 #define MALLOC_BOOL_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "bool_1d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC bool_1d: size to alloc > 0 fails"); \
     a = BOOL_1DARRAY(KOKKOS_NOINIT("bool_1d"), s); \
+    if(a.data() == NULL)           \
+      throw std::bad_alloc();      \
   }
 #define MALLOC_BOOL_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "bool_2d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC bool_2d: size to alloc > 0 fails"); \
     a = BOOL_2DARRAY("bool_2d", s); \
+    if(a.data() == NULL)            \
+      throw std::bad_alloc();       \
   }
 #define MALLOC_MATRIX_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "matrix_1d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC matrix_1d: size to alloc > 0 fails"); \
     a = MATRIX_1DARRAY("matrix_1d",s); \
+    if(a.data() == NULL)              \
+      throw std::bad_alloc();         \
   }
 #define MALLOC_MATRIX_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "matrix_2d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC matrix_2d: size to alloc > 0 fails"); \
     a = MATRIX_2DARRAY("matrix_2d",s); \
+    if(a.data() == NULL)              \
+      throw std::bad_alloc();         \
   }
 #define MALLOC_MATRIX_VIEW_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "matrix_view_1d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC matrix_view_1d: size to alloc > 0 fails"); \
     a = MATRIX_VIEW_1DARRAY("matrix_view_1d",s); \
+    if(a.data() == NULL)                 \
+      throw std::bad_alloc();            \
   }
 #define MALLOC_MATRIX_VIEW_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "matrix_view_2d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC matrix_view_2d: size to alloc > 0 fails"); \
     a = MATRIX_VIEW_2DARRAY("matrix_view_2d",s); \
+    if(a.data() == NULL)                 \
+      throw std::bad_alloc();            \
   }
 #define MALLOC_THREAD_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "thread_1d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC thread_1d: size to alloc > 0 fails"); \
     a = THREAD_1DARRAY("thread_1d",s); \
+    if(a.data() == NULL)              \
+      throw std::bad_alloc();         \
   }
 #define MALLOC_THREAD_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "thread_2d"); \
+    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC thread_2d: size to alloc > 0 fails"); \
     a = THREAD_2DARRAY("thread_2d",s); \
+    if(a.data() == NULL)             \
+      throw std::bakd_alloc();       \
   }
 //RESIZE (with copy)
 #define RESIZE_1DARRAY(a,os,s)           Kokkos::resize(a,s)
@@ -187,6 +271,11 @@ enum BASKER_ERROR_CODE
   }
 
 #define FREE(a)                        BASKER_NO_OP
+
+#define FREE_INT_1DARRAY_PAIRS(a)      \
+  { \
+    a = INT_1DARRAY_PAIRS(); \
+  }
 
 #define FREE_INT_1DARRAY(a)      \
   { \
@@ -390,7 +479,8 @@ enum BASKER_ERROR_CODE
 //Time Macro
 #ifdef BASKER_TIME
 #ifdef BASKER_KOKKOS
-#define BASKER_KOKKOS_TIME
+#define BASKER_TIMER
+#define BASKER_TIMER_FINE
 #else
 #define BASKER_OMP_TIME
 #endif

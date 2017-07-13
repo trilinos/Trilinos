@@ -55,6 +55,9 @@
 #include <Tpetra_RowMatrix.hpp>
 
 #include <Ifpack2_Chebyshev.hpp>
+#include <Ifpack2_Relaxation.hpp>
+#include <Ifpack2_ILUT.hpp>
+#include <Ifpack2_BlockRelaxation.hpp>
 #include <Ifpack2_Factory.hpp>
 #include <Ifpack2_Parameters.hpp>
 
@@ -69,6 +72,20 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+
+#ifdef HAVE_MUELU_INTREPID2
+  #include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
+  #include "MueLu_IntrepidPCoarsenFactory_def.hpp"
+  #include "Intrepid2_Basis.hpp"
+
+  #ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    #include "Kokkos_DynRankView.hpp"
+  #else
+    #include "Intrepid2_FieldContainer.hpp"
+  #endif
+#endif
+
+// #define IFPACK2_HAS_PROPER_REUSE
 
 namespace MueLu {
 
@@ -115,6 +132,11 @@ namespace MueLu {
       this->Input(currentLevel, "CoarseNumZLayers");            // necessary for fallback criterion
       this->Input(currentLevel, "LineDetection_VertLineIds");   // necessary to feed block smoother
     }
+    else if (type_ == "TOPOLOGICAL")
+    {
+      // for the topological smoother, we require an element to node map:
+      this->Input(currentLevel, "pcoarsen: element to node map");
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -131,101 +153,236 @@ namespace MueLu {
              type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
              type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
              type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
-             type_ == "LINESMOOTHING_BLOCKRELAXATION" )
+             type_ == "LINESMOOTHING_BLOCKRELAXATION")
       SetupLineSmoothing(currentLevel);
 
     else if (type_ == "CHEBYSHEV")
       SetupChebyshev(currentLevel);
 
+    else if (type_ == "TOPOLOGICAL")
+    {
+#ifdef HAVE_MUELU_INTREPID2
+      SetupTopological(currentLevel);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "'TOPOLOGICAL' smoother choice requires Intrepid2");
+#endif
+    }
     else
+    {
       SetupGeneric(currentLevel);
+    }
 
     SmootherPrototype::IsSetup(true);
 
-    this->GetOStream(Statistics0) << description() << std::endl;
+    this->GetOStream(Statistics1) << description() << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupSchwarz(Level& currentLevel) {
-    if (this->IsSetup() == true)
-      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called" << std::endl;
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
 
-    // If we are doing "user" partitioning, we assume that what the user
-    // really wants to do is make tiny little subdomains with one row
-    // asssigned to each subdomain. The rows used for these little
-    // subdomains correspond to those in the 2nd block row.  Then,
-    // if we overlap these mini-subdomains, we will do something that
-    // looks like Vanka (grabbing all velocities associated with each
-    // each pressure unknown). In addition, we put all Dirichlet points
-    // as a little mini-domain.
-    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+    bool reusePreconditioner = false;
+    if (this->IsSetup() == true) {
+      // Reuse the constructed preconditioner
+      this->GetOStream(Runtime1) << "MueLu::Ifpack2Smoother::SetupSchwarz(): Setup() has already been called, assuming reuse" << std::endl;
 
-    bool isBlockedMatrix = false;
-    RCP<Matrix> merged2Mat;
+      bool isTRowMatrix = true;
+      RCP<const tRowMatrix> tA;
+      try {
+        tA = Utilities::Op2NonConstTpetraRow(A_);
+      } catch (Exceptions::BadCast) {
+        isTRowMatrix = false;
+      }
 
-    std::string sublistName = "subdomain solver parameters";
-    if (paramList.isSublist(sublistName)) {
-      ParameterList& subList = paramList.sublist(sublistName);
+      RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
+      if (!prec.is_null() && isTRowMatrix) {
+#ifdef IFPACK2_HAS_PROPER_REUSE
+        prec->resetMatrix(tA);
+        reusePreconditioner = true;
+#else
+        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
+#endif
 
-      std::string partName = "partitioner: type";
-      if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
-        isBlockedMatrix = true;
-
-        RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-        TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
-                                   "Matrix A must be of type BlockedCrsMatrix.");
-
-        size_t numVels = bA->getMatrix(0,0)->getNodeNumRows();
-        size_t numPres = bA->getMatrix(1,0)->getNodeNumRows();
-        size_t numRows = A_->getNodeNumRows();
-
-        ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
-
-        size_t numBlocks = 0;
-        for (size_t rowOfB = numVels; rowOfB < numVels+numPres; ++rowOfB)
-          blockSeeds[rowOfB] = numBlocks++;
-
-        RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-        TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
-                                   "Matrix A must be of type BlockedCrsMatrix.");
-
-        RCP<CrsMatrix> mergedMat = bA2->Merge();
-        merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
-
-        // Add Dirichlet rows to the list of seeds
-        ArrayRCP<const bool> boundaryNodes;
-        boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
-        bool haveBoundary = false;
-        for (LO i = 0; i < boundaryNodes.size(); i++)
-          if (boundaryNodes[i]) {
-            // FIXME:
-            // 1. would not this [] overlap with some in the previos blockSeed loop?
-            // 2. do we need to distinguish between pressure and velocity Dirichlet b.c.
-            blockSeeds[i] = numBlocks;
-            haveBoundary = true;
-          }
-        if (haveBoundary)
-          numBlocks++;
-
-        subList.set("partitioner: map",         blockSeeds);
-        subList.set("partitioner: local parts", as<int>(numBlocks));
+      } else {
+        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available "
+            "(either failed cast to CanChangeMatrix, or to Tpetra Row Matrix), reverting to full construction" << std::endl;
       }
     }
 
-    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA;
-    if (isBlockedMatrix == true) tpA = Utilities::Op2NonConstTpetraRow(merged2Mat);
-    else                         tpA = Utilities::Op2NonConstTpetraRow(A_);
+    if (!reusePreconditioner) {
+      ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
 
-    prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
+      bool isBlockedMatrix = false;
+      RCP<Matrix> merged2Mat;
+
+      std::string sublistName = "subdomain solver parameters";
+      if (paramList.isSublist(sublistName)) {
+        // If we are doing "user" partitioning, we assume that what the user
+        // really wants to do is make tiny little subdomains with one row
+        // assigned to each subdomain. The rows used for these little
+        // subdomains correspond to those in the 2nd block row. Then,
+        // if we overlap these mini-subdomains, we will do something that
+        // looks like Vanka (grabbing all velocities associated with each
+        // each pressure unknown). In addition, we put all Dirichlet points
+        // as a little mini-domain.
+        ParameterList& subList = paramList.sublist(sublistName);
+
+        std::string partName = "partitioner: type";
+        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
+          isBlockedMatrix = true;
+
+          RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
+                                     "Matrix A must be of type BlockedCrsMatrix.");
+
+          size_t numVels = bA->getMatrix(0,0)->getNodeNumRows();
+          size_t numPres = bA->getMatrix(1,0)->getNodeNumRows();
+          size_t numRows = A_->getNodeNumRows();
+
+          ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
+
+          size_t numBlocks = 0;
+          for (size_t rowOfB = numVels; rowOfB < numVels+numPres; ++rowOfB)
+            blockSeeds[rowOfB] = numBlocks++;
+
+          RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
+                                     "Matrix A must be of type BlockedCrsMatrix.");
+
+          merged2Mat = bA2->Merge();
+
+          // Add Dirichlet rows to the list of seeds
+          ArrayRCP<const bool> boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
+          bool haveBoundary = false;
+          for (LO i = 0; i < boundaryNodes.size(); i++)
+            if (boundaryNodes[i]) {
+              // FIXME:
+              // 1. would not this [] overlap with some in the previos blockSeed loop?
+              // 2. do we need to distinguish between pressure and velocity Dirichlet b.c.
+              blockSeeds[i] = numBlocks;
+              haveBoundary = true;
+            }
+          if (haveBoundary)
+            numBlocks++;
+
+          subList.set("partitioner: map",         blockSeeds);
+          subList.set("partitioner: local parts", as<int>(numBlocks));
+
+        } else {
+          RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          if (!bA.is_null()) {
+            isBlockedMatrix = true;
+            merged2Mat = bA->Merge();
+          }
+        }
+      }
+
+      RCP<const tRowMatrix> tA;
+      if (isBlockedMatrix == true) tA = Utilities::Op2NonConstTpetraRow(merged2Mat);
+      else                         tA = Utilities::Op2NonConstTpetraRow(A_);
+
+      prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
+      SetPrecParameters();
+
+      prec_->initialize();
+    }
+
+    prec_->compute();
+  }
+
+#ifdef HAVE_MUELU_INTREPID2
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupTopological(Level& currentLevel) {
+    /*
+     
+     basic notion:
+     
+     Look for user input indicating topo dimension, something like "topological domain type: {node|edge|face}"
+     Call something like what you can find in Poisson example line 1180 to set seeds for a smoother
+     
+     */
+    if (this->IsSetup() == true) {
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupTopological(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupTopological(): reuse of this type is not available, reverting to full construction" << std::endl;
+    }
+    
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+    
+    typedef typename Node::device_type::execution_space ES;
+    
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; // "Field Container" for ordinals
+#else
+    typedef Intrepid2::FieldContainer<LocalOrdinal> FCO;
+#endif
+    
+    LocalOrdinal  lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    
+    using namespace std;
+    
+    const Teuchos::RCP<FCO> elemToNode = Factory::Get<Teuchos::RCP<FCO> >(currentLevel,"pcoarsen: element to node map");
+    
+    string basisString = paramList.get<string>("pcoarsen: hi basis");
+    int degree;
+    // NOTE: To make sure Stokhos works we only instantiate these guys with double.  There's a lot
+    // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.  Here, we only
+    // care about the assignment of basis ordinals to topological entities, so this code is actually
+    // independent of the Scalar type--hard-coding double here won't hurt us.
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    auto basis = MueLuIntrepid::BasisFactory<double,ES>(basisString, degree);
+#else
+    auto basis = MueLuIntrepid::BasisFactory<double>(basisString, degree);
+#endif
+    
+    string topologyTypeString = paramList.get<string>("smoother: neighborhood type");
+    int dimension;
+    if (topologyTypeString == "node")
+      dimension = 0;
+    else if (topologyTypeString == "edge")
+      dimension = 1;
+    else if (topologyTypeString == "face")
+      dimension = 2;
+    else if (topologyTypeString == "cell")
+      dimension = basis->getBaseCellTopology().getDimension();
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized smoother neighborhood type.  Supported types are node, edge, face.");
+    vector<vector<LocalOrdinal>> seeds;
+    MueLuIntrepid::FindGeometricSeedOrdinals(basis, *elemToNode, seeds, *A_->getRowMap(), *A_->getColMap());
+    
+    // Ifpack2 wants the seeds in an array of the same length as the number of local elements,
+    // with local partition #s marked for the ones that are seeds, and invalid for the rest
+    int myNodeCount = A_->getRowMap()->getNodeNumElements();
+    ArrayRCP<LocalOrdinal> nodeSeeds(myNodeCount,lo_invalid);
+    int localPartitionNumber = 0;
+    for (LocalOrdinal seed : seeds[dimension])
+    {
+      nodeSeeds[seed] = localPartitionNumber++;
+    }
+    
+    paramList.remove("smoother: neighborhood type");
+    paramList.remove("pcoarsen: hi basis");
+    
+    paramList.set("partitioner: map", nodeSeeds);
+    paramList.set("partitioner: type", "user");
+    paramList.set("partitioner: overlap", 1);
+    paramList.set("partitioner: local parts", int(seeds[dimension].size()));
+
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tA = Utilities::Op2NonConstTpetraRow(A_);
+    
+    type_ = "BLOCKRELAXATION";
+    prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
     prec_->initialize();
     prec_->compute();
   }
+#endif
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupLineSmoothing(Level& currentLevel) {
-    if (this->IsSetup() == true)
-      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called" << std::endl;
+    if (this->IsSetup() == true) {
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupLineSmoothing(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupLineSmoothing(): reuse of this type is not available, reverting to full construction" << std::endl;
+    }
 
     ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
 
@@ -276,9 +433,9 @@ namespace MueLu {
       type_ = "RELAXATION";
     }
 
-    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA = Utilities::Op2NonConstTpetraRow(A_);
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tA = Utilities::Op2NonConstTpetraRow(A_);
 
-    prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
+    prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
     prec_->initialize();
     prec_->compute();
@@ -286,8 +443,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupChebyshev(Level& currentLevel) {
-    if (this->IsSetup() == true)
-      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called" << std::endl;
+    if (this->IsSetup() == true) {
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupChebyshev(): SetupChebyshev() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupChebyshev(): reuse of this type is not available, reverting to full construction" << std::endl;
+    }
 
     typedef Teuchos::ScalarTraits<SC> STS;
     SC negone = -STS::one();
@@ -343,9 +502,9 @@ namespace MueLu {
       paramList.set(eigRatioString, ratio);
     }
 
-    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA = Utilities::Op2NonConstTpetraRow(A_);
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tA = Utilities::Op2NonConstTpetraRow(A_);
 
-    prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
+    prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
     prec_->initialize();
     prec_->compute();
@@ -359,26 +518,52 @@ namespace MueLu {
         A_->SetMaxEigenvalueEstimate(lambdaMax);
         this->GetOStream(Statistics1) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax << std::endl;
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
+      TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): no maximum eigenvalue estimate");
     }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& currentLevel) {
-    if (this->IsSetup() == true)
-      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called" << std::endl;
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
 
-    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA = Utilities::Op2NonConstTpetraRow(A_);
+    RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if (!bA.is_null())
+      A_ = bA->Merge();
 
-    prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
-    SetPrecParameters();
-    prec_->initialize();
+    RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+
+    bool reusePreconditioner = false;
+    if (this->IsSetup() == true) {
+      // Reuse the constructed preconditioner
+      this->GetOStream(Runtime1) << "MueLu::Ifpack2Smoother::SetupGeneric(): Setup() has already been called, assuming reuse" << std::endl;
+
+      RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
+      if (!prec.is_null()) {
+#ifdef IFPACK2_HAS_PROPER_REUSE
+        prec->resetMatrix(tA);
+        reusePreconditioner = true;
+#else
+        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
+#endif
+
+      } else {
+        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available (failed cast to CanChangeMatrix), "
+            "reverting to full construction" << std::endl;
+      }
+    }
+
+    if (!reusePreconditioner) {
+      prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
+      SetPrecParameters();
+      prec_->initialize();
+    }
+
     prec_->compute();
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
+    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack2
     // TODO:  It might be nice to switch back the internal
@@ -486,6 +671,27 @@ namespace MueLu {
            << "RCP<prec_>: " << prec_ << std::endl;
     }
   }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> MatrixType;
+    // NOTE: Only works for a subset of Ifpack2's smoothers
+    RCP<Ifpack2::Relaxation<MatrixType> > pr     = rcp_dynamic_cast<Ifpack2::Relaxation<MatrixType> >(prec_);
+    if(!pr.is_null()) return pr->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::Chebyshev<MatrixType> > pc       = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
+    if(!pc.is_null()) return pc->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::BlockRelaxation<MatrixType> > pb = rcp_dynamic_cast<Ifpack2::BlockRelaxation<MatrixType> >(prec_);
+    if(!pb.is_null()) return pb->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::ILUT<MatrixType> > pi            = rcp_dynamic_cast<Ifpack2::ILUT<MatrixType> >(prec_);
+    if(!pi.is_null()) return pi->getNodeSmootherComplexity();
+
+
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+
 
 } // namespace MueLu
 

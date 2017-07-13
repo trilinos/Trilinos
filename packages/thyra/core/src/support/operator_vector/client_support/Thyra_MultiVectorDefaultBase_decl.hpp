@@ -93,8 +93,48 @@ protected:
   /** \name Overridden protected member functions from MultiVectorBase */
   //@{
 
-  /** \brief . */
-  void assignImpl(Scalar alpha);
+  /** \brief Default implementation of assign(scalar) using RTOps. */
+  virtual void assignImpl(Scalar alpha);
+
+  /** \brief Default implementation of assign(MV) using RTOps. */
+  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar>& mv);
+
+  /** \brief Default implementation of scale using RTOps. */
+  virtual void scaleImpl(Scalar alpha);
+
+  /** \brief Default implementation of update using RTOps. */
+  virtual void updateImpl(
+    Scalar alpha,
+    const MultiVectorBase<Scalar>& mv
+    );
+
+  /** \brief Default implementation of linear_combination using RTOps. */
+  virtual void linearCombinationImpl(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+    const Scalar& beta
+    );
+
+  /** \brief Default implementation of dots using RTOps. */
+  virtual void dotsImpl(
+    const MultiVectorBase<Scalar>& mv,
+    const ArrayView<Scalar>& prods
+    ) const;
+
+  /** \brief Default implementation of norms_1 using RTOps. */
+  virtual void norms1Impl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const;
+
+  /** \brief Default implementation of norms_2 using RTOps. */
+  virtual void norms2Impl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const;
+
+  /** \brief Default implementation of norms_inf using RTOps. */
+  virtual void normsInfImpl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const;
 
   /** \brief . */
   RCP<const MultiVectorBase<Scalar> >

@@ -59,7 +59,7 @@ namespace Xpetra {
 
   template<class GlobalOrdinal, class Node>
   const Epetra_Map & toEpetra(const RCP< const Map<int,GlobalOrdinal,Node> > &map) {
-    XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal COMMA Node>, map->getMap(), epetraMap, "toEpetra");
+    XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map->getMap(), epetraMap, "toEpetra");
     return epetraMap->getEpetra_Map();
   }
 

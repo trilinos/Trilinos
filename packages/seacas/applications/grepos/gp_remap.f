@@ -54,7 +54,7 @@ C   --   LIST - IN/OUT - the list of integers; renumbered
         ISCR(I) = 0
  100  CONTINUE
 
-      DO 110 I = 1, LLIST
+      DO 110 I = LLIST, 1, -1
         INDEX = IX(I)
         if (index .ne. 0) ISCR(ABS(INDEX)) = LIST(I)
  110  CONTINUE

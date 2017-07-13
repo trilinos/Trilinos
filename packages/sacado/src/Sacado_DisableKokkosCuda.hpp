@@ -55,6 +55,8 @@
 #define KOKKOS_INLINE_FUNCTION inline
 #define KOKKOS_FORCEINLINE_FUNCTION  inline
 
+#define SACADO_DISABLE_CUDA_IN_KOKKOS 1
+
 #endif
 
 

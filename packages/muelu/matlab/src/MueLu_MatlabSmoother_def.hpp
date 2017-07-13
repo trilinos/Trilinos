@@ -101,7 +101,7 @@ namespace MueLu {
     if(!setupFunction_.length())
       throw runtime_error("Invalid matlab function name");
     solveData_= callMatlab(setupFunction_, solveDataSize_, InputArgs);
-    this->GetOStream(Statistics0) << description() << endl;
+    this->GetOStream(Statistics1) << description() << endl;
     this->IsSetup(true); //mark the smoother as set up
   }
 

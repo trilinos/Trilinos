@@ -176,8 +176,10 @@ class ParameterListTestCase(unittest.TestCase):
 
     def testConstructor6(self):
         "Test Teuchos.ParameterList copy constructor"
+        self.plist.setParameters(self.dict)
         plist_copy = Teuchos.ParameterList(self.plist)
         self.assertTrue(isinstance(plist_copy,Teuchos.ParameterList))
+        self.assertDictsEqual(plist_copy, self.dict)
 
     def testConstructor7(self):
         "Test Teuchos.ParameterList constructor with bad argument"
@@ -422,6 +424,7 @@ class ParameterListTestCase(unittest.TestCase):
 
     def test__cmp__1(self):
         "Test Teuchos.ParameterList __cmp__ method with dictionary"
+        # Note: Python 3 does not support the cmp() function
         if self.py_version < 3:
             d1 = { "a" : 2 }
             d2 = { "a" : 2, "b" : 1 }
@@ -431,6 +434,7 @@ class ParameterListTestCase(unittest.TestCase):
 
     def test__cmp__2(self):
         "Test Teuchos.ParameterList __cmp__ method with ParameterList"
+        # Note: Python 3 does not support the cmp() function
         if self.py_version < 3:
             d = { "a" : 2, "b" : 1 }
             plist1 = Teuchos.ParameterList(d)

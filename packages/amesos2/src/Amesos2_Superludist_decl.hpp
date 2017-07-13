@@ -283,8 +283,8 @@ private:
     SLUD::int_t                   *sizes, *fstVtxSep; // memory allocated by get_perm_c_parmetis
     SLUD::Pslu_freeable_t          pslu_freeable;
 
-    SLUD::superlu_options_t          options;
-    SLUD::mem_usage_t                mem_usage;
+    SLUD::amesos2_superlu_dist_options_t  options;
+    SLUD::amesos2_superlu_dist_mem_usage_t     mem_usage;
     SLUD::gridinfo_t                 grid;
     MPI_Comm                         mat_comm; ///< Raw communicator used by the matrix A
     typename type_map::LUstruct_t    lu; ///< stores the L and U factors
@@ -326,13 +326,15 @@ private:
                                  global_ordinal_type,
                                  node_type> > superlu_rowmap_;
 
+  bool is_contiguous_;
+
 };                              // End class Superludist
 
 
 // Specialize the solver_traits template for SuperLU_DIST
 template <>
 struct solver_traits<Superludist> {
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && !defined(__clang__)
   typedef Meta::make_list3<double, std::complex<double>, SLUD::Z::doublecomplex> supported_scalars;
 #else
   typedef Meta::make_list1<double> supported_scalars;

@@ -148,6 +148,8 @@ namespace MueLu {
     //@}
 
   private:
+    //! Helper function to recursively fill BlockedMultiVector with default null space vectors
+    void fillNullspaceVector(const RCP<BlockedMultiVector>& nsp, LocalOrdinal numPDEs) const;
 
   }; //class NullspaceFactory
 

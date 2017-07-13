@@ -91,14 +91,6 @@
 #  define HAVE_TPETRA_KOKKOSCOMPAT
 #endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 
-/* Define when enabling TpetraKernels in TpetraCore */
-#cmakedefine HAVE_TPETRACORE_TPETRAKERNELS
-#ifdef HAVE_TPETRACORE_TPETRAKERNELS
-// For backwards compatibility
-#  define HAVE_TPETRA_TPETRAKERNELS
-#  define HAVE_TPETRA_KOKKOSLINALG
-#endif // HAVE_TPETRACORE_TPETRAKERNELS
-
 /* Define when enabling KokkosContainers in TpetraCore */
 #cmakedefine HAVE_TPETRACORE_KOKKOSCONTAINERS
 #ifdef HAVE_TPETRACORE_KOKKOSCONTAINERS
@@ -116,9 +108,6 @@
 
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT
-
-/* Define when enabling RDMA support for MPI communication for CUDA GPUs */
-#cmakedefine TPETRA_ENABLE_MPI_CUDA_RDMA
 
 /* Define when enabling Tpetra for refactoring to new KokkosCore interface */
 #cmakedefine TPETRA_HAVE_KOKKOS_REFACTOR
@@ -174,6 +163,13 @@
 #ifdef HAVE_TPETRACORE_RTI
 #  define HAVE_TPETRA_RTI
 #endif // HAVE_TPETRACORE_RTI
+
+#cmakedefine HAVE_TPETRA_BCRS_DO_POINT_IMPORT
+
+/* Define the Fortran name mangling to be used for the BLAS */
+#ifndef TPETRACORE_F77_BLAS_MANGLE
+#  define TPETRACORE_F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#endif
 
 @TPETRA_DEPRECATED_DECLARATIONS@
 

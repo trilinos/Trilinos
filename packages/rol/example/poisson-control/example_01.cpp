@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     error->set(x);
     error->axpy(-1.0,y);
     *outStream << "\nError between PDAS solution and TR solution is " << error->norm() << "\n";
-    errorFlag = ((error->norm() > 1e2*std::sqrt(ROL::ROL_EPSILON)) ? 1 : 0);
+    errorFlag = ((error->norm() > 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

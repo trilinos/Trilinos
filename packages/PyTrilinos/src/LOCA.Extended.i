@@ -74,7 +74,7 @@ following classes:
 %{
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
@@ -82,10 +82,16 @@ following classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
+#include "PyTrilinos_Teuchos_Util.hpp"
+
+// Epetra includes
+#ifdef HAVE_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
+#endif
 
 // NOX-Epetra includes
 #ifdef HAVE_NOX_EPETRA
-#include "Epetra_Vector.h"
+//#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #endif

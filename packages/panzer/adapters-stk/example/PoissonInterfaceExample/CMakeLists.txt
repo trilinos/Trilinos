@@ -20,6 +20,14 @@ TRIBITS_ADD_ADVANCED_TEST(
   COMM mpi)
 
 TRIBITS_ADD_ADVANCED_TEST(
+  PoissonInterfaceExample_2d_diffsideids_MPI_1
+  TEST_0 EXEC PoissonInterfaceExample
+    ARGS --test-jacobian --mesh-filename=diffsideids.exo
+    PASS_REGULAR_EXPRESSION "PASS BASICS"
+    NUM_MPI_PROCS 1
+  COMM serial mpi)
+
+TRIBITS_ADD_ADVANCED_TEST(
   PoissonInterfaceExample_3d_MPI_4
   TEST_0 EXEC PoissonInterfaceExample
     ARGS --3d --nx=3 --nonlinear --test-jacobian
@@ -76,3 +84,7 @@ TRIBITS_ADD_ADVANCED_TEST(
          8
     PASS_REGULAR_EXPRESSION "Test Passed"
   COMM mpi)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(diffsideids_files
+  SOURCE_FILES diffsideids.exo
+  EXEDEPS PoissonInterfaceExample)

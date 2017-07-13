@@ -98,8 +98,10 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   /* Smoothing Options (Section 6.4.4) */
   setStringToIntegralParameter<int>("smoother: type", std::string("Chebyshev"),
 				    "Smoothing algorithm",smoothers,PL);
+  setIntParameter("smoother: min size for coarse", -1, "Use fine smoother when coarsest is large", PL, intParam);
   setIntParameter("smoother: sweeps", 2, "Number of smoothing sweeps", PL, intParam);
   setDoubleParameter("smoother: line detection threshold",-1.0,"Smoother line detection threshold",PL,dblParam);
+  PL->set("smoother: line detection mode",std::string("coordinates"));
   setIntParameter("smoother: line direction nodes", -1, "Number of mesh points in z direction", PL, intParam);
   setDoubleParameter("smoother: damping factor",1.0,"Smoother damping factor",PL,dblParam);
   setDoubleParameter("smoother: Chebyshev eig boost", 1.1, "factor to scale eig_max when using Cheby smoothing", PL,dblParam);
@@ -240,6 +242,8 @@ void ML_Epetra::SetValidAggrParams(Teuchos::ParameterList *PL)
   /* Aggregation and Prolongator Options (Section 6.4.3) */
   setStringToIntegralParameter<int>("aggregation: type", "Uncoupled", "Aggregation algorithm", tuple<std::string>("Uncoupled","Coupled","MIS","Uncoupled-MIS","METIS","ParMETIS","Zoltan","user"),PL);
   setDoubleParameter("aggregation: threshold",0.0,"Dropping for aggregation",PL,dblParam);
+  setDoubleParameter("ML advanced Dirichlet: threshold",1.0e-5,"Dropping for Dirichlet determination. Only used for variable dof and shared node constructors",PL,dblParam);
+  setDoubleParameter("variable DOF  amalgamation: threshold",1.8e-9,"Dropping for amalgamation. Only used for variable dof constructor",PL,dblParam);
   setDoubleParameter("aggregation: damping factor",1.3333,"Damping factor for smoothed aggregation",PL,dblParam);
   setIntParameter("aggregation: smoothing sweeps",1,"Number of sweeps for prolongator smoother",PL,intParam);
   setIntParameter("aggregation: global aggregates",0,"Number of global aggregates (METIS/ParMETIS)",PL,intParam);
@@ -360,6 +364,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   }
   SetValidSmooParams(&(PL->sublist("coarse: list")),smoothers);
 
+  setIntParameter("RAP: sort columns",0,"matrix columns sorted after RAP",PL,intParam);
+
   /* Load-balancing Options (Section 6.4.6) */
   setIntParameter("repartition: enable",0,"Enable repartitioning",PL,intParam);
   setStringToIntegralParameter<int>("repartition: partitioner","Zoltan","Repartitioning method",tuple<std::string>("Zoltan","ParMETIS"),PL);
@@ -414,6 +420,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("aggregation: aux: max levels",10,"Unlisted option",PL,intParam);
   PL->set("low memory usage",false);
   setDoubleParameter("aggregation: edge prolongator drop threshold",0.0,"Unlisted option",PL,dblParam);
+  PL->set("ML variable DOF",false);
   PL->set("zero starting solution",true);
   PL->set("aggregation: block scaling",false);
   setIntParameter("profile: operator iterations",0,"Unlisted option",PL,intParam);

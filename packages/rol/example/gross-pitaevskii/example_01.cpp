@@ -88,11 +88,13 @@ int main(int argc, char **argv) {
     int errorFlag = 0;
 
     Teuchos::ParameterList parlist;
+    Teuchos::ParameterList gplist;
+
     std::string paramfile = "parameters.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&parlist));
+    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&gplist));
  
-    int nx     = parlist.get("Interior Grid Points",100);
-    double gnl = parlist.get("Nonlinearity Coefficient g",50.0);
+    int nx    = gplist.get("Interior Grid Points",100);
+    RealT gnl = gplist.get("Nonlinearity Coefficient g",50.0);
 
     // Grid spacing
     RealT dx = 1.0/(nx+1);
@@ -117,7 +119,7 @@ int main(int argc, char **argv) {
 
        
     // Set Initial Guess (normalized)
-    double sqrt30 = sqrt(30);
+    RealT sqrt30 = sqrt(30);
 
     for (int i=0; i<nx; i++) {
         (*psi_rcp)[i]   = sqrt30*(*xi_rcp)[i]*(1.0-(*xi_rcp)[i]);

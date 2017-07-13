@@ -96,7 +96,7 @@ namespace Amesos2 {
 
   protected:
     // Do not allow direct construction of MultiVecAdapter's.  Only
-    // allow construction throw the non-member friend functions.
+    // allow construction through the non-member friend functions.
 
     /// Copy constructor
     MultiVecAdapter( const MultiVecAdapter<multivec_t>& adapter );
@@ -201,6 +201,8 @@ namespace Amesos2 {
       return mv_->getVectorNonConst(j);
     }
 
+    /// Return pointer to vector when number of vectors == 1 and single MPI process
+    typename multivec_t::impl_scalar_type * getMVPointer_impl() const;
 
     /**
      * \brief Copies the multivector's data into the user-provided vector.
@@ -224,6 +226,8 @@ namespace Amesos2 {
      *                     describes where the 'rows' of the multivector
      *                     will end up.
      *
+     *  \param [in] distribution
+     *
      *  \throw std::runtime_error Thrown if the space available in \c A
      *  is not large enough given \c lda , the value of \c global_copy ,
      *  and the number of vectors in \c this.
@@ -233,7 +237,8 @@ namespace Amesos2 {
                size_t lda,
                Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,
                                               global_ordinal_t,
-                                              node_t> > distribution_map) const;
+                                              node_t> > distribution_map,
+                                              EDistribution distribution) const;
 
     /**
      * \brief Extracts a 1 dimensional view of this MultiVector's data
@@ -257,13 +262,15 @@ namespace Amesos2 {
      * \param source_map describes how the input array data is distributed
      *                 accross processors.  This data will be redistributed
      *                 to match the map of the adapted multivector.
+     *  \param [in] distribution
      */
     void
     put1dData (const Teuchos::ArrayView<const scalar_t>& new_data,
                size_t lda,
                Teuchos::Ptr< const Tpetra::Map<local_ordinal_t,
                                         global_ordinal_t,
-                                        node_t> > source_map );
+                                        node_t> > source_map,
+                                        EDistribution distribution );
 
     //! Get a short description of this adapter class
     std::string description () const;

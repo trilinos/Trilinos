@@ -248,7 +248,9 @@ public:
    *  \param copiesMap on return points to the map of vertices with copies
    *  \param onetooneMap on return points to the map of vertices without copies
    */
-  void getVertexMaps(Teuchos::RCP<const map_t>& copiesMap, Teuchos::RCP<const map_t>& onetooneMap) const {
+  void getVertexMaps(Teuchos::RCP<const map_t>& copiesMap, 
+                     Teuchos::RCP<const map_t>& onetooneMap) const 
+  {
     copiesMap = mapWithCopies;
     onetooneMap = oneToOneMap;
   }
@@ -421,6 +423,9 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     ia->getIDsViewOf(primaryEType, vtxIds);
     size_t maxId = *(std::max_element(vtxIds,vtxIds+numLocalVertices_));
     reduceAll(*comm_,Teuchos::REDUCE_MAX,1,&maxId,&numGlobalVertices_);
+    // TODO:  KDD 1/17 The above computation of numGlobalVertices_ is
+    // TODO:  correct only when the vertices are consecutively numbered
+    // TODO:  starting at ID 1.  Github #1024
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -444,6 +449,8 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     Tpetra::global_size_t numGlobalCoords = 
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     mapWithCopies = rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
+    // TODO KDD 1/17 It would be better to use minimum GID rather than
+    // TODO zero in the above Tpetra::Map constructor.  Github #1024
     oneToOneMap = Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
 
     numOwnedVertices_=oneToOneMap->getNodeNumElements();
@@ -539,6 +546,8 @@ HyperGraphModel<Adapter>::HyperGraphModel(
         Tpetra::global_size_t numGlobalCoords = 
           Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
         oneToOneMap = rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
+        // TODO KDD 1/17 It would be better to use minimum GID rather than
+        // TODO zero in the above Tpetra::Map constructor.  Github #1024
       }
       secondAdj = rcp(new sparse_matrix_type(oneToOneMap,0));
       for (size_t i=0; i<numLocalVertices_;i++) {

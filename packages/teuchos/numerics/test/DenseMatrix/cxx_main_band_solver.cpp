@@ -308,6 +308,9 @@ int main(int argc, char* argv[])
   solver3.setMatrix( AB3 );
   solver3.setVectors( Teuchos::rcp( &xhat, false ), Teuchos::rcp( &b, false ) );
 
+  Teuchos::RCP<BDMatrix> AB3bak = Teuchos::rcp( new BDMatrix( *AB3 ) );
+  Teuchos::RCP<DVector> b3bak = Teuchos::rcp( new DVector( Teuchos::Copy, b ) );
+
   // Factor and solve with matrix equilibration.
   returnCode = solver3.factor();
   testName = "Solve with matrix equilibration: factor() random A:";
@@ -338,6 +341,16 @@ int main(int argc, char* argv[])
   numberFailedTests += CompareVectors( *x3, xhat, tol );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 #endif
+
+  // Non-tranpose solve where factor is not called
+  xhat.putScalar( ScalarTraits<STYPE>::zero() );
+  solver3.setMatrix( AB3bak );
+  solver3.setVectors( Teuchos::rcp( &xhat, false ), b3bak );
+  solver3.solveWithTransposeFlag( Teuchos::NO_TRANS );
+  returnCode = solver3.solve();
+  testName = "Solve with matrix equilibration: solve() without factor() random A (NO_TRANS):";
+  numberFailedTests += CompareVectors( *x3, xhat, tol );
+  numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
   //
   // If a test failed output the number of failed tests.

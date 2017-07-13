@@ -43,10 +43,10 @@ namespace BaskerNS
     BaskerMatrix<Int,Entry,Exe_Space>& operator= (const BaskerMatrix<Int,Entry,Exe_Space>&);
     */
 
-
     //init_matrix (want to change these to malloc_matrix)
     BASKER_INLINE
     void init_matrix(string _label, Int _m, Int _n, Int _nnz);
+
     BASKER_INLINE
     void init_matrix(string _label, Int _m, Int _n, Int _nnz,
                     Int *_col_ptr, Int *_row_idx, Entry *_val);
@@ -72,7 +72,8 @@ namespace BaskerNS
     void clean_col();
     BASKER_INLINE
     void convert2D(BASKER_MATRIX &M, 
-		   BASKER_BOOL alloc = BASKER_TRUE);
+		   BASKER_BOOL alloc, 
+		   Int kid);
 
     
     //just set shape, do not init
@@ -85,7 +86,6 @@ namespace BaskerNS
 
     BASKER_INLINE
     void init_inc_lvl();
-
 
 
     //****Deprecated*******
@@ -126,9 +126,10 @@ namespace BaskerNS
 
     BASKER_BOOL v_fill;
 
-    Int srow, scol;
-    Int erow, ecol;
+    Int srow, scol; //start col (wrt global matrix, if a block)
+    Int erow, ecol; //end col (wrt global matrix, if a block)
     Int ncol, nrow, nnz;
+    Int mnnz; //malloc nnz
     
     INT_1DARRAY   col_ptr;
     INT_1DARRAY   row_idx;
@@ -166,7 +167,7 @@ namespace BaskerNS
     //Used for end
     INT_1DARRAY pend;
     void init_pend();
-    
+    void clear_pend();
 
   };//end class BaskerMatrix
 

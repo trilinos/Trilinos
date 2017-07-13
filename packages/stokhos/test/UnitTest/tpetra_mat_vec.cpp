@@ -38,10 +38,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -134,10 +133,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -147,10 +145,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     const GlobalOrdinal row = myGIDs[i];
     columnIndices[0] = row;
     size_t ncol = 1;
-    if (row != nrow-1) {
-      columnIndices[1] = row+1;
-      ncol = 2;
-    }
+    // if (row != nrow-1) {
+    //   columnIndices[1] = row+1;
+    //   ncol = 2;
+    // }
     graph->insertGlobalIndices(row, columnIndices(0,ncol));
   }
   graph->fillComplete();
@@ -164,11 +162,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     vals[0] = Scalar(2.0);
     size_t ncol = 1;
 
-    if (row != nrow-1) {
-      columnIndices[1] = row+1;
-      vals[1] = Scalar(2.0);
-      ncol = 2;
-    }
+    // if (row != nrow-1) {
+    //   columnIndices[1] = row+1;
+    //   vals[1] = Scalar(2.0);
+    //   ncol = 2;
+    // }
     matrix->replaceGlobalValues(row, columnIndices(0,ncol), vals(0,ncol));
   }
   matrix->fillComplete();
@@ -215,12 +213,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   Scalar val = Scalar(0.5);
   for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    if (row % 2) {
-      val = Scalar(0.5);
-    }
-    else
-      val = Scalar(0.0);
+    // const GlobalOrdinal row = myGIDs[i];
+    // if (row % 2) {
+    //   val = Scalar(0.5);
+    // }
+    // else
+    //   val = Scalar(0.0);
 
     // Set small values to zero
     Scalar v = x_view[i];

@@ -146,25 +146,12 @@ bool MeshField::operator==(const MeshField &other) const
          m_subsetParts == other.m_subsetParts;
 }
 
-void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
-				   const stk::io::DBStepTimeInterval &sti,
-				   bool ignore_missing_fields)
+double MeshField::restore_field_data_at_step(Ioss::Region *region, stk::mesh::BulkData &bulk,
+                                             int step, bool ignore_missing_fields)
 {
-  if (!is_active())
-    return;
-  
-  if (m_timeMatch == CLOSEST || m_timeMatch == SPECIFIED) {
-    int step = 0;
-    if (m_timeMatch == CLOSEST) {
-      step = sti.get_closest_step();
-    }
-    else if (m_timeMatch == SPECIFIED) {
-      DBStepTimeInterval sti2(sti.region, m_timeToRead);
-      step = sti2.get_closest_step();
-    }
     STKIORequire(step > 0);
     
-    sti.region->begin_state(step);
+    double time_read = region->begin_state(step);
 
     std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
     while (I != m_fieldParts.end()) {
@@ -180,60 +167,80 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       // the data to the stk field. The subset will be defined as a
       // selector of the stk part.
       bool subsetted = rank == stk::topology::NODE_RANK &&
-	io_entity->type() == Ioss::NODEBLOCK &&
-	*stk_part != mesh::MetaData::get(bulk).universal_part();
+        io_entity->type() == Ioss::NODEBLOCK &&
+        *stk_part != mesh::MetaData::get(bulk).universal_part();
 
       size_t state_count = m_field->number_of_states();
       stk::mesh::FieldState state = m_field->state();
       // If the multi-state field is not "set" at the newest state, then the user has
       // registered the field at a specific state and only that state should be input.
       if(m_singleState || state_count == 1 || state != stk::mesh::StateNew) {
-	if (subsetted) {
-	  stk::io::subsetted_field_data_from_ioss(bulk, m_field, entity_list,
-						  io_entity, stk_part, m_dbName);
-	} else {
-	  stk::io::field_data_from_ioss(bulk, m_field, entity_list,
-					io_entity, m_dbName);
-	}
+        if (subsetted) {
+          stk::io::subsetted_field_data_from_ioss(bulk, m_field, entity_list,
+                                                  io_entity, stk_part, m_dbName);
+        } else {
+          stk::io::field_data_from_ioss(bulk, m_field, entity_list,
+                                        io_entity, m_dbName);
+        }
       } else {
-	if (subsetted) {
-	  stk::io::subsetted_multistate_field_data_from_ioss(bulk, m_field, entity_list,
-							     io_entity, stk_part, m_dbName, state_count,
-							     ignore_missing_fields);
-	} else {
-	  stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list,
-						   io_entity, m_dbName, state_count,
-						   ignore_missing_fields);
-	}
+        if (subsetted) {
+          stk::io::subsetted_multistate_field_data_from_ioss(bulk, m_field, entity_list,
+                                                             io_entity, stk_part, m_dbName, state_count,
+                                                             ignore_missing_fields);
+        } else {
+          stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list,
+                                                   io_entity, m_dbName, state_count,
+                                                   ignore_missing_fields);
+        }
       }
 
       if (m_oneTimeOnly) {
-	(*I).release_field_data();
+        (*I).release_field_data();
       }
       ++I;
     }
-    sti.region->end_state(step);
+    region->end_state(step);
+
+    return time_read;
+}
+
+double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
+				   const stk::io::DBStepTimeInterval &sti,
+				   bool ignore_missing_fields)
+{
+  double time_read = -1.0;
+  if (!is_active())
+    return time_read;
+
+  if (m_timeMatch == CLOSEST || m_timeMatch == SPECIFIED) {
+    int step = 0;
+    if (m_timeMatch == CLOSEST) {
+      step = sti.get_closest_step();
+    }
+    else if (m_timeMatch == SPECIFIED) {
+      DBStepTimeInterval sti2(sti.region, m_timeToRead);
+      step = sti2.get_closest_step();
+    }
+
+    time_read = restore_field_data_at_step(sti.region, bulk, step, ignore_missing_fields);
   }
   else if (m_timeMatch == LINEAR_INTERPOLATION) {
-    std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
-    while (I != m_fieldParts.end()) {
+    // Interpolation only handles single-state fields with state StateNew
+    size_t state_count = m_field->number_of_states();
+    stk::mesh::FieldState state = m_field->state();
+    STKIORequire(m_singleState || state_count == 1 || state != stk::mesh::StateNew);
 
+    for (auto &field_part : m_fieldParts) {
       // Get data at beginning of interval...
       std::vector<double> values;
-      (*I).get_interpolated_field_data(sti, values);
+      field_part.get_interpolated_field_data(sti, values);
       
-      size_t state_count = m_field->number_of_states();
-      stk::mesh::FieldState state = m_field->state();
-
-      // Interpolation only handles single-state fields currently.
-      STKIORequire(m_singleState || state_count == 1 || state != stk::mesh::StateNew);
-
-      Ioss::GroupingEntity *io_entity = (*I).get_io_entity();
+      Ioss::GroupingEntity *io_entity = field_part.get_io_entity();
       const Ioss::Field &io_field = io_entity->get_fieldref(m_dbName);
       size_t field_component_count = io_field.transformed_storage()->component_count();
 
       std::vector<stk::mesh::Entity> entity_list;
-      const stk::mesh::EntityRank rank = (*I).get_entity_rank();
+      const stk::mesh::EntityRank rank = field_part.get_entity_rank();
       stk::io::get_entity_list(io_entity, rank, bulk, entity_list);
       
       for (size_t i=0; i < entity_list.size(); ++i) {
@@ -247,14 +254,15 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 	}
       }
       if (m_oneTimeOnly) {
-	(*I).release_field_data();
+	field_part.release_field_data();
       }
-      ++I;
     }
+    time_read = sti.t_analysis;
   }
   if (m_oneTimeOnly) {
     set_inactive();
   }
+  return time_read;
 }
 
 void MeshFieldPart::release_field_data()

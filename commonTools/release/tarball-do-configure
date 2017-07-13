@@ -56,6 +56,7 @@ cmake \
 -DTrilinos_ENABLE_Ifpack=ON \
 -DTrilinos_ENABLE_Ifpack2=ON \
 -DTrilinos_ENABLE_Intrepid=ON \
+-DTrilinos_ENABLE_Intrepid2=OFF \
 -DTrilinos_ENABLE_Isorropia=ON \
 -DTrilinos_ENABLE_Kokkos=ON \
 -DTrilinos_ENABLE_Komplex=ON \

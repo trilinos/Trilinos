@@ -47,10 +47,11 @@ void PNGProcessor::add_this_much_pixel_padding_to_bottom(unsigned amount)
 }
 
 //IO and Checking
-unsigned PNGProcessor::get_ideal_rows_per_processor(unsigned numProcs) const
-{
-    return m_imageHeight/numProcs + !!(m_imageHeight%numProcs);
-}
+//unsigned PNGProcessor::get_ideal_rows_per_processor(unsigned numProcs) const
+//{
+//    return m_imageHeight/numProcs + !!(m_imageHeight%numProcs);
+//}
+
 void PNGProcessor::fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const
 {
     unsigned id = 1;
@@ -59,15 +60,17 @@ void PNGProcessor::fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& 
             if (m_pixelVector[rowIndex][colIndex])
                 elemIds.push_back(id);
 }
-void PNGProcessor::get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>&
-                                                    coordinates) const
-{
-    coordinates.clear();
-    for (unsigned rowIndex = 0; rowIndex < m_imageHeight; rowIndex++)
-        for (unsigned colIndex = 0; colIndex < m_imageWidth; colIndex++)
-            if (m_pixelVector[rowIndex][colIndex])
-                coordinates.emplace_back(colIndex+1, m_imageHeight-rowIndex);
-}
+
+//void PNGProcessor::get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>&
+//                                                    coordinates) const
+//{
+//    coordinates.clear();
+//    for (unsigned rowIndex = 0; rowIndex < m_imageHeight; rowIndex++)
+//        for (unsigned colIndex = 0; colIndex < m_imageWidth; colIndex++)
+//            if (m_pixelVector[rowIndex][colIndex])
+//                coordinates.emplace_back(colIndex+1, m_imageHeight-rowIndex);
+//}
+
 void PNGProcessor::get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned,
                                                       unsigned>>& coordinates) const
 {
@@ -78,16 +81,16 @@ void PNGProcessor::get_coordinates_of_inactive_pixels(std::vector<std::pair<unsi
                 coordinates.emplace_back(colIndex+1, m_imageHeight-rowIndex);
 }
 
-void PNGProcessor::print_image()
-{
-    for (unsigned row = 0; row < m_imageHeight; row++)
-    {
-        for (unsigned col = 0; col < m_imageWidth;
-                col++)
-            printf("%8x ", m_imageVector[row][col]);
-        printf("\n");
-    }
-}
+//void PNGProcessor::print_image()
+//{
+//    for (unsigned row = 0; row < m_imageHeight; row++)
+//    {
+//        for (unsigned col = 0; col < m_imageWidth;
+//                col++)
+//            printf("%8x ", m_imageVector[row][col]);
+//        printf("\n");
+//    }
+//}
 
 //private
 void PNGProcessor::process_bytes_into_image_vector()
@@ -177,6 +180,8 @@ ColoredPNGProcessor::ColoredPNGProcessor(std::string fileName)
 {
     convert_to_grey_bits();
 }
+ColoredPNGProcessor::~ColoredPNGProcessor() { }
+
 void ColoredPNGProcessor::commit_image_vector_to_pixel_vector()
 {
     find_median_grey_bit_value();
@@ -222,12 +227,13 @@ void ColoredPNGProcessor::convert_to_grey_bits()
             process_unsigned_int_to_grey_bit(row, col);
 }
 
+
+
 void ColoredPNGProcessor::process_unsigned_int_to_grey_bit(unsigned row, unsigned col)
 {
     unsigned mask = 0xff;
     unsigned imageVal = m_imageVector[row][col];
-    unsigned char greyBit = (((imageVal>>24)&mask)*54 +
-            ((imageVal>>16)&mask)*183 +((imageVal>>8)&mask)*19)/256;
+    unsigned char greyBit = (((imageVal>>24)&mask)*54 + ((imageVal>>16)&mask)*183 +((imageVal>>8)&mask)*19)/256;
     m_imageVector[row][col] = greyBit;
     m_greyBits.push_back(greyBit);
 }
@@ -238,7 +244,6 @@ void ColoredPNGProcessor::find_median_grey_bit_value()
     unsigned middleIndex = m_greyBits.size()/2;
     m_medianValue = m_greyBits[middleIndex];
 }
-
 void ColoredPNGProcessor::update_image_value_according_to_relation_with_median_value(unsigned row,
                                                                                      unsigned col)
 {
@@ -270,4 +275,71 @@ void ColoredPNGProcessor::find_upper_and_lower_bounds()
         m_lowerBound=0x00;
     if (m_upperBound < m_medianValue)
         m_lowerBound = 0xff;
+}
+
+SimpleColoredPng::SimpleColoredPng(std::string fileName)
+: PNGProcessor(fileName), mOtherPixelCount(0)
+{
+    for (unsigned row = 0; row < m_imageHeight; row++)
+        for (unsigned col = 0; col < m_imageWidth; col++)
+        {
+            store_special_colors_with_coordinates(row, col);
+            update_image_value_ignoring_white(row, col);
+        }
+
+    PNGProcessor::commit_image_vector_to_pixel_vector();
+}
+
+const unsigned RED   = 0xFF0000;
+const unsigned GREEN = 0x00FF00;
+const unsigned BLUE  = 0x0000FF;
+
+void SimpleColoredPng::store_special_colors_with_coordinates(unsigned row, unsigned col)
+{
+    unsigned colorNoAlpha = (m_imageVector[row][col]>>8);
+    switch(colorNoAlpha)
+    {
+        case RED:
+            mRedPixels.push_back({row, col});
+            break;
+        case GREEN:
+            mGreenPixels.push_back({row, col});
+            break;
+        case BLUE:
+            mBluePixels.push_back({row, col});
+            break;
+        default:
+            break;
+    }
+}
+
+void SimpleColoredPng::update_image_value_ignoring_white(unsigned row, unsigned col)
+{
+    bool isWhite = m_imageVector[row][col] == 0xffffffff;
+    bool isTransparent = (m_imageVector[row][col] & 0xff) == 0;
+    if(!isWhite && !isTransparent)
+    {
+        m_imageVector[row][col] = 0xff;
+        mOtherPixelCount++;
+    }
+}
+
+void SimpleColoredPng::fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const
+{
+    unsigned id = 1;
+    for (int rowIndex = m_imageHeight-1; rowIndex >= 0; rowIndex--)
+        for (unsigned colIndex = 0; colIndex < m_imageWidth; colIndex++, id++)
+            if (m_pixelVector[rowIndex][colIndex])
+                elemIds.push_back(id);
+}
+
+stk::mesh::EntityIdVector SimpleColoredPng::get_elemIds_for_colored_pixels(const std::vector<Pixel> & coloredPixels)
+{
+    stk::mesh::EntityIdVector elemIds;
+    for(Pixel pixel : coloredPixels)
+    {
+        stk::mesh::EntityId id = (m_imageHeight - pixel.x) * m_imageWidth - (m_imageWidth - (pixel.y+1));
+        elemIds.push_back(id);
+    }
+    return elemIds;
 }

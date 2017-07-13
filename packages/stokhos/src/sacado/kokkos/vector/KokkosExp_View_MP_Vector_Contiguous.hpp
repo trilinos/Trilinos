@@ -42,8 +42,6 @@
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_MP_VECTOR_CONTIGUOUS_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_MP_VECTOR_CONTIGUOUS_HPP
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 #include "Sacado_Traits.hpp"
 #include "Sacado_MP_Vector.hpp"
 #include "Sacado_MP_VectorTraits.hpp"
@@ -80,6 +78,32 @@ struct is_ViewMPVectorContiguous< Kokkos::View<D,P...> , Args... > {
 } // namespace Kokkos
 
 namespace Kokkos {
+
+template <typename T, typename ... P>
+struct is_view_mp_vector< View<T,P...> > {
+  typedef View<T,P...> view_type;
+  static const bool value =
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewMPVectorContiguous >::value;
+};
+
+template <typename T, typename ... P>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_mp_vector< View<T,P...> >::value, unsigned >::type
+dimension_scalar(const View<T,P...>& view) {
+  return view.implementation_map().dimension_scalar();
+}
+
+template <typename D, typename ... P>
+struct FlatArrayType< View<D,P...>,
+                      typename std::enable_if< is_view_mp_vector< View<D,P...> >::value >::type > {
+  typedef View<D,P...> view_type;
+  typedef typename view_type::traits::dimension dimension;
+  typedef typename view_type::array_type::value_type flat_value_type;
+  typedef typename Kokkos::Experimental::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
+  typedef View<flat_data_type,P...> type;
+};
 
 // Overload of deep_copy for MP::Vector views intializing to a constant scalar
 template< class DT, class ... DP >
@@ -148,36 +172,20 @@ void deep_copy( const View<DT,DP...> & dst ,
       unsigned(ViewTraits<ST,SP...>::rank) )
     , "Deep copy destination and source must have same rank" );
 
+  // Note ETP 09/29/2016:  Use FlatArrayType instead of array_type to work
+  // around issue where dst and src are rank-1, but have differing layouts.
+  // Kokkos' deep_copy() doesn't work in this case because the array_type
+  // will be rank-2.  It should be possible to make deep_copy() work there,
+  // but this seems easier.
+
+  // Kokkos::deep_copy(
+  //   typename View<DT,DP...>::array_type( dst ) ,
+  //   typename View<ST,SP...>::array_type( src ) );
+
   Kokkos::deep_copy(
-    typename View<DT,DP...>::array_type( dst ) ,
-    typename View<ST,SP...>::array_type( src ) );
+    typename FlatArrayType< View<DT,DP...> >::type( dst ) ,
+    typename FlatArrayType< View<ST,SP...> >::type( src ) );
 }
-
-template <typename T, typename ... P>
-struct is_view_mp_vector< View<T,P...> > {
-  typedef View<T,P...> view_type;
-  static const bool value =
-    std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewMPVectorContiguous >::value;
-};
-
-template <typename T, typename ... P>
-KOKKOS_INLINE_FUNCTION
-constexpr typename
-std::enable_if< is_view_mp_vector< View<T,P...> >::value, unsigned >::type
-dimension_scalar(const View<T,P...>& view) {
-  return view.implementation_map().dimension_scalar();
-}
-
-template <typename D, typename ... P>
-struct FlatArrayType< View<D,P...>,
-                      typename std::enable_if< is_view_mp_vector< View<D,P...> >::value >::type > {
-  typedef View<D,P...> view_type;
-  typedef typename view_type::traits::dimension dimension;
-  typedef typename view_type::array_type::value_type flat_value_type;
-  typedef typename Kokkos::Experimental::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
-  typedef View<flat_data_type,P...> type;
-};
 
 } // namespace Kokkos
 
@@ -346,6 +354,7 @@ struct MPVectorAllocation<ValueType, true> {
 
   // Assign scalar_type pointer to give ptr
   template <typename T>
+  KOKKOS_INLINE_FUNCTION
   void assign(T * ptr) {
     value_ptr  = reinterpret_cast<value_type*>(ptr);
     scalar_ptr = reinterpret_cast<scalar_type*>(ptr);
@@ -492,6 +501,7 @@ struct MPVectorAllocation<ValueType, false> {
   // Assign scalar_type pointer to give ptr
   // This makes BIG assumption on how the data was allocated
   template <typename T>
+  KOKKOS_INLINE_FUNCTION
   void assign(T * ptr) {
     value_ptr  = reinterpret_cast<value_type*>(ptr);
     if (ptr != 0)
@@ -598,7 +608,11 @@ public:
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
     { return m_offset.m_dim.extent(r); }
 
-   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
+  KOKKOS_INLINE_FUNCTION constexpr
+  typename Traits::array_layout layout() const
+    { return m_offset.layout(); }
+
+  KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
     { return m_offset.dimension_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const
     { return m_offset.dimension_1(); }
@@ -772,9 +786,10 @@ public:
   KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
+  template< class ... P >
   KOKKOS_INLINE_FUNCTION
   ViewMapping
-    ( pointer_type ptr
+    ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & layout
     )
     : m_handle()
@@ -783,7 +798,8 @@ public:
     , m_stride( 1 )
     , m_sacado_size( Kokkos::Impl::GetSacadoSize<unsigned(Rank)>::eval(layout) )
     {
-      m_handle.set( ptr, m_offset.span(), m_sacado_size.value );
+      m_handle.set( ( (ViewCtorProp<void,pointer_type> const &) prop ).value,
+                    m_offset.span(), m_sacado_size.value );
     }
 
   //----------------------------------------
@@ -793,12 +809,12 @@ public:
    */
   template< class ... P >
   SharedAllocationRecord<> *
-  allocate_shared( ViewAllocProp< P... > const & prop
+  allocate_shared( ViewCtorProp< P... > const & prop
                  , typename Traits::array_layout const & layout )
   {
-    typedef ViewAllocProp< P... > alloc_prop ;
+    typedef ViewCtorProp< P... > ctor_prop ;
 
-    typedef typename alloc_prop::execution_space  execution_space ;
+    typedef typename ctor_prop::execution_space  execution_space ;
     typedef typename Traits::memory_space         memory_space ;
     typedef typename handle_type::template ConstructDestructFunctor<execution_space> functor_type ;
     typedef SharedAllocationRecord< memory_space , functor_type > record_type ;
@@ -815,8 +831,8 @@ public:
 
     // Create shared memory tracking record with allocate memory from the memory space
     record_type * const record =
-      record_type::allocate( ( (ViewAllocProp<void,memory_space> const &) prop ).value
-                           , ( (ViewAllocProp<void,std::string>  const &) prop ).value
+      record_type::allocate( ( (ViewCtorProp<void,memory_space> const &) prop ).value
+                           , ( (ViewCtorProp<void,std::string>  const &) prop ).value
                            , alloc_size );
 
     //  Only set the the pointer and initialize if the allocation is non-zero.
@@ -829,8 +845,8 @@ public:
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
       record->m_destroy = m_handle.create_functor(
-        ( (ViewAllocProp<void,execution_space> const &) prop).value
-        , alloc_prop::initialize
+        ( (ViewCtorProp<void,execution_space> const &) prop).value
+        , ctor_prop::initialize
         , m_offset.span()
         , m_sacado_size.value );
 
@@ -1394,7 +1410,6 @@ partition( const Kokkos::Experimental::View<D,P...> & src ,
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Specialization for deep_copy( view, view::value_type ) for Cuda
@@ -1402,7 +1417,7 @@ namespace Impl {
 template< class OutputView >
 struct ViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
-                                                        ViewMPVectorContiguous >::value &&
+                                                        Experimental::Impl::ViewMPVectorContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
                                                    Cuda >::value >::type >
 {
@@ -1476,7 +1491,6 @@ struct ViewFill< OutputView ,
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -1583,7 +1597,5 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-#endif
 
 #endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_MP_VECTOR_CONTIGUOUS_HPP */

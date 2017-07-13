@@ -68,7 +68,7 @@ public:
     dual_vec1_ = (vec1_->dual()).clone();
     dual_vec2_ = (vec2_->dual()).clone();
   }
-  
+
   void plus( const Vector<Real> &x ) {
     const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const Vector<Real> >(x));
@@ -127,6 +127,30 @@ public:
     }
   }
 
+  void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+
+    vec1_->applyUnary(f);
+    vec2_->applyUnary(f);
+
+  }
+
+  void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
+    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
+
+    vec1_->applyBinary(f,*xs.get_1());
+    vec2_->applyBinary(f,*xs.get_2());
+  
+  }
+
+  Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
+
+    Real result = r.initialValue();
+    r.reduce(vec1_->reduce(r),result);
+    r.reduce(vec2_->reduce(r),result);
+    return result;
+  }
+
+
   int dimension() const {
     return (vec1_)->dimension() + (vec2_)->dimension();
   }
@@ -139,12 +163,27 @@ public:
     return vec2_; 
   }
 
+  Teuchos::RCP<Vector<Real> > get_1() { 
+    return vec1_; 
+  }
+
+  Teuchos::RCP<Vector<Real> > get_2() { 
+    return vec2_; 
+  }
+
   void set_1(const Vector<Real>& vec) { 
     vec1_->set(vec);
   }
   
   void set_2(const Vector<Real>& vec) { 
     vec2_->set(vec); 
+  }
+
+  void print( std::ostream &outStream ) const {
+    outStream << "Sim: ";
+    vec1_->print(outStream);
+    outStream << "Opt: ";
+    vec2_->print(outStream);
   }
 };
 

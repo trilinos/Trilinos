@@ -1,17 +1,18 @@
 
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   SimpleSolveExample
-#   SOURCES SimpleSolve
-#   ARGS
-#   COMM serial mpi
-# )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SimpleSolveExampleNonContigMap
+  SOURCES SimpleSolveNonContigMap
+  ARGS
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+)
 
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   SimpleSolveFileExample
-#   SOURCES SimpleSolve_File
-#   ARGS
-#   COMM serial mpi
-# )
+
+TRIBITS_ADD_EXECUTABLE(
+  SimpleSolveExample
+  SOURCES SimpleSolve
+  COMM serial mpi
+  )
 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   MultipleSolvesFileExample
@@ -46,6 +47,14 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES quick_solve
   )
 ENDIF ()
+
+IF (Tpetra_INST_INT_INT)
+ TRIBITS_ADD_EXECUTABLE(
+   SimpleSolveFileExample
+  SOURCES SimpleSolve_File
+ )
+ENDIF ()
+
 
 IF (Tpetra_INST_INT_INT)
 IF (${PACKAGE_NAME}_ENABLE_EpetraExt)

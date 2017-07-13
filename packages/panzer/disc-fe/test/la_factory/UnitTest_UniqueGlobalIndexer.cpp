@@ -208,7 +208,7 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vec
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
    indices.resize(8);
    switch(procRank_) {
@@ -267,9 +267,9 @@ const std::vector<int> & UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getB
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Intrepid2::FieldContainer<double> & vertices)
+void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & vertices)
 {
-   vertices.resize(1,4,2);
+  vertices = Kokkos::DynRankView<double,PHX::Device>("vertices",1,4,2);
    switch(procRank_) {
    case 0:
       vertices(0,0,0) = 0.0; vertices(0,0,1) = 0.0;
@@ -444,7 +444,7 @@ void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
    indices.resize(2);
    switch(procRank_) {
@@ -488,9 +488,9 @@ const std::vector<int> & UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinal
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Intrepid2::FieldContainer<double> & vertices)
+void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & vertices)
 {
-   vertices.resize(1,1,2);
+   vertices = Kokkos::DynRankView<double,PHX::Device>("vertices",1,1,2);
    switch(procRank_) {
    case 0:
       vertices(0,0,0) = 0.5; vertices(0,0,1) = 0.5;

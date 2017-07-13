@@ -137,7 +137,7 @@ public:
     input_file.seekg(0,std::ios::beg); 
     Vsrc_  = Teuchos::rcp(new std::vector<Real>(dim,0.0));
     Imeas_ = Teuchos::rcp(new std::vector<Real>(dim,0.0));
-    double Vsrc, Imeas;
+    Real Vsrc, Imeas;
     std::cout << "Using input file to generate data." << "\n";
     for( int i = 0; i < dim; i++ ){
       input_file >> Vsrc;
@@ -380,8 +380,8 @@ public:
     ---
    */
   void generate_plot(Real Is_lo, Real Is_up, Real Is_step, Real Rs_lo, Real Rs_up, Real Rs_step){
-    Teuchos::RCP<std::vector<double> > S_rcp = Teuchos::rcp(new std::vector<double>(2,0.0) );
-    StdVector<double> S(S_rcp);
+    Teuchos::RCP<std::vector<Real> > S_rcp = Teuchos::rcp(new std::vector<Real>(2,0.0) );
+    StdVector<Real> S(S_rcp);
     std::ofstream output ("Objective.dat");
 
     Real Is = 0.0;
@@ -508,8 +508,8 @@ private:
     ---
    */
   Real Newton(const Real I, const Real Vsrc, const Real Is, const Real Rs){
-    double EPS = 1.e-16;
-    double TOL = 1.e-13;
+    Real EPS = 1.e-16;
+    Real TOL = 1.e-13;
     int MAXIT = 200;
     Real IN = I;
     Real fval  = diode(IN,Vsrc,Is,Rs);
@@ -564,7 +564,7 @@ private:
     ierr = 2 if the computer arithmetic contains a bug.
     xi may be disregarded (it is the error).
     
-    Prototype: void lambertw( double, double, int, double);
+    Prototype: void lambertw( Real, Real, int, Real);
     
     Reference:
     T.C. Banwell

@@ -66,7 +66,8 @@ public:
 
   // Constructor
   GoldenSection( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
-    tol_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Bracketing Tolerance",1.e-8);
+    Real oem8(1.e-8);
+    tol_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Bracketing Tolerance",oem8);
     btls_ = Teuchos::rcp(new BackTracking<Real>(parlist));
   }
 
@@ -80,17 +81,17 @@ public:
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
             Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), zero(0), one(1), two(2), five(5);
     ls_neval = 0; 
     ls_ngrad = 0;
     // Get initial line search parameter
     alpha = LineSearch<Real>::getInitialAlpha(ls_neval,ls_ngrad,fval,gs,x,s,obj,con);
     
     // Reciprocal of golden ratio
-    Real c = 2.0/(1.0+sqrt(5.0));
+    Real c = two/(one+sqrt(five));
 
     // Compute value phi(0)
-    Real tl  = 0.0;
+    Real tl  = zero;
     Real val_tl = fval;
 
     // Compute value phi(alpha)
@@ -110,8 +111,8 @@ public:
     }
 
     // Compute min( phi(0), phi(alpha) )
-    Real t     = 0.0;
-    Real val_t = 0.0;
+    Real t     = zero;
+    Real val_t = zero;
     if ( val_tl < val_tr ) {
       t     = tl;
       val_t = val_tl;
@@ -122,14 +123,14 @@ public:
     }
 
     // Compute value phi(t1)
-    Real tc1 = c*tl + (1.0-c)*tr;
+    Real tc1 = c*tl + (one-c)*tr;
     LineSearch<Real>::updateIterate(*xnew_,x,s,tc1,con);
     obj.update(*xnew_);
     Real val_tc1 = obj.value(*xnew_,tol);
     ls_neval++;
 
     // Compute value phi(t2)
-    Real tc2 = (1.0-c)*tl + c*tr;
+    Real tc2 = (one-c)*tl + c*tr;
     LineSearch<Real>::updateIterate(*xnew_,x,s,tc2,con);
     obj.update(*xnew_);
     Real val_tc2 = obj.value(*xnew_,tol);
@@ -161,7 +162,7 @@ public:
         tc1     = tc2;
         val_tc1 = val_tc2;
  
-        tc2     = (1.0-c)*tl + c*tr;     
+        tc2     = (one-c)*tl + c*tr;     
         LineSearch<Real>::updateIterate(*xnew_,x,s,tc2,con);
         obj.update(*xnew_);
         val_tc2 = obj.value(*xnew_,tol);
@@ -173,7 +174,7 @@ public:
         tc2     = tc1;
         val_tc2 = val_tc1;
 
-        tc1     = c*tl + (1.0-c)*tr;
+        tc1     = c*tl + (one-c)*tr;
         LineSearch<Real>::updateIterate(*xnew_,x,s,tc1,con);
         obj.update(*xnew_);
         val_tc1 = obj.value(*xnew_,tol);
@@ -200,7 +201,7 @@ public:
     alpha = t;
     fval  = val_t;  
 
-    if ( alpha < ROL_EPSILON ) {
+    if ( alpha < ROL_EPSILON<Real>() ) {
       btls_->run(alpha,fval,ls_neval,ls_ngrad,gs,s,x,obj,con);
     }
   }

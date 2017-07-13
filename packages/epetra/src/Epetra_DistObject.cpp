@@ -55,7 +55,6 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& map)
   : Epetra_Object("Epetra::DistObject"),
     Map_(map),
     Comm_(&Map_.Comm()),
-    DistributedGlobal_(map.DistributedGlobal()),
     Exports_(0),
     Imports_(0),
     LenExports_(0),
@@ -70,7 +69,6 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& map, const char* con
   : Epetra_Object(label),
     Map_(map),
     Comm_(&Map_.Comm()),
-    DistributedGlobal_(map.DistributedGlobal()),
     Exports_(0),
     Imports_(0),
     LenExports_(0),
@@ -85,7 +83,6 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_DistObject& Source)
   : Epetra_Object(Source),
     Map_(Source.Map_),
     Comm_(&Map_.Comm()),
-    DistributedGlobal_(Source.DistributedGlobal_),
     Exports_(0),
     Imports_(0),
     LenExports_(0),
@@ -119,8 +116,11 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
                               const Epetra_OffsetIndex * Indexor)
 {
 
+#ifdef HAVE_EPETRA_DEBUG
+  // Only perform the expensive map comparisons in the debug version
   if (!Map_.SameAs(Importer.TargetMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Importer.SourceMap())) EPETRA_CHK_ERR(-3);
+#endif
 
   int NumSameIDs = Importer.NumSameIDs();
   int NumPermuteIDs = Importer.NumPermuteIDs();
@@ -144,9 +144,11 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
 			      Epetra_CombineMode CombineMode,
                               const Epetra_OffsetIndex * Indexor)
 {
-
+#ifdef HAVE_EPETRA_DEBUG
+  // Only perform the expensive map comparisons in the debug version
   if (!Map_.SameAs(Exporter.TargetMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Exporter.SourceMap())) EPETRA_CHK_ERR(-3);
+#endif
 
   int NumSameIDs = Exporter.NumSameIDs();
   int NumPermuteIDs = Exporter.NumPermuteIDs();
@@ -170,9 +172,11 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
 			      Epetra_CombineMode CombineMode,
                               const Epetra_OffsetIndex * Indexor)
 {
-
+#ifdef HAVE_EPETRA_DEBUG
+  // Only perform the expensive map comparisons in the debug version
   if (!Map_.SameAs(Exporter.SourceMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Exporter.TargetMap())) EPETRA_CHK_ERR(-3);
+#endif
 
   int NumSameIDs = Exporter.NumSameIDs();
   int NumPermuteIDs = Exporter.NumPermuteIDs();
@@ -196,9 +200,11 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
 			      Epetra_CombineMode CombineMode,
                               const Epetra_OffsetIndex * Indexor)
 {
-
+#ifdef HAVE_EPETRA_DEBUG
+  // Only perform the expensive map comparisons in the debug version
   if (!Map_.SameAs(Importer.SourceMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Importer.TargetMap())) EPETRA_CHK_ERR(-3);
+#endif
 
   int NumSameIDs = Importer.NumSameIDs();
   int NumPermuteIDs = Importer.NumPermuteIDs();
@@ -259,7 +265,7 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
   EPETRA_CHK_ERR(PackAndPrepare(A, NumExportIDs, ExportLIDs,
                  LenExports, Exports, SizeOfPacket, Sizes_, VarSizes, Distor));
 
-  if ((DistributedGlobal_ && DoReverse) || (A.Map().DistributedGlobal() && !DoReverse)) {
+  if ((Map_.DistributedGlobal() && DoReverse) || (A.Map().DistributedGlobal() && !DoReverse)) {
     if (DoReverse) {
       // Do the exchange of remote data
       if( VarSizes ) {

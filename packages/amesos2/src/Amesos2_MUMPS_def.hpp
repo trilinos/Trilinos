@@ -60,6 +60,7 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 #endif
 
+#include <limits>
 
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_MUMPS_decl.hpp"
@@ -77,6 +78,7 @@ namespace Amesos2
     , nzvals_()                   // initialize to empty arrays
     , rowind_()
     , colptr_()
+    , is_contiguous_(true)
   {
 
     typedef FunctionMap<MUMPS,scalar_type>  function_map;
@@ -243,9 +245,15 @@ namespace Amesos2
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
     #endif
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-      slu_type>::do_get(B, bvals_(),as<size_t>(ld_rhs),
-                        ROOTED);
+
+    if ( is_contiguous_ == true ) {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
  
     
     int ierr = 0; // returned error code
@@ -269,11 +277,19 @@ namespace Amesos2
     #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
     #endif
-      
-    Util::put_1d_data_helper<
-    MultiVecAdapter<Vector>,slu_type>::do_put(X, bvals_(),
-                                              as<size_t>(ld_rhs),
-                                              ROOTED);
+
+    if ( is_contiguous_ == true ) {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, bvals_(),
+            as<size_t>(ld_rhs),
+            ROOTED);
+    }
+    else {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, bvals_(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED);
+    }
     
     return(ierr);
   }//end solve()
@@ -334,6 +350,11 @@ namespace Amesos2
         mumps_par.icntl[0] = getIntegralValue<local_ordinal_type>(*parameterList, 
                                                                   "ICNTL(11)");
       }
+
+    if( parameterList->isParameter("IsContiguous") ){
+      is_contiguous_ = parameterList->get<bool>("IsContiguous");
+
+    }
   }//end set parameters()
   
   
@@ -355,6 +376,8 @@ namespace Amesos2
       pl->set("ICNTL(6)", "no", "See Manual" );
       pl->set("ICNTL(9)", "no", "See Manual" );
       pl->set("ICNTL(11)", "no", "See Manual" );
+
+      pl->set("IsContiguous", true, "Whether GIDs contiguous");
       
       valid_params = pl;
     }
@@ -388,10 +411,18 @@ namespace Amesos2
         Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
         #endif
     
-        Util::get_ccs_helper<
-        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-          ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
-                   nnz_ret, ROOTED, ARBITRARY);
+        if ( is_contiguous_ == true ) {
+          Util::get_ccs_helper<
+            MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+            ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+                nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
+        }
+        else {
+          Util::get_ccs_helper<
+            MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+            ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+                nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
+        }
   
         if( this->root_ ){
                   TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
@@ -417,8 +448,8 @@ namespace Amesos2
     mumps_par.n =  this->globalNumCols_;
     mumps_par.nz = this->globalNumNonZeros_;
     mumps_par.a = (magnitude_type*)malloc(mumps_par.nz * sizeof(magnitude_type));
-    mumps_par.irn = (local_ordinal_type*)malloc(mumps_par.nz *sizeof(local_ordinal_type));
-    mumps_par.jcn = (local_ordinal_type*)malloc(mumps_par.nz * sizeof(local_ordinal_type));
+    mumps_par.irn = (MUMPS_INT*)malloc(mumps_par.nz *sizeof(MUMPS_INT));
+    mumps_par.jcn = (MUMPS_INT*)malloc(mumps_par.nz * sizeof(MUMPS_INT));
 
     if((mumps_par.a == NULL) || (mumps_par.irn == NULL) 
        || (mumps_par.jcn == NULL))
@@ -429,17 +460,34 @@ namespace Amesos2
     /* Will have to add support for symmetric case*/
     local_ordinal_type tri_count = 0;
     local_ordinal_type i,j;
+    local_ordinal_type max_local_ordinal = 0;
     
     for(i = 0; i < (local_ordinal_type)this->globalNumCols_; i++)
       {
-        for( j = colptr_[i]; j < colptr_[i+1]; j++)
+        for( j = colptr_[i]; j < colptr_[i+1]-1; j++)
           {
-            mumps_par.jcn[tri_count] = (local_ordinal_type)i+1; //Fortran index
-            mumps_par.irn[tri_count] = (local_ordinal_type)rowind_[j]+1; //Fortran index
+            mumps_par.jcn[tri_count] = (MUMPS_INT)i+1; //Fortran index
+            mumps_par.irn[tri_count] = (MUMPS_INT)rowind_[j]+1; //Fortran index
             mumps_par.a[tri_count] = nzvals_[j];
+            
             tri_count++;
           }
+        
+        j = colptr_[i+1]-1;
+        mumps_par.jcn[tri_count] = (MUMPS_INT)i+1; //Fortran index
+        mumps_par.irn[tri_count] = (MUMPS_INT)rowind_[j]+1; //Fortran index
+        mumps_par.a[tri_count] = nzvals_[j];
+
+        tri_count++;
+        
+        if(rowind_[j] > max_local_ordinal)
+          {
+            max_local_ordinal = rowind_[j];
+          }
       }
+    TEUCHOS_TEST_FOR_EXCEPTION(std::numeric_limits<MUMPS_INT>::max() <= max_local_ordinal,
+                               std::runtime_error,
+                               "Matrix index larger than MUMPS_INT");
 
     return 0;
   }//end Convert to Trip()

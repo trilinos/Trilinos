@@ -48,10 +48,10 @@ import sys
 import os
 
 inputArgs = ' '.join(sys.argv[1:])
-#print "inputArgs = '"+inputArgs+"'"
+#print("inputArgs = '" + inputArgs + "'"
 
 if not os.path.exists('.mockprogram_inout.txt'):
-  print "Error: .mockprogram_inout.txt is missing!"
+  print("Error: .mockprogram_inout.txt is missing!")
   sys.exit(1)
 
 mockprogramInout = open('.mockprogram_inout.txt', 'r').read()
@@ -60,31 +60,35 @@ if len(mockprogramInoutArray) and mockprogramInoutArray[-1] == "":
   mockprogramInoutArray = mockprogramInoutArray[:-1]
 
 if len(mockprogramInoutArray) < 3:
-  print "Error: .mockprogram_inout.txt has less than three lines:\n" \
-    "-------------\n"+mockprogramInout+"-------------"
+  print("Error: .mockprogram_inout.txt has less than three lines:\n"
+        "-------------\n" + mockprogramInout + "-------------")
   sys.exit(2)
 
 # Assert input
 expectedInputLine = mockprogramInoutArray[0]
 if expectedInputLine.find("MOCK_PROGRAM_INPUT:") != 0:
-  print "Error, first line = '"+expectedInputLine+"', does not match ^MOCK_PROGRAM_INPUT:"
+  print("Error, first line = '" + expectedInputLine + "', does not match "
+        "^MOCK_PROGRAM_INPUT:") 
   sys.exit(3)
 expectedInput = expectedInputLine.replace("MOCK_PROGRAM_INPUT:", "").strip()
 if inputArgs != expectedInput:
-  print "Error, input args='"+inputArgs+"' does not match expected='"+expectedInput+"'"
+  print("Error, input args='" + inputArgs + "' does not match expected='" +
+        expectedInput + "'")
   sys.exit(4)
 
 # Get return code
 returnCodeLine = mockprogramInoutArray[1]
 if returnCodeLine.find("MOCK_PROGRAM_RETURN:") != 0:
-  print "Error, second line = '"+returnCodeLine+"', does not match ^MOCK_PROGRAM_RETURN:"
+  print("Error, second line = '" + returnCodeLine + "', does not match "
+        "^MOCK_PROGRAM_RETURN:") 
   sys.exit(5)
 returnCode = returnCodeLine.replace("MOCK_PROGRAM_RETURN:", "").strip()
 
 # Get output (can be multi-line)
 outputLine = mockprogramInoutArray[2]
 if outputLine.find("MOCK_PROGRAM_OUTPUT:") != 0:
-  print "Error, third line = '"+outputLine+"', does not match ^MOCK_PROGRAM_OUTPUT:"
+  print("Error, third line = '" + outputLine + "', does not match "
+        "^MOCK_PROGRAM_OUTPUT:") 
   sys.exit(6)
 outputStr = outputLine.replace("MOCK_PROGRAM_OUTPUT: ", "")
 numLinesOuput = 1
@@ -94,7 +98,7 @@ if len(mockprogramInoutArray) > 3:
       break
     outputStr = outputStr+"\n"+line
     numLinesOuput = numLinesOuput + 1
-print outputStr
+print(outputStr)
 
 # Write the remaining lines back into the file
 lineLineIndex = 2 + numLinesOuput

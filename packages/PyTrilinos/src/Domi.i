@@ -79,45 +79,15 @@ other Trilinos solver technologies.
 #undef HAVE_STDINT_H
 #endif
 #include "Domi_ConfigDefs.hpp"
+#include "PyTrilinos_PythonException.hpp"
 
 // Teuchos includes
 #include "Teuchos_CommHelpers.hpp"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
-#ifdef HAVE_EPETRA
 // Epetra includes
-#include "Epetra_LAPACK.h"
-#include "Epetra_Time.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_IntSerialDenseMatrix.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "PyTrilinos_LinearProblem.hpp"
+#ifdef HAVE_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 #ifdef HAVE_TPETRA
@@ -137,10 +107,6 @@ other Trilinos solver technologies.
 #include "Domi_MDComm.hpp"
 #include "Domi_MDMap.hpp"
 #include "Domi_MDVector.hpp"
-
-// PyTrilinos includes
-#include "PyTrilinos_PythonException.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
 #include "PyTrilinos_Domi_Util.hpp"
 
 %}
@@ -588,8 +554,8 @@ MDMap = MDMap_default
 }
 %ignore Domi::MDVector::operator=;
 %ignore Domi::MDVector::operator[];
-%ignore Domi::MDVector::getDataNonConst;
-%ignore Domi::MDVector::getData;
+%ignore Domi::MDVector::getDataNonConst(bool includePadding = true);
+%ignore Domi::MDVector::getData(bool includePadding = true) const;
 %include "Domi_MDVector.hpp"
 %teuchos_rcp(Domi::MDVector< int      , Domi::DefaultNode::DefaultNodeType >)
 %teuchos_rcp(Domi::MDVector< long long, Domi::DefaultNode::DefaultNodeType >)

@@ -31,20 +31,23 @@ class PerformanceTester
 public:
     void run_performance_test()
     {
-        rootTimer.start();
         time_algorithm();
         generate_output();
     }
 
+    double get_duration() const { return duration; }
+
 protected:
     PerformanceTester(MPI_Comm comm) :
+            duration(0.0),
             enabledTimerSet(CHILDMASK1),
             rootTimer(createRootTimer("totalTestRuntime", enabledTimerSet)),
             childTimer("timed algorithm", CHILDMASK1, rootTimer),
-            duration(0.0),
             communicator(comm)
     {
+        rootTimer.start();
     }
+
     virtual ~PerformanceTester()
     {
         stk::diag::deleteRootTimer(rootTimer);
@@ -53,13 +56,21 @@ protected:
     virtual void run_algorithm_to_time() = 0;
     virtual size_t get_value_to_output_as_iteration_count() = 0;
 
+    double duration;
+
 private:
+    const int CHILDMASK1 = 1;
+    stk::diag::TimerSet enabledTimerSet;
+    stk::diag::Timer rootTimer;
+    stk::diag::Timer childTimer;
+    MPI_Comm communicator;
+
     void time_algorithm()
     {
         stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(childTimer, communicator);
         double startTime = stk::wall_time();
         run_algorithm_to_time();
-        duration = stk::wall_time() - startTime;
+        duration += stk::wall_time() - startTime;
     }
 
     void generate_output()
@@ -67,13 +78,6 @@ private:
         print_output_for_pass_fail_test(duration, get_value_to_output_as_iteration_count(), communicator);
         print_output_for_graph_generation(duration, rootTimer, communicator);
     }
-
-    const int CHILDMASK1 = 1;
-    stk::diag::TimerSet enabledTimerSet;
-    stk::diag::Timer rootTimer;
-    stk::diag::Timer childTimer;
-    double duration;
-    MPI_Comm communicator;
 };
 
 }

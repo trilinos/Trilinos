@@ -64,7 +64,7 @@ class AlgRandom : public Algorithm<Adapter>
 
   const RCP<IdentifierModel<Adapter> > model;
   const RCP<Teuchos::ParameterList> pl;
-  const RCP<Teuchos::Comm<int> > comm;
+  const RCP<const Teuchos::Comm<int> > comm;
 
   public:
 
@@ -74,12 +74,17 @@ class AlgRandom : public Algorithm<Adapter>
   AlgRandom(
     const RCP<IdentifierModel<Adapter> > &model__,
     const RCP<Teuchos::ParameterList> &pl__,
-    const RCP<Teuchos::Comm<int> > &comm__
+    const RCP<const Teuchos::Comm<int> > &comm__
   ) : model(model__), pl(pl__), comm(comm__)
   {
   }
 
-  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution)
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution)
+  {
+    throw std::logic_error("AlgRandom does not yet support global ordering.");
+  }
+
+  int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution)
   {
   
     int ierr= 0;

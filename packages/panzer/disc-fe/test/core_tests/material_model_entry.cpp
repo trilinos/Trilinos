@@ -45,8 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_MaterialModelEntry.hpp"
 
 #include <sstream>
@@ -55,7 +53,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(material_model_entry, no_params)
   {
-    PHX::KokkosDeviceSession session;
     
     std::string factory_name_m1 = "one";
     std::string factory_name_m2 = "two";
@@ -86,7 +83,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(material_model_entry, with_params)
   {
-    PHX::KokkosDeviceSession session;
     
     std::string factory_name = "one";
     Teuchos::ParameterList p1;

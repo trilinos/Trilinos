@@ -51,6 +51,39 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+/** @ingroup risk_group
+    \class ROL::MixedQuantileQuadrangle
+    \brief Provides an interface for a convex combination of
+           conditional value-at-risks.
+
+    The risk measure associated with the mixed-quantile quadrangle is defined
+    as
+    \f[
+       \mathcal{R}(X) = \lambda_1 \mathrm{CVaR}_{\beta_1}(X)
+         + \ldots + \lambda_n \mathrm{CVaR}_{\beta_n}(X)
+    \f]
+    where \f$0 \le \beta_1 \le \cdots \le \beta_n < 1\f$ and
+    \f$0 \le \lambda_i\f$, \f$i=1,\ldots,n\f$, satisfies
+    \f[
+       \lambda_1 + \ldots + \lambda_n = 1.
+    \f]
+    Here, the conditional value-at-risk (CVaR) with confidence level
+    \f$0\le \beta < 1\f$ is
+    \f[
+       \mathrm{CVaR}_\beta(X) = \inf_{t\in\mathbb{R}} \left\{
+         t + \frac{1}{1-\beta} \mathbb{E}\left[(X-t)_+\right]
+         \right\}
+    \f]
+    where \f$(x)_+ = \max\{0,x\}\f$.  If the distribution of \f$X\f$ is
+    continuous, then \f$\mathrm{CVaR}_{\beta}(X)\f$ is the conditional
+    expectation of \f$X\f$ exceeding the \f$\beta\f$-quantile of \f$X\f$ and
+    the optimal \f$t\f$ is the \f$\beta\f$-quantile.
+    Additionally, \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
+
+    When using derivative-based optimization, the user can provide a smooth
+    approximation of \f$(\cdot)_+\f$ using the ROL::PlusFunction class.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -71,6 +104,33 @@ private:
 
   bool firstReset_;
 
+  void checkInputs(void) const {
+    int pSize = prob_.size(), cSize = coeff_.size();
+    TEUCHOS_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
+      ">>> ERROR (ROL::MixedQuantileQuadrangle): Probability and coefficient arrays have different sizes!");
+    Real sum(0), zero(0), one(1);
+    for (int i = 0; i < pSize; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION((prob_[i]>one || prob_[i]<zero), std::invalid_argument,
+        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of probability array out of range!");
+      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i]>one || coeff_[i]<zero), std::invalid_argument,
+        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of coefficient array out of range!");
+      sum += coeff_[i];
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
+      ">>> ERROR (ROL::MixedQuantileQuadrangle): Coefficients do not sum to one!");
+    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::MixedQuantileQuadrangle): PlusFunction pointer is null!");
+  }
+
+  void initialize(void) {
+    size_ = prob_.size();
+    // Initialize temporary storage
+    Real zero(0);
+    xvar_.clear(); xvar_.resize(size_,zero);
+    vvar_.clear(); vvar_.resize(size_,zero);
+    vec_.clear();  vec_.resize(size_,zero);
+  }
+
 public:
 
   MixedQuantileQuadrangle( Teuchos::ParameterList &parlist )
@@ -80,66 +140,24 @@ public:
     // Grab probability and coefficient arrays
     prob_  = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");
     coeff_ = Teuchos::getArrayFromStringParameter<Real>(list,"Coefficient Array");
-    // Check array sizes
-    int pSize = prob_.size(), cSize = coeff_.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
-      ">>> ERROR (ROL::MixedQuantileQuadrangle): Probability and coefficient arrays have different sizes!");
-    size_ = pSize;
-    // Check array elements
-    Real sum = 0.0;
-    for (int i = 0; i < size_; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION((prob_[i]>1. || prob_[i]<0.), std::invalid_argument,
-        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of probability array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i]>1. || coeff_[i]<0.), std::invalid_argument,
-        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of coefficient array out of range!");
-      sum += coeff_[i];
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-1.) > std::sqrt(ROL_EPSILON)),std::invalid_argument,
-      ">>> ERROR (ROL::MixedQuantileQuadrangle): Coefficients do not sum to one!");
-    // Build (approximate) plus function
     plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
-    // Initialize temporary storage
-    xvar_.clear(); xvar_.resize(size_,0.0);
-    vvar_.clear(); vvar_.resize(size_,0.0);
-    vec_.clear();  vec_.resize(size_,0.0);
+    // Check inputs
+    checkInputs();
+    initialize();
   }
 
   MixedQuantileQuadrangle(const std::vector<Real> &prob,
                           const std::vector<Real> &coeff,
                           const Teuchos::RCP<PlusFunction<Real> > &pf )
-    : RiskMeasure<Real>(), plusFunction_(pf), firstReset_(true) {
-    prob_.clear(); coeff_.clear();
-    // Check array sizes
-    int pSize = prob.size(), cSize = coeff.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
-      ">>> ERROR (ROL::MixedQuantileQuadrangle): Probability and coefficient arrays have different sizes!");
-    size_ = pSize;
-    // Check array elements
-    Real sum = 0.0;
-    for (int i = 0; i < size_; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION((prob[i]>1. || prob[i]<0.), std::invalid_argument,
-        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of probability array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION((coeff[i]>1. || coeff[i]<0.), std::invalid_argument,
-        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of coefficient array out of range!");
-      prob_.push_back(prob_[i]);
-      coeff_.push_back(coeff_[i]);
-      sum += coeff[i];
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-1.) > std::sqrt(ROL_EPSILON)),std::invalid_argument,
-      ">>> ERROR (ROL::MixedQuantileQuadrangle): Coefficients do not sum to one!");
-    // Initialize temporary storage
-    xvar_.clear(); xvar_.resize(size_,0.0);
-    vvar_.clear(); vvar_.resize(size_,0.0);
-    vec_.clear();  vec_.resize(size_,0.0);
+    : RiskMeasure<Real>(), plusFunction_(pf), prob_(prob), coeff_(coeff), firstReset_(true) {
+    checkInputs();
+    initialize();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
-    for (int i = 0; i < size_; i++) {
-      xvar_[i] = Teuchos::dyn_cast<const RiskVector<Real> >(
-                 Teuchos::dyn_cast<const Vector<Real> >(x)).getStatistic(i);
-      vec_[i]  = 0.0;
-    }
+    Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(xvar_);
+    vec_.assign(size_,static_cast<Real>(0));
     if ( firstReset_ ) {
       dualVector_ = (x0->dual()).clone();
       firstReset_ = false;
@@ -150,50 +168,20 @@ public:
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
-           Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
-    for (int i = 0; i < size_; i++) {
-      vvar_[i] = Teuchos::dyn_cast<const RiskVector<Real> >(
-                 Teuchos::dyn_cast<const Vector<Real> >(v)).getStatistic(i);
-    }
+    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
+    Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(vvar_);
   }
 
   void update(const Real val, const Real weight) {
-    Real pf = 0.0;
+    Real pf(0), one(1);
     for (int i = 0; i < size_; i++) {
       pf = plusFunction_->evaluate(val-xvar_[i],0);
-      RiskMeasure<Real>::val_ += weight*coeff_[i]/(1.0-prob_[i])*pf;
-    }
-  }
-
-  void update(const Real val, const Vector<Real> &g, const Real weight) {
-    Real pf = 0.0, c = 0.0;
-    for (int i = 0; i < size_; i++) {
-      pf = plusFunction_->evaluate(val-xvar_[i],1);
-      c  = weight*coeff_[i]/(1.0-prob_[i])*pf;
-      vec_[i] -= c;
-      RiskMeasure<Real>::g_->axpy(c,g);
-    }
-  }
-
-  void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
-              const Real weight) {
-    Real pf1 = 0.0, pf2 = 0.0, c = 0.0;
-    for (int i = 0; i < size_; i++) {
-      pf1 = plusFunction_->evaluate(val-xvar_[i],1);
-      pf2 = plusFunction_->evaluate(val-xvar_[i],2);
-      c   = weight*coeff_[i]/(1.0-prob_[i])*pf2*(gv-vvar_[i]);
-      vec_[i] -= c;
-      //c  *= (gv-vvar_[i]);
-      RiskMeasure<Real>::hv_->axpy(c,g);
-      c = weight*coeff_[i]/(1.0-prob_[i])*pf1;
-      RiskMeasure<Real>::hv_->axpy(c,hv);
+      RiskMeasure<Real>::val_ += weight*coeff_[i]/(one-prob_[i])*pf;
     }
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
-    Real val  = RiskMeasure<Real>::val_;
-    Real cvar = 0.0;
+    Real val = RiskMeasure<Real>::val_, cvar(0);
     sampler.sumAll(&val,&cvar,1);
     for (int i = 0; i < size_; i++) {
       cvar += coeff_[i]*xvar_[i];
@@ -201,9 +189,19 @@ public:
     return cvar;
   }
 
+  void update(const Real val, const Vector<Real> &g, const Real weight) {
+    Real pf(0), c(0), one(1);
+    for (int i = 0; i < size_; i++) {
+      pf = plusFunction_->evaluate(val-xvar_[i],1);
+      c  = weight*coeff_[i]/(one-prob_[i])*pf;
+      vec_[i] -= c;
+      RiskMeasure<Real>::g_->axpy(c,g);
+    }
+  }
+
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
-    RiskVector<Real> &gs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(g));
-    std::vector<Real> var(size_,0.0);
+    RiskVector<Real> &gs = Teuchos::dyn_cast<RiskVector<Real> >(g);
+    std::vector<Real> var(size_);
     sampler.sumAll(&vec_[0],&var[0],size_);
     
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
@@ -211,12 +209,27 @@ public:
       var[i] += coeff_[i];
     }
     gs.setStatistic(var);
-    gs.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(dualVector_))); 
+    gs.setVector(*dualVector_); 
+  }
+
+  void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
+              const Real weight) {
+    Real pf1(0), pf2(0), c(0), one(1);
+    for (int i = 0; i < size_; i++) {
+      pf1 = plusFunction_->evaluate(val-xvar_[i],1);
+      pf2 = plusFunction_->evaluate(val-xvar_[i],2);
+      c   = weight*coeff_[i]/(one-prob_[i])*pf2*(gv-vvar_[i]);
+      vec_[i] -= c;
+      //c  *= (gv-vvar_[i]);
+      RiskMeasure<Real>::hv_->axpy(c,g);
+      c = weight*coeff_[i]/(one-prob_[i])*pf1;
+      RiskMeasure<Real>::hv_->axpy(c,hv);
+    }
   }
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
-    RiskVector<Real> &hs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(hv));
-    std::vector<Real> var(size_,0.0);
+    RiskVector<Real> &hs = Teuchos::dyn_cast<RiskVector<Real> >(hv);
+    std::vector<Real> var(size_);
     sampler.sumAll(&vec_[0],&var[0],size_);
 
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector_);
@@ -224,7 +237,7 @@ public:
 //      var[i] *= coeff_[i]/(1.0-prob_[i]);
 //    }
     hs.setStatistic(var);
-    hs.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(dualVector_)));
+    hs.setVector(*dualVector_);
   }
 };
 

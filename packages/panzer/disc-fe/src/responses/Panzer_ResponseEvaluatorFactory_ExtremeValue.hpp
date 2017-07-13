@@ -118,13 +118,12 @@ struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
                    (linearObjFactory!=Teuchos::null && globalIndexer!=Teuchos::null));
   }
 
-  virtual void setDerivativeInformationBase(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
-                                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & in_globalIndexer)
+  virtual void setDerivativeInformation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory)
   {
     using Teuchos::rcp_dynamic_cast;
 
     setDerivativeInformation(in_linearObjFactory,
-                             rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<LO,GO> >(in_globalIndexer,true));
+                             rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<LO,GO> >(in_linearObjFactory->getDomainGlobalIndexer(),true));
   }
 
   template <typename T>
@@ -137,6 +136,17 @@ struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
 
   virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildDerivativeFactory() const
   { return build<panzer::Traits::Jacobian>(); }
+
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildTangentFactory() const
+  { return build<panzer::Traits::Tangent>(); }
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  /** Using a panzer::Tangent evaluation type build the REFB for this
+    * response.
+    */
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildHessianFactory() const 
+  { return build<panzer::Traits::Hessian>(); }
+#endif
   
 private:
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;

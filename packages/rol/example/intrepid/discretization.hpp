@@ -79,7 +79,7 @@ class Discretization {
 
     int     numCells_;              // Number of elements
     int     cubDegree_;             // Order of integration cubature
-    double  domainLength_;          // Length of the computational domain     
+    Real    domainLength_;          // Length of the computational domain     
     int     spaceDim_;              // Number of spatial dimensions    
     int     numNodes_;              // Number of vertices 
     int     numCubPts_;             // Number of cubature points
@@ -105,7 +105,7 @@ class Discretization {
 
   public:    
 
-    Discretization(int numCells, int cubDegree, double domainLength) :
+    Discretization(int numCells, int cubDegree, Real domainLength) :
       numCells_(numCells), 
       cubDegree_(cubDegree), 
       domainLength_(domainLength) {
@@ -147,7 +147,7 @@ class Discretization {
       physCubPts_        = rcp( new FC(numCells_, numCubPts_, spaceDim_) );
       massMatrices_      = rcp( new FC(numCells_, numFields_, numFields_) );
 
-      double cellLength = domainLength_/numCells_;
+      Real cellLength = domainLength_/numCells_;
 
       // Set cell vertices (elemental end points)
       for(int i=0; i<numCells_; ++i) {

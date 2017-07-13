@@ -6,3 +6,4 @@ config.status
 *~
 build
 dist
+*.err

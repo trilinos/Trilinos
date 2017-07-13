@@ -75,12 +75,12 @@ public:
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
             Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     ls_neval = 0;
     ls_ngrad = 0;
     // Get line search parameter
     algo_iter_++;
-    alpha = LineSearch<Real>::getInitialAlpha(ls_neval,ls_ngrad,fval,gs,x,s,obj,con)/algo_iter_;
+    alpha = LineSearch<Real>::getInitialAlpha(ls_neval,ls_ngrad,fval,gs,x,s,obj,con)/static_cast<Real>(algo_iter_);
     // Update iterate
     LineSearch<Real>::updateIterate(*xnew_,x,s,alpha,con);
     // Compute objective function value

@@ -77,6 +77,7 @@
 #ifdef HAVE_XPETRA_EPETRA
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Exceptions.hpp>

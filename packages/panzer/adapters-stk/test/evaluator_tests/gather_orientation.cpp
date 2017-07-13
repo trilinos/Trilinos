@@ -64,7 +64,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -83,17 +82,16 @@ namespace panzer {
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName);
   void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb);
-  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
+  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
 
   TEUCHOS_UNIT_TEST(gather_orientation, gather_constr)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
     const std::string fieldName_qedge1 = "V";
 
-    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
 
     // build input physics block
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
@@ -110,11 +108,12 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk_classic::buildWorksets(*mesh,*physicsBlock); 
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
     RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
     dofManager->addField(fieldName_q1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
     dofManager->addField(fieldName_qedge1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_qedge1->getIntrepid2Basis())));
@@ -196,11 +195,11 @@ namespace panzer {
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_q1);
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_qedge1);
 
-    for(int i=0;i<fieldData_q1.size();i++) {
+    for(int i=0;i<static_cast<int>(fieldData_q1.size());i++) {
        TEST_EQUALITY(fieldData_q1[i],1);
     }
 
-    for(int i=0;i<fieldData_qedge1.dimension(0);i++) {
+    for(int i=0;i<fieldData_qedge1.extent_int(0);i++) {
        TEST_EQUALITY(fieldData_qedge1(i,0), 1);
        TEST_EQUALITY(fieldData_qedge1(i,1), 1);
        TEST_EQUALITY(fieldData_qedge1(i,2),-1);
@@ -217,20 +216,17 @@ namespace panzer {
      return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData)); 
   }
 
-  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY)
+  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
   {
-    typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk_classic::STK_Interface::VectorFieldType CoordinateField;
-
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
     
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
 
     return mesh;

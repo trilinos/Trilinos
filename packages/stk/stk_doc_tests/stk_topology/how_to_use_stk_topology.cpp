@@ -212,7 +212,7 @@ TEST(stk_topology_understanding, superelements)
     EXPECT_EQ(0u, validSuperElement.num_permutations());
     EXPECT_EQ(0u, validSuperElement.num_sides());
     EXPECT_EQ(0u, validSuperElement.dimension());
-    EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, validSuperElement.face_topology());
+    EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, validSuperElement.face_topology(0));
     EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, validSuperElement.edge_topology());
     EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, validSuperElement.base());
     EXPECT_FALSE(validSuperElement.has_homogeneous_faces());
@@ -228,7 +228,7 @@ TEST(stk_topology_understanding, superelements)
     EXPECT_EQ(0u, invalidSuperElement.num_permutations());
     EXPECT_EQ(0u, invalidSuperElement.num_sides());
     EXPECT_EQ(0u, invalidSuperElement.dimension());
-    EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, invalidSuperElement.face_topology());
+    EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, invalidSuperElement.face_topology(0));
     EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, invalidSuperElement.edge_topology());
     EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, invalidSuperElement.base());
     EXPECT_FALSE(invalidSuperElement.has_homogeneous_faces());
@@ -252,6 +252,9 @@ TEST(stk_topology_how_to, check_for_positive_polarity)
     EXPECT_TRUE(!quad4Topology.is_positive_polarity(5));
     EXPECT_TRUE(!quad4Topology.is_positive_polarity(6));
     EXPECT_TRUE(!quad4Topology.is_positive_polarity(7));
+
+    //or, print it and examine the output:
+    stk::verbose_print_topology(std::cout, quad4Topology);
 }
 //endCheckForPositivePolarity
 

@@ -216,8 +216,8 @@ namespace {
 
       const ScalarType zero = STS::zero();
       const ScalarType one = STS::one();
-      const ScalarType two = one + one;
-      const ScalarType four = two + two;
+      //const ScalarType two = one + one;
+      //const ScalarType four = two + two;
 
       bool success = true; // Innocent until proven guilty.
 
@@ -241,23 +241,23 @@ namespace {
       // Try some big values just to see whether ROTG correctly
       // scales its inputs to avoid overflow.
       //
-      success = success && compare (STS::rmax() / four, STS::rmax() / four);
-      success = success && compare (-STS::rmax() / four, STS::rmax() / four);
-      success = success && compare (STS::rmax() / four, -STS::rmax() / four);
+      //success = success && compare (STS::rmax() / four, STS::rmax() / four);
+      //success = success && compare (-STS::rmax() / four, STS::rmax() / four);
+      //success = success && compare (STS::rmax() / four, -STS::rmax() / four);
 
-      success = success && compare (STS::rmax() / two, STS::rmax() / two);
-      success = success && compare (-STS::rmax() / two, STS::rmax() / two);
-      success = success && compare (-STS::rmax() / two, -STS::rmax() / two);
+      //success = success && compare (STS::rmax() / two, STS::rmax() / two);
+      //success = success && compare (-STS::rmax() / two, STS::rmax() / two);
+      //success = success && compare (-STS::rmax() / two, -STS::rmax() / two);
 
-      success = success && compare (STS::rmax() / two, zero);
-      success = success && compare (zero, STS::rmax() / two);
-      success = success && compare (-STS::rmax() / two, zero);
-      success = success && compare (zero, -STS::rmax() / two);
+      //success = success && compare (STS::rmax() / two, zero);
+      //success = success && compare (zero, STS::rmax() / two);
+      //success = success && compare (-STS::rmax() / two, zero);
+      //success = success && compare (zero, -STS::rmax() / two);
 
-      success = success && compare (STS::rmax() / two, one);
-      success = success && compare (one, STS::rmax() / two);
-      success = success && compare (-STS::rmax() / two, one);
-      success = success && compare (one, -STS::rmax() / two);
+      //success = success && compare (STS::rmax() / two, one);
+      //success = success && compare (one, STS::rmax() / two);
+      //success = success && compare (-STS::rmax() / two, one);
+      //success = success && compare (one, -STS::rmax() / two);
 
       return success;
     }

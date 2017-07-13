@@ -87,13 +87,13 @@ Teuchos::RCP< Vector< double, int, long long, EpetraNode > > EpetraMultiVectorT<
 // TODO: move that elsewhere
 template<class GlobalOrdinal,class Node>
 const Epetra_MultiVector & toEpetra(const MultiVector<double, int, GlobalOrdinal,Node> & x) {
-  XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT<GlobalOrdinal COMMA Node>, x, tX, "toEpetra");
+  XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT<GlobalOrdinal XPETRA_COMMA Node>, x, tX, "toEpetra");
   return *tX.getEpetra_MultiVector();
 }
 
 template<class GlobalOrdinal,class Node>
 Epetra_MultiVector & toEpetra(MultiVector<double, int, GlobalOrdinal,Node> & x) {
-  XPETRA_DYNAMIC_CAST(      EpetraMultiVectorT<GlobalOrdinal COMMA Node>, x, tX, "toEpetra");
+  XPETRA_DYNAMIC_CAST(      EpetraMultiVectorT<GlobalOrdinal XPETRA_COMMA Node>, x, tX, "toEpetra");
   return *tX.getEpetra_MultiVector();
 }
 //

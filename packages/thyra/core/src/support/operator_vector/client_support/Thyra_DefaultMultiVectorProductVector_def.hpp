@@ -266,6 +266,108 @@ DefaultMultiVectorProductVector<Scalar>::space() const
 
 
 template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::randomizeImpl(
+  Scalar l,
+  Scalar u
+  )
+{
+  for(int k = 0; k < numBlocks_; ++k) {
+    multiVec_.getNonconstObj()->col(k)->randomize(l, u);
+  }
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::absImpl(
+  const VectorBase<Scalar>& x
+  )
+{
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_ASSERT(productSpace_->isCompatible(*x.space()));
+#endif
+  // Apply operation block-by-block if mv is also a ProductVector
+  const RCP<const ProductVectorBase<Scalar> > pv
+    = Teuchos::rcp_dynamic_cast<const ProductVectorBase<Scalar> >(Teuchos::rcpFromRef(x));
+  if (nonnull(pv)) {
+    for(int k = 0; k < numBlocks_; ++k) {
+      multiVec_.getNonconstObj()->col(k)->abs(*pv->getVectorBlock(k));
+    }
+  } else {
+    VectorDefaultBase<Scalar>::absImpl(x);
+  }
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::reciprocalImpl(
+  const VectorBase<Scalar>& x
+  )
+{
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_ASSERT(productSpace_->isCompatible(*x.space()));
+#endif
+  // Apply operation block-by-block if mv is also a ProductVector
+  const RCP<const ProductVectorBase<Scalar> > pv
+    = Teuchos::rcp_dynamic_cast<const ProductVectorBase<Scalar> >(Teuchos::rcpFromRef(x));
+  if (nonnull(pv)) {
+    for(int k = 0; k < numBlocks_; ++k) {
+      multiVec_.getNonconstObj()->col(k)->reciprocal(*pv->getVectorBlock(k));
+    }
+  } else {
+    VectorDefaultBase<Scalar>::reciprocalImpl(x);
+  }
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::eleWiseScaleImpl(
+  const VectorBase<Scalar>& x
+  )
+{
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_ASSERT(productSpace_->isCompatible(*x.space()));
+#endif
+  // Apply operation block-by-block if mv is also a ProductVector
+  const RCP<const ProductVectorBase<Scalar> > pv
+    = Teuchos::rcp_dynamic_cast<const ProductVectorBase<Scalar> >(Teuchos::rcpFromRef(x));
+  if (nonnull(pv)) {
+    for(int k = 0; k < numBlocks_; ++k) {
+      multiVec_.getNonconstObj()->col(k)->ele_wise_scale(*pv->getVectorBlock(k));
+    }
+  } else {
+    VectorDefaultBase<Scalar>::eleWiseScaleImpl(x);
+  }
+}
+
+
+template <class Scalar>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+DefaultMultiVectorProductVector<Scalar>::norm2WeightedImpl(
+  const VectorBase<Scalar>& x
+  ) const
+{
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_ASSERT(productSpace_->isCompatible(*x.space()));
+#endif
+  // Apply operation block-by-block if mv is also a ProductVector
+  typedef ScalarTraits<Scalar> ST;
+  const RCP<const ProductVectorBase<Scalar> > pv
+    = Teuchos::rcp_dynamic_cast<const ProductVectorBase<Scalar> >(Teuchos::rcpFromRef(x));
+  if (nonnull(pv)) {
+    typename ST::magnitudeType norm = ST::magnitude(ST::zero());
+    for(int k = 0; k < numBlocks_; ++k) {
+      typename ST::magnitudeType subNorm
+        = multiVec_.getConstObj()->col(k)->norm_2(*pv->getVectorBlock(k));
+      norm += subNorm*subNorm;
+    }
+    return ST::magnitude(ST::squareroot(norm));
+  } else {
+    return VectorDefaultBase<Scalar>::norm2WeightedImpl(x);
+  }
+}
+
+
+template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::applyOpImpl(
   const RTOpPack::RTOpT<Scalar> &op,
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
@@ -331,6 +433,176 @@ template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::assignImpl(Scalar alpha)
 {
   multiVec_.getNonconstObj()->assign(alpha);
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::assignMultiVecImpl(
+  const MultiVectorBase<Scalar>& mv
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(mv.domain()->dim(), 1);
+  TEUCHOS_ASSERT(productSpace_->isCompatible(*mv.range()));
+#endif
+  const RCP<const ProductMultiVectorBase<Scalar> > pv
+    = Teuchos::rcp_dynamic_cast<const ProductMultiVectorBase<Scalar> >(Teuchos::rcpFromRef(mv));
+  if (nonnull(pv)) {
+    for(int k = 0; k < numBlocks_; ++k) {
+      multiVec_.getNonconstObj()->col(k)->assign(*pv->getMultiVectorBlock(k));
+    }
+  } else {
+    MultiVectorDefaultBase<Scalar>::assignMultiVecImpl(mv);
+  }
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::scaleImpl(Scalar alpha)
+{
+  multiVec_.getNonconstObj()->scale(alpha);
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::updateImpl(
+  Scalar alpha,
+  const MultiVectorBase<Scalar>& mv
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(mv.domain()->dim(), 1);
+  TEUCHOS_ASSERT(productSpace_->isCompatible(*mv.range()));
+#endif
+  const RCP<const ProductMultiVectorBase<Scalar> > pv
+    = Teuchos::rcp_dynamic_cast<const ProductMultiVectorBase<Scalar> >(Teuchos::rcpFromRef(mv));
+  if (nonnull(pv)) {
+    for(int k = 0; k < numBlocks_; ++k) {
+      multiVec_.getNonconstObj()->col(k)->update(alpha, *pv->getMultiVectorBlock(k));
+    }
+  } else {
+    MultiVectorDefaultBase<Scalar>::updateImpl(alpha, mv);
+  }
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::linearCombinationImpl(
+  const ArrayView<const Scalar>& alpha,
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+  const Scalar& beta
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(alpha.size(), mv.size());
+  for (Ordinal i = 0; i < mv.size(); ++i) {
+    TEUCHOS_ASSERT_EQUALITY(mv[i]->domain()->dim(), 1);
+    TEUCHOS_ASSERT(productSpace_->isCompatible(*mv[i]->range()));
+  }
+#endif
+
+  // Apply operation block-by-block if each element of mv is also a ProductMultiVector
+  bool allCastsSuccessful = true;
+  Array<Ptr<const ProductMultiVectorBase<Scalar> > > pvs(mv.size());
+  for (Ordinal i = 0; i < mv.size(); ++i) {
+    pvs[i] = Teuchos::ptr_dynamic_cast<const ProductMultiVectorBase<Scalar> >(mv[i]);
+    if (pvs[i].is_null()) {
+      allCastsSuccessful = false;
+      break;
+    }
+  }
+
+  if (allCastsSuccessful) {
+    Array<RCP<const MultiVectorBase<Scalar> > > blocks_rcp(pvs.size());
+    Array<Ptr<const MultiVectorBase<Scalar> > > blocks(pvs.size());
+    for (int k = 0; k < numBlocks_; ++k) {
+      for (Ordinal i = 0; i < pvs.size(); ++i) {
+        blocks_rcp[i] = pvs[i]->getMultiVectorBlock(k);
+        blocks[i] = blocks_rcp[i].ptr();
+      }
+      multiVec_.getNonconstObj()->col(k)->linear_combination(alpha, blocks(), beta);
+    }
+  } else {
+    MultiVectorDefaultBase<Scalar>::linearCombinationImpl(alpha, mv, beta);
+  }
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::dotsImpl(
+  const MultiVectorBase<Scalar>& mv,
+  const ArrayView<Scalar>& prods
+  ) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(mv.domain()->dim(), 1);
+  TEUCHOS_ASSERT_EQUALITY(prods.size(), 1);
+  TEUCHOS_ASSERT(productSpace_->isCompatible(*mv.range()));
+#endif
+  const RCP<const ProductMultiVectorBase<Scalar> > pv
+    = Teuchos::rcp_dynamic_cast<const ProductMultiVectorBase<Scalar> >(Teuchos::rcpFromRef(mv));
+  if (nonnull(pv)) {
+    prods[0] = ScalarTraits<Scalar>::zero();
+    for(int k = 0; k < numBlocks_; ++k) {
+      Scalar prod;
+      multiVec_.getConstObj()->col(k)->dots(*pv->getMultiVectorBlock(k), Teuchos::arrayView(&prod, 1));
+      prods[0] += prod;
+    }
+  } else {
+    MultiVectorDefaultBase<Scalar>::dotsImpl(mv, prods);
+  }
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::norms1Impl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_ASSERT_EQUALITY(norms.size(), 1);
+#endif
+  typedef ScalarTraits<Scalar> ST;
+  norms[0] = ST::magnitude(ST::zero());
+  for(int k = 0; k < numBlocks_; ++k) {
+    norms[0] += multiVec_.getConstObj()->col(k)->norm_1();
+  }
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::norms2Impl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_ASSERT_EQUALITY(norms.size(), 1);
+#endif
+  typedef ScalarTraits<Scalar> ST;
+  norms[0] = ST::magnitude(ST::zero());
+  for(int k = 0; k < numBlocks_; ++k) {
+    typename ST::magnitudeType subNorm = multiVec_.getConstObj()->col(k)->norm_2();
+    norms[0] += subNorm*subNorm;
+  }
+  norms[0] = ST::magnitude(ST::squareroot(norms[0]));
+}
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::normsInfImpl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_ASSERT_EQUALITY(norms.size(), 1);
+#endif
+  typedef ScalarTraits<Scalar> ST;
+  norms[0] = ST::magnitude(ST::zero());
+  for(int k = 0; k < numBlocks_; ++k) {
+    typename ST::magnitudeType subNorm = multiVec_.getConstObj()->col(k)->norm_inf();
+    if (subNorm > norms[0])
+      norms[0] = subNorm;
+  }
 }
 
 

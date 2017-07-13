@@ -162,6 +162,7 @@ void AlgParMETIS<Adapter>::partition(
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
+  int me = problemComm->getRank();
   int np = problemComm->getSize();
 
   // Get vertex info
@@ -170,7 +171,7 @@ void AlgParMETIS<Adapter>::partition(
   int nVwgt = model->getNumWeightsPerVertex();
   size_t nVtx = model->getVertexList(vtxgnos, vwgts);
   pm_idx_t pm_nVtx;
-  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nVtx, nVtx);
+  TPL_Traits<pm_idx_t,size_t>::ASSIGN(pm_nVtx, nVtx);
 
   pm_idx_t *pm_vwgts = NULL;
   if (nVwgt) {
@@ -193,11 +194,11 @@ void AlgParMETIS<Adapter>::partition(
 
   // Convert index types for edges, if needed
   pm_idx_t *pm_offsets;  
-  TPL_Traits<pm_idx_t,const lno_t>::ASSIGN_TPL_T_ARRAY(&pm_offsets, offsets);
+  TPL_Traits<pm_idx_t,const lno_t>::ASSIGN_ARRAY(&pm_offsets, offsets);
   pm_idx_t *pm_adjs;  
   pm_idx_t pm_dummy_adj;
   if (nEdge)
-    TPL_Traits<pm_idx_t,const gno_t>::ASSIGN_TPL_T_ARRAY(&pm_adjs, adjgnos);
+    TPL_Traits<pm_idx_t,const gno_t>::ASSIGN_ARRAY(&pm_adjs, adjgnos);
   else
     pm_adjs = &pm_dummy_adj;  // ParMETIS does not like NULL pm_adjs;
     
@@ -206,15 +207,15 @@ void AlgParMETIS<Adapter>::partition(
   pm_idx_t *pm_vtxdist;
   ArrayView<size_t> vtxdist; 
   model->getVertexDist(vtxdist);
-  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T_ARRAY(&pm_vtxdist, vtxdist);
+  TPL_Traits<pm_idx_t,size_t>::ASSIGN_ARRAY(&pm_vtxdist, vtxdist);
 
   // ParMETIS does not like processors having no vertices.
   // Inspect vtxdist and remove from communicator procs that have no vertices
   RCP<Comm<int> > subcomm;
   MPI_Comm mpicomm;  // Note:  mpicomm is valid only while subcomm is in scope
 
+  int nKeep = 0;
   if (np > 1) {
-    int nKeep = 0;
     Array<int> keepRanks(np);
     for (int i = 0; i < np; i++) {
       if ((pm_vtxdist[i+1] - pm_vtxdist[i]) > 0) {
@@ -242,6 +243,8 @@ void AlgParMETIS<Adapter>::partition(
   // Create array for ParMETIS to return results in.
   pm_idx_t *pm_partList = NULL;
   if (nVtx) pm_partList = new pm_idx_t[nVtx];
+  for (size_t i = 0; i < nVtx; i++) pm_partList[i] = 0;
+  int pm_return = METIS_OK;
 
   if (mpicomm != MPI_COMM_NULL) {
     // If in ParMETIS' communicator (i.e., have vertices), call ParMETIS
@@ -264,6 +267,16 @@ void AlgParMETIS<Adapter>::partition(
     const Teuchos::ParameterList &pl = env->getParameters();
     const Teuchos::ParameterEntry *pe = pl.getEntryPtr("imbalance_tolerance");
     if (pe) tolerance = pe->getValue<double>(&tolerance);
+    
+    // ParMETIS requires tolerance to be greater than 1.0; 
+    // fudge it if condition is not met
+    if (tolerance <= 1.0) {
+      if (me == 0)
+        std::cerr << "Warning:  ParMETIS requires imbalance_tolerance > 1.0; "
+                  << "to comply, Zoltan2 reset imbalance_tolerance to 1.01."
+                  << std::endl;
+      tolerance = 1.01;
+    }
 
     pm_real_t *pm_imbTols = new pm_real_t[pm_nCon];
     for (pm_idx_t dim = 0; dim < pm_nCon; dim++)
@@ -274,9 +287,16 @@ void AlgParMETIS<Adapter>::partition(
     if (pe){
       std::string approach;
       approach = pe->getValue<std::string>(&approach);
-      if ((approach == "repartition") || (approach == "maximize_overlap"))
-        parmetis_method = "REFINE_KWAY";
-      // TODO:  AdaptiveRepart
+      if ((approach == "repartition") || (approach == "maximize_overlap")) {
+        if (nKeep > 1) 
+          // ParMETIS_V3_AdaptiveRepart requires two or more processors
+          parmetis_method = "ADAPTIVE_REPART";
+        else
+          // Probably best to do PartKway if nKeep == 1; 
+          // I think REFINE_KWAY won't give a good answer in most use cases
+          // parmetis_method = "REFINE_KWAY";
+          parmetis_method = "PARTKWAY";
+      }
     }
 
     // Other ParMETIS parameters?
@@ -290,32 +310,43 @@ void AlgParMETIS<Adapter>::partition(
     pm_options[2] = 15;  // Matches default value used in Zoltan
   
     pm_idx_t pm_nPart;
-    TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nPart, numGlobalParts);
+    TPL_Traits<pm_idx_t,size_t>::ASSIGN(pm_nPart, numGlobalParts);
 
     if (parmetis_method == "PARTKWAY") {
-      ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
-                           &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
-                           pm_partsizes, pm_imbTols, pm_options,
-                           &pm_edgecut, pm_partList, &mpicomm);
+      pm_return = ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, 
+                                       pm_vwgts, pm_ewgts, &pm_wgtflag,
+                                       &pm_numflag, &pm_nCon, &pm_nPart,
+                                       pm_partsizes, pm_imbTols, pm_options,
+                                       &pm_edgecut, pm_partList, &mpicomm);
     }
     else if (parmetis_method == "ADAPTIVE_REPART") {
       // Get object sizes:  pm_vsize
-      std::cout << "NOT READY FOR ADAPTIVE_REPART YET; NEED VSIZE" << std::endl;
-      exit(-1);
-      //pm_real_t itr = 100.;  // Same default as in Zoltan
-      //ParMETIS_V3_AdaptiveRepart(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
-      //                           pm_vsize, pm_ewgts, &pm_wgtflag,
-      //                           &pm_numflag, &pm_nCon, &pm_nPart,
-      //                           pm_partsizes, pm_imbTols,
-      //                           &itr, pm_options,
-      //                           &pm_edgecut, pm_partList, &mpicomm);
+      // TODO:  get pm_vsize info from input adapter or graph model
+      // TODO:  This is just a placeholder
+      pm_idx_t *pm_vsize = new pm_idx_t[nVtx];
+      for (size_t i = 0; i < nVtx; i++) pm_vsize[i] = 1;
+
+      pm_real_t itr = 100.;  // Same default as in Zoltan
+      pm_return = ParMETIS_V3_AdaptiveRepart(pm_vtxdist, pm_offsets, pm_adjs,
+                                             pm_vwgts,
+                                             pm_vsize, pm_ewgts, &pm_wgtflag,
+                                             &pm_numflag, &pm_nCon, &pm_nPart,
+                                             pm_partsizes, pm_imbTols,
+                                             &itr, pm_options, &pm_edgecut,
+                                             pm_partList, &mpicomm);
+      delete [] pm_vsize;
     }
-    else if (parmetis_method == "REFINE_KWAY") {
-      ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
-                             pm_ewgts,
-                             &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
-                             pm_partsizes, pm_imbTols,
-                             pm_options, &pm_edgecut, pm_partList, &mpicomm);
+    // else if (parmetis_method == "REFINE_KWAY") {
+    //   We do not currently have an execution path that calls REFINE_KWAY.
+    //   pm_return = ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, 
+    //                                      pm_vwgts, pm_ewgts, &pm_wgtflag,
+    //                                     &pm_numflag, &pm_nCon, &pm_nPart,
+    //                                    pm_partsizes, pm_imbTols, pm_options,
+    //                                      &pm_edgecut, pm_partList, &mpicomm);
+    // }
+    else {
+      // We should not reach this condition.
+      throw std::logic_error("\nInvalid ParMETIS method requested.\n");
     }
 
     // Clean up 
@@ -326,32 +357,28 @@ void AlgParMETIS<Adapter>::partition(
   // Load answer into the solution.
 
   ArrayRCP<part_t> partList;
-  if (nVtx) {
-    if (TPL_Traits<pm_idx_t, part_t>::OK_TO_CAST_TPL_T()) {
-      partList = ArrayRCP<part_t>((part_t *)pm_partList, 0, nVtx, true);
-    }
-    else {
-      // TODO Probably should have a TPL_Traits function to do the following
-      partList = ArrayRCP<part_t>(new part_t[nVtx], 0, nVtx, true);
-      for (size_t i = 0; i < nVtx; i++) {
-        partList[i] = part_t(pm_partList[i]);
-      }
-      delete [] pm_partList;
-    }
-  }
+  if (nVtx)
+    TPL_Traits<part_t, pm_idx_t>::SAVE_ARRAYRCP(&partList, pm_partList, nVtx);
+  TPL_Traits<pm_idx_t, part_t>::DELETE_ARRAY(&pm_partList);
 
   solution->setParts(partList);
 
   env->memory("Zoltan2-ParMETIS: After creating solution");
 
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<pm_idx_t,size_t>::DELETE_TPL_T_ARRAY(&pm_vtxdist);
-  TPL_Traits<pm_idx_t,const lno_t>::DELETE_TPL_T_ARRAY(&pm_offsets);
+  TPL_Traits<pm_idx_t,size_t>::DELETE_ARRAY(&pm_vtxdist);
+  TPL_Traits<pm_idx_t,const lno_t>::DELETE_ARRAY(&pm_offsets);
   if (nEdge)
-    TPL_Traits<pm_idx_t,const gno_t>::DELETE_TPL_T_ARRAY(&pm_adjs);
+    TPL_Traits<pm_idx_t,const gno_t>::DELETE_ARRAY(&pm_adjs);
 
   if (nVwgt) delete [] pm_vwgts;
   if (nEwgt) delete [] pm_ewgts;
+
+  if (pm_return != METIS_OK) {
+    throw std::runtime_error(
+          "\nParMETIS returned an error; no valid partition generated.\n"
+          "Look for 'PARMETIS ERROR' in your output for more details.\n");
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

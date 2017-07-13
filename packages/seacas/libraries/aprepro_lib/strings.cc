@@ -1,23 +1,23 @@
 // Copyright (c) 2014, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,23 +29,21 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#include <iostream>
-#include <fstream>
-
-#include "aprepro.h"
+#include "aprepro.h" // for Aprepro
+#include <iostream>  // for cout, ostream, etc
+#include <string>    // for string, operator<<
+#include <vector>    // for vector
 
 // This function is used below in the example showing how an
 // application can add its own functions to an aprepro instance.
-double succ(double i) {
-  return ++i;
-}
+double succ(double i) { return ++i; }
 
 int main(int argc, char *argv[])
 {
   SEAMS::Aprepro aprepro;
-  
+
   // Read and parse a string's worth of data at a time.
   // Cannot use looping/ifs/... with this method.
   std::vector<std::string> strings;
@@ -216,13 +214,15 @@ int main(int argc, char *argv[])
   strings.push_back("$ Test looping - print sin, cos from 0 to 90 by 5");
   strings.push_back("{_angle = -5}");
   strings.push_back("{Loop(19)}");
-  strings.push_back("{_angle += 5}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} ");
+  strings.push_back(
+      "{_angle += 5}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} ");
   strings.push_back("{EndLoop}");
   strings.push_back("");
   strings.push_back("$$$$ Test formatting and string concatenation");
   strings.push_back("{_i = 0} {_SAVE = _FORMAT}");
   strings.push_back("{loop(20)}");
-  strings.push_back("{IO(++_i)} Using the format {_FORMAT = \"%.\" // tostring(_i) // \"g\"},	PI = {PI}");
+  strings.push_back(
+      "{IO(++_i)} Using the format {_FORMAT = \"%.\" // tostring(_i) // \"g\"},	PI = {PI}");
   strings.push_back("{endloop}");
   strings.push_back("Reset format to default: {_FORMAT = _SAVE}");
   strings.push_back("");

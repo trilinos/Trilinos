@@ -79,7 +79,7 @@ supports the following classes:
 %{
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
@@ -87,10 +87,16 @@ supports the following classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
+#include "PyTrilinos_Teuchos_Util.hpp"
+
+// Epetra includes
+#ifdef HAVE_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
+#endif
 
 // NOX-Epetra includes
 #ifdef HAVE_NOX_EPETRA
-#include "Epetra_Vector.h"
+//#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #endif
@@ -137,6 +143,9 @@ supports the following classes:
 // The following #define is to change the name of LOCA method
 // arguments that conflict with a SWIG director method argument
 #define result loca_result
+
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
 
 // Teuchos::RCP handling
 %teuchos_rcp(LOCA::BorderedSystem::AbstractGroup)

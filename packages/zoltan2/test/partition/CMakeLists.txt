@@ -124,6 +124,31 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TaskMapper
+  SOURCES TaskMappingTest.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+  "nx 8 ny 8 nz 8"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TaskMappingProblemTest
+  SOURCES TaskMappingProblemTest.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+  "nx 8 ny 8 nz 8"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   blockTest
@@ -429,6 +454,11 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  MapSimulater
+  SOURCES TaskMappingSimulate.cpp
+)
+
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
   SOURCE_FILES
@@ -460,4 +490,19 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_more_files_for_partition_tests
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+##########################################
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PartitioningTree
+  SOURCES partitioningTree.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+##########################################
 

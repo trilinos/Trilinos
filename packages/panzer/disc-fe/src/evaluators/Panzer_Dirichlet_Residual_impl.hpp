@@ -60,8 +60,8 @@ PHX_EVALUATOR_CTOR(DirichletResidual,p)
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout"); 
 
   residual = PHX::MDField<ScalarT>(residual_name, data_layout);
-  dof = PHX::MDField<ScalarT>(dof_name, data_layout);
-  value = PHX::MDField<ScalarT>(value_name, data_layout);
+  dof = PHX::MDField<const ScalarT>(dof_name, data_layout);
+  value = PHX::MDField<const ScalarT>(value_name, data_layout);
   
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
@@ -84,7 +84,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual,worksets,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DirichletResidual,workset)
 { 
-  for (std::size_t i = 0; i < workset.num_cells; ++i)
+  for (index_t i = 0; i < workset.num_cells; ++i)
     for (std::size_t j = 0; j < cell_data_size; ++j)
       residual(i,j)=dof(i,j)-value(i,j);
 }

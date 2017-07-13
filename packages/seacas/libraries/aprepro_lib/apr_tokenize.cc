@@ -34,53 +34,44 @@
 #include "apr_tokenize.h"
 #include <algorithm>
 
-void SEAMS::tokenize(const std::string& str, const std::string& separators,
-              std::vector<std::string>& tokens)
+std::vector<std::string>
+SEAMS::tokenize(const std::string& str, const std::string& separators)
 {
-  std::string curr_token = "";
-  for (size_t i = 0; i < str.length(); ++i) {
-    char curr_char = str[i];
-
-    // determine if current character is a separator
-    bool is_separator = std::find(separators.begin(), separators.end(), curr_char) != separators.end();
-
-    if (is_separator && curr_token != "") {
-      // we just completed a token
-      tokens.push_back(curr_token);
-      curr_token.clear();
+  std::vector<std::string> tokens;
+  auto first = std::begin(str);
+  while (first != std::end(str)) {
+    const auto second =
+      std::find_first_of(first, std::end(str),
+			 std::begin(separators), std::end(separators));
+    if (first != second) {
+      tokens.emplace_back(first, second);
     }
-    else if (!is_separator) {
-      curr_token += curr_char;
-    }
+    if (second == std::end(str))
+      break;
+    first = std::next(second);
   }
-  if (curr_token != "") {
-    tokens.push_back(curr_token);
-  }
+  return tokens;
 }
 
 #if 0
 #include <iostream>
-using std::cout;
-using std::cin;
-
 typedef std::vector<std::string> TokenList;
 
 int main()
 {
   char s[128];
-  while(!cin.eof()) {
-    cout << "Enter a string: ";
-    cin.getline(s,128);
+  while(!std::cin.eof()) {
+    std::cout << "Enter a string: ";
+    std::cin.getline(s,128);
     std::string input_line(s);
     if (input_line != "quit") {
-      std::vector<std::string> tokens;
-      tokenize(input_line, ": \t\r\v\n", tokens);
-      cout << "There were " << tokens.size() << " tokens in the line\n";
+      std::vector<std::string> tokens = tokenize(input_line, ": \t\r\v\n");
+      std::cout << "There were " << tokens.size() << " tokens in the line\n";
       TokenList::const_iterator I = tokens.begin();
       while (I != tokens.end()) {
-        cout << "'" << *I++ << "'\t";
+	std::cout << "'" << *I++ << "'\t";
       }
-      cout << '\n';
+      std::cout << '\n';
     } else {
       exit(0);
     }

@@ -76,13 +76,13 @@ class OutArgsCreator : public StateFuncModelEvaluatorBase<Scalar>
 public:
   // Public functions overridden from ModelEvaulator.
   RCP<const VectorSpaceBase<Scalar> > get_x_space() const
-    { TEUCHOS_TEST_FOR_EXCEPT(true); return Teuchos::null; }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); TEUCHOS_UNREACHABLE_RETURN(Teuchos::null); }
   RCP<const VectorSpaceBase<Scalar> > get_f_space() const
-    { TEUCHOS_TEST_FOR_EXCEPT(true); return Teuchos::null; }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); TEUCHOS_UNREACHABLE_RETURN(Teuchos::null); }
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const
-    { TEUCHOS_TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::InArgs<Scalar>(); }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); TEUCHOS_UNREACHABLE_RETURN(ModelEvaluatorBase::InArgs<Scalar>()); }
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const
-    { TEUCHOS_TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::OutArgs<Scalar>(); }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); TEUCHOS_UNREACHABLE_RETURN(ModelEvaluatorBase::OutArgs<Scalar>()); }
   void evalModel(
     const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
@@ -597,7 +597,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   const int Np = var.Np(), Ng = var.Ng();
   
   // Setup storage for perturbed variables
-  VectorPtr per_x, per_x_dot;
+  VectorPtr per_x, per_x_dot, per_x_dot_dot;
   std::vector<VectorPtr> per_p(Np);
   MEB::InArgs<Scalar> pp = model.createInArgs();
   pp.setArgs(bp); // Set all args to start with
@@ -612,6 +612,12 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       pp.set_x_dot(per_x_dot=createMember(model.get_x_space()));
     else
       pp.set_x_dot(bp.get_x_dot());
+  }
+  if( bp.supports(MEB::IN_ARG_x_dot_dot) ) {
+    if( dir.get_x_dot_dot().get() )
+      pp.set_x_dot_dot(per_x_dot_dot=createMember(model.get_x_space()));
+    else
+      pp.set_x_dot_dot(bp.get_x_dot_dot());
   }
   for( int l = 0; l < Np; ++l ) {
     if( dir.get_p(l).get() )
@@ -831,6 +837,8 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
           V_StVpV(per_x.ptr(),as<Scalar>(uh_i*uh),*dir.get_x(),*bp.get_x());
         if ( dir.supports(MEB::IN_ARG_x_dot) && dir.get_x_dot().get() )
           V_StVpV(per_x_dot.ptr(), as<Scalar>(uh_i*uh), *dir.get_x_dot(), *bp.get_x_dot());
+        if ( dir.supports(MEB::IN_ARG_x_dot_dot) && dir.get_x_dot_dot().get() )
+          V_StVpV(per_x_dot_dot.ptr(), as<Scalar>(uh_i*uh), *dir.get_x_dot_dot(), *bp.get_x_dot_dot());
         for ( int l = 0; l < Np; ++l ) {
           if( dir.get_p(l).get() )
             V_StVpV(per_p[l].ptr(), as<Scalar>(uh_i*uh), *dir.get_p(l), *bp.get_p(l));

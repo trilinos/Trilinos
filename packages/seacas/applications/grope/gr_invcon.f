@@ -115,6 +115,7 @@ C     -element connectivity in a linear array.
            IELST = IELST + NUMELB(IELB)
          END IF
         end do
+
         if (domape) then
            do i = 0, index-1
               ia(ndcon+i) = mape(ia(ndcon+i))
@@ -188,19 +189,11 @@ C ... Node/Element inverse connectivity
             else
                id = inp
             end if
-            if (domape) then
-              IF (NOUT .GT. 0) THEN
-                WRITE (NOUT, 10030) ID, (mape(ia(ibeg+k)), k=1,icnt)
-              ELSE
-                WRITE (*, 10030)    ID, (mape(ia(ibeg+k)), k=1,icnt)
-              END IF
-            else
-              IF (NOUT .GT. 0) THEN
-                WRITE (NOUT, 10030) ID, (ia(ibeg+k), k=1,icnt)
-              ELSE
-                WRITE (*, 10030)    ID, (ia(ibeg+k), k=1,icnt)
-              END IF
-           end if
+            IF (NOUT .GT. 0) THEN
+              WRITE (NOUT, 10030) ID, (ia(ibeg+k), k=1,icnt)
+            ELSE
+              WRITE (*, 10030)    ID, (ia(ibeg+k), k=1,icnt)
+            END IF
          end do
       end if
 

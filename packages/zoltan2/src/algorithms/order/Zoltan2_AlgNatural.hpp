@@ -64,7 +64,7 @@ class AlgNatural : public Algorithm<Adapter>
 
   const RCP<IdentifierModel<Adapter> > model;
   const RCP<Teuchos::ParameterList> pl;
-  const RCP<Teuchos::Comm<int> > comm;
+  const RCP<const Teuchos::Comm<int> > comm;
 
   public:
 
@@ -74,12 +74,16 @@ class AlgNatural : public Algorithm<Adapter>
   AlgNatural(
     const RCP<IdentifierModel<Adapter> > &model__, 
     const RCP<Teuchos::ParameterList> &pl__,
-    const RCP<Teuchos::Comm<int> > &comm__
+    const RCP<const Teuchos::Comm<int> > &comm__
   ) : model(model__), pl(pl__), comm(comm__)
   {
   }
 
-  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution) 
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution) {
+    throw std::logic_error("AlgNatural does not yet support global ordering.");
+  }
+
+  int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution)
   {
 
     int ierr= 0;
@@ -90,8 +94,7 @@ class AlgNatural : public Algorithm<Adapter>
 
     // Set identity permutation.
     const size_t n = model->getLocalNumIdentifiers();
-    lno_t *perm;
-    perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
+    lno_t *perm = solution->getPermutationView();
     if (perm){
       for (size_t i=0; i<n; i++){
         perm[i] = i;

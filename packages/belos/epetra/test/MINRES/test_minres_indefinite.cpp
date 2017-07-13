@@ -132,7 +132,7 @@ main(int argc, char *argv[])
     // Create diagonal matrix with n-m positive and m negative eigenvalues.
     Epetra_Map epetraMap( NumGlobalElements, 0, Comm );
 
-    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix( Copy, epetraMap, 1 ) );
+    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix( Epetra_DataAccess::Copy, epetraMap, 1 ) );
     for ( int k=0; k<epetraMap.NumMyElements(); k++ )
     {
       int GIDk = epetraMap.GID(k);

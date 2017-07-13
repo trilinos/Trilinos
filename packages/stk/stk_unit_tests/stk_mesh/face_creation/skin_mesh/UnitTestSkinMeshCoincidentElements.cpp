@@ -2,7 +2,7 @@
 #include <stddef.h>                     // for size_t
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
@@ -16,6 +16,8 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
+
 namespace stk { namespace mesh { class Part; } }
 
 namespace
@@ -25,6 +27,8 @@ int get_other_proc(MPI_Comm comm)
 {
     return stk::parallel_machine_size(comm) - stk::parallel_machine_rank(comm) - 1;
 }
+
+// void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, Part& partToPutSidesInto)
 
 class CoincidentElements: public stk::unit_test_util::MeshTestFixture
 {
@@ -38,8 +42,7 @@ protected:
     }
     void run_skin_mesh()
     {
-        stk::mesh::ElemElemGraph elementGraph(get_bulk(), get_meta().universal_part());
-        elementGraph.skin_mesh({});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_meta().universal_part(), stk::mesh::PartVector());
     }
     void expect_faces_connected_to_num_elements_locally(const std::vector<unsigned> &goldNumConnectedElems)
     {
@@ -156,7 +159,8 @@ protected:
         expect_local_face_shared_to_other_proc({otherProc, otherProc}, {1, 2});
     }
 };
-TEST_F(TwoCoincidentQuad4ShellsInParallel, Skin)
+// disabled due to split coincident elements
+TEST_F(TwoCoincidentQuad4ShellsInParallel, DISABLED_Skin)
 {
     run_test_on_num_procs(2, stk::mesh::BulkData::NO_AUTO_AURA);
 }
@@ -219,9 +223,8 @@ class CoincidentHex8sWithAdjacentHexSerial : public CoincidentHex8sWithAdjacentH
     virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         create_coincident_hex8s_with_adjacent_hex(auraOption);
-        stk::mesh::ElemElemGraph elementGraph(get_bulk(), get_meta().universal_part());
-        elementGraph.skin_mesh({});
-        expect_faces_connected_to_num_elements_locally({1, 1, 1, 1, 1, 2, 2, 2, 2, 2});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_meta().universal_part(), {});
+        expect_faces_connected_to_num_elements_locally({2, 2, 2, 2, 2, 1, 1, 1, 1, 1});
     }
 };
 TEST_F(CoincidentHex8sWithAdjacentHexSerial, Skin)
@@ -234,10 +237,8 @@ class CoincidentHex8sWithAdjacentAirHex : public CoincidentHex8sWithAdjacentHex
     virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         create_coincident_hex8s_with_adjacent_hex(auraOption);
-
         stk::mesh::Selector air = *block2;
-        stk::mesh::ElemElemGraph elementGraph(get_bulk(), *block1, &air);
-        elementGraph.skin_mesh({});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block1, {}, &air);
 
         expect_faces_connected_to_num_elements_locally({2, 2, 2, 2, 2, 3});
     }
@@ -254,10 +255,8 @@ class Hex8WithAdjacentCoincidentAirHex8s : public CoincidentHex8sWithAdjacentHex
         create_coincident_hex8s_with_adjacent_hex(auraOption);
 
         stk::mesh::Selector air = *block1;
-        stk::mesh::ElemElemGraph elementGraph(get_bulk(), *block2, &air);
-        elementGraph.skin_mesh({});
-
-        expect_faces_connected_to_num_elements_locally({1, 1, 1, 1, 3, 1});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block2, {}, &air);
+        expect_faces_connected_to_num_elements_locally({3, 1, 1, 1, 1, 1});
     }
 };
 TEST_F(Hex8WithAdjacentCoincidentAirHex8s, Skin)
@@ -317,8 +316,7 @@ protected:
     }
     void skin_part_with_part2_as_air(stk::mesh::Selector partToSkin, stk::mesh::Selector partToConsiderAsAir)
     {
-        stk::mesh::ElemElemGraph elementGraph(get_bulk(), partToSkin, &partToConsiderAsAir);
-        elementGraph.skin_mesh({});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), partToSkin, {}, &partToConsiderAsAir);
     }
     stk::mesh::Part *block2;
 };
@@ -331,7 +329,6 @@ protected:
         create_coincident_hex8s_with_adjacent_hex_on_2_procs(auraOption, ids);
         skin_part_with_part2_as_air(*block1, *block2);
         expect_faces_connected_to_num_elements_locally_per_proc( {2, 2, 2, 2, 2, 2}, {1});
-        expect_face_ids_per_proc({1, 3, 4, 5, 6, 7}, {1});
     }
 };
 TEST_F(CoincidentHex8sWithAdjacentAirHexInParallel, SkinHex1Hex2)

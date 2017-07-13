@@ -56,18 +56,15 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
-class Epetra_Vector;
-class Epetra_CrsMatrix;
+// thyra forward decl
+namespace Thyra {
+  template <typename> class ProductVectorBase;
+}
 
 namespace panzer {
 
-class BlockedEpetraLinearObjContainer;
-
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer; //forward declaration
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class BlockedDOFManager; //forward declaration
 
 /** \brief Gathers tangent vectors dx/dp for computing df/dx*dx/dp + df/dp into
     the nodal fields of the field manager.
@@ -87,11 +84,11 @@ class GatherTangent_BlockedEpetra
     public panzer::CloneableEvaluator  {
 public:
 
-   GatherTangent_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
-     : gidIndexer_(indexer) {}
+  GatherTangent_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers)
+     : indexers_(indexers) {}
 
-   GatherTangent_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
-                                const Teuchos::ParameterList& p);
+  GatherTangent_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers,
+                               const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm);
@@ -101,7 +98,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherTangent_BlockedEpetra<EvalT,TRAITS,LO,GO>(gidIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherTangent_BlockedEpetra<EvalT,TRAITS,LO,GO>(indexers_,pl)); }
 
 
 private:
@@ -110,11 +107,10 @@ private:
   //typedef typename panzer::Traits::RealType ScalarT;
   typedef typename EvalT::ScalarT ScalarT;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > gidIndexer_;
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > indexers_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  std::vector<int> indexerIds_;   // block index
+  std::vector<int> subFieldIds_; // sub field numbers
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
@@ -122,7 +118,7 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+  Teuchos::RCP<Thyra::ProductVectorBase<double> > x_;
 
   GatherTangent_BlockedEpetra();
 };

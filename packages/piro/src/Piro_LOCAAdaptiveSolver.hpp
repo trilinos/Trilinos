@@ -104,6 +104,8 @@ private:
 
   //! Holds the final solution
   Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar> > finalPoint_;
+  
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_; 
 };
 
 

@@ -254,6 +254,16 @@ public:
    */
   static void allGather(int localVal, const ArrayView<int> &allVals);
 
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+  /// \brief Fetch a deep copy of the input arguments to \c main()
+  ///   (that is, \c argv), as given to GlobalMPISession's
+  ///   constructor.
+  ///
+  /// \return If GlobalMPISession's constructor hasn't been called
+  ///   yet, return an empty vector.  Else, return the input
+  ///   arguments.
+  static std::vector<std::string> getArgv ();
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
   //@}
 
 private:
@@ -262,6 +272,16 @@ private:
   static bool mpiIsFinalized_;
   static int rank_;
   static int nProc_;
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+  /// \brief Deep copy of the input arguments.
+  ///
+  /// This is useful if we want to call Kokkos::initialize later with
+  /// the correct command-line arguments.  We keep a deep copy because
+  /// applications may choose to modify the command-line arguments
+  /// after calling this object's constructor.  That could mess up
+  /// indexing if we just keep a pointer to the original.
+  static std::vector<std::string> argvCopy_;
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
 
   static void initialize( std::ostream *out );
 

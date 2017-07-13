@@ -92,39 +92,18 @@ NOX.Epetra provides the following user-level classes:
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
 
+// Teuchos includes
+#include "Teuchos_DefaultComm.hpp"
+
 // Epetra includes
-#include "Epetra_BLAS.h"
-#include "Epetra_Object.h"
-#include "Epetra_CompObject.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_DistObject.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_DLLExportMacro.h"
-#include "PyTrilinos_Epetra_Util.hpp"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // EpetraExt includes
 #ifdef HAVE_NOX_EPETRAEXT
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 #include "EpetraExt_ModelEvaluator.h"
+#include "PyTrilinos_EpetraExt_Util.hpp"
 #endif
 
 // NOX includes
@@ -167,21 +146,55 @@ using namespace NOX::Epetra;
 %ignore *::print(std::ostream &, int) const;
 %ignore *::operator=;
 %ignore *::operator<<;
+%ignore *::operator[];
 
 // SWIG library includes
 %include "stl.i"
 
 // Trilinos interface import
 %import "Teuchos.i"
+%teuchos_rcp(NOX::Abstract::Group)
+%teuchos_rcp(NOX::Epetra::Interface::Required)
+%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
+%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
+
+// Allow import from the this directory and its parent, and force
+// correct import of ___init__
+%pythoncode
+%{
+import sys, os.path as op
+thisDir   = op.dirname(op.abspath(__file__))
+parentDir = op.normpath(op.join(thisDir,".."))
+if not thisDir   in sys.path: sys.path.append(thisDir)
+if not parentDir in sys.path: sys.path.append(parentDir)
+del sys, op
+if "delete_Group" not in dir(___init__):
+    del ___init__
+    from . import ___init__
+%}
+
+// Include typemaps for Abstract base classes
+%ignore *::getXPtr;
+%ignore *::getFPtr;
+%ignore *::getGradientPtr;
+%ignore *::getNewtonPtr;
+%include "NOX.Abstract_typemaps.i"
+%import(module="Abstract" ) "NOX_Abstract_Group.H"
+%import(module="Abstract" ) "NOX_Abstract_PrePostOperator.H"
+%import(module="Abstract" ) "NOX_Abstract_MultiVector.H"
+%import(module="Abstract" ) "NOX_Abstract_Vector.H"
+%import(module="Interface") "NOX_Epetra_Interface_Required.H"
+%import(module="Interface") "NOX_Epetra_Interface_Jacobian.H"
+%import(module="Interface") "NOX_Epetra_Interface_Preconditioner.H"
 
 // Support for Teuchos::RCPs
+%teuchos_rcp(NOX::Epetra::Group)
+%teuchos_rcp(NOX::Epetra::FiniteDifference)
+%teuchos_rcp(NOX::Epetra::MatrixFree)
 %teuchos_rcp(NOX::Epetra::LinearSystem)
 %teuchos_rcp(NOX::Epetra::LinearSystemAztecOO)
 %teuchos_rcp(NOX::Epetra::Scaling)
 %teuchos_rcp(NOX::Epetra::VectorSpace)
-
-// Include typemaps for converting raw types to NOX.Abstract types
-%include "NOX.Abstract_typemaps.i"
 
 // Epetra import
 %import "Epetra.i"
@@ -190,7 +203,7 @@ using namespace NOX::Epetra;
 // EpetraExt import
 #ifdef HAVE_NOX_EPETRAEXT
 %ignore EpetraExt::Add;
-%include "EpetraExt.i"
+%import "EpetraExt.i"
 #endif
 
 // General exception handling
@@ -231,41 +244,9 @@ using namespace NOX::Epetra;
   }
 }
 
-%pythonbegin
-%{
-from .. import Abstract
-from .  import Interface
-%}
-
-// Allow import from the parent directory
-%pythoncode
-%{
-import sys, os.path as op
-thisDir   = op.dirname(op.abspath(__file__))
-parentDir = op.normpath(op.join(thisDir,".."))
-if not thisDir   in sys.path: sys.path.append(thisDir  )
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
-
-%teuchos_rcp(NOX::Abstract::Group)
-%import(module="Abstract") "NOX_Abstract_Group.H"
-%import(module="Abstract") "NOX_Abstract_PrePostOperator.H"
-%import(module="Abstract") "NOX_Abstract_MultiVector.H"
-%import(module="Abstract") "NOX_Abstract_Vector.H"
-
-// NOX::Epetra::Interface imports
-%teuchos_rcp(NOX::Epetra::Interface::Required)
-%import(module="Interface") "NOX_Epetra_Interface_Required.H"
-%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
-%import(module="Interface") "NOX_Epetra_Interface_Jacobian.H"
-%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
-%import(module="Interface") "NOX_Epetra_Interface_Preconditioner.H"
-
 //////////////////////////////
 // NOX.Epetra.Group support //
 //////////////////////////////
-%teuchos_rcp(NOX::Epetra::Group)
 %rename(Group_None) NOX::Epetra::Group::None;
 %include "NOX_Epetra_Group.H"
 
@@ -279,7 +260,6 @@ del sys, op
 /////////////////////////////////////////
 // NOX.Epetra.FiniteDifference support //
 /////////////////////////////////////////
-%teuchos_rcp(NOX::Epetra::FiniteDifference)
 %include "NOX_Epetra_FiniteDifference.H"
 
 /////////////////////////////////////////////////
@@ -330,7 +310,6 @@ namespace Epetra
 ///////////////////////////////////
 // NOX.Epetra.MatrixFree support //
 ///////////////////////////////////
-%teuchos_rcp(NOX::Epetra::MatrixFree)
 %include "NOX_Epetra_MatrixFree.H"
 
 ////////////////////////////////

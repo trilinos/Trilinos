@@ -96,7 +96,7 @@ ScalarT Zakharov<Real>::value(const Vector<ScalarT>& x, Real &tol) {
     // Compute dot products 
     for(int i=0; i<n; ++i) {
         xdotx += pow((*xp)[i],2);       // (k,x)
-        kdotx += double(i+1)*(*xp)[i];  // (x,x)
+        kdotx += Real(i+1)*(*xp)[i];  // (x,x)
     }
 
     // Sum terms in objective function

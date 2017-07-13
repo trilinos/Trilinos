@@ -175,11 +175,6 @@ namespace Tpetra {
             pRowMap->getComm () != pComm, std::invalid_argument,
             "The specified row map's communicator (pRowMap->getComm()) is "
             "different than the given separately supplied communicator pComm.");
-          // FIXME (mfh 25 Jun 2014) This really doesn't matter either.
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            pRowMap->getNode () != pNode, std::invalid_argument,
-            "The specified row map's node (pRowMap->getNode()) is different "
-            "than the given separately supplied node pNode.");
           return pRowMap;
         }
       }
@@ -245,6 +240,7 @@ namespace Tpetra {
         using Teuchos::ArrayView;
         using Teuchos::RCP;
         using Teuchos::rcp;
+        using Teuchos::null;
         using std::cerr;
         using std::endl;
         // Typedef to make certain type declarations shorter.
@@ -331,6 +327,7 @@ namespace Tpetra {
                   const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams)
       {
         using Teuchos::ArrayView;
+        using Teuchos::null;
         using Teuchos::RCP;
         using Teuchos::rcp;
         using std::cerr;
@@ -556,12 +553,13 @@ namespace Tpetra {
 
       static Teuchos::RCP<SparseMatrixType>
       generate_miniFE_matrix (int nx,
-                              const Teuchos::RCP<const Comm<int> >& pComm,
+                              const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
                               const Teuchos::RCP<node_type>& pNode,
                               const bool callFillComplete=true,
                               const bool debug = false)
       {
         using Teuchos::ArrayRCP;
+        using Teuchos::null;
         using Teuchos::RCP;
 
         size_t miniFE_a = 0;
@@ -732,6 +730,9 @@ namespace Tpetra {
            const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
            const Teuchos::RCP<node_type>& pNode
            ) {
+         using Teuchos::ArrayRCP;
+         using Teuchos::RCP;
+         using Teuchos::Tuple;
          typedef scalar_type ST;
          typedef local_ordinal_type LO;
          typedef global_ordinal_type GO;

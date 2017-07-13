@@ -219,6 +219,10 @@ IF(PyTrilinos_ENABLE_ML)
     PyTrilinos_ML_Util.hpp
     )
 
+  LIST(APPEND SOURCES
+    PyTrilinos_ML_Util.cpp
+    )
+
 ENDIF(PyTrilinos_ENABLE_ML)
 
 #

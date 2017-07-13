@@ -45,8 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_StlMap_Utilities.hpp"
 #include <map>
 #include <string>
@@ -55,7 +53,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(stlmap_utilities, all)
   {
-    PHX::KokkosDeviceSession session;
     
     std::map<std::string,int> my_map;
     my_map["a"] = 1;

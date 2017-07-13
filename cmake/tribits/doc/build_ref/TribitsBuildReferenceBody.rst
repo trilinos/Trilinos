@@ -1,8 +1,12 @@
 .. Common references to other documents
 
-.. _Package Dependencies and Enable/Disable Logic: ../developers_guide/TribitsDevelopersGuide.html#package-dependencies-and-enable-disable-logic
+.. _Package Dependencies and Enable/Disable Logic: https://tribits.org/doc/TribitsDevelopersGuide.html l#package-dependencies-and-enable-disable-logic
 
-.. _TriBITS Dependency Handling Behaviors: ../developers_guide/TribitsDevelopersGuide.html#tribits-dependency-handling-behaviors
+.. _TriBITS Dependency Handling Behaviors: https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-dependency-handling-behaviors
+
+.. _TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES(): https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-tpl-find-include-dirs-and-libraries
+
+.. _TRIBITS_CTEST_DRIVER(): https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-ctest-driver
 
 
 Getting set up to use CMake
@@ -130,7 +134,7 @@ a) Create a 'do-configure' script such as [Recommended]::
   NOTE: If one has already configured once and one needs to configure from
   scratch (needs to wipe clean defaults for cache variables, updates
   compilers, other types of changes) then one will want to delete the local
-  CASL and other CMake-generated files before configuring again (see
+  CMakeCache.txt and other CMake-generated files before configuring again (see
   `Reconfiguring completely from scratch`_).
 
 .. _<Project>_CONFIGURE_OPTIONS_FILE:
@@ -147,41 +151,74 @@ b) Create a CMake file fragment and point to it [Recommended].
       $EXTRA_ARGS \
       ${SOURCE_BASE}
      
-  where MyConfigureOptions.cmake might look like::
+  where MyConfigureOptions.cmake (in the current working directory) might look
+  like::
 
-    SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "")
-    SET(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "")
-    SET(BUILD_SHARED_LIBS ON CACHE BOOL "")
+    SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "Set in MyConfigureOptions.cmake")
+    SET(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "Set in MyConfigureOptions.cmake")
+    SET(BUILD_SHARED_LIBS ON CACHE BOOL "Set in MyConfigureOptions.cmake")
     ...
 
   Using a configuration fragment file allows for better reuse of configure
   options across different configure scripts and better version control of
-  configure options.  Also, when this file changes, CMake will automatically
+  configure options.  Using the comment "Set in MyConfigureOptions.cmake"
+  makes it easy see where that variable got set when looking an the
+  CMakeCache.txt file.  Also, when this file changes, CMake will automatically
   trigger a reconfgure during a make (because it knows about the file and will
   check its time stamp).
 
-  NOTE: You can actually pass in a list of configuration fragment files
-  which will be read in the order they are given.
-
-  NOTE: You can use the ``FORCE`` option in the ``SET()`` shown above and that
-  will override any value of the options that might already be set.  However,
-  that will not allow the user to override the options on the CMake
-  comamndline using ``-D<VAR>=<value>`` so it is generally desired to use
+  One can use the ``FORCE`` option in the ``SET()`` shown above and that will
+  override any value of the options that might already be set.  However, that
+  will not allow the user to override the options on the CMake comamndline
+  using ``-D<VAR>=<value>`` so it is generally **not** desired to use
   ``FORCE``.
 
-c) Using ccmake to configure
+  One can actually pass in a list of configuration fragment files separated by
+  ''","'' which will be read in the order they are given::
 
-  ::
+    -D <Project>_CONFIGURE_OPTIONS_FILE=<file0>,<file1>,...
 
-    $ ccmake $SOURCE_BASE
+  One can read in configure option files under the project source directory by
+  using the type ``STRING`` such as with::
 
-d) Using the QT CMake configuration GUI:
+    -D <Project>_CONFIGURE_OPTIONS_FILE:STRING=cmake/MpiConfig1.cmake
+
+  In this case, the relative paths will be with respect to the project base
+  source directory, not the current working directroy.  (By specifying the
+  type ``STRING``, one turns off CMake interpretation as a ``FILEPATH``.
+  Otherwise, the type ``FILEPATH`` causes CMake to always interpret relative
+  paths with respect to the current working directory and set the absolute
+  path).
+
+  Note that a CMake options file can also be read in with::
+
+    cmake -C MyConfigureOptions.cmake [other options]  ${SOURCE_BASE}
+
+  However, the advantages of using ``<Project>_CONFIGURE_OPTIONS_FILE`` are:
+
+  1) One can use ``-D<Project>_CONFIGURE_OPTIONS_FILE:STRING=<rel-path>`` to
+  use a relative path w.r.t. to the source tree to make it easier to point to
+  options files in the project source.  Using ``cmake -C`` would require
+  having to give the absolute path or a longer relative path from the build
+  directory back to the source directory.
+
+  2) ``<Project>_CONFIGURE_OPTIONS_FILE`` accepts a list of files where
+  ``cmake -C`` only accepts a single file.  That saves from having to create
+  another dummy ``*.cmake`` file that just includes the others.
+
+  3) One can create and use parameterized ``*.cmake`` files that can be used
+  with multiple TriBITS projects.  For example, one can have set statements
+  like ``SET(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME``
+  is known before the file is included.  One can't do that with ``cmake -C``
+  and instead would have to the full variables names.
+
+c) Using the QT CMake configuration GUI:
 
   On systems where the QT CMake GUI is installed (e.g. Windows) the CMake GUI
-  can be a nice way to configure <Project> if you are a user.  To make your
-  configuration easily repeatable, you might want to create a fragment file
-  and just load it by setting `<Project>_CONFIGURE_OPTIONS_FILE`_ (see above)
-  in the GUI.
+  can be a nice way to configure <Project> (or just explore options) if you
+  are a user.  To make your configuration easily repeatable, you might want to
+  create a fragment file and just load it by setting
+  `<Project>_CONFIGURE_OPTIONS_FILE`_ (see above) in the GUI.
 
 Selecting the list of packages to enable
 ----------------------------------------
@@ -229,15 +266,38 @@ for ``<Project>_SE_PACKAGES`` using, for example::
 Print package dependencies
 ++++++++++++++++++++++++++
 
-The set of package dependencies in a project will be printed in the ``cmake``
-STDOUT by setting::
+The set of package dependencies can be printed in the ``cmake`` STDOUT by
+setting the configure option::
 
   -D <Project>_DUMP_PACKAGE_DEPENDENCIES=ON
 
-This will print the basic backward dependencies for each SE package.  To also
-see the direct forward dependencies for each SE package, also include::
+This will print the basic forward/upstream dependencies for each SE package.
+To find this output, look for the line::
+
+  Printing package dependencies ...
+
+and the dependencies are listed below this for each SE package in the form::
+
+  -- <PKG>_LIB_REQUIRED_DEP_TPLS: <TPL0> <TPL1> ...
+  -- <PKG>_LIB_OPTIONAL_DEP_TPLS: <TPL2> <TPL3> ...
+  -- <PKG>_LIB_REQUIRED_DEP_PACKAGES: <PKG0> <[PKG1> ...
+  -- <PKG>_LIB_OPTIONAL_DEP_PACKAGES: <PKG2> <PKG3> ...
+  -- <PKG>_TEST_REQUIRED_DEP_TPLS: <TPL4> <TPL5> ...
+  -- <PKG>_TEST_OPTIONAL_DEP_TPLS: <TPL6> <TPL7> ...
+  -- <PKG>_TEST_REQUIRED_DEP_PACKAGES: <PKG4> <[PKG5> ...
+  -- <PKG>_TEST_OPTIONAL_DEP_PACKAGES: <PKG6> <PKG7> ...
+  
+(Dependencies that don't exist are left out of the output.  For example, if
+there are no ``<PKG>_LIB_OPTIONAL_DEP_PACKAGES`` dependencies, then that line
+is not printed.)
+
+To also see the direct forward/downstream dependencies for each SE package,
+also include::
 
   -D <Project>_DUMP_FORWARD_PACKAGE_DEPENDENCIES=ON
+
+These dependencies are printed along with the backward/upstsream dependencies
+as described above.
 
 Both of these variables are automatically enabled when
 `<Project>_VERBOSE_CONFIGURE`_ = ``ON``.
@@ -837,6 +897,16 @@ which sets the paths where the MPI executables (e.g. mpiCC, mpicc, mpirun,
 mpiexec) can be found.  By default this is set to ``${MPI_BASE_DIR}/bin`` if
 ``MPI_BASE_DIR`` is set.
 
+**NOTE:** TriBITS uses the MPI compiler wrappers (e.g. mpiCC, mpicc, mpic++,
+mpif90, etc.) which is more standard with other builds systems for HPC
+computing using MPI (and the way that MPI implementations were meant to be
+used).  But directly using the MPI compiler wrappers as the direct compilers
+is inconsistent with the way that the standard CMake module ``FindMPI.cmake``
+which tries to "unwrap" the compiler wrappers and grab out the raw underlying
+compilers and the raw compiler and linker command-line arguments.  In this
+way, TriBITS is more consistent with standard usage in the HPC community but
+is less consistent with CMake (see "HISTORICAL NOTE" below).
+
 There are several different different variations for configuring with MPI
 support:
 
@@ -889,6 +959,17 @@ a) **Configuring build using MPI compiler wrappers:**
   set the MPI compilers irrespective of the xSDK mode, then one should set
   cmake cache variables ``CMAKE_[C,CXX,Fortran]_COMPILER`` to the absolute
   path of the MPI compiler wrappers.
+
+  **HISTORICAL NOTE:** The TriBITS system has its own custom MPI integration
+  support and does not (currently) use the standard CMake module
+  ``FindMPI.cmake``.  This custom support for MPI was added to TriBITS in 2008
+  when it was found the built-in ``FindMPI.cmake`` module was not sufficient
+  for the needs of Trilinos and the approach taken by the module (still in use
+  as of CMake 3.4.x) which tries to unwrap the raw compilers and grab the list
+  of include directories, link libraries, etc, was not sufficiently portable
+  for the systems where Trilinos needed to be used.  But earlier versions of
+  TriBITS used the ``FindMPI.cmake`` module and that is why the CMake cache
+  variables ``MPI_[C,CXX,Fortran]_COMPILER`` are defined and still supported.
 
 b) **Configuring to build using raw compilers and flags/libraries:**
 
@@ -1020,6 +1101,17 @@ NOTE: If the project has ``USE_XSDK_DEFAULTS=ON`` set, then this will set
 ``BUILD_SHARED_LIBS=TRUE`` by default.  Otherwise, the default is
 ``BUILD_SHARED_LIBS=FALSE``
 
+Many systems support a feature called ``RPATH`` when shared libraries are used
+that embeds the default locations to look for shared libraries when an
+executable is run.  By default on most systems, CMake will automatically add
+RPATH directories to shared libraries and executables inside of the build
+directories.  This allows running CMake-built executables from inside the
+build directory without needing to set ``LD_LIBRARY_PATH`` on any other
+environment variables.  However, this can be disabled by setting::
+
+  -D CMAKE_SKIP_BUILD_RPATH=TRUE
+
+but it is hard to find a use case where that would be useful.
 
 Building static libraries and executables
 -----------------------------------------
@@ -1053,48 +1145,91 @@ To enable a given TPL, set::
 
   -D TPL_ENABLE_<TPLNAME>=ON
 
-where ``<TPLNAME>`` = ``Boost``, ``ParMETIS``, etc.
+where ``<TPLNAME>`` = ``BLAS``, ``LAPACK`` ``Boost``, ``Netcdf``, etc.
 
-The headers, libraries, and library directories can then be specified with
-the input cache variables:
+The full list of TPLs that is defined and can be enabled is shown by doing a
+configure with CMake and then grepping the configure output for ``Final set of
+.* TPLs``.  The set of TPL names listed in ``'Final set of enabled TPLs'`` and
+``'Final set of non-enabled TPLs'`` gives the full list of TPLs that can be
+enabled (or disabled).
 
-* ``<TPLNAME>_INCLUDE_DIRS:PATH``: List of paths to the header include
-  directories.  For example::
+Some TPLs require only libraries (e.g. Fortran libraries like BLAS or LAPACK),
+some TPL require only include directories, and some TPLs require both.
 
-    -D Boost_INCLUDE_DIRS=/usr/local/boost/include
+Each TPL specification is defined in a ``FindTPL<TPLNAME>.cmake`` module file.
+The job of each of these of these module files is to set the CMake cache
+variables:
+
+* ``TPL_<TPLNAME>_INCLUDE_DIRS:PATH``: List of paths to header files for the
+  TPL (if the TPL supplies header files).
+
+* ``TPL_<TPLNAME>_LIBRARIES:PATH``: List of (absolute) paths to libraries,
+  ordered as they will be on the link line (of the TPL supplies libraries).
+
+These variables are the only variables that are actually used in the CMake
+build system.  Therefore, one can set these two variables as CMake cache
+variables, for ``SomeTPL`` for example, with::
+
+  -D TPL_SomeTPL_INCLUDE_DIRS="${LIB_BASE}/include/a;${LIB_BASE}/include/b" \
+  -D TPL_SomeTPL_LIBRARIES="${LIB_BASE}/lib/liblib1.so;${LIB_BASE}/lib/liblib2.so" \
+
+Using this approach, one can be guaranteed that these libraries and these
+include directories and will used in the compile and link lines for the
+packages that depend on this TPL ``SomeTPL``.
+
+**WARNING:** When specifying ``TPL_<TPLNAME>_INCLUDE_DIRS`` and/or
+``TPL_<TPLNAME>_LIBRARIES``, the build system will use these without question.
+It will **not** check for the existence of these directories or files so make
+sure that these files and directories exist before these are used in the
+compiles and links.  (This can actually be a feature in rare cases the
+libraries and header files don't actually get created until after the
+configure step is complete but before the build step.)
+
+**WARNING:** Do **not** try to hack the system and set, for example::
+
+  TPL_BLAS_LIBRARIES="-L/some/dir -llib1 -llib2 ..."
+
+This is not compatible with proper CMake usage and it not guaranteed to be
+supported for all use cases or all platforms!  You should instead always use
+the full library paths when setting ``TPL_<TPLNAME>_LIBRARIES``.
+
+When the variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
+``TPL_<TPLNAME>_LIBRARIES`` are not specified, then most
+``FindTPL<TPLNAME>.cmake`` modules use a default find operation.  Some will
+call ``FIND_PACKAGE(<TPLNAME>)`` internally by default and some may implement
+the default find in some other way.  To know for sure, see the documentation
+for the specific TPL (e.g. looking in the ``FindTPL<TPLNAME>.cmake`` file to
+be sure).
+
+Most TPLs, however, use a standard system for finding include directories
+and/or libraries based on the function
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.  These simple standard
+``FindTPL<TPLNAME>.cmake`` modules specify a set of header files and/or
+libraries that must be found.  The directories where these header files and
+library files are looked for are specified using the CMake cache variables:
+
+* ``<TPLNAME>_INCLUDE_DIRS:PATH``: List of paths to search for header files
+  using ``FIND_FILE()`` for each header file, in order.
 
 * ``<TPLNAME>_LIBRARY_NAMES:STRING``: List of unadorned library names, in the
   order of the link line.  The platform-specific prefixes (e.g.. 'lib') and
   postfixes (e.g. '.a', '.lib', or '.dll') will be added automatically by
-  CMake.  For example::
-
-    -D BLAS_LIBRARY_NAMES="blas;gfortran"
+  CMake.  For example, the library ``libblas.so``, ``libblas.a``, ``blas.lib``
+  or ``blas.dll`` will all be found on the proper platform using the name
+  ``blas``.
 
 * ``<TPLNAME>_LIBRARY_DIRS:PATH``: The list of directories where the library
-  files can be found.  For example::
+  files will be searched for using ``FIND_LIBRARY()``, for each library, in
+  order.
 
-    -D BLAS_LIBRARY_DIRS=/usr/local/blas
-
-The variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and ``TPL_<TPLNAME>_LIBRARIES``
-are what are directly used by the TriBITS dependency infrastructure.  These
-variables are normally set by the variables ``<TPLNAME>_INCLUDE_DIRS``,
-``<TPLNAME>_LIBRARY_NAMES``, and ``<TPLNAME>_LIBRARY_DIRS`` using CMake
-``find`` commands but one can always override these by directly setting these
-cache variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
-``TPL_<TPLNAME>_LIBRARIES``, for example, as::
-
-  -D TPL_Boost_INCLUDE_DIRS=/usr/local/boost/include \
-  -D TPL_Boost_LIBRARIES="/user/local/boost/lib/libprogram_options.a;..."
-
-This gives the user complete and direct control in specifying exactly what is
-used in the build process.  The other variables that start with ``<TPLNAME>_``
-are just a convenience to make it easier to specify the location of the
-libraries.
+Most ``FindTPL<TPLNAME>.cmake`` modules will define a default set of libraries
+to look for and therefore ``<TPLNAME>_LIBRARY_NAMES`` can typically be left
+off.
 
 In order to allow a TPL that normally requires one or more libraries to ignore
 the libraries, one can set ``<TPLNAME>_LIBRARY_NAMES`` to empty, for example::
 
-  -D BLAS_LIBRARY_NAMES=""
+  -D <TPLNAME>_LIBRARY_NAMES=""
 
 Optional package-specific support for a TPL can be turned off by setting::
 
@@ -1112,18 +1247,123 @@ dependency on ``<TPLNAME>``.  That will result in setting
 ``TPL_ENABLE_<TPLNAME>=ON`` internally (but not set in the cache) if
 ``TPL_ENABLE_<TPLNAME>=OFF`` is not already set.
 
-WARNING: Do *not* try to hack the system and set::
+If all the parts of a TPL are not found on an initial configure the configure
+will error out with a helpful error message.  In that case, one can change the
+variables ``<TPLNAME>_INCLUDE_DIRS``, ``<TPLNAME>_LIBRARY_NAMES``, and/or
+``<TPLNAME>_LIBRARY_DIRS`` in order to help fund the parts of the TPL.  One
+can do this over and over until the TPL is found. By reconfiguring, one avoid
+a complete configure from scrath which saves time.  Or, one can avoid the find
+operations by directly setting ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
+``TPL_<TPLNAME>_LIBRARIES``.
 
-  TPL_BLAS_LIBRARIES="-L/some/dir -llib1 -llib2 ..."
+**WARNING:** The cmake cache variable ``TPL_<TPLNAME>_LIBRARY_DIRS`` does
+**not** control where libraries are found.  Instead, this variable is set
+during the find processes and is not actually used in the CMake build system
+at all.
 
-This is not compatible with proper CMake usage and it not guaranteed
-to be supported.
+In summary, this gives the user complete and direct control in specifying
+exactly what is used in the build process.
 
-If all the parts of a TPL are not found on an initial configure, then one can
-change the variables ``<TPLNAME>_INCLUDE_DIRS``, ``<TPLNAME>_LIBRARY_NAMES``,
-and/or ``<TPLNAME>_LIBRARY_DIRS``.  One can do this over and over until the
-TPL is found. By reconfiguring, one avoid a complete configure from scrath
-which saves time.
+**TPL Example 1: Standard BLAS Library**
+
+Suppose one wants to find the standard BLAS library ``blas`` in the
+directory::
+
+  /usr/lib/
+    libblas.so
+    libblas.a
+    ...
+
+The ``FindTPLBLAS.cmake`` module should be set up to automatically find the
+BLAS TPL by simply enabling BLAS with::
+
+  -D TPL_ENABLE_BLAS=ON
+
+This will result in setting the CMake cache variable ``TPL_BLAS_LIBRARIES`` as
+shown in the CMake output::
+
+  -- TPL_BLAS_LIBRARIES='/user/lib/libblas.so'
+
+(NOTE: The CMake ``FIND_LIBRARY()`` command that is used internally will
+always select the shared library by default if both shared and static
+libraries are specified, unless told otherwise.  See `Building static
+libraries and executables`_ for more details about the handling of shared and
+static libraries.)
+
+However, suppose one wants to find the ``blas`` library in a non-default
+location, such as in::
+
+  /projects/something/tpls/lib/libblas.so
+
+In this case, one could simply configure with::
+
+  -D TPL_ENABLE_BLAS=ON \
+  -D BLAS_LIBRARY_DIRS=/projects/something/tpls/lib \
+
+That will result in finding the library shown in the CMake output::
+
+  -- TPL_BLAS_LIBRARIES='/projects/something/tpls/libblas.so'
+
+And if one wants to make sure that this BLAS library is used, then one can
+just directly set::
+
+  -D TPL_BLAS_LIBRARIES=/projects/something/tpls/libblas.so
+
+**TPL Example 2: Intel Math Kernel Library (MKL) for BLAS**
+  
+There are many cases where the list of libraries specified in the
+``FindTPL<TPLNAME>.cmake`` module is not correct for the TPL that one wants to
+use or is present on the system.  In this case, one will need to set the CMake
+cache variable ``<TPLNAME>_LIBRARY_NAMES`` to tell the
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ function what libraries to
+search for, and in what order.
+
+For example, the Intel Math Kernel Library (MKL) implementation for the BLAS
+is usually given in several libraries.  The exact set of libraries needed
+depends on the version of MKL, whether 32bit or 64bit libraries are needed,
+etc.  Figuring out the correct set and ordering of these libraries for a given
+platform may not be trivial.  But once the set and the order of the libraries
+is known, then one can provide the correct list at configure time.
+
+For example, suppose one wants to use the threaded MKL libraries listed in the
+directories::
+
+  /usr/local/intel/Compiler/11.1/064/mkl/lib/em64t/
+  /usr/local/intel/Compiler/11.1/064/lib/intel64/
+
+and the list of libraries being searched for is ``mkl_intel_lp64``,
+``mkl_intel_thread``, ``mkl_core`` and ``iomp5``.
+
+In this case, one could specify this with the following do-configure script::
+
+  #!/bin/bash
+
+  INTEL_DIR=/usr/local/intel/Compiler/11.1/064
+
+  cmake \
+    -D TPL_ENABLE_BLAS=ON \
+    -D BLAS_LIBRARY_DIRS="${INTEL_DIR}/em64t;${INTEL_DIR}/intel64" \
+    -D BLAS_LIBRARY_NAMES="mkl_intel_lp64;mkl_intel_thread;mkl_core;iomp5" \
+    ...
+    ${PROJECT_SOURCE_DIR}
+
+This would call ``FIND_LIBRARY()`` on each of the listed library names in
+these directories and would find them and list them in::
+
+  -- TPL_BLAS_LIBRARIES='/usr/local/intel/Compiler/11.1/064/em64t/libmkl_intel_lp64.so;...'
+
+(where ``...`` are the rest of the found libraries.)
+  
+NOTE: When shared libraries are used, one typically only needs to list the
+direct libraries, not the indirect libraries, as the shared libraries are
+linked to each other.
+
+In this example, one could also play it super safe and manually list out the
+libraries in the right order by configuring with::
+
+  -D TPL_BLAS_LIBRARIES="${INTEL_DIR}/em64t/libmkl_intel_lp64.so;..."
+
+(where ``...`` are the rest of the libraries found in order).
 
 
 Disabling support for a Third-Party Library (TPL)
@@ -1162,6 +1402,18 @@ the tentatively enabled TPL being processes and then failing to be enabled.
 Also, it is possible that the enable process for the TPL may pass, but the
 TPL may not work correctly on the given platform.  In this case, one would
 also want to explicitly disable the TPL as shown above.
+
+
+Require all TPL libraries be found
+----------------------------------
+
+By default, some TPLs don't require that all of the libraries listed in
+``<tplName>_LIBRARY_NAMES`` be found.  To change this behavior so that all
+libraries for all enabled TPLs be found, one can set::
+
+  -D <Project>_MUST_FIND_ALL_TPL_LIBS=TRUE
+
+This makes the configure process catch more mistakes with the env.
 
 
 Disable warnings from TPL header files
@@ -1249,14 +1501,14 @@ b) **Getting verbose output from TriBITS configure:**
 
     -D <Project>_VERBOSE_CONFIGURE=ON
 
-  This produces a *lot* of output but can be very useful when debugging
+  However, this produces a *lot* of output so don't enable this unless you are
+  very desperate.  But this level of details can be very useful when debugging
   configuration problems.
 
-  To just dump the package and TPL dependencies, use::
+  To just view the package and TPL dependencies, it is recommended to use
+  ``-D`` `<Project>_DUMP_PACKAGE_DEPENDENCIES`_ ``= ON``.
 
-    -D <Project>_DUMP_PACKAGE_DEPENDENCIES=ON
-
-  To just dump the link libraries for each library and executable created,
+  To just print the link libraries for each library and executable created,
   use::
 
     -D <Project>_DUMP_LINK_LIBS=ON
@@ -1369,13 +1621,16 @@ To turn on a set a given set of tests by test category, set::
 
   -D <Project>_TEST_CATEGORIES="<CATEGORY0>;<CATEGORY1>;..." 
 
-Valid categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``
-and ``PERFORMANCE``.  ``BASIC`` tests get built and run for pre-push testing,
-CI testing, and nightly testing.  ``CONTINUOUS`` tests are for post-push
-testing and nightly testing.  ``NIGHTLY`` tests are for nightly testing only.
-``WEEKLY`` tests are for more expensive tests that are run approximately
-weekly.  ``PERFORMANCE`` tests a special category used only for performance
-testing.
+Valid categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``HEAVY`` and
+``PERFORMANCE``.  ``BASIC`` tests get built and run for pre-push testing, CI
+testing, and nightly testing.  ``CONTINUOUS`` tests are for post-push testing
+and nightly testing.  ``NIGHTLY`` tests are for nightly testing only.
+``HEAVY`` tests are for more expensive tests that require larger number of MPI
+processes and longer run times.  These test categories are nested
+(e.g. ``HEAVY`` contains all ``NIGHTLY``, ``NIGHTLY`` contains all
+``CONTINUOUS`` and ``CONTINUOUS`` contains all ``BASIC`` tests).  However,
+``PERFORMANCE`` tests are special category used only for performance testing
+and don't nest with the other categories.
 
 
 Disabling specific tests
@@ -1399,8 +1654,10 @@ reasons, configure with::
 
   -D <Project>_TRACE_ADD_TEST=ON
 
-That will print one line per show that the test got added and if not then why
-the test was not added (i.e. due to the test's ``COMM``, ``NUM_MPI_PROCS``,
+That will print one line per test and will show if the test got added or not.
+If the test is added, it shows some of the key test properties.  If the test
+did not get added, then this line will show why the test was not added
+(i.e. due to criteria related to the test's ``COMM``, ``NUM_MPI_PROCS``,
 ``CATEGORIES``, ``HOST``, ``XHOST``, ``HOSTTYPE``, or ``XHOSTTYPE``
 arguments).
 
@@ -1409,33 +1666,49 @@ arguments).
 Setting test timeouts at configure time
 ---------------------------------------
 
-A maximum default time limit for all the tests can be set at configure time
-using the cache variable::
+A maximum default time limit (timeout) for all the tests can be set at
+configure time using the cache variable::
 
   -D DART_TESTING_TIMEOUT=<maxSeconds>
 
-where ``<maxSeconds>`` is the number of wall-clock seconds.  By default there
-is no timeout limit set so it is a good idea to set some limit just so tests
-don't hang and run forever.  For example, when an MPI program has a defect, it
-can easily hang forever until it is manually killed.  If killed, CTest will
-kill all of this child processes correctly.
+where ``<maxSeconds>`` is the number of wall-clock seconds.  The default for
+most projects is 1500 seconds (see the default value set in the CMake cache).
+This value gets scaled by `<Project>_SCALE_TEST_TIMEOUT`_ and then set as the
+field ``TimeOut`` in the CMake-generated file ``DartConfiguration.tcl``.  The
+value ``TimeOut`` from this file is what is directly read by the ``ctest``
+executable.  Timeouts for tests are important.  For example, when an MPI
+program has a defect, it can easily hang (forever) until it is manually
+killed.  If killed by a timeout, CTest will kill the test process and all of
+its child processes correctly.
 
 NOTES:
 
-* Be careful not set the timeout too low since if a machine becomes loaded
-  tests can take longer to run and may result in timeouts that would not
-  otherwise occur.
-* Individual tests may have there timeout limit set on a test-by-test basis
+* If ``DART_TESTING_TIMEOUT`` is not explicitly set by the user, then the
+  projects gives it a default value (typically 1500 seconds but see the value
+  in the CMakeCache.txt file).
+
+* If ``DART_TESTING_TIMEOUT`` is explicitly set to empty
+  (i.e. ``-DDART_TESTING_TIMEOUT=``), then by default tests have no timeout
+  and can run forever until manually killed.
+
+* Individual tests may have their timeout limit set on a test-by-test basis
   internally in the project's ``CMakeLists.txt`` files (see the ``TIMEOUT``
   argument for ``TRIBITS_ADD_TEST()`` and ``TRIBITS_ADD_ADVANCED_TEST()``).
   When this is the case, the global timeout set with ``DART_TESTING_TIMEOUT``
-  has no impact on these individually set test timeouts.  To affect individual
-  test timeouts set on a test-by-test basis, use
-  `<Project>_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT`_.
-* To set or override the default global test timeout limit at runtime, see
-  `Overridding test timeouts`_.
+  has no impact on these individually set test timeouts.
 
-.. _<Project>_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT:
+* Be careful not set the global test timeout too low since if a machine
+  becomes loaded tests can take longer to run and may result in timeouts that
+  would not otherwise occur.
+
+* The value of ``DART_TESTING_TIMEOUT`` and the timeouts for individual tests
+  can be scaled up or down using the cache varaible
+  `<Project>_SCALE_TEST_TIMEOUT`_.
+
+* To set or override the default global test timeout limit at runtime, see
+  `Overriding test timeouts`_.
+
+.. _<Project>_SCALE_TEST_TIMEOUT:
 
 Scaling test timeouts at configure time
 ---------------------------------------
@@ -1460,18 +1733,22 @@ builds.
 
 NOTES:
 
+* If ``<Project>_SCALE_TEST_TIMEOUT`` is not set, the the default value is set
+  to ``1.0`` (i.e. no scaling of test timeouts).
+
 * When scaling the timeouts, the timeout is first truncated to integral
   seconds so an original timeout like ``200.5`` will be truncated to ``200``
   before it gets scaled.
 
-* Only the first fractional digit is used so ``1.57`` is truncated to ``1.5``
-  before scaling the test timeouts.
+* Only the first fractional digit of ``<Project>_SCALE_TEST_TIMEOUT`` is used
+  so ``1.57`` is truncated to ``1.5``, for example, before scaling the test
+  timeouts.
 
-* The cache value of the variable `DART_TESTING_TIMEOUT`_ is not changed in
-  the ``CMakeCache.txt`` file.  Only the value of ``TimeOut`` written into the
+* The value of the variable `DART_TESTING_TIMEOUT`_ is not changed in the
+  ``CMakeCache.txt`` file.  Only the value of ``TimeOut`` written into the
   ``DartConfiguration.tcl`` file (which is directly read by ``ctest``) will be
   scaled.  (This ensures that running configure over and over again will not
-  increase ``DART_TESTING_TIMEOUT`` each time.)
+  increase ``DART_TESTING_TIMEOUT`` or ``TimeOut`` withc each new configure.)
 
 
 Enabling support for coverage testing
@@ -1595,6 +1872,22 @@ NOTE: The set of extra repositories listed in the file
 ``<Project>_EXTRAREPOS_FILE`` can be filtered down by setting the variables
 ``<Project>_PRE_REPOSITORIES`` if PRE extra repos are listed and/or
 ``<Project>_EXTRA_REPOSITORIES`` if POST extra repos are listed.
+
+Selecting a different source location for a package
+---------------------------------------------------
+
+The source location for any package can be changed by configuring with::
+
+  -D<TRIBITS_PACKAGE>_SOURCE_DIR_OVERRIDE:STRING=<path>
+
+Here, ``<path>`` can be a relative path or an absolute path, but in both cases
+must be under the project source directory (otherwise, an error will occur).
+The relative path will then become the relative path for the package under the
+binary tree as well.
+
+This can be used, for example, to use a different repository for the
+implementation of a package that is otherwise snapshotted into the base
+project source repository (e.g. Kokkos in Trilinos).
 
   
 Reconfiguring completely from scratch
@@ -1883,7 +2176,7 @@ find the target name and then doing a find ``find . -name
 
 For this process to work correctly, you must be in the subdirectory where the
 ``TRIBITS_ADD_LIBRARY()`` or ``TRIBITS_ADD_EXECUTABLE()`` command is called
-from its ``CMakeList.txt`` file, otherwise the object file targets will not be
+from its ``CMakeLists.txt`` file, otherwise the object file targets will not be
 listed by ``make help``.
 
 NOTE: CMake does not seem to not check on dependencies when explicitly
@@ -1894,7 +2187,7 @@ file first to make sure that it gets rebuilt correctly.
 Building with verbose output without reconfiguring
 --------------------------------------------------
 
-One can get CMake to generate verbose make output at build type by just
+One can get CMake to generate verbose make output at build time by just
 setting the Makefile variable ``VERBOSE=1``, for example, as::
 
   $ make  VERBOSE=1 [<SOME_TARGET>]
@@ -1902,6 +2195,13 @@ setting the Makefile variable ``VERBOSE=1``, for example, as::
 Any number of compile or linking problem can be quickly debugged by seeing the
 raw compile and link lines.  See `Building a single object file`_ for more
 details.
+
+NOTE: The libraries listed on the link line are often in the form
+``-L<lib-dir> -l<lib1> -l<lib2>`` even if one passed in full library paths for
+TPLs through ``TPL_<TPLNAME>_LIBRARIES`` (see `Enabling support for an
+optional Third-Party Library (TPL)`_).  That is because CMake tries to keep
+the link lines as short as possible and therefore it often does this
+translation automatically (whether you want it to or not).
 
 
 Relink a target without considering dependencies
@@ -1990,7 +2290,7 @@ working directory.  To run the test exactly as ``ctest`` would, cd into the
 shown working directory and run the shown command.
 
 
-Overridding test timeouts
+Overriding test timeouts
 -------------------------
 
 The configured glboal test timeout described in ``Setting test timeouts at
@@ -1998,9 +2298,10 @@ configure time`` can be overridden on the CTest command-line as::
 
   $ ctest --timeout <maxSeconds>
 
-This will override the configured cache variable `DART_TESTING_TIMEOUT`_.
-However, this will **not** override the test timesouts set on individual tests
-on a test-by-test basis!
+This will override the configured cache variable `DART_TESTING_TIMEOUT`_
+(actually, the scaled value set as ``TimeOut`` in the file
+``DartConfiguration.tcl``).  However, this will **not** override the test
+timesouts set on individual tests on a test-by-test basis!
 
 **WARNING:** Do not try to use ``--timeout=<maxSeconds>`` or CTest will just
 ignore the argument!
@@ -2062,22 +2363,27 @@ Installing
 After a build and test of the software is complete, the software can be
 installed.  Actually, to get ready for the install, the install directory must
 be specified at configure time by setting the variable
-``CMAKE_INSTALL_PREFIX``.  The other commands described below can all be run
-after the build and testing is complete.
+``CMAKE_INSTALL_PREFIX`` in addition to other variables that affect the
+installation (see the following sections).  The other commands described below
+can all be run after the build and testing is complete.
 
-**WARNING:** When using shared libraries, one must be careful to avoid the
-error **"RegularExpression::compile(): Expression too big."** when using RPATH
-and when RPATH gets stripped out on install.  To avoid this error, use the
-shortest build directory you can, like::
+For the most typical case where the software is build and installed on the
+same machine in the same location where it will be used, one just needs to
+configure with::
 
-  $HOME/<Project>_BUILD/
+  $ cmake -DCMAKE_INSTALL_PREFIX=<install-base-dir> [other options] \
+    ${SOURCE_DIR}
+  $ make -j<N> install
 
-This has been shown to allow even the most complex TriBITS-based CMake
-projects to successfully install and avoid this error.
+For more details, see the following subsections:
 
+* `Setting the install prefix`_
+* `Setting install RPATH`_
+* `Avoiding installing libraries and headers`_
+* `Installing the software`_
 
-Setting the install prefix at configure time
---------------------------------------------
+Setting the install prefix
+--------------------------
 
 In order to set up for the install, the install prefix should be set up at
 configure time by setting, for example::
@@ -2096,12 +2402,12 @@ If these paths are relative (i.e. don't start with "/" and use type
 ``STRING``) then they are relative to ``${CMAKE_INSTALL_PREFIX}``.  Otherwise
 the paths can be absolute (use type ``PATH``) and don't have to be under
 ``${CMAKE_INSTALL_PREFIX}``.  For example, to install each part in any
-abritrary location use::
+arbitrary location use::
 
-  -D <Project>_INSTALL_INCLUDE_DIR="/usr/trilinos_include" \
-  -D <Project>_INSTALL_LIB_DIR="/usr/trilinos_lib" \
-  -D <Project>_INSTALL_RUNTIME_DIR="/usr/trilinos_bin" \
-  -D <Project>_INSTALL_EXAMPLE_DIR="/usr/share/trilinos/examples"
+  -D <Project>_INSTALL_INCLUDE_DIR="/usr/<Project>_include" \
+  -D <Project>_INSTALL_LIB_DIR="/usr/<Project>_lib" \
+  -D <Project>_INSTALL_RUNTIME_DIR="/usr/<Project>_bin" \
+  -D <Project>_INSTALL_EXAMPLE_DIR="/usr/share/<Project>/examples"
 
 NOTE: The defaults for the above include paths will be set by the standard
 CMake module ``GNUInstallDirs`` if ``<Project>_USE_GNUINSTALLDIRS=TRUE`` is
@@ -2112,6 +2418,214 @@ WARNING: To overwrite default relative paths, you must use the data type
 ``STRING`` for the cache variables.  If you don't, then CMake will use the
 current binary directory for the base path.  Otherwise, if you want to specify
 absolute paths, use the data type ``PATH`` as shown above.
+
+Setting install RPATH
+---------------------
+
+Setting RPATH for installed shared libraries and executables
+(i.e. ``BUILD_SHARED_LIBS=ON``) can be a little tricky.  Some discussion of
+how raw CMake handles RPATH and installations can be found at:
+
+.. _CMake RPATH handling reference:
+
+  https://cmake.org/Wiki/CMake_RPATH_handling
+
+The TriBITS/CMake build system being used for this <Project> CMake project
+defines the following default behavior for installed RPATH (which is not the
+same as the raw CMake default behavior):
+
+* ``CMAKE_INSTALL_RPATH`` for all libraries and executables built and installed
+  by this CMake project is set to ``${<Project>_INSTALL_LIB_DIR}``.  (This
+  default is controlled by the variable `<Project>_SET_INSTALL_RPATH`_.)
+
+* The path for all shared external libraries (i.e. TPLs) is set to the
+  location of the external libraries passed in (or automatically discovered)
+  at configure time. (This is controlled by the built-in CMake cache variable
+  ``CMAKE_INSTALL_RPATH_USE_LINK_PATH`` which is set to ``TRUE`` by default
+  for most TriBITS projects but is empty "" for raw CMake.)
+
+The above default behavior allows the installed executables and libraries to
+be run without needing to set ``LD_LIBRARY_PATH`` or any other system
+environment variables.  However, this setting does not allow the installed
+libraries and executables to be easily moved or relocated.  There are several
+built-in CMake variables that control how RPATH is handled related to
+installations.  The build-in CMake variables that control RPATH handling
+include ``CMAKE_INSTALL_RPATH``, ``CMAKE_SKIP_BUILD_RPATH``,
+``CMAKE_SKIP_INSTALL_RPATH``, ``CMAKE_SKIP_RPATH``,
+``CMAKE_BUILD_WITH_INSTALL_RPATH``, ``CMAKE_INSTALL_RPATH_USE_LINK_PATH``.
+The TriBITS/CMake build system for <Project> respects all of these raw CMake
+variables and their documented effect on the build and install.
+
+In addition, this TriBITS/CMake project defines the cache variable:
+
+.. _<Project>_SET_INSTALL_RPATH:
+
+  **<Project>_SET_INSTALL_RPATH**: If ``TRUE``, then the global CMake variable
+  ``CMAKE_INSTALL_RPATH`` is set to ``<Project>_INSTALL_LIB_DIR``.  If
+  ``CMAKE_INSTALL_RPATH`` is set by the user, then that is used instead.  This
+  avoids having to manually set ``CMAKE_INSTALL_RPATH`` to the correct default
+  install directory.
+
+Rather than re-documenting all of the native CMake RPATH variables mentioned
+above, instead, we describe how these variables should be set for different
+installation and distribution scenarios:
+
+0. `Use default CMake behavior`_
+1. `Libraries and executables are built, installed and used on same machine`_ (TriBITS default)
+2. `Targets will move after installation`_
+3. `Targets and TPLs will move after installation`_
+4. `Explicitly set RPATH for the final target system`_
+5. `Define all shared library paths at runtime using environment variables`_
+
+These scenarios in detail are:
+
+.. _Use default CMake behavior:
+
+0. *Use default CMake behavior:* If one just wants the default raw CMake
+   behavior with respect to RPATH, then configure with::
+
+     -D<Project>_SET_INSTALL_RPATH=FALSE \
+     -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=FALSE \
+
+   This will not put any directories into RPATH for the installed libraries or
+   executables.  This is the same behavior as setting
+   ``CMAKE_SKIP_INSTALL_RPATH=TRUE`` (see `Define all shared library paths at
+   runtime using environment variables`_).
+
+.. _Libraries and executables are built, installed and used on same machine:
+
+1. *Libraries and executables are built, installed and used on same machine
+   (TriBITS default):* One needs no options for this behavior but to make this
+   explicit then configure with::
+
+     -D<Project>_SET_INSTALL_RPATH=TRUE \
+     -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE \
+
+   As described above, this allows libraries and executables to be used right
+   away once installed without needing to set any environment variables.
+
+   Note that this also allows the installed libraries and executables to be
+   moved to the same location on an different but identical machine as well.
+
+.. _Targets will move after installation:
+
+2. *Targets will move after installation:* In this scenario, the final
+   location of built libraries and executables will be different on the same
+   machine or an otherwise identical machine.  In this case, we assume that
+   all of the external library references and directories would be the same.
+   In this case, one would generally configure with::
+
+     -D<Project>_SET_INSTALL_RPATH=FALSE \
+     -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE \
+
+   Then, to run any exectubles using these shared libraries, one must update
+   LD_LIBRARY_PATH as::
+
+     $ export LD_LIBRARY_PATH=<final-install-dir>/lib:$LD_LIBRARY_PATH
+
+   Or, if the final directory location is known, then one can directly
+   ``CMAKE_INSTALL_RPATH`` at configure time to match the final target system
+   and then one does not need to mess with ``LD_LIBRARY_PATH`` or any other
+   env variables (see `Explicitly set RPATH for the final target system`_).
+
+.. _Targets and TPLs will move after installation:
+
+3. *Targets and TPLs will move after installation*: In this scenario, the
+   final location of the installed libraries and executables will not be the
+   same as the initial install location and the external library (i.e. TPL)
+   locations may not be the same on the final target machine.  This can be
+   handled in one of two ways.  First, if one knows the final target machine
+   structure, then one can directly set ``CMAKE_INSTALL_RPATH`` to the
+   locations on the final target machine (see `Explicitly set RPATH for the
+   final target system`_).  Second, if one does not know the final machine
+   directory structure (or the same distribution needs to support several
+   different systems with different directory structures), then one can set
+   ``CMAKE_SKIP_INSTALL_RPATH=TRUE`` and then require setting the paths in the
+   env (see `Define all shared library paths at runtime using environment
+   variables`_).
+
+.. _Explicitly set RPATH for the final target system:
+
+4. *Explicitly set RPATH for the final target system:* If one knows the
+   directory structure of the final target machine where the installed
+   libraries and executables will be used, then one can set those paths at
+   configure time with::
+
+     -D<Project>_SET_INSTALL_RPATH=FALSE \
+     -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=FALSE \
+     -DCMAKE_INSTALL_RPATH="<path0>;<path1>;..." \
+
+   In this case ``CMAKE_INSTALL_RPATH`` is explicitly set.  (The value of
+   ``<Project>_SET_INSTALL_RPATH`` has no effect but setting it to ``FALSE``
+   may help to avoid confusion.)
+
+   Once the install directories are moved to the final location, the
+   executables can be run without any need to set environment variables.
+
+   Note that TriBITS also accepts the directory separator "``:``" for::
+
+     -DCMAKE_INSTALL_RPATH="<path0>:<path1>:..." \
+
+   and replaces it internally with "``;``" which raw CMake requires. (This
+   makes it more robust to pass around inside of CMake code since "``;``"
+   means array boundary with CMake.).  However, since ":" is not a valid
+   character for a path for any Unix system, this is a safe substitution (and
+   ``CMAKE_INSTALL_RPATH`` is not used on Windows systems that allow "``:``"
+   in a directory path).
+
+   Also note that Linux supports RPATHs with the special value ``$ORIGIN`` to
+   allow for relative paths and for relocatable installations.  (Mac OSX has
+   similar variables like ``@executable_path``.)  With this, one can define
+   ``CMAKE_INSTALL_RPATH`` using something like ``$ORIGIN/../lib``.  See the
+   above `CMake RPATH handling reference`_ for more details.
+
+.. _Define all shared library paths at runtime using environment variables:
+
+5. *Define all shared library paths at runtime using environment variables:*
+   If one wants complete freedom to define the paths for the shared libraries
+   at runtime with ``LD_LIBRARY_PATH`` on Linux (and similar variables on
+   other platforms), then one can completely strip RPATH out of the installed
+   libraries and executables by configuring with::
+
+     -DCMAKE_SKIP_INSTALL_RPATH=TRUE \
+
+   This will result in all paths being stripped out of RPATH regardless of the
+   values of ``<Project>_SET_INSTALL_RPATH`` or
+   ``CMAKE_INSTALL_RPATH_USE_LINK_PATH``.  (This is the same default behavior
+   as raw CMake, see `Use default CMake behavior`_).
+
+   Then the runtime environment must be set up to find the correct shared
+   libraries in the correct order at runtime (e.g. by setting
+   ``LD_LIBRARY_PATH``) .  But this approach provides the most flexibility
+   about where executables and libraries are installed and run from.
+
+   Also note that, while not necessary, in order to avoid confusion, it is
+   likely desired to configure with::
+
+     -D<Project>_SET_INSTALL_RPATH=FALSE \
+     -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=FALSE \
+     -DCMAKE_SKIP_INSTALL_RPATH=TRUE \
+
+   This will produce the least confusing CMake configure output.
+
+One additional issue about RPATH handling on Mac OSX systems needs to be
+mentioned. That is, in order for this default RPATH approach to work on OSX
+systems, all of the upstream shared libraries must have
+``@rpath/lib<libname>.dylib`` embedded into them (as shown by ``otool -L
+<lib_or_exec>``).  For libraries built and installed with CMake, the parent
+CMake project must be configured with::
+
+  -DBUILD_SHARED_LIBS=ON \
+  -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE \
+  -DCMAKE_MACOSX_RPATH=TRUE \
+
+For other build systems, see their documentation for shared library support on
+OSX.  To see the proper way to handle RPATH on OSX, just inspect the build and
+install commands that CMake generates (e.g. using ``make VERBOSE=1 <target>``)
+for shared libraries and then make sure that these other build systems use
+equivalent commands.  If that is done properly for the chain of all upstream
+shared libraries then the behaviors of this <Project> CMake project described
+above should hold on OSX systems as well.
 
 
 Avoiding installing libraries and headers
@@ -2143,21 +2657,26 @@ To install the software, type::
 
 Note that CMake actually puts in the build dependencies for installed targets
 so in some cases you can just type ``make -j<N> install`` and it will also
-build the software.  However, it is advanced to always build and test the
-software first before installing with::
+build the software before installing.  However, it is advised to always build
+and test the software first before installing with::
 
   $ make -j<N> && ctest -j<N> && make -j<N> install
 
 This will ensure that everything is built correctly and all tests pass before
 installing.
 
-**NOTE:** If while installing you see errors stating
-"RegularExpression::compile(): Expression too big.", then try using a shorter
-build directory path like::
+**WARNING:** When using shared libraries, one must be careful to avoid the
+error **"RegularExpression::compile(): Expression too big."** when using RPATH
+and when RPATH gets stripped out on install.  To avoid this error, use the
+shortest build directory you can, like::
 
   $HOME/<Project>_BUILD/
 
-See the above warning for more details.
+This has been shown to allow even the most complex TriBITS-based CMake
+projects to successfully install and avoid this error.
+
+NOTE: This problem has been resolved in CMake versions 3.6.0+ and does not
+require a short build directory path.
 
 
 Packaging
@@ -2225,10 +2744,11 @@ release mode, i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE==OFF``.)
 Dashboard submissions
 =====================
 
-You can use the TriBITS scripting code to submit package-by-package build,
-test, coverage, memcheck results to the project's CDash dashboard.
+All TriBITS projects have built-in support for submitting configure, build,
+and test results to CDash using the custom ``dashbaord`` target.
 
-First, configure as normal but add the build and test parallel levels with::
+First, configure as normal but add cache vars for the the build and test
+parallel levels with::
 
   -DCTEST_BUILD_FLAGS=-j4 -DCTEST_PARALLEL_LEVEL=4
 
@@ -2238,83 +2758,34 @@ with::
   $ make dashboard
 
 This invokes the advanced TriBITS CTest scripts to do an experimental build
-for all of the packages that you have explicitly enabled.  The packages that
-are implicitly enabled due to package dependencies are not directly processed
-by the experimental_build_test.cmake script.
+for all of the packages that you have explicitly enabled.  (The packages that
+are implicitly enabled due to package dependencies are not directly
+processed.)
 
-There are a number of options that you can set in the environment to control
-what this script does.  This set of options can be found by doing::
+NOTE: This generates a lot of output, so it is tyically better to pipe this to
+a file with::
 
-  $ grep 'SET_DEFAULT_AND_FROM_ENV(' \
-      $TRIBITS_DIR/ctest_driver/TribitsCTestDriverCore.cmake
+  $ make dashboard &> make.dashboard.out
 
-Currently, the variables can be set include::
+and then watch that file in another terminal with::
 
-  SET_DEFAULT_AND_FROM_ENV(<Project>_IGNORE_MISSING_EXTRA_REPOSITORIES ...)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_PRE_REPOSITORIES ...)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_EXTRA_REPOSITORIES ...)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_SOURCE_NAME <Project>)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_CONFIGURATION_UNIT_TESTING OFF)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_TEST_TYPE Experimental)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_TRACK "${<Project>_TRACK_DEFAULT}")
-  SET_DEFAULT_AND_FROM_ENV(CTEST_SITE ${CTEST_SITE_DEFAULT})
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DASHBOARD_ROOT "")
-  SET_DEFAULT_AND_FROM_ENV(BUILD_TYPE NONE)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_VERBOSE_CONFIGURE OFF)
-  SET_DEFAULT_AND_FROM_ENV(COMPILER_VERSION UNKNOWN)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_BUILD_NAME
-  SET_DEFAULT_AND_FROM_ENV(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_WIPE_CACHE TRUE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_CMAKE_GENERATOR ${DEFAULT_GENERATOR})
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_UPDATES TRUE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_UPDATE_ARGS "")
-  SET_DEFAULT_AND_FROM_ENV(CTEST_UPDATE_OPTIONS "")
-  SET_DEFAULT_AND_FROM_ENV(CTEST_BUILD_FLAGS "-j2")
-  SET_DEFAULT_AND_FROM_ENV(CTEST_BUILD_FLAGS "")
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_BUILD TRUE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_TEST TRUE)
-  SET_DEFAULT_AND_FROM_ENV(MPI_EXEC_MAX_NUMPROCS 0)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_PARALLEL_LEVEL 1)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_WARNINGS_AS_ERRORS_FLAGS "")
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_COVERAGE_TESTING FALSE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_COVERAGE_COMMAND gcov)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_MEMORY_TESTING FALSE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_MEMORYCHECK_COMMAND
-    "${CTEST_MEMORYCHECK_COMMAND_DEFAULT}")
-  SET_DEFAULT_AND_FROM_ENV(CTEST_MEMORYCHECK_COMMAND_OPTIONS "")
-  SET_DEFAULT_AND_FROM_ENV(CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE TRUE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE TRUE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_SUBMIT TRUE)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_ENABLE_SECONDARY_TESTED_CODE OFF)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_ENABLE_SECONDARY_STABLE_CODE OFF)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_ADDITIONAL_PACKAGES "")
-  SET_DEFAULT_AND_FROM_ENV(<Project>_EXCLUDE_PACKAGES "")
-  SET_DEFAULT_AND_FROM_ENV(<Project>_BRANCH "${<Project>_BRANCH_DEFAULT}")
-  SET_DEFAULT_AND_FROM_ENV(<Project>_ENABLE_DEVELOPMENT_MODE
-    "${<Project>_ENABLE_DEVELOPMENT_MODE_DEFAULT}")
-  SET_DEFAULT_AND_FROM_ENV(<Project>_REPOSITORY_LOCATION ...)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_PACKAGES "")
-  SET_DEFAULT_AND_FROM_ENV(<Project>_EXTRAREPOS_FILE ...)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE ...)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_ENABLE_MODIFIED_PACKAGES_ONLY OFF)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES ...)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES ...)
-  SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_SITE "")
-  SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_LOCATION "")
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DEPENDENCY_HANDLING_UNIT_TESTING FALSE)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_UPDATE_RETURN_VAL 0)
-  SET_DEFAULT_AND_FROM_ENV(<Project>_SOURCE_DIRECTORY ${CTEST_SOURCE_DIRECTORY})
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_SITE_COVERAGE ...)
-  SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_LOCATION_COVERAGE ...)
+  $ tail -f make.dashboard.out
 
-For details on what all of these options do, look at the file
-``TribitsCTestDriverCore.cmake`` (more detailed documentation will come in
-time).  The value of all of these variables is printed out when the ``make
-dashboard`` target is run.  From there, one can change and tweak these
-options.  To see the defaults, just run with ``CTEST_DO_SUBMIT=FALSE`` and one
-can see the values used without actually doing the submit.  Just grep for the
-names of the variables in the STDOUT for ``make dashboard``.
+There are a number of options that you can set in the cache and/or in the
+environment to control what this script does.  For the full set of options,
+see `TRIBITS_CTEST_DRIVER()`_.  More detains can be found by examining the
+file::
+
+  core/ctest_driver/TribitsCTestDriverCore.cmake
+
+under the TriBITS version being used.  To see the full list of options, and
+their default values, one can run with::
+
+  $ env CTEST_DO_SUBMIT=FALSE CTEST_DEPENDENCY_HANDLING_UNIT_TESTING=TRUE \
+    make dashboard
+
+This will print the options with their default values and then do a sort of
+mock running of the CTest driver script and point out what is is doing.
 
 For an example of variables one might want to tweak, to run an experimental
 build and in the process change the build, use::
@@ -2328,26 +2799,34 @@ printed at the end of STDOUT).
 It is useful to set ``CTEST_BUILD_NAME`` to some unique name to make it easier
 to find your results in the CDash dashboard.
 
-A number of the defaults set in ``TribitsCTestDriverCore.cmake`` are
-overridden from ``experimental_build_test.cmake`` (such as
-``CTEST_TEST_TYPE=Experimental``) so you will want to look at
-``experimental_build_test.cmake`` to see how these are changed.  The script
-``experimental_build_test.cmake`` sets reasonable values for these options in
-order to use the `make dashboard` target in iterative development for
-experimental builds.
+Note that the ``dashboard`` target is not directly related to the built-in
+CMake ``Experimental*`` targets that run standard dashboards with CTest
+without the custom TriBItS CTest driver.  The CTest driver run with the
+``dashboard`` target is more appropriate for the TriBITS-based project
+<Project> and provides more control over what gets tested and submitted.
 
-The target ``dashboard`` is not directly related to the built-in CMake targets
-'Experimental*' that run standard dashboards with CTest without the custom
-package-by-package driver in ``TribitsCTestDriverCore.cmake``.  The
-package-by-package extended CTest driver is more appropriate for the
-TriBITS-based project <Project>.
+The configure, builds, and submits are either done package-by-package or
+all-at-once as controlled by the varaible ``<Project>_CTEST_DO_ALL_AT_ONCE``.
+This can be set in the CMake cache when configuring the project using::
+
+  -D<Project>_CTEST_DO_ALL_AT_ONCE=TRUE
+
+or when running the ``dashboard`` target with::
+
+  $ env <Project>_CTEST_DO_ALL_AT_ONCE=TRUE make dashbaord.
+
+Using the ``dashboard`` target, one can also run coverage and memory testing
+and submit to CDash as described below.
 
 Once you configure with ``-D<Project>_ENABLE_COVERAGE_TESTING=ON``, the
 environment variable ``CTEST_DO_COVERAGE_TESTING=TRUE`` is automatically set
-by the target 'dashboard' so you don't have to set this yourself.
+by the target ``dashboard`` so you don't have to set this yourself.  Then when
+you run the ``dashboard`` target, it will automatically submit converage
+results to CDash as well.
 
 Doing a memory check with Valgrind requires that you set
-``CTEST_DO_MEMORY_TESTING=TRUE`` with the 'env' command as::
+``CTEST_DO_MEMORY_TESTING=TRUE`` with the 'env' command when running the
+``dashboard`` target as::
 
   $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
 
@@ -2363,10 +2842,10 @@ with::
     make dashboard
 
 The CMake cache variable ``<Project>_DASHBOARD_CTEST_ARGS`` can be set on the
-cmake configure line in order to pass additional arguments to 'ctest -S' when
-invoking the package-by-package CTest driver.  For example::
+cmake configure line in order to pass additional arguments to ``ctest -S``
+when invoking the package-by-package CTest driver.  For example::
 
-  -D <Project>_DASHBOARD_CTEST_ARGS="-VV"
+  -D<Project>_DASHBOARD_CTEST_ARGS="-VV"
 
 will set verbose output with CTest.
 
@@ -2396,12 +2875,14 @@ and ``TRIBITS_2ND_CTEST_DROP_SITE`` would be used for ``CTEST_DROP_SITE``.
 This is a common use case when upgrading to a new CDash installation or
 testing new features for CDash before impacting the existing CDash site.
 
-Note that if one kills the ``make dashboard`` target before it completes, then
-one must reconfigure from scratch in order to get the build directory back
-into the same state before the command was run.  This is because the
-``dashboard`` target must first reconfigure the project with no enabled
+Finally, note in package-by-package mode
+(i.e. ``<Project>_CTEST_DO_ALL_AT_ONCE=FALSE``) that if one kills the ``make
+dashboard`` target before it completes, then one must reconfigure from scratch
+in order to get the build directory back into the same state before the
+command was run.  This is because the ``dashboard`` target in
+package-by-package mode must first reconfigure the project with no enabled
 packages before it does the package-by-package configure/build/test/submit
 which enables each package one at a time.  After the package-by-package
 configure/build/test/submit cycles are complete, then the project is
-reconfigured with the original set of package enables and returning to the
+reconfigured with the original set of package enables and returned to the
 original configure state.

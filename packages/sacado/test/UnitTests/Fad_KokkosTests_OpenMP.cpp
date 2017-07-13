@@ -42,12 +42,7 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize OpenMP
-  size_t num_cores =
-    Kokkos::hwloc::get_available_numa_count() *
-    Kokkos::hwloc::get_available_cores_per_numa();
-  size_t num_hyper_threads =
-    Kokkos::hwloc::get_available_threads_per_core();
-  Kokkos::OpenMP::initialize(num_cores * num_hyper_threads);
+  Kokkos::OpenMP::initialize();
   Kokkos::OpenMP::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);

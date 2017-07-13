@@ -134,6 +134,8 @@ public:
    virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl);
 
 protected:
+   using Teko::BlockPreconditionerFactory::buildPreconditionerOperator;
+
    // Gimmie object
    Teuchos::RCP<LSCStrategy> invOpsStrategy_;
    bool isSymmetric_;

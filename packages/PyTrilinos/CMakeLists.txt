@@ -52,7 +52,7 @@ IF(NOT BUILD_SHARED_LIBS)
 ENDIF()
 
 # Set the package version number
-SET(PyTrilinos_VERSION 12.3 (Dev))
+SET(PyTrilinos_VERSION 12.8)
 
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
@@ -248,7 +248,17 @@ SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
 # based on whether the user has doxygen installed.
 FIND_PACKAGE(Doxygen)
 IF(DOXYGEN_FOUND)
-  SET(PyTrilinos_DOCSTRINGS_DEFAULT ON)
+  IF(${DOXYGEN_VERSION} VERSION_EQUAL 1.8.13 AND PyTrilinos_DOCSTRINGS)
+    MESSAGE(FATAL_ERROR 
+      "Doxygen version ${DOXYGEN_VERSION} has a bug that makes it incompatible with "
+      "PyTrilinos. To work around this, you may disable PyTrilinos docstrings by setting "
+      "PyTrilinos_DOCSTRINGS=OFF. "
+      "Alternatively, you may choose to use a different version of doxygen. If you "
+      "choose this route, be sure that the new version of doxygen is found first in "
+      "your environment path.")
+  ELSE(${DOXYGEN_VERSION} VERSION_EQUAL 1.8.13 AND PyTrilinos_DOCSTRINGS)
+    SET(PyTrilinos_DOCSTRINGS_DEFAULT ON)
+  ENDIF(${DOXYGEN_VERSION} VERSION_EQUAL 1.8.13 AND PyTrilinos_DOCSTRINGS)
 ELSE(DOXYGEN_FOUND)
   SET(PyTrilinos_DOCSTRINGS_DEFAULT OFF)
   MESSAGE(STATUS "doxygen not found!")

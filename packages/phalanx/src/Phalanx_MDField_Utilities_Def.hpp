@@ -107,7 +107,7 @@ namespace PHX {
 
   template<typename T> inline MDFieldIterator<T>&
   MDFieldIterator<T>::operator++ (int) {
-    MDFieldIterator<T> it(*this);
+    //MDFieldIterator<T> it(*this);
     ++(*this);
     return *this;
   }

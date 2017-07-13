@@ -455,12 +455,6 @@ void MapvBase::WarnOptimize()
 // ---------------------------------------------------------------------
 // Virtual destructor
 
-MapvBase::~MapvBase()
-{
-  if ( Count || nRoot() != 0 ) {
-    std::string msg("MapvBase destructor, container is not empty");
-    throw std::logic_error( msg );
-  }
-}
+MapvBase::~MapvBase() { }
 
 }

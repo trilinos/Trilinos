@@ -273,9 +273,8 @@ namespace PHX
 #endif
 
         nonref * result = any_cast<nonref>(&operand);
-	TEUCHOS_TEST_FOR_EXCEPTION(!result,
-				   std::runtime_error,
-				   "ERROR: failed to cast from any object to requested object type!");
+	if (!result)
+	  throw PHX::bad_any_cast();
 	
         // Attempt to avoid construction of a temporary object in cases when 
         // `ValueType` is not a reference. Example:

@@ -70,8 +70,9 @@
 #endif // HAVE_XPETRA_EPETRA
 
 #include "Xpetra_MapFactory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp" // taw: include MultiVectorFactory before VectorFactory (for BlockedMultiVector definition)
 #include "Xpetra_VectorFactory.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_MapExtractor.hpp"
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DefaultPlatform.hpp"
@@ -1509,13 +1510,12 @@ namespace {
       }
       {
         // check that 1dView and 1dCopy have the same values
-        ArrayRCP<ArrayRCP<Scalar> > views;
         Array<Scalar> copyspace(numLocal*numVectors);
         Array<ArrayView<Scalar> > copies(numVectors);
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
-        views = A.get2dViewNonConst();
+        ArrayRCP<ArrayRCP<Scalar> > views = A.get2dViewNonConst();
         A.get2dCopy(copies());
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);

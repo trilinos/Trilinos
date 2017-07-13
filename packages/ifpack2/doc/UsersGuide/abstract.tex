@@ -1,0 +1,8 @@
+This is the definitive user manual for the \ifpacktwo{} package in the Trilinos
+project.  \ifpacktwo{} provides implementations of iterative algorithms (e.g.,
+Jacobi, SOR, additive Schwarz) and processor-based incomplete factorizations.
+\ifpacktwo{} is part of the Trilinos \tpetra{} solver stack, is templated on index,
+scalar, and node types, and leverages node-level parallelism indirectly through
+its use of \tpetra{} kernels.  \ifpacktwo{} can be used to solve to matrix systems
+with greater than 2 billion rows (using 64-bit indices). \textit{Any options not documented in this
+  manual should be considered strictly experimental}.

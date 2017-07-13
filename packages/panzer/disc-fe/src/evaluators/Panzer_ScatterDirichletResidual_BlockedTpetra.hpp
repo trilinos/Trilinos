@@ -260,5 +260,9 @@ private:
 
 }
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_ScatterDirichletResidual_BlockedTpetra_Hessian.hpp"
+#endif
+
 // **************************************************************
 #endif

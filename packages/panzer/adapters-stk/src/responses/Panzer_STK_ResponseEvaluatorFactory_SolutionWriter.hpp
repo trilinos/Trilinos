@@ -17,7 +17,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 /** This class defines a response based solution writer.
   */
@@ -111,7 +111,7 @@ public:
 private:
    void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::PureBasis> > & bases,
                                  int baseDimension,
-                                 Intrepid2::FieldContainer<double> & centroid) const;
+                                 Kokkos::DynRankView<double,PHX::Device> & centroid) const;
 
    //! Delete from the argument all the fields that are in the removedFields array
    void deleteRemovedFields(const std::vector<std::string> & removedFields,
@@ -140,7 +140,7 @@ private:
 struct RespFactorySolnWriter_Builder {
   RespFactorySolnWriter_Builder() : addSolutionFields_(true), addCoordinateFields_(true) {}
 
-  Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh;
+  Teuchos::RCP<panzer_stk::STK_Interface> mesh;
 
   void scaleField(const std::string & fieldName,double fieldScalar)
   { fieldToScalar_[fieldName] = fieldScalar; }
@@ -159,7 +159,7 @@ struct RespFactorySolnWriter_Builder {
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
   { 
     Teuchos::RCP<ResponseEvaluatorFactory_SolutionWriter<T> > ref = 
-        Teuchos::rcp(new panzer_stk_classic::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); 
+        Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); 
  
     // disable/enable the solution fields
     ref->setAddSolutionFields(addSolutionFields_);

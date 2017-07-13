@@ -55,7 +55,6 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_EvaluationContainer_TemplateManager.hpp"
 
@@ -96,6 +95,82 @@ namespace PHX {
 	     typename Tag4, typename Tag5, typename Tag6, typename Tag7> 
     void getFieldData(PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
 		      Tag6,Tag7>& f);
+
+    /*! \brief Allows the user to manage the memory allocation of a
+        particular field and dynamically set/swap the memory at any
+        time.
+
+        This overrides the field allocated to this array in the
+        FieldManager. The fieldManager then sets this new memory
+        pointer in all evaluator fields that use it. 
+
+        NOTE: this is a very dangerous power user capability as the
+        user must allocate the field correctly (remember Sacado AD
+        types must have the extra dimensions sized correctly).
+    */
+    template<typename EvalT, typename DataT, 
+	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	     typename Tag4, typename Tag5, typename Tag6, typename Tag7> 
+    void setUnmanagedField(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
+                           Tag5,Tag6,Tag7>& f);
+
+    /*! \brief Allows the user to manage the memory allocation of a
+        particular field and dynamically set/swap the memory at any
+        time.
+
+        This overrides the field allocated to this array in the
+        FieldManager. The fieldManager then sets this new memory
+        pointer in all evaluator fields that use it. 
+
+        NOTE: this is a very dangerous power user capability as the
+        user must allocate the field correctly (remember Sacado AD
+        types must have the extra dimensions sized correctly).
+    */
+    template<typename EvalT, typename DataT> 
+    void setUnmanagedField(PHX::MDField<DataT>& f);
+
+    /* \brief Makes two fields point to (alias) the same memory for all evaluation types. 
+
+       WARNING: this is a very dangerous power user capability. This
+       allows users to tell the FieldManager to create a new field
+       that points to the same underlying memory as another field. The
+       user must be sure that the DataLayouts and Scalar types are the
+       same. Only use this BEFORE postRegistrationSetup() is
+       called. This injects extra dependencies that must be accounted
+       for during DAG construction.
+
+       This is intended for the use case where a user wants to reuse
+       an evalautor with hard coded field names but would like to
+       rename the evaluated fields without adding naming logic to the
+       evaluator.
+
+       @param aliasedField Field that is aliased to the target field's memory
+       @param targetField Field whos memory is pointed to by the aliased field 
+     */
+    void aliasFieldForAllEvaluationTypes(const PHX::FieldTag& aliasedField,
+                                         const PHX::FieldTag& targetField);
+
+    /* \brief Makes two fields point to (alias) the same memory for a specific evaluation type. 
+
+       WARNING: this is a very dangerous power user capability. This
+       allows users to tell the FieldManager to create a new field
+       that points to the same underlying memory as another field. The
+       user must be sure that the DataLayouts and Scalar types are the
+       same. Only use this BEFORE postRegistrationSetup() is
+       called. This injects extra dependencies that must be accounted
+       for during DAG construction.
+
+       This is intended for the use case where a user wants to reuse
+       an evalautor with hard coded field names but would like to
+       rename the evaluated fields without adding naming logic to the
+       evaluator.
+
+       @param aliasedField Field that is aliased to the target field's memory
+       @param targetField Field whos memory is pointed to by the aliased field 
+     */
+    template<typename EvalT> 
+    void aliasField(const PHX::FieldTag& aliasedField,
+                    const PHX::FieldTag& targetField);
     
     //! Allocates memory for a single evaluation type
     template<typename EvalT>
@@ -110,11 +185,11 @@ namespace PHX {
 #ifdef PHX_ENABLE_KOKKOS_AMT
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
 
-      @param threads_per_task The number of threads used for data parallelism within a single task.
-      @param d User defined data
+      @param work_size The number of parallel work units.
+      @param d User defined data.
      */
     template<typename EvalT>
-    void evaluateFieldsTaskParallel(const int& threads_per_task,
+    void evaluateFieldsTaskParallel(const int& work_size,
 				    typename Traits::EvalData d);
 #endif
 

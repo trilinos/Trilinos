@@ -112,6 +112,71 @@ int main(int argc, char* argv[])
     numberFailedTests++;
   }
 
+  if (verbose) std::cout << "STEQR test ... ";
+
+  typedef double ScalarType;
+  typedef Teuchos::ScalarTraits<ScalarType> STS;
+  typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+
+  const int DIAG_SZ = 1031;
+
+  std::vector<ScalarType> diagonal(DIAG_SZ);
+  std::vector<ScalarType> subdiagonal(DIAG_SZ-1);
+
+  for (i=0; i < DIAG_SZ; ++i) {
+    diagonal[i] = DIAG_SZ - i;
+    if (i < DIAG_SZ-1)
+      subdiagonal[i] = STS::eps () * i;
+  }
+
+  ScalarType expected_lambda_min = STS::one ();
+  ScalarType expected_lambda_max = DIAG_SZ;
+
+  int dont_call_me_info = 0;
+  const int dummy_ldz = 1;
+  std::vector<ScalarType> scalar_dummy(1,-1.0);
+  char char_N = 'N';
+  Teuchos::LAPACK<int,ScalarType> lapack;
+  const int N = DIAG_SZ;
+  std::vector<MagnitudeType> mag_dummy(N);
+
+  ScalarType lambda_min = STS::one ();
+  ScalarType lambda_max = STS::one ();
+
+  if( N > 2 ) {
+    lapack.STEQR (char_N, N, &diagonal[0], &subdiagonal[0],
+		  &scalar_dummy[0], dummy_ldz, &mag_dummy[0], &dont_call_me_info);
+
+    if (dont_call_me_info < 0) {
+      if (verbose)
+	std::cout << "STEQR: compute symmetric tridiagonal eigenvalues: "
+		  << "LAPACK's _STEQR failed with info = "
+		  << dont_call_me_info << " < 0.";
+
+      numberFailedTests++;
+    }
+    lambda_min = diagonal[0];
+    lambda_max = diagonal[N-1];
+  }
+
+  using std::fabs;
+  bool good_lambda_min = (fabs (lambda_min - expected_lambda_min) <= 1.e-8);
+  bool good_lambda_max = (fabs (lambda_max - expected_lambda_max) <= 1.e-8);
+
+  if (good_lambda_min && good_lambda_max) {
+    if (verbose) std::cout << "Passed! ( Lambda min: expected "
+			   << expected_lambda_min << ", computed " << lambda_min
+			   << "; Lambda max: expected " << expected_lambda_max << ", computed " << lambda_max <<  ")"
+			   << std::endl;
+
+  } else {
+    if (verbose) std::cout << "FAILED ( Lambda min: expected "
+			   << expected_lambda_min << ", computed " << lambda_min
+			   << "; Lambda max: expected " << expected_lambda_max << ", computed " << lambda_max <<  ")"
+			   << std::endl;
+    numberFailedTests++;
+  }
+
 #if ! (defined(__INTEL_COMPILER) && defined(_WIN32) )
 
   // Check ILAENV with similarity transformation routine:  dsytrd

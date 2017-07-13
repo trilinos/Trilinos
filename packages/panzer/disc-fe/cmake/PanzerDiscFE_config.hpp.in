@@ -5,6 +5,7 @@
 #include "PanzerDofMgr_config.hpp"
 
 #cmakedefine Panzer_BUILD_PAPI_SUPPORT
+#cmakedefine Panzer_BUILD_HESSIAN_SUPPORT
 #cmakedefine PANZER_HAVE_CAMAL
 
 #endif

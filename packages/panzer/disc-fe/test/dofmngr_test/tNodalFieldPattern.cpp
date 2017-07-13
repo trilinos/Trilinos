@@ -48,8 +48,6 @@
 #include <string>
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 
@@ -78,13 +76,10 @@ namespace panzer {
 // triangle tests
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 {
-   PHX::KokkosDeviceSession session;
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis1, basis2;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis1, basis2;
-
-   basis1 = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
-   basis2 = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<double,FieldContainer>);
+   basis1 = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
+   basis2 = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern1 = rcp(new Intrepid2FieldPattern(basis1));
    Teuchos::RCP<FieldPattern> pattern2 = rcp(new Intrepid2FieldPattern(basis2));
@@ -96,13 +91,10 @@ TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test3d_HEX_c1)
 {
-   PHX::KokkosDeviceSession session;
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis1, basis2;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis1, basis2;
-
-   basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
-   basis2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
+   basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
+   basis2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern1 = rcp(new Intrepid2FieldPattern(basis1));
    Teuchos::RCP<FieldPattern> pattern2 = rcp(new Intrepid2FieldPattern(basis2));

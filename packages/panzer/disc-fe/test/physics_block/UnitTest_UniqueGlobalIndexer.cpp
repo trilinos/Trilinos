@@ -175,7 +175,7 @@ void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
    indices[11] = 11;
 }
 
-void UniqueGlobalIndexer::getOwnedAndSharedIndices(std::vector<int> & indices) const
+void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<int> & indices) const
 {
    getOwnedIndices(indices);
 }

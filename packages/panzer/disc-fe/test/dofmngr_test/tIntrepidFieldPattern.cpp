@@ -48,8 +48,6 @@
 #include <string>
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 // include some intrepid basis functions
@@ -65,7 +63,7 @@
 
 #include "Intrepid2_HDIV_TRI_I1_FEM.hpp"
 
-#include "Panzer_Intrepid_ConstBasis.hpp"
+#include "Intrepid2_Basis_Const_FEM.hpp"
 
 #include "Shards_BasicTopologies.hpp"
 
@@ -87,14 +85,12 @@ std::string note = "***   NOTE: UNIT TEST BASED ON SEPT 2010   ***\n"
 // triangle tests
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c1)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis;
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
 
-   basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
+   basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
   
@@ -163,14 +159,12 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c1)
    // test quadratic triangle
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c2)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis;
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
 
-   basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<double,FieldContainer>);
+   basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -247,13 +241,11 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c2)
 // quad tests
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c1)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis;
-   basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
+   basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -331,13 +323,11 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c1)
 
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c2)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis;
-   basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
+   basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -446,13 +436,11 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c2)
 // hex tests
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c1)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis;
-   basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
+   basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -539,13 +527,11 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c1)
 
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c2)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis;
-   basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
+   basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -703,12 +689,10 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c2)
 
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_hdivi1)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
 
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2::Basis_HDIV_TRI_I1_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HDIV_TRI_I1_FEM<PHX::exec_space,double,double>);
    RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
    pattern->print(out);
@@ -723,10 +707,8 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_hdivi1)
 
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
 
    shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
    shards::CellTopology hex(shards::getCellTopologyData<shards::Hexahedron<8> >());
@@ -734,7 +716,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >()); // i'm irritated there are 4 letters in quad!
 
    {
-     RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new panzer::Basis_Constant<double,FieldContainer>(tet));
+     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_Constant_FEM<PHX::exec_space,double,double>(tet));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
@@ -770,7 +752,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    }
 
    {
-     RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new panzer::Basis_Constant<double,FieldContainer>(hex));
+     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_Constant_FEM<PHX::exec_space,double,double>(hex));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
@@ -818,7 +800,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    }
 
    {
-     RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new panzer::Basis_Constant<double,FieldContainer>(tri));
+     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_Constant_FEM<PHX::exec_space,double,double>(tri));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
@@ -844,7 +826,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    }
 
    {
-     RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new panzer::Basis_Constant<double,FieldContainer>(quad));
+     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_Constant_FEM<PHX::exec_space,double,double>(quad));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);

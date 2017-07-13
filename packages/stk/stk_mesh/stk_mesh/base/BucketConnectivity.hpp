@@ -160,19 +160,19 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
   ConnectivityOrdinal const* begin_ordinals(unsigned bucket_ordinal) const
   { impl::check_bucket_ordinal(bucket_ordinal, this);
-    return &m_ordinals[0]; }
+    return m_ordinals.data(); }
 
   ConnectivityOrdinal      * begin_ordinals(unsigned bucket_ordinal)
   { impl::check_bucket_ordinal(bucket_ordinal, this);
-    return &m_ordinals[0]; }
+    return m_ordinals.data(); }
 
   ConnectivityOrdinal const* end_ordinals(unsigned bucket_ordinal) const
   { impl::check_bucket_ordinal(bucket_ordinal, this);
-    return &m_ordinals[0] + m_num_connectivity; }
+    return m_ordinals.data() + m_num_connectivity; }
 
   ConnectivityOrdinal      * end_ordinals(unsigned bucket_ordinal)
   { impl::check_bucket_ordinal(bucket_ordinal, this);
-    return &m_ordinals[0] + m_num_connectivity; }
+    return m_ordinals.data() + m_num_connectivity; }
 
   // Permutation iterator
 
@@ -839,7 +839,7 @@ public:
 
 #ifndef NDEBUG
     // Check the ordinals are compatible with fixed connectivity
-    ConnectivityOrdinal const* ordinals = &m_ordinals[0] + from_offset;
+    ConnectivityOrdinal const* ordinals = m_ordinals.data() + from_offset;
     for (unsigned i = 0; i < num_conn_to_move; ++i) {
       ThrowAssert(ordinals[i] == i);
     }

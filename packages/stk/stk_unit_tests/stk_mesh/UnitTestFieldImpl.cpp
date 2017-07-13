@@ -84,22 +84,6 @@ TEST(UnitTestFieldRestriction, testUnit)
 namespace stk {
 namespace mesh {
 
-namespace {
-
-// Simple tags for testing field dimensions
-
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( ATAG )
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( BTAG )
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( CTAG )
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( DTAG )
-
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( ATAG )
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( BTAG )
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( CTAG )
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( DTAG )
-
-}
-
 //----------------------------------------------------------------------
 // Test field restrictions: the mapping of ( field , part ) -> dimensions
 
@@ -114,7 +98,7 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   std::vector< std::string > dummy_names(4, "dummy");
 
-  MetaData meta_data(0 /*dim*/,dummy_names);
+  MetaData meta_data(3 /*dim*/,dummy_names);
 
   const FieldVector  & allocated_fields = meta_data.get_fields();
 

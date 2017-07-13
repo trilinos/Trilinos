@@ -335,7 +335,7 @@ private:
     compute_residual(r,up,u,z);
     Real rnorm = compute_norm(r);
     // Define tolerances
-    Real tol   = 1.e2*ROL::ROL_EPSILON;
+    Real tol   = 1.e2*ROL::ROL_EPSILON<Real>();
     Real maxit = 100;
     // Initialize Jacobian storage
     std::vector<Real> d(nx_,0.0);
@@ -357,7 +357,7 @@ private:
       update(utmp,s,-alpha);
       compute_residual(r,up,utmp,z);
       rnorm = compute_norm(r); 
-      while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON) ) {
+      while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON<Real>()) ) {
         alpha /= 2.0;
         utmp.assign(u.begin(),u.end());
         update(utmp,s,-alpha);
@@ -962,7 +962,7 @@ int main(int argc, char *argv[]) {
     // Initialize reduced objective function
     RCP<ROL::Objective_SimOpt<RealT> > pobj = rcp(&obj,false);
     RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = rcp(&con,false);
-    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,cp);
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,xzp,cp);
 
     // Check deriatives.
     obj.checkGradient(x,y,true);
@@ -975,8 +975,8 @@ int main(int argc, char *argv[]) {
     robj.checkHessVec(xz,yz,true);
 
     // Initialize constraints -- these are set to -infinity and infinity.
-    RCP<vector> lo_rcp = rcp( new vector(nt,-ROL::ROL_OVERFLOW) );
-    RCP<vector> up_rcp = rcp( new vector(nt,ROL::ROL_OVERFLOW) );
+    RCP<vector> lo_rcp = rcp( new vector(nt,ROL::ROL_NINF<RealT>()) );
+    RCP<vector> up_rcp = rcp( new vector(nt,ROL::ROL_INF<RealT>()) );
  
     RCP<V> lo = rcp( new SV(lo_rcp) );
     RCP<V> up = rcp( new SV(up_rcp) );

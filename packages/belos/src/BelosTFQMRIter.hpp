@@ -376,7 +376,7 @@ namespace Belos {
   {
     MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
     if (normvec)
-      (*normvec)[0] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( iter_ + one )*tau_[0];
+      (*normvec)[0] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( 2*iter_ + one )*tau_[0];
 
     return Teuchos::null;
   }
@@ -515,89 +515,93 @@ namespace Belos {
     //
     while (stest_->checkStatus(this) != Passed) {
 
-      //
-      //--------------------------------------------------------
-      // Compute the new alpha if we need to
-      //--------------------------------------------------------
-      //
-      if (iter_%2 == 0) {
-	MVT::MvDot( *V_, *Rtilde_, alpha_ );      //   alpha = rho / (r_tilde, v) 
-	alpha_[0] = rho_old_[0]/alpha_[0];
-      }
-      //
-      //--------------------------------------------------------
-      // Update w.
-      //   w = w - alpha*Au
-      //--------------------------------------------------------
-      //
-      MVT::MvAddMv( STone, *W_, -alpha_[0], *AU_, *W_ );
-      //
-      //--------------------------------------------------------
-      // Update d.
-      //   d = u + (theta^2/alpha)eta*d
-      //--------------------------------------------------------
-      //
-      MVT::MvAddMv( STone, *U_, (theta_[0]*theta_[0]/alpha_[0])*eta, *D_, *D_ );
-      //
-      //--------------------------------------------------------
-      // Update u if we need to.
-      //   u = u - alpha*v
-      //   
-      // Note: This is usually computed with alpha (above), but we're trying be memory efficient.
-      //--------------------------------------------------------
-      //
-      if (iter_%2 == 0) {
-        // Compute new U.
-	MVT::MvAddMv( STone, *U_, -alpha_[0], *V_, *U_ );
+      for (int iIter=0; iIter<2; iIter++)
+      {
+        //
+        //--------------------------------------------------------
+        // Compute the new alpha if we need to
+        //--------------------------------------------------------
+        //
+        if (iIter == 0) {
+  	  MVT::MvDot( *V_, *Rtilde_, alpha_ );      //   alpha = rho / (r_tilde, v) 
+	  alpha_[0] = rho_old_[0]/alpha_[0];
+        }
+        //
+        //--------------------------------------------------------
+        // Update w.
+        //   w = w - alpha*Au
+        //--------------------------------------------------------
+        //
+        MVT::MvAddMv( STone, *W_, -alpha_[0], *AU_, *W_ );
+        //
+        //--------------------------------------------------------
+        // Update d.
+        //   d = u + (theta^2/alpha)eta*d
+        //--------------------------------------------------------
+        //
+        MVT::MvAddMv( STone, *U_, (theta_[0]*theta_[0]/alpha_[0])*eta, *D_, *D_ );
+        //
+        //--------------------------------------------------------
+        // Update u if we need to.
+        //   u = u - alpha*v
+        //   
+        // Note: This is usually computed with alpha (above), but we're trying be memory efficient.
+        //--------------------------------------------------------
+        //
+        if (iIter == 0) {
+          // Compute new U.
+  	  MVT::MvAddMv( STone, *U_, -alpha_[0], *V_, *U_ );
 
-	// Update Au for the next iteration.
-	lp_->apply( *U_, *AU_ );                       
-      }
-      //
-      //--------------------------------------------------------
-      // Compute the new theta, c, eta, tau; i.e. the update to the least squares solution.
-      //--------------------------------------------------------
-      //
-      MVT::MvNorm( *W_, theta_ );     // theta = ||w|| / tau
-      theta_[0] /= tau_[0];
-      // cs = 1.0 / sqrt(1.0 + theta^2)
-      cs_[0] = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[0]*theta_[0]);  
-      tau_[0] *= theta_[0]*cs_[0];     // tau = tau * theta * cs
-      eta = cs_[0]*cs_[0]*alpha_[0];     // eta = cs^2 * alpha
+  	  // Update Au for the next iteration.
+	  lp_->apply( *U_, *AU_ );                       
+        }
+        //
+        //--------------------------------------------------------
+        // Compute the new theta, c, eta, tau; i.e. the update to the least squares solution.
+        //--------------------------------------------------------
+        //
+        MVT::MvNorm( *W_, theta_ );     // theta = ||w|| / tau
+        theta_[0] /= tau_[0];
+        // cs = 1.0 / sqrt(1.0 + theta^2)
+        cs_[0] = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[0]*theta_[0]);  
+        tau_[0] *= theta_[0]*cs_[0];     // tau = tau * theta * cs
+        eta = cs_[0]*cs_[0]*alpha_[0];     // eta = cs^2 * alpha
       
-      //
-      //--------------------------------------------------------
-      // Update the solution.
-      // Don't update the linear problem object, may incur additional preconditioner application.
-      //--------------------------------------------------------
-      //
-      MVT::MvAddMv( STone, *solnUpdate_, eta, *D_, *solnUpdate_ );
-      //
-      if (iter_%2) {
-	//
-	//--------------------------------------------------------
-	// Compute the new rho, beta if we need to.
-	//--------------------------------------------------------
-	//
-	MVT::MvDot( *W_, *Rtilde_, rho_ );                // rho = (r_tilde, w)
-	beta = rho_[0]/rho_old_[0];                       // beta = rho / rho_old
-	rho_old_[0] = rho_[0];                            // rho_old = rho
-	//
-	//--------------------------------------------------------
-	// Update u, v, and Au if we need to.
-	// Note: We are updating v in two stages to be memory efficient
-	//--------------------------------------------------------
-	//
-	MVT::MvAddMv( STone, *W_, beta, *U_, *U_ );       // u = w + beta*u
+        //
+        //--------------------------------------------------------
+        // Update the solution.
+        // Don't update the linear problem object, may incur additional preconditioner application.
+        //--------------------------------------------------------
+        //
+        MVT::MvAddMv( STone, *solnUpdate_, eta, *D_, *solnUpdate_ );
+        //
+        if (iIter == 1) {
+  	  //
+	  //--------------------------------------------------------
+	  // Compute the new rho, beta if we need to.
+	  //--------------------------------------------------------
+	  //
+  	  MVT::MvDot( *W_, *Rtilde_, rho_ );                // rho = (r_tilde, w)
+	  beta = rho_[0]/rho_old_[0];                       // beta = rho / rho_old
+	  rho_old_[0] = rho_[0];                            // rho_old = rho
+	  //
+	  //--------------------------------------------------------
+	  // Update u, v, and Au if we need to.
+	  // Note: We are updating v in two stages to be memory efficient
+	  //--------------------------------------------------------
+	  //
+	  MVT::MvAddMv( STone, *W_, beta, *U_, *U_ );       // u = w + beta*u
 	
-	// First stage of v update.
-	MVT::MvAddMv( STone, *AU_, beta, *V_, *V_ );      // v = Au + beta*v 
+	  // First stage of v update.
+	  MVT::MvAddMv( STone, *AU_, beta, *V_, *V_ );      // v = Au + beta*v 
 	
-	// Update Au.
-	lp_->apply( *U_, *AU_ );                          // Au = A*u
+	  // Update Au.
+	  lp_->apply( *U_, *AU_ );                          // Au = A*u
 	
-	// Second stage of v update.
-	MVT::MvAddMv( STone, *AU_, beta, *V_, *V_ );      // v = Au + beta*v
+	  // Second stage of v update.
+	  MVT::MvAddMv( STone, *AU_, beta, *V_, *V_ );      // v = Au + beta*v
+        }
+
       }
 
       // Increment the iteration

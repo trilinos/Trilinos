@@ -1,0 +1,202 @@
+// @HEADER
+// ***********************************************************************
+//
+//                           Sacado Package
+//                 Copyright (2006) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// USA
+// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
+// (etphipp@sandia.gov).
+//
+// ***********************************************************************
+//
+// @HEADER
+
+#ifndef SACADO_FAD_EXP_GENERALFADTRAITS_HPP
+#define SACADO_FAD_EXP_GENERALFADTRAITS_HPP
+
+#include "Sacado_Traits.hpp"
+
+// Forward declarations
+namespace Sacado {
+  namespace Fad {
+  namespace Exp {
+    template <typename S> class GeneralFad;
+  }
+  }
+}
+
+namespace Sacado {
+
+  //! Specialization of %Promote to GeneralFad types
+  SACADO_FAD_PROMOTE_SPEC( Fad::Exp, GeneralFad )
+
+  //! Specialization of %ScalarType to GeneralFad types
+  template <typename Storage>
+  struct ScalarType< Fad::Exp::GeneralFad<Storage> > {
+    typedef typename Fad::Exp::GeneralFad<Storage>::scalar_type type;
+  };
+
+  //! Specialization of %Storageype to GeneralFad types
+  template <typename Storage>
+  struct ValueType< Fad::Exp::GeneralFad<Storage> > {
+    typedef typename Fad::Exp::GeneralFad<Storage>::value_type type;
+  };
+
+  //! Specialization of %IsADType to GeneralFad types
+  template <typename Storage>
+  struct IsADType< Fad::Exp::GeneralFad<Storage> > {
+    static const bool value = true;
+  };
+
+  //! Specialization of %IsADType to GeneralFad types
+  template <typename Storage>
+  struct IsScalarType< Fad::Exp::GeneralFad<Storage> > {
+    static const bool value = false;
+  };
+
+  //! Specialization of %Value to GeneralFad types
+  template <typename Storage>
+  struct Value< Fad::Exp::GeneralFad<Storage> > {
+    typedef typename ValueType< Fad::Exp::GeneralFad<Storage> >::type value_type;
+    KOKKOS_INLINE_FUNCTION
+    static const value_type& eval(const Fad::Exp::GeneralFad<Storage>& x) {
+      return x.val(); }
+  };
+
+  //! Specialization of %ScalarValue to GeneralFad types
+  template <typename Storage>
+  struct ScalarValue< Fad::Exp::GeneralFad<Storage> > {
+    typedef typename ValueType< Fad::Exp::GeneralFad<Storage> >::type value_type;
+    typedef typename ScalarType< Fad::Exp::GeneralFad<Storage> >::type scalar_type;
+    KOKKOS_INLINE_FUNCTION
+    static const scalar_type& eval(const Fad::Exp::GeneralFad<Storage>& x) {
+      return ScalarValue<value_type>::eval(x.val()); }
+  };
+
+  //! Specialization of %StringName to GeneralFad types
+  template <typename Storage>
+  struct StringName< Fad::Exp::GeneralFad<Storage> > {
+    static std::string eval() {
+      return std::string("Sacado::Fad::Exp::GeneralFad< ") +
+        StringName<typename Storage::value_type>::eval() + " >"; }
+  };
+
+  //! Specialization of %IsEqual to GeneralFad types
+  template <typename Storage>
+  struct IsEqual< Fad::Exp::GeneralFad<Storage> > {
+    KOKKOS_INLINE_FUNCTION
+    static bool eval(const Fad::Exp::GeneralFad<Storage>& x,
+                     const Fad::Exp::GeneralFad<Storage>& y) {
+      return x.isEqualTo(y);
+    }
+  };
+
+  //! Specialization of %IsStaticallySized to GeneralFad types
+  template <typename Storage>
+  struct IsStaticallySized< Fad::Exp::GeneralFad<Storage> > {
+    static const bool value = Storage::is_statically_sized;
+  };
+
+  //! Specialization of %IsStaticallySized to GeneralFad types
+  template <typename Storage>
+  struct IsStaticallySized< const Fad::Exp::GeneralFad<Storage> > {
+    static const bool value = Storage::is_statically_sized;
+  };
+
+  //! Specialization of %StaticSize to GeneralFad types
+  template <typename Storage>
+  struct StaticSize< Fad::Exp::GeneralFad<Storage> > {
+    static const unsigned value = Storage::static_size;
+  };
+
+  //! Specialization of %StaticSize to GeneralFad types
+  template <typename Storage>
+  struct StaticSize< const Fad::Exp::GeneralFad<Storage> > {
+    static const unsigned value = Storage::static_size;
+  };
+
+} // namespace Sacado
+
+// Define Teuchos traits classes
+#ifdef HAVE_SACADO_TEUCHOS
+#include "Teuchos_PromotionTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Sacado_Fad_ScalarTraitsImp.hpp"
+#include "Teuchos_SerializationTraits.hpp"
+
+namespace Teuchos {
+
+  //! Specialization of %Teuchos::PromotionTraits to GeneralFad types
+  template <typename Storage>
+  struct PromotionTraits< Sacado::Fad::Exp::GeneralFad<Storage>,
+                          Sacado::Fad::Exp::GeneralFad<Storage> > {
+    typedef typename Sacado::Promote< Sacado::Fad::Exp::GeneralFad<Storage>,
+                                      Sacado::Fad::Exp::GeneralFad<Storage> >::type
+    promote;
+  };
+
+  //! Specialization of %Teuchos::PromotionTraits to GeneralFad types
+  template <typename Storage, typename R>
+  struct PromotionTraits< Sacado::Fad::Exp::GeneralFad<Storage>, R > {
+    typedef typename Sacado::Promote< Sacado::Fad::Exp::GeneralFad<Storage>,
+                                      R >::type
+    promote;
+  };
+
+  //! Specialization of %Teuchos::PromotionTraits to GeneralFad types
+  template <typename L, typename Storage>
+  struct PromotionTraits< L, Sacado::Fad::Exp::GeneralFad<Storage> > {
+  public:
+    typedef typename Sacado::Promote< L,
+                                      Sacado::Fad::Exp::GeneralFad<Storage> >::type
+    promote;
+  };
+
+  //! Specializtion of %Teuchos::ScalarTraits
+  template <typename Storage>
+  struct ScalarTraits< Sacado::Fad::Exp::GeneralFad<Storage> > :
+    public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::Exp::GeneralFad<Storage> >
+  {};
+
+  //! Specialization of %Teuchos::SerializationTraits
+  template <typename Ordinal, typename Storage>
+  struct SerializationTraits<Ordinal, Sacado::Fad::Exp::GeneralFad<Storage> > :
+    public Sacado::Fad::SerializationTraitsImp< Ordinal,
+                                                Sacado::Fad::Exp::GeneralFad<Storage> >
+  {};
+
+  //! Specialization of %Teuchos::StorageypeSerializer
+  template <typename Ordinal, typename Storage>
+  struct ValueTypeSerializer<Ordinal, Sacado::Fad::Exp::GeneralFad<Storage> > :
+    public Sacado::Fad::SerializerImp< Ordinal,
+                                       Sacado::Fad::Exp::GeneralFad<Storage>,
+                                       ValueTypeSerializer<Ordinal,typename Storage::value_type> >
+  {
+    typedef Sacado::Fad::Exp::GeneralFad<Storage> FadType;
+    typedef ValueTypeSerializer<Ordinal,typename Storage::value_type> ValueSerializer;
+    typedef Sacado::Fad::SerializerImp< Ordinal,FadType,ValueSerializer> Base;
+    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs,
+                        Ordinal sz = 0) :
+      Base(vs, sz) {}
+  };
+}
+#endif // HAVE_SACADO_TEUCHOS
+
+#endif // SACADO_FAD_EXP_GENERALFADTRAITS_HPP

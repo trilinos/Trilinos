@@ -34,7 +34,7 @@ C
 C=======================================================================
       SUBROUTINE WRELB (A, IA, BLKTYP, NAMELB, IBPARM,
      &   IDELB, NUMELB, NUMLNK, NUMATR, LINK, ATRIB, ELATTR,
-     &   IXEL, INCEL, NREL, IELCOL, IXNP, NRNP)
+     &   IXEL, INCEL, NREL, IELCOL, IXNP, NRNP, NUMELB3)
 C=======================================================================
 
 C   --*** WRELB *** (GEN3D) Write 3D element blocks
@@ -82,6 +82,7 @@ C   --   Uses NEREPL of /PARAMS/
       INTEGER IBPARM(4,NELBLK)
       INTEGER IDELB(NELBLK)
       INTEGER NUMELB(NELBLK)
+      INTEGER NUMELB3(NELBLK)
       INTEGER NUMLNK(NELBLK)
       INTEGER NUMATR(NELBLK)
       INTEGER LINK(4,*)
@@ -151,12 +152,12 @@ C      --Block id and start/end for blocks that become multiple blocks
 C      --Number of elements in the block
 
          IF (BLKTYP(IELB) .EQ. 'C') THEN
-           NELB3 = 0
+           NUMELB3(IELB) = 0
            DO  I = 1, NUMELB(IELB)
-             NELB3 = NELB3 + NREL(IEL+I-1)
+             NUMELB3(IELB) = NUMELB3(IELB) + NREL(IEL+I-1)
            end do
          ELSE
-            NELB3 = NUMELB(IELB) * (NREND - NRSTRT + 1)
+           NUMELB3(IELB) = NUMELB(IELB) * (NREND - NRSTRT + 1)
          END IF
 
 C      --Number of nodes per element
@@ -172,7 +173,7 @@ C     --Change attributes of input block if they were changed by user
          END IF
 
          CALL NEWEL1 (BLKTYP(IELB),
-     &        NUMELB(IELB), NELB3, NRSTRT, NREND,
+     &        NUMELB(IELB), NUMELB3(IELB), NRSTRT, NREND,
      &        NUMLNK(IELB), NUMLN3, NUMATR(IELB), MAX(NUMATR(IELB),1),
      $        NUMNP, NUMNP3, LINK(1,IEL), IA(KLINK3), ATRIB(IATR),
      $        A(KATR3), IXEL(IEL), INCEL(IEL),
@@ -182,12 +183,13 @@ C     --Change attributes of input block if they were changed by user
 C      --Fixup connectivity if mirrored
 
          IF (XMIRR * YMIRR * ZMIRR .LT. 0.0) THEN
-            CALL DBMIRR (IELB, IELB, IDEBL3, NELB3, NUMLN3, IA(KLINK3))
+            CALL DBMIRR (IELB, IELB, IDEBL3, NUMELB3(IELB), NUMLN3,
+     *       IA(KLINK3))
          END IF
 
 C      --Write 3D
-         call expelb(ndbout, IDEBL3, NAMELB(IELB), NELB3, NUMLN3,
-     &        NUMATR(IELB), ierr)
+         call expelb(ndbout, IDEBL3, NAMELB(IELB), NUMELB3(IELB),
+     *     NUMLN3, NUMATR(IELB), ierr)
          if (ierr .lt. 0) then
             call exerr('gen3d2', 'Error from expelb', exlmsg)
             go to 50

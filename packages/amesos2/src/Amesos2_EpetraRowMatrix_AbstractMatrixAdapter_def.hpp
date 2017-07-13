@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -78,24 +78,24 @@ namespace Amesos2 {
   AbstractConcreteMatrixAdapter<
     Epetra_RowMatrix,
     DerivedMat>::getGlobalRowCopy_impl(global_ordinal_t row,
-				       const ArrayView<global_ordinal_t>& indices,
-				       const ArrayView<scalar_t>& vals,
-				       size_t& nnz) const
+                                       const ArrayView<global_ordinal_t>& indices,
+                                       const ArrayView<scalar_t>& vals,
+                                       size_t& nnz) const
   {
     using Teuchos::as;
-    
+
     local_ordinal_t local_row = this->row_map_->getLocalElement(row);
     int nnz_ret = 0;
     int rowmatrix_return_val
       = this->mat_->ExtractMyRowCopy(as<int>(local_row),
-				     as<int>(std::min(indices.size(), vals.size())),
-				     nnz_ret,
-				     vals.getRawPtr(),
-				     indices.getRawPtr());
+                                     as<int>(std::min(indices.size(), vals.size())),
+                                     nnz_ret,
+                                     vals.getRawPtr(),
+                                     indices.getRawPtr());
     TEUCHOS_TEST_FOR_EXCEPTION( rowmatrix_return_val != 0,
-			std::runtime_error,
-			"Epetra_RowMatrix object returned error code "
-			<< rowmatrix_return_val << " from ExtractMyRowCopy." );
+                        std::runtime_error,
+                        "Epetra_RowMatrix object returned error code "
+                        << rowmatrix_return_val << " from ExtractMyRowCopy." );
     nnz = as<size_t>(nnz_ret);
 
     // Epetra_CrsMatrix::ExtractMyRowCopy returns local column
@@ -110,14 +110,14 @@ namespace Amesos2 {
   AbstractConcreteMatrixAdapter<
     Epetra_RowMatrix,
     DerivedMat>::getGlobalColCopy_impl(global_ordinal_t col,
-				       const ArrayView<global_ordinal_t>& indices,
-				       const ArrayView<scalar_t>& vals,
-				       size_t& nnz) const
+                                       const ArrayView<global_ordinal_t>& indices,
+                                       const ArrayView<scalar_t>& vals,
+                                       size_t& nnz) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true,
-			std::runtime_error,
-			"Column access to row-based object not yet supported.  "
-			"Please contact the Amesos2 developers." );
+                        std::runtime_error,
+                        "Column access to row-based object not yet supported.  "
+                        "Please contact the Amesos2 developers." );
   }
 
 
@@ -179,10 +179,9 @@ namespace Amesos2 {
     DerivedMat>::getMaxColNNZ_impl() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true,
-			std::runtime_error,
-			"Column access to row-based object not yet supported.  "
-			"Please contact the Amesos2 developers." );
-    return 0;
+                        std::runtime_error,
+                        "Column access to row-based object not yet supported.  "
+                        "Please contact the Amesos2 developers." );
   }
 
   template <class DerivedMat>
@@ -195,8 +194,8 @@ namespace Amesos2 {
     Epetra_Map rowmap = this->mat_->RowMatrixRowMap();
     int gid = Teuchos::as<int>(row);
     TEUCHOS_TEST_FOR_EXCEPTION( !rowmap.MyGID(gid),
-			std::invalid_argument,
-			"The specified global row id does not belong to me" );
+                        std::invalid_argument,
+                        "The specified global row id does not belong to me" );
     int lid = rowmap.LID(gid);
     int nnz = 0;
     this->mat_->NumMyRowEntries(lid, nnz);
@@ -212,8 +211,8 @@ namespace Amesos2 {
     Epetra_Map rowmap = this->mat_->RowMatrixRowMap();
     int lid = Teuchos::as<int>(row);
     TEUCHOS_TEST_FOR_EXCEPTION( !rowmap.MyLID(lid),
-			std::invalid_argument,
-			"The specified local row id does not beloing to me" );
+                        std::invalid_argument,
+                        "The specified local row id does not beloing to me" );
     int num_entries = 0;
     this->mat_->NumMyRowEntries(row, num_entries);
     return num_entries;
@@ -226,10 +225,9 @@ namespace Amesos2 {
     DerivedMat>::getGlobalColNNZ_impl(global_ordinal_t col) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true,
-			std::runtime_error,
-			"Column access to row-based object not yet supported.  "
-			"Please contact the Amesos2 developers." );
-    return 0;
+                        std::runtime_error,
+                        "Column access to row-based object not yet supported.  "
+                        "Please contact the Amesos2 developers." );
   }
 
   template <class DerivedMat>
@@ -239,16 +237,29 @@ namespace Amesos2 {
     DerivedMat>::getLocalColNNZ_impl(local_ordinal_t col) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true,
-			std::runtime_error,
-			"Column access to row-based object not yet supported.  "
-			"Please contact the Amesos2 developers." );
-    return 0;
+                        std::runtime_error,
+                        "Column access to row-based object not yet supported.  "
+                        "Please contact the Amesos2 developers." );
   }
 
   template <class DerivedMat>
   const RCP<const Tpetra::Map<MatrixTraits<Epetra_RowMatrix>::local_ordinal_t,
-			      MatrixTraits<Epetra_RowMatrix>::global_ordinal_t,
-			      MatrixTraits<Epetra_RowMatrix>::node_t> >
+                              MatrixTraits<Epetra_RowMatrix>::global_ordinal_t,
+                              MatrixTraits<Epetra_RowMatrix>::node_t> >
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMap_impl() const
+  {
+    // Should Map() be used (returns Epetra_BlockMap)
+    /*
+    printf("Amesos2_EpetraRowMatrix_AbstractMatrixAdapter: Epetra does not support a 'getMap()' method. Returning rcp(Teuchos::null). \
+        If your map contains non-contiguous GIDs please use Tpetra instead of Epetra. \n");
+    */
+    return( Teuchos::null );
+  }
+
+  template <class DerivedMat>
+  const RCP<const Tpetra::Map<MatrixTraits<Epetra_RowMatrix>::local_ordinal_t,
+                              MatrixTraits<Epetra_RowMatrix>::global_ordinal_t,
+                              MatrixTraits<Epetra_RowMatrix>::node_t> >
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getRowMap_impl() const
   {
     // Must transform to a Tpetra::Map
@@ -258,8 +269,8 @@ namespace Amesos2 {
 
   template <class DerivedMat>
   const RCP<const Tpetra::Map<MatrixTraits<Epetra_RowMatrix>::local_ordinal_t,
-			      MatrixTraits<Epetra_RowMatrix>::global_ordinal_t,
-			      MatrixTraits<Epetra_RowMatrix>::node_t> >
+                              MatrixTraits<Epetra_RowMatrix>::global_ordinal_t,
+                              MatrixTraits<Epetra_RowMatrix>::node_t> >
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getColMap_impl() const
   {
     // Must transform this matrix' Epetra_Map to a Tpetra::Map
@@ -288,17 +299,60 @@ namespace Amesos2 {
     return this->mat_->IndicesAreGlobal();
   }
 
+
   template <class DerivedMat>
   RCP<const MatrixAdapter<DerivedMat> >
-  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
   {
     // Delegate implementation to subclass
 #ifdef __CUDACC__
     // NVCC doesn't seem to like the static_cast, even though it is valid
-    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
 #else
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
 #endif
+  }
+
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
+  ::super_t::spmtx_ptr_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseRowPtr() const 
+  { 
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+
+    this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
+
+    return sp_rowptr;
+  }
+
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
+  ::super_t::spmtx_idx_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseColInd() const 
+  { 
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+
+    this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
+
+    return sp_colind;
+  }
+
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
+  ::super_t::spmtx_vals_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseValues() const 
+  { 
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+
+    this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
+
+    return sp_values;
   }
 
 } // end namespace Amesos2

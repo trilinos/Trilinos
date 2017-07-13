@@ -114,12 +114,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::BasicIdentifierAdapter<myTypes_t> inputAdapter_t;
   inputAdapter_t ia(10, someIds.getRawPtr(), weights, strides);
 
-#ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &pl,
-    MPI_COMM_WORLD);
-#else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &pl);
-#endif
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &pl, comm);
 
   // Use the timers through the environment.
 

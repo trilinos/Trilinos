@@ -8,7 +8,7 @@ set(workingdir "${TrilinosDriver_BINARY_DIR}")
 # Get the day of the week
 execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 
-IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
+IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "develop")
   #TRILINOS_DRIVER_ADD_DASHBOARD(
   #  MPI_OPT_DEV
   #  ctest_linux_nightly_mpi_development_opt_trilinos-test.cmake

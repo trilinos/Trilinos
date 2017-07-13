@@ -290,6 +290,14 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   /*! We will send <tt>LengthsTo[i]</tt> values to procs <tt>ProcsTo[i]</tt>. */
   const int * LengthsTo() const {return lengths_to_;}
 
+  /// \brief Information on the last call to Do/DoReverse
+  ///
+  /// Returns the amount of data sent & recv'd on this processor in bytes
+  void GetLastDoStatistics(int & bytes_sent, int & bytes_recvd) const {
+    bytes_sent  = lastRoundBytesSend_;
+    bytes_recvd = lastRoundBytesRecv_;
+  }
+
   //@}
 
   //! @name Print object to an output stream
@@ -375,6 +383,8 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
     int send_array_size_;
 
     Epetra_MpiDistributor * comm_plan_reverse_;
-
+    
+    int lastRoundBytesSend_;
+    int lastRoundBytesRecv_;
 };
 #endif /* EPETRA_MPIDISTRIBUTOR_H */

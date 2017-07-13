@@ -2,25 +2,38 @@
 // ***********************************************************************
 //
 //                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2004) Sandia Corporation
+//                 Copyright 2004 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -721,7 +734,7 @@ namespace Experimental {
            "Anasazi::TraceMin::constructor: Invalid value for \"Trace Threshold\"; Must be positive.");
 
     howToShift_ = params.get("How To Choose Shift", ADJUSTED_RITZ_SHIFT);
-    TEUCHOS_TEST_FOR_EXCEPTION(howToShift_ != LARGEST_CONVERGED_SHIFT && howToShift_ != ADJUSTED_RITZ_SHIFT && howToShift_ != RITZ_VALUES_SHIFT, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(howToShift_ != LARGEST_CONVERGED_SHIFT && howToShift_ != ADJUSTED_RITZ_SHIFT && howToShift_ != RITZ_VALUES_SHIFT && howToShift_ != EXPERIMENTAL_SHIFT, std::invalid_argument,
            "Anasazi::TraceMin::constructor: Invalid value for \"How To Choose Shift\"; valid options are \"LARGEST_CONVERGED_SHIFT\", \"ADJUSTED_RITZ_SHIFT\", \"RITZ_VALUES_SHIFT\".");
 
     useMultipleShifts_ = params.get("Use Multiple Shifts", true);
@@ -2691,45 +2704,53 @@ namespace Experimental {
 
     std::vector<ScalarType> clusterResids(nvecs);
     std::vector<int> clusterIndices;
-    for(int i=0; i < nvecs; i++)
+    if(considerClusters_)
     {
-      // test for cluster
-      if(clusterIndices.empty() || (theta_[i-1] + R2norms_[i-1] >= theta_[i] - R2norms_[i]))
+      for(int i=0; i < nvecs; i++)
       {
-        // Add to cluster
-        if(!clusterIndices.empty())  om_->stream(Debug) << theta_[i-1] << " is in a cluster with " << theta_[i] << " because " << theta_[i-1] + R2norms_[i-1] << " >= " << theta_[i] - R2norms_[i] << std::endl;
-        clusterIndices.push_back(i);
+        // test for cluster
+        if(clusterIndices.empty() || (theta_[i-1] + R2norms_[i-1] >= theta_[i] - R2norms_[i]))
+        {
+          // Add to cluster
+          if(!clusterIndices.empty())  om_->stream(Debug) << theta_[i-1] << " is in a cluster with " << theta_[i] << " because " << theta_[i-1] + R2norms_[i-1] << " >= " << theta_[i] - R2norms_[i] << std::endl;
+          clusterIndices.push_back(i);
+        }
+        // Cluster completed
+        else
+        {
+          om_->stream(Debug) << theta_[i-1] << " is NOT in a cluster with " << theta_[i] << " because " << theta_[i-1] + R2norms_[i-1] << " < " << theta_[i] - R2norms_[i] << std::endl;
+          ScalarType totalRes = ZERO;
+          for(size_t j=0; j < clusterIndices.size(); j++)
+            totalRes += (R2norms_[clusterIndices[j]]*R2norms_[clusterIndices[j]]);
+
+          // If the smallest magnitude value of this sign is in a cluster with the
+          // largest magnitude cluster of this sign, it is not safe for the smallest
+          // eigenvalue to use a shift
+          if(theta_[clusterIndices[0]] < 0 && theta_[i] < 0)
+            negSafeToShift_ = true;
+          else if(theta_[clusterIndices[0]] > 0 && theta_[i] > 0)
+            posSafeToShift_ = true;
+
+          for(size_t j=0; j < clusterIndices.size(); j++)
+            clusterResids[clusterIndices[j]] = sqrt(totalRes);
+
+          clusterIndices.clear();
+          clusterIndices.push_back(i);
+        }
       }
-      // Cluster completed
-      else
-      {
-        om_->stream(Debug) << theta_[i-1] << " is NOT in a cluster with " << theta_[i] << " because " << theta_[i-1] + R2norms_[i-1] << " < " << theta_[i] - R2norms_[i] << std::endl;
-        ScalarType totalRes = ZERO;
-        for(size_t j=0; j < clusterIndices.size(); j++)
-          totalRes += (R2norms_[clusterIndices[j]]*R2norms_[clusterIndices[j]]);
 
-        // If the smallest magnitude value of this sign is in a cluster with the
-        // largest magnitude cluster of this sign, it is not safe for the smallest
-        // eigenvalue to use a shift
-        if(theta_[clusterIndices[0]] < 0 && theta_[i] < 0)
-          negSafeToShift_ = true;
-        else if(theta_[clusterIndices[0]] > 0 && theta_[i] > 0)
-          posSafeToShift_ = true;
-
-        for(size_t j=0; j < clusterIndices.size(); j++)
-          clusterResids[clusterIndices[j]] = sqrt(totalRes);
-
-        clusterIndices.clear();
-        clusterIndices.push_back(i);
-      }
+      // Handle last cluster
+      ScalarType totalRes = ZERO;
+      for(size_t j=0; j < clusterIndices.size(); j++)
+        totalRes += R2norms_[clusterIndices[j]];
+      for(size_t j=0; j < clusterIndices.size(); j++)
+        clusterResids[clusterIndices[j]] = totalRes;
     }
-
-    // Handle last cluster
-    ScalarType totalRes = ZERO;
-    for(size_t j=0; j < clusterIndices.size(); j++)
-      totalRes += R2norms_[clusterIndices[j]];
-    for(size_t j=0; j < clusterIndices.size(); j++)
-      clusterResids[clusterIndices[j]] = totalRes;
+    else
+    {
+      for(int j=0; j < nvecs; j++)
+        clusterResids[j] = R2norms_[j];
+    }
 
     return clusterResids;
   }
@@ -2780,6 +2801,14 @@ namespace Experimental {
         {
           for(int i=1; i<blockSize_; i++)
             ritzShifts_[i] = ritzShifts_[0];
+        }
+      }
+      else if(howToShift_ == EXPERIMENTAL_SHIFT)
+      {
+        ritzShifts_[0] = std::max(largestSafeShift_,theta_[0]-clusterResids[0]);
+        for(int i=1; i<blockSize_; i++)
+        {
+          ritzShifts_[i] = std::max(ritzShifts_[i-1],theta_[i]-clusterResids[i]);
         }
       }
       // Use Dr. Sameh's original shifting strategy
@@ -2889,26 +2918,23 @@ namespace Experimental {
   template <class ScalarType, class MV, class OP>
   std::vector<ScalarType> TraceMinBase<ScalarType,MV,OP>::computeTol()
   {
-    ScalarType temp1, temp2;
-    int nvecs = ritzShifts_.size();
-    std::vector<ScalarType> tolerances;
+    ScalarType temp1;
+    std::vector<ScalarType> tolerances(blockSize_);
 
-    for(int i=0; i < nvecs; i++)
+    for(int i=0; i < blockSize_-1; i++)
     {
-      if(std::abs(theta_[0]) != std::abs(ritzShifts_[i]))
-        temp1 = std::abs(theta_[i]-ritzShifts_[i])/std::abs(std::abs(theta_[0])-std::abs(ritzShifts_[i]));
+      if(std::abs(theta_[blockSize_-1]) != std::abs(ritzShifts_[i]))
+        temp1 = std::abs(theta_[i]-ritzShifts_[i])/std::abs(std::abs(theta_[blockSize_-1])-std::abs(ritzShifts_[i]));
       else
         temp1 = ZERO;
 
-      temp2 = pow(2.0,-iter_);
-
       // TODO: The min and max tolerances should not be hard coded
       //       Neither should the maximum number of iterations
-      tolerances.push_back(std::max(std::min(temp1*temp1,temp2),1e-8));
+      tolerances[i] = std::min(temp1*temp1,0.5);
     }
 
-    if(nvecs > 1)
-      tolerances[nvecs-1] = tolerances[nvecs-2];
+    if(blockSize_ > 1)
+      tolerances[blockSize_-1] = tolerances[blockSize_-2];
 
     return tolerances;
   }

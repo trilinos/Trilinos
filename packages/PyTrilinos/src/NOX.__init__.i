@@ -42,37 +42,8 @@
 // ***********************************************************************
 // @HEADER
 
-%define %nox_docstring
-"
-PyTrilinos.NOX is the python interface to the Trilinos nonlinear
-solver package NOX:
-
-    http://trilinos.sandia.gov/packages/nox
-
-The purpose of NOX is to provide robust nonlinear solvers for the
-problem of finding x such that F(x)=0.  In C++, NOX supports several
-namespaces, some of which are sub-modules in python:
-
-    * Abstract          - Base classes for abstract interface to NOX
-    * Epetra            - Epetra implementation
-    * Epetra.Interface  - Concrete interface for Epetra
-    * Solver            - Solver manager class and supporting utilities
-    * StatusTest        - Support for customizable stopping criteria
-
-The top-level NOX module provides the following user-level class:
-
-    * Utils  - Various utilities
-
-For an example of usage of all of NOX, please consult the following
-script in the example subdirectory of the PyTrilinos package:
-
-    * exNOX_1Dfem.py
-"
-%enddef
-
 %module(package   = "PyTrilinos.NOX",
-	autodoc   = "1",
-	docstring = %nox_docstring) __init__
+	autodoc   = "1") __init__
 
 %{
 // System includes
@@ -97,6 +68,42 @@ script in the example subdirectory of the PyTrilinos package:
 #include "numpy_include.hpp"
 %}
 
+// Ensure that python modules can be found from the current
+// directory. Use of %pythonbegin requires us to put the module
+// docstring here.
+%pythonbegin
+{
+"""
+PyTrilinos.NOX is the python interface to the Trilinos nonlinear
+solver package NOX:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of NOX is to provide robust nonlinear solvers for the
+problem of finding x such that F(x)=0.  In C++, NOX supports several
+namespaces, some of which are sub-modules in python:
+
+    * Abstract          - Base classes for abstract interface to NOX
+    * Epetra            - Epetra implementation
+    * Epetra.Interface  - Concrete interface for Epetra
+    * Solver            - Solver manager class and supporting utilities
+    * StatusTest        - Support for customizable stopping criteria
+
+The top-level NOX module provides the following user-level class:
+
+    * Utils  - Various utilities
+
+For an example of usage of all of NOX, please consult the following
+script in the example subdirectory of the PyTrilinos package:
+
+    * exNOX_1Dfem.py
+"""
+
+import os
+import sys
+sys.path.insert(0, os.path.split(__file__)[0])
+}
+
 // General ignore directives
 %ignore operator<<;
 %ignore *::operator=;
@@ -112,8 +119,6 @@ script in the example subdirectory of the PyTrilinos package:
 
 // Trilinos interface import
 %import "Teuchos.i"
-// Note: Teuchos.i turns off warnings for nested classes, so we do not
-// have to do it again.
 
 //////////////////////////////////////
 // PyTrilinos configuration support //

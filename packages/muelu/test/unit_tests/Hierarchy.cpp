@@ -71,6 +71,11 @@
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_TrilinosSmoother.hpp>
 #include <MueLu_DirectSolver.hpp>
+#include <MueLu_CreateXpetraPreconditioner.hpp>
+
+#ifdef HAVE_MUELU_KOKKOSCORE
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#endif
 
 namespace MueLuTests {
 
@@ -86,6 +91,57 @@ namespace MueLuTests {
     TEST_INEQUALITY(H, Teuchos::null);
 
   } //Constructor
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, DescriptionCaching, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    /*
+     * Test to confirm that Hierarchy::description():
+     * a) gives the same result before and after a call to SetupRe() when the number of levels has not changed
+     * b) gives a different result before and after a call to SetupRe() when the number of levels has changed
+     *
+     * The occasion for this test is the introduction of caching for the result of description(), to avoid redundant
+     * computation.
+     */
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    int numRows = 399;
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(numRows);
+
+    Teuchos::ParameterList MueLuList;
+    MueLuList.set("verbosity","none");
+    //MueLuList.set("verbosity","high");
+    MueLuList.set("coarse: max size",numRows-1); // make it so we want two levels
+    MueLuList.set("max levels",2);
+
+    Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H =
+        MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
+            A, MueLuList, Teuchos::null, Teuchos::null);
+
+    // confirm that we did get a hierarchy with two levels -- a sanity check for this test
+    TEST_EQUALITY(2, H->GetGlobalNumLevels());
+    
+    using namespace std;
+    string descriptionTwoLevel = H->description();
+
+    // SetupRe() will reset description, but since we haven't changed anything, the result from description() should not change
+    H->SetupRe();
+    string descriptionActual = H->description();
+    TEST_EQUALITY(descriptionActual,descriptionTwoLevel);
+
+    // now, we allow a larger coarse size; we should get just one level during SetupRe()
+    H->SetMaxCoarseSize(numRows+1);
+    H->SetupRe();
+    // as a sanity check for the test, make sure that we do have just one level
+    TEST_EQUALITY(1, H->GetGlobalNumLevels());
+    descriptionActual = H->description();
+
+    // since the number of levels has changed, the new description should differ from the old
+    TEST_INEQUALITY(descriptionActual, descriptionTwoLevel);
+  }//DescriptionCaching
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetAndGetLevel, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -289,7 +345,7 @@ namespace MueLuTests {
     RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
     RCP<TransPFactory>      Rfact = rcp( new TransPFactory());
     RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-    ParameterList Aclist = *(Acfact->GetValidParameterList());
+    Teuchos::ParameterList Aclist = *(Acfact->GetValidParameterList());
     Aclist.set("transpose: use implicit", true);
     Acfact->SetParameterList(Aclist);
 
@@ -774,16 +830,38 @@ namespace MueLuTests {
 
     // Write matrices out, read fine A back in, and check that the read was ok
     // by using a matvec with a random vector.
-    H.Write();
+    // JJH: 22-Feb-2016 Append scalar type to file name. The theory is that for dashboard
+    //      tests with multiple Scalar instantiations of this test, a test with Scalar type
+    //      A could try to read in the results of the test with Scalar type B, simply because
+    //      the test with type B overwrote A's output matrix file.  A better solution would be
+    //      to write to a file stream, but this would involve writing new interfaces to Epetra's
+    //      file I/O capabilities.
+    std::string tname = typeid(Scalar).name();
+    tname = tname + typeid(LocalOrdinal).name();
+    tname = tname + typeid(GlobalOrdinal).name();
+#ifdef HAVE_MUELU_KOKKOSCORE
+    std::string nn = Kokkos::Compat::KokkosDeviceWrapperNode<typename Node::execution_space>::name();
+    nn.erase(std::remove(nn.begin(), nn.end(), '/'), nn.end());
+    tname = tname + nn;
+#endif
+    tname = "_" + tname;
+    LocalOrdinal zero = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
+    //Only write out the fine level matrix, since that is the only data file we test against.
+    H.Write(zero,zero,tname);
 
     Teuchos::Array<typename TST::magnitudeType> norms(1);
 
     out << "random status: " << rand() << std::endl;
     std::srand(595343843);
     std::rand();
-    std::string infile = "A_0.m";
+    std::string infile = "A_0" + tname + ".m";
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     RCP<Matrix> Ain = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(infile, lib, comm);
+    remove(infile.c_str());
+    infile = "colmap_A_0" + tname + ".m";    remove(infile.c_str());
+    infile = "domainmap_A_0" + tname + ".m"; remove(infile.c_str());
+    infile = "rangemap_A_0" + tname + ".m";  remove(infile.c_str());
+    infile = "rowmap_A_0" + tname + ".m";    remove(infile.c_str());
     RCP<Vector> randomVec = VectorFactory::Build(A->getDomainMap(),false);
     randomVec->randomize();
     out << "randomVec norm: " << randomVec->norm2() << std::endl;
@@ -804,13 +882,11 @@ namespace MueLuTests {
     TEST_EQUALITY(norms[0]<1e-15, true);
   }
 
-
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
-#ifdef HAVE_MUELU_BROKEN_TESTS
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra);
 
     out << "===== Generating matrices =====" << std::endl;
@@ -821,7 +897,13 @@ namespace MueLuTests {
     matrixList.set("matrixType",  "Laplace2D");
 
     // Construct block matrix
-    RCP<Matrix>           A        = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBlockMatrix(matrixList);
+    RCP<Matrix> A = TestHelpers::TpetraTestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBlockMatrix(matrixList,Xpetra::UseTpetra);
+    if(A==Teuchos::null) { // if A is Teuchos::null, we could not build the matrix as it is not instantiated in Tpetra
+      out << "Skipping test" << std::endl;
+      return;
+    }
+
+    // extract information
     RCP<const Map>        rangeMap = A->getRangeMap();
     Xpetra::UnderlyingLib lib      = rangeMap->lib();
 
@@ -850,7 +932,7 @@ namespace MueLuTests {
 
     // Build block SGS smoother
     std::string ifpack2Type;
-    ParameterList ifpack2List;
+    Teuchos::ParameterList ifpack2List;
     ifpack2Type = "RBILUK";
     out << ifpack2Type << std::endl;
     RCP<SmootherPrototype> smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type) );
@@ -903,13 +985,13 @@ namespace MueLuTests {
     H.IsPreconditioner(false);
     H.Iterate(*RHS, *X, iterations);
 #endif
-#endif
     TEST_EQUALITY(0,0);
   }
 
 
 # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, Constructor, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, DescriptionCaching, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetAndGetLevel, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, GetNumLevels, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, KeepAggregates, Scalar, LO, GO, Node) \

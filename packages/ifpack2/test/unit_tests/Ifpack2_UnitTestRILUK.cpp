@@ -71,7 +71,8 @@ typedef tif_utest::Node Node;
 
 // Single-process unit tests for RILUK are located in the file Ifpack2_UnitTestSerialRILUK.cpp.
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, GlobalOrdinal)
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
+static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > setupTest ()
 {
   // Test that ILU(k) can be done on a parallel sparse matrix with noncontiguous row map.
   // See bug #6033.
@@ -80,12 +81,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
 
   using Teuchos::RCP;
+  using Teuchos::rcp;
 
   Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
 
   int nx = 2;
   size_t numElementsPerProc = nx*nx;
@@ -110,14 +109,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
     size_t i=0;
     col[i] = g_row;
     val[i++] = two;
-    if (l_row>0)              {col[i] = map->getGlobalElement(l_row-1); val[i++] = -one;}
+    if (l_row>0)                      {col[i] = map->getGlobalElement(l_row-1); val[i++] = -one;}
     if ((size_t)l_row<numLocalElts-1) {col[i] = map->getGlobalElement(l_row+1); val[i++] = -one;}
     A->insertGlobalValues(g_row, col(0,i), val(0,i));
   }
   A->fillComplete();
 
   RCP<const crs_matrix_type> constA = A;
-  Ifpack2::RILUK<row_matrix_type> prec(constA);
+  auto prec = rcp(new Ifpack2::RILUK<row_matrix_type>(constA));
 
   Teuchos::ParameterList params;
   GlobalOrdinal lof=1;
@@ -128,15 +127,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
   params.set("fact: iluk experimental threads" , 2);
 #endif
 
+  prec->setParameters(params);
+  return prec;
+}
 
-  prec.setParameters(params);
-  prec.initialize();
-  prec.compute();
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
 
-} //unit test Parallel()
+  auto prec = setupTest<Scalar, LocalOrdinal, GlobalOrdinal>();
+  prec->initialize();
+  prec->compute();
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, ParallelReuse, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  auto prec = setupTest<Scalar, LocalOrdinal, GlobalOrdinal>();
+  prec->initialize();
+  prec->compute();
+  // Pretend we've updated some of the numbers in the matrix, but not its structure.
+  prec->compute();
+}
 
 #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Parallel, SC, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Parallel, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, ParallelReuse, SC, LO, GO )
 
 #include "Ifpack2_ETIHelperMacros.h"
 

@@ -69,22 +69,6 @@ namespace panzer {
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,GlobalOrdinalT> > > & blkProvider,
-                              const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & gidProviders)
-   : blockProvider_(blkProvider), blockedDOFManager_(Teuchos::null), comm_(comm)
-{
-  gidProviders_ = gidProviders;
-
-  makeRoomForBlocks(gidProviders_.size());
-
-  // build and register the gather/scatter evaluators with 
-  // the base class.
-  this->buildGatherScatterEvaluators(*this);
-}
-
-template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                               const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT> > & gidProvider)
    : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(comm)
 { 
@@ -191,8 +175,6 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              LinearObjContainer & ghostedObjs,
                              bool zeroVectorRows, bool adjustX) const
 {
-   typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
-
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
    using Thyra::LinearOpBase;
@@ -912,7 +894,7 @@ buildTpetraGhostedMap(int i) const
    std::vector<GlobalOrdinalT> indices;
 
    // get the global indices
-   getGlobalIndexer(i)->getOwnedAndSharedIndices(indices);
+   getGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
 
    return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
 }

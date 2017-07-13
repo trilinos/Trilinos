@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/SelectorFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>
 #include <sstream>                      // for ostringstream, etc
 #include <string>                       // for string
 #include "mpi.h"                        // for MPI_COMM_WORLD
@@ -39,7 +39,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
+
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
@@ -49,7 +49,7 @@ namespace fixtures {
 SelectorFixture::~SelectorFixture() {}
 
 SelectorFixture::SelectorFixture()
-  : m_meta_data( 0 /*dim*/ )
+  : m_meta_data( 3 /*dim*/ )
   , m_bulk_data( m_meta_data , MPI_COMM_WORLD )
   , m_partA( m_meta_data.declare_part( "PartA" , stk::topology::NODE_RANK ) )
   , m_partB( m_meta_data.declare_part( "PartB" , stk::topology::NODE_RANK ) )
@@ -74,8 +74,6 @@ void SelectorFixture::generate_mesh()
 {
   const unsigned entity_count = 5 ;
 
-  stk::mesh::EntityRank ent_type = stk::topology::NODE_RANK;
-
   // Create Entities and assign to parts:
   stk::mesh::EntityId ent_id =
     1 + entity_count * m_bulk_data.parallel_rank(); // Unique ID
@@ -85,32 +83,32 @@ void SelectorFixture::generate_mesh()
   // Entity1 is contained in PartA
   partMembership.clear();
   partMembership.push_back( & m_partA );
-  m_entity1 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity1 = m_bulk_data.declare_node(ent_id, partMembership);
   ++ent_id;
 
   // Entity2 is contained in PartA and PartB
   partMembership.clear();
   partMembership.push_back( & m_partA );
   partMembership.push_back( & m_partB );
-  m_entity2 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity2 = m_bulk_data.declare_node(ent_id, partMembership);
   ++ent_id;
 
   // Entity3 is contained in PartB and PartC
   partMembership.clear();
   partMembership.push_back( & m_partB );
   partMembership.push_back( & m_partC );
-  m_entity3 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity3 = m_bulk_data.declare_node(ent_id, partMembership);
   ++ent_id;
 
   // Entity4 is contained in PartC
   partMembership.clear();
   partMembership.push_back( & m_partC );
-  m_entity4 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity4 = m_bulk_data.declare_node(ent_id, partMembership);
   ++ent_id;
 
   // Entity5 is not contained in any Part
   partMembership.clear();
-  m_entity5 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity5 = m_bulk_data.declare_node(ent_id, partMembership);
 }
 
 //--------------------------------------------------------------------------
@@ -118,7 +116,7 @@ void SelectorFixture::generate_mesh()
 VariableSelectorFixture::~VariableSelectorFixture() {}
 
 VariableSelectorFixture::VariableSelectorFixture(int NumParts)
-  : m_MetaData( 0 /*dim*/, std::vector<std::string>(4, std::string("MyEntityRank")) )
+  : m_MetaData( 3 /*dim*/, std::vector<std::string>(4, std::string("MyEntityRank")) )
   , m_BulkData( m_MetaData , MPI_COMM_WORLD )
   , m_declared_part_vector()
 {
@@ -141,14 +139,13 @@ VariableSelectorFixture::VariableSelectorFixture(int NumParts)
 
   m_BulkData.modification_begin();
 
-  stk::mesh::EntityRank ent_type = stk::topology::NODE_RANK;
   stk::mesh::EntityId ent_id =
     1 + NumParts * m_BulkData.parallel_rank(); // Unique ID
 
   for (int part_i = 0 ; part_i < NumParts ; ++part_i) {
     std::vector<stk::mesh::Part*> partMembership;
     partMembership.push_back(m_declared_part_vector[part_i]);
-    stk::mesh::Entity e = m_BulkData.declare_entity(ent_type, ent_id, partMembership);
+    stk::mesh::Entity e = m_BulkData.declare_node(ent_id, partMembership);
     m_entities.push_back( e );
     ++ent_id;
   }

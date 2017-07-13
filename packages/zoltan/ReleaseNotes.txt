@@ -1,3 +1,28 @@
+Zoltan release notes for Trilinos v12.8
+
+Improved robustness of RCB partitioner for problems where many objects have
+weight = 0 (e.g., PIC codes).  Convergence is faster and the stopping 
+criteria are more robust.
+
+Fixed bug that occurred when RETURN_LIST=PARTS and (Num_GID > 1 or Num_LID > 1);
+GIDs and LIDs are now copied correctly into return lists.
+
+Fixed a bug related to struct padding in the siMPI serial MPI interface.
+
+-----------------------
+
+Zoltan release notes for Trilinos v12.6
+
+Minor code cleanup and bug fixes.
+
+New Zoltan_Get_Fn interface returning pointers to callback functions.
+See zoltan/src/include/zoltan.h for details.
+
+Closest stand-alone Zoltan release is v3.83.  
+http://www.cs.sandia.gov/Zoltan
+
+-----------------------
+
 Zoltan release notes for Trilinos v11.8
 
 Revised Scotch TPL specification in Trilinos' CMake environment to link

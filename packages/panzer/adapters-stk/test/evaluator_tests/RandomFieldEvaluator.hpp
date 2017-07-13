@@ -45,16 +45,14 @@
 
 #include <string>
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
-
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 
 template <typename ScalarT>
 class PointEvaluation {
 public:
-   virtual void evaluateContainer(const Intrepid2::FieldContainer<double> & points,
+   virtual void evaluateContainer(const Kokkos::DynRankView<double,PHX::Device> & points,
                                   PHX::MDField<ScalarT> & field) const = 0;
 };
 
@@ -83,7 +81,7 @@ PHX_POST_REGISTRATION_SETUP(RandomFieldEvaluator,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(RandomFieldEvaluator,workset)
 {
-   for(int i=0;i<field.size();i++)
+   for(int i=0;i<static_cast<int>(field.size());i++)
       field[i] = double(std::rand())/double(RAND_MAX);
 }
 

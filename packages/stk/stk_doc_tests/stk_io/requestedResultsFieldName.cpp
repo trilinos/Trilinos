@@ -42,8 +42,6 @@
 #include <vector>                       // for vector
 #include "Ioss_NodeBlock.h"             // for NodeBlock
 #include "Ioss_Region.h"                // for NodeBlockContainer, Region
-#include "Teuchos_RCP.hpp"              // for RCP::get
-#include "Teuchos_RCPDecl.hpp"          // for RCP
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data

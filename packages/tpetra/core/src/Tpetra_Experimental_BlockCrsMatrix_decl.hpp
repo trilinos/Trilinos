@@ -54,9 +54,8 @@ namespace Tpetra {
 namespace Experimental {
 
 /// \class BlockCrsMatrix
-/// \brief Constant block CRS matrix class.
-/// \author Mark Hoemmen
-/// \date 13 Feb 2014, 24 Feb 2014
+/// \brief Sparse matrix whose entries are small dense square blocks,
+///   all of the same dimensions.
 ///
 /// \tparam Scalar The type of the numerical entries of the matrix.
 ///   (You can use real-valued or complex-valued types here, unlike in
@@ -70,25 +69,36 @@ namespace Experimental {
 ///
 /// Please read the documentation of BlockMultiVector first.
 ///
-/// This class stores values associated with the degrees of freedom of
-/// a single mesh point contiguously, in a getBlockSize() by
-/// getBlockSize() block, in row-major format.
+/// This class implements a sparse matrix whose entries are small
+/// dense square blocks, all of the same dimensions.  The intended
+/// application is to store the discretization of a partial
+/// differential equation with multiple degrees of freedom per mesh
+/// point, where all mesh points have the same number of degrees of
+/// freedom.  This class stores values associated with the degrees of
+/// freedom of a single mesh point contiguously, in a getBlockSize()
+/// by getBlockSize() block, in row-major format.  The matrix's graph
+/// represents the mesh points, with one entry per mesh point.  This
+/// saves storage over using a CrsMatrix, which requires one graph
+/// entry per matrix entry.
 ///
-/// Since this class requires a fill-complete Tpetra::CrsGraph for
-/// construction, it has a row and column Map already.  This means
-/// that it only needs to provide access using local indices.  Users
-/// are responsible for converting from global to local indices if
-/// necessary.  Please be aware that the row Map and column Map may
-/// differ, so you may not use local row and column indices
-/// interchangeably.
+/// This class requires a fill-complete Tpetra::CrsGraph for
+/// construction.  Thus, it has a row Map and a column Map already.
+/// As a result, BlockCrsMatrix only needs to provide access using
+/// local indices.  Access using local indices is faster anyway, since
+/// conversion from global to local indices requires a hash table
+/// lookup per index.  Users are responsible for converting from
+/// global to local indices if necessary.  Please be aware that the
+/// row Map and column Map may differ, so you may not use local row
+/// and column indices interchangeably.
 ///
-/// For simplicity, this object only supports local indexing.  It can
-/// do so because both of its constructors require a fill-complete
-/// Tpetra::CrsGraph, which therefore has both a row Map and a column
-/// Map.
+/// We reserve the right to change the block layout in the future.
+/// Best practice is to use this class' little_block_type and
+/// const_little_block_type typedefs to access blocks, since their
+/// types offer access to entries in a layout-independent way.
+/// These two typedefs are both Kokkos::View specializations.
 ///
-/// Here is an example of how to fill into this object using direct
-/// views.
+/// Here is an example of how to fill into this object using
+/// raw-pointer views.
 ///
 /// \code
 /// int err = 0;
@@ -111,7 +121,7 @@ namespace Experimental {
 ///     // Blocks are stored in row-major format.
 ///     for (LO j = 0; j < blockSize; ++j) {
 ///       for (LO i = 0; i < blockSize; ++i) {
-///         const Scalar curVal = curBlock[i + j * blockSize];
+///         const Scalar curVal = &curBlock[i + j * blockSize];
 ///         // Some function f of the current value and mesh point
 ///         curBlock[i + j * blockSize] = f (curVal, localColInds[k], ...);
 ///       }
@@ -120,10 +130,10 @@ namespace Experimental {
 /// }
 /// \endcode
 ///
-template<class Scalar = Details::DefaultTypes::scalar_type,
-         class LO = Details::DefaultTypes::local_ordinal_type,
-         class GO = Details::DefaultTypes::global_ordinal_type,
-         class Node = Details::DefaultTypes::node_type>
+template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+         class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+         class Node = ::Tpetra::Details::DefaultTypes::node_type>
 class BlockCrsMatrix :
   virtual public Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   virtual public Tpetra::DistObject<char, LO, GO, Node>
@@ -134,28 +144,32 @@ private:
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
 protected:
+  //! Implementation detail; tells
   typedef char packet_type;
 
 public:
   //! \name Public typedefs
   //@{
 
-  //! The type of entries in the matrix.
+  //! The type of entries in the matrix (that is, of each entry in each block).
   typedef Scalar scalar_type;
 
   /// \brief The implementation type of entries in the matrix.
   ///
-  /// Letting scalar_type and impl_scalar_type differ addresses a
-  /// work-around that the new ("Kokkos refactor," as opposed to
-  /// "classic") version of Tpetra uses, to deal with missing device
-  /// macros and volatile overloads in types like std::complex<T>.
+  /// Letting scalar_type and impl_scalar_type differ helps this class
+  /// work correctly for Scalar types like std::complex<T>, which lack
+  /// the necessary CUDA device macros and volatile overloads to work
+  /// correctly with Kokkos.
   typedef typename BlockMultiVector<Scalar, LO, GO, Node>::impl_scalar_type impl_scalar_type;
 
   //! The type of local indices.
   typedef LO local_ordinal_type;
   //! The type of global indices.
   typedef GO global_ordinal_type;
-  //! The Kokkos Node type.
+  /// \brief The Node type.
+  ///
+  /// Prefer device_type, execution_space, and memory_space (see
+  /// below), which relate directly to Kokkos.
   typedef Node node_type;
 
   //! The Kokkos::Device specialization that this class uses.
@@ -165,14 +179,37 @@ public:
   //! The Kokkos memory space that this class uses.
   typedef typename device_type::memory_space memory_space;
 
+  //! The implementation of Map that this class uses.
   typedef ::Tpetra::Map<LO, GO, node_type> map_type;
+  //! The implementation of MultiVector that this class uses.
   typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> mv_type;
+  //! The implementation of CrsGraph that this class uses.
   typedef Tpetra::CrsGraph<LO, GO, node_type> crs_graph_type;
 
-  typedef LittleBlock<impl_scalar_type, LO> little_block_type;
-  typedef LittleBlock<const impl_scalar_type, LO> const_little_block_type;
-  typedef LittleVector<impl_scalar_type, LO> little_vec_type;
-  typedef LittleVector<const impl_scalar_type, LO> const_little_vec_type;
+  //! The type used to access nonconst matrix blocks.
+  typedef Kokkos::View<impl_scalar_type**,
+                       Kokkos::LayoutRight,
+                       device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+          little_block_type;
+  //! The type used to access const matrix blocks.
+  typedef Kokkos::View<const impl_scalar_type**,
+                       Kokkos::LayoutRight,
+                       device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+          const_little_block_type;
+  //! The type used to access nonconst vector blocks.
+  typedef Kokkos::View<impl_scalar_type*,
+                       Kokkos::LayoutRight,
+                       device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+          little_vec_type;
+  //! The type used to access const vector blocks.
+  typedef Kokkos::View<const impl_scalar_type*,
+                       Kokkos::LayoutRight,
+                       device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+          const_little_vec_type;
 
   //@}
   //! \name Constructors and destructor
@@ -334,7 +371,7 @@ public:
   reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
                             const MultiVector<Scalar,LO,GO,Node>& B,
                             const MultiVector<Scalar,LO,GO,Node>& D,
-                            const ArrayView<LO>& rowIndices,
+                            const Teuchos::ArrayView<LO>& rowIndices,
                             const Scalar& dampingFactor,
                             const ESweepDirection direction,
                             const int numSweeps,
@@ -592,13 +629,13 @@ public:
   ///   has a column Map).
   /// \pre All diagonal entries of the matrix's graph must be
   ///   populated on this process.  Results are undefined otherwise.
-  /// \post <tt>offsets.size() == getNodeNumRows()</tt>
+  /// \post <tt>offsets.dimension_0() == getNodeNumRows()</tt>
   ///
   /// This method creates an array of offsets of the local diagonal
   /// entries in the matrix.  This array is suitable for use in the
   /// two-argument version of getLocalDiagCopy().  However, its
   /// contents are not defined in any other context.  For example,
-  /// you should not rely on offsets[i] being the index of the
+  /// you should not rely on \c offsets(i) being the index of the
   /// diagonal entry in the views returned by getLocalRowView().
   /// This may be the case, but it need not be.  (For example, we
   /// may choose to optimize the lookups down to the optimized
@@ -610,7 +647,17 @@ public:
   /// is fill complete, then the offsets array remains valid through
   /// calls to fillComplete() and resumeFill().  "Invalidates" means
   /// that you must call this method again to recompute the offsets.
-  void getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
+  void
+  getLocalDiagOffsets (const Kokkos::View<size_t*, device_type,
+                         Kokkos::MemoryUnmanaged>& offsets) const;
+
+  /// \brief DEPRECATED overload of this method that writes offsets to
+  ///   a Teuchos::ArrayRCP instead of a Kokkos::View.
+  ///
+  /// Please use the version of this method directly above, that
+  /// writes offsets a Kokkos::View instead of to a Teuchos::ArrayRCP.
+  void TPETRA_DEPRECATED
+  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
 
   /// \brief Variant of getLocalDiagCopy() that uses precomputed
   ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.
@@ -662,7 +709,7 @@ public:
   /// If the matrix has a const ("static") graph, and if that graph
   /// is fill complete, then the offsets array remains valid through
   /// calls to fillComplete() and resumeFill().
-  void
+  void TPETRA_DEPRECATED
   getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
@@ -681,12 +728,11 @@ protected:
                               const Scalar vals[],
                               const LO numOffsets) const;
 
-  /// \brief \name Implementation of DistObject (or DistObjectKA).
+  /// \brief \name Implementation of Tpetra::DistObject.
   ///
-  /// The methods here implement Tpetra::DistObject or
-  /// Tpetra::DistObjectKA, depending on a configure-time option.
-  /// They let BlockMultiVector participate in Import and Export
-  /// operations.  Users don't have to worry about these methods.
+  /// The methods here implement Tpetra::DistObject.  They let
+  /// BlockMultiVector participate in Import and Export operations.
+  /// Users don't have to worry about these methods.
   //@{
 
   virtual bool checkSizes (const Tpetra::SrcDistObject& source);
@@ -744,25 +790,34 @@ private:
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;
 
-  /// \brief The graph's array of row offsets.
+  /// \brief Host version of the graph's array of row offsets.
   ///
-  /// FIXME (mfh 23 Mar 2015) Once we write a Kokkos kernel for the
-  /// mat-vec, we won't need a host version of this.
-  typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptr_;
+  /// The device version of this is already stored in the graph.  We
+  /// need the host version here, because this class' interface needs
+  /// to access it on host.  We don't want to assume UVM if we can
+  /// avoid it.  Furthermore, we don't use Kokkos::DualView, because
+  /// the graph is never supposed to change once a BlockCrsMatrix gets
+  /// it.  The whole point of Kokkos::DualView is to help users
+  /// synchronize changes between host and device versions of the
+  /// data, but the data aren't changing in this case.  Furthermore,
+  /// Kokkos::DualView has extra Views in it for the "modified" flags,
+  /// and we don't want the (modest) overhead of creating and storing
+  /// those.
+  typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptrHost_;
 
-  //! Raw pointer to the graph's array of column indices.
-  const LO* ind_;
-  /// \brief Array of values in the matrix.
+  /// \brief Host version of the graph's array of column indices.
   ///
-  /// Each blockSize_ x blockSize_ block is stored contiguously, in
-  /// row major format, with no padding either inside a block or
-  /// between blocks.
-  Kokkos::View<impl_scalar_type*, device_type> valView_;
-  /// \brief Raw pointer version of valView_.
+  /// The device version of this is already stored in the graph.  We
+  /// need the host version here, because this class' interface needs
+  /// to access it on host.  See notes on ptrHost_ above.
+  typename crs_graph_type::local_graph_type::entries_type::HostMirror indHost_;
+
+  /// \brief The array of values in the matrix.
   ///
-  /// It must always be true, outside of the constructors, that
-  /// <tt>valView_.ptr_on_device() == val_</tt>.
-  impl_scalar_type* val_;
+  /// Each blockSize_ x blockSize_ block of values is stored
+  /// contiguously, in row major format, with no padding either inside
+  /// a block or between blocks.
+  typename Kokkos::DualView<impl_scalar_type*, device_type> val_;
 
   /// \brief Column Map block multivector (only initialized if needed).
   ///
@@ -790,6 +845,15 @@ private:
   ///
   /// See the documentation of X_colMap_ above.
   Teuchos::RCP<Teuchos::RCP<BMV> > Y_rowMap_;
+
+  /// \brief Use MV's importer instead of BMV's.
+  ///
+  /// Use MV's importer, which implements the "new" doTransfer interface,
+  /// instead of BMV's importer, which implements the old. This probably entails
+  /// inefficiency relative to a correct new-interface implementation in BMV;
+  /// this workaround is a first step to getting a reasonably fast
+  /// applyBlockNoTrans on the GPU.
+  Teuchos::RCP<Teuchos::RCP<typename crs_graph_type::import_type> > pointImporter_;
 
   /// \brief Offset between blocks in the matrix.
   LO offsetPerBlock_;
@@ -821,6 +885,73 @@ private:
 
   // //! Clear the local error state and stream.
   // void clearLocalErrorStateAndStream ();
+
+public:
+  //! \name Implementation of "dual view semantics"
+  //@{
+
+  //! Mark the matrix's values as modified in the given memory space.
+  template<class MemorySpace>
+  void modify ()
+  {
+    // It's legit to use a memory space, execution space, or
+    // Kokkos::Device specialization as the template parameter of
+    // Kokkos::DualView::modify.  That method just extracts the
+    // memory_space typedef of its template parameter anyway.
+    // However, insisting on a memory space avoids unnecessary
+    // instantiations.
+    val_.template modify<typename MemorySpace::memory_space> ();
+  }
+
+  //! Whether the matrix's values need sync'ing to the given memory space.
+  template<class MemorySpace>
+  bool need_sync () const
+  {
+    // It's legit to use a memory space, execution space, or
+    // Kokkos::Device specialization as the template parameter of
+    // Kokkos::DualView::need_sync.  That method just extracts the
+    // memory_space typedef of its template parameter anyway.
+    // However, insisting on a memory space avoids unnecessary
+    // instantiations.
+    return val_.template need_sync<typename MemorySpace::memory_space> ();
+  }
+
+  //! Sync the matrix's values <i>to</i> the given memory space.
+  template<class MemorySpace>
+  void sync ()
+  {
+    // It's legit to use a memory space, execution space, or
+    // Kokkos::Device specialization as the template parameter of
+    // Kokkos::DualView::sync.  That method just extracts the
+    // memory_space typedef of its template parameter anyway.
+    // However, insisting on a memory space avoids unnecessary
+    // instantiations.
+    val_.template sync<typename MemorySpace::memory_space> ();
+  }
+
+  /// \brief Get the host or device View of the matrix's values (\c val_).
+  ///
+  /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES OF
+  ///   BACKWARDS COMPATIBILITY.  YOU HAVE BEEN WARNED.  CAVEAT
+  ///   LECTOR!!!
+  ///
+  /// \tparam MemorySpace Memory space for which to get the
+  ///   Kokkos::View.
+  ///
+  /// This is <i>not</i> const, because we reserve the right to do
+  /// lazy allocation on device / "fast" memory.  Host / "slow" memory
+  /// allocations generally are not lazy; that way, the host fill
+  /// interface always works in a thread-parallel context without
+  /// needing to synchronize on the allocation.
+  template<class MemorySpace>
+  auto getValues () -> decltype (val_.template view<typename MemorySpace::memory_space> ())
+  {
+    return val_.template view<typename MemorySpace::memory_space> ();
+  }
+
+  //@}
+
+private:
 
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.
@@ -873,20 +1004,20 @@ private:
   /// <i>Relative</i> offsets are relative to the current row, while
   /// <i>absolute</i> offsets are just direct indices into an array.
   /// For example, if <tt>k_abs</tt> is an absolute offset into the
-  /// array of column indices <tt>ind_</tt>, then one can use
-  /// <tt>k_abs</tt> directly as <tt>ind_[k_abs]</tt>.  If
-  /// <tt>k_rel</tt> is a relative offset into <tt>ind_</tt>, then one
-  /// must know the current local row index in order to use
+  /// array of column indices <tt>indHost_</tt>, then one can use
+  /// <tt>k_abs</tt> directly as <tt>indHost_[k_abs]</tt>.  If
+  /// <tt>k_rel</tt> is a relative offset into <tt>indHost_</tt>, then
+  /// one must know the current local row index in order to use
   /// <tt>k_rel</tt>.  For example:
   /// \code
-  /// size_t k_abs = ptr_[curLocalRow] + k_rel; // absolute offset
-  /// LO colInd = ind_[k_abs];
+  /// size_t k_abs = ptrHost_[curLocalRow] + k_rel; // absolute offset
+  /// LO colInd = indHost_[k_abs];
   /// \endcode
   ///
   /// This method returns a relative block offset.  A <i>block</i>
   /// offset means a graph or mesh offset, vs. the <i>point</i> offset
   /// into the array of values \c val_.  A block offset is suitable
-  /// for use in \c ind_, but not in \c val_.  One must multiply a
+  /// for use in \c indHost_, but not in \c val_.  One must multiply a
   /// block offset by offsetPerBlock() in order to get the
   /// <i>point</i> offset into \c val_.
   ///

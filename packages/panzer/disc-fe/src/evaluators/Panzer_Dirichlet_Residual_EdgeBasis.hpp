@@ -52,9 +52,9 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_PointRule.hpp"
-#include "Panzer_PointValues.hpp"
+#include "Panzer_PointValues2.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -67,18 +67,20 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<ScalarT,Cell,Point,Dim> dof;
-  PHX::MDField<ScalarT,Cell,Point,Dim> value;
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation; // will scale residual
+  PHX::MDField<const ScalarT,Cell,Point,Dim> dof;
+  PHX::MDField<const ScalarT,Cell,Point,Dim> value;
+  PHX::MDField<const ScalarT,Cell,BASIS> dof_orientation; // will scale residual
                                                     // by orientation to ensure
                                                     // parallel consistency
 
   Teuchos::RCP<const panzer::PureBasis> basis; 
   Teuchos::RCP<const panzer::PointRule> pointRule; 
-  Intrepid2::FieldContainer<ScalarT> edgeTan; // edge tangents
-  Intrepid2::FieldContainer<ScalarT> refEdgeTan; // reference edge tangents
+  Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
+  Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
 
-  PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
+  PointValues2<ScalarT,PHX::MDField> pointValues;
+  PHX::MDField<const ScalarT, Cell, IP, Dim, Dim, void, void, void, void>
+    constJac_;
 
 PANZER_EVALUATOR_CLASS_END
 

@@ -53,19 +53,24 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="rcb"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="weight 1">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.18"/>
       </ParameterList>
-      <ParameterList name="weight 2">
+      <ParameterList name="metriccheck2">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="1"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.28"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList> 
+    
   </ParameterList>
 
   <ParameterList name="zoltanrcb">
@@ -80,19 +85,24 @@
       <ParameterList name="zoltan_parameters">
           <Parameter name="LB_METHOD" type="string" value="rcb"/>
       </ParameterList>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="weight 1">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.18"/>
       </ParameterList>
-      <ParameterList name="weight 2">
+      <ParameterList name="metriccheck2">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="1"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.28"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList> 
+    
   </ParameterList>
 
 

@@ -73,11 +73,11 @@ PHX_EVALUATOR_CTOR(WeakDirichletResidual,p)
 
   residual = PHX::MDField<ScalarT>(residual_name, basis->functional);
   normal_dot_flux_plus_pen = PHX::MDField<ScalarT>(normal_dot_flux_name, ir->dl_scalar);
-  flux = PHX::MDField<ScalarT>(flux_name, ir->dl_vector);
-  normal = PHX::MDField<ScalarT>(normal_name, ir->dl_vector);
-  dof = PHX::MDField<ScalarT>(dof_name, ir->dl_scalar);
-  value = PHX::MDField<ScalarT>(value_name, ir->dl_scalar);
-  sigma = PHX::MDField<ScalarT>(sigma_name, ir->dl_scalar);
+  flux = PHX::MDField<const ScalarT>(flux_name, ir->dl_vector);
+  normal = PHX::MDField<const ScalarT>(normal_name, ir->dl_vector);
+  dof = PHX::MDField<const ScalarT>(dof_name, ir->dl_scalar);
+  value = PHX::MDField<const ScalarT>(value_name, ir->dl_scalar);
+  sigma = PHX::MDField<const ScalarT>(sigma_name, ir->dl_scalar);
 
   this->addEvaluatedField(residual);
   this->addEvaluatedField(normal_dot_flux_plus_pen);
@@ -116,7 +116,7 @@ PHX_POST_REGISTRATION_SETUP(WeakDirichletResidual,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(WeakDirichletResidual,workset)
 { 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t ip = 0; ip < num_ip; ++ip) {
       normal_dot_flux_plus_pen(cell,ip) = ScalarT(0.0);
       for (std::size_t dim = 0; dim < num_dim; ++dim) {
@@ -127,10 +127,10 @@ PHX_EVALUATE_FIELDS(WeakDirichletResidual,workset)
   }
 
   if(workset.num_cells>0)
-    Intrepid2::FunctionSpaceTools::
-      integrate<ScalarT>(residual, normal_dot_flux_plus_pen, 
-			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			 Intrepid2::COMP_BLAS);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      integrate(residual.get_view(),
+                normal_dot_flux_plus_pen.get_view(), 
+                (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
   
 }
 

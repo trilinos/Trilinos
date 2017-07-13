@@ -33,11 +33,12 @@ INCLUDE_DIRECTORIES(${DIR}/../Smoothers)
 INCLUDE_DIRECTORIES(${DIR}/../Transfers/BaseClass)
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   INCLUDE_DIRECTORIES(${DIR}/../Smoothers/BlockedSmoothers)
-  INCLUDE_DIRECTORIES(${DIR}..//Transfers/BlockedTransfers)
 ENDIF()
+INCLUDE_DIRECTORIES(${DIR}/../Transfers/BlockedTransfers)
 INCLUDE_DIRECTORIES(${DIR}/../Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/../Transfers/Energy-Minimization)
 INCLUDE_DIRECTORIES(${DIR}/../Transfers/Energy-Minimization/Solvers)
+INCLUDE_DIRECTORIES(${DIR}/../Transfers/GeneralGeometric)
 INCLUDE_DIRECTORIES(${DIR}/../Transfers/Geometric-Interpolation)
 INCLUDE_DIRECTORIES(${DIR}/../Transfers/Smoothed-Aggregation)
 INCLUDE_DIRECTORIES(${DIR}/../Transfers/Petrov-Galerkin-SA)
@@ -49,11 +50,15 @@ if (${PACKAGE_NAME}_ENABLE_Tpetra)
   INCLUDE_DIRECTORIES(${DIR}/../../adapters/tpetra)
 ENDIF()
 
+INCLUDE_DIRECTORIES(${DIR}/FacadeClasses)
+
+
 ###############################################
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")
 APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
 APPEND_GLOB(HEADERS *.hpp)
+APPEND_GLOB(HEADERS ${DIR}/FacadeClasses/*.hpp)
 
 ###############################################
 SET(SOURCES "")
@@ -70,13 +75,45 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/ NOSIERRABJAM)
 INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
+IF (${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
+
+  # new ETI system which autogenerates splitted cpp files
+  # not used by default since it might slow down the compilation process
+  SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES )
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FacadeClassFactory)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FacadeClassBase)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FacadeSimple)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::BGS2x2)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::ParameterListInterpreter)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::MLParameterListInterpreter)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FactoryFactory)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::AdaptiveSaMLParameterListInterpreter)
+
+  MUELU_PROCESS_ETI_TEMPLATE(
+    "../Utils/ExplicitInstantiation"
+    "${MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES}"
+    "ExplicitInstantiation/CLASS_FILE_NAME"
+    MueLuInterface_ETI_SC_LO_GO_NO_SRC
+    0)
+  LIST(APPEND SOURCES ${MueLuInterface_ETI_SC_LO_GO_NO_SRC})
+
+ELSE()
+
+# Old pseudo ETI system for muelu-interface: just use the cpp files that are contained in the respository
+
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeClassBase.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
+
+ENDIF() # split cpp files
 
 #
 # Define the targets for package's library(s)

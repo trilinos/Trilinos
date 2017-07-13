@@ -54,19 +54,16 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
-#ifdef PANZER_HAVE_FEI
-#include "Panzer_DOFManagerFEI.hpp"
-#endif
 
 #include "Panzer_STKConnManager.hpp"
 
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
-#ifdef HAVE_TEKO 
+#ifdef PANZER_HAVE_TEKO 
 #include "Teko_RequestHandler.hpp"
 #endif
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 
 Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
@@ -76,11 +73,13 @@ buildLOWSFactory(bool blockedAssembly,
                  int spatialDim,
                  const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                  const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                 #ifdef HAVE_TEKO 
+                 #ifdef PANZER_HAVE_TEKO 
                  const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null,
                  #endif 
                  bool writeCoordinates=false,
-                 bool writeTopo=false
+                 bool writeTopo=false,
+                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,
+                 bool useCoordinates=true
                  );
 
 /** Build LOWS factory.
@@ -89,24 +88,18 @@ template <typename GO>
 Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
 buildLOWSFactory(bool blockedAssembly,
                  const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                 const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
+                 const Teuchos::RCP<panzer_stk::STKConnManager<GO> > & stkConn_manager,
                  int spatialDim,
                  const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                  const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                 #ifdef HAVE_TEKO 
+                 #ifdef PANZER_HAVE_TEKO 
                  const Teuchos::RCP<Teko::RequestHandler> & req_handler,
                  #endif 
                  bool writeCoordinates=false,
-                 bool writeTopo=false
+                 bool writeTopo=false,
+                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,
+                 bool useCoordinates=true
                  );
-
-template <typename GO>
-void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs);
-
-#ifdef PANZER_HAVE_FEI
-template <typename GO> 
-void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os);
-#endif
 
 }
 

@@ -55,6 +55,7 @@
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 
 #include "Teko_Utilities.hpp"
 #include "Teko_BlockUpperTriInverseOp.hpp"
@@ -188,6 +189,12 @@ int tBlockUpperTriInverseOp::runTest(int verbosity,std::ostream & stdstrm,std::o
    failcount += status ? 0 : 1;
    totalrun++;
 
+   status = test_applyTranspose(verbosity,failstrm);
+   Teko_TEST_MSG(stdstrm,1,"   \"applyTranspose\" ... PASSED","   \"applyTranspose\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
    status = allTests;
    if(verbosity >= 10) {
       Teko_TEST_MSG(failstrm,0,"tUpperTriInverseOp...PASSED","tUpperTriInverseOp...FAILED");
@@ -256,6 +263,29 @@ bool tBlockUpperTriInverseOp::test_apply(int verbosity,std::ostream & os)
    std::stringstream ss;
    Teuchos::FancyOStream fos(Teuchos::rcpFromRef(ss),"      |||");
    const bool result = tester.compare( *invA_, *invTri, Teuchos::ptrFromRef(fos) );
+   TEST_ASSERT(result,
+          std::endl << "   tBlockUpperTriInverseOp::test_apply "
+                    << ": Comparing implicitly generated operator to exact operator");
+     if(not result || verbosity>=10) 
+        os << ss.str(); 
+
+   return allPassed;
+}
+
+bool tBlockUpperTriInverseOp::test_applyTranspose(int verbosity,std::ostream & os)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > U = getUpperTriBlocks(A_);
+   RCP<const Thyra::LinearOpBase<double> > invTri = Thyra::transpose(createBlockUpperTriInverseOp(U,invDiag_));
+   RCP<const Thyra::LinearOpBase<double> > invA_op = invA_;
+
+   Thyra::LinearOpTester<double> tester;
+   tester.show_all_tests(true);
+   std::stringstream ss;
+   Teuchos::FancyOStream fos(Teuchos::rcpFromRef(ss),"      |||");
+   const bool result = tester.compare( *Thyra::transpose(invA_op), *invTri, Teuchos::ptrFromRef(fos) );
    TEST_ASSERT(result,
           std::endl << "   tBlockUpperTriInverseOp::test_apply "
                     << ": Comparing implicitly generated operator to exact operator");

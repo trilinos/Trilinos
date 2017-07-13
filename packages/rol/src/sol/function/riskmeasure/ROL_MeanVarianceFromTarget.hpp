@@ -52,6 +52,26 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
+/** @ingroup risk_group
+    \class ROL::MeanVarianceFromTarget
+    \brief Provides an interface for the mean plus a sum of arbitrary order
+    variances from targets.
+
+    The mean plus variances from targets risk measure is
+    \f[
+       \mathcal{R}(X) = \mathbb{E}[X]
+        + \sum_{k=1}^n c_k \mathbb{E}[\wp(X-t_k)^{p_k}]
+    \f]
+    where \f$\wp:\mathbb{R}\to[0,\infty)\f$ is either the absolute value
+    or \f$(x)_+ = \max\{0,x\}\f$, \f$c_k > 0\f$ and \f$p_k\in\mathbb{N}\f$.
+    \f$\mathcal{R}\f$ is law-invariant, but not coherent since it
+    violates positive homogeneity and translation equivariance.
+
+    When using derivative-based optimization, the user can
+    provide a smooth approximation of \f$(\cdot)_+\f$ using the
+    ROL::PositiveFunction class.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -66,36 +86,83 @@ private:
   std::vector<Real> coeff_;
   uint NumMoments_;
 
-public:
+  void checkInputs(void) const {
+    int oSize = order_.size(), cSize = coeff_.size();
+    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
+      ">>> ERROR (ROL::MeanVarianceFromTarget): Order and coefficient arrays have different sizes!");
+    Real zero(0), two(2);
+    for (int i = 0; i < oSize; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
+        ">>> ERROR (ROL::MeanVarianceFromTarget): Element of order array out of range!");
+      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
+        ">>> ERROR (ROL::MeanVarianceFromTarget): Element of coefficient array out of range!");
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::MeanVarianceFromTarget): PositiveFunction pointer is null!");
+  }
 
-  MeanVarianceFromTarget( Real target, Real order, Real coeff,
-                          Teuchos::RCP<PositiveFunction<Real> > &pf )
+public:
+  /** \brief Constructor.
+
+      @param[in]     target  is the scalar target
+      @param[in]     order   is the variance order
+      @param[in]     coeff   is the weight for variance term
+      @param[in]     pf      is the plus function or an approximation
+
+      This constructor produces a mean plus variance from target risk measure
+      with a single variance.
+  */
+  MeanVarianceFromTarget( const Real target, const Real order, const Real coeff,
+                          const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf) {
-    target_.clear(); order_.clear(); coeff_.clear();
-    target_.push_back(target);
-    order_.push_back((order < 2.0) ? 2.0 : order);
-    coeff_.push_back((coeff < 0.0) ? 1.0 : coeff);
+    target_.clear(); target_.push_back(target);
+    order_.clear();  order_.push_back(order);
+    coeff_.clear();  coeff_.push_back(coeff);
+    checkInputs();
     NumMoments_ = order_.size();
   }
 
-  MeanVarianceFromTarget( std::vector<Real> &target, std::vector<Real> &order, std::vector<Real> &coeff, 
-                          Teuchos::RCP<PositiveFunction<Real> > &pf )
+  /** \brief Constructor.
+
+      @param[in]     target  is a vector of targets
+      @param[in]     order   is a vector of variance orders
+      @param[in]     coeff   is a vector of weights for the variance terms
+      @param[in]     pf      is the plus function or an approximation
+
+      This constructor produces a mean plus variance from target risk measure
+      with an arbitrary number of variances.
+  */
+  MeanVarianceFromTarget( const std::vector<Real> &target,
+                          const std::vector<Real> &order,
+                          const std::vector<Real> &coeff, 
+                          const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf) {
-    NumMoments_ = order.size();
     target_.clear(); order_.clear(); coeff_.clear();
-    if ( NumMoments_ != target.size() ) {
-      target.resize(NumMoments_,0.0);
-    }
-    if ( NumMoments_ != coeff.size() ) {
-      coeff.resize(NumMoments_,1.0);
-    }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
+    for ( uint i = 0; i < target.size(); i++ ) {
       target_.push_back(target[i]);
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
     }
+    for ( uint i = 0; i < order.size(); i++ ) {
+      order_.push_back(order[i]);
+    }
+    for ( uint i = 0; i < coeff.size(); i++ ) {
+      coeff_.push_back(coeff[i]);
+    }
+    checkInputs();
+    NumMoments_ = order_.size();
   }
   
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"Mean Plus Variance From Target" and
+      within the "Mean Plus Variance From Target" sublist should have the following parameters
+      \li "Targets" (array of scalars)
+      \li "Orders" (array of unsigned integers)
+      \li "Coefficients" (array of positive scalars)
+      \li "Deviation Type" (eighter "Upper" or "Absolute")
+      \li A sublist for positive function information.
+  */
   MeanVarianceFromTarget( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>() {
     Teuchos::ParameterList &list
@@ -103,35 +170,32 @@ public:
     // Get data from parameter list
     Teuchos::Array<Real> target
       = Teuchos::getArrayFromStringParameter<double>(list,"Targets");
+    target_ = target.toVector();
     Teuchos::Array<Real> order
       = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
+    order_ = order.toVector();
     Teuchos::Array<Real> coeff
       = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
-    // Check inputs
-    NumMoments_ = order.size();
-    target_.clear(); order_.clear(); coeff_.clear();
-    if ( NumMoments_ != static_cast<uint>(target.size()) ) {
-      target.resize(NumMoments_,0.0);
-    }
-    if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
-      coeff.resize(NumMoments_,1.0);
-    }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
-      target_.push_back(target[i]);
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
-    }
+    coeff_ = coeff.toVector();
     // Build (approximate) positive function
-    if ( list.get("Deviation Type","Upper") == "Upper" ) {
+    std::string type = list.get<std::string>("Deviation Type");
+    if ( type == "Upper" ) {
       positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
     }
-    else {
+    else if ( type == "Absolute" ) {
       positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
     }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> (ROL::MeanDeviation): Deviation type is not recoginized!");
+    }
+    // Check inputs
+    checkInputs();
+    NumMoments_ = order.size();
   }
   
   void update(const Real val, const Real weight) {
-    Real diff = 0.0, pf0 = 0.0;
+    Real diff(0), pf0(0);
     RiskMeasure<Real>::val_ += weight * val;
     for ( uint p = 0; p < NumMoments_; p++ ) {
       diff = val-target_[p];
@@ -141,28 +205,28 @@ public:
   }
 
   void update(const Real val, const Vector<Real> &g, const Real weight) {
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, c = 1.0;
+    Real diff(0), pf0(0), pf1(0), c(1), one(1);
     for ( uint p = 0; p < NumMoments_; p++ ) {
       diff = val-target_[p];
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
-      c   += order_[p]*coeff_[p]*std::pow(pf0,order_[p]-1.0)*pf1;
+      c   += order_[p]*coeff_[p]*std::pow(pf0,order_[p]-one)*pf1;
     }
     (RiskMeasure<Real>::g_)->axpy(weight * c,g);
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
               const Real weight) {
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, pf2 = 0.0, p1 = 0.0, p2 = 0.0, ch = 1.0, cg = 0.0;
+    Real diff(0), pf0(0), pf1(0), pf2(0), p1(0), p2(0), ch(1), cg(0), one(1), two(2);
     for ( uint p = 0; p < NumMoments_; p++ ) {
       diff = val - target_[p];
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
       pf2  = positiveFunction_->evaluate(diff,2);
       //p0   = std::pow(pf0,order_[p]);
-      p1   = std::pow(pf0,order_[p]-1.0);
-      p2   = std::pow(pf0,order_[p]-2.0);
-      cg  += order_[p]*coeff_[p]*gv*( (order_[p]-1.0)*p2*pf1*pf1 + p1*pf2 );
+      p1   = std::pow(pf0,order_[p]-one);
+      p2   = std::pow(pf0,order_[p]-two);
+      cg  += order_[p]*coeff_[p]*gv*( (order_[p]-one)*p2*pf1*pf1 + p1*pf2 );
       ch  += order_[p]*coeff_[p]*p1*pf1;
     }
     RiskMeasure<Real>::hv_->axpy(weight*cg,g);

@@ -978,8 +978,8 @@ namespace stk_classic {
       case 0x0430 : top = &face_3 ; break ;
       case 0x0460 : top = &face_6 ; break ;
       default:
-        //throw RuntimeError() << "Invalid eclass and nnode specified" << std::endl ;// << StackTrace;;
-        throw std::runtime_error( "Invalid eclass and nnode specified") ; // << std::endl ;// << StackTrace;;
+        //throw RuntimeError() << "Invalid eclass and nnode specified" << std::endl ;// << StackTrace;
+        throw std::runtime_error( "Invalid eclass and nnode specified") ; // << std::endl ;// << StackTrace;
       }
 
       return top ;
@@ -1721,8 +1721,8 @@ namespace stk_classic {
       case 20 : top = & hex20 ; break ;
       case 27 : top = & hex27 ; break ;
       default :
-        //throw RuntimeError() << "Invalid nnode specified" << std::endl ;// << StackTrace;;
-        throw std::runtime_error( "Invalid nnode specified") ; // << std::endl ;// << StackTrace;;
+        //throw RuntimeError() << "Invalid nnode specified" << std::endl ;// << StackTrace;
+        throw std::runtime_error( "Invalid nnode specified") ; // << std::endl ;// << StackTrace;
       }
 
       return top ;
@@ -2262,8 +2262,8 @@ namespace stk_classic {
       case  8 : top = &tet8 ; break ;
       case 10 : top = &tet10 ; break ;
       default:
-        //throw RuntimeError() << "Invalid nnode specified" << std::endl ;// << StackTrace;;
-        throw std::runtime_error( "Invalid nnode specified") ; // << std::endl ;// << StackTrace;;
+        //throw RuntimeError() << "Invalid nnode specified" << std::endl ;// << StackTrace;
+        throw std::runtime_error( "Invalid nnode specified") ; // << std::endl ;// << StackTrace;
       }
 
       return top ;

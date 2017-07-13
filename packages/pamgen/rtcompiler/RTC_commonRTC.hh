@@ -33,7 +33,7 @@ enum TokenType {CONSTANT,    /**< constant value - ex: 4.5, 3, 'a', "str"  */
 };
 
 std::string tokenTypeToString(TokenType tt);
-  
+
 /**
  * A Token is a single item in our program
  */
@@ -42,9 +42,9 @@ class Token {
   TokenType _type;  //!< The type of the token
   std::string _value; //!< The value of the token
   int _lineLoc; //!< The line number location of this token
-  
+
  public:
-  
+
   /**
    * Constructor -> Trivial
    *
@@ -57,7 +57,7 @@ class Token {
     _type    = Ttt;
     _lineLoc = Tloc;
   }
-  
+
   Token() { }
 
   /**
@@ -89,14 +89,25 @@ class Token {
  * Type
  * An enum to specify the type of a value
  */
-enum Type {CharT, IntT, FloatT, DoubleT};
+enum Type {CharT, IntT, LongT, FloatT, DoubleT};
 
+/**
+ * Some meta functions to help with Type
+ */
+template <typename T>
+struct TypeToTypeT;
+
+template<> struct TypeToTypeT<char>   { static const Type value = CharT; };
+template<> struct TypeToTypeT<int>    { static const Type value = IntT; };
+template<> struct TypeToTypeT<long>   { static const Type value = LongT; };
+template<> struct TypeToTypeT<float>  { static const Type value = FloatT; };
+template<> struct TypeToTypeT<double> { static const Type value = DoubleT; };
 
 /**
  * ObjectType
  * An enum to specify what an object really is
  */
-enum ObjectType {OperatorOT, ScalarNumberOT, ArrayNumberOT, ScalarVarOT, 
+enum ObjectType {OperatorOT, ScalarNumberOT, ArrayNumberOT, ScalarVarOT,
                  ArrayIndexOT, ArrayVarOT, FunctionOT};
 
 
@@ -125,25 +136,25 @@ bool isValue(ObjectType type);
 bool isVariable(ObjectType type);
 
 /**
- * isValidVariableChar -> This method returns true if character c can be part 
+ * isValidVariableChar -> This method returns true if character c can be part
  *                        of a variable name.
- * 
+ *
  * @param c - The character we are looking at
  */
 bool isValidVariableChar(char c);
 
 /**
- * isValidOperatorChar -> This method returns true if character c can be part 
+ * isValidOperatorChar -> This method returns true if character c can be part
  *                        of an operator.
- * 
+ *
  * @param c - The character we are looking at
  */
 bool isValidOperatorChar(char c);
 
 /**
- * isValidNumericChar -> This method returns true if character c can be part 
+ * isValidNumericChar -> This method returns true if character c can be part
  *                       of a number.
- * 
+ *
  * @param c - The character we are looking at
  */
 bool isValidNumericChar(char c);
@@ -184,7 +195,7 @@ bool isDouble(const std::string& s);
 bool isChar(const std::string& s);
 
 /**
- * 
+ *
  */
 bool isString(const std::string& s);
 

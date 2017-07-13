@@ -40,14 +40,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_GATHER_SOLUTION_BLOCKED_EPETRA_IMPL_HPP
-#define PANZER_GATHER_SOLUTION_BLOCKED_EPETRA_IMPL_HPP
+#ifndef PANZER_GATHER_TANGENT_BLOCKED_EPETRA_IMPL_HPP
+#define PANZER_GATHER_TANGENT_BLOCKED_EPETRA_IMPL_HPP
 
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_BlockedDOFManager.hpp"
+#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
@@ -61,10 +61,9 @@
 
 template<typename EvalT,typename TRAITS,typename LO,typename GO>
 panzer::GatherTangent_BlockedEpetra<EvalT, TRAITS,LO,GO>::
-GatherTangent_BlockedEpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
-  const Teuchos::ParameterList& p)
-  : gidIndexer_(indexer)
+GatherTangent_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers,
+                            const Teuchos::ParameterList& p)
+  : indexers_(indexers)
   , useTimeDerivativeSolutionVector_(false)
   , globalDataKey_("Tangent Gather Container")
 {
@@ -100,12 +99,17 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
-  fieldIds_.resize(gatherFields_.size());
+  indexerIds_.resize(gatherFields_.size());
+  subFieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
     const std::string& fieldName = (*indexerNames_)[fd];
-    fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
+
+    indexerIds_[fd]  = getFieldBlock(fieldName,indexers_);
+    subFieldIds_[fd] = indexers_[indexerIds_[fd]]->getFieldNum(fieldName);
+
+    TEUCHOS_ASSERT(indexerIds_[fd]>=0);
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
@@ -119,11 +123,18 @@ template<typename EvalT,typename TRAITS,typename LO,typename GO>
 void panzer::GatherTangent_BlockedEpetra<EvalT, TRAITS,LO,GO>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
-   typedef BlockedEpetraLinearObjContainer BLOC;
+  using Thyra::ProductVectorBase;
 
-   // try to extract linear object container
+  typedef BlockedEpetraLinearObjContainer BLOC;
+
+  // try to extract linear object container
   if (d.gedc.containsDataObject(globalDataKey_)) {
-    blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
+    Teuchos::RCP<const BLOC> blockedContainer = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
+
+    if (useTimeDerivativeSolutionVector_)
+      x_ = Teuchos::rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_dxdt());
+    else
+      x_ = Teuchos::rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_x());
   }
 }
 
@@ -139,59 +150,34 @@ evaluateFields(typename TRAITS::EvalData workset)
 
    using Thyra::VectorBase;
    using Thyra::SpmdVectorBase;
-   using Thyra::ProductVectorBase;
 
-   typedef BlockedEpetraLinearObjContainer BLOC;
-
-   // If blockedContainer_ was not initialized, then no global evaluation data
+   // If x_ was not initialized, then no global evaluation data
    // container was set, in which case this evaluator becomes a no-op
-   if (blockedContainer_ == Teuchos::null)
+   if (x_ == Teuchos::null)
      return;
-
-   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-   out.setShowProcRank(true);
-   out.setOutputToRootOnly(-1);
-
-   std::vector<std::pair<int,GO> > GIDs;
-   std::vector<int> LIDs;
 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-   Teuchos::RCP<ProductVectorBase<double> > x;
-   if (useTimeDerivativeSolutionVector_)
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
-   else
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
+   // loop over the fields to be gathered
+   Teuchos::ArrayRCP<const double> local_x;
+   for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
 
-   // gather operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      LO cellLocalId = localCellIds[worksetCellIndex];
+      int indexerId   = indexerIds_[fieldIndex];
+      int subFieldNum = subFieldIds_[fieldIndex];
 
-      gidIndexer_->getElementGIDs(cellLocalId,GIDs,blockId);
+      // grab local data for inputing
+      rcp_dynamic_cast<SpmdVectorBase<double> >(x_->getNonconstVectorBlock(indexerId))->getLocalData(ptrFromRef(local_x));
 
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++) {
-         // used for doing local ID lookups
-         RCP<const Epetra_Map> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
+      auto subRowIndexer = indexers_[indexerId];
+      const std::vector<int> & elmtOffset = subRowIndexer->getGIDFieldOffsets(blockId,subFieldNum);
 
-         LIDs[i] = x_map->LID(GIDs[i].second);
-         // TEUCHOS_ASSERT(LIDs[i]>=0);
-      }
+      // gather operation for each cell in workset
+      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+         LO cellLocalId = localCellIds[worksetCellIndex];
 
-      // loop over the fields to be gathered
-      Teuchos::ArrayRCP<const double> local_x;
-      for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         int indexerId = gidIndexer_->getFieldBlock(fieldNum);
-
-         // grab local data for inputing
-         RCP<SpmdVectorBase<double> > block_x = rcp_dynamic_cast<SpmdVectorBase<double> >(x->getNonconstVectorBlock(indexerId));
-         block_x->getLocalData(ptrFromRef(local_x));
-
-         const std::vector<int> & elmtOffset = gidIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+         const std::vector<int> & LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {

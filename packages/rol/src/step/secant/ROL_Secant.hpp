@@ -49,12 +49,14 @@
 */
 
 #include "Teuchos_ParameterList.hpp"
+#include "ROL_LinearOperator.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
 
 template<class Real>
 struct SecantState {
+  Teuchos::RCP<Vector<Real> >               iterate;
   std::vector<Teuchos::RCP<Vector<Real> > > iterDiff; // Step Storage
   std::vector<Teuchos::RCP<Vector<Real> > > gradDiff; // Gradient Storage
   std::vector<Real>                         product;  // Step-Gradient Inner Product Storage
@@ -65,17 +67,18 @@ struct SecantState {
 };
 
 template<class Real>
-class Secant {
+class Secant : public LinearOperator<Real> {
 private:
 
   Teuchos::RCP<SecantState<Real> > state_; // Secant State
+  bool isInitialized_;
 
 public:
 
   virtual ~Secant() {}
 
   // Constructor
-  Secant( int M = 10 ) {
+  Secant( int M = 10 ) : isInitialized_(false) {
     state_ = Teuchos::rcp( new SecantState<Real> ); 
     state_->storage = M;
     state_->current = -1;
@@ -83,17 +86,25 @@ public:
   }
 
   Teuchos::RCP<SecantState<Real> >& get_state() { return state_; }
+  const Teuchos::RCP<SecantState<Real> >& get_state() const { return state_; }
 
   // Update Secant Approximation
-  virtual void update( const Vector<Real> &grad, const Vector<Real> &gp, const Vector<Real> &s, 
-                       const Real snorm, const int iter ) {
+  virtual void updateStorage( const Vector<Real> &x,  const Vector<Real> &grad,
+                              const Vector<Real> &gp, const Vector<Real> &s,
+                              const Real snorm,       const int iter ) {
+    Real one(1);
+    if ( !isInitialized_ ) {
+      state_->iterate = x.clone();
+      isInitialized_ = true;
+    }
+    state_->iterate->set(x);
     state_->iter = iter;
     Teuchos::RCP<Vector<Real> > gradDiff = grad.clone();
     gradDiff->set(grad);
-    gradDiff->axpy(-1.0,gp);
+    gradDiff->axpy(-one,gp);
 
     Real sy = s.dot(gradDiff->dual());
-    if (sy > ROL_EPSILON*snorm*snorm) {
+    if (sy > ROL_EPSILON<Real>()*snorm*snorm) {
       if (state_->current < state_->storage-1) {
         state_->current++;                                // Increment Storage
       }
@@ -111,10 +122,10 @@ public:
   }
 
   // Apply Secant Approximate Inverse Hessian
-  virtual void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) = 0;
+  virtual void applyH( Vector<Real> &Hv, const Vector<Real> &v ) const = 0;
 
   // Apply Initial Secant Approximate Inverse Hessian
-  virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
+  virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v ) const {
     Hv.set(v.dual());
     if (state_->iter != 0 && state_->current != -1) {
       Real yy = state_->gradDiff[state_->current]->dot(*(state_->gradDiff[state_->current]));
@@ -123,10 +134,10 @@ public:
   }
 
   // Apply Secant Approximate Hessian
-  virtual void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) = 0;
+  virtual void applyB( Vector<Real> &Bv, const Vector<Real> &v ) const = 0;
 
   // Apply Initial Secant Approximate Hessian 
-  virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) {
+  virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v ) const {
     Bv.set(v.dual());
     if (state_->iter != 0 && state_->current != -1) {
       Real yy = state_->gradDiff[state_->current]->dot(*(state_->gradDiff[state_->current]));
@@ -135,24 +146,33 @@ public:
   }
 
   // Test Secant Approximations 
-  void test( const Vector<Real> &x, const Vector<Real> &s ) {
+  void test( const Vector<Real> &x, const Vector<Real> &s ) const {
     Teuchos::RCP<Vector<Real> > vec  = x.clone();
     Teuchos::RCP<Vector<Real> > Hvec = x.clone();
     Teuchos::RCP<Vector<Real> > Bvec = x.clone();
+    Real one(1);
   
     // Print BHv -> Should be v
     vec->set(s);
-    applyH(*Hvec,*vec,x);
-    applyB(*Bvec,*Hvec,x);
-    vec->axpy(-1.0,*Bvec);
+    applyH(*Hvec,*vec);
+    applyB(*Bvec,*Hvec);
+    vec->axpy(-one,*Bvec);
     std::cout << " ||BHv-v|| = " << vec->norm() << "\n";
   
     // Print HBv -> Should be v
     vec->set(s);
-    applyB(*Bvec,*vec,x);
-    applyH(*Hvec,*Bvec,x);
-    vec->axpy(-1.0,*Hvec);
+    applyB(*Bvec,*vec);
+    applyH(*Hvec,*Bvec);
+    vec->axpy(-one,*Hvec);
     std::cout << " ||HBv-v|| = " << vec->norm() << "\n";
+  }
+
+  void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
+    applyB(Hv,v);
+  }
+
+  void applyInverse(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
+    applyH(Hv,v);
   }
 
 };

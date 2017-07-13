@@ -17,6 +17,7 @@
 #include "ml_ifpack.h"
 #include "ml_ifpack_wrap.h"
 #include "Ifpack_Chebyshev.h"
+#include "Ifpack_SORa.h"
 #ifdef rst_dump
 #include "ml_Ifpack_ML.h"
 #endif
@@ -30,6 +31,7 @@
 #endif
 #include "Ifpack_Chebyshev.h"
 #include "Ifpack_BlockRelaxation.h"
+#include <climits>
 
 using namespace ML_Epetra;
 
@@ -113,10 +115,19 @@ namespace ML_Epetra{
 	  if ((*InvDiagonal_)[i] != 0.0)
 	    (*InvDiagonal_)[i] = 1.0 / (*InvDiagonal_)[i];
       }
+      /* Get a new random number from ML's RNG and use it to seed the eigenvalue estimate.  This is to keep Ifpack
+	 from (non-reproducibly) generating its own.  We need a ML_Comm object here just to get the PIDs for seeding, 
+	 if ML needs to.*/
+      double dseed;
+      ML_Comm* comm;
+      ML_Comm_Create(&comm);
+      ML_random_vec(&dseed,1,comm);
+      ML_Comm_Destroy(&comm);
+      unsigned int iseed=(unsigned int) (dseed*UINT_MAX);
 
       /* Do the eigenvalue estimation*/
-      if (EigenType_ == "power-method") Ifpack_Chebyshev::PowerMethod(*A,*InvDiagonal_,MaximumIterations,lambda_max);
-      else if(EigenType_ == "cg") Ifpack_Chebyshev::CG(*A,*InvDiagonal_,MaximumIterations,lambda_min,lambda_max);
+      if (EigenType_ == "power-method") Ifpack_Chebyshev::PowerMethod(*A,*InvDiagonal_,MaximumIterations,lambda_max,&iseed);
+      else if(EigenType_ == "cg") Ifpack_Chebyshev::CG(*A,*InvDiagonal_,MaximumIterations,lambda_min,lambda_max,&iseed);
       else ML_CHK_ERR(0); // not recognized
 
       lambda_min=lambda_max / alpha;
@@ -226,17 +237,17 @@ namespace ML_Epetra{
     if(List.isParameter("smoother: line detection threshold")) {
       use_line = true;
       IFPACKList.set("partitioner: line detection threshold",List.get("smoother: line detection threshold",-1.0));
+      IFPACKList.set("partitioner: line detection mode", List.get("smoother: line detection mode","coordinates"));
       IFPACKList.set("partitioner: type","line");
       IFPACKList.set("partitioner: x-coordinates",List.get("x-coordinates",(double*)0));
       IFPACKList.set("partitioner: y-coordinates",List.get("y-coordinates",(double*)0));
       IFPACKList.set("partitioner: z-coordinates",List.get("z-coordinates",(double*)0));
-
     }
 
     if(verbose && !A->Comm().MyPID()){
       std::cout << printMsg << "block " << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
 		<< Sweeps << ",omega=" << omega;
-      if(use_line) std::cout << ",auto-line";	
+      if(use_line) std::cout << ",auto-line, "<<IFPACKList.get("partitioner: line detection mode","coordinates");	
     }
     
 #ifdef HAVE_IFPACK_DYNAMIC_FACTORY
@@ -316,6 +327,9 @@ namespace ML_Epetra{
   /**********************************************/
   else if(SmooType=="SORa"){
     const Epetra_RowMatrix* Arow=dynamic_cast<const Epetra_RowMatrix*>(A);
+    double boost = List.get("eigen-analysis: boost for lambda max", 1.0);
+    int MaximumIterations = List.get("eigen-analysis: max iters", 10);
+
     if(verbose && !A->Comm().MyPID()){
       std::cout << printMsg << "IFPACK/SORa("<<IFPACKList.get("sora: alpha",1.5)<<","<<IFPACKList.get("sora: gamma",1.0)<<")"
 	   << ", sweeps = " <<IFPACKList.get("sora: sweeps",1)<<std::endl;
@@ -326,6 +340,21 @@ namespace ML_Epetra{
       if(IFPACKList.get("sora: use global damping",false))
 	std::cout << printMsg << "global damping enabled"<<std::endl;
     }
+    /* Get a new random number from ML's RNG and use it to seed the eigenvalue estimate.  This is to keep Ifpack
+       from (non-reproducibly) generating its own.  We need a ML_Comm object here just to get the PIDs for seeding, 
+       if ML needs to.  This only needs to be on if we're usign global damping. */
+    if(IFPACKList.get("sora: use global damping",false)) {
+      double dseed;
+      ML_Comm* comm;
+      ML_Comm_Create(&comm);
+      ML_random_vec(&dseed,1,comm);
+      ML_Comm_Destroy(&comm);
+      unsigned int iseed=(unsigned int) (dseed*UINT_MAX);
+      IFPACKList.get("sora: eigen-analysis: max iters",MaximumIterations);
+      IFPACKList.get("sora: eigen-analysis: boost",boost);
+      IFPACKList.get("sora: eigen-analysis: random seed",iseed);
+    }
+
 #ifdef HAVE_IFPACK_DYNAMIC_FACTORY
     Ifpack_DynamicFactory Factory;
 #else

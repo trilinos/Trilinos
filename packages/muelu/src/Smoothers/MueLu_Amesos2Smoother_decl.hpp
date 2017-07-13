@@ -129,6 +129,9 @@ namespace MueLu {
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
+   
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const;
 
     //@}
 
@@ -141,6 +144,9 @@ namespace MueLu {
 
     //! pointer to Amesos2 solver object
     RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > prec_;
+
+    bool useTransformation_;
+    RCP<MultiVector> X_, B_;
 
   }; // class Amesos2Smoother
 
@@ -166,9 +172,14 @@ namespace MueLu {
     void DeclareInput(Level& currentLevel) const {};
     void Setup(Level& currentLevel) {};
     void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const {};
+
     RCP<SmootherPrototype> Copy() const { return Teuchos::null; };
+
     std::string description() const { return std::string(""); };
     void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const {};
+   
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const {size_t cplx=0; return cplx;};
   };
 # endif
 #endif // HAVE_MUELU_EPETRA

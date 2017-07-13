@@ -47,15 +47,14 @@ namespace
 //-BEGIN
 TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
 {
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) { return; }
+
     const std::string restartFileName = "OneGlobalDouble.restart";
     const std::string timeStepVarName = "timeStep";
     const double timeStepSize = 1e-6;
     const double currentTime = 1.0;
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-    if (numProcs != 1) {
-      return;
-    }
 
     //+ Write restart file with time step size as a global variable
     {

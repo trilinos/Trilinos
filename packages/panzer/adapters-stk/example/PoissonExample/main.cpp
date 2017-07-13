@@ -49,8 +49,6 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -65,6 +63,9 @@
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
+#include "Panzer_Response_Functional.hpp"
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
@@ -75,8 +76,6 @@
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 
@@ -86,11 +85,14 @@
 
 #include "AztecOO.h"
 
+#include <sstream>
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-		       std::vector<panzer::BC>& bcs);
+void testInitialization(const int basis_order,
+                        const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+                        std::vector<panzer::BC>& bcs);
 
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
@@ -100,13 +102,25 @@ int main(int argc,char * argv[])
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
 
-   PHX::InitializeKokkosDevice();
+   Kokkos::initialize(argc,argv);
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-   RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
+
+   // Build command line processor
+   ////////////////////////////////////////////////////
+
+   int x_elements=10,y_elements=10,basis_order=1;
+   Teuchos::CommandLineProcessor clp;
+   clp.setOption("x-elements",&x_elements);
+   clp.setOption("y-elements",&y_elements);
+   clp.setOption("basis-order",&basis_order); 
+
+   // parse commandline argument
+   TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -116,7 +130,7 @@ int main(int argc,char * argv[])
      Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
    Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
 
-   panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
+   panzer_stk::SquareQuadMeshFactory mesh_factory;
 
    // other declarations
    const std::size_t workset_size = 20;
@@ -128,11 +142,11 @@ int main(int argc,char * argv[])
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",1);
    pl->set("Y Blocks",1);
-   pl->set("X Elements",10);
-   pl->set("Y Elements",10);
+   pl->set("X Elements",x_elements);
+   pl->set("Y Elements",y_elements);
    mesh_factory.setParameterList(pl);
 
-   RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
+   RCP<panzer_stk::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
    // construct input physics and physics block
    ////////////////////////////////////////////////////////
@@ -143,7 +157,7 @@ int main(int argc,char * argv[])
    {
       bool build_transient_support = false;
 
-      testInitialization(ipb, bcs);
+      testInitialization(basis_order, ipb, bcs);
       
       const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0"));
 
@@ -190,17 +204,21 @@ int main(int argc,char * argv[])
    // build worksets
    ////////////////////////////////////////////////////////
 
-   Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+   Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
    // build DOF Manager and linear object factory
    /////////////////////////////////////////////////////////////
  
    // build the connection manager 
    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-     conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+     conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
@@ -208,7 +226,36 @@ int main(int argc,char * argv[])
 
    // construct some linear algebra object, build object to pass to evaluators
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+
+   // Setup response library for checking the error in this manufactered solution
+   ////////////////////////////////////////////////////////////////////////
+
+   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary
+      = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
+
+   {
+     const int integration_order = 10;
+
+     std::vector<std::string> eBlocks;
+     mesh->getElementBlockNames(eBlocks);
+
+     panzer::FunctionalResponse_Builder<int,int> builder;
+     builder.comm = MPI_COMM_WORLD;
+     builder.cubatureDegree = integration_order;
+     builder.requiresCellIntegral = true;
+     builder.quadPointField = "TEMPERATURE_L2_ERROR";
+
+     errorResponseLibrary->addResponse("L2 Error",eBlocks,builder);
+
+     builder.comm = MPI_COMM_WORLD;
+     builder.cubatureDegree = integration_order;
+     builder.requiresCellIntegral = true;
+     builder.quadPointField = "TEMPERATURE_H1_ERROR";
+
+     errorResponseLibrary->addResponse("H1 Error",eBlocks,builder);
+   }
+
 
    // setup closure model
    /////////////////////////////////////////////////////////////
@@ -219,8 +266,20 @@ int main(int argc,char * argv[])
    cm_factory.buildObjects(cm_builder);
 
    Teuchos::ParameterList closure_models("Closure Models");
-   closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",0.0); // a constant source
+   {
+     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","SIMPLE SOURCE"); // a constant source
       // SOURCE_TEMPERATURE field is required by the PoissonEquationSet
+     // required for error calculation
+     closure_models.sublist("solid").sublist("TEMPERATURE_L2_ERROR").set<std::string>("Type","L2 ERROR_CALC");
+     closure_models.sublist("solid").sublist("TEMPERATURE_L2_ERROR").set<std::string>("Field A","TEMPERATURE");
+     closure_models.sublist("solid").sublist("TEMPERATURE_L2_ERROR").set<std::string>("Field B","TEMPERATURE_EXACT");
+
+     closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Type","H1 ERROR_CALC");
+     closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Field A","TEMPERATURE");
+     closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Field B","TEMPERATURE_EXACT");
+
+     closure_models.sublist("solid").sublist("TEMPERATURE_EXACT").set<std::string>("Type","TEMPERATURE_EXACT");
+   }
 
    Teuchos::ParameterList user_data("User Data"); // user data can be empty here
 
@@ -243,6 +302,16 @@ int main(int argc,char * argv[])
    panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
    panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
    ae_tm.buildObjects(builder);
+
+   // Finalize construcition of STK writer response library
+   /////////////////////////////////////////////////////////////
+   {
+      user_data.set<int>("Workset Size",workset_size);
+      errorResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                                    cm_factory,
+                                                    closure_models,
+                                                    user_data);
+   }
 
    // assemble linear system
    /////////////////////////////////////////////////////////////
@@ -316,28 +385,71 @@ int main(int argc,char * argv[])
 
       // get X Epetra_Vector from ghosted container
       RCP<panzer::EpetraLinearObjContainer> ep_ghostCont = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghostCont);
-      panzer_stk_classic::write_solution_data(*dofManager,*mesh,*ep_ghostCont->get_x());
-      mesh->writeToExodus("output.exo");
+      panzer_stk::write_solution_data(*dofManager,*mesh,*ep_ghostCont->get_x());
+      // Due to multiple instances of this test being run at the same
+      // time (one for each order), we need to differentiate output to
+      // prevent race conditions on output file. Multiple runs for the
+      // same order are ok as they are staged one after another in the
+      // ADD_ADVANCED_TEST cmake macro.
+      std::ostringstream filename;
+      filename << "output_" << basis_order << ".exo";
+      mesh->writeToExodus(filename.str());
+   }
+
+   // compute error norm
+   /////////////////////////////////////////////////////////////
+
+   if(true) {
+      Teuchos::FancyOStream lout(Teuchos::rcpFromRef(std::cout));
+      lout.setOutputToRootOnly(0);
+
+      panzer::AssemblyEngineInArgs respInput(ghostCont,container);
+      respInput.alpha = 0;
+      respInput.beta = 1;
+
+      Teuchos::RCP<panzer::ResponseBase> l2_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("L2 Error");
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > l2_resp_func = 
+             Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(l2_resp);
+      Teuchos::RCP<Thyra::VectorBase<double> > l2_respVec = Thyra::createMember(l2_resp_func->getVectorSpace());
+      l2_resp_func->setVector(l2_respVec);
+
+      Teuchos::RCP<panzer::ResponseBase> h1_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("H1 Error");
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > h1_resp_func = 
+             Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
+      Teuchos::RCP<Thyra::VectorBase<double> > h1_respVec = Thyra::createMember(h1_resp_func->getVectorSpace());
+      h1_resp_func->setVector(h1_respVec);
+
+      errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
+      errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
+
+      lout << "This is the Basis Order" << std::endl;
+      lout << "Basis Order = " << basis_order << std::endl;
+      lout << "This is the L2 Error" << std::endl;
+      lout << "L2 Error = " << sqrt(l2_resp_func->value) << std::endl;
+      lout << "This is the H1 Error" << std::endl;
+      lout << "H1 Error = " << sqrt(h1_resp_func->value) << std::endl;
    }
 
    // all done!
    /////////////////////////////////////////////////////////////
-
-   PHX::FinalizeKokkosDevice();
+   
+   out << "ALL PASSED" << std::endl;
 
    return 0;
 }
 
-void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-		       std::vector<panzer::BC>& bcs)
+void testInitialization(const int basis_order,
+                        const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+                        std::vector<panzer::BC>& bcs)
 {
   {
+    const int integration_order = 10;
     Teuchos::ParameterList& p = ipb->sublist("Poisson Physics");
     p.set("Type","Poisson");
     p.set("Model ID","solid");
     p.set("Basis Type","HGrad");
-    p.set("Basis Order",1);
-    p.set("Integration Order",2);
+    p.set("Basis Order",basis_order);
+    p.set("Integration Order",integration_order);
   }
   
    {
@@ -347,7 +459,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
-      double value = 5.0;
+      double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
       panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
@@ -362,7 +474,37 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
-      double value = -5.0;
+      double value = 0.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+  		    strategy, p);
+      bcs.push_back(bc);
+   }    
+
+   {
+      std::size_t bc_id = 2;
+      panzer::BCType bctype = panzer::BCT_Dirichlet;
+      std::string sideset_id = "right";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 0.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+  		    strategy, p);
+      bcs.push_back(bc);
+   }    
+
+   {
+      std::size_t bc_id = 3;
+      panzer::BCType bctype = panzer::BCT_Dirichlet;
+      std::string sideset_id = "bottom";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
       panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 

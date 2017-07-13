@@ -26,14 +26,14 @@
 
     <ParameterList name="Finest">
       <Parameter name="PreSmoother"           type="string" value="BackwardGaussSeidel"/>
-      <Parameter name="PostSmoother"          type="string" value="NoFactory"/>
+      <Parameter name="PostSmoother"          type="string" value="NoSmoother"/>
       <Parameter name="CoarseSolver"          type="string"  value="DirectSolver"/>
       
     </ParameterList>
     
     <ParameterList name="Remaining">
       <Parameter name="startLevel"            type="int" value="1"/>
-      <Parameter name="PreSmoother"           type="string" value="NoFactory"/>
+      <Parameter name="PreSmoother"           type="string" value="NoSmoother"/>
       <Parameter name="PostSmoother"          type="string" value="BackwardGaussSeidel"/>
       <Parameter name="CoarseSolver"          type="string"  value="DirectSolver"/>
     </ParameterList>    

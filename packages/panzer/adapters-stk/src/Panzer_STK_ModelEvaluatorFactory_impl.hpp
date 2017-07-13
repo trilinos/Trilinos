@@ -55,7 +55,6 @@
 #include "Panzer_BC.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
@@ -112,7 +111,7 @@
 
 #include <Panzer_NodeType.hpp>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
@@ -166,6 +165,7 @@ namespace panzer_stk_classic {
         p.set<int>("Workset Size", 1);
         p.set<int>("Default Integration Order",-1);
         p.set<std::string>("Field Order","");
+        p.set<std::string>("Auxiliary Field Order","");
         p.set<bool>("Use DOFManager FEI",false);
         p.set<bool>("Load Balance DOFs",false);
         p.set<bool>("Use Tpetra",false);
@@ -188,6 +188,7 @@ namespace panzer_stk_classic {
       pl->sublist("Options").disableRecursiveValidation();
       pl->sublist("Active Parameters").disableRecursiveValidation();
       pl->sublist("Controls").disableRecursiveValidation();
+      pl->sublist("ALE").disableRecursiveValidation(); // this sucks
       pl->sublist("User Data").disableRecursiveValidation();
       pl->sublist("User Data").sublist("Panzer Data").disableRecursiveValidation();
 
@@ -325,8 +326,8 @@ namespace panzer_stk_classic {
     // Build mesh factory and uncommitted mesh
     ////////////////////////////////////////////////////////////////////////////////////////
 
-    Teuchos::RCP<panzer_stk_classic::STK_MeshFactory> mesh_factory = this->buildSTKMeshFactory(mesh_params);
-    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(*(mpi_comm->getRawMpiComm()));
+    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory = this->buildSTKMeshFactory(mesh_params);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(*(mpi_comm->getRawMpiComm()));
     m_mesh = mesh;
 
     m_eqset_factory = eqset_factory;
@@ -372,7 +373,7 @@ namespace panzer_stk_classic {
     try {
        // this throws some exceptions, catch them as neccessary
        this->finalizeMeshConstruction(*mesh_factory,physicsBlocks,*mpi_comm,*mesh);
-    } catch(const panzer_stk_classic::STK_Interface::ElementBlockException & ebexp) {
+    } catch(const panzer_stk::STK_Interface::ElementBlockException & ebexp) {
        fout << "*****************************************\n\n";
        fout << "Element block exception, could not finalize the mesh, printing block and sideset information:\n";
        fout.pushTab(3);
@@ -381,7 +382,7 @@ namespace panzer_stk_classic {
        fout << std::endl;
 
        throw ebexp;
-    } catch(const panzer_stk_classic::STK_Interface::SidesetException & ssexp) {
+    } catch(const panzer_stk::STK_Interface::SidesetException & ssexp) {
        fout << "*****************************************\n\n";
        fout << "Sideset exception, could not finalize the mesh, printing block and sideset information:\n";
        fout.pushTab(3);
@@ -398,9 +399,9 @@ namespace panzer_stk_classic {
 
     // build a workset factory that depends on STK
     ////////////////////////////////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory;
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory;
     if(m_user_wkst_factory==Teuchos::null)
-       wkstFactory = Teuchos::rcp(new panzer_stk_classic::WorksetFactory()); // build STK workset factory
+       wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory()); // build STK workset factory
     else
        wkstFactory = m_user_wkst_factory;
 
@@ -417,9 +418,9 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer::ConnManagerBase<int> > conn_manager;
     if(useTpetra)
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<panzer::Ordinal64>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
     else
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
     m_conn_manager = conn_manager;
 
     // build DOF Manager
@@ -546,7 +547,7 @@ namespace panzer_stk_classic {
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
-       globalIndexerFactory.setEnableGhosting(has_interface_condition);
+       globalIndexerFactory.setUseNeighbors(has_interface_condition);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,
                                                          field_order);
@@ -572,14 +573,29 @@ namespace panzer_stk_classic {
 
     // build worksets
     //////////////////////////////////////////////////////////////
+   
+    // build up needs array for workset container
+    std::map<std::string,panzer::WorksetNeeds> needs;  
+    for(std::size_t i=0;i<physicsBlocks.size();i++)
+      needs[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i]->getWorksetNeeds();
 
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,needs));
+
+    wkstContainer->setWorksetSize(workset_size);
+    wkstContainer->setGlobalIndexer(globalIndexer); // set the global indexer so the orientations are evaluated
 
     m_wkstContainer = wkstContainer;
 
-    // set the global indexer so the orientations are evaluated
-    wkstContainer->setGlobalIndexer(globalIndexer);
+    // find max number of worksets
+    std::size_t max_wksets = 0;
+    for(std::size_t p=0;p<physicsBlocks.size();p++) {
+      const panzer::WorksetDescriptor wd = panzer::blockDescriptor(physicsBlocks[p]->elementBlockID());
+      Teuchos::RCP< std::vector<panzer::Workset> >works = wkstContainer->getWorksets(wd);
+      max_wksets = std::max(max_wksets,works->size());
+    }
+    user_data_params.set<std::size_t>("Max Worksets",max_wksets);
+    wkstContainer->clear(); 
 
     // Setup lagrangian type coordinates
     /////////////////////////////////////////////////////////////
@@ -652,7 +668,7 @@ namespace panzer_stk_classic {
     // setup the closure model for automatic writing (during residual/jacobian update)
     ////////////////////////////////////////////////////////////////////////////////////////
 
-    panzer_stk_classic::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(user_cm_factory,mesh,output_list);
+    panzer_stk::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(user_cm_factory,mesh,output_list);
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     cm_factory.buildObjects(io_cm_builder);
 
@@ -661,14 +677,15 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
     {
-      bool write_dot_files = false;
-      std::string prefix = "Panzer_AssemblyGraph_";
-      write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
-      prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
+      bool write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",false);
+      std::string dot_file_prefix = p.sublist("Options").get("Volume Assembly Graph Prefix","Panzer_AssemblyGraph");
+      bool write_fm_files = p.sublist("Options").get("Write Field Manager Files",false);
+      std::string fm_file_prefix = p.sublist("Options").get("Field Manager File Prefix","Panzer_AssemblyGraph");
 
       fmb = buildFieldManagerBuilder(wkstContainer,physicsBlocks,bcs,*eqset_factory,bc_factory,cm_factory,
                                      user_cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params,
-                                     write_dot_files,prefix);
+                                     write_dot_files,dot_file_prefix,
+				     write_fm_files,fm_file_prefix);
     }
 
     // build response library
@@ -718,9 +735,20 @@ namespace panzer_stk_classic {
     /////////////////////////////////////////////////////////////
 
     {
+      // Create closure model list for use in defining initial conditions
+      // For now just remove Global MMS Parameters, if it exists
+      const Teuchos::ParameterList& models = p.sublist("Closure Models");
+      Teuchos::ParameterList cl_models(models.name());
+      for (Teuchos::ParameterList::ConstIterator model_it=models.begin(); 
+           model_it!=models.end(); ++model_it) {
+           std::string key = model_it->first;
+           if (model_it->first != "Global MMS Parameters")
+              cl_models.setEntry(key,model_it->second);
+       }
       bool write_dot_files = false;
       std::string prefix = "Panzer_AssemblyGraph_";
       setupInitialConditions(*thyra_me,*wkstContainer,physicsBlocks,user_cm_factory,*linObjFactory,
+                             cl_models,
                              p.sublist("Initial Conditions"),
                              p.sublist("User Data"),
                              p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files),
@@ -738,7 +766,7 @@ namespace panzer_stk_classic {
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::
-  addUserFieldsToMesh(panzer_stk_classic::STK_Interface & mesh,const Teuchos::ParameterList & output_list) const
+  addUserFieldsToMesh(panzer_stk::STK_Interface & mesh,const Teuchos::ParameterList & output_list) const
   {
     // register cell averaged scalar fields
     const Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
@@ -757,7 +785,7 @@ namespace panzer_stk_classic {
 
     // register cell averaged components of vector fields
     // just allocate space for the fields here. The actual calculation and writing
-    // are done by panzer_stk_classic::ScatterCellAvgVector.
+    // are done by panzer_stk::ScatterCellAvgVector.
     const Teuchos::ParameterList & cellAvgVectors = output_list.sublist("Cell Average Vectors");
     for(Teuchos::ParameterList::ConstIterator itr = cellAvgVectors.begin();
         itr != cellAvgVectors.end(); ++itr) {
@@ -827,6 +855,7 @@ namespace panzer_stk_classic {
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                          const panzer::LinearObjFactory<panzer::Traits> & lof,
+                         const Teuchos::ParameterList & closure_pl,
                          const Teuchos::ParameterList & initial_cond_pl,
                          const Teuchos::ParameterList & user_data_pl,
                          bool write_dot_files,const std::string & dot_file_prefix) const
@@ -844,6 +873,18 @@ namespace panzer_stk_classic {
       // read from exodus, or compute using field managers
 
       std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
+
+      panzer::setupInitialConditionFieldManagers(wkstContainer,
+                                                 physicsBlocks,
+                                                 cm_factory,
+                                                 closure_pl,
+                                                 initial_cond_pl,
+                                                 lof,
+                                                 user_data_pl,
+                                                 write_dot_files,
+                                                 dot_file_prefix,
+                                                 phx_ic_field_managers);
+/*
       panzer::setupInitialConditionFieldManagers(wkstContainer,
                                                  physicsBlocks,
                                                  cm_factory,
@@ -853,6 +894,7 @@ namespace panzer_stk_classic {
                                                  write_dot_files,
                                                  dot_file_prefix,
                                                  phx_ic_field_managers);
+*/
 
       // set the vector to be filled
       Teuchos::RCP<panzer::LinearObjContainer> loc = lof.buildLinearObjContainer();
@@ -883,7 +925,7 @@ namespace panzer_stk_classic {
                          const Teuchos::RCP<panzer::WorksetContainer> & wc,
                          const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
                          const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
-                         const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                         const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                          const Teuchos::ParameterList & closure_model_pl,
                          const Teuchos::ParameterList & user_data_pl,
@@ -924,17 +966,17 @@ namespace panzer_stk_classic {
 
   //! build STK mesh from a mesh parameter list
   template<typename ScalarT>
-  Teuchos::RCP<panzer_stk_classic::STK_MeshFactory> ModelEvaluatorFactory<ScalarT>::buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const
+  Teuchos::RCP<panzer_stk::STK_MeshFactory> ModelEvaluatorFactory<ScalarT>::buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const
   {
-    Teuchos::RCP<panzer_stk_classic::STK_MeshFactory> mesh_factory;
+    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
 
     // first contruct the mesh factory
     if (mesh_params.get<std::string>("Source") ==  "Exodus File") {
-      mesh_factory = Teuchos::rcp(new panzer_stk_classic::STK_ExodusReaderFactory());
+      mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory());
       mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(mesh_params.sublist("Exodus File"))));
     }
     else if (mesh_params.get<std::string>("Source") ==  "Pamgen Mesh") {
-      mesh_factory = Teuchos::rcp(new panzer_stk_classic::STK_PamgenReaderFactory());
+      mesh_factory = Teuchos::rcp(new panzer_stk::STK_PamgenReaderFactory());
       mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(mesh_params.sublist("Pamgen Mesh"))));
     }
     else if (mesh_params.get<std::string>("Source") ==  "Inline Mesh") {
@@ -945,44 +987,44 @@ namespace panzer_stk_classic {
          typeStr = mesh_params.sublist("Inline Mesh").get<std::string>("Type");
 
       if (dimension == 1) {
-        mesh_factory = Teuchos::rcp(new panzer_stk_classic::LineMeshFactory);
+        mesh_factory = Teuchos::rcp(new panzer_stk::LineMeshFactory);
         Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
         *in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
         mesh_factory->setParameterList(in_mesh);
       }
       else if (dimension == 2 && typeStr=="Tri") {
-        mesh_factory = Teuchos::rcp(new panzer_stk_classic::SquareTriMeshFactory);
+        mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
         Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
         *in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
         mesh_factory->setParameterList(in_mesh);
       }
       else if (dimension == 2) {
-        mesh_factory = Teuchos::rcp(new panzer_stk_classic::SquareQuadMeshFactory);
+        mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
         Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
         *in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
         mesh_factory->setParameterList(in_mesh);
       }
       else if (dimension == 3 && typeStr=="Tet") {
-        mesh_factory = Teuchos::rcp(new panzer_stk_classic::CubeTetMeshFactory);
+        mesh_factory = Teuchos::rcp(new panzer_stk::CubeTetMeshFactory);
         Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
         *in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
         mesh_factory->setParameterList(in_mesh);
       }
       else if(dimension == 3) {
-        mesh_factory = Teuchos::rcp(new panzer_stk_classic::CubeHexMeshFactory);
+        mesh_factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory);
         Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
         *in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
         mesh_factory->setParameterList(in_mesh);
       }
       else if(dimension==4) { // not really "dimension==4" simply a flag to try this other mesh for testing
-        mesh_factory = Teuchos::rcp(new panzer_stk_classic::MultiBlockMeshFactory);
+        mesh_factory = Teuchos::rcp(new panzer_stk::MultiBlockMeshFactory);
         Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
         *in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
         mesh_factory->setParameterList(in_mesh);
       }
     }
     else if (mesh_params.get<std::string>("Source") ==  "Custom Mesh") {
-      mesh_factory = Teuchos::rcp(new panzer_stk_classic::CustomMeshFactory());
+      mesh_factory = Teuchos::rcp(new panzer_stk::CustomMeshFactory());
       mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(mesh_params.sublist("Custom Mesh"))));
     }
     else {
@@ -1092,19 +1134,19 @@ namespace panzer_stk_classic {
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory<ScalarT>::setNOXObserverFactory(const Teuchos::RCP<const panzer_stk_classic::NOXObserverFactory>& nox_observer_factory)
+  void ModelEvaluatorFactory<ScalarT>::setNOXObserverFactory(const Teuchos::RCP<const panzer_stk::NOXObserverFactory>& nox_observer_factory)
   {
     m_nox_observer_factory = nox_observer_factory;
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory<ScalarT>::setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory>& rythmos_observer_factory)
+  void ModelEvaluatorFactory<ScalarT>::setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory)
   {
     m_rythmos_observer_factory = rythmos_observer_factory;
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory<ScalarT>::setUserWorksetFactory(Teuchos::RCP<panzer_stk_classic::WorksetFactory>& user_wkst_factory)
+  void ModelEvaluatorFactory<ScalarT>::setUserWorksetFactory(Teuchos::RCP<panzer_stk::WorksetFactory>& user_wkst_factory)
   {
     m_user_wkst_factory = user_wkst_factory;
   }
@@ -1123,8 +1165,8 @@ namespace panzer_stk_classic {
   buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
                                    const Teuchos::RCP<panzer::GlobalData>& global_data,
                                   const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver,
-                                  const Teuchos::Ptr<const panzer_stk_classic::NOXObserverFactory> & in_nox_observer_factory,
-                                  const Teuchos::Ptr<const panzer_stk_classic::RythmosObserverFactory> & in_rythmos_observer_factory
+                                  const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory,
+                                  const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory
                                   )
   {
     using Teuchos::is_null;
@@ -1136,9 +1178,9 @@ namespace panzer_stk_classic {
                        "Objects are not built yet!  Please call buildObjects() member function.");
     TEUCHOS_TEST_FOR_EXCEPTION(is_null(m_mesh), std::runtime_error,
                        "Objects are not built yet!  Please call buildObjects() member function.");
-    Teuchos::Ptr<const panzer_stk_classic::NOXObserverFactory> nox_observer_factory
+    Teuchos::Ptr<const panzer_stk::NOXObserverFactory> nox_observer_factory
         = is_null(in_nox_observer_factory) ? m_nox_observer_factory.ptr() : in_nox_observer_factory;
-    Teuchos::Ptr<const panzer_stk_classic::RythmosObserverFactory> rythmos_observer_factory
+    Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> rythmos_observer_factory
         = is_null(in_rythmos_observer_factory) ? m_rythmos_observer_factory.ptr() : in_rythmos_observer_factory;
 
     Teuchos::ParameterList& p = *this->getNonconstParameterList();
@@ -1245,7 +1287,8 @@ namespace panzer_stk_classic {
                            const Teuchos::ParameterList& closure_models,
                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
                            const Teuchos::ParameterList& user_data,
-                           bool writeGraph,const std::string & graphPrefix) const
+                           bool writeGraph,const std::string & graphPrefix,
+			   bool write_field_managers,const std::string & field_manager_prefix) const
   {
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
     fmb->setWorksetContainer(wc);
@@ -1255,8 +1298,13 @@ namespace panzer_stk_classic {
     // Print Phalanx DAGs
     if (writeGraph){
       fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
-      fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
+      fmb->writeBCGraphvizDependencyFiles(graphPrefix);
     }
+    if (write_field_managers){
+      fmb->writeVolumeTextDependencyFiles(graphPrefix, physicsBlocks);
+      fmb->writeBCTextDependencyFiles(field_manager_prefix);
+    }
+    
     return fmb;
   }
 
@@ -1337,7 +1385,8 @@ namespace panzer_stk_classic {
                                      p.sublist("Closure Models"),
                                      *m_lin_obj_factory,
                                      user_data_params,
-                                     write_dot_files,prefix);
+                                     write_dot_files,prefix,
+				     write_dot_files,prefix);
     }
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > response_library
@@ -1429,7 +1478,7 @@ namespace panzer_stk_classic {
   template<typename ScalarT>
   double ModelEvaluatorFactory<ScalarT>::
   getInitialTime(Teuchos::ParameterList& p,
-                 const panzer_stk_classic::STK_Interface & mesh) const
+                 const panzer_stk::STK_Interface & mesh) const
   {
     Teuchos::ParameterList validPL;
     {
@@ -1465,7 +1514,7 @@ namespace panzer_stk_classic {
   initializeSolnWriterResponseLibrary(const Teuchos::RCP<panzer::WorksetContainer> & wc,
                                       const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
                                       const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
-                                      const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh) const
+                                      const Teuchos::RCP<panzer_stk::STK_Interface> & mesh) const
   {
      Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
         = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wc,ugi,lof));
@@ -1473,7 +1522,7 @@ namespace panzer_stk_classic {
      std::vector<std::string> eBlocks;
      mesh->getElementBlockNames(eBlocks);
 
-     panzer_stk_classic::RespFactorySolnWriter_Builder builder;
+     panzer_stk::RespFactorySolnWriter_Builder builder;
      builder.mesh = mesh;
      stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
 
@@ -1497,9 +1546,9 @@ namespace panzer_stk_classic {
   buildLOWSFactory(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
-                   const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                   const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
-                   #ifdef HAVE_TEKO
+                   #ifdef PANZER_HAVE_TEKO
                    , const Teuchos::RCP<Teko::RequestHandler> & reqHandler
                    #endif
                    ) const
@@ -1521,60 +1570,15 @@ namespace panzer_stk_classic {
       writeTopo = p.sublist("Options").get<bool>("Write Topology");
 
 
-    return buildLOWSFactory(blockedAssembly,globalIndexer,conn_manager,mesh,mpi_comm,strat_params,
-                            #ifdef HAVE_TEKO
+    return panzer_stk::buildLOWSFactory(
+                            blockedAssembly,globalIndexer,conn_manager,
+                            Teuchos::as<int>(mesh->getDimension()), mpi_comm, strat_params,
+                            #ifdef PANZER_HAVE_TEKO
                             reqHandler,
                             #endif
                             writeCoordinates,
                             writeTopo
                             );
-  }
-
-  template<typename ScalarT>
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
-  buildLOWSFactory(bool blockedAssembly,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
-                   const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                   #ifdef HAVE_TEKO
-                   const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
-                   #endif
-                   bool writeCoordinates,
-                   bool writeTopo
-                   )
-  {
-    return panzer_stk_classic::buildLOWSFactory(blockedAssembly, globalIndexer, conn_manager,
-                                                Teuchos::as<int>(mesh->getDimension()), mpi_comm, strat_params,
-                                                #ifdef HAVE_TEKO
-                                                reqHandler,
-                                                #endif
-                                                writeCoordinates, writeTopo);
-  }
-
-  template<typename ScalarT>
-  template<typename GO>
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
-  buildLOWSFactory(bool blockedAssembly,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
-                   const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                   #ifdef HAVE_TEKO
-                   const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
-                   #endif
-                   bool writeCoordinates,
-                   bool writeTopo
-                   )
-  {
-    return panzer_stk_classic::buildLOWSFactory<GO>(blockedAssembly, globalIndexer, stkConn_manager,
-                                                    Teuchos::as<int>(mesh->getDimension()), mpi_comm, strat_params,
-                                                    #ifdef HAVE_TEKO
-                                                    reqHandler,
-                                                    #endif
-                                                    writeCoordinates, writeTopo);
   }
 
   template<typename ScalarT>

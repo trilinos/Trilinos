@@ -1,11 +1,49 @@
-#ifndef SHYLU_HTS_DECL_HPP
-#define SHYLU_HTS_DECL_HPP
+//@HEADER
+// ************************************************************************
+// 
+//               ShyLU: Hybrid preconditioner package
+//                 Copyright 2012 Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact A.M. Bradley (ambradl@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
+#ifndef INCLUDE_SHYLU_HTS_DECL_HPP
+#define INCLUDE_SHYLU_HTS_DECL_HPP
 
 #include <exception>
 #include <string>
-#ifdef HAVE_SHYLUHTS_MKL
-# include <mkl.h>
-#endif
 
 namespace Experimental {
 
@@ -29,12 +67,16 @@ struct NotTriangularException : public Exception {
 };
 /*! \brief The matrix lacks a full diagonal.
  */
-struct NotFullDiagonal : public Exception {
-  NotFullDiagonal () : Exception("Lacks a full diagonal.") {}
+struct NotFullDiagonalException : public Exception {
+  NotFullDiagonalException () : Exception("Lacks a full diagonal.") {}
 };
+
+template <typename T> struct ScalarTraits { typedef typename T::value_type Real; };
+template <> struct ScalarTraits<double> { typedef double Real; };
+template <> struct ScalarTraits<float> { typedef float Real; };
 } // namespace hts
 
-template<typename IntT=int, typename SizeT=IntT, typename RealT=double>
+template<typename IntT=int, typename SizeT=IntT, typename SclrT=double>
 struct HTS {
   /*! \struct HTS
    *  \brief OpenMP-parallelized sparse triangular solver based on the symbolic
@@ -64,34 +106,26 @@ struct HTS {
    *     x = U \ (L \ b);
    *     x(q) = x;
    *     \endcode
-   *   A simple serial solver (solve_serial) is available for sanity checking. For
-   * this factorization, it can be used like this:
+   *   For this factorization, use HTS as follows.
    *     \code
-   *     solve_serial(L, true,  xb, nrhs, p,    NULL, r,    work);
-   *     solve_serial(U, false, xb, nrhs, NULL, q,    NULL, work);
-   *     \endcode
-   *   An OpenMP-parallelized solver (preprocess + solve_omp) is the main
-   * functionality. For this factorization, use this solver as follows.
-   *     \code
-   *     Impl* Limpl = preprocess(L, nrhs, nthreads, p,    NULL, r);
-   *     Impl* Uimpl = preprocess(U, nrhs, nthreads, NULL, q);
-   *     solve_omp(Limpl, xb, nrhs); // xb is the rhs b on input.
-   *     solve_omp(Uimpl, xb, nrhs); // xb is the solution x on output.
+   *     typedef HTS<int, int, double> ihts;
+   *     Impl* Limpl = ihts::preprocess(L, nrhs, nthreads, p,    NULL, r);
+   *     Impl* Uimpl = ihts::preprocess(U, nrhs, nthreads, NULL, q);
+   *     ihts::solve_omp(Limpl, xb, nrhs); // xb is the rhs b on input.
+   *     ihts::solve_omp(Uimpl, xb, nrhs); // xb is the solution x on output.
    *     \endcode
    *
    * Int is the index type. Size is the array pointer type in the CRS/CCS data
    * structure; it is appropriate for quantities that have magnitude
-   * O(nnz). Real is the scalar type.
-   *   A complex scalar is not supported yet.
-   *   Int must be signed. Size may be unsigned.
+   * O(nnz). Sclr is the scalar type, including
+   * complex. hts::ScalarTraits<Sclr>::Real is the real type. Int must be
+   * signed. Size may be unsigned.
    *
    * Algorithm sketch.
    *   HTS automatically combines two basic algorithms, level scheduling and
    * recursive blocking, to address the spectrum of extremely sparse matrices
-   * (level scheduling) to matrices just sparse enough to be efficiently stored
-   * in a sparse data structure (recursive blocking). For some matrices, HTS
-   * will decide to use just level scheduling; for others, just recursive
-   * blocking; and for still others, a combination of the two.
+   * (level scheduling) to matrices just sparse enough to be efficiently stored in
+   * a sparse data structure (recursive blocking).
    *   I write the following for a lower triangular matrix T = L, but an upper one
    * U is almost the same.
    *   The matrix L is permuted to have three blocks:
@@ -110,14 +144,19 @@ struct HTS {
    *         [ (recursive tri)  0                ]
    *         [ (MVP)             (recursive tri) ].
    *     \endcode
+   *
+   * For more, see
+   *   A. M. Bradley, A hybrid multithreaded direct sparse triangular solver,
+   *   Proc. SIAM CSC, 2016, doi:10.1137/1.9781611974690.ch2.
    */
 
   typedef IntT Int;
   typedef SizeT Size;
-  typedef RealT Real;
+  typedef SclrT Sclr;
+  typedef typename hts::ScalarTraits<Sclr>::Real Real;
   typedef hts::Exception Exception;
   typedef hts::NotTriangularException NotTriangularException;
-  typedef hts::NotFullDiagonal NotFullDiagonal;
+  typedef hts::NotFullDiagonalException NotFullDiagonalException;
 
   //! \brief Opaque CRS type to interact with the solver.
   class CrsMatrix;
@@ -126,10 +165,18 @@ struct HTS {
 
   /*! \brief Construct a shallow wrapper to the user's C[R|S]S matrix.
    *
-   * The data passed in must persist at least as long as the CrsMatrix. This
-   * interface is written in terms of a CrsMatrix; use make_transpose in this
-   * function and is_lo in the solve functions to solve the various combinations
-   * of upper/lower triangles stored in CRS/CCS format.
+   * The data passed in must persist at least as long as the CrsMatrix.
+   * 
+   * This interface is written in terms of a CrsMatrix; use make_transpose in
+   * this function and is_lo in the solve functions to solve the various
+   * combinations of upper/lower triangles stored in CRS/CCS format.
+   *
+   * An implicit unit diagonal is permitted. If there are no diagonal elements,
+   * a unit diagonal is assumed. If only some diagonal elements are missing,
+   * preprocess will throw the exception NotFullDiagonalException.
+   *
+   * If the matrix is not triangular, preprocess will throw
+   * NotTriangularException.
    *
    * \param n [in] Dimension of the matrix.
    *
@@ -142,10 +189,14 @@ struct HTS {
    *
    * \param make_transpose [in] Make the transpose of this matrix. Set this to
    * true, for example, to make a CRS matrix from a CCS one.
+   *
+   * \param make_transpose [in] Take the complex conjugate of the entries of
+   * this matrix. Set make_transpose = true, make_conj = true to get the
+   * conjugate transpose of this matrix.
    */
   static CrsMatrix* make_CrsMatrix(
-    const Int n, const Size* rowptr, const Int* col, const Real* val,
-    const bool make_transpose = false);
+    const Int n, const Size* rowptr, const Int* col, const Sclr* val,
+    const bool make_transpose = false, const bool make_conj = false);
 
   /*! \brief Delete the CrsMatrix. Does not destroy the user's data that T wraps.
    *
@@ -153,14 +204,25 @@ struct HTS {
    */
   static void delete_CrsMatrix(CrsMatrix* T);
 
+  struct Deallocator {
+    int counter;
+    Deallocator () : counter(0) {}
+    virtual ~Deallocator () {}
+    virtual void free_CrsMatrix_data() = 0;
+  };
+  static void register_Deallocator(CrsMatrix* mtx, Deallocator* d);
+
   struct Options;
 
-  // Print compile-time and run-time options.
+  //! Print compile-time and run-time options.
   static void print_options(const Impl* impl, std::ostream& os);
 
-  // For very sparse problems, it can be efficient to turn off the symbolic
-  // analysis's block finder and instead instruct it to level schedule only. A
-  // typical use case is Gauss-Seidel smoothing of a volume discretization.
+  /*! \brief Use level scheduling only.
+   *
+   * For very sparse problems, it can be efficient to turn off the symbolic
+   * analysis's block finder and instead instruct it to level schedule only. A
+   * typical use case is Gauss-Seidel smoothing of a volume discretization.
+   */
   static void set_level_schedule_only(Options& o);
 
   struct PreprocessArgs {
@@ -212,6 +274,9 @@ struct HTS {
   //! \brief Ask whether T is lower or upper triangular.
   static bool is_lower_tri(const Impl* impl);
 
+  //! \brief Ask whether T has an implicit unit diagonal.
+  static bool has_implicit_unit_diag(const Impl* impl);
+
   //! \brief Delete the Impl after the solves are completed.
   static void delete_Impl(Impl* impl);
 
@@ -221,16 +286,16 @@ struct HTS {
   static void solve_omp(
     Impl* impl,
     // On input, the r.h.s. b; on output, the solution x in T x = b.
-    Real* xb,
+    Sclr* xb,
     // Number of r.h.s.
     const Int nrhs,
     const Int ldxb=0);
-  // x = T \ b.
-  static void solve_omp(Impl* impl, const Real* b, const Int nrhs, Real* x,
+  // x = T \ b. b and x can be the same.
+  static void solve_omp(Impl* impl, const Sclr* b, const Int nrhs, Sclr* x,
                         const Int ldb=0, const Int ldx=0);
-  // x = alpha x + beta (T \ b).
-  static void solve_omp(Impl* impl, const Real* b, const Int nrhs, Real* x,
-                        const Real alpha, const Real beta,
+  // x = alpha x + beta (T \ b). b and x can be the same.
+  static void solve_omp(Impl* impl, const Sclr* b, const Int nrhs, Sclr* x,
+                        const Sclr alpha, const Sclr beta,
                         const Int ldb=0, const Int ldx=0);
 
   struct Options {
@@ -278,8 +343,10 @@ struct HTS {
     const CrsMatrix* T,
     // Is lower triangular? If not, then it's upper triangular.
     const bool is_lo,
+    // Has an implicit unit diagonal?
+    const bool implicit_unit_diag,
     // On input, the r.h.s. b; on output, the solution x in T x = b.
-    Real* xb,
+    Sclr* xb,
     // Number of r.h.s.
     const Int nrhs,
     // Optional row permutation P. On input, b <- b(p).
@@ -289,7 +356,7 @@ struct HTS {
     // Optional diagonal scaling R. On input, b <- b./r.
     const Real* r = 0,
     // If p or q are provided, then also provide size(T,1) workspace.
-    Real* w = 0);
+    Sclr* w = 0);
 };
 
 } // namespace Experimental

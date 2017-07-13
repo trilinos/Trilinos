@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
   Test.Graph_Callbacks = 1;
   Test.Hypergraph_Callbacks = 1;
   Test.Gen_Files = 0;
-  Test.Null_Lists = NONE;
+  Test.Null_Lists = NO_NULL_LISTS;
   Test.Dynamic_Weights = .0;
   Test.Dynamic_Graph = .0;
   Test.Vtx_Inc = 0;
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
        *  Create a Zoltan DD for tracking elements during repartitioning.
        */
 
-      if (mesh.data_type == HYPERGRAPH && !build_elem_dd(&mesh)) {
+      if (mesh.data_type == ZOLTAN_HYPERGRAPH && !build_elem_dd(&mesh)) {
         Gen_Error(0, "fatal: Error returned from build_elem_dd\n");
         error_report(Proc);
         print_output = 0;
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
     }
 
     if (Test.Vtx_Inc){
-      if (mesh.data_type == HYPERGRAPH ) {
+      if (mesh.data_type == ZOLTAN_HYPERGRAPH ) {
         if (Test.Vtx_Inc>0)
           mesh.visible_nvtx += Test.Vtx_Inc; /* Increment uniformly */
         else
@@ -712,7 +712,6 @@ int i;
     }
     fprintf(fp, "\n");
   }
-
 
   fprintf(fp, "##########################################################\n");
 }

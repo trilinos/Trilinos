@@ -33,6 +33,7 @@
 
 #include <stddef.h>                     // for size_t
 #include <unistd.h>                     // for unlink
+#include <stk_util/diag/StringUtil.hpp> // for make_lower
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
@@ -45,9 +46,10 @@
 #include "Ioss_NodeBlock.h"             // for NodeBlock
 #include "Ioss_Region.h"                // for Region, NodeBlockContainer
 #include "Ioss_Utils.h"                 // for Utils
-#include "gtest/gtest.h"                // for AssertHelper, ASSERT_EQ, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+
+
 namespace Ioss { class DatabaseIO; }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace {
@@ -133,7 +135,7 @@ TEST(FieldNamesTest, FieldNameWithRestart)
 
     Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_RESTART, communicator);
     Ioss::Region iossRegion(iossDb);
-    std::string goldFieldName = Ioss::Utils::lowercase(internalClientFieldName);
+    std::string goldFieldName = sierra::make_lower(internalClientFieldName);
     testFieldNamedCorrectly(iossRegion, communicator, goldFieldName);
 
     unlink(restartFilename.c_str());
@@ -175,7 +177,7 @@ TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
     }
     Ioss::DatabaseIO *iossResultDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_MODEL, communicator);
     Ioss::Region resultRegion(iossResultDb);
-    std::string goldFieldName = Ioss::Utils::lowercase(internalClientFieldName);
+    std::string goldFieldName = sierra::make_lower(internalClientFieldName);
     testFieldNamedCorrectly(resultRegion, communicator, goldFieldName);
 
     Ioss::DatabaseIO *iossRestartDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_RESTART, communicator);

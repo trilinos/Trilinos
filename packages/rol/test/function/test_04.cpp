@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
-    RealT tol = std::sqrt(ROL::ROL_EPSILON);
+    RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     con->solve(*cp,*up,*zp,tol);
     RealT rnorm = cp->norm();
     con->value(*cp,*up,*zp,tol);

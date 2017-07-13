@@ -57,17 +57,29 @@ IF (${PROJECT_NAME}_ENABLE_Galeri)
   )
 ENDIF()
 
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  OrderingAMD
-  SOURCES orderingAMD.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  ARGS
-   "--inputFile=simple"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
+# Always run AMD test 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    OrderingAMD
+    SOURCES orderingAMD.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+     "--inputFile=simple"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+IF (${PACKAGE_NAME}_ENABLE_Scotch)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    OrderingScotch
+    SOURCES orderingScotch.cpp
+    COMM serial mpi
+    ARGS
+     "--inputFile=simple_ordering"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
 
 ##########################################
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
@@ -94,6 +106,8 @@ ENDIF()
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_order_tests
   SOURCE_FILES
     simple.mtx
+    simple_coord.mtx
+    simple_ordering.mtx
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

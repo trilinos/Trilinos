@@ -47,28 +47,29 @@
 */
 
 
-#include <Teuchos_ConfigDefs.hpp>
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Ifpack2_Version.hpp>
-#include <iostream>
+#include "Teuchos_UnitTestHarness.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_MatrixIO.hpp"
+#include "Ifpack2_UnitTestHelpers.hpp"
+#include "Ifpack2_AdditiveSchwarz.hpp"
+#include "Ifpack2_Experimental_RBILUK.hpp"
+#include "Ifpack2_Version.hpp"
+
 #include "MatrixMarket_Tpetra.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
+#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_MatrixIO.hpp"
+#include "Tpetra_RowMatrix.hpp"
+
+#include <iostream>
 
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 #include <qd/dd_real.h>
 #endif
 
-#include <Ifpack2_UnitTestHelpers.hpp>
-#include <Ifpack2_Experimental_RBILUK.hpp>
-#include <Tpetra_RowMatrix.hpp>
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
-
-namespace {
+namespace { // (anonymous)
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -94,7 +95,7 @@ namespace {
   } \
 } while (false)
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestLowerTriangularBlockCrsMatrix, Scalar, LO, GO)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, LowerTriangularBlockCrsMatrix, Scalar, LO, GO)
 {
   using Teuchos::outArg;
   using Teuchos::RCP;
@@ -207,14 +208,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestLowerTriangularBlockCrsMatr
   for (size_t k = 0; k < num_rows_per_proc; ++k) {
     LO lcl_row = k;
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(lcl_row,0);
-    Scalar* yb = ylcl.getRawPtr();
+    Scalar* yb = ylcl.ptr_on_device();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
     }
   }
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, UpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type;
@@ -261,14 +262,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestUpperTriangularBlockCrsMatr
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.getRawPtr();
+    Scalar* yb = ylcl.ptr_on_device();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
     }
   }
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, FullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type;
@@ -315,14 +316,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Sc
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.getRawPtr();
+    Scalar* yb = ylcl.ptr_on_device();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
     }
   }
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
@@ -392,10 +393,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDro
 
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-  typedef Tpetra::Experimental::LittleBlock<Scalar,LocalOrdinal> little_block_type;
-  typedef Tpetra::Experimental::LittleVector<Scalar,LocalOrdinal> little_vec_type;
+  typedef Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_block_type;
+  typedef Kokkos::View<Scalar*,Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_vec_type;
   typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
@@ -469,10 +470,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   bMatrix[23] = 4;
   bMatrix[24] = -5;
 
-  little_block_type A (aMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
-  little_block_type B (bMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
-  little_block_type C (cMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
-  little_block_type I (identityMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+  little_block_type A (aMatrix.getRawPtr (), blockSize, blockSize); // row major
+  little_block_type B (bMatrix.getRawPtr (), blockSize, blockSize); // row major
+  little_block_type C (cMatrix.getRawPtr (), blockSize, blockSize); // row major
+  little_block_type I (identityMatrix.getRawPtr (), blockSize, blockSize); // row major
 
   Tpetra::Experimental::GEMM ("N", "N", STS::one (), A, I, STS::zero (), C);
   //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize);
@@ -523,9 +524,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   }
 
   const LocalOrdinal rowStride = blockSize;
-  const LocalOrdinal colStride = 1;
 
-  little_block_type dMat(cMatrix.getRawPtr(),blockSize,rowStride,colStride);
+  little_block_type dMat(cMatrix.getRawPtr(),blockSize,rowStride);
   Teuchos::Array<int> ipiv_teuchos(blockSize);
   Kokkos::View<int*, Kokkos::HostSpace,
     Kokkos::MemoryUnmanaged> ipiv (ipiv_teuchos.getRawPtr (), blockSize);
@@ -559,8 +559,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   exactSolution[3] = -0.0384615384615381;
   exactSolution[4] = -0.0384615384615385;
 
-  little_vec_type bval(onevec.getRawPtr(),blockSize,1);
-  little_vec_type xval(computeSolution.getRawPtr(),blockSize,1);
+  little_vec_type bval(onevec.getRawPtr(),blockSize);
+  little_vec_type xval(computeSolution.getRawPtr(),blockSize);
 
   //xval.matvecUpdate(1.0,dMat,bval);
   Tpetra::Experimental::GEMV (1.0, dMat, bval, xval);
@@ -569,7 +569,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
     TEST_FLOATING_EQUALITY(exactSolution[i], computeSolution[i], 1e-13);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, DiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   using Teuchos::outArg;
   using Teuchos::RCP;
@@ -583,11 +583,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Sca
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   //typedef Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec_type; // unused
   std::ostringstream errStrm; // for error collection
-
-  out << "Ifpack2::RBILUK diagonal block matrix test" << endl;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
 
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+
+  const bool useOut = false;
+  RCP<Teuchos::oblackholestream> blackHole (new Teuchos::oblackholestream ());
+  RCP<Teuchos::FancyOStream> newOutPtr;
+  if (useOut) {
+    newOutPtr = Teuchos::rcpFromRef (out);
+  }
+  else {
+    newOutPtr = comm->getRank () == 0 ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::getFancyOStream (blackHole);
+  }
+  Teuchos::FancyOStream& newOut = *newOutPtr;
+
+  newOut << "Ifpack2::RBILUK diagonal block matrix test" << endl;
+  Teuchos::OSTab tab1 (out);
 
   const int num_rows_per_proc = 5;
   const int blockSize = 3;
@@ -595,45 +611,238 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Sca
     tif_utest::create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
 
   RCP<block_crs_matrix_type> bcrsmatrix;
-  bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
+  try {
+    bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << comm->getRank () << ": BlockCrsMatrix constructor "
+      "threw an exception: " << e.what () << endl;
+    success = false;
+  }
+  catch (...) {
+    errStrm << "Proc " << comm->getRank () << ": BlockCrsMatrix constructor "
+      "threw an exception, not a subclass of std::exception" << endl;
+    success = false;
+  }
+  lclSuccess = success ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess == 1) {
+    newOut << "BlockCrsMatrix constructor did not throw an exception" << endl;
+  }
+  else {
+    newOut << "BlockCrsMatrix constructor threw an exception on one or more "
+      "processes!" << endl;
+    Teuchos::OSTab tab2 (newOut);
+    Tpetra::Details::gathervPrint (newOut, errStrm.str (), *comm);
+    return; // stop the test on failure
+  }
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
-  Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (const_bcrsmatrix);
+  RCP<Ifpack2::Experimental::RBILUK<block_crs_matrix_type> > prec;
+  try {
+    using Teuchos::rcp;
+    prec = rcp (new Ifpack2::Experimental::RBILUK<block_crs_matrix_type> (const_bcrsmatrix));
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << comm->getRank () << ": RBILUK constructor threw an "
+      "exception: " << e.what () << endl;
+    success = false;
+  }
+  catch (...) {
+    errStrm << "Proc " << comm->getRank () << ": RBILUK constructor threw an "
+      "exception, not a subclass of std::exception" << endl;
+    success = false;
+  }
+  lclSuccess = success ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess == 1) {
+    newOut << "RBILUK constructor did not throw an exception" << endl;
+  }
+  else {
+    newOut << "RBILUK constructor threw an exception on one or more processes!"
+        << endl;
+    Teuchos::OSTab tab2 (newOut);
+    Tpetra::Details::gathervPrint (newOut, errStrm.str (), *comm);
+    return; // stop the test on failure
+  }
 
   Teuchos::ParameterList params;
   params.set("fact: iluk level-of-fill", (LocalOrdinal) 0);
   params.set("fact: relax value", 0.0);
-  prec.setParameters(params);
+  prec->setParameters(params);
 
-  prec.initialize();
-  TEST_NOTHROW(prec.compute());
+  try {
+    prec->initialize ();
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << comm->getRank () << ": prec->initialize() threw an "
+      "exception: " << e.what () << endl;
+    success = false;
+  }
+  catch (...) {
+    errStrm << "Proc " << comm->getRank () << ": prec->initialize() threw an "
+      "exception, not a subclass of std::exception" << endl;
+    success = false;
+  }
+  lclSuccess = success ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess == 1) {
+    newOut << "prec->initialize() did not throw an exception" << endl;
+  }
+  else {
+    newOut << "prec->initialize() threw an exception on one or more processes!" << endl;
+    Teuchos::OSTab tab2 (newOut);
+    Tpetra::Details::gathervPrint (newOut, errStrm.str (), *comm);
+    return; // stop the test on failure
+  }
+
+  try {
+    prec->compute ();
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << comm->getRank () << ": prec->compute() threw an "
+      "exception: " << e.what () << endl;
+    success = false;
+  }
+  catch (...) {
+    errStrm << "Proc " << comm->getRank () << ": prec->compute() threw an "
+      "exception, not a subclass of std::exception" << endl;
+    success = false;
+  }
+
+  lclSuccess = success ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess == 1) {
+    newOut << "prec->compute() did not throw an exception" << endl;
+  }
+  else {
+    newOut << "prec->compute() threw an exception on one or more processes!" << endl;
+    Teuchos::OSTab tab2 (newOut);
+    Tpetra::Details::gathervPrint (newOut, errStrm.str (), *comm);
+    return; // stop the test on failure
+  }
 
   BMV xBlock (*crsgraph->getRowMap (), blockSize, 1);
   BMV yBlock (*crsgraph->getRowMap (), blockSize, 1);
   MV x = xBlock.getMultiVectorView ();
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
-
-  prec.apply (x, y);
+  prec->apply (x, y);
 
   const Scalar exactSol = 0.2;
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.getRawPtr();
+    Scalar* yb = ylcl.ptr_on_device();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol,1e-14);
     }
   }
 }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, AdditiveSchwarzSubdomainSolver, Scalar, LO, GO)
+{
+  using std::endl;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+
+  out << "Test RBILUK as AdditiveSchwarz subdomain solver" << endl;
+  Teuchos::OSTab tab1 (out);
+  out << "Creating row Map and constant block CrsMatrix" << endl;
+
+  const int num_rows_per_proc = 10;
+  const int blockSize = 1;
+
+  const int lof = 0;
+  const size_t rbandwidth = lof+2+2;
+  RCP<Tpetra::CrsGraph<LO,GO,Node> > crsgraph = tif_utest::create_banded_graph<LO,GO,Node>(num_rows_per_proc, rbandwidth);
+  RCP<block_crs_matrix_type> bcrsmatrix =
+    rcp_const_cast<block_crs_matrix_type> (tif_utest::create_banded_block_matrix<Scalar,LO,GO,Node> (crsgraph, blockSize, rbandwidth));
+
+  RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
+
+  int overlapLimit=1;
+
+  for (int overlapLevel=0; overlapLevel<overlapLimit; ++overlapLevel) {
+
+    out << "overlap = " << overlapLevel << std::endl;
+    out << "Creating AdditiveSchwarz instance" << endl;
+    Ifpack2::AdditiveSchwarz<row_matrix_type> prec(const_bcrsmatrix);
+
+    out << "Filling in ParameterList for AdditiveSchwarz" << endl;
+    Teuchos::ParameterList params;
+    params.set ("inner preconditioner name", "RBILUK");
+    params.set ("schwarz: overlap level", overlapLevel);
+#   if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+    params.set ("schwarz: use reordering", true);
+#   else
+    params.set ("schwarz: use reordering", false);
+#   endif
+
+    out << "Setting AdditiveSchwarz's parameters" << endl;
+    TEST_NOTHROW(prec.setParameters(params));
+
+    out << "Testing domain and range Maps of AdditiveSchwarz" << endl;
+    //trivial tests to insist that the preconditioner's domain/range maps are
+    //identically those of the matrix:
+    const Tpetra::Map<LO,GO,Node>* mtx_dom_map_ptr = &*bcrsmatrix->getDomainMap();
+    const Tpetra::Map<LO,GO,Node>* mtx_rng_map_ptr = &*bcrsmatrix->getRangeMap();
+    const Tpetra::Map<LO,GO,Node>* prec_dom_map_ptr = &*prec.getDomainMap();
+    const Tpetra::Map<LO,GO,Node>* prec_rng_map_ptr = &*prec.getRangeMap();
+    TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
+    TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
+
+    out << "Calling AdditiveSchwarz's initialize()" << endl;
+    prec.initialize();
+
+    out << "Calling AdditiveSchwarz's compute()" << endl;
+    prec.compute();
+
+    typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    BMV xBlock (*crsgraph->getRowMap (), blockSize, 1);
+    BMV yBlock (*crsgraph->getRowMap (), blockSize, 1);
+    BMV zBlock (*crsgraph->getRowMap (), blockSize, 1);
+    MV x = xBlock.getMultiVectorView ();
+    MV y = yBlock.getMultiVectorView ();
+    //MV z = zBlock.getMultiVectorView ();
+    x.randomize();
+
+    //Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,2), y(rowmap,2), z(rowmap,2);
+    //x.putScalar(1);
+
+    out << "Applying AdditiveSchwarz to a multivector" << endl;
+    prec.apply (x, y);
+
+    /*
+    out << "Testing result of AdditiveSchwarz's apply" << endl;
+
+    // The solution should now be full of 1/2s
+    z.putScalar(0.5);
+
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+    Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
+
+    TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*Teuchos::ScalarTraits<Scalar>::eps());
+    */
+  }
+}
+
+
 # define UNIT_TEST_GROUP_BLOCK_LGN( Scalar, LocalOrdinal, GlobalOrdinal ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestLowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestBlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, LowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, UpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, BandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, DiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, FullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, AdditiveSchwarzSubdomainSolver, Scalar, LocalOrdinal, GlobalOrdinal)
 
 typedef Tpetra::MultiVector<>::scalar_type scalar_type;
 typedef Tpetra::MultiVector<>::local_ordinal_type local_ordinal_type;
@@ -641,5 +850,5 @@ typedef Tpetra::MultiVector<>::global_ordinal_type global_ordinal_type;
 
 UNIT_TEST_GROUP_BLOCK_LGN(scalar_type, local_ordinal_type, global_ordinal_type)
 
-}//namespace <anonymous>
+} // namespace (anonymous)
 

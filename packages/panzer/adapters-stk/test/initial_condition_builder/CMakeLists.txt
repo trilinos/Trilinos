@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/disc-fe/test/closure_mo
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/test/bcstrategy)
 
 SET(UNIT_TEST_DRIVER
-  ${TEUCHOS_STD_UNIT_TEST_MAIN})
+  ${PANZER_UNIT_TEST_MAIN})
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   initial_condition_builder
@@ -18,6 +18,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
    initial_condition_builder2
    SOURCES initial_condition_builder2.cpp user_app_STKClosureModel_Factory.hpp user_app_STKClosureModel_Factory_impl.hpp user_app_STKClosureModel_Factory_TemplateBuilder.hpp ${UNIT_TEST_DRIVER}
+   COMM serial mpi
+   NUM_MPI_PROCS 2
+   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+   initial_condition_control
+   SOURCES initial_condition_control.cpp user_app_STKClosureModel_Factory.hpp user_app_STKClosureModel_Factory_impl.hpp user_app_STKClosureModel_Factory_TemplateBuilder.hpp ${UNIT_TEST_DRIVER}
    COMM serial mpi
    NUM_MPI_PROCS 2
    )

@@ -2,25 +2,38 @@
 // ***********************************************************************
 //
 //                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2004) Sandia Corporation
+//                 Copyright 2004 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -58,10 +71,10 @@ namespace RBGen {
     double Rerr = 0.0;
     if (!firstPass) {
       // copy V_ into workZ_
-      lclAZT = Teuchos::rcp( new Epetra_MultiVector(::View,*workAZT_,0,curRank_) );
-      lclZ   = Teuchos::rcp( new Epetra_MultiVector(::View,*workZ_,0,curRank_) );
+      lclAZT = Teuchos::rcp( new Epetra_MultiVector(Epetra_DataAccess::View,*workAZT_,0,curRank_) );
+      lclZ   = Teuchos::rcp( new Epetra_MultiVector(Epetra_DataAccess::View,*workZ_,0,curRank_) );
       {
-        Epetra_MultiVector lclV(::View,*V_,0,curRank_);
+        Epetra_MultiVector lclV(Epetra_DataAccess::View,*V_,0,curRank_);
         *lclZ = lclV;
       }
       // compute the Householder QR factorization of the current right basis
@@ -162,8 +175,8 @@ namespace RBGen {
 
       // get view of new vectors
       {
-        const Epetra_MultiVector Aplus(::View,*A_,numProc_,lup);
-        Epetra_MultiVector        Unew(::View,*U_,curRank_,lup);
+        const Epetra_MultiVector Aplus(Epetra_DataAccess::View,*A_,numProc_,lup);
+        Epetra_MultiVector        Unew(Epetra_DataAccess::View,*U_,curRank_,lup);
         // put them in U
         if (firstPass) {
           // new vectors are just Aplus
@@ -173,7 +186,7 @@ namespace RBGen {
           // new vectors are Aplus - (A Z T) Z_i^T
           // specifically, Aplus - (A Z T) Z(numProc:numProc+lup-1,1:oldRank)^T
           Epetra_LocalMap lclmap(lup,0,A_->Comm());
-          Epetra_MultiVector Zi(::View,lclmap,&Z_A[numProc_],Z_LDA,oldRank);
+          Epetra_MultiVector Zi(Epetra_DataAccess::View,lclmap,&Z_A[numProc_],Z_LDA,oldRank);
           Unew = Aplus;
           int info = Unew.Multiply('N','T',-1.0,*lclAZT,Zi,1.0);
           TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,
@@ -196,7 +209,7 @@ namespace RBGen {
       int info;
       Epetra_LocalMap lclmap(oldRank,0,A_->Comm());
       // get pointer to current V
-      lclV = Teuchos::rcp( new Epetra_MultiVector(::View,*V_,0,curRank_) );
+      lclV = Teuchos::rcp( new Epetra_MultiVector(Epetra_DataAccess::View,*V_,0,curRank_) );
       // create space for T Z^T V
       Epetra_MultiVector TZTV(lclmap,curRank_,false);
       // multiply Z^T V
@@ -229,9 +242,9 @@ namespace RBGen {
       // we know that A V = U S
       // if, in addition, A^T U = V S, then have singular subspaces
       // check residuals A^T U - V S, scaling the i-th column by sigma[i]
-      Epetra_MultiVector ATUlcl(::View,ATU,0,curRank_);
-      Epetra_MultiVector Ulcl(::View,*U_,0,curRank_);
-      Epetra_MultiVector Vlcl(::View,*V_,0,curRank_);
+      Epetra_MultiVector ATUlcl(Epetra_DataAccess::View,ATU,0,curRank_);
+      Epetra_MultiVector Ulcl(Epetra_DataAccess::View,*U_,0,curRank_);
+      Epetra_MultiVector Vlcl(Epetra_DataAccess::View,*V_,0,curRank_);
       // compute A^T U
       int info = ATUlcl.Multiply('T','N',1.0,*A_,Ulcl,0.0);
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
@@ -262,8 +275,8 @@ namespace RBGen {
       // Check that A V = U Sigma
       // get pointers to current U and V, create workspace for A V - U Sigma
       Epetra_MultiVector work(U_->Map(),curRank_,false), 
-                         curU(::View,*U_,0,curRank_),
-                         curV(::View,*V_,0,curRank_);
+                         curU(Epetra_DataAccess::View,*U_,0,curRank_),
+                         curV(Epetra_DataAccess::View,*V_,0,curRank_);
       // create local MV for sigmas
       Epetra_LocalMap lclmap(curRank_,0,A_->Comm());
       Epetra_MultiVector curS(lclmap,curRank_,true);

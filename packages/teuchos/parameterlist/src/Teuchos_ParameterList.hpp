@@ -443,15 +443,15 @@ public:
   /** \brief Remove a parameter (does not depend on the type of the
    * parameter).
    *
-   * \param name [in] The name of the parameter to remove
+   * \param[in] name The name of the parameter to remove
    *
-   * \param throwIfNotExists [in] If <tt>true</tt> then if the parameter with
+   * \param[in] throwIfNotExists If <tt>true</tt> then if the parameter with
    * the name <tt>name</tt> does not exist then a std::exception will be
    * thrown!
    *
    * \returns Returns <tt>true</tt> if the parameter was removed, and
    * <tt>false</tt> if the parameter was not removed (<tt>false</tt> return
-   * value possible only if <tt>throwIfExists==false</tt>).
+   * value possible only if <tt>throwIfNotExists==false</tt>).
    */
   bool remove(
     std::string const& name, bool throwIfNotExists = true

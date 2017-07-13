@@ -71,6 +71,38 @@ namespace Amesos2 {
 
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
+  typename MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::multivec_t::impl_scalar_type *
+  MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::getMVPointer_impl() const
+  {
+  TEUCHOS_TEST_FOR_EXCEPTION( this->getGlobalNumVectors() != 1,
+		      std::invalid_argument,
+		      "Amesos2_TpetraMultiVectorAdapter: getMVPointer_impl should only be called for case with a single vector and single MPI process" );
+
+    typedef typename multivec_t::dual_view_type dual_view_type;
+    typedef typename dual_view_type::host_mirror_space host_execution_space;
+    mv_->template sync<host_execution_space> ();
+    auto contig_local_view_2d = mv_->template getLocalView<host_execution_space>();
+    auto contig_local_view_1d = Kokkos::subview (contig_local_view_2d, Kokkos::ALL (), 0);
+    return contig_local_view_1d.data();
+  }
+
+  // TODO Proper type handling: 
+  // Consider a MultiVectorTraits class
+  // typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> multivector_type
+  // NOTE: In this class, above already has a typedef multivec_t
+  // typedef typename multivector_type::impl_scalar_type return_scalar_type; // this is the POD type the dual_view_type is templated on
+  // Traits class needed to do this generically for the general MultiVectorAdapter interface
+
+
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   void
   MultiVecAdapter<
     MultiVector<Scalar,
@@ -81,7 +113,8 @@ namespace Amesos2 {
                                    Teuchos::Ptr<
                                      const Tpetra::Map<LocalOrdinal,
                                                        GlobalOrdinal,
-                                                       Node> > distribution_map ) const
+                                                       Node> > distribution_map,
+                                                       EDistribution distribution) const
   {
     using Teuchos::as;
     using Teuchos::RCP;
@@ -113,38 +146,90 @@ namespace Amesos2 {
       "storage not large enough given leading dimension and number of vectors." );
 #endif // HAVE_AMESOS2_DEBUG
 
-    // (Re)compute the Export object if necessary.  If not, then we
-    // don't need to clone distribution_map; we can instead just get
-    // the previously cloned target Map from the Export object.
-    RCP<const map_type> distMap;
-    if (exporter_.is_null () ||
-        ! exporter_->getSourceMap ()->isSameAs (* (this->getMap ())) ||
-        ! exporter_->getTargetMap ()->isSameAs (* distribution_map)) {
-
-      // Since we're caching the Export object, and since the Export
-      // needs to keep the distribution Map, we have to make a copy of
-      // the latter in order to ensure that it will stick around past
-      // the scope of this function call.  (Ptr is not reference
-      // counted.)  Map's clone() method suffices, even though it only
-      // makes a shallow copy of some of Map's data, because Map is
-      // immutable and those data are reference-counted (e.g.,
-      // ArrayRCP or RCP).
-      distMap = distribution_map->template clone<Node> (distribution_map->getNode ());
-
-      // (Re)create the Export object.
-      exporter_ = rcp (new export_type (this->getMap (), distMap));
+    // Special case when number vectors == 1 and single MPI process
+    if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
+      mv_->get1dCopy (av, lda);
     }
     else {
-      distMap = exporter_->getTargetMap ();
+
+      // (Re)compute the Export object if necessary.  If not, then we
+      // don't need to clone distribution_map; we can instead just get
+      // the previously cloned target Map from the Export object.
+      RCP<const map_type> distMap;
+      if (exporter_.is_null () ||
+          ! exporter_->getSourceMap ()->isSameAs (* (this->getMap ())) ||
+          ! exporter_->getTargetMap ()->isSameAs (* distribution_map)) {
+
+        // Since we're caching the Export object, and since the Export
+        // needs to keep the distribution Map, we have to make a copy of
+        // the latter in order to ensure that it will stick around past
+        // the scope of this function call.  (Ptr is not reference
+        // counted.)  Map's clone() method suffices, even though it only
+        // makes a shallow copy of some of Map's data, because Map is
+        // immutable and those data are reference-counted (e.g.,
+        // ArrayRCP or RCP).
+        distMap = distribution_map->template clone<Node> (distribution_map->getNode ());
+
+        // (Re)create the Export object.
+        exporter_ = rcp (new export_type (this->getMap (), distMap));
+      }
+      else {
+        distMap = exporter_->getTargetMap ();
+      }
+
+      multivec_t redist_mv (distMap, num_vecs);
+
+      // Redistribute the input (multi)vector.
+      redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
+
+      if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        // Do this if GIDs contiguous - existing functionality
+        // Copy the imported (multi)vector's data into the ArrayView.
+        redist_mv.get1dCopy (av, lda);
+      }
+      else {
+        // Do this if GIDs not contiguous...
+        // sync is needed for example if mv was updated on device, but will be passed through Amesos2 to solver running on host
+        typedef typename multivec_t::dual_view_type dual_view_type;
+        typedef typename dual_view_type::host_mirror_space host_execution_space;
+        redist_mv.template sync < host_execution_space > ();
+
+        auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+        if ( redist_mv.isConstantStride() ) {
+          for ( size_t j = 0; j < num_vecs; ++j) {
+            auto av_j = av(lda*j, lda);
+            for ( size_t i = 0; i < lda; ++i ) {
+              av_j[i] = contig_local_view_2d(i,j); //lda may not be correct if redist_mv is not constant stride...
+            }
+          }
+        }
+        else {
+          // ... lda should come from Teuchos::Array* allocation,
+          // not the MultiVector, since the MultiVector does NOT
+          // have constant stride in this case.
+          // TODO lda comes from X->getGlobalLength() in solve_impl - should this be changed???
+          const size_t lclNumRows = redist_mv.getLocalLength();
+          for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
+            auto av_j = av(lda*j, lclNumRows);
+            auto X_j = redist_mv.getVector(j);
+            auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
+            auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
+            for ( size_t i = 0; i < lclNumRows; ++i ) {
+              av_j[i] = X_lcl_j_1d(i);
+            }
+          }
+        }
+
+        auto global_contiguous_size = distMap->getGlobalNumElements(); //maybe use getGlobalLength() from the mv
+        auto local_contiguous_size = (distMap->getComm()->getRank() == 0) ? global_contiguous_size : 0;
+        RCP<const map_type> contigMap = rcp( new map_type(global_contiguous_size, local_contiguous_size, 0, distMap->getComm() ));
+
+        typedef Tpetra::Export<local_ordinal_t, global_ordinal_t, node_t> contiguous_export_t;
+        RCP<contiguous_export_t> contig_exporter = rcp( new contiguous_export_t(redist_mv.getMap(), contigMap) );
+        multivec_t contig_mv( contigMap, num_vecs);
+        contig_mv.doExport(redist_mv, *contig_exporter, Tpetra::INSERT);
+      }
     }
-
-    multivec_t redist_mv (distMap, num_vecs);
-
-    // Redistribute the input (multi)vector.
-    redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
-
-    // Copy the imported (multi)vector's data into the ArrayView.
-    redist_mv.get1dCopy (av, lda);
   }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
@@ -225,7 +310,8 @@ namespace Amesos2 {
                                    Teuchos::Ptr<
                                      const Tpetra::Map<LocalOrdinal,
                                                        GlobalOrdinal,
-                                                       Node> > source_map)
+                                                       Node> > source_map,
+                                                       EDistribution distribution )
   {
     using Teuchos::RCP;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
@@ -243,32 +329,85 @@ namespace Amesos2 {
 
     const size_t num_vecs = getGlobalNumVectors ();
 
-    // (Re)compute the Import object if necessary.  If not, then we
-    // don't need to clone source_map; we can instead just get the
-    // previously cloned source Map from the Import object.
-    RCP<const map_type> srcMap;
-    if (importer_.is_null () ||
-        ! importer_->getSourceMap ()->isSameAs (* source_map) ||
-        ! importer_->getTargetMap ()->isSameAs (* (this->getMap ()))) {
-
-      // Since we're caching the Import object, and since the Import
-      // needs to keep the source Map, we have to make a copy of the
-      // latter in order to ensure that it will stick around past the
-      // scope of this function call.  (Ptr is not reference counted.)
-      // Map's clone() method suffices, even though it only makes a
-      // shallow copy of some of Map's data, because Map is immutable
-      // and those data are reference-counted (e.g., ArrayRCP or RCP).
-      srcMap = source_map->template clone<Node> (source_map->getNode ());
-      importer_ = rcp (new import_type (srcMap, this->getMap ()));
+    // Special case when number vectors == 1 and single MPI process
+    if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
+      typedef typename multivec_t::dual_view_type::host_mirror_space host_execution_space;
+      // num_vecs = 1; stride does not matter
+      auto mv_view_to_modify_2d = mv_->template getLocalView<host_execution_space>();
+      for ( size_t i = 0; i < lda; ++i ) {
+        mv_view_to_modify_2d(i,0) = new_data[i];
+      }
     }
     else {
-      srcMap = importer_->getSourceMap ();
+
+      // (Re)compute the Import object if necessary.  If not, then we
+      // don't need to clone source_map; we can instead just get the
+      // previously cloned source Map from the Import object.
+      RCP<const map_type> srcMap;
+      if (importer_.is_null () ||
+          ! importer_->getSourceMap ()->isSameAs (* source_map) ||
+          ! importer_->getTargetMap ()->isSameAs (* (this->getMap ()))) {
+
+        // Since we're caching the Import object, and since the Import
+        // needs to keep the source Map, we have to make a copy of the
+        // latter in order to ensure that it will stick around past the
+        // scope of this function call.  (Ptr is not reference counted.)
+        // Map's clone() method suffices, even though it only makes a
+        // shallow copy of some of Map's data, because Map is immutable
+        // and those data are reference-counted (e.g., ArrayRCP or RCP).
+        srcMap = source_map->template clone<Node> (source_map->getNode ());
+        importer_ = rcp (new import_type (srcMap, this->getMap ()));
+      }
+      else {
+        srcMap = importer_->getSourceMap ();
+      }
+
+      multivec_t redist_mv (srcMap, num_vecs);
+
+      if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        // Do this if GIDs contiguous - existing functionality
+        // Redistribute the output (multi)vector.
+        const multivec_t source_mv (srcMap, new_data, lda, num_vecs);
+        mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
+      }
+      else {
+        typedef typename multivec_t::dual_view_type dual_view_type;
+        typedef typename dual_view_type::host_mirror_space host_execution_space;
+        redist_mv.template modify< host_execution_space > ();
+
+        if ( redist_mv.isConstantStride() ) {
+          auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+          for ( size_t j = 0; j < num_vecs; ++j) {
+            auto av_j = new_data(lda*j, lda);
+            for ( size_t i = 0; i < lda; ++i ) {
+              contig_local_view_2d(i,j) = av_j[i];
+            }
+          }
+        }
+        else {
+          // ... lda should come from Teuchos::Array* allocation,
+          // not the MultiVector, since the MultiVector does NOT
+          // have constant stride in this case.
+          // TODO lda comes from X->getGlobalLength() in solve_impl - should this be changed???
+          const size_t lclNumRows = redist_mv.getLocalLength();
+          for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
+            auto av_j = new_data(lda*j, lclNumRows);
+            auto X_j = redist_mv.getVector(j);
+            auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
+            auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
+            for ( size_t i = 0; i < lclNumRows; ++i ) {
+              X_lcl_j_1d(i) = av_j[i];
+            }
+          }
+        }
+
+        typedef typename multivec_t::node_type::memory_space memory_space;
+        redist_mv.template sync <memory_space> ();
+
+        mv_->doImport (redist_mv, *importer_, Tpetra::REPLACE);
+      }
     }
 
-    const multivec_t source_mv (srcMap, new_data, lda, num_vecs);
-
-    // Redistribute the output (multi)vector.
-    mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
   }
 
 

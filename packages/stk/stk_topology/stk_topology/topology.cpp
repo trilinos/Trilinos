@@ -93,6 +93,10 @@ std::string topology::name() const
   std::ostringstream oss;
   if ( is_superelement() )
     oss << "SUPERELEMENT_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPERELEMENT_START);
+  else if ( is_superface() )
+    oss << "SUPERFACE_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPERFACE_START);
+  else if ( is_superedge() )
+    oss << "SUPEREDGE_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPEREDGE_START);
   else
     oss << "UNKNOWN_TOPOLOGY_" << (static_cast<unsigned>(m_value));
 
@@ -167,7 +171,7 @@ void verbose_print_topology(std::ostream &out, topology t)
 
   out << std::boolalpha;
 
-  out << t << std::endl;;
+  out << t << std::endl;
   out << std::setw(shiftwidth) << "is valid: " << t.is_valid() << std::endl;
   out << std::setw(shiftwidth) << "base: " << t.base() << std::endl;
   out << std::setw(shiftwidth) << "is shell: " << t.is_shell() << std::endl;

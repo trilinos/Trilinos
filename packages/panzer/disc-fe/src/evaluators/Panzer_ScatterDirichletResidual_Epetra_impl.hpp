@@ -363,11 +363,13 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
-  
+
   // this is the list of parameters and their names that this scatter has to account for
-  std::vector<std::string> activeParameters = 
+  std::vector<std::string> activeParameters =
     rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
+  // ETP 02/03/16:  This code needs to be updated to properly handle scatterIC_
+  TEUCHOS_ASSERT(!scatterIC_);
   dfdp_vectors_.clear();
   for(std::size_t i=0;i<activeParameters.size();i++) {
     RCP<Epetra_Vector> vec = rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(activeParameters[i]),true)->get_f();

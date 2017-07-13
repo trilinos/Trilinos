@@ -790,7 +790,6 @@ RCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
       "relative residual norm when the block size is greater than one.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
-    //  pl->set("Restart Timers", restartTimers_);
     validPL = pl;
   }
   return validPL;

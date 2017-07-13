@@ -15,6 +15,7 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
       KLU2_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
+    NUM_MPI_PROCS 2
     CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
     )
@@ -47,8 +48,32 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
       Superlu_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
+    NUM_MPI_PROCS 2
     CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
+    )
+
+ENDIF()
+
+
+##### Umfpack Tests #####
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_UMFPACK)
+IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyUmfpackFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES umfpack_test.xml
+    EXEDEPS Solver_Test
+    )
+
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Umfpack_Solver_Test
+    ARGS "--xml-params=umfpack_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    COMM serial mpi
     )
 
 ENDIF()
@@ -133,20 +158,31 @@ ENDIF()
 
 ####   BASKER Tests ####
 IF (${PACKAGE_NAME}_ENABLE_Basker)
+
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Basker_UnitTests
     SOURCES
       Basker_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
+    NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
     )
+    
+    ##Copy shylubasker_test.xml, but do not test
+    ##depends on not included matrices
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyShyLUBaskerFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES shylubasker_test.xml
+    EXEDEPS Solver_Test
+    )
+
 ENDIF()
 
 ##### MUMPS Tests ####
 #MUMPS requires int/int type
 IF (Tpetra_INST_INT_INT)
-if (${PACKAGE_NAME}_ENABLE_MUMPS)
+IF (${PACKAGE_NAME}_ENABLE_MUMPS)
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
    MUMPS_UnitTests
    SOURCES
@@ -159,17 +195,12 @@ ENDIF()
 ENDIF()
 
 
-ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-  # SolverFactory test (doesn't make sense to run unless Trilinos is
-  # doing run-time registration of solver factories).
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    SolverFactory_UnitTests
-    SOURCES
-    SolverFactory
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    )
-ENDIF ()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SolverFactory_UnitTests
+  SOURCES
+  SolverFactory
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
 

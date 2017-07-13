@@ -67,10 +67,14 @@
 #include "ROL_ThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
 #include "ROL_ThyraME_Objective.hpp"
+#include "ROL_ThyraProductME_Objective.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_DefaultProductVector.hpp"
 #endif
+
 
 using std::cout; using std::endl; using std::string;
 using Teuchos::RCP; using Teuchos::rcp; using Teuchos::ParameterList;
@@ -126,7 +130,7 @@ Piro::PerformAnalysis(
   else if (analysis == "ROL") {
     *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
     status = Piro::PerformROLAnalysis(piroModel,
-                          analysisParams.sublist("ROL"), result);
+                          analysisParams, result);
 
   }
 #endif
@@ -293,23 +297,44 @@ Piro::PerformOptiPackAnalysis(
 int
 Piro::PerformROLAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& rolParams,
+    Teuchos::ParameterList& analysisParams,
     RCP< Thyra::VectorBase<double> >& p)
 {
+  auto rolParams = analysisParams.sublist("ROL");
 #ifdef HAVE_PIRO_ROL
   using std::string;
 
   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
   int g_index = rolParams.get<int>("Response Vector Index", 0);
-  int p_index = rolParams.get<int>("Parameter Vector Index", 0);
-  p = Thyra::createMember(piroModel.get_p_space(p_index));
-  RCP<const Thyra::VectorBase<double> > p_init = piroModel.getNominalValues().get_p(p_index);
-  Thyra::copy(*p_init, p.ptr());
 
-  ROL::ThyraVector<double> rol_p(p);
+  int num_parameters = rolParams.get<int>("Number of Parameters", 1);
+  std::vector<int> p_indices(num_parameters);
+  for(int i=0; i<num_parameters; ++i) {
+    std::ostringstream ss; ss << "Parameter Vector Index " << i;
+    p_indices[i] = rolParams.get<int>(ss.str(), i);
+  }
+
+  Teuchos::Array<Teuchos::RCP<Thyra::VectorSpaceBase<double> const>> p_spaces(num_parameters);
+  Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<double>>> p_vecs(num_parameters);
+  for (auto i = 0; i < num_parameters; ++i) {
+    p_spaces[i] = piroModel.get_p_space(p_indices[i]);
+    p_vecs[i] = Thyra::createMember(p_spaces[i]);
+  }
+  Teuchos::RCP<Thyra::DefaultProductVectorSpace<double> const> p_space = Thyra::productVectorSpace<double>(p_spaces);
+  Teuchos::RCP<Thyra::DefaultProductVector<double>> p_prod = Thyra::defaultProductVector<double>(p_space, p_vecs());
+  p = p_prod;
+
+//  p = Thyra::createMember(piroModel.get_p_space(p_index));
+
+  for (auto i = 0; i < num_parameters; ++i) {
+    RCP<const Thyra::VectorBase<double> > p_init = piroModel.getNominalValues().get_p(p_indices[i]);
+    Thyra::copy(*p_init, p_prod->getNonconstVectorBlock(i).ptr());
+  }
+
+  ROL::ThyraVector<double> rol_p(p_prod);
 
 
-  ROL::ThyraME_Objective<double> obj(piroModel, g_index, p_index);
+  ROL::ThyraProductME_Objective<double> obj(piroModel, g_index, p_indices, Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false));
 
   bool print = rolParams.get<bool>("Print Output", false);
 
@@ -400,12 +425,18 @@ Piro::PerformROLAnalysis(
   // Run Algorithm
   std::vector<std::string> output;
   if(rolParams.get<bool>("Bound Constrained", false)) {
+    Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<double>>> p_lo_vecs(num_parameters);
+    Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<double>>> p_up_vecs(num_parameters);
     double eps_bound = rolParams.get<double>("epsilon bound", 1e-6);
-    Teuchos::RCP<const Thyra::VectorBase<double> > p_lo = piroModel.getLowerBounds().get_p(p_index);
-    Teuchos::RCP<const Thyra::VectorBase<double> > p_up = piroModel.getUpperBounds().get_p(p_index);
-    TEUCHOS_TEST_FOR_EXCEPTION((p_lo == Teuchos::null)  || (p_up == Teuchos::null), Teuchos::Exceptions::InvalidParameter,
+    for (auto i = 0; i < num_parameters; ++i) {
+      p_lo_vecs[i] = piroModel.getLowerBounds().get_p(p_indices[i]);
+      p_up_vecs[i] = piroModel.getUpperBounds().get_p(p_indices[i]);
+      TEUCHOS_TEST_FOR_EXCEPTION((p_lo_vecs[i] == Teuchos::null)  || (p_up_vecs[i] == Teuchos::null), Teuchos::Exceptions::InvalidParameter,
           std::endl << "Error in Piro::PerformROLAnalysis:  " <<
           "Lower and/or Upper bounds pointers are null, cannot perform bound constrained optimization"<<std::endl);
+    }
+    Teuchos::RCP<const Thyra::VectorBase<double>> p_lo = Thyra::defaultProductVector<double>(p_space, p_lo_vecs());
+    Teuchos::RCP<const Thyra::VectorBase<double>> p_up = Thyra::defaultProductVector<double>(p_space, p_up_vecs());
 
     ROL::Thyra_BoundConstraint<double>  boundConstraint(p_lo->clone_v(), p_up->clone_v(), eps_bound);
     output  = algo.run(rol_p, obj, boundConstraint, print, *out);
@@ -442,6 +473,7 @@ Piro::getValidPiroAnalysisParameters()
   validPL->sublist("GlobiPack", false, "");
   validPL->sublist("Dakota",    false, "");
   validPL->sublist("ROL",       false, "");
+  validPL->set<int>("Write Interval", 1, "Iterval between writes to mesh");
 
   return validPL;
 }

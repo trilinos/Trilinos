@@ -161,13 +161,16 @@ namespace Amesos2 {
     /**
      * \brief Nonconst vector access
      *
-     * \note Vectors returned hold a copy of the date in the multi-vector.  So
+     * \note Vectors returned hold a copy of the data in the multi-vector.  So
      * any changes to the returned vector will not be represented in the
      * underlying multi-vector.
      */
     Teuchos::RCP<Tpetra::Vector<scalar_t,local_ordinal_t,global_ordinal_t,node_t> >
     getVectorNonConst( size_t j );
 
+
+    /// Return pointer to vector when number of vectors == 1 and num procs == 1
+    double * getMVPointer_impl() const;
 
     /**
      * \brief Copies the multi-vector's data into the user-provided vector.
@@ -179,7 +182,8 @@ namespace Amesos2 {
 		    Teuchos::Ptr<
 		    const Tpetra::Map<local_ordinal_t,
 		    global_ordinal_t,
-		    node_t> > distribution_map ) const;
+		    node_t> > distribution_map,
+        EDistribution distribution) const;
 
 
     /**
@@ -217,7 +221,8 @@ namespace Amesos2 {
 		    Teuchos::Ptr<
 		    const Tpetra::Map<local_ordinal_t,
 		    global_ordinal_t,
-		    node_t> > source_map );
+		    node_t> > source_map,
+        EDistribution distribution );
 
 
 

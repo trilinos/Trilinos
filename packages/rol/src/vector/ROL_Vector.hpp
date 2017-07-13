@@ -45,6 +45,8 @@
 #ifndef ROL_VECTOR_H
 #define ROL_VECTOR_H
 
+#include <ostream>
+
 #include "ROL_Elementwise_Function.hpp"
 
 #include "Teuchos_RefCountPtr.hpp"
@@ -216,18 +218,23 @@ public:
 
   virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-      "The method applyUnary is called but not implemented" << std::endl); 
+      "The method applyUnary wass called, but not implemented" << std::endl); 
   }
 
   virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-      "The method applyBinary is called but not implemented" << std::endl); 
+      "The method applyBinary wass called, but not implemented" << std::endl); 
   }
 
   virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-      "The method reduce is called but not implemented" << std::endl); 
+      "The method reduce was called, but not implemented" << std::endl); 
   }
+
+  virtual void print( std::ostream &outStream ) const {
+    outStream << "The method print was called, but not implemented" << std::endl;
+  }
+
 
   /** \brief Verify vector-space methods.
 
@@ -263,7 +270,7 @@ public:
     Real zero =  0.0;
     Real one  =  1.0;
     Real a    =  1.234;
-    Real b    = -432.1;
+    Real b    = -0.4321;
     int width =  94;
     std::vector<Real> vCheck;
 
@@ -336,7 +343,7 @@ public:
 
     // Additivity of dot (inner) product.
     xtmp->set(x);
-    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - x.dot(*this) - y.dot(*this)));
+    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - this->dot(x) - this->dot(y))/std::max(std::abs(this->dot(*xtmp)), std::max(std::abs(this->dot(x)), std::abs(this->dot(y)))));
     *pStream << std::setw(width) << std::left << "Additivity of dot (inner) product. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Consistency of scalar multiplication and norm.

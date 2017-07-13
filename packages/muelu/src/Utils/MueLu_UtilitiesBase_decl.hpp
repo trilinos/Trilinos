@@ -59,6 +59,7 @@
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_BlockedMap_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
@@ -66,6 +67,8 @@
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_BlockedVector.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_ExportFactory.hpp>
 
@@ -73,7 +76,6 @@
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-
 
 #include "MueLu_Exceptions.hpp"
 
@@ -110,7 +112,10 @@ namespace MueLu {
     typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrix;
     typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
+    typedef Xpetra::BlockedVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedVector;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
+    typedef Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedMultiVector;
+    typedef Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node> BlockedMap;
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
   public:
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -157,31 +162,17 @@ namespace MueLu {
     NOTE -- it's assumed that A has been fillComplete'd.
     */
     static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100) {
-      RCP<const Map> rowMap = A.getRowMap();
-      RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
-      ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
-      size_t numRows = rowMap->getNodeNumElements();
-      Teuchos::ArrayView<const LocalOrdinal> cols;
-      Teuchos::ArrayView<const Scalar> vals;
-      for (size_t i = 0; i < numRows; ++i) {
-        A.getLocalRowView(i, cols, vals);
-        LocalOrdinal j = 0;
-        for (; j < cols.size(); ++j) {
-          if (Teuchos::as<size_t>(cols[j]) == i) {
-            if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]) > tol)
-              diagVals[i] = Teuchos::ScalarTraits<Scalar>::one() / vals[j];
-            else
-              diagVals[i]=Teuchos::ScalarTraits<Scalar>::zero();
-            break;
-          }
-        }
-        if (j == cols.size()) {
-          // Diagonal entry is absent
-          diagVals[i]=Teuchos::ScalarTraits<Scalar>::zero();
-        }
-      }
-      diagVals=null;
-      return diag;
+
+      RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
+
+      RCP<const Map> rowMap = rcpA->getRowMap();
+      RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
+
+      rcpA->getLocalDiagCopy(*diag);
+
+      RCP<Vector> inv = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(diag, tol, Teuchos::ScalarTraits<Scalar>::zero());
+
+      return inv;
     }
 
 
@@ -193,6 +184,7 @@ namespace MueLu {
     NOTE -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A) {
+
       size_t numRows = A.getRowMap()->getNodeNumElements();
       Teuchos::ArrayRCP<Scalar> diag(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -205,6 +197,95 @@ namespace MueLu {
         }
       }
       return diag;
+    }
+
+    /*! @brief Extract Matrix Diagonal of lumped matrix
+
+    Returns Matrix diagonal of lumped matrix in ArrayRCP.
+
+    NOTE -- it's assumed that A has been fillComplete'd.
+    */
+    static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Teuchos::RCP<const Matrix> rcpA) {
+
+      RCP<Vector> diag = Teuchos::null;
+
+      RCP<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bA =
+          Teuchos::rcp_dynamic_cast<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(rcpA);
+      if(bA == Teuchos::null) {
+        RCP<const Map> rowMap = rcpA->getRowMap();
+        diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
+        ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
+        Teuchos::ArrayView<const LocalOrdinal> cols;
+        Teuchos::ArrayView<const Scalar> vals;
+        for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          rcpA->getLocalRowView(i, cols, vals);
+          diagVals[i] = Teuchos::ScalarTraits<Scalar>::zero();
+          for (LocalOrdinal j = 0; j < cols.size(); ++j) {
+            diagVals[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+          }
+        }
+
+      } else {
+        //TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != bA->Cols(), Xpetra::Exceptions::RuntimeError,
+        //  "UtilitiesBase::GetLumpedMatrixDiagonal(): you cannot extract the diagonal of a "<< bA->Rows() << "x"<< bA->Cols() << " blocked matrix." );
+
+        diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(bA->getRangeMapExtractor()->getFullMap(),true);
+
+        for (size_t row = 0; row < bA->Rows(); ++row) {
+          for (size_t col = 0; col < bA->Cols(); ++col) {
+            if (!bA->getMatrix(row,col).is_null()) {
+              // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
+              bool bThyraMode = bA->getRangeMapExtractor()->getThyraMode() && (Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA->getMatrix(row,col)) == Teuchos::null);
+              RCP<Vector> ddtemp = bA->getRangeMapExtractor()->ExtractVector(diag,row,bThyraMode);
+              RCP<const Vector> dd = GetLumpedMatrixDiagonal(bA->getMatrix(row,col));
+              ddtemp->update(Teuchos::as<Scalar>(1.0),*dd,Teuchos::as<Scalar>(1.0));
+              bA->getRangeMapExtractor()->InsertVector(ddtemp,row,diag,bThyraMode);
+            }
+          }
+        }
+
+      }
+
+      // we should never get here...
+      return diag;
+    }
+
+    /*! @brief Return vector containing inverse of input vector
+     *
+     * @param[in] v: input vector
+     * @param[in] tol: tolerance. If entries of input vector are smaller than tolerance they are replaced by tolReplacement (see below). The default value for tol is 100*eps (machine precision)
+     * @param[in] tolReplacement: Value put in for undefined entries in output vector (default: 0.0)
+     * @ret: vector containing inverse values of input vector v
+    */
+    static Teuchos::RCP<Vector> GetInverse(Teuchos::RCP<const Vector> v, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
+
+      RCP<Vector> ret = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(v->getMap(),true);
+
+      // check whether input vector "v" is a BlockedVector
+      RCP<const BlockedVector> bv = Teuchos::rcp_dynamic_cast<const BlockedVector>(v);
+      if(bv.is_null() == false) {
+        RCP<BlockedVector> bret = Teuchos::rcp_dynamic_cast<BlockedVector>(ret);
+        TEUCHOS_TEST_FOR_EXCEPTION(bret.is_null() == true, MueLu::Exceptions::RuntimeError,"MueLu::UtilitiesBase::GetInverse: return vector should be of type BlockedVector");
+        RCP<const BlockedMap> bmap = bv->getBlockedMap();
+        for(size_t r = 0; r < bmap->getNumMaps(); ++r) {
+          RCP<const MultiVector> submvec = bv->getMultiVector(r,bmap->getThyraMode());
+          RCP<const Vector> subvec = submvec->getVector(0);
+          RCP<Vector> subvecinf = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(subvec,tol,tolReplacement);
+          bret->setMultiVector(r, subvecinf, bmap->getThyraMode());
+        }
+        return ret;
+      }
+
+      // v is an {Epetra,Tpetra}Vector: work with the underlying raw data
+      ArrayRCP<Scalar> retVals = ret->getDataNonConst(0);
+      ArrayRCP<const Scalar> inputVals = v->getData(0);
+      for (size_t i = 0; i < v->getMap()->getNodeNumElements(); ++i) {
+        if(Teuchos::ScalarTraits<Scalar>::magnitude(inputVals[i]) > tol)
+          retVals[i] = Teuchos::ScalarTraits<Scalar>::one() / inputVals[i];
+        else
+          retVals[i] = tolReplacement;
+      }
+      return ret;
     }
 
     /*! @brief Extract Overlapped Matrix Diagonal
@@ -263,7 +344,8 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
         const size_t numVecs = X.getNumVectors();
         Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
-        RCP<MultiVector> RES = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRangeMap(), numVecs, false); // no need to initialize to zero
+        // TODO Op.getRangeMap should return a BlockedMap if it is a BlockedCrsOperator
+        RCP<MultiVector> RES = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(RHS.getMap(), numVecs, false); // no need to initialize to zero
         Op.apply(X, *RES, Teuchos::NO_TRANS, one, zero);
         RES->update(one, RHS, negone);
         return RES;
@@ -393,6 +475,11 @@ namespace MueLu {
 
     /*! @brief Detect Dirichlet rows
 
+        The routine assumes, that if there is only one nonzero per row, it is on the diagonal and therefore a DBC.
+        This is safe for most of our applications, but one should be aware of that.
+
+        There is an alternative routine (see DetectDirichletRowsExt)
+
         @param[in] A matrix
         @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
 
@@ -413,6 +500,50 @@ namespace MueLu {
               boundaryNodes[row] = false;
               break;
             }
+      }
+      return boundaryNodes;
+    }
+
+
+    /*! @brief Detect Dirichlet rows (extended version)
+
+        Look at each matrix row and mark it as Dirichlet if there is only one
+        "not small" nonzero on the diagonal. In determining whether a nonzero
+        is "not small" use
+               \f abs(A(i,j)) / sqrt(abs(diag[i]*diag[j])) > tol
+
+        @param[in] A matrix
+        @param[in/out] bHasZeroDiagonal Reference to boolean variable. Returns true if there is a zero on the diagonal in the local part of the Matrix. Otherwise it is false. Different processors might return a different value. There is no global reduction!
+        @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
+        @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
+    */
+    static Teuchos::ArrayRCP<const bool> DetectDirichletRowsExt(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, bool & bHasZeroDiagonal, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero()) {
+
+      // assume that there is no zero diagonal in matrix
+      bHasZeroDiagonal = false;
+
+      Teuchos::RCP<Vector> diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
+      A.getLocalDiagCopy(*diagVec);
+      Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
+
+      LocalOrdinal numRows = A.getNodeNumRows();
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      ArrayRCP<bool> boundaryNodes(numRows, false);
+      for (LocalOrdinal row = 0; row < numRows; row++) {
+        ArrayView<const LocalOrdinal> indices;
+        ArrayView<const Scalar> vals;
+        A.getLocalRowView(row, indices, vals);
+        size_t nnz = 0; // collect nonzeros in row (excluding the diagonal)
+        bool bHasDiag = false;
+        for (decltype(indices.size()) col = 0; col < indices.size(); col++) {
+          if ( indices[col] != row) {
+            if (STS::magnitude(vals[col] / sqrt(STS::magnitude(diagVecData[row]) * STS::magnitude(diagVecData[col]))   ) > tol) {
+              nnz++;
+            }
+          } else bHasDiag = true; // found a diagonal entry
+        }
+        if (bHasDiag == false) bHasZeroDiagonal = true; // we found at least one row without a diagonal
+        else if(nnz == 0) boundaryNodes[row] = true;
       }
       return boundaryNodes;
     }
@@ -510,6 +641,112 @@ namespace MueLu {
       // So our setting std::srand() affects that too
     }
 
+
+
+    // Finds the OAZ Dirichlet rows for this matrix
+    // so far only used in IntrepidPCoarsenFactory
+    // TODO check whether we can use DetectDirichletRows instead
+    static void FindDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
+                                  std::vector<LocalOrdinal>& dirichletRows, bool count_twos_as_dirichlet=false) {
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+      dirichletRows.resize(0);
+      for(size_t i=0; i<A->getNodeNumRows(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(i,indices,values);
+        int nnz=0;
+        for (size_t j=0; j<(size_t)indices.size(); j++) {
+          if (Teuchos::ScalarTraits<Scalar>::magnitude(values[j]) > Teuchos::ScalarTraits<MT>::eps()) {
+            nnz++;
+          }
+        }
+        if (nnz == 1 || (count_twos_as_dirichlet && nnz == 2)) {
+          dirichletRows.push_back(i);
+        }
+      }
+    }
+
+    // Applies Ones-and-Zeros to matrix rows
+    static void ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                               const std::vector<LocalOrdinal>& dirichletRows) {
+      RCP<const Map> Rmap = A->getColMap();
+      RCP<const Map> Cmap = A->getColMap();
+      Scalar one  =Teuchos::ScalarTraits<Scalar>::one();
+      Scalar zero =Teuchos::ScalarTraits<Scalar>::zero();
+
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+        GlobalOrdinal row_gid = Rmap->getGlobalElement(dirichletRows[i]);
+
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(dirichletRows[i],indices,values);
+        // NOTE: This won't work with fancy node types.
+        Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
+        for(size_t j=0; j<(size_t)indices.size(); j++) {
+          if(Cmap->getGlobalElement(indices[j])==row_gid)
+            valuesNC[j]=one;
+          else
+            valuesNC[j]=zero;
+        }
+      }
+    }
+
+    // Zeros out rows
+    static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                               const std::vector<LocalOrdinal>& dirichletRows) {
+      Scalar zero =Teuchos::ScalarTraits<Scalar>::zero();
+
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(dirichletRows[i],indices,values);
+        // NOTE: This won't work with fancy node types.
+        Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
+        for(size_t j=0; j<(size_t)indices.size(); j++)
+            valuesNC[j]=zero;
+      }
+    }
+
+    // Finds the OAZ Dirichlet rows for this matrix
+    static void FindDirichletRowsAndPropagateToCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
+                                                    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletRow,
+                                                    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletCol) {
+
+      // Make sure A's RowMap == DomainMap
+      if(!A->getRowMap()->isSameAs(*A->getDomainMap())) {
+        throw std::runtime_error("UtilitiesBase::FindDirichletRowsAndPropagateToCols row and domain maps must match.");
+      }
+      RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A->getCrsGraph()->getImporter();
+      bool has_import = !importer.is_null();
+
+      // Find the Dirichlet rows
+      std::vector<LocalOrdinal> dirichletRows;
+      FindDirichletRows(A,dirichletRows);
+
+#if 0
+    printf("[%d] DirichletRow Ids = ",A->getRowMap()->getComm()->getRank());
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++)
+        printf("%d ",dirichletRows[i]);
+    printf("\n");
+    fflush(stdout);
+#endif
+      // Allocate all as non-Dirichlet
+      isDirichletRow = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap(),true);
+      isDirichletCol = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap(),true);
+
+      Teuchos::ArrayRCP<int> dr_rcp = isDirichletRow->getDataNonConst(0);
+      Teuchos::ArrayView<int> dr    = dr_rcp();
+      Teuchos::ArrayRCP<int> dc_rcp = isDirichletCol->getDataNonConst(0);
+      Teuchos::ArrayView<int> dc    = dc_rcp();
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
+        dr[dirichletRows[i]] = 1;
+        if(!has_import) dc[dirichletRows[i]] = 1;
+      }
+
+      if(has_import)
+        isDirichletCol->doImport(*isDirichletRow,*importer,Xpetra::CombineMode::ADD);
+
+    }
 
   }; // class Utils
 

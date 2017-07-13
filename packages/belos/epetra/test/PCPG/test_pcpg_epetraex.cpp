@@ -167,8 +167,8 @@ int main(int argc, char *argv[]) {
     int numNodes = (numElePerDirection - 1)*(numElePerDirection - 1);
     //By the way, either matrix has (3*numElePerDirection - 2)^2 nonzeros.
     RCP<Epetra_Map> Map = rcp(new Epetra_Map(numNodes, 0, Comm) );
-    RCP<Epetra_CrsMatrix> Stiff = rcp(new Epetra_CrsMatrix(Copy, *Map, 0) );
-    RCP<Epetra_CrsMatrix> Mass = rcp(new Epetra_CrsMatrix(Copy, *Map, 0) );
+    RCP<Epetra_CrsMatrix> Stiff = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, 0) );
+    RCP<Epetra_CrsMatrix> Mass = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, 0) );
     RCP<Epetra_Vector> vecLHS = rcp( new Epetra_Vector(*Map) );
     RCP<Epetra_Vector> vecRHS = rcp( new Epetra_Vector(*Map) );
 

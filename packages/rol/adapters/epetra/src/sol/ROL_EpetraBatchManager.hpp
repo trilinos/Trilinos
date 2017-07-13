@@ -68,7 +68,7 @@ public:
     int nB = this->numBatches();
     std::vector<Real> receiveBuffer(nB);
     comm_->GatherAll(input,&receiveBuffer[0],1);
-    output[0] = 0;
+    output[0] = r.initialValue();
     for (int i = 0; i < nB; i++) {
       r.reduce(receiveBuffer[i],output[0]);
     }
@@ -76,6 +76,10 @@ public:
   }
 
   void sumAll(Real* input, Real* output, int dim) { comm_->SumAll(input,output,dim); }
+
+  void broadcast(Real* input, int cnt, int root) {
+    comm_->Broadcast(input, cnt, root);
+  }
 
   void barrier(void) {
     comm_->Barrier();

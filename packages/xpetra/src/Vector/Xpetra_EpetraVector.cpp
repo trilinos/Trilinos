@@ -52,13 +52,13 @@ namespace Xpetra {
   // TODO: move that elsewhere
   template<class GlobalOrdinal, class Node>
   Epetra_Vector & toEpetra(Vector<double, int, GlobalOrdinal,Node> &x) {
-    XPETRA_DYNAMIC_CAST(      EpetraVectorT<GlobalOrdinal COMMA Node>, x, tX, "toEpetra");
+    XPETRA_DYNAMIC_CAST(      EpetraVectorT<GlobalOrdinal XPETRA_COMMA Node>, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
 
   template<class GlobalOrdinal, class Node>
   const Epetra_Vector & toEpetra(const Vector<double, int, GlobalOrdinal, Node> &x) {
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GlobalOrdinal COMMA Node>, x, tX, "toEpetra");
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GlobalOrdinal XPETRA_COMMA Node>, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
   //

@@ -16,31 +16,28 @@ namespace panzer {
 class BlockedVector_ReadOnly_GlobalEvaluationData : public ReadOnlyVector_GlobalEvaluationData {
 public:
 
-  BlockedVector_ReadOnly_GlobalEvaluationData() 
-    : isInitialized_(false) {}
+  BlockedVector_ReadOnly_GlobalEvaluationData();
 
-  BlockedVector_ReadOnly_GlobalEvaluationData(const BlockedVector_ReadOnly_GlobalEvaluationData & src) 
-    : isInitialized_(false) { initialize(src.ghostedSpace_,Teuchos::null,src.gedBlocks_); }
+  BlockedVector_ReadOnly_GlobalEvaluationData(const BlockedVector_ReadOnly_GlobalEvaluationData & src);
 
   BlockedVector_ReadOnly_GlobalEvaluationData(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ghostedSpace,
-                                              const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > uniqueSpace,
-                                              const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> > & gedBlocks)
-    : isInitialized_(false) { initialize(ghostedSpace,uniqueSpace,gedBlocks); }
+                                              const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ownedSpace,
+                                              const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> > & gedBlocks);
 
   //! Virtual destructor
   virtual ~BlockedVector_ReadOnly_GlobalEvaluationData() {}
 
   /** Initialize this object using the sub GED objects. Also you must specify 
-    * ghosted and unique spaces. At completion isInitialized_ will be set to true.
+    * ghosted and owned spaces. At completion isInitialized_ will be set to true.
     *  
     * \param[in] ghostedSpace Must be a default product vector space defining the ghosted
     *                         vector
-    * \param[in] ghostedSpace Must be a default product vector space defining the unique 
+    * \param[in] ghostedSpace Must be a default product vector space defining the owned 
     *                         vector (currently ignored, included for future changes)
     * \param[in] gedBlocks GED objects that handle each block of the vector.
     */
   void initialize(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & ghostedSpace,
-                  const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & uniqueSpace,
+                  const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & ownedSpace,
                   const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> > & gedBlocks);
 
   //! Is this object initialized
@@ -54,11 +51,11 @@ public:
   //! Initialize internal data for communication (clear the ghosted vector)
   virtual void initializeData();
 
-  //! Set the unique vector
-  virtual void setUniqueVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & uniqueVector);
+  //! Set the owned vector
+  virtual void setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & ownedVector);
 
-  //! Get the unique vector
-  virtual Teuchos::RCP<const Thyra::VectorBase<double> > getUniqueVector() const;
+  //! Get the owned vector
+  virtual Teuchos::RCP<const Thyra::VectorBase<double> > getOwnedVector() const;
 
   //! Get the ghosted vector
   virtual Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const;
@@ -84,7 +81,7 @@ private:
  
   std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> > gedBlocks_;
 
-  Teuchos::RCP<const Thyra::VectorBase<double> > uniqueVector_;
+  Teuchos::RCP<const Thyra::VectorBase<double> > ownedVector_;
 
   Teuchos::RCP<const Thyra::DefaultProductVectorSpace<double> > ghostedSpace_;
 };

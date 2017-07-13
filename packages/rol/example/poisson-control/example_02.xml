@@ -1,0 +1,7 @@
+<ParameterList name="Problem Data">
+  <Parameter name="Run Derivative Check"                     type="bool"   value="false"   />
+  <Parameter name="Penalty Parameter"                        type="double" value="1.e-4"   />
+  <Parameter name="Number of Elements"                       type="int"    value="128"     />
+  <Parameter name="Use Stochastic Approximation"             type="bool"   value="false"   />
+  <Parameter name="Number of Monte Carlo Samples"            type="int"    value="10"      />
+</ParameterList>

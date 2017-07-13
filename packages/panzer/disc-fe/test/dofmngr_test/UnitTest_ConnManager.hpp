@@ -119,10 +119,11 @@ class ConnCallback { public: virtual void buildConnectivity(const FieldPattern &
        |      |      |      |      |
        +------+------+------+------+
   */
-class ConnManager : public virtual panzer::ConnManager<int,int> {
+template <typename GO>
+class ConnManager : public virtual panzer::ConnManager<int,GO> {
 public:
    typedef int LocalOrdinal;
-   typedef int GlobalOrdinal;
+   typedef GO GlobalOrdinal;
 
    ConnManager(int rank,int procCount);
 
@@ -134,6 +135,14 @@ public:
      * \param[in] fp Field pattern to build connectivity for
      */
    virtual void buildConnectivity(const FieldPattern & fp);
+
+   /** Tell the connection manager to build the connectivity assuming
+     * a particular field pattern.
+     *
+     * \param[in] fp Field pattern to build connectivity for
+     */
+   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone() const
+   { return Teuchos::rcp(new ConnManager(procRank_,2)); }
 
    /** Get ID connectivity for a particular element
      *
@@ -165,6 +174,9 @@ public:
    /** What are the blockIds included in this connection manager?
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const;
+   /** What are the cellTopologies linked to element blocks in this connection manager?
+     */
+   virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const;
 
    /** Get the local element IDs for a paricular element
      * block.
@@ -193,7 +205,7 @@ private:
    
    Teuchos::RCP<ConnCallback> callback_;
    std::map<std::string,std::vector<int> > elements_; // local element IDs
-   std::vector<std::vector<int> > connectivity_;
+   std::vector<std::vector<GlobalOrdinal> > connectivity_;
 };
 
 } // end unit test

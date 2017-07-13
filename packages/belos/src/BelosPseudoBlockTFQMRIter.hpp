@@ -88,21 +88,27 @@ namespace Belos {
 
   /** \brief Structure to contain pointers to PseudoBlockTFQMRIter state variables.
    *
-   * This struct is utilized by PseudoBlockTFQMRIter::initialize() and TRQMRIter::getState().
+   * This struct is utilized by PseudoBlockTFQMRIter::initialize() and PseudoBlockTFQMRIter::getState().
    */
   template <class ScalarType, class MV>
   struct PseudoBlockTFQMRIterState {
+ 
+    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef typename SCT::magnitudeType MagnitudeType;
 
     /*! \brief The current residual basis. */
-    Teuchos::RCP<const MV> R;
     Teuchos::RCP<const MV> W;
     Teuchos::RCP<const MV> U;
+    Teuchos::RCP<const MV> AU;
     Teuchos::RCP<const MV> Rtilde;
     Teuchos::RCP<const MV> D;
     Teuchos::RCP<const MV> V;
+    std::vector<ScalarType> alpha, eta, rho;
+    std::vector<MagnitudeType> tau, theta;
 
-    PseudoBlockTFQMRIterState() : R(Teuchos::null), W(Teuchos::null), U(Teuchos::null),
-                       Rtilde(Teuchos::null), D(Teuchos::null), V(Teuchos::null)
+
+    PseudoBlockTFQMRIterState() : W(Teuchos::null), U(Teuchos::null), AU(Teuchos::null),
+                                  Rtilde(Teuchos::null), D(Teuchos::null), V(Teuchos::null)
     {}
   };
 
@@ -230,13 +236,22 @@ namespace Belos {
      */
     PseudoBlockTFQMRIterState<ScalarType,MV> getState() const {
       PseudoBlockTFQMRIterState<ScalarType,MV> state;
-      state.R = R_;
+ 
+      // Copy over the vectors.
       state.W = W_;
       state.U = U_;
+      state.AU = AU_;
       state.Rtilde = Rtilde_;
       state.D = D_;
       state.V = V_;
-      state.solnUpdate = solnUpdate_;
+
+      // Copy over the scalars.
+      state.alpha = alpha_;
+      state.eta = eta_;
+      state.rho = rho_;
+      state.tau = tau_;
+      state.theta = theta_;
+
       return state;
     }
     
@@ -303,8 +318,8 @@ namespace Belos {
     int numRHS_;
 
     // Storage for QR factorization of the least squares system.
-    std::vector<ScalarType> alpha_, rho_, rho_old_;
-    std::vector<MagnitudeType> tau_, cs_, theta_;
+    std::vector<ScalarType> alpha_, eta_, rho_, rho_old_;
+    std::vector<MagnitudeType> tau_, theta_;
     
     // 
     // Current solver state
@@ -320,7 +335,6 @@ namespace Belos {
     // 
     // State Storage
     //
-    Teuchos::RCP<MV> R_;
     Teuchos::RCP<MV> W_;
     Teuchos::RCP<MV> U_, AU_;
     Teuchos::RCP<MV> Rtilde_;
@@ -366,7 +380,7 @@ namespace Belos {
 
       // Compute the native residuals.
       for (int i=0; i<numRHS_; i++) {
-        (*normvec)[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( iter_ + one )*tau_[i];
+        (*normvec)[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( 2*iter_ + one )*tau_[i];
       }
     }
 
@@ -378,85 +392,77 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void PseudoBlockTFQMRIter<ScalarType,MV,OP>::initializeTFQMR(const PseudoBlockTFQMRIterState<ScalarType,MV> & newstate)
   {
-    // Check if there is a multivector to clone from.
-    Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
-    Teuchos::RCP<const MV> rhsMV = lp_->getCurrRHSVec();
-
-    // Get the multivector that is not null.
-    Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-
-    TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
-                       "Belos::PseudoBlockTFQMRIter::initialize(): linear problem does not specify multivectors to clone from.");
-
-    // Get the number of right-hand sides we're solving for now.
-    int numRHS = MVT::GetNumberVecs(*tmp);
-    numRHS_ = numRHS;
-
-    // Initialize the state storage
-    // If the subspace has not be initialized before or has changed sizes, generate it using the LHS or RHS from lp_.
-    if (Teuchos::is_null(R_) || MVT::GetNumberVecs(*R_)!=numRHS_) {
-      R_ = MVT::Clone( *tmp, numRHS_ );
-      D_ = MVT::Clone( *tmp, numRHS_ );
-      V_ = MVT::Clone( *tmp, numRHS_ );
-      solnUpdate_ = MVT::Clone( *tmp, numRHS_ );
-       
-      // Resize work vectors.
-      alpha_.resize( numRHS_ );
-      rho_.resize( numRHS_ );
-      rho_old_.resize( numRHS_ );
-      tau_.resize( numRHS_ );
-      cs_.resize( numRHS_ );
-      theta_.resize( numRHS_ );
-    }
-
-    // NOTE:  In PseudoBlockTFQMRIter R_, the initial residual, is required!!!
-    //
-    std::string errstr("Belos::PseudoBlockTFQMRIter::initialize(): Specified multivectors must have a consistent length and width.");
-
     // Create convenience variables for zero and one.
     const ScalarType STone = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType STzero = Teuchos::ScalarTraits<ScalarType>::zero();
     const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
-    if (newstate.R != Teuchos::null) {
+    // NOTE:  In PseudoBlockTFQMRIter Rtilde_, the initial residual, is required!!!
+    TEUCHOS_TEST_FOR_EXCEPTION(newstate.Rtilde == Teuchos::null,std::invalid_argument,
+                       "Belos::PseudoBlockTFQMRIter::initialize(): PseudoBlockTFQMRIterState does not have initial residual.");
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
-                          std::invalid_argument, errstr );
+    // Get the number of right-hand sides we're solving for now.
+    int numRHS = MVT::GetNumberVecs(*newstate.Rtilde);
+    numRHS_ = numRHS;
 
-      // Copy basis vectors from newstate into V
-      if (newstate.R != R_) {
-        // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( STone, *newstate.R, STzero, *newstate.R, *R_ );
-      }
-
-      // Compute initial vectors
-      // Initially, they are set to the preconditioned residuals
-      //
-      W_ = MVT::CloneCopy( *R_ );
-      U_ = MVT::CloneCopy( *R_ );
-      Rtilde_ = MVT::CloneCopy( *R_ );
+    // Initialize the state storage
+    // If the subspace has not be initialized before or we are reusing this solver object, generate it using Rtilde.
+    if ( Teuchos::is_null(Rtilde_) || (MVT::GetNumberVecs(*Rtilde_) == numRHS_) )
+    {
+      // Create and/or initialize D_.
+      if ( Teuchos::is_null(D_) )
+        D_ = MVT::Clone( *newstate.Rtilde, numRHS_ );
       MVT::MvInit( *D_, STzero );
+
+      // Create and/or initialize solnUpdate_;
+      if ( Teuchos::is_null(solnUpdate_) )
+        solnUpdate_ = MVT::Clone( *newstate.Rtilde, numRHS_ );
       MVT::MvInit( *solnUpdate_, STzero );
+     
+      // Create Rtilde_. 
+      if (newstate.Rtilde != Rtilde_) 
+        Rtilde_ = MVT::CloneCopy( *newstate.Rtilde );
+      W_ = MVT::CloneCopy( *Rtilde_ );
+      U_ = MVT::CloneCopy( *Rtilde_ );
+      V_ = MVT::Clone( *Rtilde_, numRHS_ );
+
       // Multiply the current residual by Op and store in V_
       //       V_ = Op * R_ 
-      //
       lp_->apply( *U_, *V_ );
       AU_ = MVT::CloneCopy( *V_ ); 
-      //
-      // Compute initial scalars: theta, eta, tau, rho_old
-      //
-      for (int i=0; i<numRHS_; i++)
-      {
-        alpha_[i] = STone;
-        theta_[i] = MTzero;
-      }
-      MVT::MvNorm( *R_, tau_ );                         // tau = ||r_0||
-      MVT::MvDot( *R_, *Rtilde_, rho_old_ );            // rho = (r_tilde, r0)
-    }
-    else {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
-                         "Belos::PseudoBlockTFQMRIter::initialize(): PseudoBlockTFQMRIterState does not have initial residual.");
+      // Resize work vectors.
+      alpha_.resize( numRHS_, STone );
+      eta_.resize( numRHS_, STzero );
+      rho_.resize( numRHS_ );
+      rho_old_.resize( numRHS_ );
+      tau_.resize( numRHS_ );
+      theta_.resize( numRHS_, MTzero );
+
+      MVT::MvNorm( *Rtilde_, tau_ );                     // tau = ||r_0||
+      MVT::MvDot( *Rtilde_, *Rtilde_, rho_ );            // rho = (r_tilde, r0)
+    }   
+    else 
+    {
+      // If the subspace has changed sizes, clone it from the incoming state.
+      Rtilde_ = MVT::CloneCopy( *newstate.Rtilde );
+      W_ = MVT::CloneCopy( *newstate.W );
+      U_ = MVT::CloneCopy( *newstate.U );
+      AU_ = MVT::CloneCopy( *newstate.AU );
+      D_ = MVT::CloneCopy( *newstate.D );
+      V_ = MVT::CloneCopy( *newstate.V );
+
+      // The solution update is just set to zero, since the current update has already
+      // been added to the solution during deflation.
+      solnUpdate_ = MVT::Clone( *Rtilde_, numRHS_ );
+      MVT::MvInit( *solnUpdate_, STzero );
+
+      // Copy work vectors.
+      alpha_ = newstate.alpha;
+      eta_ = newstate.eta;
+      rho_ = newstate.rho;
+      tau_ = newstate.tau;
+      theta_ = newstate.theta;
     }
 
     // The solver is initialized
@@ -478,144 +484,146 @@ namespace Belos {
  
     // Create convenience variables for zero and one.
     const ScalarType STone = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType MTone = Teuchos::ScalarTraits<MagnitudeType>::one();
     const ScalarType STzero = Teuchos::ScalarTraits<ScalarType>::zero();
-    std::vector< ScalarType > eta(numRHS_,STzero), beta(numRHS_,STzero);
+    const MagnitudeType MTone = Teuchos::ScalarTraits<MagnitudeType>::one();
+    std::vector< ScalarType > beta(numRHS_,STzero);
     std::vector<int> index(1);
     //
     //  Start executable statements. 
     //
-    // Get the current solution vector.
-    Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //
     while (stest_->checkStatus(this) != Passed) {
 
-      //
-      //--------------------------------------------------------
-      // Compute the new alpha if we need to
-      //--------------------------------------------------------
-      //
-      if (iter_%2 == 0) {
-	MVT::MvDot( *V_, *Rtilde_, alpha_ );      //   alpha = rho / (r_tilde, v) 
-        for (int i=0; i<numRHS_; i++)
-	  alpha_[i] = rho_old_[i]/alpha_[i];
-      }
-      //
-      //--------------------------------------------------------
-      // Loop over all RHS and compute updates.
-      //--------------------------------------------------------
-      //
-      for (int i=0; i<numRHS_; ++i) {
-        index[0] = i;
-
+      for (int iIter=0; iIter<2; iIter++)
+      {
         //
         //--------------------------------------------------------
-        // Update w.
-        //   w = w - alpha*Au
+        // Compute the new alpha if we need to
         //--------------------------------------------------------
         //
-        Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
-        Teuchos::RCP<MV> W_i = MVT::CloneViewNonConst( *W_, index );
-        MVT::MvAddMv( STone, *W_i, -alpha_[i], *AU_i, *W_i );
-        //
-        //--------------------------------------------------------
-        // Update d.
-        //   d = u + (theta^2/alpha)eta*d
-        //--------------------------------------------------------
-        //
-        Teuchos::RCP<const MV> U_i = MVT::CloneView( *U_, index );
-        Teuchos::RCP<MV> D_i = MVT::CloneViewNonConst( *D_, index );
-        MVT::MvAddMv( STone, *U_i, (theta_[i]*theta_[i]/alpha_[i])*eta[i], *D_i, *D_i );
-        //
-        //--------------------------------------------------------
-        // Update u if we need to.
-        //   u = u - alpha*v
-        //   
-        // Note: This is usually computed with alpha (above), but we're trying be memory efficient.
-        //--------------------------------------------------------
-        //
-        if (iter_%2 == 0) {
-          // Compute new U.
-          Teuchos::RCP<const MV> V_i = MVT::CloneView( *V_, index );
-          Teuchos::RCP<MV> U2_i = MVT::CloneViewNonConst( *U_, index );
-	  MVT::MvAddMv( STone, *U2_i, -alpha_[i], *V_i, *U2_i );
+        if (iIter == 0) {
+  	  MVT::MvDot( *V_, *Rtilde_, alpha_ );      //   alpha = rho / (r_tilde, v) 
+          for (int i=0; i<numRHS_; i++) {
+	    rho_old_[i] = rho_[i];                   // rho_old = rho
+	    alpha_[i] = rho_old_[i]/alpha_[i];
+          }
         }
-      }
-      //
-      //--------------------------------------------------------
-      // Update Au for the next iteration.
-      //--------------------------------------------------------
-      //
-      if (iter_%2 == 0) {
-	lp_->apply( *U_, *AU_ );                       
-      }
-      //
-      //--------------------------------------------------------
-      // Compute the new theta, c, eta, tau; i.e. the update to the least squares solution.
-      //--------------------------------------------------------
-      //
-      MVT::MvNorm( *W_, theta_ );     // theta = ||w|| / tau
-
-      for (int i=0; i<numRHS_; ++i) {
-        theta_[i] /= tau_[i];
-        // cs = 1.0 / sqrt(1.0 + theta^2)
-        cs_[i] = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[i]*theta_[i]);  
-        tau_[i] *= theta_[i]*cs_[i];     // tau = tau * theta * cs
-        eta[i] = cs_[i]*cs_[i]*alpha_[i];     // eta = cs^2 * alpha
-      }
-      //
-      //--------------------------------------------------------
-      // Accumulate the update for the solution x := x + eta*D_
-      //--------------------------------------------------------
-      //
-      for (int i=0; i<numRHS_; ++i) {
-        index[0]=i;
-        Teuchos::RCP<const MV> D_i = MVT::CloneView( *D_, index );
-        Teuchos::RCP<MV> update_i = MVT::CloneViewNonConst( *solnUpdate_, index );
-	MVT::MvAddMv( STone, *update_i, eta[i], *D_i, *update_i );
-      }      
-      //
-      if (iter_%2) {
-	//
-	//--------------------------------------------------------
-	// Compute the new rho, beta if we need to.
-	//--------------------------------------------------------
-	//
-	MVT::MvDot( *W_, *Rtilde_, rho_ );         // rho = (r_tilde, w)
-      
+        //
+        //--------------------------------------------------------
+        // Loop over all RHS and compute updates.
+        //--------------------------------------------------------
+        //
         for (int i=0; i<numRHS_; ++i) {
-	  beta[i] = rho_[i]/rho_old_[i];           // beta = rho / rho_old
-	  rho_old_[i] = rho_[i];                   // rho_old = rho
+          index[0] = i;
 
+          //
+          //--------------------------------------------------------
+          // Update w.
+          //   w = w - alpha*Au
+          //--------------------------------------------------------
+          //
+          Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
+          Teuchos::RCP<MV> W_i = MVT::CloneViewNonConst( *W_, index );
+          MVT::MvAddMv( STone, *W_i, -alpha_[i], *AU_i, *W_i );
+          //
+          //--------------------------------------------------------
+          // Update d.
+          //   d = u + (theta^2/alpha)eta*d
+          //--------------------------------------------------------
+          //
+          Teuchos::RCP<const MV> U_i = MVT::CloneView( *U_, index );
+          Teuchos::RCP<MV> D_i = MVT::CloneViewNonConst( *D_, index );
+          MVT::MvAddMv( STone, *U_i, (theta_[i]*theta_[i]/alpha_[i])*eta_[i], *D_i, *D_i );
+          //
+          //--------------------------------------------------------
+          // Update u if we need to.
+          //   u = u - alpha*v
+          //   
+          // Note: This is usually computed with alpha (above), but we're trying be memory efficient.
+          //--------------------------------------------------------
+          //
+          if (iIter == 0) {
+            // Compute new U.
+            Teuchos::RCP<const MV> V_i = MVT::CloneView( *V_, index );
+            Teuchos::RCP<MV> U2_i = MVT::CloneViewNonConst( *U_, index );
+  	    MVT::MvAddMv( STone, *U2_i, -alpha_[i], *V_i, *U2_i );
+          }
+        }
+        //
+        //--------------------------------------------------------
+        // Update Au for the next iteration.
+        //--------------------------------------------------------
+        //
+        if (iIter == 0) {
+  	  lp_->apply( *U_, *AU_ );                       
+        }
+        //
+        //--------------------------------------------------------
+        // Compute the new theta, c, eta, tau; i.e. the update to the least squares solution.
+        //--------------------------------------------------------
+        //
+        MVT::MvNorm( *W_, theta_ );     // theta = ||w|| / tau
+
+        for (int i=0; i<numRHS_; ++i) {
+          theta_[i] /= tau_[i];
+          // cs = 1.0 / sqrt(1.0 + theta^2)
+          MagnitudeType cs = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[i]*theta_[i]);  
+          tau_[i] *= theta_[i]*cs;     // tau = tau * theta * cs
+          eta_[i] = cs*cs*alpha_[i];     // eta = cs^2 * alpha
+        }
+        //
+        //--------------------------------------------------------
+        // Accumulate the update for the solution x := x + eta*D_
+        //--------------------------------------------------------
+        //
+        for (int i=0; i<numRHS_; ++i) {
+          index[0]=i;
+          Teuchos::RCP<const MV> D_i = MVT::CloneView( *D_, index );
+          Teuchos::RCP<MV> update_i = MVT::CloneViewNonConst( *solnUpdate_, index );
+	  MVT::MvAddMv( STone, *update_i, eta_[i], *D_i, *update_i );
+        }      
+        //
+        if (iIter == 1) {
   	  //
 	  //--------------------------------------------------------
-	  // Update u, v, and Au if we need to.
-	  // Note: We are updating v in two stages to be memory efficient
+	  // Compute the new rho, beta if we need to.
 	  //--------------------------------------------------------
 	  //
-          index[0]=i;
-          Teuchos::RCP<const MV> W_i = MVT::CloneView( *W_, index );
-          Teuchos::RCP<MV> U_i = MVT::CloneViewNonConst( *U_, index );
-	  MVT::MvAddMv( STone, *W_i, beta[i], *U_i, *U_i );       // u = w + beta*u
-	
-	  // First stage of v update.
-          Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
-          Teuchos::RCP<MV> V_i = MVT::CloneViewNonConst( *V_, index );
-	  MVT::MvAddMv( STone, *AU_i, beta[i], *V_i, *V_i );      // v = Au + beta*v 
-	}
+	  MVT::MvDot( *W_, *Rtilde_, rho_ );         // rho = (r_tilde, w)
+      
+          for (int i=0; i<numRHS_; ++i) {
+	    beta[i] = rho_[i]/rho_old_[i];           // beta = rho / rho_old
 
-	// Update Au.
-	lp_->apply( *U_, *AU_ );                          // Au = A*u
+  	    //
+	    //--------------------------------------------------------
+	    // Update u, v, and Au if we need to.
+	    // Note: We are updating v in two stages to be memory efficient
+	    //--------------------------------------------------------
+	    //
+            index[0]=i;
+            Teuchos::RCP<const MV> W_i = MVT::CloneView( *W_, index );
+            Teuchos::RCP<MV> U_i = MVT::CloneViewNonConst( *U_, index );
+	    MVT::MvAddMv( STone, *W_i, beta[i], *U_i, *U_i );       // u = w + beta*u
 	
-	// Second stage of v update.
-        for (int i=0; i<numRHS_; ++i) {
-          index[0]=i;
-          Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
-          Teuchos::RCP<MV> V_i = MVT::CloneViewNonConst( *V_, index );
-	  MVT::MvAddMv( STone, *AU_i, beta[i], *V_i, *V_i );      // v = Au + beta*v 
+	    // First stage of v update.
+            Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
+            Teuchos::RCP<MV> V_i = MVT::CloneViewNonConst( *V_, index );
+	    MVT::MvAddMv( STone, *AU_i, beta[i], *V_i, *V_i );      // v = Au + beta*v 
+	  }
+
+	  // Update Au.
+	  lp_->apply( *U_, *AU_ );                          // Au = A*u
+	
+	  // Second stage of v update.
+          for (int i=0; i<numRHS_; ++i) {
+            index[0]=i;
+            Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
+            Teuchos::RCP<MV> V_i = MVT::CloneViewNonConst( *V_, index );
+	    MVT::MvAddMv( STone, *AU_i, beta[i], *V_i, *V_i );      // v = Au + beta*v 
+          }
         }
       }
 

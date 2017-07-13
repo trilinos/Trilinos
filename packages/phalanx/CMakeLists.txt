@@ -66,7 +66,7 @@ ENDIF()
 
 # Index size type
 IF(NOT DEFINED ${PACKAGE_NAME}_INDEX_SIZE_TYPE)
-  SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "UINT")
+  SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "INT")
 ENDIF()
 
 IF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "KOKKOS")
@@ -100,20 +100,18 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT
   PHX_ENABLE_KOKKOS_AMT
-  "Enable the Kokkos EXPERIMENTAL Asynchronous Multi-tasking capability. Default is off."
+  "Enable the Kokkos Asynchronous Multi-tasking capability. Default is off."
   OFF )
-MESSAGE(STATUS "Kokkos EXPERIMENTAL AMT support: ${PHX_ENABLE_KOKKOS_AMT}")
+MESSAGE(STATUS "Kokkos AMT support: ${PHX_ENABLE_KOKKOS_AMT}")
 IF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
-  IF(NOT PHX_KOKKOS_DEVICE_TYPE_THREAD)
-  MESSAGE(FATAL_ERROR "Phalanx configure ERROR: Kokkos AMT support is enabled but only works in Phalanx with the Kokkos Pthreads execution space. Please change your execution space or disable AMT support in Phalanx.")
+  IF(PHX_KOKKOS_DEVICE_TYPE_THREAD)
+  MESSAGE(FATAL_ERROR "Phalanx configure ERROR: Kokkos AMT support is enabled but is not implemented for Pthreads execution space. Please change your execution space or disable AMT support in Phalanx.")
 ENDIF()
 ENDIF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
 
-IF(${PACKAGE_NAME}_ENABLE_Intrepid2)
-  MESSAGE(STATUS "Build MDField support for Intrepid: ON")
-ELSE()
-  MESSAGE(STATUS "Build MDField support for Intrepid: OFF")
-ENDIF()
+# For use by Phalanx and Panzer unit tests
+GLOBAL_SET(PHALANX_UNIT_TEST_MAIN
+  "${PACKAGE_SOURCE_DIR}/test/Utilities/Phalanx_UnitTestMain.cpp")
 
 #
 # C) Add the libraries, tests, and examples

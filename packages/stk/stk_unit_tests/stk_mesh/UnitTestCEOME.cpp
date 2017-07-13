@@ -42,16 +42,15 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
-#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string, etc
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
-#include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
-#include <unit_tests/Setup8Quad4ProcMesh.hpp>
+#include <stk_unit_tests/stk_mesh/UnitTestRingFixture.hpp>  // for test_shift_ring
+#include <stk_unit_tests/stk_mesh/Setup8Quad4ProcMesh.hpp>
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
@@ -70,7 +69,7 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
-#include <unit_tests/BulkDataTester.hpp>
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
@@ -88,7 +87,6 @@ using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::BaseEntityRank;
 using stk::mesh::PairIterRelation;
 using stk::mesh::EntityProc;
 using stk::mesh::Entity;
@@ -153,7 +151,7 @@ namespace
 {
 //==============================================================================
 
-void updateSharingAndPrintStats(stk::mesh::unit_test::BulkDataTester &bulk)
+void updateSharingAndPrintStats(stk::unit_test_util::BulkDataTester &bulk)
 {
     printMemoryStats(bulk.parallel());
     double startTime = stk::wall_time();
@@ -181,7 +179,7 @@ TEST(CEOME, change_entity_owner_2Elem2ProcMove)
 
     const int spatial_dimension = 2;
     stk::mesh::MetaData meta(spatial_dimension);
-    stk::mesh::unit_test::BulkDataTester bulk(meta, pm);
+    stk::unit_test_util::BulkDataTester bulk(meta, pm);
 
     stk::mesh::EntityVector elems;
     CEOUtils::fillMeshfor2Elem2ProcMoveAndTest(bulk, meta, elems);
@@ -221,7 +219,7 @@ TEST(CEOME, change_entity_owner_2Elem2ProcFlip)
     }
     const int spatial_dimension = 2;
     stk::mesh::MetaData meta(spatial_dimension);
-    stk::mesh::unit_test::BulkDataTester mesh(meta, pm);
+    stk::unit_test_util::BulkDataTester mesh(meta, pm);
 
     CEOUtils::fillMeshfor2Elem2ProcFlipAndTest(mesh, meta);
 
@@ -276,7 +274,7 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveRight)
     // Set up meta and bulk data
     const unsigned spatial_dim = 2;
     MetaData meta_data(spatial_dim);
-    stk::mesh::unit_test::BulkDataTester mesh(meta_data, pm);
+    stk::unit_test_util::BulkDataTester mesh(meta_data, pm);
     int p_rank = mesh.parallel_rank();
     int p_size = mesh.parallel_size();
 
@@ -328,7 +326,7 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveLeft)
     // Set up meta and bulk data
     const unsigned spatial_dim = 2;
     MetaData meta_data(spatial_dim);
-    stk::mesh::unit_test::BulkDataTester mesh(meta_data, pm);
+    stk::unit_test_util::BulkDataTester mesh(meta_data, pm);
     int p_rank = mesh.parallel_rank();
     int p_size = mesh.parallel_size();
 
@@ -372,7 +370,7 @@ TEST(CEOME, TwoElemGiveAllEntitiesToOneProcAndCheckParts)
     // Set up meta and bulk data
     const unsigned spatial_dim = 2;
     MetaData meta(spatial_dim);
-    stk::mesh::unit_test::BulkDataTester mesh(meta, pm);
+    stk::unit_test_util::BulkDataTester mesh(meta, pm);
     int p_rank = mesh.parallel_rank();
     int p_size = mesh.parallel_size();
 
@@ -436,7 +434,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     // Set up meta and bulk data
     const unsigned spatial_dim = 2;
     MetaData meta_data(spatial_dim);
-    stk::mesh::unit_test::BulkDataTester mesh(meta_data, pm);
+    stk::unit_test_util::BulkDataTester mesh(meta_data, pm);
     int p_rank = mesh.parallel_rank();
     int p_size = mesh.parallel_size();
 
@@ -552,7 +550,7 @@ TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
 
     unsigned spatialDim = 2;
     stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::unit_test::BulkDataTester mesh(meta, pm);
+    stk::unit_test_util::BulkDataTester mesh(meta, pm);
 
     CEOUtils::fillMeshfor8Elem4ProcMoveTopAndTest(mesh, meta);
 
@@ -610,7 +608,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcRotate)
 
     unsigned spatialDim = 2;
     stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::unit_test::BulkDataTester mesh(meta, pm);
+    stk::unit_test_util::BulkDataTester mesh(meta, pm);
     const int p_rank = mesh.parallel_rank();
     CEOUtils::fillMeshfor4Elem4ProcRotateAndTest(mesh, meta);
 
@@ -690,7 +688,7 @@ TEST(CEOME, change_entity_owner_3Elem4Proc1Edge3D)
 
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::unit_test::BulkDataTester mesh(meta, pm);
+    stk::unit_test_util::BulkDataTester mesh(meta, pm);
     const int p_rank = mesh.parallel_rank();
     CEOUtils::fillMeshfor3Elem4Proc1Edge3DAndTest(mesh, meta);
 

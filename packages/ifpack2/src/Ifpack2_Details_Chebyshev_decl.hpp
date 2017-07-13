@@ -41,32 +41,6 @@
 //@HEADER
 */
 
-// ***********************************************************************
-//
-//      Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2004) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-
 #ifndef IFPACK2_DETAILS_CHEBYSHEV_DECL_HPP
 #define IFPACK2_DETAILS_CHEBYSHEV_DECL_HPP
 
@@ -445,6 +419,14 @@ private:
   /// Estimate for maximum eigenvalue of A.
   /// This is the value actually used by ifpackApplyImpl().
   ST lambdaMaxForApply_;
+
+  /// \brief Factor used to increase estimate of A's maximum eigenvalue.
+  ///
+  /// ifpackApplyImpl() multiplies lambdaMaxForApply_ (which see) by
+  /// this factor. The idea is to ensure that A's maximum eigenvalue
+  /// is less than the result. Otherwise the smoother could actually
+  /// magnify high-energy error modes.  The default value is 1.1.
+  MT boostFactor_;
   /// Estimate for minimum eigenvalue of A.
   /// This is the value actually used by ifpackApplyImpl().
   ST lambdaMinForApply_;
@@ -505,6 +487,14 @@ private:
 
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
+
+  /// \brief Output stream for debug output ONLY.
+  ///
+  /// This is ONLY valid if debug_ is true.
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+  //! Whether to print copious debug output.
+  bool debug_;
 
   //@}
   //! \name Computational helper methods
@@ -646,6 +636,19 @@ private:
                    const ST eigRatio,
                    const V& D_inv);
 
+  /// \brief Fill x with random initial guess for power method
+  ///
+  /// \param x [out] Initial guess vector; a domain Map vector of the
+  ///   matrix.
+  /// \param nonnegativeRealParts [in] Whether to force all entries of
+  ///   x (on output) to have nonnegative real parts.  Defaults to
+  ///   false (don't force).
+  ///
+  /// This is an implementation detail of powerMethod() below.  For a
+  /// justification of the second parameter, see Github Issues #64 and
+  /// #567.
+  void computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts = false) const;
+
   /// \brief Use the power method to estimate the maximum eigenvalue
   ///   of A*D_inv, given an initial guess vector x.
   ///
@@ -658,7 +661,7 @@ private:
   ///   A.  This method may use this Vector as scratch space.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
-  static ST
+  ST
   powerMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, V& x);
 
   /// \brief Use the power method to estimate the maximum eigenvalue
@@ -670,7 +673,7 @@ private:
   ///   method.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
-  static ST
+  ST
   powerMethod (const op_type& A, const V& D_inv, const int numIters);
 
   //! The maximum infinity norm of all the columns of X.

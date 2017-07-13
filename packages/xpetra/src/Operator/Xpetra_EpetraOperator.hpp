@@ -150,8 +150,8 @@ namespace Xpetra {
     //! @name Xpetra specific
     //@{
 
-    //! TpetraOperator constructor to wrap a Tpetra::Operator object
-    EpetraOperator(const Teuchos::RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &op) : op_(op) { } //TODO removed const
+    //! EpetraOperator constructor to wrap a Epetra_Operator object
+    EpetraOperator(const Teuchos::RCP<Epetra_Operator> &op) : op_(op) { } //TODO removed const
 
     //@}
 

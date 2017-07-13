@@ -51,7 +51,7 @@
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
-panzer_stk_classic::IOClosureModelFactory<EvalT>::
+panzer_stk::IOClosureModelFactory<EvalT>::
 IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT> > userCMF,
                       const Teuchos::RCP<STK_Interface> & mesh,
                       const Teuchos::ParameterList & outputList)
@@ -66,7 +66,7 @@ IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
-panzer_stk_classic::IOClosureModelFactory<EvalT>::
+panzer_stk::IOClosureModelFactory<EvalT>::
 IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT> > userCMF,
                       const Teuchos::RCP<STK_Interface> & mesh,
                       const std::map<std::string,std::vector<std::string> > & nodalFields,
@@ -87,7 +87,7 @@ IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
-void panzer_stk_classic::IOClosureModelFactory<EvalT>::
+void panzer_stk::IOClosureModelFactory<EvalT>::
 parseOutputList(const Teuchos::ParameterList & pl,
                 std::map<std::string,std::vector<std::string> > & blockIdToFields) const
 {
@@ -108,7 +108,7 @@ parseOutputList(const Teuchos::ParameterList & pl,
 // ********************************************************************
 template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
-panzer_stk_classic::IOClosureModelFactory<EvalT>::
+panzer_stk::IOClosureModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
 		   const Teuchos::ParameterList& models, 
 		   const panzer::FieldLayoutLibrary& fl,

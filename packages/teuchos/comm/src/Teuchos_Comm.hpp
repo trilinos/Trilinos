@@ -421,35 +421,6 @@ public:
     ,const Ordinal bytes, const char sendBuffer[], char globalReducts[]
     ) const = 0;
 
-  /** \brief Global reduction combined with a scatter.
-   *
-   * \param reductOp [in] The user-defined reduction operation that accepts
-   * char arrays.
-   *
-   * \param sendBytes [in] The number of entires in <tt>sendBuffer[]</tt>.
-   * This must be the same in each process.
-   *
-   * \param sendBuffer [in] Array (length <tt>sendBytes</tt>) of the data
-   * contributed from each process.
-   *
-   * \param recvCounts [in] Array (length <tt>this->getSize()</tt>) which
-   * gives the number of chars from the global reduction that will be received
-   * in each process.
-   *
-   * \param myGlobalReducts [out] Array (length
-   * <tt>blockSize*recvCounts[rank]</tt>) of the global reductions gathered in
-   * this process.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>sendBytes == sum(recvCounts[i],i=0...this->getSize()-1)</tt>
-   * </ul>
-   */
-  TEUCHOS_DEPRECATED virtual void reduceAllAndScatter(
-    const ValueTypeReductionOp<Ordinal,char> &reductOp
-    ,const Ordinal sendBytes, const char sendBuffer[]
-    ,const Ordinal recvCounts[], char myGlobalReducts[]
-    ) const = 0;
-
   /** \brief Scan reduction.
    *
    * \param reductOp [in] The user-defined reduction operation

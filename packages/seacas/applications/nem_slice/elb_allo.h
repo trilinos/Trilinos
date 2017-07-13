@@ -36,6 +36,6 @@
 #ifndef _ELB_ALLO_CONST_H_
 #define _ELB_ALLO_CONST_H_
 
-void *array_alloc(int num_dim, ...);
+void *array_alloc(int numdim, ...);
 
 #endif /* _ELB_ALLO_CONST_H_ */

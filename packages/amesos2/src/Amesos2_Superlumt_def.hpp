@@ -101,6 +101,7 @@ namespace Amesos2 {
     , nzvals_()                 // initialize to empty arrays
     , rowind_()
     , colptr_()
+    , is_contiguous_(true)
   {
     Teuchos::RCP<Teuchos::ParameterList> default_params
       = Teuchos::parameterList( *(this->getValidParameters()) );
@@ -344,10 +345,18 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        slu_type>::do_get(B, bxvals_(),
-                          ldbx_,
-                          ROOTED);
+      if ( is_contiguous_ == true ) {
+        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+          slu_type>::do_get(B, bxvals_(),
+              ldbx_,
+              ROOTED, this->rowIndexBase_);
+      }
+      else {
+        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+          slu_type>::do_get(B, bxvals_(),
+              ldbx_,
+              NON_CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      }
     }
 
     int info = 0; // returned error code (0 = success)
@@ -419,8 +428,14 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, ROOTED);
+      if ( is_contiguous_ == true ) {
+        Util::put_1d_data_helper<
+          MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, ROOTED);
+      }
+      else {
+        Util::put_1d_data_helper<
+          MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, NON_CONTIGUOUS_AND_ROOTED);
+      }
     }
 
     return(info);
@@ -485,6 +500,10 @@ namespace Amesos2 {
 
     // TODO: until we support retrieving col/row permutations from the user
     data_.options.usepr = SLUMT::NO;
+
+    if( parameterList->isParameter("IsContiguous") ){
+      is_contiguous_ = parameterList->get<bool>("IsContiguous");
+    }
   }
 
 
@@ -567,6 +586,8 @@ namespace Amesos2 {
 
       pl->set("PrintStat", false, "Specifies whether to print the solver's statistics");
 
+      pl->set("IsContiguous", true, "Whether GIDs contiguous");
+
       valid_params = pl;
     }
 
@@ -605,10 +626,18 @@ namespace Amesos2 {
 #endif
 
       // Use compressed-column store for SuperLU_MT
-      Util::get_ccs_helper<
-      MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
-                                                      nzvals_, rowind_, colptr_,
-                                                      nnz_ret, ROOTED, ARBITRARY);
+      if ( is_contiguous_ == true ) {
+        Util::get_ccs_helper<
+          MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
+              nzvals_, rowind_, colptr_,
+              nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
+      }
+      else {
+        Util::get_ccs_helper<
+          MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
+              nzvals_, rowind_, colptr_,
+              nnz_ret, NON_CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
+      }
     }
 
     if( this->root_ ){

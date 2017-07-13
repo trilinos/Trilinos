@@ -130,6 +130,9 @@ namespace panzer {
 
     virtual std::string getType() const;
 
+    //! Set the list of tangent parameter names
+    virtual void setTangentParamNames(const std::vector<std::string>& tangent_param_names);
+
     /** Used to get the DOFs that have been added to the equation set. This can be used at anytime, however
       * it returns only DOFs added using the <code>addDOF</code> method. Note that if <code>setupDOFs</code>
       * has been called, the <code>getProvidedDOFs</code> should be used instead (it also returns more information
@@ -374,9 +377,8 @@ namespace panzer {
     //! Maps the dof name into a DOFDescriptor.  Should be private, but is protected so that the aux equaiton sets can access it.
     std::map<std::string,DOFDescriptor> m_provided_dofs_desc;
 
-    // Tangent parameter names for setting up tangent fields -- will be initialized in derived classes if
-    // equation set supports tangent vectors within tangent evaluation type
-    std::vector<std::string> tangentParamNames;
+    // Tangent parameter names for setting up tangent fields
+    std::vector<std::string> m_tangent_param_names;
 
   private:
 

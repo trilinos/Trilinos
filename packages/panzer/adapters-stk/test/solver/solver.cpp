@@ -53,8 +53,6 @@ using Teuchos::rcp;
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -82,8 +80,6 @@ using Teuchos::rcp;
 
 #include <cstdio> // for get char
 
-#include "Epetra_MpiComm.h"
-
 // Piro solver objects
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
@@ -106,7 +102,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
   
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
@@ -114,13 +109,13 @@ namespace panzer {
     pl->set("X Elements",20);
     pl->set("Y Elements",20);
     
-    panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
     mesh_factory.setParameterList(pl);
-    //RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer_stk_classic::STK_Interface> mesh = 
+    //RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = 
       mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
-    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
@@ -186,24 +181,28 @@ namespace panzer {
 
     // build worksets
     //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
       Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
@@ -283,8 +282,7 @@ namespace panzer {
 
     // Set output arguments to evalModel call
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
-    int num_g = outArgs.Ng(); // Number of *vectors* of responses
-    assert (num_g == 1);
+    assert(outArgs.Ng() == 1); // Number of *vectors* of responses
 
     //RCP<Thyra::MultiVectorBase<double> > dgdp =
     //Thyra::createMembers(*thyra_me->get_x_space(),numParams);
@@ -300,13 +298,13 @@ namespace panzer {
     //std::cout << *gx << std::endl;
 
     // Export solution to ghosted vector for exodus output
-    RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), gx);
-    Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap()));
-    RCP<Epetra_Import> importer = ep_lof->getGhostedImport();
+    RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap(0)), gx);
+    Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap(0)));
+    RCP<Epetra_Import> importer = ep_lof->getGhostedImport(0);
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 
-    panzer_stk_classic::write_solution_data(*dofManager,*mesh,ghosted_solution);
+    panzer_stk::write_solution_data(*dofManager,*mesh,ghosted_solution);
     mesh->writeToExodus("output.exo");
 
     // Test solution values on left, middle, and right side of mesh.
@@ -386,7 +384,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
@@ -394,13 +391,13 @@ namespace panzer {
     pl->set("X Elements",20);
     pl->set("Y Elements",20);
     
-    panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
     mesh_factory.setParameterList(pl);
-    //RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer_stk_classic::STK_Interface> mesh = 
+    //RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = 
       mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
-    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
@@ -467,24 +464,28 @@ namespace panzer {
    
     // build worksets
     //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
       Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
@@ -567,8 +568,7 @@ namespace panzer {
 
     // Set output arguments to evalModel call
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
-    int num_g = outArgs.Ng(); // Number of *vectors* of responses
-    assert (num_g == 1);
+    assert(outArgs.Ng() == 1); // Number of *vectors* of responses
     
     // Solution vector is returned as extra respons vector
     RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*thyra_me->get_x_space());
@@ -580,13 +580,13 @@ namespace panzer {
     //std::cout << *gx << std::endl;
 
     // Export solution to ghosted vector for exodus output
-    RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), gx);
-    Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap()));
-    RCP<Epetra_Import> importer = ep_lof->getGhostedImport();
+    RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap(0)), gx);
+    Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap(0)));
+    RCP<Epetra_Import> importer = ep_lof->getGhostedImport(0);
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 
-    panzer_stk_classic::write_solution_data(*dofManager,*mesh,ghosted_solution);
+    panzer_stk::write_solution_data(*dofManager,*mesh,ghosted_solution);
     
   }
 

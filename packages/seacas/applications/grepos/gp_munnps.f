@@ -138,7 +138,7 @@ C     a large array and see if ltnnps(inno+i) is indexed....
   120 CONTINUE
 
       CALL ORDIX (JNPS, IXNPS, NUMNPS, IDNPS, ISCR, IDNPS)
-      CALL ORDSTR(JNPS, IXNPS, NUMNPS, NAME, NAMSCR, NAME)
+      CALL ORDSTR(JNPS, IXNPS, NUMNPS, NAME, NAMSCR)
       CALL MOVINT (JNPS, NNX, NNNPS)
       NUMNPS = JNPS
       JNN = 1

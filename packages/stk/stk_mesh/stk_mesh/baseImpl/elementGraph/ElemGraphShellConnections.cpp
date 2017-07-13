@@ -13,10 +13,19 @@ bool is_other_element_shell(const stk::mesh::GraphEdge& graphEdge,
                             const std::vector<stk::topology>& elementTopologies,
                             const stk::mesh::ParallelInfoForGraphEdges& parGraphInfo)
 {
-    if(stk::mesh::impl::is_local_element(graphEdge.elem2))
-        return elementTopologies[graphEdge.elem2].is_shell();
+    stk::topology topo;
+    if(stk::mesh::impl::is_local_element(graphEdge.elem2()))
+        topo = elementTopologies[graphEdge.elem2()];
     else
-        return parGraphInfo.get_parallel_info_for_graph_edge(graphEdge).m_remote_element_toplogy.is_shell();
+        topo = parGraphInfo.get_parallel_info_for_graph_edge(graphEdge).m_remote_element_toplogy;
+    return stk::mesh::impl::is_shell_or_beam2(topo);
+}
+
+bool is_this_element_shell(const stk::mesh::GraphEdge& graphEdge,
+                          const std::vector<stk::topology>& elementTopologies)
+{
+    stk::topology topo = elementTopologies[graphEdge.elem1()];
+    return stk::mesh::impl::is_shell_or_beam2(topo);
 }
 
 class SideConnections
@@ -65,9 +74,9 @@ void SideConnections::record_side_connections_for_graph_edge(const stk::mesh::Gr
                                             const std::vector<stk::topology>& elementTopologies)
 {
     if(is_other_element_shell(graphEdge, elementTopologies, parGraphInfo))
-        foundShellViaSide[graphEdge.side1] = true;
+        foundShellViaSide[graphEdge.side1()] = true;
     else
-        foundSomethingUnShellLikeViaSide[graphEdge.side1] = true;
+        foundSomethingUnShellLikeViaSide[graphEdge.side1()] = true;
 }
 
 void SideConnections::fill_sides_connected_to_shell_and_nonshell(std::vector<int>& sidesConnectedToShellAndToNonShell)
@@ -86,8 +95,14 @@ bool SideConnections::does_side_have_both_connection_to_shell_and_to_nonshell(in
 void delete_non_shell_graph_edges(GraphInfo &graphInfo, const stk::mesh::impl::ElementSidePair &elementSidePair)
 {
     for(const stk::mesh::GraphEdge& graphEdge : graphInfo.graph.get_edges_for_element_side(elementSidePair.first, elementSidePair.second))
-        if(!is_other_element_shell(graphEdge, graphInfo.elementTopologies, graphInfo.parGraphInfo))
+    {
+        if(!is_this_element_shell(graphEdge, graphInfo.elementTopologies) && !is_other_element_shell(graphEdge, graphInfo.elementTopologies, graphInfo.parGraphInfo))
+        {
+            if(!impl::is_local_element(graphEdge.elem2()))
+                graphInfo.parGraphInfo.erase_parallel_info_for_graph_edge(graphEdge);
             graphInfo.graph.delete_edge(graphEdge);
+        }
+    }
 }
 
 void remove_graph_edges_blocked_by_shell(GraphInfo &graphInfo)

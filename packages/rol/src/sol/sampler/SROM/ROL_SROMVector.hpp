@@ -67,12 +67,13 @@ private:
   mutable Teuchos::RCP<Vector<Real> > dual_pvec_;
   mutable Teuchos::RCP<Vector<Real> > dual_avec_;
   mutable Teuchos::RCP<SROMVector<Real> > dual_vec_;
+  mutable bool isDualInitialized_;
 
 public:
 
   SROMVector(const Teuchos::RCP<ProbabilityVector<Real> >  &pvec,
              const Teuchos::RCP<AtomVector<Real> >         &avec)
-    : pvec_(pvec), avec_(avec) {
+    : pvec_(pvec), avec_(avec), isDualInitialized_(false) {
     dual_pvec_ = (pvec_->dual()).clone();
     dual_avec_ = (avec_->dual()).clone();
   }
@@ -120,11 +121,14 @@ public:
   }
 
   const Vector<Real> & dual(void) const {
+    if ( !isDualInitialized_ ) {
+      dual_vec_ = Teuchos::rcp(new SROMVector(
+                  Teuchos::rcp_static_cast<ProbabilityVector<Real> >(dual_pvec_),
+                  Teuchos::rcp_static_cast<AtomVector<Real> >(dual_avec_)) );
+      isDualInitialized_ = true;
+    }
     dual_pvec_->set(pvec_->dual());
     dual_avec_->set(avec_->dual());
-    dual_vec_ = Teuchos::rcp(new SROMVector(
-                  Teuchos::rcp_static_cast<ProbabilityVector<Real> >(dual_pvec_),
-                  Teuchos::rcp_static_cast<AtomVector<Real> >(dual_avec_)));
     return *dual_vec_;
   }
 

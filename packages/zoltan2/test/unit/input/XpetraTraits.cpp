@@ -188,6 +188,7 @@ int main(int argc, char *argv[])
   //   Tpetra::MultiVector
   /////////////////////////////////////////////////////////////////
 
+
   // XpetraTraits<Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> >
   {
     RCP<tmatrix_t> M;

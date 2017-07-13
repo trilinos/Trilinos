@@ -918,10 +918,6 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_Broadcast ) {        \
   Teuchos::RCP<const Teuchos::Comm<Ordinal> >                           \
     comm = Teuchos::DefaultComm<Ordinal>::getComm();                    \
                                                                         \
-  if (!Kokkos::HostSpace::execution_space::is_initialized())            \
-    Kokkos::HostSpace::execution_space::initialize();                   \
-  if (!Device::is_initialized())                                        \
-    Device::initialize();                                               \
                                                                         \
   int n = 7;                                                            \
   int p = 5;                                                            \
@@ -953,18 +949,11 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_Broadcast ) {        \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
                                                                         \
   success = success1 && success2;                                       \
-  Device::finalize();                                                   \
-  if (Kokkos::HostSpace::execution_space::is_initialized())             \
-    Kokkos::HostSpace::execution_space::finalize();                     \
 }                                                                       \
 TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_SumAll ) {           \
   Teuchos::RCP<const Teuchos::Comm<Ordinal> >                           \
     comm = Teuchos::DefaultComm<Ordinal>::getComm();                    \
                                                                         \
-  if (!Kokkos::HostSpace::execution_space::is_initialized())            \
-    Kokkos::HostSpace::execution_space::initialize();                   \
-  if (!Device::is_initialized())                                        \
-    Device::initialize();                                               \
                                                                         \
   int n = 7;                                                            \
   int p = 5;                                                            \
@@ -999,18 +988,11 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_SumAll ) {           \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
   success = success1 && success2;                                       \
                                                                         \
-  Device::finalize();                                                   \
-  if (Kokkos::HostSpace::execution_space::is_initialized())             \
-    Kokkos::HostSpace::execution_space::finalize();                     \
 }                                                                       \
 TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MaxAll ) {           \
   Teuchos::RCP<const Teuchos::Comm<Ordinal> >                           \
     comm = Teuchos::DefaultComm<Ordinal>::getComm();                    \
                                                                         \
-  if (!Kokkos::HostSpace::execution_space::is_initialized())            \
-    Kokkos::HostSpace::execution_space::initialize();                   \
-  if (!Device::is_initialized())                                        \
-    Device::initialize();                                               \
                                                                         \
   int n = 7;                                                            \
   int p = 5;                                                            \
@@ -1046,18 +1028,11 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MaxAll ) {           \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
   success = success1 && success2;                                       \
                                                                         \
-  Device::finalize();                                                   \
-  if (Kokkos::HostSpace::execution_space::is_initialized())             \
-    Kokkos::HostSpace::execution_space::finalize();                     \
 }                                                                       \
 TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
   Teuchos::RCP<const Teuchos::Comm<Ordinal> >                           \
     comm = Teuchos::DefaultComm<Ordinal>::getComm();                    \
                                                                         \
-  if (!Kokkos::HostSpace::execution_space::is_initialized())            \
-    Kokkos::HostSpace::execution_space::initialize();                   \
-  if (!Device::is_initialized())                                        \
-    Device::initialize();                                               \
                                                                         \
   int n = 7;                                                            \
   int p = 5;                                                            \
@@ -1092,9 +1067,6 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
   success = success1 && success2;                                       \
                                                                         \
-  Device::finalize();                                                   \
-  if (Kokkos::HostSpace::execution_space::is_initialized())             \
-    Kokkos::HostSpace::execution_space::finalize();                     \
 }
 
 #ifdef KOKKOS_HAVE_OPENMP
@@ -1142,5 +1114,4 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
 #endif
 
 #define FAD_COMM_TESTS(FadType, FAD)        \
-  FAD_BASE_COMM_TESTS(FadType, FAD)         \
-  FAD_KOKKOS_COMM_TESTS(FadType, FAD)
+  FAD_BASE_COMM_TESTS(FadType, FAD)

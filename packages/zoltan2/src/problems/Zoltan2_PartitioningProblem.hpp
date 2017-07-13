@@ -58,7 +58,10 @@
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>
 #include <Zoltan2_MachineRepresentation.hpp>
+#include <Zoltan2_AlgSerialGreedy.hpp>
+#ifdef ZOLTAN2_TASKMAPPING_MOVE
 #include <Zoltan2_TaskMapping.hpp>
+#endif
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -109,54 +112,34 @@ public:
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-#ifdef HAVE_ZOLTAN2_MPI
-  typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
-  /*! \brief Constructor where MPI communicator can be specified
-   */
-  PartitioningProblem(Adapter *A, ParameterList *p, MPI_Comm comm):
-      Problem<Adapter>(A,p,comm), solution_(),
-      problemComm_(), problemCommConst_(),
+  //! \brief Constructor where Teuchos communicator is specified
+  PartitioningProblem(Adapter *A, ParameterList *p,
+                      const RCP<const Teuchos::Comm<int> > &comm):
+      Problem<Adapter>(A,p,comm), 
+      solution_(),
       inputType_(InvalidAdapterType),
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(), partIds_(), partSizes_(),
-      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false),
-      metricsRequested_(false), metrics_(), graphMetrics_()
+      graphFlags_(), idFlags_(), coordFlags_(),
+      algName_(), numberOfWeights_(), partIds_(), partSizes_(),
+      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
   }
+
+#ifdef HAVE_ZOLTAN2_MPI
+  /*! \brief Constructor where MPI communicator can be specified
+   */
+  PartitioningProblem(Adapter *A, ParameterList *p, MPI_Comm mpicomm):
+  PartitioningProblem(A, p, 
+                      rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
+                                            Teuchos::opaqueWrapper(mpicomm))))
+  {}
 #endif
 
   //! \brief Constructor where communicator is the Teuchos default.
   PartitioningProblem(Adapter *A, ParameterList *p):
-      Problem<Adapter>(A,p), solution_(),
-      problemComm_(), problemCommConst_(),
-      inputType_(InvalidAdapterType),
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(),
-      partIds_(), partSizes_(), numberOfCriteria_(),
-      levelNumberParts_(), hierarchical_(false),
-      metricsRequested_(false), metrics_(), graphMetrics_()
-  {
-    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
-    initializeProblem();
-  }
-
-  //! \brief Constructor where Teuchos communicator is specified
-  PartitioningProblem(Adapter *A, ParameterList *p,
-                      RCP<const Teuchos::Comm<int> > &comm):
-      Problem<Adapter>(A,p,comm), solution_(),
-      problemComm_(), problemCommConst_(),
-      inputType_(InvalidAdapterType),
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(),
-      partIds_(), partSizes_(), numberOfCriteria_(),
-      levelNumberParts_(), hierarchical_(false),
-      metricsRequested_(false), metrics_(), graphMetrics_()
-  {
-    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
-    initializeProblem();
-  }
+  PartitioningProblem(A, p, Teuchos::DefaultComm<int>::getComm()) 
+  {}
 
   /*! \brief Destructor
    */
@@ -179,7 +162,7 @@ public:
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
 
-  void solve(bool updateInputData=true );
+  void solve(bool updateInputData=true);
 
   //!  \brief Get the solution to the problem.
   //
@@ -187,72 +170,6 @@ public:
 
   const PartitioningSolution<Adapter> &getSolution() {
     return *(solution_.getRawPtr());
-  };
-
-  /*! \brief Returns the imbalance of the solution.
-   *   \param idx If there are multiple weights per object,
-   *      specify the index for which the imbalance
-   *      is desired, ranging from zero to one less then
-   *     number of weights per object.
-   *   Imbalance was only computed if user requested
-   *   metrics with a parameter.
-   */
-  const scalar_t getWeightImbalance(int idx=0) const {
-    scalar_t imb = 0;
-    if (!metrics_.is_null())
-      metrics_->getWeightImbalance(imb, idx);
-
-    return imb;
-  }
-
-  /*! \brief Get the array of metrics
-   *   Metrics were only computed if user requested
-   *   metrics with a parameter.
-   */
-  ArrayRCP<const MetricValues<scalar_t> > getMetrics() const {
-   if (metrics_.is_null()){
-      ArrayRCP<const MetricValues<scalar_t> > emptyMetrics;
-      return emptyMetrics;
-    }
-    else
-      return metrics_->getMetrics();
-  }
-
-  /*! \brief Get the array of graphMetrics
-   *   Graph metrics were only computed if user requested
-   *   graph metrics with a parameter.
-   */
-  ArrayRCP<const GraphMetricValues<scalar_t> > getGraphMetrics() const {
-   if (graphMetrics_.is_null()){
-      ArrayRCP<const GraphMetricValues<scalar_t> > emptyMetrics;
-      return emptyMetrics;
-    }
-    else
-      return graphMetrics_->getGraphMetrics();
-  }
-
-  /*! \brief Print the array of metrics
-   *   \param os the output stream for the report.
-   *   Metrics were only computed if user requested
-   *   metrics with a parameter.
-   */
-  void printMetrics(std::ostream &os) const {
-    if (metrics_.is_null())
-      os << "No metrics available." << std::endl;
-    else
-      metrics_->printMetrics(os);
-  };
-
-  /*! \brief Print the array of metrics
-   *   \param os the output stream for the report.
-   *   Metrics were only computed if user requested
-   *   metrics with a parameter.
-   */
-  void printGraphMetrics(std::ostream &os) const {
-    if (graphMetrics_.is_null())
-      os << "No metrics available." << std::endl;
-    else
-      graphMetrics_->printGraphMetrics(os);
   };
 
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
@@ -338,20 +255,121 @@ public:
 /*
   void setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine);
 */
-  /*! \brief Reset the list of parameters
-   */
-  void resetParameters(ParameterList *params)
-  {
-    Problem<Adapter>::resetParameters(params);  // creates new environment
-  }
 
-  /*! \brief Get the current Environment.
-   *   Useful for testing.
-   */
-
-  const RCP<const Environment> & getEnvironment() const
+  /*! \brief Set up validators specific to this Problem
+  */
+  static void getValidParameters(ParameterList & pl)
   {
-    return this->envConst_;
+    Zoltan2_AlgMJ<Adapter>::getValidParameters(pl);
+    AlgPuLP<Adapter>::getValidParameters(pl);
+    AlgPTScotch<Adapter>::getValidParameters(pl);
+    AlgSerialGreedy<Adapter>::getValidParameters(pl);
+    AlgForTestingOnly<Adapter>::getValidParameters(pl);
+
+    // This set up does not use tuple because we didn't have constructors
+    // that took that many elements - Tuple will need to be modified and I
+    // didn't want to have low level changes with this particular refactor
+    // TO DO: Add more Tuple constructors and then redo this code to be
+    //  Teuchos::tuple<std::string> algorithm_names( "rcb", "multijagged" ... );
+    Array<std::string> algorithm_names(17);
+    algorithm_names[0] = "rcb";
+    algorithm_names[1] = "multijagged";
+    algorithm_names[2] = "rib";
+    algorithm_names[3] = "hsfc";
+    algorithm_names[4] = "patoh";
+    algorithm_names[5] = "phg";
+    algorithm_names[6] = "metis";
+    algorithm_names[7] = "parmetis";
+    algorithm_names[8] = "pulp";
+    algorithm_names[9] = "parma";
+    algorithm_names[10] = "scotch";
+    algorithm_names[11] = "ptscotch";
+    algorithm_names[12] = "block";
+    algorithm_names[13] = "cyclic";
+    algorithm_names[14] = "random";
+    algorithm_names[15] = "zoltan";
+    algorithm_names[16] = "forTestingOnly";
+    RCP<Teuchos::StringValidator> algorithm_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator( algorithm_names ));
+    pl.set("algorithm", "random", "partitioning algorithm",
+      algorithm_Validator);
+
+    // bool parameter
+    pl.set("keep_partition_tree", false, "If true, will keep partition tree",
+      Environment::getBoolValidator());
+
+    // bool parameter
+    pl.set("rectilinear", false, "If true, then when a cut is made, all of the "
+      "dots located on the cut are moved to the same side of the cut. The "
+      "resulting regions are then rectilinear. The resulting load balance may "
+      "not be as good as when the group of dots is split by the cut. ",
+      Environment::getBoolValidator());
+
+    RCP<Teuchos::StringValidator> partitioning_objective_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+       Teuchos::tuple<std::string>( "balance_object_count",
+         "balance_object_weight", "multicriteria_minimize_total_weight",
+         "multicriteria_minimize_maximum_weight",
+         "multicriteria_balance_total_maximum", "minimize_cut_edge_count",
+         "minimize_cut_edge_weight", "minimize_neighboring_parts",
+         "minimize_boundary_vertices" )));
+    pl.set("partitioning_objective", "balance_object_weight",
+      "objective of partitioning", partitioning_objective_Validator);
+
+    pl.set("imbalance_tolerance", 1.1, "imbalance tolerance, ratio of "
+      "maximum load over average load", Environment::getAnyDoubleValidator());
+
+    // num_global_parts >= 1
+    RCP<Teuchos::EnhancedNumberValidator<int>> num_global_parts_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(
+        1, Teuchos::EnhancedNumberTraits<int>::max()) ); // no maximum
+    pl.set("num_global_parts", 1, "global number of parts to compute "
+      "(0 means use the number of processes)", num_global_parts_Validator);
+
+    // num_local_parts >= 0
+    RCP<Teuchos::EnhancedNumberValidator<int>> num_local_parts_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(
+        0, Teuchos::EnhancedNumberTraits<int>::max()) ); // no maximum
+    pl.set("num_local_parts", 0, "number of parts to compute for this "
+      "process (num_global_parts == sum of all num_local_parts)", 
+      num_local_parts_Validator);
+
+    RCP<Teuchos::StringValidator> partitioning_approach_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "partition", "repartition",
+          "maximize_overlap" )));
+    pl.set("partitioning_approach", "partition", "Partition from scratch, "
+      "partition incrementally from current partition, of partition from "
+      "scratch but maximize overlap  with the current partition",
+      partitioning_approach_Validator);
+
+    RCP<Teuchos::StringValidator> objects_to_partition_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "matrix_rows", "matrix_columns",
+          "matrix_nonzeros", "mesh_elements", "mesh_nodes", "graph_edges",
+        "graph_vertices", "coordinates", "identifiers" )));
+    pl.set("objects_to_partition", "graph_vertices", "Objects to be partitioned",
+      objects_to_partition_Validator);
+
+    RCP<Teuchos::StringValidator> model_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "hypergraph", "graph",
+          "geometry", "ids" )));
+    pl.set("model", "graph", "This is a low level parameter. Normally the "
+      "library will choose a computational model based on the algorithm or "
+      "objective specified by the user.", model_Validator);
+
+    // bool parameter
+    pl.set("remap_parts", false, "remap part numbers to minimize migration "
+      "between old and new partitions", Environment::getBoolValidator() );
+
+    pl.set("mapping_type", -1, "Mapping of solution to the processors. -1 No"
+      " Mapping, 0 coordinate mapping.", Environment::getAnyIntValidator());
+
+    RCP<Teuchos::EnhancedNumberValidator<int>> ghost_layers_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(1, 10, 1, 0) );
+    pl.set("ghost_layers", 2, "number of layers for ghosting used in "
+      "hypergraph ghost method", ghost_layers_Validator);
   }
 
 private:
@@ -360,11 +378,9 @@ private:
   void createPartitioningProblem(bool newData);
 
   RCP<PartitioningSolution<Adapter> > solution_;
-
-  RCP<MachineRepresentation <typename Adapter::base_adapter_t::scalar_t>  > machine_;
-
-  RCP<Comm<int> > problemComm_;
-  RCP<const Comm<int> > problemCommConst_;
+#ifdef ZOLTAN2_TASKMAPPING_MOVE
+  RCP<MachineRepresentation<scalar_t,part_t> > machine_;
+#endif
 
   BaseAdapterType inputType_;
 
@@ -395,12 +411,6 @@ private:
 
   ArrayRCP<int> levelNumberParts_;
   bool hierarchical_;
-
-  // Did the user request metrics?
-
-  bool metricsRequested_;
-  RCP<const EvaluatePartition<Adapter> > metrics_;
-  RCP<const EvaluatePartition<Adapter> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -435,10 +445,10 @@ template <typename Adapter>
 
   // Create a copy of the user's communicator.
 
-  problemComm_ = this->comm_->duplicate();
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
-  machine_ = RCP <Zoltan2::MachineRepresentation<typename Adapter::scalar_t> >(new Zoltan2::MachineRepresentation<typename Adapter::scalar_t>(problemComm_));
+#ifdef ZOLTAN2_TASKMAPPING_MOVE
+  machine_ = RCP<MachineRepresentation<scalar_t,part_t> >(
+                 new MachineRepresentation<scalar_t,part_t>(*(this->comm_)));
+#endif
 
   // Number of criteria is number of user supplied weights if non-zero.
   // Otherwise it is 1 and uniform weight is implied.
@@ -460,7 +470,7 @@ template <typename Adapter>
 
   if (this->env_->getDebugLevel() >= DETAILED_STATUS){
     std::ostringstream msg;
-    msg << problemComm_->getSize() << " procs,"
+    msg << this->comm_->getSize() << " procs,"
       << numberOfWeights_ << " user-defined weights\n";
     this->env_->debug(DETAILED_STATUS, msg.str());
   }
@@ -535,45 +545,63 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   try {
     if (algName_ == std::string("multijagged")) {
       this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
-                                              problemComm_,
+                                              this->comm_,
                                               this->coordinateModel_));
     }
     else if (algName_ == std::string("zoltan")) {
       this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
-                                           problemComm_,
+                                           this->comm_,
                                            this->baseInputAdapter_));
     }
     else if (algName_ == std::string("parma")) {
       this->algorithm_ = rcp(new AlgParMA<Adapter>(this->envConst_,
-                                           problemComm_,
+                                           this->comm_,
                                            this->baseInputAdapter_));
     }
     else if (algName_ == std::string("scotch")) {
       this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
-                                            problemComm_,
-                                            this->graphModel_));
+                                            this->comm_,
+                                            this->baseInputAdapter_));
     }
     else if (algName_ == std::string("parmetis")) {
       this->algorithm_ = rcp(new AlgParMETIS<Adapter>(this->envConst_,
-                                            problemComm_,
+                                            this->comm_,
                                             this->graphModel_));
     }
     else if (algName_ == std::string("pulp")) {
       this->algorithm_ = rcp(new AlgPuLP<Adapter>(this->envConst_,
-                                            problemComm_,
+                                            this->comm_,
                                             this->baseInputAdapter_));
     }
     else if (algName_ == std::string("block")) {
       this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
-                                         problemComm_, this->identifierModel_));
+                                         this->comm_, this->identifierModel_));
+    }
+    else if (algName_ == std::string("phg") ||
+             algName_ == std::string("patoh")) {
+      // phg and patoh provided through Zoltan
+      Teuchos::ParameterList &pl = this->env_->getParametersNonConst();
+      Teuchos::ParameterList &zparams = pl.sublist("zoltan_parameters",false);
+      if (numberOfWeights_ > 0) {
+        char strval[10];
+        sprintf(strval, "%d", numberOfWeights_);
+        zparams.set("OBJ_WEIGHT_DIM", strval);
+      }
+      zparams.set("LB_METHOD", algName_.c_str());
+      zparams.set("LB_APPROACH", "PARTITION"); 
+      algName_ = std::string("zoltan");
+
+      this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
+                                           this->comm_,
+                                           this->baseInputAdapter_));
     }
     else if (algName_ == std::string("forTestingOnly")) {
       this->algorithm_ = rcp(new AlgForTestingOnly<Adapter>(this->envConst_,
-                                           problemComm_,
+                                           this->comm_,
                                            this->baseInputAdapter_));
     }
     // else if (algName_ == std::string("rcb")) {
-    //  this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_,problemComm_,
+    //  this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_,this->comm_,
     //                                             this->coordinateModel_));
     // }
     else {
@@ -588,7 +616,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   try{
     soln = new PartitioningSolution<Adapter>(
-      this->envConst_, problemCommConst_, numberOfWeights_,
+      this->envConst_, this->comm_, numberOfWeights_,
       partIds_.view(0, numberOfCriteria_),
       partSizes_.view(0, numberOfCriteria_), this->algorithm_);
   }
@@ -614,13 +642,14 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   }
   //if mapping is 0 -- coordinate mapping
 
+#if ZOLTAN2_TASKMAPPING_MOVE
   if (mapping_type == 0){
 
     //part_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
 
     Zoltan2::CoordinateTaskMapper <Adapter, part_t> *ctm=
                   new Zoltan2::CoordinateTaskMapper<Adapter,part_t>(
-                          problemComm_.getRawPtr(),
+                          this->comm_.getRawPtr(),
                           machine_.getRawPtr(),
                           this->coordinateModel_.getRawPtr(),
                           solution_.getRawPtr(),
@@ -628,48 +657,31 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                           //,task_communication_xadj,
                           //task_communication_adj
                           );
+
+    // KDD  For now, we would need to re-map the part numbers in the solution.
+    // KDD  I suspect we'll later need to distinguish between part numbers and 
+    // KDD  process numbers to provide separation between partitioning and
+    // KDD  mapping.  For example, does this approach here assume #parts == #procs?
+    // KDD  If we map k tasks to p processes with k > p, do we effectively reduce
+    // KDD  the number of tasks (parts) in the solution?
+
+#ifdef KDD_READY
+    const part_t *oldParts = solution_->getPartListView();
+    size_t nLocal = ia->getNumLocalIds();
+    for (size_t i = 0; i < nLocal; i++) {
+      // kind of cheating since oldParts is a view; probably want an interface in solution 
+      // for resetting the PartList rather than hacking in like this.
+      oldParts[i] = ctm->getAssignedProcForTask(oldParts[i]);  
+    }
+#endif 
+
     //for now just delete the object.
     delete ctm;
   }
+#endif
+
   else if (mapping_type == 1){
     //if mapping is 1 -- graph mapping
-  }
-
-  if (metricsRequested_){
-    typedef EvaluatePartition<Adapter> psq_t;
-
-    psq_t *quality = NULL;
-
-    if (inputType_ == GraphAdapterType ||
-        inputType_ == MatrixAdapterType ||
-        inputType_ == MeshAdapterType){
-
-      try{
-        quality=new psq_t(this->envConst_, problemCommConst_,
-			  this->baseInputAdapter_,&this->getSolution(),false);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      psq_t *graphQuality = NULL;
-
-      try{
-        graphQuality = new psq_t(this->envConst_, problemCommConst_,
-                                 this->baseInputAdapter_, &this->getSolution(),
-                                 this->graphModel_);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      graphMetrics_ = rcp(graphQuality);
-    } else {
-
-      try{
-        quality=new psq_t(this->envConst_, problemCommConst_,
-			  this->baseInputAdapter_,&this->getSolution(),false);
-      }
-      Z2_FORWARD_EXCEPTIONS
-    }
-
-    metrics_ = rcp(quality);
   }
 
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
@@ -735,19 +747,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   std::string defString("default");
 
-  // Did the user ask for computation of quality metrics?
-
-  int yesNo=0;
-  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("compute_metrics");
-  if (pe){
-    yesNo = pe->getValue<int>(&yesNo);
-    metricsRequested_ = true;
-  }
-
   // Did the user specify a computational model?
 
   std::string model(defString);
-  pe = pl.getEntryPtr("model");
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("model");
   if (pe)
     model = pe->getValue<std::string>(&model);
 
@@ -808,17 +811,19 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
     }
     else if (algorithm == std::string("metis") ||
-             algorithm == std::string("parmetis") ||
-             algorithm == std::string("scotch") ||
-             algorithm == std::string("ptscotch"))
+             algorithm == std::string("parmetis"))
     {
 
       //modelType_ = GraphModelType;
       modelAvail_[GraphModelType]=true;
-
       algName_ = algorithm;
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
+    }
+    else if (algorithm == std::string("scotch") ||
+             algorithm == std::string("ptscotch")) // BDD: Don't construct graph for scotch here
+    {
+      algName_ = algorithm;
     }
     else if (algorithm == std::string("pulp"))
     {
@@ -859,7 +864,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = HypergraphModelType;
       modelAvail_[HypergraphModelType]=true;
 
-      if (problemComm_->getSize() > 1)
+      if (this->comm_->getSize() > 1)
         algName_ = std::string("phg");
       else
         algName_ = std::string("patoh");
@@ -870,15 +875,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[GraphModelType]=true;
 
 #ifdef HAVE_ZOLTAN2_SCOTCH
-      if (problemComm_->getSize() > 1)
+      modelAvail_[GraphModelType]=false; // graph constructed by AlgPTScotch
+      if (this->comm_->getSize() > 1)
         algName_ = std::string("ptscotch");
       else
         algName_ = std::string("scotch");
-      removeSelfEdges = true;
-      needConsecutiveGlobalIds = true;
 #else
 #ifdef HAVE_ZOLTAN2_PARMETIS
-      if (problemComm_->getSize() > 1)
+      if (this->comm_->getSize() > 1)
         algName_ = std::string("parmetis");
       else
         algName_ = std::string("metis");
@@ -887,12 +891,12 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 #else
 #ifdef HAVE_ZOLTAN2_PULP
       // TODO: XtraPuLP
-      //if (problemComm_->getSize() > 1)
+      //if (this->comm_->getSize() > 1)
       //  algName_ = std::string("xtrapulp");
       //else
       algName_ = std::string("pulp");
 #else
-      if (problemComm_->getSize() > 1)
+      if (this->comm_->getSize() > 1)
         algName_ = std::string("phg");
       else
         algName_ = std::string("patoh");
@@ -932,7 +936,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = HypergraphModelType;
       modelAvail_[HypergraphModelType]=true;
 
-      if (problemComm_->getSize() > 1)
+      if (this->comm_->getSize() > 1)
         algName_ = std::string("phg");
       else
         algName_ = std::string("patoh");
@@ -943,7 +947,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = GraphModelType;
       modelAvail_[GraphModelType]=true;
 
-      if (problemComm_->getSize() > 1)
+      if (this->comm_->getSize() > 1)
         algName_ = std::string("phg");
       else
         algName_ = std::string("patoh");
@@ -1024,10 +1028,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         graphFlags_.set(SYMMETRIZE_INPUT_BIPARTITE);
     }
 
-    int sgParameter = 0;
+    bool sgParameter = false;
     pe = pl.getEntryPtr("subset_graph");
     if (pe)
-      sgParameter = pe->getValue<int>(&sgParameter);
+      sgParameter = pe->getValue(&sgParameter);
 
     if (sgParameter == 1)
         graphFlags_.set(BUILD_SUBSET_GRAPH);
@@ -1101,23 +1105,23 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     {
       this->env_->debug(DETAILED_STATUS, "    building graph model");
       this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-            this->baseInputAdapter_, this->envConst_, problemComm_,
+            this->baseInputAdapter_, this->envConst_, this->comm_,
             graphFlags_));
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
             this->graphModel_);
-    }
-
+    } 
     if(modelAvail_[HypergraphModelType]==true)
     {
-      std::cout << "Hypergraph model not implemented yet..." << std::endl;
+      //KDD USING ZOLTAN FOR HYPERGRAPH FOR NOW
+      //KDD std::cout << "Hypergraph model not implemented yet..." << std::endl;
     }
 
     if(modelAvail_[CoordinateModelType]==true)
     {
       this->env_->debug(DETAILED_STATUS, "    building coordinate model");
       this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
-            this->baseInputAdapter_, this->envConst_, problemComm_,
+            this->baseInputAdapter_, this->envConst_, this->comm_,
             coordFlags_));
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
@@ -1128,7 +1132,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     {
       this->env_->debug(DETAILED_STATUS, "    building identifier model");
       this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-            this->baseInputAdapter_, this->envConst_, problemComm_,
+            this->baseInputAdapter_, this->envConst_, this->comm_,
             idFlags_));
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(

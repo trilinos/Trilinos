@@ -3,12 +3,11 @@
 # TrilinosCreateClientTemplateHeaders.cmake
 SET(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} "${Trilinos_SOURCE_DIR}/cmake")
 
-
 MACRO(TRILINOS_DISABLE_PACKAGE_REQUIRING_CXX11  CXX11_PACKAGE_NAME_IN)
   IF ("${${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN}}" STREQUAL "")
     MESSAGE(
       "\n***"
-      "\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN}=OFF"
+      "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN}=OFF"
       " because ${PROJECT_NAME}_ENABLE_CXX11='${${PROJECT_NAME}_ENABLE_CXX11}'!"
       "\n***\n"
       )
@@ -27,16 +26,46 @@ MACRO(TRILINOS_DISABLE_PACKAGE_REQUIRING_CXX11  CXX11_PACKAGE_NAME_IN)
 ENDMACRO()
 
 
-
 MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
 
   #MESSAGE("TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS got called!")
 
   SET(TPL_ENABLE_MPI OFF CACHE BOOL "Enable MPI support.")
 
+  #
+  # Set options for global enable/disable of float and complex
+  #
+
+  SET(Trilinos_ENABLE_FLOAT  OFF  CACHE  BOOL
+    "Enable the float scalar type in all Trilinos packages by default.")
+
+  SET(Trilinos_ENABLE_COMPLEX  OFF  CACHE  BOOL
+    "Enable std::complex<T> scalar types in all Trilinos packages by default.")
+
+  IF (Trilinos_ENABLE_COMPLEX  AND  Trilinos_ENABLE_FLOAT)
+    SET(Trilinos_ENABLE_COMPLEX_FLOAT_DEFAULT  ON)
+  ELSE()
+    SET(Trilinos_ENABLE_COMPLEX_FLOAT_DEFAULT  OFF)
+  ENDIF()
+  SET(Trilinos_ENABLE_COMPLEX_FLOAT  ${Trilinos_ENABLE_COMPLEX_FLOAT_DEFAULT}
+    CACHE  BOOL
+    "Enable std::complex<float> scalar types in all Trilinos packages by default.")
+
+  SET(Trilinos_ENABLE_COMPLEX_DOUBLE  ${Trilinos_ENABLE_COMPLEX}
+    CACHE  BOOL
+    "Enable std::complex<double> scalar types in all Trilinos packages by default.")
+
+  #
+  # Trilinos Data Dir?  Is this still being used anywhere?
+  #
+
   ADVANCED_SET(Trilinos_DATA_DIR  NOTFOUND
     CACHE PATH
     "Path TrilinosData directory to find more tests and other stuff" )
+
+  #
+  # Put in disables based on various criteria
+  #
     
   IF (NOT ${PROJECT_NAME}_ENABLE_CXX11)
     TRILINOS_DISABLE_PACKAGE_REQUIRING_CXX11("Kokkos")
@@ -46,7 +75,7 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
     MESSAGE(
       "\n***"
-      "\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_ForTrilinos=OFF"
+      "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_ForTrilinos=OFF"
       " because ${PROJECT_NAME}_ENABLE_Fortran=OFF!"
       "\n***\n"
       )
@@ -56,7 +85,7 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   IF ("${${PROJECT_NAME}_ENABLE_PyTrilinos}" STREQUAL "" AND NOT BUILD_SHARED_LIBS)
     MESSAGE(
       "\n***"
-      "\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_PyTrilinos=OFF"
+      "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_PyTrilinos=OFF"
       " because BUILD_SHARED_LIBS=OFF!"
       "\n***\n"
       )
@@ -64,8 +93,8 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   ENDIF()
 
   IF (NOT EXISTS "${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota")
-    MESSAGE("-- " "  Setting ${PROJECT_NAME}_ENABLE_TriKota=OFF"
-      " because '${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota' does not exit!")
+    MESSAGE("-- " "Setting ${PROJECT_NAME}_ENABLE_TriKota=OFF"
+      " because '${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota' does not exist!")
     SET(${PROJECT_NAME}_ENABLE_TriKota OFF)
   ENDIF()
     

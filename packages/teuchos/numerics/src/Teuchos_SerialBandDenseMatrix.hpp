@@ -448,6 +448,8 @@ protected:
 template<typename OrdinalType, typename ScalarType>
 SerialBandDenseMatrix<OrdinalType, ScalarType>::SerialBandDenseMatrix ()
   : CompObject (),
+    Object(),
+    BLAS<OrdinalType,ScalarType>(),
     numRows_ (0),
     numCols_ (0),
     stride_ (0),
@@ -465,6 +467,8 @@ SerialBandDenseMatrix (OrdinalType numRows_in,
                        OrdinalType ku_in,
                        bool zeroOut)
   : CompObject (),
+    Object(),
+    BLAS<OrdinalType,ScalarType>(),
     numRows_ (numRows_in),
     numCols_ (numCols_in),
     stride_ (kl_in+ku_in+1),
@@ -489,6 +493,8 @@ SerialBandDenseMatrix (DataAccess CV,
                        OrdinalType kl_in,
                        OrdinalType ku_in)
   : CompObject (),
+    Object(),
+    BLAS<OrdinalType,ScalarType>(),
     numRows_ (numRows_in),
     numCols_ (numCols_in),
     stride_ (stride_in),
@@ -509,6 +515,8 @@ template<typename OrdinalType, typename ScalarType>
 SerialBandDenseMatrix<OrdinalType, ScalarType>::
 SerialBandDenseMatrix (const SerialBandDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans)
   : CompObject (),
+    Object(),
+    BLAS<OrdinalType,ScalarType>(),
     numRows_ (0),
     numCols_ (0),
     stride_ (0),
@@ -566,6 +574,8 @@ SerialBandDenseMatrix (DataAccess CV,
                        OrdinalType numCols_in,
                        OrdinalType startCol)
   : CompObject (),
+    Object(),
+    BLAS<OrdinalType,ScalarType>(),
     numRows_ (numRows_in),
     numCols_ (numCols_in),
     stride_ (Source.stride_),

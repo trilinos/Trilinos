@@ -56,8 +56,8 @@ VelocityVerletSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
                           const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer_ ) :
   appParams(appParams_),
   model(model_),
-  solMgr(solMgr_),
   observer(observer_),
+  solMgr(solMgr_),
   out(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   using Teuchos::RCP;
@@ -352,7 +352,7 @@ Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModel
      Vp_StV(v.ptr(), 0.5 * delta_t, *a);
 
      // Observe completed time step
-     if (observer != Teuchos::null) observer->observeSolution(*x, t);
+     if (observer != Teuchos::null) observer->observeSolution(*x, *v, *a, t);
 
    }
 

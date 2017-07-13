@@ -2,9 +2,9 @@
 #include <stk_unit_test_utils/unittestMeshUtils.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/fixtures/QuadFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>
 #include <stk_io/IossBridge.hpp>
-#include <unit_tests/BulkDataTester.hpp>
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "FaceCreatorFixture.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
@@ -50,14 +50,14 @@ void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, s
     stk::mesh::get_selected_entities(fixture.m_meta.locally_owned_part(), fixture.m_bulk_data.buckets(stk::topology::ELEM_RANK), elems);
     for(stk::mesh::Entity element : elems)
     {
-        fixture.m_bulk_data.change_entity_parts(element, {&block_1});
+        fixture.m_bulk_data.change_entity_parts(element, stk::mesh::ConstPartVector{&block_1});
     }
     fixture.m_bulk_data.modification_end();
 
     std::ostringstream os;
     const std::string file_temp("testadfasdasdfas.exo");
-    stk::unit_test_util::write_mesh_using_stk_io(file_temp, fixture.m_bulk_data, bulkData.parallel());
-    stk::unit_test_util::fill_mesh_using_stk_io(file_temp, bulkData, bulkData.parallel());
+    stk::io::write_mesh(file_temp, fixture.m_bulk_data);
+    stk::io::fill_mesh(file_temp, bulkData);
 
     ThrowRequireMsg(fixture.m_bulk_data.parallel_size()<10, "Testing assumption violated.");
     os << file_temp << "." << fixture.m_bulk_data.parallel_size() << "." << fixture.m_bulk_data.parallel_rank();
@@ -72,7 +72,7 @@ protected:
 
     void setup_2x1_2d_mesh(stk::mesh::BulkData::AutomaticAuraOption aura_option)
     {
-        set_bulk(new stk::mesh::unit_test::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), aura_option));
+        set_bulk(new stk::mesh::BulkData(get_meta(), get_comm(), aura_option));
         unsigned numX = 2, numY = 1;
         convert_quad_fixture_to_my_bulk_data_flavor(numX, numY, get_bulk());
     }

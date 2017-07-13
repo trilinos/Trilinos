@@ -30,6 +30,24 @@
 #ifndef SACADO_FAD_VIEWSTORAGE_HPP
 #define SACADO_FAD_VIEWSTORAGE_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#include "Sacado_Fad_Exp_ViewStorage.hpp"
+
+namespace Sacado {
+  namespace Fad {
+
+    template <typename T, unsigned static_length, unsigned static_stride,
+              typename U>
+    using ViewStorage = Exp::ViewStorage<T,static_length,static_stride,U>;
+
+  }
+}
+
+#else
+
 #include "Sacado_Traits.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
 #include "Sacado_mpl_integral_nonzero_constant.hpp"
@@ -71,6 +89,12 @@ namespace Sacado {
       ViewStorage(T* v, const int arg_size = 0, const int arg_stride = 0) :
         sz_(arg_size), stride_(arg_stride), val_(v+sz_.value*stride_.value), dx_(v) {}
 
+      //! Constructor
+      KOKKOS_INLINE_FUNCTION
+      ViewStorage(T* arg_dx, T* arg_val, const int arg_size = 0,
+                  const int arg_stride = 0) :
+        sz_(arg_size), stride_(arg_stride), val_(arg_val), dx_(arg_dx) {}
+
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       ViewStorage(const ViewStorage& x) :
@@ -90,7 +114,7 @@ namespace Sacado {
               dx_[i] = x.dx_[i];
           else
             for (int i=0; i<sz_.value; ++i)
-              dx_[i*stride_.value] = x.dx_[i*stride_.value];
+              dx_[i*stride_.value] = x.dx_[i*x.stride_.value];
         }
         return *this;
       }
@@ -182,5 +206,7 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
+
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_VIEWSTORAGE_HPP

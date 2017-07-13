@@ -76,6 +76,10 @@ int loop_lvl = 0;
 std::fstream *tmp_file;
 const char  *temp_f;
 
+#if defined __NVCC__
+#pragma diag_suppress code_is_unreachable
+#endif
+
 #define MAX_IF_NESTING 64
 
  int if_state[MAX_IF_NESTING] = {0}; // INITIAL
@@ -190,7 +194,7 @@ integer {D}+({E})?
     } else {
       s = aprepro.getsym(yytext);
 
-      if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
+      if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
 	BEGIN(LOOP_SKIP);
       }
       else { /* Value defined and != 0. */
@@ -307,14 +311,14 @@ integer {D}+({E})?
   }
 }
 
-<END_CASE_SKIP>"{case".*"\n"  {
+<END_CASE_SKIP>{WS}"{"{WS}"case".*"\n"  {
   yyless(0);
   curr_index = 0;
   BEGIN(INITIAL);
   switch_skip_to_endcase = false;
 }
 
-<INITIAL,END_CASE_SKIP>"{default}".*"\n"     {
+<INITIAL,END_CASE_SKIP>{WS}"{"{WS}"default"{WS}"}".*"\n"     {
  aprepro.ap_file_list.top().lineno++;
  if (!switch_active) {
     yyerror("default statement found outside switch statement.");
@@ -338,7 +342,7 @@ integer {D}+({E})?
   }
 }
 
-<END_CASE_SKIP>"{endswitch}".*"\n"  {
+<END_CASE_SKIP>{WS}"{"{WS}"endswitch"{WS}"}".*"\n"        {
   aprepro.ap_file_list.top().lineno++;
   BEGIN(INITIAL);
   switch_active = false;
@@ -347,7 +351,7 @@ integer {D}+({E})?
 
 <END_CASE_SKIP>.*"\n" {  aprepro.ap_file_list.top().lineno++; }
 
-<INITIAL>{WS}"{endswitch}".*"\n"        {
+<INITIAL>{WS}"{"{WS}"endswitch"{WS}"}".*"\n"        {
   aprepro.ap_file_list.top().lineno++;
   if (!switch_active) {
     yyerror("endswitch statement found without matching switch.");
@@ -545,15 +549,14 @@ integer {D}+({E})?
   {
     symrec *s;
     int quoted = false;
-    std::fstream *yytmp;
     char *pt = strchr(yytext, ')');
     *pt = '\0';
     /* Check to see if surrounded by double quote */ 
-    if ((pt = strchr(yytext, '"')) != NULL) {
+    if ((pt = strchr(yytext, '"')) != nullptr) {
       yytext++;
       quoted = true;
     }
-    if ((pt = strrchr(yytext, '"')) != NULL) {
+    if ((pt = strrchr(yytext, '"')) != nullptr) {
       *pt = '\0';
       quoted = true;
     }
@@ -561,7 +564,7 @@ integer {D}+({E})?
     if (quoted == false) {
       /* See if this is an aprepro variable referring to a name */
       s = aprepro.getsym(yytext);
-      if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
+      if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
 	pt = yytext;
       } else {
 	pt = (char*)s->value.svar;
@@ -588,7 +591,7 @@ integer {D}+({E})?
 <PARSING>{id} {
            symrec *s;
 			     s = aprepro.getsym(yytext);
-			     if (s == 0)
+			     if (s == nullptr)
 			       s = aprepro.putsym (yytext, SEAMS::Aprepro::UNDEFINED_VARIABLE, 0);
 			     yylval->tptr = s;
 			     return((token::yytokentype)s->type);
@@ -716,7 +719,7 @@ namespace SEAMS {
 
   void Scanner::add_include_file(const std::string &filename, bool must_exist)
   {
-    std::fstream *yytmp = NULL;
+    std::fstream *yytmp = nullptr;
     if (must_exist)
       yytmp = aprepro.open_file(filename.c_str(), "r");
     else
@@ -767,14 +770,14 @@ namespace SEAMS {
 
     if (aprepro.ap_options.interactive && yyin == &std::cin &&
 	isatty(0) != 0 && isatty(1) != 0) {
-      char *line = getline_int(NULL);
+      char *line = getline_int(nullptr);
 
       if (strlen(line) == 0)
 	return 0;
 
       gl_histadd(line);
   
-      if (strlen(line) > max_size - 2) {
+      if (strlen(line) > (size_t)max_size - 2) {
 	yyerror("input line is too long");
 	return 0;
       }
@@ -828,7 +831,7 @@ namespace SEAMS {
         if (--aprepro.ap_file_list.top().loop_count <= 0)  {
           // On Windows, you can't remove the temp file until all the references to the
           // file object have been released, so we will delete it here.
-          delete yyin; yyin = NULL;
+          delete yyin; yyin = nullptr;
 
           if (strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0) {
             if (!aprepro.ap_options.debugging)
@@ -843,7 +846,7 @@ namespace SEAMS {
         }
         else {
           // Do not pop ap_file_list; we are rereading that file...
-          delete yyin; yyin = NULL;
+          delete yyin; yyin = nullptr;
           yyFlexLexer::yypop_buffer_state();
           yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
           yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer(yyin, YY_BUF_SIZE));
@@ -851,7 +854,7 @@ namespace SEAMS {
         }
       }
       else {
-        delete yyin; yyin=NULL;
+        delete yyin; yyin=nullptr;
         aprepro.ap_file_list.pop();
         yyFlexLexer::yypop_buffer_state();
 
@@ -874,7 +877,7 @@ namespace SEAMS {
 
       // Reset the current character index.
       curr_index = 0;
-      if (yyin != NULL)
+      if (yyin != nullptr)
 	curr_index = yyin->tellg();
 
       return (0);
@@ -918,9 +921,9 @@ namespace SEAMS {
 
     aprepro.ap_file_list.push(SEAMS::file_rec("_string_", 0, true, -1));
   
-    std::istringstream *ins = new std::istringstream(new_string); // Declare an input string stream.
+    auto ins = new std::istringstream(new_string); // Declare an input string stream.
     yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(ins, new_string.size()));
-    return (NULL);
+    return (nullptr);
   }
 
   /* Push the contents of 'string' onto the stack to be reread.
@@ -948,10 +951,10 @@ namespace SEAMS {
       std::string new_string("}");
       new_string += string;
 
-      std::istringstream *ins = new std::istringstream(new_string); // Declare an input string stream.
+      auto ins = new std::istringstream(new_string); // Declare an input string stream.
       yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(ins, new_string.size()));
     }
-    return (NULL);
+    return (nullptr);
   }
 
   char *Scanner::if_handler(double x)
@@ -972,7 +975,7 @@ namespace SEAMS {
       if (aprepro.ap_options.debugging) 
 	std::cerr << "DEBUG IF: If level " << if_lvl << " " << if_state[if_lvl] << "\n";
     }
-    return(NULL);
+    return(nullptr);
   }
 
   char *Scanner::elseif_handler(double x)
@@ -986,7 +989,7 @@ namespace SEAMS {
     }
     if (aprepro.ap_options.debugging) 
       std::cerr << "DEBUG IF: elseif at level " << if_lvl << " " << if_state[if_lvl] << "\n";
-    return(NULL);
+    return(nullptr);
   }
 
   char *Scanner::switch_handler(double x)
@@ -1007,7 +1010,7 @@ namespace SEAMS {
       std::cerr << "DEBUG SWITCH: 'switch' with condition = " << switch_condition
 		<< " at line " << aprepro.ap_file_list.top().lineno << "\n";
     }
-    return(NULL);
+    return(nullptr);
   }
 
   char *Scanner::case_handler(double x)
@@ -1038,7 +1041,7 @@ namespace SEAMS {
       // Need to skip all code until end of case
       switch_skip_to_endcase = true;
     }
-    return(NULL);
+    return(nullptr);
   }
 
   void Scanner::save_history_string()
@@ -1060,7 +1063,7 @@ namespace SEAMS {
     yyin->seekg(hist_start);
 
     // Read everything up to this point again and save it.
-    char* tmp = new char[len+1];
+    auto tmp = new char[len+1];
     yyin->read(tmp, len);
     tmp[len] = '\0';
 
@@ -1079,7 +1082,7 @@ namespace SEAMS {
 #endif
 int SEAMSFlexLexer::yylex()
 {
-    std::cerr << "in ExampleFlexLexer::yylex() !" << std::endl;
+    std::cerr << "in ExampleFlexLexer::yylex() !" << '\n';
     return 0;
 }
 

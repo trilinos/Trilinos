@@ -67,6 +67,32 @@
     throw e; \
   }
 
+namespace Zoltan2 {
+/*! \brief Exception thrown when a called base-class method is not implemented
+ */ 
+class NotImplemented : public std::exception
+{
+private:
+  std::string msg;
+public:
+  NotImplemented(const char *ffile, const int lline, const char *ffunc)
+  {
+    std::ostringstream emsg;
+    emsg << ffile << ":" << lline
+         << " error: " << ffunc << " is not implemented."
+         << std::endl;
+    msg = emsg.str();
+  }
+  ~NotImplemented() throw() {}
+  const char *what() const throw() { return msg.c_str(); }
+};
+
+}
+
+#define Z2_THROW_NOT_IMPLEMENTED \
+{ throw Zoltan2::NotImplemented(__FILE__, __LINE__, __func__zoltan2__); }
+
+
 /*! \brief  Forward an exception back through call stack.
  *
  *  A \c try block that calls another Zoltan2 function should

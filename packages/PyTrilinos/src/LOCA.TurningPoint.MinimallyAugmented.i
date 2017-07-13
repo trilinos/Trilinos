@@ -71,11 +71,20 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
         docstring = %loca_turningpoint_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_LinearProblem.hpp"
+
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
+// Epetra includes
+#ifdef HAVE_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // LOCA includes

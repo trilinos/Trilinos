@@ -1,0 +1,1362 @@
+/*
+//@HEADER
+// ***********************************************************************
+//
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+//@HEADER
+*/
+
+/// \file Ifpack2_UnitTestLocalSparseTriangularSolver.cpp
+/// \brief Unit tests for Ifpack2::LocalSparseTriangularSolver
+
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+#include <limits>
+
+namespace { // (anonymous)
+
+using Teuchos::outArg;
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::REDUCE_MIN;
+using Teuchos::reduceAll;
+using std::endl;
+typedef Tpetra::global_size_t GST;
+
+template<class CrsMatrixType, class MultiVectorType>
+void
+referenceApply (const CrsMatrixType& A,
+                const MultiVectorType& X,
+                MultiVectorType& Y,
+                const Teuchos::ETransp mode,
+                const typename MultiVectorType::scalar_type& alpha,
+                const typename MultiVectorType::scalar_type& beta)
+{
+  typedef typename MultiVectorType::scalar_type ST;
+  typedef Teuchos::ScalarTraits<ST> STS;
+  typedef MultiVectorType MV;
+
+  if (beta == STS::zero ()) {
+    if (alpha == STS::zero ()) {
+      Y.putScalar (STS::zero ()); // Y := 0 * Y (ignore contents of Y)
+    }
+    else { // alpha != 0
+      A.template localSolve<ST, ST> (X, Y, mode);
+      if (alpha != STS::one ()) {
+        Y.scale (alpha);
+      }
+    }
+  }
+  else { // beta != 0
+    if (alpha == STS::zero ()) {
+      Y.scale (beta); // Y := beta * Y
+    }
+    else { // alpha != 0
+      MV Y_tmp (Y, Teuchos::Copy);
+      A.template localSolve<ST, ST> (X, Y_tmp, mode); // Y_tmp := M * X
+      Y.update (alpha, Y_tmp, beta); // Y := beta * Y + alpha * Y_tmp
+    }
+  }
+}
+
+struct TrisolverDetails {
+  enum Enum { Internal, HTS };
+};
+
+static bool isGblSuccess (const bool success, Teuchos::FancyOStream& out)
+{
+  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int lclSuccess = success ? 1 : 0;
+  int gblSuccess = 0; // to be revised
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return false;
+  }
+  return true;
+}
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
+void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
+                              const TrisolverDetails::Enum trisolverType)
+{
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Tpetra::Map<LO, GO> map_type;
+  typedef typename map_type::device_type device_type;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar, LO, GO> row_matrix_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO> mv_type;
+  typedef Ifpack2::LocalSparseTriangularSolver<row_matrix_type> solver_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename crs_matrix_type::mag_type mag_type;
+
+  out << "Ifpack2::LocalSparseTriangularSolver CompareToLocalSolve" << endl;
+  Teuchos::OSTab tab0 (out);
+
+  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+
+  const LO lclNumRows = 5;
+  const GO gblNumRows = comm->getSize () * lclNumRows;
+  const GO indexBase = 0;
+  RCP<const map_type> rowMap =
+    rcp (new map_type (static_cast<GST> (gblNumRows),
+                       static_cast<size_t> (lclNumRows),
+                       indexBase, comm));
+
+  // If we construct an upper or lower triangular matrix with an
+  // implicit unit diagonal, then we need to specify the column Map
+  // explicitly.  Otherwise, the matrix will report having the wrong
+  // number of columns.
+  RCP<const map_type> colMap = rowMap;
+
+  const GO maxLowerBandwidth = 1;
+  const GO maxUpperBandwidth = 1;
+  const GO maxNumEntPerRow =
+    maxLowerBandwidth + static_cast<GO> (1) + maxUpperBandwidth;
+
+  Teuchos::Array<GO> gblColIndsBuf (maxNumEntPerRow);
+  Teuchos::Array<Scalar> valsBuf (maxNumEntPerRow);
+
+  const bool isUpperTriangularValues[] = {false, true};
+  const bool implicitUnitDiagValues[] = {false, true};
+
+  // Make sure the matrix is diagonally dominant.  Cast to mag_type
+  // first, since some Scalar types (like std::complex<T> for T =
+  // float, double) don't have a direct conversion from integer types.
+  const Scalar diagVal = static_cast<Scalar> (static_cast<mag_type> (2 * maxNumEntPerRow));
+  const Scalar offDiagVal = STS::one () / diagVal;
+
+  // For this test, the opposite of "is upper triangular" is "is lower
+  // triangular."
+  for (bool isUpperTriangular : isUpperTriangularValues) {
+    out << (isUpperTriangular ? "Upper" : "Lower") << " triangular" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    for (bool implicitUnitDiag : implicitUnitDiagValues) {
+      out << (implicitUnitDiag ? "Implicit" : "Explicit") << " unit diagonal" << endl;
+      Teuchos::OSTab tab2 (out);
+
+      out << "Construct the test matrix A" << endl;
+      RCP<crs_matrix_type> A =
+        rcp (new crs_matrix_type (rowMap, colMap,
+                                  static_cast<size_t> (maxNumEntPerRow),
+                                  Tpetra::StaticProfile));
+
+      out << "Fill the test matrix A" << endl;
+      // Pick the entries of the matrix so that triangular solves are
+      // guaranteed not to get Inf or NaN results.
+
+      const LO minLclRow = 0;
+      const LO maxLclRow = lclNumRows;
+
+      for (LO lclRow = minLclRow; lclRow < maxLclRow; ++lclRow) {
+        const GO gblRow = rowMap->getGlobalElement (lclRow);
+        TEST_ASSERT( gblRow != Tpetra::Details::OrdinalTraits<GO>::invalid () );
+        if (! success) {
+          break;
+        }
+
+        // Don't subtract at all when computing these bounds (even the
+        // upper one), in case LO is unsigned.
+        //
+        //if (lclRow - maxLowerBandwidth < minLclRow) { ... }
+        // if (lclRow + maxUpperBandwidth >= maxLclRow) { ... }
+
+        LO lowerBandwidth = (lclRow < minLclRow + maxLowerBandwidth) ?
+          lclRow :
+          maxLowerBandwidth;
+        LO upperBandwidth = (lclRow + maxUpperBandwidth >= maxLclRow) ?
+          (maxLclRow - static_cast<LO> (1)) - lclRow :
+          maxUpperBandwidth;
+
+        TEST_ASSERT( lclRow >= lowerBandwidth + minLclRow );
+        TEST_ASSERT( lclRow + upperBandwidth < maxLclRow );
+        if (! success) {
+          // If the test messed up the bounds, don't continue; go fix
+          // the test.  We don't want to crash with an illegal array
+          // access.
+          break;
+        }
+
+        LO numEnt = 0;
+        if (! implicitUnitDiag) {
+          numEnt++;
+        }
+        if (isUpperTriangular) {
+          numEnt += upperBandwidth;
+        }
+        else { // is lower triangular
+          numEnt += lowerBandwidth;
+        }
+
+        TEST_ASSERT( numEnt <= maxNumEntPerRow );
+        if (! success) {
+          break;
+        }
+
+        Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf.view (0, numEnt);
+        Teuchos::ArrayView<Scalar> vals = valsBuf.view (0, numEnt);
+        TEST_EQUALITY( static_cast<LO> (gblColInds.size ()), numEnt );
+        TEST_EQUALITY( static_cast<LO> (vals.size ()), numEnt );
+        if (! success) {
+          break;
+        }
+
+        LO curPos = 0;
+        if (! implicitUnitDiag) {
+          gblColInds[curPos] = gblRow;
+          vals[curPos] = diagVal;
+          curPos++;
+        }
+        if (isUpperTriangular) {
+          for (LO k = 0; k < upperBandwidth; ++k) {
+            gblColInds[curPos] = gblRow + static_cast<GO> (k+1);
+            vals[curPos] = offDiagVal;
+            curPos++;
+          }
+        }
+        else { // is lower triangular
+          for (LO k = 0; k < lowerBandwidth; ++k) {
+            gblColInds[curPos] = gblRow - static_cast<GO> (k+1);
+            vals[curPos] = offDiagVal;
+            curPos++;
+          }
+        }
+
+        TEST_NOTHROW( A->insertGlobalValues (gblRow, gblColInds, vals) );
+      }
+
+      if (! isGblSuccess (success, out)) return;
+
+      out << "Call fillComplete on the test matrix A" << endl;
+
+      TEST_NOTHROW( A->fillComplete () );
+      if (! isGblSuccess (success, out)) return;
+
+      out << "Make a deep copy of A" << endl;
+      // Make a true deep copy of A.  This will help us test whether
+      // LocalSparseTriangularSolver modified the entries of the matrix
+      // (it shouldn't).
+      RCP<crs_matrix_type> A_copy;
+      {
+        typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
+        typedef typename crs_matrix_type::local_graph_type local_graph_type;
+
+        local_matrix_type A_lcl = A->getLocalMatrix ();
+
+        typename local_matrix_type::row_map_type::non_const_type ptr ("A_copy.ptr", A_lcl.graph.row_map.dimension_0 ());
+        Kokkos::deep_copy (ptr, A_lcl.graph.row_map);
+        typename local_graph_type::entries_type::non_const_type ind ("A_copy.ind", A_lcl.graph.entries.dimension_0 ());
+        Kokkos::deep_copy (ind, A_lcl.graph.entries);
+        typename local_matrix_type::values_type::non_const_type val ("A_copy.val", A_lcl.values.dimension_0 ());
+        Kokkos::deep_copy (val, A_lcl.values);
+
+        TEST_NOTHROW( A_copy = rcp (new crs_matrix_type (rowMap, A->getColMap (), ptr, ind, val)) );
+      }
+      TEST_ASSERT( ! A_copy.is_null () );
+      if (! isGblSuccess (success, out)) return;
+
+      out << "Call fillComplete on the deep copy of A" << endl;
+      TEST_NOTHROW( A_copy->fillComplete (A->getDomainMap (), A->getRangeMap ()) );
+      if (! isGblSuccess (success, out)) return;
+
+      out << "Create the solver" << endl;
+      RCP<solver_type> solver;
+      TEST_NOTHROW( solver = rcp (new solver_type (A)) );
+      TEST_ASSERT( ! solver.is_null () );
+      if (! isGblSuccess (success, out)) return;
+
+      if (trisolverType == TrisolverDetails::HTS) {
+        out << "Set solver parameters" << endl;
+        // This line can throw. It should throw if HTS is not built in.
+        Teuchos::ParameterList pl ("LocalSparseTriangularSolver parameters");
+        pl.set ("trisolver: type", "HTS");
+        try {
+          solver->setParameters (pl);
+        } catch (...) {
+#ifdef HAVE_IFPACK2_SHYLUHTS
+          // This should not happen.
+          isGblSuccess (false, out);
+          return;
+#else
+          // This should happen. Continue with the default solver.
+#endif
+        }
+      }
+
+      out << "Set up the solver" << endl;
+      TEST_NOTHROW( solver->initialize () );
+      if (success) {
+        TEST_NOTHROW( solver->compute () );
+      }
+      if (! isGblSuccess (success, out)) return;
+
+      out << "Make sure that we can call setMatrix with a null input matrix, "
+        "and that this resets the solver" << endl;
+      TEST_NOTHROW( solver->setMatrix (Teuchos::null) );
+      TEST_ASSERT( ! solver->isInitialized () );
+      TEST_ASSERT( ! solver->isComputed () );
+      if (! isGblSuccess (success, out)) return;
+
+      out << "Set up the solver again with the original input matrix A" << endl;
+      TEST_NOTHROW( solver->setMatrix (A) );
+      TEST_NOTHROW( solver->initialize () );
+      if (success) {
+        TEST_NOTHROW( solver->compute () );
+      }
+      if (! isGblSuccess (success, out)) return;
+
+      out << "Call compute() on the solver again, testing reuse of the nonzero pattern" << endl;
+      TEST_NOTHROW( solver->compute () );
+
+      out << "Test the solver" << endl;
+
+      // For different combinations of alpha, beta, and mode, apply
+      // the solver.  Test against Tpetra::CrsMatrix::localSolve with
+      // A_copy, a deep copy of the original matrix A.  This tests
+      // whether the solver changes A (it shouldn't).
+
+      const size_t numVecValues[] = {static_cast<size_t> (1), static_cast<size_t> (3)};
+      const Scalar ZERO = STS::zero ();
+      const Scalar ONE = STS::one ();
+      const Scalar THREE = ONE + ONE + ONE;
+      const Scalar alphaValues[] = {ZERO, ONE, -ONE, THREE, -THREE};
+      const Scalar betaValues[] = {ZERO, ONE, -ONE, THREE, -THREE};
+      const Teuchos::ETransp modes[] = {Teuchos::NO_TRANS, Teuchos::TRANS, Teuchos::CONJ_TRANS};
+
+      for (size_t numVecs : numVecValues) {
+        out << "numVecs: " << numVecs << endl;
+        Teuchos::OSTab tab3 (out);
+
+        typename Kokkos::View<mag_type*, device_type>::HostMirror norms ("norms", numVecs);
+
+        for (Teuchos::ETransp mode : modes) {
+          out << "mode: ";
+          if (mode == Teuchos::NO_TRANS) {
+            out << "NO_TRANS";
+          }
+          else if (mode == Teuchos::TRANS) {
+            out << "TRANS";
+          }
+          else if (mode == Teuchos::CONJ_TRANS) {
+            out << "CONJ_TRANS";
+          }
+          else {
+            TEST_ASSERT( false );
+          }
+          out << endl;
+          Teuchos::OSTab tab4 (out);
+
+          auto domainMap = mode == Teuchos::NO_TRANS ?
+            A_copy->getDomainMap () :
+            A_copy->getRangeMap ();
+          auto rangeMap = mode == Teuchos::NO_TRANS ?
+            A_copy->getRangeMap () :
+            A_copy->getDomainMap ();
+          mv_type X (domainMap, numVecs);
+          mv_type Y (rangeMap, numVecs);
+          mv_type X_copy (X.getMap (), numVecs);
+          mv_type Y_copy (Y.getMap (), numVecs);
+
+          for (Scalar alpha : alphaValues) {
+            out << "alpha: " << alpha << endl;
+            Teuchos::OSTab tab5 (out);
+
+            for (Scalar beta : betaValues) {
+              out << "beta: " << beta << endl;
+              Teuchos::OSTab tab6 (out);
+
+              X.randomize ();
+              Y.randomize ();
+              Tpetra::deep_copy (X_copy, X);
+              Tpetra::deep_copy (Y_copy, Y);
+
+              TEST_NOTHROW( solver->apply (X, Y, mode, alpha, beta) );
+              // Don't continue unless no processes threw.  Otherwise, the
+              // test may deadlock if run with multiple MPI processes,
+              // since comparing the vectors requires all-reduces.
+              if (! isGblSuccess (success, out)) return;
+
+              // Test against a reference implementation.
+              TEST_NOTHROW( referenceApply (*A_copy, X_copy, Y_copy, mode, alpha, beta) );
+              if (! isGblSuccess (success, out)) return;
+
+              // Compare Y and Y_copy.  Compute difference in Y_copy.
+              Y_copy.update (ONE, Y, -ONE); // Y_copy := Y - Y_copy
+              Y_copy.normInf (norms);
+
+              const mag_type tol = static_cast<mag_type> (gblNumRows) * STS::eps ();
+              for (size_t j = 0; j < numVecs; ++j) {
+                TEST_ASSERT( norms(j) <= tol );
+                if (norms(j) > tol) {
+                  out << "norms(" << j << ") = " << norms(j) << " > tol = " << tol << endl;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Make sure that all processes succeeded.
+  if (! isGblSuccess (success, out)) return;
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareInternalToLocalSolve, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  testCompareToLocalSolve<Scalar, LocalOrdinal, GlobalOrdinal> (success, out, TrisolverDetails::Internal);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareHTSToLocalSolve, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+#ifdef HAVE_IFPACK2_SHYLUHTS
+  testCompareToLocalSolve<Scalar, LocalOrdinal, GlobalOrdinal> (success, out, TrisolverDetails::HTS);
+#else
+  
+#endif
+}
+
+// Solve Ax = b for x, where A is either upper or lower triangular.
+// We don't implement the transpose or conjugate transpose cases here.
+template<class CrsMatrixType, class VectorType>
+void
+TRSV (VectorType& x,
+      const CrsMatrixType& A,
+      VectorType& b,
+      const char uplo[],
+      const char trans[],
+      const char diag[])
+{
+  typedef typename CrsMatrixType::scalar_type SC;
+  //typedef typename CrsMatrixType::impl_scalar_type val_type;
+  typedef typename CrsMatrixType::local_ordinal_type LO;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+
+  bool upper = false;
+  if (uplo[0] == 'U' || uplo[0] == 'u') {
+    upper = true;
+  }
+  else if (uplo[0] == 'L' || uplo[0] == 'l') {
+    upper = false; // lower instead
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid uplo");
+  }
+
+  bool transpose = false;
+  bool conjugate = false;
+  if (trans[0] == 'T' || trans[0] == 't') {
+    transpose = true;
+    conjugate = false;
+  }
+  else if (trans[0] == 'C' || trans[0] == 'c') {
+    transpose = true;
+    conjugate = true;
+  }
+  else if (trans[0] == 'H' || trans[0] == 'h') {
+    transpose = true;
+    conjugate = true;
+  }
+  else if (trans[0] == 'N' || trans[0] == 'n') {
+    transpose = false;
+    conjugate = false;
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid trans");
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (transpose || conjugate, std::logic_error, "Transpose and conjugate "
+     "transpose cases not implemented");
+
+  bool implicitUnitDiag = false;
+  if (diag[0] == 'U' || diag[0] == 'u') {
+    implicitUnitDiag = true;
+  }
+  else if (diag[0] == 'N' || diag[0] == 'n') {
+    implicitUnitDiag = false;
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid diag");
+  }
+
+  const auto colMap = A.getColMap ();
+  const auto rowMap = A.getRowMap ();
+  const LO lclNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
+
+  // x is write only, but we sync anyway, just to be sure
+  x.template sync<Kokkos::HostSpace> ();
+  x.template modify<Kokkos::HostSpace> ();
+  auto x_lcl_2d = x.template getLocalView<Kokkos::HostSpace> ();
+  auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
+  Kokkos::deep_copy (x_lcl_1d, Kokkos::Details::ArithTraits<SC>::zero ());
+
+  // b is read only
+  b.template sync<Kokkos::HostSpace> ();
+  auto b_lcl_2d = b.template getLocalView<Kokkos::HostSpace> ();
+  auto b_lcl_1d = Kokkos::subview (b_lcl_2d, Kokkos::ALL (), 0);
+
+  // Use global indices, in case the row and column Maps differ.
+  // This helps us check what the actual diagonal entry is.
+  Teuchos::Array<SC> valsBuf;
+  Teuchos::Array<GO> gblColIndsBuf;
+
+  if (upper) {
+    // NOTE (mfh 23 Aug 2016) In the upper triangular case, we count
+    // from N down to 1, to avoid an infinite loop if LO is unsigned.
+    // (Unsigned numbers are ALWAYS >= 0.)
+    for (LO lclRowPlusOne = lclNumRows; lclRowPlusOne > static_cast<LO> (0); --lclRowPlusOne) {
+      const LO lclRow = lclRowPlusOne - static_cast<LO> (1);
+
+      const size_t numEnt = A.getNumEntriesInLocalRow (lclRow);
+      if (static_cast<size_t> (valsBuf.size ()) < numEnt) {
+        valsBuf.resize (numEnt);
+      }
+      if (static_cast<size_t> (gblColIndsBuf.size ()) < numEnt) {
+        gblColIndsBuf.resize (numEnt);
+      }
+
+      Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf (0, numEnt);
+      Teuchos::ArrayView<SC> vals = valsBuf (0, numEnt);
+
+      const GO gblRow = rowMap->getGlobalElement (lclRow);
+      size_t numEnt2 = 0;
+      A.getGlobalRowCopy (gblRow, gblColInds, vals, numEnt2);
+      TEUCHOS_TEST_FOR_EXCEPT( numEnt != numEnt2 );
+      TEUCHOS_TEST_FOR_EXCEPT( numEnt != numEnt2 );
+      TEUCHOS_TEST_FOR_EXCEPT( static_cast<size_t> (gblColInds.size ()) != numEnt );
+      TEUCHOS_TEST_FOR_EXCEPT( static_cast<size_t> (vals.size ()) != numEnt );
+
+      // Go through the row.  It doesn't matter if the matrix is upper
+      // or lower triangular here; what matters is distinguishing the
+      // diagonal entry.
+      SC x_i = static_cast<SC> (b_lcl_1d[lclRow]);
+      SC diagVal = Teuchos::ScalarTraits<SC>::one ();
+      for (size_t k = 0; k < numEnt; ++k) {
+        if (gblColInds[k] == gblRow) {
+          TEUCHOS_TEST_FOR_EXCEPT( implicitUnitDiag && gblColInds[k] == gblRow );
+          diagVal = vals[k];
+        }
+        else {
+          const LO lclCol = colMap->getLocalElement (gblColInds[k]);
+          TEUCHOS_TEST_FOR_EXCEPT( lclCol == Teuchos::OrdinalTraits<LO>::invalid () );
+          x_i = x_i - vals[k] * x_lcl_1d[lclCol];
+        }
+      }
+
+      // Update the output entry
+      {
+        const LO lclCol = colMap->getLocalElement (gblRow);
+        TEUCHOS_TEST_FOR_EXCEPT( lclCol == Teuchos::OrdinalTraits<LO>::invalid () );
+        x_lcl_1d[lclCol] = x_i / diagVal;
+      }
+    } // for each local row
+  }
+  else { // lower triangular
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+      const size_t numEnt = A.getNumEntriesInLocalRow (lclRow);
+      if (static_cast<size_t> (valsBuf.size ()) < numEnt) {
+        valsBuf.resize (numEnt);
+      }
+      if (static_cast<size_t> (gblColIndsBuf.size ()) < numEnt) {
+        gblColIndsBuf.resize (numEnt);
+      }
+
+      Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf (0, numEnt);
+      Teuchos::ArrayView<SC> vals = valsBuf (0, numEnt);
+
+      const GO gblRow = rowMap->getGlobalElement (lclRow);
+      size_t numEnt2 = 0;
+      A.getGlobalRowCopy (gblRow, gblColInds, vals, numEnt2);
+      TEUCHOS_TEST_FOR_EXCEPT( numEnt != numEnt2 );
+      TEUCHOS_TEST_FOR_EXCEPT( numEnt != numEnt2 );
+      TEUCHOS_TEST_FOR_EXCEPT( static_cast<size_t> (gblColInds.size ()) != numEnt );
+      TEUCHOS_TEST_FOR_EXCEPT( static_cast<size_t> (vals.size ()) != numEnt );
+
+      // Go through the row.  It doesn't matter if the matrix is upper
+      // or lower triangular here; what matters is distinguishing the
+      // diagonal entry.
+      SC x_i = static_cast<SC> (b_lcl_1d[lclRow]);
+      SC diagVal = Teuchos::ScalarTraits<SC>::one ();
+      for (size_t k = 0; k < numEnt; ++k) {
+        if (gblColInds[k] == gblRow) {
+          TEUCHOS_TEST_FOR_EXCEPT( implicitUnitDiag && gblColInds[k] == gblRow );
+          diagVal = vals[k];
+        }
+        else {
+          const LO lclCol = colMap->getLocalElement (gblColInds[k]);
+          TEUCHOS_TEST_FOR_EXCEPT( lclCol == Teuchos::OrdinalTraits<LO>::invalid () );
+          x_i = x_i - vals[k] * x_lcl_1d[lclCol];
+        }
+      }
+
+      // Update the output entry
+      {
+        const LO lclCol = colMap->getLocalElement (gblRow);
+        TEUCHOS_TEST_FOR_EXCEPT( lclCol == Teuchos::OrdinalTraits<LO>::invalid () );
+        x_lcl_1d[lclCol] = x_i / diagVal;
+      }
+    } // for each local row
+  } // upper or lower triangular
+
+  x.template sync<typename VectorType::device_type::memory_space> ();
+}
+
+// Consider a real arrow matrix (arrow pointing down and right) with
+// diagonal entries d and other nonzero entries 1.  Here is a 4 x 4
+// example:
+//
+// [d     1]
+// [  d   1]
+// [    d 1]
+// [1 1 1 d]
+//
+// Compute its LU factorization without pivoting, assuming that all
+// the values exist:
+//
+// [1            ] [d        1      ]
+// [    1        ] [   d     1      ]
+// [        1    ] [      d  1      ]
+// [1/d 1/d 1/d 1] [         d - 3/d]
+//
+// Generalize the pattern: the off-diagonal nonzero entries of the L
+// factor are all 1/d, and the lower right entry of U is d - (n-1)/d,
+// where the original matrix A is n by n.  If d is positive and big
+// enough, say d >= 2n, then all diagonal entries of U will be
+// sufficiently large for this factorization to make sense.
+// Furthermore, if d is a power of 2, then 1/d is exact in binary
+// floating-point arithmetic (if it doesn't overflow), as is (1/d +
+// 1/d).  This lets us easily check our work.
+//
+// Suppose that we want to solve Ax=b for b = [1 2 ... n]^T.
+// For c = Ux, first solve Lc = b:
+//
+// c = [1, 2, ..., n-1, n - n(n-1)/(2d)]^T
+//
+// and then solve Ux = c.  First,
+//
+// x_n = c_n / (d - (n-1)/d).
+//
+// Then, for k = 1, ..., n-1, dx_k + x_n = k, so
+//
+// x_k = (k - x_n) / d, for k = 1, ..., n-1.
+//
+// Now, multiply b through by d - (n-1)/d.  This completely avoids
+// rounding error, as long as no quantities overflow.  To get the
+// right answer, multiply both c and x through by the same scaling
+// factor.
+
+template<class SC, class LO, class DT>
+void
+testArrowMatrixWithDense (bool& success, Teuchos::FancyOStream& out, const LO lclNumRows)
+{
+  typedef typename Kokkos::Details::ArithTraits<SC>::val_type val_type;
+  typedef typename Kokkos::Details::ArithTraits<val_type>::mag_type mag_type;
+  typedef typename Kokkos::View<val_type**, DT>::HostMirror::execution_space host_execution_space;
+  typedef Kokkos::HostSpace host_memory_space;
+  typedef Kokkos::Device<host_execution_space, host_memory_space> HDT;
+
+  Teuchos::OSTab tab0 (out);
+  out << "Test arrow matrix problem using dense matrices" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  const LO lclNumCols = lclNumRows;
+  out << "Test with " << lclNumRows << " x " << lclNumCols << " matrices" << endl;
+
+  // Kokkos Views fill with zeros by default.
+  Kokkos::View<val_type**, HDT> A ("A", lclNumRows, lclNumCols);
+  Kokkos::View<val_type**, HDT> L ("L", lclNumRows, lclNumCols);
+  Kokkos::View<val_type**, HDT> U ("U", lclNumRows, lclNumCols);
+
+  const val_type ZERO = Kokkos::Details::ArithTraits<val_type>::zero ();
+  const val_type ONE = Kokkos::Details::ArithTraits<val_type>::one ();
+  const val_type TWO = ONE + ONE;
+  const val_type N = static_cast<val_type> (static_cast<mag_type> (lclNumRows));
+  const val_type d = TWO * N;
+
+  out << "Construct test problem (d = " << d << ")" << endl;
+
+  for (LO i = 0; i < lclNumRows; ++i) {
+    A(i, i) = d;
+    if (i + 1 < lclNumRows) {
+      A(i, lclNumCols-1) = ONE;
+    }
+    else if (i + 1 == lclNumRows) {
+      for (LO j = 0; j + 1 < lclNumCols; ++j) {
+        A(i, j) = ONE;
+      }
+    }
+  }
+
+  for (LO i = 0; i < lclNumRows; ++i) {
+    L(i, i) = ONE;
+    if (i + 1 == lclNumRows) {
+      for (LO j = 0; j + 1 < lclNumCols; ++j) {
+        L(i, j) = ONE / d;
+      }
+    }
+  }
+
+  for (LO i = 0; i < lclNumRows; ++i) {
+    if (i + 1 < lclNumRows) {
+      U(i, i) = d;
+      U(i, lclNumCols-1) = ONE;
+    }
+    else if (i + 1 == lclNumRows) {
+      U(i, i) = d - (N - ONE) / d;
+    }
+  }
+
+  out << "Use dense matrix-matrix multiply to check that A == L*U" << endl;
+
+  Kokkos::View<val_type**, HDT> A_copy ("A_copy", lclNumRows, lclNumCols);
+  Tpetra::Experimental::GEMM ("N", "N", ONE, L, U, ZERO, A_copy);
+  for (LO i = 0; i < lclNumRows; ++i) {
+    out << "Row " << i << endl;
+    for (LO j = 0; j < lclNumCols; ++j) {
+      TEST_EQUALITY( A(i,j), A_copy(i,j) );
+    }
+  }
+
+  out << "Check that the LU factorization of A is LU" << endl;
+
+  Kokkos::deep_copy (A_copy, A);
+  Kokkos::View<LO*, HDT> ipiv ("ipiv", lclNumRows);
+  int info = 0;
+  Tpetra::Experimental::GETF2 (A_copy, ipiv, info);
+  TEST_EQUALITY( info, 0 );
+
+  for (LO i = 0; i < lclNumRows; ++i) {
+    out << "Row " << i << endl;
+    for (LO j = 0; j < lclNumCols; ++j) {
+      if (j < i) { // lower triangle (L) part of result
+        TEST_EQUALITY( L(i,j), A_copy(i,j) );
+      }
+      else { // upper triangle (U) part of result
+        TEST_EQUALITY( U(i,j), A_copy(i,j) );
+      }
+    }
+  }
+  for (LO i = 0; i < lclNumRows; ++i) {
+    // LAPACK pivots are one-based.
+    TEST_EQUALITY( static_cast<LO> (ipiv[i]), i + static_cast<LO> (1) );
+  }
+
+  // Test our exact solution to Ax=b.
+  Kokkos::View<val_type*, HDT> x ("x", lclNumCols);
+  Kokkos::View<val_type*, HDT> c ("c", lclNumRows);
+  Kokkos::View<val_type*, HDT> b ("b", lclNumRows);
+
+  const val_type scalingFactor = d - (N - ONE) / d;
+  for (LO i = 0; i < lclNumRows; ++i) {
+    b(i) = scalingFactor * static_cast<val_type> (static_cast<mag_type> (i+1));
+    //b(i) = static_cast<val_type> (static_cast<mag_type> (i+1));
+  }
+  // GETRS overwrites the input right-hand side with the solution.
+  Kokkos::deep_copy (x, b);
+
+  Tpetra::Experimental::GETRS ("N", A_copy, ipiv, x, info);
+  TEST_EQUALITY( info, 0 );
+
+  const val_type c_n_unscaled_expected = N - ((N - ONE)*N) / (TWO * d);
+  const val_type c_n_expected = scalingFactor * c_n_unscaled_expected;
+  const val_type x_n_unscaled_expected = c_n_unscaled_expected / scalingFactor;
+  const val_type x_n_expected = c_n_unscaled_expected;
+
+  //TEST_EQUALITY( x(lclNumRows-1), x_n_unscaled_expected );
+  TEST_EQUALITY( x(lclNumRows-1), x_n_expected );
+  for (LO i = 0; i + 1 < lclNumRows; ++i) {
+    const val_type K = static_cast<val_type> (static_cast<mag_type> (i+1));
+    //const val_type x_i_unscaled_expected = (K - x_n_unscaled_expected) / d;
+    //TEST_EQUALITY( x(i), x_i_unscaled_expected );
+
+    const val_type x_i_expected = (scalingFactor * (K - x_n_unscaled_expected)) / d;
+    TEST_EQUALITY( x(i), x_i_expected );
+  }
+
+  // Now repeat the test to see if we can do a triangular solve with
+  // L.  We do this to test whether solving Lc = b works correctly.
+  Kokkos::deep_copy (x, b);
+  Kokkos::deep_copy (c, ZERO);
+
+  // Compute c, the result of solving Lc = b
+  c(0) = b(0);
+  for (LO i = 1; i < lclNumRows; ++i) {
+    val_type c_i = b(i);
+    for (LO j = 0; j < i; ++j) {
+      c_i = c_i - L(i,j) * c(j);
+    }
+    c(i) = c_i / L(i,i);
+  }
+
+  // Test the resulting vector c
+  for (LO i = 0; i + 1 < lclNumRows; ++i) {
+    const val_type K = static_cast<val_type> (static_cast<mag_type> (i+1));
+    // const val_type c_i_unscaled_expected = K; // unused
+    const val_type c_i_expected = scalingFactor * K;
+    TEST_EQUALITY( c(i), c_i_expected );
+  }
+  TEST_EQUALITY( c(lclNumRows-1), c_n_expected );
+}
+
+template<class SC = Tpetra::Vector<>::scalar_type,
+         class LO = Tpetra::Vector<>::local_ordinal_type,
+         class GO = Tpetra::Vector<>::global_ordinal_type>
+void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
+{
+  typedef Tpetra::Map<LO, GO> map_type;
+  typedef typename map_type::device_type device_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO> crs_matrix_type;
+  typedef Tpetra::RowMatrix<SC, LO, GO> row_matrix_type;
+  typedef Tpetra::Vector<SC, LO, GO> vec_type;
+  typedef Ifpack2::LocalSparseTriangularSolver<row_matrix_type> solver_type;
+  typedef Kokkos::Details::ArithTraits<SC> KAT;
+  typedef typename KAT::val_type IST;
+  typedef typename KAT::mag_type mag_type;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
+
+  const bool explicitlyStoreUnitDiagonalOfL = false;
+
+  Teuchos::OSTab tab0 (out);
+  out << "Ifpack2::LocalSparseTriangularSolver: Test with arrow matrix" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+
+  const LO lclNumRows = 8; // power of two (see above)
+  const LO lclNumCols = lclNumRows;
+  const GO gblNumRows = comm->getSize () * lclNumRows;
+  const GO indexBase = 0;
+  RCP<const map_type> rowMap =
+    rcp (new map_type (static_cast<GST> (gblNumRows),
+                       static_cast<size_t> (lclNumRows),
+                       indexBase, comm));
+
+  // At this point, we know Kokkos has been initialized, so test the
+  // dense version of the problem.
+  testArrowMatrixWithDense<SC, LO, device_type> (success, out, lclNumRows);
+
+  // If we construct an upper or lower triangular matrix with an
+  // implicit unit diagonal, then we need to specify the column Map
+  // explicitly.  Otherwise, the matrix will report having the wrong
+  // number of columns.  In this case, the local matrix is square and
+  // every column is populated, so we can set column Map = row Map.
+  RCP<const map_type> colMap = rowMap;
+  RCP<const map_type> domMap = rowMap;
+  RCP<const map_type> ranMap = rowMap;
+
+  typedef typename crs_matrix_type::local_graph_type local_graph_type;
+  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
+  typedef typename local_matrix_type::row_map_type::non_const_type row_offsets_type;
+  typedef typename local_graph_type::entries_type::non_const_type col_inds_type;
+  typedef typename local_matrix_type::values_type::non_const_type values_type;
+
+  //
+  // The suffix _d here stands for (GPU) "device," and the suffix _h
+  // stands for (CPU) "host."
+  //
+
+  row_offsets_type L_ptr_d ("ptr", lclNumRows + 1);
+  auto L_ptr_h = Kokkos::create_mirror_view (L_ptr_d);
+  row_offsets_type U_ptr_d ("ptr", lclNumRows + 1);
+  auto U_ptr_h = Kokkos::create_mirror_view (U_ptr_d);
+
+  // The local number of _entries_ could in theory require 64 bits
+  // even if LO is 32 bits.  This example doesn't require it, but why
+  // not be general if there is no serious cost?  We use ptrdiff_t
+  // because it is signed.
+  const ptrdiff_t L_lclNumEnt = explicitlyStoreUnitDiagonalOfL ?
+    (2*lclNumRows - 1) :
+    (lclNumRows - 1);
+  const ptrdiff_t U_lclNumEnt = 2*lclNumRows - 1;
+
+  col_inds_type L_ind_d ("ind", L_lclNumEnt);
+  auto L_ind_h = Kokkos::create_mirror_view (L_ind_d);
+  values_type L_val_d ("val", L_lclNumEnt);
+  auto L_val_h = Kokkos::create_mirror_view (L_val_d);
+
+  col_inds_type U_ind_d ("ind", U_lclNumEnt);
+  auto U_ind_h = Kokkos::create_mirror_view (U_ind_d);
+  values_type U_val_d ("val", U_lclNumEnt);
+  auto U_val_h = Kokkos::create_mirror_view (U_val_d);
+
+  const IST ONE = KAT::one ();
+  const IST TWO = KAT::one () + KAT::one ();
+  // Don't cast directly from an integer type to IST,
+  // since if IST is complex, that cast may not exist.
+  const IST N = static_cast<IST> (static_cast<mag_type> (lclNumRows));
+  const IST d = TWO * N;
+
+  ptrdiff_t L_curPos = 0;
+  for (LO i = 0; i < lclNumRows; ++i) {
+    L_ptr_h[i] = L_curPos;
+
+    if (i + 1 == lclNumRows) {
+      // Last row: Add the off-diagonal entries
+      for (LO j = 0; j + 1 < lclNumCols; ++j) {
+        L_ind_h[L_curPos] = j;
+        L_val_h[L_curPos] = ONE / d;
+        ++L_curPos;
+      }
+    }
+    if (explicitlyStoreUnitDiagonalOfL) {
+      // Add the diagonal entry
+      L_ind_h[L_curPos] = i;
+      L_val_h[L_curPos] = ONE;
+      ++L_curPos;
+    }
+  }
+  L_ptr_h[lclNumRows] = L_curPos;
+
+  ptrdiff_t U_curPos = 0;
+  for (LO i = 0; i < lclNumRows; ++i) {
+    U_ptr_h[i] = U_curPos;
+
+    if (i + 1 < lclNumRows) {
+      // Add the diagonal entry (first in the row)
+      U_ind_h[U_curPos] = i;
+      U_val_h[U_curPos] = d;
+      ++U_curPos;
+
+      // Add the last entry in the row
+      U_ind_h[U_curPos] = lclNumCols - 1;
+      U_val_h[U_curPos] = ONE;
+      ++U_curPos;
+    }
+    else if (i + 1 == lclNumRows) {
+      // Add the last row's diagonal entry (only entry in this row)
+      U_ind_h[U_curPos] = lclNumCols - 1;
+      U_val_h[U_curPos] = d - (N - ONE) / d;
+      ++U_curPos;
+    }
+  }
+  U_ptr_h[lclNumRows] = U_curPos;
+
+  // Make sure that we counted the number of entries correctly.
+  TEST_ASSERT( L_curPos == L_lclNumEnt );
+  TEST_ASSERT( U_curPos == U_lclNumEnt );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+
+  Kokkos::deep_copy (L_ptr_d, L_ptr_h);
+  Kokkos::deep_copy (L_ind_d, L_ind_h);
+  Kokkos::deep_copy (L_val_d, L_val_h);
+
+  Kokkos::deep_copy (U_ptr_d, U_ptr_h);
+  Kokkos::deep_copy (U_ind_d, U_ind_h);
+  Kokkos::deep_copy (U_val_d, U_val_h);
+
+  out << "Create the lower triangular Tpetra::CrsMatrix L" << endl;
+  RCP<crs_matrix_type> L;
+  TEST_NOTHROW( L = rcp (new crs_matrix_type (rowMap, colMap, L_ptr_d, L_ind_d, L_val_d)) );
+  TEST_ASSERT( ! L.is_null () );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+  out << "Call fillComplete on the lower triangular matrix L" << endl;
+  TEST_NOTHROW( L->fillComplete (domMap, ranMap) );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+
+  out << "Make sure that the last row of L is correct" << endl;
+  {
+    Teuchos::OSTab tab2 (out);
+
+    // FIXME (mfh 23 Aug 2016) This may depend on UVM.
+    // We should instead rely on dual view semantics here.
+    Teuchos::ArrayView<const LO> lclColInds;
+    Teuchos::ArrayView<const SC> vals;
+
+    L->getLocalRowView (lclNumRows - 1, lclColInds, vals);
+    if (explicitlyStoreUnitDiagonalOfL) {
+      TEST_EQUALITY( static_cast<LO> (lclColInds.size ()), lclNumCols );
+      TEST_EQUALITY( static_cast<LO> (vals.size ()), lclNumCols );
+    }
+    else {
+      TEST_EQUALITY( static_cast<LO> (lclColInds.size ()),
+                     lclNumCols - static_cast<LO> (1) );
+      TEST_EQUALITY( static_cast<LO> (vals.size ()),
+                     lclNumCols - static_cast<LO> (1) );
+    }
+    if (success) {
+      // FIXME (mfh 23 Aug 2016) This depends on the entries being
+      // sorted.  They should be, since they were sorted on input,
+      // using a KokkosSparse::CrsMatrix input.
+      for (LO j = 0; j + 1 < lclNumCols; ++j) {
+        TEST_EQUALITY( lclColInds[j], j );
+        TEST_EQUALITY( static_cast<IST> (vals[j]), ONE / d );
+      }
+      if (explicitlyStoreUnitDiagonalOfL) {
+        TEST_EQUALITY( lclColInds[lclNumCols-1], lclNumCols - 1 );
+        TEST_EQUALITY( static_cast<IST> (vals[lclNumCols-1]), ONE );
+      }
+    }
+  }
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+
+  out << "Create the upper triangular Tpetra::CrsMatrix U" << endl;
+  RCP<crs_matrix_type> U;
+  TEST_NOTHROW( U = rcp (new crs_matrix_type (rowMap, colMap, U_ptr_d, U_ind_d, U_val_d)) );
+  TEST_ASSERT( ! U.is_null () );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+  out << "Call fillComplete on the upper triangular matrix U" << endl;
+  TEST_NOTHROW( U->fillComplete (domMap, ranMap) );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+
+  out << "Create the solver for L" << endl;
+  RCP<solver_type> L_solver;
+  TEST_NOTHROW( L_solver = rcp (new solver_type (L, Teuchos::rcpFromRef (out))) );
+  TEST_ASSERT( ! L_solver.is_null () );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // to be revised
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+
+  out << "Set up the solver for L" << endl;
+  TEST_NOTHROW( L_solver->initialize () );
+  if (success) {
+    TEST_NOTHROW( L_solver->compute () );
+  }
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // to be revised
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+
+  out << "Create the solver for U" << endl;
+  RCP<solver_type> U_solver;
+  TEST_NOTHROW( U_solver = rcp (new solver_type (U, Teuchos::rcpFromRef (out))) );
+  TEST_ASSERT( ! U_solver.is_null () );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // to be revised
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+
+  out << "Set up the solver for U" << endl;
+  TEST_NOTHROW( U_solver->initialize () );
+  if (success) {
+    TEST_NOTHROW( U_solver->compute () );
+  }
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // to be revised
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return;
+  }
+
+  const IST scalingFactor = d - (N - ONE) / d;
+  const bool scaleProblem = true;//false;
+
+  // Set up the right-hand side b.
+  vec_type b (ranMap);
+  {
+    b.template sync<Kokkos::HostSpace> ();
+    b.template modify<Kokkos::HostSpace> ();
+    auto b_lcl_2d = b.template getLocalView<Kokkos::HostSpace> ();
+    auto b_lcl_1d = Kokkos::subview (b_lcl_2d, Kokkos::ALL (), 0);
+
+    for (LO i = 0; i < lclNumRows; ++i) {
+      // Don't cast directly from an integer type to IST,
+      // since if IST is complex, that cast may not exist.
+      const IST K = static_cast<IST> (static_cast<mag_type> (i+1));
+      if (scaleProblem) {
+        b_lcl_1d(i) = scalingFactor * K;
+      }
+      else {
+        b_lcl_1d(i) = K;
+      }
+    }
+    b.template sync<typename device_type::memory_space> ();
+  }
+
+  // We solve Ax=b (with A = LU) by first solving Lc = b, and then
+  // solving Ux = c.  Thus, c's Map is the same as U's range Map.
+  vec_type c (U->getRangeMap ());
+  vec_type x (domMap);
+
+  out << "Solve Lc = b for c" << endl;
+  int lclNotThrew = 1; // to be set below
+  int gblNotThrew = 0; // output argument
+  {
+    std::ostringstream errStrm;
+    bool threw = false;
+    try {
+      L_solver->apply (b, c);
+    }
+    catch (std::exception& e) {
+      errStrm << "L_solver->apply(b,c) threw an exception: " << e.what () << std::endl;
+      threw = true;
+    }
+    catch (...) {
+      errStrm << "L_solver->apply(b,c) threw an exception not a subclass of "
+        "std::exception" << std::endl;
+      threw = true;
+    }
+    lclNotThrew = threw ? 0 : 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclNotThrew, outArg (gblNotThrew));
+    TEST_EQUALITY( gblNotThrew, 1 );
+    if (gblNotThrew != 1) {
+      Tpetra::Details::gathervPrint (out, errStrm.str (), *comm);
+    }
+  }
+  if (gblNotThrew != 1) {
+    out << "Aborting test" << endl;
+    return;
+  }
+
+  // Test the entries of c for correctness.  These are EXACT tests,
+  // which we may do since the solves should not have committed any
+  // rounding error.  See discussion above.
+  //
+  // NOTE (mfh 21 Aug 2016) This won't work if we accept approximate
+  // sparse triangular solves.
+
+  const IST c_n_unscaled_expected = N - ((N - ONE)*N) / (TWO * d);
+  const IST c_n_expected = scaleProblem ?
+    (scalingFactor * c_n_unscaled_expected) :
+    c_n_unscaled_expected;
+  const IST x_n_unscaled_expected = c_n_unscaled_expected / scalingFactor;
+  const IST x_n_expected = scaleProblem ? c_n_unscaled_expected : x_n_unscaled_expected;
+
+  out << "Test entries of c (solution of Lc=b)" << endl;
+  {
+    Teuchos::OSTab tab2 (out);
+
+    c.template sync<Kokkos::HostSpace> ();
+    auto c_lcl_2d = c.template getLocalView<Kokkos::HostSpace> ();
+    auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
+
+    for (LO i = 0; i + 1 < lclNumRows; ++i) {
+      // Don't cast directly from an integer type to IST,
+      // since if IST is complex, that cast may not exist.
+      const IST K = static_cast<IST> (static_cast<mag_type> (i+1));
+      const IST c_i_expected = scaleProblem ? (scalingFactor * K) : K;
+      TEST_EQUALITY( c_lcl_1d(i), c_i_expected );
+    }
+    TEST_EQUALITY( c_lcl_1d(lclNumRows-1), c_n_expected );
+    c.template sync<typename device_type::memory_space> ();
+  }
+  // lclSuccess = success ? 1 : 0;
+  // gblSuccess = 0; // to be revised
+  // reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  // TEST_EQUALITY( gblSuccess, 1 );
+  // if (! gblSuccess) {
+  //   out << "Aborting test" << endl;
+  //   return;
+  // }
+
+  out << "Solve Ux = c for x" << endl;
+  TEST_NOTHROW( U_solver->apply (c, x) );
+  // lclSuccess = success ? 1 : 0;
+  // gblSuccess = 0; // to be revised
+  // reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  // TEST_EQUALITY( gblSuccess, 1 );
+  // if (! gblSuccess) {
+  //   out << "Aborting test" << endl;
+  //   return;
+  // }
+
+  // Test the entries of x for correctness.  These are EXACT tests,
+  // which we may do since the solves should not have committed any
+  // rounding error.  See discussion above.
+  //
+  // NOTE (mfh 21 Aug 2016) This won't work if we accept approximate
+  // sparse triangular solves.
+
+  out << "Test entries of x (solution of Ux=c)" << endl;
+  {
+    Teuchos::OSTab tab2 (out);
+
+    x.template sync<Kokkos::HostSpace> ();
+    auto x_lcl_2d = x.template getLocalView<Kokkos::HostSpace> ();
+    auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
+
+    for (LO i = 0; i + 1 < lclNumRows; ++i) {
+      // Don't cast directly from an integer type to IST,
+      // since if IST is complex, that cast may not exist.
+      const IST K = static_cast<IST> (static_cast<mag_type> (i+1));
+      const IST x_i_expected = scaleProblem ?
+        ((scalingFactor * (K - x_n_unscaled_expected)) / d) :
+        ((K - x_n_unscaled_expected) / d);
+      TEST_EQUALITY( x_lcl_1d(i), x_i_expected );
+    }
+    TEST_EQUALITY( x_lcl_1d(lclNumRows-1), x_n_expected );
+  }
+
+  out << "Test against a reference sparse triangular solver" << endl;
+
+  c.putScalar (Teuchos::ScalarTraits<SC>::zero ());
+  x.putScalar (Teuchos::ScalarTraits<SC>::zero ());
+
+  const std::string unitDiagL = explicitlyStoreUnitDiagonalOfL ?
+    "No unit diagonal" : "Unit diagonal";
+  TRSV<crs_matrix_type, vec_type> (c, *L, b, "Lower triangular", "No transpose",
+                                   unitDiagL.c_str ());
+  out << "Test entries of c (solution of Lc=b)" << endl;
+  {
+    Teuchos::OSTab tab2 (out);
+
+    c.template sync<Kokkos::HostSpace> ();
+    auto c_lcl_2d = c.template getLocalView<Kokkos::HostSpace> ();
+    auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
+
+    for (LO i = 0; i + 1 < lclNumRows; ++i) {
+      // Don't cast directly from an integer type to IST,
+      // since if IST is complex, that cast may not exist.
+      const IST K = static_cast<IST> (static_cast<mag_type> (i+1));
+      const IST c_i_expected = scaleProblem ? (scalingFactor * K) : K;
+      TEST_EQUALITY( c_lcl_1d(i), c_i_expected );
+    }
+    TEST_EQUALITY( c_lcl_1d(lclNumRows-1), c_n_expected );
+    c.template sync<typename device_type::memory_space> ();
+  }
+
+  TRSV<crs_matrix_type, vec_type> (x, *U, c, "Upper triangular", "No transpose",
+                                   "No unit diagonal");
+  out << "Test entries of x (solution of Ux=c)" << endl;
+  {
+    Teuchos::OSTab tab2 (out);
+
+    x.template sync<Kokkos::HostSpace> ();
+    auto x_lcl_2d = x.template getLocalView<Kokkos::HostSpace> ();
+    auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
+
+    for (LO i = 0; i + 1 < lclNumRows; ++i) {
+      // Don't cast directly from an integer type to IST,
+      // since if IST is complex, that cast may not exist.
+      const IST K = static_cast<IST> (static_cast<mag_type> (i+1));
+      const IST x_i_expected = scaleProblem ?
+        ((scalingFactor * (K - x_n_unscaled_expected)) / d) :
+        ((K - x_n_unscaled_expected) / d);
+      TEST_EQUALITY( x_lcl_1d(i), x_i_expected );
+    }
+    TEST_EQUALITY( x_lcl_1d(lclNumRows-1), x_n_expected );
+  }
+
+  // Make sure that all processes succeeded.
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // to be revised
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (gblSuccess != 1) {
+    out << "The test FAILED on at least one MPI process." << endl;
+  }
+}
+
+// This test is really only useful for Scalar = double.
+#ifdef HAVE_TPETRA_INST_DOUBLE
+TEUCHOS_UNIT_TEST(LocalSparseTriangularSolver, ArrowMatrix)
+{
+  testArrowMatrix<double> (success, out);
+}
+#endif // HAVE_TPETRA_INST_DOUBLE
+
+#define UNIT_TEST_GROUP_SC_LO_GO(SC, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareInternalToLocalSolve, SC, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareHTSToLocalSolve, SC, LO, GO)
+
+#include "Ifpack2_ETIHelperMacros.h"
+
+IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+// Test all enabled combinations of Scalar (SC), LocalOrdinal (LO),
+// and GlobalOrdinal (GO) types, where Scalar is real.
+
+IFPACK2_INSTANTIATE_SLG_REAL( UNIT_TEST_GROUP_SC_LO_GO )
+
+} // namespace (anonymous)
+

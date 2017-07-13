@@ -59,6 +59,7 @@
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PatternFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
+#include "MueLu_RepartitionHeuristicFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
@@ -133,6 +134,14 @@ namespace MueLu {
 
     */
     const RCP<const FactoryBase> GetFactory(const std::string& varName) const;
+
+    /*! @brief Get factory associated with a particular data name (NONCONST version)
+
+       @param[in] varName name of variable.
+
+    */
+    const RCP<FactoryBase> GetFactoryNonConst(const std::string& varName);
+
 
     //!
     const RCP<const FactoryBase> GetDefaultFactory(const std::string& varName) const;

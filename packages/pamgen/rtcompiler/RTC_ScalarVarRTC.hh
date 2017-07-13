@@ -26,11 +26,10 @@ class ScalarVar : public Variable
    * Constructor -> Trivial
    *
    * @param name  - The name of the variable
-   * @param type  - The type of the variable
    * @param value - The initial value of the variable (optional)
    */
-  ScalarVar(const std::string& name, Type type, T value = 0)
-    : Variable(name, type, ScalarVarOT) 
+  ScalarVar(const std::string& name, T value = 0)
+    : Variable(name, TypeToTypeT<T>::value, ScalarVarOT)
   {
     _value = value;
   }
@@ -47,7 +46,7 @@ class ScalarVar : public Variable
    */
   void setValue(double value) {
     _value = (T) value;
-    
+
     if (_address != NULL)
       *((T*)_address) = _value;
   }
@@ -65,7 +64,7 @@ class ScalarVar : public Variable
   /**
    * getValue -> Returns the value of the variable
    */
-  double getValue() { 
+  double getValue() {
     //if we are dealing with a reference, it might need to refresh itself
     if (_address != NULL)
       _value   = *((T*)_address);

@@ -92,23 +92,6 @@ value_now() {
     return 0;
 }
 
-std::vector<std::string> &
-split(
-  const std::string &           path,
-  char                          separator,
-  std::vector<std::string> &    path_vector)
-{
-  for (std::string::const_iterator it = path.begin(); ; ) {
-    std::string::const_iterator it2 = std::find(it, path.end(), separator);
-    path_vector.push_back(std::string(it, it2));
-    if (it2 == path.end())
-      break;
-    it = it2 + 1;
-  }
-  
-  return path_vector;
-}
-
 } // namespace <empty>
 
 
@@ -156,8 +139,6 @@ public:
   static Timer createRootTimer(const std::string &name, const TimerSet &timer_set);
     
   static void deleteRootTimer(TimerImpl *root_timer);
-
-  static std::vector<Timer> &findTimers(TimerImpl *root_timer, const std::string &path_tail, std::vector<Timer> &found_timers);
 
   static void findTimer(TimerImpl *timer, std::vector<std::string> &path_tail_vector, std::vector<Timer> &found_timers);
   
@@ -253,10 +234,6 @@ public:
   /**
    * Member function <b>shouldRecord</b> returns true if any of the specified timer
    * bit masks are set in the enable timer bit mask.
-   *
-   * @param timer_mask    a <b>TimerMask</b> value to test the enable timer
-   *        bit mask against.
-   *
    */
   bool shouldRecord() const {
     return m_timerSet.shouldRecord(m_timerMask) && s_enabledMetricsMask;
@@ -265,8 +242,7 @@ public:
   /**
    * Member function <b>getSubtimerLapCount</b> returns the subtimer lap counter.
    *
-   * @return      a <b>Counter</b> value of the subtimer lap
-   *        counter.
+   * @return      a <b>Counter</b> value of the subtimer lap counter.
    */
   double getSubtimerLapCount() const {
     return m_subtimerLapCount;
@@ -439,13 +415,6 @@ deleteRootTimer(
 {
   TimerImpl::deleteRootTimer(timer.m_timerImpl);
   timer.m_timerImpl = 0;
-}
-
-
-std::vector<Timer> &
-findTimers(Timer root_timer, const std::string &path_tail, std::vector<Timer> &found_timers) {
-  TimerImpl::findTimers(root_timer.m_timerImpl, path_tail, found_timers);
-  return found_timers;
 }
 
 
@@ -708,21 +677,6 @@ TimerImpl::findTimer(
 }
 
 
-std::vector<Timer> &
-TimerImpl::findTimers(
-  TimerImpl *                   root_timer,
-  const std::string &           path_tail,
-  std::vector<Timer> &          found_timers)
-{
-  std::vector<std::string> path_tail_vector;
-  
-  findTimer(root_timer, split(path_tail, '.', path_tail_vector), found_timers);
-
-  return found_timers;
-}
-
-
-
 Writer &
 TimerImpl::dump(
   Writer &    dout) const
@@ -731,7 +685,6 @@ TimerImpl::dump(
     dout << "TimerImpl" << push << dendl;
     dout << "m_name, " << m_name << dendl;
     dout << "m_timerMask, " << m_timerMask << dendl;
-//    dout << "m_parentTimer, " << c_ptr_name(m_parentTimer) << dendl;
     dout << "m_subtimerLapCount, " << m_subtimerLapCount << dendl;
     dout << "m_lapStartCount, " << m_lapStartCount << dendl;
 

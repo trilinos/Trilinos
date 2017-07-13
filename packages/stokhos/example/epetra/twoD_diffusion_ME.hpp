@@ -72,6 +72,9 @@ public:
     bool eliminate_bcs = false,
     const Teuchos::RCP<Teuchos::ParameterList>& precParams = Teuchos::null);
 
+  //! Destructor
+  ~twoD_diffusion_ME();
+
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
 

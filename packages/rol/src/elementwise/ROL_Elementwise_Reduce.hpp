@@ -66,11 +66,11 @@ template<class Real>
 class ReductionSum : public ReductionOp<Real> {
 public: 
   void reduce( const Real &input, Real &output ) const {
-    output += input;
+    output = output + input;
   }
 
   void reduce( const volatile Real &input, volatile Real &output ) const {
-    output += input;
+    output = output + input;
   }
 
   Real initialValue() const {
@@ -154,6 +154,28 @@ public:
   Teuchos::EReductionType reductionType() const {
     return Teuchos::REDUCE_MAX;
   }
+};
+
+
+template<class Real> 
+class EuclideanNormSquared : public ReductionOp<Real> {
+public: 
+  void reduce( const Real &input, Real &output ) const {
+    output = output*output + input;
+  }
+
+  void reduce( const volatile Real &input, volatile Real &output ) const {
+    output = output*output + input;
+  }
+
+  Real initialValue() const {
+    return 0;
+  }
+
+  Teuchos::EReductionType reductionType() const {
+    return Teuchos::REDUCE_SUM;
+  }
+
 };
 
 } // namespace Elementwise 

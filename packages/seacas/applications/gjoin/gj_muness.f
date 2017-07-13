@@ -35,7 +35,7 @@ C=======================================================================
       SUBROUTINE MUNESS (NUMESS, ISTAT, LESSEL, LESSDL, 
      &  IDESS, NEESS, NEDSS, IXEESS, IXEDSS,
      &  LTEESS, LTSSS, FACSS, 
-     &  LTEX, LTSX, TDX, IXESS, IXDSS, NEX, NDX, ISCR)
+     &  LTEX, LTSX, TDX, IXESS, IXDSS, NEX, NDX, ISCR, USESDF)
 C=======================================================================
 C $Id: muness.f,v 1.2 2001/06/26 17:38:54 gdsjaar Exp $
 C
@@ -80,6 +80,7 @@ C   --   ISCR - SCRATCH - size = NUMESS
       INTEGER NEX(*), NDX(*)
       INTEGER ISCR(*)
       REAL    FACSS(*), TDX(*)
+      LOGICAL USESDF
 
       IF (NUMESS .LE. 0) RETURN
 
@@ -107,7 +108,9 @@ C   --   ISCR - SCRATCH - size = NUMESS
             N = ISCR(ISET)
             CALL MOVINT (NEESS(N), LTEESS(IXEESS(N)), LTEX(JNE))
             CALL MOVINT (NEESS(N), LTSSS(IXEESS(N)),  LTSX(JNE))
-            CALL MOVREA (NEDSS(N), FACSS(IXEDSS(N)),  TDX(JND))
+            IF (USESDF) THEN
+              CALL MOVREA (NEDSS(N), FACSS(IXEDSS(N)),  TDX(JND))
+            ENDIF
             JNE = JNE + NEESS(N)
             JND = JND + NEDSS(N)
             NEX(JESS) = NEX(JESS) + NEESS(N)
@@ -131,6 +134,8 @@ C   --   ISCR - SCRATCH - size = NUMESS
       LESSDL = JND - 1
       CALL MOVINT (LESSEL, LTEX, LTEESS)
       CALL MOVINT (LESSEL, LTSX, LTSSS)
-      CALL MOVREA (LESSDL, TDX,  FACSS)
+      if (usesdf) then
+        CALL MOVREA (LESSDL, TDX,  FACSS)
+      end if
       RETURN
       END

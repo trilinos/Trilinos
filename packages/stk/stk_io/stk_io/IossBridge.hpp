@@ -1,23 +1,23 @@
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_io_IossBridge_hpp
 #define stk_io_IossBridge_hpp
@@ -42,7 +42,10 @@
 #include <string>                       // for string, basic_string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
-#include "stk_mesh/base/FieldState.hpp"  // for FieldState
+#include "Ioss_EntityType.h"
+#include "stk_mesh/base/FieldState.hpp" // for FieldState
+#include "stk_mesh/base/Part.hpp" // for FieldState
+
 namespace Ioss { class ElementTopology; }
 namespace Ioss { class EntityBlock; }
 namespace Ioss { class GroupingEntity; }
@@ -57,11 +60,12 @@ namespace stk { namespace mesh { struct Entity; } }
 
 namespace Ioss {
 class SideSet;
+class SideBlock;
+class NodeBlock;
 class Field;
 }
 
 void STKIORequire(bool cond);
-void STKIORequireMsg(bool cond, const std::string &msg);
 
 namespace stk {
   namespace mesh {
@@ -81,6 +85,25 @@ namespace stk {
  * use_cases/io_example.cpp file.
  */
 namespace io {
+
+typedef std::pair<stk::mesh::EntityId, int> EntityIdToProcPair;
+typedef std::vector<EntityIdToProcPair> EntitySharingInfo;
+
+typedef std::pair<std::string, stk::mesh::Part*> FieldNameToPart;
+
+struct FieldNameToPartLess
+{
+  inline bool operator()(const FieldNameToPart& lhs, const FieldNameToPart& rhs) const
+  {
+     if (lhs.first < rhs.first || rhs.first < lhs.first)
+     {
+        return lhs.first < rhs.first;
+     }
+     return lhs.second->name() < rhs.second->name();
+  }
+};
+
+typedef std::vector<FieldNameToPart> FieldNameToPartVector;
 
 /** \addtogroup stk_io_module
  * \{
@@ -110,8 +133,7 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
  *	results or restart file.
  */
 template <typename T>
-void default_part_processing(const std::vector<T*> &entities,
-                             stk::mesh::MetaData &meta)
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta)
 {
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
@@ -121,8 +143,7 @@ void default_part_processing(const std::vector<T*> &entities,
 
 //! \deprecated
 template <typename T>
-void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta,
-                             const stk::mesh::EntityRank)
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta, const stk::mesh::EntityRank)
 {
   default_part_processing (entities, meta);
 }
@@ -156,11 +177,11 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
  */
 void define_output_db( Ioss::Region & io_region,
                        const mesh::BulkData& bulk_data,
+                       const std::vector<std::vector<int>> &attributeOrdering,
                        const Ioss::Region *input_region = NULL,
                        const stk::mesh::Selector *subset_selector = NULL,
                        bool sort_stk_parts = false,
                        bool use_nodeset_for_part_node_fields = true);
-
 
 /** Given an Ioss::Region 'io_region' which has already had its
  * metadata defined via 'define_output_db()' call; transfer all bulk
@@ -172,7 +193,6 @@ void define_output_db( Ioss::Region & io_region,
 void write_output_db( Ioss::Region & io_region ,
                       const mesh::BulkData& bulk,
                       const stk::mesh::Selector *subset_selector = NULL);
-
 
 //----------------------------------------------------------------------
 
@@ -227,7 +247,7 @@ public:
   // Field is not defined on UNIVERSAL part, but we still want to output it on the nodeblock.
   // This is done to output, for example, nodal fields that exist on an element block without
   // creating a nodeset for the nodes of the element block.
-  mutable bool m_forceNodeblockOutput; 
+  mutable bool m_forceNodeblockOutput;
 };
 
 std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage);
@@ -259,6 +279,8 @@ void ioss_add_fields(const stk::mesh::Part &part,
  */
 void define_input_fields(Ioss::Region &region,  stk::mesh::MetaData &meta);
 
+FieldNameToPartVector get_var_names(Ioss::Region &region, Ioss::EntityType type, stk::mesh::MetaData& meta);
+
 /**
  * For the given Ioss::GroupingEntity "entity", find all fields that
  * exist on the input database of type "role" and declare them on
@@ -280,7 +302,7 @@ void define_io_fields(Ioss::GroupingEntity *entity,
  *  stk::topology. If a corresponding topology is not found, a
  *  runtime error exception will be thrown.
  */
-stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology);
+stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology, unsigned mesh_spatial_dimension);
 
 /** Given a stk::topology, return the
  *	corresponding Ioss::ElementTopology string. If a corresponding
@@ -414,10 +436,15 @@ void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
  */
 bool is_part_io_part(const mesh::Part &part);
 
+/** Define an alternate name to use for the part on output
+ */
+void set_alternate_part_name(stk::mesh::Part& part, const std::string& altPartName);
+std::string get_alternate_part_name(stk::mesh::Part& part);
+
 /** Define an attribute on the specified part 'part' indicating that
  * this part should be used for io.  \see is_part_io_part()
  */
-void put_io_part_attribute( mesh::Part &part, Ioss::GroupingEntity *entity = NULL);
+void put_io_part_attribute( mesh::Part &part);
 
 /** Remove the existing attribute on the specified part 'part' that indicates that
  * this part should be used for io.  \see is_part_io_part()
@@ -428,15 +455,24 @@ const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
 
 size_t db_api_int_size(const Ioss::GroupingEntity *entity);
 
-mesh::EntityRank part_primary_entity_rank(const mesh::Part &part);
-
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
 
 void get_io_field_type(const stk::mesh::FieldBase *field,
                        const stk::mesh::FieldRestriction &res,
                        std::pair<std::string, Ioss::Field::BasicType> *result);
+
+void write_file_for_subdomain(const std::string &baseFilename,
+                              int index_subdomain,
+                              int num_subdomains,
+                              int global_num_nodes,
+                              int global_num_elems,
+                              stk::mesh::BulkData& bulkData,
+                              const EntitySharingInfo &nodeSharingInfo,
+                              int numSteps = -1,
+                              double timeStep = 0.0);
+
 /**
- * \}
+ * \---}
  */
 
 }//namespace io

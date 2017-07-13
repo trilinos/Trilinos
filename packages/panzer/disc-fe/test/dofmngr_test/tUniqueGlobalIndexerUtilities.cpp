@@ -51,8 +51,6 @@
 #include <vector>
 #include <set>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
@@ -77,7 +75,6 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -95,17 +92,17 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
    std::vector<int> ghostedFields;
-   std::vector<int> sharedIndices;
-   globalIndexer->getOwnedAndSharedIndices(sharedIndices);
+   std::vector<int> ghostedIndices;
+   globalIndexer->getOwnedAndGhostedIndices(ghostedIndices);
    panzer::buildGhostedFieldVector(*globalIndexer,ghostedFields);
 
-   TEST_EQUALITY(ghostedFields.size(),sharedIndices.size());
+   TEST_EQUALITY(ghostedFields.size(),ghostedIndices.size());
    TEST_COMPARE(*std::min_element(ghostedFields.begin(),ghostedFields.end()),>,-1);
 
    std::stringstream ss;
    ss << "Field Numbers = ";
    for(std::size_t i=0;i<ghostedFields.size();i++) 
-      ss << sharedIndices[i] << ":" << ghostedFields[i] << " ";
+      ss << ghostedIndices[i] << ":" << ghostedFields[i] << " ";
    out << std::endl;
    out << ss.str() << std::endl;
 
@@ -145,9 +142,9 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 
 void fillFieldContainer(int fieldNum,const std::string & blockId,
                         const panzer::UniqueGlobalIndexer<short,int> & ugi,
-                        Intrepid2::FieldContainer<int> & data)
+                        Kokkos::DynRankView<int,PHX::Device> & data)
 {
-   data.resize(1,4);
+  data = Kokkos::DynRankView<int,PHX::Device>("data",1,4);
 
    const std::vector<short> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
@@ -161,9 +158,9 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 
 void fillFieldContainer(int fieldNum,const std::string & blockId,
                         const panzer::UniqueGlobalIndexer<short,int> & ugi,
-                        Intrepid2::FieldContainer<int> & data,std::size_t cols)
+                        Kokkos::DynRankView<int,PHX::Device> & data,std::size_t cols)
 {
-   data.resize(1,4,cols);
+  data = Kokkos::DynRankView<int,PHX::Device>("data",1,4,cols);
 
    const std::vector<short> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
@@ -178,9 +175,8 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 {
-   PHX::KokkosDeviceSession session;
 
-   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
+   typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -263,9 +259,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 {
-   PHX::KokkosDeviceSession session;
 
-   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
+   typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -342,9 +337,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 {
-   PHX::KokkosDeviceSession session;
 
-   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
+   typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -411,9 +405,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 {
-   PHX::KokkosDeviceSession session;
 
-   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
+   typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI

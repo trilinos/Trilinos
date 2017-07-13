@@ -110,7 +110,9 @@ namespace NOX {
       */
       Group(const NOX::Thyra::Vector& initial_guess,
         const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null,
+        const bool rightScalingFirst = false);
 
       /** \brief Power user constructor that takes explicit linear solver objects to handle different combinations.
 
@@ -134,7 +136,9 @@ namespace NOX {
         const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double> >& lows_factory,
         const Teuchos::RCP< ::Thyra::PreconditionerBase<double> >& prec_op,
         const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null,
+        const bool rightScalingFirst = false);
 
       //! Copy constructor
       Group(const NOX::Thyra::Group& source, NOX::CopyType type = DeepCopy);
@@ -154,11 +158,22 @@ namespace NOX {
       Teuchos::RCP<const ::Thyra::LinearOpBase<double> >
       getJacobianOperator() const;
 
+      Teuchos::RCP<const ::Thyra::LinearOpBase<double> >
+      getScaledJacobianOperator() const;
+
+      void unscaleJacobianOperator() const;
+
       Teuchos::RCP< ::Thyra::LinearOpWithSolveBase<double> >
       getNonconstJacobian();
 
       Teuchos::RCP<const ::Thyra::LinearOpWithSolveBase<double> >
       getJacobian() const;
+
+      Teuchos::RCP< ::Thyra::PreconditionerBase<double> >
+      getNonconstPreconditioner();
+
+      Teuchos::RCP<const ::Thyra::PreconditionerBase<double> >
+      getPreconditioner() const;
 
       /** @name "Compute" functions. */
       //@{
@@ -264,6 +279,8 @@ namespace NOX {
 
       const NOX::Abstract::Vector& getX() const;
 
+      const NOX::Abstract::Vector& getScaledX() const;
+
       const NOX::Abstract::Vector& getF() const;
 
       double getNormF() const;
@@ -316,6 +333,8 @@ namespace NOX {
       void scaleResidualAndJacobian() const;
 
       void unscaleResidualAndJacobian() const;
+
+      void computeScaledSolution();
 
     protected:
 
@@ -375,15 +394,24 @@ namespace NOX {
       //! Residual OutArgs
       mutable ::Thyra::ModelEvaluatorBase::OutArgs<double> out_args_;
 
-      /** \brief Optional wieghting vector for function scaling
+      /** \brief Optional wieghting vector for function scaling. NOX assumes that this vector can be updated in between nonlinear iterations.
 
            This is pulled out of the initial guess vector
       */
       Teuchos::RCP<const ::Thyra::VectorBase<double> > weight_vec_;
+      //! Optional wieghting vector for solution (right) scaling. NOX assumes that this vector will not change during an entire nonlinear solve.
+      Teuchos::RCP<const ::Thyra::VectorBase<double> > right_weight_vec_;
 
-      //! Inverse of weight vector used to unscale problem
+      //! Inverse of weight vector used to unscale function (left) scaling. NOX assumes that this vector can be updated in between nonlinear iterations.
       mutable Teuchos::RCP< ::Thyra::VectorBase<double> > inv_weight_vec_;
+      //! Inverse of weight vector used to unscale solution (right) scaling. NOX assumes that this vector will not change during an entire nonlinear solve.
+      Teuchos::RCP< ::Thyra::VectorBase<double> > inv_right_weight_vec_;
 
+      //! Scaled solution vector scaled by the 
+      mutable Teuchos::RCP<NOX::Thyra::Vector> scaled_x_vec_;
+
+      //! Do right scaling before left scaling?
+      bool rightScalingFirst_;
     };
 
   } // namespace LAPACK

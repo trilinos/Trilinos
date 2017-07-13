@@ -52,7 +52,7 @@ namespace ROL {
 
 template <class Real>
 Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol) {
-  Real ftol = std::sqrt(ROL_EPSILON);
+  Real ftol = std::sqrt(ROL_EPSILON<Real>());
 
   Teuchos::RCP<Vector<Real> > xd = d.clone();
   xd->set(x);
@@ -66,7 +66,7 @@ void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &to
   Real deriv = 0.0, h = 0.0, xi = 0.0;
   for (int i = 0; i < g.dimension(); i++) {
     xi    = std::abs(x.dot(*x.basis(i)));
-    h     = ((xi < ROL_EPSILON) ? 1. : xi)*tol;
+    h     = ((xi < ROL_EPSILON<Real>()) ? 1. : xi)*tol;
     deriv = this->dirDeriv(x,*x.basis(i),h);
     g.axpy(deriv,*g.basis(i));
   }
@@ -74,14 +74,15 @@ void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &to
 
 template <class Real>
 void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+  Real zero(0), one(1);
   // Get Step Length
-  if ( v.norm() == 0. ) {
+  if ( v.norm() == zero ) {
     hv.zero();
   }
   else {
-    Real gtol = std::sqrt(ROL_EPSILON);
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
 
-    Real h = std::max(1.0,x.norm()/v.norm())*tol;
+    Real h = std::max(one,x.norm()/v.norm())*tol;
     //Real h = 2.0/(v.norm()*v.norm())*tol;
 
     // Compute Gradient at x
@@ -99,8 +100,8 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
     this->gradient(hv,*xnew,gtol);
     
     // Compute Newton Quotient
-    hv.axpy(-1.0,*g);
-    hv.scale(1.0/h);
+    hv.axpy(-one,*g);
+    hv.scale(one/h);
   }
 } 
 
@@ -141,7 +142,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   using Finite_Difference_Arrays::shifts;
   using Finite_Difference_Arrays::weights;
 
-  Real tol = std::sqrt(ROL_EPSILON);
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
 
   int numSteps = steps.size();
   int numVals = 4;
@@ -158,6 +159,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
   // Compute gradient at x.
   Teuchos::RCP<Vector<Real> > gtmp = g.clone();
+  this->update(x);
   this->gradient(*gtmp, x, tol);
   Real dtg = d.dot(gtmp->dual());
 
@@ -198,6 +200,11 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
                   << std::setw(20) << "grad'*dir"
                   << std::setw(20) << "FD approx"
                   << std::setw(20) << "abs error"
+                  << "\n"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "---------"
                   << "\n";
       }
       outStream << std::scientific << std::setprecision(11) << std::right
@@ -257,7 +264,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   using Finite_Difference_Arrays::weights;
 
 
-  Real tol = std::sqrt(ROL_EPSILON);
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
 
   int numSteps = steps.size();
   int numVals = 4;
@@ -323,6 +330,11 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
                 << std::setw(20) << "norm(Hess*vec)"
                 << std::setw(20) << "norm(FD approx)"
                 << std::setw(20) << "norm(abs error)"
+                << "\n"
+                << std::setw(20) << "---------"
+                << std::setw(20) << "--------------"
+                << std::setw(20) << "---------------"
+                << std::setw(20) << "---------------"
                 << "\n";
       }
       outStream << std::scientific << std::setprecision(11) << std::right
@@ -351,7 +363,7 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
                                                  const bool printToStream,
                                                  std::ostream & outStream ) {
 
-  Real tol = std::sqrt(ROL_EPSILON);
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
   
   // Compute (Hessian at x) times (vector v).
   Teuchos::RCP<Vector<Real> > h = hv.clone();

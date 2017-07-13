@@ -45,7 +45,7 @@ using Teuchos::ArrayView;
 using Teuchos::TimeMonitor;
 using Teuchos::Time;
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 typedef Epetra_Map Map;
 typedef Epetra_CrsMatrix CrsMatrix;
 typedef Epetra_CrsGraph CrsGraph;
@@ -157,13 +157,13 @@ size_t setUp1(RCP<Map> &rowmap,
   pl->set("Y Elements",yelem);
   pl->set("Z Elements",zelem);
 
-  panzer_stk_classic::CubeHexMeshFactory factory; 
+  panzer_stk::CubeHexMeshFactory factory; 
   factory.setParameterList(pl);
-  RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+  RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-  conn = rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+  conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
 
-  RCP<Intrepid2::Basis<double,FieldContainer> > basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+  RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
   RCP<const panzer::FieldPattern> pressure_pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis1));
 
   my_dofM = Teuchos::rcp(new panzer::DOFManager<int,int>());
@@ -178,18 +178,18 @@ size_t setUp1(RCP<Map> &rowmap,
   my_dofM->buildGlobalUnknowns();
 
   std::vector<int> owned; 
-  std::vector<int> ownedAndShared; 
+  std::vector<int> ownedAndGhosted; 
 
   my_dofM->getOwnedIndices(owned);
-  my_dofM->getOwnedAndSharedIndices(ownedAndShared);
+  my_dofM->getOwnedAndGhostedIndices(ownedAndGhosted);
 
-  size_t sz = ownedAndShared.size();
+  size_t sz = ownedAndGhosted.size();
 
   Epetra_MpiComm mpiComm(MPI_COMM_WORLD);
   //This is taken from Tpetra_Map_def.hpp
   //I could probably use a non-member constructor.
-  rowmap = rcp(new Map(-1,ownedAndShared.size(),&ownedAndShared[0],0,mpiComm));
-  colmap = rcp(new Map(-1,ownedAndShared.size(),&ownedAndShared[0],0,mpiComm));
+  rowmap = rcp(new Map(-1,ownedAndGhosted.size(),&ownedAndGhosted[0],0,mpiComm));
+  colmap = rcp(new Map(-1,ownedAndGhosted.size(),&ownedAndGhosted[0],0,mpiComm));
   return sz;
 }
 

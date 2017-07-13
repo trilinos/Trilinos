@@ -11,7 +11,7 @@
 
 #include <unordered_set>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 namespace {
    //! A dummy response for local use, is only used by the response library
@@ -93,6 +93,10 @@ buildAndRegisterEvaluators(const std::string & responseName,
   else if(addSolutionFields_)
     allFields.insert(allFields.end(),physicsBlock.getProvidedDOFs().begin(),physicsBlock.getProvidedDOFs().end());
 
+  // Add in tangent fields
+  if(addSolutionFields_)
+    allFields.insert(allFields.end(),physicsBlock.getTangentFields().begin(),physicsBlock.getTangentFields().end());
+
   // add in bases for any addtional fields
   for(std::size_t i=0;i<additionalFields_.size();i++)
     bases[additionalFields_[i].second->name()] = additionalFields_[i].second;
@@ -113,7 +117,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
       centroidRule = rcp(new panzer::PointRule("Centroid",1,physicsBlock.cellData()));
 
       // compute centroid
-      Intrepid2::FieldContainer<double> centroid;
+      Kokkos::DynRankView<double,PHX::Device> centroid;
       computeReferenceCentroid(bases,physicsBlock.cellData().baseCellDimension(),centroid);
 
       // build pointe values evaluator
@@ -138,24 +142,26 @@ buildAndRegisterEvaluators(const std::string & responseName,
     TEUCHOS_TEST_FOR_EXCEPTION(found==bases.end(),std::logic_error,
                                "Could not find basis \""+basisName+"\"!");
     Teuchos::RCP<const panzer::PureBasis> basis = found->second;
-    
+
+    // determine if user has modified field scalar for each field to be written to STK
+    std::vector<double> scalars(fields.size(),1.0); // fill with 1.0
+    for(std::size_t f=0;f<fields.size();f++) {
+      std::unordered_map<std::string,double>::const_iterator f2s_itr = fieldToScalar_.find(fields[f]);
+
+      // if scalar is found, include it in the vector and remove the field from the
+      // hash table so it won't be included in the warning message.
+      if(f2s_itr!=fieldToScalar_.end()) {
+        scalars[f] = f2s_itr->second;
+        scaledFieldsHash.erase(fields[f]);
+      }
+    }
+
     // write out nodal fields
     if(basis->getElementSpace()==panzer::PureBasis::HGRAD ||
        basis->getElementSpace()==panzer::PureBasis::CONST) {
-      
-      // determine if user has modified field scalar for each field to be written to STK
+
       std::string fields_concat = "";
-      std::vector<double> scalars(fields.size(),1.0); // fill with 1.0 
-      for(std::size_t f=0;f<fields.size();f++) { 
-        std::unordered_map<std::string,double>::const_iterator f2s_itr = fieldToScalar_.find(fields[f]);
-
-        // if scalar is found, include it in the vector and remove the field from the
-        // hash table so it won't be included in the warning message.
-        if(f2s_itr!=fieldToScalar_.end()) { 
-          scalars[f] = f2s_itr->second;
-          scaledFieldsHash.erase(fields[f]);
-        }
-
+      for(std::size_t f=0;f<fields.size();f++) {
         fields_concat += fields[f];
       }
 
@@ -196,7 +202,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
       {
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
            = Teuchos::rcp(new ScatterVectorFields<EvalT,panzer::Traits>("STK HCURL Scatter Basis " +basis->name()+": "+fields_concat,
-                                                                        mesh_,centroidRule,fields));
+                                                                        mesh_,centroidRule,fields,scalars));
 
         this->template registerEvaluator<EvalT>(fm, evaluator);
         fm.template requireField<EvalT>(*evaluator->evaluatedFields()[0]); // require the dummy evaluator
@@ -231,7 +237,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
       {
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
            = Teuchos::rcp(new ScatterVectorFields<EvalT,panzer::Traits>("STK HDIV Scatter Basis " +basis->name()+": "+fields_concat,
-                                                                        mesh_,centroidRule,fields));
+                                                                        mesh_,centroidRule,fields,scalars));
 
         this->template registerEvaluator<EvalT>(fm, evaluator);
         fm.template requireField<EvalT>(*evaluator->evaluatedFields()[0]); // require the dummy evaluator
@@ -268,38 +274,32 @@ template <typename EvalT>
 void ResponseEvaluatorFactory_SolutionWriter<EvalT>::
 computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::PureBasis> > & bases,
                          int baseDimension,
-                         Intrepid2::FieldContainer<double> & centroid) const
+                         Kokkos::DynRankView<double,PHX::Device> & centroid) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
 
-   centroid.resize(1,baseDimension);
+   centroid = Kokkos::DynRankView<double,PHX::Device>("centroid",1,baseDimension);
 
    // loop over each possible basis
    for(std::map<std::string,RCP<const panzer::PureBasis> >::const_iterator itr=bases.begin();
        itr!=bases.end();++itr) {
 
-      // see if this basis has coordinates
-      RCP<Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > intrepidBasis = itr->second->getIntrepid2Basis();
-      RCP<Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > > basisCoords 
-         = rcp_dynamic_cast<Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > >(intrepidBasis);
-
-      if(basisCoords==Teuchos::null) // no coordinates...move on
-         continue;
+      RCP<Intrepid2::Basis<PHX::exec_space,double,double>> intrepidBasis = itr->second->getIntrepid2Basis();
 
       // we've got coordinates, lets commpute the "centroid"
-      Intrepid2::FieldContainer<double> coords(intrepidBasis->getCardinality(),
-                                              intrepidBasis->getBaseCellTopology().getDimension());
-      basisCoords->getDofCoords(coords);
+      Kokkos::DynRankView<double,PHX::Device> coords("coords",intrepidBasis->getCardinality(),
+						     intrepidBasis->getBaseCellTopology().getDimension());
+      intrepidBasis->getDofCoords(coords);
       TEUCHOS_ASSERT(coords.rank()==2);
-      TEUCHOS_ASSERT(coords.dimension(1)==baseDimension);
+      TEUCHOS_ASSERT(coords.extent_int(1)==baseDimension);
 
-      for(int i=0;i<coords.dimension(0);i++)
-         for(int d=0;d<coords.dimension(1);d++)
+      for(int i=0;i<coords.extent_int(0);i++)
+         for(int d=0;d<coords.extent_int(1);d++)
             centroid(0,d) += coords(i,d);
 
       // take the average
-      for(int d=0;d<coords.dimension(1);d++)
+      for(int d=0;d<coords.extent_int(1);d++)
          centroid(0,d) /= coords.dimension(0);
 
       return;

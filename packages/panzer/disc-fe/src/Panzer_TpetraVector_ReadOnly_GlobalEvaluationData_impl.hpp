@@ -25,20 +25,22 @@ useConstantValues(const std::vector<GlobalOrdinalT> & indices,double value)
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-initialize(const RCP<const ImportType> & importer,
-           const RCP<const MapType> & ghostedMap,
-           const RCP<const MapType> & uniqueMap)
+initialize(const RCP<const ImportType>& importer,
+           const RCP<const MapType>&    ghostedMap,
+           const RCP<const MapType>&    ownedMap)
 {
-  importer_ = importer;
+  importer_   = importer;
   ghostedMap_ = ghostedMap;
-  uniqueMap_ = uniqueMap;
+  ownedMap_   = ownedMap;
 
   // allocate the ghosted vector
   ghostedVector_ = Teuchos::rcp(new VectorType(ghostedMap_));
 
   // build up the thyra conversion data structures
-  ghostedSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(ghostedMap_);
-  uniqueSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(uniqueMap_);
+  ghostedSpace_ = Thyra::tpetraVectorSpace<ScalarT, LocalOrdinalT,
+    GlobalOrdinalT, NodeT>(ghostedMap_);
+  ownedSpace_   = Thyra::tpetraVectorSpace<ScalarT, LocalOrdinalT,
+    GlobalOrdinalT, NodeT>(ownedMap_);
 
 
    // translate filtered pair GIDs to LIDs
@@ -68,14 +70,15 @@ void
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 globalToGhost(int mem)
 {
-   TEUCHOS_TEST_FOR_EXCEPTION(uniqueVector_==Teuchos::null,std::logic_error,
-                              "Unique vector has not been set, can't perform the halo exchange!");
+  TEUCHOS_TEST_FOR_EXCEPTION(ownedVector_ == Teuchos::null, std::logic_error,
+    "Owned vector has not been set, can't perform the halo exchange!");
 
-   // initialize the ghosted data, zeroing out things, and filling in specified constants
-   initializeData();
+  // Initialize the ghosted data, zeroing out things, and filling in specified
+  // constants.
+  initializeData();
 
-   // do the global distribution
-   ghostedVector_->doImport(*uniqueVector_,*importer_,Tpetra::INSERT);
+  // Do the global distribution.
+  ghostedVector_->doImport(*ownedVector_, *importer_, Tpetra::INSERT);
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -104,21 +107,19 @@ initializeData()
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void 
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-setUniqueVector_Tpetra(const Teuchos::RCP<const VectorType> & uniqueVector)
+setOwnedVector_Tpetra(const Teuchos::RCP<const VectorType>& ownedVector)
 {
   TEUCHOS_ASSERT(isInitialized_);
-
-  uniqueVector_ = uniqueVector;
+  ownedVector_ = ownedVector;
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<const typename TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::VectorType>
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-getUniqueVector_Tpetra() const
+getOwnedVector_Tpetra() const
 {
   TEUCHOS_ASSERT(isInitialized_);
-
-  return uniqueVector_;
+  return ownedVector_;
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -135,22 +136,22 @@ getGhostedVector_Tpetra() const
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void 
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-setUniqueVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & uniqueVector)
+setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >&
+	ownedVector)
 {
   typedef Thyra::TpetraOperatorVectorExtraction<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> TOE;
-
   TEUCHOS_ASSERT(isInitialized_);
-  uniqueVector_ = TOE::getConstTpetraVector(uniqueVector);
+  ownedVector_ = TOE::getConstTpetraVector(ownedVector);
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<const Thyra::VectorBase<double> > 
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-getUniqueVector() const
+getOwnedVector() const
 {
   TEUCHOS_ASSERT(isInitialized_);
-
-  return (uniqueVector_==Teuchos::null) ? Teuchos::null : Thyra::createConstVector(uniqueVector_,uniqueSpace_);
+  return (ownedVector_ == Teuchos::null) ? Teuchos::null :
+    Thyra::createConstVector(ownedVector_, ownedSpace_);
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -173,7 +174,7 @@ print(std::ostream & os) const
   os << "\n";
   os << tab << "TpetraVector_ReadOnly_GlobalEvaluationData\n"
      << tab << "  init    = " << isInitialized_ << "\n"
-     << tab << "  unique  = " << uniqueVector_ << "\n"
+     << tab << "  owned   = " << ownedVector_   << "\n"
      << tab << "  ghosted = " << ghostedVector_ << "\n";
 }
 

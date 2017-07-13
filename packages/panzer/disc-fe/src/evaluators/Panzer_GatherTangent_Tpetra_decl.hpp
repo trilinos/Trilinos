@@ -59,8 +59,6 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
-#include "Panzer_Evaluator_WithBaseImpl.hpp"
-
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -98,7 +96,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherTangent_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherTangent_Tpetra<EvalT,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
   // for testing purposes
   const PHX::FieldTag & getFieldTag(int i) const
@@ -107,8 +105,8 @@ public:
 private:
 
   // We always use RealType for gathering as we never compute derivatives for this evaluator
-  //typedef typename panzer::Traits::RealType ScalarT;
-  typedef typename EvalT::ScalarT ScalarT;
+  typedef typename panzer::Traits::RealType ScalarT;
+  //typedef typename EvalT::ScalarT ScalarT;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering

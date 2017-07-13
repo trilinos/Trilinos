@@ -44,8 +44,7 @@
 #ifndef ROL_ATOMVECTOR_H
 #define ROL_ATOMVECTOR_H
 
-#include "ROL_StdVector.hpp"
-#include "ROL_BatchManager.hpp"
+#include "ROL_BatchStdVector.hpp"
 
 /** \class ROL::AtomVector
     \brief Provides the std::vector implementation of the ROL::Vector interface.
@@ -61,51 +60,47 @@ template <class Real>
 class DualAtomVector;
 
 template <class Real>
-class AtomVector : public StdVector<Real> {
+class AtomVector : public BatchStdVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  const uint numMySamples_;
-  const uint dimension_;
+  const int numMySamples_;
+  const int dimension_;
 
 public:
   AtomVector(const Teuchos::RCP<std::vector<Real> > &vec,
+             const Teuchos::RCP<BatchManager<Real> > &bman,
              const int numMySamples, const int dimension)
-    : StdVector<Real>(vec), numMySamples_(numMySamples), dimension_(dimension) {}
+    : BatchStdVector<Real>(vec,bman),
+      numMySamples_(numMySamples), dimension_(dimension) {}
 
   Teuchos::RCP<const std::vector<Real> > getAtom(const int i) const {
-    std::vector<Real> pt(dimension_,0.);
-    if ( i >= 0 && i < (int)numMySamples_ ) {
-      const std::vector<Real> &yval = *(StdVector<Real>::getVector());
-      for (uint j = 0; j < dimension_; j++) {
-        pt[j] = yval[i*dimension_ + j];
-      }
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> ERROR (ROL::AtomVector): index out of bounds in getAtom!");
+    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
+      ">>> ERROR (ROL::AtomVector): index out of bounds in getAtom!");
+    uint dim = static_cast<uint>(dimension_), I = static_cast<uint>(i);
+    std::vector<Real> pt(dim,0);
+    const std::vector<Real> &yval = *(StdVector<Real>::getVector());
+    for (uint j = 0; j < dim; ++j) {
+      pt[j] = yval[I*dim + j];
     }
     return Teuchos::rcp(new std::vector<Real>(pt));
   }
 
   void setAtom(const int i, const std::vector<Real> &pt) {
-    if ( i >= 0 && i < (int)numMySamples_ ) {
-      std::vector<Real> &yval = *(StdVector<Real>::getVector());
-      for (uint j = 0; j < dimension_; j++) {
-        yval[i*dimension_ + j] = pt[j];
-      }
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> ERROR (ROL::AtomVector): index out of bounds in setAtom!");
+    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
+      ">>> ERROR (ROL::AtomVector): index out of bounds in setAtom!");
+    uint dim = static_cast<uint>(dimension_), I = static_cast<uint>(i);
+    std::vector<Real> &yval = *(StdVector<Real>::getVector());
+    for (uint j = 0; j < dim; ++j) {
+      yval[I*dim + j] = pt[j];
     }
   }
 
   int getNumMyAtoms(void) const {
-    return (int)numMySamples_;
+    return numMySamples_;
   }
 
   int getDimension(void) const {
-    return (int)dimension_;
+    return dimension_;
   }
 };
 
@@ -113,84 +108,67 @@ template<class Real>
 class PrimalAtomVector : public AtomVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  const uint numMySamples_;
-  const uint dimension_;
   const Teuchos::RCP<std::vector<Real> > scale_;
-  const Teuchos::RCP<BatchManager<Real> > bman_;
-
   mutable Teuchos::RCP<DualAtomVector<Real> > dual_vec_;
+  mutable bool isDualInitialized_;
 
 public:
   PrimalAtomVector(const Teuchos::RCP<std::vector<Real> > &vec,
-                   const int numMySamples,
-                   const int dimension,
-                   const Teuchos::RCP<std::vector<Real> > &scale,
-                   const Teuchos::RCP<BatchManager<Real> > &bman)
-    : AtomVector<Real>(vec,numMySamples,dimension),
-      numMySamples_((uint)numMySamples), dimension_((uint)dimension),
-      scale_(scale), bman_(bman) {}
+                   const Teuchos::RCP<BatchManager<Real> > &bman,
+                   const int numMySamples, const int dimension,
+                   const Teuchos::RCP<std::vector<Real> > &scale)
+    : AtomVector<Real>(vec,bman,numMySamples,dimension),
+      scale_(scale), isDualInitialized_(false) {}
 
   Real dot(const Vector<Real> &x) const {
-    const PrimalAtomVector<Real> &ex = Teuchos::dyn_cast<const PrimalAtomVector>(x);
-    const std::vector<Real> &xval = *(ex.getVector());
+    const std::vector<Real> &xval = *(Teuchos::dyn_cast<const StdVector<Real> >(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
-    uint index = 0;
-    Real val = 0;
-    for (uint i = 0; i < numMySamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        index = i*dimension_ + j;
+    uint ysize = yval.size();
+    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
+      "Error: Vectors must have the same dimension." );
+    uint index        = 0;
+    uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
+    uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
+    Real val(0), sum_val(0);
+    for (uint i = 0; i < numMySamples; i++) {
+      for (uint j = 0; j < dimension; j++) {
+        index = i*dimension + j;
         val += xval[index] * (*scale_)[index] * yval[index];
       }
     }
     // Global sum
-    Real sum_val = 0;
-    bman_->sumAll(&val,&sum_val,1);
+    BatchStdVector<Real>::getBatchManager()->sumAll(&val,&sum_val,1);
     return sum_val;
   }
 
   Teuchos::RCP<Vector<Real> > clone(void) const {
+    uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
+    uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
     return Teuchos::rcp(new PrimalAtomVector(
-           Teuchos::rcp(new std::vector<Real>(numMySamples_*dimension_)),
-                        numMySamples_,dimension_,scale_,bman_));
+           Teuchos::rcp(new std::vector<Real>(numMySamples*dimension)),
+                        BatchStdVector<Real>::getBatchManager(),
+                        numMySamples,dimension,scale_));
   }
 
   const Vector<Real> & dual(void) const {
-    const std::vector<Real> &yval = *(StdVector<Real>::getVector());
+    uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
+    uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
+    if ( !isDualInitialized_ ) {
+      dual_vec_ = Teuchos::rcp(new DualAtomVector<Real>(
+                  Teuchos::rcp(new std::vector<Real>(numMySamples*dimension)),
+                               BatchStdVector<Real>::getBatchManager(),
+                               numMySamples,dimension,scale_));
+      isDualInitialized_ = true;
+    }
     uint index = 0;
-    std::vector<Real> tmp(yval);
-    for (uint i = 0; i < numMySamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        index = i*dimension_ + j;
-        tmp[index] *= (*scale_)[index];
+    for (uint i = 0; i < numMySamples; i++) {
+      for (uint j = 0; j < dimension; j++) {
+        index = i*dimension + j;
+        (*(dual_vec_->getVector()))[index]
+          = (*scale_)[index] * (*(StdVector<Real>::getVector()))[index];
       }
     }
-    dual_vec_ = Teuchos::rcp(new DualAtomVector<Real>(
-                Teuchos::rcp(new std::vector<Real>(tmp)),
-                             numMySamples_,dimension_,scale_,bman_));
     return *dual_vec_;
-  }
-
-  int dimension(void) const {
-    Real dim = (Real)StdVector<Real>::dimension();
-    Real sum = 0.;
-    bman_->sumAll(&dim,&sum,1);
-    return (int)sum;
-  }
-
-  Real reduce(const Elementwise::ReductionOp<Real> &r) const {
-    const std::vector<Real> &yval = *(StdVector<Real>::getVector());
-    uint index = 0;
-    Real result = r.initialValue();
-    for (uint i = 0; i < numMySamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        index = i*dimension_ + j;
-        r.reduce(yval[index],result);
-      }
-    }
-    // Global sum
-    Real sum = 0.;
-    bman_->reduceAll(&result,&sum,r);
-    return sum;
   }
 };
 
@@ -198,84 +176,67 @@ template<class Real>
 class DualAtomVector : public AtomVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  const uint numMySamples_;
-  const uint dimension_;
   const Teuchos::RCP<std::vector<Real> > scale_;
-  const Teuchos::RCP<BatchManager<Real> > bman_;
-
-  mutable Teuchos::RCP<PrimalAtomVector<Real> > dual_vec_;
+  mutable Teuchos::RCP<PrimalAtomVector<Real> > primal_vec_;
+  mutable bool isDualInitialized_;
 
 public:
   DualAtomVector(const Teuchos::RCP<std::vector<Real> > &vec,
-                 const int numMySamples,
-                 const int dimension,
-                 const Teuchos::RCP<std::vector<Real> > &scale,
-                 const Teuchos::RCP<BatchManager<Real> > &bman)
-    : AtomVector<Real>(vec,numMySamples,dimension),
-      numMySamples_((uint)numMySamples), dimension_((uint)dimension),
-      scale_(scale), bman_(bman) {}
+                 const Teuchos::RCP<BatchManager<Real> > &bman,
+                 const int numMySamples, const int dimension,
+                 const Teuchos::RCP<std::vector<Real> > &scale)
+    : AtomVector<Real>(vec,bman,numMySamples,dimension),
+      scale_(scale), isDualInitialized_(false) {}
 
   Real dot(const Vector<Real> &x) const {
-    const DualAtomVector<Real> &ex = Teuchos::dyn_cast<const DualAtomVector>(x);
-    const std::vector<Real> &xval = *(ex.getVector());
+    const std::vector<Real> &xval = *(Teuchos::dyn_cast<const StdVector<Real> >(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
-    uint index = 0;
-    Real val = 0;
-    for (uint i = 0; i < numMySamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        index = i*dimension_ + j;
+    uint ysize = yval.size();
+    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
+      "Error: Vectors must have the same dimension." );
+    uint index        = 0;
+    uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
+    uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
+    Real val(0), sum_val(0);
+    for (uint i = 0; i < numMySamples; i++) {
+      for (uint j = 0; j < dimension; j++) {
+        index = i*dimension + j;
         val += xval[index] * yval[index] / (*scale_)[index];
       }
     }
     // Global sum
-    Real sum_val = 0;
-    bman_->sumAll(&val,&sum_val,1);
+    BatchStdVector<Real>::getBatchManager()->sumAll(&val,&sum_val,1);
     return sum_val;
   }
 
   Teuchos::RCP<Vector<Real> > clone(void) const {
+    uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
+    uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
     return Teuchos::rcp(new DualAtomVector(
-           Teuchos::rcp(new std::vector<Real>(numMySamples_*dimension_)),
-                        numMySamples_,dimension_,scale_,bman_));
+           Teuchos::rcp(new std::vector<Real>(numMySamples*dimension)),
+                        BatchStdVector<Real>::getBatchManager(),
+                        numMySamples,dimension,scale_));
   }
 
   const Vector<Real> & dual(void) const {
-    const std::vector<Real> &yval = *(StdVector<Real>::getVector());
+    uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
+    uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
+    if ( !isDualInitialized_ ) {
+      primal_vec_ = Teuchos::rcp(new PrimalAtomVector<Real>(
+                    Teuchos::rcp(new std::vector<Real>(numMySamples*dimension)),
+                               BatchStdVector<Real>::getBatchManager(),
+                               numMySamples,dimension,scale_));
+      isDualInitialized_ = true;
+    }
     uint index = 0;
-    std::vector<Real> tmp(yval);
-    for (uint i = 0; i < numMySamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        index = i*dimension_ + j;
-        tmp[index] /= (*scale_)[index];
+    for (uint i = 0; i < numMySamples; i++) {
+      for (uint j = 0; j < dimension; j++) {
+        index = i*dimension + j;
+        (*(primal_vec_->getVector()))[index]
+          = (*(StdVector<Real>::getVector()))[index] / (*scale_)[index];
       }
     }
-    dual_vec_ = Teuchos::rcp(new PrimalAtomVector<Real>(
-                Teuchos::rcp(new std::vector<Real>(tmp)),
-                             numMySamples_,dimension_,scale_,bman_));
-    return *dual_vec_;
-  }
-
-  int dimension(void) const {
-    Real dim = (Real)StdVector<Real>::dimension();
-    Real sum = 0.;
-    bman_->sumAll(&dim,&sum,1);
-    return (int)sum;
-  }
-
-  Real reduce(const Elementwise::ReductionOp<Real> &r) const {
-    const std::vector<Real> &yval = *(StdVector<Real>::getVector());
-    uint index = 0;
-    Real result = r.initialValue();
-    for (uint i = 0; i < numMySamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        index = i*dimension_ + j;
-        r.reduce(yval[index],result);
-      }
-    }
-    // Global sum
-    Real sum = 0.;
-    bman_->reduceAll(&result,&sum,r);
-    return sum;
+    return *primal_vec_;
   }
 };
 

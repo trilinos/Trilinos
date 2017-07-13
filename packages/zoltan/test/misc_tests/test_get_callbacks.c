@@ -25,7 +25,6 @@ void packObjMultiFn(void *data, int ngid, int nlid, int nids,
                     ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int *dest,
                     int *size, int *index, char *buf, int *ierr)
 {
-  int i;
   *ierr = ZOLTAN_OK;
   printf("Greetings from packObjMultiFn %d\n", *((int *)data));
   ((int *)buf)[0] = *((int *) data);
@@ -34,7 +33,6 @@ void packObjMultiFn(void *data, int ngid, int nlid, int nids,
 void unpackObjMultiFn(void *data, int ngid, int nids, ZOLTAN_ID_PTR gids, 
                       int *size, int *index, char *buf, int *ierr)
 {
-  int i;
   *ierr = ZOLTAN_OK;
   printf("Greetings from unpackObjMultiFn %d\n", *((int *)data));
   ((int *)buf)[0] = *((int *) data);

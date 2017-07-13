@@ -59,16 +59,16 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
 
 #include "MueLu_UzawaSmoother_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
 
@@ -169,26 +169,10 @@ namespace MueLu {
     domainMapExtractor_ = bA->getDomainMapExtractor();
 
     // Store the blocks in local member variables
-    Teuchos::RCP<CrsMatrix> A00 = bA->getMatrix(0, 0);
-    Teuchos::RCP<CrsMatrix> A01 = bA->getMatrix(0, 1);
-    Teuchos::RCP<CrsMatrix> A10 = bA->getMatrix(1, 0);
-    Teuchos::RCP<CrsMatrix> A11 = bA->getMatrix(1, 1);
-
-    Teuchos::RCP<CrsMatrixWrap> Op00 = Teuchos::rcp(new CrsMatrixWrap(A00));
-    Teuchos::RCP<CrsMatrixWrap> Op01 = Teuchos::rcp(new CrsMatrixWrap(A01));
-    Teuchos::RCP<CrsMatrixWrap> Op10 = Teuchos::rcp(new CrsMatrixWrap(A10));
-    Teuchos::RCP<CrsMatrixWrap> Op11 = Teuchos::rcp(new CrsMatrixWrap(A11));
-
-    F_ = Teuchos::rcp_dynamic_cast<Matrix>(Op00);
-    G_ = Teuchos::rcp_dynamic_cast<Matrix>(Op01);
-    D_ = Teuchos::rcp_dynamic_cast<Matrix>(Op10);
-    Z_ = Teuchos::rcp_dynamic_cast<Matrix>(Op11);
-
-    // TODO move this to BlockedCrsMatrix->getMatrix routine...
-    F_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
-    G_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
-    D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
-    Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
+    F_ = bA->getMatrix(0, 0);
+    G_ = bA->getMatrix(0, 1);
+    D_ = bA->getMatrix(1, 0);
+    Z_ = bA->getMatrix(1, 1);
 
     // Set the Smoother
     // carefully switch to the SubFactoryManagers (defined by the users)
@@ -215,59 +199,103 @@ namespace MueLu {
 
     SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
+    bool bRangeThyraMode  = rangeMapExtractor_->getThyraMode();
+    bool bDomainThyraMode = domainMapExtractor_->getThyraMode();
+
     // extract parameters from internal parameter list
     const ParameterList & pL = Factory::GetParameterList();
     LocalOrdinal nSweeps = pL.get<LocalOrdinal>("Sweeps");
     Scalar omega = pL.get<Scalar>("Damping factor");
 
     // wrap current solution vector in RCP
-    RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
+    RCP<MultiVector>       rcpX = Teuchos::rcpFromRef(X);
+    RCP<const MultiVector> rcpB = Teuchos::rcpFromRef(B);
+
+    // make sure that both rcpX and rcpB are BlockedMultiVector objects
+    bool bCopyResultX = false;
+    RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    MUELU_TEST_FOR_EXCEPTION(bA.is_null() == true, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): A_ must be a BlockedCrsMatrix");
+    RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rcpX);
+    RCP<const BlockedMultiVector> bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
+
+    if(bX.is_null() == true) {
+      RCP<MultiVector> test = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedDomainMap(),rcpX));
+      rcpX.swap(test);
+      bCopyResultX = true;
+    }
+
+    if(bB.is_null() == true) {
+      RCP<const MultiVector> test = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedRangeMap(),rcpB));
+      rcpB.swap(test);
+    }
+
+    // we now can guarantee that X and B are blocked multi vectors
+    bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rcpX);
+    bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
+
+    // check the type of operator
+    RCP<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rbA = Teuchos::rcp_dynamic_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA);
+    if(rbA.is_null() == false) {
+      // A is a ReorderedBlockedCrsMatrix
+      Teuchos::RCP<const Xpetra::BlockReorderManager > brm = rbA->getBlockReorderManager();
+
+      // check type of X vector
+      if(bX->getBlockedMap()->getNumMaps() != bA->getDomainMapExtractor()->NumMaps()) {
+        // X is a blocked multi vector but incompatible to the reordered blocked operator A
+        Teuchos::RCP<MultiVector> test =
+            buildReorderedBlockedMultiVector(brm, bX);
+        rcpX.swap(test);
+      }
+      if(bB->getBlockedMap()->getNumMaps() != bA->getRangeMapExtractor()->NumMaps()) {
+        // B is a blocked multi vector but incompatible to the reordered blocked operator A
+        Teuchos::RCP<const MultiVector> test =
+            buildReorderedBlockedMultiVector(brm, bB);
+        rcpB.swap(test);
+      }
+    }
+
+    // Throughout the rest of the algorithm rcpX and rcpB are used for solution vector and RHS
 
     // create residual vector
     // contains current residual of current solution X with rhs B
-    RCP<MultiVector> residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
+    RCP<MultiVector> residual = MultiVectorFactory::Build(rcpB->getMap(), rcpB->getNumVectors());
+    RCP<BlockedMultiVector> bresidual = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(residual);
+    Teuchos::RCP<MultiVector> r1 = bresidual->getMultiVector(0,bRangeThyraMode);
+    Teuchos::RCP<MultiVector> r2 = bresidual->getMultiVector(1,bRangeThyraMode);
+
+    // helper vector 1
+    RCP<MultiVector> xtilde     = MultiVectorFactory::Build(rcpX->getMap(), rcpX->getNumVectors());
+    RCP<BlockedMultiVector> bxtilde = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(xtilde);
+    RCP<MultiVector> xtilde1 = bxtilde->getMultiVector(0,bDomainThyraMode);
+    RCP<MultiVector> xtilde2 = bxtilde->getMultiVector(1,bDomainThyraMode);
 
     // incrementally improve solution vector X
     for (LocalOrdinal run = 0; run < nSweeps; ++run) {
       // 1) calculate current residual
-      residual->update(one,B,zero); // residual = B
+      residual->update(one,*rcpB,zero); // residual = B
       A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -one, one);
-
-      // split residual vector
-      Teuchos::RCP<MultiVector> r1 = rangeMapExtractor_->ExtractVector(residual, 0);
-      Teuchos::RCP<MultiVector> r2 = rangeMapExtractor_->ExtractVector(residual, 1);
 
       // 2) solve F * \Delta \tilde{x}_1 = r_1
       //    start with zero guess \Delta \tilde{x}_1
-      RCP<MultiVector> xtilde1 = MultiVectorFactory::Build(F_->getRowMap(),1);
-      xtilde1->putScalar(zero);
+      bxtilde->putScalar(zero);
       velPredictSmoo_->Apply(*xtilde1,*r1);
 
       // 3) calculate rhs for SchurComp equation
       //    r_2 - D \Delta \tilde{x}_1
-      RCP<MultiVector> schurCompRHS = MultiVectorFactory::Build(Z_->getRowMap(),1);
+      RCP<MultiVector> schurCompRHS = MultiVectorFactory::Build(r2->getMap(),rcpB->getNumVectors());
       D_->apply(*xtilde1,*schurCompRHS);
       schurCompRHS->update(one,*r2,-one);
 
       // 4) solve SchurComp equation
       //    start with zero guess \Delta \tilde{x}_2
-      RCP<MultiVector> xtilde2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
-      xtilde2->putScalar(zero);
       schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
 
-      // 5) extract parts of solution vector X
-      Teuchos::RCP<MultiVector> x1 = domainMapExtractor_->ExtractVector(rcpX, 0);
-      Teuchos::RCP<MultiVector> x2 = domainMapExtractor_->ExtractVector(rcpX, 1);
+      rcpX->update(omega,*bxtilde,one);
+    }
 
-      // 6) update solution vector with increments xhat1 and xhat2
-      //    rescale increment for x2 with omega_
-      x1->update(omega,*xtilde1,one); // x1 = x1_old + omega xtilde1
-      x2->update(omega,*xtilde2,one); // x2 = x2_old + omega xtilde2
-
-      // write back solution in global vector X
-      domainMapExtractor_->InsertVector(x1, 0, rcpX);
-      domainMapExtractor_->InsertVector(x2, 1, rcpX);
-
+    if (bCopyResultX == true) {
+      RCP<MultiVector> Xmerged = bX->Merge();
+      X.update(one, *Xmerged, zero);
     }
   }
 
@@ -298,6 +326,12 @@ namespace MueLu {
     }
   }
 
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t UzawaSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
+    // FIXME: This is a placeholder
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+  
 } // namespace MueLu
 
 

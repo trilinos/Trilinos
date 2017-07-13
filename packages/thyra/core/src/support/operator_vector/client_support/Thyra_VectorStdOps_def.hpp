@@ -45,7 +45,6 @@
 #include "Thyra_VectorStdOps_decl.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_ROpGetElement.hpp"
 #include "RTOpPack_TOpSetElement.hpp"
 #include "RTOpPack_ROpMin.hpp"
@@ -54,23 +53,12 @@
 #include "RTOpPack_ROpMax.hpp"
 #include "RTOpPack_ROpMaxIndex.hpp"
 #include "RTOpPack_ROpMaxIndexLessThanBound.hpp"
-#include "RTOpPack_ROpNorm1.hpp"
-#include "RTOpPack_ROpNorm2.hpp"
-#include "RTOpPack_ROpNormInf.hpp"
 #include "RTOpPack_ROpSum.hpp"
-#include "RTOpPack_ROpWeightedNorm2.hpp"
-#include "RTOpPack_TOpAbs.hpp"
 #include "RTOpPack_TOpAddScalar.hpp"
-#include "RTOpPack_TOpAssignVectors.hpp"
-#include "RTOpPack_TOpAXPY.hpp"
 #include "RTOpPack_TOpEleWiseDivide.hpp"
 #include "RTOpPack_TOpEleWiseProd.hpp"
 #include "RTOpPack_TOpEleWiseConjProd.hpp"
 #include "RTOpPack_TOpEleWiseProdUpdate.hpp"
-#include "RTOpPack_TOpEleWiseScale.hpp"
-#include "RTOpPack_TOpLinearCombination.hpp"
-#include "RTOpPack_TOpScaleVector.hpp"
-#include "RTOpPack_TOpReciprocal.hpp"
 #include "RTOpPack_TOpRandomize.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Assert.hpp"
@@ -105,13 +93,7 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_1( const VectorBase<Scalar>& v_rhs )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpNorm1<Scalar> norm_1_op;
-  Teuchos::RCP<RTOpPack::ReductTarget> norm_1_targ = norm_1_op.reduct_obj_create();
-  applyOp<Scalar>(norm_1_op, tuple(ptrInArg(v_rhs)),
-    ArrayView<Ptr<VectorBase<Scalar> > >(null),
-    norm_1_targ.ptr() );
-  return norm_1_op(*norm_1_targ);
+  return v_rhs.norm_1();
 }
 
 
@@ -119,13 +101,7 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_2( const VectorBase<Scalar>& v_rhs )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpNorm2<Scalar> norm_2_op;
-  Teuchos::RCP<RTOpPack::ReductTarget> norm_2_targ = norm_2_op.reduct_obj_create();
-  applyOp<Scalar>(norm_2_op, tuple(ptrInArg(v_rhs)),
-    ArrayView<Ptr<VectorBase<Scalar> > >(null),
-    norm_2_targ.ptr() );
-  return norm_2_op(*norm_2_targ);
+  return v_rhs.norm_2();
 }
 
 
@@ -133,13 +109,7 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_2( const VectorBase<Scalar>& w, const VectorBase<Scalar>& v )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpWeightedNorm2<Scalar> wght_norm_2_op;
-  Teuchos::RCP<RTOpPack::ReductTarget> wght_norm_2_targ = wght_norm_2_op.reduct_obj_create();
-  applyOp<Scalar>(wght_norm_2_op, tuple(ptrInArg(w), ptrInArg(v)),
-    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
-    wght_norm_2_targ.ptr());
-  return wght_norm_2_op(*wght_norm_2_targ);
+  return v.norm_2(w);
 }
 
 
@@ -147,29 +117,14 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_inf( const VectorBase<Scalar>& v_rhs )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpNormInf<Scalar> norm_inf_op;
-  Teuchos::RCP<RTOpPack::ReductTarget> norm_inf_targ = norm_inf_op.reduct_obj_create();
-  applyOp<Scalar>(norm_inf_op, tuple(ptrInArg(v_rhs)),
-    ArrayView<Ptr<VectorBase<Scalar> > >(null),
-    norm_inf_targ.ptr() );
-  return norm_inf_op(*norm_inf_targ);
+  return v_rhs.norm_inf();
 }
 
 
 template<class Scalar>
 Scalar Thyra::dot( const VectorBase<Scalar>& v_rhs1, const VectorBase<Scalar>& v_rhs2 )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpDotProd<Scalar> dot_prod_op;
-  Teuchos::RCP<RTOpPack::ReductTarget>
-    dot_prod_targ = dot_prod_op.reduct_obj_create();
-  applyOp<Scalar>(dot_prod_op,
-    tuple(ptrInArg(v_rhs1), ptrInArg(v_rhs2))(),
-    ArrayView<Ptr<VectorBase<Scalar> > >(null),
-    dot_prod_targ.ptr()
-    );
-  return dot_prod_op(*dot_prod_targ);
+  return v_rhs2.dot(v_rhs1);
 }
 
 
@@ -218,9 +173,7 @@ template<class Scalar>
 void Thyra::copy( const VectorBase<Scalar>& v_rhs,
   const Ptr<VectorBase<Scalar> > &v_lhs )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
-  applyOp<Scalar>( assign_vectors_op, tuple(ptrInArg(v_rhs)), tuple(v_lhs), null );
+  v_lhs->assign(v_rhs);
 }
 
 
@@ -238,34 +191,21 @@ void Thyra::add_scalar( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &v_l
 template<class Scalar>
 void Thyra::scale( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &v_lhs )
 {
-  using Teuchos::tuple; using Teuchos::null;
-  if( alpha == ScalarTraits<Scalar>::zero() ) {
-    assign(v_lhs, ScalarTraits<Scalar>::zero());
-  }
-  else if( alpha != ScalarTraits<Scalar>::one() ) {
-    RTOpPack::TOpScaleVector<Scalar> scale_vector_op(alpha);
-    applyOp<Scalar>(scale_vector_op,
-      ArrayView<Ptr<const VectorBase<Scalar> > >(null),
-      tuple(v_lhs), null );
-  }
+  v_lhs->scale(alpha);
 }
 
 
 template<class Scalar>
 void Thyra::abs( const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> > &y )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::TOpAbs<Scalar> abs_op;
-  applyOp<Scalar>( abs_op, tuple(ptrInArg(x)), tuple(y), null );
+  y->abs(x);
 }
 
 
 template<class Scalar>
 void Thyra::reciprocal( const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> > &y )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::TOpReciprocal<Scalar> recip_op;
-  applyOp<Scalar>( recip_op, tuple(ptrInArg(x)), tuple(y), null );
+  y->reciprocal(x);
 }
 
 
@@ -299,9 +239,7 @@ template<class Scalar>
 void Thyra::ele_wise_scale( const VectorBase<Scalar>& x,
   const Ptr<VectorBase<Scalar> > &y )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::TOpEleWiseScale<Scalar> ele_wise_scale;
-  applyOp<Scalar>( ele_wise_scale, tuple(ptrInArg(x)), tuple(y), null );
+  y->ele_wise_scale(x);
 }
 
 
@@ -360,19 +298,7 @@ void Thyra::linear_combination(
   const Ptr<VectorBase<Scalar> > &y
   )
 {
-  using Teuchos::tuple; using Teuchos::ptr; using Teuchos::ptrInArg;
-  using Teuchos::null;
-  const int m = x.size();
-  if( beta == Teuchos::ScalarTraits<Scalar>::one() && m == 1 ) {
-    Vp_StV( y, alpha[0], *x[0] );
-    return;
-  }
-  else if( m == 0 ) {
-    Vt_S( y, beta );
-    return;
-  }
-  RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(alpha,beta);
-  applyOp<Scalar>( lin_comb_op, x, tuple(y), null );
+  y->linear_combination(alpha, x, beta);
 }
 
 
@@ -386,12 +312,7 @@ void Thyra::seed_randomize( unsigned int s )
 template<class Scalar>
 void Thyra::randomize( Scalar l, Scalar u, const Ptr<VectorBase<Scalar> > &v )
 {
-  using Teuchos::tuple; using Teuchos::null;
-  RTOpPack::TOpRandomize<Scalar> random_vector_op(l,u);
-  applyOp<Scalar>( random_vector_op,
-    ArrayView<Ptr<const VectorBase<Scalar> > >(null),
-    tuple(v),
-    null );
+  v->randomize(l, u);
   // Warning! If the RTOpPack::TOpRandomize<Scalar> object is ever made
   // static, the one must be careful to change the seed in between calls.
   // Right now the seed is being incremented by the constructor automatically.
@@ -447,9 +368,7 @@ void Thyra::Vp_StV( const Ptr<VectorBase<Scalar> > &v_lhs, const Scalar& alpha,
   const VectorBase<Scalar>& v_rhs
   )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
-  applyOp<Scalar>( axpy_op, tuple(ptrInArg(v_rhs)), tuple(v_lhs), null );
+  v_lhs->update(alpha, v_rhs);
 }
 
 

@@ -122,12 +122,6 @@ public:
     ,const Ordinal bytes, const char sendBuffer[], char globalReducts[]
     ) const;
   /** \brief . */
-  TEUCHOS_DEPRECATED virtual void reduceAllAndScatter(
-    const ValueTypeReductionOp<Ordinal,char> &reductOp
-    ,const Ordinal sendBytes, const char sendBuffer[]
-    ,const Ordinal recvCounts[], char myGlobalReducts[]
-    ) const;
-  /** \brief . */
         virtual void scan(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
@@ -324,28 +318,6 @@ void SerialComm<Ordinal>::reduceAll(
 {
   (void)reductOp;
   std::copy(sendBuffer,sendBuffer+bytes,globalReducts);
-}
-
-
-template<typename Ordinal>
-TEUCHOS_DEPRECATED
-void SerialComm<Ordinal>::reduceAllAndScatter(
-  const ValueTypeReductionOp<Ordinal,char> &reductOp
-  ,const Ordinal sendBytes, const char sendBuffer[]
-  ,const Ordinal recvCounts[], char myGlobalReducts[]
-  ) const
-{
-  // Ignore unused arguments
-  (void)reductOp;
-  (void)sendBytes;
-  (void)sendBuffer;
-  (void)recvCounts;
-  (void)myGlobalReducts;
-
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( recvCounts==NULL || recvCounts[0] != sendBytes );
-#endif
-  std::copy(sendBuffer,sendBuffer+sendBytes,myGlobalReducts);
 }
 
 

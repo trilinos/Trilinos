@@ -32,6 +32,8 @@
 #include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include <string>
+#include <algorithm>
 
 namespace Rythmos {
 
@@ -134,6 +136,14 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::initialize(
     *out << "numberOfSteps_ = " << numberOfSteps_ << std::endl;
   }
 
+  if (breakPoints_.size() > 0) {
+    currentBreakPoints_.clear();
+    for (const auto& bp : breakPoints_) {
+      if (bp > stepperRange.lower())
+	currentBreakPoints_.push_back(bp);
+    }
+  }
+
   setStepControlState_(BEFORE_FIRST_STEP);
 
 }
@@ -202,6 +212,18 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::nextStepSize(
   // Limit the step size to the requested step size
   currentStepSize_ = std::min(requestedStepSize_, currentStepSize_);
 
+  // Cut if a break point is in range
+  bool hitBreakPoint = false;
+  if (currentBreakPoints_.size() > 0) {
+    // Break points are sorted and in range. Remove as we hit them.
+    const Scalar time = stepper.getStepStatus().time;
+    if (time < *currentBreakPoints_.begin() && (time + currentStepSize_) >= *currentBreakPoints_.begin()) {
+      currentStepSize_ = *currentBreakPoints_.begin() - time;
+      currentBreakPoints_.pop_front();
+      hitBreakPoint = true;
+    }
+  }
+
   *stepSize = currentStepSize_;
   *stepSizeType = stepSizeType_;
   *order = currentOrder_;
@@ -218,7 +240,15 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::nextStepSize(
     Teuchos::OSTab ostab2(out,2,"** nextStepSize_ **");
     out << "currentStepSize_ = " << currentStepSize_ << std::endl;
     out << "currentOrder_ = " << currentOrder_ << std::endl;
-    out << "requestedStepSize_ = " << requestedStepSize_ << std::endl;
+    out << "requestedStepSize_ = " << requestedStepSize_ << std::endl;    
+    if (breakPoints_.size() > 0) {
+      if (hitBreakPoint)
+	out << "On break point = true" << std::endl;
+      else
+	out << "On break point = false" << std::endl;
+    }
+    if (currentBreakPoints_.size() > 0)
+      out << "Next break point = " << *currentBreakPoints_.begin() << std::endl; 
   }
 
 }
@@ -542,6 +572,31 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setParameterList(
   numberOfNonlinearIterationsForStepSizeRestriction_ =
     p.get<int>("Number of Nonlinear Iterations for Step Size Restriction");
 
+  // Parse the break points
+  {
+    breakPoints_.clear();
+    std::string str = p.get<std::string>("Break Points");
+    std::string delimiters(",");
+    std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+    std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+    while ( (pos != std::string::npos) || (lastPos != std::string::npos) ) {
+      std::string token = str.substr(lastPos,pos-lastPos);
+      breakPoints_.push_back(Scalar(std::stod(token)));
+      if(pos==std::string::npos)
+        break;
+
+      lastPos = str.find_first_not_of(delimiters, pos);
+      pos = str.find_first_of(delimiters, lastPos);
+    }
+
+    // order the break points
+    std::sort(breakPoints_.begin(),breakPoints_.end());
+
+    // copy into current
+    currentBreakPoints_.resize(breakPoints_.size());
+    std::copy(breakPoints_.begin(),breakPoints_.end(),currentBreakPoints_.begin());
+  }
+
   if ( doOutput_(Teuchos::VERB_HIGH) ) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"setParameterList");
@@ -610,6 +665,7 @@ ImplicitBDFStepperRampingStepControl<Scalar>::getValidParameters() const
                 "If \" Restrct Step Size Increase by Number of Nonlinear Iterations\" is "
                 "true, the step size will not be allowed to increase if the number of nonlinear "
                 "iterations was greater than or equal to the specified value.");
+    p->set<std::string>("Break Points","");
   }
 
   return (p);

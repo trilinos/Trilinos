@@ -119,16 +119,24 @@ template<typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherTangent_Tpetra<EvalT, TRAITS,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
   // try to extract linear object container
   if (d.gedc.containsDataObject(globalDataKey_)) {
-    tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+    RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
+    RCP<LOCPair_GlobalEvaluationData> loc_pair =
+      rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+
+    if(loc_pair!=Teuchos::null) {
+      Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
+      tpetraContainer_ = rcp_dynamic_cast<LOC>(loc,true);
+    }
 
     if(tpetraContainer_==Teuchos::null) {
-      // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
-      tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+      tpetraContainer_ = rcp_dynamic_cast<LOC>(ged,true);
     }
   }
 }

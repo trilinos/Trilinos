@@ -41,32 +41,6 @@
 //@HEADER
 */
 
-// ***********************************************************************
-//
-//      Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2004) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-
 
 /*! \file Ifpack2_UnitTestContainer.cpp
 
@@ -179,7 +153,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
 
   // Apply the SparseContainer
   out << "Applying the SparseContainer" << endl;
-  MyContainer.apply(x,y);
+  MyContainer.applyMV(x,y);
 
   // Apply raw ILUT
   out << "Applying reference ILUT" << endl;
@@ -192,7 +166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
   // Weighted Apply the SparseContainer
   out << "Testing SparseContainer::weightedApply" << endl;
   d.putScalar(1.0);
-  MyContainer.weightedApply(x,y,d);
+  MyContainer.weightedApplyMV(x,y,d);
 
   // Diff
   out << "Computing results" << endl;
@@ -313,7 +287,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   x.putScalar (0.0);
   out << "DenseContainer::apply" << endl;
   try {
-    MyContainer->apply (b, x);
+    MyContainer->applyMV(b, x);
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -343,7 +317,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
 
   out << "DenseContainer::weightedApply" << endl;
   d.putScalar (1.0);
-  MyContainer->weightedApply (b, y, d);
+  MyContainer->weightedApplyMV(b, y, d);
 
   out << "Computing results of apply() and weightedApply() "
       << "(they should be the same in this case)" << endl;
@@ -476,7 +450,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   x.putScalar (0.0);
   out << "DenseContainer::apply" << endl;
   try {
-    MyContainer->apply (b, x);
+    MyContainer->applyMV(b, x);
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;

@@ -297,6 +297,7 @@ void handle_invalid_arg(const char* expr,
 // 2) Check method argument foo is not NULL
 //   ThrowInvalidArgMsgIf(foo != NULL, "Arg foo is NULL");
 
+#define ThrowRequireWithSierraHelpMsg(expr) ThrowGenericCond(expr, "Program error. Contact sierra-help@sandia.gov for support.", handle_assert)
 #define ThrowRequireMsg(expr,message) ThrowGenericCond(expr, message, handle_assert)
 #define ThrowRequire(expr)            ThrowRequireMsg(expr, "")
 
@@ -314,6 +315,18 @@ void handle_invalid_arg(const char* expr,
 
 #define ThrowInvalidArgMsgIf(expr, message) ThrowGenericCond( !(expr), message, handle_invalid_arg)
 #define ThrowInvalidArgIf(expr)             ThrowInvalidArgMsgIf(expr, "")
+
+/**
+ * @ingroup Exception
+ * @brief Macro WarnTrace makes a pretty warning message with file and line number.
+ */
+#define WarnTrace std::string(std::string("  warning at ") + stk::source_relative_path(STK_STR_TRACE))
+
+/**
+ * @ingroup Exception
+ * @brief Macro ErrorTrace makes a pretty error message with file and line number.
+ */
+#define ErrorTrace std::string(std::string("  error thrown from ") + stk::source_relative_path(STK_STR_TRACE))
 
 ///
 /// @}

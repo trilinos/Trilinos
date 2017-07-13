@@ -35,8 +35,8 @@ public:
     //basics
     NoGhostGameofLife(GameofLifeMesh& Mesh, std::string name);
 
-    NoGhostGameofLife(stk::mesh::BulkData& bulkData, ScalarIntField& lifeField,
-                      ScalarIntField& neighborField, std::string name);
+    //NoGhostGameofLife(stk::mesh::BulkData& bulkData, ScalarIntField& lifeField,
+    //                  ScalarIntField& neighborField, std::string name);
 
     ~NoGhostGameofLife(){}
 

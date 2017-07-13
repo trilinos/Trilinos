@@ -46,6 +46,8 @@ namespace stk {
        * filename is changed.
        */
     void filename_substitution(std::string &filename);
+    std::string tailname(const std::string &filename);
+    std::string basename(const std::string &filename);
   }
 }
 #endif

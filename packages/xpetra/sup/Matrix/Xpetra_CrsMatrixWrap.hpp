@@ -95,7 +95,9 @@ class CrsMatrixWrap :
   typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
   typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+#endif
 #endif
 
 public:
@@ -145,6 +147,7 @@ public:
   }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying fixed number of entries for each row and column map
   CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params = null)
     : finalDefaultView_(false)
@@ -155,6 +158,11 @@ public:
     // Default view
     CreateDefaultView();
   }
+#else
+#ifdef __GNUC__
+#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
+#endif
+#endif
 #endif
 
   CrsMatrixWrap(RCP<CrsMatrix> matrix)
@@ -447,6 +455,21 @@ public:
     return matrixData_->getFrobeniusNorm();
   }
 
+  //! Left scale matrix using the given vector entries
+  void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+    matrixData_->leftScale(x);
+  }
+
+  //! Right scale matrix using the given vector entries
+  void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+    matrixData_->rightScale(x);
+  }
+
+  //! Returns true if globalConstants have been computed; false otherwise
+  bool haveGlobalConstants() const {
+    return matrixData_->haveGlobalConstants();
+  }
+
   //@}
 
   //! @name Advanced Matrix-vector multiplication and solve methods
@@ -578,10 +601,16 @@ public:
   }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
   /// \brief Access the underlying local Kokkos::CrsMatrix object
   local_matrix_type getLocalMatrix () const {
     return matrixData_->getLocalMatrix();
   }
+#else
+#ifdef __GNUC__
+#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
+#endif
+#endif
 #endif
 
   // JG: Added:

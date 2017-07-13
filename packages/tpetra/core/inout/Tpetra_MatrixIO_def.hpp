@@ -58,8 +58,10 @@ generateMatrix (const Teuchos::RCP<Teuchos::ParameterList> &plist,
                 const Teuchos::RCP<Node> &node,
                 Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &A)
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::as;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
   TEUCHOS_TEST_FOR_EXCEPTION( plist == Teuchos::null, std::runtime_error,
       "Tpetra::Utils::generateMatrix(): ParameterList is null.");
   TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::isParameterType<std::string>(*plist,"mat_type") == false, std::runtime_error,
@@ -70,8 +72,17 @@ generateMatrix (const Teuchos::RCP<Teuchos::ParameterList> &plist,
     const GlobalOrdinal gridSize = as<GlobalOrdinal>(plist->get<int>("gridSize",100));
     const GlobalOrdinal gS2 = gridSize*gridSize;
     const GlobalOrdinal numRows = gS2*gridSize;
-    Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap;
-    rowMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(as<global_size_t>(numRows),as<GlobalOrdinal>(0),comm,GloballyDistributed,node));
+    Teuchos::RCP<map_type> rowMap;
+    if (node.is_null ()) {
+      rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
+                                           static_cast<GlobalOrdinal> (0),
+                                           comm, GloballyDistributed));
+    }
+    else {
+      rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
+                                           static_cast<GlobalOrdinal> (0),
+                                           comm, GloballyDistributed, node));
+    }
     A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,7,Tpetra::StaticProfile));
     // fill matrix, one row at a time
     Teuchos::Array<GlobalOrdinal> neighbors;
@@ -112,6 +123,8 @@ readHBMatrix (const std::string &filename,
               Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap,
               const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
   const int myRank = comm->getRank();
   int numRows,numCols,numNZ;
   Teuchos::ArrayRCP<Scalar> svals;
@@ -214,7 +227,16 @@ readHBMatrix (const std::string &filename,
   broadcast(*comm,0,&numCols);
   // create map with uniform partitioning
   if (rowMap == Teuchos::null) {
-    rowMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>((global_size_t)numRows,(GlobalOrdinal)0,comm,GloballyDistributed,node));
+    if (node.is_null ()) {
+      rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
+                                           static_cast<GlobalOrdinal> (0),
+                                           comm, GloballyDistributed));
+    }
+    else {
+      rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
+                                           static_cast<GlobalOrdinal> (0),
+                                           comm, GloballyDistributed, node));
+    }
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION( rowMap->getGlobalNumElements() != (global_size_t)numRows, std::runtime_error,
@@ -247,12 +269,17 @@ readHBMatrix (const std::string &filename,
   }
   nnzPerRow = Teuchos::null;
   // create column map
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap;
+  Teuchos::RCP<const map_type> domMap;
   if (numRows == numCols) {
     domMap = rowMap;
   }
   else {
-    domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm,node);
+    if (node.is_null ()) {
+      domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm);
+    }
+    else {
+      domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm,node);
+    }
   }
   A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,myNNZ,Tpetra::StaticProfile));
   // free this locally, A will keep it allocated as long as it is needed by A (up until allocation of nonzeros)

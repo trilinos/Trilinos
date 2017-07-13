@@ -48,8 +48,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 
-#include "Kokkos_Core.hpp"
-
 #include <string>
 #include <iostream>
 
@@ -183,8 +181,6 @@ TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test)
 
 TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test_tpetra)
 {
-   Kokkos::initialize();
-
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -223,6 +219,4 @@ TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test_tpetra)
       else
          out << "Apply: SUCCESS" << std::endl;
    }
-
-   Kokkos::finalize();
 }

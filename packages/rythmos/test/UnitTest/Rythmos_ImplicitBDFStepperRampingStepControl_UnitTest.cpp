@@ -66,11 +66,9 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator,
 
   const RCP<Teuchos::ParameterList> params = 
     Teuchos::parameterList();
+
   const RCP<ImplicitBDFStepper<double> > stepper =
     implicitBDFStepper<double>(model, nonlinearSolver, params);
-
-//   const RCP<ImplicitBDFStepperStepControl<double> > scs = 
-//     Teuchos::rcp(new ImplicitBDFStepperStepControl<double>);
 
   const RCP<ImplicitBDFStepperRampingStepControl<double> > rscs = 
     Teuchos::rcp(new ImplicitBDFStepperRampingStepControl<double>);
@@ -104,6 +102,57 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator,
 
 }
 
+
+TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator,
+                   ImplicitBDFStepperRampingStepControlBreakPointing )
+{
+  const RCP<SinCosModel> model = sinCosModel(true);
+
+  const RCP<TimeStepNonlinearSolver<double> > nonlinearSolver =
+    timeStepNonlinearSolver<double>();
+
+  const RCP<Teuchos::ParameterList> params = 
+    Teuchos::parameterList();
+
+  const RCP<ImplicitBDFStepper<double> > stepper =
+    implicitBDFStepper<double>(model, nonlinearSolver, params);
+
+  const RCP<ImplicitBDFStepperRampingStepControl<double> > rscs = 
+    Teuchos::rcp(new ImplicitBDFStepperRampingStepControl<double>);
+
+  const RCP<Teuchos::ParameterList> rscs_params = 
+    Teuchos::parameterList();
+  rscs_params->set("Break Points","-1.0,8.5e-1,8.25e-1");
+  rscs->setParameterList(rscs_params);
+
+  rscs->setVerbLevel(Teuchos::VERB_HIGH);
+
+  const RCP<MockStepControlStrategyDecorator<double> > mscsd = 
+    mockStepControlStrategyDecorator<double>();
+  mscsd->initialize(rscs);
+  mscsd->addNonlinearSolverFailureOnStep(4,3);
+
+  stepper->setStepControlStrategy(mscsd);
+
+  stepper->setInitialCondition(model->getNominalValues());
+  const RCP<DefaultIntegrator<double> > integrator =
+    defaultIntegrator<double>();
+
+  const double finalTime = 1.0;
+  integrator->setStepper(stepper, finalTime);
+  integrator->setVerbLevel(Teuchos::VERB_MEDIUM);
+  integrator->setOStream(Teuchos::rcpFromRef(out));
+  const RCP<const Thyra::VectorBase<double> > x_final =
+    get_fwd_x<double>(*integrator, finalTime);
+
+  // not the best way to test, but will do for now
+  TEST_EQUALITY(rscs->numberOfSteps(), 51);
+  TEST_EQUALITY(rscs->numberOfFailedSteps(), 3);
+  TEST_FLOATING_EQUALITY(rscs->currentStepSize(),
+                         Teuchos::as<double>(0.0408), 1.0e-7);
+  TEST_EQUALITY(rscs->currentOrder(), 5);
+
+}
 
 } // namespace Rythmos
 

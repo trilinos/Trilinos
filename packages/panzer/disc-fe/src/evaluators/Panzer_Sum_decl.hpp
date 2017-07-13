@@ -64,10 +64,13 @@ namespace panzer {
     \endverbatim
   */
 PANZER_EVALUATOR_CLASS(Sum)
+  static const int MAX_VALUES=20;
   
   PHX::MDField<ScalarT> sum;
-  std::vector< PHX::MDField<const ScalarT> > values;
-  std::vector<double> scalars;
+  // std::vector< PHX::MDField<const ScalarT> > values;
+  // std::vector<double> scalars;
+  PHX::MDField<const ScalarT> values[MAX_VALUES];
+  Kokkos::View<const double *,PHX::Device> scalars;
 
   std::size_t cell_data_size;
 

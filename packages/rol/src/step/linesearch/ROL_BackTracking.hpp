@@ -63,8 +63,9 @@ public:
   virtual ~BackTracking() {}
 
   // Constructor
-  BackTracking( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) { 
-    rho_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Backtracking Rate",0.5);
+  BackTracking( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
+    Real half(0.5);
+    rho_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Backtracking Rate",half);
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
@@ -76,7 +77,7 @@ public:
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
             Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     ls_neval = 0;
     ls_ngrad = 0;
     // Get initial line search parameter

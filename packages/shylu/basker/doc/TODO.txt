@@ -13,13 +13,33 @@ BASKER TODO
 ** Solve with new 1perm
 ** Move ND schedule S into tree
 ** Fix column incomplete lvl-based factorization
-** Error manager for off-diag submatrices
+** Error manager for off-diag submatrices (done, needs testing)
 ** Split solver classes
 
-* Bugs
-** Scotch segfault on large problem ??
-   - This is do to not handeling scotch from the top-down
-   - Need to make a bottle up
+
+* RILUK
+  ** Add relaxation
+  ** Add tol
+  ** Add options
+
+* New ones from Siva
+ ** Different node types:
+ ** Test with serial, works or not
+ ** Cuda , what is the right behavior ?
+ ** static_assert for unsupported node_types
+    ** Ifpack2 -- done
+    ** Amesos2 -- need to pull tpetra node_type
+ ** setting option for everything that we want to control like maxh matching
+ ** Symbolic to initialize -- done
+
+ ** Example directory is never compiled
+ ** Add tests with different xml files for different options
+ ** Option for ILUT
+
+ ** High priority (for incomplete factorizations probably) : maximum product of diagonals
+    (See preconditioning highly indefinite and nonsymmetric matrices (Benzi,
+    Haws and Tuma)
+
 
 * Nice to have
 ** Redo matrix data structure

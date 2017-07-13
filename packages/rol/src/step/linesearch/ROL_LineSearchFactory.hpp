@@ -57,6 +57,7 @@
 #include "ROL_Bisection.hpp"
 #include "ROL_GoldenSection.hpp"
 #include "ROL_Brents.hpp"
+#include "ROL_ScalarMinimizationLineSearch.hpp"
 
 namespace ROL {
   template<class Real>
@@ -67,10 +68,13 @@ namespace ROL {
       case LINESEARCH_ITERATIONSCALING:     return Teuchos::rcp( new IterationScaling<Real>(parlist) );
       case LINESEARCH_PATHBASEDTARGETLEVEL: return Teuchos::rcp( new PathBasedTargetLevel<Real>(parlist) );
       case LINESEARCH_BACKTRACKING:         return Teuchos::rcp( new BackTracking<Real>(parlist) );
-      case LINESEARCH_BISECTION:            return Teuchos::rcp( new Bisection<Real>(parlist) );
-      case LINESEARCH_BRENTS:               return Teuchos::rcp( new Brents<Real>(parlist) );
-      case LINESEARCH_GOLDENSECTION:        return Teuchos::rcp( new GoldenSection<Real>(parlist) );
       case LINESEARCH_CUBICINTERP:          return Teuchos::rcp( new CubicInterp<Real>(parlist) );
+//      case LINESEARCH_BISECTION:            return Teuchos::rcp( new Bisection<Real>(parlist) );
+//      case LINESEARCH_BRENTS:               return Teuchos::rcp( new Brents<Real>(parlist) );
+//      case LINESEARCH_GOLDENSECTION:        return Teuchos::rcp( new GoldenSection<Real>(parlist) );
+      case LINESEARCH_BRENTS:
+      case LINESEARCH_GOLDENSECTION:
+      case LINESEARCH_BISECTION:            return Teuchos::rcp( new ScalarMinimizationLineSearch<Real>(parlist));
       default:                              return Teuchos::null;
     }
   }

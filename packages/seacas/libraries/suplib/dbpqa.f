@@ -51,13 +51,11 @@ C   --                 (4) - the analysis time
 C   --   NINFO - IN - the number of information records (if OPTION)
 C   --   INFO  - IN - the information records (if OPTION)
 
-      include 'exodusII.inc'
-      
       CHARACTER*(*) OPTION
       INTEGER NQAREC
-      CHARACTER*(MXSTLN) QAREC(4,*)
+      CHARACTER*(32) QAREC(4,*)
       INTEGER NINFO
-      CHARACTER*(MXLNLN) INFO(*)
+      CHARACTER*(80) INFO(*)
 
       LOGICAL ALL
 

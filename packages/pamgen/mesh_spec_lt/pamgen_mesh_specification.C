@@ -1051,19 +1051,28 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
     int border_node_list_size = 0;
     int internal_element_list_size = 0;
     int border_element_list_size = 0;
-    std::map<long,int> node_proc_ids;
-    std::map<long,int> element_proc_ids;
-    std::vector<long>  node_cmap_node_cnts;
+    std::map<long,std::vector < long > > node_proc_ids;
+    std::map<long,std::vector < std::pair <long/*element*/,long/*face*/ > > > element_proc_ids;
     std::vector<long>  elem_cmap_elem_cnts;
 
     Mesh_Specification * ms = this;
     int nfound = 0;
     int efound = 0;
+    int node_offset = 0;
+    int element_offset = 0;
     while(ms){
+
       internal_node_list_size    += ms->getMSI(NUM_INTERNAL_NODES);
       border_node_list_size      += ms->getMSI(NUM_BORDER_NODES);
       internal_element_list_size += ms->getMSI(NUM_INTERNAL_ELEMS);
       border_element_list_size   += ms->getMSI(NUM_BORDER_ELEMS);
+
+      long long * const * scnid    = ms->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_IDS);
+      long long * const * scnpid   = ms->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_PROC_IDS);
+      
+      long long * const * sceid    = ms->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_IDS);
+      long long * const * scsid    = ms->getMSPP(ms_lt::Mesh_Specification::COMM_SIDE_IDS);
+      long long * const * scepid   = ms->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_PROC_IDS);
 
       {
         int nncm = ms->getMSI(NUM_NODE_COMM_MAPS);
@@ -1072,19 +1081,15 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
         for(int ict = 0; ict < nncm; ict ++){
           long long proc_id = ncmap_ids[ict];
           long long nnodes =  ncmap_cnts[ict];
-          std::map<long,int>::iterator it;
-          it = node_proc_ids.find(proc_id);
-          if(it == node_proc_ids.end()){
-            node_proc_ids[proc_id] = nfound;
-            node_cmap_node_cnts.push_back(nnodes);
-            nfound ++;
-          }
-          else{
-            node_cmap_node_cnts[(*it).second]+=nnodes;
+
+	  for (long long nctr = 0; nctr < nnodes; nctr ++){
+	    (node_proc_ids[proc_id]).push_back(scnid[ict][nctr]+node_offset);
+	    assert(proc_id == scnpid[ict][nctr]);
           }
         }
       }
 
+      
       {
         int necm = ms->getMSI(NUM_ELEM_COMM_MAPS);
         long long * ecmap_ids = ms->getMSP(ELEM_CMAP_IDS);
@@ -1092,21 +1097,18 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
         for(int ict = 0; ict < necm; ict ++){
           long long proc_id = ecmap_ids[ict];
           long long nels =  ecmap_cnts[ict];
-          std::map<long,int>::iterator it;
-          it = element_proc_ids.find(proc_id);
-          if(it == element_proc_ids.end()){
-            element_proc_ids[proc_id] = efound;
-            elem_cmap_elem_cnts.push_back(nels);
-            efound ++;
-          }
-          else{
-            elem_cmap_elem_cnts[(*it).second]+=nels;
+	  for(long long ectr = 0; ectr < nels;ectr++){
+	    (element_proc_ids[proc_id]).push_back(std::pair<long,long>(sceid[ict][ectr]+element_offset,scsid[ict][ectr]));
+	    assert(proc_id == scepid[ict][ectr]);
           }
         }
       }
 
+      node_offset += ms->getMSI(NUM_NODES);
+      element_offset += ms->getMSI(NUM_ELEMENTS);
       ms = ms->Next();
-    }
+    }  /* while(ms)*/
+
     ndb->Parallel_Data_Size(internal_node_list_size,
                             border_node_list_size,
                             0,//num_external_nodes,
@@ -1121,19 +1123,20 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
       long long * nci  = ndb->getMSP(ms_lt::Mesh_Specification::NODE_CMAP_IDS);
       long long * ecec = ndb->getMSP(ms_lt::Mesh_Specification::ELEM_CMAP_ELEM_CNTS);
       long long * eci  = ndb->getMSP(ms_lt::Mesh_Specification::ELEM_CMAP_IDS);
-
-      std::map<long,int>::iterator it;
+      std::map<long,std::vector<long>>::iterator mit;
       {
         int count = 0;
-        for(it = node_proc_ids.begin();it != node_proc_ids.end();it ++,count ++){
-          ncnc[count] = node_cmap_node_cnts[count];
-          nci[count]  = (*it).first;
+	for(mit = node_proc_ids.begin();mit != node_proc_ids.end();mit ++,count ++){
+	  ncnc[count] = (*mit).second.size();//node_cmap_node_cnts[count];
+	  nci[count]  = (*mit).first;
         }
       }
+      std::map<long,std::vector < std::pair < long,long > > >::iterator it;
+
       {
         int count = 0;
         for(it = element_proc_ids.begin();it != element_proc_ids.end();it ++,count ++){
-          ecec[count] = elem_cmap_elem_cnts[count];
+	  ecec[count] = (*it).second.size();//elem_cmap_elem_cnts[count];
           eci[count]  = (*it).first;
         }
       }
@@ -1149,56 +1152,31 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
       long long * const * dcsid    = ndb->getMSPP(ms_lt::Mesh_Specification::COMM_SIDE_IDS);
       long long * const * dcepid   = ndb->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_PROC_IDS);
 
-      Mesh_Specification * meshSpec = this;
-      long long  node_offset = 0;
-      long long element_offset = 0;
-
-      std::vector<int>el_offsets (element_proc_ids.size());
-      std::vector<int>nd_offsets (node_proc_ids.size());
-      while(meshSpec){
-        long long * const * scnid    = meshSpec->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_IDS);
-        long long * const * scnpid   = meshSpec->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_PROC_IDS);
-        long long * const * sceid    = meshSpec->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_IDS);
-        long long * const * scsid    = meshSpec->getMSPP(ms_lt::Mesh_Specification::COMM_SIDE_IDS);
-        long long * const * scepid   = meshSpec->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_PROC_IDS);
-
         {
-          int nncm = meshSpec->getMSI(NUM_NODE_COMM_MAPS);
-          long long * ncmap_ids = meshSpec->getMSP(NODE_CMAP_IDS);
-          long long * ncmap_cnts = meshSpec->getMSP(NODE_CMAP_NODE_CNTS);
-          for(int ict = 0; ict < nncm; ict ++){
-            long long ncmapid = ncmap_ids[ict];
-            std::map<long,int>::iterator it;
-            it = node_proc_ids.find(ncmapid);
-            int which_conn = (*it).second;
-            for(int nct = 0; nct < ncmap_cnts[ict];nct++){
-              dcnpid[which_conn][nd_offsets[which_conn]] = scnpid[ict][nct];
-              dcnid[which_conn][nd_offsets[which_conn]] = scnid[ict][nct]+node_offset;
-              nd_offsets[which_conn]++;
-            }
-          }
-        }
-        {
-          int necm = meshSpec->getMSI(NUM_ELEM_COMM_MAPS);
-          long long * ecmap_ids = meshSpec->getMSP(ELEM_CMAP_IDS);
-          long long * ecmap_cnts = meshSpec->getMSP(ELEM_CMAP_ELEM_CNTS);
-          for(int ict = 0; ict < necm; ict ++){
-            long long ecmapid = ecmap_ids[ict];
-            std::map<long,int>::iterator it;
-            it = element_proc_ids.find(ecmapid);
-            int which_conn = (*it).second;
-            for(int nct = 0; nct < ecmap_cnts[ict];nct++){
-              dcepid[which_conn][el_offsets[which_conn]] = scepid[ict][nct];
-              dcsid[which_conn][el_offsets[which_conn]]  = scsid[ict][nct];
-              dceid[which_conn][el_offsets[which_conn]]  = sceid[ict][nct]+element_offset;
-              el_offsets[which_conn]++;
+	std::map<long,std::vector<long>>::iterator mit;
+	int lcount = 0;
+	for(mit = node_proc_ids.begin();mit != node_proc_ids.end();mit ++,lcount ++){
+	  std::vector<long>::iterator vit;
+	  int count = 0;
+	  for(vit = (*mit).second.begin();vit != (*mit).second.end();vit ++,count ++){
+	    dcnid[lcount][count] = *vit;
+	    dcnpid[lcount][count] = (*mit).first;
             }
           }
         }
 
-        node_offset += meshSpec->getMSI(NUM_NODES);
-        element_offset += meshSpec->getMSI(NUM_ELEMENTS);
-        meshSpec = meshSpec->Next();
+        {
+	std::map< long, std::vector < std::pair < long, long > > > :: iterator mit;
+	int lcount = 0;
+	for(mit = element_proc_ids.begin();mit != element_proc_ids.end();mit ++,lcount ++){
+	  std::vector< std::pair < long, long >>::iterator vit;
+	  int count = 0;
+	  for(vit = (*mit).second.begin();vit != (*mit).second.end();vit ++,count ++){
+	    dceid[lcount][count] = (*vit).first;
+	    dcsid[lcount][count] = (*vit).second;
+	    dcepid[lcount][count] = (*mit).first;
+          }
+        }
       }
     }
   }

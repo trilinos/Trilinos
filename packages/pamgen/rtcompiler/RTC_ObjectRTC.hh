@@ -8,7 +8,7 @@
 namespace PG_RuntimeCompiler {
 
 /**
- * A Object object represnts the operands and operators in the code the user 
+ * A Object object represnts the operands and operators in the code the user
  * gives us. It can be a Variable, constant (Number), ArrayIndex, etc. The
  * only thing all object have in common is they know what type of object they
  * are.
@@ -17,7 +17,7 @@ namespace PG_RuntimeCompiler {
 class Object
 {
  public:
-  
+
   /**
    * Constructor -> Sets the object's type
    *
@@ -38,7 +38,7 @@ class Object
   ObjectType getObjectType() const { return _objType;}
 
  protected:
-  ObjectType _objType; //!< The type of the object 
+  ObjectType _objType; //!< The type of the object
 };
 
 std::ostream& operator<<(std::ostream& os, const Object& obj);

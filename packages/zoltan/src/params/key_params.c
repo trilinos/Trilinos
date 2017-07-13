@@ -456,7 +456,8 @@ void Zoltan_Print_Configuration(char *indent)
   if (indent == NULL){
     indent = "";
   }
-  printf("\n%sZOLTAN_ID_TYPE: %s (%lu bytes)\n",
+  printf("\n%sBuild configuration:\n", indent);
+  printf("%sZOLTAN_ID_TYPE: %s (%lu bytes)\n",
     indent, zoltan_id_datatype_name, (unsigned long)(sizeof(ZOLTAN_ID_TYPE)));
   printf("%sZOLTAN_GNO_TYPE: %s, (%lu bytes)\n",
     indent, zoltan_gno_datatype_name, (unsigned long)(sizeof(ZOLTAN_GNO_TYPE)));
@@ -503,6 +504,11 @@ void Zoltan_Print_Configuration(char *indent)
     printf("version %d_%d_%d\n", 
            SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
   #endif
+#endif
+
+#if defined(ZOLTAN_PARMETIS) || defined(ZOLTAN_METIS) || defined(ZOLTAN_SCOTCH) || defined(ZOLTAN_PTSCOTCH)
+  printf("%s    sizeof indextype = %lu\n", indent, sizeof(indextype));
+  printf("%s    sizeof realtype = %lu\n", indent, sizeof(realtype));
 #endif
 }
 

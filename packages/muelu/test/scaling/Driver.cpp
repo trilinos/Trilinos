@@ -75,81 +75,16 @@
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
-#include <BelosLinearProblem.hpp>
+#include <BelosBiCGStabSolMgr.hpp>
 #include <BelosBlockCGSolMgr.hpp>
-#include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
-#include <MueLu_CreateTpetraPreconditioner.hpp>
-#endif
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_CreateEpetraPreconditioner.hpp>
-#endif
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A, Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coords = Teuchos::null) {
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, paramList, Utilities::MV2NonConstTpetraMV(coords));
-
-    return tH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif // HAVE_MUELU_TPETRA
-  }
-
-  XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
-  XPETRA_FACTORY_END;
-}
-
-#ifdef HAVE_MUELU_EPETRA
-template<>
-Teuchos::RCP<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> >
-CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > A, Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> > coords) {
-  typedef double                Scalar;
-  typedef int                   LocalOrdinal;
-  typedef int                   GlobalOrdinal;
-  typedef Xpetra::EpetraNode    Node;
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, paramList, Utilities::MV2NonConstTpetraMV(coords));
-
-    return tH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-  }
-
-  if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_EPETRA)
-    RCP<Epetra_CrsMatrix>      eA = Utilities::Op2NonConstEpetraCrs(A);
-    RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, paramList, Utilities::MV2NonConstEpetraMV(coords));
-    return eH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-  }
-
-  XPETRA_FACTORY_END;
-}
-#endif // HAVE_MUELU_EPETRA
+#include <MueLu_CreateXpetraPreconditioner.hpp>
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
@@ -187,17 +122,19 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
   bool        binaryFormat      = false;             clp.setOption("binary", "ascii",       &binaryFormat,      "print timings to screen");
 
-  std::string mapFile;                               clp.setOption("map",                   &mapFile,           "map data file");
+  std::string rowmapFile;                            clp.setOption("rowmap",                &rowmapFile,        "map data file");
   std::string colMapFile;                            clp.setOption("colmap",                &colMapFile,        "colmap data file");
   std::string domainMapFile;                         clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
   std::string rangeMapFile;                          clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
   std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,        "matrix data file");
+  std::string rhsFile;                               clp.setOption("rhs",                   &rhsFile,           "rhs data file");
   std::string coordFile;                             clp.setOption("coords",                &coordFile,         "coordinates data file");
   std::string nullFile;                              clp.setOption("nullspace",             &nullFile,          "nullspace data file");
   int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
   int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
 
+  clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -228,6 +165,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // Problem construction
   // =========================================================================
   std::ostringstream galeriStream;
+#ifdef HAVE_MUELU_OPENMP
+  std::string node_name = Node::name();
+  if(!comm->getRank() && !node_name.compare("OpenMP/Wrapper"))
+    galeriStream<<"OpenMP Max Threads = "<<omp_get_max_threads()<<std::endl;
+#endif
+
+
   comm->barrier();
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
@@ -298,8 +242,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     }
 
   } else {
-    if (!mapFile.empty())
-      map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(mapFile, lib, comm);
+    if (!rowmapFile.empty())
+      map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(rowmapFile, lib, comm);
     comm->barrier();
 
     if (!binaryFormat && !map.is_null()) {
@@ -334,10 +278,29 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       nullspace = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(nullFile, map);
   }
 
+  RCP<MultiVector> X = VectorFactory::Build(map);
+  RCP<MultiVector> B = VectorFactory::Build(map);
+
+  if (rhsFile.empty()) {
+    // we set seed for reproducibility
+    Utilities::SetRandomSeed(*comm);
+    X->randomize();
+    A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
+
+    Teuchos::Array<typename STS::magnitudeType> norms(1);
+    B->norm2(norms);
+    B->scale(one/norms[0]);
+
+  } else {
+    // read in B
+    B = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(rhsFile, map);
+  }
+
   comm->barrier();
   tm = Teuchos::null;
 
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
+
 
   int numReruns = 1;
   if (paramList.isParameter("number of reruns"))
@@ -435,7 +398,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
           aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
 #endif
         } else {
-          H = CreateHierarchy(A, mueluList, coordinates);
+          H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
         }
       }
 
@@ -447,21 +410,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       // =========================================================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
-
-      RCP<Vector> X = VectorFactory::Build(map);
-      RCP<Vector> B = VectorFactory::Build(map);
-
-      {
-        // we set seed for reproducibility
-        Utilities::SetRandomSeed(*comm);
-        X->randomize();
-        A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
-
-        Teuchos::Array<typename STS::magnitudeType> norms(1);
-        B->norm2(norms);
-        B->scale(one/norms[0]);
-        X->putScalar(zero);
-      }
+      X->putScalar(zero);
       tm = Teuchos::null;
 
       if (writeMatricesOPT > -2) {
@@ -486,7 +435,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
           H->Iterate(*B, *X, maxIts);
         }
 
-      } else if (solveType == "cg" || solveType == "gmres") {
+      } else if (solveType == "cg" || solveType == "gmres" || solveType == "bicgstab") {
 #ifdef HAVE_MUELU_BELOS
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
 
@@ -513,6 +462,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         bool set = belosProblem->setProblem();
         if (set == false) {
           out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+          // this fixes the resource leak detected by coverity (CID134984)
+          if (openedOut != NULL) {
+            fclose(openedOut);
+            openedOut = NULL;
+          }
           return EXIT_FAILURE;
         }
 
@@ -532,6 +486,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
           solver = rcp(new Belos::PseudoBlockCGSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
         } else if (solveType == "gmres") {
           solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+        } else if (solveType == "bicgstab") {
+          solver = rcp(new Belos::BiCGStabSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
         }
 
         // Perform solve
@@ -554,14 +510,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       globalTimeMonitor = Teuchos::null;
 
       if (printTimings) {
-        const bool alwaysWriteLocal = false;
-        const bool writeGlobalStats = true;
-        const bool writeZeroTimers  = false;
-        const bool ignoreZeroTimers = true;
-        const std::string filter    = "";
-        TimeMonitor::summarize(comm.ptr(), out, alwaysWriteLocal, writeGlobalStats,
-                               writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
-
         RCP<ParameterList> reportParams = rcp(new ParameterList);
         if (timingsFormat == "yaml") {
           reportParams->set("Report format",             "YAML");            // "Table" or "YAML"
@@ -572,6 +520,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         reportParams->set("writeGlobalStats",          true);
         reportParams->set("writeZeroTimers",           false);
         // FIXME: no "ignoreZeroTimers"
+
+        const std::string filter = "";
 
         std::ios_base::fmtflags ff(out.flags());
         if (timingsFormat == "table-fixed") out << std::fixed;
@@ -608,14 +558,14 @@ int main(int argc, char* argv[]) {
   bool verbose = true;
 
   try {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
+    const bool throwExceptions = false;
 
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+    Teuchos::CommandLineProcessor clp(throwExceptions);
     Xpetra::Parameters xpetraParameters(clp);
 
     std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
 
+    clp.recogniseAllOptions(false);
     switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:

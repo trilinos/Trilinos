@@ -178,6 +178,28 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, stringValidatorConverter)
 }
 
 
+TEUCHOS_UNIT_TEST(Teuchos_Validator, boolValidatorConverter)
+{
+  std::string xmlFileName = "BoolValidatorList.xml";
+  std::string boolParameterName = "boolParameterName";
+  RCP<BoolParameterEntryValidator> boolValidator =
+    rcp(new BoolParameterEntryValidator());
+
+  ParameterList myList("BoolValidatorList");
+  myList.set(boolParameterName, false,
+    "A parameter with a BoolParameterEntryValidator validator.",
+    boolValidator);
+
+  RCP<ParameterList> readInPL = writeThenReadPL(myList);
+
+  RCP<const BoolParameterEntryValidator> readInBoolValidator =
+    rcp_dynamic_cast<const BoolParameterEntryValidator>(
+      readInPL->getEntry(boolParameterName).validator(), true);
+
+  // to do - check any stuff we want to check
+  // right now it doesn't have any settings
+}
+
 TEUCHOS_UNIT_TEST(Teuchos_Validator, anynumberValidatorConverter)
 {
   std::string xmlFileName = "AnyNumberValidatorList.xml";
@@ -228,7 +250,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, anynumberValidatorConverter)
   TEST_EQUALITY(readinNonDefaultValidator->getPreferredType(),
     nonDefaultValidator->getPreferredType());
 }
-
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Validator, EnhancedNumberValidatorConverter, T)
 {

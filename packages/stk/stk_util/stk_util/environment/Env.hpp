@@ -79,24 +79,17 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
 /// @{
 ///
 
-
 //
-//  Provide single switch point for gemini interface options
+//  Provide single switch point for nemo interface options
 //
-  enum GeminiSCIVersion {
-    GEMINI_SCI_UNKNOWN = 0,
-    GEMINI_SCI_1 = 1,
-    GEMINI_SCI_2 = 2,
-    GEMINI_SCI_2_1 = 21,
-    NEMO_1 = 101
-  };
+enum NemoVersion {
+  NEMO_UNKNOWN = 0,
+  NEMO_1       = 101
+};
 
-  GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver=GEMINI_SCI_UNKNOWN);
-
-
+NemoVersion GetNemoVersion(NemoVersion ver = NEMO_UNKNOWN);
 
 bool is_comm_valid();
-
 
 /**
  * @ingroup EnvCommandLineDetail
@@ -110,7 +103,6 @@ bool is_comm_valid();
  *				or an empty string if not found.
  */
 const std::string &get_param(const char * const option);
-
 
 /**
  * @brief Member function <b>set_param</b> assigns the value to the parameter option.
@@ -133,7 +125,6 @@ void set_param(const char *option, const std::string &value);
  */
 const std::string &product_name();
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>developer_mode</b> returns true if the
@@ -153,7 +144,6 @@ void set_input_file_required(bool value);
 
 void setInputFileName(std::string value);
 std::string getInputFileName();
-
 
 /**
  * @brief Function <b>set_sm_preprocessing</b> sets whether to check input
@@ -390,9 +380,9 @@ int peer_group();
 
 
 /**
- * @brief Function <b>parallel_lag_master</b> returns the global rank of the Gemini Euler application.
+ * @brief Function <b>parallel_lag_master</b> returns the global rank of the Nemo Euler application.
  *
- * @return			a <b>int</b> value of the global rank of the Gemini Euler
+ * @return			a <b>int</b> value of the global rank of the Nemo Euler
  *				application.
  */
 int parallel_fluid_master();

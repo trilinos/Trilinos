@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 
   int errorFlag  = 0;
 
-  double errtol = ROL::ROL_THRESHOLD;
+  RealT errtol = ROL::ROL_THRESHOLD<RealT>();
 
   // *** Test body.
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
     ROL::StdVector<RealT, ElementT> checkvec(Teuchos::rcp(&consistency, false));
-    if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON)) {
+    if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }
 

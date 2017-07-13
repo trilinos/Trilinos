@@ -54,7 +54,9 @@
 #include "Ifpack2_BlockRelaxation.hpp"
 #include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_DenseContainer.hpp"
+#include "Ifpack2_SparseContainer.hpp"
 #include "Ifpack2_TriDiContainer.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver.hpp"
 
 #ifdef HAVE_IFPACK2_AMESOS2
 #  include "Ifpack2_Details_Amesos2Wrapper.hpp"
@@ -123,14 +125,37 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   }
   else if (precTypeUpper == "BLOCK_RELAXATION" ||
            precTypeUpper == "BLOCK RELAXATION" ||
-           precTypeUpper == "BLOCKRELAXATION" ) {
+           precTypeUpper == "BLOCKRELAXATION"  ||
+           precTypeUpper == "DENSE_BLOCK_RELAXATION" ||
+           precTypeUpper == "DENSE BLOCK RELAXATION" ||
+           precTypeUpper == "DENSEBLOCKRELAXATION" ) {
+    // NOTE (mfh 12 Aug 2016) Choice of "container type" is now a
+    // run-time parameter.  The "ContainerType" template parameter is
+    // now always Container<row_matrix_type>.
+    prec = rcp (new BlockRelaxation<row_matrix_type> (matrix));
+    Teuchos::ParameterList params;
+    params.set ("relaxation: container", "Dense");
+    prec->setParameters (params);
+  }
+  else if (precTypeUpper == "SPARSE_BLOCK_RELAXATION" ||
+           precTypeUpper == "SPARSE BLOCK RELAXATION" ||
+           precTypeUpper == "SPARSEBLOCKRELAXATION" ) {
     // FIXME (mfh 22 May 2014) We would prefer to have the choice of
     // dense or sparse blocks (the "container type") be a run-time
     // decision.  This will require refactoring BlockRelaxation so
     // that the "container type" is not a template parameter.  For
     // now, we default to use dense blocks.
-    typedef DenseContainer<row_matrix_type, scalar_type> container_type;
-    prec = rcp (new BlockRelaxation<row_matrix_type, container_type> (matrix));
+    //typedef SparseContainer<row_matrix_type, ILUT<row_matrix_type>> container_type;
+#ifdef HAVE_IFPACK2_AMESOS2
+    prec = rcp (new BlockRelaxation<row_matrix_type> (matrix));
+    Teuchos::ParameterList params;
+    params.set ("relaxation: container", "SparseAmesos2");
+    prec->setParameters (params);
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::invalid_argument, "Ifpack2::Details::OneLevelFactory: "
+      "\"SPARSE BLOCK RELAXATION\" requires building Trilinos with Amesos2 enabled.");
+#endif
   }
   else if (precTypeUpper == "TRIDI_RELAXATION" ||
            precTypeUpper == "TRIDI RELAXATION" ||
@@ -138,18 +163,30 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
            precTypeUpper == "TRIDIAGONAL_RELAXATION" ||
            precTypeUpper == "TRIDIAGONAL RELAXATION" ||
            precTypeUpper == "TRIDIAGONALRELAXATION") {
-    typedef TriDiContainer<row_matrix_type, scalar_type> container_type;
-    prec = rcp (new BlockRelaxation<row_matrix_type, container_type> (matrix));
-
+    prec = rcp (new BlockRelaxation<row_matrix_type> (matrix));
+    Teuchos::ParameterList params;
+    params.set ("relaxation: container", "TriDi");
+    prec->setParameters (params);
   }
   else if (precTypeUpper == "BANDED_RELAXATION" ||
            precTypeUpper == "BANDED RELAXATION" ||
            precTypeUpper == "BANDEDRELAXATION") {
-    typedef BandedContainer<row_matrix_type, scalar_type> container_type;
-    prec = rcp (new BlockRelaxation<row_matrix_type, container_type> (matrix));
+    prec = rcp (new BlockRelaxation<row_matrix_type> (matrix));
+    Teuchos::ParameterList params;
+    params.set ("relaxation: container", "Banded");
+    prec->setParameters (params);
   }
   else if (precTypeUpper == "IDENTITY" || precTypeUpper == "IDENTITY_SOLVER") {
     prec = rcp (new IdentitySolver<row_matrix_type> (matrix));
+  }
+
+  else if (precTypeUpper == "LOCAL SPARSE TRIANGULAR SOLVER" ||
+           precTypeUpper == "LOCAL_SPARSE_TRIANGULAR_SOLVER" ||
+           precTypeUpper == "LOCALSPARSETRIANGULARSOLVER" ||
+           precTypeUpper == "SPARSE TRIANGULAR SOLVER" ||
+           precTypeUpper == "SPARSE_TRIANGULAR_SOLVER" ||
+           precTypeUpper == "SPARSETRIANGULARSOLVER") {
+    prec = rcp (new LocalSparseTriangularSolver<row_matrix_type> (matrix));
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(

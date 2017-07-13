@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
   zlno_t numLocalIds = 10;
   zgno_t *myIds = new zgno_t[numLocalIds];
-  zgno_t base = rank * numLocalIds;
+  zgno_t myFirstId = rank * numLocalIds;
   
   int wdim = 2;
   zscalar_t *weights = new zscalar_t [numLocalIds*wdim];
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
   const zscalar_t **valuePtrs = new const zscalar_t * [mvdim];
 
   for (zlno_t i=0; i < numLocalIds; i++){
-    myIds[i] = base+i;
+    myIds[i] = myFirstId+i;
 
     for (int w=0; w < wdim; w++)
       weights[w*numLocalIds + i] = w + 1 + nprocs - rank;

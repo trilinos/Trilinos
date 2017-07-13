@@ -28,17 +28,17 @@ public:
     {
         return graphEdges.size();
     }
-    const GraphEdge & get_edge_at_index(size_t index) const
+    const GraphEdge & get_edge_at_index(impl::LocalId elem) const
     {
-        return graphEdges[index];
+        return graphEdges[elem];
     }
     void push_back(const GraphEdge &graphEdge)
     {
         graphEdges.push_back(graphEdge);
     }
-    void erase_at_index(size_t index)
+    void erase_at_index(impl::LocalId elem)
     {
-        graphEdges.erase(graphEdges.begin() + index);
+        graphEdges.erase(graphEdges.begin() + elem);
     }
     void clear()
     {
@@ -57,14 +57,19 @@ public:
     size_t get_num_edges() const;
     size_t get_num_edges_for_element(impl::LocalId elem) const;
     const GraphEdge & get_edge_for_element(impl::LocalId elem1, size_t index) const;
-    const GraphEdgesForElement& get_edges_for_element(size_t index) const;
+    const GraphEdgesForElement& get_edges_for_element(impl::LocalId elem) const;
     std::vector<GraphEdge> get_edges_for_element_side(impl::LocalId elem, int side) const;
 
     void add_edge(const GraphEdge &graphEdge);
     void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
     void delete_edge(const GraphEdge &graphEdge);
-    void delete_all_connections(impl::LocalId elem);
+    void delete_all_edges(impl::LocalId elem);
     void clear();
+    void delete_vertex(stk::mesh::impl::LocalId id)
+    {
+        m_graphEdges.erase(m_graphEdges.begin()+id);
+    }
+
 private:
     std::vector<GraphEdgesForElement> m_graphEdges;
     size_t m_numEdges = 0;
@@ -74,11 +79,12 @@ class ParallelInfoForGraphEdges
 {
 public:
     ParallelInfoForGraphEdges(int procRank) : m_procRank(procRank) {}
-    impl::parallel_info& get_parallel_info_for_graph_edge(const GraphEdge& graphEdge);
-    const impl::parallel_info& get_parallel_info_for_graph_edge(const GraphEdge& graphEdge) const;
+    impl::ParallelInfo& get_parallel_info_for_graph_edge(const GraphEdge& graphEdge);
+    const impl::ParallelInfo& get_parallel_info_for_graph_edge(const GraphEdge& graphEdge) const;
     impl::ParallelGraphInfo &get_parallel_graph_info() { return m_parallel_graph_info; }
+    const impl::ParallelGraphInfo &get_parallel_graph_info() const { return m_parallel_graph_info; }
 
-    void insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::parallel_info&);
+    void insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo& p_info);
     void erase_parallel_info_for_graph_edge(const GraphEdge& graphEdge);
 
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;

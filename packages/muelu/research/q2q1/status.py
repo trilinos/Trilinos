@@ -70,13 +70,14 @@ def main():
     if k <= skip:
       continue
 
+    print(file)
+
     colors = np.loadtxt(file)
-    print('len(colors) = %d' % len(colors))
-    print('len(x) = %d' % len(x))
     assert len(colors) == len(x)
 
     # one can use any key on keyboard to progress to the next plot
-    cid = fig.canvas.mpl_connect('key_press_event', moveon)
+    if ui == True:
+      cid = fig.canvas.mpl_connect('key_press_event', moveon)
 
     s = plt.scatter(x, y, c=colors, vmin=min_color, vmax=max_color, s=area, cmap=q2q1)
     s.set_alpha(0.75)
@@ -86,8 +87,8 @@ def main():
       plt.savefig(file + '.png', format='png')
     else:
       fig.canvas.draw()
+      raw_input('>')
 
-    raw_input('>')
     plt.clf()
 
 if __name__ == '__main__':

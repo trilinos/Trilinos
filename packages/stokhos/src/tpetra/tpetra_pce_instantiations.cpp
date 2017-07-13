@@ -63,6 +63,7 @@ typedef int GlobalOrdinal;
 #include "Tpetra_MultiVector_def.hpp"
 #include "Tpetra_Vector_def.hpp"
 #include "Tpetra_CrsGraph_def.hpp"
+#include "Tpetra_Details_getDiagCopyWithoutOffsets_def.hpp"
 #include "Tpetra_CrsMatrix_def.hpp"
 
 #include "TpetraExt_MatrixMatrix_def.hpp"

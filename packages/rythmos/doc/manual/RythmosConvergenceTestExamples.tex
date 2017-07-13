@@ -1,6 +1,6 @@
+\cleardoublepage{}
 
 \section{Convergence Test Examples}
-
 
 \subsection{Dahlquist Test Equation\label{rythmos:sec:Dahlquist-Test}}
 
@@ -16,7 +16,7 @@ and oscillatory solutions). By implementing time integrators in the
 Dahlquist test equation, the amplification or stability factor, $R(z)$,
 can be determined by writing it in the update form
 \[
-x_{n}=R(\lambda\Delta t)\, x_{n-1}=R(z)\, x_{n-1}
+x_{n}=R(\lambda\Delta t)\,x_{n-1}=R(z)\,x_{n-1}
 \]
 where $z=\lambda\Delta t$. A few important measures of stability
 are absolute stability, A-stability and L-stability and are defined
@@ -34,7 +34,6 @@ domain for the negative half domain where $Re(z)\leq0$. Although
 A-stability is useful for many non-stiff equations, stiff equations
 require additional stability properties to A-stability, $\left|R(z)\right|\rightarrow0$
 as $z\rightarrow-\infty$, and is known as L-stability.
-
 
 \subsection{SinCos Problem\label{rythmos:sec:SinCos-Problem}}
 
@@ -67,12 +66,9 @@ b & = & \gamma_{1}/((f/L)*cos((f/L)*t_{0}+\phi))[=1]
 The solution is shown in Fig.~\ref{rythmos:fig:SinCos-exact}. 
 \begin{figure}
 
-
 \begin{centering}
 \includegraphics{figures/sincos}\caption{Exact solution to the Sine-Cosine problem.\label{rythmos:fig:SinCos-exact}}
-
 \par\end{centering}
-
 \end{figure}
 Therefore this model has three model parameters and two initial conditions
 which effect the exact solution as above. 
@@ -88,14 +84,13 @@ F_{0} & = & x_{1}\\
 F_{1} & = & \left(\frac{f}{L}\right)^{2}(a-x_{0})
 \end{eqnarray*}
 
-
 The exact sensitivities, $\mathbf{s}=\partial\mathbf{x}/\partial\mathbf{p}$,
 for the problem are specified as
 \[
 \mathbf{s}(t)=\left[\begin{array}{cc}
 1 & 0\\
-\left(\frac{b}{L}\right)t\,\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\\
--\frac{b\, f\, t}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)
+\left(\frac{b}{L}\right)t\,\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\,f\,t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\\
+-\frac{b\,f\,t}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{b\,f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\,f^{2}\,t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)
 \end{array}\right]
 \]
 and for the default initial conditions, $\phi=0$ and $b=1$
@@ -111,11 +106,10 @@ are
 \[
 \dot{\mathbf{s}}(t)=\left[\begin{array}{cc}
 0 & 0\\
-\left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{2b\, f}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\left(\frac{b}{L}\right)-\frac{b\, f^{2}\, t}{L^{3}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)\\
--\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & \frac{2b\, f^{2}}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{3}\, t}{L^{4}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)
+\left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\,f\,t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{2b\,f}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\left(\frac{b}{L}\right)-\frac{b\,f^{2}\,t}{L^{3}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)\\
+-\frac{b\,f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\,f^{2}\,t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & \frac{2b\,f^{2}}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\,f^{3}\,t}{L^{4}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)
 \end{array}\right]
 \]
-
 
 
 \subsection{Log-Time Problem\label{rythmos:sec:Log-Time-Problem}}

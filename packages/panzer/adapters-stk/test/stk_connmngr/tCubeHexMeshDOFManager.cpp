@@ -63,15 +63,15 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
-Teuchos::RCP<panzer_stk_classic::STK_Interface> buildHexMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int zelmts,
+Teuchos::RCP<panzer_stk::STK_Interface> buildHexMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int zelmts,
                                                                                     int xblocks,int yblocks,int zblocks)
 {
    Teuchos::ParameterList pl;
@@ -82,10 +82,10 @@ Teuchos::RCP<panzer_stk_classic::STK_Interface> buildHexMesh(stk_classic::Parall
    pl.set<int>("Y Blocks",yblocks);
    pl.set<int>("Z Blocks",zblocks);
 
-   panzer_stk_classic::CubeHexMeshFactory meshFact;
+   panzer_stk::CubeHexMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
-   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = meshFact.buildMesh(comm);
+   Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
    mesh->writeToExodus("whatish.exo");
    return mesh;
 }
@@ -94,7 +94,7 @@ template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -104,23 +104,23 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double> >();
 
-   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildHexMesh(Comm,2,2,2,1,1,1);
+   Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildHexMesh(Comm,2,2,2,1,1,1);
    RCP<panzer::ConnManager<int,int> > connManager 
-         = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+         = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
@@ -202,23 +202,23 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 
    // check that owned is_subset owned_and_ghosted
    //////////////////////////////////////////////////////////////////////////
-   std::vector<int> owned, owned_and_shared;
+   std::vector<int> owned, owned_and_ghosted;
    dofManager->getOwnedIndices(owned);
-   dofManager->getOwnedAndSharedIndices(owned_and_shared);
+   dofManager->getOwnedAndGhostedIndices(owned_and_ghosted);
 
    if(numProcs==1) {
-     TEST_EQUALITY(owned.size(),owned_and_shared.size());
+     TEST_EQUALITY(owned.size(),owned_and_ghosted.size());
    }
    else  {
      out << "owned size = " << owned.size() << std::endl;
-     out << "owned_and_shared size = " << owned_and_shared.size() << std::endl;
-     TEST_ASSERT(owned.size()<=owned_and_shared.size());
+     out << "owned_and_ghosted size = " << owned_and_ghosted.size() << std::endl;
+     TEST_ASSERT(owned.size()<=owned_and_ghosted.size());
    }
    for(std::size_t i=0;i<owned.size();i++) {
-     TEST_EQUALITY(owned[i],owned_and_shared[i]);
+     TEST_EQUALITY(owned[i],owned_and_ghosted[i]);
    }
-   for(std::size_t i=owned.size();i<owned_and_shared.size();i++) {
-     TEST_ASSERT(std::find(owned.begin(),owned.end(),owned_and_shared[i])==owned.end());
+   for(std::size_t i=owned.size();i<owned_and_ghosted.size();i++) {
+     TEST_ASSERT(std::find(owned.begin(),owned.end(),owned_and_ghosted[i])==owned.end());
    }
 }
 
@@ -227,22 +227,22 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex_face_orientations)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternI1 
-         = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = 
-       Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(buildHexMesh(Comm,2,2,2,1,1,1)));
+       Teuchos::rcp(new panzer_stk::STKConnManager<int>(buildHexMesh(Comm,2,2,2,1,1,1)));
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);

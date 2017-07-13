@@ -36,6 +36,7 @@
 
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
+#include <stk_util/util/string_case_compare.hpp>
 #include <string>                       // for string
 namespace stk { namespace mesh { class MetaData; } }
 
@@ -45,6 +46,14 @@ namespace mesh {
 
 namespace impl {
 
+struct StringLessCase
+{
+    bool operator()(const std::string &a, const std::string &b) const
+    {
+        return stk::less_case(a, b);
+    }
+};
+
 class PartRepository {
 public:
   explicit PartRepository(MetaData * meta);
@@ -52,6 +61,7 @@ public:
 
   Part * universal_part() const;
 
+  Part * get_part_by_name(const std::string &name) const;
   const PartVector & get_all_parts()  const;  // returns all parts
   const PartVector   get_mesh_parts() const; // returns the non-internal parts
 
@@ -72,10 +82,12 @@ private:
 
   Part * declare_part_impl( const std::string & name, EntityRank rank, bool force_no_induce );
   void declare_subset_impl( Part & superset, Part & subset );
+  void add_part(Part* part);
 
   MetaData * m_meta_data;
   Part * m_universal_part;
   PartVector m_all_parts;
+  std::map<std::string, stk::mesh::Part*, StringLessCase> m_name_to_parts_map;
 };
 
 template<class T>

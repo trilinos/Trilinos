@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     RealT error = diff->norm();
     *outStream << "\nAbsolute Error: " << error << "\n";
     *outStream <<   "Relative Error: " << error/z.norm() << "\n";
-    errorFlag = ((error > 1e2*std::sqrt(ROL::ROL_EPSILON)) ? 1 : 0);
+    errorFlag = ((error > 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

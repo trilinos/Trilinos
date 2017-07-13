@@ -51,14 +51,14 @@ class Selector;
  */
 
 /** \brief Global counts for a mesh's entities. */
-void comm_mesh_counts( const BulkData &bulk_data ,
-                       std::vector<size_t> & counts ,
+void comm_mesh_counts( const BulkData &bulk_data,
+                       std::vector<size_t> & globalCounts,
                        const Selector *select = 0);
 
-void comm_mesh_counts( const BulkData & M ,
-                       std::vector<size_t> & counts,
-                       std::vector<size_t> & min_counts,
-                       std::vector<size_t> & max_counts,
+void comm_mesh_counts( const BulkData & M,
+                       std::vector<size_t> & globalCounts,
+                       std::vector<size_t> & min_globalCounts,
+                       std::vector<size_t> & max_globalCounts,
                        const Selector *selector = 0);
 
 //----------------------------------------------------------------------

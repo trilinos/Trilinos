@@ -65,6 +65,10 @@ typedef Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node> IteratorO
 typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Vector;
 #endif
 
+#ifdef XPETRA_BLOCKEDVECTOR_SHORT
+typedef Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedVector;
+#endif
+
 #ifdef XPETRA_MULTIVECTOR_SHORT
 typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
 #endif
@@ -91,6 +95,18 @@ typedef Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra
 
 #ifdef XPETRA_BLOCKEDCRSMATRIX_SHORT
 typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
+#endif
+
+#ifdef XPETRA_BLOCKEDMULTIVECTOR_SHORT
+typedef Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedMultiVector;
+#endif
+
+#ifdef XPETRA_REORDEREDBLOCKEDMULTIVECTOR_SHORT
+typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> ReorderedBlockedMultiVector;
+#endif
+
+#ifdef XPETRA_REORDEREDBLOCKEDCRSMATRIX_SHORT
+typedef Xpetra::ReorderedBlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> ReorderedBlockedCrsMatrix;
 #endif
 
 #ifdef HAVE_XPETRA_THYRA

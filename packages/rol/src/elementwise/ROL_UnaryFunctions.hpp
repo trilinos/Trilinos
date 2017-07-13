@@ -44,10 +44,12 @@
 #ifndef ROL_UNARYFUNCTIONS_H
 #define ROL_UNARYFUNCTIONS_H
 
+#include "ROL_Types.hpp"
+#include "ROL_Elementwise_Function.hpp"
+
 #include <cstdlib>
 #include <ctime>
 
-#include "ROL_Elementwise_Function.hpp"
 
 namespace ROL {
 namespace Elementwise {
@@ -64,6 +66,18 @@ private:
   Real value_;
 }; // class Fill
 
+// Used to shift every element in a vector by a specific value
+template<class Real>
+class Shift : public UnaryFunction<Real> {
+private:
+  Real value_;
+public:
+  Shift( const Real &value ) : value_(value) {}
+  Real apply( const Real &x ) const {
+    return x+value_;
+  }
+}; // class Shift
+
 
 // Get the elementwise reciprocal of a vector
 template<class Real> 
@@ -73,6 +87,33 @@ public:
     return static_cast<Real>(1)/x;
   }  
 }; // class Reciprocal
+
+// Get the elementwise absolute value of a vector
+template<class Real>
+class AbsoluteValue : public UnaryFunction<Real> {
+public:
+  Real apply( const Real &x ) const {
+    return std::abs(x); 
+  }
+
+};
+
+template<class Real>
+class Sign : public Elementwise::UnaryFunction<Real> {
+private:
+  Real zero_;
+  Real one_;
+public:
+  Sign() : zero_(0), one_(1) {}
+  Real apply(const Real &x) const {
+    if(x==zero_) {
+      return zero_;
+    }
+    else {
+      return x>zero_ ? one_ : -one_;
+    }
+   }
+};
 
 
 // Compute the elementwise power of a vector
@@ -86,10 +127,19 @@ public:
   Real apply( const Real &x ) const {
     return std::pow(x,exponent_);
   } 
-
-
 }; // class Power
 
+
+// Compute the elementwise square root of a vector
+template<class Real> 
+class SquareRoot : public UnaryFunction<Real> {
+public:
+  SquareRoot( void ) {}
+
+  Real apply( const Real &x ) const {
+    return std::sqrt(x);
+  } 
+}; // class Power
 
 // Generate a uniformly distributed random number
 // between lower and upper
@@ -109,6 +159,27 @@ public:
   }
 }; // class UniformlyRandom
 
+// Multiply element by a uniformly distributed random number
+// between lower and upper
+template<class Real> 
+class UniformlyRandomMultiply : public UnaryFunction<Real> {
+private:
+  const Real lower_;
+  const Real upper_;
+
+public:
+  UniformlyRandomMultiply( const Real &lower = 0.0, const Real &upper = 1.0) : 
+    lower_(lower), upper_(upper) {
+  }
+
+  Real apply( const Real &x ) const {
+    return x*((static_cast<Real>(rand()) / static_cast<Real>(RAND_MAX)) * (upper_-lower_) + lower_);
+  }
+}; // class UniformlyRandom
+
+
+
+// Returns max(x,s) where s is the given scalar
 template<class Real>
 class ThresholdUpper : public UnaryFunction<Real> {
 
@@ -122,21 +193,90 @@ public:
   Real apply( const Real &x ) const {
     return std::max(threshold_,x);
   }
-
-
 }; 
+
+// Returns min(x,s) where s is the given scalar
+template<class Real>
+class ThresholdLower : public UnaryFunction<Real> {
+
+private:
+  const Real threshold_;
+
+public:
+  ThresholdLower( const Real threshold ) : 
+    threshold_(threshold) {}
+
+  Real apply( const Real &x ) const {
+    return std::min(threshold_,x);
+  }
+}; 
+
+
+template<class Real> 
+class Scale : public UnaryFunction<Real> {
+private:
+  Real value_;
+public:
+  Scale( const Real value ) : value_(value) {}
+  Real apply( const Real &x ) const {
+    return value_*x;
+  }
+};
+
+
 
 
 template<class Real>
 class Logarithm : public UnaryFunction<Real> {
 public:
 
-  Real apply( const Real &x) const {
-    return std::log(x);
+  Real apply( const Real &x ) const {
+    // To avoid circular dependency
+    Real NINF = -0.1*std::abs(Teuchos::ScalarTraits<Real>::rmax()); 
+    return (x>0) ? std::log(x) : NINF;
   }
 
 };
 
+
+// Heaviside step function
+template<class Real>
+class Heaviside : public UnaryFunction<Real> {
+public:
+ 
+  Real apply( const Real &x ) const {
+    Real value = 0;
+    if( x>0 ) {
+      value = 1.0;
+    } else if( x==0 ) {
+      value = 0.5;
+    } else {
+      value = 0.0;
+    }
+    return value;
+  }
+
+};
+
+
+
+// Evaluate g(f(x))
+template<class Real> 
+class UnaryComposition : public UnaryFunction<Real> {
+
+private:
+  
+  Teuchos::RCP<UnaryFunction<Real> > f_;
+  Teuchos::RCP<UnaryFunction<Real> > g_; 
+  
+public:
+  UnaryComposition( Teuchos::RCP<UnaryFunction<Real> > &f,
+                    Teuchos::RCP<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
+  Real apply( const Real &x ) const {
+    return g_->apply(f_->apply(x));
+  }
+
+};
 
 
 

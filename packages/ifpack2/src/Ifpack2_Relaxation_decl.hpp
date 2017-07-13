@@ -52,8 +52,7 @@
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <type_traits>
 
-//#define IFPACK2_MD_EXPERIMENTAL
-#ifdef IFPACK2_MD_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 #include <KokkosKernels_Handle.hpp>
 #endif
 
@@ -535,6 +534,9 @@ public:
   //! Total time in seconds spent in all calls to apply().
   double getApplyTime() const;
 
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;
+    
   //@}
   //! @name Implementation of Teuchos::Describable interface
   //@{
@@ -593,20 +595,25 @@ private:
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
 
-#ifdef IFPACK2_MD_EXPERIMENTAL
-  typedef typename crs_matrix_type::local_matrix_type kokkos_csr_matrix;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType crs_graph_type;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::row_map_type lno_row_view_t;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::entries_type lno_nonzero_view_t;
-  typedef typename kokkos_csr_matrix::values_type scalar_nonzero_view_t;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type TemporaryWorkSpace;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type PersistentWorkSpace;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::execution_space MyExecSpace;
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+
+  //@}
+  //! \name Implementation of multithreaded Gauss-Seidel.
+  //@{
+
+  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
+  typedef typename local_matrix_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type TemporaryWorkSpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type PersistentWorkSpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::execution_space MyExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
       <lno_row_view_t,lno_nonzero_view_t, scalar_nonzero_view_t,
-      MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > KernelHandle;
-  Teuchos::RCP<KernelHandle> kh;
-#endif
+      MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;
+  Teuchos::RCP<mt_kernel_handle_type> mtKernelHandle_;
+#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
   //@{

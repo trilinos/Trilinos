@@ -122,9 +122,11 @@ int main(int narg, char **arg)
 
   typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> mydata_t;
   typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
+  typedef Zoltan2::EvaluatePartition<adapter_t> quality_t;
   typedef adapter_t::part_t part_t;
 
-  adapter_t adapter(zlno_t(numMyIdentifiers),myIds,weightValues,weightStrides);
+  adapter_t *adapter = 
+    new adapter_t(zlno_t(numMyIdentifiers),myIds,weightValues,weightStrides);
 
   // Set up the parameters and problem
   bool useWeights = true;
@@ -134,17 +136,21 @@ int main(int narg, char **arg)
   cmdp.parse(narg, arg);
 
   Teuchos::ParameterList params("test parameters");
-  params.set("compute_metrics", "true");
+  //params.set("compute_metrics", true); // bool parameter
   params.set("num_global_parts", nprocs);
   params.set("algorithm", "block");
   params.set("partitioning_approach", "partition");
   if (!useWeights) params.set("partitioning_objective", "balance_object_count");
   
-  Zoltan2::PartitioningProblem<adapter_t> problem(&adapter, &params);
+  Zoltan2::PartitioningProblem<adapter_t> problem(adapter, &params);
 
   problem.solve();
 
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
+
+  // create metric object
+
+  quality_t *metricObject = new quality_t(adapter, &params, comm, &solution);
 
   // Some output 
   zscalar_t *totalWeight = new zscalar_t [nprocs];
@@ -155,7 +161,9 @@ int main(int narg, char **arg)
   memset(totalCnt, 0, nprocs * sizeof(int));
 
   const part_t *partList = solution.getPartListView();
-  const zscalar_t libImbalance = problem.getWeightImbalance();
+  zscalar_t libImbalance = metricObject->getWeightImbalance(0);
+  delete metricObject;
+  delete adapter;
 
   for (int i=0; i < numMyIdentifiers; i++){
     totalCnt[partList[i]]++;

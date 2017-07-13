@@ -21,6 +21,10 @@ unique design feature of Trilinos is its focus on packages.
 
 - [General Documentation](https://trilinos.org/about/documentation/)
 
+- [Quick configure, build and install hints for Trilinos](https://github.com/trilinos/Trilinos/blob/master/INSTALL.rst)
+
+- [Trilinos Configure, Build, Test, and Install Reference Guide](https://trilinos.org/docs/files/TrilinosBuildReference.html)
+
 - For help with a particular package, see the website and accompanying
   documentation for that package. Links to these can be found down the
   right side of any page on the website and at [the package website](http://trilinos.org/packages/).
@@ -30,3 +34,7 @@ unique design feature of Trilinos is its focus on packages.
 Trilinos is licensed on a per-package basis. Most packages are now under a BSD
 license, some are published under the (L)GPL. Details can be taken from the
 documentation of each package.
+
+### Pull requests
+
+Pull requests MUST be submitted against the develop branch.  The branch you see on the main page is the master branch.  If you accidentally make your pull request against the master branch, you can switch it to be against the develop branch, by following these instructions: https://github.com/blog/2224-change-the-base-branch-of-a-pull-request

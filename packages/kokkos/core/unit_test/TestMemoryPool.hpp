@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -45,323 +45,273 @@
 #ifndef KOKKOS_UNITTEST_MEMPOOL_HPP
 #define KOKKOS_UNITTEST_MEMPOOL_HPP
 
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 #include <impl/Kokkos_Timer.hpp>
 
-//#define TESTMEMORYPOOL_PRINT
-
 namespace TestMemoryPool {
 
-struct pointer_obj {
-  uint64_t * ptr;
-};
-
-template < typename PointerView, typename MemorySpace >
-struct allocate_memory {
-  typedef typename PointerView::execution_space  execution_space;
-  typedef typename execution_space::size_type    size_type;
-
-  enum { STRIDE = 32 };
-
-  PointerView m_pointers;
-  size_t m_num_ptrs;
-  size_t m_chunk_size;
-  MemorySpace m_space;
-
-  allocate_memory( PointerView & ptrs, size_t nptrs,
-                   size_t cs, MemorySpace & sp )
-    : m_pointers( ptrs ), m_num_ptrs( nptrs ),
-      m_chunk_size( cs ), m_space( sp )
-  {
-    // Initialize the view with the out degree of each vertex.
-    Kokkos::parallel_for( m_num_ptrs * STRIDE , *this );
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i ) const
-  {
-    if ( 0 == ( i % STRIDE ) ) {
-      m_pointers[i/STRIDE].ptr =
-        static_cast< uint64_t * >( m_space.allocate( m_chunk_size ) );
-    }
-  }
-};
-
-template < typename PointerView >
-struct fill_memory {
-  typedef typename PointerView::execution_space  execution_space;
-  typedef typename execution_space::size_type    size_type;
-
-  enum { STRIDE = 32 };
-
-  PointerView m_pointers;
-  size_t m_num_ptrs;
-
-  fill_memory( PointerView & ptrs, size_t nptrs )
-    : m_pointers( ptrs ), m_num_ptrs( nptrs )
-  {
-    // Initialize the view with the out degree of each vertex.
-    Kokkos::parallel_for( m_num_ptrs * STRIDE , *this );
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i ) const
-  {
-    if ( 0 == ( i % STRIDE ) ) {
-      *m_pointers[i/STRIDE].ptr = i / STRIDE ;
-    }
-  }
-};
-
-template < typename PointerView >
-struct sum_memory {
-  typedef typename PointerView::execution_space  execution_space;
-  typedef typename execution_space::size_type    size_type;
-  typedef uint64_t                               value_type;
-
-  enum { STRIDE = 32 };
-
-  PointerView m_pointers;
-  size_t m_num_ptrs;
-  uint64_t & result;
-
-  sum_memory( PointerView & ptrs, size_t nptrs, uint64_t & res )
-    : m_pointers( ptrs ), m_num_ptrs( nptrs ), result( res )
-  {
-    // Initialize the view with the out degree of each vertex.
-    Kokkos::parallel_reduce( m_num_ptrs * STRIDE , *this, result );
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void init( value_type & v ) const
-  { v = 0; }
-
-  KOKKOS_INLINE_FUNCTION
-  void join( volatile value_type & dst, volatile value_type const & src ) const
-  { dst += src; }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i, value_type & r ) const
-  {
-    if ( 0 == ( i % STRIDE ) ) {
-      r += *m_pointers[i/STRIDE].ptr;
-    }
-  }
-};
-
-template < typename PointerView, typename MemorySpace >
-struct deallocate_memory {
-  typedef typename PointerView::execution_space  execution_space;
-  typedef typename execution_space::size_type    size_type;
-
-  enum { STRIDE = 32 };
-
-  PointerView m_pointers;
-  size_t m_num_ptrs;
-  size_t m_chunk_size;
-  MemorySpace m_space;
-
-  deallocate_memory( PointerView & ptrs, size_t nptrs,
-                     size_t cs, MemorySpace & sp )
-    : m_pointers( ptrs ), m_num_ptrs( nptrs ), m_chunk_size( cs ), m_space( sp )
-  {
-    // Initialize the view with the out degree of each vertex.
-    Kokkos::parallel_for( m_num_ptrs * STRIDE , *this );
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i ) const
-  {
-    if ( 0 == ( i % STRIDE ) ) {
-      m_space.deallocate( m_pointers[i/STRIDE].ptr, m_chunk_size );
-    }
-  }
-};
-
-#define PRECISION 6
-#define SHIFTW 21
-#define SHIFTW2 12
-
-template < typename F >
-void print_results( const std::string & text, F elapsed_time )
+template< typename MemSpace = Kokkos::HostSpace >
+void test_host_memory_pool_stats()
 {
-  std::cout << std::setw( SHIFTW ) << text << std::setw( SHIFTW2 )
-            << std::fixed << std::setprecision( PRECISION ) << elapsed_time
-            << std::endl;
+  typedef typename MemSpace::execution_space   Space ;
+  typedef typename Kokkos::MemoryPool< Space > MemPool ;
+
+  const size_t MemoryCapacity = 32000 ;
+  const size_t MinBlockSize   =    64 ;
+  const size_t MaxBlockSize   =  1024 ;
+  const size_t SuperBlockSize =  4096 ;
+
+  MemPool pool( MemSpace()
+              , MemoryCapacity
+              , MinBlockSize
+              , MaxBlockSize
+              , SuperBlockSize
+              );
+
+  {
+    typename MemPool::usage_statistics stats ;
+
+    pool.get_usage_statistics( stats );
+
+    ASSERT_LE( MemoryCapacity , stats.capacity_bytes );
+    ASSERT_LE( MinBlockSize , stats.min_block_bytes );
+    ASSERT_LE( MaxBlockSize , stats.max_block_bytes );
+    ASSERT_LE( SuperBlockSize , stats.superblock_bytes );
+  }
+
+  void * p0064 = pool.allocate(64);
+  void * p0128 = pool.allocate(128);
+  void * p0256 = pool.allocate(256);
+  void * p1024 = pool.allocate(1024);
+
+  // Aborts because exceeds max block size:
+  // void * p2048 = pool.allocate(2048);
+
+  ASSERT_NE( p0064 , (void*) 0 );
+  ASSERT_NE( p0128 , (void*) 0 );
+  ASSERT_NE( p0256 , (void*) 0 );
+  ASSERT_NE( p1024 , (void*) 0 );
+
+  pool.deallocate( p0064 , 64 );
+  pool.deallocate( p0128 , 128 );
+  pool.deallocate( p0256 , 256 );
+  pool.deallocate( p1024 , 1024 );
+
 }
 
-template < typename F, typename T >
-void print_results( const std::string & text, unsigned long long width,
-                    F elapsed_time, T result )
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+template< class DeviceType >
+struct TestMemoryPool_Functor {
+
+  typedef Kokkos::View< uintptr_t * , DeviceType >         ptrs_type ;
+  typedef Kokkos::MemoryPool< DeviceType > pool_type ;
+
+  pool_type pool ;
+  ptrs_type ptrs ;
+
+  TestMemoryPool_Functor( const pool_type & arg_pool , size_t n )
+    : pool( arg_pool )
+    , ptrs( "ptrs" , n )
+    {}
+
+  // Specify reduction argument value_type to avoid
+  // confusion with tag-dispatch.
+
+  using value_type = long ;
+
+  struct TagAlloc {};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( TagAlloc , int i , long & update ) const noexcept
+    {
+      unsigned alloc_size = 32 * ( 1 + ( i % 5 ));
+      ptrs(i) = (uintptr_t)  pool.allocate( alloc_size );
+      if ( ptrs(i) ) { ++update ; }
+    }
+
+  struct TagDealloc {};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( TagDealloc , int i , long & update ) const noexcept
+    {
+      if ( ptrs(i) && ( 0 == i % 3 ) ) {
+        unsigned alloc_size = 32 * ( 1 + ( i % 5 ));
+        pool.deallocate( (void*) ptrs(i) , alloc_size );
+        ptrs(i) = 0 ;
+        ++update ;
+      }
+    }
+
+  struct TagRealloc {};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( TagRealloc , int i , long & update ) const noexcept
+    {
+      if ( 0 == ptrs(i) ) {
+        unsigned alloc_size = 32 * ( 1 + ( i % 5 ));
+        ptrs(i) = (uintptr_t)  pool.allocate( alloc_size );
+        if ( ptrs(i) ) { ++update ; }
+      }
+    }
+
+  struct TagMixItUp {};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( TagMixItUp , int i , long & update ) const noexcept
+    {
+      if ( ptrs(i) && ( 0 == i % 3 ) ) {
+
+        unsigned alloc_size = 32 * ( 1 + ( i % 5 ));
+
+        pool.deallocate( (void*) ptrs(i) , alloc_size );
+
+        ptrs(i) = (uintptr_t)  pool.allocate( alloc_size );
+
+        if ( ptrs(i) ) { ++update ; }
+      }
+    }
+};
+
+template< class PoolType >
+void print_memory_pool_stats
+  ( typename PoolType::usage_statistics const & stats )
 {
-  std::cout << std::setw( SHIFTW ) << text << std::setw( SHIFTW2 )
-            << std::fixed << std::setprecision( PRECISION ) << elapsed_time
-            << "     " << std::setw( width ) << result << std::endl;
+  std::cout << "MemoryPool {" << std::endl
+            << "  bytes capacity = " << stats.capacity_bytes << std::endl
+            << "  bytes used     = " << stats.consumed_bytes << std::endl
+            << "  bytes reserved = " << stats.reserved_bytes << std::endl
+            << "  bytes free     = " << ( stats.capacity_bytes -
+               ( stats.consumed_bytes + stats.reserved_bytes ) ) << std::endl
+            << "  alloc used     = " << stats.consumed_blocks << std::endl
+            << "  alloc reserved = " << stats.reserved_blocks << std::endl
+            << "  super used     = " << stats.consumed_superblocks << std::endl
+            << "  super reserved = " << ( stats.capacity_superblocks -
+                                    stats.consumed_superblocks ) << std::endl
+            << "}" << std::endl ;
 }
 
-template < typename F >
-void print_results( const std::string & text, unsigned long long width,
-                    F elapsed_time, const std::string & result )
+template< class DeviceType >
+void test_memory_pool_v2( const bool print_statistics
+                        , const bool print_superblocks )
 {
-  std::cout << std::setw( SHIFTW ) << text << std::setw( SHIFTW2 )
-            << std::fixed << std::setprecision( PRECISION ) << elapsed_time
-            << "     " << std::setw( width ) << result << std::endl;
+  typedef typename DeviceType::memory_space     memory_space ;
+  typedef typename DeviceType::execution_space  execution_space ;
+  typedef Kokkos::MemoryPool< DeviceType > pool_type ;
+  typedef TestMemoryPool_Functor< DeviceType > functor_type ;
+
+  typedef typename functor_type::TagAlloc   TagAlloc ;
+  typedef typename functor_type::TagDealloc TagDealloc ;
+  typedef typename functor_type::TagRealloc TagRealloc ;
+  typedef typename functor_type::TagMixItUp TagMixItUp ;
+
+  const size_t    total_alloc_size = 10000000 ;
+  const unsigned  min_block_size   = 64 ;
+  const unsigned  max_block_size   = 256 ;
+  const long      nfill            = 70000 ;
+
+  for ( uint32_t k = 0 , min_superblock_size = 10000 ;
+        k < 3 ; ++k , min_superblock_size *= 10 ) {
+
+    typename pool_type::usage_statistics stats ;
+
+    pool_type pool( memory_space()
+                  , total_alloc_size
+                  , min_block_size
+                  , max_block_size
+                  , min_superblock_size );
+
+    functor_type functor(pool,nfill);
+
+    long result = 0 ;
+    long ndel  = 0 ;
+
+    Kokkos::parallel_reduce
+      ( Kokkos::RangePolicy< execution_space , TagAlloc >(0,nfill)
+      , functor
+      , result
+      );
+
+    pool.get_usage_statistics( stats );
+
+    const int fill_error = ( nfill != result ) ||
+                           ( nfill != long(stats.consumed_blocks) );
+
+    if ( fill_error || print_statistics ) print_memory_pool_stats< pool_type >( stats );
+    if ( fill_error || print_superblocks ) pool.print_state( std::cout );
+
+    ASSERT_EQ( nfill , result );
+    ASSERT_EQ( nfill , long(stats.consumed_blocks) );
+
+    Kokkos::parallel_reduce
+      ( Kokkos::RangePolicy< execution_space , TagDealloc >(0,nfill)
+      , functor
+      , ndel
+      );
+
+    pool.get_usage_statistics( stats );
+
+    const int del_error = ( nfill - ndel ) != long(stats.consumed_blocks);
+
+    if ( del_error || print_statistics ) print_memory_pool_stats< pool_type >( stats );
+    if ( del_error || print_superblocks ) pool.print_state( std::cout );
+
+    ASSERT_EQ( ( nfill - ndel ) , long(stats.consumed_blocks) );
+
+    Kokkos::parallel_reduce
+      ( Kokkos::RangePolicy< execution_space , TagRealloc >(0,nfill)
+      , functor
+      , result
+      );
+
+    pool.get_usage_statistics( stats );
+
+    const int refill_error = ( ndel != result ) ||
+                             ( nfill != long(stats.consumed_blocks) );
+
+    if ( refill_error || print_statistics ) print_memory_pool_stats< pool_type >( stats );
+    if ( refill_error || print_superblocks ) pool.print_state( std::cout );
+
+    ASSERT_EQ( ndel , result );
+    ASSERT_EQ( nfill , long(stats.consumed_blocks) );
+
+    Kokkos::parallel_reduce
+      ( Kokkos::RangePolicy< execution_space , TagMixItUp >(0,nfill)
+      , functor
+      , result
+      );
+
+    pool.get_usage_statistics( stats );
+
+    const int mix_error = ( ndel != result ) ||
+                          ( nfill != long(stats.consumed_blocks) );
+
+    if ( mix_error || print_statistics ) print_memory_pool_stats< pool_type >( stats );
+    if ( mix_error || print_superblocks ) pool.print_state( std::cout );
+
+    ASSERT_EQ( ndel , result );
+    ASSERT_EQ( nfill , long(stats.consumed_blocks) );
+  }
 }
 
-template < class ExecSpace >
-bool test_mempool( size_t chunk_size, size_t total_size )
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+} // namespace TestMemoryPool {
+
+namespace Test {
+
+TEST_F( TEST_CATEGORY, memory_pool )
 {
-  typedef Kokkos::View<pointer_obj*, ExecSpace>             pointer_view;
-  typedef typename pointer_view::memory_space               memory_space;
-  typedef Kokkos::Experimental::MemoryPool< memory_space >  pool_memory_space;
-
-  uint64_t result;
-  size_t num_chunks = total_size / chunk_size;
-  bool return_val = true;
-
-#ifdef TESTMEMORYPOOL_PRINT
-  std::cout << std::setw( SHIFTW ) << "chunk_size: " << std::setw( 10 )
-            << chunk_size << std::endl
-            << std::setw( SHIFTW ) << "total_size: " << std::setw( 10 )
-            << total_size << std::endl
-            << std::setw( SHIFTW ) << "num_chunks: " << std::setw( 10 )
-            << num_chunks << std::endl;
-#endif
-
-  pointer_view pointers( "pointers", num_chunks );
-
-  pool_memory_space m_space( memory_space(), chunk_size, total_size );
-
-#ifdef TESTMEMORYPOOL_PRINT
-  double elapsed_time = 0;
-  Kokkos::Impl::Timer timer;
-#endif
-
-  {
-    allocate_memory< pointer_view, pool_memory_space >
-      am( pointers, num_chunks, chunk_size, m_space );
-  }
-
-  ExecSpace::fence();
-
-#ifdef TESTMEMORYPOOL_PRINT
-  elapsed_time = timer.seconds();
-  print_results( "allocate chunks: ", elapsed_time );
-  timer.reset();
-#endif
-
-  {
-    fill_memory< pointer_view > fm( pointers, num_chunks );
-  }
-
-  ExecSpace::fence();
-
-#ifdef TESTMEMORYPOOL_PRINT
-  elapsed_time = timer.seconds();
-  print_results( "fill chunks: ", elapsed_time );
-  timer.reset();
-#endif
-
-  {
-    sum_memory< pointer_view > sm( pointers, num_chunks, result );
-  }
-
-  ExecSpace::fence();
-
-#ifdef TESTMEMORYPOOL_PRINT
-  elapsed_time = timer.seconds();
-  print_results( "sum chunks: ", 10, elapsed_time, result );
-#endif
-
-  if ( result != ( num_chunks * ( num_chunks - 1 ) ) / 2 ) {
-    std::cerr << "Invalid sum value in memory." << std::endl;
-    return_val = false;
-  }
-
-#ifdef TESTMEMORYPOOL_PRINT
-  timer.reset();
-#endif
-
-  {
-    deallocate_memory< pointer_view, pool_memory_space >
-      dm( pointers, num_chunks, chunk_size, m_space );
-  }
-
-  ExecSpace::fence();
-
-#ifdef TESTMEMORYPOOL_PRINT
-  elapsed_time = timer.seconds();
-  print_results( "deallocate chunks: ", elapsed_time );
-  timer.reset();
-#endif
-
-  {
-    allocate_memory< pointer_view, pool_memory_space >
-      am( pointers, num_chunks, chunk_size, m_space );
-  }
-
-  ExecSpace::fence();
-
-#ifdef TESTMEMORYPOOL_PRINT
-  elapsed_time = timer.seconds();
-  print_results( "allocate chunks: ", elapsed_time );
-  timer.reset();
-#endif
-
-  {
-    fill_memory< pointer_view > fm( pointers, num_chunks );
-  }
-
-  ExecSpace::fence();
-
-#ifdef TESTMEMORYPOOL_PRINT
-  elapsed_time = timer.seconds();
-  print_results( "fill chunks: ", elapsed_time );
-  timer.reset();
-#endif
-
-  {
-    sum_memory< pointer_view > sm( pointers, num_chunks, result );
-  }
-
-  ExecSpace::fence();
-
-#ifdef TESTMEMORYPOOL_PRINT
-  elapsed_time = timer.seconds();
-  print_results( "sum chunks: ", 10, elapsed_time, result );
-#endif
-
-  if ( result != ( num_chunks * ( num_chunks - 1 ) ) / 2 ) {
-    std::cerr << "Invalid sum value in memory." << std::endl;
-    return_val = false;
-  }
-
-#ifdef TESTMEMORYPOOL_PRINT
-  timer.reset();
-#endif
-
-  {
-    deallocate_memory< pointer_view, pool_memory_space >
-      dm( pointers, num_chunks, chunk_size, m_space );
-  }
-
-  ExecSpace::fence();
-
-#ifdef TESTMEMORYPOOL_PRINT
-  elapsed_time = timer.seconds();
-  print_results( "deallocate chunks: ", elapsed_time );
-#endif
-
-  return return_val;
+  TestMemoryPool::test_host_memory_pool_stats<>();
+  TestMemoryPool::test_memory_pool_v2< TEST_EXECSPACE >(false,false);
+}
 }
 
-}
-
-#ifdef TESTMEMORYPOOL_PRINT
-#undef TESTMEMORYPOOL_PRINT
 #endif
 
-#endif

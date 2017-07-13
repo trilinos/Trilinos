@@ -54,9 +54,8 @@
 
 namespace Example {
   
-PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Constant", 
-                                           BCStrategy_Dirichlet_Constant,
-                                           BCStrategy_Dirichlet_Constant)
+PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(BCStrategy_Dirichlet_Constant,
+  BCStrategy_Dirichlet_Constant)
 
 struct BCStrategyFactory : public panzer::BCStrategyFactory {
 
@@ -69,9 +68,8 @@ struct BCStrategyFactory : public panzer::BCStrategyFactory {
       
       bool found = false;
 
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant", 
-				      Example::BCStrategy_Dirichlet_Constant,
-				      BCStrategy_Dirichlet_Constant)
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant",
+        BCStrategy_Dirichlet_Constant)
 
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
 			 "Error - the BC Strategy called \"" << bc.strategy() <<

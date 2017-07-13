@@ -20,8 +20,8 @@ class RTBoundFunc
 {
  public:
   RTBoundFunc(const std::string& name_, int args, bool is_Optimizable = true,
-              bool variable_NumArgs = false) { 
-    _name             = name_; 
+              bool variable_NumArgs = false) {
+    _name             = name_;
     _numArgs          = args;
     _isOptimizable    = is_Optimizable;
     _variableNumArgs  = variable_NumArgs;
@@ -32,9 +32,9 @@ class RTBoundFunc
   bool isOptimizable() const {return _isOptimizable;}
 
   bool variableNumArgs() const {return _variableNumArgs;}
-  
+
   std::string name() const {return _name;}
-  
+
   int numArgs() const {return _numArgs;}
 
   void numArgs(int args) {
@@ -50,19 +50,19 @@ class RTBoundFunc
 };
 
 /**
- * This class is the super class for all function calls. 
+ * This class is the super class for all function calls.
  */
 class FunctionCall : public Object
 {
  public:
   FunctionCall() : Object(FunctionOT) {}
-  
+
   virtual ~FunctionCall() {}
-  
+
   virtual double execute() = 0;
-  
+
   virtual void fillArg(Line* l) = 0;
-  
+
   virtual bool canGoEarly() const = 0;
 
   bool hasVariableArgs() const {return _func->variableNumArgs();}
@@ -82,13 +82,13 @@ class FixedArgFunctionCall : public FunctionCall
   FixedArgFunctionCall(RTBoundFunc* rt);
 
   ~FixedArgFunctionCall();
-  
+
   std::ostream& operator<<(std::ostream& os) const;
-  
+
   double execute();
 
   void fillArg(Line* l);
-  
+
   bool canGoEarly() const;
 
  protected:
@@ -98,7 +98,7 @@ class FixedArgFunctionCall : public FunctionCall
 };
 
 /**
- * The VariableArgFunctionCall class represents individual function calls 
+ * The VariableArgFunctionCall class represents individual function calls
  * in the user's code. This class is for functions that can have a variable
  * number of arguments, like printf.
  */
@@ -108,13 +108,13 @@ class VariableArgFunctionCall : public FunctionCall
   VariableArgFunctionCall(RTBoundFunc* rt);
 
   ~VariableArgFunctionCall();
-  
+
   std::ostream& operator<<(std::ostream& os) const;
-  
+
   double execute();
 
   void fillArg(Line* l);
-  
+
   bool canGoEarly() const;
 
  private:
@@ -125,7 +125,7 @@ class VariableArgFunctionCall : public FunctionCall
 
 /**
  * Registrar is used to contain all the registered functions that can be called
- * by users. 
+ * by users.
  */
 class Registrar
 {
@@ -144,7 +144,7 @@ class Fabs : public RTBoundFunc
 {
  public:
   Fabs() : RTBoundFunc("fabs", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -152,7 +152,7 @@ class Sin : public RTBoundFunc
 {
  public:
   Sin() : RTBoundFunc("sin", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -160,7 +160,7 @@ class Tan : public RTBoundFunc
 {
  public:
   Tan() : RTBoundFunc("tan", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -168,7 +168,7 @@ class Cos : public RTBoundFunc
 {
  public:
   Cos() : RTBoundFunc("cos", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -176,7 +176,7 @@ class Sqrt : public RTBoundFunc
 {
  public:
   Sqrt() : RTBoundFunc("sqrt", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -184,7 +184,7 @@ class Tanh : public RTBoundFunc
 {
  public:
   Tanh() : RTBoundFunc("tanh", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -192,7 +192,7 @@ class Sinh : public RTBoundFunc
 {
  public:
   Sinh() : RTBoundFunc("sinh", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -200,7 +200,7 @@ class Cosh : public RTBoundFunc
 {
  public:
   Cosh() : RTBoundFunc("cosh", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -208,7 +208,7 @@ class Log : public RTBoundFunc
 {
  public:
   Log() : RTBoundFunc("log", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -216,7 +216,7 @@ class Log10 : public RTBoundFunc
 {
  public:
   Log10() : RTBoundFunc("log10", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -224,7 +224,7 @@ class Exp : public RTBoundFunc
 {
  public:
   Exp() : RTBoundFunc("exp", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -232,7 +232,7 @@ class Atan : public RTBoundFunc
 {
  public:
   Atan() : RTBoundFunc("atan", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -240,7 +240,7 @@ class Atantwo : public RTBoundFunc
 {
  public:
   Atantwo() : RTBoundFunc("atan2", 2) {}
-  
+
   double execute(Value**);
 };
 
@@ -248,7 +248,7 @@ class Asin : public RTBoundFunc
 {
  public:
   Asin() : RTBoundFunc("asin", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -256,7 +256,7 @@ class Acos : public RTBoundFunc
 {
  public:
   Acos() : RTBoundFunc("acos", 1) {}
-  
+
   double execute(Value**);
 };
 
@@ -272,7 +272,7 @@ class Rand : public RTBoundFunc
 {
  public:
   Rand() : RTBoundFunc("rand", 0, false) {}
-  
+
   double execute(Value**);
 };
 
@@ -296,7 +296,7 @@ class Print : public RTBoundFunc
 {
  public:
   Print() : RTBoundFunc("print", 1, false) {}
-  
+
   double execute(Value**);
 };
 
@@ -305,7 +305,7 @@ class Printf : public RTBoundFunc
 {
  public:
   Printf() : RTBoundFunc("printf", 1, false, true) {}
-  
+
   double execute(Value**);
 };
 
@@ -315,7 +315,7 @@ class Tester : public RTBoundFunc
   Tester() : RTBoundFunc("arrayFill", 2) {}
 
   double execute(Value**);
-}; 
+};
 
 class Bessel_J0 : public RTBoundFunc
 {

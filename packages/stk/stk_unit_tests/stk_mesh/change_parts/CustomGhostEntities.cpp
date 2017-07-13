@@ -35,10 +35,10 @@ protected:
     void add_myPart_to_face15_and_face25()
     {
         if (get_bulk().is_valid(face15)) {
-            get_bulk().change_entity_parts(face15, {&myPart});
+            get_bulk().change_entity_parts(face15, stk::mesh::ConstPartVector{&myPart});
         }
         if (get_bulk().is_valid(face25)) {
-            get_bulk().change_entity_parts(face25, {&myPart});
+            get_bulk().change_entity_parts(face25, stk::mesh::ConstPartVector{&myPart});
         }
     }
 
@@ -70,7 +70,7 @@ protected:
     {
         get_bulk().modification_begin();
         if (get_bulk().parallel_rank() == 0) {
-            get_bulk().change_entity_parts(face15, {}, {&myPart});
+            get_bulk().change_entity_parts(face15, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&myPart});
         }
         get_bulk().modification_end();
     }

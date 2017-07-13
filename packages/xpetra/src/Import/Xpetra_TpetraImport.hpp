@@ -182,13 +182,19 @@ namespace Xpetra {
     //@{
 
     //! Construct an Import from the source and target Maps.
-    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target) { XPETRA_TPETRA_ETI_EXCEPTION("TpetraImport<int,int>", "TpetraImport<int,int>", "int"); }
+    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Constructor (with list of parameters).
-    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist) { XPETRA_TPETRA_ETI_EXCEPTION("TpetraImport<int,int>", "TpetraImport<int,int>", "int"); }
+    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Copy constructor.
-    TpetraImport(const Import< LocalOrdinal, GlobalOrdinal, Node > &import) { XPETRA_TPETRA_ETI_EXCEPTION("TpetraImport<int,int>", "TpetraImport<int,int>", "int"); }
+    TpetraImport(const Import< LocalOrdinal, GlobalOrdinal, Node > &import) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Destructor.
     ~TpetraImport() {  }
@@ -245,7 +251,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraImport constructor to wrap a Tpetra::Import object
-    TpetraImport(const RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {  }
+    TpetraImport(const RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Import() const { return Teuchos::null; }
 
@@ -274,13 +282,19 @@ namespace Xpetra {
     //@{
 
     //! Construct an Import from the source and target Maps.
-    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target) { XPETRA_TPETRA_ETI_EXCEPTION("TpetraImport<int,int>", "TpetraImport<int,int>", "int"); }
+    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Constructor (with list of parameters).
-    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist) { XPETRA_TPETRA_ETI_EXCEPTION("TpetraImport<int,int>", "TpetraImport<int,int>", "int"); }
+    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Copy constructor.
-    TpetraImport(const Import< LocalOrdinal, GlobalOrdinal, Node > &import) { XPETRA_TPETRA_ETI_EXCEPTION("TpetraImport<int,int>", "TpetraImport<int,int>", "int"); }
+    TpetraImport(const Import< LocalOrdinal, GlobalOrdinal, Node > &import) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Destructor.
     ~TpetraImport() {  }
@@ -337,7 +351,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraImport constructor to wrap a Tpetra::Import object
-    TpetraImport(const RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {  }
+    TpetraImport(const RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraImport<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Import() const { return Teuchos::null; }
 

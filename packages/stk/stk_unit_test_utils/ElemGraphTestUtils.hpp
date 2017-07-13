@@ -6,6 +6,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_topology/topology.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 
 namespace ElemGraphTestUtils
 {
@@ -86,19 +87,19 @@ inline stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& 
     {
         int side = get_side_between_elements(bulkData, graph, elem1, elem2Id);
         EXPECT_TRUE(side != -1);
-        face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem1, side);
+        face_between_elem1_and_elem2 = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, elem1, side);
     }
     else if(isElem1LocallyOwnedAndValid)
     {
         int side = get_side_between_elements(bulkData, graph, elem1, elem2Id);
         EXPECT_TRUE(side != -1);
-        face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem1, side);
+        face_between_elem1_and_elem2 = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, elem1, side);
     }
     else if(isElem2LocallyOwnedAndValid)
     {
         int side = get_side_between_elements(bulkData, graph, elem2, elem1Id);
         EXPECT_TRUE(side != -1);
-        face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem2, side);
+        face_between_elem1_and_elem2 = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, elem2, side);
     }
     return face_between_elem1_and_elem2;
 }
@@ -106,17 +107,14 @@ inline stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& 
 inline void skin_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Part &partToSkin, const stk::mesh::PartVector& putSkinInTheseParts)
 {
     stk::mesh::Selector sel = partToSkin;
-    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, sel);
-    elem_elem_graph.skin_mesh(putSkinInTheseParts);
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, putSkinInTheseParts);
 }
 
 inline void skin_part(stk::mesh::BulkData& bulkData, const stk::mesh::Part &partToSkin, const stk::mesh::PartVector& putSkinInTheseParts)
 {
     stk::mesh::Selector sel = partToSkin;
     stk::mesh::Selector air = !partToSkin;
-
-    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, sel, &air);
-    elem_elem_graph.skin_mesh(putSkinInTheseParts);
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, putSkinInTheseParts, &air);
 }
 
 inline void test_num_faces_on_this_element(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId id, size_t gold_num_faces_this_elem)

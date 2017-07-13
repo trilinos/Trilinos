@@ -56,6 +56,7 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_FieldLibrary.hpp"
 #include "Panzer_EvaluatorsRegistrar.hpp"
+#include "Panzer_WorksetNeeds.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -89,7 +90,8 @@ namespace panzer {
                           const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                           const Teuchos::RCP<panzer::GlobalData>& global_data,
                           const bool build_transient_support,
-                          std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
+                          std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                          const std::vector<std::string>& tangent_param_names = std::vector<std::string>());
 
   /** \brief Nonmember function for reading and constructing physics blocks from a Teuchos::ParameterList for a given list of element blocks.
     *        A unique physics block object is built for each element block even if multiple element blocks point to the same physics block.
@@ -129,7 +131,8 @@ namespace panzer {
                  const panzer::CellData & cell_data,
                  const Teuchos::RCP<const panzer::EquationSetFactory>& factory,
                  const Teuchos::RCP<panzer::GlobalData>& global_data,
-                 const bool build_transient_support);
+                 const bool build_transient_support,
+                 const std::vector<std::string>& tangent_param_names = std::vector<std::string>());
 
     /** This constructor allows a bare bones physics block to be initialized
       * that only knows meta data about the mesh (excepting the cell type).
@@ -160,7 +163,8 @@ namespace panzer {
                     const bool build_transient_support,
                     const panzer::CellData & cell_data,
                     const Teuchos::RCP<const panzer::EquationSetFactory>& factory,
-                    const Teuchos::RCP<panzer::GlobalData>& global_data);
+                    const Teuchos::RCP<panzer::GlobalData>& global_data,
+                    const std::vector<std::string>& tangent_param_names = std::vector<std::string>());
 
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                const Teuchos::ParameterList& user_data) const;
@@ -233,6 +237,13 @@ namespace panzer {
 
     const std::vector<std::vector<std::string> > & getCoordinateDOFs() const;
 
+    //! Returns list of tangent fields from DOFs and tangent param names
+    const std::vector<StrPureBasisPair>& getTangentFields() const;
+
+    /** Build a workset needs object for this physics block. 
+      */
+    WorksetNeeds getWorksetNeeds() const;
+
     //! Returns the unique set of bases, key is the unique panzer::PureBasis::name() of the basis
     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& getBases() const;
 
@@ -268,8 +279,9 @@ namespace panzer {
     void initialize(const Teuchos::RCP<Teuchos::ParameterList>& input_parameters,
                     const int& default_integration_order,
                     const std::string & element_block_id,
-                       const panzer::CellData & cell_data,
-                    const bool build_transient_support);
+                    const panzer::CellData & cell_data,
+                    const bool build_transient_support,
+                    const std::vector<std::string>& tangent_param_names = std::vector<std::string>());
 
     std::string m_physics_id;
     std::string m_element_block_id;
@@ -282,6 +294,7 @@ namespace panzer {
 
     std::vector<std::string> m_dof_names;
     std::vector<StrPureBasisPair> m_provided_dofs;
+    std::vector<StrPureBasisPair> m_tangent_fields;
     std::vector<std::vector<std::string> > m_coordinate_dofs; // coordinate DOFs (defines them)
 
     //! map of unique bases, key is the panzer::PureBasis::name() corresponding to its value

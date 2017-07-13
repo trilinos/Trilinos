@@ -41,7 +41,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
+#include <stk_unit_tests/stk_mesh_fixtures/GridFixture.hpp>  // for GridFixture
 #include <string>                       // for string
 #include <utility>                      // for pair, operator==
 #include <vector>                       // for vector, vector<>::iterator
@@ -140,7 +140,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   const unsigned num_shells = 4;
 
   // get a count of entities that have already been created
-  std::vector<unsigned> count;
+  std::vector<size_t> count;
   stk::mesh::Selector locally_owned(fem_meta.locally_owned_part());
   stk::mesh::count_entities(locally_owned, bulk_data, count);
   const unsigned num_entities = count[NODE_RANK] + count[element_rank];
@@ -150,9 +150,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
   for (unsigned i = 1; i <= num_shells; ++i) {
-    stk::mesh::Entity new_shell = bulk_data.declare_entity(element_rank,
-                                                            num_entities + i,
-                                                            shell_parts);
+    stk::mesh::Entity new_shell = bulk_data.declare_element(num_entities + i, shell_parts);
     shells.push_back(new_shell);
   }
 

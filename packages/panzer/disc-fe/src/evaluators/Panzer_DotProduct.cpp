@@ -51,4 +51,21 @@
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::DotProduct)
 
+#define DOT_PRODUCT_NON_MEMBER_CONST_ETI(EVALT,TRAITST) \
+template  \
+Teuchos::RCP<panzer::DotProduct<EVALT,TRAITST> > \
+panzer::buildEvaluator_DotProduct<EVALT,TRAITST>(const std::string &, \
+                                                 const panzer::PointRule &, \
+                                                 const std::string &, \
+                                                 const std::string &, \
+                                                 double multiplier, \
+                                                 const std::string &);
+
+DOT_PRODUCT_NON_MEMBER_CONST_ETI(panzer::Traits::Residual,panzer::Traits)
+DOT_PRODUCT_NON_MEMBER_CONST_ETI(panzer::Traits::Tangent,panzer::Traits)
+DOT_PRODUCT_NON_MEMBER_CONST_ETI(panzer::Traits::Jacobian,panzer::Traits)
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+DOT_PRODUCT_NON_MEMBER_CONST_ETI(panzer::Traits::Hessian,panzer::Traits)
+#endif
+
 #endif

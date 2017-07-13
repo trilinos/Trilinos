@@ -40,8 +40,6 @@
 #include <unit_tests/UnitTestUtils.hpp>
 #include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
 
-#include <exodusMeshInterface.h>
-
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_unit_test_utils/getOption.h>
 
@@ -49,12 +47,11 @@ namespace
 {
 
 void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod search);
-void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod search);
-void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults& boxIdPairResults);
+void runStkSearchTestUsingFloatAABoxes(stk::search::SearchMethod search);
 void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm);
-void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
+void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
-void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
+void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
                 stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
 
 TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
@@ -68,6 +65,13 @@ TEST(Performance, ofAxisAlignedBoundingBoxesUsingBoostRtree)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
   stk::search::SearchMethod searchMethod = stk::search::BOOST_RTREE;
+  testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
+}
+
+TEST(Performance, ofAxisAlignedBoundingBoxesUsingKdtree)
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  stk::search::SearchMethod searchMethod = stk::search::KDTREE;
   testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
 }
 
@@ -152,165 +156,52 @@ TEST(Performance, stkSearchUsingOcttreeUsingStkAABoxes)
     runStkSearchTestUsingStkAABoxes(stk::search::OCTREE);
 }
 
-TEST(Performance, stkSearchUsingBoostUsingGtkAABoxes)
+TEST(Performance, stkSearchUsingKdtreeUsingStkAABoxes)
 {
-    runStkSearchTestUsingGtkAABoxes(stk::search::BOOST_RTREE);
+    runStkSearchTestUsingStkAABoxes(stk::search::KDTREE);
 }
 
-TEST(Performance, stkSearchUsingOcttreeUsingGtkAABoxes)
+TEST(Performance, stkSearchUsingBoostUsingFloatAABoxes)
 {
-    runStkSearchTestUsingGtkAABoxes(stk::search::OCTREE);
+    runStkSearchTestUsingFloatAABoxes(stk::search::BOOST_RTREE);
 }
 
-TEST(Performance, gtkSearchUsingOcttreeUsingGtkAABoxes)
+TEST(Performance, stkSearchUsingOcttreeUsingFloatAABoxes)
 {
-    runStkSearchTestUsingGtkAABoxes(stk::search::OCTREE);
+    runStkSearchTestUsingFloatAABoxes(stk::search::OCTREE);
 }
 
-TEST(Performance, gtkSearch)
+TEST(Performance, stkSearchUsingKdtreeUsingFloatAABoxes)
+{
+    runStkSearchTestUsingFloatAABoxes(stk::search::KDTREE);
+}
+
+void runStkSearchTestUsingFloatAABoxes(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-
-    std::vector<GtkBox> domainBoxes;
-    fillDomainBoxes(comm, domainBoxes);
+    std::vector<FloatBox> domainBoxes( fillDomainBoxes(comm) );
 
     SearchResults boxIdPairResults;
-    testGtkSearch(comm, domainBoxes, boxIdPairResults);
-}
-
-void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod searchMethod)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<GtkBox> domainBoxes;
-    fillDomainBoxes(comm, domainBoxes);
-
-    SearchResults boxIdPairResults;
-    testStkSearchUsingGtkAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
+    testStkSearchUsingFloatAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
 }
 
 void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<GtkBox> domainBoxes;
-    fillDomainBoxes(comm, domainBoxes);
+    std::vector<FloatBox> domainBoxes( fillDomainBoxes(comm) );
 
     SearchResults boxIdPairResults;
     testStkSearchUsingStkAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
 }
 
-void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults& searchResults)
-{
-    int proc_id = stk::parallel_machine_rank(comm);
-    std::vector<int> procThatOwnsBox;
-
-    for(size_t i=0;i<domainBoxes.size();i++)
-    {
-        procThatOwnsBox.push_back(proc_id);
-    }
-
-    std::vector<GtkBox> rangeBoxes(domainBoxes);
-
-    double startTime = stk::wall_time();
-
-
-    std::vector<std::pair<int, int> > interaction_list;
-    std::vector<int> first_interaction;
-    std::vector<int> last_interaction;
-
-    ACME::BoxA_BoxB_Par_Search(domainBoxes, rangeBoxes, comm, interaction_list, first_interaction, last_interaction);
-
-    /*
-    std::vector<int> ghost_indices;
-    std::vector<int> ghost_procs;
-    ACME::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
-
-    int num_procs = stk::parallel_machine_size(comm);
-    std::vector< std::vector<GtkBox> > send_list(num_procs);
-    std::vector< std::vector<GtkBox> > recv_list(num_procs);
-
-    for (size_t i=0;i<ghost_indices.size();i++)
-    {
-        send_list[ghost_procs[i]].push_back(rangeBoxes[ghost_indices[i]]);
-    }
-
-    ACME::Parallel_Data_Exchange(send_list, recv_list, comm);
-
-    ASSERT_EQ(static_cast<size_t>(num_procs), recv_list.size());
-    for (size_t i=0;i<recv_list.size();i++)
-    {
-        for (size_t j=0;j<recv_list[i].size();j++)
-        {
-            rangeBoxes.push_back(recv_list[i][j]);
-            procThatOwnsBox.push_back(i);
-        }
-    }
-    std::vector<int> interaction_list;
-    std::vector<int> first_interaction;
-    std::vector<int> last_interaction;
-
-    gtk::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
-    */
-
-
-
-    double elapsedTime = stk::wall_time() - startTime;
-
-
-    printPeformanceStats(elapsedTime, comm);
-
-    EXPECT_EQ(domainBoxes.size(), first_interaction.size());
-    EXPECT_EQ(domainBoxes.size(), last_interaction.size());
-    typedef std::set <std::pair<Ident,Ident> > localJunk;
-    localJunk localResults;
-
-    // Ident box1, Ident box2
-    for (size_t i=0;i<domainBoxes.size();i++)
-    {
-        Ident box1(i, procThatOwnsBox[i]);
-        for (int j=first_interaction[i];j<last_interaction[i];j++)
-        {
-	  Ident box2(interaction_list[j].first, interaction_list[j].second);
-            localResults.insert(std::make_pair(box1, box2));
-        }
-    }
-    std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
-    bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
-
-    if ( rangeResultsCommunicated )
-    {
-        localJunk tmp;
-        stk::search::communicate< std::pair<Ident,Ident>, std::pair<Ident,Ident> >(comm, localResults, tmp);
-        std::copy(tmp.begin(), tmp.end(), std::back_inserter(searchResults));
-    }
-    else
-    {
-        std::copy(localResults.begin(), localResults.end(), std::back_inserter(searchResults));
-    }
-
-    gatherResultstoProcZero(comm, searchResults);
-    size_t goldValueNumber=getGoldValueForTest();
-    if ( proc_id == 0 )
-    {
-        if ( goldValueNumber != 0u)
-        {
-            EXPECT_EQ(goldValueNumber, searchResults.size());
-        }
-        else
-        {
-            std::cerr << "Number of interactions: " << searchResults.size() << std::endl;
-        }
-    }
-}
-
-void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
-        stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
+void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes, stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
     int procId = stk::parallel_machine_rank(comm);
 
     StkBoxVector stkBoxes(domainBoxes.size());
-    fillStkBoxesUsingGtkBoxes(domainBoxes, procId, stkBoxes);
+    fillStkBoxesUsingFloatBoxes(domainBoxes, procId, stkBoxes);
 
-    std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
+    std::string rangeBoxComm = stk::unit_test_util::get_option("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
     double startTime = stk::wall_time();
@@ -320,33 +211,30 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     printPeformanceStats(elapsedTime, comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
-    size_t goldValueNumber=getGoldValueForTest();
+    size_t goldValueNumber = getGoldValueForTest();
     if ( procId == 0 )
     {
         if ( goldValueNumber != 0u)
         {
             EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
         }
-        else
-        {
-            std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
-        }
+        std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
     }
 }
 
-void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
+void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
     int procId = stk::parallel_machine_rank(comm);
 
-    GtkBoxVector searchBoxPairs(domainBoxes.size());
-    for(size_t i=0;i<domainBoxes.size();i++)
+    FloatBoxVector searchBoxPairs(domainBoxes.size());
+    for(size_t i = 0; i < domainBoxes.size(); i++)
     {
         Ident domainBoxId(i, procId);
         searchBoxPairs[i] = std::make_pair(domainBoxes[i], domainBoxId);
     }
 
-    std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
+    std::string rangeBoxComm = stk::unit_test_util::get_option("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
     double startTime = stk::wall_time();
@@ -356,53 +244,49 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     printPeformanceStats(elapsedTime, comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
-    size_t goldValueNumber=getGoldValueForTest();
+    size_t goldValueNumber = getGoldValueForTest();
     if ( procId == 0 )
     {
         if ( goldValueNumber != 0u)
         {
             EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
         }
-        else
-        {
-            std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
-        }
+        std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
     }
 }
 
-TEST(Performance, getGoldResults)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int procId = stk::parallel_machine_rank(comm);
-
-    std::vector<GtkBox> domainBoxes;
-    fillDomainBoxes(comm, domainBoxes);
-
-    SearchResults boxIdPairResults;
-
-    StkBoxVector stkBoxes(domainBoxes.size());
-    fillStkBoxesUsingGtkBoxes(domainBoxes, procId, stkBoxes);
-
-    double startTime = stk::wall_time();
-    for (size_t i=0;i<stkBoxes.size();++i)
-    {
-        for (size_t j=0;j<stkBoxes.size();++j)
-        {
-            if ( stk::search::intersects(stkBoxes[i].first, stkBoxes[j].first) )
-            {
-                boxIdPairResults.push_back(std::make_pair(stkBoxes[i].second, stkBoxes[j].second));
-            }
-        }
-    }
-
-    std::sort(boxIdPairResults.begin(), boxIdPairResults.end());
-    SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
-    boxIdPairResults.erase(iter_end, boxIdPairResults.end());
-
-    double elapsedTime = stk::wall_time() - startTime;
-    printPeformanceStats(elapsedTime, comm);
-
-    std::cerr << "Number of boxes: " << boxIdPairResults.size() << std::endl;
-}
+//TEST(Performance, getGoldResults)
+//{
+//    MPI_Comm comm = MPI_COMM_WORLD;
+//    int procId = stk::parallel_machine_rank(comm);
+//
+//    std::vector<FloatBox> domainBoxes( fillDomainBoxes(comm) );
+//
+//    SearchResults boxIdPairResults;
+//
+//    StkBoxVector stkBoxes(domainBoxes.size());
+//    fillStkBoxesUsingFloatBoxes(domainBoxes, procId, stkBoxes);
+//
+//    double startTime = stk::wall_time();
+//    for (size_t i=0;i<stkBoxes.size();++i)
+//    {
+//        for (size_t j=0;j<stkBoxes.size();++j)
+//        {
+//            if ( stk::search::intersects(stkBoxes[i].first, stkBoxes[j].first) )
+//            {
+//                boxIdPairResults.push_back(std::make_pair(stkBoxes[i].second, stkBoxes[j].second));
+//            }
+//        }
+//    }
+//
+//    std::sort(boxIdPairResults.begin(), boxIdPairResults.end());
+//    SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
+//    boxIdPairResults.erase(iter_end, boxIdPairResults.end());
+//
+//    double elapsedTime = stk::wall_time() - startTime;
+//    printPeformanceStats(elapsedTime, comm);
+//
+//    std::cerr << "Number of boxes: " << boxIdPairResults.size() << std::endl;
+//}
 
 }

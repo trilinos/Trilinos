@@ -66,7 +66,7 @@ class AlgSortedDegree : public Algorithm<Adapter>
 
   const RCP<GraphModel<Adapter> > model;
   const RCP<Teuchos::ParameterList> pl;
-  const RCP<Teuchos::Comm<int> > comm;
+  const RCP<const Teuchos::Comm<int> > comm;
 
   public:
 
@@ -77,19 +77,24 @@ class AlgSortedDegree : public Algorithm<Adapter>
   AlgSortedDegree(
     const RCP<GraphModel<Adapter> > &model__,
     const RCP<Teuchos::ParameterList> &pl__,
-    const RCP<Teuchos::Comm<int> > &comm__
+    const RCP<const Teuchos::Comm<int> > &comm__
   ) : model(model__), pl(pl__), comm(comm__)
   {
   }
 
-  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution)
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution)
+  {
+     throw std::logic_error(
+       "AlgSortedDegree does not yet support global ordering.");
+  }
+
+  int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution)
   {
     int ierr= 0;
   
     HELLO;
   
-    lno_t *perm;
-    perm = (lno_t *) (solution->getPermutation());
+    lno_t *perm = solution->getPermutationView();
     if (perm==0){
       // Throw exception
       std::cerr << "perm is NULL" << std::endl;
@@ -102,6 +107,7 @@ class AlgSortedDegree : public Algorithm<Adapter>
     ArrayView<const lno_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts;
     model->getEdgeList(edgeIds, offsets, wgts);
+
   
     // Store degrees together with index so we can sort.
     Teuchos::Array<std::pair<lno_t, size_t> >  degrees(nVtx);

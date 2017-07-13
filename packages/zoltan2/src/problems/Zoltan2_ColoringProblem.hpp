@@ -61,8 +61,6 @@
 
 #include <bitset>
 
-using Teuchos::rcp_dynamic_cast;
-
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
@@ -105,25 +103,42 @@ public:
    */
   virtual ~ColoringProblem() {};
 
+  /*! \brief Constructor that uses a Teuchos::Comm
+   */
+  ColoringProblem(Adapter *A, ParameterList *p,
+                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm) :
+    Problem<Adapter>(A, p, comm) 
+  {
+    HELLO;
+    createColoringProblem();
+  };
 
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor that takes an MPI communicator
    */
-  ColoringProblem(Adapter *A, ParameterList *p, MPI_Comm comm) 
-                      : Problem<Adapter>(A, p, comm) 
-  {
-    HELLO;
-    createColoringProblem();
-  };
+  ColoringProblem(Adapter *A, ParameterList *p, MPI_Comm mpicomm) :
+  ColoringProblem(A, p,
+                  rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
+                                            Teuchos::opaqueWrapper(mpicomm))))
+  {}
 #endif
 
   /*! \brief Constructor that uses a default communicator
    */
-  ColoringProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
+  ColoringProblem(Adapter *A, ParameterList *p) :
+  ColoringProblem(A, p, Teuchos::DefaultComm<int>::getComm()) 
+  {}
+
+  /*! \brief Set up validators specific to this Problem
+  */
+  static void getValidParameters(ParameterList & pl)
   {
-    HELLO;
-    createColoringProblem();
-  };
+    RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "SerialGreedy" )));
+    pl.set("color_method", "SerialGreedy", "coloring algorithm",
+     color_method_Validator);
+  }
 
   //!  \brief Direct the problem to create a solution.
   //
@@ -156,10 +171,6 @@ private:
   void createColoringProblem();
 
   RCP<ColoringSolution<Adapter> > solution_;
-
-  RCP<Comm<int> > problemComm_;
-  RCP<const Comm<int> > problemCommConst_;
-
 };
 
 
@@ -188,13 +199,13 @@ void ColoringProblem<Adapter>::solve(bool newData)
   if (method.compare("SerialGreedy") == 0)
   {
       AlgSerialGreedy<Adapter> alg(this->graphModel_, this->params_,
-                                   this->env_, problemComm_);
+                                   this->env_, this->comm_);
       alg.color(this->solution_);
   }
 #if 0 // TODO later
   else if (method.compare("speculative") == 0) // Gebremedhin-Manne
   {
-      AlgGM<base_adapter_t> alg(this->graphModel_, problemComm_);
+      AlgGM<base_adapter_t> alg(this->graphModel_, this->comm_);
       alg.color(this->solution_, this->params_);
   }
 #endif
@@ -227,9 +238,6 @@ void ColoringProblem<Adapter>::createColoringProblem()
 
   // Create a copy of the user's communicator.
 
-  problemComm_ = this->comm_->duplicate();
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
   // Only graph model supported.
   // TODO: Allow hypergraph later?
 
@@ -246,7 +254,7 @@ void ColoringProblem<Adapter>::createColoringProblem()
     graphFlags.set(REMOVE_SELF_EDGES);
     graphFlags.set(BUILD_LOCAL_GRAPH);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
+      this->baseInputAdapter_, this->envConst_, this->comm_, graphFlags));
 
     this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->graphModel_);

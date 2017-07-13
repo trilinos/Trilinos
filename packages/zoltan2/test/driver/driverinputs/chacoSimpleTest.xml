@@ -56,7 +56,7 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="multijagged"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
     <!--  <ParameterList name="Metrics">
@@ -65,7 +65,7 @@
      <Parameter name="upper" type="double" value="1.4"/>
      </ParameterList>
      
-     <ParameterList name="weight 1">
+     <ParameterList name="weight 0">
      <Parameter name="lower" type="double" value="0.99"/>
      <Parameter name="upper" type="double" value="1.4"/>
      </ParameterList>
@@ -83,7 +83,7 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="multijagged"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
     <!--  <ParameterList name="Metrics">
@@ -92,7 +92,7 @@
      <Parameter name="upper" type="double" value="1.4"/>
      </ParameterList>
      
-     <ParameterList name="weight 1">
+     <ParameterList name="weight 0">
      <Parameter name="lower" type="double" value="0.99"/>
      <Parameter name="upper" type="double" value="1.4"/>
      </ParameterList>
@@ -110,7 +110,7 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="multijagged"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
     <!--  <ParameterList name="Metrics">
@@ -119,7 +119,7 @@
      <Parameter name="upper" type="double" value="1.4"/>
      </ParameterList>
      
-     <ParameterList name="weight 1">
+     <ParameterList name="weight 0">
      <Parameter name="lower" type="double" value="0.99"/>
      <Parameter name="upper" type="double" value="1.4"/>
      </ParameterList>

@@ -93,7 +93,7 @@ public:
     Real a   = 1.0;
     Real tmp = 0.0;
     for (int i = 0; i < 100; i++) {
-      if ( std::abs(fx) < ROL_EPSILON ) { break; }
+      if ( std::abs(fx) < ROL_EPSILON<Real>() ) { break; }
       s   = -fx/evaluatePDF(x);
       a   = 1.0;
       xs  = x + a*s;
@@ -116,11 +116,11 @@ public:
   }
 
   Real lowerBound(void) const {
-    return ROL_NINF;
+    return ROL_NINF<Real>();
   }
  
   Real upperBound(void) const {
-    return ROL_INF;
+    return ROL_INF<Real>();
   }
  
   void test(std::ostream &outStream = std::cout ) const {

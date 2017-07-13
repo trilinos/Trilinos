@@ -55,7 +55,6 @@ using Teuchos::rcp;
 
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_IntegrationValues.hpp"
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_BasisValues2.hpp"
 #include "Panzer_CellData.hpp"
@@ -67,7 +66,6 @@ using Teuchos::rcp;
 #include "Panzer_GatherIntegrationCoordinates.hpp"
 
 #include "Phalanx_FieldManager.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Comm.h"
@@ -83,7 +81,6 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -100,7 +97,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Intrepid2::FieldContainer<double> FieldArray;
+  // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 4, dim = 2;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;
@@ -161,7 +158,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarType<typename EvalType::ScalarT> ScalarType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::BASIS,panzer::Dim> > fmCoordsPtr;
   Teuchos::RCP<PHX::DataLayout> dl_coords = basis->coordinates;
@@ -196,6 +192,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
+#endif
   fm->postRegistrationSetup(setupData);
 
   panzer::Traits::PreEvalData preEvalData;
@@ -208,15 +207,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
 
   fmCoords.print(out,true);
 
-  for(int cell=0;cell<fmCoords.dimension_0();++cell)
-    for(int pt=0;pt<fmCoords.dimension_1();++pt)
-      for(int dim=0;dim<fmCoords.dimension_2();++dim)
+  for(int cell=0;cell<fmCoords.extent_int(0);++cell)
+    for(int pt=0;pt<fmCoords.extent_int(1);++pt)
+      for(int dim=0;dim<fmCoords.extent_int(2);++dim)
 	TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,dim)),coords(cell,pt,dim));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -233,7 +231,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Intrepid2::FieldContainer<double> FieldArray;
+  // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 4, dim = 2;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
 
@@ -295,7 +293,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarType<typename EvalType::ScalarT> ScalarType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point,panzer::Dim> > fmCoordsPtr;
   Teuchos::RCP<PHX::DataLayout> dl_coords = quadRule->dl_vector;
@@ -330,6 +327,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
+#endif
   fm->postRegistrationSetup(setupData);
 
   panzer::Traits::PreEvalData preEvalData;
@@ -342,9 +342,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
 
   fmCoords.print(out,true);
 
-  for(int cell=0;cell<fmCoords.dimension_0();++cell)
-    for(int pt=0;pt<fmCoords.dimension_1();++pt)
-      for(int dim=0;dim<fmCoords.dimension_2();++dim)
+  for(int cell=0;cell<fmCoords.extent_int(0);++cell)
+    for(int pt=0;pt<fmCoords.extent_int(1);++pt)
+      for(int dim=0;dim<fmCoords.extent_int(2);++dim)
 	TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,dim)),quadValues->ip_coordinates(cell,pt,dim));
 }
 
@@ -357,5 +357,10 @@ typedef Traits::Jacobian JacobianType;
 
 UNIT_TEST_GROUP(ResidualType)
 UNIT_TEST_GROUP(JacobianType)
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+typedef Traits::Hessian HessianType;
+UNIT_TEST_GROUP(HessianType)
+#endif
 
 }

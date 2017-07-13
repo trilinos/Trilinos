@@ -299,21 +299,33 @@ C ... Read coordinate data
 
 C ... Read element map
       CALL MDRSRV ('MAPEL', KMAPEL, NUMEL)
+      if (mapel) then
+        kdbmapel = kmapel
+      else
+        call mdrsrv ('DBMAPEL', kdbmapel, numel)
+      endif
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 100
       if (mapel) then
-        CALL RDMAP (NDB, NUMEL, A(KMAPEL), ISEOF)
+        CALL RDMAP (NDB, NUMEL, IA(KMAPEL), ISEOF)
       else
+        CALL RDMAP (NDB, NUMEL, IA(KdbMAPEL), ISEOF)
         call iniseq(numel, ia(kmapel))
       end if
 
 C ... Read node map
       CALL MDRSRV ('MAPNO', KMAPNO, NUMNP)
+      if (mapnd) then
+        kdbmapno = kmapno
+      else
+        call mdrsrv ('DBMAPNO', kdbmapno, numnp)
+      endif
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 100
       if (mapnd) then
-        CALL RDNMAP (NDB, NUMNP, A(KMAPNO), ISEOF)
+        CALL RDNMAP (NDB, NUMNP, IA(KMAPNO), ISEOF)
       else
+        CALL RDNMAP (NDB, NUMNP, IA(KDBMAPNO), ISEOF)
         call iniseq(numnp, ia(kmapno))
       end if
 
@@ -436,8 +448,9 @@ C   --Process commands
      $     C(KVNAMI+NAMLEN*(IXSS-1)),
      &     C(KVNAMO+NAMLEN*(IXGV-1)), C(KVNAMO+NAMLEN*(IXNV-1)),
      &     C(KVNAMO+NAMLEN*(IXEV-1)), C(KVNAMO+NAMLEN*(IXNS-1)),
-     $     C(KVNAMO+NAMLEN*(IXSS-1)),
-     &     A(KCORD), A(KMAPEL), A(KMAPNO), mapnd, mapel,
+     $     C(KVNAMO+NAMLEN*(IXSS-1)), A(KCORD),
+     *     IA(KMAPEL), IA(KDBMAPEL), IA(KMAPNO), IA(KDBMAPNO),
+     *     mapnd, mapel,
      &     A(KIDELB), A(KNELB), A(KLENE), A(KNLNK), A(KNATR),
      &     A(KLINK), A(KATRIB),
      &     A(KIDNS), A(KNNNS), A(KNDNPS), A(KIXNNS), A(KIXDNS),

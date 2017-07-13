@@ -196,6 +196,15 @@ static void zhg(void *data, int ngid, int nLists, int nPins, int format,
     for (size_t j = 0; j < nEntries; j++)
       pinGids[offsets[i]+j] = graph->getColMap()->getGlobalElement(colind[j]);
   }
+
+for (zlno_t i = 0; i < nrows; i++) {
+  size_t nEntries = graph->getNumEntriesInLocalRow(i);
+  std::cout << "KDDZHG list " << i << " npins " << offsets[i+1]-offsets[i] << ": ";
+  for (size_t j = 0; j < nEntries; j++)
+    std::cout << pinGids[offsets[i]+j] << " ";
+  std::cout << std::endl;
+}
+
   *ierr = ZOLTAN_OK;
 }
 
@@ -339,6 +348,10 @@ int run(
     return 1;
   }
 
+for(int i = 0; i < nump; i++) {
+  std::cout << me << " KDD Z1 " << pgid[i] << " " << plid[i] << " " << ppart[i] << std::endl;
+}
+
   /////////////////////////////////////////
   // PARTITION USING ZOLTAN THROUGH ZOLTAN2
   /////////////////////////////////////////
@@ -372,7 +385,6 @@ int run(
   
   Teuchos::ParameterList params;
   params.set("timer_output_stream" , "std::cout");
-  //params.set("compute_metrics", "true");
   // params.set("debug_level" , "verbose_detailed_status");
 
   params.set("algorithm", "zoltan");
@@ -411,20 +423,16 @@ int run(
     return 1;
   }
 
-  // An environment.  This is usually created by the problem.
+for(int i = 0; i < nump; i++) {
+  std::cout << me << " KDD Z2 " << coords->getMap()->getGlobalElement(i)  << " " << i << " " << problem->getSolution().getPartListView()[i] << std::endl;
+}
 
-  RCP<const Zoltan2::Environment> env = problem->getEnvironment();
+  // create metric object
 
-  RCP<const matrixAdapter_t::base_adapter_t> bia = 
-    Teuchos::rcp_implicit_cast<const matrixAdapter_t::base_adapter_t>(rcp(ia));
-
-  // create metric object (also usually created by a problem)
-
-  RCP<quality_t>metricObject=rcp(new quality_t(env, problem->getComm(), bia,
-					       &problem->getSolution(),false));
+ RCP<quality_t>metricObject = rcp(new quality_t(ia,&params,problem->getComm(),
+						&problem->getSolution()));
   if (me == 0){
     metricObject->printMetrics(cout);
-    //problem->printMetrics(cout);
   }
   problem->printTimers();
 
@@ -447,7 +455,7 @@ int run(
   // CLEAN UP
   /////////////////////////////////////////
   zz.LB_Free_Part(&pgid, &plid, &pproc, &ppart);
-  //delete ia;
+  delete ia;
   delete ca;
   delete problem;
   delete uinput;

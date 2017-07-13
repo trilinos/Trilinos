@@ -473,7 +473,11 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     // Set up "local" views of X and Y.
     RCP<const MV> X_local;
     RCP<MV> Y_local;
-    const bool multipleProcs = (A_->getRowMap ()->getComm ()->getSize () >= 1);
+    //JJH 15-Apr-2016 I changed this from ">=" to ">".  Otherwise the else block
+    //is never hit.
+    //bmk 6-19-17: previously, the next line only set multipleProcs if A_ was distributed
+    //  This doesn't work if A_ is local but X/Y are distributed, as in AdditiveSchwarz.
+    const bool multipleProcs = (A_->getRowMap ()->getComm ()->getSize () > 1) || (X.getMap ()->getComm ()->getSize () > 1);
     if (multipleProcs) {
       // Interpret X and Y as "local" multivectors, that is, in the
       // local filter's domain resp. range Maps.  "Interpret" means that

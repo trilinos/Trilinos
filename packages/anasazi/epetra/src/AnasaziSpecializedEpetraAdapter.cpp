@@ -2,25 +2,38 @@
 // ***********************************************************************
 //
 //                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2004) Sandia Corporation
+//                 Copyright 2004 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -54,7 +67,7 @@ namespace Anasazi {
                                       const Epetra_BlockMap& Map_in, double * array, const int numvecs, const int stride)
      : Epetra_OP( Op )
    {
-     Epetra_MV = Teuchos::rcp( new Epetra_MultiVector(Copy, Map_in, array, stride, numvecs) ); 
+     Epetra_MV = Teuchos::rcp( new Epetra_MultiVector(Epetra_DataAccess::Copy, Map_in, array, stride, numvecs) ); 
      Epetra_MV_Temp = Teuchos::rcp( new Epetra_MultiVector(Map_in, numvecs) ); 
    }
     
@@ -109,13 +122,13 @@ namespace Anasazi {
   
   MultiVec<double>* EpetraOpMultiVec::CloneViewNonConst ( const std::vector<int>& index ) 
   {
-    EpetraOpMultiVec * ptr_apv = new EpetraOpMultiVec( Epetra_OP, View, *Epetra_MV, index);
+    EpetraOpMultiVec * ptr_apv = new EpetraOpMultiVec( Epetra_OP, Epetra_DataAccess::View, *Epetra_MV, index);
     return ptr_apv; // safe upcast.
   }
   
   const MultiVec<double>* EpetraOpMultiVec::CloneView ( const std::vector<int>& index ) const
   {
-    EpetraOpMultiVec * ptr_apv = new EpetraOpMultiVec( Epetra_OP, View, *Epetra_MV, index);
+    EpetraOpMultiVec * ptr_apv = new EpetraOpMultiVec( Epetra_OP, Epetra_DataAccess::View, *Epetra_MV, index);
     return ptr_apv; // safe upcast.
   }
   
@@ -123,7 +136,7 @@ namespace Anasazi {
   void EpetraOpMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>& index ) 
   {
     // this should be revisited to e
-    EpetraOpMultiVec temp_vec(Epetra_OP, View, *Epetra_MV, index);
+    EpetraOpMultiVec temp_vec(Epetra_OP, Epetra_DataAccess::View, *Epetra_MV, index);
 
     int numvecs = index.size();
     if ( A.GetNumberVecs() != numvecs ) {
@@ -132,7 +145,7 @@ namespace Anasazi {
         index2[i] = i;
       EpetraOpMultiVec *tmp_vec = dynamic_cast<EpetraOpMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
       TEUCHOS_TEST_FOR_EXCEPTION( tmp_vec==NULL, std::invalid_argument, "Anasazi::EpetraOpMultiVec::SetBlocks() cast of MultiVec<double> to EpetraOpMultiVec failed.");
-      EpetraOpMultiVec A_vec(Epetra_OP, View, *(tmp_vec->GetEpetraMultiVector()), index2);
+      EpetraOpMultiVec A_vec(Epetra_OP, Epetra_DataAccess::View, *(tmp_vec->GetEpetraMultiVector()), index2);
       temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
     }
     else {
@@ -150,7 +163,7 @@ namespace Anasazi {
       const Teuchos::SerialDenseMatrix<int,double>& B, double beta ) 
   {
     Epetra_LocalMap LocalMap(B.numRows(), 0, Epetra_MV->Map().Comm());
-    Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
+    Epetra_MultiVector B_Pvec(Epetra_DataAccess::View, LocalMap, B.values(), B.stride(), B.numCols());
     
     EpetraOpMultiVec *A_vec = dynamic_cast<EpetraOpMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
     TEUCHOS_TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraOpMultiVec::SetBlocks() cast of MultiVec<double> to EpetraOpMultiVec failed.");
@@ -196,7 +209,7 @@ namespace Anasazi {
     
     if (A_vec) {
       Epetra_LocalMap LocalMap(B.numRows(), 0, Epetra_MV->Map().Comm());
-      Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
+      Epetra_MultiVector B_Pvec(Epetra_DataAccess::View, LocalMap, B.values(), B.stride(), B.numCols());
      
       int info = Epetra_OP->Apply( *Epetra_MV, *Epetra_MV_Temp );
       TEUCHOS_TEST_FOR_EXCEPTION( info != 0, EpetraSpecializedMultiVecFailure, 
@@ -270,7 +283,7 @@ namespace Anasazi {
     
     std::vector<int> tmp_index( 1, 0 );
     for (int i=0; i<numvecs; i++) {
-      Epetra_MultiVector temp_vec(View, *Epetra_MV, &tmp_index[0], 1);
+      Epetra_MultiVector temp_vec(Epetra_DataAccess::View, *Epetra_MV, &tmp_index[0], 1);
       TEUCHOS_TEST_FOR_EXCEPTION( 
           temp_vec.Scale( alpha[i] ) != 0,
           EpetraSpecializedMultiVecFailure, "Anasazi::EpetraOpMultiVec::MvScale() call to Epetra_MultiVector::Scale() returned a nonzero value.");

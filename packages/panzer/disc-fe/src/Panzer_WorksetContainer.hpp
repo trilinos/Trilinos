@@ -45,39 +45,22 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Intrepid2_Orientation.hpp"
+
 #include "Panzer_PhysicsBlock.hpp"
+#include "Panzer_BC.hpp"
 #include "Panzer_WorksetFactoryBase.hpp"
 #include "Panzer_WorksetDescriptor.hpp" // what the workset is defined over
 #include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
+
+#ifndef __KK__
+#define __KK__
+#endif
 
 namespace panzer {
 
 // forward declaration
 class UniqueGlobalIndexerBase;
-
-struct SideId {
-   SideId(const BC & bc)
-      : ss_id(bc.sidesetID()), eblk_id(bc.elementBlockID()),
-        is_interface(static_cast<int>(bc.bcType() == BCT_Interface)) {}
-
-   std::string ss_id;
-   std::string eblk_id;
-   int is_interface;
-};
-
-/** Required to distinguish between boundary conditions
-  * and sides.
-  */
-struct LessSide {
-   bool operator()(const SideId & left, 
-                   const SideId  right) const
-   {
-     return ((left.is_interface <  right.is_interface) ||
-             (left.is_interface == right.is_interface &&
-              (left.ss_id + "_" + left.eblk_id  < right.ss_id + "_" + right.eblk_id)));
-     
-   }
-};
 
 /** \brief Class that provides access to worksets on
   * each element block and side set.
@@ -95,17 +78,6 @@ class WorksetContainer {
 public:
    //! Default contructor, starts with no workset factory objects
    WorksetContainer();
-
-   /** Instantiate a workset object with a specified factory and input physics block
-     * map.
-     *
-     * \param[in] factory Factory to be used for constructing worksets
-     * \param[in] physicsBlocks Vector of physics blocks
-     * \param[in] wkstSz Number of elements in a workset built by this container
-     */ 
-   WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
-                    const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
-                    std::size_t wkstSz);
 
    /** Instantiate a workset object with a specified factory and input workset needs
      * map.
@@ -132,9 +104,6 @@ public:
    Teuchos::RCP<const WorksetFactoryBase> getFactory() const
    { return wkstFactory_; }
 
-   //! The physics block vector
-   void setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks);
-
    //! set the workset size
    void setWorksetSize(std::size_t worksetSize)
    { worksetSize_ = worksetSize; }
@@ -143,56 +112,95 @@ public:
    std::size_t getWorksetSize() const
    { return worksetSize_; }
 
+   /** Set the needs for an element block. Note any old needs will
+     * be erased, and all worksets will be deleted. This is equivalent
+     * to calling <code>clear();</code> then <code>setNeeds()</code>. This clearing
+     * is required in order to for the worksets to remain consistent.
+     *
+     * \param[in] eBlock Element block associated with the needs object
+     * \param[in] needs Needs for the element block.
+     */
+   void setNeeds(const std::string & eBlock,const WorksetNeeds & needs);
+
    /** Clear all allocated worksets, maintain the workset factory and element to physics
      * block map.
      */ 
    void clear();
 
-   //! Look up an input physics block, throws an exception if it can not be found.
-   const PhysicsBlock & lookupPhysicsBlock(const std::string & eBlock) const;
 
    //! Look up an input physics block, throws an exception if it can not be found.
    const WorksetNeeds & lookupNeeds(const std::string & eBlock) const;
 
    //! Access to volume worksets
-   Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
-
-   //! Access to volume worksets
    Teuchos::RCP<std::vector<Workset> > getWorksets(const WorksetDescriptor & wd);
 
    //! Access, and construction of side worksets
-   Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const BC & bc);
-
-   //! Iterator access to volume worksets
-   inline std::vector<Workset>::iterator begin(const std::string & eBlock)
-   { return getVolumeWorksets(eBlock)->begin(); }
-
-   //! Iterator access to volume worksets
-   inline std::vector<Workset>::iterator end(const std::string & eBlock)
-   { return getVolumeWorksets(eBlock)->end(); }
-
-   //! Iterator access to side worksets
-   inline std::map<unsigned,Workset>::iterator begin(const BC & bc)
-   { return getSideWorksets(bc)->begin(); }
-
-   //! Iterator access to side worksets
-   inline std::map<unsigned,Workset>::iterator end(const BC & bc)
-   { return getSideWorksets(bc)->end(); }
-
-   /** Allocate worksets associated with the element blocks in a vector, this
-     * will overwrite any previously constructed worksets.
-     */
-   void allocateVolumeWorksets(const std::vector<std::string> & eBlocks);
-
-   /** Allocate worksets associated with the BC objects in a vector, this
-     * will overwrite any previously constructed worksets.
-     */
-   void allocateSideWorksets(const std::vector<BC> & bcs);
+   Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const WorksetDescriptor & desc);
 
    /** Set the global indexer. This is used solely for accessing the
      * orientations.
      */
    void setGlobalIndexer(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
+
+   /** Add a basis to the worksets (if required). If reuqired this will clear
+     * the workset reconstructing all the arrays. Add to all element blocks.
+     */
+   void addBasis(const std::string & type,int order,const std::string & rep_field);
+
+   ////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if 1
+   /** Instantiate a workset object with a specified factory and input physics block
+     * map.
+     *
+     * \param[in] factory Factory to be used for constructing worksets
+     * \param[in] physicsBlocks Vector of physics blocks
+     * \param[in] wkstSz Number of elements in a workset built by this container
+     */ 
+   PANZER_DEPRECATED
+   WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
+                    const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
+                    std::size_t wkstSz);
+
+   //! Access, and construction of side worksets
+   PANZER_DEPRECATED
+   Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const BC & bc);
+
+   //! The physics block vector
+   PANZER_DEPRECATED
+   void setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks);
+
+   //! Access to volume worksets
+   PANZER_DEPRECATED
+   Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
+
+   //! Iterator access to volume worksets
+   PANZER_DEPRECATED
+   inline std::vector<Workset>::iterator begin(const std::string & eBlock)
+   { 
+     WorksetDescriptor wd = blockDescriptor(eBlock); 
+     return getWorksets(wd)->begin(); }
+
+   //! Iterator access to volume worksets
+   PANZER_DEPRECATED
+   inline std::vector<Workset>::iterator end(const std::string & eBlock)
+   { WorksetDescriptor wd = blockDescriptor(eBlock); 
+     return getWorksets(wd)->end(); }
+
+   //! Iterator access to side worksets
+   PANZER_DEPRECATED
+   inline std::map<unsigned,Workset>::iterator begin(const BC & bc)
+   { WorksetDescriptor desc = bcDescriptor(bc);
+     return getSideWorksets(desc)->begin(); }
+
+   //! Iterator access to side worksets
+   PANZER_DEPRECATED
+   inline std::map<unsigned,Workset>::iterator end(const BC & bc)
+   { WorksetDescriptor desc = bcDescriptor(bc);
+     return getSideWorksets(desc)->end(); }
+#endif
+
+   ////////////////////////////////////////////////////////////////////////////////////////////////
 
 private:
    /** Set the orientations. Can only be called once, this also sets the internally stored
@@ -201,6 +209,21 @@ private:
      */
    void applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
 
+#if defined(__KK__)
+   /** Using the stored global indexer, set the orientations for a volume workset on a
+     * specified element block.
+     */
+   void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
+                          const std::string & eBlock,
+                          std::vector<Workset> & worksets) const;
+
+   /** Using the stored global indexer, set the orientations for a side workset.
+     */
+   void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
+                          const WorksetDescriptor & desc,
+                          std::map<unsigned,Workset> & worksets) const;
+#endif
+
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.
      */
@@ -208,17 +231,16 @@ private:
 
    /** Using the stored global indexer, set the orientations for a side workset.
      */
-   void applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) const;
+   void applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & worksets) const;
 
    // typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
-   typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
-   typedef std::map<SideId,Teuchos::RCP<std::map<unsigned,Workset> >,LessSide> SideMap;
+   typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > WorksetMap;
+   typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::map<unsigned,Workset> > > SideMap;
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets
-   std::map<std::string,Teuchos::RCP<PhysicsBlock> > ebToPb_; //! Maps element blocks to input physics block objects
    std::map<std::string,WorksetNeeds> ebToNeeds_; //! Maps element blocks to input physics block objects
 
-   VolumeMap volWorksets_;
+   WorksetMap worksets_;
    SideMap sideWorksets_;
 
    std::size_t worksetSize_;

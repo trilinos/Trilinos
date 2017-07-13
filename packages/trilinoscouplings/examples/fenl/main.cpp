@@ -50,14 +50,16 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   Perf perf;
   double response = 0;
+  Teuchos::Array<double> response_gradient;
   if ( cmd.USE_FIXTURE_QUADRATIC  ) {
     perf = fenl< double , Device , BoxElemPart::ElemQuadratic >
       ( comm , node , cmd.USE_FENL_XML_FILE ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
-        nelem , linear_diffusion_coefficient, cmd.USE_COEFF_SRC ,
-        cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value , response );
+        nelem , linear_diffusion_coefficient, cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
+        cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
+        response , response_gradient );
   }
   else {
     perf = fenl< double , Device , BoxElemPart::ElemLinear >
@@ -65,8 +67,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
-        nelem , linear_diffusion_coefficient, cmd.USE_COEFF_SRC ,
-        cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value , response );
+        nelem , linear_diffusion_coefficient, cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
+        cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
+        response , response_gradient );
   }
 
   perf.response_mean = response;
@@ -78,6 +81,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   if ( cmd.SUMMARIZE  ) {
     Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+    print_memory_usage(std::cout, *comm);
   }
 
   }

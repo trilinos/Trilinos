@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 
   int errorFlag = 0;
 
-  double errtol = ROL::ROL_THRESHOLD;
+  RealT errtol = ROL::ROL_THRESHOLD<RealT>();
 
   try {
 
@@ -114,9 +114,9 @@ int main(int argc, char *argv[]) {
      
     RealT left = -1e0, right = 1e0;
 
-    RCP<std::vector<RCP<V> > > x_rcp = rcp( new std::vector<RCP<V> > );
-    RCP<std::vector<RCP<V> > > y_rcp = rcp( new std::vector<RCP<V> > );
-    RCP<std::vector<RCP<V> > > z_rcp = rcp( new std::vector<RCP<V> > );
+    std::vector<RCP<V> > x_rcp;
+    std::vector<RCP<V> > y_rcp;
+    std::vector<RCP<V> > z_rcp;
 
     for( PV::size_type k=0; k<nvec; ++k ) {
       RCP<std::vector<RealT> > xk_rcp = rcp( new std::vector<RealT>(dim[k]) );
@@ -133,20 +133,19 @@ int main(int argc, char *argv[]) {
       RCP<V> yk = rcp( new SV( yk_rcp ) );
       RCP<V> zk = rcp( new SV( zk_rcp ) );
 
-      x_rcp->push_back(xk);
-      y_rcp->push_back(yk);
-      z_rcp->push_back(zk);
+      x_rcp.push_back(xk);
+      y_rcp.push_back(yk);
+      z_rcp.push_back(zk);
       
       total_dim += dim[k];
-    } 
+    }
 
     PV x(x_rcp);
-    PV y(y_rcp);
+    RCP<V> y = ROL::CreatePartitionedVector<RealT>(y_rcp[0],y_rcp[1],y_rcp[2]);
     PV z(z_rcp);
 
-
     // Standard tests.
-    std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
+    std::vector<RealT> consistency = x.checkVector(*y, z, true, *outStream);
     ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;

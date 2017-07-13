@@ -212,6 +212,11 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
+    // Seed the random number generator in Teuchos.  We create random
+    // bordering matrices and it is possible different processors might generate
+    // different matrices.  By setting the seed, this shouldn't happen.
+    Teuchos::ScalarTraits<double>::seedrandom(12345);
+
     // Create parameter list
     Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);

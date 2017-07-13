@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutable)
 
 TRIBITS_ADD_EXECUTABLE(
   example_01

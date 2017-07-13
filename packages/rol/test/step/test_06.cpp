@@ -106,7 +106,6 @@ int main(int argc, char *argv[]) {
       for (ROL::ELineSearch ls = ROL::LINESEARCH_BACKTRACKING; ls < ROL::LINESEARCH_USERDEFINED; ls++) {
         // Define Step
         parlist->sublist("Step").sublist("Line Search").sublist("Line-Search Method").set("Type",ROL::ELineSearchToString(ls));
-      
         // Define Algorithm
         ROL::Algorithm<RealT> algo("Line Search",*parlist,false);
 
@@ -118,7 +117,7 @@ int main(int argc, char *argv[]) {
         e->set(*x);
         e->axpy(-1.0,*z);
         *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
-        //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON)); 
+        //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON<RealT>())); 
       }
     }
   }

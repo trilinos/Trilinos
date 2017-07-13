@@ -48,6 +48,8 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_BlockedVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_Aggregates_decl.hpp"
@@ -135,9 +137,8 @@ namespace MueLu {
   void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Statistics0) {
+    if (verbLevel & Statistics1)
       out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
-    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

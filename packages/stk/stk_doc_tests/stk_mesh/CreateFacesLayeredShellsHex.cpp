@@ -69,7 +69,7 @@ namespace
     // ==================================================
     // VERIFICATION
     stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
-    std::vector<unsigned> entityCounts;
+    std::vector<size_t> entityCounts;
     stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
     EXPECT_EQ(1280u, entityCounts[stk::topology::ELEMENT_RANK]);
     //+ The shell faces are the same as the boundary hex faces

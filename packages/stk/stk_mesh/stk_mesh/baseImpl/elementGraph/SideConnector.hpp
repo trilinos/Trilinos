@@ -3,16 +3,72 @@
 
 #include <vector>
 #include <stk_mesh/base/Types.hpp>
+#include "BulkDataIdMapper.hpp"
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include "GraphEdgeData.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { namespace impl { class ElementLocalIdMapper; } } }
 
 namespace stk
 {
 namespace mesh
 {
+
+class SideCreationElementChooser
+{
+public:
+    SideCreationElementChooser(const stk::mesh::BulkData &b,
+                               const stk::mesh::impl::ElementLocalIdMapper &im,
+                               const stk::mesh::Graph &g,
+                               const stk::mesh::impl::SparseGraph &cg)
+    : bulk(b), localIdMapper(im), graph(g), coincidentGraph(cg) { }
+
+    GraphEdge get_chosen_graph_edge(stk::mesh::Entity elem, int elemSide) const;
+private:
+    const stk::mesh::BulkData &bulk;
+    const stk::mesh::impl::ElementLocalIdMapper &localIdMapper;
+    const stk::mesh::Graph &graph;
+    const stk::mesh::impl::SparseGraph &coincidentGraph;
+};
+
+class SideIdChooser
+{
+public:
+    SideIdChooser(const stk::mesh::BulkData &b,
+                  const stk::mesh::impl::ElementLocalIdMapper &im,
+                  const stk::mesh::Graph &g,
+                  const stk::mesh::impl::SparseGraph &cg)
+    : elemChooser(b, im, g, cg), idMapper(b, im) { }
+    stk::mesh::EntityId get_chosen_side_id(stk::mesh::Entity elem, int elemSide) const;
+private:
+    const stk::mesh::SideCreationElementChooser elemChooser;
+    stk::mesh::impl::BulkDataIdMapper idMapper;
+};
+
+class SideNodeConnector
+{
+public:
+    SideNodeConnector(stk::mesh::BulkData &b,
+                      const stk::mesh::Graph &g,
+                      const stk::mesh::impl::SparseGraph &cg,
+                      const stk::mesh::ParallelInfoForGraphEdges &p,
+                      const stk::mesh::impl::ElementLocalIdMapper & lm)
+    : bulk(b), graph(g), coincidentGraph(cg), parallelGraph(p), localMapper(lm)
+    { }
+    void connect_side_to_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
+private:
+    void connect_side_to_elements_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
+    void connect_side_to_other_elements_nodes(const GraphEdge &edgeWithMinId, stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
+    stk::mesh::EntityVector get_permuted_side_nodes(stk::mesh::Entity elemEntity, int elemSide, const stk::mesh::EntityVector &sideNodes, int permutation);
+private:
+    stk::mesh::BulkData &bulk;
+    const stk::mesh::Graph &graph;
+    const stk::mesh::impl::SparseGraph &coincidentGraph;
+    const stk::mesh::ParallelInfoForGraphEdges &parallelGraph;
+    const stk::mesh::impl::ElementLocalIdMapper &localMapper;
+};
 
 class SideConnector
 {
@@ -20,20 +76,19 @@ public:
     SideConnector(stk::mesh::BulkData &b,
                   const stk::mesh::Graph &g,
                   const stk::mesh::impl::SparseGraph &cg,
-                  const stk::mesh::EntityVector &localToElement,
-                  const std::vector<impl::LocalId> &elemToLocal) :
+                  const stk::mesh::impl::ElementLocalIdMapper & localMapper) :
             m_bulk_data(b),
             m_graph(g),
             m_coincidentGraph(cg),
-            m_local_id_to_element_entity(localToElement),
-            m_entity_to_local_id(elemToLocal)
+            m_localMapper(localMapper)
     {
     }
+
     void connect_side_to_all_elements(stk::mesh::Entity sideEntity,
                                       stk::mesh::Entity elemEntity,
                                       int elemSide);
 private:
-    stk::mesh::Entity get_entity_for_local_id(stk::mesh::impl::LocalId localId) const;
+    SideConnector();
 
     void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity,
                                               const stk::mesh::GraphEdge &graphEdge);
@@ -46,12 +101,15 @@ private:
                               stk::mesh::Entity otherElement,
                               int sideOrd);
     void connect_side_to_adjacent_elements(stk::mesh::Entity sideEntity, stk::mesh::impl::LocalId elemLocalId, int elemSide);
+    stk::mesh::EntityId get_min_id(const GraphEdge& graphEdge,
+                                   int elemSide,
+                                   const stk::mesh::impl::BulkDataIdMapper& idMapper,
+                                   stk::mesh::EntityId minId);
 
     stk::mesh::BulkData &m_bulk_data;
     const stk::mesh::Graph &m_graph;
     const stk::mesh::impl::SparseGraph &m_coincidentGraph;
-    const stk::mesh::EntityVector &m_local_id_to_element_entity;
-    const std::vector<impl::LocalId> &m_entity_to_local_id;
+    const stk::mesh::impl::ElementLocalIdMapper & m_localMapper;
 };
 
 }

@@ -44,9 +44,9 @@
 
 */
 
-#include "Tpetra/Teko_TpetraStridedMappingStrategy.hpp"
-#include "Tpetra/Teko_InterlacedTpetra.hpp"
-#include "Tpetra/Teko_TpetraHelpers.hpp"
+#include "Teko_TpetraStridedMappingStrategy.hpp"
+#include "Teko_InterlacedTpetra.hpp"
+#include "Teko_TpetraHelpers.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"

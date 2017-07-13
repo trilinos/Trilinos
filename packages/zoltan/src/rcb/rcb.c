@@ -505,7 +505,8 @@ static int rcb_fn(
   if ((wgtflag > 1) && (pivot_choice == PIVOT_CHOICE_RANDOM)){
     /* If RANDOM turns out to be wanted for wgtflag>1, we can implement it */
     ZOLTAN_PRINT_WARN(proc, yo, 
-      "random_pivots turned off because it is not implemented for multiple weights");
+      "random_pivots turned off because it is not implemented for "
+      "multiple weights");
     pivot_choice = PIVOT_CHOICE_BISECTION;
   }
 
@@ -525,7 +526,8 @@ static int rcb_fn(
                                     use_ids, gen_tree);
 
   if (ierr < 0) {
-    ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RCB_Build_Structure.");
+    ZOLTAN_PRINT_ERROR(proc, yo,
+      "Error returned from Zoltan_RCB_Build_Structure.");
     goto End;
   }
 
@@ -904,26 +906,30 @@ static int rcb_fn(
       if (wgtflag <= 1){
         if (pivot_choice == PIVOT_CHOICE_BISECTION){
           if (!Zoltan_RB_find_median(          
-               zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight, dotmark, dotnum, proc, 
+               zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight,
+               dotmark, dotnum, proc, 
                fraclo, local_comm, &valuehalf, first_guess,
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                weight[0], weightlo, weighthi,
                dotlist, rectilinear_blocks, average_cuts)) {
-            ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
+            ZOLTAN_PRINT_ERROR(proc, yo,
+               "Error returned from Zoltan_RB_find_median.");
             ierr = ZOLTAN_FATAL;
             goto End;
           }
         }
         else{
           if (!Zoltan_RB_find_median_randomized(
-               zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight, dotmark, dotnum, proc, 
+               zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight,
+               dotmark, dotnum, proc, 
                fraclo, local_comm, &valuehalf, first_guess,
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                weight[0], weightlo, weighthi,
                dotlist, rectilinear_blocks, average_cuts)) {
-            ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median_randomized.");
+            ZOLTAN_PRINT_ERROR(proc, yo,
+               "Error returned from Zoltan_RB_find_median_randomized.");
             ierr = ZOLTAN_FATAL;
             goto End;
           }

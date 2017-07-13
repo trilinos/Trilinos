@@ -1,30 +1,52 @@
-//**************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//                                 NOTICE
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright 2004 Sandia Corporation
 //
+// Under terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
+
 // This software is a result of the research described in the report
 //
-// " A comparison of algorithms for modal analysis in the absence 
-//   of a sparse direct method", P. Arbenz, R. Lehoucq, and U. Hetmaniuk,
-//  Sandia National Laboratories, Technical report SAND2003-1028J.
+//     "A comparison of algorithms for modal analysis in the absence
+//     of a sparse direct method", P. Arbenz, R. Lehoucq, and U. Hetmaniuk,
+//     Sandia National Laboratories, Technical report SAND2003-1028J.
 //
 // It is based on the Epetra, AztecOO, and ML packages defined in the Trilinos
-// framework ( http://software.sandia.gov/trilinos/ ).
-//
-// The distribution of this software follows also the rules defined in Trilinos.
-// This notice shall be marked on any reproduction of this software, in whole or
-// in part.
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-//
-// Code Authors: U. Hetmaniuk (ulhetma@sandia.gov), R. Lehoucq (rblehou@sandia.gov)
-//
-//**************************************************************************
+// framework ( http://trilinos.org/ ).
 
 #include "AnasaziConfigDefs.hpp"
 #include "CheckingTools.h"
@@ -51,7 +73,7 @@ double CheckingTools::errorOrthogonality(const Epetra_MultiVector *X,
 
   int i, j;
   for (i = 0; i < rc; ++i) {
-    Epetra_Vector MRi(Copy, (*R), i);
+    Epetra_Vector MRi(Epetra_DataAccess::Copy, (*R), i);
     if (M)
       M->Apply(*((*R)(i)), MRi);
     double normMR = 0.0;
@@ -84,7 +106,7 @@ double CheckingTools::errorOrthonormality(const Epetra_MultiVector *X,
 
   int i, j;
   for (i = 0; i < xc; ++i) {
-    Epetra_Vector MXi(Copy, (*X), i);
+    Epetra_Vector MXi(Epetra_DataAccess::Copy, (*X), i);
     if (M)
       M->Apply(*((*X)(i)), MXi);
     double dot = 0.0;
@@ -124,7 +146,7 @@ double CheckingTools::errorEquality(const Epetra_MultiVector *X,
   }
 
   for (i = 0; i < xc; ++i) {
-    Epetra_Vector MtimesXi(Copy, (*X), i);
+    Epetra_Vector MtimesXi(Epetra_DataAccess::Copy, (*X), i);
     if (M)
       M->Apply(*((*X)(i)), MtimesXi);
     MtimesXi.Update(-1.0, *((*MX)(i)), 1.0);
@@ -165,17 +187,17 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
   }
 
   Epetra_LocalMap lMap(qexc, 0, MyComm);
-  Epetra_MultiVector QextMQ(View, lMap, z, qexc, qc);
+  Epetra_MultiVector QextMQ(Epetra_DataAccess::View, lMap, z, qexc, qc);
 
   int j;
   for (j=0; j<qc; ++j) {
-    Epetra_MultiVector Qj(View, Q, j, 1);
-    Epetra_MultiVector MQ(View, Q.Map(), mQ, qr, 1);
+    Epetra_MultiVector Qj(Epetra_DataAccess::View, Q, j, 1);
+    Epetra_MultiVector MQ(Epetra_DataAccess::View, Q.Map(), mQ, qr, 1);
     if (M)
       M->Apply(Qj, MQ);
     else
       memcpy(mQ, Qj.Values(), qr*sizeof(double));
-    Epetra_MultiVector colJ(View, QextMQ, j, 1);
+    Epetra_MultiVector colJ(Epetra_DataAccess::View, QextMQ, j, 1);
     colJ.Multiply('T', 'N', 1.0, Qex, MQ,  0.0);
   }
   delete[] mQ;
@@ -285,9 +307,9 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
     std::cout << "     2-Norm     Scaled 2-Nor.\n";
   }
 
-  Epetra_Vector KQ(View, Q.Map(), work);
-  Epetra_Vector MQ(View, Q.Map(), work + qr);
-  Epetra_Vector Qj(View, Q.Map(), Q.Values());
+  Epetra_Vector KQ(Epetra_DataAccess::View, Q.Map(), work);
+  Epetra_Vector MQ(Epetra_DataAccess::View, Q.Map(), work + qr);
+  Epetra_Vector Qj(Epetra_DataAccess::View, Q.Map(), Q.Values());
 
   double maxUserNorm = 0.0;
   double minUserNorm = 1.0e+100;
@@ -311,7 +333,7 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
 
     double residualUser = 0.0;
     if (normWeight) {
-      Epetra_Vector vectWeight(View, Q.Map(), normWeight);
+      Epetra_Vector vectWeight(Epetra_DataAccess::View, Q.Map(), normWeight);
       KQ.NormWeighted(vectWeight, &residualUser);
     }
 
@@ -388,9 +410,9 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
     std::cout << "     2-Norm     Scaled 2-Nor.\n";
   }
 
-  Epetra_Vector KQ(View, Q.Map(), work);
-  Epetra_Vector MQ(View, Q.Map(), work + qr);
-  Epetra_Vector Qj(View, Q.Map(), Q.Values());
+  Epetra_Vector KQ(Epetra_DataAccess::View, Q.Map(), work);
+  Epetra_Vector MQ(Epetra_DataAccess::View, Q.Map(), work + qr);
+  Epetra_Vector Qj(Epetra_DataAccess::View, Q.Map(), Q.Values());
 
   double maxMinvNorm = 0.0;
   double minMinvNorm = 1.0e+100;

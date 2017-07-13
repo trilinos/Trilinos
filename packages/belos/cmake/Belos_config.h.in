@@ -1,6 +1,9 @@
 /* Define if want to build with Amesos enabled */
 #cmakedefine HAVE_BELOS_AMESOS
 
+/* Define if want to build with AztecOO enabled */
+#cmakedefine HAVE_BELOS_AZTECOO
+
 /* Define if want to build with IFPACK enabled */
 #cmakedefine HAVE_BELOS_IFPACK
 

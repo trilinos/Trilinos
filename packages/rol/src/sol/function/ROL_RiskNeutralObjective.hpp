@@ -47,7 +47,6 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_ParametrizedObjective.hpp"
 #include "ROL_SampleGenerator.hpp"
 
 namespace ROL {
@@ -55,7 +54,7 @@ namespace ROL {
 template<class Real>
 class RiskNeutralObjective : public Objective<Real> {
 private:
-  Teuchos::RCP<ParametrizedObjective<Real> > ParametrizedObjective_;
+  Teuchos::RCP<Objective<Real> >       ParametrizedObjective_;
   Teuchos::RCP<SampleGenerator<Real> > ValueSampler_;
   Teuchos::RCP<SampleGenerator<Real> > GradientSampler_;
   Teuchos::RCP<SampleGenerator<Real> > HessianSampler_;
@@ -64,7 +63,7 @@ private:
   Teuchos::RCP<Vector<Real> > gradient_;
   Teuchos::RCP<Vector<Real> > pointDual_;
   Teuchos::RCP<Vector<Real> > sumDual_;
- 
+
   bool firstUpdate_;
   bool storage_;
 
@@ -106,40 +105,40 @@ private:
     ParametrizedObjective_->setParameter(param);
     ParametrizedObjective_->hessVec(hv,v,x,tol);
   }
- 
+
 
 public:
   virtual ~RiskNeutralObjective() {}
 
-  RiskNeutralObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                        const Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
-                        const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
-                        const Teuchos::RCP<SampleGenerator<Real> >       &hsampler,
+  RiskNeutralObjective( const Teuchos::RCP<Objective<Real> >       &pObj,
+                        const Teuchos::RCP<SampleGenerator<Real> > &vsampler, 
+                        const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
+                        const Teuchos::RCP<SampleGenerator<Real> > &hsampler,
                         const bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
-      firstUpdate_(true), storage_(true) {
+      firstUpdate_(true), storage_(storage) {
     value_storage_.clear();
     gradient_storage_.clear();
   }
 
-  RiskNeutralObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                        const Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
-                        const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+  RiskNeutralObjective( const Teuchos::RCP<Objective<Real> >       &pObj,
+                        const Teuchos::RCP<SampleGenerator<Real> > &vsampler, 
+                        const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
                         const bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
-      firstUpdate_(true), storage_(true) {
+      firstUpdate_(true), storage_(storage) {
     value_storage_.clear();
     gradient_storage_.clear();
   }
 
-  RiskNeutralObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                        const Teuchos::RCP<SampleGenerator<Real> >       &sampler,
+  RiskNeutralObjective( const Teuchos::RCP<Objective<Real> >       &pObj,
+                        const Teuchos::RCP<SampleGenerator<Real> > &sampler,
                         const bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
-      firstUpdate_(true), storage_(true) {
+      firstUpdate_(true), storage_(storage) {
     value_storage_.clear();
     gradient_storage_.clear();
   }
@@ -151,13 +150,13 @@ public:
       sumDual_   = (x.dual()).clone();
       firstUpdate_ = false;
     }
-    ParametrizedObjective_->update(x,flag,iter);
+    ParametrizedObjective_->update(x,(flag && iter>=0),iter);
     ValueSampler_->update(x);
-    value_ = 0.0;
+    value_ = static_cast<Real>(0);
     if ( storage_ ) {
       value_storage_.clear();
     }
-    if ( flag ) {
+    if ( flag && iter>=0 ) {
       GradientSampler_->update(x);
       HessianSampler_->update(x);
       gradient_->zero();
@@ -168,11 +167,11 @@ public:
   }
 
   virtual Real value( const Vector<Real> &x, Real &tol ) {
-    Real myval = 0.0, ptval = 0.0, val = 0.0, error = 2.0*tol + 1.0;
+    Real myval(0), ptval(0), val(0), one(1), two(2), error(two*tol + one);
     std::vector<Real> ptvals;
     while ( error > tol ) {
       ValueSampler_->refine();
-      for ( int i = ValueSampler_->start(); i < ValueSampler_->numMySamples(); i++ ) {
+      for ( int i = ValueSampler_->start(); i < ValueSampler_->numMySamples(); ++i ) {
         getValue(ptval,x,ValueSampler_->getMyPoint(i),tol);
         myval += ValueSampler_->getMyWeight(i)*ptval;
         ptvals.push_back(ptval);
@@ -183,34 +182,39 @@ public:
     ValueSampler_->sumAll(&myval,&val,1);
     value_ += val;
     ValueSampler_->setSamples();
+    tol = error;
     return value_;
   }
 
   virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     g.zero(); pointDual_->zero(); sumDual_->zero();
     std::vector<Teuchos::RCP<Vector<Real> > > ptgs;
-    Real error = 2.0*tol + 1.0;
+    Real one(1), two(2), error(two*tol + one);
     while ( error > tol ) {
       GradientSampler_->refine();
-      for ( int i = GradientSampler_->start(); i < GradientSampler_->numMySamples(); i++ ) {
+      for ( int i = GradientSampler_->start(); i < GradientSampler_->numMySamples(); ++i ) {
         getGradient(*pointDual_,x,GradientSampler_->getMyPoint(i),tol);
         sumDual_->axpy(GradientSampler_->getMyWeight(i),*pointDual_);
         ptgs.push_back(pointDual_->clone());
         (ptgs.back())->set(*pointDual_);
       }
       error = GradientSampler_->computeError(ptgs,x);
+//if (GradientSampler_->batchID()==0) {
+//  std::cout << "IN GRADIENT: ERROR = " << error << "  TOL = " << tol << std::endl;  
+//}
       ptgs.clear();
     }
     GradientSampler_->sumAll(*sumDual_,g);
-    gradient_->axpy(1.0,g);
+    gradient_->plus(g);
     g.set(*(gradient_));
     GradientSampler_->setSamples();
+    tol = error;
   }
 
   virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v,
                         const Vector<Real> &x, Real &tol ) {
     hv.zero(); pointDual_->zero(); sumDual_->zero();
-    for ( int i = 0; i < HessianSampler_->numMySamples(); i++ ) {
+    for ( int i = 0; i < HessianSampler_->numMySamples(); ++i ) {
       getHessVec(*pointDual_,v,x,HessianSampler_->getMyPoint(i),tol);
       sumDual_->axpy(HessianSampler_->getMyWeight(i),*pointDual_);
     }

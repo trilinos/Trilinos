@@ -65,16 +65,14 @@ namespace {
     
     MPI_Comm communicator = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(communicator);
-    if (numProcs != 1) {
-      return;
-    }
+    if (numProcs != 1) { return; }
 
     size_t num_elems_per_edge = 9;  
     {
       //-BEGIN
       // ============================================================
       // INITIALIZATION
-      std::string s_elems_per_edge = Ioss::Utils::to_string(num_elems_per_edge);
+      std::string s_elems_per_edge = std::to_string(num_elems_per_edge);
 
       //+ Create a generated mesh containg hexes and shells.
       std::string input_filename = s_elems_per_edge + "x" +

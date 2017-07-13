@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 
@@ -80,7 +80,7 @@ struct UnorderedMapTest
     , map(capacity)
     , histogram(map.get_histogram())
   {
-    Kokkos::Impl::Timer wall_clock ;
+    Kokkos::Timer wall_clock ;
     wall_clock.reset();
 
     value_type v = {};
@@ -164,12 +164,10 @@ struct UnorderedMapTest
 
 };
 
-//#define KOKKOS_COLLECT_UNORDERED_MAP_METRICS
-
 template <typename Device, bool Near>
 void run_performance_tests(std::string const & base_file_name)
 {
-#if defined(KOKKOS_COLLECT_UNORDERED_MAP_METRICS)
+#if 0
   std::string metrics_file_name = base_file_name + std::string("-metrics.csv");
   std::string length_file_name = base_file_name  + std::string("-length.csv");
   std::string distance_file_name = base_file_name + std::string("-distance.csv");
@@ -228,7 +226,7 @@ void run_performance_tests(std::string const & base_file_name)
   distance_out << "\b\b\b   " << std::endl;
   block_distance_out << "\b\b\b   " << std::endl;
 
-  Kokkos::Impl::Timer wall_clock ;
+  Kokkos::Timer wall_clock ;
   for (int i=0;  i < num_collisions ; ++i) {
     wall_clock.reset();
     std::cout << "Collisions: " << collisions[i] << std::endl;

@@ -92,33 +92,7 @@ LOCA.Epetra.Interface supports the following classes:
 #endif
 
 // Epetra includes
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // NOX include
 #include "NOX_Epetra_Interface_Required.H"
@@ -182,6 +156,9 @@ LOCA.Epetra.Interface supports the following classes:
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
+
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
 
 // Teuchos::RCPs typemaps
 %teuchos_rcp(LOCA::Epetra::Interface::Required)

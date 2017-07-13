@@ -155,6 +155,9 @@ namespace MueLu {
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
+    size_t getNodeSmootherComplexity() const {return Teuchos::OrdinalTraits<size_t>::invalid();}
+
+
     //@}
 
   private:

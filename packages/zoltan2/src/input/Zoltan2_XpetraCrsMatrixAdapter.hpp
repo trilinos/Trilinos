@@ -93,7 +93,6 @@ public:
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
-  typedef MatrixAdapter<User,UserCoord> base_adapter_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
 #endif
@@ -104,18 +103,18 @@ public:
 
   /*! \brief Constructor   
    *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object 
-   *    \param numWeightsPerRow If row weights will be provided in setRowWeights(),
-   *        the set \c numWeightsPerRow to the number of weights per row.
+   *    \param nWeightsPerRow If row weights will be provided in setRowWeights(),
+   *        the set \c nWeightsPerRow to the number of weights per row.
    */
   XpetraCrsMatrixAdapter(const RCP<const User> &inmatrix,
-                         int numWeightsPerRow=0);
+                         int nWeightsPerRow=0);
 
   /*! \brief Specify a weight for each entity of the primaryEntityType.
    *    \param weightVal A pointer to the weights for this index.
    *    \stride          A stride to be used in reading the values.  The
    *        index \c idx weight for entity \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param idx  A value between zero and one less that the \c numWeightsPerRow 
+   *    \param idx  A value between zero and one less that the \c nWeightsPerRow 
    *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of the primary 
@@ -129,7 +128,7 @@ public:
    *    \stride          A stride to be used in reading the values.  The
    *        index \c idx weight for row \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param idx  A value between zero and one less that the \c numWeightsPerRow 
+   *    \param idx  A value between zero and one less that the \c nWeightsPerRow 
    *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of rows
@@ -194,14 +193,19 @@ public:
   }
 
 
-  int getNumWeightsPerRow() const { return numWeightsPerRow_; }
+  int getNumWeightsPerRow() const { return nWeightsPerRow_; }
 
   void getRowWeightsView(const scalar_t *&weights, int &stride,
                            int idx = 0) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__,
-      "invalid weight index",
-      idx >= 0 && idx < numWeightsPerRow_, BASIC_ASSERTION);
+    if(idx<0 || idx >= nWeightsPerRow_)
+    {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid row weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+    }
+
     size_t length;
     rowWeights_[idx].getStridedList(length, weights, stride);
   }
@@ -218,18 +222,15 @@ public:
 
 private:
 
-  RCP<Environment> env_;    // for error messages, etc.
-
   RCP<const User> inmatrix_;
   RCP<const xmatrix_t> matrix_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
-  lno_t base_;
   ArrayRCP<lno_t> offset_;
   ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
   ArrayRCP<scalar_t> values_;  // TODO:  the matrix here?  Would prefer views.
 
-  int numWeightsPerRow_;
+  int nWeightsPerRow_;
   ArrayRCP<StridedData<lno_t, scalar_t> > rowWeights_;
   ArrayRCP<bool> numNzWeight_;
 
@@ -242,11 +243,10 @@ private:
 
 template <typename User, typename UserCoord>
   XpetraCrsMatrixAdapter<User,UserCoord>::XpetraCrsMatrixAdapter(
-    const RCP<const User> &inmatrix, int numWeightsPerRow):
-      env_(rcp(new Environment)),
-      inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
+    const RCP<const User> &inmatrix, int nWeightsPerRow):
+      inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(),
       offset_(), columnIds_(),
-      numWeightsPerRow_(numWeightsPerRow), rowWeights_(), numNzWeight_(),
+      nWeightsPerRow_(nWeightsPerRow), rowWeights_(), numNzWeight_(),
       mayHaveDiagonalEntries(true)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -258,7 +258,6 @@ template <typename User, typename UserCoord>
 
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
-  base_ = rowMap_->getIndexBase();
 
   size_t nrows = matrix_->getNodeNumRows();
   size_t nnz = matrix_->getNodeNumEntries();
@@ -272,7 +271,7 @@ template <typename User, typename UserCoord>
 //TODO WE ARE COPYING THE MATRIX HERE.  IS THERE A WAY TO USE VIEWS?
 //TODO THEY ARE AVAILABLE IN EPETRA; ARE THEY AVAIL IN TPETRA AND XPETRA?
   for (size_t i=0; i < nrows; i++){
-    lno_t row = i + base_;
+    lno_t row = i;
     nnz = matrix_->getNumEntriesInLocalRow(row);
     matrix_->getLocalRowView(row, indices, nzs);
     for (size_t j=0; j < nnz; j++){
@@ -284,10 +283,10 @@ template <typename User, typename UserCoord>
     offset_[i+1] = offset_[i] + nnz;
   } 
 
-  if (numWeightsPerRow_ > 0){
-    rowWeights_ = arcp(new input_t [numWeightsPerRow_], 0, numWeightsPerRow_, true);
-    numNzWeight_ = arcp(new bool [numWeightsPerRow_], 0, numWeightsPerRow_, true);
-    for (int i=0; i < numWeightsPerRow_; i++)
+  if (nWeightsPerRow_ > 0){
+    rowWeights_ = arcp(new input_t [nWeightsPerRow_], 0, nWeightsPerRow_, true);
+    numNzWeight_ = arcp(new bool [nWeightsPerRow_], 0, nWeightsPerRow_, true);
+    for (int i=0; i < nWeightsPerRow_; i++)
       numNzWeight_[i] = false;
   }
 }
@@ -316,9 +315,14 @@ template <typename User, typename UserCoord>
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  env_->localInputAssertion(__FILE__, __LINE__,
-    "invalid row weight index",
-    idx >= 0 && idx < numWeightsPerRow_, BASIC_ASSERTION);
+  if(idx<0 || idx >= nWeightsPerRow_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid row weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
   size_t nvtx = getLocalNumRows();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
   rowWeights_[idx] = input_t(weightV, stride);
@@ -346,9 +350,14 @@ template <typename User, typename UserCoord>
   void XpetraCrsMatrixAdapter<User,UserCoord>::setRowWeightIsNumberOfNonZeros(
     int idx)
 {
-  env_->localInputAssertion(__FILE__, __LINE__,
-    "invalid row weight index",
-    idx >= 0 && idx < numWeightsPerRow_, BASIC_ASSERTION);
+  if(idx<0 || idx >= nWeightsPerRow_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid row weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
 
   numNzWeight_[idx] = true;
 }

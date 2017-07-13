@@ -72,15 +72,17 @@ NOX::Solver::PseudoTransient::
 PseudoTransient(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
         const Teuchos::RCP<NOX::StatusTest::Generic>& t,
         const Teuchos::RCP<Teuchos::ParameterList>& p) :
-  globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
-  utilsPtr(globalDataPtr->getUtils()),
   solnPtr(xGrp),                               // pointer to xGrp
   oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
   transientResidualGroup(xGrp->clone(DeepCopy)),     // create via clone
   dirPtr(xGrp->getX().clone(ShapeCopy)), // create via clone
-  testPtr(t),
-  prePostOperator(utilsPtr, p->sublist("Solver Options"))
+  testPtr(t)
 {
+  NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
+  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
+  utilsPtr = globalDataPtr->getUtils();
+  prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
+
   this->setMyParamList(p);
   thyraSolnGroup = Teuchos::rcp_dynamic_cast<NOX::Thyra::Group>(solnPtr,true);
   thyraOldSolnGroup = Teuchos::rcp_dynamic_cast<NOX::Thyra::Group>(oldSolnPtr,true);

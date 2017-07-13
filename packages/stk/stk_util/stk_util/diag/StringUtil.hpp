@@ -34,7 +34,7 @@
 #ifndef STK_UTIL_DIAG_StringUtil_h
 #define STK_UTIL_DIAG_StringUtil_h
 
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t
 #include <algorithm>                    // for transform
 #include <cctype>                       // for tolower, isspace, toupper
 #include <functional>                   // for binary_function
@@ -190,8 +190,14 @@ inline int to_identifier_lower(int c) {
 template <class T>
 inline T &make_upper(T &name) {
   std::transform(name.begin(), name.end(), name.begin(), to_upper);
-
   return name;
+}
+
+template <class T>
+inline T make_upper(const T &name) {
+  T returned_name(name);
+  std::transform(returned_name.begin(), returned_name.end(), returned_name.begin(), to_upper);
+  return returned_name;
 }
 
 /**
@@ -205,8 +211,14 @@ inline T &make_upper(T &name) {
 template <class T>
 inline T &make_lower(T &name) {
   std::transform(name.begin(), name.end(), name.begin(), to_lower);
-
   return name;
+}
+
+template <class T>
+inline T make_lower(const T &name) {
+  T returned_name(name);
+  std::transform(returned_name.begin(), returned_name.end(), returned_name.begin(), to_lower);
+  return returned_name;
 }
 
 /**
@@ -220,7 +232,6 @@ inline T &make_lower(T &name) {
 template <class T>
 inline T &make_identifier(T &name) {
   std::transform(name.begin(), name.end(), name.begin(), to_identifier_upper);
-
   return name;
 }
 
@@ -236,7 +247,6 @@ inline T &make_identifier(T &name) {
 template <class T>
 inline T &make_lower_identifier(T &name) {
   std::transform(name.begin(), name.end(), name.begin(), to_identifier_lower);
-
   return name;
 }
 
@@ -251,7 +261,6 @@ inline T &make_lower_identifier(T &name) {
 inline char *make_identifier(char *name) {
   for (char *c = name; *c != 0; ++c )
     *c = to_identifier_upper(*c);
-
   return name;
 }
 
@@ -267,7 +276,6 @@ inline char *make_identifier(char *name) {
 inline char *make_lower_identifier(char *name) {
   for (char *c = name; *c != 0; ++c )
     *c = to_identifier_lower(*c);
-
   return name;
 }
 
@@ -297,7 +305,6 @@ trim(
 template <class T>
 T convert_cast(const String &s)
 {
-  /* %TRACE% */  /* %TRACE% */
   std::istringstream is(s.c_str());
   T t = 0;
 
@@ -436,7 +443,6 @@ inline std::string word_wrap(const std::string &s, unsigned int line_length = 72
   return word_wrap(s, line_length, prefix, prefix);
 }
 
-
 /**
  * @brief Class <b>object_phrase</b> makes a pretty string for those annoying plural or
  * singular noun/verb phrases.
@@ -506,7 +512,6 @@ inline std::ostream &operator<<(std::ostream &os, const object_phrase &phrase) {
   return phrase.print(os);
 }
 
-
 /**
  * @brief Function <b>getline</b> returns a string from the input stream which has been
  * terminated by the newline character.
@@ -551,17 +556,12 @@ struct less_nocase : public std::binary_function<T, T, bool>
 	return i < 0;
     }
 
-    if (lhs_it == lhs_it_end)
-      return rhs_it != rhs_it_end;
-    else
-      return false;
+    return (lhs_it == lhs_it_end) ? (rhs_it != rhs_it_end) : false;
   }
 };
 
-
 /**
  * @brief Class specialization <b>less_nocase</b> for <b>String</b>.
- *
  */
 template <>
 struct less_nocase<String> : public std::binary_function<String, String, bool>
@@ -589,17 +589,12 @@ struct less_nocase<String> : public std::binary_function<String, String, bool>
 	return i < 0;
     }
 
-    if (lhs_it == lhs_it_end)
-      return rhs_it != rhs_it_end;
-    else
-      return false;
+    return (lhs_it == lhs_it_end) ? (rhs_it != rhs_it_end) : false;
   }
 };
 
-
 /**
  * @brief Class specialization <b>less_nocase</b> for <b>std::string</b>.
- *
  */
 template <>
 struct less_nocase<std::string> : public std::binary_function<std::string, std::string, bool>
@@ -627,17 +622,12 @@ struct less_nocase<std::string> : public std::binary_function<std::string, std::
 	return i < 0;
     }
 
-    if (lhs_it == lhs_it_end)
-      return rhs_it != rhs_it_end;
-    else
-      return false;
+    return (lhs_it == lhs_it_end) ? (rhs_it != rhs_it_end) : false;
   }
 };
 
-
 /**
  * @brief Class specialization <b>less_nocase</b> for <b>char const pointer</b>.
- *
  */
 template<>
 struct less_nocase<const char *> : public std::binary_function<const char *, const char *, bool>
@@ -655,8 +645,8 @@ struct less_nocase<const char *> : public std::binary_function<const char *, con
    */
   bool operator()(const char *lhs , const char *rhs) const {
     bool result = false;
-    if (NULL == lhs )
-      result = NULL != rhs;
+    if (nullptr == lhs )
+      result = nullptr != rhs;
     else {
       for (; *lhs && *rhs && std::tolower(*lhs) == std::tolower(*rhs); ++lhs, ++rhs)
 	;
@@ -666,10 +656,8 @@ struct less_nocase<const char *> : public std::binary_function<const char *, con
   }
 };
 
-
 /**
  * @brief Class <b>equal_nocase</b> implements a case insensitive compare functor.
- *
  */
 template <class T>
 struct equal_nocase : public std::binary_function<T, T, bool>
@@ -702,7 +690,6 @@ struct equal_nocase : public std::binary_function<T, T, bool>
 
 /**
  * @brief Class specialization <b>equal_nocase</b> for <b>String</b>.
- *
  */
 template <>
 struct equal_nocase<String> : public std::binary_function<String, String, bool>
@@ -735,7 +722,6 @@ struct equal_nocase<String> : public std::binary_function<String, String, bool>
 
 /**
  * @brief Class specialization <b>equal_nocase</b> for <b>std::string</b>.
- *
  */
 template <>
 struct equal_nocase<std::string> : public std::binary_function<std::string, std::string, bool>
@@ -768,7 +754,6 @@ struct equal_nocase<std::string> : public std::binary_function<std::string, std:
 
 /**
  * @brief Class specialization <b>equal_nocase</b> for <b>char const pointer</b>.
- *
  */
 template <>
 struct equal_nocase<const char *> : public std::binary_function<const char *, const char *, bool> {
@@ -785,7 +770,7 @@ struct equal_nocase<const char *> : public std::binary_function<const char *, co
    */
   bool operator()(const char *lhs , const char *rhs) const {
     bool result = lhs == rhs ;
-    if ( ! result && NULL != lhs && NULL != rhs ) {
+    if ( ! result && nullptr != lhs && nullptr != rhs ) {
       for (; *lhs && *rhs && std::tolower(*lhs) == std::tolower(*rhs) ; ++lhs, ++rhs);
       result = 0 == *lhs && 0 == *rhs ;
     }
@@ -824,7 +809,6 @@ size_t hash_string_nocase(
 
 /**
  * @brief Class specialization <b>hash_nocase</b> for <b>std::string</b>.
- *
  */
 template<>
 struct hash_nocase<std::string>
@@ -843,7 +827,6 @@ struct hash_nocase<std::string>
 
 /**
  * @brief Class specialization <b>hash_nocase</b> for <b>String</b>.
- *
  */
 template<>
 struct hash_nocase<String>
@@ -859,44 +842,6 @@ struct hash_nocase<String>
    */
   size_t operator()(const String & __s) const { return hash_string_nocase(__s.c_str()); }
 };
-
-// /**
-//  * @brief Class specialization <b>hash_nocase</b> for <b>std::string</b>.
-//  *
-//  */
-// template<>
-// struct hash_nocase<const std::string>
-// {
-//   /**
-//    * @brief Member function <b>operator()</b> returns the hash value of the
-//    * specified string.
-//    *
-//    * @param __s		a <b>std::string</b> const reference to the string to hash.
-//    *
-//    * @return		a <b>size_t</b> value of the hash value of the specified
-//    *			string.
-//    */
-//   size_t operator()(const std::string & __s) const { return hash_string_nocase(__s.c_str()); }
-// };
-
-// /**
-//  * @brief Class specialization <b>hash_nocase</b> for <b>std::string</b>.
-//  *
-//  */
-// template<>
-// struct hash_nocase<const String>
-// {
-//   /**
-//    * @brief Member function <b>operator()</b> returns the hash value of the
-//    * specified string.
-//    *
-//    * @param __s		a <b>std::string</const reference to the string to hash.
-//    *
-//    * @return		a <b>size_t</b> value of the hash value of the specified
-//    *			string.
-//    */
-//   size_t operator()(const String & __s) const { return hash_string_nocase(__s.c_str()); }
-// };
 
 ///
 /// @}
@@ -921,7 +866,7 @@ template<typename DATA, typename SEPARATOR>
 std::string join(const std::vector<DATA>& data, const SEPARATOR& sep)
 {
     std::ostringstream os;
-    for(size_t i=0;i<data.size()-1;++i)
+    for(size_t i = 0; i < data.size()-1; ++i)
     {
         os << data[i] << sep;
     }

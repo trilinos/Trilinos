@@ -32,8 +32,21 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml
+    SOURCE_FILES scaling.xml scaling-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml
    )
+
+ TRIBITS_ADD_EXECUTABLE(
+   ImportPerformance
+   SOURCES ImportPerformance
+   COMM mpi
+   )
+
+ TRIBITS_ADD_EXECUTABLE(
+   TAFCPerformance
+   SOURCES TAFCPerformance
+   COMM mpi
+   )
+ 
 
   IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
 
@@ -66,6 +79,11 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   ENDIF() # ENABLE_BROKEN_TESTS
+
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(ImportPerformance_cp
+    SOURCE_FILES import.xml
+    )
 
 ENDIF()
 
@@ -102,7 +120,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
       ARGS "--linAlgebra=Epetra --xml=conchas_milestone_zoltan.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )
+      ) 
 
     IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
       TRIBITS_ADD_TEST(
@@ -113,8 +131,26 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
         COMM mpi # HAVE_MPI required
       )
     ENDIF()
+    
+    IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
+      TRIBITS_ADD_TEST(
+        Driver
+        NAME "DriverEpetra_CircNspDependency"
+        ARGS "--linAlgebra=Epetra --xml=circ_nsp_dependency.xml"
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+      )
+    ENDIF()
 
   ENDIF()
+
+  TRIBITS_ADD_TEST(
+    ImportPerformance
+    NAME "ImportPerformance_Epetra"
+    ARGS "--linAlgebra=Epetra --nx=30 --ny=30"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
 
   TRIBITS_ADD_TEST(
     Driver
@@ -163,6 +199,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       COMM mpi # HAVE_MPI required
       )
   ENDIF()
+
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME "DriverTpetra_WithGlobalConstants"
+      ARGS "--linAlgebra=Tpetra --xml=scaling-withglobalconstants.xml"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan2)
     TRIBITS_ADD_TEST(

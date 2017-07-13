@@ -33,15 +33,13 @@
  *
  */
 
-#include <vector>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "elb_err.h"
+#include <cstdio>   // for fprintf, stderr
+#include <stddef.h> // for size_t
+#include <vector>   // for vector
 
 const int MAX_ERR_MSG = 1024;
-int error_lev = 1;
+int       error_lev   = 1;
 
 static std::vector<error_message> error_info;
 
@@ -65,15 +63,15 @@ void error_add(int level, const std::string &message, const std::string &filenam
 /*****************************************************************************/
 /* This function outputs the accumulated error messages to stderr
  *****************************************************************************/
-void error_report(void)
+void error_report()
 {
-  int iflag=0;
+  int iflag = 0;
 
-  if(error_lev >= 1) {
+  if (error_lev >= 1) {
     size_t error_cnt = error_info.size();
-    for(size_t i=0; i < error_cnt; i++) {
-      if(error_info[i].level == 0 || error_lev > 1) {
-        if(iflag == 0) {
+    for (size_t i = 0; i < error_cnt; i++) {
+      if (error_info[i].level == 0 || error_info[i].level >= error_lev) {
+        if (iflag == 0) {
           fprintf(stderr, "================================");
           fprintf(stderr, "messages");
           fprintf(stderr, "================================\n");
@@ -81,10 +79,10 @@ void error_report(void)
         }
 
         fprintf(stderr, "\t%s\n", error_info[i].err_mesg.c_str());
-        if(error_lev >= 2)
+        if (error_lev >= 2)
           fprintf(stderr, "\t\tin file %s\n", error_info[i].filename.c_str());
-	
-        if(error_lev >= 3)
+
+        if (error_lev >= 3)
           fprintf(stderr, "\t\t\tat line %d\n", error_info[i].line_no);
       }
     }

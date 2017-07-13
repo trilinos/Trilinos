@@ -64,8 +64,7 @@ DOF_BasisToBasis(const std::string & fieldName,
   // **************
   // Declare fields
   // **************
-
-  dof_source_coeff = PHX::MDField<ScalarT>(fieldName,sourceBasis.functional);
+  dof_source_coeff = PHX::MDField<const ScalarT>(fieldName,sourceBasis.functional);
   dof_target_coeff = PHX::MDField<ScalarT>(fieldName,targetBasis.functional);
 
   this->addDependentField(dof_source_coeff);
@@ -74,27 +73,24 @@ DOF_BasisToBasis(const std::string & fieldName,
   // **************
   // Get coordinate points for reference cell on target basis 
   // **************
-  Teuchos::RCP<Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > > coords_interface = 
-    Teuchos::rcp_dynamic_cast<Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > >(targetBasis.getIntrepid2Basis(),true);
-
-  Intrepid2::FieldContainer<double>intrpCoords =
-    Intrepid2::FieldContainer<double>(targetBasis.cardinality(),targetBasis.dimension());
-
-  coords_interface->getDofCoords(intrpCoords);
+  Kokkos::DynRankView<double,PHX::Device>intrpCoords =
+    Kokkos::DynRankView<double,PHX::Device>("intrpCoords",targetBasis.cardinality(),targetBasis.dimension());
+  
+  targetBasis.getIntrepid2Basis<PHX::exec_space,double,double>()->getDofCoords(intrpCoords);
 
   // **************
   // Evaluate source basis values at target basis coordinates
   // **************
-  Intrepid2::FieldContainer<double> basisRef = 
-    Intrepid2::FieldContainer<double>(sourceBasis.cardinality(),targetBasis.cardinality());
+  Kokkos::DynRankView<double,PHX::Device> basisRef = 
+    Kokkos::DynRankView<double,PHX::Device>("basisRef",sourceBasis.cardinality(),targetBasis.cardinality());
 
   sourceBasis.getIntrepid2Basis()->getValues(basisRef, intrpCoords, Intrepid2::OPERATOR_VALUE);
   
   // **************
   // Copy the reference basis values for all cells in workset
   // **************
-  basis = Intrepid2::FieldContainer<double>(sourceBasis.numCells(),sourceBasis.cardinality(),targetBasis.cardinality());
-  Intrepid2::FunctionSpaceTools::HGRADtransformVALUE<double>(basis,basisRef);
+  basis = Kokkos::DynRankView<double,PHX::Device>("basis",sourceBasis.numCells(),sourceBasis.cardinality(),targetBasis.cardinality());
+  Intrepid2::FunctionSpaceTools<PHX::exec_space>::HGRADtransformVALUE(basis,basisRef);
     
   std::string n = "DOF_BasisToBasis: " + dof_target_coeff.fieldTag().name();
   this->setName(n);
@@ -105,8 +101,9 @@ template <typename EvalT, typename TRAITST>
 void DOF_BasisToBasis<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData d,
 			                                  PHX::FieldManager<TRAITST>& fm)
 {
-  this->utils.setFieldData(dof_source_coeff,fm);
-  this->utils.setFieldData(dof_target_coeff,fm);
+  // not needed anymore
+  // this->utils.setFieldData(dof_source_coeff,fm);
+  // this->utils.setFieldData(dof_target_coeff,fm);
 }
 
 //**********************************************************************
@@ -114,12 +111,14 @@ template <typename EvalT, typename TRAITST>
 void DOF_BasisToBasis<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData workset)
 { 
   // Zero out arrays (intrepid does a sum!)
-      dof_target_coeff.deep_copy(ScalarT(0.0));
+  dof_target_coeff.deep_copy(ScalarT(0.0));
 
   if(workset.num_cells>0) {
 
     // evaluate function at specified points
-    Intrepid2::FunctionSpaceTools::evaluate<ScalarT>(dof_target_coeff,dof_source_coeff,basis);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::evaluate(dof_target_coeff.get_view(),
+                                                             dof_source_coeff.get_view(),
+                                                             basis);
   }
 }
 

@@ -50,6 +50,7 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_UncoupledAggregationFactory_decl.hpp"
@@ -99,6 +100,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 3");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
+    SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in AggregationFactory
@@ -248,7 +250,7 @@ namespace MueLu {
 
     Set(currentLevel, "Aggregates", aggregates);
 
-    GetOStream(Statistics0) << aggregates->description() << std::endl;
+    GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu

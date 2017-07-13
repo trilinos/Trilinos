@@ -53,6 +53,8 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_GlobalData.H"
 
+NOX::LineSearch::Utils::Slope::Slope() {}
+
 NOX::LineSearch::Utils::Slope::
 Slope(const Teuchos::RCP<NOX::GlobalData>& gd) :
   utils(*(gd->getUtils()))

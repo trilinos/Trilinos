@@ -62,6 +62,7 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -89,6 +90,12 @@ namespace MueLu {
     // Search/create default factory for this name
     return GetDefaultFactory(varName);
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP<FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetFactoryNonConst(const std::string& varName) {
+    return Teuchos::rcp_const_cast<FactoryBase>(GetFactory(varName));
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultFactory(const std::string& varName) const {
@@ -127,6 +134,13 @@ namespace MueLu {
                                                         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif
       }
+      if (varName == "number of partitions") {
+#ifdef HAVE_MPI
+                                                        return SetAndReturnDefaultFactory(varName, rcp(new RepartitionHeuristicFactory()));
+#else
+                                                        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+#endif
+      }
 
       if (varName == "Graph")                           return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
@@ -157,6 +171,11 @@ namespace MueLu {
         return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
       }
       if (varName == "CoarseSolver")                    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()), Teuchos::null)));
+
+#ifdef HAVE_MUELU_INTREPID2
+      // If we're asking for it, find who made P
+      if (varName == "pcoarsen: element to node map")                      return GetFactory("P");
+#endif
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '" + varName + "'.");
     }

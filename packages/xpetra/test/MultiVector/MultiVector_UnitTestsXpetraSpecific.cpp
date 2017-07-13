@@ -55,6 +55,7 @@
 
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_MapExtractor.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMultiVector.hpp"

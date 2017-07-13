@@ -141,7 +141,7 @@ void testAdapter(
   int fail=0;
   int rank = comm->getRank();
   int nprocs = comm->getSize();
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
 
   zlno_t nLocalRows = M->getNodeNumRows();
   zlno_t nLocalNZ = M->getNodeNumEntries();

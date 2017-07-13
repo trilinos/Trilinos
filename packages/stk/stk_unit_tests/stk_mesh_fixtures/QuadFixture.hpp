@@ -65,7 +65,7 @@ namespace fixtures {
 class QuadFixture
 {
  public:
-  typedef int Scalar ;
+  typedef double Scalar ;
   typedef Field<Scalar, Cartesian>    CoordFieldType;
 
   /**
@@ -83,6 +83,8 @@ class QuadFixture
   MetaData                      m_meta ;
   BulkData                      m_bulk_data ;
   Part &                        m_quad_part ;
+  PartVector                    m_elem_parts;
+  PartVector                    m_node_parts;
   CoordFieldType &              m_coord_field ;
   const unsigned                m_nx ;
   const unsigned                m_ny ;

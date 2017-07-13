@@ -183,7 +183,8 @@ private:
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
   std::string globalDataKey_; // what global data does this fill?
-  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
+
+  std::vector< Teuchos::ArrayRCP<double> > dfdp_vectors_;
 
   ScatterResidual_Tpetra();
 };
@@ -246,6 +247,11 @@ private:
 };
 
 }
+
+// optionally include hessian support
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_ScatterResidual_Tpetra_Hessian.hpp"
+#endif
 
 // **************************************************************
 #endif

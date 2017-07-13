@@ -80,6 +80,10 @@ namespace PHX{
 
     virtual PHX::Device::size_type dimension(size_type ordinal) const = 0; 
 
+    virtual PHX::Device::size_type extent(size_type ordinal) const = 0; 
+
+    virtual int extent_int(size_type ordinal) const = 0; 
+
     virtual void 
     dimensions(std::vector<PHX::Device::size_type>& dim) const = 0; 
 

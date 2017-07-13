@@ -100,8 +100,6 @@
 
 #include <string>
 
-// #define IMPLICIT_TRANSPOSE
-
 namespace Thyra {
 
 #define MUELU_GPD(name, type, defaultValue) \
@@ -283,8 +281,6 @@ namespace Thyra {
     typedef Xpetra::MapExtractorFactory <SC,LO,GO,NO> MapExtractorFactory;
     typedef Xpetra::MapExtractor        <SC,LO,GO,NO> MapExtractor;
     typedef Xpetra::Map                    <LO,GO,NO> Map;
-    typedef Xpetra::MapExtractor        <SC,LO,GO,NO> MapExtractor;
-    typedef Xpetra::MapExtractorFactory <SC,LO,GO,NO> MapExtractorFactory;
     typedef Xpetra::MapFactory             <LO,GO,NO> MapFactory;
     typedef Xpetra::Matrix              <SC,LO,GO,NO> Matrix;
     typedef Xpetra::MatrixFactory       <SC,LO,GO,NO> MatrixFactory;
@@ -358,7 +354,7 @@ namespace Thyra {
     RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
 
     // FIXME: why do we need to perturb A_22?
-    Array<SC> smallVal(1, 1.0e-9);
+    Array<SC> smallVal(1, 1.0e-10);
 
     // FIXME: could this be sped up using expertStaticFillComplete?
     // There was an attempt on doing it, but it did not do the proper thing
@@ -423,14 +419,14 @@ namespace Thyra {
     RCP<Matrix> BBt     = Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*A_21,     false, *A_12,     false, out);
     RCP<Matrix> BBt_abs = Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*A_21_abs, false, *A_12_abs, false, out);
 
-    SC dropTol = (paramList.get<int>("useFilters") ? 0.06 : 0.00);
+    SC dropTol = (paramList.get<int>("useFilters") ? paramList.get<double>("tau_1") : 0.00);
     RCP<Matrix> filteredA = FilterMatrix(*A_11, *A_11,    dropTol);
     RCP<Matrix> filteredB = FilterMatrix(*BBt,  *BBt_abs, dropTol);
 
-    RCP<CrsMatrix> fA_11_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredA)->getCrsMatrix();
-    RCP<CrsMatrix> fA_12_crs = Teuchos::null;
-    RCP<CrsMatrix> fA_21_crs = Teuchos::null;
-    RCP<CrsMatrix> fA_22_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredB)->getCrsMatrix();
+    RCP<Matrix> fA_11_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredA);
+    RCP<Matrix> fA_12_crs = Teuchos::null;
+    RCP<Matrix> fA_21_crs = Teuchos::null;
+    RCP<Matrix> fA_22_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredB);
 
     // Build the large filtered matrix which requires strided maps
     std::vector<size_t> stridingInfo(1, 1);
@@ -472,12 +468,6 @@ namespace Thyra {
     finestLevel->Set("AForPat",               A_11_9Pt);
     H->SetMaxCoarseSize(MUELU_GPD("coarse: max size", int, 1));
 
-#ifdef IMPLICIT_TRANSPOSE
-    out << "Using implicit transpose" << std::endl;
-
-    H->SetImplicitTranspose(true);
-#endif
-
     // The first invocation of Setup() builds the hierarchy using the filtered
     // matrix. This build includes the grid transfers but not the creation of the
     // smoothers.
@@ -493,10 +483,8 @@ namespace Thyra {
     for (int i = 1; i < H->GetNumLevels(); i++) {
       RCP<Matrix>           P     = H->GetLevel(i)->template Get<RCP<Matrix> >("P");
       RCP<BlockedCrsMatrix> Pcrs  = rcp_dynamic_cast<BlockedCrsMatrix>(P);
-      RCP<CrsMatrix>        Ppcrs = Pcrs->getMatrix(1,1);
-      RCP<Matrix>           Pp    = rcp(new CrsMatrixWrap(Ppcrs));
-      RCP<CrsMatrix>        Pvcrs = Pcrs->getMatrix(0,0);
-      RCP<Matrix>           Pv    = rcp(new CrsMatrixWrap(Pvcrs));
+      RCP<Matrix>           Pp    = Pcrs->getMatrix(1,1);
+      RCP<Matrix>           Pv    = Pcrs->getMatrix(0,0);
 
       Xpetra::IO<SC,LO,GO,NO>::Write("Pp_l" + MueLu::toString(i) + ".mm", *Pp);
       Xpetra::IO<SC,LO,GO,NO>::Write("Pv_l" + MueLu::toString(i) + ".mm", *Pv);
@@ -515,7 +503,7 @@ namespace Thyra {
     std::string   coarseType   = MUELU_GPD("coarse: type", std::string, "direct");
     ParameterList coarseParams;
     if (paramList.isSublist("coarse: params"))
-        coarseParams = paramList.sublist("coarse: params");
+      coarseParams = paramList.sublist("coarse: params");
     M.SetFactory("CoarseSolver", GetSmoother(coarseType, coarseParams, true/*coarseSolver?*/));
 
 #ifdef HAVE_MUELU_DEBUG
@@ -523,10 +511,10 @@ namespace Thyra {
 #endif
 
     RCP<BlockedCrsMatrix> A = rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
-    A->setMatrix(0, 0, A_11_crs);
-    A->setMatrix(0, 1, A_12_crs);
-    A->setMatrix(1, 0, A_21_crs);
-    A->setMatrix(1, 1, A_22_crs);
+    A->setMatrix(0, 0, A_11);
+    A->setMatrix(0, 1, A_12);
+    A->setMatrix(1, 0, A_21);
+    A->setMatrix(1, 1, A_22);
     A->fillComplete();
 
     H->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
@@ -657,20 +645,12 @@ namespace Thyra {
     PFact->AddFactoryManager(M22);
     M.SetFactory("P", PFact);
 
-    RCP<MueLu::Factory > AcFact = rcp(new BlockedRAPFactory());
-#ifdef IMPLICIT_TRANSPOSE
-    M.SetFactory("R", Teuchos::null);
-
-    ParameterList RAPparams;
-    RAPparams.set("transpose: use implicit", true);
-    AcFact->SetParameterList(RAPparams);
-#else
     RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
     RFact->SetFactory("P", PFact);
     M.SetFactory("R", RFact);
 
+    RCP<MueLu::Factory > AcFact = rcp(new BlockedRAPFactory());
     AcFact->SetFactory("R", RFact);
-#endif
     AcFact->SetFactory("P", PFact);
     M.SetFactory("A", AcFact);
 
@@ -688,6 +668,7 @@ namespace Thyra {
   SetBlockDependencyTree(MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node>& M, LocalOrdinal row, LocalOrdinal col, const std::string& mode, const ParameterList& paramList) const {
     typedef MueLu::ConstraintFactory <SC,LO,GO,NO> ConstraintFactory;
     typedef MueLu::EminPFactory      <SC,LO,GO,NO> EminPFactory;
+    typedef MueLu::GenericRFactory   <SC,LO,GO,NO> GenericRFactory;
     typedef MueLu::PatternFactory    <SC,LO,GO,NO> PatternFactory;
     typedef MueLu::Q2Q1PFactory      <SC,LO,GO,NO> Q2Q1PFactory;
     typedef MueLu::Q2Q1uPFactory     <SC,LO,GO,NO> Q2Q1uPFactory;
@@ -714,6 +695,8 @@ namespace Thyra {
         q2q1ParamList.set("dump status", paramList.get<bool>("dump status"));
       if (paramList.isParameter("phase2"))
         q2q1ParamList.set("phase2", paramList.get<bool>("phase2"));
+      if (paramList.isParameter("tau_2"))
+        q2q1ParamList.set("tau_2", paramList.get<double>("tau_2"));
       Q2Q1Fact->SetParameterList(q2q1ParamList);
     }
     Q2Q1Fact->SetFactory("A", AFact);
@@ -737,16 +720,32 @@ namespace Thyra {
     ParameterList eminParams = *(EminPFact->GetValidParameterList());
     if (paramList.isParameter("emin: num iterations"))
       eminParams.set("emin: num iterations", paramList.get<int>("emin: num iterations"));
+    if (mode == "pressure") {
+      eminParams.set("emin: iterative method", "cg");
+    } else {
+      eminParams.set("emin: iterative method", "gmres");
+      if (paramList.isParameter("emin: iterative method"))
+        eminParams.set("emin: iterative method", paramList.get<std::string>("emin: iterative method"));
+    }
     EminPFact->SetParameterList(eminParams);
     EminPFact->SetFactory("A",          AFact);
     EminPFact->SetFactory("Constraint", CFact);
     EminPFact->SetFactory("P",          Q2Q1Fact);
     M.SetFactory("P", EminPFact);
+
+    if (mode == "velocity" && (!paramList.isParameter("velocity: use transpose") || paramList.get<bool>("velocity: use transpose") == false)) {
+      // Pressure system is symmetric, so it does not matter
+      // Velocity system may benefit from running emin in restriction mode (with A^T)
+      RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
+      RFact->SetFactory("P", EminPFact);
+      M.SetFactory("R", RFact);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<MueLu::FactoryBase>
-  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetSmoother(const std::string& type, const ParameterList& paramList, bool coarseSolver) const {
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  GetSmoother(const std::string& type, const ParameterList& paramList, bool coarseSolver) const {
     typedef Teuchos::ParameterEntry                   ParameterEntry;
 
     typedef MueLu::BlockedDirectSolver   <SC,LO,GO,NO> BlockedDirectSolver;
@@ -782,8 +781,11 @@ namespace Thyra {
 
       smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
 
-    } else if (type == "direct") {
-      smootherPrototype = rcp(new BlockedDirectSolver());
+    } else if (type == "schwarz") {
+
+      std::string ifpackType = "SCHWARZ";
+
+      smootherPrototype = rcp(new TrilinosSmoother(ifpackType, paramList));
 
     } else if (type == "braess-sarazin") {
       // Define smoother/solver for BraessSarazin
@@ -821,7 +823,19 @@ namespace Thyra {
       smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("bs: sweeps", int, 1)));
       smootherPrototype->SetParameter("lumping",        ParameterEntry(lumping));
       smootherPrototype->SetParameter("Damping factor", ParameterEntry(omega));
+      smootherPrototype->SetParameter("q2q1 mode",      ParameterEntry(true));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
+
+    } else if (type == "ilu") {
+      std::string ifpackType = "RILUK";
+
+      smootherPrototype = rcp(new TrilinosSmoother(ifpackType, paramList));
+
+    } else if (type == "direct") {
+      smootherPrototype = rcp(new BlockedDirectSolver());
+
+    } else {
+      throw MueLu::Exceptions::RuntimeError("Unknown smoother type: \"" + type + "\"");
     }
 
     return coarseSolver ? rcp(new SmootherFactory(smootherPrototype, Teuchos::null)) : rcp(new SmootherFactory(smootherPrototype));

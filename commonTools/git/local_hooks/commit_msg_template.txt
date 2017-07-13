@@ -1,0 +1,23 @@
+# A) <Package>: Imperative one-line summary about 72 chars (#WXYZ)
+
+
+# B) (After 2 newlines!) Explain your changes in new paragraph (wrapped to
+# about 72 chars wide).
+
+
+# C) Mention related issue tickets, even for other repos, e.g. <org>/<repo>#WXYZ
+
+
+# Example:
+#
+# MyPackage: Add great new feature foo (#1234)
+#
+# This new foo feature is great because no one has ever done anything as
+# great as this feature.  This is great because:
+#
+# * We are the first group to ever think of this
+# * This solves a hard problem
+# * Users will love this new feature
+#
+# This directly addresses #1234 but it also relates to #2345, #3456, and
+# other_org/other_repo#4567.

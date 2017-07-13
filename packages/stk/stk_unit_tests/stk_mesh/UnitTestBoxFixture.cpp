@@ -37,7 +37,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator|
-#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture::BOX, etc
+#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture::BOX, etc
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Relation.hpp"
@@ -88,7 +88,7 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
 
   BoxFixture fixture(pm);
   MetaData& meta = fixture.fem_meta();
-  stk::mesh::unit_test::BulkDataTester& bulk = fixture.bulk_data();
+  stk::unit_test_util::BulkDataTester& bulk = fixture.bulk_data();
 
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
@@ -113,7 +113,7 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
   const unsigned ngx = root_box[0][1] - root_box[0][0] ;
   const unsigned ngy = root_box[1][1] - root_box[1][0] ;
 
-  std::vector<unsigned> local_count ;
+  std::vector<size_t> local_count ;
 
   // Verify that the correct entities are on this process
 

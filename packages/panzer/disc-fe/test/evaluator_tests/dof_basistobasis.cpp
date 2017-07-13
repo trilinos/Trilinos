@@ -56,7 +56,6 @@ using Teuchos::rcp;
 
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_IntegrationValues.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Traits.hpp"
@@ -69,7 +68,6 @@ using Teuchos::rcp;
 
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Comm.h"
@@ -83,7 +81,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-typedef Intrepid2::FieldContainer<double> FieldArray;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
 
 //**********************************************************************
 PHX_EVALUATOR_CLASS(DummyFieldEvaluator)
@@ -128,7 +126,6 @@ PHX_EVALUATE_FIELDS(DummyFieldEvaluator,workset)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -184,6 +181,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
+#endif
   fm->postRegistrationSetup(setupData);
 
   //fm->writeGraphvizFile();
@@ -195,7 +195,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->postEvaluate<EvalType>(0);
 
   typedef typename EvalType::ScalarT ScalarT;
-  typedef typename PHX::MDFieldTypeTraits<PHX::MDField<ScalarT,Cell,BASIS> >::return_type  ScalarView;
 
   typename PHX::MDField<ScalarT,Cell,BASIS> s("Pressure",sourceBasis->functional);
   typename PHX::MDField<ScalarT,Cell,BASIS> t("Pressure",targetBasis->functional);
@@ -238,5 +237,10 @@ typedef Traits::Jacobian JacobianType;
 
 UNIT_TEST_GROUP(ResidualType)
 UNIT_TEST_GROUP(JacobianType)
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+typedef Traits::Hessian HessianType;
+UNIT_TEST_GROUP(HessianType)
+#endif
 
 }

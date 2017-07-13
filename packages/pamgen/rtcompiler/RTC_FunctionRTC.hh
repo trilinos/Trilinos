@@ -93,7 +93,7 @@ class Function
    * @param size    - Only used when calling on an array, its the array's size
    */
   template <class T>
-  bool varAddrFill(unsigned int index, T* address, int size = 0) {
+  bool varAddrFill(unsigned int index, T* address, long size = 0) {
     commonVarFill(index);
 
     checkType(index, size, address, _errors);
@@ -161,8 +161,9 @@ class Function
   void commonVarFill(unsigned index);
 
   void checkType(unsigned int index, int size, int* addr, std::string& errs);
+  void checkType(unsigned int index, int size, long* addr, std::string& errs);
   void checkType(unsigned int index, int size, float* addr, std::string& errs);
-  void checkType(unsigned int index, int size,double* addr, std::string& errs);
+  void checkType(unsigned int index, int size, double* addr, std::string& errs);
   void checkType(unsigned int index, int size, char* addr, std::string& errs);
 
   std::string _name; //!< The name of this Function

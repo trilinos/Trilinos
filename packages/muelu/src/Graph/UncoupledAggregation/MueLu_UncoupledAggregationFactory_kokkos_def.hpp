@@ -52,6 +52,7 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_UncoupledAggregationFactory_kokkos_decl.hpp"
@@ -247,7 +248,7 @@ namespace MueLu {
 
     Set(currentLevel, "Aggregates", aggregates);
 
-    GetOStream(Statistics0) << aggregates->description() << std::endl;
+    GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu

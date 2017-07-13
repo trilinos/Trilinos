@@ -248,7 +248,7 @@ void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
    }
 }
 
-void UniqueGlobalIndexer::getOwnedAndSharedIndices(std::vector<int> & indices) const
+void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<int> & indices) const
 {
    indices.resize(8);
    switch(procRank_) {
@@ -304,7 +304,7 @@ const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::st
    return fieldNums;
 }
 
-void UniqueGlobalIndexer::getCoordinates(int localElementId,Intrepid2::FieldContainer<double> & vertices)
+void UniqueGlobalIndexer::getCoordinates(int localElementId,Kokkos::DynRankView<double,PHX::Device> & vertices)
 {
    vertices.resize(1,4,2);
    switch(procRank_) {

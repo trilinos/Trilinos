@@ -249,9 +249,10 @@ namespace MueLuTests {
         TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
         Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*P1,true,*P1,false,out);
-        TEST_EQUALITY(PtentTPtent->getGlobalMaxNumRowEntries()-3<1e-12, true);
-        TEST_EQUALITY(P1->getGlobalMaxNumRowEntries()-2<1e-12, true);
-        TEST_EQUALITY(P2->getGlobalMaxNumRowEntries()-2<1e-12, true);
+
+        if(PtentTPtent->haveGlobalConstants())  TEST_EQUALITY(PtentTPtent->getGlobalMaxNumRowEntries()-3<1e-12, true);
+        if(P1->haveGlobalConstants())           TEST_EQUALITY(P1->getGlobalMaxNumRowEntries()-2<1e-12, true);
+        if(P2->haveGlobalConstants())           TEST_EQUALITY(P2->getGlobalMaxNumRowEntries()-2<1e-12, true);
 
         // Define RHS
         RCP<MultiVector> X = MultiVectorFactory::Build(map,1);

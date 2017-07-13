@@ -52,6 +52,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -363,25 +364,40 @@ preEvaluate(typename TRAITS::PreEvalData d)
     dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
+
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  // this is the list of parameters and their names that this scatter has to account for
+  std::vector<std::string> activeParameters =
+    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
+
+  // ETP 02/03/16:  This code needs to be updated to properly handle scatterIC_
+  TEUCHOS_ASSERT(!scatterIC_);
+  dfdp_vectors_.clear();
+  for(std::size_t i=0;i<activeParameters.size();i++) {
+    RCP<typename LOC::VectorType> vec =
+      rcp_dynamic_cast<LOC>(d.gedc.getDataObject(activeParameters[i]),true)->get_f();
+    Teuchos::ArrayRCP<double> vec_array = vec->get1dViewNonConst();
+    dfdp_vectors_.push_back(vec_array);
+  }
 }
 
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
-   TEUCHOS_ASSERT(false);
-
+{
    std::vector<GO> GIDs;
    std::vector<LO> LIDs;
- 
+
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-   Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ? 
+   Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ?
      tpetraContainer_->get_f() :
-     tpetraContainer_->get_x(); 
+     tpetraContainer_->get_x();
 
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
    Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
@@ -396,7 +412,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
+      globalIndexer_->getElementGIDs(cellLocalId,GIDs);
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
@@ -409,33 +425,11 @@ evaluateFields(typename TRAITS::EvalData workset)
 
          if (!scatterIC_) {
            // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::pair<std::vector<int>,std::vector<int> > & indicePair 
+           const std::pair<std::vector<int>,std::vector<int> > & indicePair
              = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
            const std::vector<int> & elmtOffset = indicePair.first;
            const std::vector<int> & basisIdMap = indicePair.second;
-   
-           // loop over basis functions
-           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             int offset = elmtOffset[basis];
-             LO lid = LIDs[offset];
-             if(lid<0) // not on this processor!
-               continue;
-             
-             int basisId = basisIdMap[basis];
-             
-             if (checkApplyBC_)
-               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-                 continue;
-             
-             r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
-             
-             // record that you set a dirichlet condition
-             dc_array[lid] = 1.0;
-           }
-         } else {
-           // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-           
+
            // loop over basis functions
            for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
              int offset = elmtOffset[basis];
@@ -443,8 +437,50 @@ evaluateFields(typename TRAITS::EvalData workset)
              if(lid<0) // not on this processor!
                continue;
 
-             r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
-             
+             int basisId = basisIdMap[basis];
+
+             if (checkApplyBC_)
+               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+                 continue;
+
+             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+             //r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
+
+             // then scatter the sensitivity vectors
+             if(value.size()==0)
+               for(std::size_t d=0;d<dfdp_vectors_.size();d++)
+                 dfdp_vectors_[d][lid] = 0.0;
+             else
+               for(int d=0;d<value.size();d++) {
+                 dfdp_vectors_[d][lid] = value.fastAccessDx(d);
+               }
+
+             // record that you set a dirichlet condition
+             dc_array[lid] = 1.0;
+           }
+         } else {
+           // this call "should" get the right ordering according to the Intrepid2 basis
+           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+
+           // loop over basis functions
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             LO lid = LIDs[offset];
+             if(lid<0) // not on this processor!
+               continue;
+
+             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+             //r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
+
+             // then scatter the sensitivity vectors
+             if(value.size()==0)
+               for(std::size_t d=0;d<dfdp_vectors_.size();d++)
+                 dfdp_vectors_[d][lid] = 0.0;
+             else
+               for(int d=0;d<value.size();d++) {
+                 dfdp_vectors_[d][lid] = value.fastAccessDx(d);
+               }
+
              // record that you set a dirichlet condition
              dc_array[lid] = 1.0;
            }

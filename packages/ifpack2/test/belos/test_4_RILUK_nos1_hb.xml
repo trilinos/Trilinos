@@ -15,4 +15,5 @@
   </ParameterList>
 
   <Parameter name="expectNumIters" type="int" value="20"/>
+  <Parameter name="Reuse Pattern" type="bool" value="true"/>
 </ParameterList>

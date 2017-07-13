@@ -1,0 +1,22 @@
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Test_01
+  SOURCES test_01.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
+# Disabling test because it uses BLAS (currently not supported)
+
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  Test_02
+#  SOURCES test_02.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  CATEGORIES CONTINUOUS
+#  )
+

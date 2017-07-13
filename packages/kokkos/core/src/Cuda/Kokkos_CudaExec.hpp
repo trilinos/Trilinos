@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -45,11 +45,10 @@
 #define KOKKOS_CUDAEXEC_HPP
 
 #include <Kokkos_Macros.hpp>
-
-/* only compile this file if CUDA is enabled for Kokkos */
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 
 #include <string>
+#include <cstdint>
 #include <Kokkos_Parallel.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <Cuda/Kokkos_Cuda_abort.hpp>
@@ -99,6 +98,8 @@ CudaSpace::size_type cuda_internal_maximum_warp_count();
 CudaSpace::size_type cuda_internal_maximum_grid_count();
 CudaSpace::size_type cuda_internal_maximum_shared_words();
 
+CudaSpace::size_type cuda_internal_maximum_concurrent_block_count();
+
 CudaSpace::size_type * cuda_internal_scratch_flags( const CudaSpace::size_type size );
 CudaSpace::size_type * cuda_internal_scratch_space( const CudaSpace::size_type size );
 CudaSpace::size_type * cuda_internal_scratch_unified( const CudaSpace::size_type size );
@@ -112,7 +113,7 @@ CudaSpace::size_type * cuda_internal_scratch_unified( const CudaSpace::size_type
 #if defined( __CUDACC__ )
 
 /** \brief  Access to constant memory on the device */
-#ifdef KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE
+#ifdef KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE
 
 __device__ __constant__
 extern unsigned long kokkos_impl_cuda_constant_memory_buffer[] ;
@@ -124,14 +125,31 @@ unsigned long kokkos_impl_cuda_constant_memory_buffer[ Kokkos::Impl::CudaTraits:
 
 #endif
 
+
+namespace Kokkos {
+namespace Impl {
+  struct CudaLockArraysStruct {
+    int* atomic;
+    int* scratch;
+    int* threadid;
+    int n;
+  };
+}
+}
 __device__ __constant__
-#ifdef KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE
+#ifdef KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE
 extern
 #endif
-int* kokkos_impl_cuda_atomic_lock_array ;
+Kokkos::Impl::CudaLockArraysStruct kokkos_impl_cuda_lock_arrays ;
 
 #define CUDA_SPACE_ATOMIC_MASK 0x1FFFF
 #define CUDA_SPACE_ATOMIC_XOR_MASK 0x15A39
+
+namespace Kokkos {
+namespace Impl {
+  void* cuda_resize_scratch_space(std::int64_t bytes, bool force_shrink = false);
+}
+}
 
 namespace Kokkos {
 namespace Impl {
@@ -140,8 +158,7 @@ bool lock_address_cuda_space(void* ptr) {
   size_t offset = size_t(ptr);
   offset = offset >> 2;
   offset = offset & CUDA_SPACE_ATOMIC_MASK;
-  //offset = offset xor CUDA_SPACE_ATOMIC_XOR_MASK;
-  return (0 == atomicCAS(&kokkos_impl_cuda_atomic_lock_array[offset],0,1));
+  return (0 == atomicCAS(&kokkos_impl_cuda_lock_arrays.atomic[offset],0,1));
 }
 
 __device__ inline
@@ -149,8 +166,7 @@ void unlock_address_cuda_space(void* ptr) {
   size_t offset = size_t(ptr);
   offset = offset >> 2;
   offset = offset & CUDA_SPACE_ATOMIC_MASK;
-  //offset = offset xor CUDA_SPACE_ATOMIC_XOR_MASK;
-  atomicExch( &kokkos_impl_cuda_atomic_lock_array[ offset ], 0);
+  atomicExch( &kokkos_impl_cuda_lock_arrays.atomic[ offset ], 0);
 }
 
 }
@@ -214,27 +230,38 @@ struct CudaParallelLaunch< DriverType , true > {
         Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: Functor is too large") );
       }
 
+      // Fence before changing settings and copying closure
+      Kokkos::Cuda::fence();
+
       if ( CudaTraits::SharedMemoryCapacity < shmem ) {
         Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
       }
+      #ifndef KOKKOS_ARCH_KEPLER //On Kepler the L1 has no benefit since it doesn't cache reads
       else if ( shmem ) {
         CUDA_SAFE_CALL( cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared ) );
       } else {
         CUDA_SAFE_CALL( cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 ) );
       }
+      #endif
 
       // Copy functor to constant memory on the device
       cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
 
-      int* lock_array_ptr = lock_array_cuda_space_ptr();
-      cudaMemcpyToSymbol( kokkos_impl_cuda_atomic_lock_array , & lock_array_ptr , sizeof(int*) );
+      #ifndef KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE
+      Kokkos::Impl::CudaLockArraysStruct locks;
+      locks.atomic = atomic_lock_array_cuda_space_ptr(false);
+      locks.scratch = scratch_lock_array_cuda_space_ptr(false);
+      locks.threadid = threadid_lock_array_cuda_space_ptr(false);
+      locks.n = Kokkos::Cuda::concurrency();
+      cudaMemcpyToSymbol( kokkos_impl_cuda_lock_arrays , & locks , sizeof(CudaLockArraysStruct) );
+      #endif
 
       // Invoke the driver function on the device
       cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem , stream >>>();
 
 #if defined( KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK )
-      Kokkos::Cuda::fence();
       CUDA_SAFE_CALL( cudaGetLastError() );
+      Kokkos::Cuda::fence();
 #endif
     }
   }
@@ -255,20 +282,28 @@ struct CudaParallelLaunch< DriverType , false > {
       if ( CudaTraits::SharedMemoryCapacity < shmem ) {
         Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
       }
+      #ifndef KOKKOS_ARCH_KEPLER //On Kepler the L1 has no benefit since it doesn't cache reads
       else if ( shmem ) {
         CUDA_SAFE_CALL( cudaFuncSetCacheConfig( cuda_parallel_launch_local_memory< DriverType > , cudaFuncCachePreferShared ) );
       } else {
         CUDA_SAFE_CALL( cudaFuncSetCacheConfig( cuda_parallel_launch_local_memory< DriverType > , cudaFuncCachePreferL1 ) );
       }
+      #endif
 
-      int* lock_array_ptr = lock_array_cuda_space_ptr();
-      cudaMemcpyToSymbol( kokkos_impl_cuda_atomic_lock_array , & lock_array_ptr , sizeof(int*) );
+      #ifndef KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE
+      Kokkos::Impl::CudaLockArraysStruct locks;
+      locks.atomic = atomic_lock_array_cuda_space_ptr(false);
+      locks.scratch = scratch_lock_array_cuda_space_ptr(false);
+      locks.threadid = threadid_lock_array_cuda_space_ptr(false);
+      locks.n = Kokkos::Cuda::concurrency();
+      cudaMemcpyToSymbol( kokkos_impl_cuda_lock_arrays , & locks , sizeof(CudaLockArraysStruct) );
+      #endif
 
       cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem , stream >>>( driver );
 
 #if defined( KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK )
-      Kokkos::Cuda::fence();
       CUDA_SAFE_CALL( cudaGetLastError() );
+      Kokkos::Cuda::fence();
 #endif
     }
   }
@@ -283,5 +318,6 @@ struct CudaParallelLaunch< DriverType , false > {
 //----------------------------------------------------------------------------
 
 #endif /* defined( __CUDACC__ ) */
-#endif /* defined( KOKKOS_HAVE_CUDA ) */
+#endif /* defined( KOKKOS_ENABLE_CUDA ) */
 #endif /* #ifndef KOKKOS_CUDAEXEC_HPP */
+

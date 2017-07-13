@@ -225,6 +225,11 @@ public:
 
   //! Return a const, nonpersisting view of local indices in the given row.
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const {  }
+
+
+  //! Force the computation of global constants if we don't have them
+  void computeGlobalConstants() { }
+
   //@}
 
   //! @name Overridden from Teuchos::Describable
@@ -484,7 +489,14 @@ public:
 
     indices = ArrayView<const int>(eIndices, numEntries);
   }
+
+  //! Force the computation of global constants if we don't have them
+  void computeGlobalConstants(){ }
+
+
   //@}
+
+
 
   //! @name Overridden from Teuchos::Describable
   //@{
@@ -516,8 +528,8 @@ public:
       const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal XPETRA_COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
     int err = graph_->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -529,8 +541,8 @@ public:
       const Import<LocalOrdinal, GlobalOrdinal, Node>& importer, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal XPETRA_COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
     int err = graph_->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -542,8 +554,8 @@ public:
       const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal XPETRA_COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
     int err = graph_->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -556,8 +568,8 @@ public:
       const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal XPETRA_COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
     int err = graph_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -792,6 +804,11 @@ public:
 
     indices = ArrayView<const int>(eIndices, numEntries);
   }
+
+  //! Force the computation of global constants if we don't have them
+  void computeGlobalConstants() { }
+
+
   //@}
 
   //! @name Overridden from Teuchos::Describable
@@ -824,8 +841,8 @@ public:
       const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal XPETRA_COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
     int err = graph_->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -837,8 +854,8 @@ public:
       const Import<LocalOrdinal, GlobalOrdinal, Node>& importer, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal XPETRA_COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
     int err = graph_->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -850,8 +867,8 @@ public:
       const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal XPETRA_COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
     int err = graph_->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -864,8 +881,8 @@ public:
       const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal XPETRA_COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
     int err = graph_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM));

@@ -61,10 +61,10 @@ namespace Tpetra {
 ///
 /// These contents may be a mixture of local and remote rows of the
 /// actual matrix.
-template <class Scalar = Details::DefaultTypes::scalar_type,
-          class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-          class Node = Details::DefaultTypes::node_type>
+template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+          class Node = ::Tpetra::Details::DefaultTypes::node_type>
 class CrsMatrixStruct {
 public:
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;

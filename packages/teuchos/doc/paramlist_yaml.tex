@@ -1,0 +1,59 @@
+YAML is a human-readable data serialization format. MueLu provides a
+YAML parameter list interpreter. It produces Teuchos::ParameterList
+objects equivalent to those produced by the Teuchos XML helper functions.
+
+Here is a simple example XML parameter list:
+\begin{verbatim}
+<ParameterList>
+  <ParameterList Input>
+    <Parameter name="values" type="Array(double)" value="{54.3 -4.5 2.0}"/>
+    <Parameter name="myfunc" type="string" value="
+def func(a, b):
+  return a * 2 - b"/>
+  </ParameterList>
+  <ParameterList Solver>
+    <Parameter name="iterations" type="int" value="5"/>
+    <Parameter name="tolerance" type="double" value="1e-7"/>
+    <Parameter name="do output" type="bool" value="true"/>
+    <Parameter name="output file" type="string" value="output.txt"/>
+  </ParameterList>
+</ParameterList>
+\end{verbatim}
+
+Here is an equivalent YAML parameter list:
+\begin{verbatim}
+%YAML 1.1
+---
+ANONYMOUS:
+  Input:
+    values: [54.3, -4.5, 2.0]
+    myfunc: |-
+
+      def func(a, b):
+        return a * 2 - b
+  Solver:
+    iterations: 5
+    tolerance: 1e-7
+    do output: yes
+    output file: output.txt
+...
+\end{verbatim}
+
+The nested structure and key-value pairs of these two lists are identical.
+To a program querying them for settings, they are indistinguishable.
+
+These are the general rules for creating a YAML parameter list:
+\begin{itemize}
+\item First line must be ``\%YAML 1.1'', second must be ``---'', and last must be ``...''
+\item Nested map structure is determined by indentation. SPACES ONLY, NO TABS!
+\item As with the above example, for a top-level anonymous parameter list, ``ANONYMOUS:'' must be explicit
+\item Type is inferred. 5 is an int, 5.0 is a double, and '5.0' is a string
+\item Quotation marks (single or double) are optional for strings, but required for strings with special characters: \verb.:{}[],&*#?|-<>=!%@\.
+\item Quotation marks also turn non-string types into strings: '3' is a string
+\item As with XML parameter lists, keys are regular strings
+\item Even though YAML supports several names for bool true/false, only ``true'' and ``false'' are supported by the parameter list reader.
+\item Arrays of int, double and string supported. exampleArray: {[}hello, world, goodbye{]}
+\item {[}3, 4, 5{]} is an int array, {[}3, 4, 5.0{]} is a double array, and {[}3, '4', 5.0{]} is a string array
+\item For multi-line strings, place ``$|-$'' after the ``key:'' and then indent the string one level deeper than the key
+\item To preserve indentation in a multiline string, place ``$|2-$'' and then indent your string's content by 2 spaces relative to the key.
+\end{itemize}

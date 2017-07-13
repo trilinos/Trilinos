@@ -143,6 +143,8 @@ freeMpiOpCallback (MPI_Comm, int, void*, void*)
 // automatically.
 void createReductOp ()
 {
+#if MPI_VERSION >= 2
+
   // This function has side effects on the global singleton theMpiOp_.
   // This check ensures that the function is idempotent.  We only need
   // to create the MPI_Op singleton once.
@@ -231,6 +233,10 @@ void createReductOp ()
 
   // The "transaction" succeeded; save the result.
   theMpiOp_ = mpi_op;
+
+#else // MPI_VERSION < 2
+#  error "Sorry, you need an MPI implementation that supports at least MPI 2.0 in order to build this code.  MPI 2.0 came out in 1997.  I wrote this comment in 2017.  If you really _really_ want MPI 1.x support, please file a GitHub issue for this feature request at github.com/trilinos/trilinos/issues with an expression of its priority and we will get to it as soon as we can."
+#endif // MPI_VERSION >= 2
 }
 
 void

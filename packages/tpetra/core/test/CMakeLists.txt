@@ -6,10 +6,12 @@ ADD_SUBDIRECTORIES(
   BasicPerfTest
   Block
   BugTests
+  Comm
   CrsGraph
   CrsMatrix
   Directory
   Distributor
+  Environment
   HashTable
   ImportExport
   ImportExport2
@@ -19,8 +21,10 @@ ADD_SUBDIRECTORIES(
   Merge
   MultiVector
   MultiVectorFiller
+  Node
   PerformanceCGSolve
   Platform
+  Sort
   Utils
   RowMatrixTransposer
   TypeStack

@@ -74,7 +74,7 @@ PHX_EVALUATOR_CTOR(GlobalStatistics,p)
 
   field_values.clear();
   for (typename std::vector<std::string>::const_iterator name = names.begin(); name != names.end(); ++name)
-    field_values.push_back(PHX::MDField<ScalarT,Cell,IP>(*name, ir->dl_scalar));
+    field_values.push_back(PHX::MDField<const ScalarT,Cell,IP>(*name, ir->dl_scalar));
 
   Teuchos::RCP<PHX::MDALayout<Cell> > cell_dl = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->dimension(0)));
   volumes = PHX::MDField<ScalarT,Cell>("Cell Volumes",cell_dl);
@@ -85,7 +85,7 @@ PHX_EVALUATOR_CTOR(GlobalStatistics,p)
   this->addEvaluatedField(volumes);
   this->addEvaluatedField(tmp);
   this->addEvaluatedField(ones);
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::const_iterator field = field_values.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::const_iterator field = field_values.begin();
        field != field_values.end(); ++field) {
     this->addDependentField(*field);
   }
@@ -110,7 +110,7 @@ PHX_POST_REGISTRATION_SETUP(GlobalStatistics,sd,fm)
   this->utils.setFieldData(tmp,fm);
   this->utils.setFieldData(ones,fm);
   
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_values.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_values.begin();
        field != field_values.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
@@ -127,22 +127,22 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
   if (workset.num_cells == 0)
     return;
 
-  Intrepid2::FunctionSpaceTools::integrate<ScalarT>(volumes, ones, 
-                                                       (this->wda(workset).int_rules[ir_index])->weighted_measure, 
-                                                       Intrepid2::COMP_BLAS);
+  Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(volumes.get_view(),
+                                                                         ones.get_view(), 
+                                                                         (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+  for (index_t cell = 0; cell < workset.num_cells; ++cell)
     total_volume += volumes(cell);
 
   typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::size_type field_index = 0;
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_values.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_values.begin();
        field != field_values.end(); ++field,++field_index) {
     
-    Intrepid2::FunctionSpaceTools::integrate<ScalarT>(tmp, *field, 
-                                                         (this->wda(workset).int_rules[ir_index])->weighted_measure, 
-                                                         Intrepid2::COMP_BLAS);
+    Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(tmp.get_view(),
+                                                                           field->get_view(), 
+                                                                           (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
     
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       averages[field_index] += tmp(cell);
 
       for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < (field->dimension(1)); ++ip) {

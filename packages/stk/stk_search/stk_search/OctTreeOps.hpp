@@ -47,10 +47,10 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
-#include <stk_search/IdentProc.hpp>
-#include <stk_search/BoundingBox.hpp>
 #include <stk_search/OctTree.hpp>
 
 
@@ -167,7 +167,6 @@ void box_global_bounds(
   const RangeBoundingBox  * const arg_range_boxes ,
   float        * const arg_global_box )
 {
-  typedef typename DomainBoundingBox::first_type box_type;
   enum { Dim = 3};
 
 #if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 1210)
@@ -374,15 +373,15 @@ unsigned processor( const stk::OctTreeKey * const cuts_b ,
 
 template <class DomainBoundingBox, class RangeBoundingBox>
 void pack(
-  CommAll & comm_all ,
+  CommSparse & commSparse ,
   const stk::OctTreeKey * const cuts_b ,
   const std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & send_tree ,
         std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > * recv_tree )
 {
   typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
-  const unsigned p_rank = comm_all.parallel_rank();
-  const unsigned p_size = comm_all.parallel_size();
+  const unsigned p_rank = commSparse.parallel_rank();
+  const unsigned p_size = commSparse.parallel_size();
   const stk::OctTreeKey * const cuts_e = cuts_b + p_size ;
 
   typename SearchTree::const_iterator i ;
@@ -394,7 +393,7 @@ void pack(
 
     do {
       if ( p != p_rank ) {
-        CommBuffer & buf = comm_all.send_buffer(p);
+        CommBuffer & buf = commSparse.send_buffer(p);
 
         const std::list< DomainBoundingBox > & domain = (*i).second.first ;
         const std::list< RangeBoundingBox > & range  = (*i).second.second ;
@@ -437,7 +436,7 @@ void pack(
 
 template <class DomainBoundingBox, class RangeBoundingBox>
 void unpack(
-  CommAll & comm_all ,
+  CommSparse & commSparse ,
   std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & tree )
 {
   typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
@@ -449,10 +448,10 @@ void unpack(
   DomainBoundingBox domain_box ;
   RangeBoundingBox range_box ;
 
-  const unsigned p_size = comm_all.parallel_size();
+  const unsigned p_size = commSparse.parallel_size();
 
   for ( unsigned p = 0 ; p < p_size ; ++p ) {
-    CommBuffer & buf = comm_all.recv_buffer(p);
+    CommBuffer & buf = commSparse.recv_buffer(p);
 
     while ( buf.remaining() ) {
       buf.unpack<unsigned>( value , stk::OctTreeKey::NWord );
@@ -489,25 +488,23 @@ bool communicate(
         std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & recv_tree ,
   const bool local_flag )
 {
-  const unsigned p_size = parallel_machine_size( arg_comm );
-
   // Communicate search_tree members
 
-  CommAll comm_all( arg_comm );
+  CommSparse commSparse( arg_comm );
 
   // Sizing pass for pack
-  pack<DomainBoundingBox, RangeBoundingBox>( comm_all , arg_cuts , send_tree , NULL );
+  pack<DomainBoundingBox, RangeBoundingBox>( commSparse , arg_cuts , send_tree , NULL );
 
-  // If more than 25% then is dense
-  const bool global_flag =
-    comm_all.allocate_buffers( p_size / 4 , false , local_flag );
+  commSparse.allocate_buffers();
+  const bool global_flag = stk::is_true_on_any_proc(arg_comm, local_flag);
+ 
 
   // Actual packing pass, copy local entries too
-  pack<DomainBoundingBox, RangeBoundingBox>( comm_all , arg_cuts , send_tree , & recv_tree );
+  pack<DomainBoundingBox, RangeBoundingBox>( commSparse , arg_cuts , send_tree , & recv_tree );
 
-  comm_all.communicate();
+  commSparse.communicate();
 
-  unpack<DomainBoundingBox, RangeBoundingBox>( comm_all , recv_tree );
+  unpack<DomainBoundingBox, RangeBoundingBox>( commSparse , recv_tree );
 
   return global_flag ;
 }
@@ -524,10 +521,10 @@ void communicate(
   typedef typename RangeBoundingBox::second_type RangeKey;
   typedef std::pair<DomainKey, RangeKey> ValueType ;
 
-  CommAll comm_all( arg_comm );
+  CommSparse commSparse( arg_comm );
 
-  const int p_rank = comm_all.parallel_rank();
-  const int p_size = comm_all.parallel_size();
+  const int p_rank = commSparse.parallel_rank();
+  const int p_size = commSparse.parallel_size();
 
   typename std::set< ValueType >::const_iterator i ;
 
@@ -538,41 +535,39 @@ void communicate(
       recv_relation.insert( val );
     }
     if ( static_cast<int>(val.first.proc()) != p_rank ) {
-      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
+      CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
       buf.skip<ValueType>( 1 );
     }
     if ( communicateRangeBoxInfo )
     {
         if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
-          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          CommBuffer & buf = commSparse.send_buffer( val.second.proc() );
           buf.skip<ValueType>( 1 );
         }
     }
   }
 
-  // If more than 25% messages then is dense
-
-  comm_all.allocate_buffers( p_size / 4 , false );
+  commSparse.allocate_buffers();
 
   for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
     const ValueType & val = *i ;
     if ( static_cast<int>(val.first.proc()) != p_rank ) {
-      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
+      CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
       buf.pack<ValueType>( val );
     }
     if ( communicateRangeBoxInfo )
     {
         if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
-          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          CommBuffer & buf = commSparse.send_buffer( val.second.proc() );
           buf.pack<ValueType>( val );
         }
     }
   }
 
-  comm_all.communicate();
+  commSparse.communicate();
 
   for ( int p = 0 ; p < p_size ; ++p ) {
-    CommBuffer & buf = comm_all.recv_buffer( p );
+    CommBuffer & buf = commSparse.recv_buffer( p );
     while ( buf.remaining() ) {
       ValueType val ;
       buf.unpack<ValueType>( val );
@@ -581,21 +576,20 @@ void communicate(
   }
 }
 
-template <class DomainBoundingBox, class RangeBoundingBox>
+
+template <typename DomainKey, typename RangeKey>
 void communicateVector(
   stk::ParallelMachine arg_comm ,
-  const std::vector< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & send_relation ,
-        std::vector< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & recv_relation ,
+  const std::vector< std::pair< DomainKey, RangeKey> > & send_relation ,
+        std::vector< std::pair< DomainKey, RangeKey> > & recv_relation ,
         bool communicateRangeBoxInfo = true )
 {
-  typedef typename DomainBoundingBox::second_type DomainKey;
-  typedef typename RangeBoundingBox::second_type RangeKey;
   typedef std::pair<DomainKey, RangeKey> ValueType ;
 
-  CommAll comm_all( arg_comm );
+  CommSparse commSparse( arg_comm );
 
-  const int p_rank = comm_all.parallel_rank();
-  const int p_size = comm_all.parallel_size();
+  const int p_rank = commSparse.parallel_rank();
+  const int p_size = commSparse.parallel_size();
 
   typename std::vector< ValueType >::const_iterator i ;
 
@@ -606,41 +600,39 @@ void communicateVector(
       recv_relation.push_back( val );
     }
     if ( static_cast<int>(val.first.proc()) != p_rank ) {
-      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
+      CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
       buf.skip<ValueType>( 1 );
     }
     if ( communicateRangeBoxInfo )
     {
         if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
-          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          CommBuffer & buf = commSparse.send_buffer( val.second.proc() );
           buf.skip<ValueType>( 1 );
         }
     }
   }
 
-  // If more than 25% messages then is dense
-
-  comm_all.allocate_buffers( p_size / 4 , false );
+  commSparse.allocate_buffers();
 
   for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
     const ValueType & val = *i ;
     if ( static_cast<int>(val.first.proc()) != p_rank ) {
-      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
+      CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
       buf.pack<ValueType>( val );
     }
     if ( communicateRangeBoxInfo )
     {
         if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
-          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          CommBuffer & buf = commSparse.send_buffer( val.second.proc() );
           buf.pack<ValueType>( val );
         }
     }
   }
 
-  comm_all.communicate();
+  commSparse.communicate();
 
   for ( int p = 0 ; p < p_size ; ++p ) {
-    CommBuffer & buf = comm_all.recv_buffer( p );
+    CommBuffer & buf = commSparse.recv_buffer( p );
     while ( buf.remaining() ) {
       ValueType val ;
       buf.unpack<ValueType>( val );
@@ -648,6 +640,7 @@ void communicateVector(
     }
   }
 }
+
 
 //----------------------------------------------------------------------
 // Partition a search tree among processors
@@ -854,12 +847,11 @@ void createSearchTree(
         const std::pair<RangeBox,RangeIdent> * const arg_range_boxes,
         unsigned Dim,
         const unsigned p_rank,
-        bool local_violations,
+        bool& local_violations,
         std::map< stk::OctTreeKey, std::pair< std::list< std::pair<DomainBox,DomainIdent> >, std::list< std::pair<RangeBox,RangeIdent> > > > &search_tree)
 {
   typedef std::pair<DomainBox,DomainIdent> DomainBoundingBox;
   typedef std::pair<RangeBox,RangeIdent> RangeBoundingBox;
-  typedef std::map<stk::OctTreeKey, std::pair<std::list<DomainBoundingBox>, std::list<RangeBoundingBox> > > SearchTree;
 
   stk::OctTreeKey covering[8];
   unsigned number = 0u;
@@ -1021,7 +1013,6 @@ bool oct_tree_proximity_search(
     std::set< std::pair<DomainKey, RangeKey> > local_relation ;
 
     {
-      //WTF???
       const double tolerance = 0.001 ;
 
       std::vector< stk::OctTreeKey > cuts ;

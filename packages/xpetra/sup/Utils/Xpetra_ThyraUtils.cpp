@@ -50,7 +50,7 @@
 
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
-#include "Xpetra_ThyraUtils.hpp"
+//#include "Xpetra_ThyraUtils.hpp"
 
 
 namespace Xpetra {
@@ -66,7 +66,9 @@ namespace Xpetra {
     int nRows = mat->Rows();
     int nCols = mat->Cols();
 
-    Teuchos::RCP<Xpetra::CrsMatrix<double, int, int, EpetraNode> > Ablock = mat->getMatrix(0,0);
+    Teuchos::RCP<Xpetra::Matrix<double, int, int, EpetraNode> > Ablock = mat->getInnermostCrsMatrix();
+    Teuchos::RCP<Xpetra::CrsMatrixWrap<double, int, int, EpetraNode> > Ablock_wrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<double, int, int, EpetraNode>>(Ablock);
+    TEUCHOS_TEST_FOR_EXCEPT(Ablock_wrap.is_null() == true);
 
     bool bTpetra = false;
     bool bEpetra = false;
@@ -74,7 +76,7 @@ namespace Xpetra {
     // Note: Epetra is enabled
 #if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
      (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
-    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock);
+    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock_wrap->getCrsMatrix());
     if(tpetraMat!=Teuchos::null) bTpetra = true;
 #else
     bTpetra = false;
@@ -82,7 +84,7 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock);
+    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock_wrap->getCrsMatrix());
     if(epetraMat!=Teuchos::null) bEpetra = true;
 #endif
 
@@ -96,9 +98,31 @@ namespace Xpetra {
 
     for (int r=0; r<nRows; ++r) {
       for (int c=0; c<nCols; ++c) {
-        Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock =
-            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(mat->getMatrix(r,c));
-        std::stringstream label; label << "A" << r << c;
+        Teuchos::RCP<Matrix> xpmat = mat->getMatrix(r,c);
+
+        if(xpmat == Teuchos::null) continue; // shortcut for empty blocks
+
+        Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock = Teuchos::null;
+
+        // check whether the subblock is again a blocked operator
+        Teuchos::RCP<BlockedCrsMatrix> xpblock = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(xpmat);
+        if(xpblock != Teuchos::null) {
+          if(xpblock->Rows() == 1 && xpblock->Cols() == 1) {
+            // If it is a single block operator, unwrap it
+            Teuchos::RCP<CrsMatrixWrap> xpwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xpblock->getCrsMatrix());
+            TEUCHOS_TEST_FOR_EXCEPT(xpwrap.is_null() == true);
+            thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpwrap->getCrsMatrix());
+          } else {
+            // recursive call for general blocked operators
+            thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpblock);
+          }
+        } else {
+          // check whether it is a CRSMatrix object
+          Teuchos::RCP<CrsMatrixWrap> xpwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xpmat);
+          TEUCHOS_TEST_FOR_EXCEPT(xpwrap.is_null() == true);
+          thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpwrap->getCrsMatrix());
+        }
+
         blockMat->setBlock(r,c,thBlock);
       }
     }
@@ -118,7 +142,9 @@ namespace Xpetra {
     int nRows = mat->Rows();
     int nCols = mat->Cols();
 
-    Teuchos::RCP<Xpetra::CrsMatrix<double, int, long long, EpetraNode> > Ablock = mat->getMatrix(0,0);
+    Teuchos::RCP<Xpetra::Matrix<double, int, long long, EpetraNode> > Ablock = mat->getInnermostCrsMatrix();
+    Teuchos::RCP<Xpetra::CrsMatrixWrap<double, int, long long, EpetraNode> > Ablock_wrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<double, int, long long, EpetraNode>>(Ablock);
+    TEUCHOS_TEST_FOR_EXCEPT(Ablock_wrap.is_null() == true);
 
     bool bTpetra = false;
     bool bEpetra = false;
@@ -126,7 +152,7 @@ namespace Xpetra {
     // Note: Epetra is enabled
 #if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
      (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG) && defined(HAVE_TPETRA_INST_DOUBLE)))
-    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock);
+    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock_wrap->getCrsMatrix());
     if(tpetraMat!=Teuchos::null) bTpetra = true;
 #else
     bTpetra = false;
@@ -134,7 +160,7 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock);
+    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock_wrap->getCrsMatrix());
     if(epetraMat!=Teuchos::null) bEpetra = true;
 #endif
 
@@ -148,9 +174,31 @@ namespace Xpetra {
 
     for (int r=0; r<nRows; ++r) {
       for (int c=0; c<nCols; ++c) {
-        Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock =
-            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(mat->getMatrix(r,c));
-        std::stringstream label; label << "A" << r << c;
+        Teuchos::RCP<Matrix> xpmat = mat->getMatrix(r,c);
+
+        if(xpmat == Teuchos::null) continue; // shortcut for empty blocks
+
+        Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock = Teuchos::null;
+
+        // check whether the subblock is again a blocked operator
+        Teuchos::RCP<BlockedCrsMatrix> xpblock = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(xpmat);
+        if(xpblock != Teuchos::null) {
+          if(xpblock->Rows() == 1 && xpblock->Cols() == 1) {
+            // If it is a single block operator, unwrap it
+            Teuchos::RCP<CrsMatrixWrap> xpwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xpblock->getCrsMatrix());
+            TEUCHOS_TEST_FOR_EXCEPT(xpwrap.is_null() == true);
+            thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpwrap->getCrsMatrix());
+          } else {
+            // recursive call for general blocked operators
+            thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpblock);
+          }
+        } else {
+          // check whether it is a CRSMatrix object
+          Teuchos::RCP<CrsMatrixWrap> xpwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xpmat);
+          TEUCHOS_TEST_FOR_EXCEPT(xpwrap.is_null() == true);
+          thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpwrap->getCrsMatrix());
+        }
+
         blockMat->setBlock(r,c,thBlock);
       }
     }

@@ -58,6 +58,7 @@ namespace Intrepid {
     Vinv((n+1)*(n+2)/2,(n+1)*(n+2)/2),
     latticePts( (n+1)*(n+2)/2 , 2 )
   {
+    TEUCHOS_TEST_FOR_EXCEPTION( n <= 0, std::invalid_argument, "polynomial order must be >= 1");
 
     const int N = (n+1)*(n+2)/2;
     this -> basisCardinality_  = N;
@@ -257,7 +258,7 @@ namespace Intrepid {
               outputValues(i,j,0) = 0.0;
               outputValues(i,j,1) = 0.0;
               for (int k=0;k<this->getCardinality();k++) {
-                outputValues(i,j,0) = this->Vinv(k,i) * phisCur(k,j,1);
+                outputValues(i,j,0) += this->Vinv(k,i) * phisCur(k,j,1);
               }
               for (int k=0;k<this->getCardinality();k++) {
                 outputValues(i,j,1) -= this->Vinv(k,i) * phisCur(k,j,0);

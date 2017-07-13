@@ -145,6 +145,10 @@ namespace PHX {
 
     virtual PHX::Device::size_type dimension(size_type ordinal) const;
 
+    virtual PHX::Device::size_type extent(size_type ordinal) const;
+
+    virtual int extent_int(size_type ordinal) const;
+
     virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const; 
 
     virtual std::string name(size_type ordinal) const;
@@ -160,6 +164,17 @@ namespace PHX {
   private:
     
     std::string createIdentifier(const std::string& prefix = "");
+
+    template<typename IndexType>
+    typename std::enable_if<std::is_signed<IndexType>::value>::type
+    checkForValidRank(const IndexType& ordinal) const;
+
+    /** \brief Specialization to remove compiler warnings about
+	pointless comparison of unsigned integer with zero.
+     */
+    template<typename IndexType>
+    typename std::enable_if<std::is_unsigned<IndexType>::value>::type
+    checkForValidRank(const IndexType& ordinal) const;
 
   private:
 

@@ -16,7 +16,6 @@ ELSE()
   SET(${PACKAGE_NAME}_ENABLE_AMESOS_UMFPACK_DEFAULT OFF)
 ENDIF()
 
-
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AMESOS_UMFPACK
   HAVE_INTREPID2_AMESOS_UMFPACK
   "Enable Amesos with UmfPack functionality."
@@ -28,21 +27,33 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
-  HAVE_INTREPID2_DEBUG_INF_CHECK
-  "Enable a host of runtime debug checking for infs and nans."
-  ${${PROJECT_NAME}_ENABLE_DEBUG}
-  )
+IF(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK_OVERRIDE)
+  ## override the inf flag when it is needed e.g., refactoring dyn rank view
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
+    HAVE_INTREPID2_DEBUG_INF_CHECK
+    "Enable a host of runtime debug checking for infs and nans."
+    ${${PROJECT_NAME}_ENABLE_DEBUG})
+ELSE()
+  ## unless override is enabled, inf check is turned off by default
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
+    HAVE_INTREPID2_DEBUG_INF_CHECK
+    "Enable a host of runtime debug checking for infs and nans."
+    OFF)
+ENDIF()   
+
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KokkosDynRankView
+  HAVE_INTREPID2_KOKKOS_DYNRANKVIEW
+  "Enable Kokkos DynRankView."
+  ON)
 
 #
 # C) Add the libraries, tests, and examples
 #
-
-ADD_SUBDIRECTORY(src)
-
-TRIBITS_ADD_TEST_DIRECTORIES(test)
-
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+IF (${PACKAGE_NAME}_ENABLE_KokkosDynRankView)
+  ADD_SUBDIRECTORY(refactor)
+ELSE()
+  ADD_SUBDIRECTORY(core)
+ENDIF()
 
 #
 # Exclude files for source package.

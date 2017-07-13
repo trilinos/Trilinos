@@ -114,7 +114,7 @@ int Belos::createEpetraProblem(
   //
   // Create a Epetra_Matrix
   //
-  *A = rcp(new Epetra_CrsMatrix(Copy, *epetraMap, NumNz));
+  *A = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *epetraMap, NumNz));
   Teuchos::set_extra_data( epetraMap, "Operator::Map", Teuchos::ptr(A) );
   //
   // Add rows one-at-a-time
@@ -141,7 +141,7 @@ int Belos::createEpetraProblem(
   // Construct the right-hand side and solution multivectors.
   //
   if(B) {
-    *B = rcp(new Epetra_MultiVector(::Copy, *epetraMap, b, NumMyElements, 1 ));
+    *B = rcp(new Epetra_MultiVector(Epetra_DataAccess::Copy, *epetraMap, b, NumMyElements, 1 ));
     Teuchos::set_extra_data( epetraMap, "B::Map", Teuchos::ptr(B) );
   }
   if(X) {

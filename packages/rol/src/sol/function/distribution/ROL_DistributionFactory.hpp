@@ -166,31 +166,34 @@ namespace ROL {
   template<class Real>
   inline Teuchos::RCP<Distribution<Real> > DistributionFactory(Teuchos::ParameterList &parlist) {
     std::string dist;
+    Teuchos::ParameterList sollist;
     if ( parlist.isSublist("SOL") ) {
       dist.assign(parlist.sublist("SOL").sublist("Distribution").get("Name","Dirac"));
+      sollist = parlist;
     }
     else {
       dist.assign(parlist.sublist("Distribution").get("Name","Dirac"));
+      sollist.sublist("SOL") = parlist;
     }
     EDistribution ed = StringToEDistribution(dist);
     switch(ed) {
-      case DISTRIBUTION_ARCSINE:              return Teuchos::rcp(new Arcsine<Real>(parlist));
-      case DISTRIBUTION_BETA:                 return Teuchos::rcp(new Beta<Real>(parlist));
-      case DISTRIBUTION_CAUCHY:               return Teuchos::rcp(new Cauchy<Real>(parlist));
-      case DISTRIBUTION_DIRAC:                return Teuchos::rcp(new Dirac<Real>(parlist));
-      case DISTRIBUTION_EXPONENTIAL:          return Teuchos::rcp(new Exponential<Real>(parlist));
-      case DISTRIBUTION_GAMMA:                return Teuchos::rcp(new Gamma<Real>(parlist));
-      case DISTRIBUTION_GAUSSIAN:             return Teuchos::rcp(new Gaussian<Real>(parlist));
-      case DISTRIBUTION_KUMARASWAMY:          return Teuchos::rcp(new Kumaraswamy<Real>(parlist));
-      case DISTRIBUTION_LAPLACE:              return Teuchos::rcp(new Laplace<Real>(parlist));
-      case DISTRIBUTION_LOGISTIC:             return Teuchos::rcp(new Logistic<Real>(parlist));
-      case DISTRIBUTION_PARABOLIC:            return Teuchos::rcp(new Parabolic<Real>(parlist));
-      case DISTRIBUTION_RAISEDCOSINE:         return Teuchos::rcp(new RaisedCosine<Real>(parlist));
-      case DISTRIBUTION_SMALE:                return Teuchos::rcp(new Smale<Real>(parlist));
-      case DISTRIBUTION_TRIANGLE:             return Teuchos::rcp(new Triangle<Real>(parlist));
-      case DISTRIBUTION_TRUNCATEDEXPONENTIAL: return Teuchos::rcp(new TruncatedExponential<Real>(parlist));
-      case DISTRIBUTION_TRUNCATEDGAUSSIAN:    return Teuchos::rcp(new TruncatedGaussian<Real>(parlist));
-      case DISTRIBUTION_UNIFORM:              return Teuchos::rcp(new Uniform<Real>(parlist));
+      case DISTRIBUTION_ARCSINE:              return Teuchos::rcp(new Arcsine<Real>(sollist));
+      case DISTRIBUTION_BETA:                 return Teuchos::rcp(new Beta<Real>(sollist));
+      case DISTRIBUTION_CAUCHY:               return Teuchos::rcp(new Cauchy<Real>(sollist));
+      case DISTRIBUTION_DIRAC:                return Teuchos::rcp(new Dirac<Real>(sollist));
+      case DISTRIBUTION_EXPONENTIAL:          return Teuchos::rcp(new Exponential<Real>(sollist));
+      case DISTRIBUTION_GAMMA:                return Teuchos::rcp(new Gamma<Real>(sollist));
+      case DISTRIBUTION_GAUSSIAN:             return Teuchos::rcp(new Gaussian<Real>(sollist));
+      case DISTRIBUTION_KUMARASWAMY:          return Teuchos::rcp(new Kumaraswamy<Real>(sollist));
+      case DISTRIBUTION_LAPLACE:              return Teuchos::rcp(new Laplace<Real>(sollist));
+      case DISTRIBUTION_LOGISTIC:             return Teuchos::rcp(new Logistic<Real>(sollist));
+      case DISTRIBUTION_PARABOLIC:            return Teuchos::rcp(new Parabolic<Real>(sollist));
+      case DISTRIBUTION_RAISEDCOSINE:         return Teuchos::rcp(new RaisedCosine<Real>(sollist));
+      case DISTRIBUTION_SMALE:                return Teuchos::rcp(new Smale<Real>(sollist));
+      case DISTRIBUTION_TRIANGLE:             return Teuchos::rcp(new Triangle<Real>(sollist));
+      case DISTRIBUTION_TRUNCATEDEXPONENTIAL: return Teuchos::rcp(new TruncatedExponential<Real>(sollist));
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN:    return Teuchos::rcp(new TruncatedGaussian<Real>(sollist));
+      case DISTRIBUTION_UNIFORM:              return Teuchos::rcp(new Uniform<Real>(sollist));
       default:                                return Teuchos::null;
     }
   }

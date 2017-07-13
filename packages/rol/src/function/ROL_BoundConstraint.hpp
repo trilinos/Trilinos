@@ -126,26 +126,34 @@ public:
   virtual ~BoundConstraint() {}
 
   BoundConstraint(void)
-    : x_lo_(Teuchos::null), x_up_(Teuchos::null), scale_(1.0),
-      mask_(Teuchos::null), activated_(true), min_diff_(0.0) {}
+    : x_lo_(Teuchos::null), x_up_(Teuchos::null), scale_(1),
+      mask_(Teuchos::null), activated_(false), min_diff_(0) {}
 
+  BoundConstraint( const Vector<Real> &x ) : x_lo_(x.clone()), 
+      x_up_(x.clone()), scale_(1),
+      mask_(Teuchos::null), activated_(false), min_diff_(0) {
+    x_lo_->applyUnary(Elementwise::Fill<Real>(ROL_NINF<Real>()));
+    x_up_->applyUnary(Elementwise::Fill<Real>(ROL_INF<Real>()));
+
+  }
   /** \brief Default constructor.
 
       The default constructor automatically turns the constraints on.
   */
   BoundConstraint(const Teuchos::RCP<Vector<Real> > &x_lo,
                   const Teuchos::RCP<Vector<Real> > &x_up,
-                  const Real scale = 1.0)
+                  const Real scale = 1)
     : x_lo_(x_lo), x_up_(x_up), scale_(scale), activated_(true) {
+    Real half(0.5), one(1);
     mask_ = x_lo_->clone();
 
     // Compute difference between upper and lower bounds
     mask_->set(*x_up_);
-    mask_->axpy(-1.0,*x_lo_);
+    mask_->axpy(-one,*x_lo_);
 
     // Compute minimum difference
     min_diff_ = mask_->reduce(minimum_);
-    min_diff_ *= 0.5;
+    min_diff_ *= half;
 
   }
 
@@ -192,12 +200,12 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
 
-    Real epsn = std::min(scale_*eps,min_diff_);
+    Real one(1), epsn(std::min(scale_*eps,min_diff_));
 
     mask_->set(*x_up_);
-    mask_->axpy(-1.0,x);
+    mask_->axpy(-one,x);
 
     Active op(epsn);
     v.applyBinary(op,*mask_);
@@ -213,16 +221,16 @@ public:
                 g(\xi) < 0 \,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
       @param[in]       g   is the negative search direction.
+      @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
 
-    Real epsn = std::min(scale_*eps,min_diff_);
+    Real one(1), epsn(std::min(scale_*eps,min_diff_));
 
     mask_->set(*x_up_);
-    mask_->axpy(-1.0,x);
+    mask_->axpy(-one,x);
     
     UpperBinding op(epsn);
     mask_->applyBinary(op,g);
@@ -242,12 +250,12 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
 
-    Real epsn = std::min(scale_*eps,min_diff_);
+    Real one(1), epsn(std::min(scale_*eps,min_diff_));
 
     mask_->set(x);
-    mask_->axpy(-1.0,*x_lo_);
+    mask_->axpy(-one,*x_lo_);
 
     Active op(epsn);
     v.applyBinary(op,*mask_);
@@ -263,16 +271,16 @@ public:
                 g(\xi) > 0 \,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
       @param[in]       g   is the negative search direction.
+      @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
 
-    Real epsn = std::min(scale_*eps,min_diff_);
+    Real one(1), epsn(std::min(scale_*eps,min_diff_));
 
     mask_->set(x);
-    mask_->axpy(-1.0,*x_lo_);
+    mask_->axpy(-one,*x_lo_);
 
     LowerBinding op(epsn);
     mask_->applyBinary(op,g);
@@ -282,16 +290,25 @@ public:
   }
 
   /** \brief Return the ref count pointer to the lower bound vector */
-  const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) const {
+  virtual const Teuchos::RCP<const Vector<Real> > getLowerVectorRCP( void ) const {
     return x_lo_;
   }
 
   /** \brief Return the ref count pointer to the upper bound vector */
-  const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) const {
+  virtual const Teuchos::RCP<const Vector<Real> > getUpperVectorRCP( void ) const {
     return x_up_;
   }
 
- 
+   /** \brief Return the ref count pointer to the lower bound vector */
+  virtual  const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) {
+    return x_lo_;
+  }
+
+  /** \brief Return the ref count pointer to the upper bound vector */
+  virtual const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) {
+    return x_up_;
+  }
+
     
 
   /** \brief Set the input vector to the upper bound.
@@ -300,7 +317,12 @@ public:
       @param[out]    u   is the vector to be set to the upper bound.
   */ 
   virtual void setVectorToUpperBound( Vector<Real> &u ) {
-    u.set(*x_up_);
+    if( x_up_ == Teuchos::null ) {
+      u.applyUnary(Elementwise::Fill<Real>(ROL_INF<Real>()));
+    }
+    else {
+      u.set(*x_up_);
+    }
   }
 
   /** \brief Set the input vector to the lower bound.
@@ -309,7 +331,12 @@ public:
       @param[out]    l   is the vector to be set to the lower bound.
   */ 
   virtual void setVectorToLowerBound( Vector<Real> &l ) {
-    l.set(*x_lo_);
+    if( x_lo_ == Teuchos::null ) {
+      l.applyUnary(Elementwise::Fill<Real>(ROL_NINF<Real>()));
+    }
+    else {
+      l.set(*x_lo_);
+    }
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-active set.
@@ -323,7 +350,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     pruneUpperActive(v,x,eps);
     pruneLowerActive(v,x,eps);
   }
@@ -336,11 +363,11 @@ public:
          \mathcal{B}^+_\epsilon(x) = \mathcal{B}^+_\epsilon(x)\cap\mathcal{B}^-_\epsilon(x).
       \f]
       @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
       @param[in]       g   is the negative search direction.
+      @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
     pruneUpperActive(v,g,x,eps);
     pruneLowerActive(v,g,x,eps);
   }
@@ -352,13 +379,14 @@ public:
   */
   virtual bool isFeasible( const Vector<Real> &v ) { 
     bool flag = true;
+    Real one(1);
     if ( activated_ ) {
       mask_->set(*x_up_);
-      mask_->axpy(-1.0,v);
+      mask_->axpy(-one,v);
       Real uminusv = mask_->reduce(minimum_);
 
       mask_->set(v);
-      mask_->axpy(-1.0,*x_lo_);
+      mask_->axpy(-one,*x_lo_);
       Real vminusl = mask_->reduce(minimum_);
 
       flag = (((uminusv < 0) || (vminusl<0)) ? false : true);
@@ -391,23 +419,26 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) { 
+    Real one(1);
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
     pruneActive(*tmp,x,eps);
-    v.axpy(-1.0,*tmp);
+    v.axpy(-one,*tmp);
   }
-  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
+    Real one(1);
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
     pruneLowerActive(*tmp,x,eps);
-    v.axpy(-1.0,*tmp);
+    v.axpy(-one,*tmp);
   }
-  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) { 
+    Real one(1);
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
     pruneUpperActive(*tmp,x,eps);
-    v.axpy(-1.0,*tmp);
+    v.axpy(-one,*tmp);
   }
 
 
@@ -419,23 +450,26 @@ public:
       @param[in]       g   is the negative search direction.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) { 
+    Real one(1);
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
     pruneActive(*tmp,g,x,eps);
-    v.axpy(-1.0,*tmp);
+    v.axpy(-one,*tmp);
   }
-  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) { 
+    Real one(1);
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
     pruneLowerActive(*tmp,g,x,eps);
-    v.axpy(-1.0,*tmp);
+    v.axpy(-one,*tmp);
   }
-  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) { 
+    Real one(1);
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
     pruneUpperActive(*tmp,g,x,eps);
-    v.axpy(-1.0,*tmp);
+    v.axpy(-one,*tmp);
   }
  
   /** \brief Compute projected gradient.
@@ -457,9 +491,10 @@ public:
       @param[in]             x is the optimization variable.
   */
   void computeProjectedStep( Vector<Real> &v, const Vector<Real> &x ) { 
+    Real one(1);
     v.plus(x);
     project(v);
-    v.axpy(-1.0,x);
+    v.axpy(-one,x);
   }
 
 }; // class BoundConstraint

@@ -94,12 +94,6 @@ namespace Teuchos {
 
 namespace {
 
-  template<class NodeType>
-  Teuchos::RCP<NodeType> getNode () {
-    Teuchos::ParameterList defaultParams;
-    return Teuchos::rcp (new NodeType (defaultParams));
-  }
-
   using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::endl;
@@ -240,7 +234,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadConstLDA, LO, GO, Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     // numlocal > LDA
     // ergo, the arrayview doesn't contain enough data to specify the entries
     // also, if bounds checking is enabled, check that bad bounds are caught
@@ -251,7 +244,7 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVecs = 2;
     // multivector has two vectors, each proc having two values per vector
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
@@ -271,19 +264,18 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, NonContigView, LO, GO, Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const Mag tol = errorTolSlack * errorTolSlack * testingTol<Scalar>();   // extra slack on this test; dots() seem to be a little sensitive for single precision types
     const Mag M0  = ScalarTraits<Mag>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 53; // making this larger reduces the change that A below will have no non-zero entries, i.e., that C = abs(A) is still equal to A (we assume it is not)
     const size_t numVecs = 7;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     //
     // we will create a non-contig subview of the vector; un-viewed vectors should not be changed
     Tuple<size_t,4> inView1 = tuple<size_t>(1,4,3,2);
@@ -473,14 +465,13 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Describable, LO , GO , Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,3,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,3,comm);
     // test labeling
     const string lbl("mvecA");
     MV mvecA(map,2);
@@ -523,18 +514,21 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadMultiply, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
+
+    // mfh 05 May 2016: Tpetra::MultiVector::multiply only checks
+    // local dimensions in a debug build.
+#ifdef HAVE_TPETRA_DEBUG
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
       // create local Maps
-      RCP<const Map<LO,GO,Node> > map3l = createLocalMapWithNode<LO,GO,Node>(3,comm,node),
-                                  map2l = createLocalMapWithNode<LO,GO,Node>(2,comm,node);
+      RCP<const Map<LO,GO,Node> > map3l = createLocalMapWithNode<LO,GO,Node>(3,comm),
+                                  map2l = createLocalMapWithNode<LO,GO,Node>(2,comm);
       MV mvecA(map3l,2),
          mvecB(map2l,3),
          mvecD(map2l,2);
@@ -552,10 +546,10 @@ namespace {
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
-      RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO>(INVALID,3,comm,node),
-                                  map2n = createContigMapWithNode<LO,GO>(INVALID,2,comm,node);
-      RCP<const Map<LO,GO,Node> > map2l = createLocalMapWithNode<LO,GO,Node>(2,comm,node),
-                                  map3l = createLocalMapWithNode<LO,GO,Node>(3,comm,node);
+      RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO,Node>(INVALID,3,comm);
+      RCP<const Map<LO,GO,Node> > map2n = createContigMapWithNode<LO,GO,Node>(INVALID,2,comm);
+      RCP<const Map<LO,GO,Node> > map2l = createLocalMapWithNode<LO,GO,Node>(2,comm),
+                                  map3l = createLocalMapWithNode<LO,GO,Node>(3,comm);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2lx2(map2l,2),
@@ -572,10 +566,10 @@ namespace {
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO>(INVALID,3,comm,node),
-                                  map2n = createContigMapWithNode<LO,GO>(INVALID,2,comm,node);
-      RCP<const Map<LO,GO,Node> > map2l = createLocalMapWithNode<LO,GO,Node>(2,comm,node),
-                                  map3l = createLocalMapWithNode<LO,GO,Node>(3,comm,node);
+      RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO,Node>(INVALID,3,comm);
+      RCP<const Map<LO,GO,Node> > map2n = createContigMapWithNode<LO,GO,Node>(INVALID,2,comm);
+      RCP<const Map<LO,GO,Node> > map2l = createLocalMapWithNode<LO,GO,Node>(2,comm),
+                                  map3l = createLocalMapWithNode<LO,GO,Node>(3,comm);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2x3(map2l,3),
@@ -587,13 +581,13 @@ namespace {
       TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx2,mv3x2,S0), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
       TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,S1,mv3nx2,mv2x3,S0), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
     }
+#endif // HAVE_TPETRA_DEBUG
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Multiply, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -602,10 +596,10 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO>(INVALID,3,comm,node),
-                                map2n = createContigMapWithNode<LO,GO>(INVALID,2,comm,node);
-    RCP<const Map<LO,GO,Node> > lmap3 = createLocalMapWithNode<LO,GO,Node>(3,comm,node),
-                                lmap2 = createLocalMapWithNode<LO,GO,Node>(2,comm,node);
+    RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO,Node>(INVALID,3,comm),
+                                map2n = createContigMapWithNode<LO,GO,Node>(INVALID,2,comm);
+    RCP<const Map<LO,GO,Node> > lmap3 = createLocalMapWithNode<LO,GO,Node>(3,comm),
+                                lmap2 = createLocalMapWithNode<LO,GO,Node>(2,comm);
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
     const Mag    M0 = ScalarTraits<Mag>::zero();
@@ -1046,7 +1040,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadConstAA, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     // constructor takes ArrayView<ArrayView<Scalar> A, NumVectors
     // A.size() == NumVectors
     // A[i].size() >= MyLength
@@ -1056,8 +1049,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     // multivector has two vectors, each proc having two values per vector
-    RCP<const Map<LO,GO,Node> > map2 = createContigMapWithNode<LO,GO>(INVALID,2,comm,node),
-                                map3 = createContigMapWithNode<LO,GO>(INVALID,3,comm,node);
+    RCP<const Map<LO,GO,Node> > map2 = createContigMapWithNode<LO,GO,Node>(INVALID,2,comm);
+    RCP<const Map<LO,GO,Node> > map3 = createContigMapWithNode<LO,GO,Node>(INVALID,3,comm);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
     Array<ArrayView<const Scalar> > arrOfarr(2,ArrayView<const Scalar>(Teuchos::null));
@@ -1076,15 +1069,14 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadDot, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    RCP<const Map<LO,GO,Node> > map1 = createContigMapWithNode<LO,GO>(INVALID,1,comm,node),
-                                map2 = createContigMapWithNode<LO,GO>(INVALID,2,comm,node);
+    RCP<const Map<LO,GO,Node> > map1 = createContigMapWithNode<LO,GO,Node>(INVALID,1,comm),
+                                map2 = createContigMapWithNode<LO,GO,Node>(INVALID,2,comm);
     {
       MV mv12(map1,1),
          mv21(map2,1),
@@ -1118,7 +1110,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OrthoDot, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -1130,7 +1121,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     const bool zeroOut = true;
     MV mvec1(map,numVectors,zeroOut),
        mvec2(map,numVectors,zeroOut);
@@ -1142,7 +1133,7 @@ namespace {
     mvec2.dot(mvec1,dots2());
     TEST_COMPARE_FLOATING_ARRAYS(dots2,zeros,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,zeros,M0);
-    TEST_EQUALITY_CONST( mvec1.getVector(0)->dot(*mvec2.getVector(0)), S0);
+    TEST_EQUALITY_CONST( static_cast<Scalar> (mvec1.getVector(0)->dot(*mvec2.getVector(0))), S0 );
     mvec1.norm1(norms1());
     mvec2.norm1(norms2());
     std::fill(ans.begin(), ans.end(), M0);
@@ -1160,7 +1151,7 @@ namespace {
     mvec2.dot(mvec1,dots2());
     TEST_COMPARE_FLOATING_ARRAYS(dots2,zeros,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,zeros,M0);
-    TEST_EQUALITY_CONST( mvec1.getVector(0)->dot(*mvec2.getVector(0)), S0);
+    TEST_EQUALITY_CONST( static_cast<Scalar> (mvec1.getVector(0)->dot(*mvec2.getVector(0))), S0 );
     mvec1.norm1(norms1());
     mvec2.norm1(norms2());
     std::fill(ans.begin(), ans.end(), as<Mag>(numImages));
@@ -1178,7 +1169,7 @@ namespace {
     mvec2.dot(mvec1,dots2());
     TEST_COMPARE_FLOATING_ARRAYS(dots2,zeros,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,zeros,M0);
-    TEST_EQUALITY_CONST( mvec1.getVector(0)->dot(*mvec2.getVector(0)), S0);
+    TEST_EQUALITY_CONST( static_cast<Scalar> (mvec1.getVector(0)->dot(*mvec2.getVector(0))), S0 );
     mvec1.norm1(norms1());
     mvec2.norm1(norms2());
     std::fill(ans.begin(), ans.end(), as<Mag>(2*numImages));
@@ -1204,7 +1195,6 @@ namespace {
   {
     using std::endl;
 
-    RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -1216,7 +1206,7 @@ namespace {
     // create a Map
     const size_t numLocal = 7;
     const size_t numVectors = 13;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     MV A(map,numVectors,false);
     {
       A.randomize();
@@ -1423,7 +1413,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OffsetView, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -1440,9 +1429,9 @@ namespace {
     Array<size_t> even(tuple<size_t>(1,3,5));
     Array<size_t>  odd(tuple<size_t>(0,2,4));
     TEUCHOS_TEST_FOR_EXCEPTION( even.size() != odd.size(), std::logic_error, "Test setup assumption violated.");
-    RCP<const Map<LO,GO,Node> > fullMap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    RCP<const Map<LO,GO,Node> >    map1 = createContigMapWithNode<LO,GO>(INVALID,numLocal1,comm,node);
-    RCP<const Map<LO,GO,Node> >    map2 = createContigMapWithNode<LO,GO>(INVALID,numLocal2,comm,node);
+    RCP<const Map<LO,GO,Node> > fullMap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+    RCP<const Map<LO,GO,Node> >    map1 = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal1,comm);
+    RCP<const Map<LO,GO,Node> >    map2 = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal2,comm);
     RCP<MV> A = rcp(new MV(fullMap,numVectors,false));
     {
       // contig source multivector
@@ -1641,9 +1630,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X1_local = X1->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X2_local = X2->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X_local = X->template getLocalView<Kokkos::HostSpace> ();
+      auto X1_local = X1->template getLocalView<Kokkos::HostSpace> ();
+      auto X2_local = X2->template getLocalView<Kokkos::HostSpace> ();
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
@@ -1846,14 +1835,13 @@ namespace {
     const Scalar four = two + two;
 
     RCP<const Comm<int> > comm = getDefaultComm();
-    RCP<Node> node = getNode<Node>();
 
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 2;
     const size_t LDA = 2;
     RCP<const Map<LO, GO, Node> > map =
-      createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm, node);
+      createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2, 4, 4}
     // values(0,4) = {1, 1, 2, 2} = [1 2]
@@ -1930,7 +1918,6 @@ namespace {
     out << "Tpetra::MultiVector scale and assign test" << endl;
     Teuchos::OSTab tab0 (out);
 
-    RCP<Node> node = getNode<Node>();
     Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -1944,7 +1931,7 @@ namespace {
     // create a Map
     const size_t numLocal = 23;
     const size_t numVectors = 11;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     // Use random multivector A
     // Set B = A * 2 manually.
     // Therefore, if C = 2*A, then C == B
@@ -2082,7 +2069,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Vector, ZeroScaleUpdate, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -2090,7 +2076,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,2,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,2,comm);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2}
     // values(0,2) = {1, 1} = [1]
@@ -2339,14 +2325,13 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Vector, CopyConst, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,2,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,2,comm);
     // create random MV
     V morig(map);
     morig.randomize();
@@ -2378,7 +2363,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Vector, Indexing, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     typedef ScalarTraits<Scalar>              SCT;
     typedef typename SCT::magnitudeType Magnitude;
@@ -2386,7 +2370,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,100,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,100,comm);
     // create two random Vector objects
     V v1(map), v2(map);
     v1.randomize();
@@ -2416,7 +2400,6 @@ namespace {
   {
     typedef Map<LO, GO, Node> map_type;
 
-    RCP<Node> node = getNode<Node>();
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
     // error turned out to be a neglected return in both implementations of update(),
     // after passing the buck to scale() in the case of alpha==0 or beta==0 or gamma=0
@@ -2472,7 +2455,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CountDot, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -2483,7 +2465,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -2539,7 +2521,10 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CountDotNonTrivLDA, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
+    out << "Test dot products of MultiVectors created from an input "
+      "Teuchos::ArrayView with nontrivial LDA." << endl;
+    Teuchos::OSTab tab1 (out);
+
     // same as CountDot, but the A,LDA has a non-trivial LDA (i.e., LDA != myLen)
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -2552,7 +2537,8 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVectors = 3;
     const size_t LDA = 3;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map =
+      createContigMapWithNode<LO,GO,Node> (INVALID, numLocal, comm);
     Array<Scalar> values(9);
     // A = {0, 0, -1, 1, 1, -1, 2, 2, -1} = [0   1  2]
     //                                      [0   1  2]
@@ -2571,8 +2557,12 @@ namespace {
     values[6] = as<Scalar>(2);
     values[7] = as<Scalar>(2);
     values[8] = as<Scalar>(-1);
-    MV mvec1(map,values(),LDA,numVectors),
-       mvec2(map,values(),LDA,numVectors);
+
+    out << "Create the two MultiVectors" << endl;
+    MV mvec1(map,values(),LDA,numVectors);
+    MV mvec2(map,values(),LDA,numVectors);
+
+    out << "Do the dot products" << endl;
     Array<Scalar> dots1(numVectors), dots2(numVectors), answer(numVectors);
     answer[0] = as<Scalar>(0);
     answer[1] = as<Scalar>(2*numImages);
@@ -2609,9 +2599,8 @@ namespace {
 
     const MT M0 = Teuchos::ScalarTraits<MT>::zero ();
 
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
     const int numImages = comm->getSize();
 
     // create a Map
@@ -2619,7 +2608,7 @@ namespace {
     const size_t numVectors = 3;
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     RCP<const Map<LO, GO, Node> > map =
-      createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm, node);
+      createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm);
 
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -2687,7 +2676,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CountNormInf, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -2697,7 +2685,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -2724,7 +2712,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Norm2, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -2734,7 +2721,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     MV mvec(map,numVectors);
     // randomize the multivector
     mvec.randomize();
@@ -2770,7 +2757,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadCombinations, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -2780,8 +2766,8 @@ namespace {
     // create a Map
     const Scalar rnd = ScalarTraits<Scalar>::random();
     // two maps: one has two entires per node, the other disagrees on node 0
-    RCP<const Map<LO,GO,Node> > map1 = createContigMapWithNode<LO,GO>(INVALID,2,comm,node),
-                                map2 = createContigMapWithNode<LO,GO>(INVALID,myImageID == 0 ? 1 : 2,comm,node);
+    RCP<const Map<LO,GO,Node> > map1 = createContigMapWithNode<LO,GO,Node>(INVALID,2,comm),
+                                map2 = createContigMapWithNode<LO,GO,Node>(INVALID,myImageID == 0 ? 1 : 2,comm);
     // multivectors from different maps are incompatible for all ops
     // multivectors from the same map are compatible only if they have the same number of
     //    columns
@@ -2850,13 +2836,12 @@ namespace {
     // product of x and y is the conjugate transpose of x times y.
     RCP<const Comm<int> > serialComm =
       rcp_implicit_cast<const comm_type > (rcp (new comm_type));
-    RCP<Node> node = getNode<Node> ();
 
     const size_t numLocalElts = 1;
     const Tpetra::global_size_t numGlobalElts = serialComm->getSize () * numLocalElts;
     const GO indexBase = 0;
     RCP<const map_type> map (new map_type (numGlobalElts, indexBase, serialComm,
-                                           Tpetra::GloballyDistributed, node));
+                                           Tpetra::GloballyDistributed));
     MV x (map, 1);
     MV y (map, 1);
 
@@ -2936,12 +2921,11 @@ namespace {
     // Create a Map, on which every process in the communicator has nonzero rows.
     //
     RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
     const size_t lclNumRows = 5;
     //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const GST gblNumRows = lclNumRows * static_cast<GST> (comm->getSize ());
     const GO indexBase = 0;
-    RCP<const map_type> map = rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm, node));
+    RCP<const map_type> map = rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
     TEST_ASSERT( ! map.is_null () );
     TEST_EQUALITY( map->getGlobalNumElements (), gblNumRows );
     TEST_EQUALITY( map->getNodeNumElements (), lclNumRows );
@@ -3132,19 +3116,18 @@ namespace {
     }
   }
 
-  // Test getDualView() and view semantics.
+  // Test Tpetra::MultiVector dual view semantics.
   //
   // Create a Tpetra::MultiVector X, and fill it with some
-  // characteristic number.  Get its Kokkos::DualView using
-  // getDualView(), modify its data (through Kokkos, not through the
-  // Tpetra::MultiVector) in either memory space (we can test both
-  // sides here -- for devices with a single memory space, that will
-  // just be a redundant test), and sync.  Then, use an independent
-  // mechanism (that doesn't involve Kokkos::DualView or Kokkos::View)
-  // to see whether the Tpetra::MultiVector saw the change.
+  // characteristic number.  Use getLocalView() to modify its data in
+  // either memory space (we can test both sides here -- for devices
+  // with a single memory space, that will just be a redundant test),
+  // and sync.  Then, use an independent mechanism (that doesn't
+  // involve Kokkos::DualView or Kokkos::View) to see whether the
+  // Tpetra::MultiVector saw the change.
   //
-  // This tests whether getDualView() actually returns a view of the
-  // data.  (It must NOT make a deep copy.)
+  // This tests ensures that getLocalView() actually returns a view of
+  // the data, NOT a deep copy.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, getDualView, LO, GO, Scalar, Node )
   {
     out << "Tpetra::MultiVector::getDualView test" << endl;
@@ -3157,6 +3140,8 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
     typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename MV::device_type device_type;
+
     int lclSuccess = 1;
     int gblSuccess = 1;
     std::ostringstream errStrm;
@@ -3224,34 +3209,6 @@ namespace {
       return; // no sense in continuing.
     }
 
-    // This typedef (a 2-D Kokkos::DualView specialization) must exist.
-    typedef typename MV::dual_view_type dual_view_type;
-    dual_view_type X_lcl;
-
-    try {
-      X_lcl = X->getDualView ();
-    }
-    catch (std::exception& e) {
-      errStrm << "Process " << myRank << ": MV::getDualView threw exception: "
-              << e.what () << endl;
-      lclSuccess = 0;
-    }
-    gblSuccess = 1;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST(gblSuccess, 1);
-    if (gblSuccess != 1) {
-      out << "MV::getDualView threw an exception on one or more processes!" << endl;
-      for (int r = 0; r < numProcs; ++r) {
-        if (r == myRank) {
-          std::cerr << errStrm.str ();
-        }
-        comm->barrier ();
-        comm->barrier ();
-        comm->barrier ();
-      }
-      return; // no sense in continuing.
-    }
-
     // putScalar doesn't sync afterwards, so we have to sync manually.
     // It has the option to modify the data in the last modified
     // location without sync.  (This is supposed to avoid allocation,
@@ -3265,26 +3222,26 @@ namespace {
     // always the default execution space of Kokkos::HostSpace, even
     // when ExecSpace is Kokkos::Serial.  That's why we use
     // execution_space here and not memory_space.
-    typedef typename dual_view_type::t_dev::execution_space DMS;
-    typedef typename dual_view_type::t_host::execution_space HMS;
-    if (X_lcl.modified_device () > X_lcl.modified_host ()) {
+
+    if (X->template need_sync<Kokkos::HostSpace> ()) {
       out << "Sync to host" << endl;
-      X_lcl.template sync<HMS> ();
-    } else if (X_lcl.modified_device () < X_lcl.modified_host ()) {
+      X->template sync<Kokkos::HostSpace> ();
+    } else if (X->template need_sync<device_type> ()) {
       out << "Sync to device" << endl;
-      X_lcl.template sync<DMS> ();
+      X->template sync<device_type> ();
     } else {
       out << "No need to sync" << endl;
     }
 
-    out << "X_lcl.modified_device: " << X_lcl.modified_device () << endl
-        << "X_lcl.modified_host: " << X_lcl.modified_host () << endl;
-
     // mfh 01 Mar 2015: DualView doesn't actually reset the modified
     // flags if the host and device memory spaces are the same.  I
     // don't like that, but I don't want to mess with DualView.
-    if (! Kokkos::Impl::is_same<DMS, HMS>::value) {
-      lclSuccess = (X_lcl.modified_device () == X_lcl.modified_host ()) ? 1 : 0;
+    const bool hostAndDeviceSpacesSame =
+      std::is_same<typename device_type::memory_space,
+                   Kokkos::HostSpace>::value;
+    if (! hostAndDeviceSpacesSame) {
+      lclSuccess = (! X->template need_sync<Kokkos::HostSpace> () &&
+                    ! X->template need_sync<device_type> ()) ? 1 : 0;
       gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEST_EQUALITY_CONST(gblSuccess, 1);
@@ -3294,22 +3251,22 @@ namespace {
       }
     }
 
-    // Modify the data through the Kokkos::DualView, by setting all of
-    // its entries to a different number than before.  (ONE and TWO
-    // differ even in the finite field Z_2.)
-    typename dual_view_type::t_host X_lcl_h = X_lcl.template view<HMS> ();
-    X_lcl.template modify<HMS> ();
+    // Modify the data through the host View, by setting all of its
+    // entries to a different number than before.  (ONE and TWO differ
+    // even in the finite field Z_2.)
+    auto X_lcl_h = X->template getLocalView<Kokkos::HostSpace> ();
+    X->template modify<Kokkos::HostSpace> ();
     Kokkos::deep_copy (X_lcl_h, ONE);
-    X_lcl.template sync<DMS> ();
+    X->template sync<device_type> ();
 
     // Now compute the inf-norms of the columns of X.  (We want a
     // separate mechanism from methods that return Kokkos::DualView or
     // Kokkos::View.)  All inf-norms should be ONE, not TWO.
     typedef typename MV::mag_type mag_type;
-    Kokkos::DualView<mag_type*, DMS> norms ("norms", numVecs);
-    norms.template modify<DMS> ();
-    X->normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
+    norms.template modify<device_type> ();
+    X->normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
@@ -3328,16 +3285,18 @@ namespace {
   // make a deep copy.)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DualViewCtor, LO, GO, Scalar, Node )
   {
-    out << "Tpetra::MultiVector DualView constructor test" << endl;
-    Teuchos::OSTab tab0 (out);
-
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef typename MV::device_type device_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    out << "Tpetra::MultiVector DualView constructor test" << endl;
+    Teuchos::OSTab tab0 (out);
+
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
     int lclSuccess = 1;
@@ -3345,8 +3304,6 @@ namespace {
 
     // This typedef (a 2-D Kokkos::DualView specialization) must exist.
     typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev::execution_space DMS;
-    typedef typename dual_view_type::t_host::execution_space HMS;
 
     // We'll need this for error checking before we need it in Tpetra.
     RCP<const Comm<int> > comm = getDefaultComm ();
@@ -3357,17 +3314,21 @@ namespace {
     dual_view_type X_lcl ("X_lcl", numLclRows, numVecs);
 
     // Modify the Kokkos::DualView's data on the host.
-    typename dual_view_type::t_host X_lcl_h = X_lcl.template view<HMS> ();
-    X_lcl.template modify<HMS> ();
+    auto X_lcl_h = X_lcl.template view<Kokkos::HostSpace> ();
+    X_lcl.template modify<Kokkos::HostSpace> ();
     Kokkos::deep_copy (X_lcl_h, ONE);
-    X_lcl.template sync<DMS> ();
+    X_lcl.template sync<device_type> ();
 
     // Make sure that the DualView actually sync'd.
     //
     // mfh 01 Mar 2015: DualView doesn't actually reset the modified
     // flags if the host and device memory spaces are the same.  I
     // don't like that, but I don't want to mess with DualView.
-    if (! Kokkos::Impl::is_same<DMS, HMS>::value) {
+
+    const bool hostAndDeviceSpacesSame = std::is_same<
+      typename dual_view_type::t_dev::memory_space,
+      typename dual_view_type::t_host::memory_space>::value;
+    if (! hostAndDeviceSpacesSame) {
       lclSuccess = (X_lcl.modified_device () == X_lcl.modified_host ()) ? 1 : 0;
       gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -3389,27 +3350,27 @@ namespace {
     // inf-norm) that X_gbl's constructor didn't change the values in
     // X_lcl.
     typedef typename MV::mag_type mag_type;
-    Kokkos::DualView<mag_type*, DMS> norms ("norms", numVecs);
-    norms.template modify<DMS> ();
-    X_gbl.normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
+    norms.template modify<device_type> ();
+    X_gbl.normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
 
     // Now change the values in X_lcl.  X_gbl should see them.  Just
     // for variety, we do this on the device, not on the host.
-    typename dual_view_type::t_dev X_lcl_d = X_lcl.template view<DMS> ();
-    X_lcl.template modify<DMS> ();
+    auto X_lcl_d = X_lcl.template view<device_type> ();
+    X_lcl.template modify<device_type> ();
     Kokkos::deep_copy (X_lcl_d, TWO);
-    X_lcl.template sync<HMS> ();
+    X_lcl.template sync<Kokkos::HostSpace> ();
 
     // Make sure that the DualView actually sync'd.
     //
     // mfh 01 Mar 2015: DualView doesn't actually reset the modified
     // flags if the host and device memory spaces are the same.  I
     // don't like that, but I don't want to mess with DualView.
-    if (! Kokkos::Impl::is_same<DMS, HMS>::value) {
+    if (! hostAndDeviceSpacesSame) {
       lclSuccess = (X_lcl.modified_device () == X_lcl.modified_host ()) ? 1 : 0;
       gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -3421,9 +3382,9 @@ namespace {
     }
 
     // Make sure that X_gbl saw the changes made to X_lcl's data.
-    norms.template modify<DMS> ();
-    X_gbl.normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    norms.template modify<device_type> ();
+    X_gbl.normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), TWO );
     }
@@ -3446,9 +3407,6 @@ namespace {
   // Tpetra::MultiVector (or the underlying Kokkos::DualView).
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ViewCtor, LO, GO, Scalar, Node )
   {
-    out << "Tpetra::MultiVector View constructor test" << endl;
-    Teuchos::OSTab tab0 (out);
-
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
@@ -3456,23 +3414,18 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
     typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename MV::device_type device_type;
+    // This typedef (a 2-D Kokkos::DualView specialization) must exist.
+    typedef typename MV::dual_view_type dual_view_type;
+
+    out << "Tpetra::MultiVector View constructor test" << endl;
+    Teuchos::OSTab tab0 (out);
+
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
     const Scalar THREE = TWO + ONE;
     int lclSuccess = 1;
     int gblSuccess = 1;
-
-    // This typedef (a 2-D Kokkos::DualView specialization) must exist.
-    typedef typename MV::dual_view_type dual_view_type;
-    // The use of "execution_space" and not "memory_space" here
-    // ensures that Kokkos won't attempt to use a host execution space
-    // that hasn't been initialized.  For example, if Kokkos::OpenMP
-    // is disabled and Kokkos::Threads is enabled, the latter is
-    // always the default execution space of Kokkos::HostSpace, even
-    // when ExecSpace is Kokkos::Serial.  That's why we use
-    // execution_space here and not memory_space.
-    typedef typename dual_view_type::t_dev::execution_space DMS;
-    typedef typename dual_view_type::t_host::execution_space HMS;
 
     // We'll need this for error checking before we need it in Tpetra.
     RCP<const Comm<int> > comm = getDefaultComm ();
@@ -3496,17 +3449,17 @@ namespace {
     // inf-norm) that X_gbl's constructor didn't change the values in
     // X_lcl.
     typedef typename MV::mag_type mag_type;
-    Kokkos::DualView<mag_type*, DMS> norms ("norms", numVecs);
-    norms.template modify<DMS> ();
-    X_gbl.normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
+    norms.template modify<device_type> ();
+    X_gbl.normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
 
     // Now change the values in X_lcl.  X_gbl should see them.  Be
     // sure to tell X_gbl that we want to modify its data on device.
-    X_gbl.template modify<DMS> ();
+    X_gbl.template modify<device_type> ();
     Kokkos::deep_copy (X_lcl, TWO);
 
     // Tpetra::MultiVector::normInf _should_ either read from the most
@@ -3515,9 +3468,9 @@ namespace {
     // before calling normInf.
 
     // Make sure that X_gbl saw the changes made to X_lcl's data.
-    norms.template modify<DMS> ();
-    X_gbl.normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    norms.template modify<device_type> ();
+    X_gbl.normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), TWO );
     }
@@ -3526,12 +3479,11 @@ namespace {
     // if we modify X_gbl in host memory, and sync to device memory,
     // X_lcl should also be changed.
 
-    typename dual_view_type::t_host X_host =
-      X_gbl.template getLocalView<HMS> ();
-    X_gbl.template modify<HMS> ();
+    auto X_host = X_gbl.template getLocalView<Kokkos::HostSpace> ();
+    X_gbl.template modify<Kokkos::HostSpace> ();
 
     Kokkos::deep_copy (X_host, THREE);
-    X_gbl.template sync<DMS> ();
+    X_gbl.template sync<device_type> ();
 
     // FIXME (mfh 01 Mar 2015) We avoid writing a separate functor to
     // check the contents of X_lcl, by copying to host and checking

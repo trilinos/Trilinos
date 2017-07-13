@@ -64,9 +64,11 @@ namespace panzer {
   template<typename EvalT>
   class ClosureModelFactory : public panzer::ClosureModelFactoryBase {
 
+  protected:
+    bool m_throw_if_model_not_found;
   public:
 
-    ClosureModelFactory() {}
+    ClosureModelFactory(bool throw_if_model_not_found=true) : m_throw_if_model_not_found(throw_if_model_not_found) {}
     
     virtual ~ClosureModelFactory() {}
     
@@ -92,6 +94,10 @@ namespace panzer {
     { 
       for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators.size(); ++i)
         this->template registerEvaluator<EvalT>(fm, evaluators[i]);
+    }
+
+    virtual void setThrowOnModelNotFound(bool do_throw) {
+      m_throw_if_model_not_found=do_throw;
     }
 
   };

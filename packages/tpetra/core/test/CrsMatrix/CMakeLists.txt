@@ -17,7 +17,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     CrsMatrix_UnitTests
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ${ARGS}
+  ARGS ""
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
@@ -92,15 +92,61 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_WithGraph
-  SOURCES
-    CrsMatrix_WithGraph
+# We split the CrsMatrix_WithGraph test by execution space.
+# This speeds up the build.
+
+ASSERT_DEFINED (Tpetra_INST_CUDA)
+IF (Tpetra_INST_CUDA)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_Cuda
+    SOURCES
+      CrsMatrix_WithGraph_Cuda
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ${ARGS}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_INST_OPENMP)
+IF (Tpetra_INST_OPENMP)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_OpenMP
+    SOURCES
+      CrsMatrix_WithGraph_OpenMP
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_INST_SERIAL)
+IF (Tpetra_INST_SERIAL)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_Serial
+    SOURCES
+      CrsMatrix_WithGraph_Serial
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_INST_PTHREAD)
+IF (Tpetra_INST_PTHREAD)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_Threads
+    SOURCES
+      CrsMatrix_WithGraph_Threads
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceDomainMapAndImporter
@@ -160,12 +206,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 # FIXME (mfh 26 Sep 2015) Many (if not all) of these tests should not
 # depend on GO = int; they should be able to use the default GO type.
-IF (Tpetra_INST_INT_INT)
+#IF (Tpetra_INST_INT_INT)
   # This test only makes sense for exactly 2 MPI processes.
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_Bug5978
     SOURCES
-    bug5978
+    Bug5978
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS
     COMM mpi
@@ -179,6 +225,7 @@ IF (Tpetra_INST_INT_INT)
     CrsMatrix_Bug6069_1
     SOURCES
     Bug6069_1
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS
     COMM mpi
     NUM_MPI_PROCS 3
@@ -191,6 +238,7 @@ IF (Tpetra_INST_INT_INT)
     CrsMatrix_Bug6069_2
     SOURCES
     Bug6069_2
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS
     COMM mpi
     NUM_MPI_PROCS 2
@@ -203,12 +251,13 @@ IF (Tpetra_INST_INT_INT)
     CrsMatrix_Bug6171
     SOURCES
     Bug6171
-    ARGS ""
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS
     COMM mpi
     NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
     )
-ENDIF()
+#ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceLocalValues
@@ -257,6 +306,39 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_PackUnpack
+  SOURCES
+    CrsMatrix_PackUnpack
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+    COMM mpi
+    NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_PackError
+  SOURCES
+    CrsMatrix_PackUnpack
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+    COMM mpi
+    NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  assembleElement
+  SOURCES
+    assembleElement
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 

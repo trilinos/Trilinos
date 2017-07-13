@@ -54,7 +54,6 @@
 #include <Zoltan2_Standards.hpp>
 
 #include <Xpetra_TpetraCrsMatrix.hpp>
-#include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <Tpetra_Vector.hpp>
 
@@ -144,11 +143,11 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
       size_t numLocalRows, const gno_t *myNewRows)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    lno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from.getRowMap();
     gno_t numGlobalRows = smap->getGlobalNumElements();
+    gno_t base = smap->getMinAllGlobalIndex();
 
     // target map
     ArrayView<const gno_t> rowList(myNewRows, numLocalRows);
@@ -167,37 +166,43 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
     // TODO:  what about rectangular matrices?  
     // TODO:  Should choice of domain/range maps be an option to this function?
 
+    // KDD 3/7/16:  disabling Chris' new code to avoid dashboard failures;
+    // KDD 3/7/16:  can re-enable when issue #114 is fixed.
+    // KDD 3/7/16:  when re-enable CSIEFERT code, can comment out
+    // KDD 3/7/16:  "Original way" code.
+    // KDD 1/27/17: Re-enabling Chris' code, as this issue is resolved.
     RCP<tmatrix_t> M;
     from.importAndFillComplete(M, importer, tmap, tmap);
 
-    // Original way we did it:
-    //
-    // int oldNumElts = smap->getNodeNumElements();
-    // int newNumElts = numLocalRows;
-    //
-    // // number of non zeros in my new rows
-    // typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
-    // vector_t numOld(smap);  // TODO These vectors should have scalar=size_t,
-    // vector_t numNew(tmap);  // but ETI does not yet support that.
-    // for (int lid=0; lid < oldNumElts; lid++){
-    //   numOld.replaceGlobalValue(smap->getGlobalElement(lid),
-    //     scalar_t(from.getNumEntriesInLocalRow(lid)));
-    // }
-    // numNew.doImport(numOld, importer, Tpetra::INSERT);
-    //
-    // // TODO Could skip this copy if could declare vector with scalar=size_t.
-    // ArrayRCP<size_t> nnz(newNumElts);
-    // if (newNumElts > 0){
-    //   ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
-    //   for (int lid=0; lid < newNumElts; lid++){
-    //     nnz[lid] = static_cast<size_t>(ptr[lid]);
-    //   }
-    // }
-    //
-    // RCP<tmatrix_t> M = rcp(new tmatrix_t(tmap, nnz, Tpetra::StaticProfile));
-    // M->doImport(from, importer, Tpetra::INSERT);
-    // M->fillComplete();
+    //// Original way we did it:
+    ////
+    //int oldNumElts = smap->getNodeNumElements();
+    //int newNumElts = numLocalRows;
+    
+    //// number of non zeros in my new rows
+    //typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
+    //vector_t numOld(smap);  // TODO These vectors should have scalar=size_t,
+    //vector_t numNew(tmap);  // but ETI does not yet support that.
+    //for (int lid=0; lid < oldNumElts; lid++){
+      //numOld.replaceGlobalValue(smap->getGlobalElement(lid),
+        //scalar_t(from.getNumEntriesInLocalRow(lid)));
+    //}
+    //numNew.doImport(numOld, importer, Tpetra::INSERT);
+   
+    // TODO Could skip this copy if could declare vector with scalar=size_t.
+    //ArrayRCP<size_t> nnz(newNumElts);
+    //if (newNumElts > 0){
+      //ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
+      //for (int lid=0; lid < newNumElts; lid++){
+        //nnz[lid] = static_cast<size_t>(ptr[lid]);
+      //}
+    //}
+    
+    //RCP<tmatrix_t> M = rcp(new tmatrix_t(tmap, nnz, Tpetra::StaticProfile));
+    //M->doImport(from, importer, Tpetra::INSERT);
+    //M->fillComplete();
 
+    // End of original way we did it.
     return M;
   }
 };
@@ -241,11 +246,10 @@ struct XpetraTraits<Epetra_CrsMatrix>
   static RCP<Epetra_CrsMatrix> doMigration(const Epetra_CrsMatrix &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    lno_t base = 0;
-
     // source map
     const Epetra_Map &smap = from.RowMap();
     gno_t numGlobalRows = smap.NumGlobalElements();
+    int base = smap.MinAllGID();
 
     // target map
     const Epetra_Comm &comm = from.Comm();
@@ -414,18 +418,17 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
       size_t numLocalRows, const gno_t *myNewRows)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    lno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from.getRowMap();
     int oldNumElts = smap->getNodeNumElements();
     gno_t numGlobalRows = smap->getGlobalNumElements();
+    gno_t base = smap->getMinAllGlobalIndex();
 
     // target map
     ArrayView<const gno_t> rowList(myNewRows, numLocalRows);
     const RCP<const Teuchos::Comm<int> > &comm = from.getComm();
-    RCP<const map_t> tmap = rcp(
-      new map_t(numGlobalRows, rowList, base, comm));
+    RCP<const map_t> tmap = rcp(new map_t(numGlobalRows, rowList, base, comm));
 
     // importer
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
@@ -505,17 +508,15 @@ struct XpetraTraits<Epetra_CrsGraph>
   static RCP<Epetra_CrsGraph> doMigration(const Epetra_CrsGraph &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    lno_t base = 0;
-
     // source map
     const Epetra_BlockMap &smap = from.RowMap();
     gno_t numGlobalRows = smap.NumGlobalElements();
     lno_t oldNumElts = smap.NumMyElements();
+    int base = smap.MinAllGID();
 
     // target map
     const Epetra_Comm &comm = from.Comm();
-    Epetra_BlockMap tmap(numGlobalRows, numLocalRows,
-       myNewRows, 1, base, comm);
+    Epetra_BlockMap tmap(numGlobalRows, numLocalRows, myNewRows, 1, base, comm);
     lno_t newNumElts = tmap.NumMyElements();
 
     // importer
@@ -585,46 +586,6 @@ struct XpetraTraits<Xpetra::CrsGraph<lno_t, gno_t, node_t> >
   }
 };
 
-
-
-//////////////////////////////////////////////////////////////////////////////
-// Xpetra::RowMatrix
-template <typename scalar_t,
-          typename lno_t,
-          typename gno_t,
-          typename node_t>
-struct XpetraTraits<Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> >
-{
-  typedef Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> x_matrix_t;
-  typedef Xpetra::TpetraRowMatrix<scalar_t, lno_t, gno_t, node_t> xt_matrix_t;
-  typedef Tpetra::RowMatrix<scalar_t,lno_t,gno_t,node_t> t_matrix_t;
-
-  static inline RCP<x_matrix_t> convertToXpetra(const RCP<x_matrix_t > &a)
-  {
-    return a;
-  }
-
-  static RCP<x_matrix_t> doMigration(const x_matrix_t &from,
-      size_t numLocalRows, const gno_t *myNewRows)
-  {
-    Xpetra::UnderlyingLib lib = from.getRowMap()->lib();
-
-    if (lib == Xpetra::UseEpetra){
-       throw std::logic_error("compiler should have used specialization");
-    } else{
-      // Do the import with the Tpetra::CrsMatrix traits object
-      const xt_matrix_t *xtm = dynamic_cast<const xt_matrix_t *>(&from);
-      RCP<const t_matrix_t> tm = xtm->getTpetra_CrsMatrix();
-
-      RCP<t_matrix_t> tmnew = XpetraTraits<t_matrix_t>::doMigration(
-        *tm, numLocalRows, myNewRows);
-
-      RCP<x_matrix_t> xmnew = XpetraTraits<t_matrix_t>::convertToXpetra(tmnew);
-
-      return xmnew;
-    }
-  }
-};
 
 //////////////////////////////////////////////////////////////////////////////
 // Xpetra::CrsGraph specialization
@@ -700,18 +661,17 @@ struct XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
   static RCP<t_vector_t> doMigration(const t_vector_t &from,
       size_t numLocalElts, const gno_t *myNewElts)
   {
-    lno_t base = 0;
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
 
     // source map
     const RCP<const map_t> &smap = from.getMap();
     gno_t numGlobalElts = smap->getGlobalNumElements();
+    gno_t base = smap->getMinAllGlobalIndex();
 
     // target map
     ArrayView<const gno_t> eltList(myNewElts, numLocalElts);
     const RCP<const Teuchos::Comm<int> > comm = from.getMap()->getComm();
-    RCP<const map_t> tmap = rcp(
-      new map_t(numGlobalElts, eltList, base, comm));
+    RCP<const map_t> tmap = rcp(new map_t(numGlobalElts, eltList, base, comm));
 
     // importer
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
@@ -764,15 +724,15 @@ struct XpetraTraits<Epetra_Vector>
   static RCP<Epetra_Vector> doMigration(const Epetra_Vector &from,
       size_t numLocalElts, const gno_t *myNewElts)
   {
-    lno_t base = 0;
     // source map
     const Epetra_BlockMap &smap = from.Map();
     gno_t numGlobalElts = smap.NumGlobalElements();
+    int base = smap.MinAllGID();
 
     // target map
     const Epetra_Comm &comm = from.Comm();
     const Epetra_BlockMap tmap(numGlobalElts, numLocalElts, myNewElts,
-      1, base, comm);
+                               1, base, comm);
 
     // importer
     Epetra_Import importer(tmap, smap);
@@ -902,17 +862,16 @@ struct XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
       size_t numLocalElts, const gno_t *myNewElts)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    lno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from.getMap();
     gno_t numGlobalElts = smap->getGlobalNumElements();
+    gno_t base = smap->getMinAllGlobalIndex();
 
     // target map
     ArrayView<const gno_t> eltList(myNewElts, numLocalElts);
     const RCP<const Teuchos::Comm<int> > comm = from.getMap()->getComm();
-    RCP<const map_t> tmap = rcp(
-      new map_t(numGlobalElts, eltList, base, comm));
+    RCP<const map_t> tmap = rcp(new map_t(numGlobalElts, eltList, base, comm));
 
     // importer
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
@@ -965,15 +924,15 @@ struct XpetraTraits<Epetra_MultiVector>
   static RCP<Epetra_MultiVector> doMigration(const Epetra_MultiVector &from,
     size_t numLocalElts, const gno_t *myNewElts)
   {
-    lno_t base = 0;
     // source map
     const Epetra_BlockMap &smap = from.Map();
     gno_t numGlobalElts = smap.NumGlobalElements();
+    int base = smap.MinAllGID();
 
     // target map
     const Epetra_Comm &comm = from.Comm();
     const Epetra_BlockMap tmap(numGlobalElts, numLocalElts, myNewElts,
-      1, base, comm);
+                               1, base, comm);
 
     // importer
     Epetra_Import importer(tmap, smap);

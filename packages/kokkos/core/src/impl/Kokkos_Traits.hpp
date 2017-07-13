@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -44,9 +44,10 @@
 #ifndef KOKKOSTRAITS_HPP
 #define KOKKOSTRAITS_HPP
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include <Kokkos_Macros.hpp>
+#include <string>
 #include <type_traits>
 
 namespace Kokkos {
@@ -92,7 +93,7 @@ public:
 template< typename DefaultType
         , template< typename > class Condition
         , typename ... Pack >
-struct has_condition 
+struct has_condition
 {
   enum { value = false };
   typedef DefaultType type ;
@@ -128,7 +129,13 @@ struct are_integral { enum { value = true }; };
 
 template< typename T , class ... Args >
 struct are_integral<T,Args...> {
-  enum { value = std::is_integral<T>::value && are_integral<Args...>::value };
+  enum { value =
+    // Accept std::is_integral OR std::is_enum as an integral value
+    // since a simple enum value is automically convertable to an
+    // integral value.
+    ( std::is_integral<T>::value || std::is_enum<T>::value )
+    &&
+    are_integral<Args...>::value };
 };
 
 //----------------------------------------------------------------------------
@@ -348,11 +355,33 @@ struct is_integral : public integral_constant< bool ,
     std::is_same< T , uint8_t  >::value ||
     std::is_same< T , uint16_t >::value ||
     std::is_same< T , uint32_t >::value ||
-    std::is_same< T , uint64_t >::value 
+    std::is_same< T , uint64_t >::value
   )>
 {};
-
 //----------------------------------------------------------------------------
+
+template<typename T>
+struct is_label : public false_type {};
+
+template<>
+struct is_label<const char*> : public true_type {};
+
+template<>
+struct is_label<char*> : public true_type {};
+
+
+template<int N>
+struct is_label<const char[N]> : public true_type {};
+
+template<int N>
+struct is_label<char[N]> : public true_type {};
+
+
+template<>
+struct is_label<const std::string> : public true_type {};
+
+template<>
+struct is_label<std::string> : public true_type {};
 
 // These 'constexpr'functions can be used as
 // both regular functions and meta-function.
@@ -411,7 +440,7 @@ unsigned power_of_two_if_valid( const unsigned N )
 {
   unsigned p = ~0u ;
   if ( N && ! ( N & ( N - 1 ) ) ) {
-#if defined( __CUDA_ARCH__ ) && defined( KOKKOS_HAVE_CUDA )
+#if defined( __CUDA_ARCH__ ) && defined( KOKKOS_ENABLE_CUDA )
     p = __ffs(N) - 1 ;
 #elif defined( __GNUC__ ) || defined( __GNUG__ )
     p = __builtin_ffs(N) - 1 ;

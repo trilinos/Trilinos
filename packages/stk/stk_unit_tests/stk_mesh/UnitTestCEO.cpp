@@ -37,7 +37,7 @@
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <string>                       // for string
-#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
 #include "UnitTestCEOCommonUtils.hpp"
@@ -70,7 +70,6 @@ using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::BaseEntityRank;
 using stk::mesh::PairIterRelation;
 using stk::mesh::EntityProc;
 using stk::mesh::Entity;
@@ -98,7 +97,7 @@ TEST(CEO, change_entity_owner_2Elem2ProcMove)
 
     const int spatial_dimension = 2;
     stk::mesh::MetaData meta(spatial_dimension);
-    stk::mesh::unit_test::BulkDataTester bulk(meta, pm);
+    stk::unit_test_util::BulkDataTester bulk(meta, pm);
 
     stk::mesh::EntityVector elems;
     CEOUtils::fillMeshfor2Elem2ProcMoveAndTest(bulk, meta, elems);
@@ -184,7 +183,7 @@ void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::A
         if (prank==2)
         {
             stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
-            stk::mesh::Entity constraint = stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, 1);
+            stk::mesh::Entity constraint = stkMeshBulkData.declare_constraint(1);
             stkMeshBulkData.declare_relation(constraint,node1,0);
         }
         stk::mesh::fixup_ghosted_to_shared_nodes(stkMeshBulkData);

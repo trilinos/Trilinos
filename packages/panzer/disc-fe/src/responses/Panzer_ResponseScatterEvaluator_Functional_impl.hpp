@@ -55,7 +55,10 @@
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
 
+#include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_ProductVectorBase.hpp"
+
 #include "Teuchos_ArrayRCP.hpp"
 
 namespace panzer {
@@ -140,7 +143,7 @@ template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_Functional<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  for(std::size_t i=0;i<d.num_cells;i++) {
+  for(index_t i=0;i<d.num_cells;i++) {
     responseObj_->value += cellIntegral_(i);
   }
 }
@@ -152,17 +155,59 @@ evaluateFields(panzer::Traits::EvalData d)
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   using Thyra::SpmdVectorBase;
+  using Thyra::ProductVectorBase;
 
   TEUCHOS_ASSERT(scatterObj_!=Teuchos::null);
+  TEUCHOS_ASSERT(responseObj_->getGhostedVector()!=Teuchos::null);
 
-  // grab local data for inputing
-  Teuchos::ArrayRCP<double> local_dgdx;
-  RCP<SpmdVectorBase<double> > dgdx = rcp_dynamic_cast<SpmdVectorBase<double> >(responseObj_->getGhostedVector());
-  dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
-  TEUCHOS_ASSERT(!local_dgdx.is_null());
+  RCP<ProductVectorBase<double> > prod_dgdx = Thyra::castOrCreateNonconstProductVectorBase(responseObj_->getGhostedVector());
 
-  scatterObj_->scatterDerivative(cellIntegral_,d,this->wda,local_dgdx);
+  std::vector<Teuchos::ArrayRCP<double> > local_dgdxs;
+  for(int b=0;b<prod_dgdx->productSpace()->numBlocks();b++) {
+    // grab local data for inputing
+    Teuchos::ArrayRCP<double> local_dgdx;
+    RCP<SpmdVectorBase<double> > dgdx = rcp_dynamic_cast<SpmdVectorBase<double> >(prod_dgdx->getNonconstVectorBlock(b));
+    dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
+
+    TEUCHOS_ASSERT(!local_dgdx.is_null());
+
+    local_dgdxs.push_back(local_dgdx);
+  }
+
+  scatterObj_->scatterDerivative(cellIntegral_,d,this->wda,local_dgdxs);
 }
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+template < >
+void ResponseScatterEvaluator_Functional<panzer::Traits::Hessian,panzer::Traits>::
+evaluateFields(panzer::Traits::EvalData d)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Thyra::SpmdVectorBase;
+  using Thyra::ProductVectorBase;
+
+  TEUCHOS_ASSERT(scatterObj_!=Teuchos::null);
+  TEUCHOS_ASSERT(responseObj_->getGhostedVector()!=Teuchos::null);
+
+  RCP<ProductVectorBase<double> > prod_dgdx = Thyra::castOrCreateNonconstProductVectorBase(responseObj_->getGhostedVector());
+
+  std::vector<Teuchos::ArrayRCP<double> > local_dgdxs;
+  for(int b=0;b<prod_dgdx->productSpace()->numBlocks();b++) {
+    // grab local data for inputing
+    Teuchos::ArrayRCP<double> local_dgdx;
+    RCP<SpmdVectorBase<double> > dgdx = rcp_dynamic_cast<SpmdVectorBase<double> >(prod_dgdx->getNonconstVectorBlock(b));
+    dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
+
+    TEUCHOS_ASSERT(!local_dgdx.is_null());
+
+    local_dgdxs.push_back(local_dgdx);
+  }
+
+  // TEUCHOS_ASSERT(false);
+  scatterObj_->scatterHessian(cellIntegral_,d,this->wda,local_dgdxs);
+}
+#endif
 
 }
 

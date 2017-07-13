@@ -65,16 +65,16 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 using Teuchos::rcp_dynamic_cast;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -82,18 +82,18 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk_classic::ParallelM
    pl.set<int>("X Blocks",xblocks);
    pl.set<int>("Y Blocks",yblocks);
 
-   panzer_stk_classic::SquareQuadMeshFactory meshFact;
+   panzer_stk::SquareQuadMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
-   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+   Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
+   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 }
 
 template <typename Intrepid2Type>
 RCP<const panzer::Intrepid2FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::Intrepid2FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -104,23 +104,23 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::FieldPattern> patternI1 
-         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::FieldPattern> patternDIV
-         = buildFieldPattern<Intrepid2::Basis_HDIV_QUAD_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HDIV_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
@@ -146,9 +146,12 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
    TEST_EQUALITY(b_offsets.size(),4);
    TEST_EQUALITY(e_offsets.size(),4);
 
-   for(std::size_t i=0;i<4;i++) out << u_offsets[i] << " "; out << std::endl;
-   for(std::size_t i=0;i<4;i++) out << b_offsets[i] << " "; out << std::endl;
-   for(std::size_t i=0;i<4;i++) out << e_offsets[i] << " "; out << std::endl;
+   for (std::size_t i = 0; i < 4; ++i)
+      out << u_offsets[i] << " " << std::endl;
+   for (std::size_t i = 0; i < 4; ++i)
+      out << b_offsets[i] << " " << std::endl;
+   for (std::size_t i = 0; i < 4; ++i)
+      out << e_offsets[i] << " " << std::endl;
 
    // unfortunatly this mesh is completly uniform
    double standardO[] = { 1.0, 1.0, -1.0, -1.0 };
@@ -248,19 +251,19 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations2)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternI1 
-         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
@@ -322,18 +325,18 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations_fail
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternI1 
-         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());

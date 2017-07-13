@@ -61,7 +61,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(papi, NestedPAPICounter)
   {
-    PHX::KokkosDeviceSession session;
     
     int rank;
     MPI_Comm comm = MPI_COMM_WORLD;

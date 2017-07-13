@@ -60,6 +60,7 @@ namespace Rythmos {
 
   inline const std::string ExplicitTrapezoidal_name() { return  "Explicit Trapezoidal"; } // done
   inline const std::string Explicit2Stage2ndOrderRunge_name() { return  "Explicit 2 Stage 2nd order by Runge"; } // done
+  inline const std::string Explicit2Stage2ndOrderTVD_name() { return  "Explicit 2 Stage 2nd order TVD"; } // done
   inline const std::string Explicit3Stage3rdOrderHeun_name() { return  "Explicit 3 Stage 3rd order by Heun"; } // done
   inline const std::string Explicit3Stage3rdOrder_name() { return  "Explicit 3 Stage 3rd order"; } // done
   inline const std::string Explicit3Stage3rdOrderTVD_name() { return  "Explicit 3 Stage 3rd order TVD"; } // done
@@ -117,9 +118,13 @@ class RKButcherTableauDefaultBase :
     /** \brief . */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& b() const { return b_; }
     /** \brief . */
+    virtual const Teuchos::SerialDenseVector<int,Scalar>& bhat() const { return bhat_ ; }
+    /** \brief . */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& c() const { return c_; }
     /** \brief . */
     virtual int order() const { return order_; }
+    /** \brief . */
+    virtual bool isEmbeddedMethod() const { return isEmbedded_; }  // returns whether the stepper is Embedded or not (Sidafa)
     /** \brief . */
     virtual void setDescription(std::string longDescription) { longDescription_ = longDescription; }
 
@@ -129,7 +134,9 @@ class RKButcherTableauDefaultBase :
         const Teuchos::SerialDenseVector<int,Scalar>& b_in,
         const Teuchos::SerialDenseVector<int,Scalar>& c_in,
         const int order_in,
-        const std::string& longDescription_in
+        const std::string& longDescription_in,
+        bool isEmbedded = false, /* (default) tell the stepper the RK is an embedded method  */
+        const Teuchos::SerialDenseVector<int,Scalar>& bhat_in =  Teuchos::SerialDenseVector<int,Scalar>() /* (default) */
         )
     {
       const int numStages_in = A_in.numRows();
@@ -143,6 +150,13 @@ class RKButcherTableauDefaultBase :
       c_ = c_in;
       order_ = order_in;
       longDescription_ = longDescription_in;
+
+      /* Sidafa */
+      if (isEmbedded) {
+        TEUCHOS_ASSERT_EQUALITY( bhat_in.length(), numStages_in );
+        bhat_ = bhat_in;
+        isEmbedded_ = true;
+      }
     }
 
     /* \brief Redefined from Teuchos::ParameterListAcceptorDefaultBase */
@@ -214,6 +228,10 @@ class RKButcherTableauDefaultBase :
     int order_;
     std::string longDescription_;
     mutable RCP<ParameterList> validPL_;
+
+    /* Sidafa - Embedded method parameters */
+    Teuchos::SerialDenseVector<int,Scalar> bhat_; 
+    bool isEmbedded_ = false;
 };
 
 
@@ -546,7 +564,6 @@ class Explicit5Stage3rdOrderKandG_RKBT :
       Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
       Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
 
-      Scalar one = ST::one();
       Scalar onefifth = ST::one()/(5*ST::one());
       Scalar onefourth = ST::one()/(4*ST::one());
       Scalar onethird = ST::one()/(3*ST::one());
@@ -667,6 +684,60 @@ class Explicit3Stage3rdOrder_RKBT :
     }
 };
 
+template<class Scalar>
+class Explicit2Stage2ndOrderTVD_RKBT :
+  virtual public RKButcherTableauDefaultBase<Scalar>
+{
+  public:
+    Explicit2Stage2ndOrderTVD_RKBT()
+    {
+
+      std::ostringstream myDescription;
+      myDescription << Explicit2Stage2ndOrderTVD_name() << "\n"
+                    << "Sigal Gottlieb, David Ketcheson and Chi-Wang Shu\n"
+                    << "`Strong Stability Preserving Runge-Kutta and Multistep Time Discretizations'\n"
+                    << "World Scientific, 2011\n"
+                    << "pp. 15\n"
+                    << "c = [  0   1 ]'\n"
+                    << "A = [  0     ]\n"
+                    << "    [  1   0 ]\n"
+                    << "b = [ 1/2 1/2]'\n"
+                    << "This is also written in the following set of updates.\n"
+                    << "u1 = u^n + dt L(u^n)\n"
+                    << "u^(n+1) = u^n/2 + u1/2 + dt L(u1)/2"
+                    << std::endl;
+      typedef ScalarTraits<Scalar> ST;
+      Scalar one = ST::one();
+      Scalar zero = ST::zero();
+      Scalar onehalf = ST::one()/(2*ST::one());
+
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
+
+      // Fill myA:
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+
+      myA(1,0) = one;
+      myA(1,1) = zero;
+
+      // Fill myb:
+      myb(0) = onehalf;
+      myb(1) = onehalf;
+
+      // fill b_c_
+      myc(0) = zero;
+      myc(1) = one;
+
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
+      this->setMy_order(2);
+    }
+};
 
 template<class Scalar>
 class Explicit3Stage3rdOrderTVD_RKBT :

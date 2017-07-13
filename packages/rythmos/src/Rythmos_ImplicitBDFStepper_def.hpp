@@ -1133,9 +1133,9 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
 {
 
   using Teuchos::as;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
 
 #ifdef HAVE_RYTHMOS_DEBUG
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   TEUCHOS_TEST_FOR_EXCEPT(ST::isnaninf(hh_));
 #endif
 

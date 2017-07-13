@@ -46,7 +46,6 @@ C
 C     ******************************************************************
 C
       CHARACTER*2048 filnam, option, errmsg
-      character*1   cdum
 C
       include 'exodusII.inc'
       include 'ex2tp.blk'
@@ -159,8 +158,8 @@ C
      &' ntp3ex = ',i5)
 
 C ... Find the largest name size...
-      call exinq(ntp2ex, EXDBMXUSNM, namlen2, rdum, cdum, ierr)
-      call exinq(ntp3ex, EXDBMXUSNM, namlen3, rdum, cdum, ierr)
+      namlen2 = exinqi(ntp2ex, EXDBMXUSNM)
+      namlen3 = exinqi(ntp3ex, EXDBMXUSNM)
 
       namlen = max(namlen2, namlen3)
 

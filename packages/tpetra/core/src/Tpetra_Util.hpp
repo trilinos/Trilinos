@@ -49,30 +49,14 @@
   Tpetra_Util contains utility functions macros that are used
   throughout Tpetra, by many classes and functions. They are placed
   here so that they can be updated and maintained in a single spot.
-
-  Here are some of the utility functions found in this file:
-  <ul>
-  <li>An efficientAddOrUpdate for inserting data into an std::map.
-
-  <li>Functions for converting Ordinals to Scalars and for converting
-  Scalars to Ordinals.
-
-  <li>A templated toString function, which is mainly used to easily
-  output the contents of STL containers.
-
-  <li>A multiple-array sort function, similar to the one found in
-  Epetra_Util.
-
-  <li>Macros for reporting efficiency warnings and synchronizing
-  tests for exceptions over a given communicator.
-  </ul>
 */
 
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream
-#include <iterator>
+#include "Kokkos_DualView.hpp"
+#include "Teuchos_Utils.hpp"
+#include "Teuchos_Assert.hpp"
 #include <algorithm>
-#include <Teuchos_Utils.hpp>
-#include <Teuchos_Assert.hpp>
+#include <iterator>
 #include <sstream>
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
@@ -281,7 +265,7 @@ namespace Tpetra {
   template<class IT1>
   bool isAlreadySorted(const IT1& first, const IT1& last){
     typedef typename std::iterator_traits<IT1>::difference_type DT;
-    DT myit =OrdinalTraits<DT>::one();
+    DT myit = Teuchos::OrdinalTraits<DT>::one();
     const DT sz  = last - first;
     for(;myit < sz; ++myit){
       if(first[myit] < first[myit-1]){
@@ -409,7 +393,7 @@ namespace Tpetra {
     const IT2& last2)
   {
     typedef typename std::iterator_traits<IT1>::difference_type DT;
-    DT DT1 = OrdinalTraits<DT>::one();
+    DT DT1 = Teuchos::OrdinalTraits<DT>::one();
     if(last1-first1 > DT1){
       IT1 pivot = getPivot(first1, last1);
       pivot = partition2(first1, last1, first2, last2, pivot);
@@ -440,7 +424,7 @@ namespace Tpetra {
     const IT3& last3)
   {
     typedef typename std::iterator_traits<IT1>::difference_type DT;
-    DT DT1 = OrdinalTraits<DT>::one();
+    DT DT1 = Teuchos::OrdinalTraits<DT>::one();
     if(last1-first1 > DT1){
       IT1 pivot = getPivot(first1, last1);
       pivot = partition3(first1, last1, first2, last2, first3, last3, pivot);
@@ -467,7 +451,7 @@ namespace Tpetra {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
         DT m = n / 2;
-        DT z = OrdinalTraits<DT>::zero();
+        DT z = Teuchos::OrdinalTraits<DT>::zero();
         while (m > z)
         {
             DT max = n - m;
@@ -502,7 +486,7 @@ namespace Tpetra {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
         DT m = n / 2;
-        DT z = OrdinalTraits<DT>::zero();
+        DT z = Teuchos::OrdinalTraits<DT>::zero();
         while (m > z)
         {
             DT max = n - m;
@@ -876,8 +860,75 @@ namespace Tpetra {
     bool
     congruent (const Teuchos::Comm<int>& comm1,
                const Teuchos::Comm<int>& comm2);
-  } // namespace Details
 
+    /// \brief Get a Teuchos::ArrayView which views the host
+    ///   Kokkos::View of the input 1-D Kokkos::DualView.
+    ///
+    /// \pre The input DualView must be sync'd to host.
+    ///
+    /// \param x [in] A specialization of Kokkos::DualView.
+    ///
+    /// \return Teuchos::ArrayView that views the host version of the
+    ///   DualView's data.
+    template<class DualViewType>
+    Teuchos::ArrayView<typename DualViewType::t_dev::value_type>
+    getArrayViewFromDualView (const DualViewType& x)
+    {
+      static_assert (static_cast<int> (DualViewType::t_dev::rank) == 1,
+                     "The input DualView must have rank 1.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (x.template need_sync<Kokkos::HostSpace> (), std::logic_error, "The "
+         "input Kokkos::DualView was most recently modified on device, but this "
+         "function needs the host view of the data to be the most recently "
+         "modified.");
+
+      auto x_host = x.template view<Kokkos::HostSpace> ();
+      typedef typename DualViewType::t_dev::value_type value_type;
+      return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
+                                             x_host.dimension_0 ());
+    }
+
+    /// \brief Get a 1-D Kokkos::DualView which is a deep copy of the
+    ///   input Teuchos::ArrayView (which views host memory).
+    ///
+    /// \tparam T The type of the entries of the input Teuchos::ArrayView.
+    /// \tparam DT The Kokkos Device type.
+    ///
+    /// \param x_av [in] The Teuchos::ArrayView to copy.
+    /// \param label [in] String label for the Kokkos::DualView.
+    /// \param leaveOnHost [in] If true, the host version of the
+    ///   returned Kokkos::DualView is most recently updated (and the
+    ///   DualView may need a sync to device).  If false, the device
+    ///   version is most recently updated (and the DualView may need
+    ///   a sync to host).
+    ///
+    /// \return Kokkos::DualView that is a deep copy of the input
+    ///   Teuchos::ArrayView.
+    template<class T, class DT>
+    Kokkos::DualView<T*, DT>
+    getDualViewCopyFromArrayView (const Teuchos::ArrayView<const T>& x_av,
+                                  const char label[],
+                                  const bool leaveOnHost)
+    {
+      using Kokkos::MemoryUnmanaged;
+      typedef typename DT::memory_space DMS;
+      typedef Kokkos::HostSpace HMS;
+
+      const size_t len = static_cast<size_t> (x_av.size ());
+      Kokkos::View<const T*, HMS, MemoryUnmanaged> x_in (x_av.getRawPtr (), len);
+      Kokkos::DualView<T*, DT> x_out (label, len);
+      if (leaveOnHost) {
+        x_out.template modify<HMS> ();
+        Kokkos::deep_copy (x_out.template view<HMS> (), x_in);
+      }
+      else {
+        x_out.template modify<DMS> ();
+        Kokkos::deep_copy (x_out.template view<DMS> (), x_in);
+      }
+      return x_out;
+    }
+
+  } // namespace Details
 } // namespace Tpetra
 
 #endif // TPETRA_UTIL_HPP

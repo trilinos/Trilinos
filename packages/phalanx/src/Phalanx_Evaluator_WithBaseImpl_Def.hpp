@@ -48,8 +48,38 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 #include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
+
+namespace PHX {
+
+  //! Functor to bind unmanaged memory to a field.
+  template <typename FieldType>
+  class MemoryBinder {
+    FieldType* ptr_;
+  public:
+    //MemoryBinder() : ptr_(nullptr) {}
+    MemoryBinder(FieldType* f) : ptr_(f) {}
+    MemoryBinder(const MemoryBinder& ) = default;
+    MemoryBinder& operator=(const MemoryBinder& ) = default;
+    MemoryBinder(MemoryBinder&& ) = default;
+    MemoryBinder& operator=(MemoryBinder&& ) = default;
+    void operator()(const PHX::any& f) { ptr_->setFieldData(f); }
+  };
+
+  //! Dummy functor to satisfy binding to dummy field tags.
+  class DummyMemoryBinder {
+  public:
+    DummyMemoryBinder() {}
+    DummyMemoryBinder(const DummyMemoryBinder& ) = default;
+    DummyMemoryBinder& operator=(const DummyMemoryBinder& ) = default;
+    DummyMemoryBinder(DummyMemoryBinder&& ) = default;
+    DummyMemoryBinder& operator=(DummyMemoryBinder&& ) = default;
+    void operator()(const PHX::any& f) { /* DO NOTHING! */ }
+  };
+
+} // namespace PHX
 
 //**********************************************************************
 template<typename Traits>
@@ -80,15 +110,8 @@ addEvaluatedField(const PHX::FieldTag& ft)
   
   if ( test == evaluated_.end() )
     evaluated_.push_back(ft.clone());
-}
 
-//**********************************************************************
-template<typename Traits>
-template<typename DataT>
-void PHX::EvaluatorWithBaseImpl<Traits>::
-addEvaluatedField(const PHX::Field<DataT>& f)
-{ 
-  this->addEvaluatedField(f.fieldTag());
+  this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
 }
 
 //**********************************************************************
@@ -101,6 +124,41 @@ addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
 		  Tag4,Tag5,Tag6,Tag7>& f)
 { 
   this->addEvaluatedField(f.fieldTag());
+
+  using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+}
+
+//**********************************************************************
+template<typename Traits>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+addContributedField(const PHX::FieldTag& ft)
+{ 
+  PHX::FTPredRef pred(ft);
+  std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
+    std::find_if(contributed_.begin(), contributed_.end(), pred);
+  
+  if ( test == contributed_.end() )
+    contributed_.push_back(ft.clone());
+
+  this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
+}
+
+//**********************************************************************
+template<typename Traits>
+template<typename DataT,
+	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+addContributedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
+                    Tag4,Tag5,Tag6,Tag7>& f)
+{ 
+  this->addContributedField(f.fieldTag());
+
+  using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -114,25 +172,8 @@ addDependentField(const PHX::FieldTag& ft)
   
   if ( test == required_.end() )
     required_.push_back(ft.clone());
-}
 
-//**********************************************************************
-// DEPRECATED!!!!
-template<typename Traits>
-template<typename DataT>
-void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::Field<DataT>& v)
-{
-  this->addDependentField(v.fieldTag());
-}
-
-//**********************************************************************
-template<typename Traits>
-template<typename DataT>
-void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::Field<const DataT>& v)
-{
-  this->addDependentField(v.fieldTag());
+  this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
 }
 
 //**********************************************************************
@@ -146,6 +187,10 @@ addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
 		  Tag4,Tag5,Tag6,Tag7>& f)
 {
   this->addDependentField(f.fieldTag());
+
+  using NCF = PHX::MDField<typename std::remove_const<DataT>::type,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -158,6 +203,10 @@ addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
 		  Tag4,Tag5,Tag6,Tag7>& f)
 {
   this->addDependentField(f.fieldTag());
+
+  using NCF = PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  this->field_binders_.emplace(f.fieldTag().identifier(),
+                               PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
@@ -168,9 +217,22 @@ setName(const std::string& name)
 
 //**********************************************************************
 template<typename Traits>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+postRegistrationSetup(typename Traits::SetupData d,
+                      PHX::FieldManager<Traits>& vm)
+{}
+
+//**********************************************************************
+template<typename Traits>
 const std::vector< Teuchos::RCP<PHX::FieldTag> >&
 PHX::EvaluatorWithBaseImpl<Traits>::evaluatedFields() const
 { return evaluated_; }
+
+//**********************************************************************
+template<typename Traits>
+const std::vector< Teuchos::RCP<PHX::FieldTag> >&
+PHX::EvaluatorWithBaseImpl<Traits>::contributedFields() const
+{ return contributed_; }
 
 //**********************************************************************
 template<typename Traits>
@@ -181,14 +243,26 @@ PHX::EvaluatorWithBaseImpl<Traits>::dependentFields() const
 //**********************************************************************
 #ifdef PHX_ENABLE_KOKKOS_AMT
 template<typename Traits>
-Kokkos::Experimental::Future<void,PHX::Device::execution_space>
+Kokkos::Future<void,PHX::exec_space>
 PHX::EvaluatorWithBaseImpl<Traits>::
-createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& ,
-	   const std::size_t& ,
+createTask(Kokkos::TaskScheduler<PHX::exec_space>& ,
+	   const int& ,
+           const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
 	   typename Traits::EvalData )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
 			     "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createTask() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the createTask() method in this Evalautor.");
+}
+#endif
+//**********************************************************************
+#ifdef PHX_ENABLE_KOKKOS_AMT
+template<typename Traits>
+unsigned 
+PHX::EvaluatorWithBaseImpl<Traits>::
+taskSize() const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+			     "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for taskSize() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the taskSize() method in this Evalautor.");
 }
 #endif
 
@@ -209,6 +283,16 @@ template<typename Traits>
 const std::string& PHX::EvaluatorWithBaseImpl<Traits>::
 getName() const
 {return name_;}
+
+//**********************************************************************
+template<typename Traits>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+bindField(const PHX::FieldTag& ft, const PHX::any& f)
+{
+  const auto& range = field_binders_.equal_range(ft.identifier());
+  for (auto it = range.first; it != range.second; ++it)
+    (it->second)(f);
+}
 
 //**********************************************************************
 

@@ -71,8 +71,8 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 
 // MueLu
@@ -100,6 +100,7 @@
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RepartitionInterface.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
@@ -265,14 +266,14 @@ int main(int argc, char *argv[]) {
     //dropFact->SetPreDropFunction(predrop);
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     CoupledAggFact->SetFactory("Graph", dropFact);
-    *out << "========================= Aggregate option summary  =========================" << std::endl;
-    *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
+    *out << "========================= Aggregate option summary =========================" << std::endl;
+    *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
     *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
     CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
     CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
     std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
     if (aggOrdering == "natural" || aggOrdering == "random" || aggOrdering == "graph") {
-      *out << "aggregate ordering :                    " << aggOrdering << std::endl;
+      *out << "aggregate ordering :                    " << aggOrdering << std::endl;
       CoupledAggFact->SetOrdering(aggOrdering);
     } else {
       std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
@@ -339,25 +340,32 @@ int main(int argc, char *argv[]) {
       RCP<AmalgamationFactory> rebAmalgFact = rcp(new AmalgamationFactory());
       rebAmalgFact->SetFactory("A", Acfact);
 
+      // Repartitioning (decides how many partitions are built)
+      RCP<Factory> RepartitionHeuristicFact = rcp(new RepartitionHeuristicFactory());
+      {
+        Teuchos::ParameterList paramList;
+        paramList.set("repartition: min rows per proc", optMinRowsPerProc);
+        paramList.set("repartition: max imbalance", optNnzImbalance);
+        RepartitionHeuristicFact->SetParameterList(paramList);
+      }
+      RepartitionHeuristicFact->SetFactory("A", Acfact);
+
       // create amalgamated "Partition"
       RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
       isoInterface->SetFactory("A", Acfact);
+      isoInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
       isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
 
       // create "Partition" by unamalgamtion
       RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
       repInterface->SetFactory("A", Acfact);
+      repInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
       repInterface->SetFactory("AmalgamatedPartition", isoInterface);
 
       // Repartitioning (creates "Importer" from "Partition")
       RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
-      {
-        Teuchos::ParameterList paramList;
-        paramList.set("repartition: min rows per proc", optMinRowsPerProc);
-        paramList.set("repartition: max imbalance", optNnzImbalance);
-        RepartitionFact->SetParameterList(paramList);
-      }
       RepartitionFact->SetFactory("A", Acfact);
+      RepartitionFact->SetFactory("number of partitions", RepartitionHeuristicFact);
       RepartitionFact->SetFactory("Partition", repInterface);
 
       // Reordering of the transfer operators
@@ -424,7 +432,6 @@ int main(int argc, char *argv[]) {
 
     }
 
-    // TODO: don't forget to add Aztec as prerequisite in CMakeLists.txt!
     //
     // Solve Ax = b using AMG as a preconditioner in AztecOO
     //
@@ -436,6 +443,13 @@ int main(int argc, char *argv[]) {
       AztecOO aztecSolver(epetraProblem);
       aztecSolver.SetAztecOption(AZ_solver, AZ_gmres);
 
+#if 0
+      // TODO TAW: 4/8/2016
+      // temporarely deactivate this due to runtime error on perseus:
+      // Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed
+      // if SERIAL=OFF, OPENMP=OFF, PTHREAD=ON, CUDA=OFF
+      // probably a fix necessary in EpetraOperator (which only supports
+      // SERIAL or OPENMP, but not PTHREAD of course).
       MueLu::EpetraOperator aztecPrec(H);
       aztecSolver.SetPrecOperator(&aztecPrec);
 
@@ -443,6 +457,7 @@ int main(int argc, char *argv[]) {
       double tol = 1e-8;
 
       aztecSolver.Iterate(maxIts, tol);
+#endif
     }
 
     success = true;

@@ -66,6 +66,20 @@
 
 
 namespace EpetraExt {
+
+//=========================================================================
+// ETI
+template<int> int import_only(const Epetra_CrsMatrix& M,
+					 const Epetra_Map& targetMap,
+					 CrsMatrixStruct& Mview,
+					 const Epetra_Import * prototypeImporter);
+
+template<long long> int import_only(const Epetra_CrsMatrix& M,
+					 const Epetra_Map& targetMap,
+					 CrsMatrixStruct& Mview,
+					 const Epetra_Import * prototypeImporter);
+
+
 //=========================================================================
 //
 //Method for internal use... sparsedot forms a dot-product between two
@@ -104,7 +118,8 @@ double sparsedot(double* u, int_type* u_ind, int u_len,
 template<typename int_type>
 int mult_A_Btrans(CrsMatrixStruct& Aview,
                   CrsMatrixStruct& Bview,
-                  CrsWrapper& C)
+                  CrsWrapper& C,
+		  bool keep_all_hard_zeros)
 {
   int i, j, k;
   int returnValue = 0;
@@ -267,9 +282,9 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
       double C_ij = sparsedot(avals, Aind, A_len_i,
                               bvals, Bind, Blen);
 
-      if (C_ij == 0.0) {
-        continue;
-      }
+      if (!keep_all_hard_zeros && C_ij == 0.0) 
+	continue;
+
       int_type global_col = (int_type) Bview.rowMap->GID64(j);
 
       int err = C_filled ?
@@ -304,15 +319,16 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 }
 
 int mult_A_Btrans(CrsMatrixStruct& Aview,
-             CrsMatrixStruct& Bview,
-             CrsWrapper& C)
+		  CrsMatrixStruct& Bview,
+		  CrsWrapper& C, 
+		  bool keep_all_hard_zeros)
 {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(Aview.rowMap->GlobalIndicesInt() &&
      Aview.colMap->GlobalIndicesInt() &&
      Aview.rowMap->GlobalIndicesInt() &&
      Aview.colMap->GlobalIndicesInt()) {
-    return mult_A_Btrans<int>(Aview, Bview, C);
+    return mult_A_Btrans<int>(Aview, Bview, C, keep_all_hard_zeros);
   }
   else
 #endif
@@ -321,7 +337,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
      Aview.colMap->GlobalIndicesLongLong() &&
      Aview.rowMap->GlobalIndicesLongLong() &&
      Aview.colMap->GlobalIndicesLongLong()) {
-    return mult_A_Btrans<long long>(Aview, Bview, C);
+    return mult_A_Btrans<long long>(Aview, Bview, C, keep_all_hard_zeros);
   }
   else
 #endif
@@ -335,6 +351,7 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
                   CrsMatrixStruct& Bview,
                   CrsWrapper& C)
 {
+
   int C_firstCol = Bview.colMap->MinLID();
   int C_lastCol = Bview.colMap->MaxLID();
 
@@ -495,10 +512,11 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
 template<typename int_type>
 int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
                        CrsMatrixStruct& Bview,
-                       CrsWrapper& C)
+                       CrsWrapper& C,
+		       bool keep_all_hard_zeros)
 {
   int C_firstCol = Aview.rowMap->MinLID();
-  int C_lastCol = Aview.rowMap->MaxLID();
+  int C_lastCol  = Aview.rowMap->MaxLID();
 
   int C_firstCol_import = 0;
   int C_lastCol_import = -1;
@@ -518,13 +536,6 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 
   double* C_col_j = dwork;
   int_type* C_inds = iwork;
-
-  //std::cout << "Aview: " << std::endl;
-  //dumpCrsMatrixStruct(Aview);
-
-  //std::cout << "Bview: " << std::endl;
-  //dumpCrsMatrixStruct(Bview);
-
 
   int i, j, k;
 
@@ -605,7 +616,7 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
       //Now loop across the C_col_j values and put non-zeros into C.
 
       for(i=0; i < C_len ; ++i) {
-        if (C_col_j[i] == 0.0) continue;
+        if (!keep_all_hard_zeros && C_col_j[i] == 0.0) continue;
 
         int_type global_row = C_inds[i];
         if (!Crowmap->MyGID(global_row)) {
@@ -637,15 +648,16 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 }
 
 int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
-             CrsMatrixStruct& Bview,
-             CrsWrapper& C)
+		       CrsMatrixStruct& Bview,
+		       CrsWrapper& C,
+		       bool keep_all_hard_zeros)
 {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(Aview.rowMap->GlobalIndicesInt() &&
      Aview.colMap->GlobalIndicesInt() &&
      Aview.rowMap->GlobalIndicesInt() &&
      Aview.colMap->GlobalIndicesInt()) {
-    return mult_Atrans_Btrans<int>(Aview, Bview, C);
+    return mult_Atrans_Btrans<int>(Aview, Bview, C, keep_all_hard_zeros);
   }
   else
 #endif
@@ -654,7 +666,7 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
      Aview.colMap->GlobalIndicesLongLong() &&
      Aview.rowMap->GlobalIndicesLongLong() &&
      Aview.colMap->GlobalIndicesLongLong()) {
-    return mult_Atrans_Btrans<long long>(Aview, Bview, C);
+    return mult_Atrans_Btrans<long long>(Aview, Bview, C, keep_all_hard_zeros);
   }
   else
 #endif
@@ -886,123 +898,6 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
 
 
-// ==============================================================
-template<typename int_type>
-int import_only(const Epetra_CrsMatrix& M,
-                const Epetra_Map& targetMap,
-                CrsMatrixStruct& Mview,
-                const Epetra_Import * prototypeImporter=0)
-{
-  // The goal of this method to populare the Mview object with ONLY the rows of M
-  // that correspond to elements in 'targetMap.'  There will be no population of the
-  // numEntriesPerRow, indices, values, remote or numRemote arrays.
-
-
-  // The prototype importer, if used, has to know who owns all of the PIDs in M's rowmap.
-  // The typical use of this is to provide A's column map when I&XV is called for B, for
-  // a C = A * B multiply.
-
-#ifdef ENABLE_MMM_TIMINGS
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Setup")));
-#endif
-
-  Mview.deleteContents();
-
-  Mview.origMatrix          = &M;
-  const Epetra_Map& Mrowmap = M.RowMap();
-  int numProcs              = Mrowmap.Comm().NumProc();
-  Mview.numRows             = targetMap.NumMyElements();
-
-  Mview.origRowMap   = &(M.RowMap());
-  Mview.rowMap       = &targetMap;
-  Mview.colMap       = &(M.ColMap());
-  Mview.domainMap    = &(M.DomainMap());
-  Mview.importColMap = NULL;
-
-  int i;
-  int numRemote =0;
-  int N = Mview.rowMap->NumMyElements();
-
-  if(Mrowmap.SameAs(targetMap)) {
-    numRemote = 0;
-    Mview.targetMapToOrigRow.resize(N);
-    for(i=0;i<N; i++) Mview.targetMapToOrigRow[i]=i;
-    return 0;
-  }
-  else if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap()) && prototypeImporter->TargetMap().SameAs(targetMap)){
-    numRemote = prototypeImporter->NumRemoteIDs();
-
-    Mview.targetMapToOrigRow.resize(N);    Mview.targetMapToOrigRow.assign(N,-1);
-    Mview.targetMapToImportRow.resize(N);  Mview.targetMapToImportRow.assign(N,-1);
-
-    const int * PermuteToLIDs   = prototypeImporter->PermuteToLIDs();
-    const int * PermuteFromLIDs = prototypeImporter->PermuteFromLIDs();
-    const int * RemoteLIDs      = prototypeImporter->RemoteLIDs();
-
-    for(i=0; i<prototypeImporter->NumSameIDs();i++)
-      Mview.targetMapToOrigRow[i] = i;
-
-    // NOTE: These are reversed on purpose since we're doing a revere map.
-    for(i=0; i<prototypeImporter->NumPermuteIDs();i++)
-      Mview.targetMapToOrigRow[PermuteToLIDs[i]] = PermuteFromLIDs[i];
-
-    for(i=0; i<prototypeImporter->NumRemoteIDs();i++)
-      Mview.targetMapToImportRow[RemoteLIDs[i]] = i;
-
-  }
-  else
-    throw std::runtime_error("import_only: This routine only works if you either have the right map or no prototypeImporter");
-
-  if (numProcs < 2) {
-    if (Mview.numRemote > 0) {
-      std::cerr << "EpetraExt::MatrixMatrix::Multiply ERROR, numProcs < 2 but "
-           << "attempting to import remote matrix rows."<<std::endl;
-      return(-1);
-    }
-
-    //If only one processor we don't need to import any remote rows, so return.
-    return(0);
-  }
-
-#ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-1")));
-#endif
-  const int * RemoteLIDs = prototypeImporter->RemoteLIDs();
-
-    //Create a map that describes the remote rows of M that we need.
-  int_type* MremoteRows = numRemote>0 ? new int_type[prototypeImporter->NumRemoteIDs()] : 0;
-  for(i=0; i<prototypeImporter->NumRemoteIDs(); i++)
-    MremoteRows[i] = (int_type) targetMap.GID64(RemoteLIDs[i]);
-
-  LightweightMap MremoteRowMap((int_type) -1, numRemote, MremoteRows, (int_type)Mrowmap.IndexBase64());
-
-#ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-2")));
-#endif
-  //Create an importer with target-map MremoteRowMap and
-  //source-map Mrowmap.
-  RemoteOnlyImport * Rimporter=0;
-  Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
-
-#ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-3")));
-#endif
-
-  Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter);
-
-#ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-4")));
-#endif
-
-  // Cleanup
-  delete Rimporter;
-  delete [] MremoteRows;
-
-  return(0);
-}
-
-
 
 
 //=========================================================================
@@ -1189,7 +1084,8 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
                            const Epetra_CrsMatrix& B,
                            bool transposeB,
                            Epetra_CrsMatrix& C,
-                           bool call_FillComplete_on_result)
+			   bool call_FillComplete_on_result,
+			   bool keep_all_hard_zeros)
 {
   // DEBUG
   //  bool NewFlag=!C.IndicesAreLocal() && !C.IndicesAreGlobal();
@@ -1223,7 +1119,7 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   if (transposeB && !transposeA) scenario = 2;//A*B^T
   if (transposeA && !transposeB) scenario = 3;//A^T*B
   if (transposeA && transposeB)  scenario = 4;//A^T*B^T
-  if(NewFlag && transposeA && !transposeB) scenario = 5; // A^T*B, newmatrix
+  if(NewFlag && call_FillComplete_on_result && transposeA && !transposeB) scenario = 5; // A^T*B, newmatrix
 
   //now check size compatibility
   long long Aouter = transposeA ? A.NumGlobalCols64() : A.NumGlobalRows64();
@@ -1363,15 +1259,15 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   CrsWrapper_Epetra_CrsMatrix ecrsmat(C);
 
   switch(scenario) {
-  case 1:    EPETRA_CHK_ERR( mult_A_B(A,Aview,B,Bview,C,call_FillComplete_on_result) );
+  case 1:    EPETRA_CHK_ERR( mult_A_B(A,Aview,B,Bview,C,call_FillComplete_on_result, keep_all_hard_zeros) );
     break;
-  case 2:    EPETRA_CHK_ERR( mult_A_Btrans(Aview, Bview, ecrsmat) );
+  case 2:    EPETRA_CHK_ERR( mult_A_Btrans(Aview, Bview, ecrsmat, keep_all_hard_zeros) );
     break;
   case 3:    EPETRA_CHK_ERR( mult_Atrans_B(Aview, Bview, ecrsmat) );
     break;
-  case 4:    EPETRA_CHK_ERR( mult_Atrans_Btrans(Aview, Bview, ecrsmat) );
+  case 4:    EPETRA_CHK_ERR( mult_Atrans_Btrans(Aview, Bview, ecrsmat, keep_all_hard_zeros) );
     break;
-  case 5:    EPETRA_CHK_ERR( mult_AT_B_newmatrix(Atransview, Bview, C) );
+  case 5:    EPETRA_CHK_ERR( mult_AT_B_newmatrix(Atransview, Bview, C, keep_all_hard_zeros) );
     break;
   }
 
@@ -1410,17 +1306,18 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
                            const Epetra_CrsMatrix& B,
                            bool transposeB,
                            Epetra_CrsMatrix& C,
-                           bool call_FillComplete_on_result)
+                           bool call_FillComplete_on_result,
+			   bool keep_all_hard_zeros)
 {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(A.RowMap().GlobalIndicesInt() && B.RowMap().GlobalIndicesInt()) {
-        return TMultiply<int>(A, transposeA, B, transposeB, C, call_FillComplete_on_result);
+    return TMultiply<int>(A, transposeA, B, transposeB, C, call_FillComplete_on_result,  keep_all_hard_zeros);
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(A.RowMap().GlobalIndicesLongLong() && B.RowMap().GlobalIndicesLongLong()) {
-        return TMultiply<long long>(A, transposeA, B, transposeB, C, call_FillComplete_on_result);
+    return TMultiply<long long>(A, transposeA, B, transposeB, C, call_FillComplete_on_result,  keep_all_hard_zeros);
   }
   else
 #endif

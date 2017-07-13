@@ -165,6 +165,15 @@ def main():
   # Perform continuation run
   status = stepper.run()
 
+  #
+  # *** IMPORTANT ***
+  # If you create a GlobalData object, as above with the line
+  #     globalData = LOCA.createGlobalData(paramList)
+  # you should destroy it with the following command in order to resolve
+  # circular dependencies
+  #
+  LOCA.destroyGlobalData(globalData)
+
   return 0
 
 # ######################################################################

@@ -140,7 +140,7 @@ void getHS4( Teuchos::RCP<Objective<Real> >       &obj,
   (*lp)[0] = 1.0; (*lp)[1] = 0.0;
   Teuchos::RCP<Vector<Real> > l = Teuchos::rcp(new StdVector<Real>(lp));
   Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp(new std::vector<Real>(n,0.0));
-  (*up)[0] = ROL_INF; (*up)[1] = ROL_INF;
+  (*up)[0] = ROL_INF<Real>(); (*up)[1] = ROL_INF<Real>();
   Teuchos::RCP<Vector<Real> > u = Teuchos::rcp(new StdVector<Real>(up));
   con = Teuchos::rcp(new BoundConstraint<Real>(l,u));
 }

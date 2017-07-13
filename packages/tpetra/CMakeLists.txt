@@ -86,6 +86,15 @@ ENDIF ()
 SET(${PACKAGE_NAME}_ETI_SCALARS "")
 # Exclude all ordinal types (GlobalOrdinal and int)
 SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")
+# Kokkos versions of Scalar types.  For now, this just means replacing
+# std::complex<T> with Kokkos::complex<T>.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "")
+# Kokkos versions of Scalar types, excluding ordinal types.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "")
+# Kokkos versions of Scalar types, including ONLY ordinal types.
+# This relates to Github Issue #700.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "")
+
 SET(${PACKAGE_NAME}_ETI_LORDS "")
 SET(${PACKAGE_NAME}_ETI_GORDS "")
 SET(${PACKAGE_NAME}_ETI_DEVICES "")
@@ -189,15 +198,18 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 GLOBAL_SET(HAVE_TPETRA_OPENMP ${Tpetra_INST_OPENMP})
 IF (Tpetra_INST_OPENMP)
+  IF (NOT ${PROJECT_NAME}_ENABLE_OpenMP)
+    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must also enable OpenMP in all of Trilinos by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.")
+  ENDIF ()
   IF (NOT Kokkos_ENABLE_OpenMP)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::OpenMP execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_OPENMP=ON.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, you must enable the Kokkos::OpenMP execution space by setting Kokkos_ENABLE_OpenMP=ON.")
+    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must enable OpenMP in Kokkos by setting Kokkos_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  You do not normally need to set Kokkos_ENABLE_OpenMP:BOOL=ON explicitly if you have enabled OpenMP in all of Trilinos (by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON).  Thus, this message likely will only appear if you enabled OpenMP in Trilinos, explicitly disabled OpenMP in Kokkos, and explicitly enabled OpenMP in Tpetra.  ")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_OPENMP
   IF (HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosOpenMPWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake option Tpetra_INST_SERIAL:BOOL=ON.  If that does not work, also add Trilinos_ENABLE_OpenMP:BOOL=ON and possibly also Kokkos_ENABLE_OpenMP:BOOL=ON.")
+    MESSAGE(FATAL_ERROR "Tpetra: The OpenMP Node is disabled, since Tpetra_INST_OPENMP:BOOL=OFF, but you set that as the default Node type.  Please don't do that.  If you want OpenMP in Tpetra, you must set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  If this still does not work, please make sure that you are not disabling OpenMP in Kokkos (by setting Kokkos_ENABLE_OpenMP incorrectly).")
   ENDIF()
   IF (Kokkos_ENABLE_OpenMP)
-    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OpenMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors!")
+    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OpenMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors.  This is not an error unless you actually try using OpenMP in Tpetra.")
   ENDIF ()
 ENDIF ()
 
@@ -276,6 +288,12 @@ MESSAGE(STATUS "  - Threads: ${HAVE_TPETRA_PTHREAD}")
 MESSAGE(STATUS "  - OpenMP:  ${HAVE_TPETRA_OPENMP}")
 MESSAGE(STATUS "  - Cuda:    ${HAVE_TPETRA_CUDA}")
 
+# Fix Github Issue #190 by making sure that users enabled at least one
+# Node type.
+IF(NOT Tpetra_INST_SERIAL AND NOT Tpetra_INST_PTHREAD AND NOT Tpetra_INST_OPENMP AND NOT Tpetra_INST_CUDA)
+  MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_Cuda, Kokkos_ENABLE_OpenMP, Kokkos_ENABLE_Serial, Kokkos_ENABLE_Pthread, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, or Tpetra_INST_CUDA.")
+ENDIF()
+
 # ============================================================
 # LocalOrdinal types
 # ============================================================
@@ -330,6 +348,9 @@ ELSE ()
   # Tpetra currently needs Teuchos to support long long.
   # This may change in the future, though.
   IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
+    IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
+      MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
+    ENDIF ()
     GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
   ELSE ()
     GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
@@ -411,9 +432,6 @@ ENDIF ()
 IF (Tpetra_INST_INT_UNSIGNED)
   MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED.  This means that you want to use GlobalOrdinal = unsigned with Tpetra objects.  Please don't do that.  I only maintain this option for backwards compatibility.  While I have gone through some effort to make unsigned GlobalOrdinal types work in Tpetra, they are not tested and thus I don't want to promise that they still work.")
 ENDIF ()
-IF (Tpetra_INST_INT_UNSIGNED_LONG)
-  MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED_LONG.  This means that you want to use GlobalOrdinal = unsigned long with Tpetra objects.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him.")
-ENDIF ()
 
 # Set availability macros for various GlobalOrdinal types
 GLOBAL_SET(HAVE_TPETRA_INT_INT ${Tpetra_INST_INT_INT})
@@ -428,16 +446,18 @@ GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED_LONG ${Tpetra_INST_INT_UNSIGNED_LONG})
 IF (Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_UNSIGNED_LONG)
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL ON)
 ELSE()
-  # mfh 18 Aug 2015: CASL wants to set GlobalOrdinal = unsigned long.
-  # Tpetra doesn't have an option for this (for good reason: I don't
-  # want to promise support for unsigned GlobalOrdinal types --
-  # "unsigned" is already a bad idea).  Thus, CASL sets it using
-  # TriBITS' ETI support.  As a result, their build disables ALL
-  # GlobalOrdinal types that Tpetra claims to support; they explicitly
-  # set the four Tpetra_INST_INT_* options above to OFF.  Tpetra's
+  # mfh 16 May 2016: This branch could only conceivably be useful
+  # for users who want a GlobalOrdinal type other than the types
+  # that Tpetra explicitly supports (see above list).  This branch
+  # would only take effect if such users explicitly disable all 
+  # the explicitly supported GlobalOrdinal types.  In that case,
+  # the users would be responsible for setting their special 
+  # GlobalOrdinal type through TriBITS' ETI support.  Tpetra's
   # CMakeLists.txt files get processed before its ETI logic, so the
-  # code here doesn't see the GlobalOrdinal type that CASL adds.  This
-  # is why we don't error out if none of the above options are ON.
+  # code here would not see the GlobalOrdinal type that such users
+  # might have added.  This is why we don't error out if none of the
+  # above options are ON.  However, we still print a STATUS message,
+  # to help with debugging in case users do this by accident.
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL OFF)
   MESSAGE (STATUS "Tpetra: NOTE: No GlobalOrdinal type is enabled.  This means that you, the user, explicitly disabled all GlobalOrdinal types that Tpetra enables by default.  If you know what you are doing, this might be OK.  If you don't know what you are doing, please don't do this.")
 ENDIF()
@@ -449,22 +469,32 @@ ENDIF()
 #
 IF(Tpetra_INST_INT_INT) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "int")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "int")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "int")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "int")
 ENDIF()
 IF(Tpetra_INST_INT_LONG) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "long")
 ENDIF()
 IF(Tpetra_INST_INT_LONG_LONG) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "long long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "long long")
 ENDIF()
 IF(Tpetra_INST_INT_UNSIGNED) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "unsigned")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "unsigned")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "unsigned")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned")
 ENDIF()
 IF(Tpetra_INST_INT_UNSIGNED_LONG) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "unsigned long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "unsigned long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "unsigned long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned long")
 ENDIF()
 
@@ -532,8 +562,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_DOUBLE)
 GLOBAL_SET(HAVE_TPETRA_DOUBLE ${Tpetra_INST_DOUBLE})
 
-# Scalar = float is NOT enabled by default.
-GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT OFF)
+IF (Trilinos_ENABLE_FLOAT)
+  GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT  ON)
+ELSE()
+  GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT  OFF)
+ENDIF()
 
 # Set up the Tpetra_INST_FLOAT option: whether to instantiate / test
 # Scalar = float.
@@ -566,38 +599,31 @@ IF (Tpetra_INST_FLOAT)
   ENDIF ()
 ENDIF ()
 
-# Decide whether to instantiate / test Scalar = std::complex<float> or
-# std::complex<double> by default.  Both require a complex-arithmetic
-# BLAS.  Furthermore, std::complex<T> requires the corresponding
+# Decide whether to instantiate / test Scalar = std::complex<float> and/or
+# std::complex<double> by default.  Both require a complex-arithmetic BLAS
+# provided by Teuchos.  Furthermore, std::complex<T> requires the corresponding
 # Scalar=T instantiation to be ON.
 #
-# In a debug build, we enable Scalar = complex, in order that this
-# capability be tested.  In a release build, we disable this case, in
-# order to reduce build time.  Users may always enable it explicitly.
-ASSERT_DEFINED (Tpetra_ENABLE_DEBUG)
+# The decision to enable or disable std::complex<T> instantiations is also
+# controlled by Trilinos-level configure options.
 # mfh 18 Aug 2015: Teuchos currently doesn't even define
 # HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
 # Thanks to Andrew Bradley for pointing this out.
-IF (DEFINED HAVE_COMPLEX_BLAS)
-  IF (HAVE_COMPLEX_BLAS)
-    IF (Tpetra_INST_DOUBLE)
-      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ${Tpetra_ENABLE_DEBUG})
-    ELSE()
-      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
-    ENDIF()
-    IF (Tpetra_INST_FLOAT)
-      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ${Tpetra_ENABLE_DEBUG})
-    ELSE()
-      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-    ENDIF()
+IF (DEFINED HAVE_COMPLEX_BLAS  AND  HAVE_COMPLEX_BLAS)
+  IF (Tpetra_INST_DOUBLE AND Trilinos_ENABLE_COMPLEX_DOUBLE) 
+    GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ON)
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+  ENDIF()
+  IF (Tpetra_INST_FLOAT AND Trilinos_ENABLE_COMPLEX_FLOAT)
+    GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ON)
+  ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-  ENDIF() # HAVE_COMPLEX_BLAS
-ELSE () # NOT DEFINED HAVE_COMPLEX_BLAS (consider OFF)
+  ENDIF()
+ELSE()
   GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
   GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-ENDIF () # DEFINED HAVE_COMPLEX_BLAS
+ENDIF()
 
 # Set up the Tpetra_INST_COMPLEX_DOUBLE option: whether to instantiate
 # / test Scalar = std::complex<double>.
@@ -609,6 +635,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 ASSERT_DEFINED (Tpetra_INST_COMPLEX_DOUBLE)
 GLOBAL_SET (HAVE_TPETRA_COMPLEX_DOUBLE ${Tpetra_INST_COMPLEX_DOUBLE})
+
+IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT Trilinos_ENABLE_COMPLEX_DOUBLE)
+  MESSAGE(WARNING "Tpetra_INST_COMPLEX_DOUBLE=ON, but Trilinos_ENABLE_COMPLEX_DOUBLE=OFF.  This will work, but it will make builds more expensive, because it turns off explicit instantiation for complex<double> in KokkosKernels.  If you want to use Scalar=complex<double> in Tpetra, just set Trilinos_ENABLE_COMPLEX_DOUBLE=ON.  You do not need to set Tpetra_INST_COMPLEX_DOUBLE explicitly any more.")
+ENDIF ()
 
 # Enabling Scalar = std::complex<T> requires that the corresponding
 # Scalar=T instantiation be enabled as well.  
@@ -777,37 +807,58 @@ ENDIF ()
 #
 IF(Tpetra_INST_FLOAT) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "float")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "float")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "float")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DOUBLE) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "double")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_FLOAT) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<float>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<float>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<float>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<float>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_DOUBLE) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<double>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<double>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<double>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<double>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_FLOAT128) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "__float128")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "__float128")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "__float128")
+  # NOTE (mfh 11 Oct 2016) __float128 does not currently work with CUDA.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "__float128")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_QD_REAL) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "qd_real")
+  # NOTE (mfh 11 Oct 2016) qd_real does not currently work with
+  # Kokkos, or even with Tpetra!  We just put this here for future
+  # reference.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "qd_real")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "qd_real")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "qd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DD_REAL) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "dd_real")
+  # NOTE (mfh 11 Oct 2016) dd_real does not currently work with
+  # Kokkos, or even with Tpetra!  We just put this here for future
+  # reference.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "dd_real")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "dd_real")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "dd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 
@@ -821,6 +872,10 @@ ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
 
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS})
+
 GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})

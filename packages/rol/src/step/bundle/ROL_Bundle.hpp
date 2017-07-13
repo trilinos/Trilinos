@@ -53,7 +53,7 @@
 #include <set>
 
 /** \class ROL::Bundle
-    \brief Provides the interface for and implments a bundle.
+    \brief Provides the interface for and implements a bundle.
 */
 
 namespace ROL {
@@ -70,27 +70,35 @@ private:
 
   std::vector<Real> dualVariables_;
 
+  Teuchos::RCP<Vector<Real> > tG_;
+  Teuchos::RCP<Vector<Real> > eG_;
+  Teuchos::RCP<Vector<Real> > yG_;
+  Teuchos::RCP<Vector<Real> > gx_;
+  Teuchos::RCP<Vector<Real> > ge_;
+
   unsigned size_;
 
   unsigned maxSize_;
   unsigned remSize_;
   Real coeff_;
+  Real omega_;
 
   bool isInitialized_;
 
   void remove(const std::vector<unsigned> &ind) {
-    for (unsigned j = ind.back()+1; j < size_; j++) {
+    Real zero(0);
+    for (unsigned j = ind.back()+1; j < size_; ++j) {
       (subgradients_[j-1])->set(*(subgradients_[j]));
       linearizationErrors_[j-1] = linearizationErrors_[j];
       distanceMeasures_[j-1]    = distanceMeasures_[j];
       dualVariables_[j-1]       = dualVariables_[j];
     }
     (subgradients_[size_-1])->zero();
-    linearizationErrors_[size_-1] = ROL_OVERFLOW;
-    distanceMeasures_[size_-1]    = ROL_OVERFLOW;
-    dualVariables_[size_-1]       = 0.0;
+    linearizationErrors_[size_-1] = ROL_OVERFLOW<Real>();
+    distanceMeasures_[size_-1]    = ROL_OVERFLOW<Real>();
+    dualVariables_[size_-1]       = zero;
     for (unsigned i = ind.size()-1; i > 0; --i) {
-      for (unsigned j = ind[i-1]+1; j < size_; j++) {
+      for (unsigned j = ind[i-1]+1; j < size_; ++j) {
         (subgradients_[j-1])->set(*(subgradients_[j]));
         linearizationErrors_[j-1] = linearizationErrors_[j];
         distanceMeasures_[j-1]    = distanceMeasures_[j];
@@ -101,54 +109,61 @@ private:
   }
 
   void add(const Vector<Real> &g, const Real le, const Real dm) {
+    Real zero(0);
     (subgradients_[size_])->set(g);
     linearizationErrors_[size_] = le;
     distanceMeasures_[size_]    = dm;
-    dualVariables_[size_]       = 0.0;
+    dualVariables_[size_]       = zero;
     size_++;
   }
-
-protected:
-  Teuchos::RCP<Vector<Real> > tG_;
-  Teuchos::RCP<Vector<Real> > eG_;
-  Teuchos::RCP<Vector<Real> > yG_;
   
 /***********************************************************************************************/
 /***************** BUNDLE MODIFICATION AND ACCESS ROUTINES *************************************/
 /***********************************************************************************************/
 public:
   virtual ~Bundle(void) {}
-  Bundle(const unsigned maxSize = 10, const Real coeff = 0.0, const unsigned remSize = 2) 
-    : size_(0), maxSize_(maxSize), remSize_(remSize), coeff_(coeff), isInitialized_(false) {
+
+  Bundle(const unsigned maxSize = 10,
+         const Real coeff = 0.0,
+         const Real omega = 2.0,
+         const unsigned remSize = 2) 
+    : size_(0), maxSize_(maxSize), remSize_(remSize),
+      coeff_(coeff), omega_(omega), isInitialized_(false) {
+    Real zero(0);
     remSize_ = ((remSize_ < 2) ? 2 : ((remSize_ > maxSize_-1) ? maxSize_-1 : remSize_));
+    coeff_ = std::max(static_cast<Real>(0),coeff_);
+    omega_ = std::max(static_cast<Real>(1),omega_);
     subgradients_.clear();
     subgradients_.assign(maxSize,Teuchos::null);
     linearizationErrors_.clear();
-    linearizationErrors_.assign(maxSize_,ROL_OVERFLOW);
+    linearizationErrors_.assign(maxSize_,ROL_OVERFLOW<Real>());
     distanceMeasures_.clear();
-    distanceMeasures_.assign(maxSize_,ROL_OVERFLOW);
+    distanceMeasures_.assign(maxSize_,ROL_OVERFLOW<Real>());
     dualVariables_.clear();
-    dualVariables_.assign(maxSize_,0.0);
+    dualVariables_.assign(maxSize_,zero);
   }
 
-  void initialize(const Vector<Real> &g) {
+  virtual void initialize(const Vector<Real> &g) {
     if ( !isInitialized_ ) {
-      for (unsigned i = 0; i < maxSize_; i++) {
+      Real zero(0), one(1);
+      for (unsigned i = 0; i < maxSize_; ++i) {
         subgradients_[i] = g.clone();
       }
       (subgradients_[0])->set(g);
-      linearizationErrors_[0] = 0.0;
-      distanceMeasures_[0]    = 0.0;
-      dualVariables_[0]       = 1.0;
+      linearizationErrors_[0] = zero;
+      distanceMeasures_[0]    = zero;
+      dualVariables_[0]       = one;
       size_++;
       isInitialized_ = true;
-      gx_ = g.clone();
-      ge_ = g.clone();
       tG_ = g.clone();
       yG_ = g.clone();
       eG_ = g.clone();
+      gx_ = g.clone();
+      ge_ = g.clone();
     }
   }
+
+  virtual unsigned solveDual(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) = 0;
 
   const Real linearizationError(const unsigned i) const {
     return linearizationErrors_[i];
@@ -161,11 +176,24 @@ public:
   const Vector<Real> & subgradient(const unsigned i) const {
     return *(subgradients_[i]);
   }
+  
+  const Real getDualVariable(const unsigned i) const {
+    return dualVariables_[i];
+  }
+  
+  void setDualVariable(const unsigned i, const Real val) {
+    dualVariables_[i] = val;
+  }
+
+  void resetDualVariables(void) {
+    const Real zero(0);
+    dualVariables_.assign(size_,zero);
+  }
 
   const Real computeAlpha(const Real dm, const Real le) const {
     Real alpha = le;
-    if ( coeff_ > ROL_EPSILON ) {
-      alpha = std::max(coeff_*std::pow(dm,2.0),le);
+    if ( coeff_ > ROL_EPSILON<Real>() ) {
+      alpha = std::max(coeff_*std::pow(dm,omega_),le);
     }
     return alpha;
   }
@@ -179,24 +207,28 @@ public:
   }
 
   void aggregate(Vector<Real> &aggSubGrad, Real &aggLinErr, Real &aggDistMeas) const {
-    aggSubGrad.zero(); aggLinErr = 0.0; aggDistMeas = 0.0; eG_->zero();
-    Real eLE = 0.0, eDM = 0.0, yLE = 0.0, yDM = 0.0, tLE = 0.0, tDM = 0.0;
-    for (unsigned i = 0; i < size_; i++) {
+    Real zero(0), one(1);
+    aggSubGrad.zero(); aggLinErr = zero; aggDistMeas = zero; eG_->zero();
+    Real eLE(0), eDM(0), yLE(0), yDM(0), tLE(0), tDM(0);
+    for (unsigned i = 0; i < size_; ++i) {
       // Compute aggregate subgradient using Kahan's compensated sum
-      tG_->set(aggSubGrad);
-      yG_->set(*subgradients_[i]); yG_->scale(dualVariables_[i]); yG_->plus(*eG_);
-      aggSubGrad.set(*tG_); aggSubGrad.plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-1.0,aggSubGrad); eG_->plus(*yG_);
+      //aggSubGrad.axpy(dualVariables_[i],*subgradients_[i]);
+      yG_->set(*subgradients_[i]); yG_->scale(dualVariables_[i]); yG_->axpy(-one,*eG_);
+      tG_->set(aggSubGrad); tG_->plus(*yG_);
+      eG_->set(*tG_); eG_->axpy(-one,aggSubGrad); eG_->axpy(-one,*yG_);
+      aggSubGrad.set(*tG_);
       // Compute aggregate linearization error using Kahan's compensated sum
-      tLE = aggLinErr;
-      yLE = dualVariables_[i]*linearizationErrors_[i] + eLE;
-      aggLinErr = tLE + yLE;
-      eLE = (tLE - aggLinErr) + yLE;
+      //aggLinErr += dualVariables_[i]*linearizationErrors_[i];
+      yLE = dualVariables_[i]*linearizationErrors_[i] - eLE;
+      tLE = aggLinErr + yLE;
+      eLE = (tLE - aggLinErr) - yLE;
+      aggLinErr = tLE;
       // Compute aggregate distance measure using Kahan's compensated sum
-      tDM = aggDistMeas;
-      yDM = dualVariables_[i]*distanceMeasures_[i] + eDM;
-      aggDistMeas = tDM + yDM;
-      eDM = (tDM - aggDistMeas) + yDM;
+      //aggDistMeas += dualVariables_[i]*distanceMeasures_[i];
+      yDM = dualVariables_[i]*distanceMeasures_[i] - eDM;
+      tDM = aggDistMeas + yDM;
+      eDM = (tDM - aggDistMeas) - yDM;
+      aggDistMeas = tDM;
     }
   }
 
@@ -206,13 +238,13 @@ public:
       unsigned loc = size_, cnt = 0;
       std::vector<unsigned> ind(remSize_,0);
       for (unsigned i = size_; i > 0; --i) {
-        if ( std::abs(linearizationErrors_[i-1]) < ROL_EPSILON ) {
+        if ( std::abs(linearizationErrors_[i-1]) < ROL_EPSILON<Real>() ) {
           loc = i-1;
           break;
         }
       }
-      for (unsigned i = 0; i < size_; i++) {
-        if ( i < loc || i > loc ) {
+      for (unsigned i = 0; i < size_; ++i) {
+        if ( i != loc ) {
           ind[cnt] = i;
           cnt++;
         }
@@ -229,14 +261,15 @@ public:
 
   void update(const bool flag, const Real linErr, const Real distMeas,
               const Vector<Real> &g, const Vector<Real> &s) {
+    Real zero(0);
     if ( flag ) {
       // Serious step taken: Update linearlization errors and distance measures
-      for (unsigned i = 0; i < size_; i++) {
+      for (unsigned i = 0; i < size_; ++i) {
         linearizationErrors_[i] += linErr - subgradients_[i]->dot(s.dual());
         distanceMeasures_[i]    += distMeas;
       }
-      linearizationErrors_[size_] = 0.0;
-      distanceMeasures_[size_]    = 0.0;
+      linearizationErrors_[size_] = zero;
+      distanceMeasures_[size_]    = zero;
     }
     else {
       // Null step taken: 
@@ -246,556 +279,83 @@ public:
     // Update (sub)gradient bundle
     (subgradients_[size_])->set(g);
     // Update dual variables
-    dualVariables_[size_] = 0.0;
+    dualVariables_[size_] = zero;
     // Update bundle size
     size_++;
   }
 
-  // TT: adding access routines for derived classes
 protected:
-  
-  Real getDualVariables (const unsigned i){
-    return dualVariables_[i];
-  }
-  
-  void setDualVariables(const unsigned i, const Real val) {
-    dualVariables_[i] = val;
+  const Real GiGj(const unsigned i, const unsigned j) const {
+    return subgradient(i).dot(subgradient(j));
   }
 
-  void resetDualVariables(void){
-    dualVariables_.assign(size_,0.0);
+  const Real dotGi(const unsigned i, const Vector<Real> &x) const {
+    return x.dot(subgradient(i));
   }
 
-/***********************************************************************************************/
-/***************** DUAL CUTTING PLANE PROBLEM ROUTINES *****************************************/
-/***********************************************************************************************/
-protected:
-  Teuchos::RCP<Vector<Real> > gx_;
-  Teuchos::RCP<Vector<Real> > ge_;
-
-private:
-  std::set<unsigned> workingSet_;
-  std::set<unsigned> nworkingSet_;
-
-  void initializeDualSolver(void) {
-//    for (unsigned i = 0; i < maxSize_; i++) {
-//      dualVariables_[i] = 0.0;
-//    }
-//    dualVariables_[0] = 1.0;
-//    for (unsigned i = 0; i < maxSize_; i++) {
-//      dualVariables_[i] = ((i<size_) ? 1.0/(Real)size_ : 0.0);
-//    }
-//    nworkingSet_.clear();
-//    workingSet_.clear();
-//    for (unsigned i = 0; i < size_; i++) {
-//      nworkingSet_.insert(i);
-//    }
-    Real sum = 0.0, err = 0.0, tmp = 0.0, y = 0.0;
-    for (unsigned i = 0; i < size_; i++) {
-      // Compute sum of dualVariables_ using Kahan's compensated sum
-      tmp = sum;
-      y   = dualVariables_[i] + err;
-      sum = tmp + y;
-      err = (tmp - sum) + y;
-    }
-    for (unsigned i = 0; i < size_; i++) {
-      dualVariables_[i] /= sum;
-    }
-    nworkingSet_.clear();
-    workingSet_.clear();
-    for (unsigned i = 0; i < size_; i++) {
-      if ( dualVariables_[i] == 0.0 ) {
-        workingSet_.insert(i);
-      }
-      else {
-        nworkingSet_.insert(i);
-      }
-    }
+  void addGi(const unsigned i, const Real a, Vector<Real> &x) const {
+    x.axpy(a,subgradient(i));
   }
 
   Real evaluateObjective(std::vector<Real> &g, const std::vector<Real> &x, const Real t) const {
+    Real one(1), half(0.5);
     gx_->zero(); eG_->zero();
-    for (unsigned i = 0; i < size_; i++) {
+    for (unsigned i = 0; i < Bundle<Real>::size(); ++i) {
       // Compute Gx using Kahan's compensated sum
-      tG_->set(*gx_);
-      yG_->set(*eG_); yG_->axpy(x[i],*(subgradients_[i]));
-      gx_->set(*tG_); gx_->plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-1.0,*gx_); eG_->plus(*yG_);
+      //gx_->axpy(x[i],*Bundle<Real>::subgradients_[i]);
+      yG_->set(subgradient(i)); yG_->scale(x[i]); yG_->axpy(-one,*eG_);
+      tG_->set(*gx_); tG_->plus(*yG_);
+      eG_->set(*tG_); eG_->axpy(-one,*gx_); eG_->axpy(-one,*yG_);
+      gx_->set(*tG_);
     }
-    Real Hx = 0.0, val = 0.0, err = 0.0, tmp = 0.0, y = 0.0;
-    for (unsigned i = 0; i < size_; i++) {
+    Real Hx(0), val(0), err(0), tmp(0), y(0);
+    for (unsigned i = 0; i < size(); ++i) {
       // Compute < g_i, Gx >
-      Hx   = gx_->dot(*(subgradients_[i]));
+      Hx   = dotGi(i,*gx_);
       // Add to the objective function value using Kahan's compensated sum
-      tmp  = val;
-      y    = x[i]*(0.5*Hx + alpha(i)/t) + err;
-      val  = tmp + y;
-      err  = (tmp - val) + y;
+      //val += x[i]*(half*Hx + Bundle<Real>::alpha(i)/t);
+      y    = x[i]*(half*Hx + alpha(i)/t) - err;
+      tmp  = val + y;
+      err  = (tmp - val) - y;
+      val  = tmp;
       // Add gradient component
       g[i] = Hx + alpha(i)/t;
     }
     return val;
   }
 
-  void applyFullMatrix(std::vector<Real> &Hx, const std::vector<Real> &x) const {
-    gx_->zero(); eG_->zero();
-    for (unsigned i = 0; i < size_; i++) {
-      // Compute Gx using Kahan's compensated sum
-      tG_->set(*gx_);
-      yG_->set(*eG_); yG_->axpy(x[i],*(subgradients_[i]));
-      gx_->set(*tG_); gx_->plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-1.0,*gx_); eG_->plus(*yG_);
-    }
-    for (unsigned i = 0; i < size_; i++) {
-      // Compute < g_i, Gx >
-      Hx[i] = subgradients_[i]->dot(*gx_);
-    }
-  }
-
-  void applyMatrix(std::vector<Real> &Hx, const std::vector<Real> &x) const {
-    gx_->zero(); eG_->zero();
-    unsigned n = nworkingSet_.size();
-    typename std::set<unsigned>::iterator it = nworkingSet_.begin(); 
-    for (unsigned i = 0; i < n; i++) {
-      // Compute Gx using Kahan's compensated sum
-      tG_->set(*gx_);
-      yG_->set(*eG_); yG_->axpy(x[i],*(subgradients_[*it]));
-      gx_->set(*tG_); gx_->plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-1.0,*gx_); eG_->plus(*yG_);
-      it++;
-    }
-    it = nworkingSet_.begin();
-    for (unsigned i = 0; i < n; i++) {
-      // Compute < g_i, Gx >
-      Hx[i] = subgradients_[*it]->dot(*gx_); it++;
-    }
-  }
-
-  void computeLagMult(std::vector<Real> &lam, const Real mu, const std::vector<Real> &g) const {
-    unsigned n = workingSet_.size();
-    if ( n > 0 ) {
-      lam.resize(n,0.0);
-      typename std::set<unsigned>::iterator it = workingSet_.begin();
-      for (unsigned i = 0; i < n; i++) {
-        lam[i] = g[*it] - mu; it++;
-      }
-    }
-    else {
-      lam.clear();
-    }
-  }
- 
-  bool isNonnegative(unsigned &ind, const std::vector<Real> &x) const {
-    bool flag = true;
-    unsigned n = workingSet_.size(); ind = size_;
-    if ( n > 0 ) {
-      Real min = ROL_OVERFLOW;
-      typename std::set<unsigned>::iterator it = workingSet_.begin();
-      for (unsigned i = 0; i < n; i++) {
-        if ( x[i] < min ) {
-          ind = *it;
-          min = x[i];
-        }
-        it++;
-      }
-      flag = ((min < -ROL_EPSILON) ? false : true);
-    }
-    return flag;
-  }
-
-  Real computeAlpha(unsigned &ind, const std::vector<Real> &x, const std::vector<Real> &p) const {
-    Real alpha = 1.0, tmp = 0.0; ind = size_;
-    typename std::set<unsigned>::iterator it;
-    for (it = nworkingSet_.begin(); it != nworkingSet_.end(); it++) {
-      if ( p[*it] < -ROL_EPSILON ) {
-        tmp = -x[*it]/p[*it];
-        if ( alpha >= tmp ) {
-          alpha = tmp;
-          ind = *it;
-        }
-      }
-    }
-    return std::max(0.0,alpha);
-  }
-
-  unsigned solveEQPsubproblem(std::vector<Real> &s, Real &mu,
-                        const std::vector<Real> &g, const Real tol) const {
-    // Build reduced QP information
-    unsigned n = nworkingSet_.size(), cnt = 0;
-    mu = 0.0;
-    s.assign(size_,0.0);
-    if ( n > 0 ) {
-      std::vector<Real> gk(n,0.0);
-      typename std::set<unsigned>::iterator it = nworkingSet_.begin();
-      for (unsigned i = 0; i < n; i++) {
-        gk[i] = g[*it]; it++;
-      }
-      std::vector<Real> sk(n,0.0);
-      cnt = projectedCG(sk,mu,gk,tol);
-      it  = nworkingSet_.begin();
-      for (unsigned i = 0; i < n; i++) {
-        s[*it] = sk[i]; it++;
-      }
-    }
-    return cnt;
-  }
-
-  void applyPreconditioner(std::vector<Real> &Px, const std::vector<Real> &x) const {
-    int type = 0;
-    std::vector<Real> tmp(Px.size(),0.0);
-    switch (type) {
-      case 0: applyPreconditioner_Identity(tmp,x); break;
-      case 1: applyPreconditioner_Jacobi(tmp,x);   break;
-      case 2: applyPreconditioner_SymGS(tmp,x);    break;
-    }
-    applyPreconditioner_Identity(Px,tmp);
-  }
-
-  void applyG(std::vector<Real> &Gx, const std::vector<Real> &x) const {
-    int type = 0;
-    switch (type) {
-      case 0: applyG_Identity(Gx,x); break;
-      case 1: applyG_Jacobi(Gx,x);   break;
-      case 2: applyG_SymGS(Gx,x);    break;
-    }
-  }
-
-  void applyPreconditioner_Identity(std::vector<Real> &Px, const std::vector<Real> &x) const {
-    unsigned dim = nworkingSet_.size();
-    Real sum = 0.0, err = 0.0, tmp = 0.0, y = 0.0;
-    for (unsigned i = 0; i < dim; i++) {
-      // Compute sum of x using Kahan's compensated sum
-      tmp = sum;
-      y   = x[i] + err;
-      sum = tmp + y;
-      err = (tmp - sum) + y;
-    }
-    sum /= (Real)dim;
-    for (unsigned i = 0; i < dim; i++) {
-      Px[i] = x[i] - sum;
-    }
-  }
-
-  void applyG_Identity(std::vector<Real> &Gx, const std::vector<Real> &x) const {
-    Gx.assign(x.begin(),x.end());
-  }
-
-  void applyPreconditioner_Jacobi(std::vector<Real> &Px, const std::vector<Real> &x) const {
-    unsigned dim = nworkingSet_.size();
-    Real eHe = 0.0, sum = 0.0;
-    Real errX = 0.0, tmpX = 0.0, yX = 0.0, errE = 0.0, tmpE = 0.0, yE = 0.0;
-    std::vector<Real> gg(dim,0.0);
-    typename std::set<unsigned>::iterator it = nworkingSet_.begin(); 
-    for (unsigned i = 0; i < dim; i++) {
-      gg[i] = 1.0/std::abs(subgradients_[*it]->dot(*(subgradients_[*it]))); it++;
-      // Compute sum of inv(D)x using Kahan's aggregated sum
-      tmpX = sum;
-      yX   = x[i]*gg[i] + errX;
-      sum  = tmpX + errX;
-      errX = (tmpX - sum) + yX;
-      // Compute sum of inv(D)e using Kahan's aggregated sum
-      tmpE = eHe;
-      yE   = gg[i] + errE;
-      eHe  = tmpE + yE;
-      errE = (tmpE - eHe) + yE;
-    }
-    sum /= eHe;
-    for (unsigned i = 0; i < dim; i++) {
-      Px[i] = (x[i]-sum)*gg[i];
-    }
-  }
-
-  void applyG_Jacobi(std::vector<Real> &Gx, const std::vector<Real> &x) const {
-    unsigned dim = nworkingSet_.size();
-    typename std::set<unsigned>::iterator it = nworkingSet_.begin();
-    for (unsigned i = 0; i < dim; i++) {
-      Gx[i] = std::abs(subgradients_[*it]->dot(*(subgradients_[*it])))*x[i]; it++;
-    }
-  }
-
-  void applyPreconditioner_SymGS(std::vector<Real> &Px, const std::vector<Real> &x) const {
-    int dim = nworkingSet_.size();
-    //unsigned cnt = 0;
-    gx_->zero(); ge_->zero();
-    Real eHx = 0.0, eHe = 0.0;
-    // Forward substitution
-    std::vector<Real> x1(dim,0.0), e1(dim,0.0),gg(dim,0.0);
-    typename std::set<unsigned>::iterator it, jt;
-    it = nworkingSet_.begin(); 
-    for (int i = 0; i < dim; i++) {
-      gx_->zero(); ge_->zero(); jt = nworkingSet_.begin();
-      for (int j = 0; j < i; j++) {
-        gx_->axpy(x1[j],*(subgradients_[*jt]));
-        ge_->axpy(e1[j],*(subgradients_[*jt]));
-        jt++;
-      }
-      gg[i] = subgradients_[*it]->dot(*(subgradients_[*it]));
-      x1[i] = (x[i] - gx_->dot(*(subgradients_[*it])))/gg[i];
-      e1[i] = (1.0  - ge_->dot(*(subgradients_[*it])))/gg[i];
-      it++;
-    }
-    // Apply diagonal
-    for (int i = 0; i < dim; i++) {
-      x1[i] *= gg[i];
-      e1[i] *= gg[i];
-    }
-    // Back substitution
-    std::vector<Real> Hx(dim,0.0), He(dim,0.0); it = nworkingSet_.end();
-    for (int i = dim-1; i >= 0; --i) {
-      it--;
-      gx_->zero(); ge_->zero(); jt = nworkingSet_.end();
-      for (int j = dim-1; j >= i+1; --j) {
-        jt--;
-        gx_->axpy(Hx[j],*(subgradients_[*jt]));
-        ge_->axpy(He[j],*(subgradients_[*jt]));
-      }
-      Hx[i] = (x1[i] - gx_->dot(*(subgradients_[*it])))/gg[i];
-      He[i] = (e1[i] - ge_->dot(*(subgradients_[*it])))/gg[i];
-      // Compute sums
-      eHx += Hx[i];
-      eHe += He[i];
-    }
-    // Accumulate preconditioned vector
-    for (int i = 0; i < dim; i++) {
-      Px[i] = Hx[i] - (eHx/eHe)*He[i];
-    }
-  }
-
-  void applyG_SymGS(std::vector<Real> &Gx, const std::vector<Real> &x) const {
-    unsigned dim = nworkingSet_.size();
-    typename std::set<unsigned>::iterator it = nworkingSet_.begin();
-    for (unsigned i = 0; i < dim; i++) {
-      Gx[i] = std::abs(subgradients_[*it]->dot(*(subgradients_[*it])))*x[i]; it++;
-    }
-  }
-
-  void computeResidualUpdate(std::vector<Real> &r, std::vector<Real> &g) const {
-    unsigned n = g.size();
-    std::vector<Real> Gg(n,0.0);
-    Real y = 0.0, ytmp = 0.0, yprt = 0.0, yerr = 0.0;
-    applyPreconditioner(g,r);
-    applyG(Gg,g);
-    // Compute multiplier using Kahan's compensated sum
-    for (unsigned i = 0; i < n; i++) {
-      ytmp = y;
-      yprt = (r[i] - Gg[i]) + yerr;
-      y    = ytmp + yprt;
-      yerr = (ytmp - y) + yprt;
-    }
-    y /= (Real)n;
-    for (unsigned i = 0; i < n; i++) {
-      r[i] -= y;
-    }
-    applyPreconditioner(g,r);
-  }
-
-  unsigned projectedCG(std::vector<Real> &x, Real &mu, const std::vector<Real> &b, const Real tol) const {
-    unsigned n = nworkingSet_.size();
-    std::vector<Real> r(n,0.0), r0(n,0.0), g(n,0.0), d(n,0.0), Ad(n,0.0);
-    // Compute residual Hx + g = g with x = 0
-    x.assign(n,0.0);
-    scale(r,1.0,b);
-    r0.assign(r.begin(),r.end());
-    // Precondition residual
-    computeResidualUpdate(r,g);
-    Real rg = dot(r,g), rg0 = 0.0;
-    // Get search direction
-    scale(d,-1.0,g);
-    Real alpha = 0.0, kappa = 0.0, beta = 0.0;
-    Real CGtol = std::min(tol,1.e-2*rg);
-    unsigned cnt = 0;
-    while (rg > CGtol && cnt < 2*n+1) {
-      applyMatrix(Ad,d);
-      kappa = dot(d,Ad);
-      alpha = rg/kappa;
-      axpy(alpha,d,x);
-      axpy(alpha,Ad,r);
-      axpy(alpha,Ad,r0);
-      computeResidualUpdate(r,g);
-      rg0 = rg;
-      rg  = dot(r,g);
-      beta = rg/rg0;
-      scale(d,beta);
-      axpy(-1.0,g,d);
-      cnt++;
-    }
-    // Compute multiplier for equality constraint using Kahan's compensated sum
-    mu = 0.0;
-    Real err = 0.0, tmp = 0.0, y = 0.0;
-    for (unsigned i = 0; i < n; i++) {
-      tmp = mu;
-      y   = r0[i] + err;
-      mu  = tmp + y;
-      err = (tmp - mu) + y;
-    }
-    mu /= (Real)n;
-    // Return iteration count
-    return cnt;
-  }
-
-  Real dot(const std::vector<Real> &x, const std::vector<Real> &y) const {
-    // Compute dot product of two vectors using Kahan's compensated sum
-    Real val = 0.0, err = 0.0, tmp = 0.0, y0 = 0.0;
-    unsigned n = std::min(x.size(),y.size());
-    for (unsigned i = 0; i < n; i++) {
-      tmp = val;
-      y0  = x[i]*y[i] + err;
-      val = tmp + y0;
-      err = (tmp - val) + y0;
-    }
-    return val;
-  }
-
-  Real norm(const std::vector<Real> &x) const {
-    return std::sqrt(dot(x,x));
-  }
-
-  void axpy(const Real a, const std::vector<Real> &x, std::vector<Real> &y) const {
-    unsigned n = std::min(y.size(),x.size());
-    for (unsigned i = 0; i < n; i++) {
-      y[i] += a*x[i];
-    }
-  }
-
-  void scale(std::vector<Real> &x, const Real a) const {
-    for (unsigned i = 0; i < x.size(); i++) {
-      x[i] *= a;
-    }
-  }
-
-  void scale(std::vector<Real> &x, const Real a, const std::vector<Real> &y) const {
-    unsigned n = std::min(x.size(),y.size());
-    for (unsigned i = 0; i < n; i++) {
-      x[i] = a*y[i];
-    }
-  }
-
   unsigned solveDual_dim1(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
-    dualVariables_[0] = 1.0;
-    //std::cout << "dim = " << size_ << "  iter = " << 0 << "  CONVERGED!\n";
+    setDualVariable(0,static_cast<Real>(1));
+    //std::cout << "dim = " << Bundle<Real>::size() << "  iter = " << 0 << "  CONVERGED!\n";
     return 0;
   }
 
   unsigned solveDual_dim2(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
-    gx_->set(*subgradients_[0]); gx_->axpy(-1.0,*subgradients_[1]);
-    Real diffg  = gx_->dot(*gx_);
-    if ( std::abs(diffg) > ROL_EPSILON ) {
+    Real diffg  = gx_->dot(*gx_), zero(0), one(1), half(0.5);
+    gx_->set(subgradient(0)); addGi(1,-one,*gx_);
+    if ( std::abs(diffg) > ROL_EPSILON<Real>() ) {
       Real diffa  = (alpha(0)-alpha(1))/t;
-      Real gdiffg = subgradients_[1]->dot(*gx_);
-      dualVariables_[0] = std::min(1.0,std::max(0.0,-(gdiffg+diffa)/diffg));
-      dualVariables_[1] = 1.0-dualVariables_[0];
+      Real gdiffg = dotGi(1,*gx_);
+      setDualVariable(0,std::min(one,std::max(zero,-(gdiffg+diffa)/diffg)));
+      setDualVariable(1,one-getDualVariable(0));
     }
     else {
-      if ( std::abs(alpha(0)-alpha(1)) > ROL_EPSILON ) {
+      if ( std::abs(alpha(0)-alpha(1)) > ROL_EPSILON<Real>() ) {
         if ( alpha(0) < alpha(1) ) {
-          dualVariables_[0] = 1.0; dualVariables_[1] = 0.0;
+          setDualVariable(0,one); setDualVariable(1,zero);
         }
         else if ( alpha(0) > alpha(1) ) {
-          dualVariables_[0] = 0.0; dualVariables_[1] = 1.0;
+          setDualVariable(0,zero); setDualVariable(1,one);
         }
       }
       else {
-        dualVariables_[0] = 0.5; dualVariables_[1] = 0.5;
+        setDualVariable(0,half); setDualVariable(1,half);
       }
     }
-    //std::cout << "dim = " << size_ << "  iter = " << 0 << "  CONVERGED!\n";
+    //std::cout << "dim = " << Bundle<Real>::size() << "  iter = " << 0 << "  CONVERGED!\n";
     return 0;
   }
 
-  unsigned solveDual_arbitrary(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
-    initializeDualSolver();
-    bool nonneg = false;
-    unsigned ind = 0, i = 0, CGiter = 0;
-    Real snorm = 0.0, alpha = 0.0, mu = 0.0;
-    std::vector<Real> s(size_,0.0), Hs(size_,0.0), g(size_,0.0), lam(size_+1,0.0);
-    //Real val = evaluateObjective(g,dualVariables_,t);
-    evaluateObjective(g,dualVariables_,t);
-    for (i = 0; i < maxit; i++) {
-      CGiter += solveEQPsubproblem(s,mu,g,tol);
-      snorm = norm(s);
-      if ( snorm < ROL_EPSILON ) {
-        computeLagMult(lam,mu,g);
-        nonneg = isNonnegative(ind,lam);
-        if ( nonneg ) {
-          break;
-        }
-        else {
-          alpha = 1.0;
-          if ( ind < size_ ) {
-            workingSet_.erase(ind);
-            nworkingSet_.insert(ind);
-          }
-        }
-      }
-      else {
-        alpha = computeAlpha(ind,dualVariables_,s);
-        if ( alpha > 0.0 ) {
-          axpy(alpha,s,dualVariables_);
-          applyFullMatrix(Hs,s);
-          axpy(alpha,Hs,g);
-        }
-        if (ind < size_) {
-          workingSet_.insert(ind);
-          nworkingSet_.erase(ind);
-        }
-      }
-      //std::cout << "iter = " << i << "  snorm = " << snorm << "  alpha = " << alpha << "\n";
-    }
-    //Real crit = computeCriticality(g);
-    //std::cout << "Criticality Measure: " << crit << "\n";
-    //std::cout << "dim = " << size_ << "  iter = " << i << "   CGiter = " << CGiter << "  CONVERGED!\n";
-    return i;
-  }
-
-public:
-  virtual unsigned solveDual(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
-    unsigned iter = 0;
-    if (size_ == 1) {
-      iter = solveDual_dim1(t,maxit,tol);
-    }
-    else if (size_ == 2) {
-      iter = solveDual_dim2(t,maxit,tol);
-    }
-    else {
-      iter = solveDual_arbitrary(t,maxit,tol);
-    }
-    return iter;
-  }
-
-private:
-  /************************************************************************/
-  /********************** PROJECTION ONTO FEASIBLE SET ********************/
-  /************************************************************************/
-  void project(std::vector<Real> &x, const std::vector<Real> &v) const {
-    std::vector<Real> vsort(size_,0.0);
-    vsort.assign(v.begin(),v.end());
-    std::sort(vsort.begin(),vsort.end());
-    Real sum = -1.0, lam = 0.0;
-    for (int i = size_-1; i > 0; i--) {
-      sum += vsort[i];
-      if ( sum >= ((Real)(size_-i))*vsort[i-1] ) {
-        lam = sum/(Real)(size_-i);
-        break;
-      }
-    }
-    if (lam == 0.0) {
-      lam = (sum+vsort[0])/(Real)size_;
-    }
-    for (int i = 0; i < size_; i++) {
-      x[i] = std::max(0.0,v[i] - lam);
-    }
-  }
-
-  Real computeCriticality(const std::vector<Real> &g) {
-    std::vector<Real> x(size_,0.0), Px(size_,0.0);
-    axpy(1.0,dualVariables_,x);
-    axpy(-1.0,g,x);
-    project(Px,x);
-    scale(x,0.0);
-    axpy(1.0,dualVariables_,x);
-    axpy(-1.0,Px,x);
-    return norm(x);
-  }
 }; // class Bundle 
 
 } // namespace ROL
@@ -804,8 +364,8 @@ private:
 
 //  void aggregate(Vector<Real> &aggSubGrad, Real &aggLinErr, Real &aggDistMeas) const {
 //    aggSubGrad.zero(); aggLinErr = 0.0; aggDistMeas = 0.0;
-//    for (unsigned i = 0; i < size_; i++) {
-//      //if ( dualVariables_[i] > ROL_EPSILON ) {
+//    for (unsigned i = 0; i < size_; ++i) {
+//      //if ( dualVariables_[i] > ROL_EPSILON<Real>() ) {
 //        aggSubGrad.axpy(dualVariables_[i],*(subgradients_[i]));
 //        aggLinErr   += dualVariables_[i]*linearizationErrors_[i];
 //        aggDistMeas += dualVariables_[i]*distanceMeasures_[i];

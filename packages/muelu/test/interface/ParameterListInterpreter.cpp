@@ -71,7 +71,7 @@
 void run_sed(const std::string& pattern, const std::string& baseFile);
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -89,11 +89,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // =========================================================================
   // Parameters initialization
   // =========================================================================
-  ::Xpetra::Parameters xpetraParameters(clp);
 
   bool runHeavyTests = false;
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
 
+  clp.recogniseAllOptions(true);
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -101,12 +101,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
-  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
   // =========================================================================
   // Problem construction
   // =========================================================================
-  ParameterList matrixParameters;
+  Teuchos::ParameterList matrixParameters;
   matrixParameters.set("nx",         Teuchos::as<GO>(9999));
   matrixParameters.set("matrixType", "Laplace1D");
   RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<GO>("nx"), lib);
@@ -208,7 +206,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         } else if (dirList[k] == "MLParameterListInterpreter2/") {
           //std::cout << "ML ParameterList: " << std::endl;
           //std::cout << paramList << std::endl;
-          RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+          RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
           //std::cout << "MueLu ParameterList: " << std::endl;
           //std::cout << *mueluParamList << std::endl;
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
@@ -305,6 +303,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         for (size_t q = 0; q < classes.size(); q++)
           run_sed("'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/'", baseFile);
 
+        // Strip ParamterList pointers
+        run_sed("'s/Teuchos::RCP<Teuchos::ParameterList const>{.*}/Teuchos::RCP<Teuchos::ParameterList const>{<ignored>} >/'", baseFile);
+
 #ifdef __APPLE__
         // Some Macs print outs ptrs as 0x0 instead of 0, fix that
         run_sed("'/RCP/ s/=0x0/=0/g'", baseFile);
@@ -338,12 +339,12 @@ int main(int argc, char* argv[]) {
   bool verbose = true;
 
   try {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
+    const bool throwExceptions = false;
 
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+    Teuchos::CommandLineProcessor clp(throwExceptions);
     Xpetra::Parameters xpetraParameters(clp);
 
+    clp.recogniseAllOptions(false);
     switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
@@ -355,7 +356,7 @@ int main(int argc, char* argv[]) {
 
     if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, argc, argv);
+      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
 #else
       throw MueLu::Exceptions::RuntimeError("Epetra is not available");
 #endif
@@ -366,14 +367,14 @@ int main(int argc, char* argv[]) {
       typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-      return main_<double,int,long,Node>(clp, argc, argv);
+      return main_<double,int,long,Node>(clp, lib, argc, argv);
 #else
 #  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)           && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
-      return main_<double,int,int,Node> (clp, argc, argv);
+      return main_<double,int,int,Node> (clp, lib, argc, argv);
 #  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)     && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
-      return main_<double,int,long,Node>(clp, argc, argv);
+      return main_<double,int,long,Node>(clp, lib, argc, argv);
 #  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-      return main_<double,int,long long,Node>(clp, argc, argv);
+      return main_<double,int,long long,Node>(clp, lib, argc, argv);
 #  else
       throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation for Tpetra");
 #  endif

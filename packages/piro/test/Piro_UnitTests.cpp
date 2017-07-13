@@ -245,7 +245,7 @@ TEUCHOS_UNIT_TEST( Piro, SGResponseStatisticsSensitivity )
   RCP<EpetraExt::ModelEvaluator> model = rcp(new MockModelEval_C(app_comm));
   
   // Setup rest of solver
-  RCP<Stokhos::SGModelEvaluator> sg_model = 
+  RCP<Stokhos::SGModelEvaluatorBase> sg_model = 
     sg_solver_factory.createSGModel(model);
   RCP<EpetraExt::ModelEvaluator> sg_solver =
     sg_solver_factory.createSGSolver(sg_model);

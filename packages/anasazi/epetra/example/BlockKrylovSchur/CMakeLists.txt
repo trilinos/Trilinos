@@ -17,7 +17,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 
 if (${PACKAGE_NAME}_ENABLE_Galeri)
   TRIBITS_ADD_EXECUTABLE(
-    BlockKrylovSchurEpetra
+    Epetra_BKS_Galeri_example
     SOURCES BlockKrylovSchurEpetra.cpp
     COMM serial mpi
   )
@@ -45,6 +45,15 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
       SOURCES BlockKrylovSchurEpetraExFile.cpp
       COMM serial mpi
       )
+
+    IF (${PACKAGE_NAME}_ENABLE_Amesos)
+      TRIBITS_ADD_EXECUTABLE(
+        Epetra_BKS_File_Amesos_example
+        SOURCES BlockKrylovSchurEpetraExFileAmesos.cpp
+        COMM serial mpi
+        )
+    ENDIF(${PACKAGE_NAME}_ENABLE_Amesos)
+
   ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
 ENDIF(${PACKAGE_NAME}_ENABLE_EpetraExt)
 

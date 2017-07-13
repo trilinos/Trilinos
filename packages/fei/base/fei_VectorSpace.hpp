@@ -757,6 +757,8 @@ namespace fei {
 
     void runRecords(fei::Record_Operator<int>& record_op);
 
+    void runRecords(fei::Record_Operator<int>& record_op, int recordIndex);
+
     int synchronizeSharedRecords();
 
     int setLocalEqnNumbers();

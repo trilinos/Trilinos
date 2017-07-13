@@ -73,12 +73,14 @@ private:
 
   Teuchos::RCP<std::vector<Element> >               scaling_vec_;
   mutable Teuchos::RCP<DualScaledStdVector<Real> >  dual_vec_;
+  mutable bool isDualInitialized_;
 
 public:
 
   PrimalScaledStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec,
                         const Teuchos::RCP<std::vector<Element> > & scaling_vec) :
-    StdVector<Real>(std_vec), scaling_vec_(scaling_vec) {}
+    StdVector<Real>(std_vec), scaling_vec_(scaling_vec),
+    isDualInitialized_(false) {}
 
   Real dot( const Vector<Real> &x ) const {
     const PrimalScaledStdVector & ex = Teuchos::dyn_cast<const PrimalScaledStdVector>(x);
@@ -99,14 +101,17 @@ public:
   }
 
   const ROL::Vector<Real> & dual() const {
-    const std::vector<Element>& yval = *(StdVector<Real>::getVector());
-    uint dimension = yval.size();
-    std::vector<Element> tmp_vec(yval);
-    for (uint i = 0; i < dimension; i++) {
-      tmp_vec[i] *= (*scaling_vec_)[i];
+    uint n = StdVector<Real>::getVector()->size();
+    if ( !isDualInitialized_ ) {
+      dual_vec_ = Teuchos::rcp(new DualScaledStdVector<Real>(
+                  Teuchos::rcp(new std::vector<Element>(n)),
+                  scaling_vec_));
+      isDualInitialized_ = true;
     }
-    dual_vec_ = Teuchos::rcp( new DualScaledStdVector<Real>(
-                Teuchos::rcp(new std::vector<Element>(tmp_vec)), scaling_vec_ ) );
+    for (uint i = 0; i < n; i++) {
+      (*(dual_vec_->getVector()))[i]
+        = (*scaling_vec_)[i]*(*StdVector<Real>::getVector())[i];
+    }
     return *dual_vec_;
   }
 
@@ -123,12 +128,14 @@ private:
 
   Teuchos::RCP<std::vector<Element> >                 scaling_vec_;
   mutable Teuchos::RCP<PrimalScaledStdVector<Real> >  primal_vec_;
+  mutable bool isDualInitialized_;
 
 public:
 
   DualScaledStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec,
                       const Teuchos::RCP<std::vector<Element> > & scaling_vec) :
-    StdVector<Real>(std_vec), scaling_vec_(scaling_vec) {}
+    StdVector<Real>(std_vec), scaling_vec_(scaling_vec),
+    isDualInitialized_(false) {}
 
   Real dot( const Vector<Real> &x ) const {
     const DualScaledStdVector & ex = Teuchos::dyn_cast<const DualScaledStdVector>(x);
@@ -149,14 +156,17 @@ public:
   }
 
   const ROL::Vector<Real> & dual() const {
-    const std::vector<Element>& yval = *(StdVector<Real>::getVector());
-    uint dimension = yval.size();
-    std::vector<Element> tmp_vec(yval);
-    for (uint i = 0; i < dimension; i++) {
-      tmp_vec[i] /= (*scaling_vec_)[i];
+    uint n = StdVector<Real>::getVector()->size();
+    if ( !isDualInitialized_ ) {
+      primal_vec_ = Teuchos::rcp(new PrimalScaledStdVector<Real>(
+                    Teuchos::rcp(new std::vector<Element>(n)),
+                    scaling_vec_));
+      isDualInitialized_ = true;
     }
-    primal_vec_ = Teuchos::rcp( new PrimalScaledStdVector<Real>(
-                  Teuchos::rcp(new std::vector<Element>(tmp_vec)), scaling_vec_ ) );
+    for (uint i = 0; i < n; i++) {
+      (*(primal_vec_->getVector()))[i]
+        = (*StdVector<Real>::getVector())[i]/(*scaling_vec_)[i];
+    }
     return *primal_vec_;
   }
 

@@ -92,13 +92,13 @@ namespace MueLu {
       /*RCP< MueLu::Level > Level1 = H -> GetLevel(1);
       R_ = Level1 -> Get< RCP<Matrix> >("R");
       P_ = Level1 -> Get< RCP<Matrix> >("P");
-      //RCP<Matrix> AP = Level1 -> Get< RCP<Matrix> >("AP Pattern");
+      //RCP<Matrix> AP = Level1 -> Get< RCP<Matrix> >("AP graph");
       RCP<Matrix> AP;
       AP = MUtils::Multiply(*A_, false, *P_, false, AP);
       // Optimization storage option. If matrix is not changing later, allow this.
       bool doOptimizedStorage = true;
       // Reuse coarse matrix memory if available (multiple solve)
-      //RCP<Matrix> Ac = Level1 -> Get< RCP<Matrix> >("RAP Pattern");
+      //RCP<Matrix> Ac = Level1 -> Get< RCP<Matrix> >("RAP graph");
       RCP<Matrix> Ac;
       Ac = MUtils::Multiply(*R_, false, *AP, false, Ac, true, doOptimizedStorage);
       Ac_ = MUtils::Op2NonConstTpetraCrs(Ac);

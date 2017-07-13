@@ -151,7 +151,7 @@ size_t findUniqueGids(
   MPI_Comm mpicomm = MPI_COMM_WORLD;  // Will get MPI_COMM_WORLD from siMPI
 #endif
 
-  int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
+  int num_gid = TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID * num_entries;
   int num_user = sizeof(gno_t);
 
   // Buffer the keys for Zoltan_DD
@@ -164,7 +164,7 @@ size_t findUniqueGids(
   for (size_t i = 0; i < num_keys; i++) {
     for (size_t v = 0; v < num_entries; v++) {
       ZOLTAN_ID_PTR ddkey = &(ddkeys[idx]);
-      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(ddkey, tmpKeyVecs[v][i]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(ddkey, tmpKeyVecs[v][i]);
       idx += TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID;
     }
   }
@@ -232,7 +232,7 @@ size_t findUniqueGids(
   MPI_Comm mpicomm = MPI_COMM_WORLD;  // Will get MPI_COMM_WORLD from siMPI
 #endif
 
-  int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
+  int num_gid = TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID * num_entries;
   int num_user = sizeof(gno_t);
 
   // Buffer the keys for Zoltan_DD
@@ -241,7 +241,7 @@ size_t findUniqueGids(
   for (size_t i = 0; i < num_keys; i++) {
     for (size_t v = 0; v < num_entries; v++) {
       ZOLTAN_ID_PTR ddkey = &(ddkeys[idx]);
-      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(ddkey, keys[i][v]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(ddkey, keys[i][v]);
       idx += TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID;
     }
   }

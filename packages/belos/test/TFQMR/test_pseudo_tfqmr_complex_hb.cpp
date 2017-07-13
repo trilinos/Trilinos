@@ -89,11 +89,12 @@ int main(int argc, char *argv[]) {
   ST zero = SCT::zero();
 
   int info = 0;
-  int MyPID = 0;
   bool norm_failure = false;
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   //
+  int MyPID = session.getRank();
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 

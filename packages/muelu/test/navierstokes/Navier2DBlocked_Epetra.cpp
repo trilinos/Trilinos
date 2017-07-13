@@ -74,8 +74,8 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
@@ -244,10 +244,10 @@ int main(int argc, char *argv[]) {
     /////////////////////////////////////// build blocked transfer operator
     // using the map extractor
     RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(map_extractor,map_extractor,10));
-    bOp->setMatrix(0,0,xA11);
-    bOp->setMatrix(0,1,xA12);
-    bOp->setMatrix(1,0,xA21);
-    bOp->setMatrix(1,1,xA22);
+    bOp->setMatrix(0,0,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA11)));
+    bOp->setMatrix(0,1,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA12)));
+    bOp->setMatrix(1,0,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA21)));
+    bOp->setMatrix(1,1,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA22)));
 
     bOp->fillComplete();
 
@@ -284,7 +284,6 @@ int main(int argc, char *argv[]) {
     RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpack11Type, ifpack11List, 0) );
     smoProto11->SetFactory("A", A11Fact);
     RCP<SmootherFactory> Smoo11Fact = rcp( new SmootherFactory(smoProto11) );
-    Smoo11Fact->SetFactory("A",A11Fact);
 
     ////////////////////////////////////////// prepare null space for A11
     RCP<MultiVector> nullspace11 = MultiVectorFactory::Build(xstridedvelmap, 2);  // this is a 2D standard null space

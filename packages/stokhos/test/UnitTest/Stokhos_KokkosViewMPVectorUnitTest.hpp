@@ -422,7 +422,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
   success = checkVectorView(v2, out);
 }
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionHost, Storage, Layout )
 {
   typedef typename Storage::execution_space Device;
@@ -453,9 +452,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionHost, Storage, Layou
 
   success = checkVectorView(v, out);
 }
-#else
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionHost, Storage, Layout ) {}
-#endif
 
 /*
 // This test does not work because we can't call deep_copy on partitioned views

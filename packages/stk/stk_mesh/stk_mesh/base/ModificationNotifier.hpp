@@ -22,6 +22,13 @@ public:
         observers.push_back(observer);
     }
 
+    void unregister_observer(ModificationObserver *observer)
+    {
+        auto iter = std::find(observers.begin(), observers.end(), observer);
+        if(iter != observers.end())
+            observers.erase(iter);
+    }
+
     void notify_entity_added(stk::mesh::Entity entity)
     {
         for(ModificationObserver *observer : observers)
@@ -46,8 +53,9 @@ public:
         }
     }
 
-    void notify_finished_modification_end()
+    void notify_finished_modification_end(MPI_Comm communicator)
     {
+        reduce_values_for_observers(communicator);
         for(ModificationObserver *observer : observers)
         {
             observer->finished_modification_end_notification();
@@ -96,6 +104,10 @@ public:
 
 private:
     std::vector<ModificationObserver *> observers;
+
+    void reduce_values_for_observers(MPI_Comm communicator);
+    void get_values_to_reduce_from_observers(std::vector<size_t> &allObserverValues, std::vector<std::vector<size_t> >& observerValues);
+    void set_max_values_on_observers(const std::vector<size_t> &maxValues, std::vector<std::vector<size_t> >& observerValues);
 };
 
 }

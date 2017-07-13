@@ -53,7 +53,9 @@ namespace Details {
 template<class GraphType>
 UserPartitioner<GraphType>::
 UserPartitioner (const Teuchos::RCP<const row_graph_type>& graph) :
-  OverlappingPartitioner<GraphType> (graph)
+  OverlappingPartitioner<GraphType> (graph),
+  userProvidedParts_(false),
+  userProvidedMap_(false)
 {}
 
 template<class GraphType>
@@ -64,22 +66,44 @@ void
 UserPartitioner<GraphType>::
 setPartitionParameters (Teuchos::ParameterList& List)
 {
-  map_ = List.get ("partitioner: map", map_);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    map_.is_null (), std::runtime_error, "Ifpack2::UserPartitioner::"
-    "computePartitions: Map_ is null.");
+  userProvidedParts_ = List.isParameter("partitioner: parts");
+  userProvidedMap_   = List.isParameter("partitioner: map");
+  if (userProvidedParts_ && userProvidedMap_) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Ifpack2::UserPartitioner::setPartitionParameters: "
+                               "you may specify only one of \"partitioner: parts\" and \"partitioner: map\","
+                               " not both");
+  }
+  if (userProvidedMap_) {
+    map_ = List.get ("partitioner: map", map_);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      map_.is_null (), std::runtime_error, "Ifpack2::UserPartitioner::"
+      "setPartitionParameters: map_ is null.");
+  }
+  if (userProvidedParts_) {
+    typedef Teuchos::Array<typename Teuchos::ArrayRCP<typename GraphType::local_ordinal_type>> parts_type;
+    //FIXME JJH 9-Dec-2015 - This is a potentially expensive deep copy.  Use an ArrayRCP<ArrayRCP<int>> instead.
+    this->Parts_ = List.get<parts_type>("partitioner: parts");
+    List.remove("partitioner: parts"); //JJH I observed that iterating through the ParameterList is much more
+                                       //expensive when "partitioner: collection" is a Parameter object.
+                                       //Thus, I remove it once it's fetched from the list.
+  }
 }
 
 template<class GraphType>
 void UserPartitioner<GraphType>::computePartitions ()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    map_.is_null (), std::logic_error, "Ifpack2::UserPartitioner::"
-    "computePartitions: Map_ is null.");
-
-  const size_t localNumRows = this->Graph_->getNodeNumRows ();
-  for (size_t ii = 0; ii < localNumRows; ++ii) {
-    this->Partition_[ii] = map_[ii];
+  if (userProvidedParts_) {
+    this->NumLocalParts_ = this->Parts_.size();
+    //The user has explicitly defined Parts_, so there is no need to for Partition_.
+    this->Partition_.resize(0);
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      map_.is_null (), std::logic_error, "Ifpack2::UserPartitioner::"
+      "computePartitions: map_ is null.");
+    const size_t localNumRows = this->Graph_->getNodeNumRows ();
+    for (size_t ii = 0; ii < localNumRows; ++ii) {
+      this->Partition_[ii] = map_[ii];
+    }
   }
   // IGNORING ALL THE SINGLETON STUFF IN IFPACK_USERPARTITIONER.CPP BY
   // ORDERS OF CHRIS SIEFERT

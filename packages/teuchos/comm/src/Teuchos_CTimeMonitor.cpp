@@ -44,6 +44,7 @@
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 
 namespace {
@@ -88,7 +89,6 @@ int Teuchos_startTimer( char timerName[], int timerID )
     return -1;
   }
   return timerID;
-  (void)success; // To avoid wrong compiler warning on GCC 4.6.1
 }
 
 
@@ -109,5 +109,5 @@ void Teuchos_stopTimer( int timerID )
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,
     *Teuchos::VerboseObjectBase::getDefaultOStream(), success);
-  (void)success; // GCC 4.6.1 says this variable is unused?
+  if (!success) ; // Avoid unused var warning (we don't need to check)
 }

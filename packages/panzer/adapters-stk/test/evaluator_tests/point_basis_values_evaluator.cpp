@@ -61,7 +61,7 @@ using Teuchos::rcp;
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOF_PointValues.hpp"
 #include "Panzer_Constant.hpp"
-#include "Panzer_IntegrationValues.hpp"
+#include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_BasisValues2.hpp"
 
 #include "Panzer_STK_Version.hpp"
@@ -71,8 +71,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 
 #include "RandomFieldEvaluator.hpp"
-
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -91,18 +89,17 @@ namespace panzer {
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName);
   void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, int integration_order);
-  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
+  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
   Teuchos::RCP<panzer::IntegrationRule> buildIR(std::size_t worksetSize,int cubature_degree);
 
   TEUCHOS_UNIT_TEST(point_values_evaluator, eval)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
     const std::string fieldName_qedge1 = "V";
 
-    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
 
     // build input physics block
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
@@ -119,16 +116,17 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cell_data,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk_classic::buildWorksets(*mesh,*physicsBlock);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     TEST_EQUALITY(work_sets->size(),1);
 
     int num_points = 3;
     RCP<const panzer::PointRule> point_rule = rcp(new panzer::PointRule("RandomPoints",num_points, cell_data));
     RCP<const panzer::PointRule> point_rule_basis = rcp(new panzer::PointRule("BasisPoints",basis_q1->cardinality(), cell_data));
 
-    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray 
-       = Teuchos::rcp(new Intrepid2::FieldContainer<double>(num_points,2));
-    Intrepid2::FieldContainer<double> & point_coordinates = *userArray;
+    Teuchos::RCP<Kokkos::DynRankView<double,PHX::Device> > userArray 
+      = Teuchos::rcp(new Kokkos::DynRankView<double,PHX::Device>("userArray",num_points,2));
+    Kokkos::DynRankView<double,PHX::Device> & point_coordinates = *userArray;
     point_coordinates(0,0) =  0.0; point_coordinates(0,1) = 0.0; // mid point
     point_coordinates(1,0) =  0.5; point_coordinates(1,1) = 0.5; // mid point of upper left quadrant
     point_coordinates(2,0) = -0.5; point_coordinates(2,1) = 0.0; // mid point of line from center to left side
@@ -210,36 +208,34 @@ namespace panzer {
        point_coords_jac_inv(point_rule_basis->getName()+"_"+"jac_inv",point_rule_basis->dl_tensor);
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual,Cell,IP,Dim,Dim>(point_coords_jac_inv);
 
-    typedef panzer::ArrayTraits<double,Intrepid2::FieldContainer<double> >::size_type size_type;
-
-    for(size_type c=0;c<basis_q1->numCells();c++) {
+    for(int c=0;c<basis_q1->numCells();c++) {
        double dx = 0.5;
        double dy = 0.5;
-       for(size_type p=0;p<num_points;p++) {
+       for(int p=0;p<num_points;p++) {
           double x = dx*(point_coordinates(p,0)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,0); 
           double y = dy*(point_coordinates(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
           TEST_FLOATING_EQUALITY(point_coords(c,p,0),x,1e-10);
           TEST_FLOATING_EQUALITY(point_coords(c,p,1),y,1e-10);
        }
 
-       for(size_type p=0;p<basis_q1->cardinality();p++) {
+       for(int p=0;p<basis_q1->cardinality();p++) {
           double x = dx*(workset.bases[1]->basis_coordinates_ref(p,0)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,0); 
           double y = dy*(workset.bases[1]->basis_coordinates_ref(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
           TEST_FLOATING_EQUALITY(point_coords_basis(c,p,0),x,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_basis(c,p,1),y,1e-10);
        }
 
-       for(size_type p=0;p<num_points;p++)
+       for(int p=0;p<num_points;p++)
           TEST_FLOATING_EQUALITY(point_coords_jac_det(c,p),dx*dy/4.0,1e-10);
 
-       for(size_type p=0;p<num_points;p++) {
+       for(int p=0;p<num_points;p++) {
           TEST_FLOATING_EQUALITY(point_coords_jac(c,p,0,0),dx/2.0,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac(c,p,0,1),0.0,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac(c,p,1,0),0.0,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac(c,p,1,1),dy/2.0,1e-10);
        }
 
-       for(size_type p=0;p<num_points;p++) {
+       for(int p=0;p<num_points;p++) {
           TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,0,0),1.0/(dx/2.0),1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,0,1),0.0,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,1,0),0.0,1e-10);
@@ -250,13 +246,12 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values_evaluator, eval)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
     const std::string fieldName_qedge1 = "V";
 
-    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
 
     // build input physics block
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
@@ -274,16 +269,18 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk_classic::buildWorksets(*mesh,*physicsBlock);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     panzer::Workset & workset = (*work_sets)[0];
     TEST_EQUALITY(work_sets->size(),1);
 
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
-    panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> > int_values;
+    panzer::IntegrationValues2<double> int_values("",true);
     int_values.setupArrays(point_rule);
     int_values.evaluateValues(workset.cell_vertex_coordinates);
 
-    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    // Teuchos::RCP<Kokkos::DynRankView<double,PHX::Device> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    auto userArray = int_values.cub_points;
 
     Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_q1,*point_rule));
 
@@ -295,7 +292,7 @@ namespace panzer {
     Teuchos::RCP<const std::vector<Teuchos::RCP<PHX::FieldTag > > > evalJacFields;
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
     {
@@ -348,12 +345,11 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values_evaluator, eval_vector)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName = "U";
 
-    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
 
     // build input physics block
     Teuchos::RCP<panzer::PureBasis> basis_edge = buildBasis(workset_size,"HCurl");
@@ -370,16 +366,18 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,integration_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk_classic::buildWorksets(*mesh,*physicsBlock);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     panzer::Workset & workset = (*work_sets)[0];
     TEST_EQUALITY(work_sets->size(),1);
 
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
-    panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> > int_values;
+    panzer::IntegrationValues2<double> int_values("",true);
     int_values.setupArrays(point_rule);
     int_values.evaluateValues(workset.cell_vertex_coordinates);
 
-    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    // Teuchos::RCP<Kokkos::DynRankView<double,PHX::Device> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    auto userArray = int_values.cub_points;
 
     Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_edge,*point_rule));
 
@@ -400,7 +398,7 @@ namespace panzer {
     }
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
     {
@@ -474,13 +472,12 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(dof_point_values_evaluator, eval)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
     const std::string fieldName_qedge1 = "V";
 
-    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
 
     // build input physics block
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
@@ -498,16 +495,18 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk_classic::buildWorksets(*mesh,*physicsBlock);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     panzer::Workset & workset = (*work_sets)[0];
     TEST_EQUALITY(work_sets->size(),1);
 
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
-    panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> > int_values;
+    panzer::IntegrationValues2<double> int_values("",true);
     int_values.setupArrays(point_rule);
     int_values.evaluateValues(workset.cell_vertex_coordinates);
 
-    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    // Teuchos::RCP<Kokkos::DynRankView<double,PHX::Device> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    auto userArray = int_values.cub_points;
 
     Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_q1,*point_rule));
 
@@ -522,7 +521,7 @@ namespace panzer {
     }
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
     {
@@ -609,20 +608,17 @@ namespace panzer {
      return Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
   }
 
-  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY)
+  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
   {
-    typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk_classic::STK_Interface::VectorFieldType CoordinateField;
-
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
     
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
 
     return mesh;

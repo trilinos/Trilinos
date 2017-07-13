@@ -49,6 +49,8 @@
 #include "Teuchos_TypeTraits.hpp"
 #include "Teuchos_Version.hpp"
 
+#include "Teuchos_TestingHelpers.hpp"
+
 namespace {
 
 //
@@ -122,7 +124,6 @@ bool testScalarTraits(
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   bool success = true;
-  bool result;
 
   out << "\nTesting: " << Teuchos::TypeNameTraits<ST>::name() << " ...\n";
 
@@ -133,25 +134,21 @@ bool testScalarTraits(
   out << "Type chain (ascending) : "; TYPE_CHAIN_A<Scalar>(out); out << "\n";
   out << "Type chain (descending): "; TYPE_CHAIN_D<Scalar>(out); out << "\n";
 
+  TEUCHOS_TEST_EQUALITY_CONST(ST::isnaninf(1.0), false, out, success);
+
   out << "\nTesting that squareroot(NaN) == NaN! ...\n";
   {
     const Scalar sqrtNan = ST::squareroot(nan);
-    result = (ST::isnaninf(sqrtNan));
-    if (!result) success = false;
-    out
-      << "squareroot("<<nan<<") = " << sqrtNan << " == " << nan << " : "
-      << passfail(result) << "\n";
+    out << "squareroot("<<nan<<") = " << sqrtNan << "\n";
+    TEUCHOS_TEST_EQUALITY_CONST(ST::isnaninf(sqrtNan), true, out, success);
   }
 
   out << "\nTesting that squareroot(-NaN) == NaN! ...\n";
   {
     const Scalar negNan = -nan;
     const Scalar sqrtNegNan = ST::squareroot(negNan);
-    result = (ST::isnaninf(sqrtNegNan));
-    if (!result) success = false;
-    out
-      << "squareroot("<<negNan<<") = " << sqrtNegNan << " == " << nan << " : "
-      << passfail(result) << "\n";
+    out << "squareroot("<<negNan<<") = " << sqrtNegNan << "\n";
+    TEUCHOS_TEST_EQUALITY_CONST(ST::isnaninf(sqrtNegNan), true, out, success);
   }
 
   if (ST::isComplex == false)
@@ -160,11 +157,8 @@ bool testScalarTraits(
     {
       const Scalar negOne = -ST::one();
       const Scalar sqrtNegOne = ST::squareroot(negOne);
-      result = (ST::isnaninf(sqrtNegOne));
-      if (!result) success = false;
-      out
-        << "squareroot("<<negOne<<") = " << sqrtNegOne << " == " << nan << " : "
-        << passfail(result) << "\n";
+      out << "squareroot("<<negOne<<") = " << sqrtNegOne << "\n";
+      TEUCHOS_TEST_EQUALITY_CONST(ST::isnaninf(sqrtNegOne), true, out, success);
     }
   }
 
@@ -174,33 +168,21 @@ bool testScalarTraits(
   {
     const Scalar nan = std::numeric_limits<Scalar>::quiet_NaN();
     const Scalar sqrtNan = ST::squareroot(nan);
-    result = (ST::isnaninf(sqrtNan));
-    if (!result) success = false;
-    out
-      << "squareroot("<<nan<<") = " << sqrtNan << " == " << nan << " : "
-      << passfail(result) << "\n";
+    TEUCHOS_TEST_EQUALITY_CONST(ST::isnaninf(sqrtNan), true, out, success);
   }
 
   out << "\nTesting that squareroot(signaling_NaN) == NaN! ...\n";
   {
     const Scalar nan = std::numeric_limits<Scalar>::signaling_NaN();
     const Scalar sqrtNan = ST::squareroot(nan);
-    result = (ST::isnaninf(sqrtNan));
-    if (!result) success = false;
-    out
-      << "squareroot("<<nan<<") = " << sqrtNan << " == " << nan << " : "
-      << passfail(result) << "\n";
+    TEUCHOS_TEST_EQUALITY_CONST(ST::isnaninf(sqrtNan), true, out, success);
   }
 
   out << "\nTesting that squareroot(inf) == NaN! ...\n";
   {
     const Scalar inf = std::numeric_limits<Scalar>::infinity();
     const Scalar sqrtInf = ST::squareroot(inf);
-    result = (ST::isnaninf(sqrtInf));
-    if (!result) success = false;
-    out
-      << "squareroot("<<inf<<") = " << sqrtInf << " == " << nan << " : "
-      << passfail(result) << "\n";
+    TEUCHOS_TEST_EQUALITY_CONST(ST::isnaninf(sqrtInf), true, out, success);
   }
 
 #endif // HAVE_NUMERIC_LIMITS

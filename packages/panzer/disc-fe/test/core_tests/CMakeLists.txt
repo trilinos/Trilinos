@@ -2,7 +2,7 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(UNIT_TEST_DRIVER
-  ${TEUCHOS_STD_UNIT_TEST_MAIN})
+  ${PANZER_UNIT_TEST_MAIN})
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   integration_rule
@@ -10,11 +10,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  integration_values
-  SOURCES integration_values.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 1
-  )
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  integration_values
+#  SOURCES integration_values.cpp ${UNIT_TEST_DRIVER}
+#  NUM_MPI_PROCS 1
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   integration_values2
@@ -46,11 +46,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  point_values 
-  SOURCES point_values.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 1
-  )
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   point_values 
+#   SOURCES point_values.cpp ${UNIT_TEST_DRIVER}
+#   NUM_MPI_PROCS 1
+#   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   point_values2 
@@ -127,6 +127,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   parameter_list_acceptance_test
   SOURCES parameter_list_acceptance_test.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  view_factory
+  SOURCES view_factory.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  check_bc_consistency
+  SOURCES check_bc_consistency.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
 

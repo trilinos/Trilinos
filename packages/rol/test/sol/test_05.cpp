@@ -62,6 +62,7 @@
 #include "test_05.hpp"
 
 typedef double RealT;
+
 typedef H1VectorPrimal<RealT> PrimalStateVector;
 typedef H1VectorDual<RealT> DualStateVector;
 typedef L2VectorPrimal<RealT> PrimalControlVector;
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
     /*************************************************************************/
     bool hess = true;
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > pcon
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon
       = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(fem,hess));
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
@@ -139,7 +140,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
-    RealT tol = std::sqrt(ROL::ROL_EPSILON);
+    RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     for (int i = sampler->start(); i < sampler->numMySamples(); i++) {
 //      *outStream << "(" << sampler->getMyPoint(i)[0] << ", "
 //                        << sampler->getMyPoint(i)[1] << ", "

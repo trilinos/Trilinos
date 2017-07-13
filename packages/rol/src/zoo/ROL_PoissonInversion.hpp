@@ -345,7 +345,7 @@ public:
       if ( (Real)(i+1)*hu_ < 0.5 ) {
        (*bp)[i] = 2.0*k1*hu_;
       }
-      else if ( std::abs((Real)(i+1)*hu_ - 0.5) < ROL_EPSILON ) {
+      else if ( std::abs((Real)(i+1)*hu_ - 0.5) < ROL_EPSILON<Real>() ) {
        (*bp)[i] = (k1+k2)*hu_;
       }
       else if ( (Real)(i+1)*hu_ > 0.5 ) {

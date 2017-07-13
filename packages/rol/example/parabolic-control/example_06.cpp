@@ -75,7 +75,6 @@
 #include "ROL_EqualityConstraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_StdBoundConstraint.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -363,7 +362,7 @@ private:
     compute_residual(r,up,u,z);
     Real rnorm = compute_norm(r);
     // Define tolerances
-    Real tol   = 1.e2*ROL::ROL_EPSILON;
+    Real tol   = 1.e2*ROL::ROL_EPSILON<Real>();
     Real maxit = 100;
     // Initialize Jacobian storage
     std::vector<Real> d(nx_,0.0);
@@ -385,7 +384,7 @@ private:
       update(utmp,s,-alpha);
       compute_residual(r,up,utmp,z);
       rnorm = compute_norm(r); 
-      while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON) ) {
+      while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON<Real>()) ) {
         alpha /= 2.0;
         utmp.assign(u.begin(),u.end());
         update(utmp,s,-alpha);
@@ -1035,7 +1034,7 @@ int main(int argc, char *argv[]) {
     // Initialize reduced objective function
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
-    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,cp);
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,xzp,cp);
 
     // Check derivatives.
     obj.checkGradient(x,y,true,*outStream);
@@ -1071,7 +1070,7 @@ int main(int argc, char *argv[]) {
     xz.zero();
     std::clock_t timer_tr = std::clock();
     algo->run(xz, robj, true, *outStream);
-    *outStream << "Projected Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
+    *outStream << "Trust-Region Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
                << " seconds.\n";
 
     // Composite step.

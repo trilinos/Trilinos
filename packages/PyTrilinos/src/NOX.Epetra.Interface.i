@@ -84,33 +84,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 #include "PyTrilinos_Teuchos_Util.hpp"
 
 // Epetra includes
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // Local Epetra includes
 #include "PyTrilinos_Epetra_Util.hpp"
@@ -122,7 +96,8 @@ NOX.Epetra.Interface provides the following user-level classes:
 %}
 
 // General ignore directives
-// %ignore *::operator=;   // temp removal
+%ignore *::operator[];
+%ignore *::operator=;
 
 // Include NOX documentation
 %include "NOX_dox.i"
@@ -132,6 +107,36 @@ NOX.Epetra.Interface provides the following user-level classes:
 
 // Trilinos module imports
 %import "Teuchos.i"
+
+// Teuchos::RCPs typemaps
+%teuchos_rcp(NOX::Abstract::Group)
+%teuchos_rcp(NOX::Epetra::Interface::Required)
+%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
+%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
+
+// Allow import from the parent directory
+%pythoncode
+%{
+import sys, os.path as op
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+if not parentDir in sys.path: sys.path.append(parentDir)
+del sys, op
+try:
+    from .. import Abstract
+except (ValueError, SystemError):
+    import Abstract
+%}
+
+// Include typemaps for Abstract base classes
+%ignore *::getXPtr;
+%ignore *::getFPtr;
+%ignore *::getGradientPtr;
+%ignore *::getNewtonPtr;
+%include "NOX.Abstract_typemaps.i"
+%import(module="Abstract" ) "NOX_Abstract_Group.H"
+%import(module="Abstract" ) "NOX_Abstract_PrePostOperator.H"
+%import(module="Abstract" ) "NOX_Abstract_MultiVector.H"
+%import(module="Abstract" ) "NOX_Abstract_Vector.H"
 
 // Epetra module imports
 %import "Epetra.i"
@@ -170,11 +175,6 @@ NOX.Epetra.Interface provides the following user-level classes:
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-
-// Teuchos::RCPs typemaps
-%teuchos_rcp(NOX::Epetra::Interface::Required)
-%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
-%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
 ///////////////////////
 // NOX_Utils support //

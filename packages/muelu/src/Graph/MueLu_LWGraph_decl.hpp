@@ -75,9 +75,17 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
+
+    //! LWGraph constructor
+    //
+    // @param[in] rowPtrs: Array containing row offsets (CSR format)
+    // @param[in] colPtrs: Array containing local column indices (CSR format)
+    // @param[in] domainMap: non-overlapping (domain) map for graph. Usually provided by AmalgamationFactory stored in UnAmalgamationInfo container
+    // @param[in] importMap: overlapping map for graph. Usually provided by AmalgamationFactory stored in UnAmalgamationInfo container
+    // @param[in] objectLabel: label string
     LWGraph(const ArrayRCP<const LO>& rowPtrs, const ArrayRCP<const LO>& colPtrs,
-            const RCP<const Map>& domainMap, const RCP<const Map>& rangeMap, const std::string& objectLabel = "")
-            : rows_(rowPtrs), columns_(colPtrs), domainMap_(domainMap), importMap_(rangeMap), domainMapRef_(*domainMap), objectLabel_(objectLabel)
+            const RCP<const Map>& domainMap, const RCP<const Map>& importMap, const std::string& objectLabel = "")
+            : rows_(rowPtrs), columns_(colPtrs), domainMap_(domainMap), importMap_(importMap), domainMapRef_(*domainMap), objectLabel_(objectLabel)
     {
       minLocalIndex_ = domainMapRef_.getMinLocalIndex();
       maxLocalIndex_ = domainMapRef_.getMaxLocalIndex();

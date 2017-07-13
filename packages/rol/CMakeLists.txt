@@ -15,14 +15,26 @@ TRIBITS_PACKAGE(ROL)
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   HAVE_ROL_DEBUG
   "Enable a host of runtime debug checking."
-  ${Trilinos_ENABLE_DEBUG}
+  ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
+  ROL_TIMERS
+  "Build ROL with Teuchos TimeMonitors enabled."
+  OFF
+  )
+
+MESSAGE("-- " "Configuring ROL with " ${PACKAGE_NAME}_ENABLE_TIMERS=${${PACKAGE_NAME}_ENABLE_TIMERS})
+
 
 #
 # C) Add the libraries, tests, and examples
 #
 
 ADD_SUBDIRECTORY(src)
+
+# No reason for this to be conditional since ROL depends on Teuchos
+ADD_SUBDIRECTORY(adapters/teuchos)
 
 IF (ROL_ENABLE_Epetra)
   ADD_SUBDIRECTORY(adapters/epetra)
@@ -44,8 +56,21 @@ IF (ROL_ENABLE_Thyra)
   ADD_SUBDIRECTORY(adapters/thyra)
 ENDIF()
 
+IF (ROL_ENABLE_ArrayFireCPU)
+  ADD_SUBDIRECTORY(adapters/arrayfire)
+ENDIF()
+
+IF (ROL_ENABLE_TriKota)
+  ADD_SUBDIRECTORY(adapters/trikota)
+ENDIF()
+
+IF (ROL_ENABLE_Boost AND ROL_ENABLE_MiniTensor)
+  ADD_SUBDIRECTORY(adapters/minitensor)
+ENDIF()
+
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(tutorial)
 
 #
 # Exclude files for source package.

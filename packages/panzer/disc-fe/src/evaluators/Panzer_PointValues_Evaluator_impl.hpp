@@ -57,8 +57,8 @@ PHX_EVALUATOR_CTOR(PointValues_Evaluator,p)
 
   Teuchos::RCP<const panzer::PointRule> pointRule 
      = p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
-  Teuchos::RCP<const Intrepid2::FieldContainer<double> > userArray
-     = p.get<Teuchos::RCP<const Intrepid2::FieldContainer<double> > >("Point Array");
+  Teuchos::RCP<const Kokkos::DynRankView<double,PHX::Device> > userArray
+     = p.get<Teuchos::RCP<const Kokkos::DynRankView<double,PHX::Device> > >("Point Array");
 
   initialize(pointRule,userArray.ptr(),Teuchos::null);
 }
@@ -66,7 +66,17 @@ PHX_EVALUATOR_CTOR(PointValues_Evaluator,p)
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
 PointValues_Evaluator<EvalT,TRAITST>::PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                                                            const Intrepid2::FieldContainer<double> & userArray)
+                                                            const Kokkos::DynRankView<double,PHX::Device> & userArray)
+{
+  basis_index = 0;
+
+  initialize(pointRule,Teuchos::ptrFromRef(userArray),Teuchos::null);
+}
+
+//**********************************************************************
+template <typename EvalT, typename TRAITST>
+PointValues_Evaluator<EvalT,TRAITST>::PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
+                                                            const PHX::MDField<double, panzer::IP, panzer::Dim> & userArray)
 {
   basis_index = 0;
 
@@ -80,13 +90,16 @@ PointValues_Evaluator<EvalT,TRAITST>::PointValues_Evaluator(const Teuchos::RCP<c
 {
   basis_index = 0;
 
-  initialize(pointRule,Teuchos::null,pureBasis);
+  Teuchos::Ptr<const PHX::MDField<double, panzer::IP, panzer::Dim> > userArray;
+  initialize(pointRule,userArray,pureBasis);
 }
 
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
+template <typename ArrayT>
 void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                                                      const Teuchos::Ptr<const Intrepid2::FieldContainer<double> > & userArray,
+                                                      const Teuchos::Ptr<const ArrayT> & userArray,
+                                                      // const Teuchos::Ptr<const Kokkos::DynRankView<double,PHX::Device> > & userArray,
                                                       const Teuchos::RCP<const panzer::PureBasis> & pureBasis)
 {
   basis = pureBasis;
@@ -105,10 +118,11 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
   // copy user array data
   if(userArray!=Teuchos::null) {
     TEUCHOS_ASSERT(userArray->rank()==2);
-    refPointArray = Intrepid2::FieldContainer<double>(userArray->dimension(0),userArray->dimension(1));
-    TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
-    for(int i=0;i<userArray->size();i++)
-       refPointArray[i] = (*userArray)[i]; 
+    refPointArray = Kokkos::DynRankView<double,PHX::Device>("refPointArray",userArray->dimension(0),userArray->dimension(1));
+    // TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
+    for(int i=0;i<userArray->extent_int(0);i++)
+      for(int j=0;j<userArray->extent_int(1);j++)
+        refPointArray(i,j) = (*userArray)(i,j); 
   }
 
   // setup all fields to be evaluated and constructed

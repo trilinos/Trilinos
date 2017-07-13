@@ -88,7 +88,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 { 
   //std::cout << "ROGER ParamValue = " << param->getValue() << std::endl;
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
 	 pt < target_field.dimension(1); ++pt) {
       target_field(cell,pt) = param->getValue();

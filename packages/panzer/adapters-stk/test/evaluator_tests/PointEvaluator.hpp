@@ -45,18 +45,15 @@
 
 #include <string>
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
-
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-
 #include "Panzer_Evaluator_Macros.hpp"
 
 template <typename ScalarT>
 class PointEvaluation {
 public:
-   // virtual void evaluateContainer(const Intrepid2::FieldContainer<double> & points,
+   // virtual void evaluateContainer(const Kokkos::DynRankView<double,PHX::Device> & points,
    virtual void evaluateContainer(const PHX::MDField<ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & points,
                                   PHX::MDField<ScalarT> & field) const = 0;
 };

@@ -64,7 +64,7 @@ int Zoltan_RCB_Box(
 ZZ     *zz,             /* The Zoltan structure */
 int     part,           /* Partition whose box should be returned */
 int    *ndim,           /* Number of dimensions in the geometry partitioned
-                           (and, thus, in the RCB box for the partition) */
+                           (and, thus, in the RCB box for the part) */
 double *xmin,           /* lower x extent of box */
 double *ymin,           /* lower y extent of box */
 double *zmin,           /* lower z extent of box */
@@ -106,7 +106,7 @@ int                i, ierr = ZOLTAN_OK;
 
   if (part < 0 || part >= zz->LB.Num_Global_Parts) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-      "Invalid partition number.");
+      "Invalid part number.");
     ierr = ZOLTAN_FATAL;
     goto End;
   }

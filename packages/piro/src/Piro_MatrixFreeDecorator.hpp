@@ -68,7 +68,8 @@ public:
   /** \name Constructors/initializers */
   //@{
   /** \brief . */
-  explicit MatrixFreeDecorator(Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model);
+  explicit MatrixFreeDecorator(Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model, 
+                               double lambda_ = 1.0e-6);
   //@}
 
   /** \name Overridden from Thyra::ModelEvaluatorDelegatorBase . */
@@ -92,6 +93,8 @@ private:
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
+  // Constant used in formulas to pick perturbation, typically 1.0e-6
+  double lambda; 
 };
 
 }

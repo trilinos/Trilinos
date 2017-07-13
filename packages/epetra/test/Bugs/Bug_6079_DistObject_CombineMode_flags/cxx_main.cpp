@@ -93,7 +93,7 @@ void test ()
   v_ghosted.PutScalar(1.);
 
   Epetra_Import data_exchange (v_distributed.Map(), v_ghosted.Map());
-  int ierr = v_distributed.Import(v_ghosted, data_exchange, Epetra_AddLocalAlso);
+  v_distributed.Import(v_ghosted, data_exchange, Epetra_AddLocalAlso);
  
   std::cout << "Distributed:" << std::endl;
   for (int i=begin_index; i<end_index; ++i)

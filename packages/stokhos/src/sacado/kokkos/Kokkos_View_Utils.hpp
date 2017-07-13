@@ -272,8 +272,6 @@ make_view(typename ViewType::pointer_type ptr,
   return ViewType(ptr, N0, N1, N2, N3, N4, N5, N6, N7);
 }
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 template <typename ViewType>
 ViewType
 make_view(const std::string& label,
@@ -284,8 +282,6 @@ make_view(const std::string& label,
   return ViewType(Experimental::view_alloc(label,init),
                   N0, N1, N2, N3, N4, N5, N6, N7);
 }
-
-#endif
 
 } // namespace Kokkos
 

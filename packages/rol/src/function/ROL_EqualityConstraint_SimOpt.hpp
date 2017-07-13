@@ -49,6 +49,11 @@
 #include "ROL_Types.hpp"
 #include <iostream>
 
+#include "ROL_NonlinearLeastSquaresObjective_SimOpt.hpp"
+#include "ROL_EqualityConstraint_State.hpp"
+#include "ROL_Objective_FSsolver.hpp"
+#include "ROL_Algorithm.hpp"
+
 /** @ingroup func_group
     \class ROL::EqualityConstraint_SimOpt
     \brief Defines the equality constraint operator interface for simulation-based optimization.
@@ -92,27 +97,33 @@
 namespace ROL {
 
 template <class Real>
-class EqualityConstraint_SimOpt : public EqualityConstraint<Real> {
+class EqualityConstraint_SimOpt : public virtual EqualityConstraint<Real> {
 private:
   // Additional vector storage for solve
   Teuchos::RCP<Vector<Real> > unew_;
   Teuchos::RCP<Vector<Real> > jv_;
 
   // Default parameters for solve (backtracking Newton)
+  const Real DEFAULT_atol_;
   const Real DEFAULT_rtol_;
   const Real DEFAULT_stol_;
   const Real DEFAULT_factor_;
   const Real DEFAULT_decr_;
   const int  DEFAULT_maxit_;
   const bool DEFAULT_print_;
+  const bool DEFAULT_zero_;
+  const int  DEFAULT_solverType_;
 
   // User-set parameters for solve (backtracking Newton)
+  Real atol_;
   Real rtol_;
   Real stol_;
   Real factor_;
   Real decr_;
   int  maxit_;
   bool print_;
+  bool zero_;
+  int  solverType_;
 
   // Flag to initialize vector storage in solve
   bool firstSolve_;
@@ -121,22 +132,42 @@ public:
   EqualityConstraint_SimOpt()
     : EqualityConstraint<Real>(),
       unew_(Teuchos::null), jv_(Teuchos::null),
-      DEFAULT_rtol_(1.e-4*std::sqrt(ROL_EPSILON)),
-      DEFAULT_stol_(std::sqrt(ROL_EPSILON)),
+      DEFAULT_atol_(1.e-4*std::sqrt(ROL_EPSILON<Real>())),
+      DEFAULT_rtol_(1.e0),
+      DEFAULT_stol_(std::sqrt(ROL_EPSILON<Real>())),
       DEFAULT_factor_(0.5),
       DEFAULT_decr_(1.e-4),
       DEFAULT_maxit_(500),
       DEFAULT_print_(false),
-      rtol_(DEFAULT_rtol_), stol_(DEFAULT_stol_), factor_(DEFAULT_factor_),
-      decr_(DEFAULT_decr_), maxit_(DEFAULT_maxit_), print_(DEFAULT_print_),
-      firstSolve_(true) {}
+      DEFAULT_zero_(false),
+      DEFAULT_solverType_(0),
+      atol_(DEFAULT_atol_), rtol_(DEFAULT_rtol_), stol_(DEFAULT_stol_), factor_(DEFAULT_factor_),
+      decr_(DEFAULT_decr_), maxit_(DEFAULT_maxit_), print_(DEFAULT_print_), zero_(DEFAULT_zero_),
+      solverType_(DEFAULT_solverType_), firstSolve_(true) {}
 
   /** \brief Update constraint functions.  
                 x is the optimization variable, 
                 flag = true if optimization variable is changed,
                 iter is the outer algorithm iterations count.
   */
-  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {
+    update_1(u,flag,iter);
+    update_2(z,flag,iter);  
+  }
+
+  /** \brief Update constraint functions with respect to Sim variable.  
+                x is the optimization variable, 
+                flag = true if optimization variable is changed,
+                iter is the outer algorithm iterations count.
+  */
+  virtual void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {}
+
+  /** \brief Update constraint functions with respect to Opt variable.
+                x is the optimization variable, 
+                flag = true if optimization variable is changed,
+                iter is the outer algorithm iterations count.
+  */
+  virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
 
 
   /** \brief Evaluate the constraint operator \f$c:\mathcal{U}\times\mathcal{Z} \rightarrow \mathcal{C}\f$
@@ -172,55 +203,100 @@ public:
                      Vector<Real> &u, 
                      const Vector<Real> &z,
                      Real &tol) {
-    if ( firstSolve_ ) {
-      unew_ = u.clone();
-      jv_   = u.clone();
-      firstSolve_ = false;
+    if ( zero_ ) {
+      u.zero();
     }
-    update(u,z);
+    update(u,z,true);
     value(c,u,z,tol);
-    Real cnorm = c.norm(), alpha = 1.0, tmp = 0.0;
-    int cnt = 0;
-    if ( print_ ) {
-      std::cout << "\n     Default EqualityConstraint_SimOpt::solve\n";
-      std::cout << "       ";
-      std::cout << std::setw(6)  << std::left << "iter";
-      std::cout << std::setw(15) << std::left << "rnorm";
-      std::cout << std::setw(15) << std::left << "alpha";
-      std::cout << "\n";
-    }
-    while ( cnorm > rtol_ && cnt < maxit_) {
-      // Compute Newton step
-      applyInverseJacobian_1(*jv_,c,u,z,tol);
-      unew_->set(u);
-      unew_->axpy(-alpha, *jv_);
-      update(*unew_,z);
-      value(c,*unew_,z,tol);
-      tmp = c.norm();
-      // Perform backtracking line search
-      while ( tmp > (1.0-decr_*alpha)*cnorm &&
-              alpha > stol_ ) {
-        alpha *= factor_;
-        unew_->set(u);
-        unew_->axpy(-alpha,*jv_);
-        update(*unew_,z);
-        value(c,*unew_,z,tol);
-        tmp = c.norm();
+    Real cnorm = c.norm();
+    const Real ctol = std::min(atol_, rtol_*cnorm);
+    if (solverType_==0 || solverType_==3 || solverType_==4) {
+      if ( firstSolve_ ) {
+        unew_ = u.clone();
+        jv_   = u.clone();
+        firstSolve_ = false;
       }
+      Real alpha(1), tmp(0);
+      int cnt = 0;
       if ( print_ ) {
+        std::cout << "\n     Default EqualityConstraint_SimOpt::solve\n";
         std::cout << "       ";
-        std::cout << std::setw(6)  << std::left << cnt;
-        std::cout << std::scientific << std::setprecision(6);
-        std::cout << std::setw(15) << std::left << tmp;
-        std::cout << std::scientific << std::setprecision(6);
-        std::cout << std::setw(15) << std::left << alpha;
+        std::cout << std::setw(6)  << std::left << "iter";
+        std::cout << std::setw(15) << std::left << "rnorm";
+        std::cout << std::setw(15) << std::left << "alpha";
         std::cout << "\n";
       }
-      // Update iterate
-      cnorm = tmp;
-      u.set(*unew_);
-      alpha = 1.0;
-      cnt++;
+      for (cnt = 0; cnt < maxit_; ++cnt) {
+        // Compute Newton step
+        applyInverseJacobian_1(*jv_,c,u,z,tol);
+        unew_->set(u);
+        unew_->axpy(-alpha, *jv_);
+        update_1(*unew_);
+        //update(*unew_,z);
+        value(c,*unew_,z,tol);
+        tmp = c.norm();
+        // Perform backtracking line search
+        while ( tmp > (1.0-decr_*alpha)*cnorm &&
+                alpha > stol_ ) {
+          alpha *= factor_;
+          unew_->set(u);
+          unew_->axpy(-alpha,*jv_);
+          update_1(*unew_);
+          //update(*unew_,z);
+          value(c,*unew_,z,tol);
+          tmp = c.norm();
+        }
+        if ( print_ ) {
+          std::cout << "       ";
+          std::cout << std::setw(6)  << std::left << cnt;
+          std::cout << std::scientific << std::setprecision(6);
+          std::cout << std::setw(15) << std::left << tmp;
+          std::cout << std::scientific << std::setprecision(6);
+          std::cout << std::setw(15) << std::left << alpha;
+          std::cout << "\n";
+        }
+        // Update iterate
+        cnorm = tmp;
+        u.set(*unew_);
+        if (cnorm < ctol) {
+          break;
+        }
+        update(u,z,true);
+        alpha = 1.0;
+      }
+    }
+    if (solverType_==1 || (solverType_==3 && cnorm > ctol)) {
+      Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con = Teuchos::rcp(this,false);
+      Teuchos::RCP<Objective<Real> > obj = Teuchos::rcp(new NonlinearLeastSquaresObjective_SimOpt<Real>(con,u,z,c,true));
+      Teuchos::ParameterList parlist;
+      parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
+      parlist.sublist("Status Test").set("Step Tolerance",stol_);
+      parlist.sublist("Status Test").set("Iteration Limit",maxit_);
+      parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
+      parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
+      Teuchos::RCP<Algorithm<Real> > algo = Teuchos::rcp(new Algorithm<Real>("Trust Region",parlist,false));
+      algo->run(u,*obj,print_);
+      value(c,u,z,tol);
+    }
+    if (solverType_==2 || (solverType_==4 && cnorm > ctol)) {
+      Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con = Teuchos::rcp(this,false);
+      Teuchos::RCP<const Vector<Real> > zVec = Teuchos::rcpFromRef(z);
+      Teuchos::RCP<EqualityConstraint<Real> > conU
+        = Teuchos::rcp(new EqualityConstraint_State<Real>(con,zVec));
+      Teuchos::RCP<Objective<Real> > objU
+        = Teuchos::rcp(new Objective_FSsolver<Real>());
+      Teuchos::ParameterList parlist;
+      parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
+      parlist.sublist("Status Test").set("Step Tolerance",stol_);
+      parlist.sublist("Status Test").set("Iteration Limit",maxit_);
+      Teuchos::RCP<Algorithm<Real> > algo = Teuchos::rcp(new Algorithm<Real>("Composite Step",parlist,false));
+      Teuchos::RCP<Vector<Real> > l = c.dual().clone();
+      algo->run(u,*l,*objU,*conU,print_);
+      value(c,u,z,tol);
+    }
+    if (solverType_ > 4 || solverType_ < 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> ERROR (ROL:EqualityConstraint_SimOpt:solve): Invalid solver type!");
     }
   }
 
@@ -237,6 +313,8 @@ public:
                 - "Step Tolerance": Absolute tolerance for the step size parameter (Real)
                 - "Backtracking Factor": Rate for decreasing step size during backtracking, between 0 and 1 (Real)
                 - "Output Iteration History": Set to true in order to print solve iteration history (bool)
+                - "Zero Initial Guess": Use a vector of zeros as an initial guess for the solve (bool)
+                - "Solver Type": Determine which solver to use (0: Newton with line search, 1: Levenberg-Marquardt, 2: SQP) (int)
 
              These parameters are accessed as parlist.sublist("SimOpt").sublist("Solve").get(...).
 
@@ -244,12 +322,15 @@ public:
   */
   virtual void setSolveParameters(Teuchos::ParameterList &parlist) {
     Teuchos::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
-    rtol_   = list.get("Residual Tolerance",            DEFAULT_rtol_);
-    maxit_  = list.get("Iteration Limit",               DEFAULT_maxit_);
-    decr_   = list.get("Sufficient Decrease Tolerance", DEFAULT_decr_);
-    stol_   = list.get("Step Tolerance",                DEFAULT_stol_);
-    factor_ = list.get("Backtracking Factor",           DEFAULT_factor_);
-    print_  = list.get("Output Iteration History",      DEFAULT_print_);
+    atol_       = list.get("Absolute Residual Tolerance",   DEFAULT_atol_);
+    rtol_       = list.get("Relative Residual Tolerance",   DEFAULT_rtol_);
+    maxit_      = list.get("Iteration Limit",               DEFAULT_maxit_);
+    decr_       = list.get("Sufficient Decrease Tolerance", DEFAULT_decr_);
+    stol_       = list.get("Step Tolerance",                DEFAULT_stol_);
+    factor_     = list.get("Backtracking Factor",           DEFAULT_factor_);
+    print_      = list.get("Output Iteration History",      DEFAULT_print_);
+    zero_       = list.get("Zero Initial Guess",            DEFAULT_zero_);
+    solverType_ = list.get("Solver Type",                   DEFAULT_solverType_);
   }
 
   /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -272,10 +353,10 @@ public:
                                const Vector<Real> &u,
                                const Vector<Real> &z,
                                Real &tol) {
-    Real ctol = std::sqrt(ROL_EPSILON);
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step length
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Update state vector to u + hv
@@ -315,10 +396,10 @@ public:
                                const Vector<Real> &u,
                                const Vector<Real> &z,
                                Real &tol) { 
-    Real ctol = std::sqrt(ROL_EPSILON);
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step length
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Update state vector to u + hv
@@ -408,9 +489,9 @@ public:
                                       const Vector<Real> &z,
                                       const Vector<Real> &dualv,
                                       Real &tol) {
-    Real ctol = std::sqrt(ROL_EPSILON);
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     Teuchos::RCP<Vector<Real> > cold = dualv.clone();
@@ -479,9 +560,9 @@ public:
                                       const Vector<Real> &z,
                                       const Vector<Real> &dualv,
                                       Real &tol) {
-    Real ctol = std::sqrt(ROL_EPSILON);
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     Teuchos::RCP<Vector<Real> > cold = dualv.clone();
@@ -526,19 +607,20 @@ public:
       "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
-             \f$c_{uu}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{U}^*), \mathcal{U}^*)\f$,
-             to vector \f$v\f$ in direction \f$w\f$.
+  /** \brief Apply the simulation-space derivative of the adjoint of the constraint
+             simulation-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{uu}(u,z)(v,\cdot)^*w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual simulation-space vector
+             @param[out]      ahwv is the result of applying the simulation-space derivative of the adjoint of the constraint simulation-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual simulation-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual simulation-space vector
+             @param[in]       v    is a simulation-space vector
              @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahwv} = c_{uu}(u,z)^*(w,v) \f$, where
-             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}^*\f$, and \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
+             On return, \f$\mathsf{ahwv} = c_{uu}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
 
              ---
   */
@@ -548,10 +630,10 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    Real jtol = std::sqrt(ROL_EPSILON);
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step size
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new state
@@ -570,19 +652,20 @@ public:
   }
 
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
-             \f$c_{uz}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{U}^*), \mathcal{Z}^*)\f$,
-             to vector \f$v\f$ in direction \f$w\f$.
+  /** \brief Apply the optimization-space derivative of the adjoint of the constraint
+             simulation-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{uz}(u,z)(v,\cdot)^*w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the optimization-space derivative of the adjoint of the constraint simulation-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual simulation-space vector
+             @param[in]       v    is a simulation-space vector
              @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahwv} = c_{uz}(u,z)^*(w,v) \f$, where
-             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}^*\f$, and \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
+             On return, \f$\mathsf{ahwv} = c_{uz}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
 
              ---
   */
@@ -592,10 +675,10 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    Real jtol = std::sqrt(ROL_EPSILON);
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step size
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new state
@@ -614,19 +697,20 @@ public:
   }
 
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
-             \f$c_{zu}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{Z}^*), \mathcal{U}^*)\f$,
-             to vector \f$v\f$ in direction \f$w\f$.
+  /** \brief Apply the simulation-space derivative of the adjoint of the constraint
+             optimization-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{zu}(u,z)(v,\cdot)^*w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual simulation-space vector
+             @param[out]      ahwv is the result of applying the simulation-space derivative of the adjoint of the constraint optimization-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual simulation-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual optimization-space vector
+             @param[in]       v    is a optimization-space vector
              @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahwv} = c_{zu}(u,z)^*(w,v) \f$, where
-             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}^*\f$, and \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
+             On return, \f$\mathsf{ahwv} = c_{zu}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
 
              ---
   */
@@ -636,10 +720,10 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    Real jtol = std::sqrt(ROL_EPSILON);
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step size
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new control
@@ -657,19 +741,20 @@ public:
     ahwv.scale(1.0/h);
   }
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
-             \f$c_{zz}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{Z}^*), \mathcal{Z}^*)\f$,
-             to vector \f$v\f$ in direction \f$w\f$.
+  /** \brief Apply the optimization-space derivative of the adjoint of the constraint
+             optimization-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{zz}(u,z)(v,\cdot)^*w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the optimization-space derivative of the adjoint of the constraint optimization-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual optimization-space vector
+             @param[in]       v    is a optimization-space vector
              @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahwv} = c_{zz}(u,z)^*(w,v) \f$, where
-             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}^*\f$, and \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$. 
+             On return, \f$\mathsf{ahwv} = c_{zz}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
 
              ---
   */
@@ -679,10 +764,10 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    Real jtol = std::sqrt(ROL_EPSILON);
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step size
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new control
@@ -890,7 +975,7 @@ public:
                           const bool printToStream = true,
                           std::ostream & outStream = std::cout) {
     // Solve equality constraint for u. 
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<ROL::Vector<Real> > r = c.clone();
     Teuchos::RCP<ROL::Vector<Real> > s = u.clone();
     solve(*r,*s,z,tol);
@@ -958,7 +1043,7 @@ public:
                                                  const Vector<Real> &dualv,
                                                  const bool printToStream = true,
                                                  std::ostream & outStream = std::cout) {
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
     update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
@@ -974,7 +1059,7 @@ public:
       hist << "\nTest SimOpt consistency of Jacobian_1 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = " 
            << diff << "\n";
       hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
-      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW<Real>()) << "\n";
       outStream << hist.str();
     }
     return diff;
@@ -1025,7 +1110,7 @@ public:
                                                  const Vector<Real> &dualv,
                                                  const bool printToStream = true,
                                                  std::ostream & outStream = std::cout) {
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
     update(u,z);
     applyJacobian_2(*Jv,v,u,z,tol);
@@ -1041,7 +1126,7 @@ public:
       hist << "\nTest SimOpt consistency of Jacobian_2 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = "
            << diff << "\n";
       hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
-      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW<Real>()) << "\n";
       outStream << hist.str();
     }
     return diff;
@@ -1053,7 +1138,7 @@ public:
                                       const Vector<Real> &z, 
                                       const bool printToStream = true,
                                       std::ostream & outStream = std::cout) {
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
     update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
@@ -1071,7 +1156,7 @@ public:
       hist << "\nTest SimOpt consistency of inverse Jacobian_1: \n  ||v-inv(J)Jv|| = " 
            << dnorm << "\n";
       hist << "  ||v||          = " << vnorm << "\n";
-      hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW) << "\n";
+      hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
       outStream << hist.str();
     }
     return dnorm;
@@ -1083,7 +1168,7 @@ public:
                                              const Vector<Real> &z, 
                                              const bool printToStream = true,
                                              std::ostream & outStream = std::cout) {
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
     update(u,z);
     applyAdjointJacobian_1(*Jv,v,u,z,tol);
@@ -1100,12 +1185,745 @@ public:
       hist << std::scientific << std::setprecision(8);
       hist << "\nTest SimOpt consistency of inverse adjoint Jacobian_1: \n  ||v-inv(adj(J))adj(J)v|| = "
            << dnorm << "\n";
-      hist << "  ||v||                   = " << vnorm << "\n";
-      hist << "  Relative Error          = " << dnorm / (vnorm+ROL_UNDERFLOW) << "\n";
+      hist << "  ||v||                    = " << vnorm << "\n";
+      hist << "  Relative Error           = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
       outStream << hist.str();
     }
     return dnorm;
   }
+
+
+
+  std::vector<std::vector<Real> > checkApplyJacobian_1(const Vector<Real> &u,
+                                                       const Vector<Real> &z,
+                                                       const Vector<Real> &v,
+                                                       const Vector<Real> &jv,
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                       const int order = 1) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+   
+    return checkApplyJacobian_1(u,z,v,jv,steps,printToStream,outStream,order);
+  }
+  
+  
+  
+  
+  std::vector<std::vector<Real> > checkApplyJacobian_1(const Vector<Real> &u,
+                                                       const Vector<Real> &z,
+                                                       const Vector<Real> &v,
+                                                       const Vector<Real> &jv,
+                                                       const std::vector<Real> &steps, 
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int order = 1) {
+ 
+    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+                                "Error: finite difference order must be 1,2,3, or 4" );
+ 
+    Real one(1.0);
+ 
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+ 
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+ 
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
+ 
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+ 
+    // Compute constraint value at x.
+    Teuchos::RCP<Vector<Real> > c = jv.clone();
+    this->update(u,z);
+    this->value(*c, u, z, tol);
+ 
+    // Compute (Jacobian at x) times (vector v).
+    Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    this->applyJacobian_1(*Jv, v, u, z, tol);
+    Real normJv = Jv->norm();
+ 
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > cdif = jv.clone();
+    Teuchos::RCP<Vector<Real> > cnew = jv.clone();
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+ 
+    for (int i=0; i<numSteps; i++) {
+ 
+      Real eta = steps[i];
+ 
+      unew->set(u);
+ 
+      cdif->set(*c);
+      cdif->scale(weights[order-1][0]);
+ 
+      for(int j=0; j<order; ++j) {
+ 
+         unew->axpy(eta*shifts[order-1][j], v);
+
+         if( weights[order-1][j+1] != 0 ) {
+             this->update(*unew,z);
+             this->value(*cnew,*unew,z,tol);
+             cdif->axpy(weights[order-1][j+1],*cnew);
+         }
+
+      }
+ 
+      cdif->scale(one/eta);
+ 
+      // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
+      jvCheck[i][0] = eta;
+      jvCheck[i][1] = normJv;
+      jvCheck[i][2] = cdif->norm();
+      cdif->axpy(-one, *Jv);
+      jvCheck[i][3] = cdif->norm();
+ 
+      if (printToStream) {
+        std::stringstream hist;
+        if (i==0) {
+        hist << std::right
+             << std::setw(20) << "Step size"
+             << std::setw(20) << "norm(Jac*vec)"
+             << std::setw(20) << "norm(FD approx)"
+             << std::setw(20) << "norm(abs error)"
+             << "\n"
+             << std::setw(20) << "---------"
+             << std::setw(20) << "-------------"
+             << std::setw(20) << "---------------"
+             << std::setw(20) << "---------------"
+             << "\n";
+        }
+        hist << std::scientific << std::setprecision(11) << std::right
+             << std::setw(20) << jvCheck[i][0]
+             << std::setw(20) << jvCheck[i][1]
+             << std::setw(20) << jvCheck[i][2]
+             << std::setw(20) << jvCheck[i][3]
+             << "\n";
+        outStream << hist.str();
+      }
+ 
+    }
+ 
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+ 
+    return jvCheck;
+  } // checkApplyJacobian
+
+
+  std::vector<std::vector<Real> > checkApplyJacobian_2(const Vector<Real> &u,
+                                                       const Vector<Real> &z,
+                                                       const Vector<Real> &v,
+                                                       const Vector<Real> &jv,
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                       const int order = 1) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+   
+    return checkApplyJacobian_2(u,z,v,jv,steps,printToStream,outStream,order);
+  }
+  
+  
+  
+  
+  std::vector<std::vector<Real> > checkApplyJacobian_2(const Vector<Real> &u,
+                                                       const Vector<Real> &z,
+                                                       const Vector<Real> &v,
+                                                       const Vector<Real> &jv,
+                                                       const std::vector<Real> &steps, 
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int order = 1) {
+ 
+    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+                                "Error: finite difference order must be 1,2,3, or 4" );
+ 
+    Real one(1.0);
+ 
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+ 
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+ 
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
+ 
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+ 
+    // Compute constraint value at x.
+    Teuchos::RCP<Vector<Real> > c = jv.clone();
+    this->update(u,z);
+    this->value(*c, u, z, tol);
+ 
+    // Compute (Jacobian at x) times (vector v).
+    Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    this->applyJacobian_2(*Jv, v, u, z, tol);
+    Real normJv = Jv->norm();
+ 
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > cdif = jv.clone();
+    Teuchos::RCP<Vector<Real> > cnew = jv.clone();
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+ 
+    for (int i=0; i<numSteps; i++) {
+ 
+      Real eta = steps[i];
+ 
+      znew->set(z);
+ 
+      cdif->set(*c);
+      cdif->scale(weights[order-1][0]);
+ 
+      for(int j=0; j<order; ++j) {
+ 
+         znew->axpy(eta*shifts[order-1][j], v);
+
+         if( weights[order-1][j+1] != 0 ) {
+             this->update(u,*znew);
+             this->value(*cnew,u,*znew,tol);
+             cdif->axpy(weights[order-1][j+1],*cnew);
+         }
+
+      }
+ 
+      cdif->scale(one/eta);
+ 
+      // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
+      jvCheck[i][0] = eta;
+      jvCheck[i][1] = normJv;
+      jvCheck[i][2] = cdif->norm();
+      cdif->axpy(-one, *Jv);
+      jvCheck[i][3] = cdif->norm();
+ 
+      if (printToStream) {
+        std::stringstream hist;
+        if (i==0) {
+        hist << std::right
+             << std::setw(20) << "Step size"
+             << std::setw(20) << "norm(Jac*vec)"
+             << std::setw(20) << "norm(FD approx)"
+             << std::setw(20) << "norm(abs error)"
+             << "\n"
+             << std::setw(20) << "---------"
+             << std::setw(20) << "-------------"
+             << std::setw(20) << "---------------"
+             << std::setw(20) << "---------------"
+             << "\n";
+        }
+        hist << std::scientific << std::setprecision(11) << std::right
+             << std::setw(20) << jvCheck[i][0]
+             << std::setw(20) << jvCheck[i][1]
+             << std::setw(20) << jvCheck[i][2]
+             << std::setw(20) << jvCheck[i][3]
+             << "\n";
+        outStream << hist.str();
+      }
+ 
+    }
+ 
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+ 
+    return jvCheck;
+  } // checkApplyJacobian
+
+
+
+  std::vector<std::vector<Real> > checkApplyAdjointHessian_11(const Vector<Real> &u,
+                                                              const Vector<Real> &z,
+                                                              const Vector<Real> &p,
+                                                              const Vector<Real> &v,
+                                                              const Vector<Real> &hv,
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
+                                                              const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                              const int order = 1 ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+   
+    return checkApplyAdjointHessian_11(u,z,p,v,hv,steps,printToStream,outStream,order);
+  
+  }
+  
+  std::vector<std::vector<Real> > checkApplyAdjointHessian_11(const Vector<Real> &u,
+                                                              const Vector<Real> &z,
+                                                              const Vector<Real> &p,
+                                                              const Vector<Real> &v,
+                                                              const Vector<Real> &hv,
+                                                              const std::vector<Real> &steps,  
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
+                                                              const int order = 1 ) {
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+    Real one(1.0);
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > ahpvCheck(numSteps, tmp);
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > AJdif = hv.clone();
+    Teuchos::RCP<Vector<Real> > AJp = hv.clone();
+    Teuchos::RCP<Vector<Real> > AHpv = hv.clone();
+    Teuchos::RCP<Vector<Real> > AJnew = hv.clone();
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Apply adjoint Jacobian to p.
+    this->update(u,z);
+    this->applyAdjointJacobian_1(*AJp, p, u, z, tol);
+  
+    // Apply adjoint Hessian at (u,z), in direction v, to p.
+    this->applyAdjointHessian_11(*AHpv, p, v, u, z, tol);
+    Real normAHpv = AHpv->norm();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      // Apply adjoint Jacobian to p at (u+eta*v,z).
+      unew->set(u);
+  
+      AJdif->set(*AJp);
+      AJdif->scale(weights[order-1][0]);     
+  
+      for(int j=0; j<order; ++j) {
+  
+          unew->axpy(eta*shifts[order-1][j],v); 
+  
+          if( weights[order-1][j+1] != 0 ) {    
+              this->update(*unew,z);
+              this->applyAdjointJacobian_1(*AJnew, p, *unew, z, tol);
+              AJdif->axpy(weights[order-1][j+1],*AJnew);
+          }
+      }
+  
+      AJdif->scale(one/eta);
+  
+      // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
+      ahpvCheck[i][0] = eta;
+      ahpvCheck[i][1] = normAHpv;
+      ahpvCheck[i][2] = AJdif->norm();
+      AJdif->axpy(-one, *AHpv);
+      ahpvCheck[i][3] = AJdif->norm();
+  
+      if (printToStream) {
+        std::stringstream hist;
+        if (i==0) {
+        hist << std::right
+             << std::setw(20) << "Step size"
+             << std::setw(20) << "norm(adj(H)(u,v))"
+             << std::setw(20) << "norm(FD approx)"
+             << std::setw(20) << "norm(abs error)"
+             << "\n"
+             << std::setw(20) << "---------"
+             << std::setw(20) << "-----------------"
+             << std::setw(20) << "---------------"
+             << std::setw(20) << "---------------"
+             << "\n";
+        }
+        hist << std::scientific << std::setprecision(11) << std::right
+             << std::setw(20) << ahpvCheck[i][0]
+             << std::setw(20) << ahpvCheck[i][1]
+             << std::setw(20) << ahpvCheck[i][2]
+             << std::setw(20) << ahpvCheck[i][3]
+             << "\n";
+        outStream << hist.str();
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return ahpvCheck;
+  } // checkApplyAdjointHessian_11
+
+  std::vector<std::vector<Real> > checkApplyAdjointHessian_21(const Vector<Real> &u,
+                                                              const Vector<Real> &z,
+                                                              const Vector<Real> &p,
+                                                              const Vector<Real> &v,
+                                                              const Vector<Real> &hv,
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
+                                                              const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                              const int order = 1 ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+   
+    return checkApplyAdjointHessian_21(u,z,p,v,hv,steps,printToStream,outStream,order);
+  
+  }
+  
+  std::vector<std::vector<Real> > checkApplyAdjointHessian_21(const Vector<Real> &u,
+                                                              const Vector<Real> &z,
+                                                              const Vector<Real> &p,
+                                                              const Vector<Real> &v,
+                                                              const Vector<Real> &hv,
+                                                              const std::vector<Real> &steps,  
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
+                                                              const int order = 1 ) {
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+    Real one(1.0);
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > ahpvCheck(numSteps, tmp);
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > AJdif = hv.clone();
+    Teuchos::RCP<Vector<Real> > AJp = hv.clone();
+    Teuchos::RCP<Vector<Real> > AHpv = hv.clone();
+    Teuchos::RCP<Vector<Real> > AJnew = hv.clone();
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Apply adjoint Jacobian to p.
+    this->update(u,z);
+    this->applyAdjointJacobian_1(*AJp, p, u, z, tol);
+  
+    // Apply adjoint Hessian at (u,z), in direction v, to p.
+    this->applyAdjointHessian_21(*AHpv, p, v, u, z, tol);
+    Real normAHpv = AHpv->norm();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      // Apply adjoint Jacobian to p at (u,z+eta*v).
+      znew->set(z);
+  
+      AJdif->set(*AJp);
+      AJdif->scale(weights[order-1][0]);     
+  
+      for(int j=0; j<order; ++j) {
+  
+          znew->axpy(eta*shifts[order-1][j],v); 
+  
+          if( weights[order-1][j+1] != 0 ) {    
+              this->update(u,*znew);
+              this->applyAdjointJacobian_1(*AJnew, p, u, *znew, tol);
+              AJdif->axpy(weights[order-1][j+1],*AJnew);
+          }
+      }
+  
+      AJdif->scale(one/eta);
+  
+      // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
+      ahpvCheck[i][0] = eta;
+      ahpvCheck[i][1] = normAHpv;
+      ahpvCheck[i][2] = AJdif->norm();
+      AJdif->axpy(-one, *AHpv);
+      ahpvCheck[i][3] = AJdif->norm();
+  
+      if (printToStream) {
+        std::stringstream hist;
+        if (i==0) {
+        hist << std::right
+             << std::setw(20) << "Step size"
+             << std::setw(20) << "norm(adj(H)(u,v))"
+             << std::setw(20) << "norm(FD approx)"
+             << std::setw(20) << "norm(abs error)"
+             << "\n"
+             << std::setw(20) << "---------"
+             << std::setw(20) << "-----------------"
+             << std::setw(20) << "---------------"
+             << std::setw(20) << "---------------"
+             << "\n";
+        }
+        hist << std::scientific << std::setprecision(11) << std::right
+             << std::setw(20) << ahpvCheck[i][0]
+             << std::setw(20) << ahpvCheck[i][1]
+             << std::setw(20) << ahpvCheck[i][2]
+             << std::setw(20) << ahpvCheck[i][3]
+             << "\n";
+        outStream << hist.str();
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return ahpvCheck;
+  } // checkApplyAdjointHessian_21
+
+  std::vector<std::vector<Real> > checkApplyAdjointHessian_12(const Vector<Real> &u,
+                                                              const Vector<Real> &z,
+                                                              const Vector<Real> &p,
+                                                              const Vector<Real> &v,
+                                                              const Vector<Real> &hv,
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
+                                                              const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                              const int order = 1 ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+   
+    return checkApplyAdjointHessian_12(u,z,p,v,hv,steps,printToStream,outStream,order);
+  
+  }
+  
+  std::vector<std::vector<Real> > checkApplyAdjointHessian_12(const Vector<Real> &u,
+                                                              const Vector<Real> &z,
+                                                              const Vector<Real> &p,
+                                                              const Vector<Real> &v,
+                                                              const Vector<Real> &hv,
+                                                              const std::vector<Real> &steps,  
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
+                                                              const int order = 1 ) {
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+    Real one(1.0);
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > ahpvCheck(numSteps, tmp);
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > AJdif = hv.clone();
+    Teuchos::RCP<Vector<Real> > AJp = hv.clone();
+    Teuchos::RCP<Vector<Real> > AHpv = hv.clone();
+    Teuchos::RCP<Vector<Real> > AJnew = hv.clone();
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Apply adjoint Jacobian to p.
+    this->update(u,z);
+    this->applyAdjointJacobian_2(*AJp, p, u, z, tol);
+  
+    // Apply adjoint Hessian at (u,z), in direction v, to p.
+    this->applyAdjointHessian_12(*AHpv, p, v, u, z, tol);
+    Real normAHpv = AHpv->norm();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      // Apply adjoint Jacobian to p at (u+eta*v,z).
+      unew->set(u);
+  
+      AJdif->set(*AJp);
+      AJdif->scale(weights[order-1][0]);     
+  
+      for(int j=0; j<order; ++j) {
+  
+          unew->axpy(eta*shifts[order-1][j],v); 
+  
+          if( weights[order-1][j+1] != 0 ) {    
+              this->update(*unew,z);
+              this->applyAdjointJacobian_2(*AJnew, p, *unew, z, tol);
+              AJdif->axpy(weights[order-1][j+1],*AJnew);
+          }
+      }
+  
+      AJdif->scale(one/eta);
+  
+      // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
+      ahpvCheck[i][0] = eta;
+      ahpvCheck[i][1] = normAHpv;
+      ahpvCheck[i][2] = AJdif->norm();
+      AJdif->axpy(-one, *AHpv);
+      ahpvCheck[i][3] = AJdif->norm();
+  
+      if (printToStream) {
+        std::stringstream hist;
+        if (i==0) {
+        hist << std::right
+             << std::setw(20) << "Step size"
+             << std::setw(20) << "norm(adj(H)(u,v))"
+             << std::setw(20) << "norm(FD approx)"
+             << std::setw(20) << "norm(abs error)"
+             << "\n"
+             << std::setw(20) << "---------"
+             << std::setw(20) << "-----------------"
+             << std::setw(20) << "---------------"
+             << std::setw(20) << "---------------"
+             << "\n";
+        }
+        hist << std::scientific << std::setprecision(11) << std::right
+             << std::setw(20) << ahpvCheck[i][0]
+             << std::setw(20) << ahpvCheck[i][1]
+             << std::setw(20) << ahpvCheck[i][2]
+             << std::setw(20) << ahpvCheck[i][3]
+             << "\n";
+        outStream << hist.str();
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return ahpvCheck;
+  } // checkApplyAdjointHessian_12
+
+  std::vector<std::vector<Real> > checkApplyAdjointHessian_22(const Vector<Real> &u,
+                                                              const Vector<Real> &z,
+                                                              const Vector<Real> &p,
+                                                              const Vector<Real> &v,
+                                                              const Vector<Real> &hv,
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
+                                                              const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                              const int order = 1 ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+   
+    return checkApplyAdjointHessian_22(u,z,p,v,hv,steps,printToStream,outStream,order);
+  
+  }
+  
+  std::vector<std::vector<Real> > checkApplyAdjointHessian_22(const Vector<Real> &u,
+                                                              const Vector<Real> &z,
+                                                              const Vector<Real> &p,
+                                                              const Vector<Real> &v,
+                                                              const Vector<Real> &hv,
+                                                              const std::vector<Real> &steps,  
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
+                                                              const int order = 1 ) {
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+    Real one(1.0);
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > ahpvCheck(numSteps, tmp);
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > AJdif = hv.clone();
+    Teuchos::RCP<Vector<Real> > AJp = hv.clone();
+    Teuchos::RCP<Vector<Real> > AHpv = hv.clone();
+    Teuchos::RCP<Vector<Real> > AJnew = hv.clone();
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Apply adjoint Jacobian to p.
+    this->update(u,z);
+    this->applyAdjointJacobian_2(*AJp, p, u, z, tol);
+  
+    // Apply adjoint Hessian at (u,z), in direction v, to p.
+    this->applyAdjointHessian_22(*AHpv, p, v, u, z, tol);
+    Real normAHpv = AHpv->norm();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      // Apply adjoint Jacobian to p at (u,z+eta*v).
+      znew->set(z);
+  
+      AJdif->set(*AJp);
+      AJdif->scale(weights[order-1][0]);     
+  
+      for(int j=0; j<order; ++j) {
+  
+          znew->axpy(eta*shifts[order-1][j],v); 
+  
+          if( weights[order-1][j+1] != 0 ) {    
+              this->update(u,*znew);
+              this->applyAdjointJacobian_2(*AJnew, p, u, *znew, tol);
+              AJdif->axpy(weights[order-1][j+1],*AJnew);
+          }
+      }
+  
+      AJdif->scale(one/eta);
+  
+      // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
+      ahpvCheck[i][0] = eta;
+      ahpvCheck[i][1] = normAHpv;
+      ahpvCheck[i][2] = AJdif->norm();
+      AJdif->axpy(-one, *AHpv);
+      ahpvCheck[i][3] = AJdif->norm();
+  
+      if (printToStream) {
+        std::stringstream hist;
+        if (i==0) {
+        hist << std::right
+             << std::setw(20) << "Step size"
+             << std::setw(20) << "norm(adj(H)(u,v))"
+             << std::setw(20) << "norm(FD approx)"
+             << std::setw(20) << "norm(abs error)"
+             << "\n"
+             << std::setw(20) << "---------"
+             << std::setw(20) << "-----------------"
+             << std::setw(20) << "---------------"
+             << std::setw(20) << "---------------"
+             << "\n";
+        }
+        hist << std::scientific << std::setprecision(11) << std::right
+             << std::setw(20) << ahpvCheck[i][0]
+             << std::setw(20) << ahpvCheck[i][1]
+             << std::setw(20) << ahpvCheck[i][2]
+             << std::setw(20) << ahpvCheck[i][3]
+             << "\n";
+        outStream << hist.str();
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return ahpvCheck;
+  } // checkApplyAdjointHessian_22
 
 }; // class EqualityConstraint_SimOpt
 

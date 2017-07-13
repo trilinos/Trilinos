@@ -46,40 +46,15 @@
 #define ROL_PARAMETRIZEDEQUALITYCONSTRAINT_SIMOPT_H
 
 #include "ROL_EqualityConstraint_SimOpt.hpp"
-#include "ROL_Vector_SimOpt.hpp"
-#include "ROL_Types.hpp"
-#include <iostream>
+#include "ROL_ParametrizedEqualityConstraint.hpp"
 
 namespace ROL {
 
 template <class Real>
-class ParametrizedEqualityConstraint_SimOpt : public EqualityConstraint_SimOpt<Real> {
-private:
-  std::vector<Real> param_;
-
-protected:
-  const std::vector<Real> getParameter(void) const {
-    return this->param_;
-  }
-
+class ParametrizedEqualityConstraint_SimOpt : public ParametrizedEqualityConstraint<Real>, public EqualityConstraint_SimOpt<Real> {
 public:
-
+  virtual ~ParametrizedEqualityConstraint_SimOpt(void) {}
   ParametrizedEqualityConstraint_SimOpt() : EqualityConstraint_SimOpt<Real>() {}
-
-  ParametrizedEqualityConstraint_SimOpt(const Vector<Real> &c)
-    : EqualityConstraint_SimOpt<Real>(c) {}
-
-  virtual void setParameter(const std::vector<Real> &param) {
-    this->param_ = param;
-  }
-
-  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
-
-  virtual void value(Vector<Real> &c,
-                     const Vector<Real> &u,
-                     const Vector<Real> &z,
-                     Real &tol) = 0;
-
 }; // class ParametrizedEqualityConstraint_SimOpt
 
 } // namespace ROL

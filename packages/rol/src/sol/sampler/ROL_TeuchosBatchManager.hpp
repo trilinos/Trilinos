@@ -54,7 +54,7 @@ namespace ROL {
 template<class Real, class Ordinal>
 class TeuchosBatchManager : public BatchManager<Real> {
 private:
-  Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
 
 public:
   TeuchosBatchManager(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm)
@@ -73,7 +73,7 @@ public:
     int nB = this->numBatches();
     std::vector<Real> receiveBuffer(nB);
     Teuchos::gather<Ordinal,Real>(input,1,&receiveBuffer[0],1,0,*comm_);
-    output[0] = 0;
+    output[0] = r.initialValue();
     for (int i = 0; i < nB; i++) {
       r.reduce(receiveBuffer[i],output[0]);
     }
@@ -93,6 +93,10 @@ public:
   void sumAll(Real* input, Real* output, int dim) {
     Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_SUM,
       dim, input, output);
+  }
+
+  void broadcast(Real* input, int cnt, int root) {
+    Teuchos::broadcast<Ordinal,Real>(*comm_,root,cnt,input);
   }
 
   virtual void sumAll(Vector<Real> &input, Vector<Real> &output) {

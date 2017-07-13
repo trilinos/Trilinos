@@ -12,8 +12,8 @@
        set assign
           sideset, ilo, 1
           sideset, jlo, 2
-          sideset, klo, 3
-          sideset, ihi, 4
+          sideset, ihi, 3
+          sideset, jhi, 4
        end
      end"
    />

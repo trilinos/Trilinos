@@ -42,7 +42,7 @@
 // @HEADER
 
 /*! \file  example_01.cpp
-    \brief Shows how to solve the mother problem of PDE-constrained optimization:
+    \brief Shows how to solve the Poisson control problem.
 */
 
 #include "Teuchos_Comm.hpp"
@@ -53,23 +53,22 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Version.hpp"
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_CompositeStep.hpp"
-#include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_TpetraMultiVector.hpp"
-
 #include <iostream>
 #include <algorithm>
 
-#include "data.hpp"
-#include "objective.hpp"
-#include "constraint.hpp"
+#include "ROL_Algorithm.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
+
+#include "../TOOLS/meshmanager.hpp"
+#include "../TOOLS/linearpdeconstraint.hpp"
+#include "../TOOLS/pdeobjective.hpp"
+#include "../TOOLS/pdevector.hpp"
+#include "pde_poisson.hpp"
+#include "obj_poisson.hpp"
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
-
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
@@ -77,7 +76,8 @@ int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm
+    = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
     outStream = Teuchos::rcp(&std::cout, false);
@@ -85,7 +85,6 @@ int main(int argc, char *argv[]) {
   else {
     outStream = Teuchos::rcp(&bhs, false);
   }
-
   int errorFlag  = 0;
 
   // *** Example body.
@@ -97,43 +96,65 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    Teuchos::RCP<PoissonData<RealT> > data = Teuchos::rcp(new PoissonData<RealT>(comm, parlist, outStream));
+    Teuchos::RCP<MeshManager<RealT> > meshMgr
+      = Teuchos::rcp(new MeshManager_Rectangle<RealT>(*parlist));
+    // Initialize PDE describe Poisson's equation
+    Teuchos::RCP<PDE_Poisson<RealT> > pde
+      = Teuchos::rcp(new PDE_Poisson<RealT>(*parlist));
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+      = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
+    // Cast the constraint and get the assembler.
+    Teuchos::RCP<Linear_PDE_Constraint<RealT> > pdecon
+      = Teuchos::rcp_dynamic_cast<Linear_PDE_Constraint<RealT> >(con);
+    Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
+    // Initialize quadratic objective function
+    std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
+    qoi_vec[0] = Teuchos::rcp(new QoI_L2Tracking_Poisson<RealT>(pde->getFE()));
+    qoi_vec[1] = Teuchos::rcp(new QoI_L2Penalty_Poisson<RealT>(pde->getFE()));
+    Teuchos::RCP<StdObjective_Poisson<RealT> > std_obj
+      = Teuchos::rcp(new StdObjective_Poisson<RealT>(*parlist));
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
+      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
 
-    /*** Build vectors and dress them up as ROL vectors. ***/
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > c_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_c, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    // Set all values to 1 in u, z and c.
-    u_rcp->putScalar(1.0);
-    z_rcp->putScalar(1.0);
-    c_rcp->putScalar(1.0);
-    // Randomize d vectors.
+    // Create state vector and set to zeroes
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
+    u_rcp->randomize();
+    Teuchos::RCP<ROL::Vector<RealT> > up
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
+    // Create control vector and set to ones
+    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = assembler->createControlVector();
+    z_rcp->randomize();  //putScalar(1.0);
+    Teuchos::RCP<ROL::Vector<RealT> > zp
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
+    // Create residual vector and set to zeros
+    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = assembler->createResidualVector();
+    r_rcp->putScalar(0.0);
+    Teuchos::RCP<ROL::Vector<RealT> > rp
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
+    // Create multiplier vector and set to zeros
+    Teuchos::RCP<Tpetra::MultiVector<> > p_rcp = assembler->createStateVector();
+    p_rcp->putScalar(0.0);
+    Teuchos::RCP<ROL::Vector<RealT> > pp
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
+    // Create state direction vector and set to random
+    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = assembler->createStateVector();
     du_rcp->randomize();
+    Teuchos::RCP<ROL::Vector<RealT> > dup
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
+    // Create control direction vector and set to random
+    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = assembler->createControlVector();
     dz_rcp->randomize();
-    // Create ROL::TpetraMultiVectors.
-    Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(c_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
-    // Create ROL SimOpt vectors.
+    Teuchos::RCP<ROL::Vector<RealT> > dzp
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
+    // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
-    /*** Build objective function, constraint and reduced objective function. ***/
-    Teuchos::RCP<Objective_PDEOPT_Poisson<RealT> > obj =
-      Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, parlist));
-    Teuchos::RCP<EqualityConstraint_PDEOPT_Poisson<RealT> > con =
-      Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
-    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
-      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, up));
+    // Initialize reduced objective function
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp));
 
-    /*** Check functional interface. ***/
+    // Run derivative checks
     obj->checkGradient(x,d,true,*outStream);
     obj->checkHessVec(x,d,true,*outStream);
     con->checkApplyJacobian(x,d,*up,true,*outStream);
@@ -141,23 +162,42 @@ int main(int argc, char *argv[]) {
     con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
     con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
     con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
-    objReduced->checkGradient(*zp,*dzp,true,*outStream);
-    objReduced->checkHessVec(*zp,*dzp,true,*outStream);
 
-    /*** Solve optimization problem. ***/
+    zp->zero(); up->zero(); pp->zero();
+    ROL::Algorithm<RealT> algoTR("Trust Region",*parlist,false);
+    std::clock_t timerTR = std::clock();
+    algoTR.run(*zp,*robj,true,*outStream);
+    *outStream << "Trust Region Time: "
+               << static_cast<RealT>(std::clock()-timerTR)/static_cast<RealT>(CLOCKS_PER_SEC)
+               << " seconds." << std::endl << std::endl;
 
-    ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
-    zp->zero(); // set zero initial guess
-    algo_tr.run(*zp, *objReduced, true, *outStream);
+    // Output.
+    assembler->printMeshData(*outStream);
+    RealT tol(1.e-8);
+    con->solve(*rp,*up,*zp,tol);
+    pdecon->outputTpetraVector(u_rcp,"state.txt");
+    pdecon->outputTpetraVector(z_rcp,"control.txt");
 
-    ROL::Algorithm<RealT> algo_cs("Composite Step",*parlist,false);
-    x.zero(); // set zero initial guess
-    algo_cs.run(x, *cp, *obj, *con, true, *outStream);
+    zp->zero(); up->zero(); pp->zero();
+    ROL::Algorithm<RealT> algoCS("Composite Step",*parlist,false);
+    std::clock_t timerCS = std::clock();
+    algoCS.run(x,*rp,*obj,*con,true,*outStream);
+    *outStream << "Composite-Step SQP Time: "
+               << static_cast<RealT>(std::clock()-timerCS)/static_cast<RealT>(CLOCKS_PER_SEC)
+               << " seconds." << std::endl << std::endl;
 
-    *outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_rcp) << std::endl;
+    // Output.
+    pdecon->outputTpetraVector(u_rcp,"stateFS.txt");
+    pdecon->outputTpetraVector(z_rcp,"controlFS.txt");
 
-    data->outputTpetraVector(u_rcp, "state.txt");
+    Teuchos::Array<RealT> res(1,0);
+    con->value(*rp,*up,*zp,tol);
+    r_rcp->norm2(res.view(0,1));
+    *outStream << "Residual Norm: " << res[0] << std::endl;
+    errorFlag += (res[0] > 1.e-6 ? 1 : 0);
 
+    // Get a summary from the time monitor.
+    Teuchos::TimeMonitor::summarize();
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

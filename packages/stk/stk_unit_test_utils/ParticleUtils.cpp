@@ -12,7 +12,7 @@ static int BASE_NODE_OFFSET = 1000000;
 stk::mesh::Entity ParticleManager::create_particle_node(stk::mesh::EntityId id, stk::mesh::BulkData & mesh)
 {
     const stk::mesh::PartVector noParts;
-    return mesh.declare_entity(stk::topology::NODE_RANK, id, noParts);
+    return mesh.declare_node(id, noParts);
 }
 
 stk::mesh::Entity ParticleManager::create_particle_element(stk::mesh::EntityId id,
@@ -20,7 +20,7 @@ stk::mesh::Entity ParticleManager::create_particle_element(stk::mesh::EntityId i
                                                            stk::mesh::Part &particlePart,
                                                            stk::mesh::Entity connectedNode)
 {
-    stk::mesh::Entity newParticle = mesh.declare_entity(stk::topology::ELEM_RANK, id, particlePart);
+    stk::mesh::Entity newParticle = mesh.declare_element(id, {&particlePart});
     mesh.declare_relation(newParticle, connectedNode, 0);
     return newParticle;
 }

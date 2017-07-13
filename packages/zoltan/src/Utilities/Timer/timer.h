@@ -62,7 +62,7 @@
  * but that has not been implemented here. 
  */
 
-#if defined(__PUMAGON__) || defined(__LIBCATAMOUNT__) || defined(_MSC_VER)
+#if defined(__PUMAGON__) || defined(__LIBCATAMOUNT__) || defined(_WIN32)
 /* Tflops with Cougar & Red Storm w/Catamount does not have sysconf() or times() */
 /* Microsoft Visual Studio does not have times either */
 #define NO_TIMES

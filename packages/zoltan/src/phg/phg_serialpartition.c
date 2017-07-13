@@ -919,7 +919,7 @@ int err = ZOLTAN_OK;
   local[0].val = bal = 0.0; /* balance */
   if (cutvals)
     local[1].val = cutvals[0];
-  else
+  else {
     local[1].val = Zoltan_PHG_Compute_ConCut(shg->comm, shg, spart, numPart,
                                              &err);
     if (err < 0) {
@@ -927,6 +927,7 @@ int err = ZOLTAN_OK;
                          "Error returned from Zoltan_PHG_Compute_ConCut");
       goto End;
     }
+  }
   local[0].rank = local[1].rank = phg_comm->myProc;
 
   /* What do we say is "best"?   For now, say lowest (ratio) cut. */
@@ -935,13 +936,14 @@ int err = ZOLTAN_OK;
 
     if (cutvals)
       cut = cutvals[i];
-    else
+    else {
       cut = Zoltan_PHG_Compute_ConCut(shg->comm, shg, 
              spart+i*(shg->nVtx), numPart, &err);
-    if (err < 0) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                         "Error returned from Zoltan_PHG_Compute_ConCut");
-      goto End;
+      if (err < 0) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                           "Error returned from Zoltan_PHG_Compute_ConCut");
+        goto End;
+      }
     }
 
     if (cut < local[1].val){

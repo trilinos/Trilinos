@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
     typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Tpetra::Comm<int> > comm = platform.getComm();
+    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
  
 
     int iprint = argc - 1;
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
     int errorFlag = 0;
 
-    double errtol = ROL::ROL_THRESHOLD;
+    RealT errtol = ROL::ROL_THRESHOLD<RealT>();
 
     try {
         // Dimension of the optimization vector
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
         // Compute Error
         RealT abserr = x.norm();
         outStream << std::scientific << "\n   Absolute Error: " << abserr << std::endl;
-        if ( abserr > sqrt(ROL::ROL_EPSILON) ) {
+        if ( abserr > sqrt(ROL::ROL_EPSILON<RealT>()) ) {
             errorFlag += 1;
         }
         /*---[ End Test of optimization using ROL::TpetraMultiVector ]---*/

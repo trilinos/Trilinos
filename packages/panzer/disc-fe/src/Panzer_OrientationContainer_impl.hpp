@@ -128,7 +128,7 @@ buildOrientationContainer(const Teuchos::RCP<const UniqueGlobalIndexerBase> & gl
   // int, pair<int,Ordinal64>
   {
     typedef int LO;
-    typedef std::pair<int,int> GO;
+    typedef std::pair<int,Ordinal64> GO;
 
     RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
         = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);

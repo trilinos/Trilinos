@@ -10,6 +10,11 @@ TRIBITS_PACKAGE(Gtest)
 # B) Set up package-specific options
 #
 
+# 
+# Disable Gtest's use of pthread.
+#
+ADD_DEFINITIONS(-DGTEST_HAS_PTHREAD=0)
+
 #
 # C) Add the libraries, tests, and examples
 #

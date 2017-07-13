@@ -82,7 +82,7 @@ const std::string toString(const EAdjointEpetraOp adjointEpetraOp)
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return "";
+  TEUCHOS_UNREACHABLE_RETURN("");
 }
 
 
@@ -111,7 +111,7 @@ const std::string toString(const EApplyEpetraOpAs applyEpetraOpAs)
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return "";
+  TEUCHOS_UNREACHABLE_RETURN("");
 }
 
 

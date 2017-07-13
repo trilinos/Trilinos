@@ -21,7 +21,7 @@ APPEND_SET(SOURCES
   CoarseMapFactory_kokkos.cpp
   MueLu_TestHelpers_kokkos.cpp
   MueLu_UnitTests_kokkos.cpp
-  SaPFactory_kokkos.cpp
+  #SaPFactory_kokkos.cpp
   TentativePFactory_kokkos.cpp
 )
 

@@ -43,7 +43,7 @@
 #ifndef __Panzer_STK_ParameterListCallbackBlocked_hpp__
 #define __Panzer_STK_ParameterListCallbackBlocked_hpp__
 
-#ifdef HAVE_TEKO
+#ifdef PANZER_HAVE_TEKO
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -57,7 +57,7 @@
 #include <vector>
 #include <map>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 template <typename GO> class STKConnManager;
 
@@ -68,8 +68,9 @@ template <typename GO> class STKConnManager;
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=panzer::TpetraNodeType>
 class ParameterListCallbackBlocked : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
 public:
-  ParameterListCallbackBlocked(const Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > & connManager, 
-                        const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blkDofs);
+  ParameterListCallbackBlocked(const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
+                        const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blkDofs,
+                        const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & auxBlkDofs=Teuchos::null);
 
   Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
 
@@ -79,11 +80,28 @@ public:
 
 private:
 
-  bool isField(const std::string & field) const
-  { return blocked_ugi_->getFieldNum(field) != -1; }
+  bool isField(const std::string& field) const
+  {
+    // Check both the main and auxiliary UGIs.
+    bool useAux(true);
+    std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int, GlobalOrdinalT>>>
+      fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
+    for (int b(0); b < static_cast<int>(fieldDOFMngrs.size()); ++b)
+    {
+      for (int f(0); f < fieldDOFMngrs[b]->getNumFields(); ++f)
+      {
+        if (fieldDOFMngrs[b]->getFieldString(f) == field)
+          useAux = false;
+      }
+    }
+    if (useAux)
+      return (aux_blocked_ugi_->getFieldNum(field) != -1);
+    else
+      return (blocked_ugi_->getFieldNum(field) != -1);
+  }
 
-  void buildCoordinates(const std::string & field);
-  void buildArrayToVector(int block,const std::string & field);
+  void buildCoordinates(const std::string & field, const bool useAux = false);
+  void buildArrayToVector(int block,const std::string & field, const bool useAux = false);
 
   // this method assumes handlesRequest(rm)==true
   std::string getHandledField(const Teuchos::ParameterList & pl) const;
@@ -96,11 +114,12 @@ private:
 
   // Access the field pattern associated with this field (this will not work if the field pattern
   // and element blocks are different
-  Teuchos::RCP<const panzer::Intrepid2FieldPattern> getFieldPattern(const std::string & fieldName) const;
+  Teuchos::RCP<const panzer::Intrepid2FieldPattern> getFieldPattern(const std::string & fieldName, const bool useAux = false) const;
 
   // Generally used members
-  Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > connManager_;
+  Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > connManager_;
   Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > blocked_ugi_;
+  Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > aux_blocked_ugi_;
 
   std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns_;
 
@@ -111,6 +130,8 @@ private:
   std::map<std::string,std::vector<double> > zcoords_;
 
   mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node> > > arrayToVector_;
+
+  Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > coordsVec_;
    
 };
 
@@ -118,6 +139,6 @@ private:
 
 #include "Panzer_STK_ParameterListCallbackBlocked_impl.hpp"
 
-#endif // HAVE_TEKO
+#endif // PANZER_HAVE_TEKO
 
 #endif

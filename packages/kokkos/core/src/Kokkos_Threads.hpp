@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -44,9 +44,10 @@
 #ifndef KOKKOS_THREADS_HPP
 #define KOKKOS_THREADS_HPP
 
-#include <Kokkos_Core_fwd.hpp>
+#include <Kokkos_Macros.hpp>
+#if defined( KOKKOS_ENABLE_THREADS )
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#include <Kokkos_Core_fwd.hpp>
 
 #include <cstddef>
 #include <iosfwd>
@@ -178,6 +179,7 @@ public:
   inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
   KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return thread_pool_rank(); }
 
+  static const char* name();
   //@}
   //----------------------------------------
 };
@@ -188,6 +190,17 @@ public:
 
 namespace Kokkos {
 namespace Impl {
+
+template<>
+struct MemorySpaceAccess
+  < Kokkos::Threads::memory_space
+  , Kokkos::Threads::scratch_memory_space
+  >
+{
+  enum { assignable = false };
+  enum { accessible = true };
+  enum { deepcopy   = false };
+};
 
 template<>
 struct VerifyExecutionCanAccessMemorySpace
@@ -211,10 +224,11 @@ struct VerifyExecutionCanAccessMemorySpace
 #include <Threads/Kokkos_ThreadsTeam.hpp>
 #include <Threads/Kokkos_Threads_Parallel.hpp>
 
+#include <KokkosExp_MDRangePolicy.hpp>
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */
+#endif /* #if defined( KOKKOS_ENABLE_THREADS ) */
 #endif /* #define KOKKOS_THREADS_HPP */
-
 

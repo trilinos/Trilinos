@@ -57,7 +57,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 PHX_EVALUATOR_CTOR(ScatterCellAvgVector,p) :
    mesh_(p.get<Teuchos::RCP<STK_Interface> >("Mesh"))
@@ -97,7 +97,7 @@ PHX_POST_REGISTRATION_SETUP(ScatterCellAvgVector,d,fm)
   {
     std::string fieldName = scatterFields_[fd].fieldTag().name();
 
-    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(fieldName);
+    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(stk::topology::ELEMENT_RANK, fieldName);
 
     // setup the field data object
     this->utils.setFieldData(scatterFields_[fd],fm);

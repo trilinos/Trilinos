@@ -53,13 +53,6 @@
 // Included multivector declarations
 #include "NOX_MultiVector.H"
 
-NOX::Abstract::Vector& NOX::Abstract::Vector::random(bool useSeed, int seed)
-{
-  std::cerr << "NOX::Abstract::Vector::random() function not implemented" << std::endl;
-  throw "NOX Error";
-  return *this;
-}
-
 void NOX::Abstract::Vector::print(std::ostream& stream) const
 {
   return;

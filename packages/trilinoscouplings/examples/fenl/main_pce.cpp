@@ -135,12 +135,18 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const double kl_mean = cmd.USE_MEAN;
   const double kl_variance = cmd.USE_VAR;
   const double kl_correlation = cmd.USE_COR;
+  const bool kl_exp = cmd.USE_EXPONENTIAL;
+  const double kl_exp_shift = cmd.USE_EXP_SHIFT;
+  const double kl_exp_scale = cmd.USE_EXP_SCALE;
+  const bool kl_disc_exp_scale = cmd.USE_DISC_EXP_SCALE;
   //typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
   typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
-  KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
+  KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim,
+                            kl_exp, kl_exp_shift, kl_exp_scale,
+                            kl_disc_exp_scale );
   typedef typename KL::RandomVariableView RV;
   typedef typename RV::HostMirror HRV;
-  RV rv = diffusion_coefficient.getRandomVariables();
+  RV rv("KL Random Variables", dim);
   HRV hrv = Kokkos::create_mirror_view(rv);
 
   // Set random variables
@@ -159,9 +165,11 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     hrv(i).fastAccessCoeff(index) = 1.0 / basis_vals[index];
   }
   Kokkos::deep_copy( rv, hrv );
+  diffusion_coefficient.setRandomVariables(rv);
 
   // Compute stochastic response using stochastic Galerkin method
   Scalar response = 0;
+  Teuchos::Array<Scalar> response_gradient;
   Perf perf;
   if ( cmd.USE_FIXTURE_QUADRATIC  )
     perf = fenl< Scalar , Device , BoxElemPart::ElemQuadratic >
@@ -169,18 +177,18 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
-        nelem , diffusion_coefficient , cmd.USE_COEFF_SRC ,
+        nelem , diffusion_coefficient , cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
         cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
-        response, qd );
+        response, response_gradient, qd );
   else
     perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
       ( comm , node , cmd.USE_FENL_XML_FILE ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
-        nelem , diffusion_coefficient , cmd.USE_COEFF_SRC ,
+        nelem , diffusion_coefficient , cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
         cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
-        response , qd );
+        response , response_gradient, qd );
 
   // std::cout << "newton count = " << perf.newton_iter_count
   //           << " cg count = " << perf.cg_iter_count << std::endl;
@@ -206,6 +214,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   if ( cmd.SUMMARIZE  ) {
     Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+    print_memory_usage(std::cout, *comm);
   }
 
   }
@@ -236,7 +245,15 @@ int main( int argc , char ** argv )
               << "not correctly applying the inverse diagonal in the smoother."
               << std::endl;
   }
-
+#ifndef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+  if (cmdline.USE_MUELU && cmdline.USE_MEANBASED &&
+      comm->getRank() == 0) {
+    std::cout << "Warning:  The mean-based preconditioner for PCE requires "
+              << "specializations introduced through ETI, however it is not "
+              << "enabled.  Memory errors are likely!"
+              << std::endl;
+  }
+#endif
   if (rv==CLP_HELP)
     return(EXIT_SUCCESS);
   else if (rv==CLP_ERROR)

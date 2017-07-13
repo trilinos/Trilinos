@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -45,7 +45,6 @@
 #include <Kokkos_Random.hpp>
 #include <cstdio>
 
-#ifdef KOKKOS_HAVE_CXX11
 
 // The TeamPolicy actually supports 3D parallelism: Teams, Threads, Vector
 // Kokkos::parallel_{for/reduce/scan} calls can be completely free nested.
@@ -141,11 +140,11 @@ int main(int narg, char* args[]) {
 
   // Each team handles a slice of the data
   // Set up TeamPolicy with 512 teams with maximum number of threads per team and 16 vector lanes.
-  // The team_size_max function will determine the maximum number of threads taking into account
-  // shared memory requirements of the Functor.
+  // Kokkos::AUTO will determine the number of threads
   // The maximum vector length is hardware dependent but can always be smaller than the hardware allows.
   // The vector length must be a power of 2.
-  const Kokkos::TeamPolicy<> policy( 512 , Kokkos::TeamPolicy<>::team_size_max(SomeCorrelation(data,gsum)) , 16);
+
+  const Kokkos::TeamPolicy<> policy( 512 , Kokkos::AUTO , 16);
 
   Kokkos::parallel_for( policy , SomeCorrelation(data,gsum) );
 
@@ -159,4 +158,3 @@ int main(int narg, char* args[]) {
   Kokkos::finalize();
 }
 
-#endif //KOKKOS_HAVE_CXX11

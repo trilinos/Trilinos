@@ -86,6 +86,11 @@ namespace panzer {
     // typedef Sacado::ELRCacheFad::DFad<double> FadType;
     // typedef Sacado::Fad::SLFad<double,8> FadType;
     typedef PANZER_FADTYPE FadType;
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+    // typedef Sacado::Fad::SFad<FadType,1> HessianType;
+    typedef Sacado::Fad::DFad<Sacado::Fad::SFad<RealType,1> > HessianType;
+#endif
     
     // ******************************************************************
     // *** Evaluation Types
@@ -93,7 +98,18 @@ namespace panzer {
     struct Residual { typedef RealType ScalarT; };
     struct Jacobian { typedef FadType ScalarT;  };
     struct Tangent { typedef FadType ScalarT;  };
-    typedef Sacado::mpl::vector<Residual, Jacobian, Tangent> EvalTypes;
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+    struct Hessian { typedef HessianType ScalarT;  };
+#endif
+
+    typedef Sacado::mpl::vector< Residual
+                               , Jacobian 
+                               , Tangent
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+                               , Hessian
+#endif
+                                > EvalTypes;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
@@ -108,9 +124,10 @@ namespace panzer {
 
     typedef struct {
       GlobalEvaluationDataContainer gedc;
-      std::string sensitivities_name;
+
+      std::string first_sensitivities_name;
+      std::string second_sensitivities_name;
     } PreEvalData;
-    // typedef GlobalEvaluationDataContainer& PreEvalData;
 
     typedef void* PostEvalData;
 
@@ -130,7 +147,13 @@ namespace PHX {
 
   template<>
   struct eval_scalar_types<panzer::Traits::Tangent> 
-  { typedef Sacado::mpl::vector<panzer::Traits::FadType,bool> type; };
+  { typedef Sacado::mpl::vector<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  template<>
+  struct eval_scalar_types<panzer::Traits::Hessian> 
+  { typedef Sacado::mpl::vector<panzer::Traits::HessianType,bool> type; };
+#endif
 
 }
 

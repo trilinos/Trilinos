@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     x.axpy(-1.0, xtrue);
     RealT abserr = x.norm();
     *outStream << std::scientific << "\n   Absolute Error: " << abserr << std::endl;
-    if ( abserr > sqrt(ROL::ROL_EPSILON) ) {
+    if ( abserr > sqrt(ROL::ROL_EPSILON<RealT>()) ) {
       errorFlag += 1;
     }
   }

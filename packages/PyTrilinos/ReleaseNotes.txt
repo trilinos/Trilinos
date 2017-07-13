@@ -1,3 +1,19 @@
+Release Notes for PyTrilinos for Trilinos 12.8
+==============================================
+
+General
+  * Improved formatting in example scripts
+
+Domi
+  * Update MDMap constructor for replicated boundaries
+  * Fixed ETI bugs
+
+NOX/LOCA
+  * Fixed memory leak by updating NOX typemaps
+
+Tpetra
+  * Fix difficult-to-wrap Map class by using %inline
+
 Release Notes for PyTrilinos for Trilinos 12.4
 ==============================================
 

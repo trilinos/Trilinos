@@ -145,9 +145,9 @@ createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
 
     // Create an Epetra sparse matrix.
     if (NumMyElements == 0) {
-      A = rcp (new Epetra_CrsMatrix (Copy, *rowMap, static_cast<int*>(NULL)));
+      A = rcp (new Epetra_CrsMatrix (Epetra_DataAccess::Copy, *rowMap, static_cast<int*>(NULL)));
     } else {
-      A = rcp (new Epetra_CrsMatrix (Copy, *rowMap, &NumNz[0]));
+      A = rcp (new Epetra_CrsMatrix (Epetra_DataAccess::Copy, *rowMap, &NumNz[0]));
     }
     //set_extra_data (rowMap, "Operator::Map", ptr (A));
 
@@ -176,7 +176,7 @@ createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
     // Construct the right-hand side and solution multivectors.
     //
     if (false && b != NULL) {
-      B = rcp (new Epetra_MultiVector (::Copy, *rowMap, b, NumMyElements, 1));
+      B = rcp (new Epetra_MultiVector (Epetra_DataAccess::Copy, *rowMap, b, NumMyElements, 1));
       numRHS = 1;
     } else {
       B = rcp (new Epetra_MultiVector (*rowMap, numRHS));

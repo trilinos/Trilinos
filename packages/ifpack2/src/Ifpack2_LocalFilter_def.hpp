@@ -79,68 +79,7 @@ bool
 LocalFilter<MatrixType>::
 mapPairIsFitted (const map_type& map1, const map_type& map2)
 {
-  using Teuchos::ArrayView;
-  typedef global_ordinal_type GO; // a handy abbreviation
-  typedef typename ArrayView<const GO>::size_type size_type;
-
-  bool fitted = true;
-  if (&map1 == &map2) {
-    fitted = true;
-  }
-  else if (map1.isContiguous () && map2.isContiguous () &&
-           map1.getMinGlobalIndex () == map2.getMinGlobalIndex () &&
-           map1.getMaxGlobalIndex () <= map2.getMaxGlobalIndex ()) {
-    // Special case where both Maps are contiguous.
-    fitted = true;
-  }
-  else {
-    ArrayView<const GO> inds_map2 = map2.getNodeElementList ();
-    const size_type numInds_map1 = static_cast<size_type> (map1.getNodeNumElements ());
-
-    if (map1.isContiguous ()) {
-      // Avoid calling getNodeElementList() on the always one-to-one
-      // Map, if it is contiguous (a common case).  When called on a
-      // contiguous Map, getNodeElementList() causes allocation of an
-      // array that sticks around, even though the array isn't needed.
-      // (The Map is contiguous, so you can compute the entries; you
-      // don't need to store them.)
-      if (numInds_map1 > inds_map2.size ()) {
-        // There are fewer indices in map1 on this process than in
-        // map2.  This case might be impossible.
-        fitted = false;
-      }
-      else {
-        // Do all the map1 indices match the initial map2 indices?
-        const GO minInd_map1 = map1.getMinGlobalIndex ();
-        for (size_type k = 0; k < numInds_map1; ++k) {
-          const GO inds_map1_k = static_cast<GO> (k) + minInd_map1;
-          if (inds_map1_k != inds_map2[k]) {
-            fitted = false;
-            break;
-          }
-        }
-      }
-    }
-    else { // map1 is not contiguous.
-      // Get index lists from both Maps, and compare their indices.
-      ArrayView<const GO> inds_map1 = map1.getNodeElementList ();
-      if (numInds_map1 > inds_map2.size ()) {
-        // There are fewer indices in map1 on this process than in
-        // map2.  This case might be impossible.
-        fitted = false;
-      }
-      else {
-        // Do all the map1 indices match those in map2?
-        for (size_type k = 0; k < numInds_map1; ++k) {
-          if (inds_map1[k] != inds_map2[k]) {
-            fitted = false;
-            break;
-          }
-        }
-      }
-    }
-  }
-  return fitted;
+  return Tpetra::Details::isLocallyFitted (map1, map2);
 }
 
 
@@ -196,12 +135,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   // of entries, namely, that of the local number of entries of A's
   // range Map.
 
-  // FIXME (mfh 21 Nov 2013) For some reason, we have to use this,
-  // even if it differs from the number of entries in the range Map.
-  // Otherwise, AdditiveSchwarz Test1 fails, down in the local solve,
-  // where the matrix has 8 columns but the local part of the vector
-  // only has five rows.
-  const size_t numRows = A_->getNodeNumRows ();
+  const size_t numRows = A_->getRangeMap()->getNodeNumElements ();
 
   // using std::cerr;
   // using std::endl;
@@ -220,13 +154,13 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
 
   // If the original matrix's domain Map is not fitted to its column
   // Map, we'll have to do an Import when applying the matrix.
-  const size_t numCols = A_->getDomainMap ()->getNodeNumElements ();
   if (A_->getRangeMap ().getRawPtr () == A_->getDomainMap ().getRawPtr ()) {
     // The input matrix's domain and range Maps are identical, so the
     // locally filtered matrix's domain and range Maps can be also.
     localDomainMap_ = localRangeMap_;
   }
   else {
+    const size_t numCols = A_->getDomainMap()->getNodeNumElements ();
     localDomainMap_ =
       rcp (new map_type (numCols, indexBase, localComm,
                          Tpetra::GloballyDistributed, A_->getNode ()));
@@ -584,6 +518,12 @@ getLocalRowCopy (local_ordinal_type LocalRow,
     NumEntries = 0;
     return;
   }
+
+  if (A_->getRowMap()->getComm()->getSize() == 1) {
+    A_->getLocalRowCopy (LocalRow, Indices (), Values (), NumEntries);
+    return;
+  }
+
 
   const size_t numEntInLclRow = NumEntries_[LocalRow];
   if (static_cast<size_t> (Indices.size ()) < numEntInLclRow ||

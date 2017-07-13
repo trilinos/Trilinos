@@ -27,12 +27,21 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
 ENDIF() # Galeri
 
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+
+    TRIBITS_ADD_EXECUTABLE(
+      KokkosKernels
+      SOURCES KokkosKernels.cpp
+      COMM serial mpi
+      )
+
+ENDIF()
+
 #
 # Tests
 #
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
-
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 

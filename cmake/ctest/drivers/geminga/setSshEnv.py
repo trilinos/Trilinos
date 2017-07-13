@@ -15,7 +15,7 @@ import re
 # TODO 1: It would be better to skip the socket query and instead look directly for the ssh-agent lock files.
 
 # Fingerprint of identity that you will use. You can find it with "ssh-add -l".
-keyFingerprint = "4096 bf:65:91:4a:0a:01:e9:72:fe:73:b6:9d:15:f5:cb:f4 /home/aprokop/.ssh/id_rsa (RSA)"
+keyFingerprint = "4096 db:7b:ce:13:b4:88:64:59:b2:e9:b8:17:f0:a6:97:d5 id_rsa_geminga (RSA)"
 # socket query tool
 socketCommand="/usr/sbin/ss"
 

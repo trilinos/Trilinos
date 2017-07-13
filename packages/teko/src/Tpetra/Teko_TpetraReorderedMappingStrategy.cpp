@@ -44,7 +44,7 @@
 
 */
 
-#include "Tpetra/Teko_TpetraReorderedMappingStrategy.hpp"
+#include "Teko_TpetraReorderedMappingStrategy.hpp"
 
 #include "Teko_BlockedReordering.hpp"
 

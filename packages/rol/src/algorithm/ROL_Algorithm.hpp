@@ -52,8 +52,8 @@
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_EqualityConstraint.hpp"
-
 #include "ROL_OptimizationProblem.hpp"
+#include "ROL_ValidParameters.hpp"
 
 /** \class ROL::Algorithm
     \brief Provides an interface to run optimization algorithms.
@@ -112,6 +112,11 @@ public:
   Algorithm( const std::string &stepname,
              Teuchos::ParameterList &parlist,
              bool printHeader = false) {
+
+// Uncomment to test for parameter inconsistencies
+//    Teuchos::RCP<const Teuchos::ParameterList> validParlist = getValidROLParameters();
+//    parlist.validateParametersAndSetDefaults(*validParlist);
+
     EStep els = StringToEStep(stepname);
     TEUCHOS_TEST_FOR_EXCEPTION( !(isValidStep(els)),
                                 std::invalid_argument,
@@ -130,10 +135,12 @@ public:
   virtual std::vector<std::string> run( Vector<Real>      &x,
                                         Objective<Real>   &obj,
                                         bool              print = false,
-                                        std::ostream      &outStream = std::cout ) {
+                                        std::ostream      &outStream = std::cout,
+                                        bool              printVectors = false,
+                                        std::ostream      &vectorStream = std::cout ) {
     BoundConstraint<Real> con;
     con.deactivate();
-    return run(x,x.dual(),obj,con,print,outStream);
+    return run(x,x.dual(),obj,con,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
@@ -144,10 +151,12 @@ public:
                                         const Vector<Real> &g, 
                                         Objective<Real>    &obj,
                                         bool               print = false,
-                                        std::ostream       &outStream = std::cout ) {
+                                        std::ostream       &outStream = std::cout,
+                                        bool               printVectors = false,
+                                        std::ostream       &vectorStream = std::cout ) {
     BoundConstraint<Real> con;
     con.deactivate();
-    return run(x,g,obj,con,print,outStream);
+    return run(x,g,obj,con,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
@@ -157,8 +166,10 @@ public:
                                         Objective<Real>       &obj,
                                         BoundConstraint<Real> &con,
                                         bool                  print = false,
-                                        std::ostream          &outStream = std::cout ) {
-    return run(x,x.dual(),obj,con,print,outStream);
+                                        std::ostream          &outStream = std::cout,
+                                        bool                  printVectors = false,
+                                        std::ostream          &vectorStream = std::cout ) {
+    return run(x,x.dual(),obj,con,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
@@ -170,7 +181,13 @@ public:
                                         Objective<Real>       &obj,
                                         BoundConstraint<Real> &con,
                                         bool                  print = false,
-                                        std::ostream          &outStream = std::cout ) {
+                                        std::ostream          &outStream = std::cout,
+                                        bool                  printVectors = false,
+                                        std::ostream          &vectorStream = std::cout ) {
+    if(printVectors) {
+      x.print(vectorStream);
+    }
+
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
@@ -201,6 +218,11 @@ public:
     while (status_->check(*state_)) {
       step_->compute(*s, x, obj, con, *state_);
       step_->update(x, *s, obj, con, *state_);
+
+      if( printVectors ) {
+        x.print(vectorStream);
+      }
+
       // Store Minimal Value and Vector
       if ( state_->minValue > state_->value ) {
         state_->minIterVec->set(*(state_->iterateVec));
@@ -225,9 +247,11 @@ public:
                                         Objective<Real>          &obj,
                                         EqualityConstraint<Real> &con,
                                         bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
+                                        std::ostream             &outStream = std::cout,
+                                        bool                     printVectors = false,
+                                        std::ostream             &vectorStream = std::cout ) {
 
-    return run(x, x.dual(), l, l.dual(), obj, con, print, outStream);
+    return run(x, x.dual(), l, l.dual(), obj, con, print, outStream, printVectors, vectorStream);
 
   }
 
@@ -243,7 +267,13 @@ public:
                                         Objective<Real>          &obj,
                                         EqualityConstraint<Real> &con,
                                         bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
+                                        std::ostream             &outStream = std::cout,
+                                        bool                     printVectors = false,
+                                        std::ostream             &vectorStream = std::cout ) {
+    if( printVectors ) {
+      x.print(vectorStream);
+    } 
+
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
@@ -280,6 +310,11 @@ public:
     while (status_->check(*state_)) {
       step_->compute(*s, x, l, obj, con, *state_);
       step_->update(x, l, *s, obj, con, *state_);
+
+      if( printVectors ) { 
+        x.print(vectorStream);
+      } 
+
       output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
         outStream << step_->print(*state_,printHeader_);
@@ -297,8 +332,10 @@ public:
                                         EqualityConstraint<Real> &con,
                                         BoundConstraint<Real>    &bnd,
                                         bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
-    return run(x,x.dual(),l,l.dual(),obj,con,bnd,print,outStream);
+                                        std::ostream             &outStream = std::cout,
+                                        bool                     printVectors = false,
+                                        std::ostream             &vectorStream = std::cout) {
+    return run(x,x.dual(),l,l.dual(),obj,con,bnd,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on equality and bound constrained problems (Type-EB).
@@ -313,7 +350,13 @@ public:
                                         EqualityConstraint<Real> &con,
                                         BoundConstraint<Real>    &bnd,
                                         bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
+                                        std::ostream             &outStream = std::cout,
+                                        bool                     printVectors = false,
+                                        std::ostream             &vectorStream = std::cout ) {
+    if(printVectors) {
+      x.print(vectorStream); 
+    } 
+
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
@@ -350,6 +393,9 @@ public:
     while (status_->check(*state_)) {
       step_->compute(*s, x, l, obj, con, bnd, *state_);
       step_->update(x, l, *s, obj, con, bnd, *state_);
+      if( printVectors ) {
+        x.print(vectorStream);
+      }
       output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
         outStream << step_->print(*state_,printHeader_);
@@ -369,6 +415,7 @@ public:
     Teuchos::RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
     Teuchos::RCP<EqualityConstraint<Real> > con = opt.getEqualityConstraint();
     Teuchos::RCP<Vector<Real> >             l   = opt.getMultiplierVector();
+
     // Call appropriate run function
     if ( con == Teuchos::null ) {
       if ( bnd == Teuchos::null ) {
@@ -399,6 +446,15 @@ public:
   Teuchos::RCP<const AlgorithmState<Real> > getState(void) const {
     return state_;
   }
+
+  void reset(void) {
+    state_  = Teuchos::rcp(new AlgorithmState<Real>);
+  }
+
+
+
+
+
 
 }; // class Algorithm
 

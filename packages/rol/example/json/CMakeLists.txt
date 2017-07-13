@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 # To build this example, add the following to the cmake call in your trilinos build script
 # -D TPL_ENABLE_JSONCPP=ON \

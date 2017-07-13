@@ -274,7 +274,7 @@ namespace PAMGEN_NEVADA{
    //!  Copyright 1985, 1987, 2000 by Stephen L. Moshier
    //!
 
-   double Bessel_I1(double x) { 
+   double Bessel_I1(double x) {
       double y, z;
 
       z = fabs(x);

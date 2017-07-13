@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 
 TRIBITS_SUBPACKAGE(SuplibCpp)
 
@@ -16,7 +15,6 @@ SET(SOURCES
   GetLongOpt.C
   smart_assert.C
   timer.C
-  to_string.C
   SL_tokenize.C
   )
 

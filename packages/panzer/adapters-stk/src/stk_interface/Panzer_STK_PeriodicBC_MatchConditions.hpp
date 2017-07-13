@@ -48,7 +48,7 @@
 #include <vector>
 #include <string>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 /** Match coordinates that share the same point on a line
   */ 

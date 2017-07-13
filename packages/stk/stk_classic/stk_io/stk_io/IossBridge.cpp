@@ -1159,7 +1159,6 @@ void define_node_block(stk_classic::mesh::Part &part,
    *                  from the field restriction.
    */
   const int spatial_dim = res.dimension() ;
-  io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
 
   //--------------------------------
   // Create the special universal node block:

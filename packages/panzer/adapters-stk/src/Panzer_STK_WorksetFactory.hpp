@@ -49,7 +49,13 @@
 
 #include "Panzer_STK_Interface.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer
+{
+template<typename LO, typename GO>
+class LocalMeshInfo;
+}
+
+namespace panzer_stk {
 
 /** Pure virtual base class used to construct 
   * worksets on volumes and side sets.
@@ -65,36 +71,22 @@ public:
   /** Set mesh
      */
    virtual
-   void setMesh(const Teuchos::RCP<const panzer_stk_classic::STK_Interface> & mesh);
+   void setMesh(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh);
 
    /** Build sets of boundary condition worksets
      */
    virtual
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
-   getSideWorksets(const panzer::BC & bc,
-                 const panzer::PhysicsBlock & pb) const;
-
-   /** Build sets of boundary condition worksets
-     */
-   virtual
-   Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
-   getSideWorksets(const panzer::BC & bc,
+   getSideWorksets(const panzer::WorksetDescriptor & desc,
                    const panzer::WorksetNeeds & needs) const;
 
    /** Build sets of boundary condition worksets for the BCT_Interface case.
      */
    virtual
    Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-   getSideWorksets(const panzer::BC & bc,
-                   const panzer::PhysicsBlock & pb_a,
-                   const panzer::PhysicsBlock & pb_b) const;
-
-   /** Build workssets specified by the workset descriptor.
-     */
-   virtual
-   Teuchos::RCP<std::vector<panzer::Workset> >
-   getWorksets(const panzer::WorksetDescriptor & worksetDesc,
-               const panzer::PhysicsBlock & pb) const;
+   getSideWorksets(const panzer::WorksetDescriptor & desc,
+                   const panzer::WorksetNeeds & needs_a,
+                   const panzer::WorksetNeeds & needs_b) const;
 
    /** Build workssets specified by the workset descriptor.
      */
@@ -105,7 +97,14 @@ public:
 
 private:
 
+   /// Mesh
    Teuchos::RCP<const STK_Interface> mesh_;
+
+   // This needs to be set at the start, but is currently setup only if the
+   // workset descriptor requiers it
+   /// Alternative form of mesh
+   mutable Teuchos::RCP<const panzer::LocalMeshInfo<int,int> > mesh_info_;
+
 
 };
 

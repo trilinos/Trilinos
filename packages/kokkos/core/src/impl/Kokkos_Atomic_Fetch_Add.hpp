@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,11 +36,12 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
 
+#include <Kokkos_Macros.hpp>
 #if defined( KOKKOS_ATOMIC_HPP ) && ! defined( KOKKOS_ATOMIC_FETCH_ADD_HPP )
 #define KOKKOS_ATOMIC_FETCH_ADD_HPP
 
@@ -48,7 +49,8 @@ namespace Kokkos {
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_ATOMICS_USE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
+#if defined(__CUDA_ARCH__) || defined(KOKKOS_IMPL_CUDA_CLANG_WORKAROUND)
 
 // Support for int, unsigned int, unsigned long long int, and float
 
@@ -69,23 +71,22 @@ __inline__ __device__
 float atomic_fetch_add( volatile float * const dest , const float val )
 { return atomicAdd((float*)dest,val); }
 
+#if ( 600 <= __CUDA_ARCH__ )
+__inline__ __device__
+double atomic_fetch_add( volatile double * const dest , const double val )
+{ return atomicAdd((double*)dest,val); }
+#endif
+
 template < typename T >
 __inline__ __device__
 T atomic_fetch_add( volatile T * const dest ,
   typename Kokkos::Impl::enable_if< sizeof(T) == sizeof(int) , const T >::type val )
 {
-#ifdef KOKKOS_HAVE_CXX11
   union U {
     int i ;
     T t ;
     KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
-#else
-  union U {
-    int i ;
-    T t ;
-  } assume , oldval , newval ;
-#endif
 
   oldval.t = *dest ;
 
@@ -93,7 +94,7 @@ T atomic_fetch_add( volatile T * const dest ,
     assume.i = oldval.i ;
     newval.t = assume.t + val ;
     oldval.i = atomicCAS( (int*)dest , assume.i , newval.i );
-  } while ( assumed.i != oldval.i );
+  } while ( assume.i != oldval.i );
 
   return oldval.t ;
 }
@@ -104,18 +105,11 @@ T atomic_fetch_add( volatile T * const dest ,
   typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
                                     sizeof(T) == sizeof(unsigned long long int) , const T >::type val )
 {
-#ifdef KOKKOS_HAVE_CXX11
   union U {
     unsigned long long int i ;
     T t ;
     KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
-#else
-  union U {
-    unsigned long long int i ;
-    T t ;
-  } assume , oldval , newval ;
-#endif
 
   oldval.t = *dest ;
 
@@ -133,64 +127,83 @@ T atomic_fetch_add( volatile T * const dest ,
 template < typename T >
 __inline__ __device__
 T atomic_fetch_add( volatile T * const dest ,
-    typename ::Kokkos::Impl::enable_if<
+    typename Kokkos::Impl::enable_if<
                   ( sizeof(T) != 4 )
                && ( sizeof(T) != 8 )
              , const T >::type& val )
 {
   T return_val;
   // This is a way to (hopefully) avoid dead lock in a warp
-  bool done = false;
-  while (! done ) {
-    if( Impl::lock_address_cuda_space( (void*) dest ) ) {
-      return_val = *dest;
-      *dest = return_val + val;
-      Impl::unlock_address_cuda_space( (void*) dest );
+  int done = 0;
+  unsigned int active = __ballot(1);
+  unsigned int done_active = 0;
+  while (active!=done_active) {
+    if(!done) {
+      bool locked = Impl::lock_address_cuda_space( (void*) dest );
+      if( locked ) {
+        return_val = *dest;
+        *dest = return_val + val;
+        Impl::unlock_address_cuda_space( (void*) dest );
+        done = 1;
+      }
     }
+    done_active = __ballot(done);
   }
   return return_val;
 }
+#endif
+#endif
 //----------------------------------------------------------------------------
+#if !defined(__CUDA_ARCH__) || defined(KOKKOS_IMPL_CUDA_CLANG_WORKAROUND)
+#if defined(KOKKOS_ENABLE_GNU_ATOMICS) || defined(KOKKOS_ENABLE_INTEL_ATOMICS)
 
-#elif defined(KOKKOS_ATOMICS_USE_GCC) || defined(KOKKOS_ATOMICS_USE_INTEL)
+#if defined( KOKKOS_ENABLE_ASM ) && defined ( KOKKOS_ENABLE_ISA_X86_64 )
+inline
+int atomic_fetch_add( volatile int * dest , const int val )
+{
+        int original = val;
 
-KOKKOS_INLINE_FUNCTION
+        __asm__ __volatile__(
+                "lock xadd %1, %0"
+                : "+m" (*dest), "+r" (original)
+                : "m" (*dest), "r" (original)
+                : "memory"
+        );
+
+        return original;
+}
+#else
+inline
 int atomic_fetch_add( volatile int * const dest , const int val )
-{ return __sync_fetch_and_add(dest,val); }
+{ return __sync_fetch_and_add(dest, val); }
+#endif
 
-KOKKOS_INLINE_FUNCTION
+inline
 long int atomic_fetch_add( volatile long int * const dest , const long int val )
 { return __sync_fetch_and_add(dest,val); }
 
-#if defined( KOKKOS_ATOMICS_USE_GCC )
+#if defined( KOKKOS_ENABLE_GNU_ATOMICS )
 
-KOKKOS_INLINE_FUNCTION
+inline
 unsigned int atomic_fetch_add( volatile unsigned int * const dest , const unsigned int val )
 { return __sync_fetch_and_add(dest,val); }
 
-KOKKOS_INLINE_FUNCTION
+inline
 unsigned long int atomic_fetch_add( volatile unsigned long int * const dest , const unsigned long int val )
 { return __sync_fetch_and_add(dest,val); }
 
 #endif
 
 template < typename T >
-KOKKOS_INLINE_FUNCTION
+inline
 T atomic_fetch_add( volatile T * const dest ,
   typename Kokkos::Impl::enable_if< sizeof(T) == sizeof(int) , const T >::type val )
 {
-#ifdef KOKKOS_HAVE_CXX11
   union U {
     int i ;
     T t ;
-    KOKKOS_INLINE_FUNCTION U() {};
+    inline U() {};
   } assume , oldval , newval ;
-#else
-  union U {
-    int i ;
-    T t ;
-  } assume , oldval , newval ;
-#endif
 
   oldval.t = *dest ;
 
@@ -204,23 +217,16 @@ T atomic_fetch_add( volatile T * const dest ,
 }
 
 template < typename T >
-KOKKOS_INLINE_FUNCTION
+inline
 T atomic_fetch_add( volatile T * const dest ,
   typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
                                     sizeof(T) == sizeof(long) , const T >::type val )
 {
-#ifdef KOKKOS_HAVE_CXX11
   union U {
     long i ;
     T t ;
-    KOKKOS_INLINE_FUNCTION U() {};
+    inline U() {};
   } assume , oldval , newval ;
-#else
-  union U {
-    long i ;
-    T t ;
-  } assume , oldval , newval ;
-#endif
 
   oldval.t = *dest ;
 
@@ -233,9 +239,9 @@ T atomic_fetch_add( volatile T * const dest ,
   return oldval.t ;
 }
 
-#if defined( KOKKOS_ENABLE_ASM ) && defined ( KOKKOS_USE_ISA_X86_64 )
+#if defined( KOKKOS_ENABLE_ASM ) && defined ( KOKKOS_ENABLE_ISA_X86_64 )
 template < typename T >
-KOKKOS_INLINE_FUNCTION
+inline
 T atomic_fetch_add( volatile T * const dest ,
   typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
                                     sizeof(T) != sizeof(long) &&
@@ -244,7 +250,7 @@ T atomic_fetch_add( volatile T * const dest ,
   union U {
     Impl::cas128_t i ;
     T t ;
-    KOKKOS_INLINE_FUNCTION U() {};
+    inline U() {};
   } assume , oldval , newval ;
 
   oldval.t = *dest ;
@@ -264,24 +270,36 @@ T atomic_fetch_add( volatile T * const dest ,
 template < typename T >
 inline
 T atomic_fetch_add( volatile T * const dest ,
-    typename ::Kokkos::Impl::enable_if<
+    typename Kokkos::Impl::enable_if<
                   ( sizeof(T) != 4 )
                && ( sizeof(T) != 8 )
-              #if defined(KOKKOS_ENABLE_ASM) && defined ( KOKKOS_USE_ISA_X86_64 )
+              #if defined(KOKKOS_ENABLE_ASM) && defined ( KOKKOS_ENABLE_ISA_X86_64 )
                && ( sizeof(T) != 16 )
               #endif
                  , const T >::type& val )
 {
   while( !Impl::lock_address_host_space( (void*) dest ) );
   T return_val = *dest;
-  const T tmp = *dest = return_val + val;
+
+  // Don't use the following line of code here:
+  //
+  //const T tmp = *dest = return_val + val;
+  //
+  // Instead, put each assignment in its own statement.  This is
+  // because the overload of T::operator= for volatile *this should
+  // return void, not volatile T&.  See Kokkos #177:
+  //
+  // https://github.com/kokkos/kokkos/issues/177
+  *dest = return_val + val;
+  const T tmp = *dest;
   (void) tmp;
   Impl::unlock_address_host_space( (void*) dest );
+
   return return_val;
 }
 //----------------------------------------------------------------------------
 
-#elif defined( KOKKOS_ATOMICS_USE_OMP31 )
+#elif defined( KOKKOS_ENABLE_OPENMP_ATOMICS )
 
 template< typename T >
 T atomic_fetch_add( volatile T * const dest , const T val )
@@ -296,7 +314,7 @@ T atomic_fetch_add( volatile T * const dest , const T val )
 }
 
 #endif
-
+#endif
 //----------------------------------------------------------------------------
 
 // Simpler version of atomic_fetch_add without the fetch

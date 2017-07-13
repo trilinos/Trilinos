@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
       // Aprepro::parsing_results()
       std::fstream infile(argv[ai]);
       if (!infile.good()) {
-	std::cerr << "APREPRO: Could not open file: " << argv[ai] << std::endl;
+	std::cerr << "APREPRO: Could not open file: " << argv[ai] << '\n';
 	return 0;
       }
 
@@ -108,8 +108,11 @@ int main(int argc, char *argv[])
       readfile = true;
     }
   }
-
-  if (readfile) return 0;
+  if (readfile) {
+    std::cerr << "Aprepro: There were " << aprepro.get_error_count()
+	      << " errors detected during parsing.\n";
+    return 0;
+  }
     
   // Read and parse a string's worth of data at a time.
   // Cannot use looping/ifs/... with this method.
@@ -139,12 +142,12 @@ int main(int argc, char *argv[])
       if(aprepro.ap_options.keep_history)
       {
         std::vector<SEAMS::history_data> hist = aprepro.get_history();
-        for(size_t i = 0; i < hist.size(); i++)
+        for(auto curr_history : hist)
         {
-          SEAMS::history_data curr_history = hist[i];
+          
           std::cout << curr_history.original << " was substituted with " <<
                        curr_history.substitution << " at index " <<
-                       curr_history.index << std::endl;
+                       curr_history.index << '\n';
         }
 
         aprepro.clear_history();
@@ -155,4 +158,7 @@ int main(int argc, char *argv[])
 
     line.clear();
   }
+  std::cerr << "Aprepro: There were " << aprepro.get_error_count()
+	    << " errors detected during parsing.\n";
+  
 }

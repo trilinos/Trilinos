@@ -44,9 +44,9 @@
 
 */
 
-#include "Tpetra/Teko_StridedTpetraOperator.hpp"
-#include "Tpetra/Teko_TpetraStridedMappingStrategy.hpp"
-#include "Tpetra/Teko_TpetraReorderedMappingStrategy.hpp"
+#include "Teko_StridedTpetraOperator.hpp"
+#include "Teko_TpetraStridedMappingStrategy.hpp"
+#include "Teko_TpetraReorderedMappingStrategy.hpp"
 
 #include "Teuchos_VerboseObject.hpp"
 

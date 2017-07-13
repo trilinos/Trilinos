@@ -500,7 +500,7 @@ private:
   Ifpack_Hypre(const Ifpack_Hypre& RHS) : Time_(RHS.Comm()){}
 
   //! operator= (should never be used)
-  Ifpack_Hypre& operator=(const Ifpack_Hypre& RHS){ return(*this);}
+  Ifpack_Hypre& operator=(const Ifpack_Hypre& /*RHS*/){ return(*this);}
 
   //! Destroys all internal data
   void Destroy();
@@ -551,7 +551,7 @@ private:
   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
 
   //! Create a BoomerAMG solver.
-  int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver)
+  int Hypre_BoomerAMGCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
     { return HYPRE_BoomerAMGCreate(solver);}
 
   //! Create a ParaSails solver.
@@ -563,11 +563,11 @@ private:
     { return HYPRE_EuclidCreate(comm, solver);}
 
   //! Create an AMS solver.
-  int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver)
+  int Hypre_AMSCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
     { return HYPRE_AMSCreate(solver);}
 
   //! Create a Hybrid solver.
-  int Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver)
+  int Hypre_ParCSRHybridCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
     { return HYPRE_ParCSRHybridCreate(solver);}
 
   //! Create a PCG solver.

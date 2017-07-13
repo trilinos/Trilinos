@@ -40,18 +40,18 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef HAVE_TEKO
+#ifdef PANZER_HAVE_TEKO
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallback(
                                              const std::string & coordFieldName,
                                              const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fps,
-                                             const Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > & connManager, 
+                                             const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
                                              const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi)
    : coordFieldName_(coordFieldName), fieldPatterns_(fps), connManager_(connManager), ugi_(ugi), coordinatesBuilt_(false)
 { }
@@ -123,7 +123,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
 {
    TEUCHOS_ASSERT(fieldPatterns_.size()>0); // must be at least one field pattern
 
-   std::map<std::string,Intrepid2::FieldContainer<double> > data;
+   std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
 
    std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> >::const_iterator itr; 
    for(itr=fieldPatterns_.begin();itr!=fieldPatterns_.end();++itr) {
@@ -132,8 +132,8 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
       std::vector<std::size_t> localCellIds;
 
       // allocate block of data to store coordinates
-      Intrepid2::FieldContainer<double> & fieldData = data[blockId];
-      fieldData.resize(connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
+      Kokkos::DynRankView<double,PHX::Device> & fieldData = data[blockId];
+      fieldData = Kokkos::DynRankView<double,PHX::Device>("fieldData",connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
 
       if(fieldPattern->supportsInterpolatoryCoordinates()) {
          // get degree of freedom coordiantes

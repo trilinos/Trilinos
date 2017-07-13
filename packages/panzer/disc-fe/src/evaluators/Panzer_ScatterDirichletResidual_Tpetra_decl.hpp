@@ -209,6 +209,7 @@ private:
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const LOC> tpetraContainer_;
+  std::vector< Teuchos::ArrayRCP<double> > dfdp_vectors_;
 
   //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
   bool checkApplyBC_;
@@ -289,6 +290,11 @@ private:
 };
 
 }
+
+// optionally include hessian support
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_ScatterDirichletResidual_Tpetra_Hessian.hpp"
+#endif
 
 // **************************************************************
 #endif

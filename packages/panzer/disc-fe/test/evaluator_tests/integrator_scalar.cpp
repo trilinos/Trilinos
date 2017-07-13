@@ -55,7 +55,6 @@ using Teuchos::rcp;
 
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_IntegrationValues.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Traits.hpp"
@@ -65,7 +64,6 @@ using Teuchos::rcp;
 #include "Panzer_Integrator_Scalar.hpp"
 
 #include "Phalanx_FieldManager.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Comm.h"
@@ -82,7 +80,6 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -99,7 +96,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Intrepid2::FieldContainer<double> FieldArray;
+  // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 4, dim = 2;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;
@@ -139,7 +136,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarType<typename EvalType::ScalarT> ScalarType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->dimension(0)));
@@ -182,6 +178,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  std::vector<PHX::index_size_type> hess_derivative_dimensions;
+  hess_derivative_dimensions.push_back(4);
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(hess_derivative_dimensions);
+#endif
+
   fm->postRegistrationSetup(setupData);
 
   panzer::Traits::PreEvalData preEvalData;
@@ -200,7 +203,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -217,7 +219,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Intrepid2::FieldContainer<double> FieldArray;
+  // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;
@@ -265,7 +267,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarType<typename EvalType::ScalarT> ScalarType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->dimension(0)));
@@ -308,6 +309,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  std::vector<PHX::index_size_type> hess_derivative_dimensions;
+  hess_derivative_dimensions.push_back(4);
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(hess_derivative_dimensions);
+#endif
+
   fm->postRegistrationSetup(setupData);
 
   panzer::Traits::PreEvalData preEvalData;
@@ -326,7 +334,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -343,7 +350,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Intrepid2::FieldContainer<double> FieldArray;
+  // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;
@@ -391,7 +398,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarType<typename EvalType::ScalarT> ScalarType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->dimension(0)));
@@ -434,6 +440,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  std::vector<PHX::index_size_type> hess_derivative_dimensions;
+  hess_derivative_dimensions.push_back(4);
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(hess_derivative_dimensions);
+#endif
+
   fm->postRegistrationSetup(setupData);
 
   panzer::Traits::PreEvalData preEvalData;
@@ -459,5 +472,10 @@ typedef Traits::Jacobian JacobianType;
 
 UNIT_TEST_GROUP(ResidualType)
 UNIT_TEST_GROUP(JacobianType)
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+typedef Traits::Hessian HessianType;
+UNIT_TEST_GROUP(HessianType)
+#endif
 
 }

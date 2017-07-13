@@ -53,7 +53,7 @@ PHX_EVALUATOR_CTOR(TestScatter,p)
   std::string test_name     = p.get<std::string>("Test Name");
   std::string test_name_res = p.get<std::string>("Test Name Residual");
   Teuchos::RCP<PHX::DataLayout> dl = p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
-  value = PHX::MDField<ScalarT,Cell,NODE>(p.get<std::string>("Test Name"), dl);
+  value = PHX::MDField<const ScalarT,Cell,NODE>(p.get<std::string>("Test Name"), dl);
   scatter_value = PHX::MDField<ScalarT,Cell,NODE>(test_name_res, dl);
 
   this->addDependentField(value);
@@ -80,9 +80,9 @@ PHX_EVALUATE_FIELDS(TestScatter,workset)
 { 
  // for (int i=0; i < scatter_value.size(); ++i)
  //   scatter_value[i] = 0.0;
-  Kokkos::deep_copy(scatter_value.get_kokkos_view(), ScalarT(0.0));
+  Kokkos::deep_copy(scatter_value.get_static_view(), ScalarT(0.0));
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     ScalarT sum = 0.0;
     for (std::size_t node = 0; node < num_nodes; ++node) 
        sum += value(cell,node);

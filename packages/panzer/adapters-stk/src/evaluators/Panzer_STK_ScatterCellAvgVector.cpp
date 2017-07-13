@@ -49,6 +49,6 @@
 #include "Panzer_STK_ScatterCellAvgVector_decl.hpp"
 #include "Panzer_STK_ScatterCellAvgVector_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer_stk_classic::ScatterCellAvgVector)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer_stk::ScatterCellAvgVector)
 
 #endif

@@ -41,9 +41,6 @@ typedef MueLu::CoupledAggregationCommHelper<LocalOrdinal,GlobalOrdinal,Node> Cou
 #ifdef MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
 typedef MueLu::CoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> CoupledAggregationFactory;
 #endif
-#ifdef MUELU_DEMOFACTORY_SHORT
-typedef MueLu::DemoFactory<LocalOrdinal,GlobalOrdinal,Node> DemoFactory;
-#endif
 #ifdef MUELU_GRAPH_SHORT
 typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node> Graph;
 #endif
@@ -101,10 +98,6 @@ typedef MueLu::UncoupledAggregationFactory_kokkos<LocalOrdinal,GlobalOrdinal,Nod
 #ifdef MUELU_USERAGGREGATIONFACTORY_SHORT
 typedef MueLu::UserAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> UserAggregationFactory;
 #endif
-#ifdef MUELU_AMESOSSMOOTHER_SHORT
-typedef MueLu::AmesosSmoother<Node> AmesosSmoother;
-#endif
-
 #ifdef MUELU_FACTORY_SHORT
 typedef MueLu::Factory Factory;
 #endif
@@ -115,10 +108,6 @@ typedef MueLu::FactoryBase FactoryBase;
 
 #ifdef MUELU_FACTORYMANAGERBASE_SHORT
 typedef MueLu::FactoryManagerBase FactoryManagerBase;
-#endif
-
-#ifdef MUELU_IFPACKSMOOTHER_SHORT
-typedef MueLu::IfpackSmoother<Node> IfpackSmoother;
 #endif
 
 #ifdef MUELU_LEVEL_SHORT
@@ -149,3 +138,9 @@ typedef MueLu::VariableContainer VariableContainer;
 typedef MueLu::SmootherFactoryBase SmootherFactoryBase;
 #endif
 
+#ifdef MUELU_AMESOSSMOOTHER_SHORT
+typedef MueLu::AmesosSmoother<Node> AmesosSmoother;
+#endif
+#ifdef MUELU_IFPACKSMOOTHER_SHORT
+typedef MueLu::IfpackSmoother<Node> IfpackSmoother;
+#endif

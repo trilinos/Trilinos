@@ -48,6 +48,7 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_OrderingSolution.hpp> // BDD: needed by ordering method
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
 
@@ -56,9 +57,39 @@
 //! \brief interface to the Scotch third-party library
 
 ////////////////////////////////////////////////////////////////////////
+
+namespace Zoltan2 {
+
+// this function called by the two scotch types below
+static inline void getScotchParameters(Teuchos::ParameterList & pl)
+{
+  // bool parameter
+  pl.set("scotch_verbose", false, "verbose output",
+    Environment::getBoolValidator());
+
+  RCP<Teuchos::EnhancedNumberValidator<int>> scotch_level_Validator =
+    Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
+  pl.set("scotch_level", 0, "scotch ordering - Level of the subgraph in the "
+    "separators tree for the initial graph at the root of the tree",
+    scotch_level_Validator);
+
+  pl.set("scotch_imbalance_ratio", 0.2, "scotch ordering - Dissection "
+    "imbalance ratio", Environment::getAnyDoubleValidator());
+
+  // bool parameter
+  pl.set("scotch_ordering_default", true, "use default scotch ordering "
+    "strategy", Environment::getBoolValidator());
+
+  pl.set("scotch_ordering_strategy", "", "scotch ordering - Dissection "
+    "imbalance ratio");
+}
+
+} // Zoltan2 namespace
+
 #ifndef HAVE_ZOLTAN2_SCOTCH
 
 namespace Zoltan2 {
+
 // Error handling for when Scotch is requested
 // but Zoltan2 not built with Scotch.
 
@@ -66,14 +97,26 @@ template <typename Adapter>
 class AlgPTScotch : public Algorithm<Adapter>
 {
 public:
+  typedef typename Adapter::base_adapter_t base_adapter_t;
+  //AlgPTScotch(const RCP<const Environment> &env,
+  //            const RCP<const Comm<int> > &problemComm,
+  //            const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
+  //) BDD: old inteface for reference
   AlgPTScotch(const RCP<const Environment> &env,
               const RCP<const Comm<int> > &problemComm,
-              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
+              const RCP<const base_adapter_t> &adapter
   )
   {
     throw std::runtime_error(
           "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
           "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
+  }
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    getScotchParameters(pl);
   }
 };
 }
@@ -123,33 +166,151 @@ class AlgPTScotch : public Algorithm<Adapter>
 {
 public:
 
+  typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef GraphModel<typename Adapter::base_adapter_t> graphModel_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+
+//  /*! Scotch constructor
+//   *  \param env  parameters for the problem and library configuration
+//   *  \param problemComm  the communicator for the problem
+//   *  \param model a graph
+//   *
+//   *  Preconditions: The parameters in the environment have been processed.
+//   *  TODO:  THIS IS A MINIMAL CONSTRUCTOR FOR NOW.
+//   *  TODO:  WHEN ADD SCOTCH ORDERING OR MAPPING, MOVE SCOTCH GRAPH CONSTRUCTION
+//   *  TODO:  TO THE CONSTRUCTOR SO THAT CODE MAY BE SHARED.
+//   */
+//  AlgPTScotch(const RCP<const Environment> &env__,
+//              const RCP<const Comm<int> > &problemComm__,
+//              const RCP<graphModel_t> &model__) :
+//    env(env__), problemComm(problemComm__), 
+//#ifdef HAVE_ZOLTAN2_MPI
+//    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+//#endif
+//    model(model__) BDD: olde interface for reference
 
   /*! Scotch constructor
-   *  \param env  parameters for the problem and library configuration
+   *  \param env          parameters for the problem and library configuration
    *  \param problemComm  the communicator for the problem
-   *  \param model a graph
+   *  \param adapter      the user's input adapter
    *
-   *  Preconditions: The parameters in the environment have been processed.
-   *  TODO:  THIS IS A MINIMAL CONSTRUCTOR FOR NOW.
-   *  TODO:  WHEN ADD SCOTCH ORDERING OR MAPPING, MOVE SCOTCH GRAPH CONSTRUCTION
-   *  TODO:  TO THE CONSTRUCTOR SO THAT CODE MAY BE SHARED.
+   *  We're building a graph model, so throw an error if we can't  
+   *    build the model from the input adapter passed to constructor
+   *  For matrix and mesh adapters, additionally determine which 
+   *    objects we wish to partition
    */
   AlgPTScotch(const RCP<const Environment> &env__,
               const RCP<const Comm<int> > &problemComm__,
-              const RCP<graphModel_t> &model__) :
+              const RCP<const IdentifierAdapter<user_t> > &adapter__) :
     env(env__), problemComm(problemComm__), 
 #ifdef HAVE_ZOLTAN2_MPI
     mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
 #endif
-    model(model__)
-  { }
+    adapter(adapter__)
+  {
+    std::string errStr = "cannot build GraphModel from IdentifierAdapter, ";
+    errStr            += "Scotch requires Graph, Matrix, or Mesh Adapter";
+    throw std::runtime_error(errStr);
+  }
+  
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+              const RCP<const VectorAdapter<user_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), 
+#ifdef HAVE_ZOLTAN2_MPI
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+#endif
+    adapter(adapter__)
+  {
+    std::string errStr = "cannot build GraphModel from IdentifierAdapter, ";
+    errStr            += "Scotch requires Graph, Matrix, or Mesh Adapter";
+    throw std::runtime_error(errStr);
+  }
+  
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+              const RCP<const GraphAdapter<user_t, userCoord_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), 
+#ifdef HAVE_ZOLTAN2_MPI
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+#endif
+    adapter(adapter__), model_flags()
+  {
+    this->model_flags.reset();
+  }
+  
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+              const RCP<const MatrixAdapter<user_t, userCoord_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), 
+#ifdef HAVE_ZOLTAN2_MPI
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+#endif
+    adapter(adapter__), model_flags()
+  {
+    this->model_flags.reset();
+    
+    const ParameterList &pl = env->getParameters();
+    const Teuchos::ParameterEntry *pe;
+
+    std::string defString("default");
+    std::string objectOfInterest(defString);
+    pe = pl.getEntryPtr("objects_to_partition");
+    if (pe)
+      objectOfInterest = pe->getValue<std::string>(&objectOfInterest);
+
+    if (objectOfInterest == defString ||
+        objectOfInterest == std::string("matrix_rows") )
+      this->model_flags.set(VERTICES_ARE_MATRIX_ROWS);
+    else if (objectOfInterest == std::string("matrix_columns"))
+      this->model_flags.set(VERTICES_ARE_MATRIX_COLUMNS);
+    else if (objectOfInterest == std::string("matrix_nonzeros"))
+      this->model_flags.set(VERTICES_ARE_MATRIX_NONZEROS);
+  }
+  
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+              const RCP<const MeshAdapter<user_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), 
+#ifdef HAVE_ZOLTAN2_MPI
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+#endif
+    adapter(adapter__), model_flags()
+  {
+    this->model_flags.reset();
+    
+    const ParameterList &pl = env->getParameters();
+    const Teuchos::ParameterEntry *pe;
+
+    std::string defString("default");
+    std::string objectOfInterest(defString);
+    pe = pl.getEntryPtr("objects_to_partition");
+    if (pe)
+      objectOfInterest = pe->getValue<std::string>(&objectOfInterest);
+
+    if (objectOfInterest == defString ||
+        objectOfInterest == std::string("mesh_nodes") )
+      this->model_flags.set(VERTICES_ARE_MESH_NODES);
+    else if (objectOfInterest == std::string("mesh_elements"))
+      this->model_flags.set(VERTICES_ARE_MESH_ELEMENTS);
+  }
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    getScotchParameters(pl);
+  }
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
+  
+  int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution);
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution);
 
 private:
 
@@ -158,25 +319,67 @@ private:
 #ifdef HAVE_ZOLTAN2_MPI
   const MPI_Comm mpicomm;
 #endif
-  const RCP<GraphModel<typename Adapter::base_adapter_t> > model;
+  const RCP<const base_adapter_t> adapter;
+  modelFlag_t model_flags;
+  RCP<graphModel_t > model; // BDD:to be constructed
 
+  void buildModel(bool isLocal);
   void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts,
                      SCOTCH_Num *iwgts);
+  static int setStrategy(SCOTCH_Strat * c_strat_ptr, const ParameterList &pList, int procRank);
 };
 
-
 /////////////////////////////////////////////////////////////////////////////
+template <typename Adapter>
+void AlgPTScotch<Adapter>::buildModel(bool isLocal) {
+  HELLO;  
+  const ParameterList &pl = env->getParameters();
+  const Teuchos::ParameterEntry *pe;
+
+  std::string defString("default");
+  std::string symParameter(defString);
+  pe = pl.getEntryPtr("symmetrize_graph");
+  if (pe){
+    symParameter = pe->getValue<std::string>(&symParameter);
+    if (symParameter == std::string("transpose"))
+      this->model_flags.set(SYMMETRIZE_INPUT_TRANSPOSE);
+    else if (symParameter == std::string("bipartite"))
+      this->model_flags.set(SYMMETRIZE_INPUT_BIPARTITE);  } 
+
+  bool sgParameter = false;
+  pe = pl.getEntryPtr("subset_graph");
+  if (pe)
+    sgParameter = pe->getValue(&sgParameter);
+  if (sgParameter)
+      this->model_flags.set(BUILD_SUBSET_GRAPH);
+
+  this->model_flags.set(REMOVE_SELF_EDGES);
+  this->model_flags.set(GENERATE_CONSECUTIVE_IDS);
+  if (isLocal) {
+    HELLO; // only for ordering!
+    this->model_flags.set(BUILD_LOCAL_GRAPH);
+  }
+
+  this->env->debug(DETAILED_STATUS, "    building graph model");
+  this->model = rcp(new graphModel_t(this->adapter, 
+        this->env, 
+        this->problemComm, 
+        this->model_flags));
+  this->env->debug(DETAILED_STATUS, "    graph model built");
+}
+
 template <typename Adapter>
 void AlgPTScotch<Adapter>::partition(
   const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
   HELLO;
+  this->buildModel(false);
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   SCOTCH_Num partnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(partnbr, numGlobalParts);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(partnbr, numGlobalParts);
 
 #ifdef HAVE_ZOLTAN2_MPI
   int ierr = 0;
@@ -201,7 +404,7 @@ void AlgPTScotch<Adapter>::partition(
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   size_t nVtx = model->getVertexList(vtxID, vwgts);
   SCOTCH_Num vertlocnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertlocnbr, nVtx);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(vertlocnbr, nVtx);
   SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
 
   // Get edge info
@@ -212,14 +415,14 @@ void AlgPTScotch<Adapter>::partition(
   size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
 
   SCOTCH_Num edgelocnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgelocnbr, nEdge);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(edgelocnbr, nEdge);
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
   SCOTCH_Num *vertloctab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_TPL_T_ARRAY(&vertloctab, offsets);
+  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_ARRAY(&vertloctab, offsets);
 
   SCOTCH_Num *edgeloctab;  // adjacencies
-  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_TPL_T_ARRAY(&edgeloctab, edgeIds);
+  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_ARRAY(&edgeloctab, edgeIds);
 
   // We don't use these arrays, but we need them as arguments to Scotch.
   SCOTCH_Num *vendloctab = NULL;  // Assume consecutive storage for adj
@@ -267,18 +470,9 @@ void AlgPTScotch<Adapter>::partition(
     !ierr, BASIC_ASSERTION, problemComm);
 
   // Create array for Scotch to return results in.
-  ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx,true);
-  SCOTCH_Num *partloctab = NULL;
-  if (nVtx && (sizeof(SCOTCH_Num) == sizeof(part_t))) {
-    // Can write directly into the solution's memory
-    partloctab = (SCOTCH_Num *) partList.getRawPtr();
-  }
-  else {
-    // Can't use solution memory directly; will have to copy later.
-    // Note:  Scotch does not like NULL arrays, so add 1 to always have non-null.
-    //        ParMETIS has this same "feature."  See Zoltan bug 4299.
-    partloctab = new SCOTCH_Num[nVtx+1];
-  }
+  SCOTCH_Num *partloctab = new SCOTCH_Num[nVtx+1];
+    // Note: Scotch does not like NULL arrays, so add 1 to always have non-null.
+    //       ParMETIS has this same "feature."  See Zoltan bug 4299.
 
   // Get target part sizes
   float *partsizes = new float[numGlobalParts];
@@ -337,18 +531,18 @@ void AlgPTScotch<Adapter>::partition(
 
   // Load answer into the solution.
 
-  if ((sizeof(SCOTCH_Num) != sizeof(part_t)) || (nVtx == 0)) {
-    for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
-    delete [] partloctab;
-  }
+  ArrayRCP<part_t> partList;
+  if (nVtx > 0)
+    TPL_Traits<part_t, SCOTCH_Num>::SAVE_ARRAYRCP(&partList, partloctab, nVtx);
+  TPL_Traits<SCOTCH_Num, part_t>::DELETE_ARRAY(&partloctab);
 
   solution->setParts(partList);
 
   env->memory("Zoltan2-Scotch: After creating solution");
 
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<SCOTCH_Num, const lno_t>::DELETE_TPL_T_ARRAY(&vertloctab);
-  TPL_Traits<SCOTCH_Num, const gno_t>::DELETE_TPL_T_ARRAY(&edgeloctab);
+  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&vertloctab);
+  TPL_Traits<SCOTCH_Num, gno_t>::DELETE_ARRAY(&edgeloctab);
 
   if (nVwgts) delete [] velotab;
   if (nEwgts) delete [] edlotab;
@@ -433,11 +627,292 @@ void AlgPTScotch<Adapter>::scale_weights(
 
 }
 
+template <typename Adapter>
+int AlgPTScotch<Adapter>::setStrategy(SCOTCH_Strat * c_strat_ptr, const ParameterList &pList, int procRank) {
+  // get ordering parameters from parameter list
+  bool bPrintOutput = false; // will be true if rank 0 and verbose is true
+  const Teuchos::ParameterEntry *pe;
+
+  if (procRank == 0) {
+    pe = pList.getEntryPtr("scotch_verbose");
+    if (pe) {
+      bPrintOutput = pe->getValue(&bPrintOutput);
+    }
+  }
+
+  // get parameter setting for ordering default true/false
+  bool scotch_ordering_default = true;
+  pe = pList.getEntryPtr("scotch_ordering_default");
+  if (pe) {
+    scotch_ordering_default = pe->getValue(&scotch_ordering_default);
+  }
+  if (bPrintOutput) {
+    std::cout <<
+      "Scotch: Ordering default setting (parameter: scotch_ordering_default): "
+      << (scotch_ordering_default ? "True" : "False" ) << std::endl;
+  }
+
+  // set up error code for return
+  int ierr = 1; // will be set 0 if successful
+
+  if (scotch_ordering_default) {
+    // get parameter scotch_level
+    int scotch_level = 0;
+    pe = pList.getEntryPtr("scotch_level");
+    if (pe) {
+      scotch_level = pe->getValue(&scotch_level);
+    }
+    if (bPrintOutput) {
+      std::cout << "Scotch: Ordering level (parameter: scotch_level): " <<
+        scotch_level << std::endl;
+    }
+
+    // get parameter scotch_imbalance_ratio
+    double scotch_imbalance_ratio = 0.2;
+    pe = pList.getEntryPtr("scotch_imbalance_ratio");
+    if (pe) {
+      scotch_imbalance_ratio = pe->getValue(&scotch_imbalance_ratio);
+    }
+    if (bPrintOutput) {
+      std::cout << "Scotch: Ordering dissection imbalance ratio "
+        "(parameter: scotch_imbalance_ratio): "
+        << scotch_imbalance_ratio << std::endl;
+    }
+
+    SCOTCH_stratInit(c_strat_ptr);
+
+    ierr = SCOTCH_stratGraphOrderBuild( c_strat_ptr,
+        SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN |
+        SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE,
+        scotch_level, scotch_imbalance_ratio); // based on Siva's example
+  }
+  else {
+    // get parameter scotch_ordering_strategy
+    std::string scotch_ordering_strategy_string("");
+    pe = pList.getEntryPtr("scotch_ordering_strategy");
+    if (pe) {
+      scotch_ordering_strategy_string =
+        pe->getValue(&scotch_ordering_strategy_string);
+    }
+    if (bPrintOutput) {
+      std::cout << "Scotch ordering strategy"
+        " (parameter: scotch_ordering_strategy): " <<
+        scotch_ordering_strategy_string << std::endl;
+    }
+
+    SCOTCH_stratInit(c_strat_ptr);
+    ierr = SCOTCH_stratGraphOrder( c_strat_ptr,
+      scotch_ordering_strategy_string.c_str());
+  }
+  
+  return ierr;
+} 
+
+template <typename Adapter>
+int AlgPTScotch<Adapter>::globalOrder(
+    const RCP<GlobalOrderingSolution<gno_t> > &solution) {
+  throw std::logic_error("AlgPTScotch does not yet support global ordering.");
+}
+
+template <typename Adapter>
+int AlgPTScotch<Adapter>::localOrder(
+    const RCP<LocalOrderingSolution<lno_t> > &solution) {
+  // TODO: translate teuchos sublist parameters to scotch strategy string
+  // TODO: construct local graph model
+  // TODO: solve with scotch
+  // TODO: set solution fields
+
+  HELLO; // say hi so that we know we have called this method
+  int me = problemComm->getRank();
+  const ParameterList &pl = env->getParameters();
+  const Teuchos::ParameterEntry *pe;
+
+  bool isVerbose = false;
+  pe = pl.getEntryPtr("scotch_verbose");
+  if (pe)
+    isVerbose = pe->getValue(&isVerbose);
+  
+  // build a local graph model
+  this->buildModel(true);
+  if (isVerbose && me==0) {
+    std::cout << "Built local graph model." << std::endl;
+  }
+
+  // based off of Siva's example
+  SCOTCH_Strat c_strat_ptr; // strategy
+  SCOTCH_Graph c_graph_ptr; // pointer to scotch graph
+  int ierr;
+
+  ierr = SCOTCH_graphInit( &c_graph_ptr);
+  if ( ierr != 0) {
+    throw std::runtime_error("Failed to initialize Scotch graph!");
+  } else if (isVerbose && me == 0) {
+    std::cout << "Initialized Scotch graph." << std::endl;
+  }
+
+  // Get vertex info
+  ArrayView<const gno_t> vtxID;
+  ArrayView<StridedData<lno_t, scalar_t> > vwgts;
+  size_t nVtx = model->getVertexList(vtxID, vwgts);
+  SCOTCH_Num vertnbr=0;
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(vertnbr, nVtx);
+
+  // Get edge info
+  ArrayView<const gno_t> edgeIds;
+  ArrayView<const lno_t> offsets;
+  ArrayView<StridedData<lno_t, scalar_t> > ewgts;
+
+  size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
+  SCOTCH_Num edgenbr=0;
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(edgenbr, nEdge);
+  
+  SCOTCH_Num *verttab;  // starting adj/vtx
+  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_ARRAY(&verttab, offsets);
+
+  SCOTCH_Num *edgetab;  // adjacencies
+  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_ARRAY(&edgetab, edgeIds);
+  
+  // We don't use these arrays, but we need them as arguments to Scotch.
+  SCOTCH_Num *vendtab = NULL;  // Assume consecutive storage for adj
+  //SCOTCH_Num *vendtab = verttab+1;  // Assume consecutive storage for adj
+  // Get weight info.
+  SCOTCH_Num *velotab = NULL;  // Vertex weights
+  SCOTCH_Num *vlbltab = NULL;  // vertes labels
+  SCOTCH_Num *edlotab = NULL;  // Edge weights
+  
+  int nVwgts = model->getNumWeightsPerVertex();
+  int nEwgts = model->getNumWeightsPerEdge();
+  if (nVwgts > 1 && me == 0) {
+    std::cerr << "Warning:  NumWeightsPerVertex is " << nVwgts 
+              << " but Scotch allows only one weight. "
+              << " Zoltan2 will use only the first weight per vertex."
+              << std::endl;
+  }
+  if (nEwgts > 1 && me == 0) {
+    std::cerr << "Warning:  NumWeightsPerEdge is " << nEwgts 
+              << " but Scotch allows only one weight. "
+              << " Zoltan2 will use only the first weight per edge."
+              << std::endl;
+  }
+  
+  if (nVwgts) {
+    velotab = new SCOTCH_Num[nVtx+1];  // +1 since Scotch wants all procs 
+                                       // to have non-NULL arrays
+    scale_weights(nVtx, vwgts[0], velotab);
+  }
+
+  if (nEwgts) {
+    edlotab = new SCOTCH_Num[nEdge+1];  // +1 since Scotch wants all procs 
+                                         // to have non-NULL arrays
+    scale_weights(nEdge, ewgts[0], edlotab);
+  }
+
+  // build scotch graph
+  int baseval = 0;
+  ierr = 1;
+  ierr = SCOTCH_graphBuild( &c_graph_ptr, baseval,
+                            vertnbr, verttab, vendtab, velotab, vlbltab,
+                            edgenbr, edgetab, edlotab);
+  if (ierr != 0) {
+    throw std::runtime_error("Failed to build Scotch graph!");
+  } else if (isVerbose && me == 0) {
+    std::cout << "Built Scotch graph." << std::endl;
+  }
+
+  ierr = SCOTCH_graphCheck(&c_graph_ptr);
+  if (ierr != 0) {
+    throw std::runtime_error("Graph is inconsistent!");
+  } else if (isVerbose && me == 0) {
+    std::cout << "Graph is consistent." << std::endl;
+  }
+
+  // set the strategy 
+  ierr = AlgPTScotch<Adapter>::setStrategy(&c_strat_ptr, pl, me); 
+
+  if (ierr != 0) {
+    throw std::runtime_error("Can't build strategy!");
+  }else if (isVerbose && me == 0) {
+    std::cout << "Graphing strategy built." << std::endl;
+  }
+
+  // Allocate results
+  SCOTCH_Num cblk = 0;
+  SCOTCH_Num *permtab;  // permutation array
+  SCOTCH_Num *peritab;  // inverse permutation array
+  SCOTCH_Num *rangetab; // separator range array
+  SCOTCH_Num *treetab;  // separator tree
+
+  if (TPL_Traits<lno_t, SCOTCH_Num>::OK_TO_CAST()) {
+    permtab = reinterpret_cast<SCOTCH_Num*>(solution->getPermutationView(false));
+    peritab = reinterpret_cast<SCOTCH_Num*>(solution->getPermutationView(true));
+    rangetab = reinterpret_cast<SCOTCH_Num*>(solution->getSeparatorRangeView());
+    treetab = reinterpret_cast<SCOTCH_Num*>(solution->getSeparatorTreeView());
+  }
+  else {
+    permtab = new SCOTCH_Num[nVtx];
+    peritab = new SCOTCH_Num[nVtx];
+    rangetab = new SCOTCH_Num[nVtx+1];
+    treetab = new SCOTCH_Num[nVtx];
+  }
+
+  ierr = SCOTCH_graphOrder(&c_graph_ptr, &c_strat_ptr, permtab, peritab, 
+                           &cblk, rangetab, treetab);
+  if (ierr != 0) {
+    throw std::runtime_error("Could not compute ordering!!");
+  } else if(isVerbose && me == 0) {
+    std::cout << "Ordering computed." << std::endl;
+  }
+  
+  lno_t nSepBlocks;
+  TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(nSepBlocks, cblk);
+  solution->setNumSeparatorBlocks(nSepBlocks);
+
+  if (!TPL_Traits<lno_t, SCOTCH_Num>::OK_TO_CAST()) {
+
+    const ArrayRCP<lno_t> arv_perm = solution->getPermutationRCP(false);
+    for (size_t i = 0; i < nVtx; i++)
+      TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_perm[i], permtab[i]);
+    delete [] permtab;
+
+    const ArrayRCP<lno_t> arv_peri = solution->getPermutationRCP(true);
+    for (size_t i = 0; i < nVtx; i++)
+      TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_peri[i], peritab[i]);
+    delete [] peritab;
+
+    const ArrayRCP<lno_t> arv_range = solution->getSeparatorRangeRCP();
+    for (size_t i = 0; i <= nVtx; i++)
+      TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_range[i], rangetab[i]);
+    delete [] rangetab;
+
+    const ArrayRCP<lno_t> arv_tree = solution->getSeparatorTreeRCP();
+    for (size_t i = 0; i < nVtx; i++)
+      TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_tree[i], treetab[i]);
+    delete [] treetab;
+  }
+
+  solution->setHaveSeparator(true); 
+
+  // reclaim memory
+  // Clean up copies made due to differing data sizes.
+  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&verttab);
+  TPL_Traits<SCOTCH_Num, gno_t>::DELETE_ARRAY(&edgetab);
+
+  if (nVwgts) delete [] velotab;
+  if (nEwgts) delete [] edlotab;
+
+  SCOTCH_stratExit(&c_strat_ptr);
+  SCOTCH_graphFree(&c_graph_ptr);
+
+  if (isVerbose && problemComm->getRank() == 0) {
+    std::cout << "Freed Scotch graph!" << std::endl;
+  }
+  return 0;
+}
+
 } // namespace Zoltan2
 
 #endif // HAVE_ZOLTAN2_SCOTCH
 
 ////////////////////////////////////////////////////////////////////////
-
 
 #endif

@@ -32,7 +32,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor AND Trilinos
 
   IF( TrilinosCouplings_ENABLE_Stokhos AND
       Stokhos_ENABLE_Sacado AND
-      Stokhos_ENABLE_TpetraKernels AND
+      Stokhos_ENABLE_KokkosKernels AND
       Stokhos_ENABLE_Tpetra )
 
     # The ensemble version requires the PCE scalar type too since it builds
@@ -41,7 +41,8 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor AND Trilinos
        Stokhos_ENABLE_PCE_Scalar_Type)
       TRIBITS_ADD_EXECUTABLE(
         fenl_ensemble
-        SOURCES  fenl_ensemble.hpp main_ensemble.cpp
+        SOURCES  fenl_ensemble.hpp SampleGrouping.hpp main_ensemble.cpp
+                 VPS.hpp VPS.cpp VPS_ensemble.hpp VPS_ensemble.cpp
         COMM serial mpi
         TESTONLYLIBS fenl
         )

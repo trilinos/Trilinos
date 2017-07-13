@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
 
     z.axpy(-1.0,x);
 
-    if( z.norm() > std::sqrt(ROL::ROL_EPSILON) ) {
+    if( z.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>()) ) {
       ++errorFlag;
     }
 

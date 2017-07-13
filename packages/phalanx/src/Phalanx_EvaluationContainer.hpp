@@ -47,6 +47,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_EvaluationContainer_Base.hpp"
 #include "Phalanx_FieldTag.hpp"
@@ -73,10 +74,19 @@ namespace PHX {
     //! Requests that the container must compute this field.
     void requireField(const PHX::FieldTag& f);
 
+    void aliasField(const PHX::FieldTag& aliasedField,
+                    const PHX::FieldTag& targetField);
+
     void 
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
 
     PHX::any getFieldData(const PHX::FieldTag& f);
+
+    //! Set the memory for an unmanaged field
+    void setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a);
+
+    //! Bind the memory pointer for a field in all evaluators
+    void bindField(const PHX::FieldTag& f, const PHX::any& a);
 
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& fm);
@@ -86,10 +96,10 @@ namespace PHX {
 #ifdef PHX_ENABLE_KOKKOS_AMT
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
 
-      @param threads_per_task The number of threads used for data parallelism within a single task.
-      @param d User defined data
+      @param work_size The number of work units to parallelize over.
+      @param d User defined data.
      */
-    void evaluateFieldsTaskParallel(const int& threads_per_task,
+    void evaluateFieldsTaskParallel(const int& work_size,
 				    typename Traits::EvalData d);
 #endif
 
@@ -116,6 +126,10 @@ namespace PHX {
 
     std::unordered_map<std::string,PHX::any> fields_;
 
+    std::unordered_map<std::string,PHX::any> unmanaged_fields_;
+
+    std::unordered_map<std::string,std::string> aliased_fields_;
+    
     std::vector<PHX::index_size_type> kokkos_extended_data_type_dimensions_;
   };
   

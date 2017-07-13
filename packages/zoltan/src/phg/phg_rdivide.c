@@ -110,7 +110,7 @@ int Zoltan_PHG_rdivide(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  Zoltan_PHG_Tree_Set(zz, father, lo, hi);
+  if (hgp->keep_tree) Zoltan_PHG_Tree_Set(zz, father, lo, hi);
 
   if (!gnVtx) { /* UVC: no vertex; no need for recursion!? */
       if (level>0)
@@ -207,8 +207,10 @@ int Zoltan_PHG_rdivide(
     
   /* if only two parts total, record results and exit */
   if (lo + 1 == hi)  {
-    Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
-    Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
+    if (hgp->keep_tree) {
+      Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
+      Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
+    }
     for (i = 0; i < hg->nVtx; ++i)
       final[hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
     ZOLTAN_FREE (&part);
@@ -259,7 +261,7 @@ int Zoltan_PHG_rdivide(
           if (part[i]==0)
               final[hg->vmap[i]] = lo;
       /* No recursion for the tree */
-      Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
+      if (hgp->keep_tree) Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
   }
 
   if (hi>mid+1) { /* only split if we need it */
@@ -279,7 +281,7 @@ int Zoltan_PHG_rdivide(
           if (part[i]==1)
               final[hg->vmap[i]] = hi;
       /* No recursion for the tree */
-      Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
+      if (hgp->keep_tree) Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
   }
 
   
@@ -756,15 +758,29 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
 }
 
 
+#ifdef __INTEL_COMPILER
+#pragma optimize("",off)
+#endif
+/* KDD 3/3/16:  Release builds with Intel 15.0.2 compiler were failing nightly testing
+ * for hg_ibm03/zdrive.inp.phg.ipm.fixed07.  I traced the differences in solution to the
+ * optimization of this function.  All the input arguments were identical, yet the function
+ * returned different values for release builds than for debug builds.  The debug builds'
+ * results matched the results we get with every other compiler (release or debug), so I am
+ * disabling optimization of this function only to restore passing tests with this compiler. 
+ */
 /* UVCUVC: CHECK currently only uses 1st weight */
 static float balanceTol(PHGPartParams *hgp, int part_dim, int pno, float *ratios,
                         float tot, float pw)
 {
     float ntol=(pw==0.0) ? 0.0 : (tot*hgp->bal_tol*ratios[part_dim*pno])/pw;
-    
+
+
 /*    printf("%s: TW=%.1lf pw=%.1lf (%.3lf) old_tol=%.2f  part_s=(%.3f, %.3f) and new tol=%.2f\n", (pno==0) ? "LEFT" : "RIGHT", tot, pw, pw/tot, hgp->bal_tol, ratios[0], ratios[1], ntol);*/
     return ntol;
 }
+#ifdef __INTEL_COMPILER
+#pragma optimize("",on)
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

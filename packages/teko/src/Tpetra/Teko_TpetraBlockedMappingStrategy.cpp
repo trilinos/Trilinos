@@ -44,8 +44,8 @@
 
 */
 
-#include "Tpetra/Teko_TpetraBlockedMappingStrategy.hpp"
-#include "Tpetra/Teko_TpetraHelpers.hpp"
+#include "Teko_TpetraBlockedMappingStrategy.hpp"
+#include "Teko_TpetraHelpers.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"

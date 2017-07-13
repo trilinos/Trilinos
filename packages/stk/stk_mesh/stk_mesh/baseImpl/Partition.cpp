@@ -177,7 +177,15 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
                   "Partition::move_to cannot move an entity that does not belong to it.");
 
   // If the last bucket is full, automatically create a new one.
-  Bucket *dst_bucket = dst_partition.get_bucket_for_adds();
+  Bucket *dst_bucket = nullptr;
+  try {
+      dst_bucket = dst_partition.get_bucket_for_adds();
+  }
+  catch(std::exception& e) {
+      std::ostringstream os;
+      os << "Error adding "<<m_mesh.entity_key(entity)<< " to mesh: " << e.what();
+      throw std::runtime_error(os.str());
+  }
 
   ThrowErrorMsgIf(src_bucket && src_bucket->topology().is_valid() && (src_bucket->topology() != dst_bucket->topology()),
                   "Error: cannot change topology of entity (rank: "
@@ -218,6 +226,21 @@ void Partition::overwrite_from_end(Bucket& bucket, unsigned ordinal)
 
     // Entity field data has relocated.
   }
+}
+
+void Partition::delete_bucket(Bucket * bucket)
+{
+    if(bucket == m_buckets.back() && m_buckets.size() > 1)
+    {
+        Bucket *new_last = m_buckets[m_buckets.size() - 2];
+        m_buckets[0]->set_last_bucket_in_partition(new_last);
+    }
+
+    m_size -= bucket->size();
+
+    auto iter = std::find(m_buckets.begin(), m_buckets.end(), bucket);
+    m_repository->deallocate_bucket(bucket);
+    m_buckets.erase(iter, iter+1);
 }
 
 void Partition::remove_impl()
@@ -354,7 +377,7 @@ void Partition::sort(const EntitySorterBase& sorter)
   {
     Bucket &b = **b_i;
     size_t b_size = b.size();
-    std::copy(&b.m_entities[0], &b.m_entities[0] + b_size, &entities[0] + new_i);
+    std::copy(&b.m_entities[0], &b.m_entities[0] + b_size, entities.data() + new_i);
     new_i += b_size;
   }
 

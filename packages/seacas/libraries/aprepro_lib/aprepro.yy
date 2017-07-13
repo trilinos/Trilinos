@@ -41,6 +41,19 @@
 #include <cerrno>
 #include <cstring>
 #include <cstdio>
+#include <cfenv>
+
+namespace {
+  void reset_error()
+  {
+    if (math_errhandling & MATH_ERREXCEPT) {
+      std::feclearexcept(FE_ALL_EXCEPT);
+    }
+    if (math_errhandling & MATH_ERRNO) {
+      errno = 0;
+    }
+  }
+}
 
 namespace SEAMS {
    extern int echo;
@@ -256,7 +269,7 @@ sexp:     QSTRING		{ $$ = $1;				}
 				  $1->value.svar= $3;
 				  redefined_warning(aprepro, $1);          
 		                  set_type(aprepro, $1, token::SVAR);		}
-	| IMMSVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMSVAR EQUAL sexp	{ $$ = (char*)$1->value.svar; immutable_modify(aprepro, $1); }
         | IMMVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
         | SFNCT LPAR sexp RPAR	{
 	  if (arg_check($1, $1->value.strfnct_c == NULL))
@@ -327,57 +340,57 @@ exp:	  NUM			{ $$ = $1; 				}
 	| VAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; }
 	| VAR EQ_TIME exp	{ $1->value.var *= $3; $$ = $1->value.var; }
 	| VAR EQ_DIV exp	{ $1->value.var /= $3; $$ = $1->value.var; }
-	| VAR EQ_POW exp	{ errno = 0;
+	| VAR EQ_POW exp	{ reset_error();
 				  $1->value.var = std::pow($1->value.var,$3); 
 				  $$ = $1->value.var; 
 				  SEAMS::math_error(aprepro, "Power");
 				}
-        | INC IMMVAR		{ immutable_modify(aprepro, $2); YYERROR; }
-	| DEC IMMVAR		{ immutable_modify(aprepro, $2); YYERROR; }
-	| IMMVAR INC		{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR DEC		{ immutable_modify(aprepro, $1); YYERROR; }
-        | IMMVAR EQUAL exp	{ immutable_modify(aprepro, $1); YYERROR; }
+        | INC IMMVAR		{ $$ = $2->value.var; immutable_modify(aprepro, $2);  }
+	| DEC IMMVAR		{ $$ = $2->value.var; immutable_modify(aprepro, $2);  }
+	| IMMVAR INC		{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR DEC		{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+        | IMMVAR EQUAL exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
 	| IMMSVAR EQUAL exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_PLUS exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_MINUS exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_TIME exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_DIV exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_POW exp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMVAR EQ_PLUS exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR EQ_MINUS exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR EQ_TIME exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR EQ_DIV exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR EQ_POW exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
 
 	| UNDVAR		{ $$ = $1->value.var;
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| INC UNDVAR		{ $$ = ++($2->value.var);		
 		                  set_type(aprepro, $2, token::VAR);
-				  undefined_warning(aprepro, $2->name);          }
+				  undefined_error(aprepro, $2->name);          }
 	| DEC UNDVAR		{ $$ = --($2->value.var);		
 		                  set_type(aprepro, $2, token::VAR);
-				  undefined_warning(aprepro, $2->name);          }
+				  undefined_error(aprepro, $2->name);          }
 	| UNDVAR INC		{ $$ = ($1->value.var)++;		
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR DEC		{ $$ = ($1->value.var)--;		
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR EQUAL exp	{ $$ = $3; $1->value.var = $3;
 		                  set_type(aprepro, $1, token::VAR);                      }
 	| UNDVAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR EQ_TIME exp	{ $1->value.var *= $3; $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR EQ_DIV exp	{ $1->value.var /= $3; $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
-	| UNDVAR EQ_POW exp	{ errno = 0;
+				  undefined_error(aprepro, $1->name);          }
+	| UNDVAR EQ_POW exp	{ reset_error();
 				  $1->value.var = std::pow($1->value.var,$3); 
 				  $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
 				  SEAMS::math_error(aprepro, "Power");
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 
         | FNCT LPAR RPAR	{
 	  if (arg_check($1, $1->value.fnctptr == NULL))
@@ -489,11 +502,11 @@ exp:	  NUM			{ $$ = $1; 				}
 				    $$ = (int)$1 % (int)$3;		}  
 	| SUB exp %prec UNARY	{ $$ = -$2;				}
 	| PLU exp %prec UNARY	{ $$ =  $2;				}
-	| exp POW exp 		{ errno = 0;
+	| exp POW exp 		{ reset_error();
 				  $$ = std::pow($1, $3); 
 				  SEAMS::math_error(aprepro, "Power");			}
 	| LPAR exp RPAR		{ $$ = $2;				}
-	| LBRACK exp RBRACK     { errno = 0;
+	| LBRACK exp RBRACK     { reset_error();
 				  $$ = (double)($2 < 0 ? -floor(-($2)): floor($2) );
 				  SEAMS::math_error(aprepro, "floor (int)");		}
         | bool                   { $$ = ($1) ? 1 : 0; }

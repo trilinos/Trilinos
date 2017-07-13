@@ -46,10 +46,10 @@
 #ifndef IFPACK2_ILUT_DECL_HPP
 #define IFPACK2_ILUT_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Details_CanChangeMatrix.hpp>
-#include <Tpetra_CrsMatrix_decl.hpp>
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Tpetra_CrsMatrix_decl.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
 
 #include <string>
 #include <sstream>
@@ -303,6 +303,10 @@ public:
   //! Returns the time spent in apply().
   double getApplyTime() const;
 
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;  
+
+
   /// \brief The level of fill.
   ///
   /// For ILUT, this means the maximum number of entries in each row
@@ -385,8 +389,12 @@ private:
   Teuchos::RCP<const row_matrix_type> A_local_;
   //! L factor of the incomplete LU factorization of A_local_.
   Teuchos::RCP<crs_matrix_type> L_;
+  //! Sparse triangular solver for L
+  Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > L_solver_;
   //! U factor of the incomplete LU factorization of A_local_.
   Teuchos::RCP<crs_matrix_type> U_;
+  //! Sparse triangular solver for U
+  Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > U_solver_;
 
   //@}
   // \name Parameters (set by setParameters())

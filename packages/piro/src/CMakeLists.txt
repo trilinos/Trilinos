@@ -74,7 +74,6 @@ IF (Piro_ENABLE_NOX)
     Piro_LOCAAdaptiveSolver.hpp
     Piro_LOCAAdaptiveSolver_Def.hpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.hpp
-    Piro_NullSpaceUtils.hpp
     Piro_VelocityVerletSolver.hpp
     Piro_VelocityVerletSolver_Def.hpp
     Piro_TrapezoidRuleSolver.hpp
@@ -98,7 +97,6 @@ ENDIF()
     Piro_LOCASolver.cpp
     Piro_LOCAAdaptiveSolver.cpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
-    Piro_NullSpaceUtils.cpp
     )
 IF(Piro_ENABLE_Epetra)
   APPEND_SET(SOURCES
@@ -129,6 +127,15 @@ IF(Piro_ENABLE_Epetra)
   )
   APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
 ENDIF()
+ENDIF()
+IF (Piro_ENABLE_Tempus)
+  APPEND_SET(HEADERS
+    Piro_TempusSolver.hpp
+    Piro_TempusSolver_Def.hpp 
+    Piro_TempusStepperFactory.hpp
+    Piro_TempusStepControlFactory.hpp
+    Piro_ObserverToTempusIntegrationObserverAdapter.hpp 
+    Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp) 
 ENDIF()
 
 IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX)

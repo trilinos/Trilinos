@@ -72,8 +72,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_GatherFields.hpp"
 #include "Panzer_STKConnManager.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -110,11 +108,10 @@ namespace panzer {
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
+  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
 
   TEUCHOS_UNIT_TEST(gs_evaluators, gather_constr)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 20;
     Teuchos::RCP<panzer::BasisIRLayout> linBasis = buildLinearBasis(workset_size);
@@ -127,7 +124,7 @@ namespace panzer {
     pl.set("Basis",linBasis);
     pl.set("Field Names",fieldNames);
 
-    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
@@ -168,24 +165,29 @@ namespace panzer {
                                  physicsBlocks);
     }
 
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
 
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
  
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
     // setup field manager build
@@ -241,10 +243,10 @@ namespace panzer {
      return Teuchos::rcp(new panzer::BasisIRLayout("Q1",1,intRule)); 
   }
 
-  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY)
+  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
   {
-    typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk_classic::STK_Interface::VectorFieldType CoordinateField;
+    typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
+    typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -252,9 +254,9 @@ namespace panzer {
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
     
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
  
     // add in some fields
     mesh->addSolutionField("dog","eblock-0_0");
@@ -262,28 +264,28 @@ namespace panzer {
 
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
 
-    VariableField * field = mesh->getMetaData()->get_field<VariableField>("dog");
-    CoordinateField * cField = mesh->getMetaData()->get_field<CoordinateField>("coordinates");
+    VariableField * field = mesh->getMetaData()->get_field<VariableField>(stk::topology::NODE_RANK, "dog");
+    CoordinateField * cField = mesh->getMetaData()->get_field<CoordinateField>(stk::topology::NODE_RANK, "coordinates");
     TEUCHOS_ASSERT(field!=0);
     TEUCHOS_ASSERT(cField!=0);
 
     // fill the fields with data
-    const std::vector<stk_classic::mesh::Bucket*> nodeData 
+    const std::vector<stk::mesh::Bucket*> nodeData 
         = mesh->getBulkData()->buckets(mesh->getNodeRank());
     for(std::size_t b=0;b<nodeData.size();++b) {
-       stk_classic::mesh::Bucket * bucket = nodeData[b];
+       stk::mesh::Bucket * bucket = nodeData[b];
 
        // build all buckets
-       for(stk_classic::mesh::Bucket::iterator itr=bucket->begin();
+       for(stk::mesh::Bucket::iterator itr=bucket->begin();
            itr!=bucket->end();++itr) {
 
-          stk_classic::mesh::EntityArray<CoordinateField> coordinates(*cField,*itr);
-          stk_classic::mesh::EntityArray<VariableField> dog_array(*field,*itr);
+          double* coordinates = stk::mesh::field_data(*cField,*itr);
+          double* dog_array   = stk::mesh::field_data(*field,*itr);
 
-          double x = coordinates(0);
-          double y = coordinates(1);
+          double x = coordinates[0];
+          double y = coordinates[1];
 
-          dog_array() = 4.0*x*x+y;
+          *dog_array = 4.0*x*x+y;
        }
     }
     

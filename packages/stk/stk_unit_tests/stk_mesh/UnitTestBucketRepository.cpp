@@ -37,7 +37,7 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <utility>                      // for pair
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -61,7 +61,7 @@ TEST(BucketRepositoryTest, createBuckets)
     parts.push_back(stkMeshMetaData.declare_part("part2").mesh_meta_data_ordinal());
     stkMeshMetaData.commit();
 
-    stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
+    stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
     stk::mesh::impl::EntityRepository entityRepository(stkMeshBulkData);
 
     stk::mesh::impl::BucketRepository &bucketRepository = stkMeshBulkData.my_get_bucket_repository();

@@ -45,23 +45,24 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
-
+#include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
-#ifdef HAVE_IOSS
+#ifdef PANZER_HAVE_IOSS
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 RCP<STK_Interface> buildMesh(int xElements,int yElements);
 RCP<STK_Interface> buildMesh_cells(int xElements,int yElements);
@@ -89,9 +90,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock1.resize(localIds["eblock-1_0"]->size(),4);
+   ublock0 = Kokkos::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
+   tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
+   tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
    out << "assigning" << std::endl;
 
    assignBlock(ublock0,vert0,xval);
@@ -122,9 +123,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, cell_fields)
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock1.resize(localIds["eblock-1_0"]->size(),4);
+   ublock0 = Kokkos::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
+   tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
+   tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
    out << "assigning" << std::endl;
 
    assignBlock(ublock0,vert0,xval);
@@ -157,9 +158,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, exodus_factory_transient_fields)
    mesh->getElementVertices(*localIds["block_2"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0.resize(localIds["block_1"]->size(),4);
-   tblock0.resize(localIds["block_1"]->size(),4);
-   tblock1.resize(localIds["block_2"]->size(),4);
+   ublock0 = Kokkos::createDynRankView(ublock0,"ublock0",localIds["block_1"]->size(),4);
+   tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["block_1"]->size(),4);
+   tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["block_2"]->size(),4);
 
    mesh->setupTransientExodusFile("transient_exo.exo");
 
@@ -191,9 +192,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock1.resize(localIds["eblock-1_0"]->size(),4);
+   ublock0 = Kokkos::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
+   tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
+   tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
 
    mesh->setupTransientExodusFile("transient.exo");
 
@@ -241,7 +242,7 @@ RCP<STK_Interface> buildMesh(int xElements,int yElements)
     pl->set("X Elements",xElements);  // in each block
     pl->set("Y Elements",yElements);  // in each block
 
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
@@ -262,7 +263,7 @@ RCP<STK_Interface> buildMesh_cells(int xElements,int yElements)
     pl->set("X Elements",xElements);  // in each block
     pl->set("Y Elements",yElements);  // in each block
 
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
@@ -292,10 +293,10 @@ void buildLocalIds(const STK_Interface & mesh,
       std::vector<std::size_t> & localBlockIds = *localIds[blockId];
 
       // grab elements on this block
-      std::vector<stk_classic::mesh::Entity*> blockElmts;
+      std::vector<stk::mesh::Entity> blockElmts;
       mesh.getMyElements(blockId,blockElmts);
 
-      std::vector<stk_classic::mesh::Entity*>::const_iterator itr;
+      std::vector<stk::mesh::Entity>::const_iterator itr;
       for(itr=blockElmts.begin();itr!=blockElmts.end();++itr)
          localBlockIds.push_back(mesh.elementLocalId(*itr));
 

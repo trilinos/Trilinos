@@ -2813,8 +2813,8 @@ namespace Sacado {
         expr2.cache();
         const value_type_1 v1 = expr1.val();
         const value_type_2 v2 = expr2.val();
-        v = std::max(v1,v2);
         max_v1 = (v1 >= v2);
+        v = max_v1 ? v1 : v2;
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -2940,8 +2940,8 @@ namespace Sacado {
         expr1.cache();
         const value_type_1 v1 = expr1.val();
         const value_type_2 v2 = expr2.val();
-        v = std::max(v1,v2);
         max_v1 = (v1 >= v2);
+        v = max_v1 ? v1 : v2;
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -3052,8 +3052,8 @@ namespace Sacado {
         expr2.cache();
         const value_type_1 v1 = expr1.val();
         const value_type_2 v2 = expr2.val();
-        v = std::max(v1,v2);
         max_v1 = (v1 >= v2);
+        v = max_v1 ? v1 : v2;
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -3177,8 +3177,8 @@ namespace Sacado {
         expr2.cache();
         const value_type_1 v1 = expr1.val();
         const value_type_2 v2 = expr2.val();
-        v = std::min(v1,v2);
         min_v1 = (v1 <= v2);
+        v = min_v1 ? v1 : v2;
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -3304,8 +3304,8 @@ namespace Sacado {
         expr1.cache();
         const value_type_1 v1 = expr1.val();
         const value_type_2 v2 = expr2.val();
-        v = std::min(v1,v2);
         min_v1 = (v1 <= v2);
+        v = min_v1 ? v1 : v2;
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -3416,8 +3416,8 @@ namespace Sacado {
         expr2.cache();
         const value_type_1 v1 = expr1.val();
         const value_type_2 v2 = expr2.val();
-        v = std::min(v1,v2);
         min_v1 = (v1 <= v2);
+        v = min_v1 ? v1 : v2;
       }
 
       KOKKOS_INLINE_FUNCTION

@@ -276,6 +276,22 @@ public:
     }
   }
  
+  const Teuchos::RCP<const Vector<Real> > getLowerVectorRCP( void ) const {
+    const Teuchos::RCP<const Vector<Real> > l1 = bnd1_->getLowerVectorRCP();
+    const Teuchos::RCP<const Vector<Real> > l2 = bnd2_->getLowerVectorRCP();
+    return Teuchos::rcp( new Vector_SimOpt<Real>( Teuchos::rcp_const_cast<Vector<Real> >(l1),
+                                                  Teuchos::rcp_const_cast<Vector<Real> >(l2) ) );
+  }
+
+  const Teuchos::RCP<const Vector<Real> > getUpperVectorRCP( void ) const {
+    const Teuchos::RCP<const Vector<Real> > u1 = bnd1_->getUpperVectorRCP();
+    const Teuchos::RCP<const Vector<Real> > u2 = bnd2_->getUpperVectorRCP();
+    return Teuchos::rcp( new Vector_SimOpt<Real>( Teuchos::rcp_const_cast<Vector<Real> >(u1),
+                                                  Teuchos::rcp_const_cast<Vector<Real> >(u2) ) );
+  }
+
+
+
   /** \brief Set the input vector to the upper bound.
 
       This function sets the input vector \f$u\f$ to the upper bound \f$b\f$.
@@ -325,14 +341,14 @@ public:
     const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
     if ( bnd1_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneActive(*v2,*(xs.get_2()),eps);
-      vs.set_2(*v2);
-    }
-    if ( bnd2_->isActivated() ) {
       Teuchos::RCP<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
       bnd1_->pruneActive(*v1,*(xs.get_1()),eps);
       vs.set_1(*v1);
+    }
+    if ( bnd2_->isActivated() ) {
+      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
+      bnd2_->pruneActive(*v2,*(xs.get_2()),eps);
+      vs.set_2(*v2);
     }
   }
 

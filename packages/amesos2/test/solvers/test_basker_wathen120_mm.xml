@@ -1,0 +1,17 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="wathen120.mm" />
+  <Parameter name="num_solves" type="int" value="1" />
+  <ParameterList name="Amesos2">
+    <Parameter name="num_threads"   type="int"  value="1" />
+    <Parameter name="matching"      type="bool" value="true" />
+    <Parameter name="matching_type" type="int"  value="0" />
+    <Parameter name="btf"           type="bool" value="false" />
+    <Parameter name="amd_btf"       type="bool" value="false" />
+    <Parameter name="amd_dom"       type="bool" value="false" />
+    <Parameter name="transpose"     type="bool" value="false" />
+    <Parameter name="pivot"         type="bool" value="false" />
+    <Parameter name="pivot_tol"     type="double" value=".01" />
+    <Parameter name="symmetric"     type="bool" value="false" />
+    <Parameter name="realloc"       type="bool" value="false" />
+  </ParameterList>
+</ParameterList>

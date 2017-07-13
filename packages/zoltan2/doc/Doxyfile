@@ -657,4 +657,4 @@ MAX_DOT_GRAPH_HEIGHT   =
 # The SEARCHENGINE tag specifies whether or not a search engine should be 
 # used. If set to NO the values of all tags below this one will be ignored. 
 
-SEARCHENGINE           = NO
+SEARCHENGINE           = YES

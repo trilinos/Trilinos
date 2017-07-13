@@ -37,11 +37,15 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
 #include <vector>                       // for vector
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include <stddef.h>                     // for size_t, NULL
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+
+#include <stk_unit_test_utils/MeshFixture.hpp>
 
 namespace stk { namespace mesh { class BulkData; } }
 
@@ -56,14 +60,11 @@ bool is_positive_permutation(stk::mesh::BulkData & mesh,
                                           unsigned face_ordinal)
 {
     stk::topology faceTopology = mesh.bucket(face).topology();
-    stk::mesh::EntityVector face_node_ids(mesh.num_nodes(face));
+    stk::mesh::EntityVector face_nodes(mesh.num_nodes(face));
     for (unsigned face_node_count=0; face_node_count < mesh.num_nodes(face); ++face_node_count) {
-        face_node_ids[face_node_count] = mesh.begin_nodes(face)[face_node_count];
+        face_nodes[face_node_count] = mesh.begin_nodes(face)[face_node_count];
     }
-    stk::topology connectedElemTopology = mesh.bucket(hex).topology();
-    stk::mesh::EntityVector element_side_nodes(mesh.num_nodes(face));
-    connectedElemTopology.face_nodes(mesh.begin_nodes(hex), face_ordinal, &element_side_nodes[0]);
-    std::pair<bool, unsigned> permutation = faceTopology.equivalent(face_node_ids, element_side_nodes);
+    std::pair<bool, unsigned> permutation = stk::mesh::side_equivalent(mesh, hex, face_ordinal, face_nodes.data());
 
     bool is_a_valid_permutation = permutation.first;
     EXPECT_TRUE(is_a_valid_permutation);
@@ -225,7 +226,7 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
                 EXPECT_EQ(3u, mesh.identifier(shell_3));
                 unsigned expected_face_ordinal = 0;
                 EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-                EXPECT_TRUE(is_positive_permutation(
+                EXPECT_FALSE(is_positive_permutation(
                         mesh, face, shell_3, expected_face_ordinal));
             }
             {
@@ -234,7 +235,7 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
                 EXPECT_EQ(4u, mesh.identifier(shell_4));
                 unsigned expected_face_ordinal = 0;
                 EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-                EXPECT_TRUE(is_positive_permutation(
+                EXPECT_FALSE(is_positive_permutation(
                         mesh, face, shell_4, expected_face_ordinal));
             }
             {
@@ -243,13 +244,38 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
                 EXPECT_EQ(2u, mesh.identifier(hex_2));
                 unsigned expected_face_ordinal = 4;
                 EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-                EXPECT_FALSE(is_positive_permutation(
-                        mesh, face, hex_2, expected_face_ordinal));
+                EXPECT_TRUE(is_positive_permutation(mesh, face, hex_2, expected_face_ordinal));
             }
         }
     }
 }
 //END2hex2shell3sideset
 
+class SideCreationExplanation : public stk::unit_test_util::MeshFixture
+{
+protected:
+    void test_face_created_on_elem_side_gets_id_16(stk::mesh::EntityId elemId, int sideOrdinal)
+    {
+        setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+        get_bulk().modification_begin();
+        if(get_bulk().is_valid(elem))
+        {
+            stk::mesh::Entity side = get_bulk().declare_element_side(elem, sideOrdinal, stk::mesh::ConstPartVector{});
+            EXPECT_EQ(16u, get_bulk().identifier(side));
+        }
+        get_bulk().modification_end();
+    }
+};
+
+TEST_F(SideCreationExplanation, IdSelectionWhenCreatingSideOnElement1)
+{
+    test_face_created_on_elem_side_gets_id_16(1, 5);
+}
+
+TEST_F(SideCreationExplanation, IdSelectionWhenCreatingSideOnElement2)
+{
+    test_face_created_on_elem_side_gets_id_16(2, 4);
+}
 
 } //end empty namespace

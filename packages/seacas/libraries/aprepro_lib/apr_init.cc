@@ -84,14 +84,14 @@ struct init_d arith_fncts[] =
   {"tan",            do_tan,    "tan(x)","Tangent of x, with x in radians. "},
   {"tand",           do_tand,   "tand(x)","Tangent of x, with x in radians. "},
   {"tanh",           do_tanh,   "tanh(x)","Hyperbolic tangent of x. "},
-  {0, 0, 0, 0}				/* Last line must be 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0 */
 };
 
 struct init_a  arith_a_fncts[] =
 {
   {"rows",           do_rows,   "rows(array)","Returns the number of rows in the array. "},
   {"cols",           do_cols,   "cols(array)","Returns the number of columns in the array. "},
-  {0, 0, 0, 0}				/* Last line must be 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0 */
 };
 
 struct init_dd arith_dd_fncts[] =
@@ -110,7 +110,7 @@ struct init_dd arith_dd_fncts[] =
   {"rand_lognormal", do_rand_lognormal,"rand_lognormal(m,s)","Random value with lognormal distribution with mean m and stddev s."},
   {"rand_weibull",   do_rand_weibull,"rand_weibull(a, b)","Random value with weibull distribution with alpha=a and beta=b. "},
   {"sign",           do_sign,   "sign(x,y)","x * sgn(y)"},
-  {0, 0, 0, 0}				/* Last line must be 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0 */
 };
 
 struct init_dddd arith_dddd_fncts[] =
@@ -118,37 +118,37 @@ struct init_dddd arith_dddd_fncts[] =
   {"Vangle",         do_angle,  "Vangle(x1,y1,x2,y2)", "Angle (radians) between vector x1_i+y1_j and x2_i+y2_j."},
   {"Vangled",        do_angled, "Vangled(x1,y1,x2,y2)","Angle (degrees) between vector x1_i+y1_j and x2_i+y2_j."},
   {"dist",           do_dist,   "dist(x1,y1, x2,y2)", "sqrt((x1-x2)^2 + (y1-y2)^2)"},
-  {0, 0, 0, 0}				/* Last line must be 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0 */
 };
 
 struct init_cc arith_cc_fncts[] =
 {
   {"word_count",     do_word_count,"word_count(svar,del)","Number of words in svar. Words are separated by one or more of the characters in the string variable 'del'."},
-  {0, 0, 0, 0}				/* Last line must be 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0 */
 };
 
 struct init_c arith_c_fncts[] =
 {
   {"strtod",         do_strtod, "strtod(svar)","Returns a double-precision floating-point number equal to the value represented by the character string pointed to by svar."},
-  {0, 0, 0, 0}				/* Last line must be 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0 */
 };
 
 struct init_cd arith_cd_fncts[] =
 {
   {"option", do_option, "option(?,?)", "Internal"},
-  {0, 0, 0, 0} /* Last line must be 0, 0, 0, 0*/
+  {nullptr, nullptr, nullptr, nullptr} /* Last line must be 0, 0, 0, 0*/
 };
 
 struct init_ddd arith_ddd_fncts[] =
 {
   {"julday", do_julday, "julday(mm, dd, yy)", "Julian day corresponding to mm/dd/yy. "},
-  {0, 0, 0, 0} /* Last line must be 0, 0, 0, 0*/
+  {nullptr, nullptr, nullptr, nullptr} /* Last line must be 0, 0, 0, 0*/
 };
 
 struct init_dddddd arith_dddddd_fncts[] =
 {
   {"juldayhms", do_juldayhms, "juldayhms(mm, dd, yy, hh, mm, ss)", "Julian day corresponding to mm/dd/yy at hh:mm:ss "},
-  {0, 0, 0, 0} /* Last line must be 0, 0, 0, 0*/
+  {nullptr, nullptr, nullptr, nullptr} /* Last line must be 0, 0, 0, 0*/
 };
 
 struct str_init string_fncts[] =
@@ -160,7 +160,7 @@ struct str_init string_fncts[] =
   {"get_iso_date",   do_get_iso_date,"get_iso_date()","Returns a string representing the current date in the form YYYYMMDD."},
   {"get_time",       do_get_time,   "get_time()","Returns a string representing the current time in the form HH:MM:SS."},
   {"get_temp_filename", do_get_temp_filename, "get_temp_filename()", "Returns a string which can be used for a temporary filename without conflicting with any other filenames."},
-  {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
 };
 
 struct str_c_init string_c_fncts[] =
@@ -187,7 +187,7 @@ struct str_c_init string_c_fncts[] =
   {"Ifdef",          do_str_if,      "Ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
   {"ifndef",         do_str_notif,   "ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
   {"Ifndef",         do_str_notif,   "Ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
-  {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
 };
   
 struct str_d_init string_d_fncts[] =
@@ -205,32 +205,32 @@ struct str_d_init string_d_fncts[] =
   {"Switch",         do_switch,      "Switch(x)", "Switch statement. Select from the following case statements which matches 'x' and execute that one. End with endswitch"},
   {"case",           do_case,        "case(x)", "Switch statement. A case used in a containing switch statement."},
   {"Case",           do_case,        "Case(x)", "Switch statement. A case used in a containing switch statement."},
-  {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct str_dcc_init string_dcc_fncts[] =
   {
   {"get_word",       do_get_word,    "get_word(n,svar,del)","Returns a string containing the nth word of svar. The words are separated by one or more of the characters in the string variable del "},
-  {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct str_ccc_init string_ccc_fncts[] =
   {
   {"extract",        do_extract,     "extract(s, b, e)","Return substring [b,e). 'b' is included; 'e' is not. If 'b' not found, return empty; If 'e' not found, return rest of string. If 'b' empty, start at beginning; if 'e' empty, return rest of string."},
-  {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct str_a_init string_a_fncts[] =
   {
     {"print_array",  do_print_array, "print_array(array)","Prints the data in the array."},
-    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+    {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct array_c_init array_c_fncts[] =
   {
     {"csv_array",         do_csv_array1,      "csv_array(filename)",
      "Create a 2D array from the data in a csv file."},
-    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+    {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct array_cd_init array_cd_fncts[] =
@@ -238,7 +238,7 @@ struct array_cd_init array_cd_fncts[] =
     {"csv_array",         do_csv_array,      "csv_array(filename, [skip])",
      "Create a 2D array from the data in a csv file optionally skipping rows."
      " If skip is integer skip that many rows; if skip is a character, skip lines beginning with that character"},
-    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+    {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct array_cc_init array_cc_fncts[] =
@@ -246,28 +246,28 @@ struct array_cc_init array_cc_fncts[] =
     {"csv_array",         do_csv_array2,      "csv_array(filename, [skip])",
      "Create a 2D array from the data in a csv file optionally skipping rows."
      " If skip is integer skip that many rows; if skip is a character, skip lines beginning with that character"},
-    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+    {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct array_dd_init array_dd_fncts[] =
   {
     {"make_array",        do_make_array,     "make_array(rows, cols)",
      "Create a 2D array of size 'rows' by 'cols' initialized to zero."},
-    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+    {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct array_d_init array_d_fncts[] =
   {
     {"identity",          do_identity,     "identity(size)",
      "Create a 2D identity array with 'size' rows and columns. Diagonal = 1.0"},
-    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+    {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct array_a_init array_a_fncts[] =
   {
     {"transpose",         do_transpose,      "transpose(array)",
      "Return the transpose of input array"},
-    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+    {nullptr, nullptr, nullptr, nullptr}				/* Last line must be 0, 0, 0, 0 */
   };
 
 struct var_init variables[] =
@@ -283,13 +283,13 @@ struct var_init variables[] =
   {"SQRT2", 1.41421356237309504880},	/* square root of 2		 */
   {"TRUE",  1},
   {"FALSE", 0},
-  {0, 0}				/* Last line must be 0, 0 */
+  {nullptr, 0}				/* Last line must be 0, 0 */
 };
 
 struct svar_init svariables[] =
 {
   {"_FORMAT", "%.10g"},	/* Default output format */
-  {0, 0}		/* Last line must be 0, 0 */
+  {nullptr, nullptr}		/* Last line must be 0, 0 */
 };
 /* NOTE: The current comment is stored in "_C_"
  *	 Since it can be changed by user on command line, we
@@ -298,159 +298,159 @@ struct svar_init svariables[] =
 
   void Aprepro::init_table(const char *comment)
   {
-    for (int i = 0; arith_fncts[i].fname != 0; i++) {
+    for (int i = 0; arith_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(arith_fncts[i].fname, FUNCTION, 1);
       ptr->value.fnctptr_d = arith_fncts[i].fnct;
       ptr->info = arith_fncts[i].description;
       ptr->syntax = arith_fncts[i].syntax;
     }
 
-    for (int i = 0; arith_dd_fncts[i].fname != 0; i++) {
+    for (int i = 0; arith_dd_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(arith_dd_fncts[i].fname, FUNCTION, 1);
       ptr->value.fnctptr_dd = arith_dd_fncts[i].fnct;
       ptr->info = arith_dd_fncts[i].description;
       ptr->syntax = arith_dd_fncts[i].syntax;
     }
 
-    for (int i = 0; arith_a_fncts[i].fname != 0; i++) {
+    for (int i = 0; arith_a_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(arith_a_fncts[i].fname, FUNCTION, 1);
       ptr->value.fnctptr_a = arith_a_fncts[i].fnct;
       ptr->info = arith_a_fncts[i].description;
       ptr->syntax = arith_a_fncts[i].syntax;
     }
 
-    for (int i = 0; arith_dddd_fncts[i].fname != 0; i++) {
+    for (int i = 0; arith_dddd_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(arith_dddd_fncts[i].fname, FUNCTION, 1);
       ptr->value.fnctptr_dddd = arith_dddd_fncts[i].fnct;
       ptr->info = arith_dddd_fncts[i].description;
       ptr->syntax = arith_dddd_fncts[i].syntax;
     }
 
-    for (int i = 0; arith_cc_fncts[i].fname != 0; i++) {
+    for (int i = 0; arith_cc_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(arith_cc_fncts[i].fname, FUNCTION, 1);
       ptr->value.fnctptr_cc = arith_cc_fncts[i].fnct;
       ptr->info = arith_cc_fncts[i].description;
       ptr->syntax = arith_cc_fncts[i].syntax;
     }
 
-    for (int i = 0; arith_c_fncts[i].fname != 0; i++) {
+    for (int i = 0; arith_c_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(arith_c_fncts[i].fname, FUNCTION, 1);
       ptr->value.fnctptr_c = arith_c_fncts[i].fnct;
       ptr->info = arith_c_fncts[i].description;
       ptr->syntax = arith_c_fncts[i].syntax;
     }
 
-    for (int i = 0; arith_cd_fncts[i].fname != 0; i++) {
+    for (int i = 0; arith_cd_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(arith_cd_fncts[i].fname, FUNCTION, 1);
       ptr->value.fnctptr_cd = arith_cd_fncts[i].fnct;
       ptr->info = arith_cd_fncts[i].description;
       ptr->syntax = arith_cd_fncts[i].syntax;
     }
 
-    for (int i = 0; arith_ddd_fncts[i].fname != 0; i++) {
+    for (int i = 0; arith_ddd_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(arith_ddd_fncts[i].fname, FUNCTION, 1);
       ptr->value.fnctptr_ddd = arith_ddd_fncts[i].fnct;
       ptr->info = arith_ddd_fncts[i].description;
       ptr->syntax = arith_ddd_fncts[i].syntax;
     }
 
-    for (int i = 0; arith_dddddd_fncts[i].fname != 0; i++) {
+    for (int i = 0; arith_dddddd_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(arith_dddddd_fncts[i].fname, FUNCTION, 1);
       ptr->value.fnctptr_dddddd = arith_dddddd_fncts[i].fnct;
       ptr->info = arith_dddddd_fncts[i].description;
       ptr->syntax = arith_dddddd_fncts[i].syntax;
     }
 
-    for (int i = 0; string_fncts[i].fname != 0; i++) {
+    for (int i = 0; string_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(string_fncts[i].fname, STRING_FUNCTION, 1);
       ptr->value.strfnct = string_fncts[i].fnct;
       ptr->info = string_fncts[i].description;
       ptr->syntax = string_fncts[i].syntax;
     }
 
-    for (int i = 0; string_c_fncts[i].fname != 0; i++) {
+    for (int i = 0; string_c_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(string_c_fncts[i].fname, STRING_FUNCTION, 1);
       ptr->value.strfnct_c = string_c_fncts[i].fnct;
       ptr->info = string_c_fncts[i].description;
       ptr->syntax = string_c_fncts[i].syntax;
     }
 
-    for (int i = 0; string_d_fncts[i].fname != 0; i++) {
+    for (int i = 0; string_d_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(string_d_fncts[i].fname, STRING_FUNCTION, 1);
       ptr->value.strfnct_d = string_d_fncts[i].fnct;
       ptr->info = string_d_fncts[i].description;
       ptr->syntax = string_d_fncts[i].syntax;
     }
 
-    for (int i = 0; string_dcc_fncts[i].fname != 0; i++) {
+    for (int i = 0; string_dcc_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(string_dcc_fncts[i].fname, STRING_FUNCTION, 1);
       ptr->value.strfnct_dcc = string_dcc_fncts[i].fnct;
       ptr->info = string_dcc_fncts[i].description;
       ptr->syntax = string_dcc_fncts[i].syntax;
     }
 
-    for (int i = 0; string_ccc_fncts[i].fname != 0; i++) {
+    for (int i = 0; string_ccc_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(string_ccc_fncts[i].fname, STRING_FUNCTION, 1);
       ptr->value.strfnct_ccc = string_ccc_fncts[i].fnct;
       ptr->info = string_ccc_fncts[i].description;
       ptr->syntax = string_ccc_fncts[i].syntax;
     }
 
-    for (int i = 0; string_a_fncts[i].fname != 0; i++) {
+    for (int i = 0; string_a_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(string_a_fncts[i].fname, STRING_FUNCTION, 1);
       ptr->value.strfnct_a = string_a_fncts[i].fnct;
       ptr->info = string_a_fncts[i].description;
       ptr->syntax = string_a_fncts[i].syntax;
     }
 
-    for (int i = 0; array_c_fncts[i].fname != 0; i++) {
+    for (int i = 0; array_c_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(array_c_fncts[i].fname, ARRAY_FUNCTION, 1);
       ptr->value.arrfnct_c = array_c_fncts[i].fnct;
       ptr->info = array_c_fncts[i].description;
       ptr->syntax = array_c_fncts[i].syntax;
     }
 
-    for (int i = 0; array_cc_fncts[i].fname != 0; i++) {
+    for (int i = 0; array_cc_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(array_cc_fncts[i].fname, ARRAY_FUNCTION, 1);
       ptr->value.arrfnct_cc = array_cc_fncts[i].fnct;
       ptr->info = array_cc_fncts[i].description;
       ptr->syntax = array_cc_fncts[i].syntax;
     }
 
-    for (int i = 0; array_cd_fncts[i].fname != 0; i++) {
+    for (int i = 0; array_cd_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(array_cd_fncts[i].fname, ARRAY_FUNCTION, 1);
       ptr->value.arrfnct_cd = array_cd_fncts[i].fnct;
       ptr->info = array_cd_fncts[i].description;
       ptr->syntax = array_cd_fncts[i].syntax;
     }
 
-    for (int i = 0; array_dd_fncts[i].fname != 0; i++) {
+    for (int i = 0; array_dd_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(array_dd_fncts[i].fname, ARRAY_FUNCTION, 1);
       ptr->value.arrfnct_dd = array_dd_fncts[i].fnct;
       ptr->info = array_dd_fncts[i].description;
       ptr->syntax = array_dd_fncts[i].syntax;
     }
 
-    for (int i = 0; array_d_fncts[i].fname != 0; i++) {
+    for (int i = 0; array_d_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(array_d_fncts[i].fname, ARRAY_FUNCTION, 1);
       ptr->value.arrfnct_d = array_d_fncts[i].fnct;
       ptr->info = array_d_fncts[i].description;
       ptr->syntax = array_d_fncts[i].syntax;
     }
 
-    for (int i = 0; array_a_fncts[i].fname != 0; i++) {
+    for (int i = 0; array_a_fncts[i].fname != nullptr; i++) {
       symrec *ptr = putsym(array_a_fncts[i].fname, ARRAY_FUNCTION, 1);
       ptr->value.arrfnct_a = array_a_fncts[i].fnct;
       ptr->info = array_a_fncts[i].description;
       ptr->syntax = array_a_fncts[i].syntax;
     }
 
-    for (int i = 0; variables[i].vname != 0; i++) {
+    for (int i = 0; variables[i].vname != nullptr; i++) {
       symrec *ptr = putsym(variables[i].vname, VARIABLE, 1);
       ptr->value.var = variables[i].value;
     }
 
-    for (int i = 0; svariables[i].vname != 0; i++) {
+    for (int i = 0; svariables[i].vname != nullptr; i++) {
       symrec *ptr = putsym(svariables[i].vname, STRING_VARIABLE, 1);
       ptr->value.svar = svariables[i].value;
     }

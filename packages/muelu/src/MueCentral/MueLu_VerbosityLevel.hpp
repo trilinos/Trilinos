@@ -90,7 +90,7 @@ namespace MueLu {
 
       //
       None    = 0,
-      Low     = Errors | Warnings0 | Runtime0 | Parameters0 | Statistics0 |               Timings0,
+      Low     = Errors | Warnings0 | Statistics0,
       Medium  = Errors | Warnings0 | Runtime0 | Parameters0 | Statistics0 | Statistics1 | Timings0,
       High    = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings,
 #ifdef HAVE_MUELU_DEBUG

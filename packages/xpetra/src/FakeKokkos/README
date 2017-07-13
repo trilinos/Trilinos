@@ -1,1 +1,4 @@
-Files of this directory are used only if Kokkos is not enabled (ie: if you want to use Xpetra with only Epetra and disable Tpetra)
+If KokkosCore is enabled, Xpetra will depend on the class Kokkos::Compat::KokkosDeviceWrapperNode defined in
+teuchos/kokkoscompat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp.
+If KokkosCore is not enabled, Xpetra will depend on the class Kokkos::Compat::KokkosDeviceWrapperNode defined in
+Kokkos_SerialNode.hpp in this directory.

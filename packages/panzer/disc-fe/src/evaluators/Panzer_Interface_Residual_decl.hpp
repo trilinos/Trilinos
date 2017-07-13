@@ -61,8 +61,8 @@ PANZER_EVALUATOR_CLASS(InterfaceResidual)
   
   PHX::MDField<ScalarT> residual;
   PHX::MDField<ScalarT> normal_dot_flux;
-  PHX::MDField<ScalarT> flux;
-  PHX::MDField<ScalarT> normal;
+  PHX::MDField<const ScalarT> flux;
+  PHX::MDField<const ScalarT> normal;
 
   std::string basis_name;
   std::size_t basis_index;

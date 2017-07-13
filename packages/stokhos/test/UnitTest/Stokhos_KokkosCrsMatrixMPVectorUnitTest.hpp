@@ -211,7 +211,7 @@ struct ReplaceDiagonalValuesKernel {
     const ordinal_type row = i;
     const ordinal_type col = i;
     value_type val = value_type(row);
-    m_matrix.replaceValues(row, &col, 1, &val, true);
+    m_matrix.replaceValues(row, &col, 1, &val, false, true);
   }
 
   // Kernel launch
@@ -259,7 +259,7 @@ struct AddDiagonalValuesKernel {
     const ordinal_type row = i;
     const ordinal_type col = i;
     value_type val = value_type(row);
-    m_matrix.sumIntoValues(row, &col, 1, &val, true);
+    m_matrix.sumIntoValues(row, &col, 1, &val, false, true);
   }
 
   // Kernel launch
@@ -308,7 +308,7 @@ struct AddDiagonalValuesAtomicKernel {
     const ordinal_type row = 0;
     const ordinal_type col = 0;
     value_type val = value_type(i);
-    m_matrix.sumIntoValues(row, &col, 1, &val, true);
+    m_matrix.sumIntoValues(row, &col, 1, &val, false, true);
   }
 
   // Kernel launch

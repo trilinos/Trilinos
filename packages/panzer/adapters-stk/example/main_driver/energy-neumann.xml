@@ -124,7 +124,7 @@
 
     <ParameterList name="Options">
         <Parameter name="Write Volume Assembly Graphs" type="bool" value="true"/>
-        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-neumann_"/> 
+        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-neumann"/> 
     </ParameterList>
 
     <ParameterList name="Solver Factories">

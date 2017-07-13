@@ -59,18 +59,9 @@ class Algorithm;
 #include <Zoltan2_ColoringSolution.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_MappingSolution.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
 
-#define Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM \
-  { \
-    std::ostringstream emsg; \
-    emsg << __FILE__ << "," << __LINE__ \
-         << " error:  " <<  __func__zoltan2__ \
-         << " is not implement in selected algorithm " \
-         << std::endl; \
-    throw std::runtime_error(emsg.str()); \
-  }
-  
 
 namespace Zoltan2 {
 
@@ -96,24 +87,55 @@ public:
   virtual ~Algorithm() {}
 
   //! \brief Ordering method
-  virtual int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution) 
+  virtual int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution)
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM 
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief Ordering method
+  virtual int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution)
+  {
+    Z2_THROW_NOT_IMPLEMENTED 
   }
   
   //! \brief Coloring method
   virtual void color(const RCP<ColoringSolution<Adapter> > &solution) 
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
   
   //! \brief Matching method
-  virtual void match() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
+  virtual void match() { 
+    Z2_THROW_NOT_IMPLEMENTED 
+  }
 
   //! \brief Partitioning method
   virtual void partition(const RCP<PartitioningSolution<Adapter> > &solution) 
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief Mapping method
+  virtual void map(const RCP<MappingSolution<Adapter> > &solution) 
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief  return if algorithm determins tree to be binary
+  virtual bool isPartitioningTreeBinary() const
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief  for partitioning methods, fill arrays with partition tree info
+  virtual void getPartitionTree(part_t numParts,
+                        part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const
+  {
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief  for partitioning methods, return bounding boxes of the 
@@ -124,7 +146,7 @@ public:
   virtual std::vector<coordinateModelPartBox<scalar_t, part_t> > &
   getPartBoxesView() const
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief pointAssign method: Available only for some partitioning algorithms
@@ -138,7 +160,7 @@ public:
   //   \return the part number of a part overlapping the given point
   virtual part_t pointAssign(int dim, scalar_t *point) const
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief boxAssign method:  Available only for some partitioning algorithms
@@ -157,7 +179,7 @@ public:
   virtual void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
                          size_t &nParts, part_t **partsFound) const
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief returns serial communication graph of a computed partition
@@ -176,8 +198,37 @@ public:
     ArrayRCP<part_t> &comAdj)
     // TODO:  Should the return args be ArrayViews?
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
+
+  //! \brief In mapping, returns the rank to which a part is assigned
+  //  \param p: (in) the part for which the rank is sought
+  //  This method need not be implemented by every algorithm or, indeed,
+  //  for every mapping algorithm.  Mapping algorithms may provide this 
+  //  function to prevent additional memory use in MappingSolution.
+  //  For example, AlgContiguousMapping can compute this function implicitly, 
+  //  with no additional storage.  However, Mapping algorithms can skip this
+  //  function and, instead, register their results in MappingSolution.
+  virtual int getRankForPart(part_t p)
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief In mapping, returns a view of parts assigned to the current rank
+  //  \param numParts: (out) the number of parts assigned to the current rank
+  //  \param parts: (out) a view of the assigned parts
+  //
+  //  This method need not be implemented by every algorithm or, indeed,
+  //  for every mapping algorithm.  Mapping algorithms may provide this 
+  //  function to prevent additional memory use in MappingSolution.
+  //  For example, AlgContiguousMapping can compute this function implicitly, 
+  //  with no additional storage.  However, Mapping algorithms can skip this
+  //  function and, instead, register their results in MappingSolution.
+  virtual void getMyPartsView(part_t &numParts, part_t *&parts)
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
 
 private:
 };

@@ -201,7 +201,6 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Chebyshev
     BandedContainer
     DenseContainer
-    TriDiContainer
     Diagonal
     DiagonalFilter
     DropFilter
@@ -209,8 +208,9 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Hiptmair
     IdentitySolver
     ILUT
-    Krylov
+    LinePartitioner
     LocalFilter
+    LocalSparseTriangularSolver
     OverlappingRowMatrix
     Relaxation
     ReorderFilter
@@ -218,7 +218,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     SingletonFilter
     SparseContainer
     SparsityFilter
-    LinePartitioner
+    TriDiContainer
     Details::Chebyshev
     Details::DenseSolver
     Details::Factory
@@ -231,6 +231,9 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
       Details::Amesos2Wrapper
       )
+  ENDIF()
+  IF(Ifpack2_ENABLE_DEPRECATED_CODE)
+    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES Krylov)
   ENDIF()
 
   # Set the list of Ifpack2 classes templated on <LO, GO, Node> for
@@ -324,23 +327,20 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 ENDIF()
 
-# If LinearSolverFactory run-time registration is enabled,
-# generate .cpp files for LinearSolverFactory registration,
+# Generate .cpp files for LinearSolverFactory registration,
 # from the template (.tmpl) file in this directory.
-ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-  # mfh 03 Aug 2015: Bug 6380 is fixed now.
-  SET(IFPACK2_FACTORY_NODE_TYPES ${Ifpack2_ETI_NODES})
-  SET(IFPACK2_FACTORY_LOCALORDINAL_TYPES ${Ifpack2_ETI_LORDS})
-  SET(IFPACK2_FACTORY_GLOBALORDINAL_TYPES ${Ifpack2_ETI_GORDS})
-  SET(IFPACK2_FACTORY_SCALAR_TYPES ${Ifpack2_ETI_SCALARS})
+#
+# mfh 03 Aug 2015: Bug 6380 is fixed now.
+SET(IFPACK2_FACTORY_NODE_TYPES ${Ifpack2_ETI_NODES})
+SET(IFPACK2_FACTORY_LOCALORDINAL_TYPES ${Ifpack2_ETI_LORDS})
+SET(IFPACK2_FACTORY_GLOBALORDINAL_TYPES ${Ifpack2_ETI_GORDS})
+SET(IFPACK2_FACTORY_SCALAR_TYPES ${Ifpack2_ETI_SCALARS})
 
-  SET(TEMPLATE_FILE "Ifpack2_Details_LinearSolverFactory.tmpl")
-  IFPACK2_PROCESS_ALL_FACTORY_TEMPLATES(IFPACK2_FACTORY_OUTPUT_FILES "${TEMPLATE_FILE}" "${IFPACK2_FACTORY_SCALAR_TYPES}" "${IFPACK2_FACTORY_LOCALORDINAL_TYPES}" "${IFPACK2_FACTORY_GLOBALORDINAL_TYPES}" "${IFPACK2_FACTORY_NODE_TYPES}")
-  APPEND_SET(IFPACK2_CPP_SOURCES ${IFPACK2_FACTORY_OUTPUT_FILES})
+SET(TEMPLATE_FILE "Ifpack2_Details_LinearSolverFactory.tmpl")
+IFPACK2_PROCESS_ALL_FACTORY_TEMPLATES(IFPACK2_FACTORY_OUTPUT_FILES "${TEMPLATE_FILE}" "${IFPACK2_FACTORY_SCALAR_TYPES}" "${IFPACK2_FACTORY_LOCALORDINAL_TYPES}" "${IFPACK2_FACTORY_GLOBALORDINAL_TYPES}" "${IFPACK2_FACTORY_NODE_TYPES}")
+APPEND_SET(IFPACK2_CPP_SOURCES ${IFPACK2_FACTORY_OUTPUT_FILES})
 
-  #MESSAGE(DEBUG " *** IFPACK2_CPP_SOURCES = ${IFPACK2_CPP_SOURCES}")
-ENDIF ()
+#MESSAGE(DEBUG " *** IFPACK2_CPP_SOURCES = ${IFPACK2_CPP_SOURCES}")
 
 #
 # C) Define the targets for package's library(s)

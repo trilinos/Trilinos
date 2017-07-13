@@ -54,13 +54,13 @@
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
 // amt only works with pthread and qthreads
-#include "Kokkos_TaskPolicy.hpp"
-#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
+#include "Kokkos_TaskScheduler.hpp"
 #include "Kokkos_Threads.hpp"
 #endif
 
 namespace PHX {
 
+  class any;
   template<typename Traits> class FieldManager;
 
   /*! Pure virtual base class that provides field evaluation
@@ -100,6 +100,13 @@ namespace PHX {
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     evaluatedFields() const = 0;
 
+    /*! \brief Returns vector of fields that contribute partially to
+        the evaluation of a field. This allows users to spread the
+        evaluation of a field over multiple evaluators.
+     */
+    virtual const std::vector< Teuchos::RCP<FieldTag> >& 
+    contributedFields() const = 0;
+
     //! Returns vector of fields needed to compute the evaluated fields.
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     dependentFields() const = 0;
@@ -116,13 +123,18 @@ namespace PHX {
     /*!
         Input:
 	@param policy Kokkos task policy object used to create the task/future.
-	@param num_adjacencies The dependenc capacity in Kokkos. The maximum number of node adjacencies (task dependencies) that this task directly depends on. 
-	@param d - user defined data object defined by the EvalData typedef in the traits class.
+	@param num_adjacencies The dependence capacity in Kokkos. The maximum number of node adjacencies (task dependencies) that this task directly depends on. 
+	@param work_size The number of parallel work units.
+	@param d User defined data.
     */ 
-    virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
-	       const std::size_t& num_adjacencies,
+    virtual Kokkos::Future<void,PHX::exec_space>
+    createTask(Kokkos::TaskScheduler<PHX::exec_space>& policy,
+	       const int& work_size,
+               const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
 	       typename Traits::EvalData d) = 0;
+
+    //! Returns the size of the kokkos task for AMT.
+    virtual unsigned taskSize() const = 0;
 #endif
 
     /*! \brief This routine is called before each residual/Jacobian fill.
@@ -147,6 +159,18 @@ namespace PHX {
     //! Returns the name/identifier of this provider.
     virtual const std::string& getName() const = 0;
 
+    /*! \brief Binds memory to a field. WARNING: this is a POWER-USER function. Only use this if you understand the memory binding sequence (see detailed description for more information).
+
+      WARNING: This is a power user function. It sets/swaps the field
+      memory for the suppied field (either an externally defined user
+      managed field or a internally managed from the
+      FieldManager). All evaluators that evaluate or depend on this
+      field should be bound to the same memory. Otherwise you will get
+      undefined results. To use this consistently, do not call this
+      directly. Instead, bind all memory through calls to the
+      PHX::FieldManager class.
+     */
+    virtual void bindField(const PHX::FieldTag& ft, const PHX::any& f) = 0;
   };
 
 } 

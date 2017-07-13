@@ -51,8 +51,6 @@
 #include <vector>
 #include <set>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 
 #include "Panzer_DOFManager.hpp"
@@ -67,7 +65,7 @@
 // 2D basis 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
@@ -77,7 +75,7 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 namespace panzer {
 
@@ -85,7 +83,7 @@ template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   Teuchos::RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+  Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    Teuchos::RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -93,7 +91,6 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 {
-  PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -111,12 +108,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);
@@ -154,12 +151,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
      }
    }
    
-   // check owned and shared
+   // check owned and ghosted
    {
      std::vector<int> indices, indices_f;
 
-     dofManager->getOwnedAndSharedIndices(indices);
-     filtered_ugi.getOwnedAndSharedIndices(indices_f);
+     dofManager->getOwnedAndGhostedIndices(indices);
+     filtered_ugi.getOwnedAndGhostedIndices(indices_f);
 
      TEST_EQUALITY(indices.size(),indices_f.size());
      for(std::size_t i=0;i<indices.size();i++) {
@@ -180,13 +177,11 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
      }
    }
 
-   PHX::FinalizeKokkosDevice();
 }
 
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 {
-  PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -207,12 +202,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);
@@ -258,7 +253,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    Filtered_UniqueGlobalIndexer<int,int> filtered_ugi;
    filtered_ugi.initialize(dofManager,my_filtered);
 
-   // check the GIDs
+   out << "check the GIDs" << std::endl;
    {
      std::vector<int> gids,gids_f;
 
@@ -279,7 +274,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   // check the LIDs
+   out << "check the LIDs" << std::endl;
    {
      const std::vector<int> & lids = dofManager->getElementLIDs(0);
      const std::vector<int> & lids_f = filtered_ugi.getElementLIDs(0);
@@ -290,12 +285,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
    
-   // check owned and shared
+   out << "check owned and ghosted" << std::endl;
    {
      std::vector<int> indices, indices_f;
 
-     dofManager->getOwnedAndSharedIndices(indices);
-     filtered_ugi.getOwnedAndSharedIndices(indices_f);
+     dofManager->getOwnedAndGhostedIndices(indices);
+     filtered_ugi.getOwnedAndGhostedIndices(indices_f);
 
      TEST_EQUALITY(indices.size(),indices_f.size());
      for(std::size_t i=0;i<indices.size();i++) {
@@ -303,7 +298,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   // check owned 
+   out << "check owned" << std::endl;
    {
      std::vector<int> indices, indices_f,diff;
 
@@ -337,14 +332,13 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   // test getOwnedAndSharedNotFilteredIndicator
-   out << "testing getOwnedAndSharedNotFilteredIndicator" << std::endl;
+   out << "testing getOwnedAndGhostedNotFilteredIndicator" << std::endl;
    {
      std::vector<int> indicator;
-     filtered_ugi.getOwnedAndSharedNotFilteredIndicator(indicator);
+     filtered_ugi.getOwnedAndGhostedNotFilteredIndicator(indicator);
 
      std::vector<int> indices;
-     filtered_ugi.getOwnedAndSharedIndices(indices);
+     filtered_ugi.getOwnedAndGhostedIndices(indices);
 
      TEST_EQUALITY(indices.size(),indicator.size());
 
@@ -364,14 +358,13 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   // test getFilteredOwnedAndSharedIndices
-   out << "testing getFilteredOwnedAndSharedIndices" << std::endl;
+   out << "testing getFilteredOwnedAndGhostedIndices" << std::endl;
    {
      std::vector<int> indices_f;
-     filtered_ugi.getFilteredOwnedAndSharedIndices(indices_f);
+     filtered_ugi.getFilteredOwnedAndGhostedIndices(indices_f);
 
      std::vector<int> indices;
-     filtered_ugi.getOwnedAndSharedIndices(indices);
+     filtered_ugi.getOwnedAndGhostedIndices(indices);
 
      // check that the size didn't grow
      TEST_ASSERT(indices_f.size()<indices.size());
@@ -399,7 +392,6 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   PHX::FinalizeKokkosDevice();
 }
 
 // this just excercises a bunch of functions
@@ -411,7 +403,6 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
 
    typedef Thyra::SpmdVectorSpaceBase<double> SpmdSpace;
 
-   PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -427,12 +418,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);
@@ -462,7 +453,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
    RCP<Filtered_UniqueGlobalIndexer<int,int> > filtered_ugi = rcp(new Filtered_UniqueGlobalIndexer<int,int>);
    filtered_ugi->initialize(dofManager,filtered);
 
-   // check out ownsership
+   out << "check out ownsership" << std::endl;
    {
      std::vector<bool> isOwned;
      dofManager->ownedIndices(filtered,isOwned);
@@ -477,36 +468,41 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
      TEST_EQUALITY(isOwned[1],false);
    }
 
-   // test out sizes construction by LOF
+   out << "test out sizes construction by LOF" << std::endl;
    {
      std::vector<int> indices_f;
      filtered_ugi->getOwnedIndices(indices_f);
 
      EpetraLinearObjFactory<panzer::Traits,int> lof(tComm,filtered_ugi);
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraDomainSpace())->localSubDim(),Teuchos::as<int>(indices_f.size())); 
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraRangeSpace())->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraDomainSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraRangeSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
 
      RCP<Thyra::LinearOpBase<double> > A = lof.getThyraMatrix();
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->range())->localSubDim(),Teuchos::as<int>(indices_f.size())); 
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->domain())->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->range(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->domain(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
 
-     // next chunk of code tests to ensure parallel communication works as expected.
-     // In particular that a filtered unique vector can be used with an unfiltered 
-     // ghosted vector and that the entries in the ghosted vector will be preserved
+     // This next chunk of code tests to ensure parallel communication works as
+     // expected, in particular that a filtered owned vector can be used with
+     // an unfiltered ghosted vector and that the entries in the ghosted vector
+     // will be preserved.
      ////////////////////////////////////////////////////////////////////////////////////
 
      // check that parallel communication works as expected
-     RCP<Epetra_Import> importer = lof.getGhostedImport();
-     RCP<Epetra_Map> ghostedMap = lof.getGhostedMap();
-     RCP<Epetra_Map> uniqueMap  = lof.getMap();
+     RCP<Epetra_Import> importer   = lof.getGhostedImport(0);
+     RCP<Epetra_Map>    ghostedMap = lof.getGhostedMap(0);
+     RCP<Epetra_Map>    ownedMap   = lof.getMap(0);
+
+     TEST_ASSERT(importer   != Teuchos::null);
+     TEST_ASSERT(ghostedMap != Teuchos::null);
+     TEST_ASSERT(ownedMap   != Teuchos::null);
 
      Epetra_Vector ghosted_x(*ghostedMap);
-     Epetra_Vector unique_x(*uniqueMap);
+     Epetra_Vector owned_x(*ownedMap);
 
      ghosted_x.PutScalar(0.0);
-     unique_x.PutScalar(1.0);
+     owned_x.PutScalar(1.0);
 
-     ghosted_x.Import(unique_x,*importer,Insert);
+     ghosted_x.Import(owned_x, *importer, Insert);
 
      // check all the filtered indices remain 0
      int count=0;
@@ -527,13 +523,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
      TEST_EQUALITY(sum,ghosted_x.MyLength()-count);
 
      
-     // do a lazy test to ensure you can construct a unique matrix
-     RCP<Thyra::LinearOpBase<double> > uniqueMatrix  = lof.getThyraMatrix();
-     TEST_ASSERT(uniqueMatrix!=Teuchos::null);
+     // do a lazy test to ensure you can construct an owned matrix
+     RCP<Thyra::LinearOpBase<double> > ownedMatrix  = lof.getThyraMatrix();
+     TEST_ASSERT(ownedMatrix != Teuchos::null);
    }
 
 
-   PHX::FinalizeKokkosDevice();
 }
 
 

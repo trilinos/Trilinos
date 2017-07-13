@@ -53,16 +53,10 @@
 
 #include "Shards_BasicTopologies.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
 {
@@ -86,8 +80,8 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),25+60);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),36);
 
-   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    int mpi_numprocs = -1;
    MPI_Comm_size(MPI_COMM_WORLD, &mpi_numprocs);
@@ -95,6 +89,13 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
    TEST_EQUALITY(numprocs,mpi_numprocs);
    TEST_EQUALITY(rank,mpi_rank);
+
+   // check for nodeset
+   std::vector<std::string> nodesets;
+   mesh->getNodesetNames(nodesets);
+ 
+   TEST_EQUALITY(nodesets.size(),1);
+   TEST_EQUALITY(nodesets[0],"origin");
 }
 
 }

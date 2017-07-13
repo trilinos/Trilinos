@@ -1,0 +1,9 @@
+Decomposition Method 	= rib
+Zoltan Parameters	= remap=0
+Zoltan Parameters       = debug_level=10
+File Type		= Chaco
+File Name		= nograph
+Parallel Disk Info	= number=0
+test local partitions	= 2
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm

@@ -226,6 +226,8 @@ namespace Rythmos {
     bool useLETToDetermineConvergence_;
     bool restrictStepSizeByNumberOfNonlinearIterations_;
     int numberOfNonlinearIterationsForStepSizeRestriction_;
+    std::vector<Scalar> breakPoints_; // from user params (stor for reset)
+    std::list<Scalar> currentBreakPoints_; // break points left
 
     // Garbage to clean up for LET
 

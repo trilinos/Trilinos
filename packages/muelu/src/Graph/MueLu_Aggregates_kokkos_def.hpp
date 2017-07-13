@@ -49,6 +49,7 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_LWGraph_kokkos.hpp"
@@ -92,6 +93,28 @@ namespace MueLu {
   }
 
   ///////////////////////////////////////////////////////
+  template<class ProcWinnerType, class Vertex2AggIdType, class AggregateSizesType, class LO>
+  class ComputeAggregateSizesFunctor {
+  private:
+    ProcWinnerType      procWinner;
+    Vertex2AggIdType    vertex2AggId;
+    int                 myPID;
+    AggregateSizesType  aggregateSizes;
+
+  public:
+    ComputeAggregateSizesFunctor(ProcWinnerType procWinner_, Vertex2AggIdType vertex2AggId_, int myPID_, AggregateSizesType aggregateSizes_) :
+      procWinner(procWinner_),
+      vertex2AggId(vertex2AggId_),
+      myPID(myPID_),
+      aggregateSizes(aggregateSizes_)
+    { }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const LO k) const {
+      if (procWinner(k, 0) == myPID)
+        aggregateSizes(vertex2AggId(k, 0))++;
+    }
+  };
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::aggregates_sizes_type::const_type
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeAggregateSizes(bool forceRecompute, bool cacheSizes) const {
@@ -111,10 +134,10 @@ namespace MueLu {
       auto procWinner   = procWinner_  ->template getLocalView<DeviceType>();
 
       typename AppendTrait<decltype(aggregateSizes_), Kokkos::Atomic>::type aggregateSizesAtomic = aggregateSizes;
-      Kokkos::parallel_for("Aggregates:ComputeAggregateSizes:for", procWinner.size(), KOKKOS_LAMBDA(const LO k) {
-        if (procWinner(k, 0) == myPID)
-          aggregateSizesAtomic(vertex2AggId(k, 0))++;
-      });
+
+      ComputeAggregateSizesFunctor<decltype(procWinner), decltype(vertex2AggId), decltype(aggregateSizesAtomic), LO>
+        computeAggSizesFunctor(procWinner, vertex2AggId, myPID, aggregateSizesAtomic);
+      Kokkos::parallel_for("MueLu:Aggregates:ComputeAggregateSizes:for", range_type(0,procWinner.size()), computeAggSizesFunctor);
 
       if (cacheSizes)
         aggregateSizes_ = aggregateSizes;
@@ -164,7 +187,7 @@ namespace MueLu {
   void Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Statistics0)
+    if (verbLevel & Statistics1)
       out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
   }
 

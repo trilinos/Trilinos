@@ -50,8 +50,9 @@ INCLUDE(DualScopeSet)
 INCLUDE(GlobalNullSet)
 INCLUDE(GlobalSet)
 INCLUDE(MultilineSet)
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 INCLUDE(SetNotFound)
+INCLUDE(Split)
 
 #
 # @FUNCTION: TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()
@@ -150,7 +151,7 @@ ENDFUNCTION()
 #
 # Function that sets up cache variables for users to specify where to find a
 # `TriBITS TPL`_'s headers and libraries.  This function is typically called
-# inside of a ``FindTPL<tplName>.cmake`` moulde file (see
+# inside of a ``FindTPL<tplName>.cmake`` module file (see
 # `${TPL_NAME}_FINDMOD`_).
 #
 # Usage::
@@ -192,7 +193,11 @@ ENDFUNCTION()
 #   ``MUST_FIND_ALL_LIBS``
 #
 #     If set, then all of the library files listed in ``REQUIRED_LIBS_NAMES``
-#     must be found or the TPL is considered not found!
+#     must be found or the TPL is considered not found!  If the global cache
+#     var ``<Project>_MUST_FIND_ALL_TPL_LIBS`` is set to ``TRUE``, then this
+#     is turned on as well.  WARNING: The default is not to require finding
+#     all of the listed libs.  This is to maintain backward compatibility with
+#     some older ``FindTPL<tplName>.cmake`` modules.
 #
 #   ``NO_PRINT_ENABLE_SUCCESS_FAIL``
 #
@@ -255,13 +260,15 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
   # Make sure the right name is used
   ASSERT_DEFINED(TPL_ENABLE_${TPL_NAME})
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
      #prefix
      PARSE
-     #lists
-     "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES"
      #options
      "MUST_FIND_ALL_LIBS;MUST_FIND_ALL_HEADERS;NO_PRINT_ENABLE_SUCCESS_FAIL"
+     #one_value_keywords
+     ""
+     #multi_value_keywords
+     "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES"
      ${ARGN}
      )
 
@@ -318,14 +325,22 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
       )
     ADVANCED_SET(${TPL_NAME}_LIBRARY_NAMES ${PARSE_REQUIRED_LIBS_NAMES}
       CACHE STRING ${DOCSTR})
+    SPLIT("${${TPL_NAME}_LIBRARY_NAMES}" "," ${TPL_NAME}_LIBRARY_NAMES)
+    PRINT_VAR(${TPL_NAME}_LIBRARY_NAMES)
 
     # Let the user override what the names of the libraries which might
     # actually mean that no libraries are searched for.
-    SET(PARSE_REQUIRED_LIBS_NAMES ${${TPL_NAME}_LIBRARY_NAMES})
+    SET(REQUIRED_LIBS_NAMES ${${TPL_NAME}_LIBRARY_NAMES})
+
+    IF (${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS)
+      SET(MUST_FIND_ALL_LIBS TRUE) 
+    ELSE()
+      SET(MUST_FIND_ALL_LIBS ${PARSE_MUST_FIND_ALL_LIBS}) 
+    ENDIF()
 
     IF (TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES_VERBOSE)
       PRINT_VAR(${TPL_NAME}_LIBRARY_NAMES)
-      PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
+      PRINT_VAR(REQUIRED_LIBS_NAMES)
     ENDIF()
 
   ELSE()
@@ -385,15 +400,21 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
 
   SET(_${TPL_NAME}_ENABLE_SUCCESS TRUE)
 
-  IF (PARSE_REQUIRED_LIBS_NAMES)
+  IF (REQUIRED_LIBS_NAMES)
 
     # Libraries
 
+    IF (MUST_FIND_ALL_LIBS)
+      SET(LIB_NOT_FOUND_MSG_PREFIX "ERROR:")
+    ELSE()
+      SET(LIB_NOT_FOUND_MSG_PREFIX "NOTE:")
+    ENDIF()
+
     IF (NOT TPL_${TPL_NAME}_LIBRARIES)
 
-      IF (PARSE_MUST_FIND_ALL_LIBS)
+      IF (MUST_FIND_ALL_LIBS)
         MESSAGE("-- Must find at least one lib in each of the"
-          " lib sets \"${PARSE_REQUIRED_LIBS_NAMES}\"")
+          " lib sets \"${REQUIRED_LIBS_NAMES}\"")
       ENDIF()
 
       MESSAGE( "-- Searching for libs in ${TPL_NAME}_LIBRARY_DIRS='${${TPL_NAME}_LIBRARY_DIRS}'")
@@ -445,9 +466,9 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
 
         IF (NOT LIBNAME_SET_LIB)
           MESSAGE(
-            "-- ERROR: Did not find a lib in the lib set \"${LIBNAME_SET}\""
+            "-- ${LIB_NOT_FOUND_MSG_PREFIX} Did not find a lib in the lib set \"${LIBNAME_SET}\""
              " for the TPL '${TPL_NAME}'!")
-          IF (PARSE_MUST_FIND_ALL_LIBS)
+          IF (MUST_FIND_ALL_LIBS)
 	    SET(_${TPL_NAME}_ENABLE_SUCCESS FALSE)
           ELSE()
             BREAK()
@@ -671,24 +692,32 @@ ENDFUNCTION()
 #   TRIBITS_TPL_TENTATIVELY_ENABLE(<tplName>)
 # 
 # This function can be called from any CMakeLists.txt file to put a TPL in
-# tentative enable mode.
+# tentative enable mode.  But typically, it is called from an SE Package's
+# `<packageDir>/cmake/Dependencies.cmake`_ file (see `How to tentatively
+# enable a TPL`_).
 #
 # This should only be used for optional TPLs.  It will not work correctly for
 # required TPLs because any enabled packages that require this TPL will not be
 # disabled and instead will fail to configure or fail to build.
 #
 # All this function does is to force set ``TPL_ENABLE_<tplName>=ON`` if it has
-# not already been set. and ``TPL_TENTATIVE_ENABLE_<tplName>`` in the cache.
+# not already been set, and sets ``TPL_TENTATIVE_ENABLE_<tplName>=ON`` in the
+# cache.
 #
-# NOTE: This function will only tentatively enable a TPL it its enable has not
-# be explicitly set on input, i.e. if ``TPL_ENABLE_<tplName>=""``.
+# NOTE: This function will only tentatively enable a TPL if its enable has not
+# be explicitly set on input, i.e. if ``-D TPL_ENABLE_<tplName>=""``.  If the
+# TPL has been explicitly enabled (i.e. ``-D TPL_ENABLE_<tplName>=ON``) or
+# disabled (i.e. ``-D TPL_ENABLE_<tplName>=OFF``), then this function has no
+# effect and the TPL will be unconditionally enabled or disabled.
 #
 FUNCTION(TRIBITS_TPL_TENTATIVELY_ENABLE  TPL_NAME)
 
   IF ("${TPL_ENABLE_${TPL_NAME}}" STREQUAL "")
     # The TPL's enable status has not been set so tentatively enable it.
-    SET(TPL_ENABLE_${TPL_NAME} ON CACHE STRING "autoset" FORCE)
-    ADVANCED_SET(TPL_TENTATIVE_ENABLE_${TPL_NAME} ON CACHE STRING "autoset" FORCE)
+    SET(TPL_ENABLE_${TPL_NAME} ON CACHE STRING
+      "Set by TRIBITS_TPL_TENTATIVELY_ENABLE()" FORCE)
+    ADVANCED_SET(TPL_TENTATIVE_ENABLE_${TPL_NAME} ON CACHE STRING
+      "Set by TRIBITS_TPL_TENTATIVELY_ENABLE()" FORCE)
   ELSE()
     # The TPL's enable status has already be hard set to be ON or OFF so we
     # will leave it alone.

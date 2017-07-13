@@ -42,8 +42,6 @@
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_UQ_PCE_CONTIGUOUS_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_UQ_PCE_CONTIGUOUS_HPP
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 #include "Sacado_Traits.hpp"
 #include "Sacado_UQ_PCE.hpp"
 #include "Sacado_UQ_PCE_Traits.hpp"
@@ -405,8 +403,8 @@ make_view(typename ViewType::pointer_type ptr,
 {
   size_t N[8] = { N0, N1, N2, N3, N4, N5, N6, N7 };
   N[ViewType::rank] = cijk.dimension();
-  ViewType v(ptr, N[0], N[1], N[2], N[3], N[4], N[5], N[6], N[7]);
-  v.implementation_map().set_cijk(cijk);
+  ViewType v(Experimental::view_wrap(ptr, cijk),
+             N[0], N[1], N[2], N[3], N[4], N[5], N[6], N[7]);
   return v;
 }
 
@@ -417,58 +415,59 @@ make_view(typename ViewType::pointer_type ptr,
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
+//namespace Experimental {
 namespace Impl {
 
-// Allow passing of Cijk tensor through ViewAllocProp
+// Allow passing of Cijk tensor through ViewCtorProp
 template< typename Value, typename Execution, typename Memory >
-struct ViewAllocProp< void , Stokhos::CrsProductTensor<Value, Execution, Memory> >
+struct ViewCtorProp< void , Stokhos::CrsProductTensor<Value, Execution, Memory> >
 {
-  ViewAllocProp() = default ;
-  ViewAllocProp( const ViewAllocProp & ) = default ;
-  ViewAllocProp & operator = ( const ViewAllocProp & ) = default ;
+  ViewCtorProp() = default ;
+  ViewCtorProp( const ViewCtorProp & ) = default ;
+  ViewCtorProp & operator = ( const ViewCtorProp & ) = default ;
 
   typedef Stokhos::CrsProductTensor<Value, Execution, Memory> type ;
 
-  ViewAllocProp( const type & arg ) : value( arg ) {}
-  ViewAllocProp( type && arg ) : value( arg ) {}
+  ViewCtorProp( const type & arg ) : value( arg ) {}
+  ViewCtorProp( type && arg ) : value( arg ) {}
 
   type value ;
 };
 
 template <typename AllocProp>
-struct alloc_prop_has_cijk
+struct ctor_prop_has_cijk
 {
   static const bool value = false;
 };
 
 template< typename T >
-struct alloc_prop_has_cijk< ViewAllocProp<T> >
+struct ctor_prop_has_cijk< ViewCtorProp<T> >
 {
   static const bool value = false;
 };
 
 template< typename Value, typename Execution, typename Memory >
-struct alloc_prop_has_cijk<
-  ViewAllocProp< Stokhos::CrsProductTensor<Value, Execution, Memory> >
+struct ctor_prop_has_cijk<
+  ViewCtorProp< Stokhos::CrsProductTensor<Value, Execution, Memory> >
   >
 {
   static const bool value = true;
 };
 
 template< typename T, typename ... P >
-struct alloc_prop_has_cijk< ViewAllocProp<T,P...> >
+struct ctor_prop_has_cijk< ViewCtorProp<T,P...> >
 {
   static const bool value =
-    alloc_prop_has_cijk< ViewAllocProp<T> >::value ||
-    alloc_prop_has_cijk< ViewAllocProp<P...> >::value;
+    ctor_prop_has_cijk< ViewCtorProp<T> >::value ||
+    ctor_prop_has_cijk< ViewCtorProp<P...> >::value;
 };
 
 } /* namespace Impl */
-} /* namespace Experimental */
+//} /* namespace Experimental */
 
 template <typename CijkType, typename AllocProp>
-typename std::enable_if< !Experimental::Impl::alloc_prop_has_cijk<AllocProp>::value,
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if< !Impl::ctor_prop_has_cijk<AllocProp>::value,
                          CijkType >::type
 extract_cijk(const AllocProp& prop)
 {
@@ -476,11 +475,12 @@ extract_cijk(const AllocProp& prop)
 }
 
 template <typename CijkType, typename AllocProp>
-typename std::enable_if< Experimental::Impl::alloc_prop_has_cijk<AllocProp>::value,
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if< Impl::ctor_prop_has_cijk<AllocProp>::value,
                          CijkType >::type
 extract_cijk(const AllocProp& prop)
 {
-  return ( (const Experimental::Impl::ViewAllocProp<void,CijkType>&) prop ).value;
+  return ( (const Impl::ViewCtorProp<void,CijkType>&) prop ).value;
 }
 
 } /* namespace Kokkos */
@@ -819,6 +819,10 @@ public:
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
     { return m_offset.m_dim.extent(r); }
 
+  KOKKOS_INLINE_FUNCTION constexpr
+  typename Traits::array_layout layout() const
+    { return m_offset.layout(); }
+
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
     { return m_offset.dimension_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const
@@ -1008,18 +1012,22 @@ public:
   KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
+  template< class ... P >
   KOKKOS_INLINE_FUNCTION
   ViewMapping
-    ( pointer_type ptr
+    ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & layout
     )
     : m_handle()
     , m_offset( std::integral_constant< unsigned , 0 >() , layout )
     , m_sacado_size( Kokkos::Impl::GetSacadoSize<unsigned(Rank)>::eval(layout) )
     {
-      m_handle.set( ptr, m_offset.span(), m_sacado_size );
+      m_handle.set( ( (ViewCtorProp<void,pointer_type> const &) prop ).value
+                    , m_offset.span(), m_sacado_size );
+      m_cijk = extract_cijk<cijk_type>(prop);
 #ifndef __CUDA_ARCH__
-      m_cijk = getGlobalCijkTensor<cijk_type>();
+      if (m_cijk.dimension() == 0)
+        m_cijk = getGlobalCijkTensor<cijk_type>();
       if (m_sacado_size == 0)
         m_sacado_size = m_cijk.dimension();
 #endif
@@ -1033,12 +1041,12 @@ public:
    */
   template< class ... P >
   SharedAllocationRecord<> *
-  allocate_shared( ViewAllocProp< P... > const & prop
+  allocate_shared( ViewCtorProp< P... > const & prop
                  , typename Traits::array_layout const & layout )
   {
-    typedef ViewAllocProp< P... > alloc_prop ;
+    typedef ViewCtorProp< P... > ctor_prop ;
 
-    typedef typename alloc_prop::execution_space  execution_space ;
+    typedef typename ctor_prop::execution_space  execution_space ;
     typedef typename Traits::memory_space         memory_space ;
     typedef typename handle_type::template ConstructDestructFunctor<execution_space> functor_type ;
     typedef SharedAllocationRecord< memory_space , functor_type > record_type ;
@@ -1053,14 +1061,15 @@ public:
       m_cijk = getGlobalCijkTensor<cijk_type>();
     if (m_sacado_size == 0)
       m_sacado_size = m_cijk.dimension();
+    m_is_contiguous = true;
 
     const size_t alloc_size =
       handle_type::memory_span( m_offset.span(), m_sacado_size );
 
     // Create shared memory tracking record with allocate memory from the memory space
     record_type * const record =
-      record_type::allocate( ( (ViewAllocProp<void,memory_space> const &) prop ).value
-                           , ( (ViewAllocProp<void,std::string>  const &) prop ).value
+      record_type::allocate( ( (ViewCtorProp<void,memory_space> const &) prop ).value
+                           , ( (ViewCtorProp<void,std::string>  const &) prop ).value
                            , alloc_size );
 
     //  Only set the the pointer and initialize if the allocation is non-zero.
@@ -1073,8 +1082,8 @@ public:
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
       record->m_destroy = m_handle.create_functor(
-        ( (ViewAllocProp<void,execution_space> const &) prop).value
-        , alloc_prop::initialize
+        ( (ViewCtorProp<void,execution_space> const &) prop).value
+        , ctor_prop::initialize
         , m_offset.span()
         , m_sacado_size
         , m_cijk );
@@ -1544,7 +1553,6 @@ public:
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Specialization for deep_copy( view, view::value_type ) for Cuda
@@ -1552,7 +1560,7 @@ namespace Impl {
 template< class OutputView >
 struct ViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
-                                                        ViewPCEContiguous >::value &&
+                                                        Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
                                                    Cuda >::value >::type >
 {
@@ -1683,13 +1691,10 @@ struct ViewFill< OutputView ,
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-#endif
 
 #endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_UQ_PCE_CONTIGUOUS_HPP */

@@ -225,7 +225,7 @@ namespace Teuchos {
 
     /// All subsequent function calls will work with the transpose-type set by this method (\c Teuchos::NO_TRANS, \c Teuchos::TRANS, and \c Teuchos::CONJ_TRANS).
     /// \note This interface will allow correct behavior for complex-valued linear systems, solveWithTranspose() will not.
-    void solveWithTransposeFlag(Teuchos::ETransp trans) {TRANS_ = trans; if (trans != Teuchos::NO_TRANS) {  transpose_ = true; } }
+    void solveWithTransposeFlag(Teuchos::ETransp trans) {TRANS_ = trans; transpose_ = (trans != Teuchos::NO_TRANS) ? true : false;}
 
     //! Set whether or not to use iterative refinement to improve solutions to linear systems.
     void solveToRefinedSolution(bool flag) {refineSolution_ = flag; return;}
@@ -674,21 +674,21 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::solve() {
   int ierr = 0;
   if (equilibrate_) {
     ierr = equilibrateRHS();
-    equilibratedB_ = true;
   }
   if (ierr != 0) return(ierr);  // Can't equilibrate B, so return.
 
-  TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
-                     std::logic_error, "SerialBandDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
   TEUCHOS_TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument,
                      "SerialBandDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
   TEUCHOS_TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument,
                      "SerialBandDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
 
+  if (!factored()) factor(); // Matrix must be factored
+
+  TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
+                     std::logic_error, "SerialBandDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
+
   if (shouldEquilibrate() && !equilibratedA_)
     std::cout << "WARNING!  SerialBandDenseSolver<T>::solve: System should be equilibrated!" << std::endl;
-
-  if (!factored()) factor(); // Matrix must be factored
 
   if (RHS_->values()!=LHS_->values()) {
     (*LHS_) = (*RHS_); // Copy B to X if needed

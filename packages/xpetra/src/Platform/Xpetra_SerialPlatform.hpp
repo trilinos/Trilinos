@@ -48,9 +48,9 @@
 
 #include <Teuchos_DefaultSerialComm.hpp>
 #include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
-#include "Xpetra_ConfigDefs.hpp"
+#include <Xpetra_ConfigDefs.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 namespace Xpetra {
 

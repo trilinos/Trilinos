@@ -39,16 +39,16 @@ public:
 
     inline unsigned get_image_height() const;
 
-    unsigned get_ideal_rows_per_processor(unsigned numProcs) const;
+    //unsigned get_ideal_rows_per_processor(unsigned numProcs) const;
 
-    void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
+    virtual void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
 
-    void get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
+    //void get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
 
     void get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
 
     //data dump
-    void print_image();
+    //void print_image();
 
 protected:
     unsigned m_imageWidth;
@@ -104,12 +104,19 @@ private:
     void shrink_image_row(unsigned row);
     void shrink_image_byte(unsigned row, unsigned col, unsigned verticalOffset);
 };
+
+struct Pixel
+{
+    unsigned x;
+    unsigned y;
+};
+
 class ColoredPNGProcessor : public PNGProcessor
 {
 public:
     ColoredPNGProcessor(std::string fileName);
 
-    virtual ~ColoredPNGProcessor() {}
+    virtual ~ColoredPNGProcessor();
 
     virtual void commit_image_vector_to_pixel_vector();
 
@@ -126,6 +133,9 @@ private:
     unsigned char m_lowerBound;
     unsigned char m_upperBound;
     std::vector<unsigned char> m_greyBits;
+    std::vector<Pixel> mRedPixels;
+    std::vector<Pixel> mGreenPixels;
+    std::vector<Pixel> mBluePixels;
 
     // constructor
     void convert_to_grey_bits();
@@ -135,12 +145,37 @@ private:
 
     // commit image
     void update_image_value_according_to_relation_with_median_value(unsigned row, unsigned col);
-
     void update_image_value_according_to_proximity_with_median_value(unsigned row, unsigned col);
-
     void update_image_value_according_to_grayscale(unsigned row, unsigned col);
 
     void find_upper_and_lower_bounds();
+};
+
+class SimpleColoredPng : public PNGProcessor
+{
+public:
+    SimpleColoredPng(std::string fileName);
+    virtual ~SimpleColoredPng() {}
+
+    virtual void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
+
+    size_t get_number_other_pixels() { return mOtherPixelCount; }
+
+    std::vector<Pixel> get_red_color_coords() { return mRedPixels; }
+    std::vector<Pixel> get_green_color_coords() { return mGreenPixels; }
+    std::vector<Pixel> get_blue_color_coords() { return mBluePixels; }
+
+    stk::mesh::EntityIdVector get_elemIds_for_colored_pixels(const std::vector<Pixel> & coloredPixels);
+private:
+    void store_special_colors_with_coordinates(unsigned row, unsigned col);
+    void update_image_value_ignoring_white(unsigned row, unsigned col);
+private:
+    size_t mOtherPixelCount;
+    stk::mesh::EntityIdVector mRedElementIds;
+
+    std::vector<Pixel> mRedPixels;
+    std::vector<Pixel> mGreenPixels;
+    std::vector<Pixel> mBluePixels;
 };
 
 

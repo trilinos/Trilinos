@@ -46,6 +46,7 @@
 // Basic testing of Zoltan2::PamgenMeshAdapter
 
 #include <Zoltan2_PamgenMeshAdapter.hpp>
+#include <Zoltan2_componentMetrics.hpp>
 
 // Teuchos includes
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -92,7 +93,7 @@ int main(int narg, char *arg[]) {
   cmdp.parse(narg, arg);
 
   // Read xml file into parameter list
-  ParameterList inputMeshList;
+  Teuchos::ParameterList inputMeshList;
 
   if(xmlMeshInFileName.length()) {
     if (me == 0) {
@@ -142,6 +143,20 @@ int main(int narg, char *arg[]) {
   inputAdapter_t::gno_t const *adjacencyIds=NULL;
   inputAdapter_t::lno_t const *offsets=NULL;
   ia.print(me);
+
+  // Exercise the componentMetrics on the input; make sure the adapter works
+  {
+    Zoltan2::perProcessorComponentMetrics<inputAdapter_t> cc(ia, *CommT);
+    std::cout << me << " Region-based: Number of components on processor = "
+              << cc.getNumComponents() << std::endl;
+    std::cout << me << " Region-based: Max component size on processor = "
+              << cc.getMaxComponentSize() << std::endl;
+    std::cout << me << " Region-based: Min component size on processor = "
+              << cc.getMinComponentSize() << std::endl;
+    std::cout << me << " Region-based: Avg component size on processor = "
+              << cc.getAvgComponentSize() << std::endl;
+  }
+
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
   Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
 
@@ -238,6 +253,19 @@ int main(int narg, char *arg[]) {
     return 1;
   }
 
+  ia2.print(me);
+  {
+    Zoltan2::perProcessorComponentMetrics<inputAdapter_t> cc(ia2, *CommT);
+    std::cout << me << " Vertex-based: Number of components on processor = "
+              << cc.getNumComponents() << std::endl;
+    std::cout << me << " Vertex-based: Max component size on processor = "
+              << cc.getMaxComponentSize() << std::endl;
+    std::cout << me << " Vertex-based: Min component size on processor = "
+              << cc.getMinComponentSize() << std::endl;
+    std::cout << me << " Vertex-based: Avg component size on processor = "
+              << cc.getAvgComponentSize() << std::endl;
+  }
+
   primaryEType = ia2.getPrimaryEntityType();
   adjEType = ia2.getAdjacencyEntityType();
 
@@ -300,7 +328,11 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Deleting the mesh ... \n\n";
 
   Delete_Pamgen_Mesh();
+  // clean up - reduce the result codes
 
+  // make sure another process doesn't mangle the PASS output or the test will read as a fail when it should pass
+  std::cout << std::flush;
+  CommT->barrier();
   if (me == 0)
     std::cout << "PASS" << std::endl;
 

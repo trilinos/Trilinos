@@ -46,6 +46,16 @@ bool MeshModification::modification_end()
     return this->internal_modification_end( MOD_END_SORT );
 }
 
+bool MeshModification::resolve_node_sharing()
+{
+    return this->internal_resolve_node_sharing( MOD_END_SORT );
+}
+
+bool MeshModification::modification_end_after_node_sharing_resolution()
+{
+    return this->internal_modification_end_after_node_sharing_resolution( MOD_END_SORT );
+}
+
 bool MeshModification::internal_modification_end(modification_optimization opt)
 {
     if(this->in_synchronized_state())
@@ -79,6 +89,75 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
         m_bulkData.internal_resolve_shared_membership();
 
         // Regenerate the ghosting aura around all shared mesh entities.
+        if(m_bulkData.is_automatic_aura_on())
+        {
+            m_bulkData.internal_regenerate_aura();
+        }
+
+        m_bulkData.internal_resolve_send_ghost_membership();
+
+        m_bulkData.m_modSummary.write_summary(synchronized_count());
+        m_bulkData.check_mesh_consistency();
+    }
+    else
+    {
+        m_bulkData.m_modSummary.write_summary(synchronized_count());
+        if(!m_bulkData.add_fmwk_data())
+        {
+            std::vector<Entity> shared_modified;
+            m_bulkData.internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(shared_modified);
+        }
+    }
+
+    m_bulkData.internal_finish_modification_end(opt);
+
+    return true;
+}
+
+bool MeshModification::internal_resolve_node_sharing(modification_optimization opt)
+{
+    if(this->in_synchronized_state())
+    {
+        return false;
+    }
+
+    ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+
+    ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+
+    if(m_bulkData.parallel_size() > 1)
+    {
+        m_bulkData.internal_resolve_parallel_create_nodes();
+    }
+    else
+    {
+        m_bulkData.m_modSummary.write_summary(synchronized_count());
+        if(!m_bulkData.add_fmwk_data())
+        {
+            std::vector<Entity> shared_modified;
+            m_bulkData.internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(shared_modified);
+        }
+    }
+
+    return true;
+}
+
+bool MeshModification::internal_modification_end_after_node_sharing_resolution(modification_optimization opt)
+{
+    if(this->in_synchronized_state())
+    {
+        return false;
+    }
+
+    ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+
+    ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+
+    if(m_bulkData.parallel_size() > 1)
+    {
+        m_bulkData.internal_resolve_parallel_create_edges_and_faces();
+        m_bulkData.internal_resolve_shared_membership();
+
         if(m_bulkData.is_automatic_aura_on())
         {
             m_bulkData.internal_regenerate_aura();

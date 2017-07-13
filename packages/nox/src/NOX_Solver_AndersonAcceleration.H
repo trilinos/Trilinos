@@ -204,8 +204,8 @@ protected:
   //! Flag to recompute Jacobian each iterate. Needed if Jacobian required to apply preconditioner.
   bool recomputeJacobian;
 
-  //! Abstract vector for temporary storage
-  Teuchos::RCP<NOX::Abstract::Vector> tempVec;
+  //! Vector for temporary storage
+  Teuchos::RCP<NOX::Abstract::Vector> workVec;
 
   //! Current preconditioned function value
   Teuchos::RCP<NOX::Abstract::Vector> precF;
@@ -265,7 +265,7 @@ protected:
   int accelerationStartIteration;
 
   //! Disables the storage depth size check - used for unit testing corner cases only.
-  bool disableStorageDepthCheckForUnitTesting;
+  bool disableChecksForUnitTesting;
 };
 } // namespace Solver
 } // namespace NOX

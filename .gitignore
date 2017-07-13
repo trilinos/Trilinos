@@ -17,19 +17,24 @@ doxygen_objdb_*.tmp
 # Trilinos extra repos
 /TriBITS/
 /preCopyrightTrilinos/
-/DrekarBase
-/DrekarResearch
+/DrekarBase/
+/DrekarResearch/
+/DrekarSystemTests/
 /LIMEExt/
 /TerminalApplication/
 /DataTransferKit/
 /TeuchosWrappersExt
+/tempus/
 /packages/CTrilinos/
 /packages/ForTrilinos/
 /packages/Sundance/
 /packages/mesquite/
 /packages/moocho/
 /packages/optika/
+/packages/xSDKTrilinos/
 
+# Ignore local gitdist config file (.gitdis.default is in git repo)
+/.gitdist
 
 # Allow github Kokkos to be cloned under Trilinos
 /kokkos/
@@ -120,8 +125,23 @@ packages/muelu/doc/UsersGuide/mueluguide.pdf
 rsync.*
 .project
 
+# Ignore files that get created by checkin-test.py to allow checkin-test.py to
+# be run in source dir.
+/TrilinosPackageDependencies.generate.out
+/TrilinosPackageDependencies.xml
+/checkin-test.out
+/commitStatusEmailBody.out
+/modifiedFiles*out
+/pullInitial*out
+/pullInitial*success
+
+
 # Repostiory list file for egdist
 .egdist
 
 # Ignore Panassas temp files
 .panfs.*
+
+# Ignore files generated from INSTALL.rst
+/INSTALL.html
+/INSTALL.pdf

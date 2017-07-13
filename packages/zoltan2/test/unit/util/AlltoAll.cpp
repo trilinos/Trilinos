@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   int nprocs = comm->getSize();
 
   Teuchos::RCP<const Zoltan2::Environment> envPtr = 
-    Teuchos::rcp(new Zoltan2::Environment);
+    Teuchos::rcp(new Zoltan2::Environment(comm));
 
   int errcode = 0;
 

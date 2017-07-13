@@ -75,17 +75,19 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("transpose: use implicit");
+    SET_VALID_ENTRY("rap: fix zero diagonals");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",                   null, "Prolongator factory");
     validParamList->set< RCP<const FactoryBase> >("R",                   null, "Restrictor factory");
-    validParamList->set< RCP<const FactoryBase> >("AP Pattern",          null, "AP pattern factory");
-    validParamList->set< RCP<const FactoryBase> >("RAP Pattern",         null, "RAP pattern factory");
-    validParamList->set< bool >                  ("Keep AP Pattern",    false, "Keep the AP pattern (for reuse)");
-    validParamList->set< bool >                  ("Keep RAP Pattern",   false, "Keep the RAP pattern (for reuse)");
 
-    validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros (default = false).");
-    validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal (default = false).");
+    validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
+    validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
+
+    // Make sure we don't recursively validate options for the matrixmatrix kernels
+    ParameterList norecurse;
+    norecurse.disableRecursiveValidation();
+    validParamList->set<ParameterList> ("matrixmatrix: kernel params", norecurse, "MatrixMatrix kernel parameters");
 
     return validParamList;
   }
@@ -108,65 +110,87 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+    const bool doTranspose       = true;
+    const bool doFillComplete    = true;
+    const bool doOptimizeStorage = true;
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
       std::ostringstream levelstr;
       levelstr << coarseLevel.GetLevelID();
 
-      TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_==false, Exceptions::RuntimeError,
-                                 "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
+      TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_ == false, Exceptions::RuntimeError,
+        "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
 
-      // Set "Keeps" from params
       const Teuchos::ParameterList& pL = GetParameterList();
-      if (pL.get<bool>("Keep AP Pattern"))
-        coarseLevel.Keep("AP Pattern",  this);
-      if (pL.get<bool>("Keep RAP Pattern"))
-        coarseLevel.Keep("RAP Pattern", this);
-
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), AP, Ac;
 
       // Reuse pattern if available (multiple solve)
-      if (coarseLevel.IsAvailable("AP Pattern", this)) {
-        GetOStream(Runtime0) << "Ac: Using previous AP pattern" << std::endl;
+      RCP<ParameterList> APparams;
+      if(pL.isSublist("matrixmatrix: kernel params"))
+        APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else
+        APparams= rcp(new ParameterList);
 
-        AP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
+      // By default, we don't need global constants for A*P
+      APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
+      APparams->set("compute global constants",APparams->get("compute global constants",false));
+
+      if (coarseLevel.IsAvailable("AP reuse data", this)) {
+        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
+
+        APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
+
+        if (APparams->isParameter("graph"))
+          AP = APparams->get< RCP<Matrix> >("graph");
       }
 
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
-        AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2),true,true,std::string("MueLu::A*P-")+levelstr.str());
+        AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, GetOStream(Statistics2),
+                doFillComplete, doOptimizeStorage, std::string("MueLu::A*P-")+levelstr.str(), APparams);
       }
-      if (pL.get<bool>("Keep AP Pattern"))
-        Set(coarseLevel, "AP Pattern", AP);
 
       // Reuse coarse matrix memory if available (multiple solve)
-      if (coarseLevel.IsAvailable("RAP Pattern", this)) {
-        GetOStream(Runtime0) << "Ac: Using previous RAP pattern" << std::endl;
+      RCP<ParameterList> RAPparams;
+      if(pL.isSublist("matrixmatrix: kernel params")) RAPparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else RAPparams= rcp(new ParameterList);
 
-        Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
+      if (coarseLevel.IsAvailable("RAP reuse data", this)) {
+        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
+
+        RAPparams = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", this);
+
+        if (RAPparams->isParameter("graph"))
+          Ac = RAPparams->get< RCP<Matrix> >("graph");
+
         // Some eigenvalue may have been cached with the matrix in the previous run.
         // As the matrix values will be updated, we need to reset the eigenvalue.
         Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
       }
 
+      // We *always* need global constants for the RAP, but not for the temps
+      RAPparams->set("compute global constants: temporaries",RAPparams->get("compute global constants: temporaries",false));
+      RAPparams->set("compute global constants",true);
+
       // Allow optimization of storage.
       // This is necessary for new faster Epetra MM kernels.
       // Seems to work with matrix modifications to repair diagonal entries.
-      bool doOptimizeStorage = true; //!pL.get<bool>("RepairMainDiagonal");
 
-      const bool doTranspose    = true;
-      const bool doFillComplete = true;
       if (pL.get<bool>("transpose: use implicit") == true) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
-        Ac = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-implicit-")+levelstr.str());
+
+        Ac = MatrixMatrix::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
+               doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-implicit-")+levelstr.str(), RAPparams);
 
       } else {
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
 
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
-        Ac = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-explicit-")+levelstr.str());
+
+        Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
+                doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-explicit-")+levelstr.str(), RAPparams);
       }
 
       CheckRepairMainDiagonal(Ac);
@@ -178,9 +202,12 @@ namespace MueLu {
         GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
       }
 
-      Set(coarseLevel, "A",           Ac);
-      if (pL.get<bool>("Keep RAP Pattern"))
-        Set(coarseLevel, "RAP Pattern", Ac);
+      Set(coarseLevel, "A",         Ac);
+
+      APparams->set("graph", AP);
+      Set(coarseLevel, "AP reuse data",  APparams);
+      RAPparams->set("graph", Ac);
+      Set(coarseLevel, "RAP reuse data", RAPparams);
     }
 
     if (transferFacts_.begin() != transferFacts_.end()) {
@@ -229,8 +256,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiagonal(RCP<Matrix>& Ac) const {
     const Teuchos::ParameterList& pL = GetParameterList();
-    bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal");
-    bool checkAc             = pL.get<bool>("CheckMainDiagonal");
+    bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+    bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
 
     if (!checkAc && !repairZeroDiagonals)
       return;
@@ -284,7 +311,7 @@ namespace MueLu {
         if(rowMap->lib() == Xpetra::UseTpetra) Ac->resumeFill(); // TODO needed for refactored Tpetra because of the isFillActive flag???
         Ac->fillComplete(p);
       }
-      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
+      MatrixMatrix::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
       if (Ac->IsView("stridedMaps"))
         fixDiagMatrix->CreateView("stridedMaps", Ac);
 

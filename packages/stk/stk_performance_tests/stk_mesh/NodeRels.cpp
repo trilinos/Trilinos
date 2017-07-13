@@ -54,7 +54,7 @@ size_t do_stk_node_rel_test(stk::mesh::BulkData& bulk)
 {
   using namespace stk::mesh;
 
-  MetaData& meta = MetaData::get(bulk);
+  const MetaData& meta = bulk.mesh_meta_data();
 
   Selector local = meta.locally_owned_part();
 

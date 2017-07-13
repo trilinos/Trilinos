@@ -82,7 +82,7 @@ void comm_mesh_counts( const BulkData & M ,
     size_t numEntityRanks = localCounts.size();
     globalCounts.resize(numEntityRanks, 0);
 
-    all_reduce_sum(M.parallel(), &localCounts[0], &globalCounts[0], numEntityRanks);
+    all_reduce_sum(M.parallel(), localCounts.data(), globalCounts.data(), numEntityRanks);
 
     return;
 }
@@ -101,10 +101,10 @@ void comm_mesh_counts( const BulkData & M ,
     min_counts.resize(numEntityRanks, 0);
     max_counts.resize(numEntityRanks, 0);
 
-    all_reduce_sum(M.parallel(), &localEntityCounts[0], &globalCounts[0], numEntityRanks);
+    all_reduce_sum(M.parallel(), localEntityCounts.data(), globalCounts.data(), numEntityRanks);
 
-    all_reduce_min(M.parallel(), &localEntityCounts[0], &min_counts[0], numEntityRanks);
-    all_reduce_max(M.parallel(), &localEntityCounts[0], &max_counts[0], numEntityRanks);
+    all_reduce_min(M.parallel(), localEntityCounts.data(), min_counts.data(), numEntityRanks);
+    all_reduce_max(M.parallel(), localEntityCounts.data(), max_counts.data(), numEntityRanks);
 
     return;
 }

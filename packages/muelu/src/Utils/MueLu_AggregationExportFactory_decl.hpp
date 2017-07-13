@@ -114,7 +114,15 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationExportFactory() { }
+    AggregationExportFactory() :
+      doFineGraphEdges_(false),
+      doCoarseGraphEdges_(false),
+      numNodes_(0),
+      numAggs_(0),
+      dims_(0),
+      myRank_(-1),
+      aggsOffset_(0)
+    { }
 
     //! Destructor.
     virtual ~AggregationExportFactory() { }

@@ -40,7 +40,7 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 
-#include <stk_mesh/fixtures/HexFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>
 
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
@@ -74,7 +74,7 @@ void create_entities( BulkData & bulk,
   std::unordered_map<unsigned, Entity> node_map;
 
   for(unsigned nid=nid_start; nid<nid_end; ++nid) {
-    Entity e = bulk.declare_entity(stk::topology::NODE_RANK, nid, node_parts);
+    Entity e = bulk.declare_node(nid, node_parts);
     node_map[nid] = e;
   }
 

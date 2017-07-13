@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 ADD_SUBDIRECTORY(function)
 ADD_SUBDIRECTORY(vector)
@@ -7,3 +6,4 @@ ADD_SUBDIRECTORY(step/krylov)
 ADD_SUBDIRECTORY(sol)
 ADD_SUBDIRECTORY(parameters)
 ADD_SUBDIRECTORY(elementwise)
+ADD_SUBDIRECTORY(utils)

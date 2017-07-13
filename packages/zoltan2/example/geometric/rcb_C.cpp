@@ -87,7 +87,6 @@ int main(int argc, char *argv[])
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef inputAdapter_t::part_t part_t;
-  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Create input data.
@@ -131,13 +130,10 @@ int main(int argc, char *argv[])
   params.set("debug_procs", "0");
   params.set("error_check_level", "debug_mode_assertions");
 
-  //params.set("compute_metrics", "true");
   params.set("algorithm", "rcb");
   params.set("imbalance_tolerance", tolerance );
   params.set("num_global_parts", nprocs);
 
-  params.set("bisection_num_test_cuts", 1);
-   
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // A simple problem with no weights.
@@ -157,34 +153,25 @@ int main(int argc, char *argv[])
 
   problem1->solve();
 
-  // An environment.  This is usually created by the problem.
+  // create metric object where communicator is Teuchos default
 
-  RCP<const Zoltan2::Environment> env1 = problem1->getEnvironment();
-
-  RCP<const base_adapter_t> bia1 =
-    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia1));
-
-  // create metric object (also usually created by a problem)
-
-  RCP<quality_t>metricObject1=rcp(new quality_t(env1,problem1->getComm(),bia1,
-						&problem1->getSolution(),
-						false));
+  quality_t *metricObject1 = new quality_t(ia1, &params, //problem1->getComm(),
+					   &problem1->getSolution());
   // Check the solution.
 
   if (rank == 0) {
     metricObject1->printMetrics(cout);
-    //problem1->printMetrics(cout);
   }
 
   if (rank == 0){
-    scalar_t imb;// = problem1->getWeightImbalance();
-    metricObject1->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject1->getObjectCountImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject1;
    
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
@@ -211,7 +198,7 @@ int main(int argc, char *argv[])
   weightVec[0] = weights; weightStrides[0] = 1;
 
   inputAdapter_t *ia2=new inputAdapter_t(localCount, globalIds, coordVec, 
-					 coordStrides,weightVec,weightStrides);
+                                         coordStrides,weightVec,weightStrides);
 
   // Create a Zoltan2 partitioning problem
 
@@ -222,34 +209,31 @@ int main(int argc, char *argv[])
 
   problem2->solve();
 
-  // An environment.  This is usually created by the problem.
+  // create metric object for MPI builds
 
-  RCP<const Zoltan2::Environment> env2 = problem2->getEnvironment();
-
-  RCP<const base_adapter_t> bia2 =
-    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia2));
-
-  // create metric object (also usually created by a problem)
-
-  RCP<quality_t>metricObject2=rcp(new quality_t(env2,problem2->getComm(),bia2,
-						&problem2->getSolution(),
-						false));
+#ifdef HAVE_ZOLTAN2_MPI
+  quality_t *metricObject2 = new quality_t(ia2, &params, //problem2->getComm()
+					   MPI_COMM_WORLD,
+					   &problem2->getSolution());
+#else
+  quality_t *metricObject2 = new quality_t(ia2, &params, problem2->getComm(),
+					   &problem2->getSolution());
+#endif
   // Check the solution.
 
   if (rank == 0) {
     metricObject2->printMetrics(cout);
-    //problem2->printMetrics(cout);
   }
 
   if (rank == 0){
-    scalar_t imb;// = problem2->getWeightImbalance();
-    metricObject2->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject2->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject2;
 
   if (localCount > 0){
     delete [] weights;
@@ -287,7 +271,7 @@ int main(int argc, char *argv[])
   weightVec[2] = weights+2; weightStrides[2] = 3;
 
   inputAdapter_t *ia3=new inputAdapter_t(localCount, globalIds, coordVec,
-					 coordStrides,weightVec,weightStrides);
+                                         coordStrides,weightVec,weightStrides);
 
   // Create a Zoltan2 partitioning problem.
 
@@ -298,34 +282,25 @@ int main(int argc, char *argv[])
 
   problem3->solve();
 
-  // An environment.  This is usually created by the problem.
+  // create metric object where Teuchos communicator is specified
 
-  RCP<const Zoltan2::Environment> env3 = problem3->getEnvironment();
-
-  RCP<const base_adapter_t> bia3 =
-    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia3));
-
-  // create metric object (also usually created by a problem)
-
-  RCP<quality_t>metricObject3=rcp(new quality_t(env3,problem3->getComm(),bia3,
-						&problem3->getSolution(),
-						false));
+  quality_t *metricObject3 = new quality_t(ia3, &params, problem3->getComm(),
+					   &problem3->getSolution());
   // Check the solution.
 
   if (rank == 0) {
     metricObject3->printMetrics(cout);
-    //problem3->printMetrics(cout);
   }
 
   if (rank == 0){
-    scalar_t imb;// = problem3->getWeightImbalance();
-    metricObject3->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject3->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject3;
 
   ///////////////////////////////////////////////////////////////////////
   // Try the other multicriteria objectives.
@@ -336,49 +311,39 @@ int main(int argc, char *argv[])
   problem3->resetParameters(&params);
   problem3->solve(dataHasChanged);    
 
-  // Objective changed!
-
-  env3 = problem3->getEnvironment();
-
   // Solution changed!
 
-  metricObject3 = rcp(new quality_t(env3, problem3->getComm(), bia3,
-				    &problem3->getSolution(), false));
+  metricObject3 = new quality_t(ia3, &params, problem3->getComm(),
+                                &problem3->getSolution());
   if (rank == 0){
     metricObject3->printMetrics(cout);
-    //problem3->printMetrics(cout);
-    scalar_t imb;// = problem3->getWeightImbalance();
-    metricObject3->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject3->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject3;
 
   params.set("partitioning_objective", "multicriteria_balance_total_maximum");
   problem3->resetParameters(&params);
   problem3->solve(dataHasChanged);    
 
-  // Objective changed!
-
-  env3 = problem3->getEnvironment();
-
   // Solution changed!
 
-  metricObject3 = rcp(new quality_t(env3, problem3->getComm(), bia3,
-				    &problem3->getSolution(), false));
+  metricObject3 = new quality_t(ia3, &params, problem3->getComm(),
+                                &problem3->getSolution());
   if (rank == 0){
     metricObject3->printMetrics(cout);
-    //problem3->printMetrics(cout);
-    scalar_t imb;// = problem3->getWeightImbalance();
-    metricObject3->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject3->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject3;
 
   if (localCount > 0){
     delete [] weights;
@@ -437,24 +402,23 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject1 = rcp(new quality_t(env1, problem1->getComm(), bia1,
-				    &problem1->getSolution(), false));
+  metricObject1 = new quality_t(ia1, &params, //problem1->getComm(),
+                                &problem1->getSolution());
   // Check the solution.
 
   if (rank == 0) {
     metricObject1->printMetrics(cout);
-    //problem1->printMetrics(cout);
   }
 
   if (rank == 0){
-    scalar_t imb;// = problem1->getWeightImbalance();
-    metricObject1->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject1->getObjectCountImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject1;
 
   if (coords)
     delete [] coords;
@@ -463,8 +427,11 @@ int main(int argc, char *argv[])
     delete [] globalIds;
 
   delete problem1;
+  delete ia1;
   delete problem2;
+  delete ia2;
   delete problem3;
+  delete ia3;
 
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Finalize();

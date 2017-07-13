@@ -50,11 +50,12 @@
 /// want the declaration of Tpetra::CrsGraph, include this file
 /// (Tpetra_CrsGraph_decl.hpp).
 
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
+#include "Tpetra_Util.hpp" // need this here for sort2
 
+#include "Kokkos_Sparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
 
@@ -259,9 +260,9 @@ namespace Tpetra {
   /// stored in the local graph and communicated to the appropriate
   /// node on the next call to globalAssemble() or fillComplete() (the
   /// latter calls the former).
-  template <class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-            class Node = Details::DefaultTypes::node_type,
+  template <class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+            class Node = ::Tpetra::Details::DefaultTypes::node_type,
             const bool classic = Node::classic>
   class CrsGraph :
     public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
@@ -413,7 +414,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const size_t maxNumEntriesPerRow,
               const ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
     ///
@@ -437,7 +438,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries
     ///   in each row (legacy KokkosClassic version).
@@ -462,7 +463,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -487,7 +488,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const typename local_graph_type::row_map_type& rowPointers,
               const typename local_graph_type::entries_type::non_const_type& columnIndices,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -512,7 +513,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<size_t> & rowPointers,
               const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and a local (sorted)
     ///   graph, which the resulting CrsGraph views.
@@ -586,7 +587,7 @@ namespace Tpetra {
     void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Default parameter list suitable for validation.
-    Teuchos::RCP<const ParameterList> getValidParameters () const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
 
     //@}
     //! @name Insertion/Removal Methods
@@ -614,8 +615,19 @@ namespace Tpetra {
     /// indices will be eliminated.  This may happen either at
     /// insertion or during the next call to fillComplete().
     void
-    insertGlobalIndices (GlobalOrdinal globalRow,
+    insertGlobalIndices (const GlobalOrdinal globalRow,
                          const Teuchos::ArrayView<const GlobalOrdinal>& indices);
+
+    /// \brief Epetra compatibility version of insertGlobalIndices
+    ///   (see above) that takes input as a raw pointer, rather than
+    ///   Teuchos::ArrayView.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsGraph::InsertGlobalIndices.
+    void
+    insertGlobalIndices (const GlobalOrdinal globalRow,
+                         const LocalOrdinal numEnt,
+                         const GlobalOrdinal inds[]);
 
     //! Insert local indices into the graph.
     /**
@@ -635,6 +647,17 @@ namespace Tpetra {
     void
     insertLocalIndices (const LocalOrdinal localRow,
                         const Teuchos::ArrayView<const LocalOrdinal> &indices);
+
+    /// \brief Epetra compatibility version of insertLocalIndices
+    ///   (see above) that takes input as a raw pointer, rather than
+    ///   Teuchos::ArrayView.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsGraph::InsertMyIndices.
+    void
+    insertLocalIndices (const LocalOrdinal localRow,
+                        const LocalOrdinal numEnt,
+                        const LocalOrdinal inds[]);
 
     //! Remove all graph indices from the specified local row.
     /**
@@ -674,35 +697,71 @@ namespace Tpetra {
     */
     void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /*! \brief Signal that data entry is complete, specifying domain and range maps.
-
-      Off-process indices are distributed (via globalAssemble()),
-      indices are sorted, redundant indices are eliminated, and
-      global indices are transformed to local indices.
-
-      \pre <tt>isFillActive() == true<tt>
-      \pre <tt>isFillComplete()() == false<tt>
-
-      \post <tt>isFillActive() == false<tt>
-      \post <tt>isFillComplete() == true<tt>
-
-      Parameters:
-      - "Optimize Storage" (\c bool): Default is false.  If true,
-        then isStorageOptimized() returns true after fillComplete
-        finishes.  See isStorageOptimized() for consequences.
-    */
+    /// \brief Tell the graph that you are done changing its structure.
+    ///
+    /// This tells the graph to optimize its data structures for
+    /// computational kernels, and to prepare (MPI) communication
+    /// patterns.
+    ///
+    /// Off-process indices are distributed (via globalAssemble()),
+    /// indices are sorted, redundant indices are eliminated, and
+    /// global indices are transformed to local indices.
+    ///
+    /// \warning The domain Map and row Map arguments to this method
+    ///   MUST be one to one!  If you have Maps that are not one to
+    ///   one, and you do not know how to make a Map that covers the
+    ///   same global indices but <i>is</i> one to one, then you may
+    ///   call Tpetra::createOneToOne() (see Map's header file) to
+    ///   make a one-to-one version of your Map.
+    ///
+    /// \pre  <tt>   isFillActive() && ! isFillComplete() </tt>
+    /// \post <tt> ! isFillActive() &&   isFillComplete() </tt>
+    ///
+    /// \param domainMap [in] The graph's domain Map.  MUST be one to
+    ///   one!
+    /// \param rangeMap [in] The graph's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.  See below for valid parameters.
+    ///
+    /// List of valid parameters in <tt>params</tt>:
+    /// <ul>
+    /// <li> "Optimize Storage" (\c bool): Default is false.  If true,
+    ///      then isStorageOptimized() returns true after this method
+    ///      finishes.  See isStorageOptimized() for consequences.
+    /// </li>
+    /// </ul>
     void
     fillComplete (const Teuchos::RCP<const map_type> &domainMap,
                   const Teuchos::RCP<const map_type> &rangeMap,
                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /*! \brief Signal that data entry is complete.
-
-      Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
-
-      \note This method calls fillComplete( getRowMap(), getRowMap(), os ). See parameter options there.
-    */
-    void fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    /// \brief Tell the graph that you are done changing its
+    ///   structure; set default domain and range Maps.
+    ///
+    /// See above three-argument version of fillComplete for full
+    /// documentation.  If the graph does not yet have domain and
+    /// range Maps (i.e., if fillComplete has not yet been called on
+    /// this graph at least once), then this method uses the graph's
+    /// row Map (result of this->getRowMap()) as both the domain Map
+    /// and the range Map.  Otherwise, this method uses the graph's
+    /// existing domain and range Maps.
+    ///
+    /// \warning It is only valid to call this overload of
+    ///   fillComplete if the row Map is one to one!  If the row Map
+    ///   is NOT one to one, you must call the above three-argument
+    ///   version of fillComplete, and supply one-to-one domain and
+    ///   range Maps.  If you have Maps that are not one to one, and
+    ///   you do not know how to make a Map that covers the same
+    ///   global indices but <i>is</i> one to one, then you may call
+    ///   Tpetra::createOneToOne() (see Map's header file) to make a
+    ///   one-to-one version of your Map.
+    ///
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.  See documentation of the three-argument
+    ///   version of fillComplete (above) for valid parameters.
+    void
+    fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Perform a fillComplete on a graph that already has
     ///   data, via setAllIndices().
@@ -714,6 +773,21 @@ namespace Tpetra {
     ///
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
+    ///
+    /// \param domainMap [in] The graph's domain Map.  MUST be one to
+    ///   one!
+    /// \param rangeMap [in] The graph's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    /// \param importer [in] Import from the graph's domain Map to its
+    ///   column Map.  If no Import is necessary (i.e., if the domain
+    ///   and column Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    /// \param exporter [in] Export from the graph's row Map to its
+    ///   range Map.  If no Export is necessary (i.e., if the row and
+    ///   range Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.
     void
     expertStaticFillComplete (const Teuchos::RCP<const map_type> & domainMap,
                               const Teuchos::RCP<const map_type> & rangeMap,
@@ -725,7 +799,7 @@ namespace Tpetra {
     //@{
 
     //! Returns the communicator.
-    Teuchos::RCP<const Comm<int> > getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
     //! Returns the underlying node.
     Teuchos::RCP<node_type> getNode() const;
@@ -782,9 +856,13 @@ namespace Tpetra {
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
     size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
 
-    //! Returns the current number of entries on this node in the specified local row.
-    /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
-    size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
+    /// \brief Get the number of entries in the given row (local index).
+    ///
+    /// \return The number of entries in the given row, specified by
+    ///   local index, on the calling MPI process.  If the specified
+    ///   local row index is invalid on the calling process, return
+    ///   <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>.
+    size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const;
 
     //! \brief Returns the total number of indices allocated for the graph, across all rows on this node.
     /*! This is the allocation available to the user. Actual allocation may be larger, for example, after
@@ -925,30 +1003,34 @@ namespace Tpetra {
     /// \brief Get a const, non-persisting view of the given global
     ///   row's global column indices, as a Teuchos::ArrayView.
     ///
-    /// \param GlobalRow [in] Global index of the row.
-    /// \param Indices [out] Global column indices in the row.  If the
-    ///   given row is not a valid row index on the calling process,
-    ///   then the result has no entries (its size is zero).
+    /// \param gblRow [in] Global index of the row.
+    /// \param gblColInds [out] Global column indices in the row.  If
+    ///   the given row is not a valid row index on the calling
+    ///   process, then the result has no entries (its size is zero).
     ///
     /// \pre <tt>! isLocallyIndexed()</tt>
-    /// \post <tt>Indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
+    /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
     void
-    getGlobalRowView (GlobalOrdinal GlobalRow,
-                      Teuchos::ArrayView<const GlobalOrdinal>& Indices) const;
+    getGlobalRowView (const GlobalOrdinal gblRow,
+                      Teuchos::ArrayView<const GlobalOrdinal>& gblColInds) const;
+
+    /// \brief Whether this class implements getLocalRowView() and
+    ///   getGlobalRowView() (it does).
+    bool supportsRowViews () const;
 
     /// \brief Get a const, non-persisting view of the given local
     ///   row's local column indices, as a Teuchos::ArrayView.
     ///
-    /// \param LocalRow [in] Local index of the row.
-    /// \param indices [out] Local column indices in the row.  If the
-    ///   given row is not a valid row index on the calling process,
-    ///   then the result has no entries (its size is zero).
+    /// \param lclRow [in] Local index of the row.
+    /// \param lclColInds [out] Local column indices in the row.  If
+    ///   the given row is not a valid row index on the calling
+    ///   process, then the result has no entries (its size is zero).
     ///
     /// \pre <tt>! isGloballyIndexed()</tt>
-    /// \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
+    /// \post <tt>lclColInds.size() == getNumEntriesInLocalRow(lclRow)</tt>
     void
-    getLocalRowView (LocalOrdinal LocalRow,
-                     Teuchos::ArrayView<const LocalOrdinal>& indices) const;
+    getLocalRowView (const LocalOrdinal lclRow,
+                     Teuchos::ArrayView<const LocalOrdinal>& lclColInds) const;
 
     //@}
     //! @name Overridden from Teuchos::Describable
@@ -1248,7 +1330,37 @@ namespace Tpetra {
     void allocateIndices (const ELocalGlobal lg);
 
     template <class T>
-    Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const;
+    Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const
+    {
+      using Teuchos::arcp;
+      using Teuchos::Array;
+      using Teuchos::ArrayRCP;
+      using Teuchos::null;
+      const char tfecfFuncName[] = "allocateValues2D: ";
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! indicesAreAllocated (), std::runtime_error,
+         "Graph indices must be allocated before values.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (getProfileType () != DynamicProfile, std::runtime_error,
+         "Graph indices must be allocated in a dynamic profile.");
+
+      ArrayRCP<Array<T> > values2D;
+      values2D = arcp<Array<T> > (getNodeNumRows ());
+      if (lclInds2D_ != null) {
+        const size_t numRows = lclInds2D_.size ();
+        for (size_t r = 0; r < numRows; ++r) {
+          values2D[r].resize (lclInds2D_[r].size ());
+        }
+      }
+      else if (gblInds2D_ != null) {
+        const size_t numRows = gblInds2D_.size ();
+        for (size_t r = 0; r < numRows; ++r) {
+          values2D[r].resize (gblInds2D_[r].size ());
+        }
+      }
+      return values2D;
+    }
 
     template <class T>
     RowInfo updateLocalAllocAndValues (const RowInfo rowInfo,
@@ -1266,7 +1378,6 @@ namespace Tpetra {
       // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
       lclInds2D_[rowInfo.localRow].resize (newAllocSize);
       rowVals.resize (newAllocSize);
-      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
 
       RowInfo rowInfoOut = rowInfo;
       rowInfoOut.allocSize = newAllocSize;
@@ -1290,7 +1401,6 @@ namespace Tpetra {
       // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
       gblInds2D_[rowInfo.localRow].resize (newAllocSize);
       rowVals.resize (newAllocSize);
-      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
 
       RowInfo rowInfoOut = rowInfo;
       rowInfoOut.allocSize = newAllocSize;
@@ -1300,8 +1410,13 @@ namespace Tpetra {
     //! \name Methods governing changes between global and local indices
     //@{
 
-    //! Make the graph's column Map, if it does not already have one.
+    /// \brief Make and set the graph's column Map.
+    ///
+    /// This method makes the column Map, even if the graph already
+    /// has one.  It is the caller's responsibility not to call this
+    /// method unnecessarily.
     void makeColMap ();
+
     void makeIndicesLocal ();
     void makeImportExport ();
 
@@ -1514,7 +1629,116 @@ namespace Tpetra {
                             const Teuchos::ArrayView<Scalar>& oldRowVals,
                             const Teuchos::ArrayView<const Scalar>& newRowVals,
                             const ELocalGlobal lg,
-                            const ELocalGlobal I);
+                            const ELocalGlobal I)
+    {
+#ifdef HAVE_TPETRA_DEBUG
+      const char tfecfFuncName[] = "insertIndicesAndValues: ";
+#endif // HAVE_TPETRA_DEBUG
+
+#ifdef HAVE_TPETRA_DEBUG
+      size_t numNewInds = 0;
+      try {
+        numNewInds = insertIndices (rowInfo, newInds, lg, I);
+      } catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "insertIndices threw an exception: "
+           << e.what ());
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numNewInds > static_cast<size_t> (oldRowVals.size ()),
+         std::runtime_error, "numNewInds (" << numNewInds << ") > "
+         "oldRowVals.size() (" << oldRowVals.size () << ".");
+#else
+      const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
+#endif // HAVE_TPETRA_DEBUG
+
+      typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (rowInfo.numEntries + numNewInds > static_cast<size_t> (oldRowVals.size ()),
+         std::runtime_error, "rowInfo.numEntries (" << rowInfo.numEntries << ")"
+         " + numNewInds (" << numNewInds << ") > oldRowVals.size() ("
+         << oldRowVals.size () << ").");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_type> (numNewInds) > newRowVals.size (),
+         std::runtime_error, "numNewInds (" << numNewInds << ") > "
+         "newRowVals.size() (" << newRowVals.size () << ").");
+#endif // HAVE_TPETRA_DEBUG
+
+      size_type oldInd = static_cast<size_type> (rowInfo.numEntries);
+
+#ifdef HAVE_TPETRA_DEBUG
+      try {
+#endif // HAVE_TPETRA_DEBUG
+        //NOTE: The code in the else branch fails on GCC 4.9 and newer in the assignement oldRowVals[oldInd] = newRowVals[newInd];
+        //We supply a workaround n as well as other code variants which produce or not produce the error
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+#if GCC_VERSION >= 490
+#define GCC_WORKAROUND
+#endif
+#endif
+#ifdef GCC_WORKAROUND
+        size_type nNI = static_cast<size_type>(numNewInds);
+        if (nNI > 0)
+          memcpy(&oldRowVals[oldInd], &newRowVals[0], nNI*sizeof(Scalar));
+        /*
+        //Original Code Fails
+        for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
+        ++newInd, ++oldInd) {
+        oldRowVals[oldInd] = newRowVals[newInd];
+        }
+
+        //char cast variant fails
+        char* oldRowValPtr = (char*)&oldRowVals[oldInd];
+        const char* newRowValPtr = (const char*) &newRowVals[0];
+
+        for(size_type newInd = 0; newInd < (nNI * sizeof(Scalar)); newInd++) {
+        oldRowValPtr[newInd] = newRowValPtr[newInd];
+        }
+
+        //Raw ptr variant fails
+        Scalar* oldRowValPtr = &oldRowVals[oldInd];
+        Scalar* newRowValPtr = const_cast<Scalar*>(&newRowVals[0]);
+
+        for(size_type newInd = 0; newInd < nNI; newInd++) {
+        oldRowValPtr[newInd] = newRowValPtr[newInd];
+        }
+
+        //memcpy works
+        for (size_type newInd = 0; newInd < nNI; newInd++) {
+        memcpy( &oldRowVals[oldInd+newInd], &newRowVals[newInd], sizeof(Scalar));
+        }
+
+        //just one loop index fails
+        for (size_type newInd = 0; newInd < nNI; newInd++) {
+        oldRowVals[oldInd+newInd] = newRowVals[newInd];
+        }
+
+        //inline increment fails
+        for (size_type newInd = 0; newInd < numNewInds;) {
+        oldRowVals[oldInd++] = newRowVals[newInd++];
+        }
+
+        */
+
+#else // GCC Workaround above
+        for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
+             ++newInd, ++oldInd) {
+          oldRowVals[oldInd] = newRowVals[newInd];
+        }
+#endif // GCC Workaround
+#ifdef HAVE_TPETRA_DEBUG
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "for loop for copying values threw an "
+           "exception: " << e.what ());
+      }
+#endif // HAVE_TPETRA_DEBUG
+    }
+
     void
     insertGlobalIndicesImpl (const LocalOrdinal myRow,
                              const Teuchos::ArrayView<const GlobalOrdinal> &indices);
@@ -1584,14 +1808,7 @@ namespace Tpetra {
              class LocalIndicesViewType,
              class InputScalarViewType,
              class BinaryFunction>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     transformLocalValues (const RowInfo& rowInfo,
                           const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
                           const typename UnmanagedView<LocalIndicesViewType>::type& inds,
@@ -1599,6 +1816,42 @@ namespace Tpetra {
                           BinaryFunction f,
                           const bool atomic = useAtomicUpdatesByDefault) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
+                     "Template parameter LocalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+                     "Template parameter LocalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
+      static_assert (std::is_same<
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
+      static_assert (std::is_same<
+                       typename LocalIndicesViewType::non_const_value_type,
+                       local_ordinal_type>::value,
+                     "Template parameter LocalIndicesViewType must "
+                     "contain values of type local_ordinal_type.");
+
       typedef typename OutputScalarViewType::non_const_value_type ST;
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -1607,8 +1860,9 @@ namespace Tpetra {
         // The sizes of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
       const LO numElts = static_cast<LO> (inds.dimension_0 ());
+      const bool sorted = this->isSorted ();
+
       LO numValid = 0; // number of valid input column indices
       size_t hint = 0; // Guess for the current index k into rowVals
 
@@ -1618,24 +1872,27 @@ namespace Tpetra {
         auto colInds = this->getLocalKokkosRowView (rowInfo);
 
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k =
-            this->findLocalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
+          const LO lclColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         lclColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
             if (atomic) {
               // NOTE (mfh 30 Nov 2015) The commented-out code is
               // wrong because another thread may have changed
-              // rowVals(k) between those two lines of code.
+              // rowVals(offset) between those two lines of code.
               //
-              //const ST newVal = f (rowVals(k), newVals(j));
-              //Kokkos::atomic_assign (&rowVals(k), newVal);
+              //const ST newVal = f (rowVals(offset), newVals(j));
+              //Kokkos::atomic_assign (&rowVals(offset), newVal);
 
-              volatile ST* const dest = &rowVals(k);
+              volatile ST* const dest = &rowVals(offset);
               (void) atomic_binary_function_update (dest, newVals(j), f);
             }
             else {
-              rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
+              // use binary function f
+              rowVals(offset) = f (rowVals(offset), newVals(j));
             }
-            hint = k+1;
+            hint = offset + 1;
             ++numValid;
           }
         }
@@ -1660,24 +1917,26 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const GO gblColInd = colMap.getGlobalElement (inds(j));
           if (gblColInd != GINV) {
-            const size_t k =
-              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
-            if (k != STINV) {
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           gblColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
               if (atomic) {
                 // NOTE (mfh 30 Nov 2015) The commented-out code is
                 // wrong because another thread may have changed
-                // rowVals(k) between those two lines of code.
+                // rowVals(offset) between those two lines of code.
                 //
-                //const ST newVal = f (rowVals(k), newVals(j));
-                //Kokkos::atomic_assign (&rowVals(k), newVal);
+                //const ST newVal = f (rowVals(offset), newVals(j));
+                //Kokkos::atomic_assign (&rowVals(offset), newVal);
 
-                volatile ST* const dest = &rowVals(k);
+                volatile ST* const dest = &rowVals(offset);
                 (void) atomic_binary_function_update (dest, newVals(j), f);
               }
               else {
-                rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
+                // use binary function f
+                rowVals(offset) = f (rowVals(offset), newVals(j));
               }
-              hint = k+1;
+              hint = offset + 1;
               numValid++;
             }
           }
@@ -1709,23 +1968,54 @@ namespace Tpetra {
     /// \param inds [in] Local column indices of that row to modify.
     /// \param newVals [in] For each k, increment the value in rowVals
     ///   corresponding to local column index inds[k] by newVals[k].
+    /// \param atomic [in] Whether to use atomic updates (+=) when
+    ///   incrementing values.
     template<class OutputScalarViewType,
              class LocalIndicesViewType,
              class InputScalarViewType>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     sumIntoLocalValues (const RowInfo& rowInfo,
                         const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
                         const typename UnmanagedView<LocalIndicesViewType>::type& inds,
                         const typename UnmanagedView<InputScalarViewType>::type& newVals,
                         const bool atomic = useAtomicUpdatesByDefault) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
+                     "Template parameter LocalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+                     "Template parameter LocalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
+      static_assert (std::is_same<
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
+      static_assert (std::is_same<
+                       typename LocalIndicesViewType::non_const_value_type,
+                       local_ordinal_type>::value,
+                     "Template parameter LocalIndicesViewType must "
+                     "contain values of type local_ordinal_type.");
+
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
 
@@ -1742,7 +2032,8 @@ namespace Tpetra {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const bool sorted = this->isSorted ();
+
       size_t hint = 0; // Guess for the current index k into rowVals
       LO numValid = 0; // number of valid local column indices
 
@@ -1757,15 +2048,18 @@ namespace Tpetra {
 
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k = this->findLocalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
+          const LO lclColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         lclColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
             if (atomic) {
-              Kokkos::atomic_add (&rowVals(k), newVals(j));
+              Kokkos::atomic_add (&rowVals(offset), newVals(j));
             }
             else {
-              rowVals(k) += newVals(j);
+              rowVals(offset) += newVals(j);
             }
-            hint = k+1;
+            hint = offset + 1;
             ++numValid;
           }
         }
@@ -1779,16 +2073,17 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const GO gblColInd = this->colMap_->getGlobalElement (inds(j));
           if (gblColInd != Teuchos::OrdinalTraits<GO>::invalid ()) {
-            const size_t k =
-              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
-            if (k != STINV) {
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           gblColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
               if (atomic) {
-                Kokkos::atomic_add (&rowVals(k), newVals(j));
+                Kokkos::atomic_add (&rowVals(offset), newVals(j));
               }
               else {
-                rowVals(k) += newVals(j);
+                rowVals(offset) += newVals(j);
               }
-              hint = k+1;
+              hint = offset + 1;
               ++numValid;
             }
           }
@@ -1808,11 +2103,11 @@ namespace Tpetra {
 
     /// \brief Implementation detail of CrsMatrix::replaceLocalValues.
     ///
-    /// \tparam LocalIndicesViewType Kokkos::View specialization that
-    ///   is a 1-D array of LocalOrdinal.
     /// \tparam OutputScalarViewType Kokkos::View specialization that is
     ///   a 1-D array of the type of values in the sparse matrix (that
     ///   type is CrsMatrix::impl_scalar_type).
+    /// \tparam LocalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of LocalOrdinal.
     /// \tparam InputScalarViewType Kokkos::View specialization that
     ///   is a 1-D array of the type of values in the sparse matrix,
     ///   but with a possibly different memory space than how the
@@ -1825,22 +2120,56 @@ namespace Tpetra {
     /// \param inds [in] Local column indices of that row to modify.
     /// \param newVals [in] For each k, replace the value
     ///   corresponding to local column index inds[k] with newVals[k].
+    ///
+    /// \return The number of valid input column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     template<class OutputScalarViewType,
              class LocalIndicesViewType,
              class InputScalarViewType>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     replaceLocalValues (const RowInfo& rowInfo,
                         const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
                         const typename UnmanagedView<LocalIndicesViewType>::type& inds,
                         const typename UnmanagedView<InputScalarViewType>::type& newVals) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
+                     "Template parameter LocalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+                     "Template parameter LocalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
+      static_assert (std::is_same<
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
+      static_assert (std::is_same<
+                       typename LocalIndicesViewType::non_const_value_type,
+                       local_ordinal_type>::value,
+                     "Template parameter LocalIndicesViewType must "
+                     "contain values of type local_ordinal_type.");
+
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
 
@@ -1857,13 +2186,14 @@ namespace Tpetra {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const bool sorted = this->isSorted ();
+
       size_t hint = 0; // Guess for the current index k into rowVals
       LO numValid = 0; // number of valid local column indices
 
       // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
       // accurately, it assumes that the host execution space can
-      // access data in both InputMemorySpace and ValsMemorySpace.
+      // access data in all the Views.
 
       if (isLocallyIndexed ()) {
         // Get a view of the column indices in the row.  This amortizes
@@ -1872,10 +2202,13 @@ namespace Tpetra {
 
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k = this->findLocalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
-            rowVals(k) = newVals(j);
-            hint = k+1;
+          const LO lclColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         lclColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
+            rowVals(offset) = newVals(j);
+            hint = offset + 1;
             ++numValid;
           }
         }
@@ -1889,11 +2222,12 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const GO gblColInd = this->colMap_->getGlobalElement (inds(j));
           if (gblColInd != Teuchos::OrdinalTraits<GO>::invalid ()) {
-            const size_t k =
-              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
-            if (k != STINV) {
-              rowVals(k) = newVals(j);
-              hint = k+1;
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           gblColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
+              rowVals(offset) = newVals(j);
+              hint = offset + 1;
               ++numValid;
             }
           }
@@ -1946,13 +2280,15 @@ namespace Tpetra {
                          const bool atomic = useAtomicUpdatesByDefault) const
     {
       typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
 
       if (newVals.dimension_0 () != inds.dimension_0 ()) {
         // The dimensions of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const bool sorted = this->isSorted ();
+
       size_t hint = 0; // guess at the index's relative offset in the row
       LO numValid = 0; // number of valid input column indices
 
@@ -1979,16 +2315,17 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const LO lclColInd = this->colMap_->getLocalElement (inds(j));
           if (lclColInd != LINV) {
-            const size_t k =
-              this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
-            if (k != STINV) {
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           lclColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
               if (atomic) {
-                Kokkos::atomic_add (&rowVals(k), newVals(j));
+                Kokkos::atomic_add (&rowVals(offset), newVals(j));
               }
               else {
-                rowVals(k) += newVals(j);
+                rowVals(offset) += newVals(j);
               }
-              hint = k+1;
+              hint = offset + 1;
               numValid++;
             }
           }
@@ -2001,16 +2338,159 @@ namespace Tpetra {
 
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k =
-            this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
+          const GO gblColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         gblColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
             if (atomic) {
-              Kokkos::atomic_add (&rowVals(k), newVals(j));
+              Kokkos::atomic_add (&rowVals(offset), newVals(j));
             }
             else {
-              rowVals(k) += newVals(j);
+              rowVals(offset) += newVals(j);
             }
-            hint = k+1;
+            hint = offset + 1;
+            numValid++;
+          }
+        }
+      }
+      // If the graph is neither locally nor globally indexed on the
+      // calling process, that means the calling process has no graph
+      // entries.  Thus, none of the input column indices are valid.
+
+      return numValid;
+    }
+
+    /// \brief Implementation detail of CrsMatrix::replaceGlobalValues.
+    ///
+    /// \tparam OutputScalarViewType Kokkos::View specialization that is
+    ///   a 1-D array of the type of values in the sparse matrix (that
+    ///   type is CrsMatrix::impl_scalar_type).
+    /// \tparam GlobalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of GlobalOrdinal.
+    /// \tparam InputScalarViewType Kokkos::View specialization that
+    ///   is a 1-D array of the type of values in the sparse matrix,
+    ///   but with a possibly different memory space than how the
+    ///   matrix stores its values.
+    ///
+    /// \param rowInfo [in] Result of getRowInfo on the index of the
+    ///   local row of the matrix to modify.
+    /// \param rowVals [in/out] On input: Values of the row of the
+    ///   sparse matrix to modify.  On output: The modified values.
+    /// \param inds [in] Global column indices of that row to modify.
+    /// \param newVals [in] For each k, replace the value in rowVals
+    ///   corresponding to global column index inds[k] with newVals[k].
+    ///
+    /// \return The number of valid input column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+    template<class OutputScalarViewType,
+             class GlobalIndicesViewType,
+             class InputScalarViewType>
+    LocalOrdinal
+    replaceGlobalValues (const RowInfo& rowInfo,
+                         const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
+                         const typename UnmanagedView<GlobalIndicesViewType>::type& inds,
+                         const typename UnmanagedView<InputScalarViewType>::type& newVals) const
+    {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<GlobalIndicesViewType>::value,
+                     "Template parameter GlobalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (GlobalIndicesViewType::rank) == 1,
+                     "Template parameter GlobalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
+      static_assert (std::is_same<
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
+      static_assert (std::is_same<
+                       typename GlobalIndicesViewType::non_const_value_type,
+                       global_ordinal_type>::value,
+                     "Template parameter GlobalIndicesViewType must "
+                     "contain values of type global_ordinal_type.");
+
+      typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+
+      if (newVals.dimension_0 () != inds.dimension_0 ()) {
+        // The dimensions of the input arrays must match.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+
+      const bool sorted = this->isSorted ();
+
+      size_t hint = 0; // guess at the index's relative offset in the row
+      LO numValid = 0; // number of valid input column indices
+
+      // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
+      // accurately, it assumes that the host execution space can
+      // access data in all the Views.
+
+      if (isLocallyIndexed ()) {
+        // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
+        // pointer does NOT change its reference count.  Thus, this
+        // code is still thread safe.
+        if (colMap_.is_null ()) {
+          // NO input column indices are valid in this case, since if
+          // the column Map is null on the calling process, then the
+          // calling process owns no graph entries.
+          return numValid;
+        }
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getLocalKokkosRowView (rowInfo);
+        const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const LO lclColInd = this->colMap_->getLocalElement (inds(j));
+          if (lclColInd != LINV) {
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           lclColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
+              rowVals(offset) = newVals(j);
+              hint = offset + 1;
+              numValid++;
+            }
+          }
+        }
+      }
+      else if (isGloballyIndexed ()) {
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getGlobalKokkosRowView (rowInfo);
+
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const GO gblColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         gblColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
+            rowVals(offset) = newVals(j);
+            hint = offset + 1;
             numValid++;
           }
         }
@@ -2066,12 +2546,16 @@ namespace Tpetra {
                            const bool atomic = useAtomicUpdatesByDefault) const
     {
       typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+
       if (newVals.dimension_0 () != inds.dimension_0 ()) {
         // The sizes of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+
       const LO numElts = static_cast<LO> (inds.dimension_0 ());
+      const bool sorted = this->isSorted ();
+
       LO numValid = 0; // number of valid input column indices
       size_t hint = 0; // guess at the index's relative offset in the row
 
@@ -2094,24 +2578,26 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const LO lclColInd = colMap.getLocalElement (inds(j));
           if (lclColInd != LINV) {
-            const size_t k =
-              this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
-            if (k != STINV) {
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           lclColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
               if (atomic) {
                 // NOTE (mfh 30 Nov 2015) The commented-out code is
                 // wrong because another thread may have changed
-                // rowVals[k] between those two lines of code.
+                // rowVals(offset) between those two lines of code.
                 //
-                //const Scalar newVal = f (rowVals(k), newVals(j));
-                //Kokkos::atomic_assign (&rowVals(k), newVal);
+                //const Scalar newVal = f (rowVals(offset), newVals(j));
+                //Kokkos::atomic_assign (&rowVals(offset), newVal);
 
-                volatile Scalar* const dest = &rowVals(k);
+                volatile Scalar* const dest = &rowVals(offset);
                 (void) atomic_binary_function_update (dest, newVals(j), f);
               }
               else {
-                rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
+                // use binary function f
+                rowVals(offset) = f (rowVals(offset), newVals(j));
               }
-              hint = k+1;
+              hint = offset + 1;
               numValid++;
             }
           }
@@ -2123,24 +2609,27 @@ namespace Tpetra {
         auto colInds = this->getGlobalKokkosRowView (rowInfo);
 
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k =
-            this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
+          const GO gblColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         gblColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
             if (atomic) {
               // NOTE (mfh 30 Nov 2015) The commented-out code is
               // wrong because another thread may have changed
-              // rowVals(k) between those two lines of code.
+              // rowVals(offset) between those two lines of code.
               //
-              //const Scalar newVal = f (rowVals(k), newVals(j));
-              //Kokkos::atomic_assign (&rowVals(k), newVal);
+              //const Scalar newVal = f (rowVals(offset), newVals(j));
+              //Kokkos::atomic_assign (&rowVals(offset), newVal);
 
-              volatile Scalar* const dest = &rowVals(k);
+              volatile Scalar* const dest = &rowVals(offset);
               (void) atomic_binary_function_update (dest, newVals(j), f);
             }
             else {
-              rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
+              // use binary function f
+              rowVals(offset) = f (rowVals(offset), newVals(j));
             }
-            hint = k+1;
+            hint = offset + 1;
             numValid++;
           }
         }
@@ -2166,60 +2655,31 @@ namespace Tpetra {
     /// sorted" and "is merged" states.
     void setLocallyModified ();
 
-    //! Sort the column indices in all the rows.
-    void sortAllIndices ();
+  private:
+    /// \brief Sort and merge the column indices in all the rows.
+    ///
+    /// \param sorted [in] Whether the indices are already sorted.
+    /// \param merged [in] Whether the indices are already merged.
+    void
+    sortAndMergeAllIndices (const bool sorted, const bool merged);
+
+    // mfh 08 May 2017: I only restore "protected" here for backwards
+    // compatibility.
+  protected:
 
     //! Sort the column indices in the given row.
-    void sortRowIndices (const RowInfo rowinfo);
+    void sortRowIndices (const RowInfo& rowinfo);
 
-    /// \brief Sort the column indices and their values in the given row.
-    ///
-    /// \tparam Scalar The type of the values.  When calling this
-    ///   method from CrsMatrix, this should be the same as the
-    ///   <tt>Scalar</tt> template parameter of CrsMatrix.
-    ///
-    /// \param rowinfo [in] Result of getRowInfo() for the row.
-    ///
-    /// \param values [in/out] On input: values for the given row.  If
-    ///   indices is an array of the column indices in the row, then
-    ///   values and indices should have the same number of entries,
-    ///   and indices[k] should be the column index corresponding to
-    ///   values[k].  On output: the same values, but sorted in the
-    ///   same order as the (now sorted) column indices in the row.
-    template <class Scalar>
-    void sortRowIndicesAndValues (const RowInfo rowinfo,
-                                  const Teuchos::ArrayView<Scalar>& values);
-
-    /// \brief Merge duplicate row indices in all of the rows.
+    /// \brief Merge duplicate column indices in the given row.
     ///
     /// \pre The graph is locally indexed:
     ///   <tt>isGloballyIndexed() == false</tt>.
-    ///
-    /// \pre The graph has not already been merged: <tt>isMerged()
-    ///   == false</tt>.  That is, this function would normally only
-    ///   be called after calling sortIndices().
-    void mergeAllIndices ();
-
-    /// \brief Merge duplicate row indices in the given row.
-    ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
-    void mergeRowIndices (RowInfo rowinfo);
+    ///
+    /// \return The number of duplicate column indices eliminated from the row.
+    size_t mergeRowIndices (const RowInfo& rowInfo);
 
-    /// \brief Merge duplicate row indices in the given row, along
-    ///   with their corresponding values.
-    ///
-    /// This method is only called by CrsMatrix, for a CrsMatrix whose
-    /// graph is this CrsGraph instance.  It is only called when the
-    /// matrix owns the graph, not when the matrix was constructed
-    /// with a const graph.
-    ///
-    /// \pre The graph is not already storage optimized:
-    ///   <tt>isStorageOptimized() == false</tt>
-    template<class Scalar>
-    void
-    mergeRowIndicesAndValues (RowInfo rowinfo,
-                              const Teuchos::ArrayView<Scalar>& rowValues);
     //@}
 
     /// Set the domain and range Maps, and invalidate the Import
@@ -2237,7 +2697,23 @@ namespace Tpetra {
 
     void staticAssertions() const;
     void clearGlobalConstants();
+  public:
+    //! Returns true if globalConstants have been computed; false otherwise
+    bool haveGlobalConstants() const { return haveGlobalConstants_;}
+
+    /// \brief Forces computation of global constants if they have not been computed yet
+    ///
+    /// \warning THIS IS AN EXPERT MODE FUNCTION.  THIS IS AN
+    ///   IMPLEMENTATION DETAIL.  DO NOT CALL THIS FUNCTION!!!
+    ///
     void computeGlobalConstants();
+  protected:
+
+    /// \brief Forces computation of local constants if they have not been computed yet.
+    // This is implied by the computation of global constants, and this is only used a
+    // as an alterantive if the global constants are not computed
+    ///
+    void computeLocalConstants();
 
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
@@ -2290,28 +2766,28 @@ namespace Tpetra {
     ///   indices of row rowinfo.localRow (only works if the matrix is
     ///   locally indexed on the calling process).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<const LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getLocalKokkosRowView (const RowInfo& rowinfo) const;
+    getLocalKokkosRowView (const RowInfo& rowInfo) const;
 
     /// \brief Get a nonconst nonowned view of the local column
     ///   indices of row rowinfo.localRow (only works if the matrix is
     ///   locally indexed on the calling process).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getLocalKokkosRowViewNonConst (const RowInfo& rowinfo);
+    getLocalKokkosRowViewNonConst (const RowInfo& rowInfo);
 
     /// \brief Get a const nonowned view of the global column indices
     ///   of row rowinfo.localRow (only works if the matrix is
     ///   globally indexed).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<const GlobalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getGlobalKokkosRowView (const RowInfo& rowinfo) const;
+    getGlobalKokkosRowView (const RowInfo& rowInfo) const;
 
   protected:
 
@@ -2319,13 +2795,13 @@ namespace Tpetra {
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<const GlobalOrdinal>
-    getGlobalView (const RowInfo rowinfo) const;
+    getGlobalView (const RowInfo& rowinfo) const;
 
     /// \brief Get a nonconst, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<GlobalOrdinal>
-    getGlobalViewNonConst (const RowInfo rowinfo);
+    getGlobalViewNonConst (const RowInfo& rowinfo);
 
     /// \brief Get a pointer to the global column indices of a locally
     ///   owned row, using the result of getRowInfoFromGlobalRowIndex.
@@ -2343,109 +2819,6 @@ namespace Tpetra {
                            LocalOrdinal& numEnt,
                            const RowInfo& rowinfo) const;
 
-    /// \brief Find the column offset corresponding to the given
-    ///   (local) column index.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a local
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    ///
-    /// \param rowinfo [in] Result of getRowInfo() for the given row.
-    /// \param ind [in] (Local) column index for which to find the offset.
-    /// \param hint [in] Hint for where to find \c ind in the column
-    ///   indices for the given row.  If colInds is the ArrayView of
-    ///   the (local) column indices for the given row, and if
-    ///   <tt>colInds[hint] == ind</tt>, then the hint is correct.
-    ///   The hint is ignored if it is out of range (that is,
-    ///   greater than or equal to the number of entries in the
-    ///   given row).
-    ///
-    /// The hint optimizes for the case of calling this method several
-    /// times with the same row (as it would be in
-    /// transformLocalValues) when several index inputs occur in
-    /// consecutive sequence.  This may occur (for example) when there
-    /// are multiple degrees of freedom per mesh point, and users are
-    /// handling the assignment of degrees of freedom to global
-    /// indices manually (rather than letting some other class take
-    /// care of it).  In that case, users might choose to assign the
-    /// degrees of freedom for a mesh point to consecutive global
-    /// indices.  Epetra implements the hint for this reason.
-    ///
-    /// The hint only costs two comparisons (one to check range, and
-    /// the other to see if the hint was correct), and it can save
-    /// searching for the indices (which may take a lot more than
-    /// two comparisons).
-    size_t
-    findLocalIndex (const RowInfo& rowinfo,
-                    const LocalOrdinal ind,
-                    const size_t hint = 0) const;
-
-    /// \brief Find the column offset corresponding to the given
-    ///   (local) column index, given a view of the (local) column
-    ///   indices.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a local
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    ///
-    /// It is best to use this method if you plan to call it several
-    /// times for the same row, like in transformLocalValues().  In
-    /// that case, it amortizes the overhead of calling
-    /// getLocalKokkosRowView().
-    ///
-    /// \param rowinfo [in] Result of getRowInfo() for the given row.
-    /// \param ind [in] (Local) column index for which to find the offset.
-    /// \param colInds [in] View of all the (local) column indices
-    ///   for the given row.
-    /// \param hint [in] Hint for where to find \c ind in the column
-    ///   indices for the given row.  If colInds is the ArrayView of
-    ///   the (local) column indices for the given row, and if
-    ///   <tt>colInds[hint] == ind</tt>, then the hint is correct.
-    ///   The hint is ignored if it is out of range (that is,
-    ///   greater than or equal to the number of entries in the
-    ///   given row).
-    ///
-    /// See the documentation of the three-argument version of this
-    /// method for an explanation and justification of the hint.
-    size_t
-    findLocalIndex (const RowInfo& rowinfo,
-                    const LocalOrdinal ind,
-                    const Kokkos::View<const LocalOrdinal*, device_type,
-                      Kokkos::MemoryUnmanaged>& colInds,
-                    const size_t hint) const;
-
-    /// \brief Find the column offset corresponding to the given
-    ///   (global) column index.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a global
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    size_t
-    findGlobalIndex (const RowInfo& rowinfo,
-                     const GlobalOrdinal ind,
-                     const size_t hint = 0) const;
-
-    /// \brief Find the column offset corresponding to the given
-    ///   (global) column index.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a global
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    size_t
-    findGlobalIndex (const RowInfo& rowinfo,
-                     const GlobalOrdinal ind,
-                     const Kokkos::View<const GlobalOrdinal*,
-                       device_type, Kokkos::MemoryUnmanaged>& colInds,
-                     const size_t hint = 0) const;
-
   public:
     /// \brief Get the local graph.
     ///
@@ -2457,9 +2830,6 @@ namespace Tpetra {
     local_graph_type getLocalGraph () const;
 
   protected:
-    //! Get the local graph (DEPRECATED: call getLocalGraph() instead).
-    TPETRA_DEPRECATED local_graph_type getLocalGraph_Kokkos () const;
-
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Whether it is correct to call getRowInfo().
@@ -2495,11 +2865,33 @@ namespace Tpetra {
     //! Local graph; only initialized after first fillComplete() call.
     local_graph_type lclGraph_;
 
-    // Local and Global Counts
-    // nodeNumEntries_ and nodeNumAllocated_ are required to be always consistent
-    // nodeMaxNumEntries_, nodeNumDiags_ and the global quantities are computed during fillComplete() and only valid when isFillComplete()
-    global_size_t globalNumEntries_, globalNumDiags_, globalMaxNumRowEntries_;
-    size_t          nodeNumEntries_,   nodeNumDiags_,   nodeMaxNumRowEntries_, nodeNumAllocated_;
+    //! Local number of (populated) entries; must always be consistent.
+    size_t nodeNumEntries_;
+
+    /// \brief Local number of (populated) diagonal entries.
+    ///
+    /// Computed in computeLocalConstants(); only valid when isFillComplete().
+    size_t nodeNumDiags_;
+
+    /// \brief Local maximum of the number of entries in each row.
+    ///
+    /// Computed in computeLocalConstants(); only valid when isFillComplete().
+    size_t nodeMaxNumRowEntries_;
+
+    /// \brief Global number of entries in the graph.
+    ///
+    /// Only valid when isFillComplete().
+    global_size_t globalNumEntries_;
+
+    /// \brief Global number of (populated) diagonal entries.
+    ///
+    /// Computed in computeGlobalConstants(); only valid when isFillComplete().
+    global_size_t globalNumDiags_;
+
+    /// \brief Global maximum of the number of entries in each row.
+    ///
+    /// Computed in computeGlobalConstants(); only valid when isFillComplete().
+    global_size_t globalMaxNumRowEntries_;
 
     //! Whether the graph was allocated with static or dynamic profile.
     ProfileType pftype_;
@@ -2507,10 +2899,18 @@ namespace Tpetra {
     /// \brief The maximum number of entries to allow in each locally
     ///   owned row, per row.
     ///
-    /// This is an argument to some of the graph's constructors.
-    /// Either this or numAllocForAllRows_ is used, but not both.
-    /// allocateIndices, setAllIndices, and expertStaticFillComplete
-    /// all deallocate this array once they are done with it.
+    /// This comes in as an argument to some of the graph's
+    /// constructors.  Either this or numAllocForAllRows_ is used, but
+    /// not both.  allocateIndices(), setAllIndices(), and
+    /// expertStaticFillComplete() all deallocate this array once they
+    /// are done with it.
+    ///
+    /// This is a host View because it is only ever used on the host.
+    /// It has the HostMirror type for backwards compatibility; this
+    /// used to be a DualView with default layout, so making this a
+    /// HostMirror ensures that we can still take it directly by
+    /// assignment from the constructors that take DualView, without a
+    /// deep copy.
     ///
     /// This array <i>only</i> exists on a process before the graph's
     /// indices are allocated on that process.  After that point, it
@@ -2521,7 +2921,8 @@ namespace Tpetra {
     /// allocate, rather than doing lazy allocation at first insert.
     /// This will make both k_numAllocPerRow_ and numAllocForAllRows_
     /// obsolete.
-    Kokkos::DualView<const size_t*, Kokkos::LayoutLeft, execution_space> k_numAllocPerRow_;
+    typename Kokkos::View<const size_t*, execution_space>::HostMirror
+    k_numAllocPerRow_;
 
     /// \brief The maximum number of entries to allow in each locally owned row.
     ///
@@ -2582,9 +2983,6 @@ namespace Tpetra {
     /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
-    ///
-    /// [we may delete this to save memory on fillComplete, if "Delete
-    /// Row Pointers" is specified.]
     typename local_graph_type::row_map_type::const_type k_rowPtrs_;
 
     //@}
@@ -2627,16 +3025,14 @@ namespace Tpetra {
     /// for that row.
     Teuchos::ArrayRCP<Teuchos::Array<GlobalOrdinal> > gblInds2D_;
 
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space> t_numRowEntries_;
-
     /// \brief The number of local entries in each locally owned row.
     ///
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
     ///
     /// This may also exist with 1-D storage, if storage is unpacked.
-    t_numRowEntries_ k_numRowEntries_;
-
+    typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror
+      k_numRowEntries_;
     //@}
 
     /// \brief Status of the graph's storage, when not in a
@@ -2725,6 +3121,7 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
       {
         using Teuchos::arcp;
+        using Teuchos::Array;
         using Teuchos::ArrayRCP;
         using Teuchos::ArrayView;
         using Teuchos::null;

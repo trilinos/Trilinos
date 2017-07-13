@@ -89,9 +89,9 @@ int main(int argc, char *argv[]) {
 
     int numCells = 20;
     int numFields = 2;
-    double domainLength = 1.0;
-    double h = domainLength/double(numCells);
-    double gamma = 1e-4;
+    RealT domainLength = 1.0;
+    RealT h = domainLength/RealT(numCells);
+    RealT gamma = 1e-4;
 
     int nDoF = numCells*(numFields-1)+1;
 

@@ -1,10 +1,14 @@
 #ifndef SHYLUHTS_CONFIG_H
 #define SHYLUHTS_CONFIG_H
 
-/* Optional TPL */
-
 #cmakedefine HAVE_SHYLUHTS_MKL
 
 #cmakedefine HAVE_SHYLUHTS_BLAS
+
+#cmakedefine HAVE_SHYLUHTS_COMPLEX
+
+#ifndef F77_BLAS_MANGLE
+# define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#endif
 
 #endif

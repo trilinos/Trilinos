@@ -61,6 +61,10 @@ namespace panzer {
                typename Tag6, typename Tag7> class Array >
   struct PointValues2 {
     typedef typename ArrayTraits<Scalar, Array<Scalar,void,void,void,void,void,void,void,void> >::size_type size_type;
+
+    template<typename SourceScalar>
+    PointValues2<Scalar,Array>&
+    operator=(const PointValues2<SourceScalar,Array>& source);
     
     //! Sizes/allocates memory for arrays
     template <typename ArrayFactory>
@@ -104,16 +108,18 @@ namespace panzer {
     copyPointCoords(in_point_coords);
     copyNodeCoords(in_node_coords);
     
-    Intrepid2::CellTools<Scalar> cell_tools;
+    Intrepid2::CellTools<PHX::exec_space> cell_tools;
     
-    cell_tools.setJacobian(jac, coords_ref, node_coordinates,*(point_rule->topology));
-    cell_tools.setJacobianInv(jac_inv, jac);
-    cell_tools.setJacobianDet(jac_det, jac);
+    cell_tools.setJacobian(jac.get_view(), coords_ref.get_view(), node_coordinates.get_view(), *(point_rule->topology));
+    cell_tools.setJacobianInv(jac_inv.get_view(), jac.get_view());
+    cell_tools.setJacobianDet(jac_det.get_view(), jac.get_view());
     
     // IP coordinates
-    cell_tools.mapToPhysicalFrame(point_coords, coords_ref, node_coordinates, *(point_rule->topology));
+    cell_tools.mapToPhysicalFrame(point_coords.get_view(), coords_ref.get_view(), node_coordinates.get_view(), *(point_rule->topology));
   }
 
 } // namespace panzer
+
+#include "Panzer_PointValues2_impl.hpp"
 
 #endif

@@ -54,17 +54,6 @@
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
-//  Throw an error for input adapter functions that have been
-//  called by the model but not implemented in the adapter.
-#define Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER \
-  { \
-    std::ostringstream emsg; \
-    emsg << __FILE__ << "," << __LINE__ \
-         << " error:  " << __func__zoltan2__ << " not implemented in adapter "  \
-         << std::endl; \
-    throw std::runtime_error(emsg.str()); \
-  }
-
 namespace Zoltan2 {
 
 /*! \brief An enum to identify general types of adapters.
@@ -89,10 +78,30 @@ enum BaseAdapterType {
 
  */
 
+class BaseAdapterRoot {
+public:
+  virtual ~BaseAdapterRoot() {}; // required virtual declaration
+
+  /*! \brief Returns the number of objects on this process
+   *
+   *  Objects may be coordinates, graph vertices, matrix rows, etc.
+   *  They are the objects to be partitioned, ordered, or colored.
+   */
+  virtual size_t getLocalNumIDs() const = 0;
+
+  /*! \brief Returns the number of weights per object.
+   *   Number of weights per object should be zero or greater.  If
+   *   zero, then it is assumed that all objects are equally weighted.
+   *   Default is zero weights per ID.
+   */
+  virtual int getNumWeightsPerID() const { return 0; };
+};
+
 template <typename User>
-  class BaseAdapter {
+  class BaseAdapter : public BaseAdapterRoot {
 
 public:
+  typedef typename InputTraits<User>::lno_t lno_t;
   typedef typename InputTraits<User>::gno_t gno_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::part_t part_t;  
@@ -105,13 +114,6 @@ public:
    */
   virtual ~BaseAdapter() {};
 
-  /*! \brief Returns the number of objects on this process
-   *
-   *  Objects may be coordinates, graph vertices, matrix rows, etc.
-   *  They are the objects to be partitioned, ordered, or colored.
-   */
-  virtual size_t getLocalNumIDs() const = 0;
-
   /*! \brief Provide a pointer to this process' identifiers.
 
       \param Ids will on return point to the list of the global Ids for 
@@ -119,20 +121,20 @@ public:
    */
   virtual void getIDsView(const gno_t *&Ids) const = 0;
 
-  /*! \brief Returns the number of weights per object.
-   *   Number of weights per object should be zero or greater.  If
-   *   zero, then it is assumed that all objects are equally weighted.
-   */ 
-  virtual int getNumWeightsPerID() const = 0;
-
   /*! \brief Provide pointer to a weight array with stride.
    *    \param wgt on return a pointer to the weights for this idx
    *    \param stride on return, the value such that
    *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
    *    \param idx  the weight index, zero or greater
+   *   This function must be implemented in derived adapter if
+   *   getNumWeightsPerID > 0.
+   *   This function should not be called if getNumWeightsPerID is zero.
    */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
-                              int idx = 0) const = 0;
+                              int idx = 0) const 
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
 
   /*! \brief Provide pointer to an array containing the input part 
    *         assignment for each ID.
@@ -172,7 +174,7 @@ public:
     void applyPartitioningSolution(const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
 };

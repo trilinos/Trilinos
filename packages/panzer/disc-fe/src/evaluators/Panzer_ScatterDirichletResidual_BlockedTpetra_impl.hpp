@@ -89,7 +89,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
     PHX::MDField<const ScalarT,Cell,NODE> scatterField = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
-    this->addDependentField(scatterField);
+    this->addDependentField(scatterField.fieldTag());
   }
 
   // this is what this evaluator provides

@@ -38,7 +38,8 @@
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer
+#include <stk_util/parallel/CommSparse.hpp>
 #include <utility>                      // for pair
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Types.hpp"      // for EntityKeyProc, EntityVector, etc
@@ -52,7 +53,7 @@ namespace stk {
 namespace mesh {
 
 typedef std::set<Entity , EntityLess> EntitySet;
-typedef std::set<EntityKeyProc> EntityProcSet;
+typedef std::set<EntityKeyProc> EntityKeyProcSet;
 
 namespace {
 
@@ -84,23 +85,21 @@ void construct_transitive_closure(const BulkData& mesh, std::set<Entity,EntityLe
 
 void find_local_closure (const BulkData& mesh, std::set<Entity,EntityLess> & closure, const EntityVector & entities)
 {
-  for (EntityVector::const_iterator i = entities.begin();
-      i != entities.end(); ++i)
+  for (Entity entity : entities)
   {
-    construct_transitive_closure(mesh, closure, *i);
+    if (mesh.bucket(entity).owned() || mesh.bucket(entity).shared())
+    {
+      construct_transitive_closure(mesh, closure, entity);
+    }
   }
 }
 
-void construct_communication_set( const BulkData & bulk, const std::set<Entity,EntityLess> & closure, EntityProcSet & communication_set)
+void construct_communication_set( const BulkData & bulk, const std::set<Entity,EntityLess> & closure, EntityKeyProcSet & communication_set)
 {
   if (bulk.parallel_size() < 2) return;
 
   std::vector<int> commProcs;
-  for ( std::set<Entity,EntityLess>::const_iterator
-        i = closure.begin(); i != closure.end(); ++i) {
-
-    Entity entity = *i;
-
+  for ( Entity entity : closure ) {
     const bool owned = bulk.parallel_rank() == bulk.parallel_owner_rank(entity);
     const bool shared = bulk.bucket(entity).shared();
 
@@ -117,89 +116,49 @@ void construct_communication_set( const BulkData & bulk, const std::set<Entity,E
   }
 }
 
-size_t count_ghost_entities( const BulkData & bulk, const EntityVector & entities)
-{
-  size_t num_ghost_entities = 0;
-
-  for ( EntityVector::const_iterator
-        i = entities.begin(); i != entities.end(); ++i ) {
-    if ( ! bulk.owned_closure(*i) ) {
-      ++num_ghost_entities;
-    }
-  }
-
-  return num_ghost_entities;
-}
-
 }
 
 
 
 void find_closure( const BulkData & bulk,
-    const std::vector< Entity> & entities,
-    std::vector< Entity> & entities_closure)
+    const EntityVector& entities,
+    EntityVector& entities_closure)
 {
 
   entities_closure.clear();
 
 
-  EntityProcSet send_list;
+  EntityKeyProcSet send_list;
   EntityLess entless(bulk);
   std::set<Entity,EntityLess>     temp_entities_closure(entless);
 
-  const bool bulk_in_modifiable_state = !bulk.in_synchronized_state();
-  const size_t num_ghost_entities = bulk_in_modifiable_state ? 0 : count_ghost_entities(bulk, entities);
+  ThrowRequireMsg(bulk.in_synchronized_state(), "ERROR find_closure requires mesh in synchronized state");
 
-  const bool local_bad_input = bulk_in_modifiable_state || (0 < num_ghost_entities);
+  find_local_closure(bulk, temp_entities_closure, entities);
 
-  //Can skip if error on input
-  if ( !local_bad_input) {
-
-    find_local_closure(bulk, temp_entities_closure, entities);
-
-    construct_communication_set(bulk, temp_entities_closure, send_list);
-  }
+  construct_communication_set(bulk, temp_entities_closure, send_list);
 
 
-  CommAll all( bulk.parallel() );
+  CommSparse commSparse( bulk.parallel() );
 
   //pack send_list for sizing
-  for ( EntityProcSet::const_iterator
-      ep = send_list.begin() ; ep != send_list.end() ; ++ep ) {
-    all.send_buffer( ep->second).pack<EntityKey>(ep->first);
+  for ( const EntityKeyProc& ep : send_list ) {
+    commSparse.send_buffer( ep.second).pack<EntityKey>(ep.first);
   }
 
 
-  const bool global_bad_input = all.allocate_buffers( bulk.parallel_size() / 4 , false, local_bad_input );
-
-  if (global_bad_input) {
-
-    std::ostringstream msg;
-    //parallel consisent throw
-    if (bulk_in_modifiable_state) {
-      msg << "stk::mesh::find_closure( const BulkData & bulk, ... ) bulk is not synchronized";
-    }
-    else if ( 0 < num_ghost_entities) {
-      msg << "stk::mesh::find_closure( const BulkData & bulk, std::vector<Entity> entities, ... ) \n"
-          << "entities contains " << num_ghost_entities << " non locally used entities \n";
-    }
-
-    throw std::runtime_error(msg.str());
-  }
-
+  commSparse.allocate_buffers();
 
   //pack send_list
-  for ( EntityProcSet::const_iterator
-      ep = send_list.begin() ; ep != send_list.end() ; ++ep ) {
-    all.send_buffer( ep->second).pack<EntityKey>(ep->first);
+  for ( const EntityKeyProc& ep : send_list ) {
+    commSparse.send_buffer( ep.second).pack<EntityKey>(ep.first);
   }
 
-
-  all.communicate();
+  commSparse.communicate();
 
   //unpack the send_list into the temp entities closure set
   for ( int p = 0 ; p < bulk.parallel_size() ; ++p ) {
-    CommBuffer & buf = all.recv_buffer( p );
+    CommBuffer & buf = commSparse.recv_buffer( p );
     EntityKey k ;
     while ( buf.remaining() ) {
       buf.unpack<EntityKey>( k );

@@ -189,7 +189,11 @@ namespace Details {
       typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
         DstWhichVecsType, SrcWhichVecsType, true, true> functor_type;
       functor_type f (dst, src);
-      Kokkos::parallel_for (dst.dimension_0 (), f);
+      typedef typename DstViewType::execution_space execution_space;
+      typedef decltype (dst.dimension_0 ()) size_type;
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+
+      Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
     }
 
     static void
@@ -207,6 +211,10 @@ namespace Details {
       // Carter is working on this, but for now, the temporary fix is
       // to copy one column at a time.
 
+      typedef typename DstViewType::execution_space execution_space;
+      typedef decltype (dst.dimension_0 ()) size_type;
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+
       if (dstConstStride) {
         if (srcConstStride) {
           // FIXME (mfh 10 Dec 2014) Do a Kokkos::deep_copy if
@@ -214,13 +222,13 @@ namespace Details {
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, true, true> functor_type;
           functor_type f (dst, src);
-          Kokkos::parallel_for (dst.dimension_0 (), f);
+          Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
         }
         else { // ! srcConstStride
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, true, false> functor_type;
           functor_type f (dst, src, srcWhichVecs, srcWhichVecs);
-          Kokkos::parallel_for (dst.dimension_0 (), f);
+          Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
         }
       }
       else { // ! dstConstStride
@@ -228,13 +236,13 @@ namespace Details {
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, false, true> functor_type;
           functor_type f (dst, src, dstWhichVecs, dstWhichVecs);
-          Kokkos::parallel_for (dst.dimension_0 (), f);
+          Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
         }
         else { // ! srcConstStride
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, false, false> functor_type;
           functor_type f (dst, src, dstWhichVecs, srcWhichVecs);
-          Kokkos::parallel_for (dst.dimension_0 (), f);
+          Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
         }
       }
     }

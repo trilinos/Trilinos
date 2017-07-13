@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/GearsFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>
 #include <stk_util/stk_config.h>        // for STK_HAS_MPI
 #include <algorithm>                    // for min
 #include <cmath>                        // for fabs, floor
@@ -43,7 +43,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Types.hpp>      // for BucketVector, EntityProcVec, etc
-#include <stk_mesh/fixtures/Gear.hpp>   // for Gear, TWO_PI
+#include <stk_unit_tests/stk_mesh_fixtures/Gear.hpp>   // for Gear, TWO_PI
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"

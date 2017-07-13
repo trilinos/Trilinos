@@ -75,8 +75,6 @@ using Teuchos::rcp;
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -104,7 +102,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
     bool parameter_on = true;
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
@@ -212,7 +209,7 @@ namespace panzer {
 
       // it should be that exp_f = -f b/c x_dot=0 in the evaluation
       Thyra::Vp_StV(mass_exp_f.ptr(),1.0,*f);
-   
+
       out << "Error = " << Thyra::norm_2(*mass_exp_f) << std::endl;
       TEST_ASSERT(Thyra::norm_2(*mass_exp_f)<=1e-16);
     }
@@ -302,9 +299,9 @@ namespace panzer {
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
     
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
 
@@ -347,17 +344,21 @@ namespace panzer {
     // build worksets
     //////////////////////////////////////////////////////////////
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
@@ -378,23 +379,32 @@ namespace panzer {
     cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
-    if(parameter_on)
-       closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","Parameter");
+    if (parameter_on)
+      closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").
+        set<std::string>("Type", "Parameter");
     else
-      closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+      closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").
+        set<double>("Value", 1.0);
 
-    closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
-    closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").set<double>("Value",1.0);
+    closure_models.sublist("solid").sublist("DENSITY").
+      set<double>("Value", 1.0);
+    closure_models.sublist("solid").sublist("HEAT_CAPACITY").
+      set<double>("Value", 1.0);
+    closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").
+      set<double>("Value", 1.0);
+    closure_models.sublist("ion solid").sublist("ION_DENSITY").
+      set<double>("Value", 1.0);
+    closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").
+      set<double>("Value", 1.0);
 
     Teuchos::ParameterList user_data("User Data");
 
     fmb->setWorksetContainer(wkstContainer);
     fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+
+    if (parameter_on)
+      gd->pl->setRealValueForAllTypes(std::string("SOURCE_TEMPERATURE"), 1.0);
   }
 
 

@@ -63,6 +63,10 @@ LOCA.TimeDependent supports the following classes:
         docstring = %loca_timedependent_docstring) TimeDependent
 
 %{
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_LinearProblem.hpp"
+
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -70,6 +74,11 @@ LOCA.TimeDependent supports the following classes:
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
+
+// Epetra includes
+#ifdef HAVE_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
+#endif
 
 // LOCA includes
 #include "LOCA.H"

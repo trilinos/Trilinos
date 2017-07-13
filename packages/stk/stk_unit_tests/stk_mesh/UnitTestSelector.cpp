@@ -39,7 +39,7 @@
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator|, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, BucketVector, etc
-#include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
+#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <string>                       // for basic_string, operator==, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector
@@ -53,7 +53,8 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
-#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
+#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
 namespace stk { namespace mesh { class Bucket; } }
 
 
@@ -193,7 +194,7 @@ TEST(Verify, selectorEmptyDuringMeshMod)
     if (bulk.parallel_rank()==0) {
 
         stk::mesh::EntityId elem1Id = 1;
-        stk::mesh::Entity elem1 = bulk.declare_entity(stk::topology::ELEM_RANK, elem1Id, block1);
+        stk::mesh::Entity elem1 = bulk.declare_element(elem1Id, {&block1});
 
         EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
 
@@ -518,6 +519,7 @@ TEST(Verify, usingCopyConstructor)
     EXPECT_TRUE(selector == anotherSelector);
 }
 
+
 TEST(Verify, usingSelectField)
 {
   SelectorFixture fix ;
@@ -526,6 +528,14 @@ TEST(Verify, usingSelectField)
   stk::mesh::Selector selectFieldA = stk::mesh::selectField(fix.m_fieldA);
   stk::mesh::Selector selectFieldABC = stk::mesh::selectField(fix.m_fieldABC);
 
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Part & partB = fix.m_partB;
+  stk::mesh::Part & partC = fix.m_partC;
+  stk::mesh::Part & partD = fix.m_partD;
+
+  //
+  //  Test selection of buckets
+  //
   const int numEntities = 5;
   bool gold_shouldEntityBeInPartASelector[numEntities]         = {true , true , false, false, false};
   bool gold_shouldEntityBeInPartBSelector[numEntities]         = {false, true , true , false, false};
@@ -536,6 +546,47 @@ TEST(Verify, usingSelectField)
   testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
   testSelectorWithBuckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
   testSelectorWithBuckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
+
+  //
+  //  Test selection of parts.  Part selection returns true if there is overlap between the test part set
+  //  and any part the field was registered on.
+  //
+  EXPECT_TRUE (selectFieldA(partA));
+  EXPECT_FALSE(selectFieldA(partB));
+  EXPECT_FALSE(selectFieldA(partC));
+  EXPECT_FALSE(selectFieldA(partD));
+
+  EXPECT_TRUE (selectFieldABC(partA));
+  EXPECT_TRUE (selectFieldABC(partB));
+  EXPECT_TRUE (selectFieldABC(partC));
+  EXPECT_FALSE(selectFieldABC(partD));
+
+
+  stk::mesh::PartVector partsAB;
+  partsAB.push_back(&partA);
+  partsAB.push_back(&partB);
+
+  stk::mesh::PartVector partsCD;
+  partsAB.push_back(&partC);
+  partsAB.push_back(&partD);
+
+  EXPECT_TRUE (selectFieldA(partsAB));
+  EXPECT_FALSE(selectFieldA(partsCD));
+  
+  //
+  //  Check selection of buckets also works in a mesh modification cycle
+  //
+  fix.get_NonconstBulkData().modification_begin("TEST MODIFICATION");
+
+  testSelectorWithBuckets(fix, selectFieldA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
+  testSelectorWithBuckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
+
+
+  fix.get_NonconstBulkData().modification_end();
+
+
 }
 
 TEST(Verify, selectorContainsPart)
@@ -790,6 +841,9 @@ TEST( UnitTestRootTopology, getPartsDoesNotFindAutoCreatedRootParts )
     }
 }
 
+
+
+
 TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
 {
     stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -805,17 +859,19 @@ TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
     stk::mesh::BulkData mesh(meta, pm);
 
     stk::mesh::Part * triPart = &meta.declare_part_with_topology("tri_part", stk::topology::TRI_3);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3);
     meta.commit();
 
     mesh.modification_begin();
 
     std::array<int, 3> node_ids = {{1,2,3}};
     stk::mesh::PartVector empty;
-    stk::mesh::Entity tri3 = mesh.declare_entity(stk::topology::FACE_RANK, 1u, *triPart);
+    stk::mesh::Entity shell3 = mesh.declare_element(1u, {shellPart});
     for(unsigned i = 0; i<node_ids.size(); ++i) {
-        stk::mesh::Entity node = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i], empty);
-        mesh.declare_relation(tri3, node, i);
+        stk::mesh::Entity node = mesh.declare_node(node_ids[i], empty);
+        mesh.declare_relation(shell3, node, i);
     }
+    mesh.declare_element_side(shell3, 0u, stk::mesh::ConstPartVector{triPart} );
 
     mesh.modification_end();
 

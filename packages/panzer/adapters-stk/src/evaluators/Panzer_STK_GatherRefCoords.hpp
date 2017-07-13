@@ -55,7 +55,7 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 /** This class is a gather operation from the mesh. It
   * takes a set of field names and basis objects and

@@ -50,10 +50,26 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Epetra)
   #   COMM serial mpi
   #   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     simple1D-UncoupledAggregation
     SOURCES simple1D-UncoupledAggregation.cpp
-    ARGS ""
-    COMM serial mpi
     )
+    
+  IF( ${PACKAGE_NAME}_ENABLE_Tpetra )
+    TRIBITS_ADD_TEST(
+      simple1D-UncoupledAggregation
+      NAME "simple1D-UncoupledAggregation-Tpetra"
+      ARGS "--linAlgebra=Tpetra"
+      COMM serial mpi
+      )
+  ENDIF()
+
+  IF( ${PACKAGE_NAME}_ENABLE_Epetra )
+    TRIBITS_ADD_TEST(
+      simple1D-UncoupledAggregation
+      NAME "simple1D-UncoupledAggregation-Epetra"
+      ARGS "--linAlgebra=Epetra"
+      COMM serial mpi
+      )
+  ENDIF()
 ENDIF()

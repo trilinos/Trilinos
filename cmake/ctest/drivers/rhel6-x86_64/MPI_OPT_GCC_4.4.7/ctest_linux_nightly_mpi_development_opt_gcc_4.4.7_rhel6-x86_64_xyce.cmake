@@ -64,8 +64,9 @@ SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME MPI_OPT_DEV_XYCE)
 #SET(CTEST_TEST_TIMEOUT 900)
+SET(CTEST_TEST_TYPE Nightly)
 
-#SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+#SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
 SET( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} PyTrilinos Kokkos Gtest ThreadPool RTOp Shards Thyra Xpetra Galeri Pamgen ML SEACAS Anasazi Stratimikos FEI Intrepid STK MueLu)
 SET(Trilinos_PACKAGES NOX EpetraExt TrilinosCouplings Ifpack Isorropia AztecOO Belos Teuchos Amesos Sacado Zoltan Epetra Triutils)
@@ -75,8 +76,6 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTeuchos_ENABLE_COMPLEX=ON"
   "-DNOX_ENABLE_LOCA=ON"
   "-DTPL_ENABLE_ParMETIS:BOOL=OFF"
-  "-DParMETIS_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.7.2/ParMETIS-4.0.3_32bit/lib"
-  "-DParMETIS_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.7.2/ParMETIS-4.0.3_32bit/include"
   "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF"
   "-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF"
   )

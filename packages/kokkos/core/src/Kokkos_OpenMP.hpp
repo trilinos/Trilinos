@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -44,20 +44,26 @@
 #ifndef KOKKOS_OPENMP_HPP
 #define KOKKOS_OPENMP_HPP
 
+#include <Kokkos_Macros.hpp>
+#if defined( KOKKOS_ENABLE_OPENMP)
+
+#if !defined(_OPENMP)
+#error "You enabled Kokkos OpenMP support without enabling OpenMP in the compiler!"
+#endif
+
 #include <Kokkos_Core_fwd.hpp>
-
-#if defined( KOKKOS_HAVE_OPENMP ) && defined( _OPENMP )
-
-#include <omp.h>
 
 #include <cstddef>
 #include <iosfwd>
 #include <Kokkos_HostSpace.hpp>
-#ifdef KOKKOS_HAVE_HBWSPACE
+
+#ifdef KOKKOS_ENABLE_HBWSPACE
 #include <Kokkos_HBWSpace.hpp>
 #endif
+
 #include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_Parallel.hpp>
+#include <Kokkos_TaskScheduler.hpp>
 #include <Kokkos_Layout.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
@@ -74,26 +80,26 @@ public:
   //@{
 
   //! Tag this class as a kokkos execution space
-  typedef OpenMP                execution_space ;
-  #ifdef KOKKOS_HAVE_HBWSPACE
-  typedef Experimental::HBWSpace memory_space ;
+  using execution_space = OpenMP;
+  #ifdef KOKKOS_ENABLE_HBWSPACE
+  using memory_space = Experimental::HBWSpace;
   #else
-  typedef HostSpace             memory_space ;
+  using memory_space = HostSpace;
   #endif
   //! This execution space preferred device_type
-  typedef Kokkos::Device<execution_space,memory_space> device_type;
+  using device_type = Kokkos::Device<execution_space,memory_space>;
 
-  typedef LayoutRight           array_layout ;
-  typedef memory_space::size_type  size_type ;
+  using array_layout = LayoutRight;
+  using size_type = memory_space::size_type;
 
-  typedef ScratchMemorySpace< OpenMP > scratch_memory_space ;
+  using scratch_memory_space = ScratchMemorySpace< OpenMP >;
 
   //@}
   //------------------------------------
   //! \name Functions that all Kokkos execution spaces must implement.
   //@{
 
-  inline static bool in_parallel() { return omp_in_parallel(); }
+  inline static bool in_parallel();
 
   /** \brief  Set the device in a "sleep" state. A noop for OpenMP.  */
   static bool sleep();
@@ -148,6 +154,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION static
   unsigned hardware_thread_id() { return thread_pool_rank(); }
+
+  static const char* name();
 };
 
 } // namespace Kokkos
@@ -157,6 +165,17 @@ public:
 
 namespace Kokkos {
 namespace Impl {
+
+template<>
+struct MemorySpaceAccess
+  < Kokkos::OpenMP::memory_space
+  , Kokkos::OpenMP::scratch_memory_space
+  >
+{
+  enum { assignable = false };
+  enum { accessible = true };
+  enum { deepcopy   = false };
+};
 
 template<>
 struct VerifyExecutionCanAccessMemorySpace
@@ -175,12 +194,13 @@ struct VerifyExecutionCanAccessMemorySpace
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
-#include <OpenMP/Kokkos_OpenMPexec.hpp>
+#include <OpenMP/Kokkos_OpenMP_Exec.hpp>
 #include <OpenMP/Kokkos_OpenMP_Parallel.hpp>
+#include <OpenMP/Kokkos_OpenMP_Task.hpp>
 
+#include <KokkosExp_MDRangePolicy.hpp>
 /*--------------------------------------------------------------------------*/
 
-#endif /* #if defined( KOKKOS_HAVE_OPENMP ) && defined( _OPENMP ) */
+#endif /* #if defined( KOKKOS_ENABLE_OPENMP ) && defined( _OPENMP ) */
 #endif /* #ifndef KOKKOS_OPENMP_HPP */
-
 

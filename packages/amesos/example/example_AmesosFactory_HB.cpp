@@ -202,34 +202,36 @@ int main(int argc, char *argv[])
   Solver->PrintStatus();
   Solver->PrintTiming();
 
-  Teuchos::ParameterList TimingsList;
-  Solver->GetTiming( TimingsList );
+  // Nothing done with timing information, so commenting out.
+
+  //Teuchos::ParameterList TimingsList;
+  //Solver->GetTiming( TimingsList );
 
   // You can find out how much time was spent in ...
-  double sfact_time, nfact_time, solve_time;
-  double mtx_conv_time, mtx_redist_time, vec_redist_time;
+  //double sfact_time, nfact_time, solve_time;
+  //double mtx_conv_time, mtx_redist_time, vec_redist_time;
 
   // 1) The symbolic factorization
   //    (parameter doesn't always exist)
-  sfact_time = TimingsList.get( "Total symbolic factorization time", 0.0 );
+  //sfact_time = TimingsList.get( "Total symbolic factorization time", 0.0 );
 
   // 2) The numeric factorization
   //    (always exists if NumericFactorization() is called)
-  nfact_time = Teuchos::getParameter<double>( TimingsList, "Total numeric factorization time" );
+  //nfact_time = Teuchos::getParameter<double>( TimingsList, "Total numeric factorization time" );
 
   // 3) Solving the linear system
   //    (always exists if Solve() is called)
-  solve_time = Teuchos::getParameter<double>( TimingsList, "Total solve time" );
+  //solve_time = Teuchos::getParameter<double>( TimingsList, "Total solve time" );
 
   // 4) Converting the matrix to the accepted format for the solver
   //    (always exists if SymbolicFactorization() is called)
-  mtx_conv_time = Teuchos::getParameter<double>( TimingsList, "Total solve time" );
+  //mtx_conv_time = Teuchos::getParameter<double>( TimingsList, "Total solve time" );
 
   // 5) Redistributing the matrix for each solve to the accepted format for the solver
-  mtx_redist_time = TimingsList.get( "Total matrix redistribution time", 0.0 );
+  //mtx_redist_time = TimingsList.get( "Total matrix redistribution time", 0.0 );
 
   // 6) Redistributing the vector for each solve to the accepted format for the solver
-  vec_redist_time = TimingsList.get( "Total vector redistribution time", 0.0 );
+  //vec_redist_time = TimingsList.get( "Total vector redistribution time", 0.0 );
 
   // =========================================== //
   // E N D   O F   T H E   A M E S O S   P A R T //

@@ -45,7 +45,6 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 
-#include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_FieldManager.hpp"
@@ -84,6 +83,7 @@ private:
 
   // Simulation solution
   PHX::MDField<ScalarT,Cell,Point,Dim> solution;
+  PHX::MDField<ScalarT,Cell,Point>     solution_curl;
   int ir_degree, ir_index;
 };
 

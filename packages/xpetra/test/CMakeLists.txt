@@ -28,3 +28,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra) # AND ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE
     BlockedCrsMatrix
   )
 ENDIF()
+  ADD_SUBDIRECTORIES(
+    BlockedMultiVector
+  )

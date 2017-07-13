@@ -35,7 +35,7 @@
 #include <iostream>
 #include <limits>
 #include <iomanip>
-#include <math.h>
+#include <cmath>
 
 #include <gtest/gtest.h>
 
@@ -70,20 +70,137 @@ TEST( UnitTestEvaluator, testEvaluateEmptyString)
     EXPECT_EQ(0.0, result);
 }
 
+TEST( UnitTestEvaluator, testIndexing)
+{
+  double y[3] = {1.1, 2.2, 3.3};
+
+  {
+    //  
+    //  Check basic indexing with default zero offset
+    //
+    std::string expr0 = "y[0] + y[1] + y[2]";
+    stk::expreval::Eval expr_eval0(stk::expreval::VariableMap::getDefaultResolver(), expr0.c_str());
+    expr_eval0.parse();
+    expr_eval0.bindVariable("y", *y, 3);
+    double result = expr_eval0.evaluate();
+    EXPECT_EQ(6.6, result);
+  }
+
+  {
+    //  
+    //  Check basic indexing with default one offset
+    //
+    std::string expr1 = "y[1] + y[2] + y[3]";
+    stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), expr1.c_str(), stk::expreval::Variable::ONE_BASED_INDEX);
+    expr_eval1.parse();
+    expr_eval1.bindVariable("y", *y, 3);
+    double result = expr_eval1.evaluate();
+    EXPECT_EQ(6.6, result);
+  }
+
+  {
+    //
+    //  Error check for index above valid range
+    //
+    std::string expr1 = "y[0] + y[1] + y[3]";
+    stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), expr1.c_str(), stk::expreval::Variable::ZERO_BASED_INDEX);
+    expr_eval1.parse();
+    expr_eval1.bindVariable("y", *y, 3);
+    try {
+      expr_eval1.evaluate();
+    } 
+    catch (std::runtime_error &x) {
+      std::string errMess = x.what();
+      EXPECT_EQ(0, strcmp(errMess.c_str(),  "In analytic expression evaluator, processing variable 'y'.  Attempting to access invalid component '3' in analytic function.  Valid components are 0 to '2'.  "));
+    }
+  }
+
+  {
+    //
+    //  Error check for index below valid range
+    //
+    std::string expr1 = "y[0] + y[1] + y[2]";
+    stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), expr1.c_str(), stk::expreval::Variable::ONE_BASED_INDEX);
+    expr_eval1.parse();
+    expr_eval1.bindVariable("y", *y, 3);
+    try {
+      expr_eval1.evaluate();
+    } 
+    catch (std::runtime_error &x) {
+      std::string errMess = x.what();
+
+
+
+      EXPECT_EQ(0, strcmp(errMess.c_str(),  "In analytic expression evaluator, processing variable 'y'.  Attempting to access invalid component '0' in analytic function.  Valid components are 1 to '3'.  "));
+    }
+  }
+
+  {
+    //
+    //  Error check for lack of index
+    //
+    std::string expr1 = "y";
+    stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), expr1.c_str(), stk::expreval::Variable::ONE_BASED_INDEX);
+    expr_eval1.parse();
+    expr_eval1.bindVariable("y", *y, 3);
+    try {
+      expr_eval1.evaluate();
+    } 
+    catch (std::runtime_error &x) {
+      std::string errMess = x.what();
+      EXPECT_EQ(0, strcmp(errMess.c_str(),  "In analytic expression evaluator, processing variable 'y'.  Invalid direct access of array variable, must access by index"));
+    }
+  }
+
+  {
+    //  
+    //  Check for variable index
+    //
+    std::string expr0 = "z=1; y[0] + y[z] + y[2]";
+    stk::expreval::Eval expr_eval0(stk::expreval::VariableMap::getDefaultResolver(), expr0.c_str());
+    expr_eval0.parse();
+    expr_eval0.bindVariable("y", *y, 3);
+    double result = expr_eval0.evaluate();
+    EXPECT_EQ(6.6, result);
+  }
+
+  {
+    //  
+    //  Check for compound index
+    //
+    std::string expr0 = "y[z[2]] + y[z[1]] + y[2]";
+    stk::expreval::Eval expr_eval0(stk::expreval::VariableMap::getDefaultResolver(), expr0.c_str());
+    expr_eval0.parse();
+
+    double z[3] = {2.0, 1.0, 0};
+
+    expr_eval0.bindVariable("y", *y, 3);
+    expr_eval0.bindVariable("z", *z, 3);
+    double result = expr_eval0.evaluate();
+    EXPECT_EQ(6.6, result);
+  }
+
+
+}
+
+
+
+
 bool
 checkUndefinedFunction(
     const char *	expr)
 {
+  stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
   try {
-    stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
     expr_eval.parse();
-    if (expr_eval.undefinedFunction()) {
-      return true;
-    } else {
-      return false;
-    }
   }
   catch (std::runtime_error &x) {
+    // parse throws on undefined function(s) and lists them
+    std::cerr << x.what();
+  }
+  if (expr_eval.undefinedFunction()) {
+    return true;
+  } else {
     return false;
   }
 }
@@ -162,10 +279,7 @@ test_one_value(const char *expression, double gold_value)
   double absolute_error = fabs(result - gold_value);
   if (absolute_error > fabs(1.0e-14*result)) 
   {
-    std::cout << expression << " = " << std::setprecision(20) << result
-      << " should be " << gold_value 
-      << " error is " << absolute_error
-      << std::endl;
+    std::cout << expression << " = " << std::setprecision(20) << result << " should be " << gold_value << " error= " << absolute_error << std::endl;
     failed = true;
   } else {
     std::cout << "Expression= " << expression << " == " << result << "\n";
@@ -219,7 +333,6 @@ evaluate_range(
     }
   }
 
-  //std::cout << "KHP: ymin=  " << ymin << ", ymax= " << ymax << "\n";
   if(write_csv) {
     // write a gnuplot input file corresponding to the csv file
     std::string expression_gnu_name = expr + std::string(".gnu");
@@ -273,21 +386,12 @@ test(
     }
     double absolute_error = fabs(result - y);
     if (absolute_error > fabs(1.0e-14*result)) {
-      std::cout << expr << " at "
-		<< std::setprecision(2) << x << " is "
-		<< std::setprecision(20) << result
-		<< " should be " << y
-		<< " error is " << absolute_error
+      std::cout << expr << " at " << std::setprecision(2) << x << " is " << std::setprecision(20) << result << " should be " << y << ", error= " << absolute_error
 		<< std::endl;
       failed = true;
     }
     else if (by != result) {
-      std::cout << expr << " at "
-		<< std::setprecision(2) << x << " is "
-		<< std::setprecision(20) << result
-		<< " does not match bound value "
-		<< std::setprecision(20) << by
-		<< std::endl;
+      std::cout << expr << " at " << std::setprecision(2) << x << " is " << std::setprecision(20) << result << " does not match bound value " << std::setprecision(20) << by << std::endl;
       failed = true;
     }
   }
@@ -366,9 +470,12 @@ EXPREVAL_DEFINE_TEST1(b3, .5*sin(x));
 
 // Pierson tests
 EXPREVAL_DEFINE_TEST(k1, x^2, x*x);
-EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x),           (1.0-cos(x*stk::expreval::s_pi))/2);
-EXPREVAL_DEFINE_TEST(k3, cosine_ramp(x, 1.0),      (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
-EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
+EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x),           (1.0-cos(x*s_pi))/2);
+EXPREVAL_DEFINE_TEST(k3, cosine_ramp(x, 1.0),      (1.0-cos(x*s_pi/1.0))/2);
+EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*s_pi/1.0))/2);
+
+EXPREVAL_DEFINE_TEST(k5, haversine_pulse(x, 0.0, 1.0), std::pow(std::sin(s_pi*x),2)   );
+EXPREVAL_DEFINE_TEST(k6,  cycloidal_ramp(x, 0.0, 1.0), x-1/(s_two_pi)*sin(s_two_pi*x) );
 
 #undef EXPREVAL_DEFINE_TEST1
 
@@ -386,6 +493,11 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(test_one_value("max(1,2)",2));
   EXPECT_TRUE(test_one_value("max(1,2,3)",3));
   EXPECT_TRUE(test_one_value("max(1,2,3,4)",4));
+
+  //
+  //  Test overloaded function with wrong number of arguments
+  //
+  //EXPECT_THROW(test_one_value("min(4)",4), std::exception);
 
   EXPECT_TRUE(test_one_value("min(4,3)",3));
   EXPECT_TRUE(test_one_value("min(4,3,2)",2));
@@ -411,29 +523,20 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(test_one_value("sin(sin(sin(sin(100))))",sin(sin(sin(sin(100.0))))));
   EXPECT_TRUE(test_one_value("sin(sin(sin(sin(pow(2,2)))))",sin(sin(sin(sin(4.0))))));
 
-
-
-
-#ifndef __PATHSCALE__
   double weibull_gold_value = 3.6787944117144233402;
   EXPECT_TRUE(test_one_value("shape=10;scale=1;weibull_pdf(1.0,shape,scale)", weibull_gold_value));
-#endif
 
-#ifndef __PATHSCALE__
   // Need a better test for distributions, perhaps something that computes the
   // mean and standard deviation of the distribution.
   double normal_gold_value = 0.79788456080286540573;
   EXPECT_TRUE(test_one_value("mean=0;standard_deviation=0.5;normal_pdf(0.0,mean,standard_deviation)", normal_gold_value));
-#endif
 
-#ifndef __PATHSCALE__
   // These tests just print a range of values of the input expressions.
   // and optionally output to a CSV file along with an associated GNUPLOT input file.
   //                                                              XMIN  XMAX    Pts  Output
   EXPECT_TRUE(evaluate_range("weibull_pdf(x,3,1)"       ,    0,    3,  3000, false ));
   EXPECT_TRUE(evaluate_range("normal_pdf(x,1,.2)"       ,    0,    2,  3000, false ));
   EXPECT_TRUE(evaluate_range("gamma_pdf(x,10,1.0)"      ,    0,    4,  3000, false ));
-#endif
 
   EXPECT_TRUE(evaluate_range("exponential_pdf(x,2)"     ,    0,    6,  3000, false ));
   EXPECT_TRUE(evaluate_range("log_uniform_pdf(x,10,1.0)",    0,    4,  3000, false ));
@@ -483,10 +586,8 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
   EXPECT_TRUE(syntax("sign(x)"));
 
-#ifndef __PATHSCALE__
   EXPECT_TRUE(syntax("weibull_pdf(x, alpha, beta)"));
-  EXPECT_TRUE(syntax("normal_pdf(x, alpha, beta)"));
-#endif
+  EXPECT_TRUE(syntax( "normal_pdf(x, alpha, beta)"));
 
 #define EXPREVAL_TEST(name) test(name##_expr, name)
 
@@ -551,6 +652,8 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(EXPREVAL_TEST(k2));
   EXPECT_TRUE(EXPREVAL_TEST(k3));
   EXPECT_TRUE(EXPREVAL_TEST(k4));
+  EXPECT_TRUE(EXPREVAL_TEST(k5));
+  EXPECT_TRUE(EXPREVAL_TEST(k6));
 
 #undef EXPREVAL_TEST
 }

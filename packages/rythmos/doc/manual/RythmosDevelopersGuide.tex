@@ -1,3 +1,4 @@
+\cleardoublepage{}
 
 \section{Introduction}
 
@@ -22,7 +23,6 @@ Steppers and StepControlStrategies.\label{rythmos:fig:IntegratorStepperDesign}}
 \end{figure}
 
 
-
 \subsection{Interpolation-Buffer Base\label{rythmos:sec:InterpolationBufferBase}}
 
 An InterpolationBuffer is basically a container of solutions and time
@@ -33,15 +33,11 @@ a state at desired ``time points'' can be returned over the time
 range with an accuracy of the order of the Interpolator. See Fig~\ref{rythmos:fig:InterpolationBuffer}.
 \begin{figure}
 
-
 \begin{centering}
 \includegraphics[width=4in]{figures/InterpolationBuffer}\caption{Illustrating the time points and time nodes in InterpolationBuffer
 with a linear interpolator.\label{rythmos:fig:InterpolationBuffer}}
-
 \par\end{centering}
-
 \end{figure}
-
 
 Part of the design here is to separate the state information (solutions
 and time derivatives) from how the state is integrated to that time.
@@ -57,7 +53,6 @@ This may be important for simulations where conservation is required,
 e.g., conservation of mass, momentum and energy. The InterpolationBuffer
 can be still useful in this situation, but the ``time nodes'' should
 be used to ensure that the state satisfies the governing ODEs/DAEs.
-
 
 \subsection{Integrator Base}
 
@@ -94,7 +89,6 @@ allowing the Stepper to choose the step size based on the Step Control
 Strategy and having the Integration Control Strategy select ``coordination''
 times is the preferred approach.
 
-
 \subsection{Integration Control-Strategy\label{rythmos:sec:Integration-Control-Strategy}}
 
 The Integration Control-Strategy is meant to determine the step size
@@ -106,7 +100,6 @@ one could control the Stepper step size with the Integration control-strategy
 by using a \emph{fixed} step type and requiring the desired step size
 be taken. This is especially useful for Steppers that can only handle
 \emph{fixed} step types.
-
 
 \subsection{Stepper Base}
 
@@ -126,7 +119,6 @@ Integration Control-Strategy (see Sec.~\ref{rythmos:sec:Integration-Control-Stra
 For variable step sizes, the Stepper needs a Step Control-Strategy
 (see Sec.~\ref{rythmos:sec:Step-Control-Strategy}) in order to adjust
 the step size based on error/order, and handle time step failures.
-
 
 \subsection{Step Control-Strategy\label{rythmos:sec:Step-Control-Strategy}}
 

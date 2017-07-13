@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-//-BEGIN
+//BEGINSchedulerExample
 #include <gtest/gtest.h>
 #include <stk_util/environment/Scheduler.hpp>
 
@@ -120,4 +120,4 @@ TEST(StkUtilTestForDocumentation, TimeBasedSchedulerWithTwoTimeIntervals)
     EXPECT_TRUE(scheduler.is_it_time(1.27, timeStep++));
 }
 }
-//-END
+//ENDSchedulerExample

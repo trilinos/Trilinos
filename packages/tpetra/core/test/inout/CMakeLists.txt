@@ -3,17 +3,26 @@
 # the sparse matrix to be read in has enough rows that it may be
 # distributed over all of them, and as long as Proc 0 has enough
 # memory to handle all the sparse matrix's data.
-IF(Tpetra_INST_INT_LONG)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    MatrixMarket_Tpetra_CrsMatrix_InOutTest
-    SOURCES
-      MatrixMarket_Tpetra_CrsMatrix_InOutTest.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS ""
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    )
-ENDIF()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_InOutTest
+  SOURCES
+    MatrixMarket_Tpetra_CrsMatrix_InOutTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_Tpetra_CrsGraph_InOutTest
+  SOURCES
+    MatrixMarket_Tpetra_CrsGraph_InOutTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     MatrixMarket_Operator_Test
@@ -75,6 +84,14 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  MatrixMarket_Tpetra_CrsGraph_FileTest
+  SOURCES
+    MatrixMarket_Tpetra_CrsGraph_FileTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  )
+
 # This test has both lower and upper bounds on the number of MPI
 # processes for which it makes sense to run.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -83,5 +100,61 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM mpi
   NUM_MPI_PROCS 2-32
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test only makes sense in an MPI build,
+# with at least 2 MPI processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PackTriples
+  SOURCES
+    PackTriples.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CooMatrixImpl
+  SOURCES
+    CooMatrixImpl.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test only makes sense in an MPI build,
+# with at least 2 MPI processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CooMatrix
+  SOURCES
+    CooMatrix.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
+# I want this test to _build_ in either MPI or non-MPI ("serial"),
+# but I only want it to _run_ in an MPI build with exactly 2 MPI
+# processes.
+TRIBITS_ADD_EXECUTABLE(
+  ReadTriples
+  SOURCES
+    ReadTriples.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  ReadTriples
+  NAME ReadTriples_MPI_2
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )

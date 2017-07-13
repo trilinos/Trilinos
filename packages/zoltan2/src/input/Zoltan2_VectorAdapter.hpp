@@ -108,6 +108,7 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef User userCoord_t;
+  typedef VectorAdapter<User> base_adapter_t;
 #endif
 
   /*! \brief Destructor

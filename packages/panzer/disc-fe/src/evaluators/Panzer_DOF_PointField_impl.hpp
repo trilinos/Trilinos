@@ -70,8 +70,8 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
 
   Teuchos::RCP<PHX::DataLayout> basisLayout = fieldBasis.functional;
 
-  coordinates = PHX::MDField<ScalarT,Point,Dim>(coordinateName,coordLayout);
-  dof_coeff = PHX::MDField<ScalarT>(fieldName,basisLayout);
+  coordinates = PHX::MDField<const ScalarT,Point,Dim>(coordinateName,coordLayout);
+  dof_coeff = PHX::MDField<const ScalarT>(fieldName,basisLayout);
   dof_field = PHX::MDField<ScalarT>(fieldName+postfixFieldName,quadLayout);
 
   this->addDependentField(coordinates);
@@ -79,9 +79,9 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
   this->addEvaluatedField(dof_field);
 
   // build data storage for temporary conversion
-  basisRef    = Intrepid2::FieldContainer<double>(coeffCount,pointCount);
-  basis       = Intrepid2::FieldContainer<double>(cellCount,coeffCount,pointCount);
-  intrpCoords = Intrepid2::FieldContainer<double>(pointCount,dimCount);
+  basisRef    = Kokkos::DynRankView<double,PHX::Device>("basisRef",coeffCount,pointCount);
+  basis       = Kokkos::DynRankView<double,PHX::Device>("basis",cellCount,coeffCount,pointCount);
+  intrpCoords = Kokkos::DynRankView<double,PHX::Device>("intrpCoords",pointCount,dimCount);
   
   std::string n = "DOF_PointField: " + dof_field.fieldTag().name();
   this->setName(n);
@@ -105,8 +105,8 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
   dof_field.deep_copy(ScalarT(0.0));
 
   // copy coordinates
-  for (int i = 0; i < coordinates.dimension_0(); ++i)
-    for (int j = 0; j < coordinates.dimension_1(); ++j)
+  for (int i = 0; i < coordinates.extent_int(0); ++i)
+    for (int j = 0; j < coordinates.extent_int(1); ++j)
       intrpCoords(i,j) = Sacado::ScalarValue<ScalarT>::eval(coordinates(i,j));
 
   if(workset.num_cells>0) {
@@ -114,13 +114,12 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
     intrepidBasis->getValues(basisRef, intrpCoords, Intrepid2::OPERATOR_VALUE);
 
     // transfer reference basis values to physical frame values
-    Intrepid2::FunctionSpaceTools::
-      HGRADtransformVALUE<double>(basis,
-				  basisRef);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      HGRADtransformVALUE(basis,basisRef);
 
     // evaluate function at specified points
-    Intrepid2::FunctionSpaceTools::
-      evaluate<ScalarT>(dof_field,dof_coeff,basis);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      evaluate(dof_field.get_view(),dof_coeff.get_view(),basis);
   }
 }
 

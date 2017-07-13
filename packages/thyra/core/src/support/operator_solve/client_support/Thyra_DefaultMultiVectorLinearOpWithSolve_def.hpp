@@ -272,12 +272,14 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::validateInitialize(
   TEUCHOS_TEST_FOR_EXCEPT(is_null(multiVecRange));
   TEUCHOS_TEST_FOR_EXCEPT(is_null(multiVecDomain));
   TEUCHOS_TEST_FOR_EXCEPT( multiVecRange->numBlocks() != multiVecDomain->numBlocks() );
-  THYRA_ASSERT_VEC_SPACES(
-    "DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(lows,multiVecRange,multiVecDomain)",
-    *lows->range(), *multiVecRange->getBlock(0) );
-  THYRA_ASSERT_VEC_SPACES(
-    "DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(lows,multiVecRange,multiVecDomain)",
-    *lows->domain(), *multiVecDomain->getBlock(0) );
+  if (lows->range() != Teuchos::null)
+    THYRA_ASSERT_VEC_SPACES(
+      "DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(lows,multiVecRange,multiVecDomain)",
+      *lows->range(), *multiVecRange->getBlock(0) );
+  if (lows->domain() != Teuchos::null)
+    THYRA_ASSERT_VEC_SPACES(
+      "DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(lows,multiVecRange,multiVecDomain)",
+      *lows->domain(), *multiVecDomain->getBlock(0) );
 #endif
 }
 

@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/heterogeneous_mesh.hpp>
 #include <sstream>                      // for ostringstream, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -61,7 +61,7 @@ enum { SpatialDim = 3 };
 
 void heterogeneous_mesh_meta_data(
   stk::mesh::MetaData & meta_data ,
-  VectorFieldType & node_coord )
+  const VectorFieldType & node_coord )
 {
   stk::mesh::Part & universal        = meta_data.universal_part();
   stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("hexes", stk::topology::HEX_8));

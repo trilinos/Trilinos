@@ -118,6 +118,20 @@ public:
   /** \brief . */
   RCP< const LinearOpWithSolveBase<double> > get_W() const;
 
+  /** \brief . */
+  RCP< const LinearOpBase<double> >
+  get_W_op() const;
+  /** \brief . */
+  RCP< LinearOpBase<double> >
+  get_nonconst_W_op(const bool forceUpToDate);
+
+  /** \brief . */
+  RCP< const PreconditionerBase<double> >
+  get_prec_op() const;
+  /** \brief . */
+  RCP< PreconditionerBase<double> >
+  get_nonconst_prec_op();
+
   //@}
 
   /** \brief . */
@@ -159,7 +173,10 @@ private:
   bool do_row_sum_scaling_;
   NOX::RowSumScaling::ENOX_WhenToUpdateScaling when_to_update_;
   Teuchos::RCP< ::Thyra::VectorBase<double> > scaling_vector_;
+  Teuchos::RCP< ::Thyra::VectorBase<double> > right_scaling_vector_;
+  bool rightScalingFirst_;
 
+  bool rebuild_solver_;
 };
 
 

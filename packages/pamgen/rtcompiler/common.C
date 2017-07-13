@@ -13,7 +13,7 @@ using namespace PG_RuntimeCompiler;
 ////////////////HELPER FUNCTIONS////////////////////
 
 /*****************************************************************************/
-bool PG_RuntimeCompiler::isAssignable(ObjectType type) 
+bool PG_RuntimeCompiler::isAssignable(ObjectType type)
 /*****************************************************************************/
 {
   return (type == ScalarVarOT || type == ArrayIndexOT);
@@ -53,7 +53,7 @@ bool PG_RuntimeCompiler::isDouble(const string& str)
 
   for(unsigned int i = 0; i < str.length(); ++i) {
     char c = str[i];
-    if ( !((c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' || 
+    if ( !((c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' ||
            c == '-' || c == '+'))
       return false;
     if (c == '.' && !afterDecimal)
@@ -72,7 +72,7 @@ bool PG_RuntimeCompiler::isDouble(const string& str)
 }
 
 /*****************************************************************************/
-char PG_RuntimeCompiler::getNextRealChar(const string& str, unsigned int i) 
+char PG_RuntimeCompiler::getNextRealChar(const string& str, unsigned int i)
 /*****************************************************************************/
 {
   while (i < str.size() && (isWhitespace(str[i]) || str[i] == '\\'))
@@ -108,7 +108,7 @@ bool PG_RuntimeCompiler::isLetter(char c)
 bool PG_RuntimeCompiler::isValidVariableChar(char c)
 /*****************************************************************************/
 {
-  return ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || 
+  return ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
           (c >= 'a' && c <= 'z') || (c == '_') || (c == '.'));
 }
 
@@ -135,21 +135,21 @@ bool PG_RuntimeCompiler::isWhitespace(char o)
 }
 
 /*****************************************************************************/
-bool PG_RuntimeCompiler::isExp(char c) 
+bool PG_RuntimeCompiler::isExp(char c)
 /*****************************************************************************/
 {
   return (c == 'E' || c == 'e');
 }
 
 /*****************************************************************************/
-bool PG_RuntimeCompiler::isLengthTwoOp(const string& op) 
+bool PG_RuntimeCompiler::isLengthTwoOp(const string& op)
 /*****************************************************************************/
 {
   return (op=="||" || op=="&&" || op=="==" || op=="!=" || op=="<=" ||op==">=");
 }
 
 /*****************************************************************************/
-string PG_RuntimeCompiler::intToString(int i) 
+string PG_RuntimeCompiler::intToString(int i)
 /*****************************************************************************/
 {
   static char buf[32];
@@ -190,7 +190,9 @@ string PG_RuntimeCompiler::typeToString(Type t)
     return "double";
   else if (t == IntT)
     return "int";
-  else 
+  else if (t == LongT)
+    return "long";
+  else
     return "unknown type";
 }
 
@@ -199,9 +201,9 @@ string PG_RuntimeCompiler::typeToString(Type t)
 
 using namespace std;
 
-ostream& PG_RuntimeCompiler::operator<<(ostream& os, const Executable& obj)                     
-{                                                                                                    
-  return obj.operator<<(os);                                                                         
+ostream& PG_RuntimeCompiler::operator<<(ostream& os, const Executable& obj)
+{
+  return obj.operator<<(os);
 }
 #include "RTC_ObjectRTC.hh"
 

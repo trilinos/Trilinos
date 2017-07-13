@@ -264,7 +264,6 @@ void
 RBILUK<MatrixType>::
 initAllValues (const block_crs_matrix_type& A)
 {
-  //using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
 
@@ -306,6 +305,18 @@ initAllValues (const block_crs_matrix_type& A)
   L_block_->setAllToScalar (STM::zero ()); // Zero out L and U matrices
   U_block_->setAllToScalar (STM::zero ());
   D_block_->setAllToScalar (STM::zero ()); // Set diagonal values to zero
+
+  // NOTE (mfh 27 May 2016) The factorization below occurs entirely on
+  // host, so sync to host first.  The const_cast is unfortunate but
+  // is our only option to make this correct.
+  const_cast<block_crs_matrix_type&> (A).template sync<Kokkos::HostSpace> ();
+  L_block_->template sync<Kokkos::HostSpace> ();
+  U_block_->template sync<Kokkos::HostSpace> ();
+  D_block_->template sync<Kokkos::HostSpace> ();
+  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
+  L_block_->template modify<Kokkos::HostSpace> ();
+  U_block_->template modify<Kokkos::HostSpace> ();
+  D_block_->template modify<Kokkos::HostSpace> ();
 
   RCP<const map_type> rowMap = L_block_->getRowMap ();
 
@@ -388,8 +399,38 @@ initAllValues (const block_crs_matrix_type& A)
     }
   }
 
+  // NOTE (mfh 27 May 2016) Sync back to device, in case compute()
+  // ever gets a device implementation.
+  {
+    typedef typename block_crs_matrix_type::device_type device_type;
+    const_cast<block_crs_matrix_type&> (A).template sync<device_type> ();
+    L_block_->template sync<device_type> ();
+    U_block_->template sync<device_type> ();
+    D_block_->template sync<device_type> ();
+  }
   this->isInitialized_ = true;
 }
+
+namespace { // (anonymous)
+
+// For a given Kokkos::View type, possibly unmanaged, get the
+// corresponding managed Kokkos::View type.  This is handy for
+// translating from little_block_type or little_vec_type (both
+// possibly unmanaged) to their managed versions.
+template<class LittleBlockType>
+struct GetManagedView {
+  static_assert (Kokkos::Impl::is_view<LittleBlockType>::value,
+                 "LittleBlockType must be a Kokkos::View.");
+  typedef Kokkos::View<typename LittleBlockType::non_const_data_type,
+                       typename LittleBlockType::array_layout,
+                       typename LittleBlockType::device_type> managed_non_const_type;
+  static_assert (static_cast<int> (managed_non_const_type::rank) ==
+                 static_cast<int> (LittleBlockType::rank),
+                 "managed_non_const_type::rank != LittleBlock::rank.  "
+                 "Please report this bug to the Ifpack2 developers.");
+};
+
+} // namespace (anonymous)
 
 template<class MatrixType>
 void RBILUK<MatrixType>::compute ()
@@ -415,10 +456,25 @@ void RBILUK<MatrixType>::compute ()
     initialize (); // Don't count this in the compute() time
   }
 
-
+  // NOTE (mfh 27 May 2016) The factorization below occurs entirely on
+  // host, so sync to host first.  The const_cast is unfortunate but
+  // is our only option to make this correct.
+  if (! A_block_.is_null ()) {
+    Teuchos::RCP<block_crs_matrix_type> A_nc =
+      Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
+    A_nc->template sync<Kokkos::HostSpace> ();
+  }
+  L_block_->template sync<Kokkos::HostSpace> ();
+  U_block_->template sync<Kokkos::HostSpace> ();
+  D_block_->template sync<Kokkos::HostSpace> ();
+  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
+  L_block_->template modify<Kokkos::HostSpace> ();
+  U_block_->template modify<Kokkos::HostSpace> ();
+  D_block_->template modify<Kokkos::HostSpace> ();
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
+    Teuchos::TimeMonitor timeMon (timer);
     this->isComputed_ = false;
 
     // MinMachNum should be officially defined, for now pick something a little
@@ -437,11 +493,10 @@ void RBILUK<MatrixType>::compute ()
 
     const local_ordinal_type blockMatSize = blockSize_*blockSize_;
 
-    // FIXME (mfh 08 Nov 2015) We need to move away from expressing
-    // these strides explicitly, in order to Kokkos-ize
-    // BlockCrsMatrix.
+    // FIXME (mfh 08 Nov 2015, 24 May 2016) We need to move away from
+    // expressing these strides explicitly, in order to finish #177
+    // (complete Kokkos-ization of BlockCrsMatrix) thoroughly.
     const local_ordinal_type rowStride = blockSize_;
-    const local_ordinal_type colStride = 1;
 
     Teuchos::Array<int> ipiv_teuchos(blockSize_);
     Kokkos::View<int*, Kokkos::HostSpace,
@@ -453,12 +508,9 @@ void RBILUK<MatrixType>::compute ()
     size_t num_cols = U_block_->getColMap()->getNodeNumElements();
     Teuchos::Array<int> colflag(num_cols);
 
-    Teuchos::Array<impl_scalar_type> diagMod(blockMatSize,STM::zero());
-    little_block_type diagModBlock(&diagMod[0], blockSize_, rowStride, colStride);
-    Teuchos::Array<impl_scalar_type> matTmpArray(blockMatSize,STM::zero());
-    little_block_type matTmp(&matTmpArray[0], blockSize_, rowStride, colStride);
-    Teuchos::Array<impl_scalar_type> multiplierArray(blockMatSize, STM::zero());
-    little_block_type multiplier(&multiplierArray[0], blockSize_, rowStride, colStride);
+    typename GetManagedView<little_block_type>::managed_non_const_type diagModBlock ("diagModBlock", blockSize_, blockSize_);
+    typename GetManagedView<little_block_type>::managed_non_const_type matTmp ("matTmp", blockSize_, blockSize_);
+    typename GetManagedView<little_block_type>::managed_non_const_type multiplier ("multiplier", blockSize_, blockSize_);
 
 //    Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
@@ -485,15 +537,15 @@ void RBILUK<MatrixType>::compute ()
       for (local_ordinal_type j = 0; j < NumL; ++j)
       {
         const local_ordinal_type matOffset = blockMatSize*j;
-        little_block_type lmat(&valsL[matOffset],blockSize_,rowStride, colStride);
-        little_block_type lmatV(&InV[matOffset],blockSize_,rowStride, colStride);
+        little_block_type lmat((typename little_block_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
+        little_block_type lmatV((typename little_block_type::value_type*) &InV[matOffset],blockSize_,rowStride);
         //lmatV.assign(lmat);
         Tpetra::Experimental::COPY (lmat, lmatV);
         InI[j] = colValsL[j];
       }
 
       little_block_type dmat = D_block_->getLocalBlock(local_row, local_row);
-      little_block_type dmatV(&InV[NumL*blockMatSize], blockSize_, rowStride, colStride);
+      little_block_type dmatV((typename little_block_type::value_type*) &InV[NumL*blockMatSize], blockSize_, rowStride);
       //dmatV.assign(dmat);
       Tpetra::Experimental::COPY (dmat, dmatV);
       InI[NumL] = local_row;
@@ -507,8 +559,8 @@ void RBILUK<MatrixType>::compute ()
         if (!(colValsU[j] < numLocalRows)) continue;
         InI[NumL+1+j] = colValsU[j];
         const local_ordinal_type matOffset = blockMatSize*(NumL+1+j);
-        little_block_type umat(&valsU[blockMatSize*j], blockSize_, rowStride, colStride);
-        little_block_type umatV(&InV[matOffset], blockSize_, rowStride, colStride);
+        little_block_type umat((typename little_block_type::value_type*) &valsU[blockMatSize*j], blockSize_, rowStride);
+        little_block_type umatV((typename little_block_type::value_type*) &InV[matOffset], blockSize_, rowStride);
         //umatV.assign(umat);
         Tpetra::Experimental::COPY (umat, umatV);
         NumU += 1;
@@ -520,13 +572,12 @@ void RBILUK<MatrixType>::compute ()
         colflag[InI[j]] = j;
       }
 
-
       scalar_type diagmod = STM::zero (); // Off-diagonal accumulator
-      Tpetra::Experimental::deep_copy (diagModBlock, diagmod);
+      Kokkos::deep_copy (diagModBlock, diagmod);
 
       for (local_ordinal_type jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];
-        little_block_type currentVal(&InV[jj*blockMatSize], blockSize_, rowStride, colStride); // current_mults++;
+        little_block_type currentVal((typename little_block_type::value_type*) &InV[jj*blockMatSize], blockSize_, rowStride); // current_mults++;
         //multiplier.assign(currentVal);
         Tpetra::Experimental::COPY (currentVal, multiplier);
 
@@ -547,9 +598,9 @@ void RBILUK<MatrixType>::compute ()
             if (!(UUI[k] < numLocalRows)) continue;
             const int kk = colflag[UUI[k]];
             if (kk > -1) {
-              little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
-              little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+              little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
+              little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
@@ -559,15 +610,15 @@ void RBILUK<MatrixType>::compute ()
           for (local_ordinal_type k = 0; k < NumUU; ++k) {
             if (!(UUI[k] < numLocalRows)) continue;
             const int kk = colflag[UUI[k]];
-            little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
+            little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
             if (kk > -1) {
-              little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+              little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
             else {
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), diagModBlock);
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
@@ -616,7 +667,7 @@ void RBILUK<MatrixType>::compute ()
       }
 
       for (local_ordinal_type j = 0; j < NumU; ++j) {
-        little_block_type currentVal(&InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride, colStride); // current_mults++;
+        little_block_type currentVal((typename little_block_type::value_type*) &InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride); // current_mults++;
         // scale U by the diagonal inverse
         Tpetra::Experimental::GEMM ("N", "N", STS::one (), dmat, currentVal,
                                     STS::zero (), matTmp);
@@ -637,6 +688,19 @@ void RBILUK<MatrixType>::compute ()
     }
 
   } // Stop timing
+
+  // Sync everything back to device, for efficient solves.
+  {
+    typedef typename block_crs_matrix_type::device_type device_type;
+    if (! A_block_.is_null ()) {
+      Teuchos::RCP<block_crs_matrix_type> A_nc =
+        Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
+      A_nc->template sync<device_type> ();
+    }
+    L_block_->template sync<device_type> ();
+    U_block_->template sync<device_type> ();
+    D_block_->template sync<device_type> ();
+  }
 
   this->isComputed_ = true;
   this->numCompute_ += 1;
@@ -681,13 +745,12 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   const local_ordinal_type blockMatSize = blockSize_*blockSize_;
 
   const local_ordinal_type rowStride = blockSize_;
-  const local_ordinal_type colStride = 1;
 
   BMV yBlock (Y, * (A_block_->getGraph ()->getDomainMap ()), blockSize_);
   const BMV xBlock (X, * (A_block_->getColMap ()), blockSize_);
 
   Teuchos::Array<scalar_type> lclarray(blockSize_);
-  little_vec_type lclvec(&lclarray[0], blockSize_, colStride);
+  little_vec_type lclvec((typename little_vec_type::value_type*)&lclarray[0], blockSize_);
   const scalar_type one = STM::one ();
   const scalar_type zero = STM::zero ();
 
@@ -697,9 +760,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     if (alpha == one && beta == zero) {
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
         // Start by solving L C = X for C.  C must have the same Map
-        // as D.  We have to use a temp multivector, since
-        // localSolve() does not allow its input and output to alias
-        // one another.
+        // as D.  We have to use a temp multivector, since our
+        // implementation of triangular solves does not allow its
+        // input and output to alias one another.
         //
         // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
         const local_ordinal_type numVectors = xBlock.getNumVectors();
@@ -727,7 +790,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               little_vec_type prevVal = cBlock.getLocalBlock(col, imv);
 
               const local_ordinal_type matOffset = blockMatSize*j;
-              little_block_type lij(&valsL[matOffset],blockSize_,rowStride, colStride);
+              little_block_type lij((typename little_block_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
 
               //cval.matvecUpdate(-one, lij, prevVal);
               Tpetra::Experimental::GEMV (-one, lij, prevVal, cval);
@@ -762,7 +825,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               little_vec_type prevVal = yBlock.getLocalBlock(col, imv);
 
               const local_ordinal_type matOffset = blockMatSize*(NumU-1-j);
-              little_block_type uij(&valsU[matOffset], blockSize_, rowStride, colStride);
+              little_block_type uij((typename little_block_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
 
               //yval.matvecUpdate(-one, uij, prevVal);
               Tpetra::Experimental::GEMV (-one, uij, prevVal, yval);

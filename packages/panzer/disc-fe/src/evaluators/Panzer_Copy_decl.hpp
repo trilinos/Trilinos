@@ -63,7 +63,7 @@ namespace panzer {
   */
 PANZER_EVALUATOR_CLASS(Copy)
   
-  PHX::MDField<ScalarT> input;
+  PHX::MDField<const ScalarT> input;
   PHX::MDField<ScalarT> output;
 
 PANZER_EVALUATOR_CLASS_END

@@ -41,32 +41,6 @@
 //@HEADER
 */
 
-// ***********************************************************************
-//
-//      Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2004) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-
 
 /*! \file Ifpack2_UnitTestRILUK.cpp
 
@@ -162,36 +136,44 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
   //that method has these input arguments:
   //Teuchos::FancyOStream& out, bool& success
 
+  using Kokkos::Details::ArithTraits;
   using Teuchos::RCP;
   using std::endl;
   typedef Tpetra::Map<LO, GO, Node> map_type;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename MV::impl_scalar_type val_type;
+  typedef typename Kokkos::Details::ArithTraits<val_type>::mag_type mag_type;
+  typedef typename map_type::device_type device_type;
+  const mag_type oneMag = ArithTraits<mag_type>::one ();
+  const mag_type twoMag = oneMag + oneMag;
 
   out << "Ifpack2::RILUK: Test1" << endl;
+  Teuchos::OSTab tab1 (out);
 
   const global_size_t num_rows_per_proc = 5;
   RCP<const map_type> rowmap =
     tif_utest::create_tpetra_map<LO, GO, Node> (num_rows_per_proc);
 
   if (rowmap->getComm ()->getSize () > 1) {
-    out << endl << "This test may only be run in serial or with a single MPI process." << endl;
+    out << "This test may only be run in serial "
+      "or with a single MPI process." << endl;
     return;
   }
 
   out << "Creating matrix" << endl;
-  RCP<const crs_matrix_type> crsmatrix = tif_utest::create_test_matrix2<Scalar,LO,GO,Node>(rowmap);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix2<Scalar,LO,GO,Node>(rowmap);
 
   out << "Creating preconditioner" << endl;
   Ifpack2::RILUK<row_matrix_type> prec (crsmatrix);
 
   out << "Setting preconditioner's parameters" << endl;
-
   Teuchos::ParameterList params;
   params.set ("fact: iluk level-of-fill", 1);
   params.set ("fact: iluk level-of-overlap", 0);
-
   TEST_NOTHROW(prec.setParameters(params));
 
   out << "Calling initialize() and compute()" << endl;
@@ -199,63 +181,141 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
   prec.compute();
 
   out << "Creating test problem" << endl;
-  MV x(rowmap,2), y(rowmap,2);
-  x.putScalar(1);
+  MV x (rowmap, 2);
+  MV y (rowmap, 2);
+  x.putScalar (STS::one ());
 
-  //apply the matrix to x, putting A*x in y
+  out << "Calling crsmatrix->apply(x, y)" << endl;
   crsmatrix->apply(x,y);
 
-  out << "Calling preconditioner's apply()" << endl;
-
+  out << "Calling prec.apply(y, x)" << endl;
   //apply the preconditioner to y, putting ~A^-1*y in x
   //(this should set x back to 1's)
   prec.apply(y, x);
 
+  //x should be full of 1's now.
   out << "Checking result" << endl;
 
-  Teuchos::ArrayRCP<const Scalar> xview = x.get1dView();
+  // Useful things for comparing results.
+  Kokkos::View<mag_type*, device_type> norms ("norms", x.getNumVectors ());
+  auto norms_h = Kokkos::create_mirror_view (norms);
+  MV diff (x.getMap (), x.getNumVectors ());
 
-  //x should be full of 1's now.
+  {
+    // FIXME (mfh 04 Oct 2016) This is the bound that I found here
+    // when I fixed this test.  Not sure if it's sensible.
+    const mag_type bound = twoMag * ArithTraits<val_type>::eps ();
 
-  Teuchos::ArrayRCP<Scalar> ones(num_rows_per_proc*2, 1);
-
-  TEST_COMPARE_FLOATING_ARRAYS(xview, ones(), 2*Teuchos::ScalarTraits<Scalar>::eps());
+    diff.putScalar (STS::one ());
+    diff.update (STS::one (), x, -STS::one ());
+    diff.normInf (norms);
+    Kokkos::deep_copy (norms_h, norms);
+    for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
+      const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
+      TEST_ASSERT( absVal <= bound );
+      if (absVal > bound) {
+        out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
+            << absVal << " > " << bound
+            << "; the norm equals " << norms_h(j)
+            << endl;
+      }
+    }
+  }
 
   // Now test alpha != 1 and beta == 0.
-  Scalar alpha = Teuchos::as<Scalar> (2);
-  Scalar beta = Teuchos::as<Scalar> (0);
-  out << "Testing apply() for alpha = " << alpha << " and beta = " << beta << endl;
+  Scalar alpha = Teuchos::as<Scalar> (2.0);
+  Scalar beta = Teuchos::as<Scalar> (0.0);
+  out << "Testing apply() for alpha = " << alpha
+      << " and beta = " << beta << endl;
   MV x_copy = Tpetra::createCopy (x);
   MV y_copy = Tpetra::createCopy (y);
   crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
-  // y_copy should be 2*y now.
-  MV y_times_2 = Tpetra::createCopy (y);
-  y_times_2.scale (Teuchos::as<Scalar> (2));
-  TEST_COMPARE_FLOATING_ARRAYS(y_times_2.get1dView (), y_copy.get1dView (), 10*Teuchos::ScalarTraits<Scalar>::eps ());
+
+  out << "y_copy should be 2*y now" << endl;
+  {
+    // FIXME (mfh 04 Oct 2016) This is the bound that I found here
+    // when I fixed this test.  Not sure if it's sensible.
+    const mag_type bound = 10.0 * ArithTraits<val_type>::eps ();
+
+    // diff := y_copy - 2*y
+    diff.assign (y);
+    diff.scale (Teuchos::as<Scalar> (2.0));
+    diff.update (STS::one (), y_copy, -STS::one ());
+    diff.normInf (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
+      const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
+      TEST_ASSERT( absVal <= bound );
+      if (absVal > bound) {
+        out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
+            << absVal << " > " << bound
+            << "; the norm equals " << norms_h(j)
+            << endl;
+      }
+    }
+  }
 
   // Now test alpha == 0 and beta == 0.
-  alpha = Teuchos::as<Scalar> (0);
-  beta = Teuchos::as<Scalar> (0);
-  out << "Testing apply() for alpha = " << alpha << " and beta = " << beta << endl;
+  alpha = Teuchos::as<Scalar> (0.0);
+  beta = Teuchos::as<Scalar> (0.0);
+  out << "Testing apply() for alpha = " << alpha
+      << " and beta = " << beta << endl;
   Tpetra::deep_copy (x_copy, x);
   Tpetra::deep_copy (y_copy, y);
   crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
-  // y_copy should be zero now.
-  MV y_zero (y.getMap (), 2);
-  y_zero.putScalar (Teuchos::as<Scalar> (0));
-  TEST_COMPARE_FLOATING_ARRAYS(y_zero.get1dView (), y_copy.get1dView (), Teuchos::ScalarTraits<Scalar>::zero ());
+
+  out << "y_copy should be zero now" << endl;
+  //TEST_COMPARE_FLOATING_ARRAYS(y_zero.get1dView (), y_copy.get1dView (), Teuchos::ScalarTraits<Scalar>::zero ());
+  {
+    const mag_type bound = ArithTraits<mag_type>::zero ();
+
+    y_copy.normInf (norms);
+    Kokkos::deep_copy (norms_h, norms);
+    for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
+      const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
+      TEST_ASSERT( absVal <= bound );
+      if (absVal > bound) {
+        out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
+            << absVal << " > " << bound
+            << "; the norm equals " << norms_h(j)
+            << endl;
+      }
+    }
+  }
 
   // Now test alpha == 0 and beta == -1.
-  alpha = Teuchos::as<Scalar> (0);
-  beta = Teuchos::as<Scalar> (-1);
-  out << "Testing apply() for alpha = " << alpha << " and beta = " << beta << endl;
+  alpha = Teuchos::as<Scalar> (0.0);
+  beta = Teuchos::as<Scalar> (-1.0);
+  out << "Testing apply() for alpha = " << alpha
+      << " and beta = " << beta << endl;
   x_copy = Tpetra::createCopy (x);
   y_copy = Tpetra::createCopy (y);
   crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
-  // y_copy should be -y now.
-  MV y_neg = Tpetra::createCopy (y);
-  y_neg.update (Teuchos::as<Scalar> (0), y, Teuchos::as<Scalar> (-1));
-  TEST_COMPARE_FLOATING_ARRAYS(y_neg.get1dView (), y_copy.get1dView (), Teuchos::as<Scalar> (0));
+
+  out << "y_copy should be -y now" << endl;
+  //TEST_COMPARE_FLOATING_ARRAYS(y_neg.get1dView (), y_copy.get1dView (), Teuchos::as<Scalar> (0));
+  {
+    const mag_type bound = ArithTraits<mag_type>::zero ();
+
+    // diff := y_copy - (-y)
+    diff.assign (y);
+    diff.scale (Teuchos::as<Scalar> (-1.0));
+    diff.update (STS::one (), y_copy, -STS::one ());
+    diff.normInf (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
+      const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
+      TEST_ASSERT( absVal <= bound );
+      if (absVal > bound) {
+        out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
+            << absVal << " > " << bound
+            << "; the norm equals " << norms_h(j)
+            << endl;
+      }
+    }
+  }
 
   out << "Done with test" << endl;
 }
@@ -299,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
 
     RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LO,GO,Node>(rowmap,lof+2);
     //std::string aFile = "A_bw=" + Teuchos::toString(lof+2) + ".mm";
-    //RCP<crs_matrix_type> crsmatrix = reader_type::readSparseFile (aFile, comm, platform.getNode());
+    //RCP<crs_matrix_type> crsmatrix = reader_type::readSparseFile (aFile, comm);
     //crsmatrix->describe(out,Teuchos::VERB_EXTREME);
     Ifpack2::RILUK<row_matrix_type> prec(crsmatrix);
 
@@ -331,10 +391,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
     std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
     std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
     out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
-    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm, platform.getNode());
-    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm, platform.getNode());
+    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm);
+    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm);
     RCP<const map_type> rm = U->getRowMap();
-    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, platform.getNode(), rm);
+    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, rm);
 
     //compare factors
     out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
@@ -455,8 +515,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
     std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
     out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
-    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm, platform.getNode());
-    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm, platform.getNode());
+    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm);
+    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm);
     RCP<const map_type> rm = U->getRowMap();
 
     //Compare factors.  We can't use the Frobenius norm, as it uses GIDs.
@@ -503,7 +563,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     }
     out << std::endl;
 
-    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, platform.getNode(), rm);
+    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, rm);
     D->update(TST::one(),iD,-TST::one());
     Teuchos::Array<magnitudeType> norms(1);
     D->norm2(norms);

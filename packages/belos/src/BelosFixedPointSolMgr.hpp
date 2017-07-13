@@ -188,6 +188,22 @@ namespace Belos {
     //! Set the parameters the solver manager should use to solve the linear problem. 
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
     
+    //! Set user-defined convergence status test.
+    void replaceUserConvStatusTest( const Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > &userConvStatusTest )
+    {
+
+      convTest_ = userConvStatusTest;
+
+      typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
+      sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
+
+      StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+      outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
+
+      std::string solverDesc = " Fixed Point ";
+      outputTest_->setSolverDesc( solverDesc );
+    }
+
     //@}
    
     //! @name Reset methods
@@ -251,7 +267,7 @@ namespace Belos {
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
 
     //! Convergence stopping criterion.
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
+    Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > convTest_;
 
     //! Output "status test" that controls all the other status tests.
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
@@ -581,7 +597,6 @@ FixedPointSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "relative residual norm when the block size is greater than one.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
-    //  pl->set("Restart Timers", restartTimers_);
     validPL = pl;
   }
   return validPL;
@@ -685,9 +700,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
 	    // At least one of the linear system(s) converged.  
 	    //
 	    // Get the column indices of the linear systems that converged.
-	    typedef StatusTestGenResNorm<ScalarType,MV,OP> conv_test_type;
-	    std::vector<int> convIdx = 
-	      rcp_dynamic_cast<conv_test_type>(convTest_)->convIndices();
+	    std::vector<int> convIdx = convTest_->convIndices();
 
 	    // If the number of converged linear systems equals the
             // number of linear systems currently being solved, then
@@ -816,10 +829,8 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
 
   // Save the convergence test value ("achieved tolerance") for this solve.
   {
-    typedef StatusTestGenResNorm<ScalarType,MV,OP> conv_test_type;
     // testValues is nonnull and not persistent.
-    const std::vector<MagnitudeType>* pTestValues = 
-      rcp_dynamic_cast<conv_test_type>(convTest_)->getTestValue();
+    const std::vector<MagnitudeType>* pTestValues = convTest_->getTestValue();
     
     TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
       "Belos::FixedPointSolMgr::solve(): The convergence test's getTestValue() "

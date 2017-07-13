@@ -95,7 +95,7 @@ public:
 
 private:
   // fields to be modified
-  std::vector< PHX::MDField<ScalarT> > inFields_;
+  std::vector< PHX::MDField<const ScalarT> > inFields_;
 
   // fields that need to be modified
   std::vector< PHX::MDField<ScalarT> > outFields_;
@@ -154,7 +154,7 @@ private:
                          const UniqueGlobalIndexerBase & indexerDest);
 
   // fields to be modified
-  std::vector< PHX::MDField<ScalarT> > inFields_;
+  std::vector< PHX::MDField<const ScalarT> > inFields_;
 
   // fields that need to be modified
   std::vector< PHX::MDField<ScalarT> > outFields_;

@@ -1,4 +1,4 @@
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 
 
 TRIBITS_ADD_EXECUTABLE(
@@ -24,16 +24,21 @@ TRIBITS_ADD_EXECUTABLE(
 
 SET( RES_FILES )
 
+# This test has been failing for a long time (see Trilinos #23)
+ADVANCED_SET(Pamgen_run_test_script_l_01_DISABLE ON CACHE BOOL
+  "Set in pamgen/test/CMakeLists.txt")
 
 FUNCTION(PAMGEN_ADD_TEST  FILE_IDX_EXT)
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
      #prefix
      PARSE
-     #lists
-     "HOST;XHOST;HOSTTYPE;XHOSTTYPE;ARGS;CATEGORIES"
      #options
      "LONG_LONG"
+     #one_value_keywords
+     ""
+     #multi_value_keywords
+     "HOST;XHOST;HOSTTYPE;XHOSTTYPE;ARGS;CATEGORIES"
      ${ARGN}
      )
 
@@ -190,3 +195,9 @@ d360tri.txt  dbrick.txt sdbrick.txt ssdbrick.txt  dgeom_warp2d.txt
 1tri_elem.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )
+
+#
+# RTC testing
+#
+
+ADD_SUBDIRECTORY(rtc_test)

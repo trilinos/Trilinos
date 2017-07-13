@@ -52,6 +52,30 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
+/** @ingroup risk_group
+    \class ROL::MeanDeviation
+    \brief Provides an interface for the mean plus a sum of arbitrary order
+    deviations.
+
+    The mean plus deviations risk measure is
+    \f[
+       \mathcal{R}(X) = \mathbb{E}[X]
+        + \sum_{k=1}^n c_k \mathbb{E}[\wp(X-\mathbb{E}[X])^{p_k}]^{1/p_k}
+    \f]
+    where \f$\wp:\mathbb{R}\to[0,\infty)\f$ is either the absolute value
+    or \f$(x)_+ = \max\{0,x\}\f$, \f$c_k > 0\f$ and \f$p_k\in\mathbb{N}\f$.
+    In general, \f$\mathcal{R}\f$ is law-invariant, but not coherent.
+    In the specific case that \f$\wp(x) = (x)_+\f$ and \f$c_k\in[0,1]\f$,
+    \f$\mathcal{R}\f$ is coherent.  On the other hand,
+    the common mean-plus-standard-deviation risk measure (i.e.,
+    \f$\wp(x) = |x|\f$, \f$n=1\f$ and \f$p_1 = 2\f$) is not coherent since
+    it violates monotonicity.
+
+    When using derivative-based optimization, the user can
+    provide a smooth approximation of \f$(\cdot)_+\f$ using the
+    ROL::PositiveFunction class.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -99,27 +123,28 @@ private:
     gvp1_.clear(); gvp2_.clear(); gvp3_.clear();
     gvs1_.clear(); gvs2_.clear(); gvs3_.clear();
 
-    dev0_.resize(NumMoments_,0.0); dev1_.resize(NumMoments_,0.0);
-    dev2_.resize(NumMoments_,0.0); dev3_.resize(NumMoments_,0.0);
-    des0_.resize(NumMoments_,0.0); des1_.resize(NumMoments_,0.0);
-    des2_.resize(NumMoments_,0.0); des3_.resize(NumMoments_,0.0);
-    devp_.resize(NumMoments_,0.0);
-    gvp1_.resize(NumMoments_,0.0); gvp2_.resize(NumMoments_,0.0);
-    gvp3_.resize(NumMoments_,0.0);
-    gvs1_.resize(NumMoments_,0.0); gvs2_.resize(NumMoments_,0.0);
-    gvs3_.resize(NumMoments_,0.0);
+    dev0_.resize(NumMoments_); dev1_.resize(NumMoments_);
+    dev2_.resize(NumMoments_); dev3_.resize(NumMoments_);
+    des0_.resize(NumMoments_); des1_.resize(NumMoments_);
+    des2_.resize(NumMoments_); des3_.resize(NumMoments_);
+    devp_.resize(NumMoments_);
+    gvp1_.resize(NumMoments_); gvp2_.resize(NumMoments_);
+    gvp3_.resize(NumMoments_);
+    gvs1_.resize(NumMoments_); gvs2_.resize(NumMoments_);
+    gvs3_.resize(NumMoments_);
   }
 
   void clear(void) {
-    dev0_.assign(NumMoments_,0.0); dev1_.assign(NumMoments_,0.0);
-    dev2_.assign(NumMoments_,0.0); dev3_.assign(NumMoments_,0.0);
-    des0_.assign(NumMoments_,0.0); des1_.assign(NumMoments_,0.0);
-    des2_.assign(NumMoments_,0.0); des3_.assign(NumMoments_,0.0);
-    devp_.assign(NumMoments_,0.0);
-    gvp1_.assign(NumMoments_,0.0); gvp2_.assign(NumMoments_,0.0);
-    gvp3_.assign(NumMoments_,0.0);
-    gvs1_.assign(NumMoments_,0.0); gvs2_.assign(NumMoments_,0.0);
-    gvs3_.assign(NumMoments_,0.0);
+    Real zero(0);
+    dev0_.assign(NumMoments_,zero); dev1_.assign(NumMoments_,zero);
+    dev2_.assign(NumMoments_,zero); dev3_.assign(NumMoments_,zero);
+    des0_.assign(NumMoments_,zero); des1_.assign(NumMoments_,zero);
+    des2_.assign(NumMoments_,zero); des3_.assign(NumMoments_,zero);
+    devp_.assign(NumMoments_,zero);
+    gvp1_.assign(NumMoments_,zero); gvp2_.assign(NumMoments_,zero);
+    gvp3_.assign(NumMoments_,zero);
+    gvs1_.assign(NumMoments_,zero); gvs2_.assign(NumMoments_,zero);
+    gvs3_.assign(NumMoments_,zero);
 
     value_storage_.clear();
     gradient_storage_.clear();
@@ -128,33 +153,77 @@ private:
     weights_.clear();
   }
 
-public:
+  void checkInputs(void) const {
+    int oSize = order_.size(), cSize = coeff_.size();
+    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
+      ">>> ERROR (ROL::MeanDeviation): Order and coefficient arrays have different sizes!");
+    Real zero(0), two(2);
+    for (int i = 0; i < oSize; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
+        ">>> ERROR (ROL::MeanDeviation): Element of order array out of range!");
+      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
+        ">>> ERROR (ROL::MeanDeviation): Element of coefficient array out of range!");
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::MeanDeviation): PositiveFunction pointer is null!");
+  }
 
-  MeanDeviation( Real order, Real coeff,
-                 Teuchos::RCP<PositiveFunction<Real> > &pf )
+public:
+  /** \brief Constructor.
+
+      @param[in]     order   is the deviation order
+      @param[in]     coeff   is the weight for deviation term
+      @param[in]     pf      is the plus function or an approximation
+
+      This constructor produces a mean plus deviation risk measure
+      with a single deviation.
+  */
+  MeanDeviation( const Real order, const Real coeff,
+                 const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
-    order_.clear(); coeff_.clear();
-    order_.push_back((order < 2.0) ? 2.0 : order);
-    coeff_.push_back((coeff < 0.0) ? 1.0 : coeff);
+    order_.clear(); order_.push_back(order);
+    coeff_.clear(); coeff_.push_back(coeff);
+    checkInputs();
     NumMoments_ = order_.size();
     initialize();
   }
 
-  MeanDeviation( std::vector<Real> &order, std::vector<Real> &coeff, 
-                 Teuchos::RCP<PositiveFunction<Real> > &pf )
+  /** \brief Constructor.
+
+      @param[in]     order   is a vector of deviation orders
+      @param[in]     coeff   is a vector of weights for the deviation terms
+      @param[in]     pf      is the plus function or an approximation
+
+      This constructor produces a mean plus deviation risk measure
+      with an arbitrary number of deviations.
+  */
+  MeanDeviation( const std::vector<Real> &order,
+                 const std::vector<Real> &coeff, 
+                 const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
     order_.clear(); coeff_.clear();
-    NumMoments_ = order.size();
-    if ( NumMoments_ != coeff.size() ) {
-      coeff.resize(NumMoments_,1.0);
+    for ( uint i = 0; i < order.size(); i++ ) {
+      order_.push_back(order[i]);
     }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+    for ( uint i = 0; i < coeff.size(); i++ ) {
+      coeff_.push_back(coeff[i]);
     }
+    checkInputs();
+    NumMoments_ = order_.size();
     initialize();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"Mean Plus Deviation" and
+      within the "Mean Plus Deviation" sublist should have the following parameters
+      \li "Orders" (array of unsigned integers)
+      \li "Coefficients" (array of positive scalars)
+      \li "Deviation Type" (eighter "Upper" or "Absolute")
+      \li A sublist for positive function information.
+  */
   MeanDeviation( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>(), firstReset_(true) {
     Teuchos::ParameterList &list
@@ -162,25 +231,25 @@ public:
     // Get data from parameter list
     Teuchos::Array<Real> order
       = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
+    order_ = order.toVector();
     Teuchos::Array<Real> coeff
       = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
-    // Check inputs
-    NumMoments_ = order.size();
-    order_.clear(); coeff_.clear();
-    if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
-      coeff.resize(NumMoments_,1.0);
-    }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
-    }
+    coeff_ = coeff.toVector();
     // Build (approximate) positive function
-    if ( list.get("Deviation Type","Upper") == "Upper" ) {
+    std::string type = list.get<std::string>("Deviation Type");
+    if ( type == "Upper" ) {
       positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
     }
-    else {
+    else if ( type == "Absolute" ) {
       positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
     }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> (ROL::MeanDeviation): Deviation type is not recoginized!");
+    }
+    // Check inputs
+    checkInputs();
+    NumMoments_ = order.size();
     initialize();
   }
 
@@ -240,10 +309,10 @@ public:
 
   Real getValue(SampleGenerator<Real> &sampler) {
     // Compute expected value
-    Real val = RiskMeasure<Real>::val_, ev = 0.0;
+    Real val = RiskMeasure<Real>::val_, ev(0);
     sampler.sumAll(&val,&ev,1);
     // Compute deviation
-    Real diff = 0.0, pf0 = 0.0, dev = 0.0;
+    Real diff(0), pf0(0), dev(0), one(1);
     for ( uint i = 0; i < weights_.size(); i++ ) {
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
@@ -253,7 +322,7 @@ public:
     }
     sampler.sumAll(&dev0_[0],&des0_[0],NumMoments_);
     for ( uint p = 0; p < NumMoments_; p++ ) {
-      dev += coeff_[p]*std::pow(des0_[p],1.0/order_[p]);
+      dev += coeff_[p]*std::pow(des0_[p],one/order_[p]);
     }
     // Return mean plus deviation
     return ev + dev;
@@ -261,38 +330,38 @@ public:
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     // Compute expected value
-    Real val = RiskMeasure<Real>::val_, ev = 0.0;
+    Real val = RiskMeasure<Real>::val_, ev(0);
     sampler.sumAll(&val,&ev,1);
     // Compute deviation
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, c = 0.0;
+    Real diff(0), pf0(0), pf1(0), c(0), one(1), zero(0);
     for ( uint i = 0; i < weights_.size(); i++ ) {
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
       for ( uint p = 0; p < NumMoments_; p++ ) {
         dev0_[p] += weights_[i] * std::pow(pf0,order_[p]);
-        dev1_[p] += weights_[i] * std::pow(pf0,order_[p]-1.0) * pf1;
+        dev1_[p] += weights_[i] * std::pow(pf0,order_[p]-one) * pf1;
       }
     }
     sampler.sumAll(&dev0_[0],&des0_[0],NumMoments_);
     sampler.sumAll(&dev1_[0],&des1_[0],NumMoments_);
     for ( uint p = 0; p < NumMoments_; p++ ) {
-      dev0_[p] = std::pow(des0_[p],1.0-1.0/order_[p]);
+      dev0_[p] = std::pow(des0_[p],one-one/order_[p]);
     }
     // Compute derivative
     for ( uint i = 0; i < weights_.size(); i++ ) {
-      c    = 0.0;
+      c    = zero;
       diff = value_storage_[i]-ev;
       pf0 = positiveFunction_->evaluate(diff,0);
       pf1 = positiveFunction_->evaluate(diff,1);
       for ( uint p = 0; p < NumMoments_; p++ ) {
-        if ( dev0_[p] > 0.0 ) {
-          c += coeff_[p]/dev0_[p] * (std::pow(pf0,order_[p]-1.0)*pf1 - des1_[p]);
+        if ( dev0_[p] > zero ) {
+          c += coeff_[p]/dev0_[p] * (std::pow(pf0,order_[p]-one)*pf1 - des1_[p]);
         }
       }
       dualVector1_->axpy(weights_[i]*c,*(gradient_storage_[i]));
     }
-    dualVector1_->axpy(1.0,*(RiskMeasure<Real>::g_));
+    dualVector1_->plus(*(RiskMeasure<Real>::g_));
     sampler.sumAll(*dualVector1_,*dualVector2_);
     // Set RiskVector
     (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector2_);
@@ -300,13 +369,14 @@ public:
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
     // Compute expected value
-    Real val = RiskMeasure<Real>::val_, ev = 0.0;
-    sampler.sumAll(&val,&ev,1);
-    Real gv  = RiskMeasure<Real>::gv_, egv = 0.0;
-    sampler.sumAll(&gv,&egv,1);
+    std::vector<Real> myval(2), val(2);
+    myval[0] = RiskMeasure<Real>::val_;
+    myval[1] = RiskMeasure<Real>::gv_;
+    sampler.sumAll(&myval[0],&val[0],2);
+    Real ev = val[0], egv = val[1];
     // Compute deviation
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, pf2 = 0.0;
-    Real cg = 0.0, ch = 0.0, diff1 = 0.0, diff2 = 0.0, diff3 = 0.0;
+    Real diff(0), pf0(0), pf1(0), pf2(0), zero(0), one(1), two(2);
+    Real cg(0), ch(0), diff1(0), diff2(0), diff3(0);
     for ( uint i = 0; i < weights_.size(); i++ ) {
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
@@ -314,9 +384,9 @@ public:
       pf2  = positiveFunction_->evaluate(diff,2);
       for ( uint p = 0; p < NumMoments_; p++ ) {
         dev0_[p] += weights_[i] * std::pow(pf0,order_[p]);
-        dev1_[p] += weights_[i] * std::pow(pf0,order_[p]-1.0) * pf1;
-        dev2_[p] += weights_[i] * std::pow(pf0,order_[p]-2.0) * pf1 * pf1;
-        dev3_[p] += weights_[i] * std::pow(pf0,order_[p]-1.0) * pf2;
+        dev1_[p] += weights_[i] * std::pow(pf0,order_[p]-one) * pf1;
+        dev2_[p] += weights_[i] * std::pow(pf0,order_[p]-two) * pf1 * pf1;
+        dev3_[p] += weights_[i] * std::pow(pf0,order_[p]-one) * pf2;
       }
     }
     sampler.sumAll(&dev0_[0],&des0_[0],NumMoments_);
@@ -324,8 +394,8 @@ public:
     sampler.sumAll(&dev2_[0],&des2_[0],NumMoments_);
     sampler.sumAll(&dev3_[0],&des3_[0],NumMoments_);
     for ( uint p = 0; p < NumMoments_; p++ ) {
-      devp_[p] = std::pow(des0_[p],2.0-1.0/order_[p]);
-      dev0_[p] = std::pow(des0_[p],1.0-1.0/order_[p]);
+      devp_[p] = std::pow(des0_[p],two-one/order_[p]);
+      dev0_[p] = std::pow(des0_[p],one-one/order_[p]);
     }
     for ( uint i = 0; i < value_storage_.size(); i++ ) {
       diff = value_storage_[i]-ev;
@@ -333,11 +403,11 @@ public:
       pf1  = positiveFunction_->evaluate(diff,1);
       pf2  = positiveFunction_->evaluate(diff,2);
       for ( uint p = 0; p < NumMoments_; p++ ) {
-        gvp1_[p] += weights_[i] * (std::pow(pf0,order_[p]-1.0)*pf1-des1_[p]) *
+        gvp1_[p] += weights_[i] * (std::pow(pf0,order_[p]-one)*pf1-des1_[p]) *
                      (gradvec_storage_[i] - egv);
-        gvp2_[p] += weights_[i] * (std::pow(pf0,order_[p]-2.0)*pf1*pf1-des2_[p]) *
+        gvp2_[p] += weights_[i] * (std::pow(pf0,order_[p]-two)*pf1*pf1-des2_[p]) *
                      (gradvec_storage_[i] - egv);
-        gvp3_[p] += weights_[i] * (std::pow(pf0,order_[p]-1.0)*pf2-des3_[p]) *
+        gvp3_[p] += weights_[i] * (std::pow(pf0,order_[p]-one)*pf2-des3_[p]) *
                      (gradvec_storage_[i] - egv);
       }
     }
@@ -346,20 +416,20 @@ public:
     sampler.sumAll(&gvp3_[0],&gvs3_[0],NumMoments_);
     // Compute derivative
     for ( uint i = 0; i < weights_.size(); i++ ) {
-      cg   = 1.0;
-      ch   = 0.0;
+      cg   = one;
+      ch   = zero;
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
       pf2  = positiveFunction_->evaluate(diff,2);
       for ( uint p = 0; p < NumMoments_; p++ ) {
-        if ( dev0_[p] > 0.0 ) {
-          diff1 = std::pow(pf0,order_[p]-1.0)*pf1-des1_[p];
-          diff2 = std::pow(pf0,order_[p]-2.0)*pf1*pf1*(gradvec_storage_[i]-egv)-gvs2_[p];
-          diff3 = std::pow(pf0,order_[p]-1.0)*pf2*(gradvec_storage_[i]-egv)-gvs3_[p];
+        if ( dev0_[p] > zero ) {
+          diff1 = std::pow(pf0,order_[p]-one)*pf1-des1_[p];
+          diff2 = std::pow(pf0,order_[p]-two)*pf1*pf1*(gradvec_storage_[i]-egv)-gvs2_[p];
+          diff3 = std::pow(pf0,order_[p]-one)*pf2*(gradvec_storage_[i]-egv)-gvs3_[p];
           cg   += coeff_[p]*diff1/dev0_[p];
-          ch   += coeff_[p]*(((order_[p]-1.0)*diff2+diff3)/dev0_[p] -
-                    (order_[p]-1.0)*gvs1_[p]*diff1/devp_[p]);
+          ch   += coeff_[p]*(((order_[p]-one)*diff2+diff3)/dev0_[p] -
+                    (order_[p]-one)*gvs1_[p]*diff1/devp_[p]);
         }
       }
       dualVector1_->axpy(weights_[i]*ch,*(gradient_storage_[i]));

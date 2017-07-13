@@ -92,6 +92,10 @@ C   --   "User's Manual for GEN3D"
       CHARACTER*(MXSTLN) NAMECO(6)
 C      --NAMECO - the coordinate names
 
+C... String containing name of common element topology in model
+C    or 'MULTIPLE_TOPOLOGIES' if not common topology.
+      character*(MXSTLN) comtop
+
       CHARACTER CDUM
       logical l64bit
 
@@ -249,6 +253,8 @@ C ... Don't warn about no map stored in file
      &  IA(KNATR), IA(KLINK), KATRIB, *60)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
+
+      call CHKTOP(NELBLK, C(KNMLB), COMTOP)
 
       if (numnps .gt. 0) then
          call exgcns(ndbin, ia(kidns), ia(knnns), ia(kndnps),
@@ -510,6 +516,7 @@ C   --Write the coordinates
       CALL MDDEL ('XN3')
       CALL MDDEL ('YN3')
       CALL MDDEL ('ZN3')
+      CALL MDRSRV ('NUMELB3', KNELB3, NELBLK)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
 
@@ -517,7 +524,7 @@ C   --Write the coordinates
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &     IA(KLINK), A(KATRIB), A(KELATT), 
      &     IA(KIXEL), IA(KINCEL), IA(KNREL), IA(KIECOL), IA(KIXNP),
-     &     IA(KNRNP))
+     &     IA(KNRNP), IA(KNELB3))
 
       CALL MDDEL ('LINK')
       CALL MDDEL ('ATRIB')
@@ -540,9 +547,17 @@ C   --Write the node sets
 
 C   --Fixup sides sets if mirrored
       IF (XMIRR * YMIRR * ZMIRR .LT. 0.0) THEN
-         CALL MIRSS (IDESET(0,1), IDESET(0,2),
-     &        NESUR, IA(KISFRO), IA(KISBCK), IA(KLTSS3))
+        CALL MDRSRV ('IDXELB', KIDXELB, NELBLK+1)
+        CALL MDSTAT (NERR, MEM)
+        IF (NERR .GT. 0) GOTO 40
+        CALL MIRSS (IDESET(0,1), IDESET(0,2),
+     &    NESUR, IA(KISFRO), IA(KISBCK), IA(KLTES3), IA(KLTSS3),
+     *    COMTOP, C(KNMLB), IA(KNELB3), IA(KIDXELB))
+        CALL MDDEL ('IDXELB')
+        CALL MDSTAT (NERR, MEM)
+        IF (NERR .GT. 0) GOTO 40
       END IF
+      CALL MDDEL('NUMELB3')
 C     --Write the side sets
       
       CALL WRESS (A, IA, IDESET(0,1), IDESET(0,2),
@@ -617,3 +632,23 @@ C     --Write the side sets
       call exginf(ndb, info, ierr)
       return
       end
+
+C...Check whether model contains elements of a single topology.
+C   This is currently used in the sideset mirroring code
+      subroutine chktop(nelblk, blktyp, comtop)
+
+      include 'exodusII.inc'
+      integer nelblk
+      character*(MXSTLN) blktyp(nelblk)
+      character*(MXSTLN) comtop
+      
+      comtop = blktyp(1)(:3)
+      do 10 i=2, nelblk
+         if (blktyp(i)(:3) .ne. comtop(:3)) then
+            comtop = 'MULTIPLE_TOPOLOGIES'
+            return
+         end if
+ 10   continue
+      return
+      end
+

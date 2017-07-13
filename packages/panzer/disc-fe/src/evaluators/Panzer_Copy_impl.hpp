@@ -56,7 +56,7 @@ PHX_EVALUATOR_CTOR(Copy,p)
   std::string output_name = p.get<std::string>("Destination Name");
   Teuchos::RCP<PHX::DataLayout> data_layout = p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
   
-  input  = PHX::MDField<ScalarT>(input_name, data_layout);
+  input  = PHX::MDField<const ScalarT>(input_name, data_layout);
   output = PHX::MDField<ScalarT>(output_name, data_layout);
   
   this->addDependentField(input);

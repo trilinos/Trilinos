@@ -46,25 +46,14 @@
 #define ROL_PARAMETRIZEDEQUALITYCONSTRAINT_H
 
 #include "ROL_EqualityConstraint.hpp"
-#include "ROL_Types.hpp"
+#include "ROL_Parametrize.hpp"
 
 namespace ROL {
 
 template <class Real>
-class ParametrizedEqualityConstraint : EqualityConstraint<Real> {
-private:
-  std::vector<Real> param_;
-
-protected:
-  const std::vector<Real> getParameter(void) const {
-    return this->param_;
-  }
-
+class ParametrizedEqualityConstraint : public virtual EqualityConstraint<Real>, public Parametrize<Real> {
 public:
   virtual ~ParametrizedEqualityConstraint(void) {}
-  virtual void setParameter(const std::vector<Real> &param) {
-    this->param_ = param;
-  }
 }; // class ParametrizedEqualityConstraint
 
 } // namespace ROL

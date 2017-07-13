@@ -83,7 +83,7 @@ TEST(StkMeshHowTo, CreateFacesTwoHexes)
         unsigned num_expected_internal_faces = 1u;
         unsigned num_expected_faces = num_expected_external_faces + num_expected_internal_faces;
         stk::mesh::Selector all_entities = mesh.mesh_meta_data().universal_part();
-        std::vector<unsigned> entity_counts;
+        std::vector<size_t> entity_counts;
         stk::mesh::count_entities(all_entities, mesh, entity_counts);
         EXPECT_EQ(num_expected_faces, entity_counts[stk::topology::FACE_RANK]);
     }
@@ -128,7 +128,7 @@ TEST(StkMeshHowTo, CreateFacesSingleShell)
 
         unsigned num_expected_faces = 2u;
         stk::mesh::Selector all_entities = mesh.mesh_meta_data().universal_part();
-        std::vector<unsigned> entity_counts;
+        std::vector<size_t> entity_counts;
         stk::mesh::count_entities(all_entities, mesh, entity_counts);
         EXPECT_EQ(num_expected_faces, entity_counts[stk::topology::FACE_RANK]);
     }
@@ -177,7 +177,7 @@ TEST(StkMeshHowTo, CreateFacesTwoHexesInternalShell)
         unsigned num_expected_internal_faces = 2u;
         unsigned num_expected_faces = num_expected_external_faces + num_expected_internal_faces;
         stk::mesh::Selector all_entities = mesh.mesh_meta_data().universal_part();
-        std::vector<unsigned> entity_counts;
+        std::vector<size_t> entity_counts;
         stk::mesh::count_entities(all_entities, mesh, entity_counts);
         EXPECT_EQ(num_expected_faces, entity_counts[stk::topology::FACE_RANK]);
     }

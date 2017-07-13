@@ -81,6 +81,13 @@ BlockUpperTriInverseOp::BlockUpperTriInverseOp(BlockedLinearOp & U,const std::ve
    productDomain_  = U->productRange();
 }
 
+void BlockUpperTriInverseOp::implicitApply(const BlockedMultiVector & src, BlockedMultiVector & dst,
+           const double alpha, const double beta) const
+{ 
+  // call the no tranpose version
+  implicitApply(Thyra::NOTRANS,src,dst,alpha,beta);  
+}
+
 /** @brief Perform a matrix vector multiply with this operator. 
   *
   * The <code>apply</code> function takes one vector as input 
@@ -93,7 +100,8 @@ BlockUpperTriInverseOp::BlockUpperTriInverseOp(BlockedLinearOp & U,const std::ve
   * @param[in]     alpha (default=1)
   * @param[in]     beta  (default=0)
   */
-void BlockUpperTriInverseOp::implicitApply(const BlockedMultiVector & src, BlockedMultiVector & dst,
+void BlockUpperTriInverseOp::implicitApply(const Thyra::EOpTransp M_trans,
+           const BlockedMultiVector & src, BlockedMultiVector & dst,
            const double alpha, const double beta) const
 {
    int blocks = blockCount(src);
@@ -122,16 +130,34 @@ void BlockUpperTriInverseOp::implicitApply(const BlockedMultiVector & src, Block
 
    // run back-substituion: run over each column
    //    From Heath pg. 66
-   for(int b=blocks-1;b>=0;b--) {
-      applyOp(invDiag_[b], scrapVec[b], dstVec[b]);
+   if(M_trans==Thyra::NOTRANS) {
+      for(int b=blocks-1;b>=0;b--) {
+         applyOp(invDiag_[b], scrapVec[b], dstVec[b]);
 
-      // loop over each row
-      for(int i=0;i<b;i++) {
-         LinearOp u_ib = getBlock(i,b,U_);
-         if(u_ib!=Teuchos::null) {
-            applyOp(u_ib,dstVec[b],scrapVec[i],-1.0,1.0);
+         // loop over each row
+         for(int i=0;i<b;i++) {
+            LinearOp u_ib = getBlock(i,b,U_);
+            if(u_ib!=Teuchos::null) {
+               applyOp(u_ib,dstVec[b],scrapVec[i],-1.0,1.0);
+            }
          }
       }
+   }
+   else if(M_trans==Thyra::TRANS || M_trans==Thyra::CONJTRANS) {
+      for(int b=0;b<blocks;b++) {
+         applyTransposeOp(invDiag_[b], scrapVec[b], dstVec[b]);
+
+         // loop over each row
+         for(int i=b+1;i<blocks;i++) {
+            LinearOp u_bi = getBlock(b,i,U_);
+            if(u_bi!=Teuchos::null) {
+               applyTransposeOp(u_bi,dstVec[b],scrapVec[i],-1.0,1.0);
+            }
+         }
+      }
+   }
+   else {
+      TEUCHOS_TEST_FOR_EXCEPT(true);
    }
 
    // scale result by alpha

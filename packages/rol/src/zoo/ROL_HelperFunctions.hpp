@@ -62,7 +62,7 @@ namespace ROL {
   template<class Real>
   Teuchos::SerialDenseMatrix<int, Real> computeDenseHessian(Objective<Real> &obj, const Vector<Real> &x) {
 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     int dim = x.dimension();
     Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
@@ -239,8 +239,8 @@ namespace ROL {
                         Real eps = 0.0 )
       : isInitialized_(false), useSecantPrecond_(useSecantPrecond),
         useSecantHessVec_(useSecantHessVec), eps_(eps) {
-      obj_    = Teuchos::rcp(&obj, false);
-      con_    = Teuchos::rcp(&con, false);
+      obj_    = Teuchos::rcpFromRef(obj);
+      con_    = Teuchos::rcpFromRef(con);
       secant_ = secant;
     }
 
@@ -263,7 +263,7 @@ namespace ROL {
 
     void hessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       if ( useSecantHessVec_ ) {
-        secant_->applyB( Hv, v, x );
+        secant_->applyB( Hv, v );
       }
       else {
         obj_->hessVec( Hv, v, x, tol );
@@ -272,7 +272,7 @@ namespace ROL {
 
     void invHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       if ( useSecantHessVec_ ) {
-        secant_->applyH(Hv,v,x);
+        secant_->applyH(Hv,v);
       }
       else {
         obj_->invHessVec(Hv,v,x,tol);
@@ -281,7 +281,7 @@ namespace ROL {
 
     void precond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       if ( useSecantPrecond_ ) {
-        secant_->applyH( Mv, v, x );
+        secant_->applyH( Mv, v );
       }
       else {
         obj_->precond( Mv, v, x, tol );

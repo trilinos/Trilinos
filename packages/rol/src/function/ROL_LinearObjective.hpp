@@ -67,10 +67,10 @@ namespace ROL {
 template <class Real>
 class LinearObjective : public Objective<Real> {
 private:
-  const Teuchos::RCP<Vector<Real> > cost_;
+  const Teuchos::RCP<const Vector<Real> > cost_;
 
 public:
-  LinearObjective(const Teuchos::RCP<Vector<Real> > &cost) : cost_(cost) {}
+  LinearObjective(const Teuchos::RCP<const Vector<Real> > &cost) : cost_(cost) {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
     return x.dot(cost_->dual());

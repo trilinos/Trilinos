@@ -59,3 +59,24 @@
 
 /* Define if Belos is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_BELOS
+
+/* Define if TASMANIAN TPL is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_TASMANIAN
+
+/* Define if want to build intrepid */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID
+
+/* Define if want to build intrepid2 */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID2
+
+/* Define if want to build intrepid2 w/ the refactor */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID2_REFACTOR
+
+/* Define if TriKota is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_TRIKOTA
+
+/* Define if Sacado is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_SACADO
+
+/* Define if Stratimikos is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
