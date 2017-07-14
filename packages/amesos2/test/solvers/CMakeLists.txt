@@ -78,6 +78,27 @@ IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
 
 ENDIF()
 
+##### Tacho Tests #####
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tacho)
+IF (${PACKAGE_NAME}_ENABLE_Tacho)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyTachoFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES tacho_test.xml
+    EXEDEPS Solver_Test
+    )
+
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    COMM serial mpi
+    )
+
+ENDIF()
 
 ##### SuperLU_MT Tests #####
 
