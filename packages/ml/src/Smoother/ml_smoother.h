@@ -129,7 +129,7 @@ struct DinvA_widget {
 #include "util.h"
 #endif
 #ifdef DSUPERLU
-#include "mpi.h"
+#include <mpi.h>
 #include "superlu_ddefs.h"
 #endif
 typedef struct ML_Sm_Schwarz_Data_Struct ML_Sm_Schwarz_Data;

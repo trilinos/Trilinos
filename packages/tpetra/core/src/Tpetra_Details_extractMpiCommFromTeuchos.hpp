@@ -50,7 +50,7 @@
 
 #include "TpetraCore_config.h"
 #ifdef HAVE_TPETRACORE_MPI
-#include "mpi.h" // MPI_Comm
+#include <mpi.h> // MPI_Comm
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {

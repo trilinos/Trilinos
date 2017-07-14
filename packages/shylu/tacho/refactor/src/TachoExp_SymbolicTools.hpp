@@ -484,6 +484,7 @@ namespace Tacho {
         ordinal_type nrows, nroots;
         size_type    nnz_a, nnz_u;
         ordinal_type nsupernodes, largest_supernode, largest_schur;
+        ordinal_type nleaves, height; // tree
       } stat;
 
     public:
@@ -666,7 +667,20 @@ namespace Tacho {
           printf("Summary: SymbolicTools\n");
           printf("======================\n");
 
-          
+          stat.height = 0;
+          for (ordinal_type i=0;i<stat.nsupernodes;++i) {
+            ordinal_type self = i, cnt = 0;
+            for (; _stree_parent(self) != -1; ++cnt)
+              self = _stree_parent(self);
+            stat.height = max(stat.height, cnt);
+          }
+
+          stat.nleaves = 0;
+          for (ordinal_type i=0;i<stat.nsupernodes;++i) {
+            const ordinal_type nchildren = _stree_ptr(i+1) - _stree_ptr(i);
+            stat.nleaves += (nchildren == 0);
+          }
+
           switch (verbose) {
           case 1: {
             printf("  Time\n");
@@ -683,6 +697,8 @@ namespace Tacho {
             printf("             number of nonzeros:                              %10zu (%5.2f %% )\n", stat.nnz_u, double(stat.nnz_u)/(double(stat.nrows)*double(stat.nrows))*50.0);
             printf("             number of subgraphs:                             %10d\n", stat.nroots);
             printf("             number of supernodes:                            %10d\n", stat.nsupernodes);
+            printf("             height of supernodal tree:                       %10d\n", stat.height);
+            printf("             number of leaf supernodes:                       %10d\n", stat.nleaves);
             printf("             size of largest supernode:                       %10d\n", stat.largest_supernode);
             printf("             size of largest schur size:                      %10d\n", stat.largest_schur);
             printf("\n");

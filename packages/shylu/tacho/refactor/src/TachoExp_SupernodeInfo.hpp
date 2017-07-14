@@ -31,7 +31,7 @@ namespace Tacho {
       typedef Kokkos::Future<int,exec_space> future_type;
 
       struct Supernode {
-        mutable int lock;
+        mutable int32_t lock;
 
         ordinal_type row_begin;                     // beginning row
         ordinal_type m, n;                          // panel dimension

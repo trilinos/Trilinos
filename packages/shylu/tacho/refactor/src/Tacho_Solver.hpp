@@ -74,23 +74,28 @@ namespace Tacho {
         _verbose(0),
         _small_problem_thres(1024),
         _serial_thres_size(-1),
-        _mb(128) {}
+        _mb(-1) {}
 
     Solver(const Solver &b) = default;
 
-    void setVerbose(const ordinal_type verbose) {
+    void setVerbose(const ordinal_type verbose = 1) {
       _verbose = verbose;
     }
-    void setBlocksize(const ordinal_type mb) {
+    void setSerialThresholdSize(const ordinal_type serial_thres_size = -1) {
+      _serial_thres_size = serial_thres_size;
+    }
+    void setBlocksize(const ordinal_type mb = -1) {
+      _mb = mb;
     }
 
+    /// need to figure out how HTS options are set here
+
     int analyze(const ordinal_type m,
-                const size_type nnz,
                 const size_type_array &ap,
                 const ordinal_type_array &aj) {
       // assign graph structure
       _m = m;
-      _nnz = nnz;
+      _nnz = ap(m);
       _ap = ap;
       _aj = aj;
 
@@ -117,7 +122,7 @@ namespace Tacho {
         _S = symbolic_tools_type(_m, _ap, _aj, _G.PermVector(), _G.InvPermVector());
         _S.symbolicFactorize(_verbose);
       }
-
+      
       return 0;
     }
 
@@ -126,15 +131,6 @@ namespace Tacho {
         printf("TachoSolver: Factorize\n");
         printf("======================\n");
       }
-
-      _N = numeric_tools_type(_m, _ap, _aj,
-                              _G.PermVector(), _G.InvPermVector(),
-                              _S.NumSupernodes(), _S.Supernodes(),
-                              _S.gidSuperPanelPtr(), _S.gidSuperPanelColIdx(),
-                              _S.sidSuperPanelPtr(), _S.sidSuperPanelColIdx(), _S.blkSuperPanelColIdx(),
-                              _S.SupernodesTreeParent(), _S.SupernodesTreePtr(), _S.SupernodesTreeChildren(),
-                              _S.SupernodesTreeRoots());
-      _N.setSerialThresholdSize(_serial_thres_size);
 
       if (_m < _small_problem_thres) {
         Kokkos::Impl::Timer timer;
@@ -165,14 +161,32 @@ namespace Tacho {
           printf("\n");
         }
       } else {
+        _N = numeric_tools_type(_m, _ap, _aj,
+                                _G.PermVector(), _G.InvPermVector(),
+                                _S.NumSupernodes(), _S.Supernodes(),
+                                _S.gidSuperPanelPtr(), _S.gidSuperPanelColIdx(),
+                                _S.sidSuperPanelPtr(), _S.sidSuperPanelColIdx(), _S.blkSuperPanelColIdx(),
+                                _S.SupernodesTreeParent(), _S.SupernodesTreePtr(), _S.SupernodesTreeChildren(),
+                                _S.SupernodesTreeRoots());
+        
+        if (_serial_thres_size < 0) _serial_thres_size = 64;
+        _N.setSerialThresholdSize(_serial_thres_size);
+        
         const ordinal_type nthreads = device_exec_space::thread_pool_size(0);
         if (nthreads == 1) {
           _N.factorizeCholesky_Serial(ax, _verbose);
         } else {
-          // if (_mb > 0)
-          //   N.factorizeCholesky_ParallelByBlocks(ax, mb, verbose);
-          // else
-          _N.factorizeCholesky_Parallel(ax, _verbose);
+          if (_mb < 0) {
+            const ordinal_type max_dense_size = max(_N.getMaxSupernodeSize(),_N.getMaxSchurSize());
+            if      (max_dense_size < 256)  _mb =  -1;
+            else if (max_dense_size < 512)  _mb =  96;
+            else if (max_dense_size < 1024) _mb = 128;
+            else                            _mb = 256;
+          }
+          if (_mb > 0)
+            _N.factorizeCholesky_ParallelByBlocks(ax, _mb, _verbose);
+          else
+            _N.factorizeCholesky_Parallel(ax, _verbose);
         }
       }
       return 0;

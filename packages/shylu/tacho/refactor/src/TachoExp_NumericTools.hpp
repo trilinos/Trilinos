@@ -248,6 +248,18 @@ namespace Tacho {
         _info.serial_thres_size = serial_thres_size;
       }
 
+      inline
+      ordinal_type
+      getMaxSupernodeSize() const {
+        return _info.max_supernode_size;
+      }
+
+      inline
+      ordinal_type
+      getMaxSchurSize() const {
+        return _info.max_schur_size;
+      }
+
       ///
       /// Serial
       /// ------
@@ -348,8 +360,8 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         if (verbose) {
-          printf("Summary: NumericTools (SerialSolve)\n");
-          printf("===================================\n");
+          printf("Summary: NumericTools (SerialSolve: %3d)\n", x.dimension_1());
+          printf("========================================\n");
 
           print_stat_solve();
         }
@@ -551,8 +563,8 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         if (verbose) {
-          printf("Summary: NumericTools (ParallelSolve)\n");
-          printf("=====================================\n");
+          printf("Summary: NumericTools (ParallelSolve: %3d)\n", x.dimension_1());
+          printf("==========================================\n");
 
           print_stat_solve();
         }
@@ -657,8 +669,8 @@ namespace Tacho {
         }
 
         if (verbose) {
-          printf("Summary: NumericTools (ParallelFactorizationByBlocks)\n");
-          printf("=====================================================\n");
+          printf("Summary: NumericTools (ParallelFactorizationByBlocks: %3d)\n", blksize);
+          printf("==========================================================\n");
 
           print_stat_factor();
         }

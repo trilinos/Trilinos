@@ -116,23 +116,29 @@ namespace Tacho {
             A.attach_buffer(1, s.m, s.buf);
             
             ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
-            
+
             // lock
-            while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) ; // asm volatile("pause\n": : :"memory");
-            Kokkos::memory_fence();            
+#if defined( KOKKOS_ENABLE_ASM ) && !defined( _WIN32 ) && !defined( __arm__ ) && !defined( __aarch64__ )
+#define KOKKOS_IMPL_PAUSE asm volatile("pause\n":::"memory")
+#else
+#define KOKKOS_IMPL_PAUSE
+#endif
+            while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
+            Kokkos::store_fence();            
 
             for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
               for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
                 const ordinal_type row = s2t[ii];
-                if (row < s.m) 
-                  A(row, s2t[jj]) += ABR(ii, jj);
-                else
-                  break;
+                if (row < s.m) A(row, s2t[jj]) += ABR(ii, jj);
+                else break;
               }
-
+            
             // unlock
             s.lock = 0;
-            Kokkos::memory_fence();
+            Kokkos::load_fence();
           }
         }
         return 0;
