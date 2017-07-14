@@ -360,8 +360,8 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         if (verbose) {
-          printf("Summary: NumericTools (SerialSolve)\n");
-          printf("===================================\n");
+          printf("Summary: NumericTools (SerialSolve: %3d)\n", x.dimension_1());
+          printf("========================================\n");
 
           print_stat_solve();
         }
@@ -563,8 +563,8 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         if (verbose) {
-          printf("Summary: NumericTools (ParallelSolve)\n");
-          printf("=====================================\n");
+          printf("Summary: NumericTools (ParallelSolve: %3d)\n", x.dimension_1());
+          printf("==========================================\n");
 
           print_stat_solve();
         }

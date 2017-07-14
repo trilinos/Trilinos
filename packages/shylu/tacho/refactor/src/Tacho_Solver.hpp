@@ -132,17 +132,6 @@ namespace Tacho {
         printf("======================\n");
       }
 
-      _N = numeric_tools_type(_m, _ap, _aj,
-                              _G.PermVector(), _G.InvPermVector(),
-                              _S.NumSupernodes(), _S.Supernodes(),
-                              _S.gidSuperPanelPtr(), _S.gidSuperPanelColIdx(),
-                              _S.sidSuperPanelPtr(), _S.sidSuperPanelColIdx(), _S.blkSuperPanelColIdx(),
-                              _S.SupernodesTreeParent(), _S.SupernodesTreePtr(), _S.SupernodesTreeChildren(),
-                              _S.SupernodesTreeRoots());
-
-      if (_serial_thres_size < 0) _serial_thres_size = 64;
-      _N.setSerialThresholdSize(_serial_thres_size);
-
       if (_m < _small_problem_thres) {
         Kokkos::Impl::Timer timer;
         _U = value_type_matrix("U", _m, _m);
@@ -172,6 +161,17 @@ namespace Tacho {
           printf("\n");
         }
       } else {
+        _N = numeric_tools_type(_m, _ap, _aj,
+                                _G.PermVector(), _G.InvPermVector(),
+                                _S.NumSupernodes(), _S.Supernodes(),
+                                _S.gidSuperPanelPtr(), _S.gidSuperPanelColIdx(),
+                                _S.sidSuperPanelPtr(), _S.sidSuperPanelColIdx(), _S.blkSuperPanelColIdx(),
+                                _S.SupernodesTreeParent(), _S.SupernodesTreePtr(), _S.SupernodesTreeChildren(),
+                                _S.SupernodesTreeRoots());
+        
+        if (_serial_thres_size < 0) _serial_thres_size = 64;
+        _N.setSerialThresholdSize(_serial_thres_size);
+        
         const ordinal_type nthreads = device_exec_space::thread_pool_size(0);
         if (nthreads == 1) {
           _N.factorizeCholesky_Serial(ax, _verbose);
