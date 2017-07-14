@@ -53,7 +53,7 @@
 
 #ifdef HAVE_MPI
    #include "Teuchos_DefaultMpiComm.hpp"
-   #include "mpi.h"
+   #include <mpi.h>
 #else
    #include "Teuchos_DefaultSerialComm.hpp"
 #endif

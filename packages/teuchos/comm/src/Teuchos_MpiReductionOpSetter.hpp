@@ -54,7 +54,7 @@
 
 #ifdef HAVE_MPI
 #include "Teuchos_ReductionOp.hpp"
-#include "mpi.h"
+#include <mpi.h>
 
 namespace Teuchos {
 namespace Details {

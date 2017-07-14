@@ -62,7 +62,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_Assert.hpp"
-#include "mpi.h"
+#include <mpi.h>
 #include <iterator>
 
 // This must be defined globally for the whole program!

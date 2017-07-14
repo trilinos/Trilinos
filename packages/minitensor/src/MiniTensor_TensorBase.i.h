@@ -222,7 +222,8 @@ TensorBase<T, ST>::TensorBase(
 //
 template<typename T, typename ST>
 KOKKOS_INLINE_FUNCTION
-TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X)
+TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X) :
+    dimension_(X.dimension_)
 {
   Index const
   number_components = X.get_number_components();
@@ -246,6 +247,8 @@ TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 {
   if (this == &X) return *this;
 
+  dimension_ = X.dimension_;
+
   Index const
   number_components = X.get_number_components();
 
@@ -266,13 +269,7 @@ KOKKOS_INLINE_FUNCTION
 Index
 TensorBase<T, ST>::get_dimension(Index const order) const
 {
-  Index const
-  number_components = get_number_components();
-
-  Index const
-  dimension = integer_root(number_components, order);
-
-  return dimension;
+  return dimension_;
 }
 
 //
@@ -283,6 +280,8 @@ KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::set_dimension(Index const dimension, Index const order)
 {
+  dimension_ = dimension;
+
   Index const
   number_components = integer_power(dimension, order);
 

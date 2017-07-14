@@ -46,18 +46,17 @@
 #ifndef MUELU_REFMAXWELL_DECL_HPP
 #define MUELU_REFMAXWELL_DECL_HPP
 
-#include "MueLu.hpp"
+// TODO move this file to xpetra subfolder
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_SaPFactory_fwd.hpp"
+#include "MueLu_UncoupledAggregationFactory_fwd.hpp"
+#include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
-
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#include "MueLu_Hierarchy.hpp"
 
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
@@ -417,8 +416,6 @@ namespace MueLu {
   };
 
 } // namespace
-
-#endif //ifdef HAVE_MUELU_TPETRA
 
 #define MUELU_REFMAXWELL_SHORT
 #endif // MUELU_REFMAXWELL_DECL_HPP

@@ -84,7 +84,6 @@ int main (int argc, char *argv[]) {
 
     /// inputs are used for graph reordering and analysis
     solver.analyze(A.NumRows(),
-                   A.NumNonZeros(),
                    A.RowPtr(),
                    A.Cols());
     

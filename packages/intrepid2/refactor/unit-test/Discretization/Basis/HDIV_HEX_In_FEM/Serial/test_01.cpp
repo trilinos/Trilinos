@@ -1,12 +1,11 @@
 // @HEADER
-// ***********************************************************************
+// ************************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,68 +34,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
+//
+// ************************************************************************
 // @HEADER
 
-#ifndef PANZER_PAPI_COUNTER_HPP
-#define PANZER_PAPI_COUNTER_HPP
+/** \file test_01.cpp
+    \brief  Unit tests for the Intrepid2::Basis_HDIV_HEX_In_FEM class.
+    \author Created by P. Bochev, D. Ridzal, K. Peterson.
+*/
 
-#include <string>
-#include <map>
-#include <mpi.h>
+#include "Kokkos_Core.hpp"
 
-namespace panzer {
+#include "test_01.hpp"
 
-  class PAPICounter {
+int main(int argc, char *argv[]) {
 
-    struct InternalCounter {
-      int hw_counters;
-      long long int rcy;
-      long long int rus;
-      long long int ucy;
-      long long int uus;
-      
-      long int rt_rus;
-      long int rt_ins;
-      long int rt_fp;
-      long int rt_dcm;
+  const bool verbose = (argc-1) > 0;
+  Kokkos::initialize();
 
-      InternalCounter() : 
-	hw_counters(0),
-	rcy(0),
-	rus(0),
-	ucy(0),
-	uus(0),
-	rt_rus(0),
-	rt_ins(0),
-	rt_fp(0),
-	rt_dcm(0)
-      { }
+  const int r_val = Intrepid2::Test::HDIV_HEX_In_FEM_Test01<double,Kokkos::Serial>(verbose);
 
-    };
-    
-  public:
-    
-    PAPICounter(const std::string, const int my_rank, MPI_Comm comm);
-
-    void start();
-
-    void stop();
-
-    void report(std::ostream& os);
-
-  private:
-
-    //! dangerous in a multithreaded world!
-    static std::map<std::string,InternalCounter> m_counters;
-    std::string m_name;      
-    int m_rank;
-    MPI_Comm m_comm;
-
-  };
-
+  Kokkos::finalize();
+  return r_val;
 }
 
-#endif

@@ -96,6 +96,11 @@ namespace MueLu {
     return Teuchos::rcp_const_cast<FactoryBase>(GetFactory(varName));
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const bool FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasFactory(const std::string& varName) const {
+    if (factoryTable_.count(varName)) return true;
+    return false;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultFactory(const std::string& varName) const {

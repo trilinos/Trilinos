@@ -55,6 +55,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixFactory.hpp>
+#include <Xpetra_Parameters.hpp>
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>

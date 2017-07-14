@@ -29,6 +29,8 @@ namespace Tacho {
       typedef MatValueType mat_value_type; // matrix value type
 
       typedef SupernodeInfo<mat_value_type,exec_space> supernode_info_type;
+      typedef typename supernode_info_type::supernode_type supernode_type;
+
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
       
     private:
@@ -38,7 +40,8 @@ namespace Tacho {
       supernode_info_type _info;
       ordinal_type _sid;
       
-      // respawn control
+      supernode_type _s;
+
       ordinal_type _state;
 
     public:
@@ -54,89 +57,57 @@ namespace Tacho {
           _bufpool(bufpool),
           _info(info),
           _sid(sid),
+          _s(info.supernodes(sid)),
           _state(0) {}
       
+      
+      KOKKOS_INLINE_FUNCTION
+      void solve_internal(member_type &member, const ordinal_type n, const bool final) {
+        const ordinal_type nrhs = _info.x.dimension_1();
+        const size_type bufsize = n*nrhs*sizeof(mat_value_type);
+        
+        mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
+        TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
+        
+        CholSupernodes<Algo::Workflow::Serial>
+          ::solve_lower_recursive_serial(_sched, member, _info, _sid, final, buf, bufsize);
+        
+        if (bufsize > 0)
+          _bufpool.deallocate(buf, bufsize);
+      }
+
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
         if (get_team_rank(member) == 0) {
-          TACHO_TEST_FOR_ABORT(_state > 2, "dead lock");
-          
-          // children information
-          const ordinal_type 
-            ibeg = _info.stree_ptr(_sid), 
-            iend = _info.stree_ptr(_sid+1),
-            isize = iend - ibeg;
+          constexpr ordinal_type done = 2;
+          TACHO_TEST_FOR_ABORT(_state == done, "dead lock");
 
           switch (_state) {
           case 0: { // tree parallelsim
-            if (_info.serial_thres_size > _info.max_decendant_supernode_size(_sid)) {
-              _state = 1; 
-              Kokkos::respawn(this, future_type(), Kokkos::TaskPriority::Regular);
+            if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
+              solve_internal(member, _s.max_decendant_schur_size, true);
+              _state = done; 
             } else {
               // allocate dependence array to handle variable number of children schur contributions
-              future_type depbuf[MaxDependenceSize] /* 3 */, *dep = &depbuf[0];
-              const size_type depsize = (isize > MaxDependenceSize ? isize*sizeof(future_type) : 0);
-              if (depsize) {
-                dep = (future_type*)_sched.memory()->allocate(depsize);
-                TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
-                clear((char*)dep, depsize);
-              }
+              future_type dep[MaxDependenceSize]; /* 4 */
               
               // spawn children tasks and this (their parent) depends on the children tasks
-              for (ordinal_type i=0;i<isize;++i) {
-                // the first child has a higher priority
-                const auto priority = (i ? Kokkos::TaskPriority::Low : Kokkos::TaskPriority::High);
-                
-                const ordinal_type child = _info.stree_children(i+ibeg);
-                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, priority),
-                                            TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, child));
+              for (ordinal_type i=0;i<_s.nchildren;++i) {
+                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                                            TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, _s.children[i]));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 dep[i] = f;
               }
               
               // respawn with updating state
-              _state = 2;
-              Kokkos::respawn(this, Kokkos::when_all(dep, isize), Kokkos::TaskPriority::Regular);
-              
-              // deallocate dependence array
-              if (depsize) {
-                // manually reset future to decrease the reference count
-                for (ordinal_type i=0;i<isize;++i) (dep+i)->~future_type();
-                _sched.memory()->deallocate((void*)dep, depsize);
-              }
+              _state = 1;
+              Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
             }
             break;
           }
-          case 1: { 
-            const ordinal_type n = _info.max_decendant_schur_size(_sid), nrhs = _info.x.dimension_1();
-            const size_type bufsize = n*nrhs*sizeof(mat_value_type);
-
-            mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
-            TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
-
-            CholSupernodes<Algo::Workflow::Serial>
-              ::solve_lower_recursive_serial(_sched, member, _info, _sid, true, buf, bufsize);
-
-            if (bufsize > 0)
-              _bufpool.deallocate(buf, bufsize);
-
-            _state = 3; // done
-            break;
-          }
-          case 2: {
-            ordinal_type pm, pn; _info.getSuperPanelSize(_sid, pm, pn);
-            const ordinal_type n = pn - pm, nrhs = _info.x.dimension_1();
-            const size_type bufsize = n*nrhs*sizeof(mat_value_type);
-            mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
-            TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
-
-            CholSupernodes<Algo::Workflow::Serial>
-              ::solve_lower_recursive_serial(_sched, member, _info, _sid, false, buf, bufsize);
-
-            if (bufsize > 0)
-              _bufpool.deallocate(buf, bufsize);
-
-            _state = 3; // done 
+          case 1: {
+            solve_internal(member, _s.n - _s.m, false);
+            _state = done; 
             break;
           }
           }         

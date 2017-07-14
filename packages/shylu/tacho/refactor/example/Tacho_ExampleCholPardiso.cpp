@@ -26,7 +26,7 @@ int main (int argc, char *argv[]) {
   int nthreads = 1;
   clp.setOption("kokkos-threads", &nthreads, "Number of threads");
 
-  bool verbose = false;
+  bool verbose = true;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
   std::string file_input = "test.mtx";
@@ -191,7 +191,7 @@ int main (int argc, char *argv[]) {
     }
     
     {
-      const double res = NumericTools<value_type,Kokkos::DefaultHostExecutionSpace>::computeResidual(A, X, B);
+      const double res = NumericTools<value_type,Kokkos::DefaultHostExecutionSpace>::computeRelativeResidual(A, X, B);
       std::cout << "PardisoChol:: residual = " << res << std::endl;
     }
     

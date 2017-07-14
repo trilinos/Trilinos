@@ -1336,6 +1336,10 @@ namespace MueLu {
       GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
       return;
     }
+    if(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A) != Teuchos::null) {
+      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is a BlockedCrsMatrix, skipping..." << std::endl;
+      return;
+    }
 
     typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
 

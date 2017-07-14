@@ -53,7 +53,7 @@
 
 #ifdef HAVE_MPI
 // MPI include
-#include "mpi.h"
+#include <mpi.h>
 #endif
 
 namespace Domi

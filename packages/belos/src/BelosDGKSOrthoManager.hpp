@@ -661,7 +661,7 @@ namespace Belos {
 #endif
 
     ScalarType    ONE  = SCT::one();
-    ScalarType    ZERO  = SCT::zero();
+    const MagnitudeType ZERO = SCT::magnitude(SCT::zero());
 
     int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
@@ -758,11 +758,14 @@ namespace Belos {
         MVT::MvDot( X, *MX, diag );
       }
       (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
-      rank = 1;
-      MVT::MvScale( X, ONE/(*B)(0,0) );
-      if (this->_hasOp) {
-        // Update MXj.
-        MVT::MvScale( *MX, ONE/(*B)(0,0) );
+
+      if (SCT::magnitude((*B)(0,0)) > ZERO) {
+        rank = 1;
+        MVT::MvScale( X, ONE/(*B)(0,0) );
+        if (this->_hasOp) {
+          // Update MXj.
+          MVT::MvScale( *MX, ONE/(*B)(0,0) );
+        }
       }
     }
     else {
@@ -783,9 +786,9 @@ namespace Belos {
         rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
         // Copy tmpX back into X.
-        MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
+        MVT::Assign( *tmpX, X );
         if (this->_hasOp) {
-          MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
+          MVT::Assign( *tmpMX, *MX );
         }
       }
       else {
@@ -797,9 +800,9 @@ namespace Belos {
           rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
           // Copy tmpX back into X.
-          MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
+          MVT::Assign( *tmpX, X );
           if (this->_hasOp) {
-            MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
+            MVT::Assign( *tmpMX, *MX );
           }
         }
       }
@@ -1188,9 +1191,9 @@ namespace Belos {
           //
           if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
             // Copy vector into current column of _basisvecs
-            MVT::MvAddMv( ONE, *tempXj, ZERO, *tempXj, *Xj );
+            MVT::Assign( *tempXj, *Xj );
             if (this->_hasOp) {
-              MVT::MvAddMv( ONE, *tempMXj, ZERO, *tempMXj, *MXj );
+              MVT::Assign( *tempMXj, *MXj );
             }
           }
           else {

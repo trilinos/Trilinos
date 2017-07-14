@@ -517,8 +517,8 @@ namespace Intrepid2 {
         for (ordinal_type j=0;j<cardBubble;++j) { // y
           for (ordinal_type i=0;i<cardBubble;++i,++idx) { // x
             dofCoordsHost(idx,0) = dofCoordsBubbleHost(i,0);
-            dofCoordsHost(idx,2) = dofCoordsBubbleHost(j,0);
-            dofCoordsHost(idx,1) = dofCoordsLineHost(k,0);
+            dofCoordsHost(idx,1) = dofCoordsBubbleHost(j,0);
+            dofCoordsHost(idx,2) = dofCoordsLineHost(k,0);
           }
         }
       }
