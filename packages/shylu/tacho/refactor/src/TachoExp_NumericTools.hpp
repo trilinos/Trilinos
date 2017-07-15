@@ -269,21 +269,35 @@ namespace Tacho {
       factorizeCholesky_Serial(const value_type_array_host &ax,
                                const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
-
-        timer.reset();
         {
-          /// matrix values
-          _ax = ax;
-
-          ordinal_type_array_host iwork("work", _m+1);
-          track_alloc(iwork.span()*sizeof(ordinal_type));
+          memory_pool_type_host bufpool;
+          timer.reset();
+          {
+            const size_type
+              max_block_size = _m*sizeof(ordinal_type);
+            
+            typedef typename host_exec_space::memory_space memory_space;
+            bufpool = memory_pool_type_host(memory_space(),
+                                            max_block_size,
+                                            max_block_size,
+                                            max_block_size,
+                                            max_block_size);
+            
+            track_alloc(bufpool.capacity());
+          }
+          stat.t_extra = timer.seconds();
           
-          /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, iwork);
-
-          track_free(iwork.span()*sizeof(ordinal_type));
+          timer.reset();
+          {
+            /// matrix values
+            _ax = ax;
+            
+            /// copy the input matrix into super panels
+            _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, bufpool);
+          }
+          stat.t_copy = timer.seconds();
+          track_free(bufpool.capacity());
         }
-        stat.t_copy += timer.seconds();
 
         timer.reset();
         {
@@ -299,7 +313,7 @@ namespace Tacho {
           
           track_free(bufsize);
         }
-        stat.t_factor += timer.seconds();
+        stat.t_factor = timer.seconds();
         
         if (verbose) {
           printf("Summary: NumericTools (SerialFactorization)\n");
@@ -333,7 +347,7 @@ namespace Tacho {
         // copy b -> t
         timer.reset();
         applyRowPermutation(t, b, _peri);
-        stat.t_extra += timer.seconds();
+        stat.t_extra = timer.seconds();
         
         timer.reset();
         {
@@ -352,7 +366,7 @@ namespace Tacho {
           
           track_free(bufsize);
         }
-        stat.t_solve += timer.seconds();
+        stat.t_solve = timer.seconds();
         
         // copy t -> x
         timer.reset();
@@ -378,83 +392,77 @@ namespace Tacho {
         Kokkos::Impl::Timer timer;
 
         timer.reset();
+        typedef typename sched_type_host::memory_space memory_space;
+        typedef TaskFunctor_FactorizeChol<value_type,host_exec_space> functor_type;
+        typedef Kokkos::Future<int,host_exec_space> future_type;
+        
+        sched_type_host sched;
+        {
+          const size_type max_functor_size = sizeof(functor_type);
+          const size_type estimate_max_numtasks = _sid_block_colidx.dimension_0();
+          
+          const size_type
+            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+            min_block_size  = 1,
+            max_block_size  = max_functor_size,
+            num_superblock  = 32, // various small size blocks
+            superblock_size = task_queue_capacity/num_superblock;
+          
+          sched = sched_type_host(memory_space(),
+                                  task_queue_capacity,
+                                  min_block_size,
+                                  max_block_size,
+                                  superblock_size);
+          
+          track_alloc(sched.memory()->capacity());
+        }
+        
+        memory_pool_type_host bufpool;
+        {
+          const size_type
+            min_block_size  = 1,
+            max_block_size  = max((_info.max_schur_size*_info.max_schur_size +
+                                   _info.max_schur_size)*sizeof(value_type),
+                                  _m*sizeof(ordinal_type));
+          
+          size_type superblock_size = 1;
+          for ( ;superblock_size<max_block_size;superblock_size*=2);
+          
+          const size_type
+            num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+            //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // restrict memory pool
+            memory_capacity = num_superblock*superblock_size;
+          
+          bufpool = memory_pool_type_host(memory_space(),
+                                          memory_capacity,
+                                          min_block_size,
+                                          max_block_size,
+                                          superblock_size);
+          
+          track_alloc(bufpool.capacity());
+        }
+        stat.t_extra = timer.seconds();
+        
+        timer.reset();
         {
           /// matrix values
           _ax = ax;
-
-          ordinal_type_array_host iwork("work", _m+1);
-          track_alloc(iwork.span()*sizeof(ordinal_type));
           
           /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, iwork);
-
-          track_free(iwork.span()*sizeof(ordinal_type));
+          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, bufpool);
         }
-        stat.t_copy += timer.seconds();
+        stat.t_copy = timer.seconds();
 
-        {
-          timer.reset();
-          typedef typename sched_type_host::memory_space memory_space;
-          typedef TaskFunctor_FactorizeChol<value_type,host_exec_space> functor_type;
-          typedef Kokkos::Future<int,host_exec_space> future_type;
-
-          sched_type_host sched;
-          {
-            const size_type max_functor_size = sizeof(functor_type);
-            const size_type estimate_max_numtasks = _sid_block_colidx.dimension_0();
-
-            const size_type
-              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-              min_block_size  = 1,
-              max_block_size  = max_functor_size,
-              num_superblock  = 32, // various small size blocks
-              superblock_size = task_queue_capacity/num_superblock;
-
-            sched = sched_type_host(memory_space(),
-                                    task_queue_capacity,
-                                    min_block_size,
-                                    max_block_size,
-                                    superblock_size);
-
-            track_alloc(sched.memory()->capacity());
-          }
-
-          memory_pool_type_host bufpool;
-          {
-            const size_type
-              min_block_size  = 1,
-              max_block_size  = (_info.max_schur_size*_info.max_schur_size +
-                                 _info.max_schur_size)*sizeof(value_type);
-
-            size_type superblock_size = 1;
-            for ( ;superblock_size<max_block_size;superblock_size*=2);
-
-            const size_type
-              num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-              //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // restrict memory pool
-              memory_capacity = num_superblock*superblock_size;
-
-            bufpool = memory_pool_type_host(memory_space(),
-                                            memory_capacity,
-                                            min_block_size,
-                                            max_block_size,
-                                            superblock_size);
-
-            track_alloc(bufpool.capacity());
-          }
-          stat.t_extra += timer.seconds();
-
-          timer.reset();
-          const ordinal_type nroots = _stree_roots.dimension_0();
-          for (ordinal_type i=0;i<nroots;++i)
-            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               functor_type(sched, bufpool, _info, _stree_roots(i)));
-          Kokkos::wait(sched);
-          stat.t_factor = timer.seconds();
-
-          track_free(bufpool.capacity());
-          track_free(sched.memory()->capacity());
-        }
+        timer.reset();
+        const ordinal_type nroots = _stree_roots.dimension_0();
+        for (ordinal_type i=0;i<nroots;++i)
+          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                             functor_type(sched, bufpool, _info, _stree_roots(i)));
+        Kokkos::wait(sched);
+        stat.t_factor = timer.seconds();
+        
+        track_free(bufpool.capacity());
+        track_free(sched.memory()->capacity());
 
         if (verbose) {
           printf("Summary: NumericTools (ParallelFactorization)\n");
@@ -488,7 +496,7 @@ namespace Tacho {
         // copy b -> t
         timer.reset();
         applyRowPermutation(t, b, _peri);
-        stat.t_extra += timer.seconds();
+        stat.t_extra = timer.seconds();
 
         {
           timer.reset();
@@ -582,91 +590,85 @@ namespace Tacho {
         Kokkos::Impl::Timer timer;
 
         timer.reset();
+        typedef typename sched_type_host::memory_space memory_space;
+        typedef TaskFunctor_FactorizeCholByBlocks<value_type,host_exec_space> functor_type;
+        typedef Kokkos::Future<int,host_exec_space> future_type;
+        
+        const size_type 
+          max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
+          max_ncols_of_blocks = _info.max_schur_size/blksize + 1;
+        
+        sched_type_host sched;
+        {
+          const size_type max_dep_future_size = max_ncols_of_blocks*max_ncols_of_blocks*sizeof(future_type);
+          const size_type max_functor_size = sizeof(functor_type);
+          const size_type estimate_max_numtasks = _sid_block_colidx.dimension_0();
+          
+          const size_type
+            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+            min_block_size  = 1,
+            max_block_size  = ( max_dep_future_size + max_functor_size ),
+            num_superblock  = 32, // various small size blocks
+            superblock_size = task_queue_capacity/num_superblock;
+          
+          sched = sched_type_host(memory_space(),
+                                  task_queue_capacity,
+                                  min_block_size,
+                                  max_block_size,
+                                  superblock_size);
+          
+          track_alloc(sched.memory()->capacity());
+        }
+        
+        memory_pool_type_host bufpool;
+        {
+          const size_type
+            min_block_size  = 1,
+            max_block_size  = max(( (_info.max_schur_size*_info.max_schur_size +
+                                     _info.max_schur_size)*sizeof(value_type) +
+                                    (max_nrows_of_blocks*max_nrows_of_blocks +
+                                     max_nrows_of_blocks*max_ncols_of_blocks +
+                                     max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(dense_block_type_host) ),
+                                  _m*sizeof(ordinal_type));
+                                  
+          size_type superblock_size = 1;
+          for ( ;superblock_size<max_block_size;superblock_size*=2);
+          
+          const size_type
+            num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+            //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // # of threads is safe number
+            memory_capacity = num_superblock*superblock_size;
+          
+          bufpool = memory_pool_type_host(memory_space(),
+                                          memory_capacity,
+                                          min_block_size,
+                                          max_block_size,
+                                          superblock_size);
+          
+          track_alloc(bufpool.capacity());
+        }
+        stat.t_extra += timer.seconds();
+        
+        timer.reset();
         {
           /// matrix values
           _ax = ax;
-
-          ordinal_type_array_host iwork("work", _m+1);
-          track_alloc(iwork.span()*sizeof(ordinal_type));
           
           /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, iwork);
-
-          track_free(iwork.span()*sizeof(ordinal_type));
+          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, bufpool);
         }
         stat.t_copy += timer.seconds();
 
-        {
-          timer.reset();
-          typedef typename sched_type_host::memory_space memory_space;
-          typedef TaskFunctor_FactorizeCholByBlocks<value_type,host_exec_space> functor_type;
-          typedef Kokkos::Future<int,host_exec_space> future_type;
-
-          const size_type 
-            max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
-            max_ncols_of_blocks = _info.max_schur_size/blksize + 1;
-          
-          sched_type_host sched;
-          {
-            const size_type max_dep_future_size = max_ncols_of_blocks*max_ncols_of_blocks*sizeof(future_type);
-            const size_type max_functor_size = sizeof(functor_type);
-            const size_type estimate_max_numtasks = _sid_block_colidx.dimension_0();
-
-            const size_type
-              task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-              min_block_size  = 1,
-              max_block_size  = ( max_dep_future_size + max_functor_size ),
-              num_superblock  = 32, // various small size blocks
-              superblock_size = task_queue_capacity/num_superblock;
-
-            sched = sched_type_host(memory_space(),
-                                    task_queue_capacity,
-                                    min_block_size,
-                                    max_block_size,
-                                    superblock_size);
-
-            track_alloc(sched.memory()->capacity());
-          }
-
-          memory_pool_type_host bufpool;
-          {
-            const size_type
-              min_block_size  = 1,
-              max_block_size  = ( (_info.max_schur_size*_info.max_schur_size +
-                                   _info.max_schur_size)*sizeof(value_type) +
-                                  (max_nrows_of_blocks*max_nrows_of_blocks +
-                                   max_nrows_of_blocks*max_ncols_of_blocks +
-                                   max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(dense_block_type_host) );
-            
-            size_type superblock_size = 1;
-            for ( ;superblock_size<max_block_size;superblock_size*=2);
-
-            const size_type
-              num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-              //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // # of threads is safe number
-              memory_capacity = num_superblock*superblock_size;
-
-            bufpool = memory_pool_type_host(memory_space(),
-                                            memory_capacity,
-                                            min_block_size,
-                                            max_block_size,
-                                            superblock_size);
-
-            track_alloc(bufpool.capacity());
-          }
-          stat.t_extra += timer.seconds();
-
-          timer.reset();
-          const ordinal_type nroots = _stree_roots.dimension_0();
-          for (ordinal_type i=0;i<nroots;++i)
-            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
-          Kokkos::wait(sched);
-          stat.t_factor = timer.seconds();
-
-          track_free(bufpool.capacity());
-          track_free(sched.memory()->capacity());
-        }
+        timer.reset();
+        const ordinal_type nroots = _stree_roots.dimension_0();
+        for (ordinal_type i=0;i<nroots;++i)
+          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                             functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
+        Kokkos::wait(sched);
+        stat.t_factor = timer.seconds();
+        
+        track_free(bufpool.capacity());
+        track_free(sched.memory()->capacity());
 
         if (verbose) {
           printf("Summary: NumericTools (ParallelFactorizationByBlocks: %3d)\n", blksize);

@@ -189,31 +189,37 @@ namespace Tacho {
                               const ordinal_type_array &perm,
                               const ordinal_type_array &peri,
                               // work array to store map
-                              const ordinal_type_array &work) {
-        dense_block_type tgt;        
-        const ordinal_type nsupernodes = supernodes.dimension_0();
-        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          const auto &s = supernodes(sid);
-          
-          tgt.set_view(s.m, s.n);
-          tgt.attach_buffer(1, s.m, s.buf);
-          
-          // local to global map
-          for (ordinal_type j=0;j<s.n;++j) 
-            work(gid_colidx(j+s.gid_col_begin) /* = col */) = j;
-          
-          // row major access to sparse src
-          for (ordinal_type i=0;i<s.m;++i) {
-            const ordinal_type 
-              ii = i + s.row_begin,  // row in U
-              row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
-            for (ordinal_type k=kbeg;k<kend;++k) {
-              const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
-              if (ii <= jj) 
-                tgt(i, work(jj)) = ax(k);
+                              Kokkos::MemoryPool<exec_space> &pool) {
+
+        const ordinal_type nsupernodes = supernodes.dimension_0(), m = ap.dimension_0() - 1;
+
+        const Kokkos::RangePolicy<exec_space,Kokkos::Schedule<Kokkos::Static> > policy(0, nsupernodes);
+        Kokkos::parallel_for                                                                                
+          (policy, KOKKOS_LAMBDA(const int sid) {                                                                     
+            const auto &s = supernodes(sid);
+
+            const dense_block_type tgt(s.buf, s.m, s.n);;            
+            
+            ordinal_type *work = (ordinal_type*)pool.allocate(m*sizeof(ordinal_type));
+            TACHO_TEST_FOR_ABORT(work == NULL, "memory pool allocation fails");
+
+            // local to global map
+            for (ordinal_type j=0;j<s.n;++j) 
+              work[gid_colidx(j+s.gid_col_begin) /* = col */] = j;
+            
+            // row major access to sparse src
+            for (ordinal_type i=0;i<s.m;++i) {
+              const ordinal_type 
+                ii = i + s.row_begin,  // row in U
+                row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
+              for (ordinal_type k=kbeg;k<kend;++k) {
+                const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
+                if (ii <= jj) 
+                  tgt(i, work[jj]) = ax(k);
+              }
             }
-          }
-        }
+            pool.deallocate(work, m*sizeof(ordinal_type));
+          });    
       }
       
       inline
