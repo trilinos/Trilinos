@@ -233,7 +233,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   bool lcl_unpack_OK =
     unpackCrsMatrixAndCombine (B_lcl, col_map->getLocalMap (), errStr,
                                exportLIDs (), exports, numPacketsPerLID (),
-                               constantNumPackets, distor, Tpetra::REPLACE,
+                               constantNumPackets, world_rank, distor, Tpetra::REPLACE,
                                atomic_updates);
   TEST_ASSERT( lcl_unpack_OK );
   lclSuccess = success ? 1 : 0;
@@ -317,7 +317,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   lcl_unpack_OK =
     unpackCrsMatrixAndCombine (B_lcl, col_map->getLocalMap (), errStr,
                                exportLIDs (), exports, numPacketsPerLID (),
-                               constantNumPackets, distor, Tpetra::ADD,
+                               constantNumPackets, world_rank, distor, Tpetra::ADD,
                                atomic_updates);
   TEST_ASSERT( lcl_unpack_OK );
   lclSuccess = success ? 1 : 0;
@@ -409,7 +409,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackError, SC, LO, GO, NT)
 {
   using Tpetra::Details::gathervPrint;
   using Tpetra::Details::packCrsMatrix;
-  using Tpetra::Details::unpackCrsMatrixAndCombine;
   using Tpetra::CrsMatrix;
   using Tpetra::DefaultPlatform;
   using Tpetra::Distributor;

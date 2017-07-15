@@ -6332,10 +6332,12 @@ namespace Tpetra {
       using Details::unpackCrsMatrixAndCombine;
       const map_type& colMap = * (this->staticGraph_->colMap_);
       const auto lclColMap = colMap.getLocalMap ();
+      const Teuchos::Comm<int>& comm = * (this->getComm ());
+      const int myRank = comm.getRank ();
       std::unique_ptr<std::string> errStr;
       bool locallyCorrect = unpackCrsMatrixAndCombine (
           this->lclMatrix_, lclColMap, errStr, importLIDs, imports,
-          numPacketsPerLID, constantNumPackets, distor, combineMode, atomic);
+          numPacketsPerLID, constantNumPackets, myRank, distor, combineMode, atomic);
       TEUCHOS_TEST_FOR_EXCEPTION(!locallyCorrect, std::runtime_error, *errStr);
     }
     else {
