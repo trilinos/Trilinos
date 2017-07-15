@@ -175,9 +175,10 @@ namespace Tacho {
       _x = x;
     }
 
-    int run(int phase) {
+    int run(int phase, int msglvl = 1) {
       int ierr = 0;
 
+      _msglvl = msglvl;
       pardiso(_pt, 
               &_maxfct, &_mnum, &_mtype,
               &phase,
