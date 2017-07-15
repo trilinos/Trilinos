@@ -13,7 +13,7 @@
 
 #ifdef HAVE_SHYLUTACHO_MKL
 #include "mkl_service.h"
-#include "Tacho_ExamplePardiso.hpp"
+#include "Tacho_Pardiso.hpp"
 #endif
 
 using namespace Tacho;
