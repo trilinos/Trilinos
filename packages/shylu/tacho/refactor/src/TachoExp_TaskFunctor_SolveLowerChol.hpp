@@ -93,7 +93,7 @@ namespace Tacho {
               
               // spawn children tasks and this (their parent) depends on the children tasks
               for (ordinal_type i=0;i<_s.nchildren;++i) {
-                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
                                             TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, _s.children[i]));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 dep[i] = f;

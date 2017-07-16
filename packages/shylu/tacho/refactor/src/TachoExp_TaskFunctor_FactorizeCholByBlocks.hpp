@@ -218,7 +218,7 @@ namespace Tacho {
             future_type dep[MaxDependenceSize];
             if (use_byblocks) {
               for (ordinal_type i=0;i<_s.nchildren;++i) {
-                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
                                             TaskFunctor_FactorizeCholByBlocks
                                             (_sched, _bufpool, _info, _s.children[i], _mb));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
@@ -226,7 +226,7 @@ namespace Tacho {
               }
             } else {
               for (ordinal_type i=0;i<_s.nchildren;++i) {
-                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
                                             TaskFunctor_FactorizeChol<mat_value_type,exec_space>
                                             (_sched, _bufpool, _info, _s.children[i]));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
