@@ -92,6 +92,8 @@ class NOXSolver
   Teuchos::RCP<Teuchos::FancyOStream> out;
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
+
+  bool writeOnlyConvergedSol;
 };
 
 }
