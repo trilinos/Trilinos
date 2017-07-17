@@ -2352,7 +2352,7 @@ namespace Tpetra {
        "some of them are marked as invalid." << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (this->haveGlobalConstants_ &&
-       (this->globalNumEntries_ < this->nodeNumEntries_ ||
+       (this->globalNumEntries_ < this->getNodeNumEntries () ||
         this->globalNumDiags_ < this->nodeNumDiags_ ||
         this->globalMaxNumRowEntries_ < this->nodeMaxNumRowEntries_),
        std::logic_error, "Graph claims to have global constants, and "
@@ -4044,7 +4044,7 @@ namespace Tpetra {
            "threw an exception not a subclass of std::exception.");
       }
 
-      if (nodeNumEntries_ != allocSize) {
+      if (this->getNodeNumEntries () != allocSize) {
         // The graph's current 1-D storage is "unpacked."  This means
         // the row offsets may differ from what the final row offsets
         // should be.  This could happen, for example, if the user
@@ -4607,7 +4607,7 @@ namespace Tpetra {
       // don't have to wait around for the first one to finish before
       // starting the second one.
       GST lcl[2], gbl[2];
-      lcl[0] = static_cast<GST> (nodeNumEntries_);
+      lcl[0] = static_cast<GST> (this->getNodeNumEntries ());
       lcl[1] = static_cast<GST> (nodeNumDiags_);
       reduceAll<int,GST> (*getComm (), Teuchos::REDUCE_SUM,
                           2, lcl, gbl);
@@ -5125,7 +5125,7 @@ namespace Tpetra {
         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
           if (myImageID == imageCtr) {
             out << "Node ID = " << imageCtr << std::endl
-                << "Node number of entries = " << nodeNumEntries_ << std::endl
+                << "Node number of entries = " << this->getNodeNumEntries () << std::endl
                 << "Node number of diagonals = " << nodeNumDiags_ << std::endl
                 << "Node max number of entries = " << nodeMaxNumRowEntries_ << std::endl;
             if (! indicesAreAllocated ()) {

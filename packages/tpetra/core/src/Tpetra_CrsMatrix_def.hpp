@@ -1142,7 +1142,7 @@ namespace Tpetra {
       }
 #endif // HAVE_TPETRA_DEBUG
 
-      if (myGraph_->nodeNumEntries_ != myGraph_->getNodeAllocationSize ()) {
+      if (myGraph_->getNodeNumEntries () != myGraph_->getNodeAllocationSize ()) {
         // The matrix's current 1-D storage is "unpacked."  This means
         // the row offsets may differ from what the final row offsets
         // should be.  This could happen, for example, if the user
@@ -1417,7 +1417,7 @@ namespace Tpetra {
 
     // get data from staticGraph_
     ArrayRCP<Array<LO> > lclInds2D = staticGraph_->lclInds2D_;
-    size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
+    size_t nodeNumEntries   = staticGraph_->getNodeNumEntries ();
     size_t nodeNumAllocated = staticGraph_->getNodeAllocationSize ();
     row_map_type k_rowPtrs_ = staticGraph_->lclGraph_.row_map;
 
