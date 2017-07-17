@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "calc_decomp_cuts.h"
 
+#include <stdio.h>
 
 /* ========================================================================== */
 

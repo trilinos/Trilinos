@@ -368,6 +368,7 @@ namespace PAMGEN_NEVADA {
           );
       virtual long long Element_Proc(long long);
       virtual long long Decompose(std::set <long long> & global_el_ids);
+      virtual long long Decompose(std::set <long long> & global_el_ids, long long* lNPD);
       long long DecomposeSequential(std::set <long long> & global_el_ids);
       long long get_block_index(long long ordinal_val, long long count, long long * cumulative);
 
