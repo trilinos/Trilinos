@@ -134,48 +134,68 @@ struct UnpackCrsMatrixError {
 /// Data (bytes) describing the row of the CRS matrix are "unpacked"
 /// from a single (concatenated) char* in to the row of the matrix
 ///
+/// \tparam NumPacketsPerLIDType the specialization of the Kokkos::View of counts
+/// \tparam OffsetsType the specialization of the Kokkos::View of offsets
+/// \tparam ImportsType the specialization of the Kokkos::View of imports
+/// \tparam ImportLIDsType the specialization of the Kokkos::View of import
+//local IDs
 /// \tparam LocalMatrixType the specialization of the KokkosSparse::CrsMatrix
 ///   local matrix
 /// \tparam LocalMapType the type of the local column map
-template<class CountType, class OffsetType, class LocalMatrixType, class LocalMapType>
+template<class NumPacketsPerLIDType, class OffsetsType,
+  class ImportsType, class ImportLIDsType,
+  class LocalMatrixType, class LocalMapType>
 struct UnpackCrsMatrixAndCombineFunctor {
 
-  typedef CountType count_type;
-  typedef OffsetType offset_type;
+  typedef NumPacketsPerLIDType num_packets_per_lid_type;
+  typedef OffsetsType offsets_type;
+  typedef ImportsType imports_type;
+  typedef ImportLIDsType import_lids_type;
   typedef LocalMatrixType local_matrix_type;
   typedef LocalMapType local_map_type;
   typedef typename local_matrix_type::value_type IST;
   typedef typename local_matrix_type::ordinal_type LO;
   typedef typename local_map_type::global_ordinal_type GO;
-
-  typedef Kokkos::View<const count_type*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> num_packets_per_lid_view_type;
-  typedef Kokkos::View<offset_type*, Kokkos::HostSpace> offsets_view_type;
-  typedef Kokkos::View<const char*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> imports_view_type;
-  typedef Kokkos::View<const LO*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> import_lids_view_type;
-
   typedef UnpackCrsMatrixError<LO> value_type;
 
+  static_assert (Kokkos::Impl::is_view<NumPacketsPerLIDType>::value,
+                 "NumPacketsPerLIDType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<OffsetsType>::value,
+                 "OffsetsType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<ImportsType>::value,
+                 "ImportsType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<ImportLIDsType>::value,
+                 "ImportLIDsType must be a Kokkos::View.");
   static_assert (std::is_same<LO, typename LocalMatrixType::ordinal_type>::value,
                  "LocalMapType::local_ordinal_type and "
                  "LocalMatrixType::ordinal_type must be the same.");
 
-  num_packets_per_lid_view_type num_packets_per_lid_;
-  offsets_view_type offsets_;
-  imports_view_type imports_;
-  import_lids_view_type import_lids_;
+  NumPacketsPerLIDType num_packets_per_lid_;
+  OffsetsType offsets_;
+  ImportsType imports_;
+  ImportLIDsType import_lids_;
   LocalMatrixType local_matrix_;
   LocalMapType local_col_map_;
   Tpetra::CombineMode combine_mode_;
   bool atomic_;
 
-  UnpackCrsMatrixAndCombineFunctor(num_packets_per_lid_view_type num_packets_per_lid,
-      offsets_view_type offsets, imports_view_type imports,
-      import_lids_view_type import_lids,
-      local_matrix_type local_matrix, local_map_type local_col_map,
-      Tpetra::CombineMode combine_mode, bool atomic) :
-    num_packets_per_lid_(num_packets_per_lid), offsets_(offsets),
-    imports_(imports), import_lids_(import_lids), local_matrix_(local_matrix),
-    local_col_map_(local_col_map), combine_mode_(combine_mode), atomic_(atomic)
+  UnpackCrsMatrixAndCombineFunctor(
+      const num_packets_per_lid_type& num_packets_per_lid,
+      const offsets_type& offsets,
+      const imports_type& imports,
+      const import_lids_type& import_lids,
+      local_matrix_type& local_matrix,
+      const local_map_type& local_col_map,
+      const Tpetra::CombineMode combine_mode,
+      const bool atomic) :
+    num_packets_per_lid_(num_packets_per_lid),
+    offsets_(offsets),
+    imports_(imports),
+    import_lids_(import_lids),
+    local_matrix_(local_matrix),
+    local_col_map_(local_col_map),
+    combine_mode_(combine_mode),
+    atomic_(atomic)
   {}
 
   KOKKOS_INLINE_FUNCTION void init(value_type& dst) const
@@ -254,7 +274,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
         // vs. actual errors.
 
         // Combine a single column/value at a time to avoid temporary storage
-        LO num_modified = Teuchos::ScalarTraits<LO>::zero();
+        LO num_modified = 0;
         if (combine_mode_ == ADD) {
           for (size_t k = 0; k < static_cast<size_t>(num_ent); ++k) {
             IST val = Teuchos::ScalarTraits<IST>::zero();
@@ -317,9 +337,8 @@ unpackCrsMatrixAndCombine(
     const bool atomic)
 {
   using Kokkos::View;
-  using Kokkos::HostSpace;
-  using Kokkos::MemoryUnmanaged;
   using ::Tpetra::Details::computeOffsetsFromCounts;
+  using Tpetra::Details::create_mirror_view_from_raw_host_array;
   typedef LocalMatrixType local_matrix_type;
   typedef LocalMapType local_map_type;
   typedef typename LocalMapType::local_ordinal_type LO;
@@ -328,13 +347,7 @@ unpackCrsMatrixAndCombine(
                  "LocalMapType::local_ordinal_type and "
                  "LocalMatrixType::ordinal_type must be the same.");
 
-  // Get the number of packets on each row.
-  typedef size_t count_type;
-  typedef View<const LO*, HostSpace, MemoryUnmanaged> LIVT;  // Local indices view type
-  typedef View<const count_type*, HostSpace, MemoryUnmanaged> CVT; // Counts view type
-  typedef View<const char*, HostSpace, MemoryUnmanaged> IPVT; // Imports view type
-
-  typedef typename CVT::device_type device_type;
+  typedef typename LocalMatrixType::device_type device_type;
   typedef typename device_type::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, LO> range_type;
 
@@ -379,23 +392,42 @@ unpackCrsMatrixAndCombine(
     }
   } // end QA error checking
 
-  CVT num_packets_per_lid(numPacketsPerLID.getRawPtr(), numPacketsPerLID.size());
-  LIVT import_lids(importLIDs.getRawPtr(), numImportLIDs);
-  IPVT imports_v(imports.getRawPtr(), imports.size());
+  // numPacketsPerLID, importLIDs, and imports are input, so we have to copy
+  // them to device.  Since unpacking is done directly in to the local matrix
+  // (lclMatrix), not copying needs to be performed after unpacking.
+  typename LocalMatrixType::device_type outputDevice;
+  auto num_packets_per_lid_d =
+    create_mirror_view_from_raw_host_array(outputDevice,
+        numPacketsPerLID.getRawPtr(), numPacketsPerLID.size(),
+        true, "num_packets_per_lid_d");
+
+  auto import_lids_d =
+    create_mirror_view_from_raw_host_array(outputDevice,
+        importLIDs.getRawPtr(), importLIDs.size(),
+        true, "import_lids_d");
+
+  auto imports_d =
+    create_mirror_view_from_raw_host_array(outputDevice,
+        imports.getRawPtr(), imports.size(),
+        true, "imports_d");
 
   // Get the offsets
-  typedef size_t offset_type;
-  typedef View<offset_type*, HostSpace> OVT; // Offsets view type
-  OVT offsets("unpackCrsMatrixAndCombine: offsets", numImportLIDs+1);
-  computeOffsetsFromCounts(offsets, num_packets_per_lid);
+  View<size_t*, device_type>
+    offsets_d("offsets_d", numImportLIDs+1);
+  computeOffsetsFromCounts(offsets_d, num_packets_per_lid_d);
 
   // Now do the actual unpack!
-  typedef UnpackCrsMatrixAndCombineFunctor<count_type, offset_type,
-          local_matrix_type, local_map_type> unpack_functor_type;
+  typedef UnpackCrsMatrixAndCombineFunctor<
+    decltype(num_packets_per_lid_d),
+    decltype(offsets_d),
+    decltype(imports_d),
+    decltype(import_lids_d),
+    local_matrix_type,
+    local_map_type> unpack_functor_type;
+  unpack_functor_type unpack_functor(num_packets_per_lid_d, offsets_d,
+      imports_d, import_lids_d, lclMatrix, lclColMap, combineMode, atomic);
 
   typename unpack_functor_type::value_type result;
-  unpack_functor_type unpack_functor(num_packets_per_lid, offsets,
-      imports_v, import_lids, lclMatrix, lclColMap, combineMode, atomic);
   Kokkos::parallel_reduce(range_type(0, numImportLIDs), unpack_functor, result);
 
   if (!result.success()) {
