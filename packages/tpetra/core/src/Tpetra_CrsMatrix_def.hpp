@@ -3153,6 +3153,10 @@ namespace Tpetra {
     // these extra references lying around.
     this->k_values1D_ = this->lclMatrix_.values;
 
+    // Storage MUST be packed, since the interface doesn't give any
+    // way to indicate any extra space at the end of each row.
+    this->storageStatus_ = Details::STORAGE_1D_PACKED;
+
     checkInternalState ();
   }
 

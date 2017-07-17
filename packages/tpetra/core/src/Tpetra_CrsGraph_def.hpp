@@ -910,7 +910,6 @@ namespace Tpetra {
   getNodeNumEntries () const
   {
     typedef LocalOrdinal LO;
-    const char tfecfFuncName[] = "getNodeNumEntries: ";
 
     if (this->indicesAreAllocated_) {
       const LO lclNumRows = this->getNodeNumRows ();
@@ -3237,9 +3236,9 @@ namespace Tpetra {
     pftype_              = StaticProfile; // if the profile wasn't static before, it sure is now.
     k_lclInds1D_         = columnIndices;
     k_rowPtrs_           = rowPointers;
-    // We don't know whether it's packed or unpacked, but we may
-    // conservatively assume that it is packed.
-    storageStatus_       = Details::STORAGE_1D_UNPACKED;
+    // Storage MUST be packed, since the interface doesn't give any
+    // way to indicate any extra space at the end of each row.
+    storageStatus_       = Details::STORAGE_1D_PACKED;
 
     // Build the local graph.
     lclGraph_ = local_graph_type (k_lclInds1D_, k_rowPtrs_);
