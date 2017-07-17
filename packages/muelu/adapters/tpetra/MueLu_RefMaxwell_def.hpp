@@ -96,6 +96,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::
       smootherList_.setEntry(pname,list.entry(i));
       std::string coarsename(pname);
       coarsename.replace((size_t)0,(size_t)ref.length(),replace);
+      smootherList_.setEntry(coarsename,list.entry(i));
     }
   }
   if(list.isSublist("smoother: params")) {
