@@ -2865,9 +2865,6 @@ namespace Tpetra {
     //! Local graph; only initialized after first fillComplete() call.
     local_graph_type lclGraph_;
 
-    //! Local number of (populated) entries; must always be consistent.
-    size_t nodeNumEntries_;
-
     /// \brief Local number of (populated) diagonal entries.
     ///
     /// Computed in computeLocalConstants(); only valid when isFillComplete().

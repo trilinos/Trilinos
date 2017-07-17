@@ -169,7 +169,6 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
-    , nodeNumEntries_ (0)
     , pftype_ (pftype)
     , numAllocForAllRows_ (maxNumEntriesPerRow)
     , storageStatus_ (pftype == StaticProfile ?
@@ -207,7 +206,6 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
-    , nodeNumEntries_ (0)
     , pftype_ (pftype)
     , numAllocForAllRows_ (maxNumEntriesPerRow)
     , storageStatus_ (pftype == StaticProfile ?
@@ -243,7 +241,6 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
-    , nodeNumEntries_ (0)
     , pftype_ (pftype)
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
@@ -307,7 +304,6 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
-    , nodeNumEntries_ (0)
     , pftype_ (pftype)
     , k_numAllocPerRow_ (numEntPerRow.h_view)
     , numAllocForAllRows_ (0)
@@ -360,7 +356,6 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
-    , nodeNumEntries_ (0)
     , pftype_ (pftype)
     , k_numAllocPerRow_ (numEntPerRow.h_view)
     , numAllocForAllRows_ (0)
@@ -413,7 +408,6 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
-    , nodeNumEntries_ (0)
     , pftype_ (pftype)
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
@@ -481,7 +475,6 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_(rowMap)
     , colMap_(colMap)
-    , nodeNumEntries_ (0)
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
@@ -514,7 +507,6 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
-    , nodeNumEntries_ (0)
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
@@ -547,7 +539,6 @@ namespace Tpetra {
     , rowMap_ (rowMap)
     , colMap_ (colMap)
     , lclGraph_ (k_local_graph_)
-    , nodeNumEntries_ (0) // FIXME (mfh 17 Mar 2014) should get from lclGraph_ right now
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
@@ -598,14 +589,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! lclInds2D_.is_null () || ! gblInds2D_.is_null (), std::logic_error,
       ": cannot have 2D data structures allocated.");
-
-    if (this->getNodeNumRows () == 0) {
-      nodeNumEntries_ = 0;
-    }
-    else {
-      nodeNumEntries_ = Details::getEntryOnHost (this->lclGraph_.row_map,
-                                                 this->getNodeNumRows ());
-    }
 
     // NOTE (mfh 17 Mar 2014) We also need a version of this CrsGraph
     // constructor that takes a domain and range Map, as well as a row
@@ -926,7 +909,50 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNodeNumEntries () const
   {
-    return nodeNumEntries_;
+    typedef LocalOrdinal LO;
+    const char tfecfFuncName[] = "getNodeNumEntries: ";
+
+    if (this->indicesAreAllocated_) {
+      const LO lclNumRows = this->getNodeNumRows ();
+      if (lclNumRows == 0) {
+        return static_cast<size_t> (0);
+      }
+      else {
+        // Avoid the "*this capture" issue by creating a local Kokkos::View.
+        auto numEntPerRow = this->k_numRowEntries_;
+        const LO numNumEntPerRow = numEntPerRow.dimension_0 ();
+        if (numNumEntPerRow == 0) {
+          if (static_cast<LO> (this->lclGraph_.row_map.dimension_0 ()) <
+              static_cast<LO> (lclNumRows + 1)) {
+            return static_cast<size_t> (0);
+          }
+          else {
+            return Details::getEntryOnHost (this->lclGraph_.row_map, lclNumRows);
+          }
+        }
+        else { // k_numRowEntries_ is populated
+          // k_numRowEntries_ could actually be a host View, so run
+          // the sum in the View's native execution space.
+          typedef typename decltype (numEntPerRow)::execution_space
+            dev_exec_space;
+          typedef Kokkos::RangePolicy<dev_exec_space, LO> range_type;
+
+          const LO upperLoopBound = lclNumRows < numNumEntPerRow ?
+            lclNumRows :
+            numNumEntPerRow;
+          size_t nodeNumEnt = 0;
+          Kokkos::parallel_reduce ("Tpetra::CrsGraph::getNumNodeEntries",
+                                   range_type (0, upperLoopBound),
+                                   KOKKOS_LAMBDA (const LO& k, size_t& lclSum) {
+                                     lclSum += numEntPerRow(k);
+                                   }, nodeNumEnt);
+          return nodeNumEnt;
+        }
+      }
+    }
+    else { // nothing allocated on this process, so no entries
+      return static_cast<size_t> (0);
+    }
   }
 
 
@@ -936,10 +962,12 @@ namespace Tpetra {
   getGlobalMaxNumRowEntries () const
   {
 #ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "getGlobalMaxNumRowEntries()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
-                                          ": The matrix does not have globalConstants computed, but the user has requested them.");
-#endif
+    const char tfecfFuncName[] = "getGlobalMaxNumRowEntries: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (!haveGlobalConstants_, std::logic_error,
+       "The matrix does not have global constants computed, "
+       "but the user has requested them.");
+#endif // HAVE_TPETRA_DEBUG
 
     return globalMaxNumRowEntries_;
   }
@@ -1876,7 +1904,6 @@ namespace Tpetra {
     }
 
     k_numRowEntries_(rowinfo.localRow) += numNewInds;
-    nodeNumEntries_ += numNewInds;
     setLocallyModified ();
     return numNewInds;
   }
@@ -2062,7 +2089,6 @@ namespace Tpetra {
         }
 
         k_numRowEntries_(myRow) = rowInfo.numEntries + numNewToInsert;
-        nodeNumEntries_ += numNewToInsert;
         setLocallyModified ();
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -2101,7 +2127,6 @@ namespace Tpetra {
     }
 
     k_numRowEntries_(myRow) += numNewInds;
-    nodeNumEntries_ += numNewInds;
     setLocallyModified ();
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -2163,7 +2188,6 @@ namespace Tpetra {
     }
 
     k_numRowEntries_(myRow) += numNewInds;
-    nodeNumEntries_ += numNewInds;
     setLocallyModified ();
 #ifdef HAVE_TPETRA_DEBUG
     {
@@ -3165,8 +3189,6 @@ namespace Tpetra {
     clearGlobalConstants ();
 
     if (k_numRowEntries_.dimension_0 () != 0) {
-      const size_t oldNumEntries = k_numRowEntries_(lrow);
-      nodeNumEntries_ -= oldNumEntries;
       k_numRowEntries_(lrow) = 0;
     }
 #ifdef HAVE_TPETRA_DEBUG
@@ -3209,19 +3231,15 @@ namespace Tpetra {
        this->gblInds2D_ != Teuchos::null,
        std::runtime_error, "You may not call this method if 2-D data "
        "structures are already allocated.");
-    const size_t localNumEntries =
-      Details::getEntryOnHost (rowPointers, this->getNodeNumRows ());
 
     indicesAreAllocated_ = true;
     indicesAreLocal_     = true;
     pftype_              = StaticProfile; // if the profile wasn't static before, it sure is now.
     k_lclInds1D_         = columnIndices;
     k_rowPtrs_           = rowPointers;
-    nodeNumEntries_      = localNumEntries;
     // We don't know whether it's packed or unpacked, but we may
     // conservatively assume that it is packed.
     storageStatus_       = Details::STORAGE_1D_UNPACKED;
-
 
     // Build the local graph.
     lclGraph_ = local_graph_type (k_lclInds1D_, k_rowPtrs_);
@@ -3779,14 +3797,6 @@ namespace Tpetra {
 
     // Note: We don't need to do the following things which are normally done in fillComplete:
     // allocateIndices, globalAssemble, makeColMap, makeIndicesLocal, sortAndMergeAllIndices
-
-    // Note: Need to do this so computeGlobalConstants & fillLocalGraph work
-    //
-    // The first assignment is always true if the graph has 1-D
-    // storage (StaticProfile).  The second assignment is only true if
-    // storage is packed.
-    nodeNumEntries_ =
-      Details::getEntryOnHost (this->k_rowPtrs_, this->getNodeNumRows ());
 
     // Constants from allocateIndices
     //
@@ -4647,17 +4657,6 @@ namespace Tpetra {
     // If necessary, (re)compute the local constants: nodeNumDiags_,
     // lowerTriangular_, upperTriangular_, and nodeMaxNumRowEntries_.
     if (! haveLocalConstants_) {
-      // We have actually already computed nodeNumEntries_.
-      // nodeNumEntries_ gets updated by methods that insert or remove
-      // indices (including setAllIndices and
-      // expertStaticFillComplete).  Before fillComplete, its count
-      // may include duplicate column indices in the same row.
-      // However, mergeRowIndices and
-      // CrsMatrix::mergeRowIndicesAndValues both subtract off merged
-      // indices in each row from the total count.  Thus,
-      // nodeNumEntries_ _should_ be accurate at this point, meaning
-      // that we don't have to re-count it here.
-
       // Reset local properties
       upperTriangular_ = true;
       lowerTriangular_ = true;
@@ -4976,7 +4975,6 @@ namespace Tpetra {
             numDups += this->mergeRowIndices (rowInfo);
           }
         }, totalNumDups);
-      this->nodeNumEntries_ -= totalNumDups;
       this->indicesAreSorted_ = true; // we just sorted every row
       this->noRedundancies_ = true; // we just merged every row
     }

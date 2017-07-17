@@ -4270,7 +4270,6 @@ namespace Tpetra {
         graph.indicesAreSorted_ = true; // we just sorted every row
       }
       if (! merged) {
-        graph.nodeNumEntries_ -= totalNumDups;
         graph.noRedundancies_ = true; // we just merged every row
       }
     }
