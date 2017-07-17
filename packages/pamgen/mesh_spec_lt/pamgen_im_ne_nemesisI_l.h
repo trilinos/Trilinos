@@ -172,6 +172,17 @@ im_ne_get_elem_cmap_l(int  neid,     /* NetCDF/Exodus file ID */
                  );
 
 
+/*=============================================================================
+ *     Get IJK
+ *===========================================================================*/
+extern int
+im_ne_get_num_ijk_l(int neid,
+                long long *num_ijk
+                );
+extern int
+im_ne_get_local_num_ijk_l(int neid,
+                long long *local_num_ijk
+                );
 
 #ifdef __cplusplus
 }
