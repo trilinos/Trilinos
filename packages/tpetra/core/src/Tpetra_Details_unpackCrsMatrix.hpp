@@ -87,8 +87,9 @@ struct UnpackCrsMatrixError {
   size_t buf_size;
   bool wrong_num_bytes_error;
   bool out_of_bounds_error;
+  bool invalid_combine_mode_error;
 
-  UnpackCrsMatrixError():
+  KOKKOS_INLINE_FUNCTION UnpackCrsMatrixError():
     bad_index(Tpetra::Details::OrdinalTraits<LO>::invalid()),
     num_ent(0),
     offset(0),
@@ -96,7 +97,8 @@ struct UnpackCrsMatrixError {
     num_bytes(0),
     buf_size(0),
     wrong_num_bytes_error(false),
-    out_of_bounds_error(false) {}
+    out_of_bounds_error(false),
+    invalid_combine_mode_error(false) {}
 
   bool success() const
   {
@@ -108,7 +110,9 @@ struct UnpackCrsMatrixError {
   std::string summary() const
   {
     std::ostringstream os;
-    if (wrong_num_bytes_error || out_of_bounds_error) {
+    if (wrong_num_bytes_error ||
+        out_of_bounds_error ||
+        invalid_combine_mode_error) {
       if (wrong_num_bytes_error) {
         os << "At index i = " << bad_index
            << ", expectedNumBytes > numBytes.";
@@ -116,6 +120,10 @@ struct UnpackCrsMatrixError {
       else if (out_of_bounds_error) {
         os << "First invalid offset into 'imports' "
            << "unpack buffer at index i = " << bad_index << ".";
+      }
+      else if (invalid_combine_mode_error) {
+        os << "Invalid combine mode; code should never get "
+              "here!  Please report this bug to the Tpetra developers.";
       }
       os << "  importLIDs[i]: " << bad_index
          << ", bufSize: " << buf_size
@@ -208,6 +216,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     dst.buf_size = 0;
     dst.wrong_num_bytes_error = false;
     dst.out_of_bounds_error = false;
+    dst.invalid_combine_mode_error = false;
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -232,6 +241,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
         dst.buf_size = src.buf_size;
         dst.wrong_num_bytes_error = src.wrong_num_bytes_error;
         dst.out_of_bounds_error = src.out_of_bounds_error;
+        dst.invalid_combine_mode_error = src.invalid_combine_mode_error;
       }
     }
   }
@@ -250,7 +260,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
 
       // Now we know how many entries to expect in the received data
       // for this row.
-      LO num_ent = Teuchos::ScalarTraits<LO>::zero();
+      LO num_ent = 0;
       memcpy(&num_ent, num_ent_beg, sizeof(LO));
 
       const char* const val_beg = num_ent_end;
@@ -277,8 +287,8 @@ struct UnpackCrsMatrixAndCombineFunctor {
         LO num_modified = 0;
         if (combine_mode_ == ADD) {
           for (size_t k = 0; k < static_cast<size_t>(num_ent); ++k) {
-            IST val = Teuchos::ScalarTraits<IST>::zero();
-            GO col = Teuchos::ScalarTraits<GO>::zero();
+            IST val = 0;
+            GO col = 0;
             memcpy(&val, val_beg + k * sizeof(IST), sizeof(IST));
             memcpy(&col, ind_beg + k * sizeof(GO), sizeof(GO));
             LO local_col_idx = local_col_map_.getLocalElement(col);
@@ -288,8 +298,8 @@ struct UnpackCrsMatrixAndCombineFunctor {
         }
         else if (combine_mode_ == REPLACE) {
           for (size_t k = 0; k < static_cast<size_t>(num_ent); ++k) {
-            IST val = Teuchos::ScalarTraits<IST>::zero();
-            GO col = Teuchos::ScalarTraits<GO>::zero();
+            IST val = 0;
+            GO col = 0;
             memcpy(&val, val_beg + k * sizeof(IST), sizeof(IST));
             memcpy(&col, ind_beg + k * sizeof(GO), sizeof(GO));
             LO local_col_idx = local_col_map_.getLocalElement(col);
@@ -298,13 +308,13 @@ struct UnpackCrsMatrixAndCombineFunctor {
           }
         }
         else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-              true, std::logic_error, "Invalid combine mode; should never get "
-              "here!  Please report this bug to the Tpetra developers.");
+          dst.invalid_combine_mode_error = true;
         }
       }
 
-      if (dst.wrong_num_bytes_error || dst.out_of_bounds_error) {
+      if (dst.wrong_num_bytes_error ||
+          dst.out_of_bounds_error ||
+          dst.invalid_combine_mode_error) {
         dst.bad_index = i;
         dst.num_ent = num_ent;
         dst.offset = offsets_(i);
