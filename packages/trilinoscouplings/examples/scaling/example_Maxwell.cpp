@@ -141,8 +141,6 @@
 
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 // Xpetra
-//#include <Xpetra_Map.hpp>
-//#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -152,8 +150,6 @@
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
 #include <MueLu_AztecEpetraOperator.hpp>
-//#include <MueLu_TpetraOperator.hpp>
-//#include <MueLu_TestHelpers_Common.hpp>
 #include <MueLu_Exceptions.hpp>
 
 #endif
@@ -225,6 +221,7 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
                                            double & TotalErrorResidual,
                                            double & TotalErrorExactSol);
 
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 /** \brief  MueLu Preconditioner
 
     \param  ProblemType        [in]    problem type
@@ -245,11 +242,12 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
                                            Epetra_CrsMatrix   & D0clean,
                                            Epetra_CrsMatrix   & M0inv,
                                            Epetra_CrsMatrix   & M1,
+                                           Epetra_MultiVector & coords,
                                            Epetra_MultiVector & xh,
                                            Epetra_MultiVector & b,
                                            double & TotalErrorResidual,
                                            double & TotalErrorExactSol);
-
+#endif
 
 
 /** \brief  ML Preconditioner
@@ -1790,12 +1788,6 @@ int main(int argc, char *argv[]) {
 /*********************************** SOLVE ****************************************/
 /**********************************************************************************/
 
-
-
-   std::cout << Nx.MyLength() << std::endl;
-   std::cout << MassMatrixGinv.RowMap().NumMyElements() << std::endl;
-
-
    // Parameter list for ML
    Teuchos::ParameterList MLList;
    ML_Epetra::SetDefaultsRefMaxwell(MLList);
@@ -1815,6 +1807,25 @@ int main(int argc, char *argv[]) {
    List11c.set("coarse: type","Amesos-KLU");
    List11c.set("ML output",10);
    List11c.set("PDE equations",3);
+
+   // Parameter list for MueLu
+   Teuchos::ParameterList MueLuList;
+   Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
+   Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
+   MueLuList.set("aggregation: type","Uncoupled");
+   MueLuList.set("smoother: type","CHEBYSHEV");
+   MueList11.set("coarse: max size", 128);
+   MueList11.set("smoother: type", "CHEBYSHEV");
+   //MueList11.sublist("smoother: params").set("chebyshev: max eigenvalue",1.85123);
+   //MueList11.sublist("smoother: params").set("chebyshev: ratio eigenvalue",20.0);
+   //MueList11.set("coarse: type","Amesos-KLU");
+   MueList11.set("number of equations",3);
+   MueList22.set("coarse: max size", 128);
+   MueList22.set("smoother: type", "CHEBYSHEV");
+   //MueList22.sublist("smoother: params").set("chebyshev: max eigenvalue",1.431);
+   //MueList22.sublist("smoother: params").set("chebyshev: ratio eigenvalue",40.0);
+   //MueList22.set("coarse: type","Amesos-KLU");
+
    Epetra_FEVector xh(rhsVector);
 
    MassMatrixC.SetLabel("M1");
@@ -1834,12 +1845,24 @@ int main(int argc, char *argv[]) {
                                           xh,rhsVector,
                                           TotalErrorResidual, TotalErrorExactSol);
 
+   // build coordinates multivector
+   Epetra_MultiVector coords(MassMatrixGinv.RowMap(),3);
+
+   double* xx = coords[0];
+   double* yy = coords[1];
+   double* zz = coords[2];
+   for(int i = 0; i < MassMatrixGinv.RowMap(). NumMyElements(); ++i) {
+     xx[i] = Nx[i];
+     yy[i] = Ny[i];
+     zz[i] = Nz[i];
+   }
+
    // MueLu RefMaxwell
-   TestMueLuMultiLevelPreconditioner_Maxwell(probType,MLList,StiffMatrixC,
+   TestMueLuMultiLevelPreconditioner_Maxwell(probType,MueLuList,StiffMatrixC,
                                           DGrad,MassMatrixGinv,MassMatrixC,
+                                          coords,
                                           xh,rhsVector,
                                           TotalErrorResidual, TotalErrorExactSol);
-
 
    // Nothing like solving twice!
 #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
@@ -2186,11 +2209,11 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
                                            Epetra_CrsMatrix   & D0clean,
                                            Epetra_CrsMatrix   & M0inv,
                                            Epetra_CrsMatrix   & M1,
+                                           Epetra_MultiVector & coords,
                                            Epetra_MultiVector & xh,
                                            Epetra_MultiVector & b,
                                            double & TotalErrorResidual,
                                            double & TotalErrorExactSol){
-
 #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
   typedef double Scalar;
   typedef int LocalOrdinal;
@@ -2199,6 +2222,7 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
   typedef GlobalOrdinal GO;
   typedef Xpetra::EpetraNode Node;
 #include "MueLu_UseShortNames.hpp"
+
 
   Teuchos::RCP<CrsMatrix> ccMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(CurlCurl)));
   Teuchos::RCP<CrsMatrixWrap> ccOp = Teuchos::rcp(new CrsMatrixWrap(ccMat));
@@ -2219,43 +2243,14 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
   Teuchos::RCP<MultiVector> xxh = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(xh)));
   Teuchos::RCP<MultiVector> xb  = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(b)));
 
-  // TODO use ML parameters???
-  std::cout << MLList << std::endl;
+  Teuchos::RCP<MultiVector> xcoords = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(coords)));
 
-  // extract coordinates
-  Teuchos::ParameterList& ref11list = MLList.sublist("refmaxwell: 11list");
-  double* xc = ref11list.get<double*>("x-coordinates");
-  double* yc = ref11list.get<double*>("y-coordinates");
-  double* zc = ref11list.get<double*>("z-coordinates");
-
-
-
-  Teuchos::RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > coords = Xpetra::MultiVectorFactory<double,LocalOrdinal, GlobalOrdinal, Node>::Build(m0invMat->getRowMap(),3);
-  Teuchos::ArrayRCP< double > xx = coords->getDataNonConst(0);
-  Teuchos::ArrayRCP< double > yy = coords->getDataNonConst(1);
-  Teuchos::ArrayRCP< double > zz = coords->getDataNonConst(2);
-
-  for(size_t i = 0; i < m0invMat->getRowMap()->getNodeNumElements(); ++i) {
-    xx[i] = xc[i];
-    yy[i] = yc[i];
-    zz[i] = zc[i];
-  }
-
-  // set parameters
-  Teuchos::ParameterList params, params11, params22;
-  params.set("refmaxwell: disable add-on",false);
-  params.set("refmaxwell: max coarse size",25);
-  params.set("refmaxwell: max levels",4);
-  params.set("smoother: type","CHEBYSHEV");
-  //    params11.set("smoother: sweeps",3);
-  //    params22.set("smoother: sweeps",2);
-  params.set("refmaxwell: 11 list",params11);
-  params.set("refmaxwell: 22 list",params22);
+  MLList.set("parameterlist: syntax","muelu");
 
   // construct preconditioner
   Teuchos::RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
     = Teuchos::rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(curlcurlOp,d0cOp,M0invOp,
-        M1Op,Teuchos::null,coords,params) );
+        M1Op,Teuchos::null,xcoords,MLList) );
 
   MueLu::AztecEpetraOperator prec(preconditioner);
 
@@ -2283,7 +2278,6 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
   xh = *lhs;
 #endif
 }
-
 
 /*************************************************************************************/
 /*************************** ML PRECONDITIONER****************************************/
