@@ -1670,8 +1670,7 @@ namespace Tpetra {
 
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
     RowInfo ret;
-    if (! this->hasRowInfo () || this->rowMap_.is_null () ||
-        ! this->rowMap_->isNodeLocalElement (myRow)) {
+    if (this->rowMap_.is_null () || ! this->rowMap_->isNodeLocalElement (myRow)) {
       ret.localRow = STINV;
       ret.allocSize = 0;
       ret.numEntries = 0;
