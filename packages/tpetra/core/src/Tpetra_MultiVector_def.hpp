@@ -2532,6 +2532,12 @@ namespace Tpetra {
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
+    // See #1510.  In case diag has already been marked modified on
+    // host or device, we need to clear those flags, since the code
+    // below works on device.
+    this->view_.modified_device () = 0;
+    this->view_.modified_host () = 0;
+
     this->template modify<device_type> ();
     auto thisView = this->getLocalView<device_type> ();
 
@@ -4803,21 +4809,29 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef device_type DT;
     typedef typename dual_view_type::host_mirror_space::device_type HMDT;
+    const char prefix[] = "Tpetra::deep_copy (MultiVector): ";
     const bool debug = false;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      this->getGlobalLength () != src.getGlobalLength () ||
-      this->getNumVectors () != src.getNumVectors (), std::invalid_argument,
-      "Tpetra::deep_copy: Global dimensions of the two Tpetra::MultiVector "
-      "objects do not match.  src has dimensions [" << src.getGlobalLength ()
-      << "," << src.getNumVectors () << "], and *this has dimensions ["
-      << this->getGlobalLength () << "," << this->getNumVectors () << "].");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (this->getGlobalLength () != src.getGlobalLength () ||
+       this->getNumVectors () != src.getNumVectors (), std::invalid_argument,
+       prefix << "Global dimensions of the two Tpetra::MultiVector "
+       "objects do not match.  src has dimensions [" << src.getGlobalLength ()
+       << "," << src.getNumVectors () << "], and *this has dimensions ["
+       << this->getGlobalLength () << "," << this->getNumVectors () << "].");
     // FIXME (mfh 28 Jul 2014) Don't throw; just set a local error flag.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      this->getLocalLength () != src.getLocalLength (), std::invalid_argument,
-      "Tpetra::deep_copy: The local row counts of the two Tpetra::MultiVector "
-      "objects do not match.  src has " << src.getLocalLength () << " row(s) "
-      << " and *this has " << this->getLocalLength () << " row(s).");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (this->getLocalLength () != src.getLocalLength (), std::invalid_argument,
+       prefix << "The local row counts of the two Tpetra::MultiVector "
+       "objects do not match.  src has " << src.getLocalLength () << " row(s) "
+       << " and *this has " << this->getLocalLength () << " row(s).");
+
+    // See #1510.  We're writing to *this, so we don't care about its
+    // contents in either memory space, and we don't want
+    // DualView::modify to complain about "concurrent modification" of
+    // host and device Views.
+    this->view_.modified_device () = 0;
+    this->view_.modified_host () = 0;
 
     if (debug && this->getMap ()->getComm ()->getRank () == 0) {
       std::cout << "*** MultiVector::assign: ";
