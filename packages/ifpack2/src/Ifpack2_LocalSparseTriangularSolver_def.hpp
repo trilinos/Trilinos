@@ -425,6 +425,10 @@ compute ()
     storeRow( lclNumRows-lclRow-1, newval, newcol );
   }
 
+  // create a new local_matrix in the A_crs_ object
+  // typename Matrix::local_matrix_type A2
+  // A2 = KokkosSparse( "reversed", newval, newrow, newind )
+
   isComputed_ = true;
   ++numCompute_;
 }
