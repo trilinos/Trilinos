@@ -407,9 +407,8 @@ compute ()
 
   const local_ordinal_type numRows = A.numRows ();
 
-  typename crs_matrix_type::local_matrix_type::row_map_type newptr = ptr;
-  typename crs_matrix_type::local_matrix_type::index_type   newind = ind;
-  typename crs_matrix_type::local_matrix_type::values_type  newval = val;
+  typename crs_matrix_type::local_matrix_type::index_type::non_const_type newind ("ind", ind.dimension_0 ());
+  typename crs_matrix_type::local_matrix_type::values_type newval ("val", val.dimension_0 ());
 
   local_ordinal_type lclNumRows = A.numRows ();
   local_ordinal_type rowStart = 0; 
@@ -425,7 +424,7 @@ compute ()
 
   // create a new local_matrix in the A_crs_ object
   // typename Matrix::local_matrix_type A2
-  // A2 = KokkosSparse( "reversed", newval, newrow, newind )
+  // A2 = KokkosSparse( "reversed", newval, newcol )
 
   isComputed_ = true;
   ++numCompute_;
