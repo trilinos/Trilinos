@@ -147,6 +147,8 @@ namespace Belos {
     /// \brief Set the user-defined residual of linear problem \f$AX = B\f$.
     ///
     /// The multivector is set by pointer; no copy of the object is made.
+    /// \note If the passed in residual vector is not compatible with B,
+    ///       this vector will be ignored.
     void setInitResVec(const Teuchos::RCP<const MV> &R0) {
       R0_user_ = R0;
       isSet_=false;
@@ -155,6 +157,8 @@ namespace Belos {
     /// \brief Set the user-defined preconditioned residual of linear problem \f$AX = B\f$.
     ///
     /// The multivector is set by pointer; no copy of the object is made.
+    /// \note If the passed in residual vector is not compatible with B,
+    ///       this vector will be ignored.
     void setInitPrecResVec(const Teuchos::RCP<const MV> &PR0) {
       PR0_user_ = PR0;
       isSet_=false;
@@ -894,26 +898,43 @@ namespace Belos {
       }
     }
     else { // User specified the residuals
+      // If the user did not specify the right sized residual, create one and set R0_user_ to null.
       if (MVT::GetNumberVecs( *R0_user_ )!=MVT::GetNumberVecs( *B_ )) {
         Teuchos::RCP<MV> helper = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
         computeCurrResVec( &*helper, &*X_, &*B_ );
-        R0_user_ = helper;
+        R0_user_ = Teuchos::null;
+        R0_ = helper;
       }
 
       if (LP_!=Teuchos::null) {
-        if (PR0_user_==Teuchos::null || (PR0_user_==R0_) || (MVT::GetNumberVecs(*PR0_user_)!=MVT::GetNumberVecs(*B_))) {
+        // If the user provided preconditioned residual is the wrong size or pointing at
+        // the wrong object, create one and set the PR0_user_ to null.
+        if (PR0_user_==Teuchos::null || (PR0_user_==R0_) || (PR0_user_==R0_user_) 
+          || (MVT::GetNumberVecs(*PR0_user_)!=MVT::GetNumberVecs(*B_))) {
           Teuchos::RCP<MV> helper = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
           {
+            // Get the initial residual from getInitResVec because R0_user_ may be null from above.
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor PrecTimer(*timerPrec_);
 #endif
-            OPT::Apply( *LP_, *R0_user_, *helper );
+            OPT::Apply( *LP_, *getInitResVec(), *helper );
           }
-          PR0_user_ = helper;
+          PR0_user_ = Teuchos::null;
+          PR0_ = helper;
         }
       }
       else {
-        PR0_user_ = R0_user_;
+        // The preconditioned initial residual vector is the residual vector.
+        // NOTE:  R0_user_ could be null if incompatible.
+        if (R0_user_!=Teuchos::null)  
+        {
+          PR0_user_ = R0_user_;
+        }
+        else
+        {
+          PR0_user_ = Teuchos::null;
+          PR0_ = R0_;
+        }
       }
     }
 
