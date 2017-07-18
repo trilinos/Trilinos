@@ -118,7 +118,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*A,bHasZeroDiagonal,STS::magnitude(dirDropTol));
 
     // TODO check availability + content (length)
-    Teuchos::ArrayRCP<bool> dofPresent = currentLevel.Get< Teuchos::ArrayRCP<bool> >("DofPresent", NoFactory::get());
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent = currentLevel.Get< Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", NoFactory::get());
 
     // map[k] indicates that the kth dof in the variable dof matrix A would
     // correspond to the map[k]th dof in the padded system. If, i.e., it is
@@ -468,10 +468,10 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildPaddedMap(const Teuchos::ArrayRCP<const bool> & dofPresent, std::vector<LocalOrdinal> & map, size_t nDofs) const {
+  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildPaddedMap(const Teuchos::ArrayRCP<const LocalOrdinal> & dofPresent, std::vector<LocalOrdinal> & map, size_t nDofs) const {
     size_t count = 0;
     for (decltype(dofPresent.size()) i = 0; i < dofPresent.size(); i++)
-      if(dofPresent[i] == true) map[count++] = Teuchos::as<LocalOrdinal>(i);
+      if(dofPresent[i] == 1) map[count++] = Teuchos::as<LocalOrdinal>(i);
     TEUCHOS_TEST_FOR_EXCEPTION(nDofs != count, MueLu::Exceptions::RuntimeError, "VariableDofLaplacianFactory::buildPaddedMap: #dofs in dofPresent does not match the expected value (number of rows of A): " << nDofs << " vs. " << count);
   }
 
