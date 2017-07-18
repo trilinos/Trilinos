@@ -111,8 +111,8 @@ namespace MueLuTests {
     l->Set("A", A);
     l->Set("Coordinates",coords);
 
-    Teuchos::ArrayRCP<bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
-    l->Set<Teuchos::ArrayRCP<bool> >("DofPresent", dofPresent);
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getNodeNumElements(),1);
+    l->Set<Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", dofPresent);
 
     VariableDofLaplacianFactory lapFact;
 
@@ -185,8 +185,8 @@ namespace MueLuTests {
     l->Set("A", A);
     l->Set("Coordinates",coordinates);
 
-    Teuchos::ArrayRCP<bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
-    l->Set<Teuchos::ArrayRCP<bool> >("DofPresent", dofPresent);
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getNodeNumElements(),1);
+    l->Set<Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", dofPresent);
 
     //A->getColMap()->describe(out,Teuchos::VERB_EXTREME);
 
@@ -205,11 +205,11 @@ namespace MueLuTests {
     Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA)->apply(*oneVec,*res);
     TEST_COMPARE(res->normInf(),<, 1e-13);
 
-    Teuchos::ArrayRCP<bool> dofPresent2(3 * lapA->getRowMap()->getNodeNumElements(),true);
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent2(3 * lapA->getRowMap()->getNodeNumElements(),1);
     for(decltype(dofPresent2.size()) i = 2; i < dofPresent2.size(); i = i+3) {
-      dofPresent2[i] = false;
+      dofPresent2[i] = 0;
     }
-    l->Set<Teuchos::ArrayRCP<bool> >("DofPresent", dofPresent2);
+    l->Set<Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", dofPresent2);
 
     //A->getColMap()->describe(out,Teuchos::VERB_EXTREME);
 
@@ -276,7 +276,7 @@ namespace MueLuTests {
 
     TEST_EQUALITY(dofMap->getNodeNumElements(),2*nodeMap->getNodeNumElements());
 
-    Teuchos::ArrayRCP<bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getNodeNumElements(),1);
 
     // build hierarchy
     typedef Teuchos::ScalarTraits<Scalar> TST;
@@ -286,7 +286,7 @@ namespace MueLuTests {
     Level l;
     l.Set("A", A);
     l.Set("Coordinates",coordinates);
-    l.Set<Teuchos::ArrayRCP<bool> >("DofPresent", dofPresent);
+    l.Set<Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", dofPresent);
 
     VariableDofLaplacianFactory lapFact;
     lapFact.SetParameter("maxDofPerNode", Teuchos::ParameterEntry(2));
