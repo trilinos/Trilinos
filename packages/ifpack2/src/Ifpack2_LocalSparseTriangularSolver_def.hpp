@@ -399,31 +399,29 @@ compute ()
     htsImpl_->compute (*A_crs_, out_);
 
   // non-completed code to reverse the storage order of the local matrix
-  typedef  Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Matrix;
-  typename Matrix::local_matrix_type A = A_crs_->getLocalMatrix();
-  typename Matrix::local_matrix_type::row_map_type ptr = A.graph.row_map;
-  typename Matrix::local_matrix_type::index_type   ind = A.graph.entries;
-  typename Matrix::local_matrix_type::values_type  val = A.values;
+  typedef  Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> crs_matrix_type;
+  typename crs_matrix_type::local_matrix_type A = A_crs_->getLocalMatrix();
+  typename crs_matrix_type::local_matrix_type::row_map_type ptr = A.graph.row_map;
+  typename crs_matrix_type::local_matrix_type::index_type   ind = A.graph.entries;
+  typename crs_matrix_type::local_matrix_type::values_type  val = A.values;
 
   const local_ordinal_type numRows = A.numRows ();
 
-  typename Matrix::local_matrix_type::row_map_type newptr = ptr;
-  typename Matrix::local_matrix_type::index_type   newind = ind;
-  typename Matrix::local_matrix_type::values_type  newval = val;
+  typename crs_matrix_type::local_matrix_type::row_map_type newptr = ptr;
+  typename crs_matrix_type::local_matrix_type::index_type   newind = ind;
+  typename crs_matrix_type::local_matrix_type::values_type  newval = val;
 
   local_ordinal_type lclNumRows = A.numRows ();
+  local_ordinal_type rowStart = 0; 
   for (local_ordinal_type lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-    // See SparseRowView in Kokkos_Sparse_CrsMatrix.hpp
-    auto A_r = A.row (lclRow);
-    // nnz = A_r.length gives number of entries (in row).
-    // A_r.values(k) and A_r.colidx(k) for k in [0, A_r.length)
-    // give values resp. local column indices.
-    // ...
-
-    newval = reverse( A_r.values );
-    newcol = reverse( A_r.colidx );
-    storeRow( lclNumRows-lclRow-1, newval, newcol );
-  }
+     auto A_r = A.row (lclNumRows-lclRow-1);
+     const local_ordinal_type numEnt = A_r.length;
+     for (local_ordinal_type k = 0; k < numEnt; ++k) {
+        newval(rowStart + k) = A_r.values(numEnt - k - 1);
+        newcol(rowStart + k) = A_r.colidx(numEnt - k - 1);
+     }
+     rowStart = rowStart + numEnt;
+  }  
 
   // create a new local_matrix in the A_crs_ object
   // typename Matrix::local_matrix_type A2
