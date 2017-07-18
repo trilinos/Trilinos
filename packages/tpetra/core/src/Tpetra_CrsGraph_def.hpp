@@ -1659,15 +1659,6 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getRowInfo (const LocalOrdinal myRow) const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "getRowInfo: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo (), std::logic_error,
-      "Late catch! Graph does not have row info anymore.  "
-      "Error should have been caught earlier.  "
-      "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
     RowInfo ret;
     if (this->rowMap_.is_null () || ! this->rowMap_->isNodeLocalElement (myRow)) {
@@ -1738,7 +1729,7 @@ namespace Tpetra {
   {
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
     RowInfo ret;
-    if (! this->hasRowInfo () || this->rowMap_.is_null ()) {
+    if (this->rowMap_.is_null ()) {
       ret.localRow = STINV;
       ret.allocSize = 0;
       ret.numEntries = 0;
@@ -2548,13 +2539,12 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNumEntriesInGlobalRow (GlobalOrdinal globalRow) const
   {
-    using Teuchos::OrdinalTraits;
-    const LocalOrdinal lrow = rowMap_->getLocalElement (globalRow);
-    if (hasRowInfo () && lrow != OrdinalTraits<LocalOrdinal>::invalid ()) {
-      const RowInfo rowinfo = this->getRowInfo (lrow);
-      return rowinfo.numEntries;
-    } else {
-      return OrdinalTraits<size_t>::invalid ();
+    const RowInfo rowInfo = this->getRowInfoFromGlobalRowIndex (globalRow);
+    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
+    else {
+      return rowInfo.numEntries;
     }
   }
 
@@ -2564,11 +2554,12 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNumEntriesInLocalRow (LocalOrdinal localRow) const
   {
-    if (hasRowInfo () && rowMap_->isNodeLocalElement (localRow)) {
-      const RowInfo rowinfo = this->getRowInfo (localRow);
-      return rowinfo.numEntries;
-    } else {
+    const RowInfo rowInfo = this->getRowInfo (localRow);
+    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
       return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
+    else {
+      return rowInfo.numEntries;
     }
   }
 
@@ -2578,12 +2569,12 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNumAllocatedEntriesInGlobalRow (GlobalOrdinal globalRow) const
   {
-    const LocalOrdinal lrow = rowMap_->getLocalElement (globalRow);
-    if (hasRowInfo () && lrow != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-      const RowInfo rowinfo = this->getRowInfo (lrow);
-      return rowinfo.allocSize;
-    } else {
+    const RowInfo rowInfo = this->getRowInfoFromGlobalRowIndex (globalRow);
+    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
       return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
+    else {
+      return rowInfo.allocSize;
     }
   }
 
@@ -2593,11 +2584,12 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getNumAllocatedEntriesInLocalRow (LocalOrdinal localRow) const
   {
-    if (hasRowInfo () && rowMap_->isNodeLocalElement (localRow)) {
-      const RowInfo rowinfo = this->getRowInfo (localRow);
-      return rowinfo.allocSize;
-    } else {
-      return Teuchos::OrdinalTraits<size_t>::invalid();
+    const RowInfo rowInfo = this->getRowInfo (localRow);
+    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
+    else {
+      return rowInfo.allocSize;
     }
   }
 
