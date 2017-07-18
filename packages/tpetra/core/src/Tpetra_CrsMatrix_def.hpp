@@ -3357,6 +3357,12 @@ namespace Tpetra {
       "isCompatible) the CrsMatrix's row Map.");
 #endif // HAVE_TPETRA_DEBUG
 
+    // See #1510.  In case diag has already been marked modified on
+    // device, we need to clear that flag, since the code below works
+    // on host.
+    auto diag_dv = diag.getDualView ();
+    diag_dv.modified_device () = 0;
+
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
