@@ -409,7 +409,7 @@ compute ()
   const local_ordinal_type numCols = A.numCols ();
   const local_ordinal_type annz    = A.nnz ();
 
-  typename crs_matrix_type::local_matrix_type::row_map_type newptr ("ptr", ptr.dimension_0 ());
+  typename crs_matrix_type::local_matrix_type::row_map_type::non_const_type newptr ("ptr", ptr.dimension_0 ());
   typename crs_matrix_type::local_matrix_type::index_type::non_const_type newind ("ind", ind.dimension_0 ());
   typename crs_matrix_type::local_matrix_type::values_type newval ("val", val.dimension_0 ());
 
@@ -419,7 +419,7 @@ compute ()
      auto A_r = A.row (lclNumRows-lclRow-1);
      const local_ordinal_type numEnt = A_r.length;
      for (local_ordinal_type k = 0; k < numEnt; ++k) {
-        newval(rowStart + k) = A_r.values(numEnt - k - 1);
+        newval(rowStart + k) = A_r.value(numEnt - k - 1);
         newind(rowStart + k) = A_r.colidx(numEnt - k - 1);
      }
      newptr(lclRow) = rowStart;
@@ -428,7 +428,7 @@ compute ()
 
   // create a new local_matrix in the A_crs_ object
   // typename Matrix::local_matrix_type A2
-  //KokkosSparse::CrsMatrix ("A2", numRows, numCols, numCols, annz, newval, newptr, newcol);
+  // KokkosSparse::CrsMatrix ("A2", numRows, numCols, numCols, annz, newval, newptr, newcol);
 
   isComputed_ = true;
   ++numCompute_;
