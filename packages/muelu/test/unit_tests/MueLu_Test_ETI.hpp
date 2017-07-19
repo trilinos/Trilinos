@@ -80,17 +80,18 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
     std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
     Xpetra::Parameters xpetraParameters(clp);
 
+      //      
     switch (clp.parse(argc, argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE; 
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: 
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                            
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
     }
     Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
     if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
-      return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Xpetra::EpetraNode>(clp, argc, argv);
+      return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
 #else
       throw MueLu::Exceptions::RuntimeError("Epetra is not available");
 #endif
@@ -102,14 +103,14 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #else
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, argc, argv);
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp,  lib, argc, argv);
+#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
+#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp,  lib, argc, argv);
 #  else
         throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
 #  endif
@@ -119,14 +120,14 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
 #  else
 #    if   defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp,  lib, argc, argv);
 #    elif defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
 #    elif defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp,  lib, argc, argv);
 #    else
         throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
 #    endif
@@ -139,14 +140,14 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
 #  else
 #    if   defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib,  argc, argv);
 #    elif defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
 #    elif defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp,  lib, argc, argv);
 #    else
         throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
 #    endif

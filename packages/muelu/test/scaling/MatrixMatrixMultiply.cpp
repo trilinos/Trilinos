@@ -91,7 +91,7 @@ namespace MueLuTests {
 
 //- -- --------------------------------------------------------
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::Time;
@@ -128,7 +128,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
     TimeMonitor globalTimeMonitor(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: S - Global Time"));
     
