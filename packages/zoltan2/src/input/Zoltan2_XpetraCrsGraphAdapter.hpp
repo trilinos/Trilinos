@@ -339,7 +339,7 @@ template <typename User, typename UserCoord>
     ArrayView<const lno_t> nbors;
     graph_->getLocalRowView(v, nbors);
     offs[v+1] = offs[v] + nbors.size();
-    for (lno_t e=offs[v], i=0; e < offs[v+1]; e++)
+    for (offset_t e=offs[v], i=0; e < offs[v+1]; e++)
       adjids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
   }
 

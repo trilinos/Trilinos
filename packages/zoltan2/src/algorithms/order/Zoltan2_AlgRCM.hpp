@@ -228,7 +228,7 @@ class AlgRCM : public Algorithm<Adapter>
     Teuchos::Array<bool> mark(nVtx);
 
     // Do BFS and compute smallest degree as we go
-    lno_t smallestDegree = nVtx;
+    offset_t smallestDegree = nVtx;
     gno_t smallestVertex = 0;
 
     // Clear mark array - nothing marked yet

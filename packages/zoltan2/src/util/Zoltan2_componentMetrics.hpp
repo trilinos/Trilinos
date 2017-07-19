@@ -162,7 +162,7 @@ perProcessorComponentMetrics<Adapter>::perProcessorComponentMetrics(
       q.pop();
 
       // Add neighbors of vtx to queue.
-      for (lno_t j = offset[vtx]; j < offset[vtx+1]; j++) {
+      for (offset_t j = offset[vtx]; j < offset[vtx+1]; j++) {
         if (!mark[adj[j]]) {
           markAndEnqueue(q, mark, nUnmarkedVtx, cSize, adj[j]);
         }

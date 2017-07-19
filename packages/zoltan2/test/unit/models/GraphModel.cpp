@@ -113,10 +113,10 @@ void printGraph(zlno_t nrows, const zgno_t *v,
       for (zlno_t i=0; i < nrows; i++){
         std::cout << "  Vtx " << i << ": ";
         if (elid)
-          for (zlno_t j=idx[i]; j < idx[i+1]; j++)
+          for (offset_t j=idx[i]; j < idx[i+1]; j++)
             std::cout << *elid++ << " ";
         else
-          for (zlno_t j=idx[i]; j < idx[i+1]; j++)
+          for (offset_t j=idx[i]; j < idx[i+1]; j++)
             std::cout << *egid++ << " ";
         std::cout << std::endl;
       }

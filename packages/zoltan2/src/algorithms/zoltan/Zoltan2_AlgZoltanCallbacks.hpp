@@ -340,7 +340,7 @@ static void zoltanHGCS_withMeshAdapter(
 {
   *ierr = ZOLTAN_OK;
   typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::lno_t lno_t;  
+  // typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::offset_t offset_t;
   const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);

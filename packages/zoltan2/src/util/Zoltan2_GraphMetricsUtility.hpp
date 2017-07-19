@@ -762,7 +762,7 @@ template <typename Adapter>
 
   // Build a list of the global vertex ids...
   gno_t min = std::numeric_limits<gno_t>::max();
-  size_t maxcols = 0;
+  offset_t maxcols = 0;
   for (lno_t i = 0; i < localNumObj; ++i) {
     if (Ids[i] < min) min = Ids[i];
     offset_t ncols = offsets[i+1] - offsets[i];
