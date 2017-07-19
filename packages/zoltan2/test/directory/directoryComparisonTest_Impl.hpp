@@ -58,18 +58,22 @@
 #include <zoltan_dd_cpp.h>
 #endif
 
-
 // This is temporary
 #if !defined(TEMP_TRIAL_USER_ARRAY_TYPE) || !defined(CONVERT_DIRECTORY_TPETRA)
 
-template <typename gid_t,typename lid_t>
+enum Mode {
+  Replace = 0,
+  Add,
+  Aggregate
+};
+
+template <typename gid_t,typename lid_t,typename user_t>
 class IDs {
 public:
-
   IDs(gid_t totalIds, gid_t idBase_, int idStride_,
-    Teuchos::RCP<const Teuchos::Comm<int> > &comm_,
-    std::string name) : contiguous(idStride_ == 1), comm(comm_),
-    maxPrintSize(10), idBase(idBase_), idStride(idStride_)
+    Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Mode mode_) :
+      idBase(idBase_), contiguous(idStride_ == 1), idStride(idStride_),
+      comm(comm_), maxPrintSize(10), mode(mode_)
   {
     for(int n = 0; n < totalIds; ++n) {
       bool bAtLeastOne = false;
@@ -104,7 +108,11 @@ public:
       }
     }
 
-    print(name);
+    // set up all the initial writes
+    writeUser.resize(writeIds.size());
+    for(size_t n = 0; n < writeUser.size(); ++n) {
+      writeUser[n] = getInitialValue(writeIds[n]);
+    }
   }
 
   bool trueForAtLeastOneProc(int index, int rank) const {
@@ -177,7 +185,7 @@ public:
     return false;
   }
 
-  int sharedCount(gid_t gid) {
+  int sharedCount(gid_t gid) const {
     gid_t index = (gid-idBase)/idStride; // convert back to 0,1,2,...indexing
     int count = 0;
     for(int proc = 0; proc < comm->getSize(); ++proc) {
@@ -212,6 +220,16 @@ public:
         printVector(readIds,   "Read Ids"   );
         printVector(removeIds, "Remove Ids" );
 
+#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+        for(size_t n = 0; n < writeIds.size(); ++n) {
+          std::cout << "  array for GID (" << writeIds[n] << "): ";
+          for(size_t a = 0; a < writeUser[n].size(); ++a) {
+            std::cout << writeUser[n][a] << " ";
+          }
+          std::cout << std::endl;
+        }
+
+#endif
         if(proc == comm->getSize()-1) {
           std::cout << std::endl;
         }
@@ -224,7 +242,7 @@ public:
   // for development and eventually must go away
   // this is used by the tests to generate the variable array sizes
   // but also used by find in one place that needs to be resolved
-  int temp_create_array_length(gid_t gid) {
+  int temp_create_array_length(gid_t gid) const {
 #if defined(TEMP_USED_FIXED_SIZE) || defined(TEMP_CONSTANT_ARRAY_SIZE)
     return CONSTANT_ARRAY_SIZE;
 #else
@@ -234,26 +252,155 @@ public:
 #endif
 
   bool ZoltanDirectoryTest();
+  bool evaluateTests() const;
+  user_t getInitialValue(gid_t gid) const {
+#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+    // determine length of array
+    int modLength = temp_create_array_length(gid);
+    user_t array(modLength);
+    for(size_t n = 0; n < array.size(); ++n) {
+      switch(mode) {
+        case Mode::Replace:
+          array[n] = gid + 3; // all elements same for now
+          break;
+        case Mode::Add:
+          array[n] = 1; // all elements equal n - will sum
+          break;
+        case Mode::Aggregate:
+          array[n] = gid + 3; // all elements same for now
+          break;
+      }
+    }
+    return array;
+#else
+    switch(mode) {
+      case Mode::Replace:
+        return gid + 3; // arbitrary - just make it something good to test
+        break;
+      case Mode::Add:
+        return 1; // we will be testing if they sum to shared count
+        break;
+      case Mode::Aggregate:
+        return -1; // this has no meaning for non-array right now
+        break;
+    }
+#endif
+  }
 
 private:
-#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-  typedef std::vector<int> user_t; // user data since we are counting occurrences
-#else
-  typedef int user_t;
-#endif
-
-  const int maxPrintSize;       // print only this number for debuggin
-  bool contiguous;              // Flag indicating whether IDs are contiguous
-  std::vector<gid_t> writeIds;  // Ids generated on this proc
-  std::vector<gid_t> readIds;   // Ids to read
-  std::vector<gid_t> removeIds; // Ids to remove
-  Teuchos::RCP<const Teuchos::Comm<int> > comm;
   gid_t idBase;
+  bool contiguous;              // Flag indicating whether IDs are contiguous
   int idStride;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm;
+  const size_t maxPrintSize;       // print only this number for debugging
+  Mode mode;
+  std::vector<gid_t> writeIds;   // Ids generated on this proc
+  std::vector<user_t> writeUser; // The data we initially updated with
+  std::vector<gid_t> readIds;    // Ids to read
+  std::vector<user_t> readUser;  // User data we read
+  std::vector<gid_t> removeIds;  // Ids to remove
 };
 
-template <typename gid_t,typename lid_t>
-bool IDs<gid_t,lid_t>::ZoltanDirectoryTest()
+template <typename gid_t,typename lid_t, typename user_t>
+bool IDs<gid_t,lid_t,user_t>::evaluateTests() const {
+#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+  #define READ_VALUE readUser[i][arrayIndex]
+#else
+  #define READ_VALUE readUser[i]
+#endif
+
+  bool pass = true;
+  bool bPrint = false;
+  // check the results
+  for(int proc = 0; proc < comm->getSize(); ++proc) {
+    bool passRank = true;
+    comm->barrier();
+    if(proc == comm->getRank()) {
+      for(size_t i = 0; i < readIds.size(); ++i) {
+#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+      for(size_t arrayIndex = 0; arrayIndex < readUser[i].size(); ++arrayIndex) {
+#endif
+        id_t gid = readIds[i];
+        int expectedCount = 0;
+        switch(mode) {
+          case Mode::Add:
+            expectedCount = sharedCount(gid);
+            break; // should have summed
+          case Mode::Replace:
+#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+            expectedCount = getInitialValue(readIds[i])[arrayIndex];
+#else
+            expectedCount = getInitialValue(readIds[i]);
+#endif
+            break;
+          case Mode::Aggregate:
+#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+            expectedCount = getInitialValue(readIds[i])[arrayIndex];
+#else
+            expectedCount = getInitialValue(readIds[i]);
+#endif
+            break;
+        }
+
+        if(bPrint) {
+          if(i < maxPrintSize) {
+            std::cout << readIds[i] << ": (" << expectedCount
+              << "/" << READ_VALUE << ") ";
+          }
+          else if(i == maxPrintSize) {
+            std::cout << "... ";
+          }
+        }
+        if(READ_VALUE != expectedCount) {
+          if(!removedIDGlobally(gid)) {
+            // test failed - we should have gotten the value and the id was
+            // not removed so something went wrong
+            passRank = false;
+            //std::cout << "Failed read for global ID: " << gid
+            //  << ". Expected: " << expectedCount <<
+            //  " Got: " << READ_VALUE(i) << std::endl;
+          }
+          else {
+            if(bPrint) {
+              std::cout << "Success removing global ID: " << gid << std::endl;
+            }
+          }
+        }
+        else if(removedIDGlobally(gid)) {
+          // test failed - we should not have gotten the value because
+          // this id was removed
+          std::cout << "Failed remove for global ID: " << gid
+            << ". Expected 0 not " << expectedCount << " Got: "
+            << READ_VALUE << std::endl;
+          passRank = false;
+
+          for(int proc_index = 0; proc_index < comm->getSize(); ++proc_index) {
+            std::cout << "   Proc " << proc_index << " removed: " <<
+              (removeID(gid, proc_index) ? "Y" : "N") << std::endl;
+          }
+        }
+      }
+#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+      } // extra loop for scanning array and verifying each element
+#endif
+      if(bPrint) {
+        std::cout << "Checked rank: " << comm->getRank() << " with nIds: " <<
+          readIds.size() << " which " <<
+          (passRank ? "Passed" : "FAILED") << std::endl;
+      }
+
+      if(!passRank) {
+        pass = false;
+      }
+    }
+  }
+  comm->barrier();
+
+  return pass;
+}
+
+template <typename gid_t,typename lid_t, typename user_t>
+bool IDs<gid_t,lid_t,user_t>::ZoltanDirectoryTest()
 {
 #ifdef HAVE_ZOLTAN2_MPI
 
@@ -279,24 +426,8 @@ bool IDs<gid_t,lid_t>::ZoltanDirectoryTest()
 
 #endif // CONVERT_DIRECTORY_ORIGINAL
 
-
-#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-
-  std::vector<user_t> writeUser(writeIds.size());
-
-  for(size_t n = 0; n < writeUser.size(); ++n) {
-    int modLength = temp_create_array_length(writeIds[n]);
-    writeUser[n] = user_t(modLength,1); // initialize at 1 for counting
-  }
-
-  // TODO - these should be settable as empty and filled up by directory
-  // need to refactor still
-  std::vector<user_t> readUser(readIds.size());
-
-#else
-  std::vector<user_t> writeUser(writeIds.size(), 1);
-  std::vector<user_t> readUser(readIds.size());
-#endif
+  // Create data space for reading user
+  readUser.resize(readIds.size());
 
 #ifdef CONVERT_DIRECTORY_ORIGINAL
   // CONVERT_DIRECTORY_ORIGINAL does not have a working add feature
@@ -319,86 +450,37 @@ bool IDs<gid_t,lid_t>::ZoltanDirectoryTest()
   // these modes all have working add features
   std::vector<lid_t> ignore_lid; // TODO: decide how to best handle this API
   std::vector<int> ignore_int;   // TODO: decide how to best handle this API
-  zz.update(writeIds, ignore_lid, writeUser, ignore_int,
-    Zoltan2::Zoltan2_Directory_Add);
+
+  // convert generic mode to Zoltan2Directory - this awkward step exists because
+  // the original mode doesn't have a directory - will improve.
+  auto directoryMode
+    = Zoltan2::Zoltan2_Directory<gid_t,lid_t,user_t>::Update_Mode::Add;
+  switch(mode) {
+    case Add:
+      directoryMode = Zoltan2::Zoltan2_Directory<gid_t,lid_t,user_t>::Update_Mode::Add;
+      break;
+    case Replace:
+      directoryMode = Zoltan2::Zoltan2_Directory<gid_t,lid_t,user_t>::Update_Mode::Replace;
+      break;
+    case Aggregate:
+      directoryMode = Zoltan2::Zoltan2_Directory<gid_t,lid_t,user_t>::Update_Mode::Aggregate;
+      break;
+  }
+
+  zz.update(writeIds, ignore_lid, writeUser, ignore_int, directoryMode);
   zz.remove(removeIds);
   zz.find(readIds, ignore_lid, readUser, ignore_int, ignore_int);
 #endif
   comm->barrier();
 
-#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-#define READ_VALUE(i) readUser[i][readUser[i].size()-1] // arbitrary - just testing
-#else
-#define READ_VALUE(i) readUser[i]
-#endif
-
-  bool pass = true;
-  bool bPrint = true;
-  // check the results
-  int nprocs = comm->getSize();
-  for(int proc = 0; proc < comm->getSize(); ++proc) {
-    bool passRank = true;
-    comm->barrier();
-    if(proc == comm->getRank()) {
-      for(size_t i = 0; i < readIds.size(); ++i) {
-        id_t gid = readIds[i];
-        size_t expectedCount = sharedCount(gid);
-        if(bPrint) {
-          if(i < maxPrintSize) {
-            std::cout << readIds[i] << ": (" << expectedCount
-              << "/" << READ_VALUE(i) << ") ";
-          }
-          else if(i == maxPrintSize) {
-            std::cout << "... ";
-          }
-        }
-        if(READ_VALUE(i) != expectedCount) {
-          if(!removedIDGlobally(gid)) {
-            // test failed - we should have gotten the value and the id was
-            // not removed so something went wrong
-            passRank = false;
-            std::cout << "Failed read for global ID: " << gid
-              << ". Expected: " << expectedCount <<
-              " Got: " << READ_VALUE(i) << std::endl;
-          }
-          else {
-            if(bPrint) {
-              std::cout << "Success removing global ID: " << gid << std::endl;
-            }
-          }
-        }
-        else if(removedIDGlobally(gid)) {
-          // test failed - we should not have gotten the value because
-          // this id was removed
-          std::cout << "Failed remove for global ID: " << gid
-            << ". Expected 0 not " << expectedCount << " Got: "
-            << READ_VALUE(i) << std::endl;
-          passRank = false;
-
-          for(int proc = 0; proc < comm->getSize(); ++proc) {
-            std::cout << "   Proc " << proc << " removed: " <<
-              (removeID(gid, proc) ? "Y" : "N") << std::endl;
-          }
-        }
-      }
-      if(bPrint) {
-        std::cout << "Checked rank: " << comm->getRank() << " with nIds: " <<
-          readIds.size() << " which " <<
-          (passRank ? "Passed" : "FAILED") << std::endl;
-      }
-
-      if(!passRank) {
-        pass = false;
-      }
-    }
-  }
-  comm->barrier();
-
 #ifdef CONVERT_DIRECTORY_ORIGINAL
+  bool pass = evaluateTests();
   // this is awkward because the original test can't actually do Add
   // so it will be in a fail state when any processes share ids
   // however I don't want to bias the test time... so pass it - might not matter
   pass = true;
+#else
+  bool pass = evaluateTests();
 #endif
 
   return pass;
@@ -409,80 +491,114 @@ bool IDs<gid_t,lid_t>::ZoltanDirectoryTest()
 #endif
 }
 
+class TestManager {
+  public:
+    TestManager(Teuchos::RCP<const Teuchos::Comm<int> > comm_, int totalIds_) :
+      comm(comm_), totalIds(totalIds_), success(true) {}
+
+    template<typename gid_t, typename lid_t, typename user_t>
+    void runTest(const std::string& name, Mode mode,
+      size_t idBase, int idStride) {
+      IDs<gid_t,lid_t,user_t> myIds(totalIds, idBase, idStride, comm, mode);
+      std::string base_message = name + " (" + mode_to_string(mode) + ") ";
+      bool test_passsed = myIds.ZoltanDirectoryTest();
+
+      myIds.print(name);
+
+      for(int proc = 0; proc < comm->getSize(); ++proc) {
+        comm->barrier();
+        if(proc == comm->getRank()) {
+          if(!test_passsed) {
+            std::cout << "FAILED: " << base_message << " on rank "
+              << comm->getRank() << std::endl;
+            success = false; // failed
+          }
+          else if(comm->getRank() == 0) {
+            std::cout << "Passed: " << base_message << std::endl;
+          }
+        }
+      }
+    }
+
+    bool is_success() const { return success; }
+
+  private:
+    std::string mode_to_string(Mode mode) const {
+      switch(mode) {
+        case Mode::Add: return "Add"; break;
+        case Mode::Replace: return "Replace"; break;
+        case Mode::Aggregate: return "Aggregate"; break;
+        default: throw std::logic_error("Bad mode."); break;
+      }
+    }
+    Teuchos::RCP<const Teuchos::Comm<int> > comm;
+    int totalIds;
+    bool success;
+};
+
+// convert totalIds to a loop count so total test time is of order 30s
+// this is only for performance testing
+int getTotalLoops(int totalIds) {
+  switch(totalIds) {
+    case 1:        return 10000; break;
+    case 10:       return 10000; break;
+    case 100:      return 10000; break;
+    case 1000:     return 10000; break;
+    case 10000:    return  3000; break;
+    case 100000:   return   500; break;
+    case 1000000:  return    50; break;
+    case 10000000: return     5; break;
+    default: throw std::logic_error("Not set up."); break;
+  }
+}
+
 int runDirectoryComparisonTest(int narg, char **arg) {
+#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+  typedef std::vector<int> user_t; // user data since we are counting occurrences
+#else
+  typedef int user_t;
+#endif
+
   Teuchos::GlobalMPISession mpiSession(&narg,&arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
+  // Note that setting this to 10 will hit an error related to the other issues
+  // I will be working on next in execute_wait of Zoltan2_Directory_Comm.
+  // When this count is low processes may set no_send_buff 1 in the
+  // Zoltan2_Directory_Constructor and then MPI_Waitall fails in execute_wait.
+  // I expect the other issues I have ongoing in that method are directly related
+  // and all will be resolved together.
   const id_t totalIds = 100;
 
-  bool bQuickTest = true;
+  bool bQuickTest = true; // false is for performance testing
 
-  // This is a hack to get some test timing out
-  // I'd like to compare ratios of say, Kokkos to Relic
-  // However fluctuations are too high for lower totalIds count.
-  // Therefore loop the test many times for better results.
-  // Since test times are not linear to totalIds I just manually
-  // made this list to generate times of order 1 minute per test.
-  std::map<id_t,int> loopsForTest;
-  loopsForTest[1] = 10000;
-  loopsForTest[10] = 10000;
-  loopsForTest[100] = 10000;
-  loopsForTest[1000] = 10000;
-  loopsForTest[10000] = 3000;
-  loopsForTest[100000] = 500;
-  loopsForTest[1000000] = 50;
-  loopsForTest[10000000] = 5;
-
-  if(loopsForTest.find(totalIds) == loopsForTest.end()) {
-    throw std::logic_error("Must setup loop count.");
-  }
-
-  int runLoops = bQuickTest ? 1 : loopsForTest[totalIds];
-
+  int runLoops = bQuickTest ? 1 : getTotalLoops(totalIds);
   for(int loop = 0; loop < runLoops; ++loop) {
-
     comm->barrier();
 
-    int returnCode = 0;
+    TestManager manager(comm, totalIds);
 
-    // Test with contiguous integer IDs
-    {
-      size_t idBase = 0;   // Smallest possible ID
-      int idStride = 1;    // Offset between IDs; 1 gives contiguous numbering
-      IDs<int,int> myIds(totalIds, idBase, idStride, comm, "contiguous int");
-      if(!myIds.ZoltanDirectoryTest()) {
-        returnCode = 1; // failed
-      }
-    }
+    manager.runTest<int, int, user_t>("contiguous int", Mode::Add, 0, 1);
+    manager.runTest<int, int, user_t>("non-contiguous int", Mode::Add, 20, 3);
+    manager.runTest<long long, int, user_t>("long long", Mode::Add, 200, 4);
 
-    // Test with non-contiguous integer IDs starting at 20
-    {
-      size_t idBase = 20;   // Smallest possible ID
-      int idStride = 3;     // Offset between IDs; 1 gives contiguous numbering
-      IDs<int,int> myIds(totalIds, idBase, idStride, comm, "non-contiguous int");
-      if(!myIds.ZoltanDirectoryTest()) {
-        returnCode = 1; // failed
-      }
-    }
+    manager.runTest<int, int, user_t>("contiguous int", Mode::Replace, 0, 1);
+    manager.runTest<int, int, user_t>("non-contiguous int", Mode::Replace, 20, 3);
+    manager.runTest<long long, int, user_t>("long long", Mode::Replace, 200, 4);
 
-    // Test with non-contiguous long long IDs starting at 200
-    {
-      size_t idBase = 200;  // Smallest possible ID
-      int idStride = 4;     // Offset between IDs; 1 gives contiguous numbering
-      IDs<long long,int> myIds(totalIds, idBase, idStride, comm, "long long");
-      if(!myIds.ZoltanDirectoryTest()) {
-        returnCode = 1; // failed
-      }
-    }
+//    manager.runTest<int, int, user_t>("contiguous int", Mode::Aggregate, 0, 1);
+//    manager.runTest<int, int, user_t>("non-contiguous int", Mode::Aggregate, 20, 3);
+//    manager.runTest<long long, int, user_t>("long long", Mode::Aggregate, 200, 4);
 
     // Check all processed
     int globalReturnCode = 0;
+    int returnCode = manager.is_success() ? 0 : 1;
     Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM, returnCode,
     Teuchos::outArg(globalReturnCode));
 
     if(globalReturnCode != 0) {
-      return globalReturnCode;
+      return globalReturnCode; // one of the ranks failed this test
     }
   }
 

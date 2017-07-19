@@ -45,10 +45,11 @@
  */
 
 // This is temporary for prototyping a std::vector
-#define TEMP_TRIAL_USER_ARRAY_TYPE
+// For now only Kokkos will set this since the others don't do that
+// #define TEMP_TRIAL_USER_ARRAY_TYPE
 
 // This is temporary for turning off resizing and using all arrays same length
-//#define TEMP_USED_FIXED_SIZE
+// #define TEMP_USED_FIXED_SIZE
 
 // This is temporary for making all arrays same length - but can still use resize
 // #define TEMP_CONSTANT_ARRAY_SIZE
@@ -71,7 +72,9 @@
 #endif
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
+#ifdef HAVE_MPI
   #include "Zoltan2_Directory_Comm.hpp"
+#endif
 #endif
 
 // Supplies the current hash - rolled over from zoltan
@@ -140,11 +143,11 @@ Zoltan2_Directory<gid_t,lid_t,user_t>::Zoltan2_Directory(
     int table_length_,
 #endif
     int debug_level_, bool contiguous_) :
-    comm(comm_), use_lid(use_lid_),
+    comm(comm_), contiguous(contiguous_), use_lid(use_lid_),
+    debug_level(debug_level_)
 #ifdef CONVERT_DIRECTORY_RELIC
-    table_length(table_length_),
+    , table_length(table_length_)
 #endif
-    debug_level(debug_level_), contiguous(contiguous_)
 {
   Zoltan2_Directory_Clock clock("construct", comm);
   allocate();
@@ -307,7 +310,7 @@ template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   const std::vector<gid_t>& gid, const std::vector<lid_t>& lid,
   const std::vector<user_t>& user, const std::vector<int>& partition,
-  Zoltan2_Update_Mode mode)
+  Update_Mode mode)
 {
   Zoltan2_Directory_Clock clock("update", comm);
 
@@ -321,7 +324,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   // for each linked list head, walk its list resetting errcheck
 #ifdef CONVERT_DIRECTORY_KOKKOS
   if(debug_level) {
-    for(int n = 0; n < node_map.size(); ++n) {
+    for(size_t n = 0; n < node_map.size(); ++n) {
       node_map.value_at(n).errcheck = -1; // not possible processor
     }
   }
@@ -394,8 +397,17 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   rcp_export_t idExporter = Teuchos::rcp(new export_t(idMap, oto_idMap));
 
   // TODO this mode handling is temp - will need to develop
-  oto_idVec->doExport(*idVec, *idExporter,
-    (mode == Zoltan2_Directory_Add) ? Tpetra::ADD : Tpetra::REPLACE);
+  switch(mode) {
+    case Update_Mode::Replace:
+      oto_idVec->doExport(*idVec, *idExporter, Tpetra::REPLACE);
+      break;
+    case Update_Mode::Add:
+      oto_idVec->doExport(*idVec, *idExporter, Tpetra::ADD);
+      break;
+    case Update_Mode::Aggregate:
+      throw std::logic_error("Tpetra mode wont' support Aggregate.");
+      break;
+  }
 #else
 
   Zoltan2_Directory_Clock buildUpdateMSGClock("build update", comm);
@@ -404,8 +416,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   std::vector<int> procs(gid.size());
 
   std::vector<int> msg_sizes(gid.size());
-  size_t sum_msg_size = 0;
-  for (int i = 0; i < gid.size(); i++) {
+  int sum_msg_size = 0;
+  for (size_t i = 0; i < gid.size(); i++) {
     size_t msg_size = update_msg_size;
     if(user.size()) {
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
@@ -421,8 +433,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 
   typedef Zoltan2_DD_Update_Msg<gid_t,lid_t> msg_t;
 
-  size_t track_offset = 0;
-  for (int i = 0; i < gid.size(); i++) {
+  int track_offset = 0;
+  for (size_t i = 0; i < gid.size(); i++) {
     procs[i] = hash_proc(gid[i]);
 
     msg_t *ptr = (msg_t*)(&(sbuff[track_offset]));
@@ -518,7 +530,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 
   Zoltan2_Directory_Clock updateSendClock("update send", comm);
 
-#ifdef TEMP_USED_FIXED_SIZE
+#ifdef TEMP_USED_FIXED_SIZE // Not array
   int sum_recv_sizes = nrec * update_msg_size;
 #else
   int sum_recv_sizes;
@@ -546,7 +558,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   std::vector<char> rbuff(sum_recv_sizes);   // receive buffer
 
   // send my update messages & receive updates directed to me
-#ifdef TEMP_USED_FIXED_SIZE
+#ifdef TEMP_USED_FIXED_SIZE // Not array
   const int nbytes = update_msg_size;
 #else
   const int nbytes = 1;
@@ -650,7 +662,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
  user_t *user,               /* gid's user data (in), NULL if not needed  */
  int partition,              /* gid's partition (in), -1 if not used      */
  int owner,                  /* gid's current owner (proc number) (in)    */
- Zoltan2_Update_Mode mode)
+ Update_Mode mode)
 {
   const char * yo = "Zoltan2_Directory::update_local";
 
@@ -693,20 +705,29 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
         *plid = lid[0];
       }
       if (user) {
+        #ifndef TEMP_TRIAL_USER_ARRAY_TYPE
         user_t * puser = reinterpret_cast<user_t*>(
           reinterpret_cast<char*>(node.gid) +
           sizeof(gid_t) + (use_lid?sizeof(lid_t):0));
-        if (user) {
-          if(mode == Zoltan2_Directory_Add) {
-#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-            throw std::logic_error("Fix did not refactor yet - maybe will not do");
-#else
-            *puser += *user;
-#endif
-          }
-          else {
-            *puser = *user;
-          }
+        #endif
+        switch(mode) {
+          case Update_Mode::Replace:
+            #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+              throw std::logic_error("Did not refactor relic mode for Array Replace.");
+            #else
+              *puser = *user;
+            #endif
+            break;
+          case Update_Mode::Add:
+            #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+              throw std::logic_error("Did not refactor relic mode for Array Add.");
+            #else
+              *puser += *user;
+            #endif
+            break;
+          case Update_Mode::Aggregate:
+            throw std::logic_error("Did not refactor relic mode for Aggregate.");
+            break;
         }
       }
 #else
@@ -715,26 +736,59 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
         node.lid = *lid;
       }
       if (user) {
-        if(mode == Zoltan2_Directory_Add) {
-#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+        #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
           user_val_t * pRead = (user_val_t*)(user);
           user_val_t readValue = *pRead;
-          // printf( "update local reading size: %d ", *pRead );
-          if(node.userData.size() != readValue) {
-            throw std::logic_error("The data lengths are not the same size");
-          }
-          for(size_t i = 0; i < node.userData.size(); ++i) {
-            ++pRead;
-            (node.userData)[i] += *pRead;
-            // printf( "%d ", *pRead );
-          }
-          // printf( "\n" );
-#else
-          node.userData += *user;
-#endif
-        }
-        else {
-          node.userData = *user;
+        #endif
+        switch(mode) {
+          case Update_Mode::Replace:
+            #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+              // printf( "update local reading size: %d ", *pRead );
+              if(node.userData.size() != static_cast<size_t>(readValue)) {
+                throw std::logic_error("The data lengths are not the same size");
+              }
+              for(size_t i = 0; i < node.userData.size(); ++i) {
+                ++pRead;
+                (node.userData)[i] = *pRead;
+                // printf( "%d ", *pRead );
+              }
+            // printf( "\n" );
+            #else
+              node.userData = *user;
+            #endif
+            break;
+          case Update_Mode::Add:
+            #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+              // printf( "update local reading size: %d ", *pRead );
+              if(node.userData.size() != static_cast<size_t>(readValue)) {
+                throw std::logic_error("The data lengths are not the same size");
+              }
+              for(size_t i = 0; i < node.userData.size(); ++i) {
+                ++pRead;
+              node.userData[i] += *pRead;
+              // printf( "%d ", *pRead );
+              }
+              // printf( "\n" );
+            #else
+              node.userData += *user;
+            #endif
+            break;
+          case Update_Mode::Aggregate:
+            #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+              // printf( "update local reading size: %d ", *pRead );
+              if(node.userData.size() != static_cast<size_t>(readValue)) {
+                throw std::logic_error("The data lengths are not the same size");
+              }
+              for(size_t i = 0; i < node.userData.size(); ++i) {
+                ++pRead;
+              node.userData[i] += *pRead;
+              // printf( "%d ", *pRead );
+              }
+              // printf( "\n" );
+            #else
+              throw std::logic_error("Did not refactor yet for Aggregate.");
+            #endif
+            break;
         }
       }
 #endif
@@ -890,7 +944,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   std::vector<int> procs(gid.size());     // list of processors to contact
 
   /* Setup procs list */
-  for (int i = 0; i < gid.size(); i++)  {
+  for (size_t i = 0; i < gid.size(); i++)  {
     procs[i] = hash_proc(gid[i]);
   }
 
@@ -920,7 +974,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
 
   /* for each GID, fill DD_Find_Msg buffer and contact list */
   int track_offset = 0;
-  for (int i = 0; i < gid.size(); i++)  {
+  for (size_t i = 0; i < gid.size(); i++)  {
     msg_t *ptr = (msg_t*)(&(sbuff[track_offset]));
     ptr->index = i;
     ptr->proc  = procs[i];
@@ -968,11 +1022,12 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   std::vector<int> rmsg_sizes_resized(nrec);
   int sum_rmsg_sizes_resized = 0;
   for (int i = 0; i < nrec; i++) {
-    // TODO: Fix cast
-    msg_t *ptr = (msg_t*)(&(rbuff[track_offset]));
     size_t find_rmsg_size_resized = find_msg_size;
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
 #ifndef TEMP_USED_FIXED_SIZE
+    // TODO: Fix cast
+    msg_t *ptr = (msg_t*)(&(rbuff[track_offset]));
+
     // TODO: Fix casts
     user_t * puser = (user_t*)(ptr->adjData + 1);
     user_val_t * pVal = (user_val_t*)(puser);
@@ -1003,7 +1058,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   int errcount = 0;
   int track_offset_resized = 0;
 
-#ifdef TEMP_USED_FIXED_SIZE
+#ifdef TEMP_USED_FIXED_SIZE // Not array
   std::vector<char> sbuff_resized = sbuff;
   std::vector<char> rbuff_resized = rbuff;
   std::vector<int> smsg_sizes_resized(gid.size(), find_msg_size);
@@ -1031,14 +1086,14 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   size_t sum_smsg_sizes_resized = 0;
   track_offset = 0;
   for (size_t i = 0; i < gid.size(); i++) {
-    // TODO: Fix cast
-    msg_t *ptr = (msg_t*)(&(sbuff[track_offset]));
     size_t find_msg_size_resized = find_msg_size;
 
     // TODO: For user not used we can do larger optimiations in this code now
     if(user.size()) {
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
 #ifndef TEMP_USED_FIXED_SIZE
+      // TODO: Fix cast
+      msg_t *ptr = (msg_t*)(&(sbuff[track_offset]));
       user_val_t * pSize = (user_val_t*)(ptr->adjData+1);
       find_msg_size_resized += (*pSize) * sizeof(user_val_t);
 #endif
@@ -1089,7 +1144,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After fill in return info");
   }
 
-#ifdef TEMP_USED_FIXED_SIZE
+  Zoltan2_Directory_Clock reverseClock("reverse", comm);
+#if defined(TEMP_USED_FIXED_SIZE) || not defined(TEMP_TRIAL_USER_ARRAY_TYPE) // Not array
 
 #ifdef CONVERT_DIRECTORY_RELIC
   err = Zoltan_Comm_Do_Reverse(plan, ZOLTAN2_DD_FIND_MSG_TAG+2, &(rbuff_resized[0]),
@@ -1100,23 +1156,26 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
 #endif
 
 #else
-  /* send return information back to requester */
-  Zoltan2_Directory_Clock reverseClock("reverse", comm);
+  // send return information back to requester
+
   // resize the directory to handle the array contents
 #ifdef CONVERT_DIRECTORY_RELIC
   err = Zoltan_Comm_Do_Reverse(plan, ZOLTAN2_DD_FIND_MSG_TAG+2, &(rbuff_resized[0]),
     1, &(rmsg_sizes_resized[0]), &(sbuff_resized[0]));
 #else
-if(smsg_sizes_resized[0] < 10) {
-  throw std::logic_error( "Mem corruption!\n" );
-}
+  // #########################################################################
+  // TODO - This may become deleted - see comments in Zoltan2_Directory_Comm
+  // execute_wait which has some in progress code working but I expect
+  // will be simpler once I understand it better.
   directoryComm.inform_final_sizes(smsg_sizes_resized);
+  // #########################################################################
   err = directoryComm.execute_reverse(ZOLTAN2_DD_FIND_MSG_TAG+2, rbuff_resized,
     1, rmsg_sizes_resized, sbuff_resized);
 #endif
-  reverseClock.complete();
+
 #endif
 
+  reverseClock.complete();
 
   if (err) {
     throw std::logic_error("Zoltan2_Directory::find() do reverse failed");
@@ -1130,7 +1189,7 @@ if(smsg_sizes_resized[0] < 10) {
   Zoltan2_Directory_Clock fillClock("fill", comm);
   track_offset_resized = 0;
 
-  for (int i = 0; i < gid.size(); i++) {
+  for (size_t i = 0; i < gid.size(); i++) {
     // TODO: Fix cast
     msg_t *ptr = (msg_t*)(&(sbuff_resized[track_offset_resized]));
 
@@ -1296,7 +1355,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::allocate_node_list(
     nodelist = std::vector<Zoltan2_Directory_Node<gid_t,lid_t,user_t>>(len);
     nodedata = std::vector<char>(nodedata_size * len);
     nextfreenode = 0;
-    relice_idx_t nodeidx = 0;
     for(relice_idx_t nodeidx = 0; nodeidx < len; ++nodeidx) {
       Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node = nodelist[nodeidx];
       node.next = nodeidx + 1;
@@ -1466,7 +1524,7 @@ return 0;
 #ifdef CONVERT_DIRECTORY_KOKKOS
   std::vector<size_t> msg_offset(gid.size()+1); // +1 so last can get size
   size_t sum_msg_size = 0;
-  for (int i = 0; i < msg_offset.size(); i++) {
+  for (size_t i = 0; i < msg_offset.size(); i++) {
     size_t this_msg_size = remove_msg_size; // will be varying soon
     msg_offset[i] = sum_msg_size;
     sum_msg_size += this_msg_size;

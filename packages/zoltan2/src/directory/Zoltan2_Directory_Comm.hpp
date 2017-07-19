@@ -56,7 +56,7 @@ namespace Zoltan2 {
 class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
   public:
     Zoltan2_Directory_Plan() :
-      maxed_recvs(0), bOwnRecvBuff(false), recv_buff(NULL) {
+      maxed_recvs(0), recv_buff(NULL), bOwnRecvBuff(false) {
     }
     ~Zoltan2_Directory_Plan() {
       if(bOwnRecvBuff) {
@@ -65,6 +65,8 @@ class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
     }
 
     void getInvertedValues(Zoltan2_Directory_Plan * from);
+
+    void print(const std::string& headerMessage) const;
 
     std::vector<int> procs_to;      /* processors I'll send to */
     std::vector<int> procs_from;    /* processors I'll receive from*/
@@ -156,9 +158,12 @@ class Zoltan2_Directory_Comm {
     int execute_resize(const std::vector<int> &sizes, int tag,
       int *sum_recv_sizes);
 
+    // #########################################################################
+    // TODO - This may become deleted - see comments in execute_wait
     void inform_final_sizes(const std::vector<int> &sizes) {
       final_sizes = sizes; // will work on this
     }
+    // #########################################################################
 
   private:
     int execute_resize(Zoltan2_Directory_Plan *plan,
@@ -201,7 +206,10 @@ class Zoltan2_Directory_Comm {
     Zoltan2_Directory_Plan * plan_forward; // for efficient MPI communication
     int nrec;
 
+    // #########################################################################
+    // TODO - This may become deleted - see comments in execute_wait
     std::vector<int> final_sizes; // TODO - temporary measure will work on this
+    // #########################################################################
 };
 
 // -----------------------------------------------------------------------------
