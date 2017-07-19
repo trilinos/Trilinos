@@ -5018,7 +5018,6 @@ namespace Tpetra {
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
-    const char tfecfFuncName[] = "describe()";
     using Teuchos::ArrayView;
     using Teuchos::Comm;
     using Teuchos::RCP;
