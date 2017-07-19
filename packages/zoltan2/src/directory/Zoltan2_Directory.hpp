@@ -93,12 +93,6 @@ class Zoltan2_Directory_Node {
 };
 #endif
 
-// TODO: decide how to place this
-enum Zoltan2_Update_Mode {
-  Zoltan2_Directory_Replace = 0,
-  Zoltan2_Directory_Add
-};
-
 template <typename gid_t, typename lid_t, typename user_t>
 class Zoltan2_Directory {
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
@@ -116,6 +110,12 @@ class Zoltan2_Directory {
 #endif
 
 public:
+  enum Update_Mode {
+    Replace = 0,
+    Add,
+    Aggregate
+  };
+
   Zoltan2_Directory(Teuchos::RCP<const Teuchos::Comm<int> > comm, bool use_lid,
 #ifdef CONVERT_DIRECTORY_RELIC
     int table_length,
@@ -128,7 +128,7 @@ public:
 
   int update(const std::vector<gid_t>& gid, const std::vector<lid_t>& lid,
     const std::vector<user_t>& user, const std::vector<int>& partition,
-    Zoltan2_Update_Mode mode);
+    Update_Mode mode);
 
   int find(const std::vector<gid_t>& gid, std::vector<lid_t>& lid,
     std::vector<user_t>& user, std::vector<int>& partition,
@@ -156,7 +156,7 @@ private:
 
 #ifndef CONVERT_DIRECTORY_TPETRA
   int update_local(gid_t* gid, lid_t* lid, user_t *user,
-    int partition, int owner, Zoltan2_Update_Mode mode);
+    int partition, int owner, Update_Mode mode);
   int find_local(gid_t* gid, lid_t* lid, user_t *user,
     int *partition, int *owner, bool bVariableData);
   int remove_local(gid_t* gid);

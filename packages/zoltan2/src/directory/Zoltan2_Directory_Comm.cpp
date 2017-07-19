@@ -81,6 +81,56 @@ void Zoltan2_Directory_Plan::getInvertedValues(Zoltan2_Directory_Plan * from) {
   comm          = from->comm;
 }
 
+
+void Zoltan2_Directory_Plan::print(const std::string& headerMessage) const {
+
+  #define PRINT_VECTOR(v) \
+  std::cout << "  " << #v << " "; \
+  for(size_t n = 0; n < v.size(); ++n) { \
+    std::cout << v[n] << " "; \
+  } \
+  std::cout << std::endl;
+
+  #define PRINT_VAL(val) std::cout << "  " << #val << ": " << val << std::endl;
+
+  for(int proc = 0; proc < comm->getSize(); ++proc) {
+    comm->barrier();
+    if(proc == comm->getRank()) {
+
+      std::cout << "Rank " << proc << " " << headerMessage << std::endl;
+
+      PRINT_VECTOR(procs_to)
+      PRINT_VECTOR(procs_from)
+      PRINT_VECTOR(lengths_to)
+      PRINT_VECTOR(lengths_from)
+      PRINT_VECTOR(starts_to)
+      PRINT_VECTOR(starts_from)
+      PRINT_VECTOR(indices_to)
+      PRINT_VECTOR(indices_from)
+      PRINT_VECTOR(sizes)
+      PRINT_VECTOR(sizes_to)
+      PRINT_VECTOR(sizes_from)
+      PRINT_VECTOR(starts_to_ptr)
+      PRINT_VECTOR(starts_from_ptr)
+      PRINT_VECTOR(indices_to_ptr)
+      PRINT_VECTOR(indices_from_ptr)
+
+      PRINT_VAL(nvals)
+      PRINT_VAL(nvals_recv)
+      PRINT_VAL(nrecvs)
+      PRINT_VAL(nsends)
+      PRINT_VAL(nindices_to)
+      PRINT_VAL(nindices_from)
+      PRINT_VAL(self_msg)
+      PRINT_VAL(max_send_size)
+      PRINT_VAL(total_recv_size)
+      PRINT_VAL(maxed_recvs)
+
+    }
+  }
+  comm->barrier();
+}
+
 Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
   int       nvals,	                    	/* number of values I currently own */
   const std::vector<int>  &assign,  /* processor assignment for all my values */
@@ -461,7 +511,7 @@ int Zoltan2_Directory_Comm::sort_ints(
     p[copy_sort[i]]++;                /* count number of occurances */
   }
 
-  for (size_t i = 1; i < top+1; i++) {
+  for (int i = 1; i < top+1; i++) {
     p[i] += p[i-1];                   /* compute partial sums */
   }
                                       /* assert: p[top] = nvals */
@@ -780,7 +830,7 @@ int Zoltan2_Directory_Comm::execute_post(
 int Zoltan2_Directory_Comm::execute_wait(
   Zoltan2_Directory_Plan *plan,          /* communication data structure */
   int tag,			/* message tag for communicating */
-  const std::vector<char> &send_data,		     /* array of data I currently own */
+  const std::vector<char> &send_data,		 /* array of data I currently own */
   int nbytes,                            /* msg size */
   std::vector<char> &recv_data)		       /* array of data I'll own after comm */
 {
@@ -812,11 +862,23 @@ int Zoltan2_Directory_Comm::execute_wait(
       }
       int k = plan->starts_from[self_num];
 
-      // TODO - decide are these the right test conditions...
-      // Still need to figure out the right way to organize passing the
-      // reverse message sizes or best way to communciate them - perhaps with
-      // exchange_sizes
-      // final_sizes is a hack right now
+      // #######################################################################
+      // This comment for this block and below block:
+      // Issue was how to make directory work for reverse communication when
+      // the data was variable sized - this code makes it work except when
+      // gid update sets are small and some processes may then set no_send_buff
+      // equal to 1 in the directory constructor. If I override that to always
+      // be 0 then it seems to work for all cases.
+      // I got this working sort of hacking a bit and learning how this was setup.
+      //
+      // Next steps are:
+      // (1) Look more closely at how this should be set up
+      // (2) See if perhaps both these blocks can be eliminated
+      // (3) or figure out what is actually necessary and then simplify/optimize
+      //
+      // Also note I am currently passing in a final_sizes which tells the
+      // directory all the sizes expected to be received back. I suspect that the
+      // final form may eliminate that as well.
       if(final_sizes.size()) {
         size_t offsetSrc = (size_t) plan->starts_from_ptr[self_num] * nbytes;
         for (int j = plan->lengths_from[self_num]; j; j--) {
@@ -831,6 +893,7 @@ int Zoltan2_Directory_Comm::execute_wait(
           k++;
         }
       }
+      // #######################################################################
       else {
         if (!plan->sizes_from.size() || plan->sizes_from[self_num]) {
           for (int j = plan->lengths_from[self_num]; j; j--) {
@@ -842,7 +905,6 @@ int Zoltan2_Directory_Comm::execute_wait(
       }
     }
     else {
-      throw std::logic_error("UNTESTED COMM 9"); // needs unit testing
       self_num = plan->nrecvs;
     }
 
@@ -861,8 +923,8 @@ int Zoltan2_Directory_Comm::execute_wait(
 
       int k = plan->starts_from[index];
 
-      // TODO - decide are these the right test conditions...
-      // final_sizes is a temporary measure in development
+      // #######################################################################
+      // TODO: See block directly above for comments pertaining to both blocks.
       if(final_sizes.size()) {
         size_t offsetSrc = (size_t) plan->starts_from_ptr[index];
         for (int j = plan->lengths_from[index]; j; j--) {
@@ -880,6 +942,7 @@ int Zoltan2_Directory_Comm::execute_wait(
           k++;
         }
       }
+      // #######################################################################
       else {
         for (int j = plan->lengths_from[index]; j; j--) {
           memcpy(&recv_data[(size_t)(plan->indices_from[k]) * (size_t)nbytes],
@@ -921,7 +984,6 @@ int Zoltan2_Directory_Comm::execute_all_to_all(
   }
 
   int nprocs = plan->comm->getSize();
-  int me = plan->comm->getRank();
 
   std::vector<int> outbufCounts(nprocs,0);
   std::vector<int> outbufOffsets(nprocs,0);
@@ -1026,7 +1088,7 @@ int Zoltan2_Directory_Comm::execute_all_to_all(
 
         if (i < nSendMsgs){
           if (plan->procs_to[i] == p){   /* procs_to is sorted */
-            int length = plan->sizes_to[i] * nbytes;
+            length = plan->sizes_to[i] * nbytes;
             int offset = plan->starts_to_ptr[i] * nbytes;
 
             if ((!sorted || (plan->nvals > nSendItems)) && length){
@@ -1105,7 +1167,7 @@ int Zoltan2_Directory_Comm::execute_all_to_all(
       if (i < nSendMsgs){
         if (plan->procs_to[i] == p){    /* procs_to is sorted */
           int offset = plan->starts_to[i] * nbytes;
-          int length = plan->lengths_to[i] * nbytes;
+          length = plan->lengths_to[i] * nbytes;
 
           if ((!sorted || (plan->nvals > nSendItems)) && length){
             memcpy(pBufPtr, &(send_data[0]) + offset, length);
@@ -1467,27 +1529,7 @@ int Zoltan2_Directory_Comm::execute_resize(
     if (plan->indices_from.size() == 0) {
       /* Simpler case; recvs already blocked by processor */
       std::vector<int> index(nrecvs + self_msg);
-      std::vector<int> sort_val(nsends + self_msg);
-
-      for (int i = 0; i < nrecvs + self_msg; i++) {
-        sort_val[i] = plan->starts_from[i];
-        index[i] = i;
-      }
-      sort_ints(sort_val, index);
-
-      int sum = 0;
-      for (int i = 0; i < nrecvs + self_msg; i++) {
-        starts_from_ptr[index[i]] = sum;
-        sum += sizes_from[index[i]];
-      }
-    }
-    else {
-      // TODO - not sure yet how we will organize this case
-      // This allows for the working receive for the reverse
-      // with variable arrays - but right now this is duplicate of the
-      // above. So I need to figure out how this all integrates best
-      std::vector<int> index(nrecvs + self_msg);
-      std::vector<int> sort_val(nsends + self_msg);
+      std::vector<int> sort_val(nrecvs + self_msg);
 
       for (int i = 0; i < nrecvs + self_msg; i++) {
         sort_val[i] = plan->starts_from[i];
