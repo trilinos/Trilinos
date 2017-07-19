@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/unit_tests/kokkos)
 
 FILE(GLOB SOURCES *.cpp)
 
-IF(Trilinos_ENABLE_KokkosCore)
+IF(${PACKAGE_NAME}_ENABLE_KokkosCore)
 IF(TPL_ENABLE_CUDA)
   CUDA_INCLUDE_DIRECTORIES(${KokkosCore_INCLUDE_DIRS})
   CUDA_COMPILE(OBJECTS_CUDA saxpy_kokkos.cu create_kokkos_view.cu copy_kokkos_memory.cu)
