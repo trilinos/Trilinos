@@ -119,8 +119,9 @@ struct ContainerFactoryEntry : public ContainerFactoryEntryBase<MatrixType>
 template<typename MatrixType>
 struct ContainerFactory
 {
-  //! @name Typedefs
+  //! \name Typedefs
   //@{
+
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
   //! The local_ordinal_type from the input MatrixType.
@@ -135,32 +136,29 @@ struct ContainerFactory
   //! Tpetra::Importer specialization for use with \c MatrixType and compatible MultiVectors.
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
   typedef Ifpack2::Container<MatrixType> BaseContainer;
+  //@}
 
   static_assert (std::is_same<typename std::decay<MatrixType>::type, row_matrix_type>::value,
                  "MatrixType must be a Tpetra::RowMatrix specialization.");
 
+  // \name Functions
+  //@{
   //! Registers a specialization of Ifpack2::Container by binding a key (string) to it.
   /*!
-    \param
-    containerType - (In) The key to pair with ContainerType. After registering, the key can be used to construct a ContainerType.
+    \tparam ContainerType The Container specialization to register.
+    \param containerType The key to pair with ContainerType. After registering, the key can be used to construct a ContainerType.
     */
   template<typename ContainerType>
   static void registerContainer(std::string containerType);
 
   //! Build a specialization of Ifpack2::Container given a key that has been registered.
   /*!
-    \param
-    containerType - (In) The key for looking up the Container specialization. If this key hasn't been registered, an exception is thrown.
-    \param
-    A - (In) The problem matrix.
-    \param
-    localRows - (In) The rows that correspond to each block. The outer list contains blocks, and the inner list contains rows. In BlockRelaxation, this is retrieved from a Partitioner.
-    \param
-    importer - (In) The importer that is used to import off-process rows (used by overlapping BlockRelaxation).
-    \param
-    OverlapLevel - (In) In BlockRelaxation the overlap level is retrieved from the parameter list.
-    \param
-    DampingFactor - (In) In BlockRelaxation the damping factor is retrieved from the parameter list.
+    \param containerType The key for looking up the Container specialization. If this key hasn't been registered, an exception is thrown.
+    \param A The problem matrix.
+    \param localRows The rows that correspond to each block. The outer list contains blocks, and the inner list contains rows. In BlockRelaxation, this is retrieved from a Partitioner.
+    \param importer The importer that is used to import off-process rows (used by overlapping BlockRelaxation).
+    \param OverlapLevel In BlockRelaxation the overlap level is retrieved from the parameter list.
+    \param DampingFactor In BlockRelaxation the damping factor is retrieved from the parameter list.
     */
   static Teuchos::RCP<BaseContainer> build(std::string containerType, const Teuchos::RCP<const MatrixType>& A,
       const Teuchos::Array<Teuchos::Array<local_ordinal_type>>& localRows, const Teuchos::RCP<const import_type> importer,
@@ -168,10 +166,10 @@ struct ContainerFactory
 
   //! Registers a specialization of Ifpack2::Container by binding a key (string) to it.
   /*!
-    \param
-    containerType - (In) The key to deregister. If it wasn't registered before, the call has no effect.
+    \param containerType The key to deregister. If it wasn't registered before, the call has no effect.
     */
   static void deregisterContainer(std::string containerType);
+  //@}
 
   private:
   static std::map<std::string, Teuchos::RCP<Details::ContainerFactoryEntryBase<MatrixType>>> table;
