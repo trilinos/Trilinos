@@ -20,6 +20,51 @@ Declarations for the class Xpetra::MatrixSplitting.
 */
 namespace Xpetra {
 
+
+//Definition of the predicate for the node_ structure.
+//Given a tuple made of node index and a specific region it belongs to,
+//this predicate returns true if the node has global index which coincides with the index specified in input.
+template<class GlobalOrdinal>
+class checkerRegionToAll { 
+ 
+	public:  
+
+		//Constructor
+		checkerRegionToAll( GlobalOrdinal node_index){node_index_ = node_index;};
+
+		//Unary Operator
+  		bool operator()(const std::tuple<GlobalOrdinal, GlobalOrdinal > &node)  
+  		{ return (std::get<0>(node) == node_index_); }  
+
+	private:
+
+		GlobalOrdinal node_index_;
+
+}; 
+
+
+//Definition of the predicate for the node_ structure.
+//Given a tuple made of node index and a specific region it belongs to,
+//this predicate returns true if the node has global index which coincides with the index specified in input.
+//It does the same thing as checkerRegionToAll but it works on a different data structure 
+template<class GlobalOrdinal>
+class checkerAllToRegion { 
+ 
+	public:  
+
+		//Constructor
+		checkerAllToRegion( GlobalOrdinal node_index){node_index_ = node_index;};
+
+		//Unary Operator
+  		bool operator()(const std::tuple<GlobalOrdinal, GlobalOrdinal > &node)  
+  		{ return (std::get<1>(node) == node_index_); }  
+
+	private:
+
+		GlobalOrdinal node_index_;
+
+}; 
+
 	/*!
 	@class Xpetra::MatrixSplitting class.
 	@brief Xpetra-specific matrix class.
@@ -54,7 +99,7 @@ namespace Xpetra {
 		//@{
 
 		//! Constructor specifying fixed number of entries for each row.
-		MatrixSplitting(RCP<Matrix> matrix, RCP< Teuchos::Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > nodes)
+		MatrixSplitting(RCP<Matrix> matrix, RCP< Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > nodes)
 		{
 			std::cout<<"This version of MatrixSplitting constructor is NOT currently supported \n";			
 		}
@@ -64,7 +109,7 @@ namespace Xpetra {
 		{
 			comm_ = comm;
 			driver_ = rcp( new Xpetra::SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> (elements_file_name, comm_) );
-			Teuchos::Array<GlobalOrdinal> elementlist = driver_->GetGlobalRowMap();
+			Array<GlobalOrdinal> elementlist = driver_->GetGlobalRowMap();
 			num_total_elements_ = driver_->GetNumGlobalElements();
 			num_total_regions_ = driver_->GetNumTotalRegions();
 
@@ -332,12 +377,12 @@ namespace Xpetra {
 		}
 
 		//! Get offsets of the diagonal entries in the matrix.
-		void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
+		void getLocalDiagOffsets(ArrayRCP<size_t> &offsets) const {
 		  globalMatrixData_->getLocalDiagOffsets(offsets);
 		}
 
 		//! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
-		void getLocalDiagCopy(Xpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+		void getLocalDiagCopy(Xpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const ArrayView<const size_t> &offsets) const {
 		  globalMatrixData_->getLocalDiagCopy(diag,offsets);
 		}
 
@@ -518,28 +563,33 @@ namespace Xpetra {
 		{	
 			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=localMatrixData_.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of localMatrixData_ structure \n");
 			RCP<Matrix> regional_matrix = localMatrixData_[region_idx];
+			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
 
-			regional_matrix -> resumeFill();
-      			Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = regional_matrix->getRowMap()->getNodeElementList();
- 			/*for( typename Teuchos::ArrayView<const GlobalOrdinal>::iterator iter = MyGlobalElements.begin(); iter!=MyGlobalElements.end(); ++iter )	
+			//THIS IS THE CORE OF THE PROBLEM WHERE ONE NEEDS TO POPULATE THE REGIONAL MATRICES BY ACCESSING ENTRIES OF THE GLOBAL MATRIX
+			//
+			/*regional_matrix -> resumeFill();
+      			ArrayView<const GlobalOrdinal> MyGlobalElements = globalMatrixData_->getRowMap()->getNodeElementList();
+ 			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyGlobalElements.begin(); iter!=MyGlobalElements.end(); ++iter )	
 			{
-				std::vector<GlobalOrdinal> cols;
-				cols.push_back(*iter);
-				std::vector<Scalar> vals;
-				vals.push_back(1.0);
-
-				regional_matrix -> insertGlobalValues(*iter, cols, vals);
-
-			}*/
-			regional_matrix -> fillComplete();
-
+				checkerAllToRegion<GlobalOrdinal> unaryPredicate(*iter);
+				typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator region_iterator;
+				region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerAllToRegion<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicate);
+				if( region_iterator!=regionToAll.end() ) 
+				{
+					GlobalOrdinal node_regional_idx = std::get<0>( *region_iterator );
+					ArrayView<const GlobalOrdinal> inds;
+					ArrayView<const Scalar> vals;
+					globalMatrixData_ -> getGlobalRowView( *iter, inds, vals );
+				}
+			}
+			regional_matrix -> fillComplete();*/
 		};
 		// @}
 
 
 		//! @name Creation of Local matrices
 		//@{
-		void CreateLocalMatrices( Teuchos::Array<Teuchos::Array<GlobalOrdinal> > local_maps){ 
+		void CreateLocalMatrices( Array<Array<GlobalOrdinal> > local_maps){ 
 
 			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=local_maps.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of local_maps structure \n");
 
@@ -578,7 +628,7 @@ namespace Xpetra {
 
 		RCP<SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> > driver_;
 		RCP<Matrix> globalMatrixData_;
-		Teuchos::Array<RCP<Matrix> > localMatrixData_;
+		Array<RCP<Matrix> > localMatrixData_;
 
 		GlobalOrdinal num_total_elements_;
 		GlobalOrdinal num_total_regions_;

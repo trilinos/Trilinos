@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
 	else
 		std::cout<<"PID: "<<comm->getRank()<<" num local nodes in region 1: "<<elementlist_region1.size()<<std::endl;
 
-	Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseEpetra> xpetraWrapper( argv[1], argv[2], comm );
+	Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseTpetra> xpetraWrapper( argv[1], argv[2], comm );
 	std::string output_file="A_write.mtx";
 	xpetraWrapper.write(output_file.c_str());
 
