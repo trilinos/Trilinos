@@ -2861,9 +2861,6 @@ namespace Tpetra {
   protected:
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-    //! Whether it is correct to call getRowInfo().
-    bool hasRowInfo () const;
-
     //! Throw an exception if the internal state is not consistent.
     void checkInternalState () const;
 

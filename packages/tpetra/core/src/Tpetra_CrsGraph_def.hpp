@@ -2707,21 +2707,16 @@ namespace Tpetra {
       "for columns yet, so it doesn't make sense to call this method.  If the "
       "graph doesn't have a column Map yet, you should call fillComplete on "
       "it first.");
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo(), std::runtime_error,
-      "Graph row information was deleted at fillComplete.");
-#endif // HAVE_TPETRA_DEBUG
 
     // This does the right thing (reports an empty row) if the input
     // row is invalid.
-    const RowInfo rowinfo = getRowInfo (localRow);
+    const RowInfo rowinfo = this->getRowInfo (localRow);
     // No side effects on error.
     const size_t theNumEntries = rowinfo.numEntries;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (indices.size ()) < theNumEntries, std::runtime_error,
-      "Specified storage (size==" << indices.size () << ") does not suffice "
-      "to hold all " << theNumEntries << " entry/ies for this row.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) < theNumEntries, std::runtime_error,
+       "Specified storage (size==" << indices.size () << ") does not suffice "
+       "to hold all " << theNumEntries << " entry/ies for this row.");
     numEntries = theNumEntries;
 
     if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
@@ -2750,11 +2745,6 @@ namespace Tpetra {
   {
     using Teuchos::ArrayView;
     const char tfecfFuncName[] = "getGlobalRowCopy: ";
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo (), std::runtime_error,
-      "Graph row information was deleted at fillComplete.");
-#endif // HAVE_TPETRA_DEBUG
 
     // This does the right thing (reports an empty row) if the input
     // row is invalid.
@@ -2795,11 +2785,6 @@ namespace Tpetra {
       "currently stored as global indices, so we cannot return a view with "
       "local column indices, whether or not the graph has a column Map.  If "
       "the graph _does_ have a column Map, use getLocalRowCopy() instead.");
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo (), std::runtime_error, "Graph row information was "
-      "deleted at fillComplete().");
-#endif // HAVE_TPETRA_DEBUG
 
     // This does the right thing (reports an empty row) if the input
     // row is invalid.
@@ -2837,11 +2822,6 @@ namespace Tpetra {
       isLocallyIndexed (), std::runtime_error, "The graph's indices are "
       "currently stored as local indices, so we cannot return a view with "
       "global column indices.  Use getGlobalRowCopy() instead.");
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo (), std::runtime_error,
-      "Graph row information was deleted at fillComplete().");
-#endif // HAVE_TPETRA_DEBUG
 
     // This does the right thing (reports an empty row) if the input
     // row is invalid.
@@ -2883,9 +2863,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! rowMap_->isNodeLocalElement (localRow), std::runtime_error,
       ": row does not belong to this node.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo (), std::runtime_error,
-      ": graph row information was deleted at fillComplete().");
     if (! indicesAreAllocated ()) {
       allocateIndices (LocalIndices);
     }
@@ -2966,9 +2943,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       rowMap_->isNodeLocalElement(localRow) == false, std::runtime_error,
       ": row does not belong to this node.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo (), std::runtime_error,
-      ": graph row information was deleted at fillComplete().");
     if (! indicesAreAllocated ()) {
       allocateIndices (LocalIndices);
     }
@@ -3009,12 +2983,9 @@ namespace Tpetra {
     typedef typename ArrayView<const GO>::size_type size_type;
     const char tfecfFuncName[] = "insertGlobalIndices";
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isLocallyIndexed() == true, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isLocallyIndexed (), std::runtime_error,
       ": graph indices are local; use insertLocalIndices().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo (), std::runtime_error,
-      ": graph row information was deleted at fillComplete().");
     // This can't really be satisfied for now, because if we are
     // fillComplete(), then we are local.  In the future, this may
     // change.  However, the rule that modification require active
@@ -3106,9 +3077,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isLocallyIndexed() == true, std::runtime_error,
       ": graph indices are local; use insertLocalIndices().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo (), std::runtime_error,
-      ": graph row information was deleted at fillComplete().");
     // This can't really be satisfied for now, because if we are
     // fillComplete(), then we are local.  In the future, this may
     // change.  However, the rule that modification require active
@@ -3580,9 +3548,6 @@ namespace Tpetra {
   resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     const char tfecfFuncName[] = "resumeFill";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! hasRowInfo(), std::runtime_error,
-      ": Sorry, you cannot resume fill of the CrsGraph, since the graph's row "
-      "information was deleted in fillComplete().");
 
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *rowMap_->getComm() );
@@ -4667,7 +4632,7 @@ namespace Tpetra {
       // At this point, indices have already been sorted in each row.
       // That makes finding out whether the graph is lower / upper
       // triangular easier.
-      if (this->indicesAreAllocated () && this->hasRowInfo ()) {
+      if (this->indicesAreAllocated ()) {
         const LO numLocalRows = static_cast<LO> (this->getNodeNumRows ());
         for (LO localRow = 0; localRow < numLocalRows; ++localRow) {
           const GO globalRow = rowMap.getGlobalElement (localRow);
@@ -5127,9 +5092,6 @@ namespace Tpetra {
       }
       // O(N) and O(NNZ) data
       if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          ! hasRowInfo (), std::runtime_error, ": reduce verbosity level; "
-          "graph row information was deleted at fillComplete().");
         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
           if (myImageID == imageCtr) {
             out << std::setw(width) << "Node ID"
@@ -5523,20 +5485,6 @@ namespace Tpetra {
     domainMap_ = domainMap;
     rangeMap_ = rangeMap;
     colMap_ = colMap;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  bool
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  hasRowInfo () const
-  {
-    if (this->indicesAreAllocated () &&
-        this->getProfileType () == StaticProfile &&
-        this->k_rowPtrs_.dimension_0 () == 0) {
-      return false;
-    } else {
-      return true;
-    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>

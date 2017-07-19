@@ -2661,19 +2661,12 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     const char tfecfFuncName[] = "getLocalRowCopy: ";
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      isGloballyIndexed () && ! hasColMap (), std::runtime_error,
-      "Tpetra::CrsMatrix::getLocalRowCopy: The matrix is globally indexed and "
-      "does not have a column Map yet.  That means we don't have local indices "
-      "for columns yet, so it doesn't make sense to call this method.  If the "
-      "matrix doesn't have a column Map yet, you should call fillComplete on "
-      "it first.");
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! staticGraph_->hasRowInfo (), std::runtime_error,
-      "Tpetra::CrsMatrix::getLocalRowCopy: The graph's row information was "
-      "deleted at fillComplete().");
-#endif // HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->hasColMap (), std::runtime_error,
+       "The matrix does not have a column Map yet.  This means we don't have "
+       "local indices for columns yet, so it doesn't make sense to call this "
+       "method.  If the matrix doesn't have a column Map yet, you should call "
+       "fillComplete on it first.");
 
     const RowInfo rowinfo = staticGraph_->getRowInfo (localRow);
     const size_t theNumEntries = rowinfo.numEntries;
@@ -2725,6 +2718,7 @@ namespace Tpetra {
         }
       }
       else if (staticGraph_->isGloballyIndexed ()) {
+        // Don't call getColMap(), because it touches RCP's reference count.
         const map_type& colMap = * (staticGraph_->colMap_);
         const GlobalOrdinal* curGblInds;
         const impl_scalar_type* curVals;
