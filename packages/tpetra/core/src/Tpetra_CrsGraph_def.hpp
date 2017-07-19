@@ -3688,7 +3688,13 @@ namespace Tpetra {
 
     // Make indices local, if they aren't already.
     // The method doesn't do any work if the indices are already local.
-    makeIndicesLocal ();
+    const size_t numBadColInds = this->makeIndicesLocal ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (numBadColInds != 0, std::runtime_error, "When converting column indices "
+       "from global to local, we encountered " << numBadColInds
+       << "ind" << (numBadColInds != static_cast<size_t> (1) ? "ices" : "ex")
+       << " that do" << (numBadColInds != static_cast<size_t> (1) ? "es" : "")
+       << " not live in the column Map on this process.");
 
     // If this process has no indices, then CrsGraph considers it
     // already trivially sorted and merged.  Thus, this method need
@@ -4679,7 +4685,7 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
+  size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   makeIndicesLocal ()
   {
@@ -4708,6 +4714,11 @@ namespace Tpetra {
        "that it has a column Map, because hasColMap() returns true.  However, "
        "the result of getColMap() is null.  This should never happen.  Please "
        "report this bug to the Tpetra developers.");
+
+    // Return value: The number of column indices (counting
+    // duplicates) that could not be converted to local indices,
+    // because they were not in the column Map on the calling process.
+    size_t lclNumErrs = 0;
 
     const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
     const map_type& colMap = * (this->getColMap ());
@@ -4772,52 +4783,79 @@ namespace Tpetra {
         auto k_numRowEnt = Kokkos::create_mirror_view (device_type (), h_numRowEnt);
 
         using Details::convertColumnIndicesFromGlobalToLocal;
-        const size_t numBad =
+        lclNumErrs =
           convertColumnIndicesFromGlobalToLocal<LO, GO, DT, offset_type, num_ent_type> (k_lclInds1D_,
                                                                                         k_gblInds1D_,
                                                                                         k_rowPtrs_,
                                                                                         lclColMap,
                                                                                         k_numRowEnt);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (numBad != 0, std::runtime_error, "When converting column indices "
-           "from global to local, we encountered " << numBad
-           << "ind" << (numBad != static_cast<size_t> (1) ? "ices" : "ex")
-           << " that do" << (numBad != static_cast<size_t> (1) ? "es" : "")
-           << " not live in the column Map on this process.");
-
         // We've converted column indices from global to local, so we
         // can deallocate the global column indices (which we know are
         // in 1-D storage, because the graph has static profile).
         k_gblInds1D_ = gbl_col_inds_type ();
       }
       else {  // the graph has dynamic profile (2-D index storage)
-        lclInds2D_ = Teuchos::arcp<Teuchos::Array<LO> > (lclNumRows);
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          if (! gblInds2D_[lclRow].empty ()) {
-            const GO* const ginds = gblInds2D_[lclRow].getRawPtr ();
+        // Avoid any drama with *this capture, by extracting the
+        // variables that the thread-parallel loop will need below.
+        // This is just a shallow copy.
+        Teuchos::ArrayRCP<Teuchos::Array<LO> > lclInds2D (lclNumRows);
+        Teuchos::ArrayRCP<Teuchos::Array<GO> > gblInds2D = this->gblInds2D_;
+
+        // We must use a host thread parallelization here, because
+        // Teuchos::ArrayRCP does not work in CUDA.
+        typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+          host_execution_space;
+        typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+        Kokkos::parallel_reduce (
+          "Tpetra::CrsGraph::makeIndicesLocal (DynamicProfile)",
+          range_type (0, lclNumRows),
+          [&gblInds2D, &h_numRowEnt, &lclInds2D, &colMap] (const LO& lclRow, size_t& numErrs) {
+            const GO* const curGblInds = gblInds2D[lclRow].getRawPtr ();
             // NOTE (mfh 26 Jun 2016) It's always legal to cast the
             // number of entries in a row to LO, as long as the row
             // doesn't have too many duplicate entries.
-            const LO rna = static_cast<LO> (gblInds2D_[lclRow].size ());
+            const LO rna = static_cast<LO> (gblInds2D[lclRow].size ());
             const LO numEnt = static_cast<LO> (h_numRowEnt(lclRow));
-            lclInds2D_[lclRow].resize (rna);
-            LO* const linds = lclInds2D_[lclRow].getRawPtr ();
+            lclInds2D[lclRow].resize (rna); // purely thread-local, so safe
+            LO* const curLclInds = lclInds2D[lclRow].getRawPtr ();
             for (LO j = 0; j < numEnt; ++j) {
-              const GO gid = ginds[j];
+              const GO gid = curGblInds[j];
               const LO lid = colMap.getLocalElement (gid);
-              linds[j] = lid;
+              curLclInds[j] = lid;
+              if (lid == Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+                ++numErrs;
+              }
+            }
+          }, lclNumErrs);
+
+        this->lclInds2D_ = lclInds2D; // "commit" the result
+
 #ifdef HAVE_TPETRA_DEBUG
+        // If we detected an error in the above loop, go back and find
+        // the first global column index not in the column Map on the
+        // calling process.
+        if (lclNumErrs != 0) {
+          for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+            const GO* const curGblInds = gblInds2D_[lclRow].getRawPtr ();
+            // NOTE (mfh 26 Jun 2016) It's always legal to cast the
+            // number of entries in a row to LO, as long as the row
+            // doesn't have too many duplicate entries.
+            const LO numEnt = static_cast<LO> (h_numRowEnt(lclRow));
+            for (LO j = 0; j < numEnt; ++j) {
+              const GO gid = curGblInds[j];
+              const LO lid = colMap.getLocalElement (gid);
               TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-                (linds[j] == Teuchos::OrdinalTraits<LO>::invalid(),
+                (lid == Tpetra::Details::OrdinalTraits<LO>::invalid (),
                  std::logic_error,
-                 "Global column ginds[j=" << j << "]=" << ginds[j]
+                 "Global column curGblInds[j=" << j << "]=" << curGblInds[j]
                  << " of local row " << lclRow << " is not in the column Map.  "
                  "This should never happen.  Please report this bug to the "
                  "Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
             }
           }
         }
+#endif // HAVE_TPETRA_DEBUG
+
         gblInds2D_ = Teuchos::null;
       }
     } // globallyIndexed() && lclNumRows > 0
@@ -4826,6 +4864,8 @@ namespace Tpetra {
     indicesAreLocal_  = true;
     indicesAreGlobal_ = false;
     checkInternalState ();
+
+    return lclNumErrs;
   }
 
 

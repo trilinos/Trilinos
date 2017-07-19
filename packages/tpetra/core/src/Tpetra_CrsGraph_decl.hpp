@@ -1446,7 +1446,17 @@ namespace Tpetra {
     /// method unnecessarily.
     void makeColMap ();
 
-    void makeIndicesLocal ();
+    /// \brief Convert column indices from global to local.
+    ///
+    /// \pre The graph has a column Map.
+    /// \post The graph is locally indexed.
+    ///
+    /// \return The number of column indices on this process, counting
+    ///   duplicates, that could not be converted to local indices,
+    ///   because they were not in the column Map on the calling
+    ///   process.
+    size_t makeIndicesLocal ();
+
     void makeImportExport ();
 
     //@}
