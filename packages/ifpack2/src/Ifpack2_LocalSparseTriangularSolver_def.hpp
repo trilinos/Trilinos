@@ -407,6 +407,7 @@ compute ()
 
   const local_ordinal_type numRows = A.numRows ();
 
+  typename Matrix::local_matrix_type::row_map_type newptr = ptr;
   typename crs_matrix_type::local_matrix_type::index_type::non_const_type newind ("ind", ind.dimension_0 ());
   typename crs_matrix_type::local_matrix_type::values_type newval ("val", val.dimension_0 ());
 
@@ -419,6 +420,7 @@ compute ()
         newval(rowStart + k) = A_r.values(numEnt - k - 1);
         newcol(rowStart + k) = A_r.colidx(numEnt - k - 1);
      }
+     ptr(lclRow) = rowStart;
      rowStart = rowStart + numEnt;
   }  
 
