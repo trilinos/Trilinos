@@ -406,8 +406,10 @@ compute ()
   typename crs_matrix_type::local_matrix_type::values_type  val = A.values;
 
   const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type annz    = A.nnz ();
 
-  typename Matrix::local_matrix_type::row_map_type newptr = ptr;
+  typename crs_matrix_type::local_matrix_type::row_map_type newptr ("ptr", ptr.dimension_0 ());
   typename crs_matrix_type::local_matrix_type::index_type::non_const_type newind ("ind", ind.dimension_0 ());
   typename crs_matrix_type::local_matrix_type::values_type newval ("val", val.dimension_0 ());
 
@@ -418,15 +420,15 @@ compute ()
      const local_ordinal_type numEnt = A_r.length;
      for (local_ordinal_type k = 0; k < numEnt; ++k) {
         newval(rowStart + k) = A_r.values(numEnt - k - 1);
-        newcol(rowStart + k) = A_r.colidx(numEnt - k - 1);
+        newind(rowStart + k) = A_r.colidx(numEnt - k - 1);
      }
-     ptr(lclRow) = rowStart;
+     newptr(lclRow) = rowStart;
      rowStart = rowStart + numEnt;
   }  
 
   // create a new local_matrix in the A_crs_ object
   // typename Matrix::local_matrix_type A2
-  // A2 = KokkosSparse( "reversed", newval, newcol )
+  //KokkosSparse::CrsMatrix ("A2", numRows, numCols, numCols, annz, newval, newptr, newcol);
 
   isComputed_ = true;
   ++numCompute_;
