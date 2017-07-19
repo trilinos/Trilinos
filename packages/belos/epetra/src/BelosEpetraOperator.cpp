@@ -125,9 +125,7 @@ int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) 
     vec_Y->PutScalar( 0.0 );
     lp_->setInitResVec( vec_X );
   }
-  lp_->setLHS( vec_Y );
-  lp_->setRHS( vec_X );
-  solver_->reset( Belos::Problem );
+  lp_->setProblem( vec_Y, vec_X );
   Belos::ReturnType ret = solver_->solve();
   
   if (ret != Converged) 
@@ -145,9 +143,7 @@ int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVecto
     vec_Y->PutScalar( 0.0 );
     lp_->setInitResVec( vec_X );
   }
-  lp_->setLHS( vec_Y ); 
-  lp_->setRHS( vec_X );
-  solver_->reset( Belos::Problem );
+  lp_->setProblem( vec_Y, vec_X ); 
   Belos::ReturnType ret = solver_->solve();
   
   if (ret != Converged) 
