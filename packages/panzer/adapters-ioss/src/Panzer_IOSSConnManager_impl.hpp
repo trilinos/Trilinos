@@ -44,6 +44,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 #include <algorithm>
 
 // MPI includes
@@ -98,6 +99,8 @@ IOSSConnManager<GO>::IOSSConnManager(Ioss::DatabaseIO * iossMeshDB)
    : iossMeshDB_(iossMeshDB), iossRegion_(), iossNodeBlocks_(), iossElementBlocks_(),
 	 iossConnectivity_(), iossToShardsTopology_(), iossElementBlockTopologies_(),
 	 elementBlocks_(), neighborElementBlocks_(),
+	 numUniqueEdges_(0), numUniqueFaces_(0), edgeNodeToEdgeMap_(), faceNodeToFaceMap_(),
+	 elementEdgeNodes_(), elementFaceNodes_(),
 	 elmtLidToGid_(), elmtLidToConn_(), connSize_(),
 	 connectivity_(), ownedElementCount_(0), sidesetsToAssociate_(),
 	 sidesetYieldedAssociations_(), elmtToAssociatedElmts_(), placeholder_()
@@ -197,26 +200,15 @@ void IOSSConnManager<GO>::getDofCoords(const std::string & blockId,
                                        std::vector<LocalOrdinal> & localCellIds,
                                        Kokkos::DynRankView<double,PHX::Device> & points) const {
 
-  // Note: This method only works when the original FieldPattern used in buildConnectivity()
-  //       was a NodalFieldPattern. When the code is generalized to allow any field pattern,
-  //       this method will need to be rewritten, since only nodal information is obtained
-  //       from IOSS.
-
   // Check that the FieldPattern has a topology that is compatible with all elements;
   TEUCHOS_TEST_FOR_EXCEPTION(!compatibleTopology(coordProvider), std::logic_error,
 		     		            "Error, coordProvider must have a topology compatible with all elements.");
 
   int dim = coordProvider.getDimension();
-  int numIdsPerElement = coordProvider.numberIds();
+  int idsPerElement = coordProvider.numberIds();
 
-  // Get the number of topological ids per element
-  int numTopoIdsPerElement = connSize_[0];
-  for (size_t el = 0; el < connSize_.size(); ++el) {
-    TEUCHOS_TEST_FOR_EXCEPTION(connSize_[el] != numTopoIdsPerElement, std::logic_error,
-	     		               "Error, connSize[0] = " << connSize_[0]
-							<< ", but connSize[" << el << "] = " << connSize_[el] << std::endl
-							<< ", but getDofCoords can only be used for constant connSize_.");
-  }
+  const CellTopologyData * baseTopologyData = coordProvider.getCellTopology().getBaseCellTopologyData();
+  int cornerNodesPerElement = int(baseTopologyData->subcell_count[0]);
 
   // Get the local Cell Ids
   localCellIds = getElementBlock(blockId);
@@ -226,9 +218,7 @@ void IOSSConnManager<GO>::getDofCoords(const std::string & blockId,
   std::vector<int> iossNodeBlockNodeIds;
   std::vector<double> iossNodeBlockCoordinates;
   std::vector<double> iossNodeCoordinates(dim);
-  static bool createdIossNodeIdToCoordinateMap = false;
-  static std::map<GlobalOrdinal, std::vector<double>> iossNodeIdToCoordinateMap;
-  if (!createdIossNodeIdToCoordinateMap) {
+  std::map<GlobalOrdinal, std::vector<double>> iossNodeIdToCoordinateMap;
     for (Ioss::NodeBlock * NodeBlock : iossNodeBlocks_) {
       NodeBlock->get_field_data("ids", iossNodeBlockNodeIds);
       NodeBlock->get_field_data("mesh_model_coordinates", iossNodeBlockCoordinates);
@@ -239,24 +229,24 @@ void IOSSConnManager<GO>::getDofCoords(const std::string & blockId,
         iossNodeIdToCoordinateMap[GlobalOrdinal(iossNodeBlockNodeIds[node])] = iossNodeCoordinates;
       }
     }
-    createdIossNodeIdToCoordinateMap = true;
-  }
 
-  // Get element vertices
-  Kokkos::DynRankView<double,PHX::Device> vertices("vertices",numElements,numTopoIdsPerElement,dim);
-  LocalOrdinal offset;
-  for (LocalOrdinal element = 0; element < numElements; ++element) {
-	offset = elmtLidToConn_[localCellIds[element]];
-	for (LocalOrdinal id = 0; id < numTopoIdsPerElement; ++id) {
-	  iossNodeCoordinates = iossNodeIdToCoordinateMap[connectivity_[offset+id]];
-	  for (LocalOrdinal k = 0; k < dim; ++k) {
-        vertices(element,id,k) = iossNodeCoordinates[k];
-	  }
-	}
+  Teuchos::RCP<std::vector<GlobalOrdinal>> blockConnectivity;
+  Kokkos::DynRankView<double,PHX::Device> vertices("vertices",numElements,cornerNodesPerElement,dim);
+
+  blockConnectivity = iossConnectivity_.find(blockId)->second;
+  const Ioss::ElementTopology * iossElementBlockTopology = iossElementBlockTopologies_.find(blockId)->second;
+  int iossNodesPerElement = iossElementBlockTopology->number_nodes();
+  for (int elmtIdxInBlock = 0; elmtIdxInBlock < numElements; ++elmtIdxInBlock) {
+    for (int nodeIdxInElmt = 0; nodeIdxInElmt < cornerNodesPerElement; ++nodeIdxInElmt) {
+      iossNodeCoordinates = iossNodeIdToCoordinateMap[(*(blockConnectivity))[iossNodesPerElement*elmtIdxInBlock + iossElementBlockTopology->element_connectivity()[nodeIdxInElmt]]];
+      for (LocalOrdinal k = 0; k < dim; ++k) {
+        vertices(elmtIdxInBlock,nodeIdxInElmt,k) = iossNodeCoordinates[k];
+      }
+    }
   }
 
   // setup output array
-  points = Kokkos::DynRankView<double,PHX::Device>("points",numElements,numIdsPerElement,dim);
+  points = Kokkos::DynRankView<double,PHX::Device>("points",numElements,idsPerElement,dim);
   coordProvider.getInterpolatoryCoordinates(vertices,points);
 }
 
@@ -312,6 +302,170 @@ void IOSSConnManager<GO>::buildLocalElementMapping() {
 }
 
 template <typename GO>
+void IOSSConnManager<GO>::buildEdgeFaceCornerNodeMapping() {
+
+  // get the local maximum node, edge, and face numbers
+  std::vector<std::string> elementBlockIds;
+  getElementBlockIds(elementBlockIds);
+
+  size_t dim;
+  int nodesPerElement, edgesPerElement, facesPerElement;
+  int numCornerNodesThisSubcell;
+  std::vector<int> numCornerNodesOnEdges, numCornerNodesOnFaces;
+  std::vector<std::vector<int>> edgeConnectivities, faceConnectivities;
+  std::vector<GlobalOrdinal> nodesThisElement;
+  std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_> cornerNodesThisSubcell;
+  std::vector<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>> edgesThisElement, facesThisElement;
+
+  Teuchos::RCP<std::vector<GlobalOrdinal>> blockConnectivity;
+  for (std::string elementBlockId : elementBlockIds) {
+    blockConnectivity = iossConnectivity_.find(elementBlockId)->second;
+	int blockConnectivitySize = blockConnectivity->size();
+	if (blockConnectivitySize > 0) {
+	  const Ioss::ElementTopology * top = iossElementBlockTopologies_.find(elementBlockId)->second;
+	  dim = top->spatial_dimension();
+	  nodesPerElement = top->number_nodes();
+	  if (dim > 1) {
+	    edgesPerElement = top->number_edges();
+	    numCornerNodesOnEdges.resize(edgesPerElement);
+	    edgeConnectivities.resize(edgesPerElement);
+	    for (int edge = 0; edge < edgesPerElement; ++edge) {
+	      numCornerNodesOnEdges[edge] = top->edge_type(edge)->number_corner_nodes();
+	      edgeConnectivities[edge] = top->edge_connectivity(edge+1);
+	    }
+	    if (dim > 2) {
+	      facesPerElement = top->number_faces();
+	      numCornerNodesOnFaces.resize(facesPerElement);
+	      faceConnectivities.resize(facesPerElement);
+	      for (int face = 0; face < facesPerElement; ++face) {
+	        numCornerNodesOnFaces[face] = top->face_type(face)->number_corner_nodes();
+	        faceConnectivities[face] = top->face_connectivity(face+1);
+	      }
+	    }
+	  }
+	  elementEdgeNodes_[elementBlockId] = rcp(new std::vector<std::vector<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>>>);
+	  elementFaceNodes_[elementBlockId] = rcp(new std::vector<std::vector<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>>>);
+	  nodesThisElement.resize(nodesPerElement);
+	  for(std::size_t elmtIdInBlock=0; elmtIdInBlock < getElementBlock(elementBlockId).size(); ++elmtIdInBlock) {
+	    edgesThisElement.clear();
+	    facesThisElement.clear();
+		for (int node = 0; node < nodesPerElement; ++node) {
+	      nodesThisElement[node] = (*blockConnectivity)[nodesPerElement*elmtIdInBlock + node];
+	    }
+	    if (dim > 1) {
+	      for (int edge = 0; edge < edgesPerElement; ++edge) {
+	        numCornerNodesThisSubcell = numCornerNodesOnEdges[edge];
+	        TEUCHOS_TEST_FOR_EXCEPTION(numCornerNodesThisSubcell > MAX_SUBCELL_CORNER_NODES_, std::logic_error,
+	                    "Error, currently IOSSConnManager only supports element edges with at most " << MAX_SUBCELL_CORNER_NODES_ << " corner nodes.");
+	        //cornerNodesThisSubcell.resize(numCornerNodesThisSubcell);
+	        for (int cornerNode = 0; cornerNode < numCornerNodesThisSubcell; ++cornerNode) {
+	          cornerNodesThisSubcell[cornerNode] = nodesThisElement[ edgeConnectivities[edge][cornerNode] ];
+	        }
+	        for (int cornerNode = numCornerNodesThisSubcell; cornerNode < MAX_SUBCELL_CORNER_NODES_; ++cornerNode) {
+	          cornerNodesThisSubcell[cornerNode] = -1;
+	        }
+	        // Sort is necessary to ensure edge identifiers are unique.
+	        std::sort(cornerNodesThisSubcell.begin(), cornerNodesThisSubcell.begin()+numCornerNodesThisSubcell);
+	        edgeNodeToEdgeMap_[cornerNodesThisSubcell] = -1;
+	        edgesThisElement.push_back(cornerNodesThisSubcell);
+	      }
+	      if (dim > 2) {
+	        for (int face = 0; face < facesPerElement; ++face) {
+	    	  numCornerNodesThisSubcell = numCornerNodesOnFaces[face];
+	    	  TEUCHOS_TEST_FOR_EXCEPTION(numCornerNodesThisSubcell > MAX_SUBCELL_CORNER_NODES_, std::logic_error,
+	    	  	                    "Error, currently IOSSConnManager only supports element faces with at most " << MAX_SUBCELL_CORNER_NODES_ << " corner nodes.");
+	    	  //cornerNodesThisSubcell.resize(numCornerNodesThisSubcell);
+	    	  for (int cornerNode = 0; cornerNode < numCornerNodesThisSubcell; ++cornerNode) {
+	    	    cornerNodesThisSubcell[cornerNode] = nodesThisElement[ faceConnectivities[face][cornerNode] ];
+	    	  }
+	    	  for (int cornerNode = numCornerNodesThisSubcell; cornerNode < MAX_SUBCELL_CORNER_NODES_; ++cornerNode) {
+	    	    cornerNodesThisSubcell[cornerNode] = -1;
+	    	  }
+	    	  // Sort is necessary to ensure edge identifiers are unique.
+	    	  std::sort(cornerNodesThisSubcell.begin(), cornerNodesThisSubcell.begin()+numCornerNodesThisSubcell);
+	    	  faceNodeToFaceMap_[cornerNodesThisSubcell] = -1;
+	    	  facesThisElement.push_back(cornerNodesThisSubcell);
+	    	}
+	      }
+	    }
+	    elementEdgeNodes_[elementBlockId]->push_back(edgesThisElement);
+	    elementFaceNodes_[elementBlockId]->push_back(facesThisElement);
+	  }
+	}
+  }
+
+  dim = iossElementBlockTopologies_.find(elementBlockIds[0])->second->spatial_dimension();
+
+  std::vector<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>> keys;
+  std::vector<GlobalOrdinal> gids;
+  GlobalOrdinal numEdges = 0;
+  GlobalOrdinal numFaces = 0;
+
+  if (dim > 1) {
+    numEdges = edgeNodeToEdgeMap_.size();
+    if (dim > 2) {
+      numFaces = faceNodeToFaceMap_.size();
+    }
+  }
+
+#ifdef HAVE_MPI
+  Ioss::ParallelUtils util = iossMeshDB_->util();
+  MPI_Comm communicator = util.communicator();
+  Teuchos::MpiComm<int> comm(communicator);
+
+  if (dim > 1) {
+	keys.clear();
+	for (auto pair : edgeNodeToEdgeMap_) {
+	  keys.push_back(pair.first);
+	}
+    gids.resize(numEdges);
+    TEUCHOS_TEST_FOR_EXCEPTION(keys.size() != gids.size(), std::logic_error,
+       "Error, keys() != gids.size().");
+    numUniqueEdges_ = Zoltan2::findUniqueGids<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>,GlobalOrdinal>(keys, gids, comm);
+    for (GlobalOrdinal edge = 0; edge < numEdges; ++edge) {
+      edgeNodeToEdgeMap_[keys[edge]] = gids[edge];
+    }
+    if (dim > 2) {
+      keys.clear();
+      for (auto pair : faceNodeToFaceMap_) {
+        keys.push_back(pair.first);
+      }
+      gids.resize(numFaces);
+      TEUCHOS_TEST_FOR_EXCEPTION(keys.size() != gids.size(), std::logic_error,
+          		                     "Error, keys() != gids.size().");
+      numUniqueFaces_ = Zoltan2::findUniqueGids<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>,GlobalOrdinal>(keys, gids, comm);
+      for (GlobalOrdinal face = 0; face < numFaces; ++face) {
+        faceNodeToFaceMap_[keys[face]] = gids[face];
+      }
+    }
+  }
+
+#else
+  if (dim > 1) {
+	keys.clear();
+	for (auto pair : edgeNodeToEdgeMap_) {
+	  keys.push_back(pair.first);
+	}
+	for (GlobalOrdinal edge = 0; edge < numEdges; ++edge) {
+	  edgeNodeToEdgeMap_[keys[edge]] = edge;
+	}
+	if (dim > 2) {
+      keys.clear();
+		for (auto pair : faceNodeToFaceMap_) {
+		  keys.push_back(pair.first);
+		}
+	  for (GlobalOrdinal face = 0; face < numFaces; ++face) {
+	    faceNodeToFaceMap_[keys[face]] = face;
+	  }
+	}
+  }
+
+
+#endif
+
+}
+
+template <typename GO>
 void IOSSConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp) {
 
   //Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
@@ -324,11 +478,6 @@ void IOSSConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp) {
   // Check that the FieldPattern has a topology that is compatible with all elements;
   TEUCHOS_TEST_FOR_EXCEPTION(!compatibleTopology(fp), std::logic_error,
 		     		            "Error, fp must have a topology compatible with all elements.");
-
-  // Determine whether the field pattern has more nodes than the base element topology.
-  const CellTopologyData * baseTopologyData = fp.getCellTopology().getBaseCellTopologyData();
-  int num_nodes = fp.getSubcellCount(0);
-  bool extended = num_nodes > int(baseTopologyData->subcell_count[0]);
 
   // Get element info from IOSS database and build a local element mapping.
   buildLocalElementMapping();
@@ -349,7 +498,8 @@ void IOSSConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp) {
 
   }
 
-  // Need to create iossBaseConnectivity, which contains the corner nodes for each element.
+  // Build mapping from edge and face corner node numbers to unique global edge and face numbers.
+  buildEdgeFaceCornerNodeMapping();
 
   // Build sub cell ID counts and offsets
   //    ID counts = How many IDs belong on each subcell (number of mesh DOF used)
@@ -368,12 +518,10 @@ void IOSSConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp) {
   // loop over elements and build global connectivity
   std::vector<std::string> elementBlockIds;
   getElementBlockIds(elementBlockIds);
-  RCP<std::vector<GlobalOrdinal>> elementBlock;
+  //RCP<std::vector<GlobalOrdinal>> elementBlock;
   std::size_t elmtLid = 0;
 
   for (std::string elementBlockId : elementBlockIds) {
-
-	elementBlock = iossConnectivity_[elementBlockId];
 
 	for(std::size_t elmtIdInBlock=0; elmtIdInBlock < getElementBlock(elementBlockId).size(); ++elmtIdInBlock) {
 
@@ -383,10 +531,10 @@ void IOSSConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp) {
       elmtLidToConn_[elmtLid] = connectivity_.size();
 
       // add connectivities for sub cells
-      numIds += addSubcellConnectivities(fp, elementBlockId, elmtIdInBlock, 0, nodeIdCnt, nodeOffset);
-      numIds += addSubcellConnectivities(fp, elementBlockId, elmtIdInBlock, 1, edgeIdCnt, edgeOffset);
-      numIds += addSubcellConnectivities(fp, elementBlockId, elmtIdInBlock, 2, faceIdCnt, faceOffset);
-      numIds += addSubcellConnectivities(fp, elementBlockId, elmtIdInBlock, 3, faceIdCnt, faceOffset);
+      numIds += addSubcellConnectivities(fp, elementBlockId, elmtIdInBlock, elmtLid, 0, nodeIdCnt, nodeOffset);
+      numIds += addSubcellConnectivities(fp, elementBlockId, elmtIdInBlock, elmtLid, 1, edgeIdCnt, edgeOffset);
+      numIds += addSubcellConnectivities(fp, elementBlockId, elmtIdInBlock, elmtLid, 2, faceIdCnt, faceOffset);
+      numIds += addSubcellConnectivities(fp, elementBlockId, elmtIdInBlock, elmtLid, fp.getDimension(), cellIdCnt, cellOffset);
 
       connSize_[elmtLid] = numIds;
       ++elmtLid;
@@ -402,25 +550,69 @@ void IOSSConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & f
                                   GlobalOrdinal & nodeOffset, GlobalOrdinal & edgeOffset,
                                   GlobalOrdinal & faceOffset, GlobalOrdinal & cellOffset) const {
 
+  GlobalOrdinal nodeId;
   GlobalOrdinal blockmaxNodeId;
-
   GlobalOrdinal localmaxNodeId = -1;
-  GlobalOrdinal localmaxEdgeId = -1;
-  GlobalOrdinal localmaxFaceId = -1;
-
   GlobalOrdinal maxNodeId = -1;
+
   GlobalOrdinal maxEdgeId = -1;
   GlobalOrdinal maxFaceId = -1;
+
+  GlobalOrdinal blockmaxElementId;
+  GlobalOrdinal localmaxElementId;
+  GlobalOrdinal maxElementId;
+
+  const CellTopologyData * baseTopologyData = fp.getCellTopology().getBaseCellTopologyData();
+
+  int nodesPerElement = fp.getSubcellCount(0);
+  int cornerNodesPerElement = int(baseTopologyData->subcell_count[0]);
+  bool extended = nodesPerElement > cornerNodesPerElement;
 
   // get the local maximum node, edge, and face numbers
   std::vector<std::string> elementBlockIds;
   getElementBlockIds(elementBlockIds);
+
+  int elementsInBlock;
+  Teuchos::RCP<std::vector<GlobalOrdinal>> blockConnectivity;
   for (std::string elementBlockId : elementBlockIds) {
-	if (iossConnectivity_.find(elementBlockId)->second->size() > 0) {
-      blockmaxNodeId = *(std::max_element(iossConnectivity_.find(elementBlockId)->second->begin(), iossConnectivity_.find(elementBlockId)->second->end()));
+	std::vector<LocalOrdinal> elementBlock = *(elementBlocks_.find(elementBlockId)->second);
+	blockmaxElementId = -1;
+	for (auto element : elementBlock) {
+	  if (element > blockmaxElementId) {
+	    blockmaxElementId = elmtLidToGid_[element];
+	  }
+	}
+	blockConnectivity = iossConnectivity_.find(elementBlockId)->second;
+	int blockConnectivitySize = blockConnectivity->size();
+	if (blockConnectivitySize > 0) {
+	  const Ioss::ElementTopology * iossElementBlockTopology = iossElementBlockTopologies_.find(elementBlockId)->second;
+	  int iossNodesPerElement = iossElementBlockTopology->number_nodes();
+	  if (!extended && (cornerNodesPerElement < iossNodesPerElement)) {
+	    // If the FieldPattern is not extended, but the Ioss::ElementTopology is, then
+		// we must ignore the non-corner nodes.
+		elementsInBlock = blockConnectivitySize / iossNodesPerElement;
+		TEUCHOS_TEST_FOR_EXCEPTION(blockConnectivitySize % iossNodesPerElement != 0, std::logic_error,
+		   "Error, Size of connectivity for this block not a multiple of the number of elements in the block.");
+		blockmaxNodeId = -1;
+		for (int element = 0; element < elementsInBlock; ++element) {
+		  for (int node = 0; node < cornerNodesPerElement; ++node) {
+		    nodeId = *(blockConnectivity->begin() + nodesPerElement*element + iossElementBlockTopology->element_connectivity()[node]);
+		    if (nodeId > blockmaxNodeId) {
+		      blockmaxNodeId = nodeId;
+		    }
+		  }
+		}
+	  }
+	  else {
+	    // We can use the entire blockConnectivity vector if the FieldPattern is extended
+		// or if neither the FieldPattern nor the Ioss::ElementTopology is extended.
+		blockmaxNodeId = *(std::max_element(blockConnectivity->begin(), blockConnectivity->end()));
+	  }
       if (blockmaxNodeId > localmaxNodeId)
         localmaxNodeId = blockmaxNodeId;
 	}
+	if (blockmaxElementId > localmaxElementId)
+      localmaxElementId = blockmaxElementId;
   }
 
 #ifdef HAVE_MPI
@@ -429,16 +621,32 @@ void IOSSConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & f
   Teuchos::MpiComm<int> comm(communicator);
 
   Teuchos::reduceAll<int, GlobalOrdinal>(comm, Teuchos::REDUCE_MAX, 1, &localmaxNodeId, &maxNodeId);
-  Teuchos::reduceAll<int, GlobalOrdinal>(comm, Teuchos::REDUCE_MAX, 1, &localmaxEdgeId, &maxEdgeId);
-  Teuchos::reduceAll<int, GlobalOrdinal>(comm, Teuchos::REDUCE_MAX, 1, &localmaxFaceId, &maxFaceId);
+  Teuchos::reduceAll<int, GlobalOrdinal>(comm, Teuchos::REDUCE_MAX, 1, &localmaxElementId, &maxElementId);
 #else
   maxNodeId = localmaxNodeId;
-  maxEdgeEd = localmaxEdgeId;
-  maxFaceId = localmaxFaceId;
+  maxNodeId = localmaxElementId;
 #endif
 
-  // compute ID counts for each sub cell type
   int patternDim = fp.getDimension();
+  switch(patternDim) {
+    case 0:
+      maxEdgeId = -1;
+      maxFaceId = -1;
+      break;
+    case 1:
+      maxEdgeId = maxElementId - 1;
+      maxFaceId = -1;
+      break;
+    case 2:
+      maxEdgeId = numUniqueEdges_ - 1;
+      maxFaceId = maxElementId - 1;
+      break;
+    default:
+      maxEdgeId = numUniqueEdges_ - 1;
+      maxFaceId = numUniqueFaces_ - 1;
+  };
+
+  // compute ID counts for each sub cell type
   switch(patternDim) {
     case 3:
 	  faceIdCnt = fp.getSubcellIndices(2,0).size();
@@ -468,24 +676,48 @@ void IOSSConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & f
 
 template <typename GO>
 typename IOSSConnManager<GO>::LocalOrdinal IOSSConnManager<GO>::addSubcellConnectivities(
-		const panzer::FieldPattern & fp, std::string & blockId, std::size_t elmtIdInBlock, unsigned subcellRank, LocalOrdinal idCnt, GlobalOrdinal offset) {
+		const panzer::FieldPattern & fp, std::string & blockId, std::size_t elmtIdInBlock, std::size_t elmtLid,
+		unsigned subcellRank, LocalOrdinal idCnt, GlobalOrdinal offset) {
 
    if(idCnt<=0)
      return 0 ;
 
-   if(subcellRank > 0)
-     return 0; // Currently only set up for nodes, not edges, faces, or cells
-               // since iossConnectivity_ only has node numbers.
+   int dim = fp.getDimension();
+   TEUCHOS_TEST_FOR_EXCEPTION(int(subcellRank) > dim, std::logic_error,
+          "Error, subcell rank (" << subcellRank << ") must not be greater than dimension (" << dim << ").");
 
    std::size_t subcellsPerElement = fp.getSubcellCount(subcellRank);
 
-   // loop over all nodes
+   const Ioss::ElementTopology * iossElementBlockTopology = iossElementBlockTopologies_.find(blockId)->second;
+   int iossNodesPerElement = iossElementBlockTopology->number_nodes();
+
+
    LocalOrdinal numIds = 0;
    GlobalOrdinal subcellId;
 
+   // loop over all subcells
    for(std::size_t subcell=0; subcell < subcellsPerElement; ++subcell) {
-	 // Is this what we want, or do we want contiguous ids with a mapping back to application subcell numbers?
-	 subcellId = (*(iossConnectivity_[blockId]))[subcellsPerElement*elmtIdInBlock+subcell];
+	 if (subcellRank == 0) {
+	   subcellId = (*(iossConnectivity_[blockId]))[iossNodesPerElement*elmtIdInBlock+iossElementBlockTopology->element_connectivity()[subcell]];
+	 }
+	 else {
+	   if (int(subcellRank) == dim) {
+	     subcellId = elmtLidToGid_[elmtLid];
+	   }
+	   else {
+	     if (subcellRank == 1) {
+	       subcellId = edgeNodeToEdgeMap_[(*(elementEdgeNodes_[blockId]))[elmtIdInBlock][subcell]];
+	     }
+	     else if (subcellRank == 2) {
+	       subcellId = faceNodeToFaceMap_[(*(elementFaceNodes_[blockId]))[elmtIdInBlock][subcell]];
+	     }
+	     else {
+	       TEUCHOS_TEST_FOR_EXCEPTION(false, std::logic_error,
+	    	           "Error, unsupported combination of subcell rank (" << subcellRank << ") and dimension (" << dim << ").");
+	     }
+	   }
+	 }
+
 	 // loop over all ids for subcell
 	 for(LocalOrdinal i=0; i < idCnt; i++) {
        connectivity_.push_back(offset+idCnt*subcellId+i);
@@ -501,13 +733,71 @@ bool IOSSConnManager<GO>::compatibleTopology(const panzer::FieldPattern & fp) co
 
    bool compatible = true;
 
-   //RCP<IossElementInfo> elementInfo;
-
    const CellTopologyData * baseTopologyData = fp.getCellTopology().getBaseCellTopologyData();
 
+   int numNodes = fp.getSubcellCount(0);
+   int numCornerNodes = int(baseTopologyData->subcell_count[0]);
+   bool extended = numNodes > numCornerNodes;
 
-   int num_nodes = fp.getSubcellCount(0);
-   bool extended = num_nodes > int(baseTopologyData->subcell_count[0]);
+   int numEdges, numFaces;
+   int numEdgeCornerNodes, numFaceCornerNodes;
+   int uniqueNumEdgeCornerNodes = 1 + MAX_SUBCELL_CORNER_NODES_; // Needed for Zoltan2::findUniqueGids()
+   int uniqueNumFaceCornerNodes = 1 + MAX_SUBCELL_CORNER_NODES_; // Needed for Zoltan2::findUniqueGids()
+
+   std::vector<int> numCornerNodesOnEdges, numCornerNodesOnFaces, numEdgesOnFaces;
+
+   if (baseTopologyData->dimension > 1) {
+
+     numEdges = int(baseTopologyData->subcell_count[1]);
+
+     numCornerNodesOnEdges.resize(numEdges);
+     for (int edge = 0; edge < numEdges; ++edge) {
+       numEdgeCornerNodes = int(baseTopologyData->subcell[1][edge].topology->subcell_count[0]);
+       numCornerNodesOnEdges[edge] = numEdgeCornerNodes;
+       if (edge == 0) {
+         uniqueNumEdgeCornerNodes = numEdgeCornerNodes;
+       }
+       else {
+         compatible &= numEdgeCornerNodes == uniqueNumEdgeCornerNodes;
+       }
+     }
+
+     TEUCHOS_TEST_FOR_EXCEPTION(!compatible, std::logic_error,
+       "Error, currently IOSSConnManager only supports elements for which all edges have the same number of corner nodes.");
+
+     TEUCHOS_TEST_FOR_EXCEPTION(uniqueNumEdgeCornerNodes > MAX_SUBCELL_CORNER_NODES_, std::logic_error,
+            "Error, currently IOSSConnManager only supports element edges with at most " << MAX_SUBCELL_CORNER_NODES_ << " corner nodes.");
+
+
+     if (baseTopologyData->dimension > 2) {
+
+       numFaces = int(baseTopologyData->subcell_count[2]);
+
+       numCornerNodesOnFaces.resize(numFaces);
+       for (int face = 0; face < numFaces; ++face) {
+    	 numFaceCornerNodes = int(baseTopologyData->subcell[2][face].topology->subcell_count[0]);
+         numCornerNodesOnFaces[face] = numFaceCornerNodes;
+         if (face == 0) {
+           uniqueNumFaceCornerNodes = numFaceCornerNodes;
+         }
+         else {
+           compatible &= numFaceCornerNodes == uniqueNumFaceCornerNodes;
+         }
+       }
+
+       TEUCHOS_TEST_FOR_EXCEPTION(!compatible, std::logic_error,
+         "Error, currently IOSSConnManager only supports elements for which all faces have the same number of corner nodes.");
+
+       TEUCHOS_TEST_FOR_EXCEPTION(uniqueNumEdgeCornerNodes > MAX_SUBCELL_CORNER_NODES_, std::logic_error,
+              "Error, currently IOSSConnManager only supports element faces with at most " << MAX_SUBCELL_CORNER_NODES_ << " corner nodes.");
+
+       numEdgesOnFaces.resize(numFaces);
+       for (int face = 0; face < numFaces; ++face) {
+         numEdgesOnFaces[face] = int(baseTopologyData->subcell[2][face].topology->subcell_count[1]);
+       }
+
+     }
+   }
 
    for (Ioss::ElementBlock * iossElementBlock : iossElementBlocks_) {
 
@@ -517,18 +807,34 @@ bool IOSSConnManager<GO>::compatibleTopology(const panzer::FieldPattern & fp) co
      std::size_t dim = topology->spatial_dimension();
      compatible &= (dim==(std::size_t) baseTopologyData->dimension);
 
-     compatible &= topology->number_corner_nodes()==int(baseTopologyData->subcell_count[0]);
-     compatible &= topology->number_edges()==int(baseTopologyData->subcell_count[1]);
-     if (dim > 2) {
-       compatible &= topology->number_faces()==int(baseTopologyData->subcell_count[2]);
+     compatible &= topology->number_corner_nodes()==numCornerNodes;
+     if (dim > 1) {
+       compatible &= topology->number_edges()==numEdges;
+       if (dim > 2) {
+         compatible &= topology->number_faces()==numFaces;
+       }
      }
 
      // If the field pattern has more nodes than the base cell topology,
-     // make sure the iossElement has the same number of nodes.
+     // make sure the Ioss element has the same number of nodes.
      if (extended) {
-    	 compatible &= topology->number_nodes()==num_nodes;
+    	 compatible &= topology->number_nodes()==numNodes;
      }
 
+     // Check that base topology of field pattern has same edge and face topologies as
+     // base topology of the Ioss element.
+     if (dim > 1) {
+       for (int edge = 0; edge < numEdges; ++edge) {
+         compatible &= topology->edge_type(edge)->number_corner_nodes()==numCornerNodesOnEdges[edge];
+       }
+
+       if (dim > 2) {
+         for (int face = 0; face < numFaces; ++face) {
+    	   compatible &= topology->face_type(face)->number_corner_nodes()==numCornerNodesOnFaces[face];
+    	   compatible &= topology->face_type(face)->number_edges()==numEdgesOnFaces[face];
+         }
+       }
+     }
 
    }
 

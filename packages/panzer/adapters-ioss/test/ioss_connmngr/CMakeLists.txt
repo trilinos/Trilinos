@@ -31,3 +31,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
   SOURCE_FILES rectangle.pg
   EXEDEPS tIOSSConnManager1 tIOSSConnManager2 tIOSSConnManager3
 )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  tIOSSConnManagerBrickPg
+  SOURCE_FILES brick.pg
+  EXEDEPS tIOSSConnManager1 tIOSSConnManager2 tIOSSConnManager3
+)

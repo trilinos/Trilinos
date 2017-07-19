@@ -45,6 +45,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
@@ -262,14 +263,19 @@ protected:
     */
    void clearLocalElementMapping();
 
+   /** Build mapping from edge and face corner node numbers to unique global edge and face numbers.
+    */
+   void buildEdgeFaceCornerNodeMapping();
+
    void buildOffsetsAndIdCounts(const panzer::FieldPattern & fp,
                                   LocalOrdinal & nodeIdCnt, LocalOrdinal & edgeIdCnt,
                                   LocalOrdinal & faceIdCnt, LocalOrdinal & cellIdCnt,
                                   GlobalOrdinal & nodeOffset, GlobalOrdinal & edgeOffset,
                                   GlobalOrdinal & faceOffset, GlobalOrdinal & cellOffset) const;
 
-   LocalOrdinal addSubcellConnectivities(const panzer::FieldPattern & fp, std::string & blockId, std::size_t elmtIdInBlock,unsigned subcellRank,
-                                         LocalOrdinal idCnt,GlobalOrdinal offset);
+   LocalOrdinal addSubcellConnectivities(const panzer::FieldPattern & fp, std::string & blockId,
+		                                 std::size_t elmtIdInBlock, std::size_t elmtLid,
+										 unsigned subcellRank, LocalOrdinal idCnt,GlobalOrdinal offset);
 
    /* Determine whether a FieldPattern object is compatible with the Ioss::ElementTopology
     * of every block in the mesh.
@@ -293,6 +299,13 @@ protected:
    // element block information
    std::map<std::string,Teuchos::RCP<std::vector<LocalOrdinal> > > elementBlocks_;
    std::map<std::string,Teuchos::RCP<std::vector<LocalOrdinal> > > neighborElementBlocks_;
+
+   static const int MAX_SUBCELL_CORNER_NODES_ = 6;
+   GlobalOrdinal numUniqueEdges_, numUniqueFaces_;
+   std::map<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>,GlobalOrdinal> edgeNodeToEdgeMap_;
+   std::map<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>,GlobalOrdinal> faceNodeToFaceMap_;
+   std::map<std::string,Teuchos::RCP<std::vector<std::vector<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>>>>> elementEdgeNodes_;
+   std::map<std::string,Teuchos::RCP<std::vector<std::vector<std::array<GlobalOrdinal,MAX_SUBCELL_CORNER_NODES_>>>>> elementFaceNodes_;
 
    std::vector<GlobalOrdinal> elmtLidToGid_; // element LID to GID map.
    std::vector<LocalOrdinal> elmtLidToConn_; // element LID to starting index in connectivity_
