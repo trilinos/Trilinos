@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -40,8 +40,8 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_DETAILS_CONTAINERFACTORY_H
-#define IFPACK2_DETAILS_CONTAINERFACTORY_H
+#ifndef IFPACK2_CONTAINERFACTORY_DECL_H
+#define IFPACK2_CONTAINERFACTORY_DECL_H
 
 #include "Ifpack2_Container.hpp"
 #include "Ifpack2_TriDiContainer.hpp"
@@ -60,6 +60,9 @@
 #include <string>
 #include <map>
 #include <sstream>
+
+/// \file Ifpack2_ContainerFactory_decl.hpp
+/// \brief Ifpack2::ContainerFactory class declaration
 
 namespace Ifpack2 {
 namespace Details {
@@ -107,70 +110,68 @@ struct ContainerFactoryEntry : public ContainerFactoryEntryBase<MatrixType>
 
 } // namespace Details
 
+/// \class ContainerFactory
+/// \brief A static "factory" that provides a way to register
+///   and construct arbitrary Ifpack2::Container subclasses using
+///   string keys.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
+
 template<typename MatrixType>
 struct ContainerFactory
 {
+  //! @name Typedefs
+  //@{
+  //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
+  //! The local_ordinal_type from the input MatrixType.
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  //! The global_ordinal_type from the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  //! The node_type from the input MatrixType.
   typedef typename MatrixType::node_type node_type;
+
+  //! Tpetra::RowMatrix specialization (superclass of MatrixType)
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
+  //! Tpetra::Importer specialization for use with \c MatrixType and compatible MultiVectors.
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
   typedef Ifpack2::Container<MatrixType> BaseContainer;
 
   static_assert (std::is_same<typename std::decay<MatrixType>::type, row_matrix_type>::value,
                  "MatrixType must be a Tpetra::RowMatrix specialization.");
 
+  //! Registers a specialization of Ifpack2::Container by binding a key (string) to it.
+  /*!
+    \param
+    containerType - (In) The key to pair with ContainerType. After registering, the key can be used to construct a ContainerType.
+    */
   template<typename ContainerType>
-  static void registerContainer(std::string containerType)
-  {
-    //overwrite any existing registration with the same name
-    table[containerType] = Teuchos::rcp(new Details::ContainerFactoryEntry<MatrixType, ContainerType>());
-  }
+  static void registerContainer(std::string containerType);
 
+  //! Build a specialization of Ifpack2::Container given a key that has been registered.
+  /*!
+    \param
+    containerType - (In) The key for looking up the Container specialization. If this key hasn't been registered, an exception is thrown.
+    \param
+    A - (In) The problem matrix.
+    \param
+    localRows - (In) The rows that correspond to each block. The outer list contains blocks, and the inner list contains rows. In BlockRelaxation, this is retrieved from a Partitioner.
+    \param
+    importer - (In) The importer that is used to import off-process rows (used by overlapping BlockRelaxation).
+    \param
+    OverlapLevel - (In) In BlockRelaxation the overlap level is retrieved from the parameter list.
+    \param
+    DampingFactor - (In) In BlockRelaxation the damping factor is retrieved from the parameter list.
+    */
   static Teuchos::RCP<BaseContainer> build(std::string containerType, const Teuchos::RCP<const MatrixType>& A,
       const Teuchos::Array<Teuchos::Array<local_ordinal_type>>& localRows, const Teuchos::RCP<const import_type> importer,
-      int OverlapLevel, scalar_type DampingFactor)
-  {
-    if(!registeredDefaults)
-    {
-      registerDefaults();
-    }
-    //In the case that Amesos2 isn't enabled, provide a better error message than the generic one
-    #ifndef HAVE_IFPACK2_AMESOS2
-    if(containerType == "SparseAmesos" || containerType == "SparseAmesos2")
-    {
-      throw std::invalid_argument("Container type SparseAmesos (aka SparseAmesos2) was requested but Amesos2 isn't enabled.\n"
-                                  "Add the CMake option \"-D Trilinos_ENABLE_Amesos2=ON\" to enable it.");
-    }
-    #endif
-    auto it = table.find(containerType);
-    if(it == table.end())
-    {
-      std::ostringstream oss;
-      oss << "Container type \"" << containerType << "\" not registered.\n";
-      oss << "Call ContainerFactory<MatrixType>::registerContainer<ContainerType>(containerName) first.\n";
-      oss << "Currently registered Container types: ";
-      for(auto r : table)
-      {
-        oss << '\"' << r.first << "\" ";
-      }
-      //remove the single trailing space from final message
-      auto str = oss.str();
-      str = str.substr(0, str.length() - 1);
-      throw std::invalid_argument(str);
-    }
-    return it->second->build(A, localRows, importer, OverlapLevel, DampingFactor);
-  }
+      int OverlapLevel, scalar_type DampingFactor);
 
-  static void deregisterContainer(std::string containerType)
-  {
-    auto it = table.find(containerType);
-    if(it != table.end())
-    {
-      table.erase(it);
-    }
-  }
+  //! Registers a specialization of Ifpack2::Container by binding a key (string) to it.
+  /*!
+    \param
+    containerType - (In) The key to deregister. If it wasn't registered before, the call has no effect.
+    */
+  static void deregisterContainer(std::string containerType);
 
   private:
   static std::map<std::string, Teuchos::RCP<Details::ContainerFactoryEntryBase<MatrixType>>> table;
