@@ -849,7 +849,15 @@ namespace Tpetra {
      */
     global_size_t getGlobalNumEntries() const;
 
-    //! Returns the local number of entries in the graph.
+    /// \brief The local number of entries in the graph.
+    ///
+    /// "Local" means "local to the calling (MPI) process."
+    ///
+    /// \warning If the graph is not fill complete, this may launch a
+    ///   thread-parallel computational kernel.  This is because we do
+    ///   not store the number of entries as a separate integer field,
+    ///   since doing so and keeping it updated would hinder
+    ///   thread-parallel insertion of new entries.  See #1357.
     size_t getNodeNumEntries() const;
 
     //! \brief Returns the current number of entries on this node in the specified global row.
@@ -864,22 +872,43 @@ namespace Tpetra {
     ///   <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>.
     size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const;
 
-    //! \brief Returns the total number of indices allocated for the graph, across all rows on this node.
-    /*! This is the allocation available to the user. Actual allocation may be larger, for example, after
-      calling fillComplete(), and thus this does not necessarily reflect the memory consumption of the
-      this graph.
+    /// \brief The local number of indices allocated for the graph,
+    ///   over all rows on the calling (MPI) process.
+    ///
+    /// "Local" means "local to the calling (MPI) process."
+    ///
+    /// \warning If the graph is not fill complete, this may require
+    ///   computation.  This is because we do not store the allocation
+    ///   count as a separate integer field, since doing so and
+    ///   keeping it updated would hinder thread-parallel insertion of
+    ///   new entries.
+    ///
+    /// This is the allocation available to the user. Actual
+    /// allocation may be larger, for example, after calling
+    /// fillComplete().  Thus, this does not necessarily reflect the
+    /// graph's memory consumption.
+    ///
+    /// \return If indicesAreAllocated() is true, the allocation size.
+    ///   Otherwise,
+    ///   <tt>Tpetra::Details::OrdinalTraits<size_t>::invalid()</tt>.
+    size_t getNodeAllocationSize () const;
 
-      This quantity is computed during the actual allocation. Therefore, if <tt>indicesAreAllocated() == false</tt>,
-      this method returns <tt>OrdinalTraits<size_t>::invalid()</tt>.
-    */
-    size_t getNodeAllocationSize() const;
-
-    //! \brief Returns the current number of allocated entries for this node in the specified global row .
-    /** Throws exception std::runtime_error if the specified global row does not belong to this node. */
+    /// \brief Current number of allocated entries in the given row on
+    ///   the calling (MPI) process, using a global row index.
+    ///
+    /// \return If the given row index is in the row Map on the
+    ///   calling process, then return this process' allocation size
+    ///   for that row.  Otherwise, return
+    ///   <tt>Tpetra::Details::OrdinalTraits<size_t>::invalid()</tt>.
     size_t getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const;
 
-    //! Returns the current number of allocated entries on this node in the specified local row.
-    /** Throws exception std::runtime_error if the specified local row is not valid for this node. */
+    /// \brief Current number of allocated entries in the given row on
+    ///   the calling (MPI) process, using a local row index.
+    ///
+    /// \return If the given row index is in the row Map on the
+    ///   calling process, then return this process' allocation size
+    ///   for that row.  Otherwise, return
+    ///   <tt>Tpetra::Details::OrdinalTraits<size_t>::invalid()</tt>.
     size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const;
 
     //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
@@ -2832,9 +2861,6 @@ namespace Tpetra {
   protected:
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-    //! Whether it is correct to call getRowInfo().
-    bool hasRowInfo () const;
-
     //! Throw an exception if the internal state is not consistent.
     void checkInternalState () const;
 
@@ -2864,9 +2890,6 @@ namespace Tpetra {
 
     //! Local graph; only initialized after first fillComplete() call.
     local_graph_type lclGraph_;
-
-    //! Local number of (populated) entries; must always be consistent.
-    size_t nodeNumEntries_;
 
     /// \brief Local number of (populated) diagonal entries.
     ///
