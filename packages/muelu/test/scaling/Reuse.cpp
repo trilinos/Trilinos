@@ -75,8 +75,9 @@
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
-
-int main(int argc, char *argv[]) {
+//- -- --------------------------------------------------------
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP; // reference count pointers
@@ -87,12 +88,6 @@ int main(int argc, char *argv[]) {
   using Teuchos::ArrayRCP;
 
   typedef Teuchos::ScalarTraits<SC> STS;
-
-  //
-  // MPI initialization using Teuchos
-  //
-
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   bool success = false;
   bool verbose = true;
@@ -110,7 +105,6 @@ int main(int argc, char *argv[]) {
     // Parameters
     //
 
-    Teuchos::CommandLineProcessor clp(false);
     Xpetra::Parameters            xpetraParameters(clp);                          // manage parameters of Xpetra
 
     std::string xmlFileName  = "reuse.xml"; clp.setOption("xml",                   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'reuse.xml'");
@@ -405,3 +399,16 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
+
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
+}
+
+
+
+
