@@ -57,19 +57,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
-/*
-#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    SET_VALID_ENTRY("aggregation: drop tol");
-    SET_VALID_ENTRY("aggregation: Dirichlet threshold");
-    SET_VALID_ENTRY("aggregation: drop scheme");
-    {
-      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      validParamList->getEntry("aggregation: drop scheme").setValidator(
-        rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
-    }
-#undef  SET_VALID_ENTRY
-    validParamList->set< bool >                  ("lightweight wrap",           true, "Experimental option for lightweight graph access");
-*/
 
     validParamList->set< double >                ("Advanced Dirichlet: threshold", 1e-5, "Drop tolerance for Dirichlet detection");
     validParamList->set< double >                ("Variable DOF amalgamation: threshold", 1.8e-9, "Drop tolerance for amalgamation process");
@@ -117,8 +104,14 @@ namespace MueLu {
     bool bHasZeroDiagonal = false;
     Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*A,bHasZeroDiagonal,STS::magnitude(dirDropTol));
 
-    // TODO check availability + content (length)
-    Teuchos::ArrayRCP<LocalOrdinal> dofPresent = currentLevel.Get< Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", NoFactory::get());
+    // check availability of DofPresent array
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent;
+    if (currentLevel.IsAvailable("DofPresent", NoFactory::get())) {
+      dofPresent = currentLevel.Get< Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", NoFactory::get());
+    } else {
+      // TAW: not sure about size of array. We cannot determine the expected size in the non-padded case correctly...
+      dofPresent = Teuchos::ArrayRCP<LocalOrdinal>(A->getRowMap()->getNodeNumElements(),1);
+    }
 
     // map[k] indicates that the kth dof in the variable dof matrix A would
     // correspond to the map[k]th dof in the padded system. If, i.e., it is
@@ -318,9 +311,8 @@ namespace MueLu {
     }
 
     // squeeze out hard-coded zeros from CSR arrays
-    Teuchos::ArrayRCP<Scalar> amalgVals; //(/*rowptr[rowptr.size()-1]*/); // empty array!
+    Teuchos::ArrayRCP<Scalar> amalgVals;
     this->squeezeOutNnzs(amalgRowPtr,amalgCols,amalgVals,keep);
-
 
     typedef Xpetra::MultiVectorFactory<double,LO,GO,NO> dxMVf;
     RCP<dxMV> ghostedCoords = dxMVf::Build(amalgColMap,Coords->getNumVectors());
@@ -345,11 +337,9 @@ namespace MueLu {
       this->MueLu_az_sort<LocalOrdinal>(&(amalgCols[j]), amalgRowPtr[i+1] - j, NULL, &(lapVals[j]));
     }
 
-    // TODO status array?
-
+    // Caluclate status array for next level
     Teuchos::Array<char> status(nLocalNodes * maxDofPerNode);
 
-    //std::vector<LocalOrdinal> map (size ndofs)
     // dir or not Teuchos::ArrayRCP<const bool> dirOrNot
     for(decltype(status.size()) i = 0; i < status.size(); i++) status[i] = 's';
     for(decltype(status.size()) i = 0; i < status.size(); i++) {
