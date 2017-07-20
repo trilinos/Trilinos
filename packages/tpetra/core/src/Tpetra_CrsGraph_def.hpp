@@ -5426,7 +5426,6 @@ namespace Tpetra {
                     Distributor& /* distor */,
                     CombineMode /* CM */)
   {
-    using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
@@ -5455,19 +5454,14 @@ namespace Tpetra {
       isFillComplete (), std::runtime_error,
       "Import or Export operations are not allowed on the destination "
       "CrsGraph if it is fill complete.");
-    size_t importsOffset = 0;
-
-    typedef typename ArrayView<const LO>::const_iterator iter_type;
-    iter_type impLIDiter = importLIDs.begin();
-    iter_type impLIDend = importLIDs.end();
 
     const map_type& rowMap = * (this->rowMap_);
-
-    for (size_t i = 0; impLIDiter != impLIDend; ++impLIDiter, ++i) {
-      const LO lclRow = *impLIDiter;
+    const size_t numImportLIDs = static_cast<size_t> (importLIDs.size ());
+    size_t importsOffset = 0;
+    for (size_t i = 0; i < numImportLIDs; ++i) {
+      const LO lclRow = importLIDs[i];
       const GO gblRow = rowMap.getGlobalElement (lclRow);
       const LO numEnt = numPacketsPerLID[i];
-
       const GO* const gblColInds = (numEnt == 0) ? NULL : &imports[importsOffset];
       if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
         // This row is not in the row Map on the calling process.
