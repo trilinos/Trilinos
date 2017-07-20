@@ -359,7 +359,7 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
         WorksetDetails & details = itr->second(j);
 
         ortsPerBlock.clear();
-        for (int k=0;k<worksets[i].num_cells;++k) {
+        for (int k=0;k<itr->second.num_cells;++k) {
           ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
         }
 
