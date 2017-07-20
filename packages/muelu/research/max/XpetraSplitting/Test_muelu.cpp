@@ -14,7 +14,7 @@
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_IO.hpp"
-#include "../../../../xpetra/research/max/Xpetra_MatrixSplitting.hpp"
+#include "Xpetra_MatrixSplitting.hpp"
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
 #endif
