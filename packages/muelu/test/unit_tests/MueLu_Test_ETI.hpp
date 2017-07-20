@@ -160,14 +160,14 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #  else
 #    if   defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
 #    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, lib, argc, argv);
 #    else
         throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
 #    endif
