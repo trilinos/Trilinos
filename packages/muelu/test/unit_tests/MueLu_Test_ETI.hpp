@@ -50,7 +50,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-
+#include "Teuchos_StandardCatchMacros.hpp"
 #include <MueLu_TestHelpers_Common.hpp>
 
 #ifndef MUELU_AUTOMATIC_TEST_ETI_NAME
