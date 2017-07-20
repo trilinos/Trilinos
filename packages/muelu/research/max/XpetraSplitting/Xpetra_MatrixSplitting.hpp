@@ -9,13 +9,11 @@
 #include "Xpetra_IO.hpp"
 #include "Xpetra_SplittingDriver_def.hpp"
 
-//Epetra
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
+//Ifpack2
+#include "Ifpack2_OverlappingRowMatrix_def.hpp"
 
-
-#include "Ifpack2_OverlappingPartitioner_def.hpp"
+//MueLu
+#include <MueLu_Utilities.hpp>
 
 /** \file Xpetra_MatrixSplitting.hpp
 
@@ -568,24 +566,32 @@ class checkerAllToRegion {
 			RCP<Matrix> regional_matrix = localMatrixData_[region_idx];
 			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
 
+			typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_crs_matrix;
+			typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_row_matrix;
+			typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> tpetra_map;
+			RCP<tpetra_crs_matrix > tpetraGlobalMatrix = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(globalMatrixData_);
+			RCP<const tpetra_map > tpetraGlobalMap = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2TpetraMap( *(globalMatrixData_->getRowMap()) );
+			Ifpack2::OverlappingRowMatrix<tpetra_row_matrix> enlargedMatrix(tpetraGlobalMatrix, 1);
+
 			//THIS IS THE CORE OF THE PROBLEM WHERE ONE NEEDS TO POPULATE THE REGIONAL MATRICES BY ACCESSING ENTRIES OF THE GLOBAL MATRIX
 			//
-			/*regional_matrix -> resumeFill();
-      			ArrayView<const GlobalOrdinal> MyGlobalElements = globalMatrixData_->getRowMap()->getNodeElementList();
- 			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyGlobalElements.begin(); iter!=MyGlobalElements.end(); ++iter )	
+			regional_matrix -> resumeFill();
+      			ArrayView<const GlobalOrdinal> MyRegionalElements =regional_matrix->getRowMap()->getNodeElementList();
+ 			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionalElements.begin(); iter!=MyRegionalElements.end(); ++iter )	
 			{
-				checkerAllToRegion<GlobalOrdinal> unaryPredicate(*iter);
-				typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator region_iterator;
-				region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerAllToRegion<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicate);
-				if( region_iterator!=regionToAll.end() ) 
-				{
-					GlobalOrdinal node_regional_idx = std::get<0>( *region_iterator );
-					ArrayView<const GlobalOrdinal> inds;
-					ArrayView<const Scalar> vals;
-					globalMatrixData_ -> getGlobalRowView( *iter, inds, vals );
-				}
+				//Nodes are saved in data structures with 1 as base index
+				checkerRegionToAll<GlobalOrdinal> unaryPredicate(*iter+1);
+				typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator;
+				global_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicate);
+				TEUCHOS_TEST_FOR_EXCEPTION( global_iterator==regionToAll.end(), Exceptions::RuntimeError, "Processor with ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with index: "<<*iter+1<<" is not in regionToAll"<< regionToAll.size()<<"\n" );
+				GlobalOrdinal node_idx = std::get<1>( *global_iterator );
+				LocalOrdinal node_local_idx = enlargedMatrix.getRowMap()->getLocalElement(node_idx);
+				ArrayView<const GlobalOrdinal> inds;
+				ArrayView<const Scalar> vals;
+				enlargedMatrix.getLocalRowView( node_local_idx, inds, vals );
+
 			}
-			regional_matrix -> fillComplete();*/
+			regional_matrix -> fillComplete();
 		};
 		// @}
 
