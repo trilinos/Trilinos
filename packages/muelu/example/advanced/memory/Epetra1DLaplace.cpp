@@ -145,7 +145,8 @@ int main(int argc, char *argv[])
 
     MemoryUsageStop();
 
-    success = true;
+    if(ierr==0) success = true;
+    else success=false;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
