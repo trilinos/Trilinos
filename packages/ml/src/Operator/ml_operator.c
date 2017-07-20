@@ -2308,17 +2308,6 @@ void ML_Aux_Data_Destroy(ML_Aux_Data** ptr)
   ML_free(*ptr);
 }
 
-/* Copy timing and apply statistics from one operator to another.
-   Useful when you want to preserves stats across repartitioning or permuting, for example. */
-void ML_Operator_Copy_Statistics(ML_Operator *source, ML_Operator *target)
-{
-   target->build_time = source->build_time;
-   target->apply_time = source->apply_time;
-   target->apply_without_comm_time = source->apply_without_comm_time;
-   target->ntimes = source->ntimes;
-   target->nflop = source->nflop;
-}
-
 
 
 #ifdef WKC
