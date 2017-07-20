@@ -1,5 +1,5 @@
 // @HEADER
-// Just a Test that this IDE works
+//
 // ***********************************************************************
 //
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
@@ -426,7 +426,9 @@ void AlgPuLP<Adapter>::partition(
   int nVwgts = model->getNumWeightsPerVertex();
 
   int* vertex_weights = NULL;
-  long vertex_weights_sum = 0;
+  
+  // TODO: verify not used and delete; make compile says it doesn't
+  // long vertex_weights_sum = 0;
 
   if (nVwgts)
   {
@@ -473,10 +475,11 @@ void AlgPuLP<Adapter>::partition(
 		}
 
     //TODO: Is this necessary? 
-		if(nVwgts == 1)
+		/*if(nVwgts == 1)
         {
             vertex_weights_sum = global_wgt_sum[0];
         }
+        */
 	}
 
   // Get edge info
@@ -507,7 +510,7 @@ void AlgPuLP<Adapter>::partition(
 
   pulp_graph_t g = {num_verts, num_edges,
                     out_edges, out_offsets,
-                    vertex_weights, edge_weights, vertex_weights_sum};
+                    vertex_weights, edge_weights, global_wgt_sum[0]};
 
 #else
   // Create XtraPuLP's graph structure
@@ -705,9 +708,7 @@ void AlgPuLP<Adapter>::scale_weights(
 	for (size_t i = 0; i < n; i++)
 	{
 		iwgts[i*weights_num + index] = (int)ceil(double(fwgts[i])*scale);
-		std::cout << iwgts[i*weights_num + index] << " ";
 	}
-	std::cout << std::endl;
 }
 
 template <typename Adapter>
@@ -743,7 +744,6 @@ void AlgPuLP<Adapter>::aggregate_weights(
         }
     }
 
-    std::cout << "reduceAll called" << std::endl;
     Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, nVwgts + 1, local_wgt_sum, global_wgt_sum);
 
     //TODO: 07JUL17: Check nothing will break and remove after.
@@ -758,3 +758,9 @@ void AlgPuLP<Adapter>::aggregate_weights(
 
 
 #endif
+
+
+
+
+
+
