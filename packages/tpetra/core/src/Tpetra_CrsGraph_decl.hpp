@@ -1796,10 +1796,37 @@ namespace Tpetra {
     insertLocalIndicesFiltered (const LocalOrdinal localRow,
                                 const Teuchos::ArrayView<const LocalOrdinal> &indices);
 
-    //! Like insertGlobalIndices(), but with column Map filtering.
+    /// \brief Like insertGlobalIndices(), but with column Map filtering.
+    ///
+    /// "Column Map filtering" means that any column indices not in
+    /// the column Map on the calling process, get silently dropped.
+    ///
+    /// \param gblRow [in] Global index of the row in which to insert.
+    ///   This row MUST be in the row Map on the calling process.
+    /// \param gblColInds [in] The global column indices to insert
+    ///   into that row.
+    /// \param numGblColInds [in] The number of global column indices
+    ///   to insert into that row.
     void
-    insertGlobalIndicesFiltered (const GlobalOrdinal localRow,
-                                 const Teuchos::ArrayView<const GlobalOrdinal> &indices);
+    insertGlobalIndicesFiltered (const GlobalOrdinal gblRow,
+                                 const GlobalOrdinal gblColInds[],
+                                 const LocalOrdinal numGblColInds);
+
+    /// \brief Implementation of insertGlobalIndices for nonowned rows.
+    ///
+    /// A global row index is <i>nonowned</i> when it is not in the
+    /// column Map on the calling process.
+    ///
+    /// \param gblRow [in] Global index of the row in which to insert.
+    ///   This row must NOT be in the row Map on the calling process.
+    /// \param gblColInds [in] The global column indices to insert
+    ///   into that row.
+    /// \param numGblColInds [in] The number of global column indices
+    ///   to insert into that row.
+    void
+    insertGlobalIndicesIntoNonownedRows (const GlobalOrdinal gblRow,
+                                         const GlobalOrdinal gblColInds[],
+                                         const LocalOrdinal numGblColInds);
 
     /// \brief Whether sumIntoLocalValues and transformLocalValues
     ///   should use atomic updates by default.

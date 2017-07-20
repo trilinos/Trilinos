@@ -3037,14 +3037,8 @@ namespace Tpetra {
       insertGlobalIndicesImpl (myRow, indices);
     }
     else { // a nonlocal row
-      const size_type numIndices = indices.size ();
-      // This creates the Array if it doesn't exist yet.  std::map's
-      // operator[] does a lookup each time, so it's better to pull
-      // nonlocals_[grow] out of the loop.
-      std::vector<GO>& nonlocalRow = nonlocals_[grow];
-      for (size_type k = 0; k < numIndices; ++k) {
-        nonlocalRow.push_back (indices[k]);
-      }
+      this->insertGlobalIndicesIntoNonownedRows (grow, indices.getRawPtr (),
+                                                 indices.size ());
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3070,62 +3064,70 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  insertGlobalIndicesFiltered (const GlobalOrdinal grow,
-                               const Teuchos::ArrayView<const GlobalOrdinal>& indices)
+  insertGlobalIndicesFiltered (const GlobalOrdinal gblRow,
+                               const GlobalOrdinal gblColInds[],
+                               const LocalOrdinal numGblColInds)
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "insertGlobalIndicesFiltered";
+    const char tfecfFuncName[] = "insertGlobalIndicesFiltered: ";
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isLocallyIndexed() == true, std::runtime_error,
-      ": graph indices are local; use insertLocalIndices().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isLocallyIndexed (), std::runtime_error,
+       "Graph indices are local; use insertLocalIndices().");
     // This can't really be satisfied for now, because if we are
     // fillComplete(), then we are local.  In the future, this may
     // change.  However, the rule that modification require active
     // fill will not change.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillActive() == false, std::runtime_error,
-      ": You are not allowed to call this method if fill is not active.  "
-      "If fillComplete has been called, you must first call resumeFill "
-      "before you may insert indices.");
-    if (! indicesAreAllocated ()) {
-      allocateIndices (GlobalIndices);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isFillActive() == false, std::runtime_error,
+       "You are not allowed to call this method if fill is not active.  "
+       "If fillComplete has been called, you must first call resumeFill "
+       "before you may insert indices.");
+    if (! this->indicesAreAllocated ()) {
+      this->allocateIndices (GlobalIndices);
     }
-    const LO myRow = rowMap_->getLocalElement (grow);
-    if (myRow != Teuchos::OrdinalTraits<LO>::invalid ()) {
-      // If we have a column map, use it to filter the entries.
-      if (hasColMap ()) {
-        Array<GO> filtered_indices(indices);
-        SLocalGlobalViews inds_view;
-        SLocalGlobalNCViews inds_ncview;
-        inds_ncview.ginds = filtered_indices();
-        const size_t numFilteredEntries =
-          filterIndices<GlobalIndices> (inds_ncview);
-        inds_view.ginds = filtered_indices (0, numFilteredEntries);
-        insertGlobalIndicesImpl(myRow, inds_view.ginds);
-      }
-      else {
-       insertGlobalIndicesImpl(myRow, indices);
-      }
+    const LO lclRow = this->rowMap_->getLocalElement (gblRow);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lclRow == Tpetra::Details::OrdinalTraits<LO>::invalid (),
+       std::invalid_argument, "Input global row " << gblRow
+       << " is not in the row Map on the calling process.");
+
+    Teuchos::ArrayView<const GO> gblColInds_av (gblColInds, numGblColInds);
+    // If we have a column map, use it to filter the entries.
+    if (this->hasColMap ()) {
+      Teuchos::Array<GO> filtered_indices (gblColInds_av);
+      SLocalGlobalViews inds_view;
+      SLocalGlobalNCViews inds_ncview;
+      inds_ncview.ginds = filtered_indices();
+      const size_t numFilteredEntries =
+        this->filterIndices<GlobalIndices> (inds_ncview);
+      inds_view.ginds = filtered_indices (0, numFilteredEntries);
+      this->insertGlobalIndicesImpl (lclRow, inds_view.ginds);
     }
-    else { // a nonlocal row
-      typedef typename ArrayView<const GO>::size_type size_type;
-      const size_type numIndices = indices.size ();
-      for (size_type k = 0; k < numIndices; ++k) {
-        nonlocals_[grow].push_back (indices[k]);
-      }
+    else {
+      this->insertGlobalIndicesImpl (lclRow, gblColInds_av);
     }
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      indicesAreAllocated() == false || isGloballyIndexed() == false,
-      std::logic_error,
-      ": Violated stated post-conditions. Please contact Tpetra team.");
-#endif
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  insertGlobalIndicesIntoNonownedRows (const GlobalOrdinal gblRow,
+                                       const GlobalOrdinal gblColInds[],
+                                       const LocalOrdinal numGblColInds)
+  {
+    // This creates the std::vector if it doesn't exist yet.
+    // std::map's operator[] does a lookup each time, so it's better
+    // to pull nonlocals_[grow] out of the loop.
+    std::vector<GlobalOrdinal>& nonlocalRow = this->nonlocals_[gblRow];
+    for (LocalOrdinal k = 0; k < numGblColInds; ++k) {
+      // FIXME (mfh 20 Jul 2017) Would be better to use a set, in
+      // order to avoid duplicates.  globalAssemble() sorts these
+      // anyway.
+      nonlocalRow.push_back (gblColInds[k]);
+    }
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
@@ -3411,7 +3413,7 @@ namespace Tpetra {
       (! isFillActive (), std::runtime_error, "Fill must be active before "
        "you may call this method.");
 
-    const size_t myNumNonlocalRows = nonlocals_.size ();
+    const size_t myNumNonlocalRows = this->nonlocals_.size ();
 
     // If no processes have nonlocal rows, then we don't have to do
     // anything.  Checking this is probably cheaper than constructing
@@ -3442,7 +3444,8 @@ namespace Tpetra {
     {
       Teuchos::Array<GO> myNonlocalGblRows (myNumNonlocalRows);
       size_type curPos = 0;
-      for (auto mapIter = nonlocals_.begin (); mapIter != nonlocals_.end ();
+      for (auto mapIter = this->nonlocals_.begin ();
+           mapIter != this->nonlocals_.end ();
            ++mapIter, ++curPos) {
         myNonlocalGblRows[curPos] = mapIter->first;
         std::vector<GO>& gblCols = mapIter->second; // by ref; change in place
@@ -3486,7 +3489,8 @@ namespace Tpetra {
                                StaticProfile));
     {
       size_type curPos = 0;
-      for (auto mapIter = nonlocals_.begin (); mapIter != nonlocals_.end ();
+      for (auto mapIter = this->nonlocals_.begin ();
+           mapIter != this->nonlocals_.end ();
            ++mapIter, ++curPos) {
         const GO gblRow = mapIter->first;
         std::vector<GO>& gblCols = mapIter->second; // by ref just to avoid copy
@@ -3540,8 +3544,8 @@ namespace Tpetra {
     // committed side effects to *this.  The standard idiom for
     // clearing a Container like std::map, is to swap it with an empty
     // Container and let the swapped Container fall out of scope.
-    decltype (nonlocals_) newNonlocals;
-    std::swap (nonlocals_, newNonlocals);
+    decltype (this->nonlocals_) newNonlocals;
+    std::swap (this->nonlocals_, newNonlocals);
 
     checkInternalState ();
   }
@@ -3673,7 +3677,7 @@ namespace Tpetra {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (numProcs > 1 && nonlocals_.size() > 0, std::runtime_error,
+        (numProcs > 1 && this->nonlocals_.size() > 0, std::runtime_error,
          "The graph's communicator contains only one process, "
          "but there are nonlocal entries.  "
          "This probably means that invalid entries were added to the graph.");
@@ -5457,13 +5461,22 @@ namespace Tpetra {
     iter_type impLIDiter = importLIDs.begin();
     iter_type impLIDend = importLIDs.end();
 
-    for (size_t i = 0; impLIDiter != impLIDend; ++impLIDiter, ++i) {
-      LO row_length = numPacketsPerLID[i];
+    const map_type& rowMap = * (this->rowMap_);
 
-      const GO* const row_raw = (row_length == 0) ? NULL : &imports[importsOffset];
-      ArrayView<const GlobalOrdinal> row (row_raw, row_length);
-      insertGlobalIndicesFiltered (this->getMap ()->getGlobalElement (*impLIDiter), row);
-      importsOffset += row_length;
+    for (size_t i = 0; impLIDiter != impLIDend; ++impLIDiter, ++i) {
+      const LO lclRow = *impLIDiter;
+      const GO gblRow = rowMap.getGlobalElement (lclRow);
+      const LO numEnt = numPacketsPerLID[i];
+
+      const GO* const gblColInds = (numEnt == 0) ? NULL : &imports[importsOffset];
+      if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
+        // This row is not in the row Map on the calling process.
+        this->insertGlobalIndicesIntoNonownedRows (gblRow, gblColInds, numEnt);
+      }
+      else {
+        this->insertGlobalIndicesFiltered (gblRow, gblColInds, numEnt);
+      }
+      importsOffset += numEnt;
     }
   }
 
