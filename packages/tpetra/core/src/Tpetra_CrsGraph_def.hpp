@@ -3094,16 +3094,36 @@ namespace Tpetra {
        << " is not in the row Map on the calling process.");
 
     Teuchos::ArrayView<const GO> gblColInds_av (gblColInds, numGblColInds);
-    // If we have a column map, use it to filter the entries.
-    if (this->hasColMap ()) {
-      Teuchos::Array<GO> filtered_indices (gblColInds_av);
-      SLocalGlobalViews inds_view;
-      SLocalGlobalNCViews inds_ncview;
-      inds_ncview.ginds = filtered_indices();
-      const size_t numFilteredEntries =
-        this->filterIndices<GlobalIndices> (inds_ncview);
-      inds_view.ginds = filtered_indices (0, numFilteredEntries);
-      this->insertGlobalIndicesImpl (lclRow, inds_view.ginds);
+    // If we have a column Map, use it to filter the entries.
+    if (! this->colMap_.is_null ()) {
+      const map_type& colMap = * (this->colMap_);
+
+      LO curOffset = 0;
+      while (curOffset < numGblColInds) {
+        // Find a sequence of input indices that are in the column Map
+        // on the calling process.  Doing a sequence at a time,
+        // instead of one at a time, amortizes some overhead.
+        LO endOffset = curOffset;
+        for ( ; endOffset < numGblColInds; ++endOffset) {
+          const LO lclCol = colMap.getLocalElement (gblColInds[endOffset]);
+          if (lclCol == Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+            break; // first entry, in current sequence, not in the column Map
+          }
+        }
+        // curOffset, endOffset: half-exclusive range of indices in
+        // the column Map on the calling process.  If endOffset ==
+        // curOffset, the range is empty.
+        const LO numIndInSeq = (endOffset - curOffset);
+        if (numIndInSeq != 0) {
+          Teuchos::ArrayView<const GO> curGblColInds (gblColInds + curOffset,
+                                                      numIndInSeq);
+          this->insertGlobalIndicesImpl (lclRow, curGblColInds);
+        }
+        // Invariant before this line: Either endOffset ==
+        // numGblColInds, or gblColInds[endOffset] is not in the
+        // column Map on the calling process.
+        curOffset = endOffset + 1;
+      }
     }
     else {
       this->insertGlobalIndicesImpl (lclRow, gblColInds_av);
