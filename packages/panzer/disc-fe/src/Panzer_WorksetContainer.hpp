@@ -53,10 +53,6 @@
 #include "Panzer_WorksetDescriptor.hpp" // what the workset is defined over
 #include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
 
-#ifndef __KK__
-#define __KK__
-#endif
-
 namespace panzer {
 
 // forward declaration
@@ -259,6 +255,8 @@ private:
    std::size_t worksetSize_;
 
    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer_;
+
+   Teuchos::RCP<std::vector<Intrepid2::Orientation> >  orientations_;
 };
 
 /** Build a map of volume worksets from a list of element blocks. Note that this
