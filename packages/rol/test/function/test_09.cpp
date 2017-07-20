@@ -42,14 +42,14 @@
 // @HEADER
 
 /*! \file  test_09.cpp
-    \brief Shows how to use the EqualityConstraint_Partitioned interface
+    \brief Shows how to use the Constraint_Partitioned interface
            to solve Hock & Schittkowski's problem 39
 */
 
 #include "ROL_HS39.hpp" 
 
 #include "ROL_RandomVector.hpp"
-#include "ROL_EqualityConstraint_Partitioned.hpp"
+#include "ROL_Constraint_Partitioned.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>               V;
   typedef ROL::StdVector<RealT>            SV;
   typedef ROL::Objective<RealT>            OBJ;
-  typedef ROL::EqualityConstraint<RealT>   EC;  
+  typedef ROL::Constraint<RealT>           EC;  
 
   typedef typename vector::size_type       uint;
 
@@ -120,10 +120,11 @@ int main(int argc, char *argv[]) {
     ROL::RandomizeVector(*xtest, -1.0, 1.0 ); 
     
     RCP<OBJ> obj  = rcp( new ROL::ZOO::Objective_HS39<RealT>() );
-    RCP<EC>  con1 = rcp( new ROL::ZOO::EqualityConstraint_HS39a<RealT>() );
-    RCP<EC>  con2 = rcp( new ROL::ZOO::EqualityConstraint_HS39b<RealT>() );
+    RCP<EC>  con1 = rcp( new ROL::ZOO::Constraint_HS39a<RealT>() );
+    RCP<EC>  con2 = rcp( new ROL::ZOO::Constraint_HS39b<RealT>() );
+    std::vector<RCP<EC> > cvec(2); cvec[0] = con1; cvec[1] = con2;
    
-    RCP<EC>  con = CreateEqualityConstraintPartitioned(con1, con2); 
+    RCP<EC>  con = Teuchos::rcp(new ROL::Constraint_Partitioned<RealT>(cvec));
 
     *outStream << "Checking objective" << std::endl;
     obj->checkGradient(*x,*d,true,*outStream); 

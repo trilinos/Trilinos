@@ -51,7 +51,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
 
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
@@ -105,13 +105,12 @@ RealT setUpAndSolve(Teuchos::ParameterList &list,
                     Teuchos::RCP<ROL::Objective<RealT> > &pObj,
                     Teuchos::RCP<ROL::SampleGenerator<RealT> > &sampler,
                     Teuchos::RCP<ROL::Vector<RealT> > &x,
-                    Teuchos::RCP<ROL::Vector<RealT> > &d,
                     Teuchos::RCP<ROL::BoundConstraint<RealT> > &bnd,
                     std::ostream & outStream) {
-  ROL::StochasticProblem<RealT> opt(list,pObj,sampler,x,bnd);
+  ROL::OptimizationProblem<RealT> opt(pObj,x,bnd);
+  opt.setStochasticObjective(list,sampler);
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
-  opt.checkObjectiveGradient(*d,true,outStream);
-  opt.checkObjectiveHessVec(*d,true,outStream);
+  opt.check(outStream);
   // Run ROL algorithm
   ROL::Algorithm<RealT> algo("Trust Region",list,false);
   algo.run(opt,true,outStream);
@@ -209,7 +208,7 @@ int main(int argc, char* argv[]) {
       order = i+1;
       list.sublist("SOL").sublist("Risk Measure").sublist("Spectral Risk").set("Number of Quadrature Points",order);
       setRandomVector(*x_rcp);
-      obj[i-nQuadLo] = setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+      obj[i-nQuadLo] = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
       norm[i]  = x->norm();
       hist[i-nQuadLo] = Teuchos::rcp(new std::vector<RealT>(dim));
       hvec[i-nQuadLo] = Teuchos::rcp(new ROL::StdVector<RealT>(hist[i-nQuadLo]));

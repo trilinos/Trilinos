@@ -57,7 +57,7 @@
 namespace ROL {
 
 template <class Ordinal,  class Real>
-class TeuchosObjective : public virtual Objective<Real> {
+class TeuchosObjective : public Objective<Real> {
 
   template <typename T> using RCP = Teuchos::RCP<T>;
 

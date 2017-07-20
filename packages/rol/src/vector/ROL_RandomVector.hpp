@@ -77,8 +77,8 @@ void RandomizeVector( Vector<Real> &x, const Real &lower=0.0, const Real &upper=
 
 template<class Real>
 void RandomizeFeasibleVector( Vector<Real> &x, BoundConstraint<Real> &bnd ) {
-  Teuchos::RCP<Vector<Real> > u = bnd.getUpperVectorRCP();
-  Teuchos::RCP<Vector<Real> > l = bnd.getLowerVectorRCP();
+  Teuchos::RCP<Vector<Real> > u = bnd.getUpperBound();
+  Teuchos::RCP<Vector<Real> > l = bnd.getLowerBound();
 
   Elementwise::UniformlyRandomMultiply<Real> urm;
   

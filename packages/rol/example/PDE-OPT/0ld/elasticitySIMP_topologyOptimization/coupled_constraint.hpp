@@ -45,7 +45,7 @@
 #ifndef ROL_CoupledConstraint_SimOpt_H
 #define ROL_CoupledConstraint_SimOpt_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 
 #include "constraint.hpp"
 #include "volume_constraint_SimOpt.hpp"
@@ -55,7 +55,7 @@
 #include "Amesos2.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_ElasticitySIMP_Coupled : public ROL::EqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_PDEOPT_ElasticitySIMP_Coupled : public ROL::Constraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<EqualityConstraint_PDEOPT_ElasticitySIMP<Real> > pde_;
   const Teuchos::RCP<EqualityConstraint_PDEOPT_ElasticitySIMP_Volume_SimOpt<Real> > vol_;
@@ -64,7 +64,7 @@ public:
   EqualityConstraint_PDEOPT_ElasticitySIMP_Coupled(const Teuchos::RCP<EqualityConstraint_PDEOPT_ElasticitySIMP<Real> > &pde,
                                                    const Teuchos::RCP<EqualityConstraint_PDEOPT_ElasticitySIMP_Volume_SimOpt<Real> > &vol) : pde_(pde), vol_(vol) {}
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) 
   {
     Teuchos::RCP<std::vector<Real> > cp = (Teuchos::dyn_cast<ROL::StdVector<Real> >(c)).getVector();

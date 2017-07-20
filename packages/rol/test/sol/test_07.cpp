@@ -58,7 +58,7 @@
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 
 typedef double RealT;
 
@@ -110,13 +110,12 @@ void setUpAndSolve(Teuchos::ParameterList &list,
                    Teuchos::RCP<ROL::Objective<RealT> > &pObj,
                    Teuchos::RCP<ROL::SampleGenerator<RealT> > &sampler,
                    Teuchos::RCP<ROL::Vector<RealT> > &x,
-                   Teuchos::RCP<ROL::Vector<RealT> > &d,
                    Teuchos::RCP<ROL::BoundConstraint<RealT> > &bnd,
                    std::ostream & outStream) {
-  ROL::StochasticProblem<RealT> opt(list,pObj,sampler,x,bnd);
+  ROL::OptimizationProblem<RealT> opt(pObj,x,bnd);
+  opt.setStochasticObjective(list,sampler);
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
-  opt.checkObjectiveGradient(*d,true,outStream);
-  opt.checkObjectiveHessVec(*d,true,outStream);
+  opt.check(outStream);
   // Run ROL algorithm
   ROL::Algorithm<RealT> algo("Trust Region",list,false);
   algo.run(opt,true,outStream);
@@ -220,7 +219,7 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK MEASURE\n";
     setRandomVector(*x_rcp,commptr);
-    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
   }
   catch (std::logic_error err) {

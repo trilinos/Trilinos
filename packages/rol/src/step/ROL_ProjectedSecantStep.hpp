@@ -198,7 +198,7 @@ public:
   std::string printName( void ) const {
     std::stringstream hist;
     hist << "\n" << EDescentToString(DESCENT_SECANT);
-    hist << "with " << ESecantToString(esec_) << "\n";
+    hist << " with " << ESecantToString(esec_) << "\n";
     return hist.str();
   }
   std::string print( AlgorithmState<Real> &algo_state, bool print_header = false ) const {

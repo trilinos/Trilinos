@@ -44,11 +44,11 @@
 #ifndef PDE_INTEGRALCONSTRAINT_HPP
 #define PDE_INTEGRALCONSTRAINT_HPP
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "integralobjective.hpp"
 
 template<class Real>
-class IntegralConstraint : public ROL::EqualityConstraint_SimOpt<Real> {
+class IntegralConstraint : public ROL::Constraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<QoI<Real> > qoi_;
   const Teuchos::RCP<Assembler<Real> > assembler_;
@@ -67,7 +67,7 @@ public:
   }
 
   void setParameter(const std::vector<Real> &param) {
-    ROL::EqualityConstraint_SimOpt<Real>::setParameter(param);
+    ROL::Constraint_SimOpt<Real>::setParameter(param);
     obj_->setParameter(param);
   }
 
@@ -156,7 +156,7 @@ public:
 
 
 template<class Real>
-class IntegralOptConstraint : public ROL::EqualityConstraint<Real> {
+class IntegralOptConstraint : public ROL::Constraint<Real> {
 private:
   const Teuchos::RCP<QoI<Real> > qoi_;
   const Teuchos::RCP<Assembler<Real> > assembler_;
@@ -172,7 +172,7 @@ public:
   }
 
   void setParameter(const std::vector<Real> &param) {
-    ROL::EqualityConstraint<Real>::setParameter(param);
+    ROL::Constraint<Real>::setParameter(param);
     obj_->setParameter(param);
   }
 

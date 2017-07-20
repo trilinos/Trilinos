@@ -48,11 +48,11 @@
 #include "Sacado.hpp"
 
 #include "ROL_StdVector.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_Sacado_StdObjective.hpp"
-#include "ROL_Sacado_StdEqualityConstraint.hpp"
-#include "ROL_Sacado_StdInequalityConstraint.hpp"
+#include "ROL_Sacado_StdConstraint.hpp"
 #include <cmath>
 
 /* \class ROL::NonlinearProgram 
@@ -85,9 +85,8 @@ protected:
   typedef PartitionedVector<Real>     PV;
 
   typedef Objective<Real>             OBJ;
-  typedef EqualityConstraint<Real>    EQCON;
-  typedef InequalityConstraint<Real>  INCON;
-  typedef BoundConstraint<Real>       BND;
+  typedef Constraint<Real>            CON;
+  typedef Bounds<Real>                BND;
   typedef OptimizationProblem<Real>   OPT;
 
   typedef typename vector<Real>::size_type size_type;
@@ -139,17 +138,17 @@ protected:
 
   /* \brief Return the equality constraint. Do not overload if you 
             have no equality constraint. */
-  virtual const Teuchos::RCP<EQCON> getEqualityConstraint() {
+  virtual const Teuchos::RCP<CON> getEqualityConstraint() {
     return Teuchos::null;
   }
 
-  /* \brief Return the equality constraint vector (used for cloning). 
+  /* \brief Return the equality constraint vector (used for cloning).
             Returns a Teuchos::null if there is no equality constraint */
   const Teuchos::RCP<V> getEqualityMultiplier() { 
     int n = dimension_ce();
     if( n > 0 ) {
       Teuchos::RCP<vector<Real> > l = Teuchos::rcp( new vector<Real>(n,1.0) );
-      return Teuchos::rcp( new SV(l) );        
+      return Teuchos::rcp( new SV(l) );
     }
     else {
       return Teuchos::null;
@@ -158,7 +157,7 @@ protected:
 
   /* \brief Return the inequality constraint. Do not overload if you 
             have no inequality constraint. */
-  virtual const Teuchos::RCP<INCON> getInequalityConstraint() {
+  virtual const Teuchos::RCP<CON> getInequalityConstraint() {
     return Teuchos::null;
   }
 
@@ -168,7 +167,24 @@ protected:
     int n = dimension_ci();
     if( n > 0 ) {
       Teuchos::RCP<vector<Real> > l = Teuchos::rcp( new vector<Real>(n,1.0) );
-      return Teuchos::rcp( new SV(l) );        
+      return Teuchos::rcp( new SV(l) );
+    }
+    else {
+      return Teuchos::null;
+    }
+  }
+
+  /* \brief Return the bounds on the inequality constraint.
+            Returns a Teuchos::null if there is no inequality constraint */
+  const Teuchos::RCP<BND> getInequalityBoundConstraint() {
+    int n = dimension_ci();
+    if( n > 0 ) {
+      const Real lval(0), uval(ROL_INF<Real>());
+      Teuchos::RCP<V> l = Teuchos::rcp( new SV(
+                          Teuchos::rcp( new vector<Real>(n,lval) ) ) );
+      Teuchos::RCP<V> u = Teuchos::rcp( new SV(
+                          Teuchos::rcp( new vector<Real>(n,uval) ) ) );
+      return Teuchos::rcp( new BND(l,u) );
     }
     else {
       return Teuchos::null;
@@ -191,7 +207,7 @@ protected:
 
   // Default deactivated bound
   Teuchos::RCP<BND> getBoundConstraint() {
-    return bnd_;  
+    return bnd_;
   }
 
 public:
@@ -225,7 +241,8 @@ public:
                                    getEqualityConstraint(),
                                    getEqualityMultiplier(),
                                    getInequalityConstraint(),
-                                   getInequalityMultiplier() ) );
+                                   getInequalityMultiplier(),
+                                   getInequalityBoundConstraint() ) );
   }
 
   /* \brief Return the initial guess for the optimization vector */
@@ -248,19 +265,27 @@ public:
   };
    
    /* \brief If the problem has known solutions, return whether ROL
-             has acceptibly solved problem */ 
+             has acceptibly solved problem */
   bool foundAcceptableSolution( const V &x, const Real &tolerance=std::sqrt(ROL_EPSILON<Real>()) ) {
     Teuchos::RCP<const PV> sol = Teuchos::rcp_dynamic_cast<const PV>( getSolutionSet() );
-    Teuchos::RCP<V> error = x.clone();    
+    Teuchos::RCP<V> error;
+    Teuchos::RCP<const V> xv;
+    if ( dimension_ci() > 0 ) {
+      xv = Teuchos::dyn_cast<const PV>(x).get(0);
+      error = xv->clone();
+    }
+    else {
+      xv = Teuchos::rcp(&x, false);
+      error = x.clone();
+    }
  
     Real minerror = ROL::ROL_INF<Real>();
     for( size_type k=0; k<sol->numVectors(); ++k) {
-      error->set(x);
-      error->axpy(-1.0,*(sol->get(k))); 
+      error->set(*xv);
+      error->axpy(-1.0,*(sol->get(k)));
       minerror = std::min(minerror,error->norm());
-    } 
+    }
     return (minerror < tolerance);
-
   }
   
    

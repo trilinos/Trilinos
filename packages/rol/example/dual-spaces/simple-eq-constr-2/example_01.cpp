@@ -466,7 +466,7 @@ int main(int argc, char *argv[]) {
   try {
 
     RCP<ROL::Objective<RealT> > obj;
-    RCP<ROL::EqualityConstraint<RealT> > constr;
+    RCP<ROL::Constraint<RealT> > constr;
     RCP<vector> x_rcp = rcp( new vector(0, 0.0) );
     RCP<vector> sol_rcp = rcp( new vector(0, 0.0) );
     OptStdVector<RealT> x(x_rcp);      // Iteration vector.

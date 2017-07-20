@@ -68,7 +68,7 @@ public:
     return Teuchos::size<Ordinal>(*comm_);
   }
 
-  void reduceAll(Real* input, Real* output,
+  void reduceAll(Real* input, Real* output, int dim,
                  const Elementwise::ReductionOp<Real> &r) {
     int nB = this->numBatches();
     std::vector<Real> receiveBuffer(nB);

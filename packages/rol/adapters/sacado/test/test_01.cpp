@@ -169,17 +169,7 @@ int main(int argc, char *argv[]) {
 
       x = opt->getSolutionVector();       
      
-      if( nlp->dimension_ci() > 0 ) { // Has slack variables, extract optimization vector
-
-        PV xpv = Teuchos::dyn_cast<PV>(*x);
-        RCP<V>  sol = xpv.get(0);
-        
-        problemSolved = nlp->foundAcceptableSolution( *sol, errtol );
-  
-      }
-      else {
-        problemSolved = nlp->foundAcceptableSolution( *x, errtol );
-      }
+      problemSolved = nlp->foundAcceptableSolution( *x, errtol );
 
       RealT tol = std::sqrt(ROL_EPSILON<RealT>()); 
 

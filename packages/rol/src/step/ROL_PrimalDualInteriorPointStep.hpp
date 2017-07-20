@@ -120,8 +120,8 @@ class PrimalDualInteriorPointStep : public Step<Real> {
   typedef BoundConstraint<Real>                       BND;
   typedef Krylov<Real>                                KRYLOV;
   typedef LinearOperator<Real>                        LINOP;
-  typedef LinearOperatorFromEqualityConstraint<Real>  LOPEC;
-  typedef EqualityConstraint<Real>                    EQCON;
+  typedef LinearOperatorFromConstraint<Real>          LOPEC;
+  typedef Constraint<Real>                            EQCON;
   typedef StepState<Real>                             STATE;
   typedef InteriorPointPenalty<Real>                  PENALTY;
   typedef PrimalDualInteriorPointResidual<Real>       RESIDUAL;
@@ -171,7 +171,7 @@ private:
   Real kappa1_;            // Feasibility projection parameter
   Real kappa2_;            // Feasibility projection parameter
   Real kappa_eps_;         // 
-  Real lambda_max_;        // Equality multiplier maximum value
+  Real lambda_max_;        //  multiplier maximum value
   Real theta_mu_;
   Real gamma_theta_;
   Real gamma_phi_
@@ -276,7 +276,7 @@ public:
 
     kappa1_     = iplist.get("Bound Perturbation Coefficient 1",        1.e-2);
     kappa2_     = iplist.get("Bound Perturbation Coefficient 2",        1.e-2);
-    lambda_max_ = iplist.get("Equality Multiplier Maximum Value",       1.e3 ); 
+    lambda_max_ = iplist.get(" Multiplier Maximum Value",       1.e3 ); 
     smax_       = iplist.get("Maximum Scaling Parameter",               1.e2 );
     tau_min_    = iplist.get("Minimum Fraction-to-Boundary Parameter",  0.99 );
     kappa_mu_   = iplist.get("Multiplicative Penalty Reduction Factor", 0.2  );
@@ -309,7 +309,7 @@ public:
 
 
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
-                   Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
+                   Objective<Real> &obj, Constraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
 
     using Teuchos::RCP; using Teuchos::rcp;
@@ -349,8 +349,8 @@ public:
     /* Identify (implicitly) the index sets of upper and lower bounds by creating mask vectors */
     /*******************************************************************************************/
   
-    xl_ = bnd.getLowerVectorRCP();
-    xu_ = bnd.getUpperVectorRCP();
+    xl_ = bnd.getLowerBound();
+    xu_ = bnd.getUpperBound();
 
     maskl_ = ipPen.getLowerMask();
     masku_ = ipPen.getUpperMask();
@@ -435,7 +435,7 @@ public:
 
 
   void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l, 
-                Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                Objective<Real> &obj, Constraint<Real> &con, 
                 BoundConstraint<Real> &bnd, AlgorithmState<Real> &algo_state ) {
 
 
@@ -487,7 +487,7 @@ public:
 
 
   void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-               Objective<Real> &obj, EqualityConstraint<Real> &con, 
+               Objective<Real> &obj, Constraint<Real> &con, 
                BoundConstraint<Real> &bnd, AlgorithmState<Real> &algo_state ) {
 
     // Check deviation from shifted complementarity

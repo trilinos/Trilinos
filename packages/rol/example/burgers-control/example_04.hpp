@@ -49,7 +49,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 
 #include "Teuchos_LAPACK.hpp"
@@ -858,7 +858,7 @@ public:
 };
 
 template<class Real>
-class EqualityConstraint_BurgersControl : public ROL::EqualityConstraint_SimOpt<Real> {
+class Constraint_BurgersControl : public ROL::Constraint_SimOpt<Real> {
 private:
 
   typedef H1VectorPrimal<Real> PrimalStateVector;
@@ -874,7 +874,7 @@ private:
   bool useHessian_;
 
 public:
-  EqualityConstraint_BurgersControl(Teuchos::RCP<BurgersFEM<Real> > &fem, bool useHessian = true)
+  Constraint_BurgersControl(Teuchos::RCP<BurgersFEM<Real> > &fem, bool useHessian = true)
    : fem_(fem), useHessian_(useHessian) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 
@@ -888,7 +888,7 @@ public:
     fem_->compute_residual(*cp,*up,*zp);
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                        const ROL::Vector<Real> &z, Real &tol) {

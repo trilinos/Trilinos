@@ -49,7 +49,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_TeuchosBatchManager.hpp"
 
 #include "Teuchos_LAPACK.hpp"
@@ -861,7 +861,7 @@ public:
 };
 
 template<class Real>
-class EqualityConstraint_BurgersControl : public ROL::EqualityConstraint_SimOpt<Real> {
+class Constraint_BurgersControl : public ROL::Constraint_SimOpt<Real> {
 private:
 
   typedef H1VectorPrimal<Real> PrimalStateVector;
@@ -877,8 +877,8 @@ private:
   bool useHessian_;
 
 public:
-  EqualityConstraint_BurgersControl(const Teuchos::RCP<BurgersFEM<Real> > &fem,
-                                    const bool useHessian = true)
+  Constraint_BurgersControl(const Teuchos::RCP<BurgersFEM<Real> > &fem,
+                            const bool useHessian = true)
    : fem_(fem), useHessian_(useHessian) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 
@@ -891,7 +891,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->compute_residual(*cp,*up,*zp);
@@ -909,7 +909,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_pde_jacobian(*jvp,*vp,*up,*zp);
@@ -927,7 +927,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_control_jacobian(*jvp,*vp,*up,*zp);
@@ -945,7 +945,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_inverse_pde_jacobian(*ijvp,*vp,*up,*zp);
@@ -963,7 +963,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_adjoint_pde_jacobian(*jvp,*vp,*up,*zp);
@@ -981,7 +981,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_adjoint_control_jacobian(*jvp,*vp,*up,*zp);
@@ -999,7 +999,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_inverse_adjoint_pde_jacobian(*iajvp,*vp,*up,*zp);
@@ -1020,7 +1020,7 @@ public:
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
       const std::vector<Real> param
-        = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+        = ROL::Constraint_SimOpt<Real>::getParameter();
       fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
       fem_->apply_adjoint_pde_hessian(*ahwvp,*wp,*vp,*up,*zp);
@@ -1045,7 +1045,7 @@ public:
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
       const std::vector<Real> param
-        = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+        = ROL::Constraint_SimOpt<Real>::getParameter();
       fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
       fem_->apply_adjoint_control_pde_hessian(*ahwvp,*wp,*vp,*up,*zp);
@@ -1069,7 +1069,7 @@ public:
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
       const std::vector<Real> param
-        = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+        = ROL::Constraint_SimOpt<Real>::getParameter();
       fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
       fem_->apply_adjoint_pde_control_hessian(*ahwvp,*wp,*vp,*up,*zp);
@@ -1093,7 +1093,7 @@ public:
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
       const std::vector<Real> param
-        = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+        = ROL::Constraint_SimOpt<Real>::getParameter();
       fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
       fem_->apply_adjoint_control_hessian(*ahwvp,*wp,*vp,*up,*zp);

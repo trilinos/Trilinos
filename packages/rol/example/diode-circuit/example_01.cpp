@@ -49,6 +49,7 @@
 #include "ROL_StepFactory.hpp"
 #include "ROL_StatusTestFactory.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_Bounds.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -166,7 +167,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::PrimalScaledStdVector<RealT> > lo_IsRs = Teuchos::rcp(new ROL::PrimalScaledStdVector<RealT>(IsRs_lower_rcp, scaling_rcp));
     Teuchos::RCP<ROL::PrimalScaledStdVector<RealT> > up_IsRs = Teuchos::rcp(new ROL::PrimalScaledStdVector<RealT>(IsRs_upper_rcp, scaling_rcp));
     // Bound constraint.
-    ROL::BoundConstraint<RealT> con2(lo_IsRs, up_IsRs, scale);
+    ROL::Bounds<RealT> con2(lo_IsRs, up_IsRs, scale);
 
     // Gradient and Hessian check
     // direction for gradient check

@@ -44,13 +44,13 @@
 #ifndef ROL_FRACTIONALCONSTRAINT_H
 #define ROL_FRACTIONALCONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_KrylovFactory.hpp"
 #include "fractional_operator.hpp"
 #include "fractional_vector.hpp"
 
 template <class Real>
-class FractionalConstraint : public ROL::EqualityConstraint_SimOpt<Real> {
+class FractionalConstraint : public ROL::Constraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<PDE<Real> > pde_local_;
   const Teuchos::RCP<PDE<Real> > pde_cylinder_;
@@ -134,7 +134,7 @@ public:
   }
 
   void setParameter(const std::vector<Real> &param) {
-    ROL::EqualityConstraint_SimOpt<Real>::setParameter(param);
+    ROL::Constraint_SimOpt<Real>::setParameter(param);
     pde_local_->setParameter(param);
     pde_cylinder_->setParameter(param);
     isAssembled_ = false;

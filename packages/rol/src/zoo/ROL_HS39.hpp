@@ -52,8 +52,8 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_EqualityConstraint_Partitioned.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Constraint_Partitioned.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -99,12 +99,13 @@ public:
 
 // First of two equality constraints
 template<class Real>
-class EqualityConstraint_HS39a : public EqualityConstraint<Real> {
+class Constraint_HS39a : public Constraint<Real> {
 
   typedef std::vector<Real> vector;
   typedef StdVector<Real>   SV;
 
 public:
+  Constraint_HS39a(void) {}
  
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
@@ -159,12 +160,13 @@ public:
 
 // Second of two equality constraints
 template<class Real>
-class EqualityConstraint_HS39b : public EqualityConstraint<Real> {
+class Constraint_HS39b : public Constraint<Real> {
 
   typedef std::vector<Real> vector;
   typedef StdVector<Real>   SV;
 
 public:
+  Constraint_HS39b(void) {}
  
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<vector> cp = Teuchos::dyn_cast<SV>(c).getVector();

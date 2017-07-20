@@ -131,8 +131,8 @@ int main(int argc, char* argv[]) {
     RealT alpha = 1.e-3;
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobjSimOpt
       = Teuchos::rcp(new Objective_BurgersControl<RealT>(alpha,nx));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pconSimOpt
-      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(nx));
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pconSimOpt
+      = Teuchos::rcp(new Constraint_BurgersControl<RealT>(nx));
     pconSimOpt->setSolveParameters(*parlist);
     Teuchos::RCP<ROL::Objective<RealT> > pObj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,zp,pp));
@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
     RealT eps(1.e-2);
     std::vector<RealT> stat(3,0);
     Teuchos::RCP<ROL::Algorithm<RealT> > algo;
-    Teuchos::RCP<ROL::StochasticProblem<RealT> > optProb;
+    Teuchos::RCP<ROL::OptimizationProblem<RealT> > optProb;
     for (int i = 0; i < 3; ++i) {
       *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
       // Build CVaR risk measure
@@ -168,18 +168,19 @@ int main(int argc, char* argv[]) {
       // Build stochastic problem
       if ( i==0 ) { xvec[i]->zero();          }
       else        { xvec[i]->set(*xvec[i-1]); }
-      optProb = Teuchos::rcp(new ROL::StochasticProblem<RealT>(list,pObj,sampler,xvec[i]));
-      if ( i==0 ) { optProb->setSolutionStatistic(1);         }
-      else        { optProb->setSolutionStatistic(stat[i-1]); }
-      optProb->checkObjectiveGradient(d,true,*outStream);
-      optProb->checkObjectiveHessVec(d,true,*outStream);
+      optProb = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(pObj,xvec[i]));
+      RealT init_stat(1);
+      if ( i > 0 ) { init_stat = stat[i-1]; }
+      list.sublist("SOL").set("Initial Statistic",init_stat);
+      optProb->setStochasticObjective(list,sampler);
+      optProb->check(*outStream);
       // Run ROL algorithm
       algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
       clock_t start = clock();
       algo->run(*optProb,true,*outStream);
       *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
       // Get solution statistic
-      stat[i] = optProb->getSolutionStatistic();
+      stat[i] = optProb->getSolutionStatistic(list);
       // Update smoothing parameter
       eps *= static_cast<RealT>(1.e-2);
     }
@@ -198,10 +199,10 @@ int main(int argc, char* argv[]) {
     list.sublist("SOL").sublist("Risk Measure").sublist(rm).sublist("Distribution").sublist("Dirac").set("Location",0.);
     // Build stochastic problem
     zp->set(*xvec[2]);
-    optProb = Teuchos::rcp(new ROL::StochasticProblem<RealT>(list,pObj,sampler,zp));
-    optProb->setSolutionStatistic(stat[2]);
-    optProb->checkObjectiveGradient(d,true,*outStream);
-    optProb->checkObjectiveHessVec(d,true,*outStream);
+    optProb = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(pObj,zp));
+    list.sublist("SOL").set("Initial Statistic",stat[2]);
+    optProb->setStochasticObjective(list,sampler);
+    optProb->check(*outStream);
     // Run ROL algorithm
     parlist->sublist("Status Test").set("Iteration Limit",1000);
     parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-7);
@@ -213,7 +214,7 @@ int main(int argc, char* argv[]) {
     /************************* COMPUTE ERROR ******************************************************/
     /**********************************************************************************************/
     Teuchos::RCP<ROL::Vector<RealT> > cErr = zp->clone();
-    RealT zstat = optProb->getSolutionStatistic();
+    RealT zstat = optProb->getSolutionStatistic(list);
     *outStream << "\nSUMMARY:\n";
     *outStream << "  ---------------------------------------------\n";
     *outStream << "    True Value-At-Risk    = " << zstat << "\n";

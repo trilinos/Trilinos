@@ -81,7 +81,7 @@ class Problem_006 : public ROL::NonlinearProgram<Real> {
   typedef ROL::NonlinearProgram<Real>   NP;
   typedef ROL::Vector<Real>             V;
   typedef ROL::Objective<Real>          OBJ;
-  typedef ROL::EqualityConstraint<Real> EQCON;
+  typedef ROL::Constraint<Real>         CON;
 
 public:
 
@@ -96,9 +96,9 @@ public:
     return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_006::Obj> );
   }
 
-  const RCP<EQCON> getEqualityConstraint() {
+  const RCP<CON> getEqualityConstraint() {
     return Teuchos::rcp( 
-      new ROL::Sacado_StdEqualityConstraint<Real,HS_006::EqCon> );
+      new ROL::Sacado_StdConstraint<Real,HS_006::EqCon> );
   }
 
   const RCP<const V> getInitialGuess() {

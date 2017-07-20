@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing Navier-Stokes equations.
     Teuchos::RCP<PDE_NavierStokes<RealT> > pde
       = Teuchos::rcp(new PDE_NavierStokes<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon

@@ -48,7 +48,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_PrimalDualActiveSetStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
@@ -507,7 +507,7 @@ int main(int argc, char *argv[]) {
     RCP<V> lo = rcp( new SV(l_rcp) );
     RCP<V> up = rcp( new SV(u_rcp) );
 
-    ROL::BoundConstraint<RealT> icon(lo,up);
+    ROL::Bounds<RealT> icon(lo,up);
 
     Teuchos::ParameterList parlist;
 

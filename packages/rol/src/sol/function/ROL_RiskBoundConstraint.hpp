@@ -133,6 +133,17 @@ public:
     }
   }
 
+  void projectInterior( Vector<Real> &x ) {
+    if ( augmented_ && activated_ ) {
+      Teuchos::RCP<StdVector<Real> > xs = Teuchos::dyn_cast<RiskVector<Real> >(x).getStatistic();
+      stat_bc_->projectInterior(*xs);
+    }
+    if ( bc_ != Teuchos::null && bc_->isActivated() ) {
+      Teuchos::RCP<Vector<Real> > xvec = Teuchos::dyn_cast<RiskVector<Real> >(x).getVector();
+      bc_->projectInterior(*xvec);
+    }
+  }
+
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
       Teuchos::RCP<StdVector<Real> >       vs = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic();
@@ -189,20 +200,9 @@ public:
     }
   } 
 
-  void setVectorToUpperBound( Vector<Real> &u ) {
-    if ( augmented_ && activated_ ) {
-      Teuchos::RCP<StdVector<Real> > us = Teuchos::dyn_cast<RiskVector<Real> >(u).getStatistic();
-      stat_bc_->setVectorToUpperBound(*us);
-    }
-    if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > uv = Teuchos::dyn_cast<RiskVector<Real> >(u).getVector();
-      bc_->setVectorToUpperBound(*uv);
-    }
-  }
-
-  const Teuchos::RCP<const Vector<Real> > getLowerVectorRCP(void) const {
+  const Teuchos::RCP<const Vector<Real> > getLowerBound(void) const {
     if (!isLOinitialized_) {
-      const Teuchos::RCP<const Vector<Real> > vlo = bc_->getLowerVectorRCP();
+      const Teuchos::RCP<const Vector<Real> > vlo = bc_->getLowerBound();
       lo_ = Teuchos::rcp(new RiskVector<Real>(Teuchos::rcp_const_cast<Vector<Real> >(vlo),
                                               lower_, augmented_));
       isLOinitialized_ = true;
@@ -210,53 +210,14 @@ public:
     return lo_;
   }
 
-  const Teuchos::RCP<const Vector<Real> > getUpperVectorRCP(void) const {
+  const Teuchos::RCP<const Vector<Real> > getUpperBound(void) const {
     if (!isHIinitialized_) {
-      const Teuchos::RCP<const Vector<Real> > vhi = bc_->getUpperVectorRCP();
+      const Teuchos::RCP<const Vector<Real> > vhi = bc_->getUpperBound();
       hi_ = Teuchos::rcp(new RiskVector<Real>(Teuchos::rcp_const_cast<Vector<Real> >(vhi),
                                               upper_, augmented_));
       isHIinitialized_ = true;
     }
     return hi_;
-  }
-
-  void setVectorToLowerBound( Vector<Real> &l ) {
-    if ( augmented_ && activated_ ) {
-      Teuchos::RCP<StdVector<Real> > ls = Teuchos::dyn_cast<RiskVector<Real> >(l).getStatistic();
-      stat_bc_->setVectorToLowerBound(*ls);
-    }
-    if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > lvec = Teuchos::dyn_cast<RiskVector<Real> >(l).getVector();
-      bc_->setVectorToLowerBound(*lvec);
-    }
-  }
-
-  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
-    if ( augmented_ && activated_ ) {
-      Teuchos::RCP<StdVector<Real> >       vs = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic();
-      Teuchos::RCP<const StdVector<Real> > xs = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
-      stat_bc_->pruneActive(*vs,*xs,eps);
-    }
-    if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> >       vv = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
-      Teuchos::RCP<const Vector<Real> > xv = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-      bc_->pruneActive(*vv,*xv,eps);
-    }
-  }
-
-  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
-    if ( augmented_ && activated_ ) {
-      Teuchos::RCP<StdVector<Real> >       vs = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic();
-      Teuchos::RCP<const StdVector<Real> > gs = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic();
-      Teuchos::RCP<const StdVector<Real> > xs = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
-      stat_bc_->pruneActive(*vs,*gs,*xs,eps);
-    }
-    if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> >       vv = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
-      Teuchos::RCP<const Vector<Real> > gv = Teuchos::dyn_cast<const RiskVector<Real> >(g).getVector();
-      Teuchos::RCP<const Vector<Real> > xv = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-      bc_->pruneActive(*vv,*gv,*xv,eps);
-    }
   }
 
   bool isFeasible( const Vector<Real> &v ) { 

@@ -92,8 +92,8 @@ public:
                 Real tol=std::sqrt(ROL_EPSILON<Real>()) ) : 
     obj_(obj), bnd_(bnd), tol_(tol) {
 
-    l_   = bnd_->getLowerVectorRCP();
-    u_   = bnd_->getUpperVectorRCP();
+    l_   = bnd_->getLowerBound();
+    u_   = bnd_->getUpperBound();
 
     p_   = x.clone();
     q_   = x.clone();

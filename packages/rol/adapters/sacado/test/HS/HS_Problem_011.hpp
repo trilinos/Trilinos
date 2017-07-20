@@ -80,7 +80,7 @@ class Problem_011 : public ROL::NonlinearProgram<Real> {
 
   typedef ROL::Vector<Real>               V;
   typedef ROL::Objective<Real>            OBJ;
-  typedef ROL::InequalityConstraint<Real> INCON;
+  typedef ROL::Constraint<Real>           CON;
   typedef ROL::NonlinearProgram<Real>     NP;
 
 
@@ -97,9 +97,9 @@ public:
     return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_011::Obj> );
   }
 
-  const RCP<INCON> getInequalityConstraint() {
+  const RCP<CON> getInequalityConstraint() {
     return Teuchos::rcp( 
-      new ROL::Sacado_StdInequalityConstraint<Real,HS_011::InCon>);
+      new ROL::Sacado_StdConstraint<Real,HS_011::InCon>);
   }
 
   const RCP<const V> getInitialGuess() {

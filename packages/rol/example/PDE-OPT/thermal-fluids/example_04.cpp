@@ -61,7 +61,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/pdeconstraint.hpp"
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing Navier-Stokes equations.
     Teuchos::RCP<PDE_ThermalFluids_ex03<RealT> > pde
       = Teuchos::rcp(new PDE_ThermalFluids_ex03<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
@@ -257,8 +257,9 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
-    ROL::StochasticProblem<RealT> opt(*parlist,robj,sampler,zp);
-    opt.setSolutionStatistic(1.0);
+    ROL::OptimizationProblem<RealT> opt(robj,zp);
+    parlist->sublist("SOL").set("Initial Solution",1.0);
+    opt.setStochasticObjective(*parlist,sampler);
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);

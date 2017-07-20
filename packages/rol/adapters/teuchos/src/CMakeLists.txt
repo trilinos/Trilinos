@@ -37,8 +37,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
   APPEND_SET(HEADERS 
     function/ROL_Teuchos_Objective.hpp
-    function/ROL_Teuchos_EqualityConstraint.hpp
-    function/ROL_Teuchos_InequalityConstraint.hpp
+    function/ROL_Teuchos_Constraint.hpp
 )
 
 

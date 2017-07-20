@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     // RealT noise         = parlist->get("Measurement Noise",0.0);
 
     
-    EqualityConstraint_DiodeCircuit<RealT> con(V_th,lo_Vsrc,up_Vsrc,step_Vsrc);
+    Constraint_DiodeCircuit<RealT> con(V_th,lo_Vsrc,up_Vsrc,step_Vsrc);
 
     RealT alpha = 1.e-4; // regularization parameter (unused)
     int ns = 101; // number of Vsrc components
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> p(p_rcp);
     Teuchos::RCP<ROL::Vector<RealT> > pp  = Teuchos::rcp(&p,false);
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,zp,pp);
     // Check derivatives.
     *outStream << "Derivatives of reduced objective" << std::endl;

@@ -58,13 +58,14 @@
 #include <algorithm>
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_EqualityConstraint_Partitioned.hpp"
+#include "ROL_Constraint_Partitioned.hpp"
 #include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_Reduced_EqualityConstraint_SimOpt.hpp"
-#include "ROL_CompositeEqualityConstraint_SimOpt.hpp"
+#include "ROL_Reduced_Constraint_SimOpt.hpp"
+#include "ROL_CompositeConstraint_SimOpt.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
+#include "ROL_Bounds.hpp"
 
 #include "../../TOOLS/pdeconstraint.hpp"
 #include "../../TOOLS/linearpdeconstraint.hpp"
@@ -117,12 +118,12 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing elasticity equations.
     Teuchos::RCP<PDE_TopoOpt<RealT> > pde
       = Teuchos::rcp(new PDE_TopoOpt<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > conPDE
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > conPDE
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     // Initialize the filter PDE.
     Teuchos::RCP<PDE_Filter<RealT> > pdeFilter
       = Teuchos::rcp(new PDE_Filter<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > conFilter
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > conFilter
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pdeFilter,meshMgr,comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
@@ -168,12 +169,12 @@ int main(int argc, char *argv[]) {
     d = Teuchos::rcp(new ROL::Vector_SimOpt<RealT>(dup,dzp));
 
     /*** Initialize "filtered" or "unfiltered" constraint. ***/
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pdeWithFilter;
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
     bool useFilter  = parlist->sublist("Problem").get("Use Filter", true);
     if (useFilter) {
       bool useStorage = parlist->sublist("Problem").get("Use State Storage",true);
       pdeWithFilter
-        = Teuchos::rcp(new ROL::CompositeEqualityConstraint_SimOpt<RealT>(
+        = Teuchos::rcp(new ROL::CompositeConstraint_SimOpt<RealT>(
             conPDE, conFilter, *rp, *rp, *up, *zp, *zp, useStorage));
     }
     else {
@@ -188,11 +189,11 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new IntegralConstraint<RealT>(qoi_vol,assembler));
 
     /*** Initialize combined constraint. ***/
-    std::vector<Teuchos::RCP<ROL::EqualityConstraint<RealT> > > convec(2);
+    std::vector<Teuchos::RCP<ROL::Constraint<RealT> > > convec(2);
     convec[0] = pdeWithFilter;
     convec[1] = vcon;
-    Teuchos::RCP<ROL::EqualityConstraint<RealT> > con
-      = Teuchos::rcp(new ROL::EqualityConstraint_Partitioned<RealT>(convec));
+    Teuchos::RCP<ROL::Constraint<RealT> > con
+      = Teuchos::rcp(new ROL::Constraint_Partitioned<RealT>(convec));
 
     /*** Initialize constraint and multiplier vectors ***/
     RealT vecScaling = one / std::pow(domainWidth*domainHeight*(one-volFraction), 2);
@@ -274,7 +275,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > zhip
       = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(zhi_rcp,pde,assembler));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > zbnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(zlop,zhip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(zlop,zhip));
     // State bounds
     Teuchos::RCP<Tpetra::MultiVector<> > ulo_rcp = assembler->createStateVector();
     Teuchos::RCP<Tpetra::MultiVector<> > uhi_rcp = assembler->createStateVector();
@@ -284,7 +285,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > uhip
       = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(uhi_rcp,pde,assembler));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > ubnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(ulop,uhip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(ulop,uhip));
     ubnd->deactivate();
     // SimOpt bounds
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd

@@ -52,7 +52,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_InequalityConstraint.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 
 namespace ROL {
 namespace ZOO {
@@ -188,7 +188,7 @@ Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint_HS24( void ) {
   Teuchos::RCP<Vector<Real> > l = Teuchos::rcp( new StdVector<Real>(lp) );
   Teuchos::RCP<Vector<Real> > u = Teuchos::rcp( new StdVector<Real>(up) );
 
-  return Teuchos::rcp( new BoundConstraint<Real>(l,u) );
+  return Teuchos::rcp( new Bounds<Real>(l,u) );
 
 }
 

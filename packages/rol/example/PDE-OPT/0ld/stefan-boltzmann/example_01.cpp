@@ -54,7 +54,7 @@
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
     /*** Build objective function, constraint and reduced objective function. ***/
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj =
       Teuchos::rcp(new Objective_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con =
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
       Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, up));
@@ -150,7 +150,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,bounds,bman,false,false,100));
     // Build stochastic problem
-    ROL::StochasticProblem<RealT> opt(*parlist,objReduced,sampler,zp);
+    ROL::OptimizationProblem<RealT> opt(objReduced,zp);
+    opt.setStochasticObjective(*parlist,sampler);
 
     /*** Check functional interface. ***/
     std::vector<RealT> par(sdim,1.0);
@@ -166,15 +167,14 @@ int main(int argc, char *argv[]) {
     con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
     objReduced->checkGradient(*zp,*dzp,true,*outStream);
     objReduced->checkHessVec(*zp,*dzp,true,*outStream);
-    opt.checkObjectiveGradient(*dzp,true,*outStream);
-    opt.checkObjectiveHessVec(*dzp,true,*outStream);
+    opt.check(*outStream);
 
     /*** Solve optimization problem. ***/
     ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
     zp->zero(); // set zero initial guess
     algo_tr.run(opt, true, *outStream);
 
-    *outStream << " Solution Statistic: S(z) = " << opt.getSolutionStatistic() << "\n";
+    *outStream << " Solution Statistic: S(z) = " << opt.getSolutionStatistic(*parlist) << "\n";
 
     data->outputTpetraVector(z_rcp, "control.txt");
 

@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
     }
 
 
-    // Equality constraint value (scalar)  
+    // Constraint value (scalar)  
     Teuchos::RCP<std::vector<RealT> > c_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
     ConStdVector<RealT> c(c_rcp);
 

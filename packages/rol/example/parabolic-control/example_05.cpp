@@ -73,10 +73,10 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_StdBoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -88,7 +88,7 @@
 #include <ctime>
 
 template<class Real>
-class EqualityConstraint_ParabolicControl : public ROL::EqualityConstraint_SimOpt<Real> {
+class Constraint_ParabolicControl : public ROL::Constraint_SimOpt<Real> {
 
   typedef std::vector<Real>    vector;
   typedef ROL::Vector<Real>    V;
@@ -388,7 +388,7 @@ private:
 
 public:
 
-  EqualityConstraint_ParabolicControl(Real eps = 1.0, uint nx = 128, uint nt = 100, Real T = 1) 
+  Constraint_ParabolicControl(Real eps = 1.0, uint nx = 128, uint nt = 100, Real T = 1) 
     : eps1_(eps*eps), eps2_(1.0), nx_(nx), nt_(nt), T_(T) {
     u0_.resize(nx_,0.0);
     dx_ = 1.0/((Real)nx-1.0);
@@ -914,7 +914,7 @@ int main(int argc, char *argv[]) {
     RealT alpha = 1.e-3; // Set penalty parameter.
     RealT eps   = 5.e-1; // Set conductivity 
     Objective_ParabolicControl<RealT> obj(alpha,nx,nt,T);
-    EqualityConstraint_ParabolicControl<RealT> con(eps,nx,nt,T);
+    Constraint_ParabolicControl<RealT> con(eps,nx,nt,T);
     // Initialize iteration vectors.
     RCP<vector> xz_rcp = rcp( new vector(nt, 1.0) );
     RCP<vector> xu_rcp = rcp( new vector(nx*nt, 1.0) );
@@ -961,7 +961,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize reduced objective function
     RCP<ROL::Objective_SimOpt<RealT> > pobj = rcp(&obj,false);
-    RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = rcp(&con,false);
+    RCP<ROL::Constraint_SimOpt<RealT> > pcon = rcp(&con,false);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,xzp,cp);
 
     // Check deriatives.
@@ -981,7 +981,7 @@ int main(int argc, char *argv[]) {
     RCP<V> lo = rcp( new SV(lo_rcp) );
     RCP<V> up = rcp( new SV(up_rcp) );
 
-    ROL::BoundConstraint<RealT> icon(lo,up);
+    ROL::Bounds<RealT> icon(lo,up);
 
     // Primal dual active set.
     std::string filename = "input.xml";

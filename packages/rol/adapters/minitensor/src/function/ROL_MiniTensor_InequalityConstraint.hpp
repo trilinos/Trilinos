@@ -43,7 +43,7 @@
 #define ROL_MiniTensor_InequalityConstraint_hpp
 
 #include "MiniTensor_Solvers.h"
-#include "ROL_InequalityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_MiniTensor_Vector.hpp"
 
 namespace ROL {
@@ -54,7 +54,7 @@ using Index = minitensor::Index;
 /// Function base class that defines the interface to Mini Solvers.
 ///
 template<typename MSIC, typename S, Index M, Index N>
-class MiniTensor_InequalityConstraint : public InequalityConstraint<S>
+class MiniTensor_InequalityConstraint : public Constraint<S>
 {
 public:
 

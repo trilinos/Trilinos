@@ -13,7 +13,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
@@ -44,7 +44,7 @@
   */
 
 template<class Real>
-class EqualityConstraint_DiodeCircuit : public ROL::EqualityConstraint_SimOpt<Real> {
+class Constraint_DiodeCircuit : public ROL::Constraint_SimOpt<Real> {
 private:
   /// Thermal voltage (constant)
   Real Vth_; 
@@ -186,7 +186,7 @@ private:
 
 public:
   
-  EqualityConstraint_DiodeCircuit(Real Vth, Real Vsrc_min, Real Vsrc_max, Real Vsrc_step){
+  Constraint_DiodeCircuit(Real Vth, Real Vsrc_min, Real Vsrc_max, Real Vsrc_step){
     Vth_ = Vth;
     ns_ = (Vsrc_max-Vsrc_min)/Vsrc_step + 1;
     Vsrc_ = Teuchos::rcp(new std::vector<Real>(ns_,0.0));

@@ -45,6 +45,7 @@
 #include "ROL_InteriorPointPenalty.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdVector.hpp"
+#include "ROL_Bounds.hpp"
 
 #include <iomanip>
 
@@ -174,7 +175,7 @@ int main(int argc, char *argv[]) {
     }
 
     RCP<OBJ> obj = rcp( new NullObjective<RealT> );
-    RCP<BND> bnd = rcp( new ROL::BoundConstraint<RealT>(l,u) );
+    RCP<BND> bnd = rcp( new ROL::Bounds<RealT>(l,u) );
 
     ROL::InteriorPointPenalty<RealT> ipobj(obj,bnd,parlist);
 
