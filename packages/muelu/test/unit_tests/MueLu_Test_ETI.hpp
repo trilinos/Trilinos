@@ -80,9 +80,9 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
     std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
     Xpetra::Parameters xpetraParameters(clp);
 
-      //      
+    //
     switch (clp.parse(argc, argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE; 
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: 
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                            
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
