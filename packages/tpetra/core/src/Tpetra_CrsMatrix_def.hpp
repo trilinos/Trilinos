@@ -4060,13 +4060,15 @@ namespace Tpetra {
 
       // Make indices local, if necessary.  The method won't do
       // anything if the graph is already locally indexed.
-      const size_t numBadColInds = this->myGraph_->makeIndicesLocal ();
+      const std::pair<size_t, std::string> makeIndicesLocalResult =
+        this->myGraph_->makeIndicesLocal ();
+      // TODO (mfh 20 Jul 2017) Instead of throwing here, pass along
+      // the error state to makeImportExport or
+      // computeGlobalConstants, which may do all-reduces and thus may
+      // have the opportunity to communicate that error state.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (numBadColInds != 0, std::runtime_error, "When converting column indices "
-         "from global to local, we encountered " << numBadColInds
-         << "ind" << (numBadColInds != static_cast<size_t> (1) ? "ices" : "ex")
-         << " that do" << (numBadColInds != static_cast<size_t> (1) ? "es" : "")
-         << " not live in the column Map on this process.");
+        (makeIndicesLocalResult.first != 0, std::runtime_error,
+         makeIndicesLocalResult.second);
 
       const bool sorted = this->myGraph_->isSorted ();
       const bool merged = this->myGraph_->isMerged ();
@@ -4084,7 +4086,8 @@ namespace Tpetra {
       // The matrix does _not_ own the graph, and the graph's
       // structure is already fixed, so just fill the local matrix.
       this->fillLocalMatrix (params);
-    } else {
+    }
+    else {
       // The matrix _does_ own the graph, so fill the local graph at
       // the same time as the local matrix.
       this->fillLocalGraphAndMatrix (params);

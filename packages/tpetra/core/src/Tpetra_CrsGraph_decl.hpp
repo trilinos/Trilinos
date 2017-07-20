@@ -1451,11 +1451,18 @@ namespace Tpetra {
     /// \pre The graph has a column Map.
     /// \post The graph is locally indexed.
     ///
-    /// \return The number of column indices on this process, counting
-    ///   duplicates, that could not be converted to local indices,
-    ///   because they were not in the column Map on the calling
-    ///   process.
-    size_t makeIndicesLocal ();
+    /// \return Error code and error string.  See below.
+    ///
+    /// First return value is the number of column indices on this
+    /// process, counting duplicates, that could not be converted to
+    /// local indices, because they were not in the column Map on the
+    /// calling process.  If some error occurred before conversion
+    /// happened, then this is
+    /// <tt>Tpetra::Details::OrdinalTraits<size_t>::invalid()</tt>.
+    ///
+    /// Second return value is a human-readable error string.  If the
+    /// first return value is zero, then the string may be empty.
+    std::pair<size_t, std::string> makeIndicesLocal ();
 
     void makeImportExport ();
 

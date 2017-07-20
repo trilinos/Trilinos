@@ -61,8 +61,13 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include <algorithm>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <utility>
+#ifdef HAVE_TPETRA_DEBUG
+#  include <map>
+#  include <vector>
+#endif // HAVE_TPETRA_DEBUG
 
 namespace Tpetra {
   namespace Details {
@@ -3688,31 +3693,27 @@ namespace Tpetra {
 
     // Make indices local, if they aren't already.
     // The method doesn't do any work if the indices are already local.
-    const size_t numBadColInds = this->makeIndicesLocal ();
+    const std::pair<size_t, std::string> makeIndicesLocalResult =
+      this->makeIndicesLocal ();
+    // TODO (mfh 20 Jul 2017) Instead of throwing here, pass along the
+    // error state to makeImportExport or computeGlobalConstants,
+    // which may do all-reduces and thus may have the opportunity to
+    // communicate that error state.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (numBadColInds != 0, std::runtime_error, "When converting column indices "
-       "from global to local, we encountered " << numBadColInds
-       << "ind" << (numBadColInds != static_cast<size_t> (1) ? "ices" : "ex")
-       << " that do" << (numBadColInds != static_cast<size_t> (1) ? "es" : "")
-       << " not live in the column Map on this process.");
+      (makeIndicesLocalResult.first != 0, std::runtime_error,
+       makeIndicesLocalResult.second);
 
     // If this process has no indices, then CrsGraph considers it
     // already trivially sorted and merged.  Thus, this method need
     // not be called on all processes in the row Map's communicator.
     this->sortAndMergeAllIndices (this->isSorted (), this->isMerged ());
 
-    makeImportExport (); // Make Import and Export objects, if necessary
-    computeGlobalConstants ();
-    fillLocalGraph (params);
-    fillComplete_ = true;
+    this->makeImportExport (); // Make Import and Export objects, if necessary
+    this->computeGlobalConstants ();
+    this->fillLocalGraph (params);
+    this->fillComplete_ = true;
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillActive() == true || isFillComplete() == false, std::logic_error,
-      ": Violated stated post-conditions. Please contact Tpetra team.");
-#endif
-
-    checkInternalState ();
+    this->checkInternalState ();
   }
 
 
@@ -4685,13 +4686,14 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  size_t
+  std::pair<size_t, std::string>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   makeIndicesLocal ()
   {
     using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::arcp;
     using Teuchos::Array;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef device_type DT;
@@ -4705,6 +4707,8 @@ namespace Tpetra {
     const char tfecfFuncName[] = "makeIndicesLocal: ";
     ProfilingRegion regionMakeIndicesLocal ("Tpetra::CrsGraph::makeIndicesLocal");
 
+    // These are somewhat global properties, so it's safe to have
+    // exception checks for them, rather than returning an error code.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! this->hasColMap (), std::logic_error, "The graph does not have a "
        "column Map yet.  This method should never be called in that case.  "
@@ -4715,20 +4719,22 @@ namespace Tpetra {
        "the result of getColMap() is null.  This should never happen.  Please "
        "report this bug to the Tpetra developers.");
 
-    // Return value: The number of column indices (counting
+    // Return value 1: The number of column indices (counting
     // duplicates) that could not be converted to local indices,
     // because they were not in the column Map on the calling process.
     size_t lclNumErrs = 0;
+    std::ostringstream errStrm; // for return value 2 (error string)
 
     const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
     const map_type& colMap = * (this->getColMap ());
 
-    if (isGloballyIndexed () && lclNumRows != 0) {
-      // This is a host View.
-      typename row_entries_type::const_type h_numRowEnt = k_numRowEntries_;
+    if (this->isGloballyIndexed () && lclNumRows != 0) {
+      // This is a host-accessible View.
+      typename row_entries_type::const_type h_numRowEnt =
+        this->k_numRowEntries_;
 
-      // allocate data for local indices
-      if (getProfileType () == StaticProfile) {
+      // Allocate space for local indices.
+      if (this->getProfileType () == StaticProfile) {
         // If GO and LO are the same size, we can reuse the existing
         // array of 1-D index storage to convert column indices from
         // GO to LO.  Otherwise, we'll just allocate a new buffer.
@@ -4742,11 +4748,14 @@ namespace Tpetra {
             lcl_col_inds_type>::select (k_gblInds1D_, k_lclInds1D_);
         }
         else {
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (k_rowPtrs_.dimension_0 () == 0, std::logic_error,
-             "k_rowPtrs_.dimension_0() == 0.  This should never happen at this "
-             "point.  Please report this bug to the Tpetra developers.");
-
+          if (k_rowPtrs_.dimension_0 () == 0) {
+            errStrm << "k_rowPtrs_.dimension_0() == 0.  This should never "
+              "happen here.  Please report this bug to the Tpetra developers."
+              << endl;
+            // Need to return early.
+            return std::make_pair (Tpetra::Details::OrdinalTraits<size_t>::invalid (),
+                                   errStrm.str ());
+          }
           const auto numEnt = Details::getEntryOnHost (k_rowPtrs_, lclNumRows);
 
           // mfh 17 Dec 2016: We don't need initial zero-fill of
@@ -4789,6 +4798,14 @@ namespace Tpetra {
                                                                                         k_rowPtrs_,
                                                                                         lclColMap,
                                                                                         k_numRowEnt);
+        if (lclNumErrs != 0) {
+          errStrm << "When converting column indices from global to local, "
+            "we encountered " << lclNumErrs << " ind"
+            << (lclNumErrs != size_t (1) ? "ices" : "ex") << " that "
+            "do" << (lclNumErrs != static_cast<size_t> (1) ? "es" : "")
+            << " not live in the column Map on this process." << endl;
+        }
+
         // We've converted column indices from global to local, so we
         // can deallocate the global column indices (which we know are
         // in 1-D storage, because the graph has static profile).
@@ -4830,42 +4847,65 @@ namespace Tpetra {
 
         this->lclInds2D_ = lclInds2D; // "commit" the result
 
-#ifdef HAVE_TPETRA_DEBUG
         // If we detected an error in the above loop, go back and find
-        // the first global column index not in the column Map on the
+        // the global column indices not in the column Map on the
         // calling process.
         if (lclNumErrs != 0) {
-          for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-            const GO* const curGblInds = gblInds2D_[lclRow].getRawPtr ();
-            // NOTE (mfh 26 Jun 2016) It's always legal to cast the
-            // number of entries in a row to LO, as long as the row
-            // doesn't have too many duplicate entries.
-            const LO numEnt = static_cast<LO> (h_numRowEnt(lclRow));
-            for (LO j = 0; j < numEnt; ++j) {
-              const GO gid = curGblInds[j];
-              const LO lid = colMap.getLocalElement (gid);
-              TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-                (lid == Tpetra::Details::OrdinalTraits<LO>::invalid (),
-                 std::logic_error,
-                 "Global column curGblInds[j=" << j << "]=" << curGblInds[j]
-                 << " of local row " << lclRow << " is not in the column Map.  "
-                 "This should never happen.  Please report this bug to the "
-                 "Tpetra developers.");
+          // If there are too many errors, don't bother printing them.
+          if (lclNumErrs > static_cast<size_t> (100)) {
+            errStrm << "When converting column indices from global to local, "
+              "we encountered " << lclNumErrs << " indices that do not live "
+              "in the column Map on this process.  That's too many to print."
+              << endl;
+          }
+          else {
+            std::map<LO, std::vector<GO> > badColInds;
+
+            for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+              const GO* const curGblInds = gblInds2D_[lclRow].getRawPtr ();
+              // NOTE (mfh 26 Jun 2016) It's always legal to cast the
+              // number of entries in a row to LO, as long as the row
+              // doesn't have too many duplicate entries.
+              const LO numEnt = static_cast<LO> (h_numRowEnt(lclRow));
+              for (LO j = 0; j < numEnt; ++j) {
+                const GO gid = curGblInds[j];
+                const LO lid = colMap.getLocalElement (gid);
+                if (lid == Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+                  badColInds[lid].push_back (gid);
+                }
+              }
+            }
+
+            errStrm << "When converting column indices from global to local, "
+              "we encountered " << lclNumErrs << " ind"
+               << (lclNumErrs != size_t (1) ? "ices" : "ex") << " that "
+              "do" << (lclNumErrs != static_cast<size_t> (1) ? "es" : "")
+               << " not live in the column Map on this process." << endl
+               << "Global column indices not in the column Map:" << endl;
+            for (auto && eachPair : badColInds) {
+              errStrm << "Local row " << eachPair.first << ": [";
+              const size_t numBad = eachPair.second.size ();
+              for (size_t k = 0; k < numBad; ++k) {
+                errStrm << eachPair.second[k];
+                if (k + size_t (1) < numBad) {
+                  errStrm << ",";
+                }
+              }
+              errStrm << "]" << endl;
             }
           }
         }
-#endif // HAVE_TPETRA_DEBUG
 
-        gblInds2D_ = Teuchos::null;
+        this->gblInds2D_ = Teuchos::null;
       }
     } // globallyIndexed() && lclNumRows > 0
 
-    lclGraph_ = local_graph_type (k_lclInds1D_, k_rowPtrs_);
-    indicesAreLocal_  = true;
-    indicesAreGlobal_ = false;
-    checkInternalState ();
+    this->lclGraph_ = local_graph_type (this->k_lclInds1D_, this->k_rowPtrs_);
+    this->indicesAreLocal_  = true;
+    this->indicesAreGlobal_ = false;
+    this->checkInternalState ();
 
-    return lclNumErrs;
+    return std::make_pair (lclNumErrs, errStrm.str ());
   }
 
 
