@@ -344,6 +344,11 @@ private:
   mutable Teuchos::RCP<MV> X_colMap_;
   mutable Teuchos::RCP<MV> Y_rowMap_;
 
+  //! The permuted copy of the U factor.
+  typedef  Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> crs_matrix_type;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  Teuchos::RCP<typename crs_matrix_type::local_matrix_type> Ulocal_;
+
   bool isInitialized_;
   bool isComputed_;
 
