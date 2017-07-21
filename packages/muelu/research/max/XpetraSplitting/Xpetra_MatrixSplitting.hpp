@@ -121,7 +121,7 @@ class checkerAllToRegion {
 			//Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
 			globalMatrixData_ = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matrix_file_name, xpetraMap);
 
-			CreateLocalMatrices( driver_->GetLocalRowMaps() );
+			CreateLocalMatrices( driver_->GetRegionalRowMaps() );
 		}
 
 		//! Destructor
@@ -528,9 +528,25 @@ class checkerAllToRegion {
 
 		//! Implements DistObject interface
 		//{@
-		void write(const char* output_file_name)
+		void writeGlobalMatrix()
 		{
-                	Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(output_file_name, *globalMatrixData_);
+			std::string file_name;
+			file_name += "A_global.mtx";
+                	Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name, *globalMatrixData_);
+		}
+
+
+		void writeRegionalMatrices()
+		{
+			for( int i = 0; i<num_total_regions_; ++i )
+			{
+				std::string region_str = std::to_string(i);
+				std::string file_name;
+				file_name += "A_region_";
+				file_name += region_str;
+				file_name += ".mtx";
+                		Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name.c_str(), *localMatrixData_[i]);
+			}
 		}
 		// @}
 		
@@ -566,6 +582,8 @@ class checkerAllToRegion {
 			RCP<Matrix> regional_matrix = localMatrixData_[region_idx];
 			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
 
+			//Xpetra structures must be covnerted into Tpetra specialized ones to construct an Ifpack2::OverlappingRowMatrix object
+			//Once the Ifpack2::OverlappingRowMatrix class is transferred into the Xpetra directory, the following 6 lines can be changed/removed
 			typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_crs_matrix;
 			typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_row_matrix;
 			typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> tpetra_map;
@@ -583,13 +601,35 @@ class checkerAllToRegion {
 				checkerRegionToAll<GlobalOrdinal> unaryPredicate(*iter+1);
 				typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator;
 				global_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicate);
-				TEUCHOS_TEST_FOR_EXCEPTION( global_iterator==regionToAll.end(), Exceptions::RuntimeError, "Processor with ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with index: "<<*iter+1<<" is not in regionToAll"<< regionToAll.size()<<"\n" );
+				TEUCHOS_TEST_FOR_EXCEPTION( global_iterator==regionToAll.end(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with regional index: "<<*iter+1<<" is not in regionToAll["<<region_idx<<"]"<<"\n" );
 				GlobalOrdinal node_idx = std::get<1>( *global_iterator );
-				LocalOrdinal node_local_idx = enlargedMatrix.getRowMap()->getLocalElement(node_idx);
+				LocalOrdinal node_local_idx = enlargedMatrix.getRowMap()->getLocalElement(node_idx-1);
+
 				ArrayView<const GlobalOrdinal> inds;
 				ArrayView<const Scalar> vals;
 				enlargedMatrix.getLocalRowView( node_local_idx, inds, vals );
 
+				std::vector<GlobalOrdinal> regional_inds_vector(0);
+				std::vector<Scalar>	regional_vals_vector(0);
+
+				for( LocalOrdinal i = 0; i < inds.size(); ++i )
+				{
+					//Nodes are saved in data structures with 1 as base index
+					GlobalOrdinal global_col_ind = enlargedMatrix.getColMap()->getGlobalElement(inds[i]) + 1;
+					checkerAllToRegion<GlobalOrdinal> unaryPredicate2(global_col_ind);
+					typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator regional_iterator;
+					regional_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerAllToRegion<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicate2);
+					//TEUCHOS_TEST_FOR_EXCEPTION( regional_iterator==regionToAll.end(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with global index: "<<global_col_ind+1<<" is not in regionToAll["<<region_idx<<"]"<<"\n" );
+					if( regional_iterator!=regionToAll.end() )
+					{
+						//std::cout<<"Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" global column index: "<<global_col_ind<<" regional column index: "<<std::get<0>(*regional_iterator)<<std::endl;
+						regional_inds_vector.push_back( std::get<0>(*regional_iterator)-1 );
+						regional_vals_vector.push_back( vals[i] );
+					}
+				}
+				ArrayView<GlobalOrdinal> regional_inds(regional_inds_vector);
+				ArrayView<Scalar> regional_vals(regional_vals_vector);
+				regional_matrix -> insertGlobalValues( *iter,regional_inds,regional_vals );
 			}
 			regional_matrix -> fillComplete();
 		};
@@ -598,9 +638,9 @@ class checkerAllToRegion {
 
 		//! @name Creation of Local matrices
 		//@{
-		void CreateLocalMatrices( Array<Array<GlobalOrdinal> > local_maps){ 
+		void CreateLocalMatrices( Array<Array<GlobalOrdinal> > regional_maps){ 
 
-			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=local_maps.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of local_maps structure \n");
+			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=regional_maps.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of regional_maps structure \n");
 
 			localMatrixData_.clear( );		
 
@@ -608,7 +648,7 @@ class checkerAllToRegion {
 			{
 				//Create Xpetra map for local stiffness matrix
 				RCP<const Xpetra::Map<int,GlobalOrdinal,Node> > xpetraMap;
-				xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Node>::Build(lib, driver_->num_regional_nodes_[i], local_maps[i], 0, comm_); 			
+				xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Node>::Build(lib, driver_->num_regional_nodes_[i], regional_maps[i], 0, comm_); 			
 				int num_elements = xpetraMap->getGlobalNumElements();
 				
 				RCP<CrsMatrix> crs_matrix;
@@ -639,8 +679,8 @@ class checkerAllToRegion {
 		RCP<Matrix> globalMatrixData_;
 		Array<RCP<Matrix> > localMatrixData_;
 
-		GlobalOrdinal num_total_elements_;
-		GlobalOrdinal num_total_regions_;
+		GlobalOrdinal num_total_elements_ = 0;
+		GlobalOrdinal num_total_regions_ = 0;
 
 	}; //class MatrixSplitting
 

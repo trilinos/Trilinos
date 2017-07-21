@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 	//SplittingDriver
 	Xpetra::SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> driver("node.txt", comm);
 	Teuchos::Array<GlobalOrdinal> elementlist = driver.GetGlobalRowMap();
-	Teuchos::Array<GlobalOrdinal> elementlist_region1 = driver.GetLocalRowMap(1);
+	Teuchos::Array<GlobalOrdinal> elementlist_region1 = driver.GetRegionalRowMap(1);
 	/*driver.printView();
 	driver.printNodesToRegion();*/
 	driver.printInactive();
@@ -86,7 +86,8 @@ int main(int argc, char* argv[])
 
 	Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseTpetra> xpetraWrapper( argv[1], argv[2], comm );
 	std::string output_file="A_write.mtx";
-	xpetraWrapper.write(output_file.c_str());
+	xpetraWrapper.writeGlobalMatrix();	
+	xpetraWrapper.writeRegionalMatrices();
 
 	#ifdef HAVE_MPI
  	  MPI_Finalize();

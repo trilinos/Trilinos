@@ -228,7 +228,7 @@ namespace Xpetra{
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateRowMaps()
 	{
-		TEUCHOS_TEST_FOR_EXCEPTION( ( procs_per_region_.empty() && regions_per_proc_.empty() ), Exceptions::RuntimeError, "Information about region partitioning across processors is not consistent: incorrect values for number of processors or number of regions \n");
+		TEUCHOS_TEST_FOR_EXCEPTION( ( procs_per_region_.empty() && regions_per_proc_.empty() ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Information about region partitioning across processors is not consistent: incorrect values for number of processors or number of regions \n");
 		Array<GlobalOrdinal> elements;
 		Array<GlobalOrdinal> regional_elements;
 		Array<Array<GlobalOrdinal> > elements_per_region;
@@ -260,7 +260,7 @@ namespace Xpetra{
 				int num_regional_nodes = nodes_iterator2 - nodes_iterator1;
 						
 				typename Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >::iterator nodes_iterator_aux;
-				GlobalOrdinal local_node_label = 1;
+				GlobalOrdinal regional_node_label = 1;
 				for( nodes_iterator_aux=nodes_iterator1; nodes_iterator_aux!=nodes_iterator2; ++nodes_iterator_aux )
 				{
 					GlobalOrdinal node = std::get<0>(*nodes_iterator_aux);
@@ -276,20 +276,20 @@ namespace Xpetra{
 
 					//Nodes on the interface still belong to multiple regions, so 
 					//it is important to keep track of this for the row maps of regional matrices
-					regional_elements.push_back(local_node_label);
+					regional_elements.push_back(regional_node_label);
 
 					//If a process owns a region (or even a portion of it), we provide to it a map
 					//from regional indices to global indices for all the nodes inside that region, 
 					//even if a specific node is not owned by the calling process
-					regionToAll[*iter_array-1].push_back( std::make_tuple( local_node_label,std::get<0>(*nodes_iterator_aux) ) );
-					local_node_label++;
+					regionToAll[*iter_array-1].push_back( std::make_tuple( regional_node_label,std::get<0>(*nodes_iterator_aux) ) );
+					regional_node_label++;
 				}
 
 				for( typename Array<GlobalOrdinal>::iterator iter = regional_elements.begin(); iter!=regional_elements.end(); ++iter )
 					*iter = *iter - 1;
 
 				elements_per_region[*iter_array-1] = regional_elements;
-				TEUCHOS_TEST_FOR_EXCEPTION( ( num_regional_nodes!=regionToAll[*iter_array-1].size() ), Exceptions::RuntimeError, "Number of regional nodes does not match with number of nodes stored in regionToAll \n"<<"num_regional_nodes= "<< num_regional_nodes<<" whereas regionToAll["<<*iter_array-1<<"].size()= "<<regionToAll[*iter_array-1].size()<<"\n");
+				TEUCHOS_TEST_FOR_EXCEPTION( ( num_regional_nodes!=regionToAll[*iter_array-1].size() ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of regional nodes does not match with number of nodes stored in regionToAll \n"<<"num_regional_nodes= "<< num_regional_nodes<<" whereas regionToAll["<<*iter_array-1<<"].size()= "<<regionToAll[*iter_array-1].size()<<"\n");
 			}
 			TEUCHOS_TEST_FOR_EXCEPTION( ( num_total_regions_!=regionToAll.size() ), Exceptions::RuntimeError, "regionToAll size has been corrupted\n"<<"num_total_regions_ = "<<num_total_regions_<<" whereas regionToAll.size() = "<<regionToAll.size()<<"\n");
 		}
@@ -297,7 +297,7 @@ namespace Xpetra{
 		{
 			bool region_found = false;			
 			GlobalOrdinal myRegion = -1;
-			TEUCHOS_TEST_FOR_EXCEPTION( !( procs_per_region_.size() == num_total_regions_ ), Exceptions::RuntimeError, "Number of total regions does not match with driver structures \n");
+			TEUCHOS_TEST_FOR_EXCEPTION( !( procs_per_region_.size() == num_total_regions_ ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of total regions does not match with driver structures \n");
 
 			Array<GlobalOrdinal> regional_procs;
 			while( !region_found )
@@ -340,7 +340,7 @@ namespace Xpetra{
 				if( proc_iterator!=regional_procs_reduced.end() )//This reasoning works because the PROC ID for each region has been previously sorted in ascending order
 				{
 					GlobalOrdinal node = std::get<0>( *( nodes_iterator1+(proc_iterator-regional_procs_reduced.begin()+1) ) );
-					GlobalOrdinal local_node_label = proc_iterator-regional_procs_reduced.begin()+1;
+					GlobalOrdinal regional_node_label = proc_iterator-regional_procs_reduced.begin()+1;
 					checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(node);
 					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 					nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(nodesToRegion_.begin(), nodesToRegion_.end(), unaryPredicateNode);	
@@ -348,8 +348,8 @@ namespace Xpetra{
 					if( myRegion == nodal_regions[0] )
 						elements.push_back( node );
 
-					regional_elements.push_back(local_node_label);
-					regionToAll[myRegion-1].push_back( std::make_tuple(local_node_label, node) );
+					regional_elements.push_back(regional_node_label);
+					regionToAll[myRegion-1].push_back( std::make_tuple(regional_node_label, node) );
 				}
 
 				//If a process owns a region (or even a portion of it), we provide to it a map
@@ -358,11 +358,11 @@ namespace Xpetra{
 				/*for( proc_iterator=regional_procs_reduced.begin(); proc_iterator!=regional_procs_reduced.end(); ++proc_iterator )
 				{
 					GlobalOrdinal node = std::get<0>( *( nodes_iterator1+(proc_iterator-regional_procs_reduced.begin()+1) ) );
-					GlobalOrdinal local_node_label = proc_iterator-regional_procs_reduced.begin();
+					GlobalOrdinal regional_node_label = proc_iterator-regional_procs_reduced.begin();
 					checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(node);
 					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 					nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(nodesToRegion_.begin(), nodesToRegion_.end(), unaryPredicateNode);	
-					regionToAll[myRegion-1].push_back( std::make_tuple(local_node_label, node) );
+					regionToAll[myRegion-1].push_back( std::make_tuple(regional_node_label, node) );
 				}*/
 
 			}
@@ -374,7 +374,7 @@ namespace Xpetra{
 				if( proc_iterator!=regional_procs.end() )//This reasoning works because the PROC ID for each region has been previously sorted in ascending order
 				{
 					GlobalOrdinal node = std::get<0>( *( nodes_iterator1+(proc_iterator-regional_procs.begin()+1) ) );
-					GlobalOrdinal local_node_label = proc_iterator-regional_procs.begin()+1;
+					GlobalOrdinal regional_node_label = proc_iterator-regional_procs.begin()+1;
 					checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(node);
 					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 					nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(nodesToRegion_.begin(), nodesToRegion_.end(), unaryPredicateNode);	
@@ -382,8 +382,8 @@ namespace Xpetra{
 					if( myRegion == nodal_regions[0] )
 						elements.push_back( node );
 
-					regional_elements.push_back(local_node_label);
-					regionToAll[myRegion-1].push_back( std::make_tuple(local_node_label, node) );
+					regional_elements.push_back(regional_node_label);
+					regionToAll[myRegion-1].push_back( std::make_tuple(regional_node_label, node) );
 				}
 
 				//If a process owns a region (or even a portion of it), we provide to it a map
@@ -392,11 +392,11 @@ namespace Xpetra{
 				/*for( proc_iterator=regional_procs.begin(); proc_iterator!=regional_procs.end(); ++proc_iterator )
 				{
 					GlobalOrdinal node = std::get<0>( *( nodes_iterator1+(proc_iterator-regional_procs.begin()+1) ) );
-					GlobalOrdinal local_node_label = proc_iterator-regional_procs.begin();
+					GlobalOrdinal regional_node_label = proc_iterator-regional_procs.begin();
 					checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(node);
 					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 					nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(nodesToRegion_.begin(), nodesToRegion_.end(), unaryPredicateNode);	
-					regionToAll[myRegion-1].push_back( std::make_tuple(local_node_label, node) );
+					regionToAll[myRegion-1].push_back( std::make_tuple(regional_node_label, node) );
 				}*/
 			}
 			else
@@ -413,7 +413,7 @@ namespace Xpetra{
 					for( int i=0; i<num_nodes_proc; ++i )
 					{
 						GlobalOrdinal node = std::get<0>( *( nodes_iterator1 + init_node + i ) );
-						GlobalOrdinal local_node_label = init_node + i + 1;
+						GlobalOrdinal regional_node_label = init_node + i + 1;
 						checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(node);
 						typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 						nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(nodesToRegion_.begin(), nodesToRegion_.end(), unaryPredicateNode);	
@@ -421,8 +421,8 @@ namespace Xpetra{
 						if( myRegion == nodal_regions[0] )
 							elements.push_back( node );
 
-						regional_elements.push_back(local_node_label);
-						regionToAll[myRegion-1].push_back( std::make_tuple(local_node_label, node) );
+						regional_elements.push_back(regional_node_label);
+						regionToAll[myRegion-1].push_back( std::make_tuple(regional_node_label, node) );
 					}
 				}
 				else
@@ -431,7 +431,7 @@ namespace Xpetra{
 					for( int i=0; i<num_nodes_proc-1; ++i )
 					{
 						GlobalOrdinal node = std::get<0>( *( nodes_iterator1 + init_node + i ) );
-						GlobalOrdinal local_node_label = init_node + i + 1;
+						GlobalOrdinal regional_node_label = init_node + i + 1;
 						checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(node);
 						typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 						nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(nodesToRegion_.begin(), nodesToRegion_.end(), unaryPredicateNode);	
@@ -439,8 +439,8 @@ namespace Xpetra{
 						if( myRegion == nodal_regions[0] )
 							elements.push_back( node );
 
-						regional_elements.push_back(local_node_label);
-						regionToAll[myRegion-1].push_back( std::make_tuple(local_node_label, node) );
+						regional_elements.push_back(regional_node_label);
+						regionToAll[myRegion-1].push_back( std::make_tuple(regional_node_label, node) );
 					}
 				}	
 
@@ -455,11 +455,11 @@ namespace Xpetra{
 						for( int i=0; i<num_nodes_proc; ++i )
 						{
 							GlobalOrdinal node = std::get<0>( *( nodes_iterator1 + init_node + i ) );
-							GlobalOrdinal local_node_label = init_node + i;
+							GlobalOrdinal regional_node_label = init_node + i;
 							checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(node);
 							typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 							nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(nodesToRegion_.begin(), nodesToRegion_.end(), unaryPredicateNode);	
-							regionToAll[myRegion-1].push_back( std::make_tuple(local_node_label, node) );
+							regionToAll[myRegion-1].push_back( std::make_tuple(regional_node_label, node) );
 						}
 					}
 					else
@@ -468,17 +468,17 @@ namespace Xpetra{
 						for( int i=0; i<num_nodes_proc-1; ++i )
 						{
 							GlobalOrdinal node = std::get<0>( *( nodes_iterator1 + init_node + i ) );
-							GlobalOrdinal local_node_label = init_node + i;
+							GlobalOrdinal regional_node_label = init_node + i;
 							checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(node);
 							typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 							nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(nodesToRegion_.begin(), nodesToRegion_.end(), unaryPredicateNode);	
-							regionToAll[myRegion-1].push_back( std::make_tuple(local_node_label, node) );
+							regionToAll[myRegion-1].push_back( std::make_tuple(regional_node_label, node) );
 						}
 					}	
 				}*/
 	
 			}	
-			TEUCHOS_TEST_FOR_EXCEPTION( ( num_total_regions_!=regionToAll.size() ), Exceptions::RuntimeError, "regionToAll size has been corrupted\n"<<"num_total_regions_ = "<<num_total_regions_<<" whereas regionToAll.size()= "<<regionToAll.size()<<"\n");
+			TEUCHOS_TEST_FOR_EXCEPTION( ( num_total_regions_!=regionToAll.size() ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - regionToAll size has been corrupted\n"<<"num_total_regions_ = "<<num_total_regions_<<" whereas regionToAll.size()= "<<regionToAll.size()<<"\n");
 
 			for( typename Array<GlobalOrdinal>::iterator iter = regional_elements.begin(); iter!=regional_elements.end(); ++iter )
 				*iter = *iter - 1;
@@ -490,17 +490,17 @@ namespace Xpetra{
 			*iter = *iter - 1;
 
 		maps_.global_map_ = elements;
-		maps_.local_maps_ = elements_per_region;
+		maps_.regional_maps_ = elements_per_region;
 		maps_.regionToAll_ = regionToAll;
 	}
 
 
 // Get methods to allow a user interface with private members of the SplittingDriver class
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	Array<GlobalOrdinal> SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLocalRowMap(GlobalOrdinal region_index)
+	Array<GlobalOrdinal> SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionalRowMap(GlobalOrdinal region_index)
 	{
 		TEUCHOS_TEST_FOR_EXCEPTION( region_index>num_total_regions_, Exceptions::RuntimeError, "Value of region index exceeds total number of regions stored \n"<<"Trying to access informaiton about region "<<region_index<<" when the total number of regions stored is "<<num_total_regions_<<"\n");
-		return maps_.local_maps_[region_index-1];
+		return maps_.regional_maps_[region_index-1];
 	}
 
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

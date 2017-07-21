@@ -65,7 +65,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	public:
 		Array<Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > > regionToAll_;//used as a map for a RegionToAll node index
 		Array<GlobalOrdinal> global_map_; //used as RowMap for global matrices
-		Array<Array<GlobalOrdinal> > local_maps_; //used as RowMap for local matrices
+		Array<Array<GlobalOrdinal> > regional_maps_; //used as RowMap for regional matrices
 	};
 
 
@@ -87,8 +87,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		GlobalOrdinal GetNumGlobalElements(){return num_total_nodes_;};
 		GlobalOrdinal GetNumTotalRegions(){return num_total_regions_;};
 		Array<GlobalOrdinal> GetGlobalRowMap(){return maps_.global_map_;};
-		Array<GlobalOrdinal> GetLocalRowMap(GlobalOrdinal region_index);
-		Array<Array<GlobalOrdinal> > GetLocalRowMaps(){return maps_.local_maps_;};
+		Array<GlobalOrdinal> GetRegionalRowMap(GlobalOrdinal region_index);
+		Array<Array<GlobalOrdinal> > GetRegionalRowMaps(){return maps_.regional_maps_;};
 		Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >  GetRegionToAll(GlobalOrdinal);//used as a map for a RegionToAll node index
 	//}
 	//! @Printout methods
@@ -117,7 +117,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
 		Array<std::tuple<int, Array<GlobalOrdinal> > > nodesToRegion_; //for each node it lists the regions it belongs to
 
-		//Maps used for global and local operators
+		//Maps used for global and regional operators
 		Splitting_MapsInfo<Scalar, LocalOrdinal, GlobalOrdinal, Node> maps_;
 
 		//Interface routines
