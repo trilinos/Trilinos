@@ -1573,6 +1573,8 @@ namespace Tpetra {
     ///   will store the input indices as global indices.  Otherwise,
     ///   if <tt>I == LocalIndices</tt>, this method will store the
     ///   input indices as local indices.
+    ///
+    /// \return The number of indices inserted.
     size_t
     insertIndices (const RowInfo& rowInfo,
                    const SLocalGlobalViews& newInds,
@@ -1735,12 +1737,23 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     }
 
-    void
-    insertGlobalIndicesImpl (const LocalOrdinal myRow,
+    /// \brief Insert global indices, using an input <i>local</i> row index.
+    ///
+    /// \return The number of indices inserted.
+    size_t
+    insertGlobalIndicesImpl (const LocalOrdinal lclRow,
+                             const Teuchos::ArrayView<const GlobalOrdinal>& gblColInds);
+
+    /// \brief Insert global indices, using an input RowInfo.
+    ///
+    /// \return The number of indices inserted.
+    size_t
+    insertGlobalIndicesImpl (const RowInfo& rowInfo,
                              const Teuchos::ArrayView<const GlobalOrdinal> &indices);
+
     void
-    insertLocalIndicesImpl (const LocalOrdinal myRow,
-                            const Teuchos::ArrayView<const LocalOrdinal> &indices);
+    insertLocalIndicesImpl (const LocalOrdinal lclRow,
+                            const Teuchos::ArrayView<const LocalOrdinal>& gblColInds);
 
     /// \brief Like insertGlobalIndices(), but with column Map filtering.
     ///
