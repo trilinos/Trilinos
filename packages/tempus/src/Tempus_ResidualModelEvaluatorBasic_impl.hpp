@@ -6,15 +6,15 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_ResidualModelEvaluator_impl_hpp
-#define Tempus_ResidualModelEvaluator_impl_hpp
+#ifndef Tempus_ResidualModelEvaluatorBasic_impl_hpp
+#define Tempus_ResidualModelEvaluatorBasic_impl_hpp
 
 namespace Tempus {
 
 
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-ResidualModelEvaluator<Scalar>::
+ResidualModelEvaluatorBasic<Scalar>::
 createInArgs() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -30,7 +30,7 @@ createInArgs() const
 
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-ResidualModelEvaluator<Scalar>::
+ResidualModelEvaluatorBasic<Scalar>::
 createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -47,42 +47,39 @@ createOutArgsImpl() const
 
 template <typename Scalar>
 void
-ResidualModelEvaluator<Scalar>::
+ResidualModelEvaluatorBasic<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-
   using Teuchos::RCP;
 
-  RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
-  RCP<Thyra::VectorBase<Scalar> >   x_dot = Thyra::createMember(get_x_space());
-
-  // call functor to compute x dot
-  computeXDot_(*x,*x_dot);
-
-  // setup input condition for nonlinear solve
+  // Setup the evaluation of the ImplicitODE_DAE
   MEB::InArgs<Scalar> transientInArgs = transientModel_->createInArgs();
+  MEB::OutArgs<Scalar> transientOutArgs = transientModel_->createOutArgs();
+  RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
+
+  // setup the temporal input condition for application ME
   transientInArgs.set_x(x);
-  transientInArgs.set_x_dot(x_dot);
-  transientInArgs.set_t(t_);
-  transientInArgs.set_alpha(alpha_);
-  transientInArgs.set_beta(beta_);
+  if (transientInArgs.supports(MEB::IN_ARG_t)) transientInArgs.set_t(t_);
   for (int i=0; i<transientModel_->Np(); ++i) {
     if (inArgs.get_p(i) != Teuchos::null)
       transientInArgs.set_p(i, inArgs.get_p(i));
   }
 
   // setup output condition
-  MEB::OutArgs<Scalar> transientOutArgs = transientModel_->createOutArgs();
   transientOutArgs.set_f(outArgs.get_f());
-  transientOutArgs.set_W_op(outArgs.get_W_op());
 
-  // build residual and jacobian
+  RCP<Thyra::VectorBase<Scalar> > x_dot = Thyra::createMember(get_x_space());
+  computeXDot_(*x,*x_dot);
+  transientInArgs.set_x_dot(x_dot);
+  transientInArgs.set_alpha(alpha_);
+  transientInArgs.set_beta(beta_);
+  transientOutArgs.set_W_op(outArgs.get_W_op());
   transientModel_->evalModel(transientInArgs,transientOutArgs);
 }
 
 
 } // namespace Tempus
 
-#endif  // Tempus_ResidualModelEvaluator_impl_hpp
+#endif  // Tempus_ResidualModelEvaluatorBasic_impl_hpp

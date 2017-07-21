@@ -51,7 +51,6 @@ public:
   /// Destructor
   virtual ~SolutionState() {};
 
-  /** \brief. */
   SolutionState(
     const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,

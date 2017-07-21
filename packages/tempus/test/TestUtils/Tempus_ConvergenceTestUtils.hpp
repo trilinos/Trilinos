@@ -61,8 +61,10 @@ template<class Scalar>
 void LinearRegression<Scalar>::validateXYData_(
   std::vector<Scalar>& x, std::vector<Scalar>& y)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(x.size() != y.size());
-  TEUCHOS_TEST_FOR_EXCEPT(x.size() < 2);
+  TEUCHOS_TEST_FOR_EXCEPTION(x.size() != y.size(), std::logic_error,
+    "x and y data are note the same size for linear regression\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(x.size() < 2, std::logic_error,
+    "Not enough data points for linear regression!\n");
   int N = Teuchos::as<int>(x.size());
   // There must be at least two unique x values
   Scalar alpha = x[0];

@@ -6,11 +6,11 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_ResidualModelEvaluator_decl_hpp
-#define Tempus_ResidualModelEvaluator_decl_hpp
+#ifndef Tempus_ResidualModelEvaluatorBasic_decl_hpp
+#define Tempus_ResidualModelEvaluatorBasic_decl_hpp
 
 #include <functional>
-#include "Thyra_StateFuncModelEvaluatorBase.hpp"
+#include "Tempus_ResidualModelEvaluator.hpp"
 
 namespace Tempus {
 
@@ -25,29 +25,30 @@ namespace Tempus {
  *  it is not stateless!
  */
 template <typename Scalar>
-class ResidualModelEvaluator : public Thyra::StateFuncModelEvaluatorBase<Scalar>
+class ResidualModelEvaluatorBasic
+  : public Tempus::ResidualModelEvaluator<Scalar>
 {
 public:
-  typedef Thyra::VectorBase<Scalar>  Vector;
 
   /// Constructor
-  ResidualModelEvaluator(
+  ResidualModelEvaluatorBasic(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
     : transientModel_(transientModel)
   {}
 
   /// Set the underlying transient ModelEvaluator
-  void setTransientModel(
+  virtual void setTransientModel(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me)
   { transientModel_ = me; }
 
   /// Get the underlying transient model 'f'
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getTransientModel() const
-  { return transientModel_; }
+  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+    getTransientModel() const { return transientModel_; }
 
   /// Set values to compute x dot and evaluate transient model.
-  void initialize(
-    std::function<void (const Vector &,Vector &)> computeXDot,
+  virtual void initialize(
+    std::function<void (const Thyra::VectorBase<Scalar> &,
+                              Thyra::VectorBase<Scalar> &)> computeXDot,
     double t, double alpha, double beta)
   {
     computeXDot_ = computeXDot; t_ = t; alpha_ = alpha; beta_ = beta;
@@ -63,6 +64,7 @@ public:
 
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const
       { return transientModel_->get_f_space(); }
+
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int p) const
       { return transientModel_->get_p_space(p); };
 
@@ -85,11 +87,12 @@ public:
 
 private:
   /// Default constructor - not allowed
-  ResidualModelEvaluator();
+  ResidualModelEvaluatorBasic();
 
 private:
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > transientModel_;
-  std::function<void (const Vector &,Vector &)> computeXDot_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >      transientModel_;
+  std::function<void (const Thyra::VectorBase<Scalar> &,
+                            Thyra::VectorBase<Scalar> &)> computeXDot_;
   Scalar t_;
   Scalar alpha_;
   Scalar beta_;
@@ -97,4 +100,4 @@ private:
 
 } // namespace Tempus
 
-#endif // Tempus_ResidualModelEvaluator_hpp
+#endif // Tempus_ResidualModelEvaluatorBasic_decl_hpp
