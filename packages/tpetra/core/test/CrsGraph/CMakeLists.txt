@@ -49,3 +49,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 3-8
   STANDARD_PASS_OUTPUT
   )
+
+# This test needs exactly 2 MPI processes to work.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsGraph_insertGlobalIndicesFiltered
+  SOURCES
+    CrsGraph_insertGlobalIndicesFiltered.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )

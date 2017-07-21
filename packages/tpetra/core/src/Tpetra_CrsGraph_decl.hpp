@@ -1446,62 +1446,29 @@ namespace Tpetra {
     /// method unnecessarily.
     void makeColMap ();
 
-    void makeIndicesLocal ();
+    /// \brief Convert column indices from global to local.
+    ///
+    /// \pre The graph has a column Map.
+    /// \post The graph is locally indexed.
+    ///
+    /// \return Error code and error string.  See below.
+    ///
+    /// First return value is the number of column indices on this
+    /// process, counting duplicates, that could not be converted to
+    /// local indices, because they were not in the column Map on the
+    /// calling process.  If some error occurred before conversion
+    /// happened, then this is
+    /// <tt>Tpetra::Details::OrdinalTraits<size_t>::invalid()</tt>.
+    ///
+    /// Second return value is a human-readable error string.  If the
+    /// first return value is zero, then the string may be empty.
+    std::pair<size_t, std::string> makeIndicesLocal ();
+
     void makeImportExport ();
 
     //@}
     //! \name Methods for inserting indices or transforming values
     //@{
-
-    template<ELocalGlobal lg>
-    size_t filterIndices (const SLocalGlobalNCViews& inds) const
-    {
-      using Teuchos::ArrayView;
-      static_assert (lg == GlobalIndices || lg == LocalIndices,
-                     "Tpetra::CrsGraph::filterIndices: The template parameter "
-                     "lg must be either GlobalIndices or LocalIndicies.");
-
-      const map_type& cmap = *colMap_;
-      size_t numFiltered = 0;
-#ifdef HAVE_TPETRA_DEBUG
-      size_t numFiltered_debug = 0;
-#endif
-      if (lg == GlobalIndices) {
-        ArrayView<GlobalOrdinal> ginds = inds.ginds;
-        typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
-        typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
-        while (cptr != ginds.end()) {
-          if (cmap.isNodeGlobalElement(*cptr)) {
-            *fend++ = *cptr;
-#ifdef HAVE_TPETRA_DEBUG
-            ++numFiltered_debug;
-#endif
-          }
-          ++cptr;
-        }
-        numFiltered = fend - ginds.begin();
-      }
-      else if (lg == LocalIndices) {
-        ArrayView<LocalOrdinal> linds = inds.linds;
-        typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
-        typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
-        while (cptr != linds.end()) {
-          if (cmap.isNodeLocalElement(*cptr)) {
-            *fend++ = *cptr;
-#ifdef HAVE_TPETRA_DEBUG
-            ++numFiltered_debug;
-#endif
-          }
-          ++cptr;
-        }
-        numFiltered = fend - linds.begin();
-      }
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
-#endif
-      return numFiltered;
-    }
-
 
     template<class T>
     size_t
@@ -1606,6 +1573,8 @@ namespace Tpetra {
     ///   will store the input indices as global indices.  Otherwise,
     ///   if <tt>I == LocalIndices</tt>, this method will store the
     ///   input indices as local indices.
+    ///
+    /// \return The number of indices inserted.
     size_t
     insertIndices (const RowInfo& rowInfo,
                    const SLocalGlobalViews& newInds,
@@ -1768,21 +1737,55 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     }
 
-    void
-    insertGlobalIndicesImpl (const LocalOrdinal myRow,
-                             const Teuchos::ArrayView<const GlobalOrdinal> &indices);
-    void
-    insertLocalIndicesImpl (const LocalOrdinal myRow,
-                            const Teuchos::ArrayView<const LocalOrdinal> &indices);
-    //! Like insertLocalIndices(), but with column Map filtering.
-    void
-    insertLocalIndicesFiltered (const LocalOrdinal localRow,
-                                const Teuchos::ArrayView<const LocalOrdinal> &indices);
+    /// \brief Insert global indices, using an input <i>local</i> row index.
+    ///
+    /// \return The number of indices inserted.
+    size_t
+    insertGlobalIndicesImpl (const LocalOrdinal lclRow,
+                             const Teuchos::ArrayView<const GlobalOrdinal>& gblColInds);
 
-    //! Like insertGlobalIndices(), but with column Map filtering.
+    /// \brief Insert global indices, using an input RowInfo.
+    ///
+    /// \return The number of indices inserted.
+    size_t
+    insertGlobalIndicesImpl (const RowInfo& rowInfo,
+                             const Teuchos::ArrayView<const GlobalOrdinal> &indices);
+
     void
-    insertGlobalIndicesFiltered (const GlobalOrdinal localRow,
-                                 const Teuchos::ArrayView<const GlobalOrdinal> &indices);
+    insertLocalIndicesImpl (const LocalOrdinal lclRow,
+                            const Teuchos::ArrayView<const LocalOrdinal>& gblColInds);
+
+    /// \brief Like insertGlobalIndices(), but with column Map filtering.
+    ///
+    /// "Column Map filtering" means that any column indices not in
+    /// the column Map on the calling process, get silently dropped.
+    ///
+    /// \param gblRow [in] Global index of the row in which to insert.
+    ///   This row MUST be in the row Map on the calling process.
+    /// \param gblColInds [in] The global column indices to insert
+    ///   into that row.
+    /// \param numGblColInds [in] The number of global column indices
+    ///   to insert into that row.
+    void
+    insertGlobalIndicesFiltered (const GlobalOrdinal gblRow,
+                                 const GlobalOrdinal gblColInds[],
+                                 const LocalOrdinal numGblColInds);
+
+    /// \brief Implementation of insertGlobalIndices for nonowned rows.
+    ///
+    /// A global row index is <i>nonowned</i> when it is not in the
+    /// column Map on the calling process.
+    ///
+    /// \param gblRow [in] Global index of the row in which to insert.
+    ///   This row must NOT be in the row Map on the calling process.
+    /// \param gblColInds [in] The global column indices to insert
+    ///   into that row.
+    /// \param numGblColInds [in] The number of global column indices
+    ///   to insert into that row.
+    void
+    insertGlobalIndicesIntoNonownedRows (const GlobalOrdinal gblRow,
+                                         const GlobalOrdinal gblColInds[],
+                                         const LocalOrdinal numGblColInds);
 
     /// \brief Whether sumIntoLocalValues and transformLocalValues
     ///   should use atomic updates by default.
