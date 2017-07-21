@@ -3784,20 +3784,6 @@ namespace Tpetra {
                                 const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                                 const Teuchos::ArrayView<const Scalar>& values);
 
-    /// \brief Like insertLocalValues(), but with column filtering.
-    ///
-    /// "Column filtering" means that if the matrix has a column Map,
-    /// then this method ignores entries in columns that are not in
-    /// the column Map.
-    ///
-    /// See discussion in the documentation of getGlobalRowCopy()
-    /// about why we use \c Scalar and not \c impl_scalar_type here
-    /// for the input array type.
-    void
-    insertLocalValuesFiltered (const LocalOrdinal localRow,
-                               const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                               const Teuchos::ArrayView<const Scalar>& values);
-
     /// \brief Combine in the data using the given combine mode.
     ///
     /// The copyAndPermute() and unpackAndCombine() methods use this
