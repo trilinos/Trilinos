@@ -436,6 +436,7 @@ void AlgPuLP<Adapter>::partition(
 		vertex_weights = new int[num_verts*nVwgts];
 
 		//Used for debug purposes. Outputs local vertex weights by their vertices and components.
+    /*
 		std::cout << "Given input (not scaled/norm) weights within each process: " << std::endl;
 		for (int i = 0; i < nVwgts; ++i)
 		{
@@ -446,6 +447,7 @@ void AlgPuLP<Adapter>::partition(
 			}
 			std::cout << std::endl;
 		}
+    */
 
 		// global_wgt_sum and local_wgt_sum are arrays that stores the sum of the weights by component.
 		// Both have an additional element as flag for any weights being non-integer which triggers scaling.
@@ -573,7 +575,7 @@ void AlgPuLP<Adapter>::partition(
     !ierr, BASIC_ASSERTION, problemComm);
 #else
   //What does graph look like here?
-  ierr = xtrapulp_run(&g, &ppc, parts, num_parts, nVwgts, multiweight_option);
+  ierr = xtrapulp_run(&g, &ppc, parts, num_parts, multiweight_option);
   env->globalInputAssertion(__FILE__, __LINE__, "xtrapulp_run",
     !ierr, BASIC_ASSERTION, problemComm);//If any of the weights are not integers, extremely small (< INT_EPSILON), or extremely large (> MAX_NUM), then scale ALL the weights
 
@@ -625,7 +627,7 @@ void AlgPuLP<Adapter>::scale_weights(
 	int *iwgts
 )
 {
-    std::cout << "Single scale_weights called" << std::endl;
+  //std::cout << "Single scale_weights called" << std::endl;
 	const double INT_EPSILON = 1e-5;
 	const double MAX_NUM = 1e9;
 
@@ -704,7 +706,7 @@ void AlgPuLP<Adapter>::scale_weights(
     }
 
   /* Convert weights to positive integers using the computed scale factor */
-    std::cout << "Scaled weight component " << index << " with scale: " << scale << std::endl;
+  //std::cout << "Scaled weight component " << index << " with scale: " << scale << std::endl;
 	for (size_t i = 0; i < n; i++)
 	{
 		iwgts[i*weights_num + index] = (int)ceil(double(fwgts[i])*scale);
@@ -758,9 +760,3 @@ void AlgPuLP<Adapter>::aggregate_weights(
 
 
 #endif
-
-
-
-
-
-
