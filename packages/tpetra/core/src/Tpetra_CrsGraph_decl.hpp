@@ -1470,56 +1470,6 @@ namespace Tpetra {
     //! \name Methods for inserting indices or transforming values
     //@{
 
-    template<ELocalGlobal lg>
-    size_t filterIndices (const SLocalGlobalNCViews& inds) const
-    {
-      using Teuchos::ArrayView;
-      static_assert (lg == GlobalIndices || lg == LocalIndices,
-                     "Tpetra::CrsGraph::filterIndices: The template parameter "
-                     "lg must be either GlobalIndices or LocalIndicies.");
-
-      const map_type& cmap = *colMap_;
-      size_t numFiltered = 0;
-#ifdef HAVE_TPETRA_DEBUG
-      size_t numFiltered_debug = 0;
-#endif
-      if (lg == GlobalIndices) {
-        ArrayView<GlobalOrdinal> ginds = inds.ginds;
-        typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
-        typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
-        while (cptr != ginds.end()) {
-          if (cmap.isNodeGlobalElement(*cptr)) {
-            *fend++ = *cptr;
-#ifdef HAVE_TPETRA_DEBUG
-            ++numFiltered_debug;
-#endif
-          }
-          ++cptr;
-        }
-        numFiltered = fend - ginds.begin();
-      }
-      else if (lg == LocalIndices) {
-        ArrayView<LocalOrdinal> linds = inds.linds;
-        typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
-        typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
-        while (cptr != linds.end()) {
-          if (cmap.isNodeLocalElement(*cptr)) {
-            *fend++ = *cptr;
-#ifdef HAVE_TPETRA_DEBUG
-            ++numFiltered_debug;
-#endif
-          }
-          ++cptr;
-        }
-        numFiltered = fend - linds.begin();
-      }
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
-#endif
-      return numFiltered;
-    }
-
-
     template<class T>
     size_t
     filterGlobalIndicesAndValues (const Teuchos::ArrayView<GlobalOrdinal>& ginds,
