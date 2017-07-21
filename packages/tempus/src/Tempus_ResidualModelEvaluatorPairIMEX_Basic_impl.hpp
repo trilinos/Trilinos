@@ -66,9 +66,23 @@ ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
 getNominalValues() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  using Teuchos::RCP;
+
+  MEB::InArgsSetup<Scalar> inArgs = this->createInArgs();
+
+  // Set x, xdot, parameters, ... as needed.
+
+  return inArgs;
+}
+
+template <typename Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+createInArgs() const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
 
   MEB::InArgsSetup<Scalar> inArgs = getImplicitModel()->getNominalValues();
+  inArgs.setModelEvalDescription(this->description());
 
   inArgs.setSupports(MEB::IN_ARG_x,true);
   inArgs.setSupports(MEB::IN_ARG_x_dot,true);
@@ -82,28 +96,19 @@ getNominalValues() const
 }
 
 template <typename Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
-createImplicitInArgs(
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & DXimpDt,
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & Ximp,
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & Xexp,
-  Scalar ts, Scalar alpha,Scalar beta) const
+createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  MEB::InArgs<Scalar> inArgs = this->getImplicitModel()->createInArgs();
+  MEB::OutArgsSetup<Scalar> outArgs = getImplicitModel()->createOutArgs();
+  outArgs.setModelEvalDescription(this->description());
 
-  inArgs.set_x(Ximp);
-  inArgs.set_x_dot(DXimpDt);
-  inArgs.set_t(ts);
-  inArgs.set_alpha(alpha);
-  inArgs.set_beta(beta);
-  //TODO: set these values
-  //inArgs.set_step_size(beta);
-  //inArgs.set_stage_number(beta);
+  outArgs.setSupports(MEB::OUT_ARG_f);
+  outArgs.setSupports(MEB::OUT_ARG_W_op);
 
-  return inArgs;
+  return outArgs;
 }
 
 template <typename Scalar>

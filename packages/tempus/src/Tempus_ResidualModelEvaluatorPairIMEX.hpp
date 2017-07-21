@@ -50,26 +50,6 @@ public:
                           Scalar stepSize, Scalar stageNumber) = 0;
   //@}
 
-  /// \name Methods that apply to implicit terms.
-  //@{
-    /** Given an a few different terms, build an InArgs structure that is
-      * compatible with the implicit model evaluator.
-      *
-      * \param[in] DXimpDt The time derivative of the implicit terms.
-      * \param[in] Ximp The implicit terms
-      * \param[in] Xexp The explicit terms
-      * \param[in] ts Time point values
-      * \param[in] alpha Alpha parameter
-      * \param[in] beta Beta parameter
-      */
-    virtual Thyra::ModelEvaluatorBase::InArgs<Scalar>
-    createImplicitInArgs(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & DXimpDt,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & Ximp,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & Xexp,
-      Scalar ts, Scalar alpha, Scalar beta) const = 0;
-  //@}
-
   //@{ \name Accessors
     virtual void setExplicitModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & ) = 0;

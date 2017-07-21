@@ -135,7 +135,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
   std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.05 );
+  TEST_FLOATING_EQUALITY( slope, order, 0.08 );
   out << "\n\n ** Slope on " << stepperType << " = " << slope
       << "\n" << std::endl;
 

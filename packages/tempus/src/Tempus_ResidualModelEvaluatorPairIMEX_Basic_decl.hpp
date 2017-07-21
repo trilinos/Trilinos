@@ -96,26 +96,6 @@ public:
     }
   //@}
 
-  /// \name Methods that apply to implicit terms.
-  //@{
-    /** Given an a few different terms, build an InArgs structure that is
-      * compatible with the implicit model evaluator.
-      *
-      * \param[in] DXimpDt The time derivative of the implicit terms.
-      * \param[in] Ximp The implicit terms
-      * \param[in] Xexp The explicit terms
-      * \param[in] ts Time point values
-      * \param[in] alpha Alpha parameter
-      * \param[in] beta Beta parameter
-      */
-    virtual Thyra::ModelEvaluatorBase::InArgs<Scalar>
-    createImplicitInArgs(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & DXimpDt,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & Ximp,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & Xexp,
-      Scalar ts, Scalar alpha, Scalar beta) const;
-  //@}
-
   //@{ \name Accessors
     virtual void setExplicitModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model )
@@ -141,12 +121,8 @@ public:
       get_f_space() const { return getImplicitModel()->get_f_space(); }
 
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
-
-    virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const
-      { return getImplicitModel()->createInArgs(); }
-
-    virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const
-      { return getImplicitModel()->createOutArgs(); }
+    virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+    virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar>createOutArgsImpl() const;
 
     virtual void evalModelImpl(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar> & in,
