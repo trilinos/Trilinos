@@ -604,6 +604,7 @@ class checkerAllToRegion {
 				TEUCHOS_TEST_FOR_EXCEPTION( global_iterator==regionToAll.end(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with regional index: "<<*iter+1<<" is not in regionToAll["<<region_idx<<"]"<<"\n" );
 				GlobalOrdinal node_idx = std::get<1>( *global_iterator );
 				LocalOrdinal node_local_idx = enlargedMatrix.getRowMap()->getLocalElement(node_idx-1);
+				//LocalOrdinal node_local_idx = globalMatrixData_->getRowMap()->getLocalElement(node_idx-1);
 
 				ArrayView<const GlobalOrdinal> inds;
 				ArrayView<const Scalar> vals;
