@@ -33,6 +33,7 @@ namespace Tempus {
 
 
 /** \brief Runge-Kutta methods.
+ *
  *  This base class specifies the Butcher tableau which defines the
  *  Runge-Kutta (RK) method.  Both explicit and implicit RK methods
  *  can be specied here, and of arbitrary number of stages and orders.
@@ -82,34 +83,31 @@ class RKButcherTableau :
     /** \brief Return true if the RK method has embedded capabilities */
     virtual bool isEmbedded() const { return isEmbedded_; }
 
-    /** \brief . */
     virtual void initialize(
-        const Teuchos::SerialDenseMatrix<int,Scalar>& A,
-        const Teuchos::SerialDenseVector<int,Scalar>& b,
-        const Teuchos::SerialDenseVector<int,Scalar>& c,
-        const int order,
-        const std::string& longDescription,
-        bool isEmbedded = false,
-        const Teuchos::SerialDenseVector<int,Scalar>&
-          bstar =  Teuchos::SerialDenseVector<int,Scalar>()
-        )
+      const Teuchos::SerialDenseMatrix<int,Scalar>& A,
+      const Teuchos::SerialDenseVector<int,Scalar>& b,
+      const Teuchos::SerialDenseVector<int,Scalar>& c,
+      const int order,
+      const std::string& longDescription,
+      bool isEmbedded = false,
+      const Teuchos::SerialDenseVector<int,Scalar>&
+        bstar =  Teuchos::SerialDenseVector<int,Scalar>())
     {
       this->initialize(A,b,c,order,order,order,
                        longDescription,isEmbedded,bstar);
     }
 
     virtual void initialize(
-        const Teuchos::SerialDenseMatrix<int,Scalar>& A,
-        const Teuchos::SerialDenseVector<int,Scalar>& b,
-        const Teuchos::SerialDenseVector<int,Scalar>& c,
-        const int order,
-        const int orderMin,
-        const int orderMax,
-        const std::string& longDescription,
-        bool isEmbedded = false,
-        const Teuchos::SerialDenseVector<int,Scalar>&
-          bstar =  Teuchos::SerialDenseVector<int,Scalar>()
-        )
+      const Teuchos::SerialDenseMatrix<int,Scalar>& A,
+      const Teuchos::SerialDenseVector<int,Scalar>& b,
+      const Teuchos::SerialDenseVector<int,Scalar>& c,
+      const int order,
+      const int orderMin,
+      const int orderMax,
+      const std::string& longDescription,
+      bool isEmbedded = false,
+      const Teuchos::SerialDenseVector<int,Scalar>&
+        bstar =  Teuchos::SerialDenseVector<int,Scalar>())
     {
       const int numStages = A.numRows();
       TEUCHOS_ASSERT_EQUALITY( A.numCols(), numStages );
@@ -135,7 +133,6 @@ class RKButcherTableau :
 
     /* \brief Redefined from Teuchos::ParameterListAcceptorDefaultBase */
     //@{
-      /** \brief . */
       virtual void setParameterList(
         Teuchos::RCP<Teuchos::ParameterList> const& pList)
       {
@@ -152,7 +149,6 @@ class RKButcherTableau :
         this->rkbtPL_ = pl;
       }
 
-      /** \brief . */
       virtual Teuchos::RCP<const Teuchos::ParameterList>
       getValidParameters() const
       {
@@ -166,10 +162,8 @@ class RKButcherTableau :
 
     /* \brief Redefined from Teuchos::Describable */
     //@{
-      /** \brief . */
       virtual std::string description() const { return "RK Butcher Tableau"; }
 
-      /** \brief . */
       virtual void describe( Teuchos::FancyOStream &out,
                              const Teuchos::EVerbosityLevel verbLevel) const
       {
@@ -180,8 +174,12 @@ class RKButcherTableau :
           out << "A = " << this->A() << std::endl;
           out << "b = " << this->b() << std::endl;
           out << "c = " << this->c() << std::endl;
-          out << "order = " << this->order() << std::endl;
+          out << "bstar = " << this->bstar() << std::endl;
+          out << "order    = " << this->order()    << std::endl;
+          out << "orderMin = " << this->orderMin() << std::endl;
+          out << "orderMax = " << this->orderMax() << std::endl;
           out << "isImplicit = " << this->isImplicit() << std::endl;
+          out << "isDIRK     = " << this->isDIRK()     << std::endl;
           out << "isEmbedded = " << this->isEmbedded() << std::endl;
         }
       }
@@ -203,15 +201,16 @@ class RKButcherTableau :
         for (size_t j = i; j < this->numStages(); j++)
           if (A_(i,j) != 0.0) isImplicit_ = true;
     }
+    /// DIRK is defined as if a_ij = 0 for j>i and a_ii != 0 for at least one i.
     void set_isDIRK() {
       isDIRK_ = true;
+      bool nonZero = false;
       for (size_t i = 0; i < this->numStages(); i++) {
-        if (A_(i,i) == 0.0) { isDIRK_ = false; }
-        else {
-          for (size_t j = i+1; j < this->numStages(); j++)
-            if (A_(i,j) != 0.0) isDIRK_ = false;
-        }
+        if (A_(i,i) != 0.0) nonZero = true;
+        for (size_t j = i+1; j < this->numStages(); j++)
+          if (A_(i,j) != 0.0) isDIRK_ = false;
       }
+      if (nonZero == false) isDIRK_ = false;
     }
 
   private:
@@ -231,7 +230,6 @@ class RKButcherTableau :
   protected:
     Teuchos::RCP<Teuchos::ParameterList> rkbtPL_;
 };
-
 
 // ----------------------------------------------------------------------------
 // Nonmember constructor
@@ -276,40 +274,12 @@ Teuchos::RCP<RKButcherTableau<Scalar> > rKButcherTableau(
   return(rkbt);
 }
 
-// ----------------------------------------------------------------------------
 template<class Scalar>
-class GeneralExplicit_RKBT :
+class General_RKButcherTableau :
   virtual public RKButcherTableau<Scalar>
 {
-  public:
-  GeneralExplicit_RKBT()
-  {
-    std::stringstream Description;
-    Description << this->description() << "\n"
-      << "The format of the Butcher Tableau parameter list is\n"
-      << "  <Parameter name=\"A\" type=\"string\" value=\"# # # ;\n"
-      << "                                           # # # ;\n"
-      << "                                           # # #\"/>\n"
-      << "  <Parameter name=\"b\" type=\"string\" value=\"# # #\"/>\n"
-      << "  <Parameter name=\"c\" type=\"string\" value=\"# # #\"/>\n\n"
-      << "Note the number of stages is implicit in the number of entries.\n"
-      << "The number of stages must be consistent.\n"
-      << "\n"
-      << "Default tableau is RK4 (order=4):\n"
-      << "c = [  0  1/2 1/2  1  ]'\n"
-      << "A = [  0              ]\n"
-      << "    [ 1/2  0          ]\n"
-      << "    [  0  1/2  0      ]\n"
-      << "    [  0   0   1   0  ]\n"
-      << "b = [ 1/6 1/3 1/3 1/6 ]'" << std::endl;
-
-    this->setDescription(Description.str());
-    this->setParameterList(Teuchos::null);
-  }
-
-  virtual std::string description() const { return "General ERK"; }
-
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  protected:
+  void parseGeneralPL(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
     using Teuchos::as;
 
@@ -421,12 +391,75 @@ class GeneralExplicit_RKBT :
 
     this->setMyParamList(pl);
     this->rkbtPL_ = pl;
+  }
 
-    //std::stringstream ss;
-    //this->rkbtPL_->unused(ss);
-    //this->rkbtPL_->sublist("Tableau").unused(ss);
-    //TEUCHOS_TEST_FOR_EXCEPTION( ss.str().length(), std::logic_error,
-    // "Error - GeneralExplicit_RKBT()  Found unused parameters!\n" + ss.str());
+};
+
+// ----------------------------------------------------------------------------
+/** \brief General Explicit Runge-Kutta Butcher Tableau
+ *
+ *  The format of the Butcher Tableau parameter list is
+    \verbatim
+      <Parameter name="A" type="string" value="# # # ;
+                                               # # # ;
+                                               # # #">
+      <Parameter name="b" type="string" value="# # #">
+      <Parameter name="c" type="string" value="# # #">
+    \endverbatim
+ *  Note the number of stages is implicit in the number of entries.
+ *  The number of stages must be consistent.
+ *
+ *  Default tableau is RK4 (order=4):
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  0  &  0  &     &     &    \\
+ *                        1/2 & 1/2 &  0  &     &    \\
+ *                        1/2 &  0  & 1/2 &  0  &    \\
+ *                         1  &  0  &  0  &  1  &  0 \\ \hline
+ *                            & 1/6 & 1/3 & 1/3 & 1/6 \end{array}
+ *  \f]
+ */
+template<class Scalar>
+class GeneralExplicit_RKBT :
+  virtual public General_RKButcherTableau<Scalar>
+{
+  public:
+  GeneralExplicit_RKBT()
+  {
+    std::stringstream Description;
+    Description << this->description() << "\n"
+      << "The format of the Butcher Tableau parameter list is\n"
+      << "  <Parameter name=\"A\" type=\"string\" value=\"# # # ;\n"
+      << "                                           # # # ;\n"
+      << "                                           # # #\"/>\n"
+      << "  <Parameter name=\"b\" type=\"string\" value=\"# # #\"/>\n"
+      << "  <Parameter name=\"c\" type=\"string\" value=\"# # #\"/>\n\n"
+      << "Note the number of stages is implicit in the number of entries.\n"
+      << "The number of stages must be consistent.\n"
+      << "\n"
+      << "Default tableau is RK4 (order=4):\n"
+      << "c = [  0  1/2 1/2  1  ]'\n"
+      << "A = [  0              ]\n"
+      << "    [ 1/2  0          ]\n"
+      << "    [  0  1/2  0      ]\n"
+      << "    [  0   0   1   0  ]\n"
+      << "b = [ 1/6 1/3 1/3 1/6 ]'" << std::endl;
+
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  virtual std::string description() const { return "General ERK"; }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    this->parseGeneralPL(pList);
+    TEUCHOS_TEST_FOR_EXCEPTION(this->isImplicit() == true, std::logic_error,
+      "Error - General ERK received an implicit Butcher Tableau!\n");
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
@@ -454,6 +487,19 @@ class GeneralExplicit_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief Backward Euler Runge-Kutta Butcher Tableau
+ *
+ *  The tableau for Backward Euler (order=1) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|c} 1 & 1 \\ \hline
+ *                       & 1 \end{array}
+ *  \f]
+ */
 template<class Scalar>
 class BackwardEuler_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -482,6 +528,24 @@ class BackwardEuler_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief Forward Euler Runge-Kutta Butcher Tableau
+ *
+ *  The tableau for Forward Euler (order=1) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|c} 0 & 0 \\ \hline
+ *                       & 1 \end{array}
+ *  \f]
+ */
 template<class Scalar>
 class ForwardEuler_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -508,6 +572,22 @@ class ForwardEuler_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief Runge-Kutta 4th order Butcher Tableau
+ *
+ *  The tableau for RK4 (order=4) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  0  &  0  &     &     &    \\
+ *                        1/2 & 1/2 &  0  &     &    \\
+ *                        1/2 &  0  & 1/2 &  0  &    \\
+ *                         1  &  0  &  0  &  1  &  0 \\ \hline
+ *                            & 1/6 & 1/3 & 1/3 & 1/6 \end{array}
+ *  \f]
+ */
 template<class Scalar>
 class Explicit4Stage4thOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -582,6 +662,26 @@ class Explicit4Stage4thOrder_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief Explicit RK 3/8th Rule Butcher Tableau
+ *
+ *  The tableau (order=4) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  0  &  0  &     &     &    \\
+ *                        1/3 & 1/3 &  0  &     &    \\
+ *                        2/3 &-1/3 &  1  &  0  &    \\
+ *                         1  &  1  & -1  &  1  &  0 \\ \hline
+ *                            & 1/8 & 3/8 & 3/8 & 1/8 \end{array}
+ *  \f]
+ *  Reference:  E. Hairer, S.P. Norsett, G. Wanner,
+ *              "Solving Ordinary Differential Equations I:
+ *              Nonstiff Problems", 2nd Revised Edition,
+ *              Table 1.2, pg 138.
+ */
 template<class Scalar>
 class Explicit3_8Rule_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -657,6 +757,26 @@ class Explicit3_8Rule_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief RK Explicit 4 Stage 3rd order by Runge
+ *
+ *  The tableau (order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  0  &  0  &     &     &    \\
+ *                        1/2 & 1/2 &  0  &     &    \\
+ *                         1  &  0  &  1  &  0  &    \\
+ *                         1  &  0  &  0  &  1  &  0 \\ \hline
+ *                            & 1/6 & 2/3 &  0  & 1/6 \end{array}
+ *  \f]
+ *  Reference:  E. Hairer, S.P. Norsett, G. Wanner,
+ *              "Solving Ordinary Differential Equations I:
+ *              Nonstiff Problems", 2nd Revised Edition,
+ *              Table 1.1, pg 135.
+ */
 template<class Scalar>
 class Explicit4Stage3rdOrderRunge_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -731,6 +851,25 @@ class Explicit4Stage3rdOrderRunge_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief RK Explicit 5 Stage 3rd order by Kinnmark and Gray
+ *
+ *  The tableau (order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|ccccc}  0  &  0  &     &     &     &    \\
+ *                         1/5 & 1/5 &  0  &     &     &    \\
+ *                         1/5 &  0  & 1/5 &  0  &     &    \\
+ *                         1/3 &  0  &  0  & 1/3 &  0  &    \\
+ *                         2/3 &  0  &  0  &  0  & 2/3 &  0 \\ \hline
+ *                             & 1/4 &  0  &  0  &  0  & 3/4 \end{array}
+ *  \f]
+ *  Reference:  Modified by P. Ullrich.  From the prim_advance_mod.F90
+ *              routine in the HOMME atmosphere model code.
+ */
 template<class Scalar>
 class Explicit5Stage3rdOrderKandG_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -819,6 +958,21 @@ class Explicit5Stage3rdOrderKandG_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief RK Explicit 3 Stage 3rd order
+ *
+ *  The tableau (order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|ccc}  0  &  0  &     &     \\
+ *                       1/2 & 1/2 &  0  &     \\
+ *                        1  & -1  &  2  &  0  \\ \hline
+ *                           & 1/6 & 4/6 & 1/6  \end{array}
+ *  \f]
+ */
 template<class Scalar>
 class Explicit3Stage3rdOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -879,6 +1033,32 @@ class Explicit3Stage3rdOrder_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief RK Explicit 3 Stage 3rd order TVD
+ *
+ *  The tableau (order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|ccc}  0  &  0  &     &     \\
+ *                        1  &  1  &  0  &     \\
+ *                       1/2 & 1/4 & 1/4 &  0  \\ \hline
+ *                           & 1/6 & 1/6 & 4/6  \end{array}
+ *  \f]
+ *  Reference: Sigal Gottlieb and Chi-Wang Shu,
+ *             'Total Variation Diminishing Runge-Kutta Schemes',
+ *             Mathematics of Computation,
+ *             Volume 67, Number 221, January 1998, pp. 73-85.
+ *
+ *  This is also written in the following set of updates.
+    \verbatim
+      u1 = u^n + dt L(u^n)
+      u2 = 3 u^n/4 + u1/4 + dt L(u1)/4
+      u^(n+1) = u^n/3 + 2 u2/2 + 2 dt L(u2)/3
+    \endverbatim
+ */
 template<class Scalar>
 class Explicit3Stage3rdOrderTVD_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -948,6 +1128,25 @@ class Explicit3Stage3rdOrderTVD_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief RK Explicit 3 Stage 3rd order by Heun
+ *
+ *  The tableau (order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|ccc}  0  &  0  &     &     \\
+ *                       1/3 & 1/3 &  0  &     \\
+ *                       2/3 &  0  & 2/3 &  0  \\ \hline
+ *                           & 1/4 &  0  & 3/4  \end{array}
+ *  \f]
+ *  Reference:  E. Hairer, S.P. Norsett, G. Wanner,
+ *              "Solving Ordinary Differential Equations I:
+ *              Nonstiff Problems", 2nd Revised Edition,
+ *              Table 1.1, pg 135.
+ */
 template<class Scalar>
 class Explicit3Stage3rdOrderHeun_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1012,6 +1211,24 @@ class Explicit3Stage3rdOrderHeun_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief RK Explicit 2 Stage 2nd order by Runge
+ *
+ *  The tableau (order=2) (also known as Explicit Midpoint) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cc}  0  &  0  &     \\
+ *                      1/2 & 1/2 &  0  \\ \hline
+ *                          &  0  &  1   \end{array}
+ *  \f]
+ *  Reference:  E. Hairer, S.P. Norsett, G. Wanner,
+ *              "Solving Ordinary Differential Equations I:
+ *              Nonstiff Problems", 2nd Revised Edition,
+ *              Table 1.1, pg 135.
+ */
 template<class Scalar>
 class Explicit2Stage2ndOrderRunge_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1065,6 +1282,20 @@ class Explicit2Stage2ndOrderRunge_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief RK Explicit Trapezoidal
+ *
+ *  The tableau (order=2) (also known as Explicit Midpoint) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cc}  0  &  0  &     \\
+ *                       1  &  1  &  0  \\ \hline
+ *                          & 1/2 & 1/2  \end{array}
+ *  \f]
+ */
 template<class Scalar>
 class ExplicitTrapezoidal_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1112,6 +1343,115 @@ class ExplicitTrapezoidal_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief General Implicit Runge-Kutta Butcher Tableau
+ *
+ *  The format of the Butcher Tableau parameter list is
+    \verbatim
+      <Parameter name="A" type="string" value="# # # ;
+                                               # # # ;
+                                               # # #">
+      <Parameter name="b" type="string" value="# # #">
+      <Parameter name="c" type="string" value="# # #">
+    \endverbatim
+ *  Note the number of stages is implicit in the number of entries.
+ *  The number of stages must be consistent.
+ *
+ *  Default tableau is "SDIRK 2 Stage 2nd order":
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cc} \gamma  & \gamma &        \\
+ *                         1    & 1-\gamma & \gamma \\ \hline
+ *                              & 1-\gamma & \gamma  \end{array}
+ *  \f]
+ *  where \f$\gamma = (2\pm \sqrt{2})/2\f$.  This will produce an
+ *  L-stable 2nd order method.
+ *
+ *  Reference: U. M. Ascher and L. R. Petzold,
+ *             Computer Methods for ODEs and DAEs, p. 106.
+ */
+template<class Scalar>
+class GeneralDIRK_RKBT :
+  virtual public General_RKButcherTableau<Scalar>
+{
+  public:
+  GeneralDIRK_RKBT()
+  {
+    std::stringstream Description;
+    Description << this->description() << "\n"
+      << "The format of the Butcher Tableau parameter list is\n"
+      << "  <Parameter name=\"A\" type=\"string\" value=\"# # # ;\n"
+      << "                                           # # # ;\n"
+      << "                                           # # #\"/>\n"
+      << "  <Parameter name=\"b\" type=\"string\" value=\"# # #\"/>\n"
+      << "  <Parameter name=\"c\" type=\"string\" value=\"# # #\"/>\n\n"
+      << "Note the number of stages is implicit in the number of entries.\n"
+      << "The number of stages must be consistent.\n"
+      << "\n"
+      << "Default tableau is 'SDIRK 2 Stage 2nd order':\n"
+      << "  Computer Methods for ODEs and DAEs\n"
+      << "  U. M. Ascher and L. R. Petzold\n"
+      << "  p. 106\n"
+      << "  gamma = (2+-sqrt(2))/2\n"
+      << "  c = [  gamma   1     ]'\n"
+      << "  A = [  gamma   0     ]\n"
+      << "      [ 1-gamma  gamma ]\n"
+      << "  b = [ 1-gamma  gamma ]'" << std::endl;
+
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  virtual std::string description() const { return "General DIRK"; }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    this->parseGeneralPL(pList);
+    TEUCHOS_TEST_FOR_EXCEPTION(this->isImplicit() != true, std::logic_error,
+      "Error - General DIRK did not receive a DIRK Butcher Tableau!\n");
+  }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+
+    // Tableau ParameterList
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    std::string gamma = std::to_string((2.0 - ST::squareroot(2.0))/(2.0));
+    std::string one_gamma = std::to_string(1.0-(2.0-ST::squareroot(2.0))/(2.0));
+    Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
+    tableauPL->set<std::string>("A", gamma + " 0.0; " + one_gamma + " "+gamma);
+    tableauPL->set<std::string>("b", one_gamma + " " + gamma);
+    tableauPL->set<std::string>("c", gamma + " 1.0");
+    tableauPL->set<int>("order", 2);
+    pl->set("Tableau", *tableauPL);
+
+    return pl;
+  }
+};
+
+
+// ----------------------------------------------------------------------------
+/** \brief SDIRK 1 Stage 1st order
+ *
+ *  The tableau (order=1) (also known as Backward Euler) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|c} 1 & 1 \\ \hline
+ *                       & 1 \end{array}
+ *  \f]
+ */
 template<class Scalar>
 class SDIRK1Stage1stOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1174,6 +1514,28 @@ class SDIRK1Stage1stOrder_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief SDIRK 2 Stage 2nd order
+ *
+ *  The tableau (order=1 or 2) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cc} \gamma  & \gamma &        \\
+ *                         1    & 1-\gamma & \gamma \\ \hline
+ *                              & 1-\gamma & \gamma  \end{array}
+ *  \f]
+ *  The default value is \f$\gamma = (2\pm \sqrt{2})/2\f$.
+ *  This will produce an L-stable 2nd order method with the stage
+ *  times within the timestep.  Other values of gamma will still
+ *  produce an L-stable scheme, but will only be 1st order accurate.
+ *  L-stability is guaranteed because \f$A_{sj} = b_j\f$.
+ *
+ *  Reference: U. M. Ascher and L. R. Petzold,
+ *             Computer Methods for ODEs and DAEs, p. 106.
+ */
 template<class Scalar>
 class SDIRK2Stage2ndOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1267,6 +1629,32 @@ class SDIRK2Stage2ndOrder_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief SDIRK 2 Stage 3rd order
+ *
+ *  The tableau (order=2 or 3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cc}  \gamma  &  \gamma   &        \\
+ *                      1-\gamma & 1-2\gamma & \gamma \\ \hline
+ *                               &   1/2     &   1/2   \end{array}
+ *  \f]
+ *  \f[
+ *  \gamma = \left\{ \begin{array}{cc}
+ *                     (2\pm \sqrt{2})/2 & \mbox{then 2nd order and L-stable} \\
+ *                     (3\pm \sqrt{3})/6 & \mbox{then 3rd order and A-stable}
+ *                   \end{array} \right.
+ *  \f]
+ *  The default value is \f$\gamma = (3\pm \sqrt{3})/6\f$.
+ *
+ *  Reference: E. Hairer, S. P. Norsett, and G. Wanner,
+ *             Solving Ordinary Differential Equations I:
+ *             Nonstiff Problems, 2nd Revised Edition,
+ *             Table 7.2, pg 207.
+ */
 template<class Scalar>
 class SDIRK2Stage3rdOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1314,12 +1702,12 @@ class SDIRK2Stage3rdOrder_RKBT :
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
 
-    thirdOrderAStable_  = pl->get<bool>("3rd Order A-stable");
-    secondOrderLStable_ = pl->get<bool>("2nd Order L-stable");
+    thirdOrderAStable_  = pl->get<bool>("3rd Order A-stable",false);
+    secondOrderLStable_ = pl->get<bool>("2nd Order L-stable",false);
     TEUCHOS_TEST_FOR_EXCEPTION(
       thirdOrderAStable_ && secondOrderLStable_, std::logic_error,
       "'3rd Order A-stable' and '2nd Order L-stable' can not both be true.");
-    gamma_ = pl->get<double>("gamma");
+    gamma_ = pl->get<double>("gamma", gamma_default_);
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
     using Teuchos::as;
@@ -1329,10 +1717,12 @@ class SDIRK2Stage3rdOrder_RKBT :
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
     const Scalar one = ST::one();
     const Scalar zero = ST::zero();
+    const Scalar gammaLStable =
+      as<Scalar>( (2*one + ST::squareroot(2*one))/(2*one) );
     if (thirdOrderAStable_)
       gamma_ = gamma_default_;
     else if (secondOrderLStable_)
-      gamma_ = as<Scalar>( (2*one + ST::squareroot(2*one))/(2*one) );
+      gamma_ = gammaLStable;
     A(0,0) = gamma_;
     A(0,1) = zero;
     A(1,0) = as<Scalar>( one - 2*gamma_ );
@@ -1343,7 +1733,17 @@ class SDIRK2Stage3rdOrder_RKBT :
     c(1) = as<Scalar>( one - gamma_ );
 
     int order = 2;
-    if ( std::abs((gamma_-gamma_default_)/gamma_) < 1.0e-08 ) order = 3;
+    if ( std::abs((gamma_-gamma_default_)/gamma_) < 1.0e-08 ) {
+      order = 3;
+      thirdOrderAStable_  = true;
+      secondOrderLStable_ = false;
+    } else if ( std::abs((gamma_-gammaLStable)/gamma_) < 1.0e-08 ) {
+      thirdOrderAStable_  = false;
+      secondOrderLStable_ = true;
+    } else {
+      thirdOrderAStable_  = false;
+      secondOrderLStable_ = false;
+    }
 
     this->initialize(A,b,c,order,2,3,this->getDescription());
     this->setMyParamList(pl);
@@ -1388,12 +1788,30 @@ class SDIRK2Stage3rdOrder_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief EDIRK 2 Stage 3rd order
+ *
+ *  The tableau (order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cc}  0  &  0  &     \\
+ *                      2/3 & 1/3 & 1/3 \\ \hline
+ *                          & 1/4 & 3/4  \end{array}
+ *  \f]
+ *  Reference: E. Hairer, S. P. Norsett, and G. Wanner,
+ *             Solving Ordinary Differential Equations I:
+ *             Nonstiff Problems, 2nd Revised Edition,
+ *             Table 7.1, pg 205.
+ */
 template<class Scalar>
-class DIRK2Stage3rdOrder_RKBT :
+class EDIRK2Stage3rdOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
 {
   public:
-  DIRK2Stage3rdOrder_RKBT()
+  EDIRK2Stage3rdOrder_RKBT()
   {
     std::ostringstream Description;
     Description << this->description() << "\n"
@@ -1411,7 +1829,7 @@ class DIRK2Stage3rdOrder_RKBT :
     this->setParameterList(Teuchos::null);
   }
 
-  virtual std::string description() const { return "DIRK 2 Stage 3rd order"; }
+  virtual std::string description() const { return "EDIRK 2 Stage 3rd order"; }
 
   void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
@@ -1481,7 +1899,7 @@ class Implicit3Stage6thOrderKuntzmannButcher_RKBT :
       << "Nonstiff Problems, 2nd Revised Edition\n"
       << "E. Hairer, S. P. Norsett, and G. Wanner\n"
       << "Table 7.4, pg 209\n"
-      << "c = [ 1/2-sqrt(15)/10   1/2              1/2-sqrt(15)/10  ]'\n"
+      << "c = [ 1/2-sqrt(15)/10   1/2              1/2+sqrt(15)/10  ]'\n"
       << "A = [ 5/36              2/9-sqrt(15)/15  5/36-sqrt(15)/30 ]\n"
       << "    [ 5/36+sqrt(15)/24  2/9              5/36-sqrt(15)/24 ]\n"
       << "    [ 5/36+sqrt(15)/30  2/9+sqrt(15)/15  5/36             ]\n"

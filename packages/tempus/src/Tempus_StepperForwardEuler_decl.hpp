@@ -16,7 +16,26 @@ namespace Tempus {
 
 
 /** \brief Forward Euler time stepper.
+ *
+ *  For the explicit ODE system,
+ *  \f[
+ *    \dot{x} = \bar{f}(x,t),
+ *  \f]
+ *  the Forward Euler stepper can be written as
+ *  \f[
+ *    x_{n} = x_{n-1} + \Delta t\, \bar{f}(x_{n-1},t_{n-1})
+ *  \f]
  *  Forward Euler is an explicit time stepper (i.e., no solver used).
+ *  Note that the time derivative by definition is
+ *  \f[
+ *    \dot{x}_{n} = \bar{f}(x_{n},t_{n}),
+ *  \f]
+ *
+ *  <b> Algorithm </b>
+ *  The single-timestep algorithm for Forward Euler is simply,
+ *   - Evaluate \f$\bar{f}(x_{n-1},t_{n-1})\f$
+ *   - \f$x_{n} \leftarrow x_{n-1} + \Delta t\, \bar{f}(x_{n-1},t_{n-1})\f$
+ *   - \f$\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})\f$ [Optional]
  */
 template<class Scalar>
 class StepperForwardEuler : virtual public Tempus::Stepper<Scalar>

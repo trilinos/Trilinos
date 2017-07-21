@@ -11,6 +11,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_ResidualModelEvaluatorBasic.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "NOX_Thyra.H"
 
@@ -59,10 +60,7 @@ void StepperBackwardEuler<Scalar>::setModel(
   this->validImplicitODE_DAE(transientModel);
   if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
   residualModel_ =
-    Teuchos::rcp(new ResidualModelEvaluator<Scalar>(transientModel));
-
-  inArgs_  = residualModel_->getNominalValues();
-  outArgs_ = residualModel_->createOutArgs();
+    Teuchos::rcp(new ResidualModelEvaluatorBasic<Scalar>(transientModel));
 }
 
 
@@ -249,7 +247,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
     residualModel_->initialize(computeXDot, t, alpha, beta);
 
     const Thyra::SolveStatus<double> sStatus =
-      this->solveNonLinear(residualModel_, *solver_, x, inArgs_);
+      this->solveNonLinear(residualModel_, *solver_, x);
 
     computeXDot(*x, *xDot);
 

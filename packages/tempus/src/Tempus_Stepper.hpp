@@ -54,7 +54,6 @@ namespace Tempus {
  *     BDF steppers.
  *
  * <b> CS Design Considerations</b>
- *   - Steppers will be fully constructed with input or default parameters.
  *   - All input parameters (i.e., ParameterList) can be set by public methods.
  *   - The Stepper ParameterList must be consistent.
  *     - The "set" methods which update parameters in the ParameterList
@@ -75,8 +74,7 @@ public:
       ) = 0;
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel) = 0;
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel() = 0;
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
 
     /// Set solver via ParameterList solver name.
     virtual void setSolver(std::string solverName) = 0;
@@ -147,7 +145,7 @@ public:
       const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
       const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
       const bool supports = inArgs.supports(MEB::IN_ARG_x) and
-                            inArgs.supports(MEB::IN_ARG_x_dot) and 
+                            inArgs.supports(MEB::IN_ARG_x_dot) and
                             outArgs.supports(MEB::OUT_ARG_f);
 
       TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
@@ -160,9 +158,10 @@ public:
         << "  IN_ARG_x_dot  = true\n"
         << "  OUT_ARG_f = true\n"
         << "\n"
-        << "NOTE: Currently the convention to evaluate f(x, xdot, t) is to set\n"
-        << "xdotdot=null!  There is no InArgs support to test if xdotdot is null,\n"
-        << "so we set xdotdot=null and hope the ModelEvaluator can handle it.\n");
+        << "NOTE: Currently the convention to evaluate f(x, xdot, t) is to\n"
+        << "set xdotdot=null!  There is no InArgs support to test if xdotdot\n"
+        << "is null, so we set xdotdot=null and hope the ModelEvaluator can\n"
+        << "handle it.\n");
 
       return;
     }

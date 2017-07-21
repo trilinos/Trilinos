@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef TEMPUS_TEST_VANDERPOL_MODEL_IMPL_HPP
-#define TEMPUS_TEST_VANDERPOL_MODEL_IMPL_HPP
+#ifndef TEMPUS_TEST_VANDERPOL_IMEX_IMPLICITMODEL_IMPL_HPP
+#define TEMPUS_TEST_VANDERPOL_IMEX_IMPLICITMODEL_IMPL_HPP
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
@@ -25,8 +25,8 @@
 namespace Tempus_Test {
 
 template<class Scalar>
-VanDerPolModel<Scalar>::
-VanDerPolModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
+VanDerPol_IMEX_ImplicitModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
 {
   isInitialized_ = false;
   dim_ = 2;
@@ -52,46 +52,24 @@ VanDerPolModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
 }
 
 template<class Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-VanDerPolModel<Scalar>::
-getExactSolution(double t) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-      "Error - No exact solution for van der Pol problem!\n");
-  return(inArgs_);
-}
-
-template<class Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-VanDerPolModel<Scalar>::
-getExactSensSolution(int j, double t) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
-      "Error - No exact sensitivities for van der Pol problem!\n");
-  return(inArgs_);
-}
-
-template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 get_x_space() const
 {
   return x_space_;
 }
 
-
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 get_f_space() const
 {
   return f_space_;
 }
 
-
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 getNominalValues() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
@@ -99,10 +77,9 @@ getNominalValues() const
   return nominalValues_;
 }
 
-
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 create_W() const
 {
   using Teuchos::RCP;
@@ -140,7 +117,7 @@ create_W() const
 
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 create_W_op() const
 {
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, dim_);
@@ -150,7 +127,7 @@ create_W_op() const
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 get_W_factory() const
 {
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
@@ -161,7 +138,7 @@ get_W_factory() const
 
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 createInArgs() const
 {
   setupInOutArgs_();
@@ -174,7 +151,7 @@ createInArgs() const
 
 template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 createOutArgsImpl() const
 {
   setupInOutArgs_();
@@ -184,7 +161,7 @@ createOutArgsImpl() const
 
 template<class Scalar>
 void
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 evalModelImpl(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
@@ -194,55 +171,24 @@ evalModelImpl(
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
 
-  const RCP<const Thyra::VectorBase<Scalar> > x_in = inArgs.get_x().assert_not_null();
+  const RCP<const Thyra::VectorBase<Scalar> > x_in =
+    inArgs.get_x().assert_not_null();
   Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
 
   //double t = inArgs.get_t();
-  Scalar epsilon = epsilon_;
-  if (acceptModelParams_) {
-    const RCP<const Thyra::VectorBase<Scalar> > p_in =
-      inArgs.get_p(0).assert_not_null();
-    Thyra::ConstDetachedVectorView<Scalar> p_in_view( *p_in );
-    epsilon = p_in_view[0];
-  }
-
   Scalar beta = inArgs.get_beta();
 
   const RCP<Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
-  const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
-  RCP<Thyra::MultiVectorBase<Scalar> > DfDp_out;
-  if (acceptModelParams_) {
-    Thyra::ModelEvaluatorBase::Derivative<Scalar> DfDp = outArgs.get_DfDp(0);
-    DfDp_out = DfDp.getMultiVector();
-  }
 
   if (inArgs.get_x_dot().is_null()) {
 
     // Evaluate the Explicit ODE f(x,t) [= xdot]
     if (!is_null(f_out)) {
       Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
+//    f_out_view[0] = 0;
+//    f_out_view[1] = (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]/epsilon_;
       f_out_view[0] = x_in_view[1];
-      f_out_view[1] =
-        ((1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0])/epsilon;
-    }
-    if (!is_null(W_out)) {
-      RCP<Thyra::MultiVectorBase<Scalar> > matrix =
-        Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
-      Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
-      matrix_view(0,0) = 0.0;                              // d(f0)/d(x0_n)
-      matrix_view(0,1) = +beta;                            // d(f0)/d(x1_n)
-      matrix_view(1,0) =
-        -beta*(2.0*x_in_view[0]*x_in_view[1]+1.0)/epsilon; // d(f1)/d(x0_n)
-      matrix_view(1,1) =
-         beta*(1.0 - x_in_view[0]*x_in_view[0])/epsilon;   // d(f1)/d(x1_n)
-      // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
-    }
-    if (!is_null(DfDp_out)) {
-      Thyra::DetachedMultiVectorView<Scalar> DfDp_out_view( *DfDp_out );
-      DfDp_out_view(0,0) = 0.0;
-      DfDp_out_view(1,0) =
-        -((1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0])
-           /(epsilon*epsilon);
+      f_out_view[1] = (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]/epsilon_;
     }
   } else {
 
@@ -250,38 +196,42 @@ evalModelImpl(
     RCP<const Thyra::VectorBase<Scalar> > x_dot_in;
     x_dot_in = inArgs.get_x_dot().assert_not_null();
     Scalar alpha = inArgs.get_alpha();
+
     if (!is_null(f_out)) {
       Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
       Thyra::ConstDetachedVectorView<Scalar> x_dot_in_view( *x_dot_in );
+//    f_out_view[0] = x_dot_in_view[0];
+//    f_out_view[1] = x_dot_in_view[1]
+//      - (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]/epsilon_;
       f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
       f_out_view[1] = x_dot_in_view[1]
-        - ((1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0])/epsilon;
+        - (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]/epsilon_;
     }
+    const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
     if (!is_null(W_out)) {
-      RCP<Thyra::MultiVectorBase<Scalar> > matrix =
+      RCP<Thyra::MultiVectorBase<Scalar> > W =
         Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
-      Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
-      matrix_view(0,0) = alpha;                             // d(f0)/d(x0_n)
-      matrix_view(0,1) = -beta;                             // d(f0)/d(x1_n)
-      matrix_view(1,0) =
-          beta*(2.0*x_in_view[0]*x_in_view[1]+1.0)/epsilon; // d(f1)/d(x0_n)
-      matrix_view(1,1) = alpha
-        - beta*(1.0 - x_in_view[0]*x_in_view[0])/epsilon;   // d(f1)/d(x1_n)
+      Thyra::DetachedMultiVectorView<Scalar> W_view( *W );
+//    W_view(0,0) = alpha;                                   // d(f0)/d(x0_n)
+//    W_view(0,1) = 0.0;                                     // d(f0)/d(x1_n)
+//    W_view(1,0) =
+//        2.0*beta*x_in_view[0]*x_in_view[1]/epsilon_;       // d(f1)/d(x0_n)
+//    W_view(1,1) = alpha
+//      - beta*(1.0 - x_in_view[0]*x_in_view[0])/epsilon_;   // d(f1)/d(x1_n)
+      W_view(0,0) = alpha;                                   // d(f0)/d(x0_n)
+      W_view(0,1) = -beta;                                   // d(f0)/d(x1_n)
+      W_view(1,0) =
+          2.0*beta*x_in_view[0]*x_in_view[1]/epsilon_;       // d(f1)/d(x0_n)
+      W_view(1,1) = alpha
+        - beta*(1.0 - x_in_view[0]*x_in_view[0])/epsilon_;   // d(f1)/d(x1_n)
       // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
-    }
-    if (!is_null(DfDp_out)) {
-      Thyra::DetachedMultiVectorView<Scalar> DfDp_out_view( *DfDp_out );
-      DfDp_out_view(0,0) = 0.0;
-      DfDp_out_view(1,0) =
-        ((1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0])
-          /(epsilon*epsilon);
     }
   }
 }
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 get_p_space(int l) const
 {
   if (!acceptModelParams_) {
@@ -293,7 +243,7 @@ get_p_space(int l) const
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::Array<std::string> >
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 get_p_names(int l) const
 {
   if (!acceptModelParams_) {
@@ -308,18 +258,16 @@ get_p_names(int l) const
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 get_g_space(int j) const
 {
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
   return g_space_;
 }
 
-// private
-
 template<class Scalar>
 void
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 setupInOutArgs_() const
 {
   if (isInitialized_) {
@@ -330,14 +278,11 @@ setupInOutArgs_() const
     // Set up prototypical InArgs
     Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
     inArgs.setModelEvalDescription(this->description());
-    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_t );
-    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x );
-    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_beta );
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_dot );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_t );
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_alpha );
-    if (acceptModelParams_) {
-      inArgs.set_Np(Np_);
-    }
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_beta );
     inArgs_ = inArgs;
   }
 
@@ -347,11 +292,6 @@ setupInOutArgs_() const
     outArgs.setModelEvalDescription(this->description());
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f );
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
-    if (acceptModelParams_) {
-      outArgs.set_Np_Ng(Np_,Ng_);
-      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,0,
-                           Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
-    }
     outArgs_ = outArgs;
   }
 
@@ -390,12 +330,13 @@ setupInOutArgs_() const
 
 template<class Scalar>
 void
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   using Teuchos::get;
   using Teuchos::ParameterList;
-  Teuchos::RCP<ParameterList> tmpPL = Teuchos::rcp(new ParameterList("VanDerPolModel"));
+  Teuchos::RCP<ParameterList> tmpPL =
+    Teuchos::rcp(new ParameterList("VanDerPol_IMEX_ImplicitModel"));
   if (paramList != Teuchos::null) tmpPL = paramList;
   tmpPL->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(tmpPL);
@@ -418,7 +359,7 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
-VanDerPolModel<Scalar>::
+VanDerPol_IMEX_ImplicitModel<Scalar>::
 getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
@@ -440,4 +381,4 @@ getValidParameters() const
 }
 
 } // namespace Tempus_Test
-#endif // TEMPUS_TEST_VANDERPOL_MODEL_IMPL_HPP
+#endif // TEMPUS_TEST_VANDERPOL_IMEX_IMPLICITMODEL_IMPL_HPP

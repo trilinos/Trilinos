@@ -369,7 +369,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     // Solve for new displacement
     // IKT, 3/13/17: check how solveNonLinear works.
     const Thyra::SolveStatus<double> status =
-        this->solveNonLinear(residualModel_, *solver_, d_old, inArgs_);
+        this->solveNonLinear(residualModel_, *solver_, d_old);
 
     if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -519,7 +519,7 @@ StepperNewmarkImplicitDForm<Scalar>::setParameterList(
       //IKT, FIXME - THROW EXCEPTION.
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error,
-        "Error - d-Form of Newmark scheme is not defined for explicit (Beta = 0).\n"); 
+        "Error - d-Form of Newmark scheme is not defined for explicit (Beta = 0).\n");
     }
   } else {
     *out_ << "\nNo Newmark Parameters sublist found in input file; using "
