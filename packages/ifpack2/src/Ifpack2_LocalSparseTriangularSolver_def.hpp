@@ -361,34 +361,6 @@ initialize ()
   if (Teuchos::nonnull (htsImpl_))
     htsImpl_->initialize (*A_crs_);
 
-  auto A   = A_crs_->getLocalMatrix();
-  auto ptr = A.graph.row_map;
-  auto ind = A.graph.entries;
-  auto val = A.values;
-
-  const local_ordinal_type numRows = A.numRows ();
-  const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type annz    = A.nnz ();
-
-  typename local_matrix_type::row_map_type::non_const_type  newptr ("ptr", ptr.dimension_0 ());
-  typename local_matrix_type::index_type::non_const_type    newind ("ind", ind.dimension_0 ());
-  typename local_matrix_type::values_type                   newval ("val", val.dimension_0 ());
-
-  local_ordinal_type lclNumRows = A.numRows ();
-  local_ordinal_type rowStart = 0;
-  for (local_ordinal_type lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-     auto A_r = A.row (lclNumRows-lclRow-1);
-     const local_ordinal_type numEnt = A_r.length;
-     for (local_ordinal_type k = 0; k < numEnt; ++k) {
-        newval(rowStart + k) = A_r.value(numEnt - k - 1);
-        newind(rowStart + k) = A_r.colidx(numEnt - k - 1);
-     }
-     newptr(lclRow) = rowStart;
-     rowStart = rowStart + numEnt;
-  }
-
-  Ulocal_ = Teuchos::rcp(new local_matrix_type("Ulocal", numRows, numCols, annz, newval, newptr, newind));
-
   isInitialized_ = true;
   ++numInitialize_;
 }
@@ -425,6 +397,34 @@ compute ()
 
   if (Teuchos::nonnull (htsImpl_))
     htsImpl_->compute (*A_crs_, out_);
+
+  auto A   = A_crs_->getLocalMatrix();
+  auto ptr = A.graph.row_map;
+  auto ind = A.graph.entries;
+  auto val = A.values;
+
+  const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type annz    = A.nnz ();
+
+  typename local_matrix_type::row_map_type::non_const_type  newptr ("ptr", ptr.dimension_0 ());
+  typename local_matrix_type::index_type::non_const_type    newind ("ind", ind.dimension_0 ());
+  typename local_matrix_type::values_type                   newval ("val", val.dimension_0 ());
+
+  local_ordinal_type lclNumRows = A.numRows ();
+  local_ordinal_type rowStart = 0;
+  for (local_ordinal_type lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+     auto A_r = A.row (lclNumRows-lclRow-1);
+     const local_ordinal_type numEnt = A_r.length;
+     for (local_ordinal_type k = 0; k < numEnt; ++k) {
+        newval(rowStart + k) = A_r.value(numEnt - k - 1);
+        newind(rowStart + k) = A_r.colidx(numEnt - k - 1);
+     }
+     newptr(lclRow) = rowStart;
+     rowStart = rowStart + numEnt;
+  }
+
+  Ulocal_ = Teuchos::rcp(new local_matrix_type("Ulocal", numRows, numCols, annz, newval, newptr, newind));
 
   isComputed_ = true;
   ++numCompute_;
