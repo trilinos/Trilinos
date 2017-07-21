@@ -102,7 +102,7 @@ namespace MueLu {
     Teuchos::Array<char> dofStatus;
     if(fineLevel.GetLevelID() == 0) {
       dofStatus = Get<Teuchos::Array<char> >(fineLevel, "DofStatus");
-      TEUCHOS_TEST_FOR_EXCEPTION(dofStatus.size() == Teuchos::as<size_t>(unamalgA->getRowMap()->getNodeNumElements()), MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: User provided dofStatus on level 0 does not fit to size of unamalgamted A");
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(dofStatus.size()) == Teuchos::as<size_t>(unamalgA->getRowMap()->getNodeNumElements()), MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: User provided dofStatus on level 0 does not fit to size of unamalgamted A");
     } else {
       // dof status is the dirichlet information of unsmooshed/unamalgamated A (fine level)
       dofStatus = Teuchos::Array<char>(amalgP->getRowMap()->getNodeNumElements() * maxDofPerNode,'s');
