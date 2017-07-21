@@ -2927,53 +2927,6 @@ namespace Tpetra {
     this->insertLocalIndices (localRow, indsT);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  insertLocalIndicesFiltered (const LocalOrdinal localRow,
-                              const Teuchos::ArrayView<const LocalOrdinal>& indices)
-  {
-    typedef LocalOrdinal LO;
-    const char tfecfFuncName[] = "insertLocalIndicesFiltered";
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillActive() == false, std::runtime_error,
-      ": requires that fill is active.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isGloballyIndexed() == true, std::runtime_error,
-      ": graph indices are global; use insertGlobalIndices().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      hasColMap() == false, std::runtime_error,
-      ": cannot insert local indices without a column map.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      rowMap_->isNodeLocalElement(localRow) == false, std::runtime_error,
-      ": row does not belong to this node.");
-    if (! indicesAreAllocated ()) {
-      allocateIndices (LocalIndices);
-    }
-
-     // If we have a column map, use it to filter the entries.
-    if (hasColMap ()) {
-      Teuchos::Array<LO> filtered_indices (indices);
-      SLocalGlobalViews inds_view;
-      SLocalGlobalNCViews inds_ncview;
-      inds_ncview.linds = filtered_indices();
-      const size_t numFilteredEntries =
-        filterIndices<LocalIndices>(inds_ncview);
-      inds_view.linds = filtered_indices (0, numFilteredEntries);
-      insertLocalIndicesImpl(localRow, inds_view.linds);
-    }
-    else {
-      insertLocalIndicesImpl(localRow, indices);
-    }
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      indicesAreAllocated() == false || isLocallyIndexed() == false,
-      std::logic_error,
-      ": Violated stated post-conditions. Please contact Tpetra team.");
-#endif
-  }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void

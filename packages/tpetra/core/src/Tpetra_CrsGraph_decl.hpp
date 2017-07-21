@@ -1791,10 +1791,6 @@ namespace Tpetra {
     void
     insertLocalIndicesImpl (const LocalOrdinal myRow,
                             const Teuchos::ArrayView<const LocalOrdinal> &indices);
-    //! Like insertLocalIndices(), but with column Map filtering.
-    void
-    insertLocalIndicesFiltered (const LocalOrdinal localRow,
-                                const Teuchos::ArrayView<const LocalOrdinal> &indices);
 
     /// \brief Like insertGlobalIndices(), but with column Map filtering.
     ///
