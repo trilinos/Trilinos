@@ -305,6 +305,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     if(matFileName.length() > 0) {
       // Read matrix from disk
       out << thickSeparator << std::endl << "Reading matrix from disk" <<std::endl;
+      // TODO
       typedef Tpetra::MatrixMarket::Reader<Tpetra_CrsMatrix> reader_type;
       Acrs = reader_type::readSparseFile(matFileName,comm);
     }
@@ -317,7 +318,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       Acrs = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Axp);
     }
     // Block this bad boy
-    Ablock = Tpetra::Experimental::convertToBlockCrsMatrix(*Acrs,blocksize);
+    Ablock = Tpetra::Experimental::convertToBlockCrsMatrix<SC,LO,GO,NO>(*Acrs,blocksize);
 
     // Now wrap BlockCrs to Xpetra::Matrix
     RCP<Xpetra_CrsMatrix> Axt = rcp(new Xpetra_TpetraBlockCrsMatrix(Ablock));
@@ -342,7 +343,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     SList->set("Output Style",Belos::Brief);
     SList->set("Maximum Iterations",10);
     SList->set("Convergence Tolerance",5e-2);
-
 
     // =========================================================================
     // Solve #1 (fixed point + Jacobi)

@@ -83,15 +83,33 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
     //
     switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE;
-    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: 
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                            
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
     }
     Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
     if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
+
+      // TAW: we might want to simplify the following logic block.
+      //      In fact, there are examples/tests which only run with Tpetra
+      //      We might need a feature that allows to run Epetra/Tpetra only
+      //      We still need to make sure that the test compiles (i.e., we
+      //      need some preprocessor flags/macros RUN_WITH_EPETRA and RUN_WITH_TPETRA
+#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+      // Both Epetra and Tpetra (with double, int, int) enabled
       return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
+#else
+      std::cout << "Skip running with Epetra since both Epetra and Tpetra are enabled but Tpetra is not instantiated on double, int, int." << std::endl;
+#endif // end Tpetra instantiated on double, int, int
+#else
+      // only Epetra enabled. No Tpetra instantiation possible
+      return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
+#endif // HAVE_MUELU_TPETRA
+
+
 #else
       throw MueLu::Exceptions::RuntimeError("Epetra is not available");
 #endif
@@ -163,7 +181,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #  else
 #    if   defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
+        //return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
 #    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
