@@ -2,11 +2,11 @@ TRIBITS_SUBPACKAGE(AdaptersIOSS)
 
 # Optional IOSS dependency
 ##########################
-IF(${PACKAGE_NAME}_ENABLE_SEACASIoss)
-   GLOBAL_SET(PANZER_HAVE_IOSS ON)
-ELSE()
-   GLOBAL_SET(PANZER_HAVE_IOSS OFF)
-ENDIF()
+#IF(${PACKAGE_NAME}_ENABLE_SEACASIoss)
+#   GLOBAL_SET(PANZER_HAVE_IOSS ON)
+#ELSE()
+#   GLOBAL_SET(PANZER_HAVE_IOSS OFF)
+#ENDIF()
 
 # Optional Teko dependency
 ##########################
