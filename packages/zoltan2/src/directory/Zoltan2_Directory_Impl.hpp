@@ -51,7 +51,7 @@
 // This is temporary for turning off resizing and using all arrays same length
 // #define TEMP_USED_FIXED_SIZE
 
-// This is temporary for making all arrays same length - but can still use resize
+// This is temporary for making arrays same length - but can still use resize
 // #define TEMP_CONSTANT_ARRAY_SIZE
 
 // This is temporary - If arrays are constant length - use this val
@@ -72,9 +72,7 @@
 #endif
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
-#ifdef HAVE_MPI
   #include "Zoltan2_Directory_Comm.hpp"
-#endif
 #endif
 
 // Supplies the current hash - rolled over from zoltan
@@ -535,7 +533,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 #else
   int sum_recv_sizes;
 #ifdef CONVERT_DIRECTORY_KOKKOS
-  err = directoryComm.execute_resize(msg_sizes,
+  err = directoryComm.resize(msg_sizes,
    ZOLTAN2_DD_RESIZE_MSG_TAG, &sum_recv_sizes);
 #else
   err = Zoltan_Comm_Resize(plan, &(msg_sizes[0]),
@@ -565,7 +563,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 #endif
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
-  err = directoryComm.execute(ZOLTAN2_DD_UPDATE_MSG_TAG+1,
+  err = directoryComm.do_forward(ZOLTAN2_DD_UPDATE_MSG_TAG+1,
     sbuff, nbytes, rbuff);
 #else
   err = Zoltan_Comm_Do(plan, ZOLTAN2_DD_UPDATE_MSG_TAG+1, &(sbuff[0]),
@@ -1002,7 +1000,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   err = Zoltan_Comm_Do (plan, ZOLTAN2_DD_FIND_MSG_TAG+1, &(sbuff[0]),
     nbytes, &(rbuff[0]));
 #else
-  err = directoryComm.execute(ZOLTAN2_DD_FIND_MSG_TAG+1, sbuff,
+  err = directoryComm.do_forward(ZOLTAN2_DD_FIND_MSG_TAG+1, sbuff,
     nbytes, rbuff);
 #endif
   sendClock.complete();
@@ -1015,9 +1013,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Do");
   }
 
-  // get find messages directed to me and determine total sums
-  // we will fill the array values in a new resized rbuff_resized
-  // TODO - we just want to get our local sizes here so make it more lightweight
+  // get find messages directed to me and determine total recv size
+  // and a list of individual sizes (rmsg_sizes_resized)
   track_offset = 0;
   std::vector<int> rmsg_sizes_resized(nrec);
   int sum_rmsg_sizes_resized = 0;
@@ -1025,15 +1022,19 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     size_t find_rmsg_size_resized = find_msg_size;
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
 #ifndef TEMP_USED_FIXED_SIZE
+    // First read the incoming rbuff
     // TODO: Fix cast
     msg_t *ptr = (msg_t*)(&(rbuff[track_offset]));
 
+    // extract the variable length
     // TODO: Fix casts
     user_t * puser = (user_t*)(ptr->adjData + 1);
+
     user_val_t * pVal = (user_val_t*)(puser);
 
     // access our local database and determine the length of the array
     // fill the message and track the new resized values we will use
+    // This doesn't collect the array values, just the length at this point.
     err = find_local(ptr->adjData, NULL, // (lid_t*)ptr->adjData,
       puser, &ptr->partition, &ptr->proc, false);
     find_rmsg_size_resized += (*pVal) * sizeof(user_val_t);
@@ -1044,132 +1045,71 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     sum_rmsg_sizes_resized += find_rmsg_size_resized;
   }
 
-  // Now send it back so we know what sizes we are dealing with
-  // This will fill sbuff with proper sizes
-#ifdef CONVERT_DIRECTORY_RELIC
-  err = Zoltan_Comm_Do_Reverse(plan, ZOLTAN2_DD_FIND_MSG_TAG+2, &(rbuff[0]),
-    find_msg_size, NULL, &(sbuff[0]));
-#else
-  err = directoryComm.execute_reverse(ZOLTAN2_DD_FIND_MSG_TAG+2, rbuff,
-    find_msg_size, std::vector<int>(), sbuff);
-#endif
-
-
-  int errcount = 0;
-  int track_offset_resized = 0;
-
+  // TODO - This step should perhaps be merged in the above loop
+  // First we had rbuff with equal find_msg_size for each element
+  // That was sufficient to collect the array lengths
+  // Now we make a new rbuff_resized which can handle all the individual
+  // elements and copy over the other parts of the message
+  // Then we call find_local again, but this time with flag set so it will
+  // actually fill all the array values.
 #ifdef TEMP_USED_FIXED_SIZE // Not array
-  std::vector<char> sbuff_resized = sbuff;
   std::vector<char> rbuff_resized = rbuff;
-  std::vector<int> smsg_sizes_resized(gid.size(), find_msg_size);
 #else
-
-  /* Build a new rbuff with resized space */
   std::vector<char> rbuff_resized(sum_rmsg_sizes_resized);
 
-  /* Copy relevant values - need to work on this strategy */
+  int track_offset_resized = 0;
   track_offset = 0;
   for (int i = 0; i < nrec; i++) {
     // TODO: Fix cast
     char *ptr = (char*)(&(rbuff[track_offset]));
     char *ptr_resized = (char*)(&(rbuff_resized[track_offset_resized]));
-
     memcpy(ptr_resized, ptr, find_msg_size);
-
     track_offset += find_msg_size;
     track_offset_resized += rmsg_sizes_resized[i];
   }
 
-  // Now determine the final receive sizes - we cam get this now from sbuff
-  // due to callin the execute_reverse above for fixed size messages
-  std::vector<int> smsg_sizes_resized(gid.size());
-  size_t sum_smsg_sizes_resized = 0;
-  track_offset = 0;
-  for (size_t i = 0; i < gid.size(); i++) {
-    size_t find_msg_size_resized = find_msg_size;
-
-    // TODO: For user not used we can do larger optimiations in this code now
-    if(user.size()) {
-#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-#ifndef TEMP_USED_FIXED_SIZE
-      // TODO: Fix cast
-      msg_t *ptr = (msg_t*)(&(sbuff[track_offset]));
-      user_val_t * pSize = (user_val_t*)(ptr->adjData+1);
-      find_msg_size_resized += (*pSize) * sizeof(user_val_t);
-#endif
-#endif
-    }
-
-    sum_smsg_sizes_resized += find_msg_size_resized;
-    smsg_sizes_resized[i] = find_msg_size_resized;
-    track_offset += find_msg_size;
-  }
-
-  std::vector<char> sbuff_resized(sum_smsg_sizes_resized);  // send buffer resized
-
-  /* Copy relevant values - need to work on this strategy */
-  track_offset = 0;
-  track_offset_resized = 0;
-  for (size_t i = 0; i < gid.size(); i++) {
-    // TODO: Fix cast
-    char *ptr = (char*)(&(sbuff[track_offset]));
-    char *ptr_resized = (char*)(&(sbuff_resized[track_offset_resized]));
-
-    memcpy(ptr_resized, ptr, find_msg_size);
-
-    track_offset += find_msg_size;
-    track_offset_resized += smsg_sizes_resized[i];
-  }
-#endif
-
-  // get find messages directed to me, fill in return information
-  // at this stage we will fill in all of the user information, not just length
-  Zoltan2_Directory_Clock receiveClock("receive", comm);
+  // Fill it with the true array data
   track_offset_resized = 0;
   for (int i = 0; i < nrec; i++) {
     // TODO: Fix cast
     msg_t *ptr = (msg_t*)(&(rbuff_resized[track_offset_resized]));
+
     // TODO: Fix casts
     user_t * puser = (user_t*)(ptr->adjData + 1);
-    // TODO: Need to review the handling of local id here...
+
+    // access our local database and determine the length of the array
+    // fill the message and track the new resized values we will use
+    // This is going to collect the actual array values
     err = find_local(ptr->adjData, NULL, // (lid_t*)ptr->adjData,
       puser, &ptr->partition, &ptr->proc, true);
-    if (err == 1) { // TODO Eliminate warnings (1) just errors
-      ++errcount;
-    }
     track_offset_resized += rmsg_sizes_resized[i];
   }
-  receiveClock.complete();
-  if (debug_level > 6) {
-    ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After fill in return info");
+ #endif
+
+  if(track_offset_resized != sum_rmsg_sizes_resized) {
+    throw std::logic_error("Bad sum!");
   }
 
   Zoltan2_Directory_Clock reverseClock("reverse", comm);
 #if defined(TEMP_USED_FIXED_SIZE) || not defined(TEMP_TRIAL_USER_ARRAY_TYPE) // Not array
-
+  std::vector<char> sbuff_resized = sbuff;
 #ifdef CONVERT_DIRECTORY_RELIC
   err = Zoltan_Comm_Do_Reverse(plan, ZOLTAN2_DD_FIND_MSG_TAG+2, &(rbuff_resized[0]),
     find_msg_size, NULL, &(sbuff_resized[0]));
 #else
-  err = directoryComm.execute_reverse(ZOLTAN2_DD_FIND_MSG_TAG+2, rbuff_resized,
+  err = directoryComm.do_reverse(ZOLTAN2_DD_FIND_MSG_TAG+2, rbuff_resized,
     find_msg_size, std::vector<int>(), sbuff_resized);
 #endif
 
 #else
   // send return information back to requester
-
   // resize the directory to handle the array contents
+  std::vector<char> sbuff_resized;  // will be filled in reverse call
 #ifdef CONVERT_DIRECTORY_RELIC
   err = Zoltan_Comm_Do_Reverse(plan, ZOLTAN2_DD_FIND_MSG_TAG+2, &(rbuff_resized[0]),
     1, &(rmsg_sizes_resized[0]), &(sbuff_resized[0]));
 #else
-  // #########################################################################
-  // TODO - This may become deleted - see comments in Zoltan2_Directory_Comm
-  // execute_wait which has some in progress code working but I expect
-  // will be simpler once I understand it better.
-  directoryComm.inform_final_sizes(smsg_sizes_resized);
-  // #########################################################################
-  err = directoryComm.execute_reverse(ZOLTAN2_DD_FIND_MSG_TAG+2, rbuff_resized,
+  err = directoryComm.do_reverse(ZOLTAN2_DD_FIND_MSG_TAG+2, rbuff_resized,
     1, rmsg_sizes_resized, sbuff_resized);
 #endif
 
@@ -1189,6 +1129,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   Zoltan2_Directory_Clock fillClock("fill", comm);
   track_offset_resized = 0;
 
+  // it's not going to be in order... so don't use gid[i]
   for (size_t i = 0; i < gid.size(); i++) {
     // TODO: Fix cast
     msg_t *ptr = (msg_t*)(&(sbuff_resized[track_offset_resized]));
@@ -1201,10 +1142,14 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
       lid[ptr->index] = *(ptr->adjData);
     }
 
+    size_t find_msg_size_resized = find_msg_size;
+
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
     user_val_t * pRead = ((user_val_t*)(ptr->adjData+1));
-    user[ptr->index].resize(static_cast<size_t>(*pRead));
-    for(size_t n = 0; n < user[ptr->index].size(); ++n) {
+    find_msg_size_resized += (*pRead) * sizeof(user_val_t);
+    size_t array_length = *pRead;
+    user[ptr->index].resize(array_length);
+    for(size_t n = 0; n < array_length; ++n) {
       ++pRead;
       user[ptr->index][n] = *pRead;
     }
@@ -1214,7 +1159,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     }
 #endif
 
-    track_offset_resized += smsg_sizes_resized[i];
+    // don't use smsg_sizes_resized here because we don't get them back
+    // in the same order
+    track_offset_resized += find_msg_size_resized;
   }
 
   fillClock.complete();
@@ -1223,6 +1170,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After fill return lists");
   }
 
+  int errcount = 0;
   Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_SUM, 1, &errcount, &err);
   err = (err) ? 1 : 0;
 
@@ -1299,6 +1247,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
         user_val_t * pWrite = (user_val_t*) user;
         *pWrite = static_cast<user_val_t>(node.userData.size());
+
         if(bVariableData) {
           for(size_t n = 0; n < node.userData.size(); ++n) {
             ++pWrite;
@@ -1572,7 +1521,7 @@ return 0;
 
   // send my update messages & receive updates directed to me
 #ifdef CONVERT_DIRECTORY_KOKKOS
-  err = directoryComm.execute(ZOLTAN2_DD_UPDATE_MSG_TAG+1,
+  err = directoryComm.do_forward(ZOLTAN2_DD_UPDATE_MSG_TAG+1,
     sbuff, remove_msg_size, rbuff);
 #else
   err = Zoltan_Comm_Do (plan, ZOLTAN2_DD_UPDATE_MSG_TAG+1, &(sbuff[0]),
