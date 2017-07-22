@@ -51,11 +51,15 @@
 #include <vector>
 #include <mpi.h>
 
+#ifdef HAVE_MPI
+
 namespace Zoltan2 {
 
 class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
   public:
     Zoltan2_Directory_Plan() :
+      indices_to_allocated(false), indices_from_allocated(false),
+      sizes_allocated(false),
       maxed_recvs(0), recv_buff(NULL), bOwnRecvBuff(false) {
     }
     ~Zoltan2_Directory_Plan() {
@@ -79,13 +83,18 @@ class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
 
     /* Following arrays used is send/recv data not packed contiguously */
     std::vector<int> indices_to;    /* indices of items I send in my msgs */
+    bool indices_to_allocated; // will need to rethink - new vector (loses NULL vs 0)
+
 				/* ordered consistent with lengths_to */
     std::vector<int> indices_from;  /* indices for where to put arriving data */
+    bool indices_from_allocated; // will need to rethink - new vector (loses NULL vs 0)
+
 				/* ordered consistent with lengths_from */
 
     /* Above information is sufficient if items are all of the same size */
     /* If item sizes are variable, then need following additional arrays */
     std::vector<int> sizes;      /* size of each item to send (if items vary) */
+    bool sizes_allocated; // will need to rethink - new vector (loses NULL vs 0)
 				/* Note only on sending processor: */
 				/* assuming recv proc can figure it out */
 
@@ -136,13 +145,13 @@ class Zoltan2_Directory_Comm {
 
     ~Zoltan2_Directory_Comm();
 
-    int execute(
+    int do_forward(
       int tag,		      	                    /* message tag for communicating */
       const std::vector<char> &send_data,	    /* array of data I currently own */
       int nbytes,                             /* msg size */
       std::vector<char> &recv_data);          /* array of data to receive */
 
-    int execute_reverse(
+    int do_reverse(
       int tag,			                         /* message tag for communicating */
       const std::vector<char> &send_data,    /* array of data I currently own */
       int nbytes,                            /* msg size */
@@ -155,31 +164,24 @@ class Zoltan2_Directory_Comm {
       return plan_forward->total_recv_size;
     }
 
-    int execute_resize(const std::vector<int> &sizes, int tag,
+    int resize(const std::vector<int> &sizes, int tag,
       int *sum_recv_sizes);
 
-    // #########################################################################
-    // TODO - This may become deleted - see comments in execute_wait
-    void inform_final_sizes(const std::vector<int> &sizes) {
-      final_sizes = sizes; // will work on this
-    }
-    // #########################################################################
-
   private:
-    int execute_resize(Zoltan2_Directory_Plan *plan,
+    int resize(Zoltan2_Directory_Plan *plan,
       const std::vector<int> &sizes, int tag, int *sum_recv_sizes);
 
-    int execute_post(Zoltan2_Directory_Plan *plan, int tag,
+    int do_post(Zoltan2_Directory_Plan *plan, int tag,
       const std::vector<char> &send_data,
       int nbytes,                            /* msg size */
       std::vector<char> &recv_data);
 
-    int execute_wait(Zoltan2_Directory_Plan *plan, int tag,
+    int do_wait(Zoltan2_Directory_Plan *plan, int tag,
       const std::vector<char> &send_data,
       int nbytes,                            /* msg size */
       std::vector<char> &recv_data);
 
-    int execute_all_to_all(Zoltan2_Directory_Plan *plan,
+    int do_all_to_all(Zoltan2_Directory_Plan *plan,
       const std::vector<char> &send_data,
       int nbytes,                            /* msg size */
       std::vector<char> &recv_data);
@@ -205,11 +207,6 @@ class Zoltan2_Directory_Comm {
 
     Zoltan2_Directory_Plan * plan_forward; // for efficient MPI communication
     int nrec;
-
-    // #########################################################################
-    // TODO - This may become deleted - see comments in execute_wait
-    std::vector<int> final_sizes; // TODO - temporary measure will work on this
-    // #########################################################################
 };
 
 // -----------------------------------------------------------------------------
@@ -232,5 +229,7 @@ class Zoltan2_Directory_Comm {
 // -----------------------------------------------------------------------------
 
 }; // end namespace Zoltan2
+
+#endif // #ifdef HAVE_MPI
 
 #endif

@@ -49,6 +49,7 @@
 #include <unordered_set>
 #include <Zoltan2_TPLTraits.hpp>
 
+#ifdef HAVE_MPI
 
 #if !defined(TEMP_TRIAL_USER_ARRAY_TYPE) || !defined(CONVERT_DIRECTORY_TPETRA)
 #include "Zoltan2_Directory_Impl.hpp"
@@ -222,13 +223,19 @@ public:
 
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
         for(size_t n = 0; n < writeIds.size(); ++n) {
-          std::cout << "  array for GID (" << writeIds[n] << "): ";
+          std::cout << "  Write array for GID (" << writeIds[n] << "): ";
           for(size_t a = 0; a < writeUser[n].size(); ++a) {
             std::cout << writeUser[n][a] << " ";
           }
           std::cout << std::endl;
         }
-
+        for(size_t n = 0; n < readIds.size(); ++n) {
+          std::cout << "  Read array for GID (" << readIds[n] << "): ";
+          for(size_t a = 0; a < readUser[n].size(); ++a) {
+            std::cout << readUser[n][a] << " ";
+          }
+          std::cout << std::endl;
+        }
 #endif
         if(proc == comm->getSize()-1) {
           std::cout << std::endl;
@@ -242,11 +249,11 @@ public:
   // for development and eventually must go away
   // this is used by the tests to generate the variable array sizes
   // but also used by find in one place that needs to be resolved
-  int temp_create_array_length(gid_t gid) const {
+  size_t temp_create_array_length(gid_t gid) const {
 #if defined(TEMP_USED_FIXED_SIZE) || defined(TEMP_CONSTANT_ARRAY_SIZE)
     return CONSTANT_ARRAY_SIZE;
 #else
-    return (gid%5)+1; // 1..5 inclusive
+    return (gid%7)+1; // 1..7 inclusive
 #endif
   }
 #endif
@@ -256,7 +263,7 @@ public:
   user_t getInitialValue(gid_t gid) const {
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
     // determine length of array
-    int modLength = temp_create_array_length(gid);
+    size_t modLength = temp_create_array_length(gid);
     user_t array(modLength);
     for(size_t n = 0; n < array.size(); ++n) {
       switch(mode) {
@@ -303,6 +310,7 @@ private:
 
 template <typename gid_t,typename lid_t, typename user_t>
 bool IDs<gid_t,lid_t,user_t>::evaluateTests() const {
+
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
   #define READ_VALUE readUser[i][arrayIndex]
 #else
@@ -312,13 +320,22 @@ bool IDs<gid_t,lid_t,user_t>::evaluateTests() const {
   bool pass = true;
   bool bPrint = false;
   // check the results
+
   for(int proc = 0; proc < comm->getSize(); ++proc) {
     bool passRank = true;
     comm->barrier();
     if(proc == comm->getRank()) {
       for(size_t i = 0; i < readIds.size(); ++i) {
 #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-      for(size_t arrayIndex = 0; arrayIndex < readUser[i].size(); ++arrayIndex) {
+      // first validate the array length is correct
+      if(readUser[i].size() != temp_create_array_length(readIds[i])) {
+        std::cout << "Failed array size is incorrect!" << std::endl;
+        passRank = false;
+        break;
+      }
+      // now loop the elements and validate each individual element
+      for(size_t arrayIndex = 0;
+        arrayIndex < readUser[i].size() && passRank; ++arrayIndex) {
 #endif
         id_t gid = readIds[i];
         int expectedCount = 0;
@@ -351,6 +368,7 @@ bool IDs<gid_t,lid_t,user_t>::evaluateTests() const {
             std::cout << "... ";
           }
         }
+
         if(READ_VALUE != expectedCount) {
           if(!removedIDGlobally(gid)) {
             // test failed - we should have gotten the value and the id was
@@ -373,7 +391,6 @@ bool IDs<gid_t,lid_t,user_t>::evaluateTests() const {
             << ". Expected 0 not " << expectedCount << " Got: "
             << READ_VALUE << std::endl;
           passRank = false;
-
           for(int proc_index = 0; proc_index < comm->getSize(); ++proc_index) {
             std::cout << "   Proc " << proc_index << " removed: " <<
               (removeID(gid, proc_index) ? "Y" : "N") << std::endl;
@@ -503,7 +520,7 @@ class TestManager {
       std::string base_message = name + " (" + mode_to_string(mode) + ") ";
       bool test_passsed = myIds.ZoltanDirectoryTest();
 
-      myIds.print(name);
+      // myIds.print(name);
 
       for(int proc = 0; proc < comm->getSize(); ++proc) {
         comm->barrier();
@@ -569,7 +586,7 @@ int runDirectoryComparisonTest(int narg, char **arg) {
   // Zoltan2_Directory_Constructor and then MPI_Waitall fails in execute_wait.
   // I expect the other issues I have ongoing in that method are directly related
   // and all will be resolved together.
-  const id_t totalIds = 100;
+  const id_t totalIds = 243;
 
   bool bQuickTest = true; // false is for performance testing
 
@@ -603,6 +620,14 @@ int runDirectoryComparisonTest(int narg, char **arg) {
   }
 
   return 0;
+}
+
+#endif
+
+#else // HAVE_MPI
+
+int runDirectoryComparisonTest(int narg, char **arg) {
+  throw std::logic_error( "No imeplementation for serial." );
 }
 
 #endif
