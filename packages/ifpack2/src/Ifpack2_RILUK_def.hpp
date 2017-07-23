@@ -600,7 +600,7 @@ void RILUK<MatrixType>::initialize ()
         checkOrderingConsistency (*A_local_);
         L_solver_->setMatrix (L_);
         L_solver_->initialize ();
-        U_solver_->setMatrix( U_);
+        U_solver_->setMatrix (U_);
         U_solver_->initialize ();
         // Do not call initAllValues. compute() always calls initAllValues to
         // fill L and U with possibly new numbers. initialize() is concerned
@@ -1043,7 +1043,10 @@ void RILUK<MatrixType>::compute ()
       ! U_->isUpperTriangular (), std::runtime_error,
       "Ifpack2::RILUK::compute: U isn't lower triangular.");
 
+    // If L_solver_ or U_solver store modified factors internally, we need to reset those
+    L_solver_->setMatrix (L_);
     L_solver_->compute ();
+    U_solver_->setMatrix (U_);
     U_solver_->compute ();
   }
   else {
