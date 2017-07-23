@@ -1775,65 +1775,69 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  insertGlobalValues (const GlobalOrdinal globalRow,
+  insertGlobalValues (const GlobalOrdinal gblRow,
                       const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                       const Teuchos::ArrayView<const Scalar>& values)
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
     using Teuchos::toString;
     using std::endl;
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef typename ArrayView<const GO>::size_type size_type;
+    typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
     const char tfecfFuncName[] = "insertGlobalValues: ";
 
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      values.size () != indices.size (), std::runtime_error,
-      "values.size() = " << values.size() << " != indices.size() = "
-      << indices.size() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (values.size () != indices.size (), std::runtime_error,
+      "values.size() = " << values.size () << " != indices.size() = "
+      << indices.size () << ".");
 #endif // HAVE_TPETRA_DEBUG
 
-    const LO localRow = getRowMap ()->getLocalElement (globalRow);
+    // Don't call getRowMap(), because it touches RCP's reference
+    // count, which is not thread safe.
+    const map_type& rowMap = * (this->getCrsGraphRef ().rowMap_);
+    const LO lclRow = rowMap.getLocalElement (gblRow);
 
-    if (localRow == OTL::invalid ()) { // globalRow _not_ owned by calling process
-      insertNonownedGlobalValues (globalRow, indices, values);
+    if (lclRow == Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+      // Input row is _not_ owned by the calling process.
+      this->insertNonownedGlobalValues (gblRow, indices, values);
     }
-    else { // globalRow _is_ owned by calling process
+    else { // Input row _is_ owned by the calling process
       if (this->isStaticGraph ()) {
         // Uh oh!  Not allowed to insert into owned rows in that case.
         std::ostringstream err;
-        const int myRank = getRowMap ()->getComm ()->getRank ();
-        const int numProcs = getRowMap ()->getComm ()->getSize ();
+        const int myRank = rowMap.getComm ()->getRank ();
+        const int numProcs = rowMap.getComm ()->getSize ();
 
         err << "The matrix was constructed with a constant (\"static\") graph, "
-          "yet the given global row index " << globalRow << " is in the row "
+          "yet the given global row index " << gblRow << " is in the row "
           "Map on the calling process (with rank " << myRank << ", of " <<
           numProcs << " process(es)).  In this case, you may not insert new "
           "entries into rows owned by the calling process.";
 
-        if (! getRowMap ()->isNodeGlobalElement (globalRow)) {
+        if (! rowMap.isNodeGlobalElement (gblRow)) {
           err << "  Furthermore, GID->LID conversion with the row Map claims that "
             "the global row index is owned on the calling process, yet "
-            "getRowMap()->isNodeGlobalElement(globalRow) returns false.  That's"
+            "getRowMap()->isNodeGlobalElement(gblRow) returns false.  That's"
             " weird!  This might indicate a Map bug.  Please report this to the"
             " Tpetra developers.";
         }
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          this->isStaticGraph (), std::runtime_error, err.str ());
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, err.str ());
       }
 
-      if (! myGraph_->indicesAreAllocated ()) {
+      crs_graph_type& graph = * (this->myGraph_);
+
+      if (! graph.indicesAreAllocated ()) {
         try {
-          allocateValues (GlobalIndices, GraphNotYetAllocated);
+          this->allocateValues (GlobalIndices, GraphNotYetAllocated);
         }
         catch (std::exception& e) {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::runtime_error, "Tpetra::CrsMatrix::insertGlobalValues: "
-            "allocateValues(GlobalIndices,GraphNotYetAllocated) threw an "
-            "exception: " << e.what ());
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (true, std::runtime_error, "allocateValues(GlobalIndices,"
+             "GraphNotYetAllocated) threw an exception: " << e.what ());
         }
       }
 
@@ -1844,14 +1848,14 @@ namespace Tpetra {
       // FIXME (mfh 16 May 2013) We may want to consider deferring the
       // test to the CrsGraph method, since it may have to do this
       // anyway.
-      if (hasColMap ()) {
-        const map_type& colMap = * (getColMap ());
+      if (this->hasColMap ()) {
+        const map_type& colMap = * (graph.colMap_);
         // In a debug build, keep track of the nonowned ("bad") column
         // indices, so that we can display them in the exception
         // message.  In a release build, just ditch the loop early if
         // we encounter a nonowned column index.
 #ifdef HAVE_TPETRA_DEBUG
-        Array<GO> badColInds;
+        Teuchos::Array<GO> badColInds;
 #endif // HAVE_TPETRA_DEBUG
         bool allInColMap = true;
         for (size_type k = 0; k < numEntriesToInsert; ++k) {
@@ -1866,7 +1870,7 @@ namespace Tpetra {
         }
         if (! allInColMap) {
           std::ostringstream os;
-          os << "You attempted to insert entries in owned row " << globalRow
+          os << "You attempted to insert entries in owned row " << gblRow
              << ", at the following column indices: " << toString (indices)
              << "." << endl;
 #ifdef HAVE_TPETRA_DEBUG
@@ -1879,71 +1883,53 @@ namespace Tpetra {
             "process." << endl << "It is invalid to insert into columns not in "
             "the column Map on the process that owns the row.";
 #endif // HAVE_TPETRA_DEBUG
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            ! allInColMap, std::invalid_argument, os.str ());
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (true, std::invalid_argument, os.str ());
         }
       }
 
       typename Graph::SLocalGlobalViews inds_view;
-      ArrayView<const impl_scalar_type> vals_view;
+      Teuchos::ArrayView<const IST> vals_view;
 
       inds_view.ginds = indices;
-      vals_view       = av_reinterpret_cast<const impl_scalar_type> (values);
+      vals_view       = av_reinterpret_cast<const IST> (values);
 
-#ifdef HAVE_TPETRA_DEBUG
-      RowInfo rowInfo;
-      try {
-        rowInfo = myGraph_->getRowInfo (localRow);
-      } catch (std::exception& e) {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::runtime_error, "myGraph_->getRowInfo(localRow=" << localRow
-          << ") threw an exception: " << e.what ());
-      }
-#else
-      RowInfo rowInfo = myGraph_->getRowInfo (localRow);
-#endif // HAVE_TPETRA_DEBUG
-
+      RowInfo rowInfo = graph.getRowInfo (lclRow);
       const size_t curNumEntries = rowInfo.numEntries;
       const size_t newNumEntries =
         curNumEntries + static_cast<size_t> (numEntriesToInsert);
       if (newNumEntries > rowInfo.allocSize) {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          getProfileType () == StaticProfile && newNumEntries > rowInfo.allocSize,
-          std::runtime_error, "Tpetra::CrsMatrix::insertGlobalValues: new "
-          "indices exceed statically allocated graph structure.  curNumEntries"
-          " (" << curNumEntries << ") + numEntriesToInsert (" <<
-          numEntriesToInsert << ") > allocSize (" << rowInfo.allocSize << ").");
-
-        // Update allocation only as much as necessary
-        try {
-          rowInfo =
-            myGraph_->template updateGlobalAllocAndValues<impl_scalar_type> (rowInfo,
-                                                                        newNumEntries,
-                                                                        values2D_[localRow]);
-        } catch (std::exception& e) {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::runtime_error, "myGraph_->updateGlobalAllocAndValues"
-            "(...) threw an exception: " << e.what ());
-        }
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (this->getProfileType () == StaticProfile &&
+           newNumEntries > rowInfo.allocSize, std::runtime_error,
+           "New indices exceed statically allocated graph structure.  "
+           "curNumEntries (" << curNumEntries << ") + numEntriesToInsert ("
+           << numEntriesToInsert << ") > allocSize (" << rowInfo.allocSize
+           << ").");
+        rowInfo =
+          graph.template updateGlobalAllocAndValues<IST> (rowInfo,
+                                                          newNumEntries,
+                                                          this->values2D_[lclRow]);
       }
       try {
+        Teuchos::ArrayView<IST> curVals = this->getViewNonConst (rowInfo);
         if (isGloballyIndexed ()) {
           // lg=GlobalIndices, I=GlobalIndices means the method calls
           // getGlobalViewNonConst() and does direct copying, which
           // should be reasonably fast.
-          myGraph_->template insertIndicesAndValues<impl_scalar_type> (rowInfo, inds_view,
-                                                                  this->getViewNonConst (rowInfo),
-                                                                  vals_view,
-                                                                  GlobalIndices, GlobalIndices);
+          graph.template insertIndicesAndValues<IST> (rowInfo, inds_view,
+                                                      curVals, vals_view,
+                                                      GlobalIndices,
+                                                      GlobalIndices);
         }
         else {
           // lg=GlobalIndices, I=LocalIndices means the method calls
           // the Map's getLocalElement() method once per entry to
           // insert.  This may be slow.
-          myGraph_->template insertIndicesAndValues<impl_scalar_type> (rowInfo, inds_view,
-                                                                  this->getViewNonConst (rowInfo),
-                                                                  vals_view,
-                                                                  GlobalIndices, LocalIndices);
+          graph.template insertIndicesAndValues<IST> (rowInfo, inds_view,
+                                                      curVals, vals_view,
+                                                      GlobalIndices,
+                                                      LocalIndices);
         }
       }
       catch (std::exception& e) {
@@ -1953,7 +1939,7 @@ namespace Tpetra {
       }
 
 #ifdef HAVE_TPETRA_DEBUG
-      const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow (localRow);
+      const size_t chkNewNumEntries = graph.getNumEntriesInLocalRow (lclRow);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(chkNewNumEntries != newNumEntries,
         std::logic_error, ": There should be a total of " << newNumEntries
         << " entries in the row, but the graph now reports " << chkNewNumEntries
@@ -3846,14 +3832,17 @@ namespace Tpetra {
       "getCrsGraph() returns null.  This should not happen at this point.  "
       "Please report this bug to the Tpetra developers.");
 
-    if (this->isStaticGraph () && this->getCrsGraphRef ().isFillComplete ()) {
+    const crs_graph_type& graph = this->getCrsGraphRef ();
+    if (this->isStaticGraph () && graph.isFillComplete ()) {
       // If this matrix's graph is fill complete and the user did not
       // supply a domain or range Map, use the graph's domain and
       // range Maps.
-      this->fillComplete (this->getCrsGraphRef ().getDomainMap (),
-                          this->getCrsGraphRef ().getRangeMap (), params);
-    } else {
-      this->fillComplete (this->getRowMap (), this->getRowMap (), params);
+      this->fillComplete (graph.getDomainMap (), graph.getRangeMap (), params);
+    }
+    else { // assume that user's row Map is the domain and range Map
+      Teuchos::RCP<const map_type> rangeMap = graph.getRowMap ();
+      Teuchos::RCP<const map_type> domainMap = rangeMap;
+      this->fillComplete (domainMap, rangeMap, params);
     }
   }
 
