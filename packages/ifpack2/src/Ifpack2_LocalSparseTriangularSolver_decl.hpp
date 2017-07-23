@@ -107,6 +107,9 @@ public:
   //! Specialization of Tpetra::RowMatrix used by this class.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> row_matrix_type;
+  //! Specialization of Tpetra::CrsMatrix used by this class.
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type, false> crs_matrix_type;
 
   static_assert (std::is_same<MatrixType, row_matrix_type>::value,
                  "Ifpack2::LocalSparseTriangularSolver: The template parameter "
@@ -179,6 +182,9 @@ public:
   /// \brief Set this object's parameters.
   ///
   /// \param plist [in] List of parameters.
+  ///
+  /// - "trisolver: reverse U" (\c bool): reverse storage for upper triangular matrices
+  ///   to be more cache-efficient
   ///
   /// If Trilinos_ENABLE_ShyLUHTS=TRUE, then these parameters are available:
   ///   - "trisolver: type" (\c string): One of {"Internal" (default), "HTS"}.
@@ -335,10 +341,7 @@ private:
   //! Debug output stream; may be null (not used in that case)
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   //! The original input matrix, as a Tpetra::CrsMatrix.
-  Teuchos::RCP<const Tpetra::CrsMatrix<scalar_type,
-                                       local_ordinal_type,
-                                       global_ordinal_type,
-                                       node_type, false> > A_crs_;
+  Teuchos::RCP<const crs_matrix_type> A_crs_;
 
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   mutable Teuchos::RCP<MV> X_colMap_;
@@ -346,6 +349,8 @@ private:
 
   bool isInitialized_;
   bool isComputed_;
+  bool isInternallyChanged_;
+  bool reverseStorage_;
 
   mutable int numInitialize_;
   mutable int numCompute_;
