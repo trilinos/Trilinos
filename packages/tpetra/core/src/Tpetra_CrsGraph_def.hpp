@@ -2968,14 +2968,11 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  insertGlobalIndices (const GlobalOrdinal grow,
-                       const Teuchos::ArrayView<const GlobalOrdinal>& indices)
+  insertGlobalIndices (const GlobalOrdinal gblRow,
+                       const LocalOrdinal numInputInds,
+                       const GlobalOrdinal inputGblColInds[])
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef typename ArrayView<const GO>::size_type size_type;
     const char tfecfFuncName[] = "insertGlobalIndices: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -2985,71 +2982,74 @@ namespace Tpetra {
     // fillComplete(), then we are local.  In the future, this may
     // change.  However, the rule that modification require active
     // fill will not change.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillActive() == false, std::runtime_error,
-      ": You are not allowed to call this method if fill is not active.  "
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->isFillActive (), std::runtime_error,
+      "You are not allowed to call this method if fill is not active.  "
       "If fillComplete has been called, you must first call resumeFill "
       "before you may insert indices.");
-    if (! indicesAreAllocated ()) {
-      allocateIndices (GlobalIndices);
+    if (! this->indicesAreAllocated ()) {
+      this->allocateIndices (GlobalIndices);
     }
-    const LO myRow = rowMap_->getLocalElement (grow);
-    if (myRow != Teuchos::OrdinalTraits<LO>::invalid ()) {
+    const LO lclRow = this->rowMap_->getLocalElement (gblRow);
+    if (lclRow != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
 #ifdef HAVE_TPETRA_DEBUG
-      if (hasColMap ()) {
+      if (this->hasColMap ()) {
         using std::endl;
-        const map_type& colMap = * (getColMap ());
+        const map_type& colMap = * (this->colMap_);
         // In a debug build, keep track of the nonowned ("bad") column
         // indices, so that we can display them in the exception
         // message.  In a release build, just ditch the loop early if
         // we encounter a nonowned column index.
-        Array<GO> badColInds;
+        std::vector<GlobalOrdinal> badColInds;
         bool allInColMap = true;
-        for (size_type k = 0; k < indices.size (); ++k) {
-          if (! colMap.isNodeGlobalElement (indices[k])) {
+        for (size_t k = 0; k < numInputInds; ++k) {
+          if (! colMap.isNodeGlobalElement (inputGblColInds[k])) {
             allInColMap = false;
-            badColInds.push_back (indices[k]);
+            badColInds.push_back (inputGblColInds[k]);
           }
         }
         if (! allInColMap) {
           std::ostringstream os;
-          os << "You attempted to insert entries in owned row " << grow << ", "
-            "at the following column indices: " << toString (indices) << "."
-             << endl;
-          os << "Of those, the following indices are not in the column Map on "
-            "this process: " << toString (badColInds) << "." << endl << "Since "
-            "the matrix has a column Map already, it is invalid to insert "
-            "entries at those locations.";
+          os << "You attempted to insert entries in owned row " << gblRow
+             << ", at the following column indices: [";
+          for (size_t k = 0; k < numInputInds; ++k) {
+            os << inputGblColInds[k];
+            if (k + size_t (1) < numInputInds) {
+              os << ",";
+            }
+          }
+          os << "]." << endl << "Of those, the following indices are not in "
+            "the column Map on this process: [";
+          for (size_t k = 0; k < badColInds.size (); ++k) {
+            os << badColInds[k];
+            if (k + size_t (1) < badColInds.size ()) {
+              os << ",";
+            }
+          }
+          os << "]." << endl << "Since the matrix has a column Map already, "
+            "it is invalid to insert entries at those locations.";
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (! allInColMap, std::invalid_argument, os.str ());
+            (true, std::invalid_argument, os.str ());
         }
       }
 #endif // HAVE_TPETRA_DEBUG
-      this->insertGlobalIndicesImpl (myRow, indices.getRawPtr (),
-                                     indices.size ());
+      this->insertGlobalIndicesImpl (lclRow, inputGblColInds, numInputInds);
     }
     else { // a nonlocal row
-      this->insertGlobalIndicesIntoNonownedRows (grow, indices.getRawPtr (),
-                                                 indices.size ());
+      this->insertGlobalIndicesIntoNonownedRows (gblRow, inputGblColInds,
+                                                 numInputInds);
     }
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      indicesAreAllocated() == false || isGloballyIndexed() == false,
-      std::logic_error,
-      ": Violated stated post-conditions. Please contact Tpetra team.");
-#endif
   }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  insertGlobalIndices (const GlobalOrdinal globalRow,
-                       const LocalOrdinal numEnt,
-                       const GlobalOrdinal inds[])
+  insertGlobalIndices (const GlobalOrdinal gblRow,
+                       const Teuchos::ArrayView<const GlobalOrdinal>& inputGblColInds)
   {
-    Teuchos::ArrayView<const GlobalOrdinal> indsT (inds, numEnt);
-    this->insertGlobalIndices (globalRow, indsT);
+    this->insertGlobalIndices (gblRow, inputGblColInds.size (),
+                               inputGblColInds.getRawPtr ());
   }
 
 
