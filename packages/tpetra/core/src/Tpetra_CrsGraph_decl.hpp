@@ -1723,14 +1723,14 @@ namespace Tpetra {
     /// "Column Map filtering" means that any column indices not in
     /// the column Map on the calling process, get silently dropped.
     ///
-    /// \param gblRow [in] Global index of the row in which to insert.
+    /// \param lclRow [in] Local index of the row in which to insert.
     ///   This row MUST be in the row Map on the calling process.
     /// \param gblColInds [in] The global column indices to insert
     ///   into that row.
     /// \param numGblColInds [in] The number of global column indices
     ///   to insert into that row.
     void
-    insertGlobalIndicesFiltered (const GlobalOrdinal gblRow,
+    insertGlobalIndicesFiltered (const LocalOrdinal lclRow,
                                  const GlobalOrdinal gblColInds[],
                                  const LocalOrdinal numGblColInds);
 

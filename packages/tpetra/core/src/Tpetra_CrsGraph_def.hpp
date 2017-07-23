@@ -3049,7 +3049,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  insertGlobalIndicesFiltered (const GlobalOrdinal gblRow,
+  insertGlobalIndicesFiltered (const LocalOrdinal lclRow,
                                const GlobalOrdinal gblColInds[],
                                const LocalOrdinal numGblColInds)
   {
@@ -3065,18 +3065,13 @@ namespace Tpetra {
     // change.  However, the rule that modification require active
     // fill will not change.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isFillActive() == false, std::runtime_error,
+      (! this->isFillActive (), std::runtime_error,
        "You are not allowed to call this method if fill is not active.  "
        "If fillComplete has been called, you must first call resumeFill "
        "before you may insert indices.");
     if (! this->indicesAreAllocated ()) {
       this->allocateIndices (GlobalIndices);
     }
-    const LO lclRow = this->rowMap_->getLocalElement (gblRow);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (lclRow == Tpetra::Details::OrdinalTraits<LO>::invalid (),
-       std::invalid_argument, "Input global row " << gblRow
-       << " is not in the row Map on the calling process.");
 
     Teuchos::ArrayView<const GO> gblColInds_av (gblColInds, numGblColInds);
     // If we have a column Map, use it to filter the entries.
@@ -5473,7 +5468,7 @@ namespace Tpetra {
         this->insertGlobalIndicesIntoNonownedRows (gblRow, gblColInds, numEnt);
       }
       else {
-        this->insertGlobalIndicesFiltered (gblRow, gblColInds, numEnt);
+        this->insertGlobalIndicesFiltered (lclRow, gblColInds, numEnt);
       }
       importsOffset += numEnt;
     }
