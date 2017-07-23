@@ -1913,16 +1913,19 @@ namespace Tpetra {
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   insertGlobalIndicesImpl (const LocalOrdinal lclRow,
-                           const Teuchos::ArrayView<const GlobalOrdinal>& gblColInds)
+                           const GlobalOrdinal inputGblColInds[],
+                           const size_t numInputInds)
   {
-    return this->insertGlobalIndicesImpl (this->getRowInfo (lclRow), gblColInds);
+    return this->insertGlobalIndicesImpl (this->getRowInfo (lclRow),
+                                          inputGblColInds, numInputInds);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   insertGlobalIndicesImpl (const RowInfo& rowInfo,
-                           const Teuchos::ArrayView<const GlobalOrdinal>& indices)
+                           const GlobalOrdinal inputGblColInds[],
+                           const size_t numInputInds)
   {
     using Kokkos::subview;
     typedef LocalOrdinal LO;
@@ -1931,12 +1934,10 @@ namespace Tpetra {
     const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
 
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
-    size_t numNewInds = indices.size();
-    size_t newNumEntries = rowInfo.numEntries + numNewInds;
+    size_t newNumEntries = rowInfo.numEntries + numInputInds; // preliminary
 
     if (newNumEntries > rowInfo.allocSize) {
       if (this->getProfileType () == StaticProfile) {
-
         // Count how many new indices are just duplicates of the old
         // ones.  If enough are duplicates, then we're safe.
         //
@@ -1944,7 +1945,6 @@ namespace Tpetra {
         // before.  Thus, we're justified in not optimizing it.  We
         // could use binary search if the graph's current entries are
         // sorted, for example, but we just use linear search for now.
-
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (rowInfo.numEntries > rowInfo.allocSize, std::logic_error,
            "For local row " << lclRow << ", rowInfo.numEntries = "
@@ -1957,30 +1957,31 @@ namespace Tpetra {
           const size_t curOffset = rowInfo.offset1D;
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (static_cast<size_t> (k_gblInds1D_.dimension_0 ()) < curOffset,
-             std::logic_error, "k_gblInds1D_.dimension_0() = " <<
-             k_gblInds1D_.dimension_0 () << " < offset1D = " << curOffset
-             << ".  Please report this bug to the Tpetra developers.");
+             std::logic_error, "k_gblInds1D_.dimension_0() = "
+             << this->k_gblInds1D_.dimension_0 ()
+             << " < offset1D = " << curOffset << ".  "
+             "Please report this bug to the Tpetra developers.");
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (static_cast<size_t> (k_gblInds1D_.dimension_0 ()) <
              curOffset + rowInfo.numEntries,
-             std::logic_error, "k_gblInds1D_.dimension_0() = " <<
-             k_gblInds1D_.dimension_0 () << " < offset1D (= " << curOffset <<
-             ") + rowInfo.numEntries (= " << rowInfo.numEntries << ").  Please "
-             "report this bug to the Tpetra developers.");
+             std::logic_error, "k_gblInds1D_.dimension_0() = "
+             << this->k_gblInds1D_.dimension_0 ()
+             << " < offset1D (= " << curOffset << ") + rowInfo.numEntries (= "
+             << rowInfo.numEntries << ").  "
+             "Please report this bug to the Tpetra developers.");
           const Kokkos::pair<size_t, size_t>
             range (curOffset, curOffset + rowInfo.numEntries);
 
-          auto gblIndsCur = subview (k_gblInds1D_, range);
+          auto gblIndsCur = subview (this->k_gblInds1D_, range);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (static_cast<size_t> (gblIndsCur.dimension_0 ()) != rowInfo.numEntries,
-             std::logic_error, "gblIndsCur.dimension_0() = " <<
-             gblIndsCur.dimension_0 () << " != rowInfo.numEntries = " <<
-             rowInfo.numEntries << ".  Please report this bug to the Tpetra "
-             "developers.");
+            (static_cast<size_t> (gblIndsCur.dimension_0 ()) !=
+             rowInfo.numEntries, std::logic_error,
+             "gblIndsCur.dimension_0() = " << gblIndsCur.dimension_0 ()
+             << " != rowInfo.numEntries = " << rowInfo.numEntries
+             << ".  Please report this bug to the Tpetra developers.");
 
-          const size_t numInput = static_cast<size_t> (indices.size ());
-          for (size_t k_new = 0; k_new < numInput; ++k_new) {
-            const GO gblIndToInsert = indices[k_new];
+          for (size_t k_new = 0; k_new < numInputInds; ++k_new) {
+            const GO gblIndToInsert = inputGblColInds[k_new];
             for (size_t k_old = 0; k_old < rowInfo.numEntries; ++k_old) {
               if (gblIndsCur[k_old] == gblIndToInsert) {
                 // Input could itself have duplicates.  Input is
@@ -1991,34 +1992,33 @@ namespace Tpetra {
                 ++dupCount;
               }
             }
-          } // for k_new in 0 .. numInput-1
+          } // for k_new in 0 .. numInputInds - 1
         } // if global 1-D indexing (k_gblInds1D_ not empty)
         else { // global 2-D indexing
-          // mfh 21 Jul 2017: This is not thread safe, because
-          // creating an Teuchos::ArrayView or Teuchos::ArrayRCP that
-          // views a Teuchos::ArrayRCP is not.  We could fix that by
-          // making the left-hand side Teuchos::ArrayRCP<GO>&, but
-          // that would not solve the problem below.
-          Teuchos::ArrayView<GO> gblInds = (this->gblInds2D_[lclRow]) ();
+          // mfh 21 Jul 2017: We use a Teuchos::Array<GO>& as the
+          // left-hand side, because creating an Teuchos::ArrayView or
+          // Teuchos::ArrayRCP that views a Teuchos::ArrayRCP is not
+          // thread safe.
+          Teuchos::Array<GO>& gblInds_out = this->gblInds2D_[lclRow];
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (rowInfo.allocSize != static_cast<size_t> (gblInds.size ()),
+            (rowInfo.allocSize != static_cast<size_t> (gblInds_out.size ()),
              std::logic_error, "rowInfo.allocSize = " << rowInfo.allocSize
-             << " != gblInds.size() = " << gblInds.size ()
+             << " != gblInds_out.size() = " << gblInds_out.size ()
              << ".  Please report this bug to the Tpetra developers.");
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (rowInfo.numEntries > static_cast<size_t> (gblInds.size ()),
+            (rowInfo.numEntries > static_cast<size_t> (gblInds_out.size ()),
              std::logic_error, "rowInfo.numEntries = " << rowInfo.numEntries
-             << " > gblInds.size() = " << gblInds.size ()
+             << " > gblInds_out.size() = " << gblInds_out.size ()
              << ".  Please report this bug to the Tpetra developers.");
-          // mfh 21 Jul 2017: This is not thread safe, because
-          // creating a subview of a Teuchos::ArrayView is not.
-          auto gblIndsCur = gblInds (0, rowInfo.numEntries);
+          // mfh 21 Jul 2017: Creating a subview of a
+          // Teuchos::ArrayView is not thread safe, but we don't need
+          // to do this anyway.
+          //auto gblIndsCur_out = gblInds_out (0, rowInfo.numEntries);
 
-          const size_t numInput = static_cast<size_t> (indices.size ());
-          for (size_t k_new = 0; k_new < numInput; ++k_new) {
-            const GO gblIndToInsert = indices[k_new];
+          for (size_t k_new = 0; k_new < numInputInds; ++k_new) {
+            const GO gblIndToInsert = inputGblColInds[k_new];
             for (size_t k_old = 0; k_old < rowInfo.numEntries; ++k_old) {
-              if (gblIndsCur[k_old] == gblIndToInsert) {
+              if (gblInds_out[k_old] == gblIndToInsert) {
                 // Input could itself have duplicates.  Input is
                 // const, so we can't remove duplicates.  That's OK
                 // here, though, because dupCount just refers to the
@@ -2027,15 +2027,14 @@ namespace Tpetra {
                 ++dupCount;
               }
             } // for k_old in 0 .. rowInfo.numEntries - 1
-          } // for k_new in 0 .. numInput - 1
+          } // for k_new in 0 .. numInputInds - 1
         } // whether 1-D or 2-D indexing
 
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (indices.size ()) < dupCount, std::logic_error,
-           "indices.size() = " << indices.size () << " < dupCount = " <<
-           dupCount << ".  Please report this bug to the Tpetra developers.");
-        const size_t numNewToInsert =
-          static_cast<size_t> (indices.size ()) - dupCount;
+          (numInputInds < dupCount, std::logic_error, "numInputInds = "
+           << numInputInds << " < dupCount = " << dupCount
+           << ".  Please report this bug to the Tpetra developers.");
+        const size_t numNewToInsert = numInputInds - dupCount;
 
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (rowInfo.numEntries + numNewToInsert > rowInfo.allocSize,
@@ -2057,8 +2056,8 @@ namespace Tpetra {
                                                curOffset + rowInfo.allocSize));
 
           size_t curPos = 0;
-          for (size_t k_new = 0; k_new < numNewInds; ++k_new) {
-            const GO gblIndToInsert = indices[k_new];
+          for (size_t k_new = 0; k_new < numInputInds; ++k_new) {
+            const GO gblIndToInsert = inputGblColInds[k_new];
 
             bool isAlreadyInOld = false;
             for (size_t k_old = 0; k_old < rowInfo.numEntries; ++k_old) {
@@ -2093,8 +2092,8 @@ namespace Tpetra {
                                      rowInfo.allocSize - rowInfo.numEntries);
 
           size_t curPos = 0;
-          for (size_t k_new = 0; k_new < numNewInds; ++k_new) {
-            const GO gblIndToInsert = indices[k_new];
+          for (size_t k_new = 0; k_new < numInputInds; ++k_new) {
+            const GO gblIndToInsert = inputGblColInds[k_new];
 
             bool isAlreadyInOld = false;
             for (size_t k_old = 0; k_old < rowInfo.numEntries; ++k_old) {
@@ -2111,7 +2110,7 @@ namespace Tpetra {
               gblIndsNew[curPos] = gblIndToInsert;
               ++curPos;
             }
-          } // for k_new in 0 .. numNewInds - 1
+          } // for k_new in 0 .. numInputInds - 1
         } // whether 1-D or 2-D indexing
 
         this->k_numRowEntries_(lclRow) = rowInfo.numEntries + numNewToInsert;
@@ -2135,27 +2134,26 @@ namespace Tpetra {
         if (newAllocSize < newNumEntries) {
           newAllocSize = newNumEntries;
         }
-        this->gblInds2D_[lclRow].resize(newAllocSize);
+        this->gblInds2D_[lclRow].resize (newAllocSize);
       }
-    }
+    } // newNumEntries > rowInfo.allocSize
 
     // Copy new indices at end of global index array
     if (k_gblInds1D_.dimension_0 () != 0) {
-      const size_t numIndsToCopy = static_cast<size_t> (indices.size ());
       const size_t offset = rowInfo.offset1D + rowInfo.numEntries;
-      for (size_t k = 0; k < numIndsToCopy; ++k) {
-        this->k_gblInds1D_[offset + k] = indices[k];
+      for (size_t k = 0; k < numInputInds; ++k) {
+        this->k_gblInds1D_[offset + k] = inputGblColInds[k];
       }
     }
     else {
       GO* const whereToPutGblColInds =
         this->gblInds2D_[lclRow].getRawPtr () + rowInfo.numEntries;
-      for (size_t k_new = 0; k_new < numNewInds; ++k_new) {
-        whereToPutGblColInds[k_new] = indices[k_new];
+      for (size_t k_new = 0; k_new < numInputInds; ++k_new) {
+        whereToPutGblColInds[k_new] = inputGblColInds[k_new];
       }
     }
 
-    this->k_numRowEntries_(lclRow) += numNewInds;
+    this->k_numRowEntries_(lclRow) += numInputInds;
     this->setLocallyModified ();
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -2169,7 +2167,7 @@ namespace Tpetra {
     }
 #endif // HAVE_TPETRA_DEBUG
 
-    return numNewInds;
+    return numInputInds;
   }
 
 
@@ -2978,11 +2976,11 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename ArrayView<const GO>::size_type size_type;
-    const char tfecfFuncName[] = "insertGlobalIndices";
+    const char tfecfFuncName[] = "insertGlobalIndices: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (this->isLocallyIndexed (), std::runtime_error,
-      ": graph indices are local; use insertLocalIndices().");
+      "graph indices are local; use insertLocalIndices().");
     // This can't really be satisfied for now, because if we are
     // fillComplete(), then we are local.  In the future, this may
     // change.  However, the rule that modification require active
@@ -3015,18 +3013,20 @@ namespace Tpetra {
         }
         if (! allInColMap) {
           std::ostringstream os;
-          os << "Tpetra::CrsGraph::insertGlobalIndices: You attempted to insert "
-            "entries in owned row " << grow << ", at the following column "
-            "indices: " << toString (indices) << "." << endl;
+          os << "You attempted to insert entries in owned row " << grow << ", "
+            "at the following column indices: " << toString (indices) << "."
+             << endl;
           os << "Of those, the following indices are not in the column Map on "
             "this process: " << toString (badColInds) << "." << endl << "Since "
             "the matrix has a column Map already, it is invalid to insert "
             "entries at those locations.";
-          TEUCHOS_TEST_FOR_EXCEPTION(! allInColMap, std::invalid_argument, os.str ());
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (! allInColMap, std::invalid_argument, os.str ());
         }
       }
 #endif // HAVE_TPETRA_DEBUG
-      insertGlobalIndicesImpl (myRow, indices);
+      this->insertGlobalIndicesImpl (myRow, indices.getRawPtr (),
+                                     indices.size ());
     }
     else { // a nonlocal row
       this->insertGlobalIndicesIntoNonownedRows (grow, indices.getRawPtr (),
@@ -3102,9 +3102,8 @@ namespace Tpetra {
         // curOffset, the range is empty.
         const LO numIndInSeq = (endOffset - curOffset);
         if (numIndInSeq != 0) {
-          Teuchos::ArrayView<const GO> curGblColInds (gblColInds + curOffset,
-                                                      numIndInSeq);
-          this->insertGlobalIndicesImpl (lclRow, curGblColInds);
+          this->insertGlobalIndicesImpl (lclRow, gblColInds + curOffset,
+                                         numIndInSeq);
         }
         // Invariant before this line: Either endOffset ==
         // numGblColInds, or gblColInds[endOffset] is not in the
@@ -3113,7 +3112,8 @@ namespace Tpetra {
       }
     }
     else {
-      this->insertGlobalIndicesImpl (lclRow, gblColInds_av);
+      this->insertGlobalIndicesImpl (lclRow, gblColInds_av.getRawPtr (),
+                                     gblColInds_av.size ());
     }
   }
 

@@ -1702,17 +1702,31 @@ namespace Tpetra {
 
     /// \brief Insert global indices, using an input <i>local</i> row index.
     ///
+    /// \param rowInfo [in] Result of getRowInfo() on the row in which
+    ///   to insert.
+    /// \param inputGblColInds [in] Input global column indices.
+    /// \param numInputInds [in] The number of input global column
+    ///   indices.
+    ///
     /// \return The number of indices inserted.
     size_t
     insertGlobalIndicesImpl (const LocalOrdinal lclRow,
-                             const Teuchos::ArrayView<const GlobalOrdinal>& gblColInds);
+                             const GlobalOrdinal inputGblColInds[],
+                             const size_t numInputInds);
 
     /// \brief Insert global indices, using an input RowInfo.
+    ///
+    /// \param rowInfo [in] Result of getRowInfo() on the row in which
+    ///   to insert.
+    /// \param inputGblColInds [in] Input global column indices.
+    /// \param numInputInds [in] The number of input global column
+    ///   indices.
     ///
     /// \return The number of indices inserted.
     size_t
     insertGlobalIndicesImpl (const RowInfo& rowInfo,
-                             const Teuchos::ArrayView<const GlobalOrdinal> &indices);
+                             const GlobalOrdinal inputGblColInds[],
+                             const size_t numInputInds);
 
     void
     insertLocalIndicesImpl (const LocalOrdinal lclRow,
