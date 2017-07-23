@@ -1507,43 +1507,6 @@ namespace Tpetra {
       return numFiltered;
     }
 
-    template<class T>
-    size_t
-    filterLocalIndicesAndValues (const Teuchos::ArrayView<LocalOrdinal>& linds,
-                                 const Teuchos::ArrayView<T>& vals) const
-    {
-      using Teuchos::ArrayView;
-      const map_type& cmap = *colMap_;
-      size_t numFiltered = 0;
-      typename ArrayView<T>::iterator fvalsend = vals.begin();
-      typename ArrayView<T>::iterator valscptr = vals.begin();
-#ifdef HAVE_TPETRA_DEBUG
-      size_t numFiltered_debug = 0;
-#endif
-      typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
-      typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
-      while (cptr != linds.end()) {
-        if (cmap.isNodeLocalElement (*cptr)) {
-          *fend++ = *cptr;
-          *fvalsend++ = *valscptr;
-#ifdef HAVE_TPETRA_DEBUG
-          ++numFiltered_debug;
-#endif
-        }
-        ++cptr;
-        ++valscptr;
-      }
-      numFiltered = fend - linds.begin();
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
-      TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
-      const size_t numFilteredActual =
-        Teuchos::as<size_t> (fvalsend - vals.begin ());
-      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
-#endif
-      return numFiltered;
-    }
-
     /// \brief Insert indices into the given row.
     ///
     /// \pre <tt>! (lg == LocalIndices && I == GlobalIndices)</tt>.
