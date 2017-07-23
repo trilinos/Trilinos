@@ -5741,35 +5741,27 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     {
       using Teuchos::reduceAll;
+
+      const Teuchos::Comm<int>& comm = * (this->getComm ());
       std::ostringstream msg;
       int lclBad = 0;
+      int gblBad = 0; // output argument; to be set below
       try {
         srcRowMat->pack (exportLIDs, exports, numPacketsPerLID,
                          constantNumPackets, distor);
-      } catch (std::exception& e) {
-        lclBad = 1;
-        msg << e.what ();
       }
-      int gblBad = 0;
-      const Teuchos::Comm<int>& comm = * (this->getComm ());
+      catch (std::exception& e) {
+        const int myRank = comm.getRank ();
+        lclBad = 1;
+        msg << "Proc " << myRank << ": " << e.what () << std::endl;
+      }
       reduceAll<int, int> (comm, Teuchos::REDUCE_MAX,
                            lclBad, Teuchos::outArg (gblBad));
       if (gblBad != 0) {
-        const int myRank = comm.getRank ();
-        const int numProcs = comm.getSize ();
-        for (int r = 0; r < numProcs; ++r) {
-          if (r == myRank && lclBad != 0) {
-            std::ostringstream os;
-            os << "Proc " << myRank << ": " << msg.str () << std::endl;
-            std::cerr << os.str ();
-          }
-          comm.barrier ();
-          comm.barrier ();
-          comm.barrier ();
-        }
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          true, std::logic_error, "pack() threw an exception on one or "
-          "more participating processes.");
+        Tpetra::Details::gathervPrint (std::cerr, msg.str (), comm);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::logic_error, "pack() threw an exception on one or "
+           "more participating processes.");
       }
     }
 #else
