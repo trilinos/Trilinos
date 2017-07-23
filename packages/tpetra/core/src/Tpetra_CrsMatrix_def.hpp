@@ -1980,7 +1980,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  insertGlobalValuesFiltered (const GlobalOrdinal globalRow,
+  insertGlobalValuesFiltered (const GlobalOrdinal gblRow,
                               const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                               const Teuchos::ArrayView<const Scalar>& values)
   {
@@ -1993,13 +1993,13 @@ namespace Tpetra {
     const char tfecfFuncName[] = "insertGlobalValuesFiltered: ";
 
     // mfh 14 Dec 2012: Defer test for static graph until we know that
-    // globalRow is in the row Map.  If it's not in the row Map, it
+    // gblRow is in the row Map.  If it's not in the row Map, it
     // doesn't matter whether or not the graph is static; the data
     // just get stashed for later use by globalAssemble().
     //
     // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     //   isStaticGraph(), std::runtime_error,
-    //   ": matrix was constructed with static graph. Cannot insert new entries.");
+    //   "matrix was constructed with static graph. Cannot insert new entries.");
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       values.size () != indices.size (), std::runtime_error,
@@ -2008,18 +2008,21 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
-    const LO lrow = getRowMap ()->getLocalElement (globalRow);
+    // getRowMap() is not thread safe, because it increments RCP's
+    // reference count.  getCrsGraphRef() is thread safe.
+    const LO lclRow =
+      this->getCrsGraphRef ().rowMap_->getLocalElement (gblRow);
 
-    if (lrow != Teuchos::OrdinalTraits<LO>::invalid ()) { // globalRow is in our row Map.
+    if (lclRow != Teuchos::OrdinalTraits<LO>::invalid ()) { // in row Map
       // If the matrix has a static graph, this process is now allowed
       // to insert into rows it owns.
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        this->isStaticGraph (), std::runtime_error,
-        "The matrix was constructed with a static graph.  In that case, "
-        "it is forbidden to insert new entries into rows owned by the "
-        "calling process.");
-      if (! myGraph_->indicesAreAllocated ()) {
-        allocateValues (GlobalIndices, GraphNotYetAllocated);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->isStaticGraph (), std::runtime_error,
+         "The matrix was constructed with a static graph.  In that case, "
+         "it is forbidden to insert new entries into rows owned by the "
+         "calling process.");
+      if (! this->myGraph_->indicesAreAllocated ()) {
+        this->allocateValues (GlobalIndices, GraphNotYetAllocated);
       }
       typename Graph::SLocalGlobalViews inds_view;
       ArrayView<const ST> vals_view;
@@ -2029,7 +2032,7 @@ namespace Tpetra {
       // valid for the whole scope.
       Array<GO> filtered_indices;
       Array<ST> filtered_values;
-      if (hasColMap ()) { // We have a column Map.
+      if (this->hasColMap ()) { // We have a column Map.
         // Use column Map to filter the indices and corresponding
         // values, so that we only insert entries into columns we own.
         filtered_indices.assign (indices.begin (), indices.end ());
@@ -2047,7 +2050,7 @@ namespace Tpetra {
       const size_t numFilteredEntries = vals_view.size ();
       // add the new indices and values
       if (numFilteredEntries > 0) {
-        RowInfo rowInfo = myGraph_->getRowInfo (lrow);
+        RowInfo rowInfo = myGraph_->getRowInfo (lclRow);
         const size_t curNumEntries = rowInfo.numEntries;
         const size_t newNumEntries = curNumEntries + numFilteredEntries;
         if (newNumEntries > rowInfo.allocSize) {
@@ -2058,9 +2061,9 @@ namespace Tpetra {
           // Update allocation only as much as necessary
           rowInfo = myGraph_->template updateGlobalAllocAndValues<ST> (rowInfo,
                                                                        newNumEntries,
-                                                                       values2D_[lrow]);
+                                                                       values2D_[lclRow]);
         }
-        if (isGloballyIndexed ()) {
+        if (this->isGloballyIndexed ()) {
           // lg=GlobalIndices, I=GlobalIndices means the method calls
           // getGlobalViewNonConst() and does direct copying, which
           // should be reasonably fast.
@@ -2080,17 +2083,19 @@ namespace Tpetra {
         }
 #ifdef HAVE_TPETRA_DEBUG
         {
-          const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow (lrow);
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(chkNewNumEntries != newNumEntries,
-            std::logic_error, ": There should be a total of " << newNumEntries
-            << " entries in the row, but the graph now reports " << chkNewNumEntries
-            << " entries.  Please report this bug to the Tpetra developers.");
+          const size_t chkNewNumEntries =
+            this->myGraph_->getNumEntriesInLocalRow (lclRow);
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (chkNewNumEntries != newNumEntries, std::logic_error,
+             "There should be a total of " << newNumEntries << " entries in "
+             "the row, but the graph now reports " << chkNewNumEntries
+             << " entries.  Please report this bug to the Tpetra developers.");
         }
 #endif // HAVE_TPETRA_DEBUG
       }
     }
     else { // The calling process doesn't own the given row.
-      insertNonownedGlobalValues (globalRow, indices, values);
+      this->insertNonownedGlobalValues (gblRow, indices, values);
     }
   }
 

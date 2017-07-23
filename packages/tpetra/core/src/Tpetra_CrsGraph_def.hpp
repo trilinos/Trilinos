@@ -1856,6 +1856,9 @@ namespace Tpetra {
                  const ELocalGlobal I)
   {
     using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       lg != GlobalIndices && lg != LocalIndices, std::invalid_argument,
@@ -1864,28 +1867,32 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     size_t numNewInds = 0;
     if (lg == GlobalIndices) { // input indices are global
-      ArrayView<const GlobalOrdinal> new_ginds = newInds.ginds;
+      ArrayView<const GO> new_ginds = newInds.ginds;
       numNewInds = new_ginds.size();
       if (I == GlobalIndices) { // store global indices
-        ArrayView<GlobalOrdinal> gind_view = getGlobalViewNonConst(rowinfo);
-        std::copy(new_ginds.begin(), new_ginds.end(), gind_view.begin()+rowinfo.numEntries);
+        ArrayView<GO> gind_view = this->getGlobalViewNonConst (rowinfo);
+        GO* const gblColInds_out = gind_view.getRawPtr () + rowinfo.numEntries;
+        for (size_t k = 0; k < numNewInds; ++k) {
+          gblColInds_out[k] = new_ginds[k];
+        }
       }
       else if (I == LocalIndices) { // store local indices
-        ArrayView<LocalOrdinal> lind_view = getLocalViewNonConst(rowinfo);
-        typename ArrayView<const GlobalOrdinal>::iterator         in = new_ginds.begin();
-        const typename ArrayView<const GlobalOrdinal>::iterator stop = new_ginds.end();
-        typename ArrayView<LocalOrdinal>::iterator out = lind_view.begin()+rowinfo.numEntries;
-        while (in != stop) {
-          *out++ = colMap_->getLocalElement (*in++);
+        ArrayView<LO> lind_view = this->getLocalViewNonConst (rowinfo);
+        LO* const lclColInds_out = lind_view.getRawPtr () + rowinfo.numEntries;
+        for (size_t k = 0; k < numNewInds; ++k) {
+          lclColInds_out[k] = colMap_->getLocalElement (new_ginds[k]);
         }
       }
     }
     else if (lg == LocalIndices) { // input indices are local
-      ArrayView<const LocalOrdinal> new_linds = newInds.linds;
+      ArrayView<const LO> new_linds = newInds.linds;
       numNewInds = new_linds.size();
       if (I == LocalIndices) { // store local indices
-        ArrayView<LocalOrdinal> lind_view = getLocalViewNonConst(rowinfo);
-        std::copy(new_linds.begin(), new_linds.end(), lind_view.begin()+rowinfo.numEntries);
+        ArrayView<LO> lind_view = this->getLocalViewNonConst (rowinfo);
+        LO* const lclColInds_out = lind_view.getRawPtr () + rowinfo.numEntries;
+        for (size_t k = 0; k < numNewInds; ++k) {
+          lclColInds_out[k] = new_linds[k];
+        }
       }
       else if (I == GlobalIndices) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::CrsGraph::"
@@ -1897,8 +1904,8 @@ namespace Tpetra {
       }
     }
 
-    k_numRowEntries_(rowinfo.localRow) += numNewInds;
-    setLocallyModified ();
+    this->k_numRowEntries_(rowinfo.localRow) += numNewInds;
+    this->setLocallyModified ();
     return numNewInds;
   }
 
