@@ -1514,10 +1514,13 @@ namespace Tpetra {
     ///   indices (meaning that the graph has a column Map), yet to
     ///   ask it to store global indices.
     ///
-    /// \param rowInfo [in] Result of CrsGraph's getRowInfo() or
-    ///   updateAllocAndValues() methods, for the locally owned row
-    ///   (whose local index is <tt>rowInfo.localRow</tt>) for which
-    ///   you want to insert indices.
+    /// This method does no allocation; it just inserts the indices.
+    ///
+    /// \param rowInfo [in/out] On input: Result of CrsGraph's
+    ///   getRowInfo() or updateAllocAndValues() methods, for the
+    ///   locally owned row (whose local index is
+    ///   <tt>rowInfo.localRow</tt>) for which you want to insert
+    ///   indices.  On output: numEntries field is updated.
     ///
     /// \param newInds [in] View of the column indices to insert.  If
     ///   <tt>lg == GlobalIndices</tt>, then newInds.ginds, a
@@ -1539,7 +1542,7 @@ namespace Tpetra {
     ///
     /// \return The number of indices inserted.
     size_t
-    insertIndices (const RowInfo& rowInfo,
+    insertIndices (RowInfo& rowInfo,
                    const SLocalGlobalViews& newInds,
                    const ELocalGlobal lg,
                    const ELocalGlobal I);
@@ -1585,7 +1588,7 @@ namespace Tpetra {
     ///   input indices as local indices.
     template<class Scalar>
     void
-    insertIndicesAndValues (const RowInfo& rowInfo,
+    insertIndicesAndValues (RowInfo& rowInfo,
                             const SLocalGlobalViews& newInds,
                             const Teuchos::ArrayView<Scalar>& oldRowVals,
                             const Teuchos::ArrayView<const Scalar>& newRowVals,
@@ -1596,7 +1599,15 @@ namespace Tpetra {
       const char tfecfFuncName[] = "insertIndicesAndValues: ";
 #endif // HAVE_TPETRA_DEBUG
 
+      const size_t oldNumEnt = rowInfo.numEntries;
+
 #ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (oldNumEnt != this->getNumEntriesInLocalRow (rowInfo.localRow),
+         std::logic_error, "On input, rowInfo.numEntries = " << oldNumEnt
+         << " != getNumEntriesInLocalRow(" << rowInfo.localRow << ").");
+#endif // HAVE_TPETRA_DEBUG
+
       size_t numNewInds = 0;
       try {
         numNewInds = insertIndices (rowInfo, newInds, lg, I);
@@ -1605,34 +1616,20 @@ namespace Tpetra {
           (true, std::runtime_error, "insertIndices threw an exception: "
            << e.what ());
       }
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (numNewInds > static_cast<size_t> (oldRowVals.size ()),
-         std::runtime_error, "numNewInds (" << numNewInds << ") > "
-         "oldRowVals.size() (" << oldRowVals.size () << ".");
-#else
-      const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
-#endif // HAVE_TPETRA_DEBUG
 
       typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
 
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (rowInfo.numEntries + numNewInds > static_cast<size_t> (oldRowVals.size ()),
-         std::runtime_error, "rowInfo.numEntries (" << rowInfo.numEntries << ")"
-         " + numNewInds (" << numNewInds << ") > oldRowVals.size() ("
-         << oldRowVals.size () << ").");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (static_cast<size_type> (numNewInds) > newRowVals.size (),
          std::runtime_error, "numNewInds (" << numNewInds << ") > "
          "newRowVals.size() (" << newRowVals.size () << ").");
 #endif // HAVE_TPETRA_DEBUG
 
-      size_type oldInd = static_cast<size_type> (rowInfo.numEntries);
-
 #ifdef HAVE_TPETRA_DEBUG
       try {
 #endif // HAVE_TPETRA_DEBUG
-        //NOTE: The code in the else branch fails on GCC 4.9 and newer in the assignement oldRowVals[oldInd] = newRowVals[newInd];
+        //NOTE: The code in the else branch fails on GCC 4.9 and newer in the assignement oldRowVals[oldNumEnt] = newRowVals[newInd];
         //We supply a workaround n as well as other code variants which produce or not produce the error
 #if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
 #define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
@@ -1643,16 +1640,16 @@ namespace Tpetra {
 #ifdef GCC_WORKAROUND
         size_type nNI = static_cast<size_type>(numNewInds);
         if (nNI > 0)
-          memcpy(&oldRowVals[oldInd], &newRowVals[0], nNI*sizeof(Scalar));
+          memcpy(&oldRowVals[oldNumEnt], &newRowVals[0], nNI*sizeof(Scalar));
         /*
         //Original Code Fails
         for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
-        ++newInd, ++oldInd) {
-        oldRowVals[oldInd] = newRowVals[newInd];
+        ++newInd, ++oldNumEnt) {
+        oldRowVals[oldNumEnt] = newRowVals[newInd];
         }
 
         //char cast variant fails
-        char* oldRowValPtr = (char*)&oldRowVals[oldInd];
+        char* oldRowValPtr = (char*)&oldRowVals[oldNumEnt];
         const char* newRowValPtr = (const char*) &newRowVals[0];
 
         for(size_type newInd = 0; newInd < (nNI * sizeof(Scalar)); newInd++) {
@@ -1660,7 +1657,7 @@ namespace Tpetra {
         }
 
         //Raw ptr variant fails
-        Scalar* oldRowValPtr = &oldRowVals[oldInd];
+        Scalar* oldRowValPtr = &oldRowVals[oldNumEnt];
         Scalar* newRowValPtr = const_cast<Scalar*>(&newRowVals[0]);
 
         for(size_type newInd = 0; newInd < nNI; newInd++) {
@@ -1669,25 +1666,26 @@ namespace Tpetra {
 
         //memcpy works
         for (size_type newInd = 0; newInd < nNI; newInd++) {
-        memcpy( &oldRowVals[oldInd+newInd], &newRowVals[newInd], sizeof(Scalar));
+        memcpy( &oldRowVals[oldNumEnt+newInd], &newRowVals[newInd], sizeof(Scalar));
         }
 
         //just one loop index fails
         for (size_type newInd = 0; newInd < nNI; newInd++) {
-        oldRowVals[oldInd+newInd] = newRowVals[newInd];
+        oldRowVals[oldNumEnt+newInd] = newRowVals[newInd];
         }
 
         //inline increment fails
         for (size_type newInd = 0; newInd < numNewInds;) {
-        oldRowVals[oldInd++] = newRowVals[newInd++];
+        oldRowVals[oldNumEnt++] = newRowVals[newInd++];
         }
 
         */
 
 #else // GCC Workaround above
+        size_type oldCounter = oldNumEnt;
         for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
-             ++newInd, ++oldInd) {
-          oldRowVals[oldInd] = newRowVals[newInd];
+             ++newInd, ++oldCounter) {
+          oldRowVals[oldCounter] = newRowVals[newInd];
         }
 #endif // GCC Workaround
 #ifdef HAVE_TPETRA_DEBUG

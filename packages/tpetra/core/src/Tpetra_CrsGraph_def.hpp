@@ -1850,7 +1850,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  insertIndices (const RowInfo& rowinfo,
+  insertIndices (RowInfo& rowinfo,
                  const SLocalGlobalViews &newInds,
                  const ELocalGlobal lg,
                  const ELocalGlobal I)
@@ -1860,10 +1860,14 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
 
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lg != GlobalIndices && lg != LocalIndices, std::invalid_argument,
-      "Tpetra::CrsGraph::insertIndices: lg must be either GlobalIndices or "
-      "LocalIndices.");
+    const char tfecfFuncName[] = "insertIndices: ";
+    const size_t oldNumEnt = this->getNumEntriesInLocalRow (rowinfo.localRow);
+#endif // HAVE_TPETRA_DEBUG
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lg != GlobalIndices && lg != LocalIndices, std::invalid_argument,
+       "lg must be either GlobalIndices or LocalIndices.");
 #endif // HAVE_TPETRA_DEBUG
     size_t numNewInds = 0;
     if (lg == GlobalIndices) { // input indices are global
@@ -1871,6 +1875,14 @@ namespace Tpetra {
       numNewInds = new_ginds.size();
       if (I == GlobalIndices) { // store global indices
         ArrayView<GO> gind_view = this->getGlobalViewNonConst (rowinfo);
+#ifdef HAVE_TPETRA_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (gind_view.size ()) <
+           rowinfo.numEntries + numNewInds, std::logic_error,
+           "gind_view.size() = " << gind_view.size ()
+           << " < rowinfo.numEntries (= " << rowinfo.numEntries
+           << ") + numNewInds (= " << numNewInds << ").");
+#endif // HAVE_TPETRA_DEBUG
         GO* const gblColInds_out = gind_view.getRawPtr () + rowinfo.numEntries;
         for (size_t k = 0; k < numNewInds; ++k) {
           gblColInds_out[k] = new_ginds[k];
@@ -1878,6 +1890,14 @@ namespace Tpetra {
       }
       else if (I == LocalIndices) { // store local indices
         ArrayView<LO> lind_view = this->getLocalViewNonConst (rowinfo);
+#ifdef HAVE_TPETRA_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (lind_view.size ()) <
+           rowinfo.numEntries + numNewInds, std::logic_error,
+           "lind_view.size() = " << lind_view.size ()
+           << " < rowinfo.numEntries (= " << rowinfo.numEntries
+           << ") + numNewInds (= " << numNewInds << ").");
+#endif // HAVE_TPETRA_DEBUG
         LO* const lclColInds_out = lind_view.getRawPtr () + rowinfo.numEntries;
         for (size_t k = 0; k < numNewInds; ++k) {
           lclColInds_out[k] = colMap_->getLocalElement (new_ginds[k]);
@@ -1889,6 +1909,14 @@ namespace Tpetra {
       numNewInds = new_linds.size();
       if (I == LocalIndices) { // store local indices
         ArrayView<LO> lind_view = this->getLocalViewNonConst (rowinfo);
+#ifdef HAVE_TPETRA_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (lind_view.size ()) <
+           rowinfo.numEntries + numNewInds, std::logic_error,
+           "lind_view.size() = " << lind_view.size ()
+           << " < rowinfo.numEntries (= " << rowinfo.numEntries
+           << ") + numNewInds (= " << numNewInds << ").");
+#endif // HAVE_TPETRA_DEBUG
         LO* const lclColInds_out = lind_view.getRawPtr () + rowinfo.numEntries;
         for (size_t k = 0; k < numNewInds; ++k) {
           lclColInds_out[k] = new_linds[k];
@@ -1904,8 +1932,20 @@ namespace Tpetra {
       }
     }
 
+    rowinfo.numEntries += numNewInds;
     this->k_numRowEntries_(rowinfo.localRow) += numNewInds;
     this->setLocallyModified ();
+
+#ifdef HAVE_TPETRA_DEBUG
+    const size_t chkNewNumEnt =
+      this->getNumEntriesInLocalRow (rowinfo.localRow);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (chkNewNumEnt != oldNumEnt + numNewInds, std::logic_error,
+       "chkNewNumEnt = " << chkNewNumEnt
+       << " != oldNumEnt (= " << oldNumEnt
+       << ") + numNewInds (= " << numNewInds << ").");
+#endif // HAVE_TPETRA_DEBUG
+
     return numNewInds;
   }
 
