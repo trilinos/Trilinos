@@ -124,12 +124,14 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel,
+                                Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel,
+                                Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     // Obtain general variables
@@ -145,16 +147,17 @@ namespace MueLu {
     // collect general input data
     LO blkSize                 = A->GetFixedBlockSize();
     RCP<const Map> rowMap      = A->getRowMap();
-    LO numDimensions           = 0;                             // Number of spatial dimensions
-    Array<GO> gFineNodesPerDir(3);                              // Global number of fine points per direction
-    Array<GO> gCoarseNodesPerDir(3);                            // Global number of coarse points per direction
-    LO lNumFinePoints;                                          // Local number of fine points
-    Array<LO> lFineNodesPerDir(3);                              // Local number of fine points per direction
-    Array<LO> lCoarseNodesPerDir(3);                            // Local number of coarse points per direction
+    LO numDimensions           = 0;                   // Number of spatial dimensions
+    Array<GO> gFineNodesPerDir(3);                    // Global number of fine points per direction
+    Array<GO> gCoarseNodesPerDir(3);                  //Global number of coarse points per direction
+    LO lNumFinePoints;                                // Local number of fine points
+    Array<LO> lFineNodesPerDir(3);                    // Local number of fine points per direction
+    Array<LO> lCoarseNodesPerDir(3);                  // Local number of coarse points per direction
     Array<LO> mapDirL2G(3);
     Array<LO> mapDirG2L(3);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(fineCoords==Teuchos::null, Exceptions::RuntimeError, "Coordinates cannot be accessed from fine level!");
+    TEUCHOS_TEST_FOR_EXCEPTION(fineCoords==Teuchos::null, Exceptions::RuntimeError,
+                               "Coordinates cannot be accessed from fine level!");
     numDimensions  = fineCoords->getNumVectors();
     lNumFinePoints = fineCoords->getLocalLength();
 
@@ -177,12 +180,14 @@ namespace MueLu {
     try {
       crates = Teuchos::fromStringToArray<LO>(coarsenRate);
     } catch(const Teuchos::InvalidArrayStringRepresentation e) {
-      GetOStream(Errors,-1) << " *** Coarsen must be a string convertible into an array! *** " << std::endl;
+      GetOStream(Errors,-1) << " *** Coarsen must be a string convertible into an array! *** "
+                            << std::endl;
       throw e;
     }
     TEUCHOS_TEST_FOR_EXCEPTION((crates.size()>1) && (crates.size()<numDimensions),
                                Exceptions::RuntimeError,
-                               "Coarsen must have at least as many components as the number of spatial dimensions in the problem.");
+                               "Coarsen must have at least as many components as the number of"
+                               " spatial dimensions in the problem.");
     for(LO i = 0; i < 3; ++i) {
       if(i < numDimensions) {
         if( crates.size()==1 ) {
@@ -205,18 +210,21 @@ namespace MueLu {
     try {
       mapDirG2L = Teuchos::fromStringToArray<LO>(axisPermutation);
     } catch(const Teuchos::InvalidArrayStringRepresentation e) {
-      GetOStream(Errors,-1) << " *** axisPermutation must be a string convertible into an array! *** " << std::endl;
+      GetOStream(Errors,-1) << " *** axisPermutation must be a string convertible into array! *** "
+                            << std::endl;
       throw e;
     }
     for(LO i = 0; i < numDimensions; ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION(mapDirG2L[i] > numDimensions,
                                  Exceptions::RuntimeError,
-                                 "axis permutation values must all be less than the number of spatial dimensions.");
+                                 "axis permutation values must all be less than"
+                                 " the number of spatial dimensions.");
       mapDirL2G[mapDirG2L[i]] = i;
     }
 
-    // Find the offsets for the nodes on the current processor, this tells us the position of the first node on the partition compare to the
-    // closest lower coarse point. This information is needed to know who are the coarse nodes that need to be used for interpolation and by
+    // Find the offsets for the nodes on the current processor, this tells us the position of the
+    // first node on the partition compare to the closest lower coarse point. This information is
+    // needed to know who are the coarse nodes that need to be used for interpolation and by
     // extension this tells us what are the ghostnodes we need for the computation.
     //
     //     x - o - o - x
@@ -270,10 +278,11 @@ namespace MueLu {
     }
     /* At this point the local geometrical discovery is over */
 
-    // Check if the partition contains nodes on a boundary, if so that boundary (face, line or point) will not require ghost nodes.
-    // Always include a layer if ghost nodes for inner interface since even for faces with coarse nodes, an outward curvature might
-    // require ghost nodes to compute a proper interpolation operator. Curvature could be check localy to avoid including extra
-    // ghost nodes...
+    // Check if the partition contains nodes on a boundary, if so that boundary (face, line or
+    // point) will not require ghost nodes.
+    // Always include a layer if ghost nodes for inner interface since even for faces with coarse
+    // nodes, an outward curvature might require ghost nodes to compute a proper interpolation
+    // operator. Curvature could be check localy to avoid including extra ghost nodes...
     bool ghostInterface[6] = {false, false, false, false, false, false};
     for(LO i=0; i < 3; ++i) {
       if(i < numDimensions) {
@@ -286,19 +295,23 @@ namespace MueLu {
       }
     }
 
-    /* Here one element can represent either the degenerate case of one node or the more general case of two nodes.
-       i.e. x---x is a 1D element with two nodes and x is a 1D element with one node. This helps generating a 3D space from tensorial products...
-       A good way to handle this would be to generalize the algorithm to take into account the discretization order used in each direction,
-       at least in the FEM sense, since a 0 degree discretization will have a unique node per element. This way a 1D discretization can be viewed
-       as a 3D problem with one 0 degree element in the y direction and one 0 degre element in the z direction. */
+    // Here one element can represent either the degenerate case of one node or the more general
+    // case of two nodes, i.e. x---x is a 1D element with two nodes and x is a 1D element with one
+    // node. This helps generating a 3D space from tensorial products...
+    // A good way to handle this would be to generalize the algorithm to take into account the
+    // discretization order used in each direction, at least in the FEM sense, since a 0 degree
+    // discretization will have a unique node per element. This way 1D discretization can be viewed
+    // as a 3D problem with one 0 degree element in the y direction and one 0 degre element in the z
+    // direction.
     LO endRate[3] = {0, 0, 0};
-    /* /!\ Operations below are aftecting both local and global values that have two different orientations.   /!\
-           orientations can be interchanged using mapDirG2L and mapDirL2G. coarseRate, endRate and offsets
-           are in the global basis, as well as all the variables starting with a g, while the variables
-       /!\ starting with an l are in the local basis.                                                          /!\ */
+    // !!! Operations below are aftecting both local and global values that have two different   !!!
+    // orientations. Orientations can be interchanged using mapDirG2L and mapDirL2G. coarseRate,
+    // endRate and offsets are in the global basis, as well as all the variables starting with a g,
+    // !!! while the variables starting with an l are in the local basis.                        !!!
     for(LO i = 0; i < 3; ++i) {
       if(i < numDimensions) {
-        // This array is passed to the RAPFactory and eventually becomes gFineNodePerDir on the next level.
+        // This array is passed to the RAPFactory and eventually becomes gFineNodePerDir on the next
+        // level.
         gCoarseNodesPerDir[i] = (gFineNodesPerDir[i] - 1) / coarseRate[i];
         endRate[i] = Teuchos::as<LO>((gFineNodesPerDir[i] - 1) % coarseRate[i]);
         if(endRate[i] == 0) {
@@ -315,14 +328,16 @@ namespace MueLu {
 
     for(LO i = 0; i < 3; ++i) {
       if(i < numDimensions) {
-        // Check whether the partition includes the "end" of the mesh which means that endRate will apply.
-        // Also make sure that endRate is not 0 which means that the mesh does not require a particular treatment
-        // at the boundaries.
+        // Check whether the partition includes the "end" of the mesh which means that endRate will
+        // apply. Also make sure that endRate is not 0 which means that the mesh does not require a
+        // particular treatment at the boundaries.
         if( (gIndices[mapDirG2L[i]] + lFineNodesPerDir[i]) == gFineNodesPerDir[mapDirG2L[i]] ) {
-          lCoarseNodesPerDir[i] = (lFineNodesPerDir[i] - endRate[mapDirG2L[i]] + offsets[mapDirG2L[i]] - 1) / coarseRate[mapDirG2L[i]] + 1;
+          lCoarseNodesPerDir[i] = (lFineNodesPerDir[i] - endRate[mapDirG2L[i]]
+                                   + offsets[mapDirG2L[i]] - 1) / coarseRate[mapDirG2L[i]] + 1;
           if(offsets[mapDirG2L[i]] == 0) {++lCoarseNodesPerDir[i];}
         } else {
-          lCoarseNodesPerDir[i] = (lFineNodesPerDir[i] + offsets[mapDirG2L[i]] - 1) / coarseRate[mapDirG2L[i]];
+          lCoarseNodesPerDir[i] = (lFineNodesPerDir[i] + offsets[mapDirG2L[i]] - 1)
+            / coarseRate[mapDirG2L[i]];
           if(offsets[mapDirG2L[i]] == 0) {++lCoarseNodesPerDir[i];}
         }
       } else {
@@ -357,7 +372,8 @@ namespace MueLu {
       for(LO j = 0; j < 2; ++j) {
         for(LO k = 0; k < 2; ++k) {
           // Check if two adjoining faces need ghost nodes and then add their common edge
-          if(ghostInterface[2*complementaryIndices[i][0]+j] && ghostInterface[2*complementaryIndices[i][1]+k]) {
+          if(ghostInterface[2*complementaryIndices[i][0]+j]
+             && ghostInterface[2*complementaryIndices[i][1]+k]) {
             numGhosts += lCoarseNodesPerDir[mapDirL2G[i]];
             // Add corners if three adjoining faces need ghost nodes,
             // but add them only once! Hence when i == 0.
@@ -432,42 +448,45 @@ namespace MueLu {
     if(ghostInterface[4]) {
       ghostOffset[2] = startingGID;
       for(LO j = 0; j < lengthOne; ++j) {
-        if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
+        if((j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1])) {
           ghostOffset[1] = ((j-1)*coarseRate[1] + endRate[1])*gFineNodesPerDir[0];
         } else {
           ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
         }
         for(LO k = 0; k < lengthZero; ++k) {
-          if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+          if((k == lengthZero-1)
+             && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0])) {
             ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
           } else {
             ghostOffset[0] = k*coarseRate[0];
           }
-          // If the partition includes a changed rate at the edge, ghost nodes need to be picked carefully.
-          // This if statement is repeated each time a ghost node is selected.
+          // If the partition includes a changed rate at the edge, ghost nodes need to be picked
+          // carefully. This if statement is repeated each time a ghost node is selected.
           ghostsGIDs[countGhosts] = ghostOffset[2] + ghostOffset[1] + ghostOffset[0];
           ++countGhosts;
         }
       }
     }
 
-    // Sweep over the lCoarseNodesPerDir[2] coarse layers in direction 2 and gather necessary ghost nodes
-    // located on these layers.
+    // Sweep over the lCoarseNodesPerDir[2] coarse layers in direction 2 and gather necessary ghost
+    // nodes located on these layers.
     for(LO i = 0; i < lengthTwo; ++i) {
-      // Exclude the cases where ghost nodes exists on the faces in directions 2, these faces are swept
-      // seperatly for efficiency.
+      // Exclude the cases where ghost nodes exists on the faces in directions 2, these faces are
+      // swept seperatly for efficiency.
       if( !((i == lengthTwo-1) && ghostInterface[5]) && !((i == 0) && ghostInterface[4]) ) {
         // Set the ghostOffset in direction 2 taking into account a possible endRate different
         // from the regular coarseRate.
         if( (i == lengthTwo-1) && !ghostInterface[5] ) {
-          ghostOffset[2] = startingGID + ((i-1)*coarseRate[2] + endRate[2])*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+          ghostOffset[2] = startingGID + ((i-1)*coarseRate[2] + endRate[2])
+            *gFineNodesPerDir[1]*gFineNodesPerDir[0];
         } else {
           ghostOffset[2] = startingGID + i*coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
         }
         for(LO j = 0; j < lengthOne; ++j) {
           if( (j == 0) && ghostInterface[2] ) {
             for(LO k = 0; k < lengthZero; ++k) {
-              if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+              if((k == lengthZero-1)
+                 && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0])) {
                 if(k == 0) {
                   ghostOffset[0] = endRate[0];
                 } else {
@@ -483,13 +502,15 @@ namespace MueLu {
           } else if( (j == lengthOne-1) && ghostInterface[3] ) {
             // Set the ghostOffset in direction 1 taking into account a possible endRate different
             // from the regular coarseRate.
-            if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
+            if((j == lengthOne-1)
+               && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1])) {
               ghostOffset[1] = ((j-1)*coarseRate[1] + endRate[1])*gFineNodesPerDir[0];
             } else {
               ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
             }
             for(LO k = 0; k < lengthZero; ++k) {
-              if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+              if((k == lengthZero-1)
+                 && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0])) {
                 ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
               } else {
                 ghostOffset[0] = k*coarseRate[0];
@@ -499,7 +520,8 @@ namespace MueLu {
             }
           } else {
             // Set ghostOffset[1] for side faces sweep
-            if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
+            if((j == lengthOne-1)
+               && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1])) {
               ghostOffset[1] = ( (j-1)*coarseRate[1] + endRate[1] )*gFineNodesPerDir[0];
             } else {
               ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
@@ -511,7 +533,7 @@ namespace MueLu {
               ++countGhosts;
             }
             if(ghostInterface[1]) { // Grab ghost point at the end of direction 0.
-              if( (startingIndices[0] + (lengthZero-1)*coarseRate[0]) > gFineNodesPerDir[0] - 1 ) {
+              if((startingIndices[0] + (lengthZero-1)*coarseRate[0]) > gFineNodesPerDir[0] - 1) {
                 if(lengthZero > 2) {
                   ghostOffset[0] = (lengthZero-2)*coarseRate[0] + endRate[0];
                 } else {
@@ -531,18 +553,21 @@ namespace MueLu {
     // Finally check the top face
     if(ghostInterface[5]) {
       if( startingIndices[2] + (lengthTwo-1)*coarseRate[2] + 1 > gFineNodesPerDir[2] ) {
-        ghostOffset[2] = startingGID + ((lengthTwo-2)*coarseRate[2] + endRate[2])*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+        ghostOffset[2] = startingGID + ((lengthTwo-2)*coarseRate[2]
+                                        + endRate[2])*gFineNodesPerDir[1]*gFineNodesPerDir[0];
       } else {
-        ghostOffset[2] = startingGID + (lengthTwo-1)*coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+        ghostOffset[2] = startingGID
+          + (lengthTwo-1)*coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
       }
       for(LO j = 0; j < lengthOne; ++j) {
-        if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) { // && !ghostInterface[3] ) {
+        if((j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1])) {
           ghostOffset[1] = ( (j-1)*coarseRate[1] + endRate[1] )*gFineNodesPerDir[0];
         } else {
           ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
         }
         for(LO k = 0; k < lengthZero; ++k) {
-          if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {// && !ghostInterface[1] ) {
+          if((k == lengthZero-1)
+             && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0])) {
             ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
           } else {
             ghostOffset[0] = k*coarseRate[0];
@@ -560,9 +585,10 @@ namespace MueLu {
     //   - compute row and column indices for stencil entries
     RCP<const Map> stridedDomainMapP;
     RCP<Matrix>    P;
-    MakeGeneralGeometricP(numDimensions, mapDirL2G, mapDirG2L, lFineNodesPerDir, lCoarseNodesPerDir, gCoarseNodesPerDir,
-                          gFineNodesPerDir, coarseRate, endRate, offsets, ghostInterface, fineCoords, nTerms, blkSize,
-                          stridedDomainMapP, A, P, coarseCoords, ghostsGIDs, interpolationOrder);
+    MakeGeneralGeometricP(numDimensions, mapDirL2G, mapDirG2L, lFineNodesPerDir, lCoarseNodesPerDir,
+                          gCoarseNodesPerDir, gFineNodesPerDir, coarseRate, endRate, offsets,
+                          ghostInterface, fineCoords, nTerms, blkSize, stridedDomainMapP, A, P,
+                          coarseCoords, ghostsGIDs, interpolationOrder);
 
     // set StridingInformation of P
     if (A->IsView("stridedMaps") == true) {
@@ -577,16 +603,28 @@ namespace MueLu {
     Set<Array<GO> >(coarseLevel, "gCoarseNodesPerDim", gCoarseNodesPerDir);
     Set<Array<LO> >(coarseLevel, "lCoarseNodesPerDim", lCoarseNodesPerDir);
 
-    // rst: null space might get scaled here ... do we care. We could just inject at the cpoints, but I don't
-    //  feel that this is needed.
-    RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(), fineNullspace->getNumVectors());
-    P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
+    // rst: null space might get scaled here ... do we care. We could just inject at the cpoints,
+    // but I don't feel that this is needed.
+    RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(),
+                                                                 fineNullspace->getNumVectors());
+    P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(),
+             Teuchos::ScalarTraits<SC>::zero());
     Set(coarseLevel, "Nullspace", coarseNullspace);
 
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MakeGeneralGeometricP(LO const ndm, const Array<LO> mapDirL2G, const Array<LO> mapDirG2L, const Array<LO> lFineNodesPerDir, const Array<LO> lCoarseNodesPerDir, Array<GO> gCoarseNodesPerDir, Array<GO> gFineNodesPerDir, ArrayRCP<LO> const coarseRate, LO const endRate[3], LO const offsets[6], bool const ghostInterface[6], const RCP<Xpetra::MultiVector<double,LO,GO,Node> >& fineCoords, LO const nnzP, LO const dofsPerNode, RCP<const Map>& stridedDomainMapP, RCP<Matrix> & Amat, RCP<Matrix>& P, RCP<Xpetra::MultiVector<double,LO,GO,Node> >& coarseCoords, Array<GO> ghostsGIDs, int interpolationOrder) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MakeGeneralGeometricP(
+                                LO const ndm, const Array<LO> mapDirL2G, const Array<LO> mapDirG2L,
+                                const Array<LO> lFineNodesPerDir,const Array<LO> lCoarseNodesPerDir,
+                                Array<GO> gCoarseNodesPerDir, Array<GO> gFineNodesPerDir,
+                                ArrayRCP<LO> const coarseRate, LO const endRate[3],
+                                LO const offsets[6], bool const ghostInterface[6],
+                                const RCP<Xpetra::MultiVector<double,LO,GO,Node> >& fineCoords,
+                                LO const nnzP, LO const dofsPerNode,
+                                RCP<const Map>& stridedDomainMapP,RCP<Matrix> & Amat,RCP<Matrix>& P,
+                                RCP<Xpetra::MultiVector<double,LO,GO,Node> >& coarseCoords,
+                                Array<GO> ghostsGIDs, int interpolationOrder) const {
 
     /*
      *
@@ -618,7 +656,8 @@ namespace MueLu {
      *    So far nothing...
      */
 
-    using xdMV = Xpetra::MultiVector<double,LO,GO,NO>;
+    using xdMV                 = Xpetra::MultiVector<double,LO,GO,NO>;
+    Xpetra::global_size_t OTI  = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
     LO lNumFineNodes    = lFineNodesPerDir[0]*lFineNodesPerDir[1]*lFineNodesPerDir[2];
     LO lNumCoarseNodes  = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[1]*lCoarseNodesPerDir[2];
@@ -636,8 +675,10 @@ namespace MueLu {
     RCP<const Map> fineCoordsMap = fineCoords->getMap();
     // Compute the global indices of the first node on the partition.
     { // Scope for dummy
-      gStartIndices[2] = fineCoordsMap->getMinGlobalIndex() / (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
-      GO dummy         = fineCoordsMap->getMinGlobalIndex() % (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
+      gStartIndices[2] = fineCoordsMap->getMinGlobalIndex()
+        / (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
+      GO dummy         = fineCoordsMap->getMinGlobalIndex()
+        % (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
       gStartIndices[1] = dummy / gFineNodesPerDir[0];
       gStartIndices[0] = dummy % gFineNodesPerDir[0];
     }
@@ -720,16 +761,20 @@ namespace MueLu {
       // that will be used to construct the column and domain maps of P as well
       // as to construct the coarse coordinates map.
       for(LO col = 0; col < lNumCoarseNodes; ++col) {
-        if((endRate[2] != coarseRate[2]) && (gCoarseNodesGIDs[col] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
+        if((endRate[2] != coarseRate[2]) && (gCoarseNodesGIDs[col] > (gCoarseNodesPerDir[2] - 2)
+                                             *fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)){
           tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab + 1;
-          tmpVars[0] = gCoarseNodesGIDs[col] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
+          tmpVars[0] = gCoarseNodesGIDs[col] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab
+            - fineNodesEndCoarseSlab;
         } else {
           tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab;
           tmpVars[0] = gCoarseNodesGIDs[col] % fineNodesPerCoarseSlab;
         }
-        if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane + fineNodesEndCoarsePlane - 1)) {
+        if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)
+                                             *fineNodesPerCoarsePlane + fineNodesEndCoarsePlane-1)){
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
-          tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane - fineNodesEndCoarsePlane;
+          tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane
+            - fineNodesEndCoarsePlane;
         } else {
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
           tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
@@ -743,8 +788,10 @@ namespace MueLu {
         tmp     = col % (lCoarseNodesPerDir[mapDirG2L[1]]*lCoarseNodesPerDir[mapDirG2L[0]]);
         gInd[1] = tmp / lCoarseNodesPerDir[mapDirG2L[0]];
         gInd[0] = tmp % lCoarseNodesPerDir[mapDirG2L[0]];
-        lCol = gInd[mapDirG2L[2]]*(lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]) + gInd[mapDirG2L[1]]*lCoarseNodesPerDir[0] + gInd[mapDirG2L[0]];
-        gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
+        lCol = gInd[mapDirG2L[2]]*(lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0])
+          + gInd[mapDirG2L[1]]*lCoarseNodesPerDir[0] + gInd[mapDirG2L[0]];
+        gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer
+          + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
         coarseNodesGIDs[lCol] = gCoarseNodeOnCoarseGridGID;
         for(LO dof = 0; dof < dofsPerNode; ++dof) {
           colGIDs[dofsPerNode*lCol + dof] = dofsPerNode*gCoarseNodeOnCoarseGridGID + dof;
@@ -753,16 +800,21 @@ namespace MueLu {
       // Now loop over the ghost nodes of the partition to add them to colGIDs
       // since they will need to be included in the column map of P
       for(LO col = lNumCoarseNodes; col < lNumCoarseNodes + lNumGhostNodes; ++col) {
-        if((endRate[2] != coarseRate[2]) && (ghostsGIDs[ghostsPermut[col - lNumCoarseNodes]] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
+        if((endRate[2] != coarseRate[2]) && (ghostsGIDs[ghostsPermut[col - lNumCoarseNodes]] >
+                                             (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab
+                                             + fineNodesEndCoarseSlab - 1)) {
           tmpInds[2] = ghostsGIDs[ghostsPermut[col - lNumCoarseNodes]] / fineNodesPerCoarseSlab + 1;
-          tmpVars[0] = ghostsGIDs[ghostsPermut[col - lNumCoarseNodes]] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
+          tmpVars[0] = ghostsGIDs[ghostsPermut[col - lNumCoarseNodes]]
+            - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
         } else {
           tmpInds[2] = ghostsGIDs[ghostsPermut[col - lNumCoarseNodes]] / fineNodesPerCoarseSlab;
           tmpVars[0] = ghostsGIDs[ghostsPermut[col - lNumCoarseNodes]] % fineNodesPerCoarseSlab;
         }
-        if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane + fineNodesEndCoarsePlane - 1)) {
+        if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)
+                                             *fineNodesPerCoarsePlane + fineNodesEndCoarsePlane-1)){
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
-          tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane - fineNodesEndCoarsePlane;
+          tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane
+            - fineNodesEndCoarsePlane;
         } else {
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
           tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
@@ -772,7 +824,8 @@ namespace MueLu {
         } else {
           tmpInds[0] = tmpVars[1] / coarseRate[0];
         }
-        gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
+        gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer
+          + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
         for(LO dof = 0; dof < dofsPerNode; ++dof) {
           colGIDs[dofsPerNode*col + dof] = dofsPerNode*gCoarseNodeOnCoarseGridGID + dof;
         }
@@ -785,12 +838,12 @@ namespace MueLu {
 
     RCP<const Map> domainMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
                                                                     numGloCols,
-                                                                    colGIDs.view(0, dofsPerNode*lNumCoarseNodes),
+                                                                    colGIDs.view(0, dofsPerNode
+                                                                                 *lNumCoarseNodes),
                                                                     rowMapP->getIndexBase(),
                                                                     rowMapP->getComm());
 
-    RCP<const Map> colMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
-                                                                 Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+    RCP<const Map> colMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),OTI,
                                                                  colGIDs.view(0, colGIDs.size()),
                                                                  rowMapP->getIndexBase(),
                                                                  rowMapP->getComm());
@@ -807,8 +860,9 @@ namespace MueLu {
                                                         rowMapP->getComm());
 
     // Do the actual import using the fineCoordsMap
-    RCP<const Map> ghostMap = Xpetra::MapFactory<LO,GO,NO>::Build(fineCoordsMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), ghostsGIDs.view(0, lNumGhostNodes),
-                                                               fineCoordsMap->getIndexBase(), rowMapP->getComm());
+    RCP<const Map> ghostMap = Xpetra::MapFactory<LO,GO,NO>::Build(fineCoordsMap->lib(), OTI,
+                                                                  fineCoordsMap->getIndexBase(),
+                                                                  rowMapP->getComm());
     RCP<const Import> importer = ImportFactory::Build(fineCoordsMap, ghostMap);
     RCP<xdMV> ghostCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(ghostMap, ndm);
     ghostCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
@@ -834,16 +888,19 @@ namespace MueLu {
     // Declaration and assignment of fineCoords which holds the coordinates of the fine nodes in 3D.
     // To do so we pull the nD coordinates from fineCoords and pad the rest with zero vectors...
     // We also create an nD array that will store the coordinates of the coarse grid nodes.
-    // That array will eventually be used during the construction of coarseCoords, the MultiVector of
-    // coarse nodes coordinates that we store on the coarse level.
+    // That array will eventually be used during the construction of coarseCoords, the MultiVector
+    // of coarse nodes coordinates that we store on the coarse level.
     ArrayRCP< ArrayRCP<double> > lFineCoords(3);
     ArrayRCP< ArrayRCP<double> > lGhostCoords(3);
     RCP<const Map> ghostCoordsMap = ghostCoords->getMap();
-    RCP<Xpetra::Vector<double, LO, GO, NO> > zeros = Xpetra::VectorFactory<double, LO, GO, NO>::Build(fineCoordsMap, true);
-    RCP<Xpetra::Vector<double, LO, GO, NO> > ghostZeros = Xpetra::VectorFactory<double, LO, GO, NO>::Build(ghostCoordsMap, true);
+    RCP<Xpetra::Vector<double,LO,GO,NO> > zeros
+      = Xpetra::VectorFactory<double,LO,GO,NO>::Build(fineCoordsMap, true);
+    RCP<Xpetra::Vector<double,LO,GO,NO> > ghostZeros
+      = Xpetra::VectorFactory<double,LO,GO,NO>::Build(ghostCoordsMap, true);
 
     // Build the MultiVector holding the coarse grid points coordinates.
-    coarseCoords = Xpetra::MultiVectorFactory<double,LO,GO,Node>::Build(coarseCoordsMap, Teuchos::as<size_t>(ndm));
+    coarseCoords = Xpetra::MultiVectorFactory<double,LO,GO,Node>::Build(coarseCoordsMap,
+                                                                        Teuchos::as<size_t>(ndm));
     ArrayRCP<double> xCoarseNodes; ArrayRCP<double> yCoarseNodes; ArrayRCP<double> zCoarseNodes;
 
     if(ndm==1) {
@@ -965,11 +1022,13 @@ namespace MueLu {
       if(ndm < 3) { rate[2] = 0;}
       if(ndm < 2) { rate[1] = 0;}
 
-      // We need to check whether we are on the edge of the mesh in which case we need to adjust the coarse nodes
+      // We need to check whether we are on the edge of the mesh in which case we need to adjust
+      // the coarse nodes
       firstCoarseNodeIndex = 0;
-      Array<GO> firstCoarseNodeIndices(3); // These are fine grid indices, divide by coarseRate[i] to get coarse grid indices
+      Array<GO> firstCoarseNodeIndices(3); // These are fine grid indices
       if((currentNodeIndices[2] == gFineNodesPerDir[2] -1) && (endRate[2] == coarseRate[2])) {
-        // If we are on the last node and have a endRate == coarseRate we need to take the coarse node below the current node
+        // If we are on the last node and have a endRate == coarseRate we need to take the coarse
+        // node below the current node
         firstCoarseNodeIndices[2] = ((currentNodeIndices[2] / coarseRate[2]) - 1) * coarseRate[2];
       } else {
         firstCoarseNodeIndices[2] = (currentNodeIndices[2] / coarseRate[2]) * coarseRate[2];
@@ -994,21 +1053,25 @@ namespace MueLu {
         tmpInds[3] = firstCoarseNodeIndex % fineNodesPerCoarseSlab;
         tmpInds[1] = tmpInds[3] / fineNodesPerCoarsePlane;
         tmpInds[0] = (tmpInds[3] % fineNodesPerCoarsePlane) / coarseRate[0];
-        firstCoarseNodeOnCoarseGridIndex = tmpInds[2]*coarseNodesPerCoarseLayer + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
+        firstCoarseNodeOnCoarseGridIndex = tmpInds[2]*coarseNodesPerCoarseLayer
+          + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
       }
 
       LO coarseGhosts[8] = {0, 0, 0, 0, 0, 0, 0, 0};
       if( ghostInterface[0] ) {
         if( ((indices[0][mapDirG2L[0]] < rate[0] - offsets[0]) && offsets[0] != 0)
-            || (((currentNodeIndices[0] == gFineNodesPerDir[0] -1) && (indices[0][mapDirG2L[0]] < rate[0] - offsets[0] + 1)) && offsets[0] != 0)
-            || ((currentNodeIndices[0] == gFineNodesPerDir[0] -1) && lFineNodesPerDir[mapDirG2L[0]] == 1) ) {
+            || (((currentNodeIndices[0] == gFineNodesPerDir[0] -1)
+                 && (indices[0][mapDirG2L[0]] < rate[0] - offsets[0] + 1)) && offsets[0] != 0)
+            || ((currentNodeIndices[0] == gFineNodesPerDir[0] -1)
+                && lFineNodesPerDir[mapDirG2L[0]] == 1) ) {
           coarseGhosts[0] = 1;
           coarseGhosts[2] = 1;
           coarseGhosts[4] = 1;
           coarseGhosts[6] = 1;
         }
       }
-      if( ghostInterface[1] && (indices[0][mapDirG2L[0]] > lFineNodesPerDir[mapDirG2L[0]] - offsets[3] - 2) ) {
+      if(ghostInterface[1]
+         && (indices[0][mapDirG2L[0]] > lFineNodesPerDir[mapDirG2L[0]] - offsets[3] - 2)) {
         coarseGhosts[1] = 1;
         coarseGhosts[3] = 1;
         coarseGhosts[5] = 1;
@@ -1016,15 +1079,18 @@ namespace MueLu {
       }
       if( ghostInterface[2] ) {
         if( ((indices[0][mapDirG2L[1]] < rate[1] - offsets[1]) && offsets[1] != 0)
-            || (((currentNodeIndices[1] == gFineNodesPerDir[1] -1) && (indices[0][mapDirG2L[1]] < rate[1] - offsets[1] + 1)) && offsets[1] != 0)
-            || ((currentNodeIndices[1] == gFineNodesPerDir[1] -1) && lFineNodesPerDir[mapDirG2L[1]] == 1) ) {
+            || (((currentNodeIndices[1] == gFineNodesPerDir[1] -1)
+                 && (indices[0][mapDirG2L[1]] < rate[1] - offsets[1] + 1)) && offsets[1] != 0)
+            || ((currentNodeIndices[1] == gFineNodesPerDir[1] -1)
+                && lFineNodesPerDir[mapDirG2L[1]] == 1) ) {
           coarseGhosts[0] = 1;
           coarseGhosts[1] = 1;
           coarseGhosts[4] = 1;
           coarseGhosts[5] = 1;
         }
       }
-      if( ghostInterface[3] && (indices[0][mapDirG2L[1]] > lFineNodesPerDir[mapDirG2L[1]] - offsets[4] - 2) ) {
+      if( ghostInterface[3] && (indices[0][mapDirG2L[1]] > lFineNodesPerDir[mapDirG2L[1]]
+                                - offsets[4] - 2) ) {
         coarseGhosts[2] = 1;
         coarseGhosts[3] = 1;
         coarseGhosts[6] = 1;
@@ -1032,15 +1098,18 @@ namespace MueLu {
       }
       if( ghostInterface[4] ) {
         if( ((indices[0][mapDirG2L[2]] < rate[2] - offsets[2]) && offsets[2] != 0)
-            || (((currentNodeIndices[2] == gFineNodesPerDir[2] -1) && (indices[0][mapDirG2L[2]] < rate[2] - offsets[2] + 1)) && offsets[2] != 0)
-            || ((currentNodeIndices[2] == gFineNodesPerDir[2] -1) && lFineNodesPerDir[mapDirG2L[2]] == 1) ) {
+            || (((currentNodeIndices[2] == gFineNodesPerDir[2] -1)
+                 && (indices[0][mapDirG2L[2]] < rate[2] - offsets[2] + 1)) && offsets[2] != 0)
+            || ((currentNodeIndices[2] == gFineNodesPerDir[2] -1)
+                && lFineNodesPerDir[mapDirG2L[2]] == 1) ) {
           coarseGhosts[0] = 1;
           coarseGhosts[1] = 1;
           coarseGhosts[2] = 1;
           coarseGhosts[3] = 1;
         }
       }
-      if( ghostInterface[5] && (indices[0][mapDirG2L[2]] > lFineNodesPerDir[mapDirG2L[2]] - offsets[5] - 2) ) {
+      if( ghostInterface[5]
+          && (indices[0][mapDirG2L[2]] > lFineNodesPerDir[mapDirG2L[2]] - offsets[5] - 2) ) {
         coarseGhosts[4] = 1;
         coarseGhosts[5] = 1;
         coarseGhosts[6] = 1;
@@ -1049,21 +1118,25 @@ namespace MueLu {
 
       GO firstGhostNodeIndices[3], firstGhostNodeIndex;
       if(currentNodeIndices[0] == gFineNodesPerDir[0] - 1) {
-        firstGhostNodeIndices[0] = (currentNodeIndices[0]-rate[0]) - (currentNodeIndices[0]-rate[0])%coarseRate[0];
+        firstGhostNodeIndices[0] = (currentNodeIndices[0]-rate[0]) - (currentNodeIndices[0]-rate[0])
+          % coarseRate[0];
       } else {
         firstGhostNodeIndices[0] = currentNodeIndices[0] - currentNodeIndices[0]%coarseRate[0];
       }
       if(currentNodeIndices[1] == gFineNodesPerDir[1] - 1) {
-        firstGhostNodeIndices[1] = (currentNodeIndices[1]-rate[1]) - (currentNodeIndices[1]-rate[1])%coarseRate[1];
+        firstGhostNodeIndices[1] = (currentNodeIndices[1]-rate[1]) - (currentNodeIndices[1]-rate[1])
+          % coarseRate[1];
       } else {
         firstGhostNodeIndices[1] = currentNodeIndices[1] - currentNodeIndices[1]%coarseRate[1];
       }
       if(currentNodeIndices[2] == gFineNodesPerDir[2] - 1) {
-        firstGhostNodeIndices[2] = (currentNodeIndices[2]-rate[2]) - (currentNodeIndices[2]-rate[2])%coarseRate[2];
+        firstGhostNodeIndices[2] = (currentNodeIndices[2]-rate[2]) - (currentNodeIndices[2]-rate[2])
+          % coarseRate[2];
       } else {
         firstGhostNodeIndices[2] = currentNodeIndices[2] - currentNodeIndices[2]%coarseRate[2];
       }
-      firstGhostNodeIndex = firstGhostNodeIndices[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0] + firstGhostNodeIndices[1]*gFineNodesPerDir[0] + firstGhostNodeIndices[0];
+      firstGhostNodeIndex = firstGhostNodeIndices[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0]
+        + firstGhostNodeIndices[1]*gFineNodesPerDir[0] + firstGhostNodeIndices[0];
 
       Array<GO> gCoarseNodesOnCoarseGridIndices(8);
       GO ghostNodeIndex, ghostNodeOnCoarseGridIndex;
@@ -1084,26 +1157,30 @@ namespace MueLu {
             // Check whether ghost nodes are needed for the current fine point.
             if(coarseGhosts[ind] == 1) {
               // Get the global ghost node index and load its coordinates
-              ghostNodeIndex = firstGhostNodeIndex + Teuchos::as<GO>(ind2*rate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0]
-                                                                     + ind1*rate[1]*gFineNodesPerDir[0]
-                                                                     + ind0*rate[0]);
-              ghostNodeOnCoarseGridIndex = firstCoarseNodeOnCoarseGridIndex + Teuchos::as<GO>(ind2*gCoarseNodesPerDir[1]*gCoarseNodesPerDir[0]
-                                                                                              + ind1*gCoarseNodesPerDir[0]
-                                                                                              + ind0);
+              ghostNodeIndex = firstGhostNodeIndex
+                + Teuchos::as<GO>(ind2*rate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0]
+                                  + ind1*rate[1]*gFineNodesPerDir[0] + ind0*rate[0]);
+              ghostNodeOnCoarseGridIndex = firstCoarseNodeOnCoarseGridIndex
+                + Teuchos::as<GO>(ind2*gCoarseNodesPerDir[1]*gCoarseNodesPerDir[0]
+                                  + ind1*gCoarseNodesPerDir[0] + ind0);
               currentGhostLID  = ghostMap->getLocalElement(ghostNodeIndex);
               connecPIDs[ind]  = ghostsPIDs[currentGhostLID];
               connecLGIDs[ind] = ghostNodeIndex;
-              for(LO dim = 0; dim < 3; ++dim) {connec[ind + 1][dim] = lGhostCoords[dim][currentGhostLID];}
+              for(LO dim = 0; dim < 3; ++dim) {
+                connec[ind + 1][dim] = lGhostCoords[dim][currentGhostLID];
+              }
               gCoarseNodesOnCoarseGridIndices[4*ind2 + 2*ind1 + ind0] = ghostNodeOnCoarseGridIndex;
             } else {
               // Get the local coarse node index and load its coordinates
-              coarseNodeIndex = firstCoarseNodeIndex + Teuchos::as<GO>(ind2*rate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0]
-                                                                     + ind1*rate[1]*gFineNodesPerDir[0]
-                                                                     + ind0*rate[0]);
-              coarseNodeOnCoarseGridIndex = firstCoarseNodeOnCoarseGridIndex + Teuchos::as<GO>(ind2*gCoarseNodesPerDir[1]*gCoarseNodesPerDir[0]
-                                                                                               + ind1*gCoarseNodesPerDir[0]
-                                                                                               + ind0);
-              for(LO dim = 0; dim < 3; ++dim) {connec[ind + 1][dim] = lFineCoords[dim][fineCoordsMap->getLocalElement(coarseNodeIndex)];}
+              coarseNodeIndex = firstCoarseNodeIndex
+                + Teuchos::as<GO>(ind2*rate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0]
+                                  + ind1*rate[1]*gFineNodesPerDir[0] + ind0*rate[0]);
+              coarseNodeOnCoarseGridIndex = firstCoarseNodeOnCoarseGridIndex
+                + Teuchos::as<GO>(ind2*gCoarseNodesPerDir[1]*gCoarseNodesPerDir[0]
+                                  + ind1*gCoarseNodesPerDir[0] + ind0);
+              for(LO dim = 0; dim < 3; ++dim) {
+                connec[ind + 1][dim] = lFineCoords[dim][fineCoordsMap->getLocalElement(coarseNodeIndex)];
+              }
               gCoarseNodesOnCoarseGridIndices[4*ind2 + 2*ind1 + ind0] = coarseNodeOnCoarseGridIndex;
               connecPIDs[ind]  = -1;
               connecLGIDs[ind] = coarseCoordsMap->getLocalElement(coarseNodeOnCoarseGridIndex);
@@ -1114,15 +1191,19 @@ namespace MueLu {
 
       // Compute the actual geometric interpolation stencil
       SC stencil[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-      ComputeStencil(ndm, currentNodeIndices, firstCoarseNodeIndices, rate, connec, interpolationOrder, stencil);
+      ComputeStencil(ndm, currentNodeIndices, firstCoarseNodeIndices, rate, connec,
+                     interpolationOrder, stencil);
 
       // Finally check whether the fine node is on a coarse: node, edge or face
       // and select accordingly the non-zero values from the stencil and the
       // corresponding column indices
       LO nzIndStencil[8] = {0,0,0,0,0,0,0,0};
-      if( ((currentNodeIndices[0] % coarseRate[0] == 0) || currentNodeIndices[0] == gFineNodesPerDir[0] - 1)
-          && ((currentNodeIndices[1] % coarseRate[1] == 0) || currentNodeIndices[1] == gFineNodesPerDir[1] - 1)
-          && ((currentNodeIndices[2] % coarseRate[2] == 0) || currentNodeIndices[2] == gFineNodesPerDir[2] - 1) ) {
+      if( ((currentNodeIndices[0] % coarseRate[0] == 0)
+           || currentNodeIndices[0] == gFineNodesPerDir[0] - 1)
+          && ((currentNodeIndices[1] % coarseRate[1] == 0)
+              || currentNodeIndices[1] == gFineNodesPerDir[1] - 1)
+          && ((currentNodeIndices[2] % coarseRate[2] == 0)
+              || currentNodeIndices[2] == gFineNodesPerDir[2] - 1) ) {
         if(ndm==1) {
           xCoarseNodes[currentCoarseNode] = lFineCoords[0][i];
         } else if(ndm==2) {
@@ -1170,7 +1251,9 @@ namespace MueLu {
       for(LO j = 0; j < dofsPerNode; ++j) {
         ia[i*dofsPerNode + j + 1] = ia[i*dofsPerNode + j] + nStencil;
         for(LO k = 0; k < nStencil; ++k) {
-          ja [ia[i*dofsPerNode + j] + k] = colMapP->getLocalElement(gCoarseNodesOnCoarseGridIndices[nzIndStencil[permutation[k]]]*dofsPerNode + j);
+          ja [ia[i*dofsPerNode + j] + k] =
+            colMapP->getLocalElement(gCoarseNodesOnCoarseGridIndices[nzIndStencil[permutation[k]]]
+                                     *dofsPerNode + j);
           val[ia[i*dofsPerNode + j] + k] = stencil[nzIndStencil[permutation[k]]];
         }
         // Add the stencil for each degree of freedom.
@@ -1204,7 +1287,8 @@ namespace MueLu {
                                "The interpolation order can be set to 0 or 1 only.");
 
     if(interpolationOrder == 0) {
-      ComputeConstantInterpolationStencil(numDimensions, currentNodeIndices, coarseNodeIndices, rate, stencil);
+      ComputeConstantInterpolationStencil(numDimensions, currentNodeIndices, coarseNodeIndices,
+                                          rate, stencil);
     } else if(interpolationOrder == 1) {
       ComputeLinearInterpolationStencil(numDimensions, coord, stencil);
     }
@@ -1212,9 +1296,10 @@ namespace MueLu {
   } // End ComputeStencil
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeConstantInterpolationStencil(
-                                const LO numDimensions, const Array<GO> currentNodeIndices,
-                                const Array<GO> coarseNodeIndices, const LO rate[3], SC stencil[8]) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  ComputeConstantInterpolationStencil(const LO numDimensions, const Array<GO> currentNodeIndices,
+                                      const Array<GO> coarseNodeIndices, const LO rate[3],
+                                      SC stencil[8]) const {
 
     LO coarseNode = 0;
     if(numDimensions > 2) {
@@ -1235,21 +1320,22 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeLinearInterpolationStencil(
-                                const LO numDimensions, const double coord[9][3], SC stencil[8]) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  ComputeLinearInterpolationStencil(const LO numDimensions, const double coord[9][3], SC stencil[8])
+    const {
 
     //                7         8                Find xi, eta and zeta such that
     //                x---------x
-    //               /|        /|             Rx = x_p - sum N_i(xi,eta,zeta)x_i = 0
-    //             5/ |      6/ |             Ry = y_p - sum N_i(xi,eta,zeta)y_i = 0
-    //             x---------x  |             Rz = z_p - sum N_i(xi,eta,zeta)z_i = 0
+    //               /|        /|          Rx = x_p - sum N_i(xi,eta,zeta)x_i = 0
+    //             5/ |      6/ |          Ry = y_p - sum N_i(xi,eta,zeta)y_i = 0
+    //             x---------x  |          Rz = z_p - sum N_i(xi,eta,zeta)z_i = 0
     //             |  | *P   |  |
-    //             |  x------|--x             We can do this with a Newton solver:
-    //             | /3      | /4             We will start with initial guess (xi,eta,zeta) = (0,0,0)
-    //             |/        |/               We compute the Jacobian and iterate until convergence...
+    //             |  x------|--x          We can do this with a Newton solver:
+    //             | /3      | /4          We will start with initial guess (xi,eta,zeta) = (0,0,0)
+    //             |/        |/            We compute the Jacobian and iterate until convergence...
     //  z  y       x---------x
-    //  | /        1         2                Once we have (xi,eta,zeta), we can evaluate all N_i which
-    //  |/                                    give us the weights for the interpolation stencil!
+    //  | /        1         2             Once we have (xi,eta,zeta), we can evaluate all N_i which
+    //  |/                                 give us the weights for the interpolation stencil!
     //  o---x
     //
 
@@ -1274,7 +1360,7 @@ namespace MueLu {
       for(LO i = 0; i < numDimensions; ++i) {
         residual(i) = coord[0][i];                 // Add coordinates from point of interest
         for(LO k = 0; k < numTerms; ++k) {
-          residual(i) -= functions[0][k]*coord[k+1][i];  // Remove contribution from all coarse points
+          residual(i) -= functions[0][k]*coord[k+1][i]; //Remove contribution from all coarse points
         }
         if(iter == 1) {
           norm_ref += residual(i)*residual(i);
@@ -1302,7 +1388,7 @@ namespace MueLu {
       }
 
       // Recompute Residual norm
-      GetInterpolationFunctions(numDimensions, paramCoords, functions); // These need to be recomputed with new paramCoords!
+      GetInterpolationFunctions(numDimensions, paramCoords, functions);
       for(LO i = 0; i < numDimensions; ++i) {
         double tmp = coord[0][i];
         for(LO k = 0; k < numTerms; ++k) {
@@ -1322,7 +1408,10 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetInterpolationFunctions(const LO numDimensions, const Teuchos::SerialDenseVector<LO,double> parameters, double functions[4][8]) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetInterpolationFunctions(const LO numDimensions,
+                            const Teuchos::SerialDenseVector<LO,double> parameters,
+                            double functions[4][8]) const {
     double xi = 0.0, eta = 0.0, zeta = 0.0, denominator = 0.0;
     if(numDimensions == 1) {
       xi = parameters[0];
