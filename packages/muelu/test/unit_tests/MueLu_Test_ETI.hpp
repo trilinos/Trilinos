@@ -58,9 +58,12 @@
 #endif
 
 
-// This function serves to mange the ETI (or not) for tests that are *not* unit tests.  This
+// This function serves to manage the ETI (or not) for tests that are *not* unit tests.  This
 // allows us to isolate this particular bit of functionality, rather than have it cut-and-paste
 // duplicated over half of the testing tree
+// TAW: 7/24/17 Please be aware of the fact that this routine only tests one enabled configuration
+//              either Epetra or Tpetra (depending on the user choice with --linAlgebra)
+//              It does NOT test all enabled configurations as the unit tests would do.
 bool Automatic_Test_ETI(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -70,7 +73,9 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   //
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
-  bool success = false;
+  // TAW: 7/24/17 the success flag is meaningless here, since most test routines in MUELU_AUTOMATIC_TEST_ETI_NAME
+  //              have their own flag
+  bool success = true;
   try {
     //
     // Parameters
@@ -181,7 +186,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #  else
 #    if   defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        //return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
 #    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
