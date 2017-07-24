@@ -68,7 +68,7 @@ namespace Tempus_Test {
  *    \dot{x}_1(t) - (1-x_0^2)x_1/\epsilon & = & 0
  *  \f}
  *
- *  Recalling the defintion of the iteration martix, \f$W\f$,
+ *  Recalling the defintion of the iteration matrix, \f$W\f$,
  *  \f[
  *    W_{ij} \equiv \frac{d\mathcal{F}_i}{dx_j} =
  *      \alpha \frac{\partial\mathcal{F}_i}{\partial \dot{x}_j}

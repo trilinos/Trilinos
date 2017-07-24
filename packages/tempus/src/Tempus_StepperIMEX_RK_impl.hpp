@@ -145,7 +145,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(
       tableauPL->set<int>("order", 3);
       pl->set("Tableau", *tableauPL);
 
-      this->setExplicitTableau("General DIRK", pl);
+      this->setImplicitTableau("General DIRK", pl);
     }
     description_ = stepperType;
     order_ = 3;
