@@ -7,7 +7,37 @@
 
   <!-- ===========  STEP SUBLIST  =========== -->
   <ParameterList name="Step">
-    <Parameter name="Type" type="string" value="Augmented Lagrangian" />
+    <Parameter name="Type" type="string" value="Moreau-Yosida Penalty" />
+
+    <!-- ===========  COMPOSITE STEP  =========== -->
+    <ParameterList name="Composite Step">
+      <Parameter name="Output Level" type="int" value="0" />
+      <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
+      <ParameterList name="Optimality System Solver">
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-10"  />
+        <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
+      </ParameterList>
+      <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
+      <ParameterList name="Tangential Subproblem Solver">
+        <Parameter name="Iteration Limit"    type="int"    value="20"   />
+        <Parameter name="Relative Tolerance" type="double" value="1e-2" />
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
+    <ParameterList name="Moreau-Yosida Penalty">
+      <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Initial Penalty Parameter"       type="double" value="1e5"   />
+      <Parameter name="Penalty Parameter Growth Factor" type="double" value="1.0"   />
+
+      <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+      <ParameterList name="Subproblem">
+        <Parameter name="Optimality Tolerance"          type="double" value="1e-12" />
+        <Parameter name="Feasibility Tolerance"         type="double" value="1e-12" />
+        <Parameter name="Print History"                 type="bool"   value="false" />
+        <Parameter name="Iteration Limit"               type="int"    value="20"    />
+      </ParameterList>
+    </ParameterList>
 
     <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
     <ParameterList name="Augmented Lagrangian">
