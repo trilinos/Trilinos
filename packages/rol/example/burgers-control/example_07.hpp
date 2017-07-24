@@ -1231,6 +1231,8 @@ private:
   Real min_diff_;
   Real scale_;
   Teuchos::RCP<BurgersFEM<Real> > fem_;
+  Teuchos::RCP<ROL::Vector<Real> > l_;
+  Teuchos::RCP<ROL::Vector<Real> > u_;
 
   void cast_vector(Teuchos::RCP<std::vector<Real> > &xvec,
                    ROL::Vector<Real> &x) const {
@@ -1284,6 +1286,10 @@ public:
       }
     }
     min_diff_ *= 0.5;
+    l_ = Teuchos::rcp(new L2VectorPrimal<Real>(
+         Teuchos::rcp(new std::vector<Real>(l)), fem));
+    u_ = Teuchos::rcp(new L2VectorPrimal<Real>(
+         Teuchos::rcp(new std::vector<Real>(u)), fem));
   }
 
   bool isFeasible( const ROL::Vector<Real> &x ) {
@@ -1374,18 +1380,12 @@ public:
     }
   }
 
-  void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-    Teuchos::RCP<std::vector<Real> > us = Teuchos::rcp( new std::vector<Real>(dim_,0.0) );
-    us->assign(x_up_.begin(),x_up_.end());
-    Teuchos::RCP<ROL::Vector<Real> > up = Teuchos::rcp( new L2VectorPrimal<Real>(us,fem_) );
-    u.set(*up);
+  const Teuchos::RCP<const ROL::Vector<Real> > getLowerBound(void) const {
+    return l_;
   }
 
-  void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-    Teuchos::RCP<std::vector<Real> > ls = Teuchos::rcp( new std::vector<Real>(dim_,0.0) );
-    ls->assign(x_lo_.begin(),x_lo_.end());
-    Teuchos::RCP<ROL::Vector<Real> > lp = Teuchos::rcp( new L2VectorPrimal<Real>(ls,fem_) );
-    l.set(*lp);
+  const Teuchos::RCP<const ROL::Vector<Real> > getUpperBound(void) const {
+    return u_;
   }
 };
 
@@ -1398,6 +1398,8 @@ private:
   Real min_diff_;
   Real scale_;
   Teuchos::RCP<BurgersFEM<Real> > fem_;
+  Teuchos::RCP<ROL::Vector<Real> > l_;
+  Teuchos::RCP<ROL::Vector<Real> > u_;
 
   void cast_vector(Teuchos::RCP<std::vector<Real> > &xvec,
                    ROL::Vector<Real> &x) const {
@@ -1451,6 +1453,10 @@ public:
       }
     }
     min_diff_ *= 0.5;
+    l_ = Teuchos::rcp(new H1VectorPrimal<Real>(
+         Teuchos::rcp(new std::vector<Real>(l)), fem));
+    u_ = Teuchos::rcp(new H1VectorPrimal<Real>(
+         Teuchos::rcp(new std::vector<Real>(u)), fem));
   }
 
   bool isFeasible( const ROL::Vector<Real> &x ) {
@@ -1541,18 +1547,12 @@ public:
     }
   }
 
-  void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-    Teuchos::RCP<std::vector<Real> > us = Teuchos::rcp( new std::vector<Real>(dim_,0.0) );
-    us->assign(x_up_.begin(),x_up_.end());
-    Teuchos::RCP<ROL::Vector<Real> > up = Teuchos::rcp( new H1VectorPrimal<Real>(us,fem_) );
-    u.set(*up);
+  const Teuchos::RCP<const ROL::Vector<Real> > getLowerBound(void) const {
+    return l_;
   }
 
-  void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-    Teuchos::RCP<std::vector<Real> > ls = Teuchos::rcp( new std::vector<Real>(dim_,0.0) );
-    ls->assign(x_lo_.begin(),x_lo_.end());
-    Teuchos::RCP<ROL::Vector<Real> > lp = Teuchos::rcp( new H1VectorPrimal<Real>(ls,fem_) );
-    l.set(*lp);
+  const Teuchos::RCP<const ROL::Vector<Real> > getUpperBound(void) const {
+    return u_;
   }
 };
 
