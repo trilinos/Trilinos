@@ -3770,6 +3770,24 @@ namespace Tpetra {
     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&
     operator= (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& rhs);
 
+    /// \brief Common implementation detail of insertGlobalValues and
+    ///   insertGlobalValuesFiltered.
+    ///
+    /// \pre <tt>&graph == this->getCrsGraph ().getRawPtr ()</tt>
+    /// \pre <tt>rowInfo == graph.getRowInfo (rowInfo.localRow)</tt>
+    /// \pre <tt>graph.getRowMap ()->isNodeLocalElement (rowInfo.localRow)</tt></li>
+    /// \pre <tt>! this->isStaticGraph ()</tt>
+    /// \pre If graph has a column Map, then all entries of gblColInds
+    ///      are in the column Map on the calling process.  That is, the
+    ///      entries of gblColInds (and their corresponding vals entries)
+    ///      are "prefiltered," if we needed to filter them.
+    void
+    insertGlobalValuesImpl (crs_graph_type& graph,
+                            RowInfo& rowInfo,
+                            const GlobalOrdinal gblColInds[],
+                            const impl_scalar_type vals[],
+                            const size_t numInputEnt);
+
     /// \brief Like insertGlobalValues(), but with column filtering.
     ///
     /// "Column filtering" means that if the matrix has a column Map,
@@ -4127,7 +4145,8 @@ namespace Tpetra {
     /// This method is \c const because it doesn't change allocations
     /// (and thus doesn't change pointers).  Consider the difference
     /// between <tt>const double*</tt> and <tt>double* const</tt>.
-    Teuchos::ArrayView<impl_scalar_type> getViewNonConst (const RowInfo& rowinfo) const;
+    Teuchos::ArrayView<impl_scalar_type>
+    getViewNonConst (const RowInfo& rowinfo) const;
 
   private:
     /// \brief Constant view of all entries (including extra space) in
