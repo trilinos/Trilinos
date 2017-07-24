@@ -44,16 +44,22 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
   //stepperTypes.push_back("General IMEX RK"  );
 
   std::vector<double> stepperOrders;
-  stepperOrders.push_back(1.10487);
-  stepperOrders.push_back(1.77603);
-  stepperOrders.push_back(3.05228);
+  stepperOrders.push_back(1.21571);
+  stepperOrders.push_back(1.94113);
+  stepperOrders.push_back(3.14676);
   //stepperOrders.push_back(1.0);
 
   std::vector<double> stepperErrors;
-  stepperErrors.push_back(0.248327);
-  stepperErrors.push_back(0.136411);
-  stepperErrors.push_back(8.74616e-05);
+  stepperErrors.push_back(0.136124);
+  stepperErrors.push_back(0.0269125);
+  stepperErrors.push_back(0.0309342);
   //stepperErrors.push_back(1.38785e-05);
+
+  std::vector<double> stepperInitDt;
+  stepperInitDt.push_back(0.0125);
+  stepperInitDt.push_back(0.05);
+  stepperInitDt.push_back(0.05);
+  //stepperInitDt.push_back(0.025);
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {
@@ -67,7 +73,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
     std::vector<double> StepSize;
     std::vector<double> ErrorNorm;
     const int nTimeStepSizes = 3;
-    double dt = 0.025; // 0.20;
+    double dt = stepperInitDt[m];
     double order = 0.0;
     for (int n=0; n<nTimeStepSizes; n++) {
 

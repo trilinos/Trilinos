@@ -372,8 +372,8 @@ bool IntegratorBasic<Scalar>::advanceTime()
     integratorObserver_->observeStartIntegrator();
 
     while (integratorStatus_ == WORKING and
-          timeStepControl_->timeInRange (solutionHistory_->getCurrentTime()) and
-          timeStepControl_->indexInRange(solutionHistory_->getCurrentIndex())){
+        timeStepControl_->timeInRange (solutionHistory_->getCurrentTime()) and
+        timeStepControl_->indexInRange(solutionHistory_->getCurrentIndex())){
 
       stepperTimer_->reset();
       stepperTimer_->start();
@@ -386,7 +386,8 @@ bool IntegratorBasic<Scalar>::advanceTime()
       integratorObserver_->observeNextTimeStep(integratorStatus_);
 
       if (integratorStatus_ == FAILED) break;
-      solutionHistory_->getWorkingState()->getMetaData()->setSolutionStatus(WORKING);
+      solutionHistory_->getWorkingState()->getMetaData()->
+        setSolutionStatus(WORKING);
 
       integratorObserver_->observeBeforeTakeStep();
 
