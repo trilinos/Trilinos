@@ -59,24 +59,30 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
-// Amesos2
-#include "Amesos2.hpp"
+// Forward declarations.
 
-// Ifpack2
-#include "Ifpack2_Factory.hpp"
+namespace Amesos2 {
+  template < typename tM, typename tV > class Solver;
+}
 
-// MueLu
-#include "MueLu.hpp"
-#include "MueLu_TpetraOperator.hpp"
-#include "MueLu_CreateTpetraPreconditioner.hpp"
+namespace MueLu {
+  template <typename tSC, typename tLO, typename tGO, typename tNO> class TpetraOperator;
+}
 
-// Belos
-#include "BelosConfigDefs.hpp"
-#include "BelosLinearProblem.hpp"
-#include "BelosSolverFactory.hpp"
-#include "BelosTpetraAdapter.hpp"
+namespace Ifpack2 {
+  template <typename tSC, typename tLO, typename tGO, typename tNO> class Preconditioner;
+}
+
+namespace Belos {
+  template <typename tSC, typename tMV, typename tOP> class BlockGmresSolMgr;
+  template <typename tSC, typename tMV, typename tOP> class LinearProblem;
+}
+
+
+// Class declaration.
 
 template<class Real>
 class Solver {
@@ -126,100 +132,11 @@ public:
     preconditioner_ = parlist.get("Preconditioner", "Ifpack2");
   }
 
-  void setA(Teuchos::RCP<Tpetra::CrsMatrix<> > &A) {
-    if (useDirectSolver_) { // using Amesos2 direct solver
-      if (firstSolve_) { // construct solver object
-        try {
-          solver_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >(directSolver_, A);
-        }
-        catch (std::invalid_argument e) {
-          std::cout << e.what() << std::endl;
-        }
-        solver_->symbolicFactorization();
-        firstSolve_ = false;
-      }
-      solver_->numericFactorization();
-    }
-    else { // construct MueLu or Ifpack2 preconditioner and Belos solver
-      // Create transpose.
-      Tpetra::RowMatrixTransposer<> transposer(A);
-      A_trans_ = transposer.createTranspose();
-      if (preconditioner_ == "Ifpack2") {
-        Teuchos::ParameterList & parlistIfpack2 = parlist_.sublist("Ifpack2");
-        // Create preconditioners.
-        ifpack2Preconditioner_trans_ = Ifpack2::Factory::create<Tpetra::RowMatrix<Real,LO,GO,NO> > ("SCHWARZ", A_trans_);
-        ifpack2Preconditioner_ = Ifpack2::Factory::create<Tpetra::RowMatrix<Real,LO,GO,NO> > ("SCHWARZ", A);
-        ifpack2Preconditioner_trans_->setParameters(parlistIfpack2);
-        ifpack2Preconditioner_->setParameters(parlistIfpack2);
-        ifpack2Preconditioner_trans_->initialize();
-        ifpack2Preconditioner_->initialize();
-        ifpack2Preconditioner_trans_->compute();
-        ifpack2Preconditioner_->compute();
-      }
-      else if (preconditioner_ == "MueLu") {
-        Teuchos::ParameterList & parlistMuelu = parlist_.sublist("MueLu");
-        // Create preconditioners.
-        mueLuPreconditioner_trans_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(Teuchos::RCP<OP>(A_trans_), parlistMuelu);
-        mueLuPreconditioner_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(Teuchos::RCP<OP>(A), parlistMuelu);
-      }
-
-      // Create Belos solver object and linear problem.
-      if (firstSolve_) {
-        Teuchos::RCP<Teuchos::ParameterList> parlistBelos = Teuchos::rcpFromRef(parlist_.sublist("Belos"));
-        // Transpose solver.
-        problemBelos_trans_ = Teuchos::rcp(new Belos::LinearProblem<Real,MV,OP>());
-        problemBelos_trans_->setOperator(A_trans_);
-        solverBelos_trans_ = Teuchos::rcp(new Belos::BlockGmresSolMgr<Real,MV,OP>(problemBelos_trans_, parlistBelos));
-        // Forward solver.
-        problemBelos_ = Teuchos::rcp(new Belos::LinearProblem<Real,MV,OP>());
-        problemBelos_->setOperator(A);
-        solverBelos_ = Teuchos::rcp(new Belos::BlockGmresSolMgr<Real,MV,OP>(problemBelos_, parlistBelos));
-        firstSolve_ = false;
-      }
-      else {
-        problemBelos_trans_->setOperator(A_trans_);
-      }
-    }
-  }
+  void setA(Teuchos::RCP<Tpetra::CrsMatrix<> > &A);
 
   void solve(const Teuchos::RCP<Tpetra::MultiVector<> > &x,
              const Teuchos::RCP<const Tpetra::MultiVector<> > &b,
-             const bool transpose = false) {
-    if (useDirectSolver_) { // using Amesos2 direct solver
-      //parlistAmesos2_->set("Transpose", transpose);
-      parlistAmesos2_->sublist(directSolver_).set("Transpose", transpose);
-      solver_->setParameters(parlistAmesos2_);
-      solver_->setX(x);
-      solver_->setB(b);
-      solver_->solve();
-    }
-    else { // use Belos with MueLu or Ifpack2
-      if ( transpose ) {
-        problemBelos_trans_->setLHS(x);
-        problemBelos_trans_->setRHS(b);
-        if (preconditioner_ == "Ifpack2") {
-          problemBelos_trans_->setRightPrec(ifpack2Preconditioner_trans_);
-        }
-        else if (preconditioner_ == "MueLu") {
-          problemBelos_trans_->setRightPrec(mueLuPreconditioner_trans_);
-        }
-        problemBelos_trans_->setProblem();
-        solverBelos_trans_->solve();
-        }
-      else {
-        problemBelos_->setLHS(x);
-        problemBelos_->setRHS(b);
-        if (preconditioner_ == "Ifpack2") {
-          problemBelos_->setRightPrec(ifpack2Preconditioner_);
-        }
-        else if (preconditioner_ == "MueLu") {
-          problemBelos_->setRightPrec(mueLuPreconditioner_);
-        }
-        problemBelos_->setProblem();
-        solverBelos_->solve();
-      }
-    }
-  }
+             const bool transpose = false);
 
 };
 
