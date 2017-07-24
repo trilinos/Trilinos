@@ -1793,11 +1793,11 @@ namespace Tpetra {
       // This needs to be a nonconst reference, in case we want to
       // reallocate it.
       Teuchos::Array<IST>& curVals = this->values2D_[rowInfo.localRow];
-      // Reassign rowInfo in order to get the updated allocSize.
-      rowInfo =
-        graph.template updateGlobalAllocAndValues<IST> (rowInfo,
-                                                        newNumEnt,
-                                                        curVals);
+      // Teuchos::ArrayRCP::resize automatically copies over values on
+      // reallocation.
+      graph.gblInds2D_[rowInfo.localRow].resize (newNumEnt);
+      curVals.resize (newNumEnt);
+      rowInfo.allocSize = newNumEnt; // reassign for updated allocSize
     }
 
     using Teuchos::ArrayView;
