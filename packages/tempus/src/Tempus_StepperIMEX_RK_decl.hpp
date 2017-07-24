@@ -174,12 +174,55 @@ namespace Tempus {
  *   - Solve \f$M(x_n)\, \dot{x}_n + F(x_n,t_n) + G(x_n,t_n) = 0\f$
  *       for \f$\dot{x}_n\f$ [Optional]
  *
+ *  <table>
+ *  <caption id="multi_row">IMEX-RK Tableaus</caption>
+ *  <tr><th> Name  <th> Order <th> Implicit Tableau <th> Explicit Tableau
+ *  <tr><td> First Order  <td> 1st
+ *      <td> \f[ \begin{array}{c|cc}
+ *             0 & 0 & 0 \\
+ *             1 & 0 & 1 \\ \hline
+ *               & 0 & 1
+ *           \end{array} \f]
+ *      <td> \f[ \begin{array}{c|cc}
+ *             0 & 0 & 0 \\
+ *             1 & 1 & 0 \\ \hline
+ *               & 1 & 0
+ *           \end{array} \f]
+ *  <tr><td> SSP2\n \f$\gamma = 1-1/\sqrt{2}\f$ <td> 2nd
+ *      <td> \f[ \begin{array}{c|cc}
+ *             \gamma   & \gamma & 0 \\
+ *             1-\gamma & 1-2\gamma & \gamma \\ \hline
+ *                      & 1/2       & 1/2
+ *           \end{array} \f]
+ *      <td> \f[ \begin{array}{c|cc}
+ *             0 & 0   & 0 \\
+ *             1 & 1   & 0 \\ \hline
+ *               & 1/2 & 1/2
+ *           \end{array} \f]
+ *  <tr><td> ARS 233\n \f$\gamma = (3+\sqrt{3})/6\f$ <td> 3rd
+ *      <td> \f[ \begin{array}{c|ccc}
+ *             0        & 0      & 0         & 0      \\
+ *             \gamma   & 0      & \gamma    & 0      \\
+ *             1-\gamma & 0      & 1-2\gamma & \gamma \\ \hline
+ *                      & 0      & 1/2       & 1/2
+ *           \end{array} \f]
+ *      <td> \f[ \begin{array}{c|ccc}
+ *             0        & 0        & 0         & 0 \\
+ *             \gamma   & \gamma   & 0         & 0 \\
+ *             1-\gamma & \gamma-1 & 2-2\gamma & 0 \\ \hline
+ *                      & 0        & 1/2       & 1/2
+ *           \end{array} \f]
+ *  </table>
+ *
  *  #### References
+ *  -# Ascher, Ruuth, Spiteri, "Implicit-explicit Runge-Kutta methods for
+ *     time-dependent partial differential equations", Applied Numerical
+ *     Mathematics 25 (1997) 151-167.
+ *  -# Cyr, "IMEX Lagrangian Methods", SAND2015-3745C.
  *  -# Shadid, Cyr, Pawlowski, Widley, Scovazzi, Zeng, Phillips, Conde,
  *     Chuadhry, Hensinger, Fischer, Robinson, Rider, Niederhaus, Sanchez,
  *     "Towards an IMEX Monolithic ALE Method with Integrated UQ for
  *     Multiphysics Shock-hydro", SAND2016-11353, 2016, pp. 21-28.
- *  -# Cyr, "IMEX Lagrangian Methods", SAND2015-3745C.
  */
 template<class Scalar>
 class StepperIMEX_RK : virtual public Tempus::StepperImplicit<Scalar>

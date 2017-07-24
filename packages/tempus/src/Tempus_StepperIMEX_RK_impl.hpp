@@ -97,7 +97,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     pl->set<std::string>("Stepper Type", "SDIRK 2 Stage 3rd order");
     pl->set("Solver Name", "");
-    Scalar gamma = 1.0 + 1.0/ST::squareroot(2.0);
+    Scalar gamma = 1.0 - 1.0/ST::squareroot(2.0);
     pl->set<double>("gamma",gamma);
     this->setImplicitTableau("SDIRK 2 Stage 3rd order", pl);
 
@@ -106,7 +106,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(
   } else if (stepperType == "IMEX RK ARS 233") {
     using std::to_string;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    const Scalar gammaN = (3.0-ST::squareroot(3.0))/(6.0);
+    const Scalar gammaN = (3.0+ST::squareroot(3.0))/(6.0);
     std::string gamma      = to_string(        gammaN);
     std::string one_gamma  = to_string(1.0-    gammaN);
     std::string one_2gamma = to_string(1.0-2.0*gammaN);
