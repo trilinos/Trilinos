@@ -1638,6 +1638,31 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  insertIndicesAndValues (crs_graph_type& graph,
+                          RowInfo& rowInfo,
+                          const typename crs_graph_type::SLocalGlobalViews& newInds,
+                          const Teuchos::ArrayView<impl_scalar_type>& oldRowVals,
+                          const Teuchos::ArrayView<const impl_scalar_type>& newRowVals,
+                          const ELocalGlobal lg,
+                          const ELocalGlobal I)
+  {
+    const size_t oldNumEnt = rowInfo.numEntries;
+    const size_t numInserted = graph.insertIndices (rowInfo, newInds, lg, I);
+
+    // Use of memcpy here works around an issue with GCC >= 4.9.0,
+    // that probably relates to scalar_type vs. impl_scalar_type
+    // aliasing.  See history of Tpetra_CrsGraph_def.hpp for
+    // details; look for GCC_WORKAROUND macro definition.
+    if (numInserted > 0) {
+      const size_t startOffset = oldNumEnt;
+      memcpy (&oldRowVals[startOffset], &newRowVals[0],
+              numInserted * sizeof (impl_scalar_type));
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   insertLocalValues (const LocalOrdinal lclRow,
                      const Teuchos::ArrayView<const LocalOrdinal>& indices,
                      const Teuchos::ArrayView<const Scalar>& values)
@@ -1729,10 +1754,8 @@ namespace Tpetra {
     Teuchos::ArrayView<IST> valsView = this->getViewNonConst (rowInfo);
     Teuchos::ArrayView<const IST> valsIn =
       Teuchos::av_reinterpret_cast<const IST> (values);
-    graph.template insertIndicesAndValues<IST> (rowInfo, indsView,
-                                                valsView, valsIn,
-                                                LocalIndices,
-                                                LocalIndices);
+    this->insertIndicesAndValues (graph, rowInfo, indsView, valsView,
+                                  valsIn, LocalIndices, LocalIndices);
 #ifdef HAVE_TPETRA_DEBUG
     const size_t chkNewNumEnt = graph.getNumEntriesInLocalRow (lclRow);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1815,10 +1838,9 @@ namespace Tpetra {
     // be reasonably fast.  LocalIndices means the method calls the
     // Map's getLocalElement() method once per entry to insert.  This
     // may be slow.
-    graph.template insertIndicesAndValues<IST> (rowInfo, inputIndsAV,
-                                                curValsAV, inputValsAV,
-                                                GlobalIndices,
-                                                curIndexingStatus);
+    this->insertIndicesAndValues (graph, rowInfo, inputIndsAV, curValsAV,
+                                  inputValsAV, GlobalIndices,
+                                  curIndexingStatus);
 #ifdef HAVE_TPETRA_DEBUG
     const size_t chkNewNumEnt =
       graph.getNumEntriesInLocalRow (rowInfo.localRow);
