@@ -89,6 +89,13 @@ public:
       hv[i] = alpha_*v[i];
     }
   }
+
+  void precond( std::vector<Real> &pv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
+    unsigned size = x.size();
+    for ( unsigned i = 0; i < size; i++ ) {
+      pv[i] = v[i]/alpha_;
+    }
+  }
 };
 
 template<class Real>
@@ -139,6 +146,18 @@ public:
     unsigned size = x.size();
     for ( unsigned i = 0; i < size; ++i ) {
       ahuv[i] = static_cast<Real>(0);
+    }
+  }
+
+  void applyPreconditioner( std::vector<Real> &pv,
+                            const std::vector<Real> &v,
+                            const std::vector<Real> &x,
+                            const std::vector<Real> &g,
+                            Real &tol ) {
+    unsigned size = x.size();
+    const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
+    for ( unsigned i = 0; i < size; ++i ) {
+      pv[i] = v[i]/std::pow(std::exp(param[i]),2);
     }
   }
 };
@@ -210,7 +229,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > x;
     x = Teuchos::rcp(new ROL::StdVector<RealT>(x_rcp));
     // Build samplers
-    int nSamp = 10;
+    int nSamp = 50;
     unsigned sdim = dim + 1;
     std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > dist(sdim);
     for ( unsigned i = 0; i < 2; ++i ) {
