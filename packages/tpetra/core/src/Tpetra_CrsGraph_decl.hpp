@@ -672,29 +672,36 @@ namespace Tpetra {
     void removeLocalIndices (LocalOrdinal localRow);
 
     //@}
-    //! @name Transformational Methods
-    /**
-       Each of the methods in this group is a global collective. It is
-       necessary to call these mehtods on all nodes participating in the
-       communicator associated with this graph.
-    */
+    //! @name Collective methods for changing the graph's global state
     //@{
 
-    /// \brief Communicate non-local contributions to other processes.
+    /// \brief Communicate nonlocal contributions to other processes.
     ///
-    /// This method is called automatically by fillComplete().
-    /// Most users do not need to call this themselves,
-    /// though we do permit this.
+    /// This method is called automatically by fillComplete().  Most
+    /// users do not need to call this themselves.
+    ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
     void globalAssemble ();
 
-    /*! Resume fill operations.
-      After calling fillComplete(), resumeFill() must be called before initiating any changes to the graph.
-
-      resumeFill() may be called repeatedly.
-
-      \post  <tt>isFillActive() == true<tt>
-      \post  <tt>isFillComplete() == false<tt>
-    */
+    /// \brief Resume fill operations.
+    ///
+    /// After calling fillComplete(), resumeFill() must be called
+    /// before initiating any changes to the graph.
+    ///
+    /// resumeFill() may be called repeatedly.
+    ///
+    /// \warning A CrsGraph instance does not currently (as of 23 Jul
+    ///   2017) and never did support arbitrary structure changes
+    ///   after the first fillComplete call on that instance.  The
+    ///   safest thing to do is not to change structure at all after
+    ///   first fillComplete.
+    ///
+    /// \post <tt>isFillActive() == true<tt>
+    /// \post <tt>isFillComplete() == false<tt>
+    ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
     void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Tell the graph that you are done changing its structure.
@@ -706,6 +713,9 @@ namespace Tpetra {
     /// Off-process indices are distributed (via globalAssemble()),
     /// indices are sorted, redundant indices are eliminated, and
     /// global indices are transformed to local indices.
+    ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
     ///
     /// \warning The domain Map and row Map arguments to this method
     ///   MUST be one to one!  If you have Maps that are not one to
@@ -747,6 +757,9 @@ namespace Tpetra {
     /// and the range Map.  Otherwise, this method uses the graph's
     /// existing domain and range Maps.
     ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
+    ///
     /// \warning It is only valid to call this overload of
     ///   fillComplete if the row Map is one to one!  If the row Map
     ///   is NOT one to one, you must call the above three-argument
@@ -770,6 +783,9 @@ namespace Tpetra {
     /// graph has been constructed in any other way, this method will
     /// throw an exception.  This routine is needed to support other
     /// Trilinos packages and should not be called by ordinary users.
+    ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
     ///
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
