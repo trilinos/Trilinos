@@ -77,12 +77,12 @@ int main(int argc, char* argv[])
 	/*driver.printView();
 	driver.printNodesToRegion();*/
 	driver.printInactive();
-	std::cout<<"PID: "<<comm->getRank()<<" beginning map: "<<elementlist[0]<<std::endl;
+	/*std::cout<<"PID: "<<comm->getRank()<<" beginning map: "<<elementlist[0]<<std::endl;
 	std::cout<<"PID: "<<comm->getRank()<<" end of map: "<<*(elementlist.end()-1)<<std::endl;
 	if( elementlist_region1.size()>0 )
 		std::cout<<"PID: "<<comm->getRank()<<" num local nodes in region 1: "<<elementlist_region1.size()<<" min_index= "<<*(std::min_element(elementlist_region1.begin(), elementlist_region1.end()))<<" max_index= "<<*(std::max_element(elementlist_region1.begin(), elementlist_region1.end()))<<std::endl;
 	else
-		std::cout<<"PID: "<<comm->getRank()<<" num local nodes in region 1: "<<elementlist_region1.size()<<std::endl;
+		std::cout<<"PID: "<<comm->getRank()<<" num local nodes in region 1: "<<elementlist_region1.size()<<std::endl;*/
 
 	Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseTpetra> xpetraWrapper( argv[1], argv[2], comm );
 	std::string output_file="A_write.mtx";

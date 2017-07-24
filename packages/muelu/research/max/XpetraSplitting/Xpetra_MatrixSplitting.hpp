@@ -586,9 +586,7 @@ class checkerAllToRegion {
 			//Once the Ifpack2::OverlappingRowMatrix class is transferred into the Xpetra directory, the following 6 lines can be changed/removed
 			typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_crs_matrix;
 			typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_row_matrix;
-			typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> tpetra_map;
 			RCP<tpetra_crs_matrix > tpetraGlobalMatrix = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(globalMatrixData_);
-			RCP<const tpetra_map > tpetraGlobalMap = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2TpetraMap( *(globalMatrixData_->getRowMap()) );
 			Ifpack2::OverlappingRowMatrix<tpetra_row_matrix> enlargedMatrix(tpetraGlobalMatrix, 1);
 
 			//THIS IS THE CORE OF THE PROBLEM WHERE ONE NEEDS TO POPULATE THE REGIONAL MATRICES BY ACCESSING ENTRIES OF THE GLOBAL MATRIX
@@ -604,7 +602,6 @@ class checkerAllToRegion {
 				TEUCHOS_TEST_FOR_EXCEPTION( global_iterator==regionToAll.end(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with regional index: "<<*iter+1<<" is not in regionToAll["<<region_idx<<"]"<<"\n" );
 				GlobalOrdinal node_idx = std::get<1>( *global_iterator );
 				LocalOrdinal node_local_idx = enlargedMatrix.getRowMap()->getLocalElement(node_idx-1);
-				//LocalOrdinal node_local_idx = globalMatrixData_->getRowMap()->getLocalElement(node_idx-1);
 
 				ArrayView<const GlobalOrdinal> inds;
 				ArrayView<const Scalar> vals;
@@ -620,10 +617,8 @@ class checkerAllToRegion {
 					checkerAllToRegion<GlobalOrdinal> unaryPredicate2(global_col_ind);
 					typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator regional_iterator;
 					regional_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerAllToRegion<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicate2);
-					//TEUCHOS_TEST_FOR_EXCEPTION( regional_iterator==regionToAll.end(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with global index: "<<global_col_ind+1<<" is not in regionToAll["<<region_idx<<"]"<<"\n" );
 					if( regional_iterator!=regionToAll.end() )
 					{
-						//std::cout<<"Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" global column index: "<<global_col_ind<<" regional column index: "<<std::get<0>(*regional_iterator)<<std::endl;
 						regional_inds_vector.push_back( std::get<0>(*regional_iterator)-1 );
 						regional_vals_vector.push_back( vals[i] );
 					}
