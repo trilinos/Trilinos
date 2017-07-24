@@ -209,10 +209,10 @@ public:
                        const std::vector<Teuchos::RCP<BoundConstraint<Real> > > &ibnd )
     : INPUT_obj_(obj), INPUT_sol_(x), INPUT_bnd_(bnd),
       INPUT_econ_(econ), INPUT_emul_(emul),
-      INPUT_icon_(icon), INPUT_imul_(imul), INPUT_ibnd(ibnd),
+      INPUT_icon_(icon), INPUT_imul_(imul), INPUT_ibnd_(ibnd),
       INTERMEDIATE_obj_(obj), INTERMEDIATE_sol_(x), INTERMEDIATE_bnd_(bnd),
       INTERMEDIATE_econ_(econ), INTERMEDIATE_emul_(emul),
-      INTERMEDIATE_icon_(icon), INTERMEDIATE_imul_(imul), INTERMEDIATE_ibnd(ibnd),
+      INTERMEDIATE_icon_(icon), INTERMEDIATE_imul_(imul), INTERMEDIATE_ibnd_(ibnd),
       isInitialized_(false), needRiskLess_(false) {}
 
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >                     &obj,
@@ -224,9 +224,9 @@ public:
                        const std::vector<Teuchos::RCP<Vector<Real> > >          &imul,
                        const std::vector<Teuchos::RCP<BoundConstraint<Real> > > &ibnd )
     : INPUT_obj_(obj), INPUT_sol_(x), INPUT_bnd_(bnd),
-      INPUT_icon_(icon), INPUT_imul_(imul), INPUT_ibnd(ibnd),
+      INPUT_icon_(icon), INPUT_imul_(imul), INPUT_ibnd_(ibnd),
       INTERMEDIATE_obj_(obj), INTERMEDIATE_sol_(x), INTERMEDIATE_bnd_(bnd),
-      INTERMEDIATE_icon_(icon), INTERMEDIATE_imul_(imul), INTERMEDIATE_ibnd(ibnd),
+      INTERMEDIATE_icon_(icon), INTERMEDIATE_imul_(imul), INTERMEDIATE_ibnd_(ibnd),
       isInitialized_(false), needRiskLess_(false) {
     std::vector<Teuchos::RCP<Constraint<Real> > > econ0(1,econ);
     std::vector<Teuchos::RCP<Vector<Real> > >     emul0(1,emul);
