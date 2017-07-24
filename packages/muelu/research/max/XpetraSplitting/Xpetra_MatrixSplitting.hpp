@@ -121,7 +121,7 @@ class checkerAllToRegion {
 			//Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
 			globalMatrixData_ = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matrix_file_name, xpetraMap);
 
-			CreateLocalMatrices( driver_->GetRegionalRowMaps() );
+			CreateRegionalMatrices( driver_->GetRegionalRowMaps() );
 		}
 
 		//! Destructor
@@ -545,7 +545,7 @@ class checkerAllToRegion {
 				file_name += "A_region_";
 				file_name += region_str;
 				file_name += ".mtx";
-                		Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name.c_str(), *localMatrixData_[i]);
+                		Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name.c_str(), *regionalMatrixData_[i]);
 			}
 		}
 		// @}
@@ -578,8 +578,8 @@ class checkerAllToRegion {
 		//{@
 		void RegionalMatrix(GlobalOrdinal region_idx)
 		{	
-			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=localMatrixData_.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of localMatrixData_ structure \n");
-			RCP<Matrix> regional_matrix = localMatrixData_[region_idx];
+			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=regionalMatrixData_.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of regionalMatrixData_ structure \n");
+			RCP<Matrix> regional_matrix = regionalMatrixData_[region_idx];
 			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
 
 			//Xpetra structures must be covnerted into Tpetra specialized ones to construct an Ifpack2::OverlappingRowMatrix object
@@ -632,17 +632,17 @@ class checkerAllToRegion {
 		// @}
 
 
-		//! @name Creation of Local matrices
+		//! @name Creation of Regional matrices
 		//@{
-		void CreateLocalMatrices( Array<Array<GlobalOrdinal> > regional_maps){ 
+		void CreateRegionalMatrices( Array<Array<GlobalOrdinal> > regional_maps){ 
 
 			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=regional_maps.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of regional_maps structure \n");
 
-			localMatrixData_.clear( );		
+			regionalMatrixData_.clear( );		
 
 			for( int i = 0; i<num_total_regions_; ++i )
 			{
-				//Create Xpetra map for local stiffness matrix
+				//Create Xpetra map for regional stiffness matrix
 				RCP<const Xpetra::Map<int,GlobalOrdinal,Node> > xpetraMap;
 				xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Node>::Build(lib, driver_->num_regional_nodes_[i], regional_maps[i], 0, comm_); 			
 				int num_elements = xpetraMap->getGlobalNumElements();
@@ -656,7 +656,7 @@ class checkerAllToRegion {
 					std::cerr<<" The library to build matrices must be either Epetra or Tpetra \n";
 
 				RCP<Matrix> matrixPointer = rcp(new CrsMatrixWrap(crs_matrix));
-				localMatrixData_.push_back( matrixPointer );
+				regionalMatrixData_.push_back( matrixPointer );
 			}
 
 			for( GlobalOrdinal i = 0; i<num_total_regions_; ++i )
@@ -673,7 +673,7 @@ class checkerAllToRegion {
 
 		RCP<SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> > driver_;
 		RCP<Matrix> globalMatrixData_;
-		Array<RCP<Matrix> > localMatrixData_;
+		Array<RCP<Matrix> > regionalMatrixData_;
 
 		GlobalOrdinal num_total_elements_ = 0;
 		GlobalOrdinal num_total_regions_ = 0;
