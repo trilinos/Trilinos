@@ -1358,28 +1358,6 @@ namespace Tpetra {
     bool indicesAreAllocated () const;
     void allocateIndices (const ELocalGlobal lg);
 
-    template <class T>
-    RowInfo updateLocalAllocAndValues (const RowInfo rowInfo,
-                                       const size_t newAllocSize,
-                                       Teuchos::Array<T>& rowVals)
-    {
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT( ! isLocallyIndexed () );
-      TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
-      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
-      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowInfo.allocSize );
-      TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement (rowInfo.localRow) );
-#endif // HAVE_TPETRA_DEBUG
-
-      // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
-      lclInds2D_[rowInfo.localRow].resize (newAllocSize);
-      rowVals.resize (newAllocSize);
-
-      RowInfo rowInfoOut = rowInfo;
-      rowInfoOut.allocSize = newAllocSize;
-      return rowInfoOut;
-    }
-
     //! \name Methods governing changes between global and local indices
     //@{
 

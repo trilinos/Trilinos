@@ -1714,12 +1714,14 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->getProfileType () == StaticProfile, std::runtime_error,
          "New indices exceed statically allocated graph structure.");
-      // This must be a nonconst reference, since the call will reallocate.
+      // This must be a nonconst reference, since we'll reallocate.
       Teuchos::Array<IST>& curVals = this->values2D_[lclRow];
       // Make space for the new matrix entries.
-      rowInfo = graph.template updateLocalAllocAndValues<IST> (rowInfo,
-                                                               newNumEnt,
-                                                               curVals);
+      // Teuchos::ArrayRCP::resize automatically copies over values on
+      // reallocation.
+      graph.lclInds2D_[rowInfo.localRow].resize (newNumEnt);
+      curVals.resize (newNumEnt);
+      rowInfo.allocSize = newNumEnt; // give rowInfo updated allocSize
     }
     typename crs_graph_type::SLocalGlobalViews indsView;
     indsView.linds = indices;
