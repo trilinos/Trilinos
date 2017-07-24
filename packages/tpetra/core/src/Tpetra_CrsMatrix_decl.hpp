@@ -3884,7 +3884,6 @@ namespace Tpetra {
                                                            f, atomic);
     }
 
-  private:
     /// \brief Special case of insertGlobalValues for when globalRow
     ///   is <i>not<i> owned by the calling process.
     ///
@@ -3914,6 +3913,14 @@ namespace Tpetra {
       GraphNotYetAllocated
     };
 
+  private:
+    /// \brief Allocate 2-D storage for matrix values.
+    ///
+    /// This is an implementation detail of allocateValues() (see below).
+    Teuchos::ArrayRCP<Teuchos::Array<impl_scalar_type> >
+    allocateValues2D ();
+
+  protected:
     /// \brief Allocate values (and optionally indices) using the Node.
     ///
     /// \param gas [in] If GraphNotYetAllocated, allocate the

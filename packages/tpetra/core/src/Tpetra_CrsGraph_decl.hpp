@@ -1359,39 +1359,6 @@ namespace Tpetra {
     void allocateIndices (const ELocalGlobal lg);
 
     template <class T>
-    Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const
-    {
-      using Teuchos::arcp;
-      using Teuchos::Array;
-      using Teuchos::ArrayRCP;
-      using Teuchos::null;
-      const char tfecfFuncName[] = "allocateValues2D: ";
-
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! indicesAreAllocated (), std::runtime_error,
-         "Graph indices must be allocated before values.");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (getProfileType () != DynamicProfile, std::runtime_error,
-         "Graph indices must be allocated in a dynamic profile.");
-
-      ArrayRCP<Array<T> > values2D;
-      values2D = arcp<Array<T> > (getNodeNumRows ());
-      if (lclInds2D_ != null) {
-        const size_t numRows = lclInds2D_.size ();
-        for (size_t r = 0; r < numRows; ++r) {
-          values2D[r].resize (lclInds2D_[r].size ());
-        }
-      }
-      else if (gblInds2D_ != null) {
-        const size_t numRows = gblInds2D_.size ();
-        for (size_t r = 0; r < numRows; ++r) {
-          values2D[r].resize (gblInds2D_[r].size ());
-        }
-      }
-      return values2D;
-    }
-
-    template <class T>
     RowInfo updateLocalAllocAndValues (const RowInfo rowInfo,
                                        const size_t newAllocSize,
                                        Teuchos::Array<T>& rowVals)

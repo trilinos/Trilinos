@@ -781,6 +781,41 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Teuchos::ArrayRCP<Teuchos::Array<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::impl_scalar_type> >
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  allocateValues2D ()
+  {
+    using Teuchos::arcp;
+    using Teuchos::Array;
+    using Teuchos::ArrayRCP;
+    typedef impl_scalar_type IST;
+    typedef LocalOrdinal LO;
+    const char tfecfFuncName[] = "allocateValues2D: ";
+
+    const crs_graph_type& graph = this->getCrsGraphRef ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! graph.indicesAreAllocated (), std::runtime_error,
+       "Graph indices must be allocated before values.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (graph.getProfileType () != DynamicProfile, std::runtime_error,
+       "Graph indices must be allocated in a dynamic profile.");
+
+    const LO lclNumRows = graph.getNodeNumRows ();
+    Teuchos::ArrayRCP<Teuchos::Array<IST> > values2D (lclNumRows);
+    if (! graph.lclInds2D_.is_null ()) {
+      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        values2D[lclRow].resize (graph.lclInds2D_[lclRow].size ());
+      }
+    }
+    else if (! graph.gblInds2D_.is_null ()) {
+      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        values2D[lclRow].resize (graph.gblInds2D_[lclRow].size ());
+      }
+    }
+    return values2D;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   allocateValues (ELocalGlobal lg, GraphAllocationStatus gas)
@@ -884,20 +919,7 @@ namespace Tpetra {
       // values in "2-D storage," meaning an array of arrays.  The
       // outer array has as many inner arrays as there are rows in the
       // matrix, and each inner array stores the values in that row.
-      try {
-        this->values2D_ =
-          this->staticGraph_->template allocateValues2D<impl_scalar_type> ();
-      }
-      catch (std::exception& e) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error, "CrsGraph::allocateValues2D threw an "
-           "exception: " << e.what ());
-      }
-      catch (...) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error, "CrsGraph::allocateValues2D threw an "
-           "exception not a subclass of std::exception.");
-      }
+      this->values2D_ = this->allocateValues2D ();
     }
   }
 
