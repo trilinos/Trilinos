@@ -475,6 +475,39 @@ namespace Tpetra {
                const local_matrix_type& lclMatrix,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+    /// \brief Constructor specifying column, domain and range Maps,
+    ///   and a local matrix, which the resulting CrsMatrix views.
+    ///
+    /// Unlike most other CrsMatrix constructors, successful
+    /// completion of this constructor will result in a fill-complete
+    /// matrix.
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param domainMap [in] The matrix's domain Map.  MUST be one to
+    ///   one!
+    ///
+    /// \param rangeMap [in] The matrix's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    ///
+    /// \param lclMatrix [in] A local CrsMatrix containing all local
+    ///    matrix values as well as a local graph.  The graph's local
+    ///    row indices must come from the specified row Map, and its
+    ///    local column indices must come from the specified column
+    ///    Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap,
+               const Teuchos::RCP<const map_type>& domainMap,
+               const Teuchos::RCP<const map_type>& rangeMap,
+               const local_matrix_type& lclMatrix,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2, const bool isClassic>
     friend class CrsMatrix;

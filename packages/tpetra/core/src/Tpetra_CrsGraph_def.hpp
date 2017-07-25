@@ -660,6 +660,19 @@ namespace Tpetra {
     checkInternalState ();
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::RCP<const map_type>& domainMap,
+            const Teuchos::RCP<const map_type>& rangeMap,
+            const local_graph_type& k_local_graph_,
+            const Teuchos::RCP<Teuchos::ParameterList>& params)
+    : CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>(rowMap, colMap, k_local_graph_, params)
+  {
+    setDomainRangeMaps(domainMap, rangeMap);
+    makeImportExport ();
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::

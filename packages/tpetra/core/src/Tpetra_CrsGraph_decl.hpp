@@ -539,6 +539,37 @@ namespace Tpetra {
               const local_graph_type& lclGraph,
               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
+    /// \brief Constructor specifying column, domain and range maps, and a
+    ///   local (sorted) graph, which the resulting CrsGraph views.
+    ///
+    /// Unlike most other CrsGraph constructors, successful completion
+    /// of this constructor will result in a fill-complete graph.
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param domainMap [in] The graph's domain Map. MUST be one to
+    ///   one!
+    ///
+    /// \param rangeMap [in] The graph's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    ///
+    /// \param lclGraph [in] A locally indexed Kokkos::StaticCrsGraph
+    ///   whose local row indices come from the specified row Map, and
+    ///   whose local column indices come from the specified column
+    ///   Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<const map_type>& colMap,
+              const Teuchos::RCP<const map_type>& domainMap,
+              const Teuchos::RCP<const map_type>& rangeMap,
+              const local_graph_type& lclGraph,
+              const Teuchos::RCP<Teuchos::ParameterList>& params);
+
     /// \brief Create a cloned CrsGraph for a different Node type.
     ///
     /// This method creates a new CrsGraph on a specified Kokkos Node
