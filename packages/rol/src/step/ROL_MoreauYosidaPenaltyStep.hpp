@@ -130,10 +130,10 @@ private:
   Real gLnorm_;
   Real tau_;
   bool print_;
-  bool hasEquality_;
 
   Teuchos::ParameterList parlist_;
   int subproblemIter_;
+  bool hasEquality_;
 
   void updateState(const Vector<Real> &x, const Vector<Real> &l,
                    Objective<Real> &obj,
