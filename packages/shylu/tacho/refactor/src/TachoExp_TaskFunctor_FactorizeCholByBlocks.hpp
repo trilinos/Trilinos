@@ -136,75 +136,74 @@ namespace Tacho {
               bufsize = matrix_of_blocks_bufsize + abr_bufsize;
 
             char *buf = (char*)_bufpool.allocate(bufsize);
-            if (buf == NULL && bufsize != 0) {
-              std::cout << " bufsize requested = " << bufsize << "\n";
-              _bufpool.print_state(std::cout);
-            }
-            TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufpool allocation fails");
-            clear((char*)buf, matrix_of_blocks_bufsize);
-
-            // assign buf information for deallocation
-            _buf = buf; _bufsize = bufsize;
-
-            dense_matrix_of_blocks_type hbr;
-
-            // m and n are available, then factorize the supernode block
-            if (m > 0) {
-              dense_matrix_of_blocks_type htl((dense_block_type*)buf, bm, bm);
-              buf += (bm*bm)*sizeof(dense_block_type);
-
-              setMatrixOfBlocks(htl, m, m, _mb);
-              attachBaseBuffer(htl, ptr, 1, m); ptr += m*m;
-
-              // chol
-              Chol<Uplo::Upper,Algo::ByBlocks>::invoke(_sched, member, htl);
-
-              if (n > 0) {
-                dense_matrix_of_blocks_type htr((dense_block_type*)buf, bm, bn);
-                buf += (bm*bn)*sizeof(dense_block_type);
-
-                setMatrixOfBlocks(htr, m, n, _mb);
-                attachBaseBuffer(htr, ptr, 1, m);
-
-                // trsm
-                Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks>
-                  ::invoke(_sched, member, Diag::NonUnit(), 1.0, htl, htr);
-
-                hbr = dense_matrix_of_blocks_type((dense_block_type*)buf, bn, bn);
-                buf += (bn*bn)*sizeof(dense_block_type);
-
-                setMatrixOfBlocks(hbr, n, n, _mb);
-                attachBaseBuffer(hbr, (mat_value_type*)buf, 1, n);
-
-                // herk
-                Herk<Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks>
-                  ::invoke(_sched, member, -1.0, htr, 0.0, hbr);
-
-                for (ordinal_type k=0;k<(bm*bn);++k) htr[k].set_future();
-              }
-              for (ordinal_type k=0;k<(bm*bm);++k) htl[k].set_future();
-            }
-
-            _state = 2;
-            if (bn > 0) {
-              const size_type bn2 = bn*(bn+1)/2, depsize = bn2*sizeof(future_type);
-              future_type *dep = (future_type*)_sched.memory()->allocate(depsize);
-              TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
-              clear((char*)dep, depsize);
-
-              ordinal_type k = 0;
-              for (ordinal_type j=0;j<bn;++j)
-                for (ordinal_type i=0;i<=j;++i,++k) {
-                  dep[k] = hbr(i,j).future();
-                  hbr(i,j).set_future();
-                }
-              Kokkos::respawn(this, Kokkos::when_all(dep, bn2), Kokkos::TaskPriority::Regular);
-
-              for (ordinal_type k=0;k<bn2;++k) (dep+k)->~future_type();
-              _sched.memory()->deallocate((void*)dep, depsize);
+            if (buf == NULL && bufsize) {
+              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);  
             } else {
-              if (_bufsize)
-                _bufpool.deallocate(_buf, _bufsize);
+              clear((char*)buf, matrix_of_blocks_bufsize);
+              
+              // assign buf information for deallocation
+              _buf = buf; _bufsize = bufsize;
+              
+              dense_matrix_of_blocks_type hbr;
+              
+              // m and n are available, then factorize the supernode block
+              if (m > 0) {
+                dense_matrix_of_blocks_type htl((dense_block_type*)buf, bm, bm);
+                buf += (bm*bm)*sizeof(dense_block_type);
+                
+                setMatrixOfBlocks(htl, m, m, _mb);
+                attachBaseBuffer(htl, ptr, 1, m); ptr += m*m;
+                
+                // chol
+                Chol<Uplo::Upper,Algo::ByBlocks>::invoke(_sched, member, htl);
+                
+                if (n > 0) {
+                  dense_matrix_of_blocks_type htr((dense_block_type*)buf, bm, bn);
+                  buf += (bm*bn)*sizeof(dense_block_type);
+                  
+                  setMatrixOfBlocks(htr, m, n, _mb);
+                  attachBaseBuffer(htr, ptr, 1, m);
+                  
+                  // trsm
+                  Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks>
+                    ::invoke(_sched, member, Diag::NonUnit(), 1.0, htl, htr);
+                  
+                  hbr = dense_matrix_of_blocks_type((dense_block_type*)buf, bn, bn);
+                  buf += (bn*bn)*sizeof(dense_block_type);
+                  
+                  setMatrixOfBlocks(hbr, n, n, _mb);
+                  attachBaseBuffer(hbr, (mat_value_type*)buf, 1, n);
+                  
+                  // herk
+                  Herk<Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks>
+                    ::invoke(_sched, member, -1.0, htr, 0.0, hbr);
+                  
+                  for (ordinal_type k=0;k<(bm*bn);++k) htr[k].set_future();
+                }
+                for (ordinal_type k=0;k<(bm*bm);++k) htl[k].set_future();
+              }
+              
+              _state = 2;
+              if (bn > 0) {
+                const size_type bn2 = bn*(bn+1)/2, depsize = bn2*sizeof(future_type);
+                future_type *dep = (future_type*)_sched.memory()->allocate(depsize);
+                TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
+                clear((char*)dep, depsize);
+                
+                ordinal_type k = 0;
+                for (ordinal_type j=0;j<bn;++j)
+                  for (ordinal_type i=0;i<=j;++i,++k) {
+                    dep[k] = hbr(i,j).future();
+                    hbr(i,j).set_future();
+                  }
+                Kokkos::respawn(this, Kokkos::when_all(dep, bn2), Kokkos::TaskPriority::Regular);
+                
+                for (ordinal_type k=0;k<bn2;++k) (dep+k)->~future_type();
+                _sched.memory()->deallocate((void*)dep, depsize);
+              } else {
+                if (_bufsize)
+                  _bufpool.deallocate(_buf, _bufsize);
+              }
             }
             break;
           }

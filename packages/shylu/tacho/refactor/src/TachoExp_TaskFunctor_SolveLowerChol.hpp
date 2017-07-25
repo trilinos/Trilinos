@@ -62,18 +62,23 @@ namespace Tacho {
       
       
       KOKKOS_INLINE_FUNCTION
-      void solve_internal(member_type &member, const ordinal_type n, const bool final) {
+      ordinal_type 
+      solve_internal(member_type &member, const ordinal_type n, const bool final) {
         const ordinal_type nrhs = _info.x.dimension_1();
         const size_type bufsize = n*nrhs*sizeof(mat_value_type);
         
         mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
-        TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
+        //TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   
+        if (buf == NULL && bufsize) 
+          return -1;
         
         CholSupernodes<Algo::Workflow::Serial>
           ::solve_lower_recursive_serial(_sched, member, _info, _sid, final, buf, bufsize);
         
         if (bufsize > 0)
           _bufpool.deallocate(buf, bufsize);
+
+        return 0;
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -85,8 +90,11 @@ namespace Tacho {
           switch (_state) {
           case 0: { // tree parallelsim
             if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
-              solve_internal(member, _s.max_decendant_schur_size, true);
-              _state = done; 
+              const ordinal_type r_val = solve_internal(member, _s.max_decendant_schur_size, true);
+              if (r_val) 
+                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
+              else
+                _state = done; 
             } else {
               // allocate dependence array to handle variable number of children schur contributions
               future_type dep[MaxDependenceSize]; /* 4 */
@@ -106,8 +114,11 @@ namespace Tacho {
             break;
           }
           case 1: {
-            solve_internal(member, _s.n - _s.m, false);
-            _state = done; 
+            const ordinal_type r_val = solve_internal(member, _s.n - _s.m, false);
+            if (r_val) 
+              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
+            else
+              _state = done; 
             break;
           }
           }         

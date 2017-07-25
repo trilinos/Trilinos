@@ -82,7 +82,8 @@ namespace Tacho {
     /// label size used to identify object name
     ///
     enum : int { LabelSize = 64,
-                 MaxDependenceSize = 4 };
+                 MaxDependenceSize = 4,
+                 MaxNumberOfSuperblocks = 4};
 
     template<typename T>
     struct TypeTraits;

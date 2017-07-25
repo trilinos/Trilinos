@@ -429,8 +429,8 @@ namespace Tacho {
           for ( ;superblock_size<max_block_size;superblock_size*=2);
           
           const size_type
-            num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // restrict memory pool
+            //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+            num_superblock  = min(host_exec_space::thread_pool_size(0), MaxNumberOfSuperblocks),
             memory_capacity = num_superblock*superblock_size;
           
           bufpool = memory_pool_type_host(memory_space(),
@@ -536,8 +536,8 @@ namespace Tacho {
             for ( ;superblock_size<max_block_size;superblock_size*=2);
             
             const size_type
-              num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-              //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // restrict memory pool
+              //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+              num_superblock  = min(host_exec_space::thread_pool_size(0), MaxNumberOfSuperblocks),
               memory_capacity = num_superblock*superblock_size;
 
             bufpool = memory_pool_type_host(memory_space(),
@@ -635,8 +635,8 @@ namespace Tacho {
           for ( ;superblock_size<max_block_size;superblock_size*=2);
           
           const size_type
-            num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            //num_superblock  = min(host_exec_space::thread_pool_size(0), 4), // # of threads is safe number
+            //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+            num_superblock  = min(host_exec_space::thread_pool_size(0), MaxNumberOfSuperblocks),
             memory_capacity = num_superblock*superblock_size;
           
           bufpool = memory_pool_type_host(memory_space(),
