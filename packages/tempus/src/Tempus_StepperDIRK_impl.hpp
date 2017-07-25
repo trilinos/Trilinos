@@ -219,24 +219,29 @@ void StepperDIRK<Scalar>::takeStep(
         }
       }
 
+      Scalar ts = time + c(i)*dt;
       if (A(i,i) == Teuchos::ScalarTraits<Scalar>::zero()) {
         // Explicit stage for the ImplicitODE_DAE
-        const Scalar ts = time + c(i)*dt;
+        bool isNeeded = false;
+        for (int k=i+1; k<numStages; ++k) if (A(k,i) != 0.0) isNeeded = true;
+        if (b(i) != 0.0) isNeeded = true;
+        if (isNeeded == false) {
+          // stageXDot_[i] is not needed.
+          assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+        } else {
+          typedef Thyra::ModelEvaluatorBase MEB;
+          inArgs_.set_x(xTilde_);
+          if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(ts);
+          if (inArgs_.supports(MEB::IN_ARG_x_dot))
+            inArgs_.set_x_dot(Teuchos::null);
+          outArgs_.set_f(stageXDot_[i]);
 
-        typedef Thyra::ModelEvaluatorBase MEB;
-        inArgs_.set_x(xTilde_);
-        if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(ts);
-        if (inArgs_.supports(MEB::IN_ARG_x_dot))
-          inArgs_.set_x_dot(Teuchos::null);
-        outArgs_.set_f(stageXDot_[i]);
-
-        residualModel_->getTransientModel()->evalModel(inArgs_,outArgs_);
-
+          residualModel_->getTransientModel()->evalModel(inArgs_,outArgs_);
+        }
       } else {
         // Implicit stage for the ImplicitODE_DAE
         Scalar alpha = 1.0/dt/A(i,i);
         Scalar beta = 1.0;
-        Scalar ts = time + c(i)*dt;
 
         // function used to compute time derivative
         auto computeXDot = xDotFunction(alpha,xTilde_.getConst());

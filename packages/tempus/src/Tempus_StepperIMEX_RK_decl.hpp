@@ -152,7 +152,7 @@ namespace Tempus {
  *       for \f$\dot{x}_n\f$ [Optional]
  *
  *  The single-timestep algorithm for IMEX-RK using the pseudo time derivative,
- *  \f$\tilde{\dot{X}}\f$, is
+ *  \f$\tilde{\dot{X}}\f$, is (which is currently implemented)
  *   - \f$X_1 \leftarrow x_{n-1}\f$
  *   - for \f$i = 1 \ldots s\f$ do
  *     - \f$\tilde{X} \leftarrow x_{n-1} - \Delta t\,\sum_{j=1}^{i-1} \left(
@@ -174,10 +174,11 @@ namespace Tempus {
  *   - Solve \f$M(x_n)\, \dot{x}_n + F(x_n,t_n) + G(x_n,t_n) = 0\f$
  *       for \f$\dot{x}_n\f$ [Optional]
  *
+ *  The following table contains the pre-coded IMEX-RK tableaus.
  *  <table>
  *  <caption id="multi_row">IMEX-RK Tableaus</caption>
  *  <tr><th> Name  <th> Order <th> Implicit Tableau <th> Explicit Tableau
- *  <tr><td> First Order  <td> 1st
+ *  <tr><td> IMEX RK 1st order  <td> 1st
  *      <td> \f[ \begin{array}{c|cc}
  *             0 & 0 & 0 \\
  *             1 & 0 & 1 \\ \hline
@@ -188,7 +189,7 @@ namespace Tempus {
  *             1 & 1 & 0 \\ \hline
  *               & 1 & 0
  *           \end{array} \f]
- *  <tr><td> SSP2\n \f$\gamma = 1-1/\sqrt{2}\f$ <td> 2nd
+ *  <tr><td> IMEX RK SSP2\n \f$\gamma = 1-1/\sqrt{2}\f$ <td> 2nd
  *      <td> \f[ \begin{array}{c|cc}
  *             \gamma   & \gamma & 0 \\
  *             1-\gamma & 1-2\gamma & \gamma \\ \hline
@@ -199,7 +200,7 @@ namespace Tempus {
  *             1 & 1   & 0 \\ \hline
  *               & 1/2 & 1/2
  *           \end{array} \f]
- *  <tr><td> ARS 233\n \f$\gamma = (3+\sqrt{3})/6\f$ <td> 3rd
+ *  <tr><td> IMEX RK ARS 233\n \f$\gamma = (3+\sqrt{3})/6\f$ <td> 3rd
  *      <td> \f[ \begin{array}{c|ccc}
  *             0        & 0      & 0         & 0      \\
  *             \gamma   & 0      & \gamma    & 0      \\
