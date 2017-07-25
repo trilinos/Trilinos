@@ -99,7 +99,6 @@ template <typename EvalT, typename TRAITST>
 template <typename ArrayT>
 void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
                                                       const Teuchos::Ptr<const ArrayT> & userArray,
-                                                      // const Teuchos::Ptr<const Kokkos::DynRankView<double,PHX::Device> > & userArray,
                                                       const Teuchos::RCP<const panzer::PureBasis> & pureBasis)
 {
   basis = pureBasis;
@@ -113,12 +112,12 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
     TEUCHOS_ASSERT(false);
   }
 
-  panzer::MDFieldArrayFactory af(pointRule->getName()+"_");
-       
   // copy user array data
   if(userArray!=Teuchos::null) {
     TEUCHOS_ASSERT(userArray->rank()==2);
-    refPointArray = Kokkos::DynRankView<double,PHX::Device>("refPointArray",userArray->dimension(0),userArray->dimension(1));
+    MDFieldArrayFactory md_af("refPointArray",true);
+
+    refPointArray = md_af.buildStaticArray<double,NODE,Dim>("refPointArray",userArray->dimension(0),userArray->dimension(1));
     // TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
     for(int i=0;i<userArray->extent_int(0);i++)
       for(int j=0;j<userArray->extent_int(1);j++)
@@ -126,7 +125,8 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
   }
 
   // setup all fields to be evaluated and constructed
-  pointValues.setupArrays(pointRule,af);
+  pointValues = PointValues2<ScalarT>(pointRule->getName()+"_",false);
+  pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
   this->addEvaluatedField(pointValues.coords_ref);
@@ -167,7 +167,8 @@ PHX_EVALUATE_FIELDS(PointValues_Evaluator,workset)
     panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,basisValues.basis_coordinates_ref);
+    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,
+                               basisValues.basis_coordinates_ref);
   }
   else {
     // evaluate the point values (construct jacobians etc...)

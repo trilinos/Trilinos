@@ -47,7 +47,6 @@
 #include "Phalanx_DataLayout.hpp"
 
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_CommonArrayFactories.hpp"
 #include "Kokkos_ViewFactory.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
@@ -76,11 +75,9 @@ GatherNormals(
   std::string orientationFieldName = basis->name() + " Orientation";
   dof_orientation = PHX::MDField<const ScalarT,Cell,NODE>(orientationFieldName,basis_layout);
 
-  // setup all basis fields that are required
-  MDFieldArrayFactory af_pv(pointRule->getName()+"_");
-
   // setup all fields to be evaluated and constructed
-  pointValues.setupArrays(pointRule,af_pv);
+  pointValues = panzer::PointValues2<ScalarT> (pointRule->getName()+"_",false);
+  pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
   this->addDependentField(dof_orientation);

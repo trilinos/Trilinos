@@ -40,75 +40,84 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_BASIS_DESCRIPTOR_HPP
-#define PANZER_BASIS_DESCRIPTOR_HPP
+
+#ifndef __Panzer_PointDescriptor_hpp__
+#define __Panzer_PointDescriptor_hpp__
 
 #include <string>
-#include <functional>
 
-#include "Panzer_PointDescriptor.hpp"
+#include "Teuchos_RCP.hpp"
+
+// forward declarations
+namespace shards {
+class CellTopology;
+}
 
 namespace panzer {
+class PointGenerator;
+}
 
-class BasisDescriptor
+// class declarations
+namespace panzer {
+
+class PointDescriptor
 {
 public:
+ 
+  /** \brief Constructor for the point descriptor. Protected and used by constructors.
+    *
+    * \param[in] type String that defines the "type" of this point descriptor,
+    *                 used to generate unique hashes
+    * \param[in] generator PointGenerator object for the points.
+    */
+  PointDescriptor(const std::string & type,const Teuchos::RCP<PointGenerator> & generator);
 
-  /** \brief Constructor for empty basis
+  /// Destructor
+  virtual ~PointDescriptor() = default;
+
+  /** Build a generator class that generates any reference points on 
+    * a specified topology.
+    *
+    * \param[in] The cell topology to build the coordinates on
+    */
+  const PointGenerator & getGenerator() const { return *_generator; }
+
+  /** \brief Get unique string associated with the type of point
+   *         descriptor. This will be used generate a hash
+   *        to sort through a map of PointDescriptors.
    *
+   * \return  A string that uniquely describes this point descriptor
    */
-  BasisDescriptor();
+  const std::string & getType() const { return _type; }
 
-  /** \brief Destructor
-   *
-   */
-  virtual ~BasisDescriptor() = default;
-
-  /** \brief Constructor for basis description
-   *
-   * \param[in] basis_order Basis order (e.g. 1 could be piecewise linear)
-   * \param[in] basis_type Basis type (e.g. HGrad, HDiv, HCurl, ...)
-   */
-  BasisDescriptor(const int basis_order, const std::string & basis_type);
-
-  /** \brief Get type of basis
-   *
-   * \return Type of basis
-   */
-  const std::string & getType() const {return _basis_type;}
-
-  /** \brief Get order of basis
-   *
-   * \return Order of basis
-   */
-  int getOrder() const {return _basis_order;}
-
-  /** \brief Get unique key associated with basis of this order and type
-   *  The key is used to sort through a map of BasisDescriptors.
+  /** \brief Get unique key associated with integrator of this order and type
+   *  The key is used to sort through a map of IntegrationDescriptors.
    *
    * \return Unique basis key
    */
   std::size_t getKey() const {return _key;}
 
-
-  /** \brief Build a point descriptor that builds reference points for
-   *  the DOF locations. This method throws if no points exist for this
-   *  basis.
-   */
-  PointDescriptor getPointDescriptor() const;
-
 protected:
 
- 
-  /// Basis type (HGrad, HDiv, HCurl,...)
-  std::string _basis_type;
+  /// Default constructor, no user version
+  PointDescriptor() {}
 
-  // Basis order (>0)
-  int _basis_order;
+  /** \brief Setup the point descriptor. Protected and used by constructors.
+    *
+    * \param[in] type String that defines the "type" of this point descriptor,
+    *                 used to generate unique hashes
+    * \param[in] generator PointGenerator object for the points.
+    */
+  void setup(const std::string & type,const Teuchos::RCP<PointGenerator> & generator);
 
-  // Unique key associated with basis.
+  /// Type string
+  std::string _type;
+
+  /// Unique key associated with integrator
   std::size_t _key;
 
+  /// PointGenerator object to build the points
+  Teuchos::RCP<PointGenerator> _generator;
 };
 
 }
@@ -117,9 +126,9 @@ protected:
 namespace std {
 
 template <>
-struct hash<panzer::BasisDescriptor>
+struct hash<panzer::PointDescriptor>
 {
-  std::size_t operator()(const panzer::BasisDescriptor& desc) const;
+  std::size_t operator()(const panzer::PointDescriptor& desc) const;
 };
 
 }

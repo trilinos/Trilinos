@@ -40,48 +40,23 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_POINT_VALUES_EVALUATOR_DECL_HPP
-#define PANZER_POINT_VALUES_EVALUATOR_DECL_HPP
 
-#include <string>
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Panzer_PointValues2.hpp"
-#include "Panzer_Evaluator_Macros.hpp"
+#ifndef __Panzer_PointGenerator_hpp__
+#define __Panzer_PointGenerator_hpp__
+
+#include "Kokkos_DynRankView.hpp"
 
 namespace panzer {
-    
-//! Interpolates basis DOF values to IP DOF values
-PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
 
-  // is anything other than ScalarT really needed here?
-  PointValues2<ScalarT> pointValues;
- 
-  PHX::MDField<double,NODE,Dim> refPointArray;
-
-  bool useBasisValuesRefArray; // if true then basis is non-null
-  Teuchos::RCP<const panzer::PureBasis> basis;
-  std::size_t basis_index;
-
-  //! Initialization method to unify the constructors.
-  template <typename ArrayT>
-  void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                  const Teuchos::Ptr<const ArrayT> & userArray,
-                  // const Teuchos::Ptr<const Kokkos::DynRankView<double,PHX::Device> > & userArray,
-                  const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
-
+/** A class that uses run time polymorphism
+  * to generate the reference cell points. This is a utility for
+  * PointDescriptor.
+  */
+class PointGenerator {
 public:
-  PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const Kokkos::DynRankView<double,PHX::Device> & userArray);
-
-  PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const PHX::MDField<double, panzer::IP, panzer::Dim> & userArray);
-
-  //! This builds a point rule from the basis function reference points in the workset
-  PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
-
-PANZER_EVALUATOR_CLASS_END
+  //! Get the points for a particular topology
+  virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const = 0;
+};
 
 }
 

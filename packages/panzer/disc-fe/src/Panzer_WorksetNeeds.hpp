@@ -8,6 +8,7 @@
 
 #include "Panzer_BasisDescriptor.hpp"
 #include "Panzer_IntegrationDescriptor.hpp"
+#include "Panzer_PointDescriptor.hpp"
 
 #include <vector>
 
@@ -15,8 +16,6 @@ namespace panzer {
 
 class PureBasis;
 class IntegrationRule;
-class BasisDescriptor;
-class IntegrationDescriptor;
 
 /** This class provides a simplified interface to the objects
   * required to specify a Workset. In paritcular this is all
@@ -49,7 +48,16 @@ public:
    */
   void addIntegrator(const panzer::IntegrationDescriptor & descriptor)
   {
-    _integration_desciptors.push_back(descriptor);
+    _integration_descriptors.push_back(descriptor);
+  }
+
+  /** \brief Add request for point.
+   *
+   * \param[in] descriptor Description of point type
+   */
+  void addPoint(const panzer::PointDescriptor & descriptor)
+  {
+    _point_descriptors.push_back(descriptor);
   }
 
   /** \brief Add request for basis
@@ -58,7 +66,7 @@ public:
    */
   void addBasis(const panzer::BasisDescriptor & descriptor)
   {
-    _basis_desciptors.push_back(descriptor);
+    _basis_descriptors.push_back(descriptor);
   }
 
   /** \brief Get a list of integrators being requested
@@ -67,7 +75,16 @@ public:
    */
   const std::vector<panzer::IntegrationDescriptor> & getIntegrators() const
   {
-    return _integration_desciptors;
+    return _integration_descriptors;
+  }
+
+  /** \brief Get a list of points being requested
+   *
+   * \return List of point descriptions
+   */
+  const std::vector<panzer::PointDescriptor> & getPoints() const
+  {
+    return _point_descriptors;
   }
 
   /** \brief Get a list of bases being requested
@@ -76,7 +93,7 @@ public:
    */
   const std::vector<panzer::BasisDescriptor> & getBases() const
   {
-    return _basis_desciptors;
+    return _basis_descriptors;
   }
 
   //TEUCHOS_DEPRECATED
@@ -94,10 +111,13 @@ public:
 protected:
 
   /// List of integration descriptors requested in workset
-  std::vector<panzer::IntegrationDescriptor> _integration_desciptors;
+  std::vector<panzer::IntegrationDescriptor> _integration_descriptors;
+
+  /// List of point descriptors requested in workset
+  std::vector<panzer::PointDescriptor> _point_descriptors;
 
   /// List of basis descriptors requested in workset
-  std::vector<panzer::BasisDescriptor> _basis_desciptors;
+  std::vector<panzer::BasisDescriptor> _basis_descriptors;
 
 };
 
