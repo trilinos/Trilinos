@@ -519,6 +519,37 @@ namespace Tpetra {
               const local_graph_type& lclGraph,
               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
+    /// \brief Constructor specifying column, domain and range maps, and a
+    ///   local (sorted) graph, which the resulting CrsGraph views.
+    ///
+    /// Unlike most other CrsGraph constructors, successful completion
+    /// of this constructor will result in a fill-complete graph.
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param domainMap [in] The graph's domain Map. MUST be one to
+    ///   one!
+    ///
+    /// \param rangeMap [in] The graph's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    ///
+    /// \param lclGraph [in] A locally indexed Kokkos::StaticCrsGraph
+    ///   whose local row indices come from the specified row Map, and
+    ///   whose local column indices come from the specified column
+    ///   Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const local_graph_type& lclGraph,
+              const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<const map_type>& colMap = Teuchos::null,
+              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
     /// \brief Create a cloned CrsGraph for a different Node type.
     ///
     /// This method creates a new CrsGraph on a specified Kokkos Node
@@ -1574,6 +1605,14 @@ namespace Tpetra {
     // as an alterantive if the global constants are not computed
     ///
     void computeLocalConstants();
+
+    /// \brief Forces computation of local triangular properties if they have
+    /// not been computed yet.
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method. It may disappear or change at any time.
+    void computeLocalTriangularProperties();
 
     /// \brief Get information about the locally owned row with local
     ///   index myRow.

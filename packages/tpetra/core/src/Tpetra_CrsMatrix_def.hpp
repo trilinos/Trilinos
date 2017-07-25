@@ -545,6 +545,59 @@ namespace Tpetra {
     checkInternalState ();
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::RCP<const map_type>& colMap,
+             const Teuchos::RCP<const map_type>& domainMap,
+             const Teuchos::RCP<const map_type>& rangeMap,
+             const local_matrix_type& lclMatrix,
+             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap),
+    lclMatrix_ (lclMatrix),
+    k_values1D_ (lclMatrix.values),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
+    fillComplete_ (true),
+    frobNorm_ (-STM::one ())
+  {
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, RCP<const Map>, RCP<const Map>, local_matrix_type[, "
+      "RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
+    try {
+      graph = Teuchos::rcp (new crs_graph_type (lclMatrix.graph, rowMap, colMap,
+                                                domainMap, rangeMap, params));
+    }
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "RCP<const Map>, RCP<const Map>, RCP<const Map>, local_graph_type[, "
+         "RCP<ParameterList>]) threw an exception: " << e.what ());
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (!graph->isFillComplete (), std::logic_error, "CrsGraph constructor (RCP"
+       "<const Map>, RCP<const Map>, RCP<const Map>, RCP<const Map>, local_graph_type[, "
+       "RCP<ParameterList>]) did not produce a fill-complete graph.  Please report this "
+       "bug to the Tpetra developers.");
+    // myGraph_ not null means that the matrix owns the graph.  This
+    // is true because the column indices come in as nonconst through
+    // the matrix, implying shared ownership.
+    myGraph_ = graph;
+    staticGraph_ = graph;
+    computeGlobalConstants ();
+
+    // Sanity checks at the end.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive (), std::logic_error,
+      "We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillComplete (), std::logic_error,
+      "We're at the end of fillComplete(), but isFillComplete() is false.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+    checkInternalState ();
+  }
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   ~CrsMatrix ()
