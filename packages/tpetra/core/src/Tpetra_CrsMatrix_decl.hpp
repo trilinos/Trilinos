@@ -3884,7 +3884,6 @@ namespace Tpetra {
                                                            f, atomic);
     }
 
-  private:
     /// \brief Special case of insertGlobalValues for when globalRow
     ///   is <i>not<i> owned by the calling process.
     ///
@@ -3895,6 +3894,57 @@ namespace Tpetra {
     insertNonownedGlobalValues (const GlobalOrdinal globalRow,
                                 const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                                 const Teuchos::ArrayView<const Scalar>& values);
+
+    /// \brief Insert indices and their values into the given row.
+    ///
+    /// \tparam Scalar The type of a single value.  When this method
+    ///   is called by CrsMatrix, \c Scalar corresponds to the first
+    ///   template parameter of CrsMatrix.
+    ///
+    /// \pre <tt>! (lg == LocalIndices && I == GlobalIndices)</tt>.
+    ///   It does not make sense to give this method local column
+    ///   indices (meaning that the graph has a column Map), yet to
+    ///   ask it to store global indices.
+    ///
+    /// \param graph [in/out] The graph into which to insert indices.
+    ///
+    /// \param rowInfo [in/out] On input: Result of the graph's
+    ///   getRowInfo() or updateAllocAndValues() methods, for the
+    ///   locally owned row (whose local index is
+    ///   <tt>rowInfo.localRow</tt>) for which you want to insert
+    ///   indices.  On output: RowInfo with updated newEntries field.
+    ///
+    /// \param newInds [in] View of the column indices to insert.  If
+    ///   <tt>lg == GlobalIndices</tt>, then newInds.ginds, a
+    ///   <tt>Teuchos::ArrayView<const GlobalOrdinal></tt>, contains
+    ///   the (global) column indices to insert.  Otherwise, if <tt>lg
+    ///   == LocalIndices</tt>, then newInds.linds, a
+    ///   <tt>Teuchos::ArrayView<const LocalOrdinal></tt>, contains
+    ///   the (local) column indices to insert.
+    ///
+    /// \param oldRowVals [out] View of the current values.  They will
+    ///   be overwritten with the new values.
+    ///
+    /// \param newRowVals [in] View of the new values.  They will be
+    ///   copied over the old values.
+    ///
+    /// \param lg If <tt>lg == GlobalIndices</tt>, then the input
+    ///   indices (in \c newInds) are global indices.  Otherwise, if
+    ///   <tt>lg == LocalIndices</tt>, the input indices are local
+    ///   indices.
+    ///
+    /// \param I If <tt>lg == GlobalIndices</tt>, then this method
+    ///   will store the input indices as global indices.  Otherwise,
+    ///   if <tt>I == LocalIndices</tt>, this method will store the
+    ///   input indices as local indices.
+    void
+    insertIndicesAndValues (crs_graph_type& graph,
+                            RowInfo& rowInfo,
+                            const typename crs_graph_type::SLocalGlobalViews& newInds,
+                            const Teuchos::ArrayView<impl_scalar_type>& oldRowVals,
+                            const Teuchos::ArrayView<const impl_scalar_type>& newRowVals,
+                            const ELocalGlobal lg,
+                            const ELocalGlobal I);
 
     //! Type of the DistObject specialization from which this class inherits.
     typedef DistObject<char, LocalOrdinal, GlobalOrdinal, Node, classic> dist_object_type;
@@ -3914,6 +3964,14 @@ namespace Tpetra {
       GraphNotYetAllocated
     };
 
+  private:
+    /// \brief Allocate 2-D storage for matrix values.
+    ///
+    /// This is an implementation detail of allocateValues() (see below).
+    Teuchos::ArrayRCP<Teuchos::Array<impl_scalar_type> >
+    allocateValues2D ();
+
+  protected:
     /// \brief Allocate values (and optionally indices) using the Node.
     ///
     /// \param gas [in] If GraphNotYetAllocated, allocate the

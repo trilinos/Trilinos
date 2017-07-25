@@ -781,6 +781,41 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Teuchos::ArrayRCP<Teuchos::Array<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::impl_scalar_type> >
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  allocateValues2D ()
+  {
+    using Teuchos::arcp;
+    using Teuchos::Array;
+    using Teuchos::ArrayRCP;
+    typedef impl_scalar_type IST;
+    typedef LocalOrdinal LO;
+    const char tfecfFuncName[] = "allocateValues2D: ";
+
+    const crs_graph_type& graph = this->getCrsGraphRef ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! graph.indicesAreAllocated (), std::runtime_error,
+       "Graph indices must be allocated before values.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (graph.getProfileType () != DynamicProfile, std::runtime_error,
+       "Graph indices must be allocated in a dynamic profile.");
+
+    const LO lclNumRows = graph.getNodeNumRows ();
+    Teuchos::ArrayRCP<Teuchos::Array<IST> > values2D (lclNumRows);
+    if (! graph.lclInds2D_.is_null ()) {
+      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        values2D[lclRow].resize (graph.lclInds2D_[lclRow].size ());
+      }
+    }
+    else if (! graph.gblInds2D_.is_null ()) {
+      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        values2D[lclRow].resize (graph.gblInds2D_[lclRow].size ());
+      }
+    }
+    return values2D;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   allocateValues (ELocalGlobal lg, GraphAllocationStatus gas)
@@ -884,20 +919,7 @@ namespace Tpetra {
       // values in "2-D storage," meaning an array of arrays.  The
       // outer array has as many inner arrays as there are rows in the
       // matrix, and each inner array stores the values in that row.
-      try {
-        this->values2D_ =
-          this->staticGraph_->template allocateValues2D<impl_scalar_type> ();
-      }
-      catch (std::exception& e) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error, "CrsGraph::allocateValues2D threw an "
-           "exception: " << e.what ());
-      }
-      catch (...) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error, "CrsGraph::allocateValues2D threw an "
-           "exception not a subclass of std::exception.");
-      }
+      this->values2D_ = this->allocateValues2D ();
     }
   }
 
@@ -1616,53 +1638,78 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  insertLocalValues (const LocalOrdinal localRow,
+  insertIndicesAndValues (crs_graph_type& graph,
+                          RowInfo& rowInfo,
+                          const typename crs_graph_type::SLocalGlobalViews& newInds,
+                          const Teuchos::ArrayView<impl_scalar_type>& oldRowVals,
+                          const Teuchos::ArrayView<const impl_scalar_type>& newRowVals,
+                          const ELocalGlobal lg,
+                          const ELocalGlobal I)
+  {
+    const size_t oldNumEnt = rowInfo.numEntries;
+    const size_t numInserted = graph.insertIndices (rowInfo, newInds, lg, I);
+
+    // Use of memcpy here works around an issue with GCC >= 4.9.0,
+    // that probably relates to scalar_type vs. impl_scalar_type
+    // aliasing.  See history of Tpetra_CrsGraph_def.hpp for
+    // details; look for GCC_WORKAROUND macro definition.
+    if (numInserted > 0) {
+      const size_t startOffset = oldNumEnt;
+      memcpy (&oldRowVals[startOffset], &newRowVals[0],
+              numInserted * sizeof (impl_scalar_type));
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  insertLocalValues (const LocalOrdinal lclRow,
                      const Teuchos::ArrayView<const LocalOrdinal>& indices,
                      const Teuchos::ArrayView<const Scalar>& values)
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    using Teuchos::av_reinterpret_cast;
-    using Teuchos::toString;
     using std::endl;
-    const char tfecfFuncName[] = "insertLocalValues";
+    typedef impl_scalar_type IST;
+    const char tfecfFuncName[] = "insertLocalValues: ";
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillActive (), std::runtime_error,
-      ": Fill is not active.  After calling fillComplete, you must call "
-      "resumeFill before you may insert entries into the matrix again.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isStaticGraph (),  std::runtime_error,
-      " cannot insert indices with static graph; use replaceLocalValues() instead.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_->isGloballyIndexed(),
-      std::runtime_error, ": graph indices are global; use insertGlobalValues().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! hasColMap (), std::runtime_error,
-      " cannot insert local indices without a column map.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(values.size() != indices.size(),
-      std::runtime_error, ": values.size() must equal indices.size().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->isFillActive (), std::runtime_error,
+       "Fill is not active.  After calling fillComplete, you must call "
+       "resumeFill before you may insert entries into the matrix again.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isStaticGraph (), std::runtime_error,
+       "Cannot insert indices with static graph; use replaceLocalValues() "
+       "instead.");
+    // At this point, we know that myGraph_ is nonnull.
+    crs_graph_type& graph = * (this->myGraph_);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (graph.colMap_.is_null (), std::runtime_error,
+       "Cannot insert local indices without a column map.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (graph.isGloballyIndexed (),
+       std::runtime_error, "Graph indices are global; use "
+       "insertGlobalValues().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (values.size () != indices.size (), std::runtime_error,
+       "values.size() = " << values.size ()
+       << " != indices.size() = " << indices.size () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! getRowMap()->isNodeLocalElement(localRow), std::runtime_error,
-      ": Local row index " << localRow << " does not belong to this process.");
+      ! graph.rowMap_->isNodeLocalElement (lclRow), std::runtime_error,
+      "Local row index " << lclRow << " does not belong to this process.");
 
-    if (! myGraph_->indicesAreAllocated ()) {
-      try {
-        allocateValues (LocalIndices, GraphNotYetAllocated);
-      }
-      catch (std::exception& e) {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::runtime_error, "Tpetra::CrsMatrix::insertLocalValues: "
-          "allocateValues(LocalIndices,GraphNotYetAllocated) threw an "
-          "exception: " << e.what ());
-      }
+    if (! graph.indicesAreAllocated ()) {
+      this->allocateValues (LocalIndices, GraphNotYetAllocated);
     }
 
     const size_t numEntriesToAdd = static_cast<size_t> (indices.size ());
 #ifdef HAVE_TPETRA_DEBUG
-    // In a debug build, if the matrix has a column Map, test whether
-    // any of the given column indices are not in the column Map.
-    // Keep track of the invalid column indices so we can tell the
-    // user about them.
-    if (hasColMap ()) {
-      const map_type& colMap = * (getColMap ());
-      Array<LocalOrdinal> badColInds;
+    // In a debug build, test whether any of the given column indices
+    // are not in the column Map.  Keep track of the invalid column
+    // indices so we can tell the user about them.
+    {
+      using Teuchos::toString;
+
+      const map_type& colMap = * (graph.colMap_);
+      Teuchos::Array<LocalOrdinal> badColInds;
       bool allInColMap = true;
       for (size_t k = 0; k < numEntriesToAdd; ++k) {
         if (! colMap.isNodeLocalElement (indices[k])) {
@@ -1672,90 +1719,50 @@ namespace Tpetra {
       }
       if (! allInColMap) {
         std::ostringstream os;
-        os << "Tpetra::CrsMatrix::insertLocalValues: You attempted to insert "
-          "entries in owned row " << localRow << ", at the following column "
-          "indices: " << toString (indices) << "." << endl;
+        os << "You attempted to insert entries in owned row " << lclRow
+           << ", at the following column indices: " << toString (indices)
+           << "." << endl;
         os << "Of those, the following indices are not in the column Map on "
           "this process: " << toString (badColInds) << "." << endl << "Since "
           "the matrix has a column Map already, it is invalid to insert "
           "entries at those locations.";
-        TEUCHOS_TEST_FOR_EXCEPTION(! allInColMap, std::invalid_argument, os.str ());
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::invalid_argument, os.str ());
       }
     }
 #endif // HAVE_TPETRA_DEBUG
 
-#ifdef HAVE_TPETRA_DEBUG
-    RowInfo rowInfo;
-    try {
-      rowInfo = myGraph_->getRowInfo (localRow);
-    } catch (std::exception& e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::runtime_error, "Tpetra::CrsMatrix::insertLocalValues: "
-        "myGraph_->getRowInfo threw an exception: " << e.what ());
-    }
-#else
-    RowInfo rowInfo = myGraph_->getRowInfo (localRow);
-#endif // HAVE_TPETRA_DEBUG
-
-    const size_t curNumEntries = rowInfo.numEntries;
-    const size_t newNumEntries = curNumEntries + numEntriesToAdd;
-    if (newNumEntries > rowInfo.allocSize) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        getProfileType() == StaticProfile, std::runtime_error,
-        ": new indices exceed statically allocated graph structure.");
-
+    RowInfo rowInfo = graph.getRowInfo (lclRow);
+    const size_t curNumEnt = rowInfo.numEntries;
+    const size_t newNumEnt = curNumEnt + numEntriesToAdd;
+    if (newNumEnt > rowInfo.allocSize) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->getProfileType () == StaticProfile, std::runtime_error,
+         "New indices exceed statically allocated graph structure.");
+      // This must be a nonconst reference, since we'll reallocate.
+      Teuchos::Array<IST>& curVals = this->values2D_[lclRow];
       // Make space for the new matrix entries.
-      try {
-        rowInfo = myGraph_->template updateLocalAllocAndValues<impl_scalar_type> (rowInfo,
-                                                                             newNumEntries,
-                                                                             values2D_[localRow]);
-      } catch (std::exception& e) {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::runtime_error, "Tpetra::CrsMatrix::insertLocalValues: "
-          "myGraph_->updateGlobalAllocAndValues threw an exception: "
-          << e.what ());
-      }
+      // Teuchos::ArrayRCP::resize automatically copies over values on
+      // reallocation.
+      graph.lclInds2D_[rowInfo.localRow].resize (newNumEnt);
+      curVals.resize (newNumEnt);
+      rowInfo.allocSize = newNumEnt; // give rowInfo updated allocSize
     }
     typename crs_graph_type::SLocalGlobalViews indsView;
     indsView.linds = indices;
 
+    Teuchos::ArrayView<IST> valsView = this->getViewNonConst (rowInfo);
+    Teuchos::ArrayView<const IST> valsIn =
+      Teuchos::av_reinterpret_cast<const IST> (values);
+    this->insertIndicesAndValues (graph, rowInfo, indsView, valsView,
+                                  valsIn, LocalIndices, LocalIndices);
 #ifdef HAVE_TPETRA_DEBUG
-    ArrayView<impl_scalar_type> valsView;
-    try {
-      valsView = this->getViewNonConst (rowInfo);
-    } catch (std::exception& e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::runtime_error, "Tpetra::CrsMatrix::insertLocalValues: "
-        "getViewNonConst threw an exception: " << e.what ());
-    }
-#else
-    ArrayView<impl_scalar_type> valsView = this->getViewNonConst (rowInfo);
-#endif // HAVE_TPETRA_DEBUG
-
-    ArrayView<const impl_scalar_type> valsIn =
-      av_reinterpret_cast<const impl_scalar_type> (values);
-    try {
-      myGraph_->template insertIndicesAndValues<impl_scalar_type> (rowInfo, indsView,
-                                                              valsView, valsIn,
-                                                              LocalIndices,
-                                                              LocalIndices);
-    } catch (std::exception& e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::runtime_error, "Tpetra::CrsMatrix::insertLocalValues: "
-        "myGraph_->insertIndicesAndValues threw an exception: "
-        << e.what ());
-    }
-
-#ifdef HAVE_TPETRA_DEBUG
-    const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow (localRow);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      chkNewNumEntries != newNumEntries, std::logic_error,
-      ": The row should have " << newNumEntries << " entries after insert, but "
-      "instead has " << chkNewNumEntries << ".  Please report this bug to the "
-      "Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isLocallyIndexed(), std::logic_error,
-      ": At end of insertLocalValues(), this CrsMatrix is not locally indexed.  "
-      "Please report this bug to the Tpetra developers.");
+    const size_t chkNewNumEnt = graph.getNumEntriesInLocalRow (lclRow);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (chkNewNumEnt != newNumEnt, std::logic_error,
+      "The row should have " << newNumEnt << " entries after insert, but "
+      "instead has " << chkNewNumEnt << ".  Please report this bug to "
+      "the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
   }
 
@@ -1811,11 +1818,11 @@ namespace Tpetra {
       // This needs to be a nonconst reference, in case we want to
       // reallocate it.
       Teuchos::Array<IST>& curVals = this->values2D_[rowInfo.localRow];
-      // Reassign rowInfo in order to get the updated allocSize.
-      rowInfo =
-        graph.template updateGlobalAllocAndValues<IST> (rowInfo,
-                                                        newNumEnt,
-                                                        curVals);
+      // Teuchos::ArrayRCP::resize automatically copies over values on
+      // reallocation.
+      graph.gblInds2D_[rowInfo.localRow].resize (newNumEnt);
+      curVals.resize (newNumEnt);
+      rowInfo.allocSize = newNumEnt; // reassign for updated allocSize
     }
 
     using Teuchos::ArrayView;
@@ -1831,10 +1838,9 @@ namespace Tpetra {
     // be reasonably fast.  LocalIndices means the method calls the
     // Map's getLocalElement() method once per entry to insert.  This
     // may be slow.
-    graph.template insertIndicesAndValues<IST> (rowInfo, inputIndsAV,
-                                                curValsAV, inputValsAV,
-                                                GlobalIndices,
-                                                curIndexingStatus);
+    this->insertIndicesAndValues (graph, rowInfo, inputIndsAV, curValsAV,
+                                  inputValsAV, GlobalIndices,
+                                  curIndexingStatus);
 #ifdef HAVE_TPETRA_DEBUG
     const size_t chkNewNumEnt =
       graph.getNumEntriesInLocalRow (rowInfo.localRow);

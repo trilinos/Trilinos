@@ -672,29 +672,36 @@ namespace Tpetra {
     void removeLocalIndices (LocalOrdinal localRow);
 
     //@}
-    //! @name Transformational Methods
-    /**
-       Each of the methods in this group is a global collective. It is
-       necessary to call these mehtods on all nodes participating in the
-       communicator associated with this graph.
-    */
+    //! @name Collective methods for changing the graph's global state
     //@{
 
-    /// \brief Communicate non-local contributions to other processes.
+    /// \brief Communicate nonlocal contributions to other processes.
     ///
-    /// This method is called automatically by fillComplete().
-    /// Most users do not need to call this themselves,
-    /// though we do permit this.
+    /// This method is called automatically by fillComplete().  Most
+    /// users do not need to call this themselves.
+    ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
     void globalAssemble ();
 
-    /*! Resume fill operations.
-      After calling fillComplete(), resumeFill() must be called before initiating any changes to the graph.
-
-      resumeFill() may be called repeatedly.
-
-      \post  <tt>isFillActive() == true<tt>
-      \post  <tt>isFillComplete() == false<tt>
-    */
+    /// \brief Resume fill operations.
+    ///
+    /// After calling fillComplete(), resumeFill() must be called
+    /// before initiating any changes to the graph.
+    ///
+    /// resumeFill() may be called repeatedly.
+    ///
+    /// \warning A CrsGraph instance does not currently (as of 23 Jul
+    ///   2017) and never did support arbitrary structure changes
+    ///   after the first fillComplete call on that instance.  The
+    ///   safest thing to do is not to change structure at all after
+    ///   first fillComplete.
+    ///
+    /// \post <tt>isFillActive() == true<tt>
+    /// \post <tt>isFillComplete() == false<tt>
+    ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
     void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Tell the graph that you are done changing its structure.
@@ -706,6 +713,9 @@ namespace Tpetra {
     /// Off-process indices are distributed (via globalAssemble()),
     /// indices are sorted, redundant indices are eliminated, and
     /// global indices are transformed to local indices.
+    ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
     ///
     /// \warning The domain Map and row Map arguments to this method
     ///   MUST be one to one!  If you have Maps that are not one to
@@ -747,6 +757,9 @@ namespace Tpetra {
     /// and the range Map.  Otherwise, this method uses the graph's
     /// existing domain and range Maps.
     ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
+    ///
     /// \warning It is only valid to call this overload of
     ///   fillComplete if the row Map is one to one!  If the row Map
     ///   is NOT one to one, you must call the above three-argument
@@ -770,6 +783,9 @@ namespace Tpetra {
     /// graph has been constructed in any other way, this method will
     /// throw an exception.  This routine is needed to support other
     /// Trilinos packages and should not be called by ordinary users.
+    ///
+    /// This method must be called collectively (that is, like any MPI
+    /// collective) over all processes in the graph's communicator.
     ///
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
@@ -1358,84 +1374,6 @@ namespace Tpetra {
     bool indicesAreAllocated () const;
     void allocateIndices (const ELocalGlobal lg);
 
-    template <class T>
-    Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const
-    {
-      using Teuchos::arcp;
-      using Teuchos::Array;
-      using Teuchos::ArrayRCP;
-      using Teuchos::null;
-      const char tfecfFuncName[] = "allocateValues2D: ";
-
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! indicesAreAllocated (), std::runtime_error,
-         "Graph indices must be allocated before values.");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (getProfileType () != DynamicProfile, std::runtime_error,
-         "Graph indices must be allocated in a dynamic profile.");
-
-      ArrayRCP<Array<T> > values2D;
-      values2D = arcp<Array<T> > (getNodeNumRows ());
-      if (lclInds2D_ != null) {
-        const size_t numRows = lclInds2D_.size ();
-        for (size_t r = 0; r < numRows; ++r) {
-          values2D[r].resize (lclInds2D_[r].size ());
-        }
-      }
-      else if (gblInds2D_ != null) {
-        const size_t numRows = gblInds2D_.size ();
-        for (size_t r = 0; r < numRows; ++r) {
-          values2D[r].resize (gblInds2D_[r].size ());
-        }
-      }
-      return values2D;
-    }
-
-    template <class T>
-    RowInfo updateLocalAllocAndValues (const RowInfo rowInfo,
-                                       const size_t newAllocSize,
-                                       Teuchos::Array<T>& rowVals)
-    {
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT( ! isLocallyIndexed () );
-      TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
-      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
-      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowInfo.allocSize );
-      TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement (rowInfo.localRow) );
-#endif // HAVE_TPETRA_DEBUG
-
-      // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
-      lclInds2D_[rowInfo.localRow].resize (newAllocSize);
-      rowVals.resize (newAllocSize);
-
-      RowInfo rowInfoOut = rowInfo;
-      rowInfoOut.allocSize = newAllocSize;
-      return rowInfoOut;
-    }
-
-    template <class T>
-    RowInfo
-    updateGlobalAllocAndValues (const RowInfo rowInfo,
-                                const size_t newAllocSize,
-                                Teuchos::Array<T>& rowVals)
-    {
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT( ! isGloballyIndexed () );
-      TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated () );
-      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
-      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowInfo.allocSize );
-      TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement (rowInfo.localRow) );
-#endif // HAVE_TPETRA_DEBUG
-
-      // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
-      gblInds2D_[rowInfo.localRow].resize (newAllocSize);
-      rowVals.resize (newAllocSize);
-
-      RowInfo rowInfoOut = rowInfo;
-      rowInfoOut.allocSize = newAllocSize;
-      return rowInfoOut;
-    }
-
     //! \name Methods governing changes between global and local indices
     //@{
 
@@ -1469,43 +1407,6 @@ namespace Tpetra {
     //@}
     //! \name Methods for inserting indices or transforming values
     //@{
-
-    template<class T>
-    size_t
-    filterGlobalIndicesAndValues (const Teuchos::ArrayView<GlobalOrdinal>& ginds,
-                                  const Teuchos::ArrayView<T>& vals) const
-    {
-      using Teuchos::ArrayView;
-      const map_type& cmap = *colMap_;
-      size_t numFiltered = 0;
-      typename ArrayView<T>::iterator fvalsend = vals.begin();
-      typename ArrayView<T>::iterator valscptr = vals.begin();
-#ifdef HAVE_TPETRA_DEBUG
-      size_t numFiltered_debug = 0;
-#endif
-      typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
-      typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
-      while (cptr != ginds.end()) {
-        if (cmap.isNodeGlobalElement (*cptr)) {
-          *fend++ = *cptr;
-          *fvalsend++ = *valscptr;
-#ifdef HAVE_TPETRA_DEBUG
-          ++numFiltered_debug;
-#endif
-        }
-        ++cptr;
-        ++valscptr;
-      }
-      numFiltered = fend - ginds.begin();
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
-      TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
-      const size_t numFilteredActual =
-        static_cast<size_t> (fvalsend - vals.begin ());
-      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
-#endif // HAVE_TPETRA_DEBUG
-      return numFiltered;
-    }
 
     /// \brief Insert indices into the given row.
     ///
@@ -1546,155 +1447,6 @@ namespace Tpetra {
                    const SLocalGlobalViews& newInds,
                    const ELocalGlobal lg,
                    const ELocalGlobal I);
-
-    /// \brief Insert indices and their values into the given row.
-    ///
-    /// \tparam Scalar The type of a single value.  When this method
-    ///   is called by CrsMatrix, \c Scalar corresponds to the first
-    ///   template parameter of CrsMatrix.
-    ///
-    /// \pre <tt>! (lg == LocalIndices && I == GlobalIndices)</tt>.
-    ///   It does not make sense to give this method local column
-    ///   indices (meaning that the graph has a column Map), yet to
-    ///   ask it to store global indices.
-    ///
-    /// \param rowInfo [in] Result of CrsGraph's getRowInfo() or
-    ///   updateAllocAndValues() methods, for the locally owned row
-    ///   (whose local index is <tt>rowInfo.localRow</tt>) for which
-    ///   you want to insert indices.
-    ///
-    /// \param newInds [in] View of the column indices to insert.  If
-    ///   <tt>lg == GlobalIndices</tt>, then newInds.ginds, a
-    ///   <tt>Teuchos::ArrayView<const GlobalOrdinal></tt>, contains
-    ///   the (global) column indices to insert.  Otherwise, if <tt>lg
-    ///   == LocalIndices</tt>, then newInds.linds, a
-    ///   <tt>Teuchos::ArrayView<const LocalOrdinal></tt>, contains
-    ///   the (local) column indices to insert.
-    ///
-    /// \param oldRowVals [out] View of the current values.  They will
-    ///   be overwritten with the new values.
-    ///
-    /// \param newRowVals [in] View of the new values.  They will be
-    ///   copied over the old values.
-    ///
-    /// \param lg If <tt>lg == GlobalIndices</tt>, then the input
-    ///   indices (in \c newInds) are global indices.  Otherwise, if
-    ///   <tt>lg == LocalIndices</tt>, the input indices are local
-    ///   indices.
-    ///
-    /// \param I If <tt>lg == GlobalIndices</tt>, then this method
-    ///   will store the input indices as global indices.  Otherwise,
-    ///   if <tt>I == LocalIndices</tt>, this method will store the
-    ///   input indices as local indices.
-    template<class Scalar>
-    void
-    insertIndicesAndValues (RowInfo& rowInfo,
-                            const SLocalGlobalViews& newInds,
-                            const Teuchos::ArrayView<Scalar>& oldRowVals,
-                            const Teuchos::ArrayView<const Scalar>& newRowVals,
-                            const ELocalGlobal lg,
-                            const ELocalGlobal I)
-    {
-      const char tfecfFuncName[] = "insertIndicesAndValues: ";
-
-      const size_t oldNumEnt = rowInfo.numEntries;
-
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (oldNumEnt != this->getNumEntriesInLocalRow (rowInfo.localRow),
-         std::logic_error, "On input, rowInfo.numEntries = " << oldNumEnt
-         << " != getNumEntriesInLocalRow(" << rowInfo.localRow << ").");
-#endif // HAVE_TPETRA_DEBUG
-
-      size_t numNewInds = 0;
-      try {
-        numNewInds = insertIndices (rowInfo, newInds, lg, I);
-      } catch (std::exception& e) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error, "insertIndices threw an exception: "
-           << e.what ());
-      }
-
-      typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
-
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_type> (numNewInds) > newRowVals.size (),
-         std::runtime_error, "numNewInds (" << numNewInds << ") > "
-         "newRowVals.size() (" << newRowVals.size () << ").");
-#endif // HAVE_TPETRA_DEBUG
-
-#ifdef HAVE_TPETRA_DEBUG
-      try {
-#endif // HAVE_TPETRA_DEBUG
-        //NOTE: The code in the else branch fails on GCC 4.9 and newer in the assignement oldRowVals[oldNumEnt] = newRowVals[newInd];
-        //We supply a workaround n as well as other code variants which produce or not produce the error
-#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
-#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
-#if GCC_VERSION >= 490
-#define GCC_WORKAROUND
-#endif
-#endif
-#ifdef GCC_WORKAROUND
-        size_type nNI = static_cast<size_type>(numNewInds);
-        if (nNI > 0)
-          memcpy(&oldRowVals[oldNumEnt], &newRowVals[0], nNI*sizeof(Scalar));
-        /*
-        //Original Code Fails
-        for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
-        ++newInd, ++oldNumEnt) {
-        oldRowVals[oldNumEnt] = newRowVals[newInd];
-        }
-
-        //char cast variant fails
-        char* oldRowValPtr = (char*)&oldRowVals[oldNumEnt];
-        const char* newRowValPtr = (const char*) &newRowVals[0];
-
-        for(size_type newInd = 0; newInd < (nNI * sizeof(Scalar)); newInd++) {
-        oldRowValPtr[newInd] = newRowValPtr[newInd];
-        }
-
-        //Raw ptr variant fails
-        Scalar* oldRowValPtr = &oldRowVals[oldNumEnt];
-        Scalar* newRowValPtr = const_cast<Scalar*>(&newRowVals[0]);
-
-        for(size_type newInd = 0; newInd < nNI; newInd++) {
-        oldRowValPtr[newInd] = newRowValPtr[newInd];
-        }
-
-        //memcpy works
-        for (size_type newInd = 0; newInd < nNI; newInd++) {
-        memcpy( &oldRowVals[oldNumEnt+newInd], &newRowVals[newInd], sizeof(Scalar));
-        }
-
-        //just one loop index fails
-        for (size_type newInd = 0; newInd < nNI; newInd++) {
-        oldRowVals[oldNumEnt+newInd] = newRowVals[newInd];
-        }
-
-        //inline increment fails
-        for (size_type newInd = 0; newInd < numNewInds;) {
-        oldRowVals[oldNumEnt++] = newRowVals[newInd++];
-        }
-
-        */
-
-#else // GCC Workaround above
-        size_type oldCounter = oldNumEnt;
-        for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
-             ++newInd, ++oldCounter) {
-          oldRowVals[oldCounter] = newRowVals[newInd];
-        }
-#endif // GCC Workaround
-#ifdef HAVE_TPETRA_DEBUG
-      }
-      catch (std::exception& e) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error, "for loop for copying values threw an "
-           "exception: " << e.what ());
-      }
-#endif // HAVE_TPETRA_DEBUG
-    }
 
     /// \brief Insert global indices, using an input <i>local</i> row index.
     ///
