@@ -523,7 +523,7 @@ struct throw_no_scalar_support_exception {
 
 
 
-#ifdef HAVE_AMESOS2_KLU2 
+#ifdef HAVE_AMESOS2_KLU2
     if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
         (solverName == "amesos2_klu")  || (solverName == "klu")){
       return handle_solver_type_support<KLU2,Matrix,Vector>::apply(A, X, B);
@@ -598,7 +598,7 @@ struct throw_no_scalar_support_exception {
      */
     std::string err_msg = solver_name + " is not enabled or is not supported";
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, err_msg);
-    return( Teuchos::null );
+    //return( Teuchos::null ); // unreachable
   }
 
 } // end namespace Amesos2
