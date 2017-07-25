@@ -436,17 +436,25 @@ void StepperIMEX_RK<Scalar>::takeStep(
       Scalar tHats = time + cHat(i)*dt;
       if (A(i,i) == Teuchos::ScalarTraits<Scalar>::zero()) {
         // Explicit stage for the ImplicitODE_DAE
-        typedef Thyra::ModelEvaluatorBase MEB;
-        Thyra::assign(stageX_.ptr(), *xTilde_);
-        inArgs_.set_x(stageX_);
-        if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(ts);
-        if (inArgs_.supports(MEB::IN_ARG_x_dot))
-          inArgs_.set_x_dot(Teuchos::null);
-        outArgs_.set_f(stageG_[i]);
+        bool isNeeded = false;
+        for (int k=i+1; k<numStages; ++k) if (A(k,i) != 0.0) isNeeded = true;
+        if (b(i) != 0.0) isNeeded = true;
+        if (isNeeded == false) {
+          // stageG_[i] is not needed.
+          assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+        } else {
+          typedef Thyra::ModelEvaluatorBase MEB;
+          Thyra::assign(stageX_.ptr(), *xTilde_);
+          inArgs_.set_x(stageX_);
+          if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(ts);
+          if (inArgs_.supports(MEB::IN_ARG_x_dot))
+            inArgs_.set_x_dot(Teuchos::null);
+          outArgs_.set_f(stageG_[i]);
 
-        residualModelPairIMEX_->getImplicitModel()->evalModel(inArgs_,outArgs_);
-        Thyra::Vt_S(stageG_[i].ptr(), -1.0);
-
+          residualModelPairIMEX_->getImplicitModel()->evalModel(inArgs_,
+                                                                outArgs_);
+          Thyra::Vt_S(stageG_[i].ptr(), -1.0);
+        }
       } else {
         // Implicit stage for the ImplicitODE_DAE
         Scalar alpha = 1.0/dt/A(i,i);
