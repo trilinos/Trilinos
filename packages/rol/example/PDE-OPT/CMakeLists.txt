@@ -4,11 +4,13 @@ SET(NOINSTALLHEADERS "")
 
 APPEND_SET(SOURCES
   TOOLS/solver.cpp
+  TOOLS/assembler.cpp
 )
 
 APPEND_SET(NOINSTALLHEADERS
   TOOLS/solver.hpp
   TOOLS/solver_def.hpp
+  TOOLS/assembler.hpp
 )
 
 TRIBITS_ADD_LIBRARY(

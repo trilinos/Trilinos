@@ -49,6 +49,9 @@
 #include "assembler.hpp"
 #include "pdevector.hpp"
 
+// Do not instantiate the template in this translation unit.
+extern template class Assembler<double>;
+
 template<class Real>
 class IntegralObjective : public ROL::Objective_SimOpt<Real> {
 private:

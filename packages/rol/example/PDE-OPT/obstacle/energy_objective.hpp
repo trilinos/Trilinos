@@ -5,6 +5,9 @@
 #include "ROL_Objective.hpp"
 #include "../TOOLS/assembler.hpp"
 
+// Do not instantiate the template in this translation unit.
+extern template class Assembler<double>;
+
 template<class Real>
 class EnergyObjective : public ROL::Objective<Real> {
 private:
