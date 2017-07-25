@@ -86,17 +86,17 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
     Xpetra::Parameters xpetraParameters(clp);
 
     //
-    switch (clp.parse(argc, argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE;
-    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
+    clp.recogniseAllOptions(false);
+    switch (clp.parse(argc, argv, NULL)) {
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
     }
     Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
     if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
-
       // TAW: we might want to simplify the following logic block.
       //      In fact, there are examples/tests which only run with Tpetra
       //      We might need a feature that allows to run Epetra/Tpetra only
