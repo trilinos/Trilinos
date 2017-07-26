@@ -88,7 +88,7 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 // StepperNewmarkImplicitAForm definitions:
 template<class Scalar>
 StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
@@ -100,36 +100,36 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
 
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->initialize();
 }
 
 
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->validSecondOrderODE_DAE(transientModel);
-  if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
-  residualModel_ =
-    Teuchos::rcp(new SecondOrderResidualModelEvaluator<Scalar>(transientModel,
+  this->validSecondOrderODE_DAE(appModel);
+  if (wrapperModel_ != Teuchos::null) wrapperModel_ = Teuchos::null;
+  wrapperModel_ =
+    Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                                       "Newmark Implicit a-Form"));
-  inArgs_  = residualModel_->getNominalValues();
-  outArgs_ = residualModel_->createOutArgs();
+  inArgs_  = wrapperModel_->getNominalValues();
+  outArgs_ = wrapperModel_->createOutArgs();
 }
 
 
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 
@@ -272,9 +272,9 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
-      residualModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<double> sStatus =
-        this->solveNonLinear(residualModel_, *solver_, a_init);
+        this->solveNonLinear(wrapperModel_, *solver_, a_init);
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
       else
@@ -295,13 +295,13 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
-    //inject d_pred, v_pred, a and other relevant data into residualModel_
-    residualModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    //inject d_pred, v_pred, a and other relevant data into wrapperModel_
+    wrapperModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
 
     //Solve for new acceleration
     //IKT, 3/13/17: check how solveNonLinear works.
     const Thyra::SolveStatus<double> sStatus =
-      this->solveNonLinear(residualModel_, *solver_, a_old);
+      this->solveNonLinear(wrapperModel_, *solver_, a_old);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -359,7 +359,7 @@ void StepperNewmarkImplicitAForm<Scalar>::describe(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   out << description() << "::describe:" << std::endl
-      << "residualModel_ = " << residualModel_->description() << std::endl;
+      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
 }
 
 

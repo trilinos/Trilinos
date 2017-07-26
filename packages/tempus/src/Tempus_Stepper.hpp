@@ -70,10 +70,10 @@ public:
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel
       ) = 0;
     virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel) = 0;
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
 
     /// Set solver via ParameterList solver name.

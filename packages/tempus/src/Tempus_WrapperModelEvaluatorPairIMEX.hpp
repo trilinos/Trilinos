@@ -10,7 +10,7 @@
 #define Tempus_ModelEvaluatorIMEXPair_hpp
 
 //#include "Tempus_ModelEvaluatorPairIMEX.hpp"
-#include "Tempus_ResidualModelEvaluator.hpp"
+#include "Tempus_WrapperModelEvaluator.hpp"
 
 
 namespace Tempus {
@@ -23,8 +23,8 @@ namespace Tempus {
  *  This was taken and modified from Drekar's IMEXModelPair class.
  */
 template <typename Scalar>
-class ResidualModelEvaluatorPairIMEX
-  : public Tempus::ResidualModelEvaluator<Scalar>
+class WrapperModelEvaluatorPairIMEX
+  : public Tempus::WrapperModelEvaluator<Scalar>
 {
 public:
 

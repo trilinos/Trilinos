@@ -12,7 +12,7 @@
 #include "Tempus_RKButcherTableauBuilder.hpp"
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
-#include "Tempus_ResidualModelEvaluatorBasic.hpp"
+#include "Tempus_WrapperModelEvaluatorBasic.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "NOX_Thyra.H"
@@ -27,34 +27,34 @@ template<class Scalar> class StepperFactory;
 // StepperDIRK definitions:
 template<class Scalar>
 StepperDIRK<Scalar>::StepperDIRK(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
   this->setTableau(pList, stepperType);
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->setSolver();
   this->initialize();
 }
 
 template<class Scalar>
 void StepperDIRK<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->validImplicitODE_DAE(transientModel);
-  residualModel_ =
-    Teuchos::rcp(new ResidualModelEvaluatorBasic<Scalar>(transientModel));
+  this->validImplicitODE_DAE(appModel);
+  wrapperModel_ =
+    Teuchos::rcp(new WrapperModelEvaluatorBasic<Scalar>(appModel));
 
-  inArgs_  = residualModel_->getNominalValues();
-  outArgs_ = residualModel_->createOutArgs();
+  inArgs_  = wrapperModel_->getNominalValues();
+  outArgs_ = wrapperModel_->createOutArgs();
 }
 
 template<class Scalar>
 void StepperDIRK<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 
@@ -162,13 +162,13 @@ void StepperDIRK<Scalar>::initialize()
 {
   // Initialize the stage vectors
   const int numStages = DIRK_ButcherTableau_->numStages();
-  stageX_    = residualModel_->getNominalValues().get_x()->clone_v();
+  stageX_    = wrapperModel_->getNominalValues().get_x()->clone_v();
   stageXDot_.resize(numStages);
   for (int i=0; i<numStages; ++i) {
-    stageXDot_[i] = Thyra::createMember(residualModel_->get_f_space());
+    stageXDot_[i] = Thyra::createMember(wrapperModel_->get_f_space());
     assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   }
-  xTilde_    = Thyra::createMember(residualModel_->get_x_space());
+  xTilde_    = Thyra::createMember(wrapperModel_->get_x_space());
   assign(xTilde_.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
 }
 
@@ -236,7 +236,7 @@ void StepperDIRK<Scalar>::takeStep(
             inArgs_.set_x_dot(Teuchos::null);
           outArgs_.set_f(stageXDot_[i]);
 
-          residualModel_->getTransientModel()->evalModel(inArgs_,outArgs_);
+          wrapperModel_->getAppModel()->evalModel(inArgs_,outArgs_);
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
@@ -246,9 +246,9 @@ void StepperDIRK<Scalar>::takeStep(
         // function used to compute time derivative
         auto computeXDot = xDotFunction(alpha,xTilde_.getConst());
 
-        residualModel_->initialize(computeXDot, ts, alpha, beta);
+        wrapperModel_->initialize(computeXDot, ts, alpha, beta);
 
-        sStatus = this->solveNonLinear(residualModel_, *solver_, stageX_);
+        sStatus = this->solveNonLinear(wrapperModel_, *solver_, stageX_);
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED ) pass=false;
 
         computeXDot(*stageX_, *(stageXDot_[i]));
@@ -307,7 +307,7 @@ void StepperDIRK<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out << description() << "::describe:" << std::endl
-      << "residualModel_ = " << residualModel_->description() << std::endl;
+      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
 }
 
 

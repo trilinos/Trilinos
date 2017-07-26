@@ -129,7 +129,7 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 // StepperHHTAlpha definitions:
 template<class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
@@ -141,34 +141,34 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
 
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->initialize();
 }
 
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->validSecondOrderODE_DAE(transientModel);
-  if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
-  residualModel_ =
-    Teuchos::rcp(new SecondOrderResidualModelEvaluator<Scalar>(transientModel,
+  this->validSecondOrderODE_DAE(appModel);
+  if (wrapperModel_ != Teuchos::null) wrapperModel_ = Teuchos::null;
+  wrapperModel_ =
+    Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                                       "HHT-Alpha"));
 }
 
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 
@@ -310,9 +310,9 @@ void StepperHHTAlpha<Scalar>::takeStep(
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
-      residualModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<double> sStatus =
-        this->solveNonLinear(residualModel_, *solver_, a_init);
+        this->solveNonLinear(wrapperModel_, *solver_, a_init);
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
       else
@@ -337,12 +337,12 @@ void StepperHHTAlpha<Scalar>::takeStep(
     predictDisplacement_alpha_f(*d_pred, *d_old);
     predictVelocity_alpha_f(*v_pred, *v_old);
 
-    //inject d_pred, v_pred, a and other relevant data into residualModel_
-    residualModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    //inject d_pred, v_pred, a and other relevant data into wrapperModel_
+    wrapperModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
 
     //Solve for new acceleration
     const Thyra::SolveStatus<double> sStatus =
-      this->solveNonLinear(residualModel_, *solver_, a_new);
+      this->solveNonLinear(wrapperModel_, *solver_, a_new);
 
     //correct acceleration (function of alpha_m)
     correctAcceleration(*a_new, *a_old);
@@ -402,7 +402,7 @@ void StepperHHTAlpha<Scalar>::describe(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   out << description() << "::describe:" << std::endl
-      << "residualModel_ = " << residualModel_->description() << std::endl;
+      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
 }
 
 

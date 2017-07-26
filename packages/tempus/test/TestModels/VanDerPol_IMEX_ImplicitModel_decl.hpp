@@ -9,7 +9,8 @@
 #ifndef TEMPUS_TEST_VANDERPOL_IMEX_ImplicitMODEL_DECL_HPP
 #define TEMPUS_TEST_VANDERPOL_IMEX_ImplicitMODEL_DECL_HPP
 
-#include "Tempus_ResidualModelEvaluatorPairIMEX.hpp"
+#include "Thyra_ModelEvaluator.hpp" // Interface
+#include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
 
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_ParameterList.hpp"

@@ -13,7 +13,7 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_ResidualModelEvaluatorPairIMEX_Basic.hpp"
+#include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
 
 #include "../TestModels/VanDerPol_IMEX_ExplicitModel.hpp"
 #include "../TestModels/VanDerPol_IMEX_ImplicitModel.hpp"
@@ -91,8 +91,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
         Teuchos::rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
 
       // Setup the IMEX Pair ModelEvaluator
-      RCP<Tempus::ResidualModelEvaluatorPairIMEX_Basic<double> > model =
-          Teuchos::rcp(new Tempus::ResidualModelEvaluatorPairIMEX_Basic<double>(
+      RCP<Tempus::WrapperModelEvaluatorPairIMEX_Basic<double> > model =
+          Teuchos::rcp(new Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>(
                                                  explicitModel, implicitModel));
 
       // Set the Stepper

@@ -12,7 +12,7 @@
 #include "Tempus_config.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
-#include "Tempus_ResidualModelEvaluatorPairIMEX.hpp"
+#include "Tempus_WrapperModelEvaluatorPairIMEX.hpp"
 
 
 namespace Tempus {
@@ -259,16 +259,16 @@ public:
       Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau);
 
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
     virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
 
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
-     { return residualModelPairIMEX_->getExplicitModel(); }
+     { return wrapperModelPairIMEX_->getExplicitModel(); }
 
     virtual void setModelPair(
-      const Teuchos::RCP<ResidualModelEvaluatorPairIMEX<Scalar> > & modelPair);
+      const Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > & modelPair);
 
     virtual void setModelPair(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
@@ -321,7 +321,7 @@ protected:
 
   std::string                                            description_;
   Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
-  Teuchos::RCP<ResidualModelEvaluatorPairIMEX<Scalar> >  residualModelPairIMEX_;
+  Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> >  wrapperModelPairIMEX_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >      solver_;
 
   Teuchos::RCP<const RKButcherTableau<Scalar> >          explicitTableau_;

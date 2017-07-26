@@ -10,7 +10,7 @@
 #define Tempus_StepperBackwardEuler_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
-#include "Tempus_ResidualModelEvaluator.hpp"
+#include "Tempus_WrapperModelEvaluator.hpp"
 
 namespace Tempus {
 
@@ -38,17 +38,17 @@ public:
 
   /// Constructor
   StepperBackwardEuler(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return residualModel_->getTransientModel();}
+      getModel(){return wrapperModel_->getAppModel();}
 
     virtual void setSolver(std::string solverName);
     virtual void setSolver(
@@ -102,7 +102,7 @@ private:
 private:
 
   Teuchos::RCP<Teuchos::ParameterList>              stepperPL_;
-  Teuchos::RCP<ResidualModelEvaluator<Scalar> >     residualModel_;
+  Teuchos::RCP<WrapperModelEvaluator<Scalar> >     wrapperModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   Teuchos::RCP<Stepper<Scalar> >                    predictorStepper_;
 
