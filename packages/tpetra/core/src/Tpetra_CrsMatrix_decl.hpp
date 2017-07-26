@@ -4009,26 +4009,20 @@ namespace Tpetra {
                            BinaryFunction f,
                            const bool atomic = useAtomicUpdatesByDefault) const
     {
-      using Kokkos::MemoryUnmanaged;
-      using Kokkos::View;
-      typedef impl_scalar_type ST;
-      typedef BinaryFunction BF;
+      typedef impl_scalar_type IST;
+      typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
-      typedef device_type DD;
-      typedef typename View<GO*, DD>::HostMirror::device_type HD;
 
-      // The 'indices' and 'values' arrays come from the user, so we
-      // assume that they are host data, not device data.
-      const ST* const rawInputVals =
-        reinterpret_cast<const ST*> (values.getRawPtr ());
-      View<const ST*, HD, MemoryUnmanaged> inputValsK (rawInputVals,
-                                                       values.size ());
-      View<const GO*, HD, MemoryUnmanaged> inputIndsK (indices.getRawPtr (),
-                                                       indices.size ());
-      return this->template transformGlobalValues<BF, HD> (globalRow,
-                                                           inputIndsK,
-                                                           inputValsK,
-                                                           f, atomic);
+      const LO numInputEnt = static_cast<LO> (indices.size ());
+      if (static_cast<LO> (values.size ()) != numInputEnt) {
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+
+      const GO* const inputCols = indices.getRawPtr ();
+      const IST* const inputVals =
+        reinterpret_cast<const IST*> (values.getRawPtr ());
+      return this->transformGlobalValues (globalRow, numInputEnt, inputVals,
+                                          inputCols, f, atomic);
     }
 
     /// \brief Special case of insertGlobalValues for when globalRow
