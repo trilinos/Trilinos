@@ -14,31 +14,31 @@ namespace Tempus {
 
 template <typename Scalar>
 void
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
-setTransientModel(
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
+setAppModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me)
 {
   TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-    "Error - ResidualModelEvaluatorPairIMEX_Basic<Scalar>::setTransientModel\n"
+    "Error - WrapperModelEvaluatorPairIMEX_Basic<Scalar>::setAppModel\n"
     "  should not be used.  One should instead use setExplicitModel,\n"
-    "  setImplicitModel, or create a new ResidualModelEvaluatorPairIMEX.\n");
+    "  setImplicitModel, or create a new WrapperModelEvaluatorPairIMEX.\n");
 }
 
 template <typename Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
-getTransientModel() const
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
+getAppModel() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-    "Error - ResidualModelEvaluatorPairIMEX_Basic<Scalar>::getTransientModel\n"
+    "Error - WrapperModelEvaluatorPairIMEX_Basic<Scalar>::getAppModel\n"
     "  should not be used.  One should instead use getExplicitModel,\n"
-    "  getImplicitModel, or directly use this ResidualModelEvaluatorPairIMEX\n"
+    "  getImplicitModel, or directly use this WrapperModelEvaluatorPairIMEX\n"
     "  object.\n");
 }
 
 template <typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 get_x_space() const
 {
   return this->getImplicitModel()->get_x_space();
@@ -46,7 +46,7 @@ get_x_space() const
 
 template <typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 get_g_space(int i) const
 {
   return this->getImplicitModel()->get_g_space(i);
@@ -54,7 +54,7 @@ get_g_space(int i) const
 
 template <typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 get_p_space(int i) const
 {
   return this->getImplicitModel()->get_p_space(i);
@@ -62,7 +62,7 @@ get_p_space(int i) const
 
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 getNominalValues() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -76,7 +76,7 @@ getNominalValues() const
 
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 createInArgs() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -97,7 +97,7 @@ createInArgs() const
 
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -113,7 +113,7 @@ createOutArgsImpl() const
 
 template <typename Scalar>
 void
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 evalExplicitModel(
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X, Scalar time,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const
@@ -150,7 +150,7 @@ evalExplicitModel(
 
 template <typename Scalar>
 void
-ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 evalImplicitModel(
             const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
             const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
@@ -191,7 +191,7 @@ evalImplicitModel(
 }
 
 template <typename Scalar>
-void ResidualModelEvaluatorPairIMEX_Basic<Scalar>::
+void WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & outArgs) const
 {

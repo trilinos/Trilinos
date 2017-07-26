@@ -93,7 +93,7 @@ StepperNewmarkImplicitDForm<Scalar>::correctAcceleration(
 // StepperNewmarkImplicitDForm definitions:
 template <class Scalar>
 StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& transientModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList)
     : out_(Teuchos::VerboseObjectBase::getDefaultOStream()) {
 #ifdef VERBOSE_DEBUG_OUTPUT
@@ -104,33 +104,33 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
 
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->initialize();
 }
 
 template <class Scalar>
 void
 StepperNewmarkImplicitDForm<Scalar>::setModel(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& transientModel) {
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel) {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->validSecondOrderODE_DAE(transientModel);
-  if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
-  residualModel_ = Teuchos::rcp(new SecondOrderResidualModelEvaluator<Scalar>(
-      transientModel, "Newmark Implicit d-Form"));
-  inArgs_ = residualModel_->getNominalValues();
-  outArgs_ = residualModel_->createOutArgs();
+  this->validSecondOrderODE_DAE(appModel);
+  if (wrapperModel_ != Teuchos::null) wrapperModel_ = Teuchos::null;
+  wrapperModel_ = Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(
+      appModel, "Newmark Implicit d-Form"));
+  inArgs_ = wrapperModel_->getNominalValues();
+  outArgs_ = wrapperModel_->createOutArgs();
 }
 
 template <class Scalar>
 void
 StepperNewmarkImplicitDForm<Scalar>::setNonConstModel(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& transientModel) {
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& appModel) {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 /** \brief Set the solver to a pre-defined solver in the ParameterList.
@@ -296,11 +296,11 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
       *out_ << "\n*** a_init ***\n";
 #endif
 
-      residualModel_->initializeNewmark(
+      wrapperModel_->initializeNewmark(
           a_init, v_init, d_init, dt, time, beta_, gamma_);
 
       const Thyra::SolveStatus<double>
-      status = this->solveNonLinear(residualModel_, *solver_, d_init, inArgs_);
+      status = this->solveNonLinear(wrapperModel_, *solver_, d_init, inArgs_);
 
       if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED ) {
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -362,14 +362,14 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     *out_ << "\n*** v_pred ***\n";
 
 #endif
-    // inject d_pred, v_pred, a and other relevant data into residualModel_
-    residualModel_->initializeNewmark(
+    // inject d_pred, v_pred, a and other relevant data into wrapperModel_
+    wrapperModel_->initializeNewmark(
         a_old, v_pred, d_pred, dt, t, beta_, gamma_);
 
     // Solve for new displacement
     // IKT, 3/13/17: check how solveNonLinear works.
     const Thyra::SolveStatus<double> status =
-        this->solveNonLinear(residualModel_, *solver_, d_old);
+        this->solveNonLinear(wrapperModel_, *solver_, d_old);
 
     if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -444,7 +444,7 @@ StepperNewmarkImplicitDForm<Scalar>::describe(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   out << description() << "::describe:" << std::endl
-      << "residualModel_ = " << residualModel_->description() << std::endl;
+      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
 }
 
 template <class Scalar>

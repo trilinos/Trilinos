@@ -26,17 +26,17 @@ public:
 
   /// Constructor
   StepperNewmarkExplicitAForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return eODEModel_;}
+      getModel(){return appModel_;}
 
     virtual void setSolver(std::string solverName);
     virtual void setSolver(
@@ -107,7 +107,7 @@ protected:
 
   Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
   /// Explicit ODE ModelEvaluator
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > eODEModel_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;

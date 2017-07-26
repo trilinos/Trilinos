@@ -12,7 +12,7 @@
 #include "Tempus_RKButcherTableauBuilder.hpp"
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
-#include "Tempus_ResidualModelEvaluatorPairIMEX_Basic.hpp"
+#include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "NOX_Thyra.H"
@@ -27,13 +27,13 @@ template<class Scalar> class StepperFactory;
 // StepperIMEX_RK definitions:
 template<class Scalar>
 StepperIMEX_RK<Scalar>::StepperIMEX_RK(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
   this->setTableaus(pList, stepperType);
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->setSolver();
   this->initialize();
 }
@@ -235,41 +235,41 @@ void StepperIMEX_RK<Scalar>::setImplicitTableau(
 
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > nc_model =
-    Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar> > (transientModel);
-  Teuchos::RCP<ResidualModelEvaluatorPairIMEX<Scalar> > modelPairIMEX =
-    Teuchos::rcp_dynamic_cast<ResidualModelEvaluatorPairIMEX<Scalar> > (nc_model);
+    Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar> > (appModel);
+  Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > modelPairIMEX =
+    Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairIMEX<Scalar> > (nc_model);
 
   setModelPair(modelPairIMEX);
 }
 
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
-/** \brief Create ResidualModelPairIMEX from user-supplied ModelEvaluator pair
+/** \brief Create WrapperModelPairIMEX from user-supplied ModelEvaluator pair
  *  The user-supplied ME pair can contain any user-specific IMEX interactions
  *  between explicit and implicit MEs.
  */
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::setModelPair(
-  const Teuchos::RCP<ResidualModelEvaluatorPairIMEX<Scalar> > & modelPairIMEX)
+  const Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > & modelPairIMEX)
 {
   this->validExplicitODE    (modelPairIMEX->getExplicitModel());
   this->validImplicitODE_DAE(modelPairIMEX->getImplicitModel());
-  residualModelPairIMEX_ = modelPairIMEX;
+  wrapperModelPairIMEX_ = modelPairIMEX;
 
-  inArgs_  = residualModelPairIMEX_->getImplicitModel()->getNominalValues();
-  outArgs_ = residualModelPairIMEX_->getImplicitModel()->createOutArgs();
+  inArgs_  = wrapperModelPairIMEX_->getImplicitModel()->getNominalValues();
+  outArgs_ = wrapperModelPairIMEX_->getImplicitModel()->createOutArgs();
 }
 
-/** \brief Create ResidualModelPairIMEX from explicit/implicit ModelEvaluators.
- *  Use the supplied explicit/implicit MEs to create a ResidualModelPairIMEX
+/** \brief Create WrapperModelPairIMEX from explicit/implicit ModelEvaluators.
+ *  Use the supplied explicit/implicit MEs to create a WrapperModelPairIMEX
  *  with basic IMEX interactions between explicit and implicit MEs.
  */
 template<class Scalar>
@@ -279,8 +279,8 @@ void StepperIMEX_RK<Scalar>::setModelPair(
 {
   this->validExplicitODE    (explicitModel);
   this->validImplicitODE_DAE(implicitModel);
-  residualModelPairIMEX_ = Teuchos::rcp(
-    new ResidualModelEvaluatorPairIMEX_Basic<Scalar>(
+  wrapperModelPairIMEX_ = Teuchos::rcp(
+    new WrapperModelEvaluatorPairIMEX_Basic<Scalar>(
                                               explicitModel, implicitModel));
 }
 
@@ -364,17 +364,17 @@ void StepperIMEX_RK<Scalar>::initialize()
 {
   // Initialize the stage vectors
   const int numStages = explicitTableau_->numStages();
-  stageX_ = residualModelPairIMEX_->getNominalValues().get_x()->clone_v();
+  stageX_ = wrapperModelPairIMEX_->getNominalValues().get_x()->clone_v();
   stageF_.resize(numStages);
   stageG_.resize(numStages);
   for(int i=0; i < numStages; i++) {
-    stageF_[i] = Thyra::createMember(residualModelPairIMEX_->get_f_space());
-    stageG_[i] = Thyra::createMember(residualModelPairIMEX_->get_f_space());
+    stageF_[i] = Thyra::createMember(wrapperModelPairIMEX_->get_f_space());
+    stageG_[i] = Thyra::createMember(wrapperModelPairIMEX_->get_f_space());
     assign(stageF_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
     assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   }
 
-  xTilde_ = Thyra::createMember(residualModelPairIMEX_->get_x_space());
+  xTilde_ = Thyra::createMember(wrapperModelPairIMEX_->get_x_space());
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 }
 
@@ -451,7 +451,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
             inArgs_.set_x_dot(Teuchos::null);
           outArgs_.set_f(stageG_[i]);
 
-          residualModelPairIMEX_->getImplicitModel()->evalModel(inArgs_,
+          wrapperModelPairIMEX_->getImplicitModel()->evalModel(inArgs_,
                                                                 outArgs_);
           Thyra::Vt_S(stageG_[i].ptr(), -1.0);
         }
@@ -463,10 +463,10 @@ void StepperIMEX_RK<Scalar>::takeStep(
         // function used to compute time derivative
         auto computeXDot = xDotFunction(alpha,xTilde_.getConst());
 
-        residualModelPairIMEX_->initialize2(computeXDot, ts, tHats,
+        wrapperModelPairIMEX_->initialize2(computeXDot, ts, tHats,
                                             alpha, beta, dt, i);
 
-        sStatus = this->solveNonLinear(residualModelPairIMEX_,*solver_,stageX_);
+        sStatus = this->solveNonLinear(wrapperModelPairIMEX_,*solver_,stageX_);
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
         // Update contributions to stage values
@@ -474,7 +474,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
       }
 
       // Evaluate the ExplicitODE
-      residualModelPairIMEX_->evalExplicitModel(stageX_, tHats, stageF_[i]);
+      wrapperModelPairIMEX_->evalExplicitModel(stageX_, tHats, stageF_[i]);
       Thyra::Vt_S(stageF_[i].ptr(), -1.0);
     }
 
@@ -526,7 +526,7 @@ void StepperIMEX_RK<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out << description() << "::describe:" << std::endl
-      << "residualModelPairIMEX_ = " << residualModelPairIMEX_->description()
+      << "wrapperModelPairIMEX_ = " << wrapperModelPairIMEX_->description()
       << std::endl;
 }
 

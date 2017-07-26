@@ -9,7 +9,7 @@
 #ifndef Tempus_ModelEvaluatorIMEXPair_Basic_decl_hpp
 #define Tempus_ModelEvaluatorIMEXPair_Basic_decl_hpp
 
-#include "Tempus_ResidualModelEvaluatorPairIMEX.hpp"
+#include "Tempus_WrapperModelEvaluatorPairIMEX.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 
 
@@ -23,9 +23,9 @@ namespace Tempus {
  *  how to translate between implicit and explicit model in and out
  *  arguments, if needed.
  *
- *  All functions called on ResidualModelEvaluatorPairIMEX_Basic will call
+ *  All functions called on WrapperModelEvaluatorPairIMEX_Basic will call
  *  the same function on the implicit Model Evaluator.  This was selected
- *  because the ResidualModelEvaluatorPairIMEX_Basic will be passed to the
+ *  because the WrapperModelEvaluatorPairIMEX_Basic will be passed to the
  *  solvers which in turn make calls to solve the implicit ODE.
  *
  *  If the explicit version of the Model Evaluator functions are needed,
@@ -35,13 +35,13 @@ namespace Tempus {
  *  This was taken and modified from Drekar's IMEXModelPair class.
  */
 template <typename Scalar>
-class ResidualModelEvaluatorPairIMEX_Basic
-  : public Tempus::ResidualModelEvaluatorPairIMEX<Scalar>
+class WrapperModelEvaluatorPairIMEX_Basic
+  : public Tempus::WrapperModelEvaluatorPairIMEX<Scalar>
 {
 public:
 
   /// Constructor
-  ResidualModelEvaluatorPairIMEX_Basic(
+  WrapperModelEvaluatorPairIMEX_Basic(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel)
     : explicitModel_(explicitModel), implicitModel_(implicitModel)
@@ -49,20 +49,20 @@ public:
 
 
   /// Destructor
-  virtual ~ResidualModelEvaluatorPairIMEX_Basic(){}
+  virtual ~WrapperModelEvaluatorPairIMEX_Basic(){}
 
-  /// \name Overridden from Tempus::ResidualModelEvaluator
+  /// \name Overridden from Tempus::WrapperModelEvaluator
   //@{
-    virtual void setTransientModel(
+    virtual void setAppModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getTransientModel() const;
+      getAppModel() const;
     virtual void initialize(
       std::function<void (const Thyra::VectorBase<Scalar> &,
                                 Thyra::VectorBase<Scalar> &)> computeXDot,
       double t, double alpha, double beta)
     { TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-       "Error - ResidualModelEvaluatorPairIMEX_Basic::initialize is not "
+       "Error - WrapperModelEvaluatorPairIMEX_Basic::initialize is not "
        "implemented yet!\n"); }
   //@}
 
@@ -80,7 +80,7 @@ public:
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
       get_p_space(int i) const;
 
-    /// Set values to compute x dot and evaluate transient model.
+    /// Set values to compute x dot and evaluate application model.
     virtual void initialize2(
       std::function<void (const Thyra::VectorBase<Scalar> &,
                                 Thyra::VectorBase<Scalar> &)> computeXDot,
@@ -142,7 +142,7 @@ public:
 
 private:
   /// Default constructor - not allowed
-  ResidualModelEvaluatorPairIMEX_Basic(){}
+  WrapperModelEvaluatorPairIMEX_Basic(){}
 
 protected:
 

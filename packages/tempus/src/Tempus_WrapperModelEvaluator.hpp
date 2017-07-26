@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_ResidualModelEvaluator_hpp
-#define Tempus_ResidualModelEvaluator_hpp
+#ifndef Tempus_WrapperModelEvaluator_hpp
+#define Tempus_WrapperModelEvaluator_hpp
 
 #include <functional>
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
@@ -19,25 +19,25 @@ namespace Tempus {
  *  \f$ g(x) \f$, which is suitable for a nonlinear solve.  This is
  *  accomplished by computing the time derivative of the state, x_dot,
  *  (through Lambda functions), supplying the current time, and calling
- *  the application transient ModelEvaluator, \f$ f(\dot{x},x,t) \f$.
+ *  the application ModelEvaluator, \f$ f(\dot{x},x,t) \f$.
  *
  *  This class breaks the primary design principle for ModelEvaluators;
  *  it is not stateless!
  */
 template <typename Scalar>
-class ResidualModelEvaluator : public Thyra::StateFuncModelEvaluatorBase<Scalar>
+class WrapperModelEvaluator : public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
 
-  /// Set the underlying transient ModelEvaluator
-  virtual void setTransientModel(
+  /// Set the underlying application ModelEvaluator
+  virtual void setAppModel(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me) = 0;
 
-  /// Get the underlying transient model 'f'
+  /// Get the underlying application model 'f'
   virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-    getTransientModel() const = 0;
+    getAppModel() const = 0;
 
-  /// Set values to compute x dot and evaluate transient model.
+  /// Set values to compute x dot and evaluate application model.
   virtual void initialize(
     std::function<void (const Thyra::VectorBase<Scalar> &,
                               Thyra::VectorBase<Scalar> &)> computeXDot,
@@ -46,4 +46,4 @@ public:
 
 } // namespace Tempus
 
-#endif // Tempus_ResidualModelEvaluator_hpp
+#endif // Tempus_WrapperModelEvaluator_hpp
