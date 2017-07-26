@@ -62,7 +62,7 @@ using Teuchos::RCP;
 /*********************************************************/
 //Tpetra typedefs
 typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
+typedef Zoltan2::BasicUserTypes<double, int, int>           basic_user_t;
 
 
 
@@ -136,7 +136,7 @@ int main(int narg, char *arg[]) {
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
-  typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::PamgenMeshAdapter<basic_user_t> inputAdapter_t;
 
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t ia2(*CommT, "vertex");

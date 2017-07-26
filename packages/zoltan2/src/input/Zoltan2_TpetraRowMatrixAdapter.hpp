@@ -216,7 +216,7 @@ private:
   RCP<const User> matrix_;
   RCP<const Tpetra::Map<lno_t, gno_t, node_t> > rowMap_;
   RCP<const Tpetra::Map<lno_t, gno_t, node_t> > colMap_;
-  ArrayRCP<lno_t> offset_;
+  ArrayRCP<offset_t> offset_;
   ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
   ArrayRCP<scalar_t> values_;  // TODO:  the matrix here?  Would prefer views.
 

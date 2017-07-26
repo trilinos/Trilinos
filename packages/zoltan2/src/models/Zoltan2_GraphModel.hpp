@@ -206,7 +206,7 @@ public:
          will on return point to a StridedData object of weights.
        \return The number of ids in the edgeIds list.
    */
-  // Implied Vertex offset_t from getVertexList are used as indices to offsets
+  // Implied Vertex LNOs from getVertexList are used as indices to offsets
   // array.
   // Vertex GNOs are returned as neighbors in edgeIds.
 

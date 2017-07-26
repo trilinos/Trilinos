@@ -254,7 +254,7 @@ private:
 
   RCP<const User> graph_;
 
-  ArrayRCP<const lno_t> offs_;
+  ArrayRCP<const offset_t> offs_;
   ArrayRCP<const gno_t> adjids_;
 
   int nWeightsPerVertex_;
@@ -295,7 +295,7 @@ template <typename User, typename UserCoord>
   // because edge Ids are not usually stored in vertex id order.
 
   size_t n = nvtx + 1;
-  lno_t *offs = new lno_t [n];
+  offset_t *offs = new offset_t [n];
 
   if (!offs)
   {
@@ -323,7 +323,7 @@ template <typename User, typename UserCoord>
   for (size_t v=0; v < nvtx; v++){
     graph_->getLocalRowCopy(v, nbors(), nedges);  // Diff from CrsGraph
     offs[v+1] = offs[v] + nedges;
-    for (lno_t e=offs[v], i=0; e < offs[v+1]; e++) {
+    for (offset_t e=offs[v], i=0; e < offs[v+1]; e++) {
         adjids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
     }
   }
