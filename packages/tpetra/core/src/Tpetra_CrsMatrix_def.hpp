@@ -2511,6 +2511,114 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  transformGlobalValues (impl_scalar_type rowVals[],
+                         const crs_graph_type& graph,
+                         const RowInfo& rowInfo,
+                         const GlobalOrdinal inds[],
+                         const impl_scalar_type newVals[],
+                         const LocalOrdinal numElts,
+                         std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
+                         const bool atomic) const
+  {
+    typedef impl_scalar_type ST;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+
+    //if (newVals.dimension_0 () != inds.dimension_0 ()) {
+    // The sizes of the input arrays must match.
+    //return Tpetra::Details::OrdinalTraits<LO>::invalid ();
+    //}
+    //const LO numElts = static_cast<LO> (inds.dimension_0 ());
+    const bool sorted = graph.isSorted ();
+
+    LO numValid = 0; // number of valid input column indices
+    size_t hint = 0; // Guess for the current index k into rowVals
+
+    if (graph.isGloballyIndexed ()) {
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      auto colInds = graph.getGlobalKokkosRowView (rowInfo);
+
+      for (LO j = 0; j < numElts; ++j) {
+        const GO gblColInd = inds[j];
+        const size_t offset =
+          KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                       gblColInd, hint, sorted);
+        if (offset != rowInfo.numEntries) {
+          if (atomic) {
+            // NOTE (mfh 30 Nov 2015) The commented-out code is
+            // wrong because another thread may have changed
+            // rowVals[offset] between those two lines of code.
+            //
+            //const ST newVal = f (rowVals[offset], newVals[j]);
+            //Kokkos::atomic_assign (&rowVals[offset], newVal);
+
+            volatile ST* const dest = &rowVals[offset];
+            (void) atomic_binary_function_update (dest, newVals[j], f);
+          }
+          else {
+            // use binary function f
+            rowVals[offset] = f (rowVals[offset], newVals[j]);
+          }
+          hint = offset + 1;
+          ++numValid;
+        }
+      }
+    }
+    else if (graph.isLocallyIndexed ()) {
+      // NOTE (mfh 26 Nov 2015) Dereferencing an RCP or reading its
+      // pointer does NOT change its reference count.  Thus, this
+      // code is still thread safe.
+      if (graph.colMap_.is_null ()) {
+        // NO input column indices are valid in this case.  Either the
+        // column Map hasn't been set yet (so local indices don't
+        // exist yet), or the calling process owns no graph entries.
+        return numValid;
+      }
+      const map_type& colMap = * (graph.colMap_);
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      auto colInds = graph.getLocalKokkosRowView (rowInfo);
+
+      const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+      for (LO j = 0; j < numElts; ++j) {
+        const LO lclColInd = colMap.getLocalElement (inds[j]);
+        if (lclColInd != LINV) {
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         lclColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
+            if (atomic) {
+              // NOTE (mfh 30 Nov 2015) The commented-out code is
+              // wrong because another thread may have changed
+              // rowVals[offset] between those two lines of code.
+              //
+              //const ST newVal = f (rowVals[offset], newVals[j]);
+              //Kokkos::atomic_assign (&rowVals[offset], newVal);
+
+              volatile ST* const dest = &rowVals[offset];
+              (void) atomic_binary_function_update (dest, newVals[j], f);
+            }
+            else {
+              // use binary function f
+              rowVals[offset] = f (rowVals[offset], newVals[j]);
+            }
+            hint = offset + 1;
+            numValid++;
+          }
+        }
+      }
+    }
+    // If the graph is neither locally nor globally indexed on the
+    // calling process, that means the calling process has no graph
+    // entries.  Thus, none of the input column indices are valid.
+
+    return numValid;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   sumIntoLocalValues (const LocalOrdinal localRow,
                       const Teuchos::ArrayView<const LocalOrdinal>& indices,
                       const Teuchos::ArrayView<const Scalar>& values,
