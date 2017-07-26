@@ -394,7 +394,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   // Create an exporter between the two maps
   rcp_export_t idExporter = Teuchos::rcp(new export_t(idMap, oto_idMap));
 
-  // TODO this mode handling is temp - will need to develop
   switch(mode) {
     case Update_Mode::Replace:
       oto_idVec->doExport(*idVec, *idExporter, Tpetra::REPLACE);
@@ -403,7 +402,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
       oto_idVec->doExport(*idVec, *idExporter, Tpetra::ADD);
       break;
     case Update_Mode::Aggregate:
-      throw std::logic_error("Tpetra mode wont' support Aggregate.");
+      throw std::logic_error("Tpetra mode won't support Aggregate.");
       break;
   }
 #else
@@ -724,7 +723,11 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
             #endif
             break;
           case Update_Mode::Aggregate:
-            throw std::logic_error("Did not refactor relic mode for Aggregate.");
+            #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
+              throw std::logic_error("TODO - implement aggregate for Relic.");
+            #else
+              throw std::logic_error("Aggregate doesn't have meaning for single type.");
+            #endif
             break;
         }
       }
@@ -736,55 +739,60 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
       if (user) {
         #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
           user_val_t * pRead = (user_val_t*)(user);
-          user_val_t readValue = *pRead;
+          size_t read_array_length = static_cast<size_t>(*pRead);
         #endif
         switch(mode) {
           case Update_Mode::Replace:
             #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-              // printf( "update local reading size: %d ", *pRead );
-              if(node.userData.size() != static_cast<size_t>(readValue)) {
-                throw std::logic_error("The data lengths are not the same size");
-              }
+              node.userData.resize(read_array_length); // change to new
               for(size_t i = 0; i < node.userData.size(); ++i) {
                 ++pRead;
-                (node.userData)[i] = *pRead;
-                // printf( "%d ", *pRead );
+                node.userData[i] = *pRead;
               }
-            // printf( "\n" );
             #else
               node.userData = *user;
             #endif
             break;
           case Update_Mode::Add:
             #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-              // printf( "update local reading size: %d ", *pRead );
-              if(node.userData.size() != static_cast<size_t>(readValue)) {
+              if(node.userData.size() != static_cast<size_t>(read_array_length)) {
                 throw std::logic_error("The data lengths are not the same size");
               }
               for(size_t i = 0; i < node.userData.size(); ++i) {
                 ++pRead;
-              node.userData[i] += *pRead;
-              // printf( "%d ", *pRead );
+                node.userData[i] += *pRead;
               }
-              // printf( "\n" );
             #else
               node.userData += *user;
             #endif
             break;
           case Update_Mode::Aggregate:
             #ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-              // printf( "update local reading size: %d ", *pRead );
-              if(node.userData.size() != static_cast<size_t>(readValue)) {
-                throw std::logic_error("The data lengths are not the same size");
+              // Add only unique elements
+              // Preserve ordering
+              // TODO: Make it faster... optimize
+              // First scan the new incoming data
+              for(size_t i = 0; i < read_array_length; ++i) {
+                ++pRead; // get the next incoming array element (*pRead)
+                if(node.userData.size() == 0 ||
+                  (*pRead) > node.userData[node.userData.size()-1]) {
+                  node.userData.push_back(*pRead); // add first element or at end
+                }
+                else {
+                  for(auto itr = node.userData.begin(); // scan final aggregated
+                    itr != node.userData.end(); ++itr) {
+                    if((*itr) == (*pRead)) { // do they match
+                      break; // break because it's already in there
+                    }
+                    else if((*itr) > (*pRead)) { // is scanned element larger?
+                      node.userData.insert(itr, (*pRead)); // preserve ordering
+                      break; // break because once we add it we are done
+                    }
+                  }
+                }
               }
-              for(size_t i = 0; i < node.userData.size(); ++i) {
-                ++pRead;
-              node.userData[i] += *pRead;
-              // printf( "%d ", *pRead );
-              }
-              // printf( "\n" );
             #else
-              throw std::logic_error("Did not refactor yet for Aggregate.");
+              throw std::logic_error("Aggregate doesn't have meaning for single type.");
             #endif
             break;
         }
@@ -1045,13 +1053,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     sum_rmsg_sizes_resized += find_rmsg_size_resized;
   }
 
-  // TODO - This step should perhaps be merged in the above loop
-  // First we had rbuff with equal find_msg_size for each element
-  // That was sufficient to collect the array lengths
-  // Now we make a new rbuff_resized which can handle all the individual
-  // elements and copy over the other parts of the message
-  // Then we call find_local again, but this time with flag set so it will
-  // actually fill all the array values.
 #ifdef TEMP_USED_FIXED_SIZE // Not array
   std::vector<char> rbuff_resized = rbuff;
 #else
@@ -1073,13 +1074,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   for (int i = 0; i < nrec; i++) {
     // TODO: Fix cast
     msg_t *ptr = (msg_t*)(&(rbuff_resized[track_offset_resized]));
-
     // TODO: Fix casts
     user_t * puser = (user_t*)(ptr->adjData + 1);
-
-    // access our local database and determine the length of the array
-    // fill the message and track the new resized values we will use
-    // This is going to collect the actual array values
     err = find_local(ptr->adjData, NULL, // (lid_t*)ptr->adjData,
       puser, &ptr->partition, &ptr->proc, true);
     track_offset_resized += rmsg_sizes_resized[i];
@@ -1283,7 +1279,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
     throw std::logic_error("GID not found");
   }
 
-  throw std::logic_error("find_local did not succeed");
+//  throw std::logic_error("find_local did not succeed");
+  return 0;
 }
 #endif
 
@@ -1451,7 +1448,6 @@ template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   const std::vector<gid_t>& gid)   /* Incoming list of GIDs to remove */
 {
-return 0;
   const char * yo = "Zoltan2_Directory::remove";
 
   if (debug_level > 4) {
