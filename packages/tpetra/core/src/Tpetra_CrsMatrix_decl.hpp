@@ -1424,6 +1424,40 @@ namespace Tpetra {
                           std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
                           const bool atomic = useAtomicUpdatesByDefault) const;
 
+    /// \brief Transform the given values using local indices.
+    ///
+    /// \param lclRow [in] Local index of the row in which to transform.
+    /// \param numInputEnt [in] Number of entries in inputVals and
+    ///   inputCols.
+    /// \param inputVals [in] Values to use for transforming the
+    ///   values.
+    /// \param inputCols [in] (Local) column indices, for which to
+    ///   transform the corresponding values.
+    /// \param f [in] A binary function used to transform rowVals.  It
+    ///   takes two <tt>const impl_scalar_type&</tt> arguments, and
+    ///   returns impl_scalar_type.
+    /// \param atomic [in] Whether to use atomic updates.
+    ///
+    /// This method transforms the values using the expression
+    /// \code
+    /// newVals[k] = f (rowVals[k], newVals[j]);
+    /// \endcode
+    /// where k is the local index corresponding to <tt>inds[j]</tt>.
+    /// It ignores invalid local column indices, but they are counted
+    /// in the return value.
+    ///
+    /// \return The number of valid local column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+    LocalOrdinal
+    transformLocalValues (const LocalOrdinal lclRow,
+                          const LocalOrdinal numInputEnt,
+                          const impl_scalar_type inputVals[],
+                          const LocalOrdinal inputCols[],
+                          std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
+                          const bool atomic = useAtomicUpdatesByDefault) const;
+
   public:
     /// \brief Transform CrsMatrix entries in place, using local
     ///   indices to select the entries in the row to transform.
@@ -1507,30 +1541,16 @@ namespace Tpetra {
                      "Second template parameter ImplScalarViewType must "
                      "contain values of type impl_scalar_type.");
       typedef LocalOrdinal LO;
-
-      if (! this->isFillActive () || this->staticGraph_.is_null ()) {
-        // Fill must be active and the "nonconst" graph must exist.
-        return Teuchos::OrdinalTraits<LO>::invalid ();
-      }
-      const crs_graph_type& graph = * (this->staticGraph_);
-
       const LO numInputEnt = inputInds.dimension_0 ();
       if (static_cast<LO> (inputVals.dimension_0 ()) != numInputEnt) {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
-
-      const RowInfo rowInfo = graph.getRowInfo (localRow);
-      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        // The calling process does not own this row, so it is not
-        // allowed to modify its values.
-        return static_cast<LO> (0);
-      }
-      auto curRowVals = this->getRowViewNonConst (rowInfo);
-      return this->transformLocalValues (curRowVals.ptr_on_device (),
-                                         graph, rowInfo,
-                                         inputInds.ptr_on_device (),
+      return this->transformLocalValues (localRow,
+                                         numInputEnt,
                                          inputVals.ptr_on_device (),
-                                         numInputEnt, f, atomic);
+                                         inputInds.ptr_on_device (),
+                                         f,
+                                         useAtomicUpdatesByDefault);
     }
 
     /// \brief Transform CrsMatrix entries in place, using global
