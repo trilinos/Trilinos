@@ -121,6 +121,11 @@ namespace Tacho {
       supernode_info_type_host _info;
 
       ///
+      /// bufpool # of superblocks
+      ///
+      ordinal_type _max_num_superblocks;
+
+      ///
       /// statistics
       ///
       struct {
@@ -240,12 +245,23 @@ namespace Tacho {
                          stree_ptr,
                          stree_children);
         track_alloc(_superpanel_buf.span()*sizeof(value_type));
+
+        ///
+        /// max number of superblocks
+        ///
+        _max_num_superblocks = 4;
       }
 
       inline
       void
-      setSerialThresholdSize(ordinal_type serial_thres_size) {
+      setSerialThresholdSize(const ordinal_type serial_thres_size) {
         _info.serial_thres_size = serial_thres_size;
+      }
+
+      inline
+      void
+      setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks) {
+        _max_num_superblocks = max_num_superblocks;
       }
 
       inline
@@ -430,7 +446,7 @@ namespace Tacho {
           
           const size_type
             //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            num_superblock  = min(host_exec_space::thread_pool_size(0), MaxNumberOfSuperblocks),
+            num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
           
           bufpool = memory_pool_type_host(memory_space(),
@@ -537,7 +553,7 @@ namespace Tacho {
             
             const size_type
               //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-              num_superblock  = min(host_exec_space::thread_pool_size(0), MaxNumberOfSuperblocks),
+              num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
               memory_capacity = num_superblock*superblock_size;
 
             bufpool = memory_pool_type_host(memory_space(),
@@ -636,7 +652,7 @@ namespace Tacho {
           
           const size_type
             //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            num_superblock  = min(host_exec_space::thread_pool_size(0), MaxNumberOfSuperblocks),
+            num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
           
           bufpool = memory_pool_type_host(memory_space(),

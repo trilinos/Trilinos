@@ -92,7 +92,7 @@ namespace Tacho {
 
               // allocation fails
               if (r_val) 
-                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
+                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
               else
                 _state = done;
             } else {
@@ -117,7 +117,7 @@ namespace Tacho {
             const ordinal_type r_val = factorize_internal(member, _s.n - _s.m, false);
             // allocation fails
             if (r_val) 
-              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
+              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
             else
               _state = done;
             break;

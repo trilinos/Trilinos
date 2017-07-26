@@ -57,6 +57,12 @@ namespace Tacho {
       throw x(msg);                                                     \
     }
 
+#if defined( KOKKOS_ENABLE_ASM ) && !defined( _WIN32 ) && !defined( __arm__ ) && !defined( __aarch64__ )
+#define KOKKOS_IMPL_PAUSE asm volatile("pause\n":::"memory")
+#else
+#define KOKKOS_IMPL_PAUSE
+#endif
+
     ///
     /// print execution spaces
     ///
@@ -82,8 +88,7 @@ namespace Tacho {
     /// label size used to identify object name
     ///
     enum : int { LabelSize = 64,
-                 MaxDependenceSize = 4,
-                 MaxNumberOfSuperblocks = 4};
+                 MaxDependenceSize = 4 };
 
     template<typename T>
     struct TypeTraits;
@@ -215,6 +220,43 @@ namespace Tacho {
       for (size_type i=0;i<bufsize;++i) buf[i] = 0;
 #endif
     } 
+    
+    template<size_t BufSize, typename SpaceType = Kokkos::DefaultExecutionSpace>
+    struct Flush {
+      typedef double value_type;
+      
+      // flush a large host buffer
+      Kokkos::View<value_type*,SpaceType> _buf;
+      Flush() : _buf("Flush::buf", BufSize/sizeof(double)) {
+        Kokkos::deep_copy(_buf, 1);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void init(value_type &update) {
+        update = 0;
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void join(volatile value_type &update,
+                const volatile value_type &input) {
+        update += input;
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const int i, value_type &update) const {
+        update += _buf[i];
+      }
+      
+      void run() {
+        double sum = 0;
+        Kokkos::parallel_reduce(Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
+        SpaceType::fence();
+        FILE *fp = fopen("/dev/null", "w");
+        fprintf(fp, "%f\n", sum);
+        fclose(fp);
+      }
+
+    };
 
     template<typename ValueType>
     struct Random;

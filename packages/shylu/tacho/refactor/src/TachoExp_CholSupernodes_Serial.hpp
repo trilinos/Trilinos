@@ -70,7 +70,8 @@ namespace Tacho {
              const size_type bufsize,
              /* */ void *buf) {
         typedef SupernodeInfoType supernode_info_type;
-        
+
+        typedef typename supernode_info_type::value_type value_type;
         typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
         typedef typename supernode_info_type::dense_block_type dense_block_type;
 
@@ -83,7 +84,42 @@ namespace Tacho {
           srcbeg  = info.sid_block_colidx(sbeg).second, 
           srcend  = info.sid_block_colidx(send).second, 
           srcsize = srcend - srcbeg;
+        
+        // short cut to direct update
+        if ((send - sbeg) == 1) {
+          const auto &s = info.supernodes(info.sid_block_colidx(sbeg).first);
+          const ordinal_type 
+            tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
+            tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
+            tgtsize = tgtend - tgtbeg;
+          
+          if (srcsize == tgtsize) {
+            const ordinal_type kend = srcsize*srcsize;
+            /* */ value_type *tgt = s.buf;
+            const value_type *src = (value_type*)ABR.data();
 
+            // lock
+            while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
+            Kokkos::store_fence();            
+
+            for (ordinal_type j=0;j<srcsize;++j) {
+              const value_type *__restrict__ ss = src + j*srcsize;
+              /* */ value_type *__restrict__ tt = tgt + j*srcsize;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+              for (ordinal_type i=0;i<(j+1);++i)
+                tt[i] += ss[i];
+            }
+
+            // unlock
+            s.lock = 0;
+            Kokkos::load_fence();
+              
+            return 0;
+          }
+        } 
+        
         const size_type s2tsize = srcsize*sizeof(ordinal_type);
         TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");        
 
@@ -118,11 +154,6 @@ namespace Tacho {
             ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
 
             // lock
-#if defined( KOKKOS_ENABLE_ASM ) && !defined( _WIN32 ) && !defined( __arm__ ) && !defined( __aarch64__ )
-#define KOKKOS_IMPL_PAUSE asm volatile("pause\n":::"memory")
-#else
-#define KOKKOS_IMPL_PAUSE
-#endif
             while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
             Kokkos::store_fence();            
 
