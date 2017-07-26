@@ -218,7 +218,7 @@ public:
     econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
     acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
     verbosity_ = Glist.get("Print Verbosity",0);
-    computeObj_ = Glist.get("Recompute Objective Function",true);
+    computeObj_ = Glist.get("Recompute Objective Function",false);
     // Initialize Line Search
     if (lineSearch_ == Teuchos::null) {
       lineSearchName_ = Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation"); 

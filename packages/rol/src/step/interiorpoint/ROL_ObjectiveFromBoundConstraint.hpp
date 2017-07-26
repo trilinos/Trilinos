@@ -311,7 +311,7 @@ public:
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    const Real zero(0), one(1), two(2), eight(8);
+    const Real one(1), two(2), eight(8);
 
     switch(btype_) {
       case BARRIER_LOGARITHM:
