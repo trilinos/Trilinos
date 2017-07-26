@@ -90,6 +90,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		Array<GlobalOrdinal> GetRegionalRowMap(GlobalOrdinal region_index);
 		Array<Array<GlobalOrdinal> > GetRegionalRowMaps(){return maps_.regional_maps_;};
 		Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >  GetRegionToAll(GlobalOrdinal);//used as a map for a RegionToAll node index
+		Array<std::tuple<int, Array<GlobalOrdinal> > > GetInterfaceNodes(){return interfaceNodes_;};
 	//}
 	//! @Printout methods
 		void printView();
@@ -116,6 +117,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		Array<std::tuple<int, Array<GlobalOrdinal> > > procs_per_region_; //lists of processes instantiated for each region
 
 		Array<std::tuple<int, Array<GlobalOrdinal> > > nodesToRegion_; //for each node it lists the regions it belongs to
+		Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes_; //for each node on the interface it lists the regions it belongs to
 
 		//Maps used for global and regional operators
 		Splitting_MapsInfo<Scalar, LocalOrdinal, GlobalOrdinal, Node> maps_;

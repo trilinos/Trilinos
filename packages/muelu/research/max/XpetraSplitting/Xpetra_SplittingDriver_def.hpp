@@ -127,7 +127,6 @@ namespace Xpetra{
 					procs_per_region_.push_back( tuple_aux );	
 				}
 			}
-			std::cout<<"proc_per_region.size(): "<<procs_per_region_.size()<<" , num_total_regions_: "<<num_total_regions_<<std::endl;
 			TEUCHOS_TEST_FOR_EXCEPTION( !( procs_per_region_.size()==num_total_regions_ ), Exceptions::RuntimeError, "Number of regions detected does not match with the initially declared one \n procs_per_region_ tracks "<<procs_per_region_.size()<<"regions whereas num_total_regions_ = "<<num_total_regions_<<"\n");
 		}
 		else if( tot_num_proc == num_total_regions_ )
@@ -183,6 +182,7 @@ namespace Xpetra{
 	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NodesToRegion()
 	{
 		nodesToRegion_.clear();
+		interfaceNodes_.clear();
 		Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > nodes_reordered;
 		nodes_reordered = nodes_;
 		std::sort(nodes_reordered.begin(), nodes_reordered.end(), compareNodes<GlobalOrdinal>);
@@ -217,6 +217,9 @@ namespace Xpetra{
 			std::sort(regions.begin(), regions.end());
 			new_tuple = std::make_tuple(current_node, regions);
 			nodesToRegion_.push_back(new_tuple);
+
+			if( regions.size()>1 )
+				interfaceNodes_.push_back(new_tuple);
 			
 			if( next_node_iterator == nodes_reordered.end() )
 				break;

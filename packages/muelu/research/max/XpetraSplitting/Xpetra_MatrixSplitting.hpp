@@ -66,6 +66,29 @@ class checkerAllToRegion {
 
 }; 
 
+
+//Definition of the predicate for the node_ structure.
+//Given a tuple made of node index and a specific region it belongs to,
+//this predicate returns true if the node has global index which coincides with the index specified in input.
+//This checker is specifically used only for nodes lying on the interface
+template<class GlobalOrdinal>
+class checkerInterfaceNodes { 
+ 
+	public:  
+
+		//Constructor
+		checkerInterfaceNodes( GlobalOrdinal node_index){node_index_ = node_index;};
+
+		//Unary Operator
+  		bool operator()(const std::tuple<int, Array<GlobalOrdinal> >  &node)  
+  		{ return (std::get<0>(node) == node_index_); }  
+
+	private:
+
+		GlobalOrdinal node_index_;
+
+}; 
+
 	/*!
 	@class Xpetra::MatrixSplitting class.
 	@brief Xpetra-specific matrix class.
@@ -94,6 +117,11 @@ class checkerAllToRegion {
 	typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
 	typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
+	//Xpetra structures must be covnerted into Tpetra specialized ones to construct an Ifpack2::OverlappingRowMatrix object
+	//Once the Ifpack2::OverlappingRowMatrix class is transferred into the Xpetra directory, the following 6 lines can be changed/removed
+	typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_crs_matrix;
+	typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_row_matrix;
+
 	public:
 
 		//! @name Constructor/Destructor Methods
@@ -113,6 +141,10 @@ class checkerAllToRegion {
 			Array<GlobalOrdinal> elementlist = driver_->GetGlobalRowMap();
 			num_total_elements_ = driver_->GetNumGlobalElements();
 			num_total_regions_ = driver_->GetNumTotalRegions();
+
+			regional_matrix_initialized_.clear();
+			for( int i = 0; i<num_total_regions_; ++i )
+				regional_matrix_initialized_.push_back(false);
 
 			//Create Xpetra map for global stiffness matrix
 			RCP<const Xpetra::Map<int,GlobalOrdinal,Node> > xpetraMap;
@@ -397,7 +429,7 @@ class checkerAllToRegion {
 		  globalMatrixData_->leftScale(x);
 		}
 
-		//! Right scale matrix using the given vector entries
+		//! Neighbor2 scale matrix using the given vector entries
 		void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
 		  globalMatrixData_->rightScale(x);
 		}
@@ -582,16 +614,25 @@ class checkerAllToRegion {
 			RCP<Matrix> regional_matrix = regionalMatrixData_[region_idx];
 			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
 
-			//Xpetra structures must be covnerted into Tpetra specialized ones to construct an Ifpack2::OverlappingRowMatrix object
-			//Once the Ifpack2::OverlappingRowMatrix class is transferred into the Xpetra directory, the following 6 lines can be changed/removed
-			typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_crs_matrix;
-			typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_row_matrix;
 			RCP<tpetra_crs_matrix > tpetraGlobalMatrix = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(globalMatrixData_);
-			Ifpack2::OverlappingRowMatrix<tpetra_row_matrix> enlargedMatrix(tpetraGlobalMatrix, 1);
+			Ifpack2::OverlappingRowMatrix<tpetra_row_matrix> enlargedMatrix(tpetraGlobalMatrix, 2);
+
+			regional_matrix->resumeFill();
+			InitializeRegionalMatrices( region_idx, regional_matrix, enlargedMatrix );
+			RegionalCollapse( region_idx, regional_matrix, enlargedMatrix );
+			regional_matrix->fillComplete();
+		};
+		// @}
+
+
+		void InitializeRegionalMatrices(GlobalOrdinal region_idx, RCP<Matrix>& regional_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
+		{
+			TEUCHOS_TEST_FOR_EXCEPTION( regional_matrix_initialized_[region_idx], Exceptions::RuntimeError, "Surrogate regional stiffness matrices are already initialized by chopping the global stiffness matrix \n");
+
+			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
 
 			//THIS IS THE CORE OF THE PROBLEM WHERE ONE NEEDS TO POPULATE THE REGIONAL MATRICES BY ACCESSING ENTRIES OF THE GLOBAL MATRIX
 			//
-			regional_matrix -> resumeFill();
       			ArrayView<const GlobalOrdinal> MyRegionalElements =regional_matrix->getRowMap()->getNodeElementList();
  			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionalElements.begin(); iter!=MyRegionalElements.end(); ++iter )	
 			{
@@ -627,9 +668,355 @@ class checkerAllToRegion {
 				ArrayView<Scalar> regional_vals(regional_vals_vector);
 				regional_matrix -> insertGlobalValues( *iter,regional_inds,regional_vals );
 			}
-			regional_matrix -> fillComplete();
-		};
-		// @}
+			regional_matrix_initialized_[region_idx] = true;
+		}
+
+
+		void RegionalCollapse(GlobalOrdinal region_idx, RCP<Matrix>& regional_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
+		{
+			TEUCHOS_TEST_FOR_EXCEPTION( !regional_matrix_initialized_[region_idx], Exceptions::RuntimeError, "The global stiffness matrix must be chopped into surrogate regional matrices before collapsing \n");
+			TEUCHOS_TEST_FOR_EXCEPTION( driver_->num_regional_nodes_[region_idx]!=regionalMatrixData_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of regional nodes in region "<<region_idx+1<<" does not coincide with the value returned by regionalMatrixData_["<<region_idx+1<<"]->getGlobalNumRows() \n");
+
+			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
+
+			//This portion of the code assumes that the number of regional nodes is the same on each direction of the domain 
+			//Foir a 2D problem we have then nx = ny = sqrt( num_regional_ndoes_ )
+			GlobalOrdinal n;
+			GlobalOrdinal nx;
+			GlobalOrdinal ny;
+
+			n = driver_->num_regional_nodes_[region_idx];
+			nx = std::sqrt(n);
+			ny = nx;
+			TEUCHOS_TEST_FOR_EXCEPTION( static_cast<double>( nx - std::floor(static_cast<double>( std::sqrt(static_cast<double>(n)) )))!=0.0 , Exceptions::RuntimeError, "The code assumes that the regions are 2D and that the number of regional nodes is the same on each direction of the domain \n");
+
+			//interfaceNodes contains nodes on an interface between any regions
+			Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes = driver_->GetInterfaceNodes();	
+
+			ArrayView<const GlobalOrdinal> MyRegionalElements =regional_matrix->getRowMap()->getNodeElementList();
+ 			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionalElements.begin(); iter!=MyRegionalElements.end(); ++iter )	
+			{
+			
+				//Nodes are saved in data structures with 1 as base index
+				GlobalOrdinal regional_node_idx	= *iter+1;
+				checkerRegionToAll<GlobalOrdinal> unaryPredicate(regional_node_idx);
+				typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator;
+				global_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicate);
+				TEUCHOS_TEST_FOR_EXCEPTION( global_iterator==regionToAll.end(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with regional index: "<<regional_node_idx<<" is not in regionToAll["<<region_idx<<"]"<<"\n" );
+
+				GlobalOrdinal global_node_idx = std::get<1>( *global_iterator );
+				checkerInterfaceNodes<GlobalOrdinal> unaryPredicate2( global_node_idx );
+				typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator interface_iterator;
+				interface_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal, Array<GlobalOrdinal> > >::iterator, checkerInterfaceNodes<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicate2);
+
+				//Here we assuming that a specific labeling choice is adopted region wise and we use it to distinguish coarse node from fine nodes
+				bool coarse_point = false;
+				if( regional_node_idx%3==1 )
+					coarse_point = true;
+
+				GlobalOrdinal regional_node_idx_neighbor1 = 0;
+				GlobalOrdinal regional_node_idx_neighbor2 = 0;
+	
+				//Horizontal-Vertical Collapse
+				if( interface_iterator!=interfaceNodes.end() && regional_node_idx>ny && regional_node_idx<=(nx-1)*ny && !coarse_point )
+				{
+					regional_node_idx_neighbor1 = regional_node_idx-ny;
+					regional_node_idx_neighbor2 = regional_node_idx+ny;	
+				}
+				else if( interface_iterator!=interfaceNodes.end() && regional_node_idx%ny>1 && !coarse_point )
+				{
+					regional_node_idx_neighbor1 = regional_node_idx-1;
+					regional_node_idx_neighbor2 = regional_node_idx+1;	
+				}
+
+				if( regional_node_idx_neighbor1!=0 && regional_node_idx_neighbor2!=0 )					
+				{
+					//Computation of global index for neighbor1 node
+					checkerRegionToAll<GlobalOrdinal> unaryPredicateLeft(regional_node_idx_neighbor1);
+					typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator_neighbor1;
+					global_iterator_neighbor1 = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicateLeft);
+
+					//Computation of global index for neighbor2 node
+					checkerRegionToAll<GlobalOrdinal> unaryPredicateRight(regional_node_idx_neighbor2);
+					typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator_neighbor2;
+					global_iterator_neighbor2 = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicateRight);
+
+					TEUCHOS_TEST_FOR_EXCEPTION( global_iterator_neighbor1 == regionToAll.end() || global_iterator_neighbor2 == regionToAll.end(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with regional index: "<<regional_node_idx<<" lies on the interface between regions: "<<std::get<1>(*interface_iterator)<<" BUT has globally mislabeled neighbouring nodes missing from regionToAll \n" );
+
+					//Check to see if neighbor1 node lies on a coarse line
+					GlobalOrdinal global_node_idx_neighbor1 = std::get<1>( *global_iterator_neighbor1 );
+					checkerInterfaceNodes<GlobalOrdinal> unaryPredicate2neighbor1( global_node_idx_neighbor1 );
+					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator interface_iterator_neighbor1;
+					interface_iterator_neighbor1 = std::find_if<typename Array< std::tuple< GlobalOrdinal, Array<GlobalOrdinal> > >::iterator, checkerInterfaceNodes<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicate2neighbor1);
+
+					//Check to see if neighbor2 node lies on a coarse line
+					GlobalOrdinal global_node_idx_neighbor2 = std::get<1>( *global_iterator_neighbor2 );
+					checkerInterfaceNodes<GlobalOrdinal> unaryPredicate2neighbor2( global_node_idx_neighbor2 );
+					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator interface_iterator_neighbor2;
+					interface_iterator_neighbor2 = std::find_if<typename Array< std::tuple< GlobalOrdinal, Array<GlobalOrdinal> > >::iterator, checkerInterfaceNodes<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicate2neighbor2);
+
+					//I apply the collapse only if the current node is a fine node which lies on a coarse line
+					//This means that the neighbor1 node and neighbor2 node must both lie on the coarse line as well
+					if( interface_iterator_neighbor1!=interfaceNodes.end() && interface_iterator_neighbor2!=interfaceNodes.end() )
+					{
+
+						//For each fine node on a horixontal coarse line on the interface, I extract the rows from the global matrix
+						LocalOrdinal node_idx = enlargedMatrix.getRowMap()->getLocalElement(global_node_idx-1);
+						LocalOrdinal node_idx_neighbor1 = enlargedMatrix.getRowMap()->getLocalElement(global_node_idx_neighbor1-1);
+						LocalOrdinal node_idx_neighbor2 = enlargedMatrix.getRowMap()->getLocalElement(global_node_idx_neighbor2-1);
+						ArrayView<const LocalOrdinal> inds;
+						ArrayView<const Scalar> vals;
+						enlargedMatrix.getLocalRowView( node_idx, inds, vals );
+						ArrayView<const LocalOrdinal> inds_neighbor1;
+						ArrayView<const Scalar> vals_neighbor1;
+						enlargedMatrix.getLocalRowView( node_idx_neighbor1, inds_neighbor1, vals_neighbor1 );
+						ArrayView<const LocalOrdinal> inds_neighbor2;
+						ArrayView<const Scalar> vals_neighbor2;
+						enlargedMatrix.getLocalRowView( node_idx_neighbor2, inds_neighbor2, vals_neighbor2 );
+
+						std::vector<LocalOrdinal> inds_vector = createVector(inds);
+						std::vector<LocalOrdinal> inds_neighbor1_vector = createVector(inds_neighbor1);
+						std::vector<LocalOrdinal> inds_neighbor2_vector = createVector(inds_neighbor2);
+
+						std::vector<GlobalOrdinal> global_inds_vector(0);
+						std::vector<GlobalOrdinal> global_inds_neighbor1_vector(0);
+						std::vector<GlobalOrdinal> global_inds_neighbor2_vector(0);
+
+						for( typename std::vector<LocalOrdinal>::iterator iter_node = inds_vector.begin(); iter_node!=inds_vector.end(); ++iter_node )
+							global_inds_vector.push_back( enlargedMatrix.getRowMap()->getGlobalElement(*iter_node) );
+						std::sort( global_inds_vector.begin(), global_inds_vector.end() );
+
+						for( typename std::vector<LocalOrdinal>::iterator iter_node = inds_neighbor1_vector.begin(); iter_node!=inds_neighbor1_vector.end(); ++iter_node )
+							global_inds_neighbor1_vector.push_back( enlargedMatrix.getRowMap()->getGlobalElement(*iter_node) );
+
+						std::sort( global_inds_neighbor1_vector.begin(), global_inds_neighbor1_vector.end() );
+
+						for( typename std::vector<LocalOrdinal>::iterator iter_node = inds_neighbor2_vector.begin(); iter_node!=inds_neighbor2_vector.end(); ++iter_node )
+							global_inds_neighbor2_vector.push_back( enlargedMatrix.getRowMap()->getGlobalElement(*iter_node) );
+
+						std::sort( global_inds_neighbor2_vector.begin(), global_inds_neighbor2_vector.end() );
+
+						//IDENTIFICATION OF EXTERNAL NODES THROUGH GLOBAL INDICES STARTS HERE
+						std::vector<GlobalOrdinal> global_node_idx_neighbor1_extra;	
+						std::vector<GlobalOrdinal> global_node_idx_neighbor2_extra;
+						std::vector<GlobalOrdinal> global_node_idx_extra(global_inds_vector);
+
+						//The follolwing triple of vector is expected to EVENTUALLY contain only one entry: 
+						//the label of the external node with information to collapse close to neighbor1, neighbor2 and central node
+						std::vector<GlobalOrdinal> diff_neighbor1;
+						std::vector<GlobalOrdinal> diff_neighbor2;
+						std::vector<GlobalOrdinal> diff_center;
+
+						//Identification of external node from the side of neighbor1
+						{
+							//Compute the intersection between neoghbourhood of neighbor1 node and neighbourhood of central node
+							std::set_intersection(global_inds_vector.begin(), global_inds_vector.end(), global_inds_neighbor1_vector.begin(), global_inds_neighbor1_vector.end(), std::back_inserter(global_node_idx_neighbor1_extra));
+							for( typename std::vector<GlobalOrdinal>::iterator iter_node = global_node_idx_neighbor1_extra.begin(); iter_node!=global_node_idx_neighbor1_extra.end(); ++iter_node )
+							{
+								checkerAllToRegion<GlobalOrdinal> unaryPredicateExtra(*iter_node+1);
+								typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator regional_iterator_extra;
+								regional_iterator_extra = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerAllToRegion<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicateExtra);
+
+								//Invalidation of node indices for nodes belonging to the current region
+								if( regional_iterator_extra!=regionToAll.end() )
+									*iter_node = -1;		
+							}
+
+							//Removal of invalidated indices associated with nodes belonging to current region: (external nodes do not belong to this region)
+							global_node_idx_neighbor1_extra.erase(std::remove(global_node_idx_neighbor1_extra.begin(), global_node_idx_neighbor1_extra.end(), -1),global_node_idx_neighbor1_extra.end());
+
+							//External node from neighbor1 side does not belong to the neighborhood of neighbor2
+							std::set_difference(global_node_idx_neighbor1_extra.begin(), global_node_idx_neighbor1_extra.end(), global_inds_neighbor2_vector.begin(), global_inds_neighbor2_vector.end(), std::inserter(diff_neighbor1, diff_neighbor1.begin()));
+							TEUCHOS_TEST_FOR_EXCEPTION( diff_neighbor1.size()!=1 , Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<"Mislabeling of nodes obstructed the identification of the extra node: regional node "<< regional_node_idx<<" leads to diff_neighbor1.size()= "<<diff_neighbor1.size()<<" \n");
+						}
+
+						//Identification of external node from the side of neighbor2
+						{
+							//Compute the intersection between neighbourhood of neighbor2 node and neighbourhood of central node
+							std::set_intersection(global_inds_vector.begin(), global_inds_vector.end(), global_inds_neighbor2_vector.begin(), global_inds_neighbor2_vector.end(), std::back_inserter(global_node_idx_neighbor2_extra));
+
+							for( typename std::vector<GlobalOrdinal>::iterator iter_node = global_node_idx_neighbor2_extra.begin(); iter_node!=global_node_idx_neighbor2_extra.end(); ++iter_node )
+							{
+								checkerAllToRegion<GlobalOrdinal> unaryPredicateExtra(*iter_node+1);
+								typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator regional_iterator_extra;
+								regional_iterator_extra = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerAllToRegion<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicateExtra);
+
+								//Invalidation of node indices for nodes belonging to the current region
+								if( regional_iterator_extra!=regionToAll.end() )
+									*iter_node = -1;		
+							}
+
+							//Removal of invalidated indices associated with nodes belonging to current region: (external nodes do not belong to this region)
+							global_node_idx_neighbor2_extra.erase(std::remove(global_node_idx_neighbor2_extra.begin(), global_node_idx_neighbor2_extra.end(), -1),global_node_idx_neighbor2_extra.end());
+
+							//External node from neighbor2 side does not belong to the neighborhood of neighbor1
+							std::set_difference(global_node_idx_neighbor2_extra.begin(), global_node_idx_neighbor2_extra.end(), global_inds_neighbor1_vector.begin(), global_inds_neighbor1_vector.end(), std::inserter(diff_neighbor2, diff_neighbor2.begin()));
+							TEUCHOS_TEST_FOR_EXCEPTION( diff_neighbor2.size()!=1 , Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<"Mislabeling of nodes obstructed the identification of the extra node: regional node "<< regional_node_idx<<" leads to diff_neighbor2.size()= "<<diff_neighbor2.size()<<" \n");
+						}
+
+						//Identification of external node from the side of central node
+						{
+							for( typename std::vector<GlobalOrdinal>::iterator iter_node = global_node_idx_extra.begin(); iter_node!=global_node_idx_extra.end(); ++iter_node )
+							{
+								checkerAllToRegion<GlobalOrdinal> unaryPredicateExtra(*iter_node+1);
+								typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator regional_iterator_extra;
+								regional_iterator_extra = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerAllToRegion<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicateExtra);
+
+								//Invalidation of node indices for nodes belonging to the current region
+								if( regional_iterator_extra!=regionToAll.end() )
+									*iter_node = -1;		
+							}
+
+							//Removal of invalidated indices associated with nodes belonging to current region: (external nodes do not belong to this region)
+							global_node_idx_extra.erase(std::remove(global_node_idx_extra.begin(), global_node_idx_extra.end(), -1),global_node_idx_extra.end());
+							std::vector<GlobalOrdinal> diff_center_temp;
+
+							//At thie point global_node_idx_extra contains indices of all the three external nodes: two of these must be removed since they are already tracked
+							//External nodes from neighbors1's and neighbor2's side must be removed
+							std::set_difference(global_node_idx_extra.begin(), global_node_idx_extra.end(), diff_neighbor1.begin(), diff_neighbor1.end(), std::inserter(diff_center_temp, diff_center_temp.begin()));
+							std::set_difference(diff_center_temp.begin(), diff_center_temp.end(), diff_neighbor2.begin(), diff_neighbor2.end(), std::inserter(diff_center, diff_center.begin()));
+							TEUCHOS_TEST_FOR_EXCEPTION( diff_center.size()!=1 , Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<"Mislabeling of nodes obstructed the identification of the extra node: regional node "<< regional_node_idx<<" leads to diff_center.size()= "<<diff_center.size()<<" \n");
+						}
+
+						//Computation of local indices for central node and its neighbors
+						LocalOrdinal local_regional_node_idx = regional_matrix->getRowMap()->getLocalElement( regional_node_idx );
+						LocalOrdinal local_regional_node_idx_neighbor1 = regional_matrix->getRowMap()->getLocalElement( regional_node_idx_neighbor1 );
+						LocalOrdinal local_regional_node_idx_neighbor2 = regional_matrix->getRowMap()->getLocalElement( regional_node_idx_neighbor2 );
+
+						//Computation of local indices for external nodes
+						LocalOrdinal local_extra_central = enlargedMatrix.getRowMap()->getLocalElement( diff_center[0] );
+						LocalOrdinal local_extra_neighbor1 = enlargedMatrix.getRowMap()->getLocalElement( diff_neighbor1[0] );
+						LocalOrdinal local_extra_neighbor2 = enlargedMatrix.getRowMap()->getLocalElement( diff_neighbor2[0] );
+
+						ArrayView<const GlobalOrdinal> regional_row;
+						ArrayView<const GlobalOrdinal> regional_col;
+						ArrayView<const Scalar> regional_val;
+
+						//Extract Row view of the regional matrix before collapsing
+						if( regional_matrix -> isLocallyIndexed() )
+							regional_matrix -> getLocalRowView( local_regional_node_idx, regional_col, regional_val );
+						else
+							regional_matrix -> getGlobalRowView( regional_node_idx, regional_col, regional_val );
+
+						//Extract Row of overlapped global matrix to detect node with information to collapse
+						ArrayView<const GlobalOrdinal> external_row;
+						ArrayView<const GlobalOrdinal> external_col;
+						ArrayView<const Scalar> external_val;
+						enlargedMatrix.getLocalRowView( node_idx, external_col, external_val );
+
+						//neighbor1 collapse
+						{
+							Scalar initial_value = 0;				
+							for( typename ArrayView<const GlobalOrdinal>::iterator iter_view = regional_col.begin(); iter_view!=regional_col.end(); ++iter_view  )
+							{
+								if( regional_matrix -> isLocallyIndexed() )
+									if( *iter_view==local_regional_node_idx_neighbor1 )
+										initial_value = regional_val[iter_view - regional_col.begin()];
+								if( regional_matrix -> isGloballyIndexed() )
+									if( *iter_view==regional_node_idx_neighbor1 )
+										initial_value = regional_val[iter_view - regional_col.begin()];
+
+								if(initial_value!=0)
+									break;
+							}
+
+							Scalar external_value = 0;
+							for( typename ArrayView<const GlobalOrdinal>::iterator iter_view = external_col.begin(); iter_view!=external_col.end(); ++iter_view  )
+							{
+								if( *iter_view==local_extra_neighbor1 )
+									external_value = external_val[iter_view - external_col.begin()];
+
+								if(external_value!=0)
+									break;
+							}
+
+							Scalar new_value = external_value;// new matrix entry generated with the collapsing
+							std::vector<GlobalOrdinal> new_entry_ind;
+							std::vector<Scalar> new_entry_val;
+							new_entry_ind.push_back(regional_node_idx_neighbor1-1);
+							new_entry_val.push_back(new_value);
+					
+							//If a nonzero value is already stored in the specified position, the new values is SUMMED to the already existing one
+							//See description of insertGlobalValues(...)
+							regional_matrix -> insertGlobalValues( regional_node_idx-1, new_entry_ind, new_entry_val );
+						}
+						//neighbor2 collapse
+						{
+							Scalar initial_value = 0;				
+							for( typename ArrayView<const GlobalOrdinal>::iterator iter_view = regional_col.begin(); iter_view!=regional_col.end(); ++iter_view  )
+							{
+								if( regional_matrix -> isLocallyIndexed() )
+									if( *iter_view==local_regional_node_idx_neighbor2 )
+										initial_value = regional_val[iter_view - regional_col.begin()];
+								if( regional_matrix -> isGloballyIndexed() )
+									if( *iter_view==regional_node_idx_neighbor2 )
+										initial_value = regional_val[iter_view - regional_col.begin()];
+
+								if(initial_value!=0)
+									break;
+							}
+
+							Scalar external_value = 0;
+							for( typename ArrayView<const GlobalOrdinal>::iterator iter_view = external_col.begin(); iter_view!=external_col.end(); ++iter_view  )
+							{
+								if( *iter_view==local_extra_neighbor2 )
+									external_value = external_val[iter_view - external_col.begin()];
+
+								if(external_value!=0)
+									break;
+							}
+
+							Scalar new_value = external_value;// new matrix entry generated with the collapsing
+							std::vector<GlobalOrdinal> new_entry_ind;
+							std::vector<Scalar> new_entry_val;
+							new_entry_ind.push_back(regional_node_idx_neighbor2-1);
+							new_entry_val.push_back(new_value);
+
+							//If a nonzero value is already stored in the specified position, the new values is SUMMED to the already existing one
+							//See description of insertGlobalValues(...)
+							regional_matrix -> insertGlobalValues( regional_node_idx-1, new_entry_ind, new_entry_val );
+						}
+						//central node collapse
+						{
+							Scalar initial_value = 0;				
+							for( typename ArrayView<const GlobalOrdinal>::iterator iter_view = regional_col.begin(); iter_view!=regional_col.end(); ++iter_view  )
+							{
+								if( regional_matrix -> isLocallyIndexed() )
+									if( *iter_view==local_regional_node_idx )
+										initial_value = regional_val[iter_view - regional_col.begin()];
+								if( regional_matrix -> isGloballyIndexed() )
+									if( *iter_view==regional_node_idx )
+										initial_value = regional_val[iter_view - regional_col.begin()];
+
+								if(initial_value!=0)
+									break;
+							}
+
+							Scalar external_value = 0;
+							for( typename ArrayView<const GlobalOrdinal>::iterator iter_view = external_col.begin(); iter_view!=external_col.end(); ++iter_view  )
+							{
+								if( *iter_view==local_extra_central )
+									external_value = external_val[iter_view - external_col.begin()];
+
+								if(external_value!=0)
+									break;
+							}
+
+							Scalar new_value = external_value;// new matrix entry generated with the collapsing
+							std::vector<GlobalOrdinal> new_entry_ind;
+							std::vector<Scalar> new_entry_val;
+							new_entry_ind.push_back(regional_node_idx-1);
+							new_entry_val.push_back(new_value);
+
+							//If a nonzero value is already stored in the specified position, the new values is SUMMED to the already existing one
+							//See description of insertGlobalValues(...)
+							regional_matrix -> insertGlobalValues( regional_node_idx-1, new_entry_ind, new_entry_val );
+						}
+					}
+				}
+	
+			}					
+		}
 
 
 		//! @name Creation of Regional matrices
@@ -668,6 +1055,7 @@ class checkerAllToRegion {
 		// The boolean finalDefaultView_ keep track of the status of the default view (= already updated or not)
 		// See also MatrixSplitting::updateDefaultView()
 		mutable bool finalDefaultView_;
+		Array<bool> regional_matrix_initialized_;
 
 		RCP<const Teuchos::Comm<int> > comm_;
 
