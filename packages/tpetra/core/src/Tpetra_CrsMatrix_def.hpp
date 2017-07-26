@@ -2402,6 +2402,37 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  transformGlobalValues (const GlobalOrdinal gblRow,
+                         const LocalOrdinal numInputEnt,
+                         const impl_scalar_type inputVals[],
+                         const GlobalOrdinal inputCols[],
+                         std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
+                         const bool atomic) const
+  {
+    using Tpetra::Details::OrdinalTraits;
+    typedef LocalOrdinal LO;
+
+    if (! this->isFillActive () || this->staticGraph_.is_null ()) {
+      // Fill must be active and the "nonconst" graph must exist.
+      return OrdinalTraits<LO>::invalid ();
+    }
+    const crs_graph_type& graph = * (this->staticGraph_);
+    const RowInfo rowInfo = graph.getRowInfoFromGlobalRowIndex (gblRow);
+
+    if (rowInfo.localRow == OrdinalTraits<size_t>::invalid ()) {
+      // The calling process does not own this row, so it is not
+      // allowed to modify its values.
+      return static_cast<LO> (0);
+    }
+    auto curRowVals = this->getRowViewNonConst (rowInfo);
+    return this->transformGlobalValues (curRowVals.ptr_on_device (), graph,
+                                        rowInfo, inputCols, inputVals,
+                                        numInputEnt, f, atomic);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   transformLocalValues (impl_scalar_type rowVals[],
                         const crs_graph_type& graph,
                         const RowInfo& rowInfo,
