@@ -887,6 +887,26 @@ namespace Tpetra {
                        const Scalar vals[],
                        const LocalOrdinal cols[]);
 
+  private:
+    /// \brief Implementation detail of replaceGlobalValues.
+    ///
+    /// \param rowVals [in/out] On input: Values of the row of the
+    ///   sparse matrix to modify.  On output: The modified values.
+    /// \param graph [in] The matrix's graph.
+    /// \param rowInfo [in] Result of graph.getRowInfo on the index of
+    ///   the local row of the matrix to modify.
+    /// \param inds [in] Global column indices of that row to modify.
+    /// \param newVals [in] For each k, replace the value in rowVals
+    ///   corresponding to local column index inds[k] with newVals[k].
+    LocalOrdinal
+    replaceGlobalValuesImpl (impl_scalar_type rowVals[],
+                             const crs_graph_type& graph,
+                             const RowInfo& rowInfo,
+                             const GlobalOrdinal inds[],
+                             const impl_scalar_type newVals[],
+                             const LocalOrdinal numElts) const;
+
+  public:
     /// \brief Replace one or more entries' values, using global indices.
     ///
     /// \param globalRow [in] Global index of the row in which to
@@ -958,29 +978,15 @@ namespace Tpetra {
                        impl_scalar_type>::value,
                      "Second template parameter ImplScalarViewType must "
                      "contain values of type impl_scalar_type.");
-
       typedef LocalOrdinal LO;
-      typedef ImplScalarViewType ISVT;
-      typedef GlobalIndicesViewType GIVT;
-
-      if (! isFillActive () || staticGraph_.is_null ()) {
-        // Fill must be active and the graph must exist.
+      const LO numInputEnt = inputInds.dimension_0 ();
+      if (static_cast<LO> (inputVals.dimension_0 ()) != numInputEnt) {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
-      const RowInfo rowInfo = staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
-      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        // The input local row is invalid on the calling process,
-        // which means that the calling process summed 0 entries.
-        return static_cast<LO> (0);
-      }
-
-      auto curVals = this->getRowViewNonConst (rowInfo);
-      // output scalar view type
-      typedef typename std::decay<decltype (curVals)>::type OSVT;
-      return staticGraph_->template replaceGlobalValues<OSVT, GIVT, ISVT> (rowInfo,
-                                                                           curVals,
-                                                                           inputInds,
-                                                                           inputVals);
+      const Scalar* const inVals =
+        reinterpret_cast<const Scalar*> (inputVals.data ());
+      return this->replaceGlobalValues (globalRow, numInputEnt, inVals,
+                                        inputInds.data ());
     }
 
     /// \brief Backwards compatibility version of replaceGlobalValues
@@ -1111,7 +1117,7 @@ namespace Tpetra {
       const Scalar* const inVals =
         reinterpret_cast<const Scalar*> (inputVals.data ());
       return this->replaceLocalValues (localRow, numInputEnt,
-                                       inVals, inputInds);
+                                       inVals, inputInds.data ());
     }
 
     /// \brief Backwards compatibility version of replaceLocalValues

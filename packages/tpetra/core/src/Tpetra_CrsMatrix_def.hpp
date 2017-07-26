@@ -2281,30 +2281,98 @@ namespace Tpetra {
                                          inputCols, inVals, numEnt);
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  replaceGlobalValuesImpl (impl_scalar_type rowVals[],
+                           const crs_graph_type& graph,
+                           const RowInfo& rowInfo,
+                           const GlobalOrdinal inds[],
+                           const impl_scalar_type newVals[],
+                           const LocalOrdinal numElts) const
+  {
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+
+    const bool sorted = graph.isSorted ();
+
+    size_t hint = 0; // guess at the index's relative offset in the row
+    LO numValid = 0; // number of valid input column indices
+
+    // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
+    // accurately, it assumes that the host execution space can
+    // access data in all the Views.
+
+    if (graph.isLocallyIndexed ()) {
+      // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
+      // pointer does NOT change its reference count.  Thus, this
+      // code is still thread safe.
+      if (graph.colMap_.is_null ()) {
+        // NO input column indices are valid in this case, since if
+        // the column Map is null on the calling process, then the
+        // calling process owns no graph entries.
+        return numValid;
+      }
+      const map_type& colMap = * (graph.colMap_);
+
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      auto colInds = graph.getLocalKokkosRowView (rowInfo);
+      const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+      for (LO j = 0; j < numElts; ++j) {
+        const LO lclColInd = colMap.getLocalElement (inds[j]);
+        if (lclColInd != LINV) {
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         lclColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
+            rowVals[offset] = newVals[j];
+            hint = offset + 1;
+            numValid++;
+          }
+        }
+      }
+    }
+    else if (graph.isGloballyIndexed ()) {
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      auto colInds = graph.getGlobalKokkosRowView (rowInfo);
+
+      for (LO j = 0; j < numElts; ++j) {
+        const GO gblColInd = inds[j];
+        const size_t offset =
+          KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                       gblColInd, hint, sorted);
+        if (offset != rowInfo.numEntries) {
+          rowVals[offset] = newVals[j];
+          hint = offset + 1;
+          numValid++;
+        }
+      }
+    }
+    // If the graph is neither locally nor globally indexed on the
+    // calling process, that means the calling process has no graph
+    // entries.  Thus, none of the input column indices are valid.
+
+    return numValid;
+  }
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceGlobalValues (const GlobalOrdinal globalRow,
-                       const Teuchos::ArrayView<const GlobalOrdinal>& inputInds,
+                       const Teuchos::ArrayView<const GlobalOrdinal>& inputGblColInds,
                        const Teuchos::ArrayView<const Scalar>& inputVals) const
   {
-    using Kokkos::MemoryUnmanaged;
-    using Kokkos::View;
-    typedef impl_scalar_type IST;
-    typedef GlobalOrdinal GO;
-    typedef device_type DD;
-    typedef typename View<GO*, DD>::HostMirror::device_type HD;
-    // inputInds and inputVals come from the user, so they are host data.
-    typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
-    typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
+    typedef LocalOrdinal LO;
 
-    const IST* inputValsRaw =
-      reinterpret_cast<const IST*> (inputVals.getRawPtr ());
-    GIVT indsK (inputInds.getRawPtr (), inputInds.size ());
-    ISVT valsK (inputValsRaw, inputVals.size ());
-    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow,
-                                                           indsK,
-                                                           valsK);
+    const LO numInputEnt = static_cast<LO> (inputGblColInds.size ());
+    if (static_cast<LO> (inputVals.size ()) != numInputEnt) {
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    return this->replaceGlobalValues (globalRow, numInputEnt,
+                                      inputVals.getRawPtr (),
+                                      inputGblColInds.getRawPtr ());
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -2313,25 +2381,29 @@ namespace Tpetra {
   replaceGlobalValues (const GlobalOrdinal globalRow,
                        const LocalOrdinal numEnt,
                        const Scalar inputVals[],
-                       const GlobalOrdinal inputCols[]) const
+                       const GlobalOrdinal inputGblColInds[]) const
   {
-    using Kokkos::MemoryUnmanaged;
-    using Kokkos::View;
     typedef impl_scalar_type IST;
-    typedef GlobalOrdinal GO;
-    typedef device_type DD;
-    typedef typename View<GO*, DD>::HostMirror::device_type HD;
-    // inputInds and inputVals come from the user, so they are host data.
-    typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
-    typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
+    typedef LocalOrdinal LO;
 
-    GIVT indsK (inputCols, numEnt);
-    ISVT valsK (reinterpret_cast<const IST*> (inputVals), numEnt);
-    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow,
-                                                           indsK,
-                                                           valsK);
+    if (! this->isFillActive () || this->staticGraph_.is_null ()) {
+      // Fill must be active and the "nonconst" graph must exist.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    const crs_graph_type& graph = * (this->staticGraph_);
+
+    const RowInfo rowInfo = graph.getRowInfoFromGlobalRowIndex (globalRow);
+    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      // The input local row is invalid on the calling process,
+      // which means that the calling process summed 0 entries.
+      return static_cast<LO> (0);
+    }
+
+    auto curRowVals = this->getRowViewNonConst (rowInfo);
+    const IST* const inVals = reinterpret_cast<const IST*> (inputVals);
+    return this->replaceGlobalValuesImpl (curRowVals.data (), graph, rowInfo,
+                                          inputGblColInds, inVals, numEnt);
   }
-
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
