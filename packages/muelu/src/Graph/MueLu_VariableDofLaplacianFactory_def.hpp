@@ -217,7 +217,9 @@ namespace MueLu {
     Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
 
     LocalOrdinal oldBlockRow = 0;
-    LocalOrdinal blockRow, blockColumn;
+    LocalOrdinal blockRow = 0;
+    LocalOrdinal blockColumn = 0;
+
     size_t newNzs = 0;
     amalgRowPtr[0] = newNzs;
 
