@@ -1222,6 +1222,29 @@ namespace Tpetra {
                          const GlobalOrdinal cols[],
                          const bool atomic = useAtomicUpdatesByDefault);
 
+  private:
+    /// \brief Implementation detail of sumIntoLocalValues.
+    ///
+    /// \param rowVals [in/out] On input: Values of the row of the
+    ///   sparse matrix to modify.  On output: The modified values.
+    /// \param graph [in] The matrix's graph.
+    /// \param rowInfo [in] Result of graph.getRowInfo on the index of
+    ///   the local row of the matrix to modify.
+    /// \param inds [in] Local column indices of that row to modify.
+    /// \param newVals [in] For each k, increment the value in rowVals
+    ///   corresponding to local column index inds[k] by newVals[k].
+    /// \param atomic [in] Whether to use atomic updates (+=) when
+    ///   incrementing values.
+    LocalOrdinal
+    sumIntoLocalValuesImpl (impl_scalar_type rowVals[],
+                            const crs_graph_type& graph,
+                            const RowInfo& rowInfo,
+                            const LocalOrdinal inds[],
+                            const impl_scalar_type newVals[],
+                            const LocalOrdinal numElts,
+                            const bool atomic = useAtomicUpdatesByDefault) const;
+
+  public:
     /// \brief Sum into one or more sparse matrix entries, using local
     ///   row and column indices.
     ///
@@ -1294,30 +1317,16 @@ namespace Tpetra {
                        impl_scalar_type>::value,
                      "Second template parameter ImplScalarViewType must "
                      "contain values of type impl_scalar_type.");
-
       typedef LocalOrdinal LO;
-
-      if (! this->isFillActive () || this->staticGraph_.is_null ()) {
-        // Fill must be active and the graph must exist.
+      const LO numInputEnt = inputInds.dimension_0 ();
+      if (static_cast<LO> (inputVals.dimension_0 ()) != numInputEnt) {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
-
-      const RowInfo rowInfo = this->staticGraph_->getRowInfo (localRow);
-      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        // The input local row is invalid on the calling process,
-        // which means that the calling process summed 0 entries.
-        return static_cast<LO> (0);
-      }
-
-      auto curVals = this->getRowViewNonConst (rowInfo);
-      typedef typename std::remove_const<typename std::remove_reference<decltype (curVals)>::type>::type OSVT;
-      typedef typename UnmanagedView<LocalIndicesViewType>::type LIVT;
-      typedef typename UnmanagedView<ImplScalarViewType>::type ISVT;
-      return staticGraph_->template sumIntoLocalValues<OSVT, LIVT, ISVT> (rowInfo,
-                                                                          curVals,
-                                                                          inputInds,
-                                                                          inputVals,
-                                                                          atomic);
+      return this->sumIntoLocalValues (localRow,
+                                       numInputEnt,
+                                       reinterpret_cast<const Scalar*> (inputVals.data ()),
+                                       inputInds.data (),
+                                       atomic);
     }
 
     /// \brief Sum into one or more sparse matrix entries, using local
