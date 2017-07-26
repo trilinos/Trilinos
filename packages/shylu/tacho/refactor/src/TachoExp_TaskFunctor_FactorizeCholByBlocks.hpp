@@ -137,7 +137,7 @@ namespace Tacho {
 
             char *buf = (char*)_bufpool.allocate(bufsize);
             if (buf == NULL && bufsize) {
-              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);  
+              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);  
             } else {
               clear((char*)buf, matrix_of_blocks_bufsize);
               

@@ -92,7 +92,7 @@ namespace Tacho {
             if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
               const ordinal_type r_val = solve_internal(member, _s.max_decendant_schur_size, true);
               if (r_val) 
-                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
+                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
               else
                 _state = done; 
             } else {
@@ -116,7 +116,7 @@ namespace Tacho {
           case 1: {
             const ordinal_type r_val = solve_internal(member, _s.n - _s.m, false);
             if (r_val) 
-              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
+              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
             else
               _state = done; 
             break;
