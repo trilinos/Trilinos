@@ -1602,32 +1602,32 @@ namespace Tpetra {
                            BinaryFunction f,
                            const bool atomic = useAtomicUpdatesByDefault) const
     {
-      using Kokkos::MemoryUnmanaged;
-      using Kokkos::View;
       typedef impl_scalar_type ST;
-      typedef BinaryFunction BF;
-      typedef device_type DD;
-      typedef InputMemorySpace ID;
 
-      if (! isFillActive () || staticGraph_.is_null ()) {
+      if (inputInds.dimension_0 () != inputVals.dimension_0 ()) {
+        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+      }
+      const LocalOrdinal numInputEnt = inputInds.dimension_0 ();
+
+      if (! this->isFillActive () || this->staticGraph_.is_null ()) {
         // Fill must be active and the "nonconst" graph must exist.
         return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
       }
+      const crs_graph_type& graph = * (this->staticGraph_);
 
-      const RowInfo rowInfo =
-        staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
+      const RowInfo rowInfo = graph.getRowInfoFromGlobalRowIndex (globalRow);
       if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
         // The calling process does not own this row, so it is not
         // allowed to modify its values.
         return static_cast<LocalOrdinal> (0);
       }
-      auto curRowVals = this->getRowViewNonConst (rowInfo);
 
-      return staticGraph_->template transformGlobalValues<ST, BF, ID, DD> (rowInfo,
-                                                                           curRowVals,
-                                                                           inputInds,
-                                                                           inputVals,
-                                                                           f, atomic);
+      auto curRowVals = this->getRowViewNonConst (rowInfo);
+      return graph.template transformGlobalValues<ST> (curRowVals.data (),
+                                                       rowInfo,
+                                                       inputInds.data (),
+                                                       inputVals.data (),
+                                                       numInputEnt, f, atomic);
     }
 
     //! Set all matrix entries equal to \c alpha.
