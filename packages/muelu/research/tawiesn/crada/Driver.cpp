@@ -456,35 +456,27 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       // create map extractor
       Teuchos::Array<GlobalOrdinal> nonSpecialGids;
+      Teuchos::Array<GlobalOrdinal> specialGids;
       for (size_t i = 0; i < map->getNodeNumElements(); i++) {
         GlobalOrdinal gid = map->getGlobalElement(i);
         if (mySpecialMap->isNodeGlobalElement(gid) == false) {
           nonSpecialGids.push_back(gid);
+        } else {
+          specialGids.push_back(gid);
         }
       }
 
       std::cout << "non special gids: " << nonSpecialGids.size() << std::endl;
 
-      // TODO check special map
-      /*int numA = 0;
-      int numB = 0;
-      int numC = 0;
-      for (size_t t = 0; t < mySpecialMap->getNodeNumElements(); t++) {
-        GlobalOrdinal gid = mySpecialMap->getGlobalElement(t);
-        if(gid % 3 == 0) numA++;
-        if(gid % 3 == 1) numB++;
-        if(gid % 3 == 2) numC++;
-      }
-
-      std::cout << "A " << numA << " B " << numB << " C " << numC << std::endl;*/
-
       //MapFactory::Build (xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialGids(),0,comm);
       std::vector<size_t> strInfo(1,nPDE);
       RCP<const Map> myStridedNonSpecialMap = StridedMapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialGids(),0,strInfo,comm);
-      RCP<const Map> myStridedSpecialMap    = StridedMapFactory::Build(mySpecialMap, strInfo);
-      //std::cout << "map " << map->getMaxAllGlobalIndex() << "nonspecial " << myNonSpecialMap->getMaxAllGlobalIndex() << " " << mySpecialMap->getMaxAllGlobalIndex() << std::endl;
+      RCP<const Map> myStridedSpecialMap    = StridedMapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),specialGids()   ,0,strInfo,comm);
+      // RCP<const Map> myStridedSpecialMap    = StridedMapFactory::Build(mySpecialMap, strInfo);
+
+      //std::cout << "map " << map->getMaxAllGlobalIndex() << " nonspecial " << myStridedNonSpecialMap->getMinAllGlobalIndex() << " " << myStridedNonSpecialMap->getMaxAllGlobalIndex() << " (" << myStridedNonSpecialMap->getGlobalNumElements() << ") special " << mySpecialMap->getMinAllGlobalIndex() << " " << mySpecialMap->getMaxAllGlobalIndex() << "(" << myStridedSpecialMap->getGlobalNumElements() << ")" << std::endl;
       //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(myNonSpecialMap)->getEpetra_Map() << std::endl;
-      //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(mySpecialMap)->getEpetra_Map() << std::endl;
+      //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(myStridedSpecialMap)->getEpetra_Map() << std::endl;
 
 
       // We always build an Xpetra style map extractor with unique global ids
@@ -494,6 +486,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       xmaps.push_back(myStridedNonSpecialMap);
       xmaps.push_back(myStridedSpecialMap);
 
+      // Xpetra mode
       Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map,xmaps);
 
       // split null space vectors
