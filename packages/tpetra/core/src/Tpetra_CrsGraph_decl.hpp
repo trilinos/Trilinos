@@ -1529,11 +1529,7 @@ namespace Tpetra {
     // mfh 08 May 2017: I only restore "protected" here for backwards
     // compatibility.
   protected:
-
-    //! Sort the column indices in the given row.
-    void sortRowIndices (const RowInfo& rowinfo);
-
-    /// \brief Merge duplicate column indices in the given row.
+    /// \brief Sort and merge duplicate column indices in the given row.
     ///
     /// \pre The graph is locally indexed:
     ///   <tt>isGloballyIndexed() == false</tt>.
@@ -1541,8 +1537,9 @@ namespace Tpetra {
     ///   <tt>isStorageOptimized() == false</tt>
     ///
     /// \return The number of duplicate column indices eliminated from the row.
-    size_t mergeRowIndices (const RowInfo& rowInfo);
-
+    size_t sortAndMergeRowIndices (const RowInfo& rowInfo,
+                                   const bool sorted,
+                                   const bool merged);
     //@}
 
     /// Set the domain and range Maps, and invalidate the Import
