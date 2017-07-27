@@ -2221,7 +2221,7 @@ namespace Tpetra {
     using Kokkos::subview;
     using Kokkos::View;
     typedef LocalOrdinal LO;
-    const char* tfecfFuncName ("insertLocallIndicesImpl");
+    const char* tfecfFuncName ("insertLocallIndicesImpl: ");
 
     const RowInfo rowInfo = this->getRowInfo(myRow);
     const size_t numNewInds = indices.size();
@@ -2229,17 +2229,18 @@ namespace Tpetra {
     if (newNumEntries > rowInfo.allocSize) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         getProfileType() == StaticProfile, std::runtime_error,
-        ": new indices exceed statically allocated graph structure.");
+        "New indices exceed statically allocated graph structure.");
 
       // update allocation, doubling size to reduce number of reallocations
       size_t newAllocSize = 2*rowInfo.allocSize;
-      if (newAllocSize < newNumEntries)
+      if (newAllocSize < newNumEntries) {
         newAllocSize = newNumEntries;
-      lclInds2D_[myRow].resize(newAllocSize);
+      }
+      this->lclInds2D_[myRow].resize(newAllocSize);
     }
 
     // Store the new indices at the end of row myRow.
-    if (k_lclInds1D_.dimension_0 () != 0) {
+    if (this->k_lclInds1D_.dimension_0 () != 0) {
       typedef View<const LO*, execution_space, MemoryUnmanaged> input_view_type;
       typedef View<LO*, execution_space, MemoryUnmanaged> row_view_type;
 
@@ -2250,57 +2251,65 @@ namespace Tpetra {
       // directly, because that first creates a _managed_ subview,
       // then returns an unmanaged version of that.  That touches the
       // reference count, which costs performance in a measurable way.
-      row_view_type myInds = subview (row_view_type (k_lclInds1D_), rng);
+      row_view_type myInds = subview (row_view_type (this->k_lclInds1D_), rng);
       Kokkos::deep_copy (myInds, inputInds);
     }
     else {
       std::copy (indices.begin (), indices.end (),
-                 lclInds2D_[myRow].begin () + rowInfo.numEntries);
+                 this->lclInds2D_[myRow].begin () + rowInfo.numEntries);
     }
 
-    k_numRowEntries_(myRow) += numNewInds;
-    setLocallyModified ();
+    this->k_numRowEntries_(myRow) += numNewInds;
+    this->setLocallyModified ();
 #ifdef HAVE_TPETRA_DEBUG
     {
-      const size_t chkNewNumEntries = getNumEntriesInLocalRow (myRow);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        chkNewNumEntries != newNumEntries, std::logic_error,
-        ": Internal logic error. Please contact Tpetra team.");
+      const size_t chkNewNumEntries = this->getNumEntriesInLocalRow (myRow);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (chkNewNumEntries != newNumEntries, std::logic_error,
+         "getNumEntriesInLocalRow(" << myRow << ") = " << chkNewNumEntries
+         << " != newNumEntries = " << newNumEntries
+         << ".  Please report this bug to the Tpetra developers.");
     }
-#endif
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sortRowIndices (const RowInfo& rowInfo)
-  {
-    if (rowInfo.numEntries > 0) {
-      auto lclColInds = this->getLocalKokkosRowViewNonConst (rowInfo);
-      // FIXME (mfh 08 May 2017) This assumes CUDA UVM.
-      LocalOrdinal* const lclColIndsRaw = lclColInds.ptr_on_device ();
-      std::sort (lclColIndsRaw, lclColIndsRaw + rowInfo.numEntries);
-    }
+#endif // HAVE_TPETRA_DEBUG
   }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  mergeRowIndices (const RowInfo& rowInfo)
+  sortAndMergeRowIndices (const RowInfo& rowInfo,
+                          const bool sorted,
+                          const bool merged)
   {
-    auto lclColInds = this->getLocalKokkosRowViewNonConst (rowInfo);
+    const size_t origNumEnt = rowInfo.numEntries;
+    if (origNumEnt != Tpetra::Details::OrdinalTraits<size_t>::invalid () &&
+        origNumEnt != 0) {
+      auto lclColInds = this->getLocalKokkosRowViewNonConst (rowInfo);
 
-    // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
-    LocalOrdinal* const beg = lclColInds.ptr_on_device ();
-    LocalOrdinal* const end = beg + rowInfo.numEntries;
-    LocalOrdinal* const newend = std::unique (beg, end);
-    const size_t mergedEntries = newend - beg;
+      LocalOrdinal* const lclColIndsRaw = lclColInds.data ();
+      if (! sorted) {
+        // FIXME (mfh 08 May 2017) This assumes CUDA UVM.
+        std::sort (lclColIndsRaw, lclColIndsRaw + origNumEnt);
+      }
 
-    // NOTE (mfh 08 May 2017) This is a host View, so it does not assume UVM.
-    this->k_numRowEntries_(rowInfo.localRow) = mergedEntries;
-    return rowInfo.numEntries - mergedEntries;
+      if (! merged) {
+        LocalOrdinal* const beg = lclColIndsRaw;
+        LocalOrdinal* const end = beg + rowInfo.numEntries;
+        // FIXME (mfh 08 May 2017) This assumes CUDA UVM.
+        LocalOrdinal* const newend = std::unique (beg, end);
+        const size_t newNumEnt = newend - beg;
+
+        // NOTE (mfh 08 May 2017) This is a host View, so it does not assume UVM.
+        this->k_numRowEntries_(rowInfo.localRow) = newNumEnt;
+        return origNumEnt - newNumEnt; // the number of duplicates in the row
+      }
+      else {
+        return static_cast<size_t> (0); // assume no duplicates
+      }
+    }
+    else {
+      return static_cast<size_t> (0); // no entries in the row
+    }
   }
 
 
@@ -5054,12 +5063,7 @@ namespace Tpetra {
       Kokkos::parallel_reduce (range_type (0, lclNumRows),
         [this, sorted, merged] (const LO& lclRow, size_t& numDups) {
           const RowInfo rowInfo = this->getRowInfo (lclRow);
-          if (! sorted) {
-            this->sortRowIndices (rowInfo);
-          }
-          if (! merged) {
-            numDups += this->mergeRowIndices (rowInfo);
-          }
+          numDups += this->sortAndMergeRowIndices (rowInfo, sorted, merged);
         }, totalNumDups);
       this->indicesAreSorted_ = true; // we just sorted every row
       this->noRedundancies_ = true; // we just merged every row
