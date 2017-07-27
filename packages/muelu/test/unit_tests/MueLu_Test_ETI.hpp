@@ -60,7 +60,8 @@
 
 // This function serves to manage the ETI (or not) for tests that are *not* unit tests.  This
 // allows us to isolate this particular bit of functionality, rather than have it cut-and-paste
-// duplicated over half of the testing tree
+// duplicated over half of the testing tree.  See documentation at
+// https://github.com/muelu/Developer-Guide/wiki/Writing-a-non-unit-test.
 // TAW: 7/24/17 Please be aware of the fact that this routine only tests one enabled configuration
 //              either Epetra or Tpetra (depending on the user choice with --linAlgebra)
 //              It does NOT test all enabled configurations as the unit tests would do.
