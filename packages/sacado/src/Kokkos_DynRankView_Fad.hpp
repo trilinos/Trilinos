@@ -48,7 +48,7 @@ namespace Experimental {
 namespace Impl {
 
 template <>
-struct DynRankDimTraits<ViewSpecializeSacadoFad> {
+struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
 
   enum : size_t{unspecified = ~size_t(0)};
 
@@ -171,6 +171,11 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
   }
 
 };
+
+}}} // namespace Kokkos::Experimental::Impl
+
+namespace Kokkos {
+namespace Impl {
 
 template <unsigned> struct AssignDim7 {
   template <typename Dst>
@@ -377,7 +382,7 @@ template< class SrcTraits , class ... Args >
 struct ViewMapping
   < typename std::enable_if<(
       std::is_same< typename SrcTraits::specialize ,
-                    ViewSpecializeSacadoFad >::value
+                    Kokkos::Impl::ViewSpecializeSacadoFad >::value
       &&
       (
         std::is_same< typename SrcTraits::array_layout
@@ -387,7 +392,7 @@ struct ViewMapping
         std::is_same< typename SrcTraits::array_layout
                     , Kokkos::LayoutStride >::value
       ) 
-    ), DynRankSubviewTag >::type
+    ), Kokkos::Experimental::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
 {
@@ -415,13 +420,13 @@ private:
 
 public:
 
-  typedef Kokkos::Experimental::ViewTraits
+  typedef Kokkos::ViewTraits
     < data_type
     , array_layout
     , typename SrcTraits::device_type
     , typename SrcTraits::memory_traits > traits_type ;
 
-  typedef Kokkos::Experimental::View
+  typedef Kokkos::View
     < data_type
     , array_layout
     , typename SrcTraits::device_type
@@ -433,13 +438,13 @@ public:
 
     static_assert( Kokkos::Impl::is_memory_traits< MemoryTraits >::value , "" );
 
-    typedef Kokkos::Experimental::ViewTraits
+    typedef Kokkos::ViewTraits
       < data_type
       , array_layout
       , typename SrcTraits::device_type
       , MemoryTraits > traits_type ;
 
-    typedef Kokkos::Experimental::View
+    typedef Kokkos::View
       < data_type
       , array_layout
       , typename SrcTraits::device_type
@@ -687,13 +692,13 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
                 , ViewSpecializeSacadoFad >::value
-  ), ViewToDynRankViewTag >::type >
+  ), Kokkos::Experimental::Impl::ViewToDynRankViewTag >::type >
 {
 public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
@@ -760,9 +765,9 @@ public:
     }
 };
 
-} //end Impl
+}} //end Kokkos::Impl
 
-} //end Experimental
+namespace Kokkos {
 
 template <typename view_type>
 struct is_dynrankview_fad { static const bool value = false; };
@@ -775,9 +780,9 @@ struct is_dynrankview_fad< DynRankView<T,P...> > {
   typedef DynRankView<T,P...> view_type;
   static const bool value =
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+                  Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
+                  Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
 template <typename T, typename ... P>
@@ -785,7 +790,7 @@ struct is_dynrankview_fad_contiguous< DynRankView<T,P...> > {
   typedef DynRankView<T,P...> view_type;
   static const bool value =
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
+                  Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
 template <typename T, typename ... P>
@@ -805,9 +810,9 @@ void deep_copy(
   const typename Sacado::ScalarType< typename DynRankView<DT,DP...>::value_type >::type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+              , Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
+              , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -825,9 +830,9 @@ void deep_copy(
   const typename DynRankView<DT,DP...>::value_type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+              , Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
+              , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -845,14 +850,14 @@ void deep_copy
   , const SrcType & src
   , typename std::enable_if<(
   ( std::is_same< typename DstType::traits::specialize
-                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename DstType::traits::specialize
-                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
   ( std::is_same< typename SrcType::traits::specialize
-                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename SrcType::traits::specialize
-                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
   ( Kokkos::Experimental::is_dyn_rank_view<DstType>::value || Kokkos::Experimental::is_dyn_rank_view<SrcType
 >::value )
@@ -984,9 +989,9 @@ void deep_copy
 
 } //end Experimental
 
-using Kokkos::Experimental::deep_copy;
+using Kokkos::deep_copy;
 
-}
+} // end Kokkos
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 

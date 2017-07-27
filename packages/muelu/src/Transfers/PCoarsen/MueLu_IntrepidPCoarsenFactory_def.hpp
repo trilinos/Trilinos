@@ -286,7 +286,7 @@ void IntrepidGetP1NodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDe
     throw std::runtime_error("IntrepidPCoarsenFactory: Unknown element type");
 
   // Get coordinates of the hi_basis dof's
-  Kokkos::Experimental::resize(hi_DofCoords,hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
+  Kokkos::resize(hi_DofCoords,hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
   hi_basis->getDofCoords(hi_DofCoords);
 }
 #else
@@ -338,7 +338,7 @@ void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candida
 
    size_t numElem     = hi_elemToNode.dimension(0);
    size_t lo_nperel   = candidates.size();
-   Kokkos::Experimental::resize(lo_elemToHiRepresentativeNode,numElem, lo_nperel);
+   Kokkos::resize(lo_elemToHiRepresentativeNode,numElem, lo_nperel);
 
 
    for(size_t i=0; i<numElem; i++)
@@ -384,7 +384,7 @@ void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
   size_t numElem     = hi_elemToNode.dimension(0);
   size_t hi_numNodes = hi_nodeIsOwned.size();
   size_t lo_nperel = lo_elemToHiRepresentativeNode.dimension(1);
-  Kokkos::Experimental::resize(lo_elemToNode,numElem, lo_nperel);
+  Kokkos::resize(lo_elemToNode,numElem, lo_nperel);
 
   // Start by flagginc the representative nodes
   std::vector<bool> is_low_order(hi_numNodes,false);
@@ -461,7 +461,7 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
   size_t hi_numNodes = hi_nodeIsOwned.size();
 
   size_t lo_nperel = lo_node_in_hi.size();
-  Kokkos::Experimental::resize(lo_elemToNode,numElem, lo_nperel);
+  Kokkos::resize(lo_elemToNode,numElem, lo_nperel);
 
   // Build lo_elemToNode (in the hi local index ordering) and flag owned ones
   std::vector<bool> is_low_order(hi_numNodes,false);
@@ -917,7 +917,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
         double threshold = 1e-10;
         std::vector<std::vector<size_t> > candidates;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-        Kokkos::Experimental::resize(hi_DofCoords,hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
+        Kokkos::resize(hi_DofCoords,hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
         hi_basis->getDofCoords(hi_DofCoords);
 #else
         // NTS: This might not work
