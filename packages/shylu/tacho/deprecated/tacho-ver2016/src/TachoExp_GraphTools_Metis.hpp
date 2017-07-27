@@ -72,10 +72,7 @@ namespace Tacho {
       /// reorder by metis
       ///
 
-      void reorder(const ordinal_type verbose = 0) {
-        Kokkos::Impl::Timer timer;
-        double t_metis = 0; 
-
+      void reorder() {
         int ierr = 0;
 
         idx_t *xadj   = (idx_t*)_xadj.data();
@@ -85,29 +82,12 @@ namespace Tacho {
         idx_t *perm   = (idx_t*)_perm.data();
         idx_t *peri   = (idx_t*)_peri.data();
 
-        timer.reset();
         ierr = METIS_NodeND(&_nvts, xadj, adjncy, vwgt, _options, 
                             perm, peri);
-        t_metis = timer.seconds();
-
         TACHO_TEST_FOR_EXCEPTION(ierr != METIS_OK, 
                                  std::runtime_error,
                                  "Failed in METIS_NodeND");
         _is_ordered = true;
-
-        if (verbose) {
-          printf("Summary: GraphTools (Metis)\n");
-          printf("===========================\n");
-
-          switch (verbose) {
-          case 1: {
-            printf("  Time\n");
-            printf("             time for reordering: %10.6f s\n", t_metis);
-            printf("\n");
-          }
-          }
-        }
-
       }
 
       ordinal_type_array PermVector()    const { return _perm; }

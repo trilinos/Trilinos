@@ -75,7 +75,7 @@ namespace Tacho {
       // CAMD output
       ordinal_type_array _pe, _nv, _el, _next, _perm, _peri; // perm = last, peri = next
       
-      double _control[CAMD_CONTROL], _info[CAMD_INFO];
+      double _control[TRILINOS_CAMD_CONTROL], _info[TRILINOS_CAMD_INFO];
       
       bool _is_ordered;
 
@@ -112,7 +112,10 @@ namespace Tacho {
             _cnst(peri(j)) = i;
       }
       
-      void reorder() {
+      void reorder(const ordinal_type verbose = 0) {
+        Kokkos::Impl::Timer timer;
+        double t_camd = 0;
+
         TACHO_CHOLMOD(camd_defaults)(_control);
         TACHO_CHOLMOD(camd_control)(_control);
 
@@ -156,12 +159,14 @@ namespace Tacho {
         for (size_type i=0;i<pfree;++i)
           iw_ptr[i] = cidx[i];
 
+        timer.reset();
         CAMD::run<ordinal_type>(_m, pe_ptr, iw_ptr, lwork_ptr, iwlen, pfree,
                                 // output
                                 nv_ptr, next, perm, hd_ptr, el_ptr, dg_ptr, wk_ptr, 
                                 _control, _info, cnst, bk_ptr);
-        
-        TACHO_TEST_FOR_EXCEPTION(_info[CAMD_STATUS] != CAMD_OK, 
+        t_camd = timer.seconds();
+
+        TACHO_TEST_FOR_EXCEPTION(_info[TRILINOS_CAMD_STATUS] != TRILINOS_CAMD_OK, 
                                  std::runtime_error,
                                  "CAMD fails");
 
@@ -169,6 +174,19 @@ namespace Tacho {
           _peri[_perm[i]] = i;
 
         _is_ordered = true;
+
+        if (verbose) {
+          printf("Summary: GraphTools (CAMD)\n");
+          printf("===========================\n");
+
+          switch (verbose) {
+          case 1: {
+            printf("  Time\n");
+            printf("             time for reordering: %10.6f s\n", t_camd);
+            printf("\n");
+          }
+          }
+        }
       }
 
 
