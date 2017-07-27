@@ -5,7 +5,7 @@
 #include "Tacho_TestGraph.hpp"
 #include "Tacho_TestSymbolic.hpp"
 #include "Tacho_TestNumeric.hpp"
-#include "Tacho_TestTaskFunctor.hpp"
+//#include "Tacho_TestTaskFunctor.hpp"
 
 #include "Tacho_TestDenseMatrixView.hpp"
 #include "Tacho_TestDenseByBlocks.hpp"
