@@ -84,14 +84,91 @@ struct BlasSupportsLayout {
     std::is_same<LayoutType, ::Kokkos::LayoutLeft>::value;
 };
 
+//! Get the stride (leading dimension) of the 2-D Kokkos::View A.
 template<class ViewType,
          class IndexType = int>
 IndexType
 getStride2DView (const ViewType& A)
 {
+  static_assert (ViewType::Rank == 2, "A must be a rank-2 Kokkos::View.");
+  static_assert (std::is_same<typename ViewType::array_layout, Kokkos::LayoutLeft>::value ||
+                 std::is_same<typename ViewType::array_layout, Kokkos::LayoutRight>::value ||
+                 std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value,
+                 "A's layout must be either LayoutLeft, LayoutRight, or LayoutStride.");
+  static_assert (std::is_integral<IndexType>::value,
+                 "IndexType must be a built-in integer type.");
   IndexType stride[8];
   A.stride (stride);
   return (A.dimension_1 () > 1) ? stride[1] : A.dimension_0 ();
+}
+
+namespace Impl {
+
+template<class ViewType,
+         class ArrayLayout,
+         class IndexType>
+struct GetStride1DView {
+  typedef ArrayLayout array_layout;
+
+  static IndexType getStride (const ViewType& x)
+  {
+    static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
+    static_assert (std::is_same<typename ViewType::array_layout, Kokkos::LayoutLeft>::value ||
+                   std::is_same<typename ViewType::array_layout, Kokkos::LayoutRight>::value ||
+                   std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value,
+                   "x's layout must be either LayoutLeft, LayoutRight, or LayoutStride.");
+    static_assert (std::is_same<typename ViewType::array_layout, array_layout>::value,
+                   "ViewType::array_layout must be the same as array_layout.");
+    static_assert (std::is_integral<IndexType>::value,
+                   "IndexType must be a built-in integer type.");
+    IndexType stride[8];
+    x.stride (stride);
+    return stride[0];
+  }
+};
+
+template<class ViewType,
+         class IndexType>
+struct GetStride1DView<ViewType, Kokkos::LayoutLeft, IndexType> {
+  typedef Kokkos::LayoutLeft array_layout;
+
+  static IndexType getStride (const ViewType&)
+  {
+    static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
+    static_assert (std::is_same<typename ViewType::array_layout, array_layout>::value,
+                   "ViewType::array_layout must be the same as array_layout.");
+    static_assert (std::is_integral<IndexType>::value,
+                   "IndexType must be a built-in integer type.");
+    return static_cast<IndexType> (1);
+  }
+};
+
+template<class ViewType,
+         class IndexType>
+struct GetStride1DView<ViewType, Kokkos::LayoutRight, IndexType> {
+  typedef Kokkos::LayoutRight array_layout;
+
+  static IndexType getStride (const ViewType&)
+  {
+    static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
+    static_assert (std::is_same<typename ViewType::array_layout, array_layout>::value,
+                   "ViewType::array_layout must be the same as array_layout.");
+    static_assert (std::is_integral<IndexType>::value,
+                   "IndexType must be a built-in integer type.");
+    return static_cast<IndexType> (1);
+  }
+};
+
+} // namespace Impl
+
+//! Get the stride ("INCX" in BLAS terms) of the 1-D Kokkos::View x.
+template<class ViewType,
+         class IndexType = int>
+IndexType
+getStride1DView (const ViewType& x)
+{
+  typedef Impl::GetStride1DView<ViewType, typename ViewType::array_layout, IndexType> impl_type;
+  return impl_type::getStride (x);
 }
 
 } // namespace Blas
