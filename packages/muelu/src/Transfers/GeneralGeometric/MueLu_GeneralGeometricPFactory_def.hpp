@@ -348,7 +348,6 @@ namespace MueLu {
       if(i < myGeo->numDimensions
          && (myGeo->startIndices[i]+myGeo->lFineNodesPerDir[i]) != myGeo->gFineNodesPerDir[i]) {
         myGeo->ghostInterface[2*i+1]=true;
-        }
       }
     }
 
