@@ -136,7 +136,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero(), one = STS::one();
 
-  bool success = false;
+  bool success = true;
   bool verbose = true;
   try {
     RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
