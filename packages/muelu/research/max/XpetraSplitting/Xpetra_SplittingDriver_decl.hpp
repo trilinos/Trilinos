@@ -58,14 +58,14 @@ class checkerNodesToRegion {
 }; 
 
 
-//This is an auxiliary class to store row maps for the global matrix, regional matrices and
-//a regionToAll map to link regional node indices with the global ones
+//This is an auxiliary class to store row maps for the global matrix, region matrices and
+//a regionToAll map to link region node indices with the global ones
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	class Splitting_MapsInfo{
 	public:
 		Array<Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > > regionToAll_;//used as a map for a RegionToAll node index
 		Array<GlobalOrdinal> global_map_; //used as RowMap for global matrices
-		Array<Array<GlobalOrdinal> > regional_maps_; //used as RowMap for regional matrices
+		Array<Array<GlobalOrdinal> > region_maps_; //used as RowMap for region matrices
 	};
 
 
@@ -78,7 +78,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	//! @name Constructor/Destructor Methods
 	//@{
 
-		//! Constructor specifying the file name containing regional information.
+		//! Constructor specifying the file name containing region information.
 		SplittingDriver (const std::string &, RCP< const Teuchos::Comm<int> >);
 
 	//}
@@ -88,7 +88,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		GlobalOrdinal GetNumTotalRegions(){return num_total_regions_;};
 		Array<GlobalOrdinal> GetGlobalRowMap(){return maps_.global_map_;};
 		Array<GlobalOrdinal> GetRegionalRowMap(GlobalOrdinal region_index);
-		Array<Array<GlobalOrdinal> > GetRegionalRowMaps(){return maps_.regional_maps_;};
+		Array<Array<GlobalOrdinal> > GetRegionalRowMaps(){return maps_.region_maps_;};
 		Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >  GetRegionToAll(GlobalOrdinal);//used as a map for a RegionToAll node index
 		Array<std::tuple<int, Array<GlobalOrdinal> > > GetInterfaceNodes(){return interfaceNodes_;};
 	//}
@@ -100,8 +100,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
 		void CreateRowMaps();
 
-	// Publicly accessible vector which contains the number of regional nodes for each domain region
-		Array<GlobalOrdinal> num_regional_nodes_;
+	// Publicly accessible vector which contains the number of region nodes for each domain region
+		Array<GlobalOrdinal> num_region_nodes_;
 		
 	private:
 		RCP< const Teuchos::Comm<int> > comm_;
@@ -119,7 +119,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		Array<std::tuple<int, Array<GlobalOrdinal> > > nodesToRegion_; //for each node it lists the regions it belongs to
 		Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes_; //for each node on the interface it lists the regions it belongs to
 
-		//Maps used for global and regional operators
+		//Maps used for global and region operators
 		Splitting_MapsInfo<Scalar, LocalOrdinal, GlobalOrdinal, Node> maps_;
 
 		//Interface routines
