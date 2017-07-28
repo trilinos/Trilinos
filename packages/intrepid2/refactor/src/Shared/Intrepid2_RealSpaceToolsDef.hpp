@@ -219,12 +219,12 @@ namespace Intrepid2 {
   namespace FunctorRealSpaceTools {
     template<typename outputViewType,
              typename inputViewType>
-    struct F_extractSacadoValues {
+    struct F_extractScalarValues {
       outputViewType _output;
       inputViewType  _input;
 
       KOKKOS_INLINE_FUNCTION
-      F_extractSacadoValues( outputViewType output_,
+      F_extractScalarValues( outputViewType output_,
                        inputViewType  input_ )
         : _output(output_), _input(input_) {}
 
@@ -238,8 +238,13 @@ namespace Intrepid2 {
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
-              for (ordinal_type m=0;m<mend;++m)
+              for (ordinal_type m=0;m<mend;++m) {
+#ifdef HAVE_INTREPID2_SACADO
                 _output(i,j,k,l,m) = Sacado::Value<typename inputViewType::value_type>::eval(_input(i,j,k,l,m));
+#else
+                _output(i,j,k,l,m) = _input(i,j,k,l,m);
+#endif
+              }
       }
     };
   }
@@ -249,11 +254,11 @@ namespace Intrepid2 {
            typename inputValueType,  class ...inputProperties>
   void
   RealSpaceTools<SpT>::
-  extractSacadoValues( /**/  Kokkos::DynRankView<outputValueType,outputProperties...>  output,
+  extractScalarValues( /**/  Kokkos::DynRankView<outputValueType,outputProperties...>  output,
                        const Kokkos::DynRankView<inputValueType, inputProperties...>   input ) {
     typedef          Kokkos::DynRankView<outputValueType,outputProperties...> outputViewType;
     typedef          Kokkos::DynRankView<inputValueType,inputProperties...> inputViewType;
-    typedef          FunctorRealSpaceTools::F_extractSacadoValues<outputViewType,inputViewType> FunctorType;
+    typedef          FunctorRealSpaceTools::F_extractScalarValues<outputViewType,inputViewType> FunctorType;
     typedef typename ExecSpace<typename inputViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
     
     const auto loopSize = input.dimension(0);

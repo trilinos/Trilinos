@@ -53,9 +53,9 @@
 #include "Intrepid2_Types.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ViewFactory.hpp"
-
-#include "Sacado_Traits.hpp"
+#ifdef HAVE_INTREPID2_SACADO
+  #include "Sacado_Traits.hpp"
+#endif
 
 namespace Intrepid2 {
 

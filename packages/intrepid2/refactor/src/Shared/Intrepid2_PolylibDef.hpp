@@ -95,8 +95,6 @@
 #ifndef __INTREPID2_POLYLIB_DEF_HPP__
 #define __INTREPID2_POLYLIB_DEF_HPP__
 
-#include "Kokkos_ViewFactory.hpp"
-
 namespace Intrepid2 {
 
   // -----------------------------------------------------------------------

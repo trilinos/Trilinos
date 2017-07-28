@@ -49,8 +49,6 @@
 #ifndef __INTREPID2_HGRAD_LINE_CN_FEM_HPP__
 #define __INTREPID2_HGRAD_LINE_CN_FEM_HPP__
 
-#include "Kokkos_ViewFactory.hpp"
-
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM_JACOBI.hpp"
 

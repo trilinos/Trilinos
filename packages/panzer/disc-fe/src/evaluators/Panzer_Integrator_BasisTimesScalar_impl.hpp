@@ -49,7 +49,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Panzer
+//Sacado
+#include "Kokkos_ViewFactory.hpp"
+
+//Panzer
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"

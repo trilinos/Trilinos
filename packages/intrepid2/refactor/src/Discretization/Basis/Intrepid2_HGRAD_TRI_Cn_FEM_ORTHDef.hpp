@@ -50,7 +50,10 @@
 #ifndef __INTREPID2_HGRAD_TRI_CN_FEM_ORTH_DEF_HPP__
 #define __INTREPID2_HGRAD_TRI_CN_FEM_ORTH_DEF_HPP__
 
-#include "Sacado.hpp"
+#ifdef HAVE_INTREPID2_SACADO
+  #include "Kokkos_ViewFactory.hpp"
+  #include "Sacado.hpp"
+#endif
 
 namespace Intrepid2 {
 // -------------------------------------------------------------------------------------
@@ -238,6 +241,10 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,n>::generate(
           outputViewType output,
     const inputViewType input,
     const ordinal_type order ) {
+#ifndef HAVE_INTREPID2_SACADO
+  INTREPID2_TEST_FOR_ABORT( true,
+          ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::generate) Sacado is needed for computing second and higher-order derivatives");
+#else
 
   constexpr ordinal_type spaceDim = 2;
   constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
@@ -285,6 +292,7 @@ void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,n>::generate(
         }
       }
     }
+#endif
 }
 
 
@@ -308,6 +316,7 @@ getValues( outputViewType output,
     OrthPolynomialTri<outputViewType,inputViewType,true,1>::generate( output, input, order );
     break;
   }
+#ifdef HAVE_INTREPID2_SACADO
   case OPERATOR_D2: {
     OrthPolynomialTri<outputViewType,inputViewType,true,2>::generate( output, input, order );
     break;
@@ -316,6 +325,13 @@ getValues( outputViewType output,
     OrthPolynomialTri<outputViewType,inputViewType,true,3>::generate( output, input, order );
     break;
   }
+#else
+  case OPERATOR_D2:
+  case OPERATOR_D3:
+    INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial::getValues) Sacado is needed for computing second and higher-order derivatives");
+    break;
+#endif
   /*
   case OPERATOR_D4: {
     OrthPolynomialTri<outputViewType,inputViewType,true,4>::generate( output, input, order );
@@ -391,6 +407,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
     break;
   }
+#ifdef HAVE_INTREPID2_SACADO
   case OPERATOR_D2:{
     typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D2,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
@@ -401,6 +418,13 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
     break;
   }
+#else
+  case OPERATOR_D2:
+  case OPERATOR_D3:
+    INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues) Sacado is needed for computing second and higher-order derivatives");
+    break;
+#endif
   /*
   case OPERATOR_D4: {
     typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D4,numPtsPerEval> FunctorType;

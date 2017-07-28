@@ -49,8 +49,6 @@
 #ifndef __INTREPID2_CELLTOOLS_DEF_REF_TO_PHYS_HPP__
 #define __INTREPID2_CELLTOOLS_DEF_REF_TO_PHYS_HPP__
 
-#include "Kokkos_ViewFactory.hpp"
-
 // disable clang warnings
 #if defined (__clang__) && !defined (__INTEL_COMPILER)
 #pragma clang system_header
@@ -151,6 +149,7 @@ namespace Intrepid2 {
     const auto refPointRank = refPoints.rank();
     const auto numPoints = (refPointRank == 2 ? refPoints.dimension(0) : refPoints.dimension(1));
     const auto basisCardinality = basis->getCardinality();
+    auto vcprop = Kokkos::common_view_alloc_prop(physPoints);
 
     typedef Kokkos::DynRankView<physPointValueType,physPointProperties...> physPointViewType;
     typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> valViewType;
@@ -160,7 +159,7 @@ namespace Intrepid2 {
     switch (refPointRank) {
     case 2: {
       // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
-      vals = Kokkos::createDynRankViewWithType<valViewType>(physPoints,"CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
+      vals = valViewType(Kokkos::view_alloc("CellTools::mapToPhysicalFrame::vals", vcprop), basisCardinality, numPoints);
       basis->getValues(vals,
                        refPoints,
                        OPERATOR_VALUE);
@@ -169,7 +168,7 @@ namespace Intrepid2 {
     case 3: {
       // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.
       //vals = valViewType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
-      vals = Kokkos::createDynRankViewWithType<valViewType>(physPoints,"CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
+      vals = valViewType(Kokkos::view_alloc("CellTools::mapToPhysicalFrame::vals", vcprop), numCells, basisCardinality, numPoints);
       for (size_type cell=0;cell<numCells;++cell)
         basis->getValues(Kokkos::subdynrankview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
                          Kokkos::subdynrankview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),

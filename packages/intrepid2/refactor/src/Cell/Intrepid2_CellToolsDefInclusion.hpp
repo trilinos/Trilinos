@@ -308,8 +308,9 @@ namespace Intrepid2 {
       numPoints = points.dimension(1), 
       spaceDim = cellTopo.getDimension();
     
-    auto refPoints = Kokkos::createDynRankView(points, "CellTools::checkPointwiseInclusion::refPoints",                 
-                                               numCells, numPoints, spaceDim);    
+    auto vcprop = Kokkos::common_view_alloc_prop(points);
+    using common_value_type = typename decltype(vcprop)::value_type;
+    Kokkos::DynRankView< common_value_type > refPoints ( Kokkos::view_alloc("CellTools::checkPointwiseInclusion::refPoints", vcprop), numCells, numPoints, spaceDim);
     
     // expect refPoints(CPD), points(CPD), cellWorkset(CND) 
     mapToReferenceFrame(refPoints, points, cellWorkset, cellTopo);
