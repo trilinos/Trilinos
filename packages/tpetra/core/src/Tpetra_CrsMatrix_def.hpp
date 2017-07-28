@@ -535,7 +535,8 @@ namespace Tpetra {
     frobNorm_ (-STM::one ())
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
-      "RCP<const Map>, local_matrix_type[, RCP<ParameterList>]): ";
+      "RCP<const Map>, RCP<const Map>, RCP<const Map>, local_matrix_type[, "
+      "RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, domainMap, rangeMap,
