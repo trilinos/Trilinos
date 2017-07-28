@@ -1,14 +1,29 @@
 function [global_indices, nodesToRegion, nodesOwnership, nodes_neighbourhood] = create_regions( nregion_nodes_x, nregion_nodes_y, nintervals_x, nintervals_y )
 
-    initial_nodes_info = zeros( nregion_nodes_x*nregion_nodes_y*nintervals_x*nintervals_y );
+%	INPUT: 
+%		nregions_nodes_x : number of nodes along the x direction for each region	
+%		nregions_nodes_y : number of nodes along the y direction for each region	
+%		nintervals_x : number of intervals splitting the domain along the x direction
+%		nintervals_y : number of intervals splitting the domain along the y direction
+%
+%	OUTPUT:
+%		global_indices: global node labels with region index associated with it
+%		nodesToRegion: cell structure that contains the list of regions a node belongs to
+% 		nodesOwnership: structure that associates a globally idnexed node with the region that owns it
+% 				(even if a node sits in more than one region, only a single region can own it)
+%		nodes_neighbourhood: for each node, this structure provides the list of neighbors (itself included) with distance equal to 1
+
+%	number of nodes along the x direction of the main
     ntotal_nodes_x = nregion_nodes_x * nintervals_x - (nintervals_x-1);
+
+%	number of nodes along the y direction of the domain
     ntotal_nodes_y = nregion_nodes_y * nintervals_y - (nintervals_y-1);
+
+%	total number of nodes that discretize the domain
     ntotal_nodes = ntotal_nodes_x * ntotal_nodes_y;
        
-    % detects the global indices of region 1
+    % detects the global indices ONLY for nodes in region 1
     global_indices_region1 = zeros(nregion_nodes_x*nregion_nodes_y,1);
-    
-    node_idex = 1;
     
     for i = 1 : nregion_nodes_x
         
@@ -19,7 +34,10 @@ function [global_indices, nodesToRegion, nodesOwnership, nodes_neighbourhood] = 
         end
         
     end
-    
+  
+
+%   use the global indices of nodes in region 1 to reconstruct the global indices of the nodes
+%   in every other region  
     global_indices = [];
     
     for i = 1 : nintervals_x
