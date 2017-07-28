@@ -96,7 +96,6 @@ TEST( DenseByBlocks, chol ) {
     
     Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                        task_functor_chol(sched, H));
-    
     Kokkos::wait(sched);
 
     clearFutureOfBlocks(H);
@@ -134,7 +133,6 @@ TEST( DenseByBlocks, chol ) {
 
     Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                        task_functor_chol(sched, H));
-    
     Kokkos::wait(sched);
 
     clearFutureOfBlocks(H);
@@ -253,10 +251,10 @@ TEST( DenseByBlocks, gemm ) {
     
     Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                        task_functor_gemm_nt_nt(sched, alpha, HA, HB, beta, HC));
+    Kokkos::wait(sched);
 
     Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                        task_functor_gemm_ct_nt(sched, alpha, HA, HB, beta, HC));
-    
     Kokkos::wait(sched);
 
     clearFutureOfBlocks(HC);
@@ -359,7 +357,6 @@ TEST( DenseByBlocks, herk ) {
     
     Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                        task_functor_herk_u_ct(sched, alpha, HA, beta, HC));
-    
     Kokkos::wait(sched);
 
     clearFutureOfBlocks(HC);
@@ -468,10 +465,10 @@ TEST( DenseByBlocks, trsm ) {
     
     Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                        task_functor_trsm_l_u_ct_nd(sched, alpha, HA, HB));
+    Kokkos::wait(sched);
     
     Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                        task_functor_trsm_l_u_nt_nd(sched, alpha, HA, HB));
-    
     Kokkos::wait(sched);
 
     clearFutureOfBlocks(HB);
