@@ -435,6 +435,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // test the constructors based on 4 maps + local matri_crsx
     RCP<MAT> tri_crs_2 = rcp(new MAT(tri_crs->getRowMap(), tri_crs->getColMap(), tri_crs->getDomainMap(),
             tri_crs->getRangeMap(), tri_crs->getLocalMatrix()) );
+    TEST_EQUALITY(tri_crs_2->isFillComplete(), true);
+    auto exporter = tri_crs_2->getGraph()->getExporter();
+    auto importer = tri_crs_2->getGraph()->getImporter();
+    TEST_EQUALITY(tri_crs->getDomainMap()->isSameAs(*(importer->getSourceMap())), true);
+    TEST_EQUALITY(tri_crs->getColMap()   ->isSameAs(*(importer->getTargetMap())), true);
+    TEST_EQUALITY(tri_crs->getRowMap()   ->isSameAs(*(exporter->getSourceMap())), true);
+    TEST_EQUALITY(tri_crs->getRangeMap() ->isSameAs(*(exporter->getTargetMap())), true);
+
     // test the action
     mvout.randomize();
     tri_crs_2->apply(mvin,mvout);
