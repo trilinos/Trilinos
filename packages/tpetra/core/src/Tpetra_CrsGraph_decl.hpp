@@ -2182,6 +2182,10 @@ namespace Tpetra {
     ///
     void computeLocalConstants();
 
+    /// \brief Forces computation of local triangular properties if they have
+    /// not been computed yet.
+    void computeTriangularProperties();
+
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
     RowInfo getRowInfo (const LocalOrdinal myRow) const;
