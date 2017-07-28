@@ -47,7 +47,7 @@ USER=`whoami`
 #who gets the email summary
 if [[ $DEBUGMODE == 1 ]]; then
   RECIPIENTS=(
-    "${USER}"
+    "${USER}@sandia.gov"
   )
 else
   RECIPIENTS=(
