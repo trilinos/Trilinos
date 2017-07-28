@@ -118,7 +118,13 @@ namespace Tacho {
       /// setup scotch parameters
       ///
 
-      void reorder(const ordinal_type treecut = 0) {
+      void reorder(const ordinal_type verbose = 0) {
+        Kokkos::Impl::Timer timer;
+        double t_scotch = 0;
+
+        _verbose = verbose;
+
+        const int treecut = 0;
         int ierr = 0;
 
         // pointers for global graph ordering
@@ -127,6 +133,7 @@ namespace Tacho {
         ordinal_type *range = _range.data();
         ordinal_type *tree  = _tree.data();
 
+        timer.reset();
         {
           // set desired tree level
           if (_strat & SCOTCH_STRATLEVELMAX ||
@@ -148,14 +155,6 @@ namespace Tacho {
 
           // if both are zero, do not build strategy
           if (_strat || _level) {
-            if (_verbose)
-              std::cout << "GraphTools_Scotch:: User provide a strategy and/or level" << std::endl
-                        << "                    strategy = " << _strat << ", level =  " << _level << ", treecut = " << treecut << std::endl
-                        << "                    strategy & SCOTCH_STRATLEVELMAX   = " << (_strat & SCOTCH_STRATLEVELMAX) << std::endl
-                        << "                    strategy & SCOTCH_STRATLEVELMIN   = " << (_strat & SCOTCH_STRATLEVELMIN) << std::endl
-                        << "                    strategy & SCOTCH_STRATLEAFSIMPLE = " << (_strat & SCOTCH_STRATLEAFSIMPLE) << std::endl
-                        << "                    strategy & SCOTCH_STRATSEPASIMPLE = " << (_strat & SCOTCH_STRATSEPASIMPLE) << std::endl
-                        << std::endl;
             ierr = SCOTCH_stratGraphOrderBuild(&stradat, straval, level, 0.2);
             TACHO_TEST_FOR_EXCEPTION(ierr, 
                                      std::runtime_error,
@@ -173,10 +172,27 @@ namespace Tacho {
                                    "Failed in SCOTCH_graphOrder");
           SCOTCH_stratExit(&stradat);
         }
+        t_scotch = timer.seconds();
         _is_ordered = true;
       
-        if (_verbose)
-          std::cout << "GraphTools_Scotch:: # of block partitions of rows/columns = " << _cblk << std::endl;
+        if (_verbose) {
+          printf("Summary: GraphTools (Scotch)\n");
+          printf("===========================\n");          
+          printf("  Time\n");
+          printf("             time for reordering: %10.6f s\n", t_scotch);
+          printf("\n");
+          if (_strat || _level) {
+            printf("  User provided strategy ( %d ) and/or level ( %d )\n", _strat, _level);
+            printf("             strategy & SCOTCH_STRATLEVELMAX:   %3d\n", (_strat & SCOTCH_STRATLEVELMAX));
+            printf("             strategy & SCOTCH_STRATLEVELMIN:   %3d\n", (_strat & SCOTCH_STRATLEVELMIN));
+            printf("             strategy & SCOTCH_STRATLEAFSIMPLE: %3d\n", (_strat & SCOTCH_STRATLEAFSIMPLE));
+            printf("             strategy & SCOTCH_STRATSEPASIMPLE: %3d\n", (_strat & SCOTCH_STRATSEPASIMPLE));
+            printf("\n");
+          }
+          printf("  Partitions\n");
+          printf("             number of block partitions: %3d\n", _cblk);
+          printf("\n");
+        }
       }
 
       ordinal_type_array PermVector()    const { return _perm; }

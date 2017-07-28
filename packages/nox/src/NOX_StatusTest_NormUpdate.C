@@ -113,7 +113,7 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem,
   const Abstract::Vector& oldSoln = problem.getPreviousSolutionGroup().getX();
   const Abstract::Vector& curSoln = problem.getSolutionGroup().getX();
 
-  if (Teuchos::is_null(updateVectorPtr))
+  if ( Teuchos::is_null(updateVectorPtr) || (updateVectorPtr->length() != curSoln.length()) )
     updateVectorPtr = curSoln.clone();
 
   updateVectorPtr->update(1.0, curSoln, -1.0, oldSoln, 0.0);

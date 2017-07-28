@@ -88,7 +88,102 @@ public:
 
    // This functions are overriden, and the filtered indices removed
   
-   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
+   /**
+    *  \brief Get the set of indices owned by this processor.
+    *
+    *  \note This is the set of owned indices from the base
+    *        `UniqueGlobalIndexer` with the filtered indices removed.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *                      owned by this processor.
+    */
+   virtual void
+   getOwnedIndices(
+     std::vector<GlobalOrdinalT>& indices) const
+   {
+     indices = owned_;
+   } // end of getOwnedIndices()
+
+   /**
+    *  \brief Get the set of indices ghosted for this processor.
+    *
+    *  \note This is the set of owned indices from the base
+    *        `UniqueGlobalIndexer` (UGI) that have been filtered out, combined
+    *        with the ghosted indices from the base UGI.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *                      ghosted for this processor.
+    */
+   virtual void
+   getGhostedIndices(
+     std::vector<GlobalOrdinalT>& indices) const
+   { 
+     indices = ghosted_;
+   } // end of getGhostedIndices()
+
+   /**
+    *  \brief Get the set of owned and ghosted indices for this processor.
+    *
+    *  \note This is the set of owned and ghosted indices from the base
+    *        `UniqueGlobalIndexer`, regardless of filtering.
+    *
+    *  \param[out] indices A `vector` that will be filled with the owned and
+    *                      ghosted indices for this processor.
+    */
+   virtual void
+   getOwnedAndGhostedIndices(
+     std::vector<GlobalOrdinalT>& indices) const 
+   { 
+     using std::size_t;
+     indices.resize(owned_.size() + ghosted_.size());
+     for (size_t i(0); i < owned_.size(); ++i)
+       indices[i] = owned_[i];
+     for (size_t i(0); i < ghosted_.size(); ++i)
+       indices[owned_.size() + i] = ghosted_[i];
+   } // end of getOwnedAndGhostedIndices()
+
+   /**
+    *  \brief Get the number of indices owned by this processor.
+    *
+    *  \note This is the number of owned indices from the base
+    *        `UniqueGlobalIndexer`, less the number of filtered indices.
+    *
+    *  \returns The number of indices owned by this processor.
+    */
+   virtual int
+   getNumOwned() const
+   { 
+     return owned_.size();
+   } // end of getNumOwned()
+
+   /**
+    *  \brief Get the number of indices ghosted for this processor.
+    *
+    *  \note This is the number of owned indices from the base
+    *        `UniqueGlobalIndexer` (UGI) that have been filtered out, plus the
+    *        number of ghosted indices from the base UGI.
+    *
+    *  \returns The number of indices ghosted for this processor.
+    */
+   virtual int
+   getNumGhosted() const
+   { 
+     return ghosted_.size();
+   } // end of getNumGhosted()
+
+   /**
+    *  \brief Get the number of owned and ghosted indices for this processor.
+    *
+    *  \note This is the number of owned and ghosted indices from the base
+    *        `UniqueGlobalIndexer`, regardless of filtering.
+    *
+    *  \returns The number of owned and ghosted indices for this processor.
+    */
+   virtual int
+   getNumOwnedAndGhosted() const
+   { 
+     return owned_.size() + ghosted_.size();
+   } // end of getNumOwnedAndGhosted()
 
    virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
 
@@ -138,9 +233,6 @@ public:
    virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint="") const 
    { base_->getElementGIDs(localElmtId,gids,blockIdHint); }
 
-   virtual void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const 
-   { base_->getOwnedAndGhostedIndices(indices); }
-
    virtual int getElementBlockGIDCount(const std::string & blockId) const 
    { return base_->getElementBlockGIDCount(blockId); }
 
@@ -154,7 +246,22 @@ private:
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > base_;
 
+   /**
+    *  \brief The list of owned indices.
+    *
+    *  The list of the owned indices from the base `UniqueGlobalIndexer` with
+    *  the filtered indices removed.
+    */
    std::vector<GlobalOrdinalT> owned_;
+
+   /**
+    *  \brief The list of ghosted indices.
+    *
+    *  The list of the owned indices from the base `UniqueGlobalIndexer` (UGI)
+    *  that have been filtered out, combined with the ghosted indices from the
+    *  base UGI.
+    */
+   std::vector<GlobalOrdinalT> ghosted_;
 };
 
 }

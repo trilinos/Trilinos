@@ -47,6 +47,7 @@
 
 #
 # System imports
+from __future__ import print_function
 from optparse import *
 
 #
@@ -72,7 +73,7 @@ def main():
   timer = Epetra.Time(comm)
 
   # Output the Epetra version
-  if comm.MyPID() == 0: print Epetra.Version()
+  if comm.MyPID() == 0: print(Epetra.Version())
 
   # Set up the problem
   nElem = 1000
@@ -86,16 +87,16 @@ def main():
   xNorm = x.Norm2()
   bNorm = b.Norm2()
   if comm.MyPID() == 0:
-    print "2 norm of x =", xNorm
-    print "2 norm of b =", bNorm
+    print("2 norm of x =", xNorm)
+    print("2 norm of b =", bNorm)
 
   # Synchronize processors
   comm.Barrier()
 
   # Print the time
-  if comm.MyPID() == 0: print "Elapsed time =", timer.ElapsedTime(), "sec"
+  if comm.MyPID() == 0: print("Elapsed time =", timer.ElapsedTime(), "sec")
 
-  if comm.MyPID() == 0: print "End Result: TEST PASSED"
+  if comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

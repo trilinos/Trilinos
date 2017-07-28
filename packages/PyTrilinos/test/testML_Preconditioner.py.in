@@ -104,7 +104,7 @@ Solver.Iterate(1550, 1e-5)
 
 Prec.PrintList()
 
-if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+if Comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 # It is possible to get the following error message with this script:
 #

@@ -21,33 +21,32 @@ namespace Tempus {
 // StepperExplicitRK definitions:
 template<class Scalar>
 StepperExplicitRK<Scalar>::StepperExplicitRK(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList>                      pList)
 {
   this->setTableau(pList, stepperType);
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->initialize();
 }
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->validExplicitODE(transientModel);
-  eODEModel_ = transientModel;
+  this->validExplicitODE(appModel);
+  appModel_ = appModel;
 
-  inArgs_  = eODEModel_->createInArgs();
-  outArgs_ = eODEModel_->createOutArgs();
-  inArgs_  = eODEModel_->getNominalValues();
+  inArgs_  = appModel_->getNominalValues();
+  outArgs_ = appModel_->createOutArgs();
 }
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 template<class Scalar>
@@ -106,12 +105,13 @@ void StepperExplicitRK<Scalar>::setTableau(
 template<class Scalar>
 void StepperExplicitRK<Scalar>::initialize()
 {
-  stageX_ = Thyra::createMember(eODEModel_->get_f_space());
   // Initialize the stage vectors
   int numStages = ERK_ButcherTableau_->numStages();
-  stagef_.reserve(numStages);
+  stageX_ = Thyra::createMember(appModel_->get_f_space());
+  stageXDot_.resize(numStages);
   for (int i=0; i<numStages; ++i) {
-    stagef_.push_back(Thyra::createMember(eODEModel_->get_f_space()));
+    stageXDot_[i] = Thyra::createMember(appModel_->get_f_space());
+    assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   }
 }
 
@@ -128,42 +128,38 @@ void StepperExplicitRK<Scalar>::takeStep(
     const Scalar dt = workingState->getTimeStep();
     const Scalar time = currentState->getTime();
 
-    int stages = ERK_ButcherTableau_->numStages();
+    const int numStages = ERK_ButcherTableau_->numStages();
     Teuchos::SerialDenseMatrix<int,Scalar> A = ERK_ButcherTableau_->A();
     Teuchos::SerialDenseVector<int,Scalar> b = ERK_ButcherTableau_->b();
     Teuchos::SerialDenseVector<int,Scalar> c = ERK_ButcherTableau_->c();
 
     // Compute stage solutions
-    for (int s=0 ; s < stages ; ++s) {
+    for (int i=0; i < numStages; ++i) {
       Thyra::assign(stageX_.ptr(), *(currentState->getX()));
-      for (int j=0 ; j < s ; ++j) {
-        if (A(s,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
-          Thyra::Vp_StV(stageX_.ptr(), A(s,j), *stagef_[j]);
+      for (int j=0; j < i; ++j) {
+        if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
+          Thyra::Vp_StV(stageX_.ptr(), dt*A(i,j), *stageXDot_[j]);
         }
       }
-      typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
-      TScalarMag ts = time + c(s)*dt;
+      const Scalar ts = time + c(i)*dt;
 
       // Evaluate model -----------------
-      //explicitEvalModel(currentState);
       typedef Thyra::ModelEvaluatorBase MEB;
       inArgs_.set_x(stageX_);
       if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(ts);
 
       if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-      outArgs_.set_f(stagef_[s]);
+      outArgs_.set_f(stageXDot_[i]);
 
-      eODEModel_->evalModel(inArgs_,outArgs_);
+      appModel_->evalModel(inArgs_,outArgs_);
       // --------------------------------
-
-      Thyra::Vt_S(stagef_[s].ptr(),dt);
     }
 
-    // Sum for solution: x_n = x_n-1 + Sum{ b(s) * dt*f(s) }
+    // Sum for solution: x_n = x_n-1 + Sum{ b(i) * dt*f(i) }
     Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
-    for (int s=0 ; s < stages ; ++s) {
-      if (b(s) != Teuchos::ScalarTraits<Scalar>::zero()) {
-        Thyra::Vp_StV((workingState->getX()).ptr(), b(s), *(stagef_[s]));
+    for (int i=0; i < numStages; ++i) {
+      if (b(i) != Teuchos::ScalarTraits<Scalar>::zero()) {
+        Thyra::Vp_StV((workingState->getX()).ptr(), dt*b(i), *(stageXDot_[i]));
       }
     }
 
@@ -176,28 +172,6 @@ void StepperExplicitRK<Scalar>::takeStep(
     workingState->setOrder(this->getOrder());
   }
   return;
-}
-
-
-template<class Scalar>
-void StepperExplicitRK<Scalar>::
-explicitEvalModel(Teuchos::RCP<SolutionState<Scalar> > state)
-{
-  // NOTE: on input state->getX() has the current solution x, and
-  //       on output state->getXDot() has the current f(x,t) [=xDot].
-  typedef Thyra::ModelEvaluatorBase MEB;
-  inArgs_.set_x(state->getX());
-  if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(state->getTime());
-
-  // For model evaluators whose state function f(x, x_dot, t) describes
-  // an implicit ODE, and which accept an optional x_dot input argument,
-  // make sure the latter is set to null in order to request the evaluation
-  // of a state function corresponding to the explicit ODE formulation
-  // x_dot = f(x, t)
-  if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-  outArgs_.set_f(state->getXDot());
-
-  eODEModel_->evalModel(inArgs_,outArgs_);
 }
 
 
@@ -230,7 +204,7 @@ void StepperExplicitRK<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out << description() << "::describe:" << std::endl
-      << "eODEModel_ = " << eODEModel_->description() << std::endl;
+      << "appModel_ = " << appModel_->description() << std::endl;
 }
 
 

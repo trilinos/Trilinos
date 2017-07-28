@@ -66,7 +66,7 @@ ELSE(NOT PYTHON_EXECUTABLE)
 
   # Retrieve the NumPy version
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c "import numpy; print numpy.__version__"
+    ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.__version__)"
     OUTPUT_VARIABLE NumPy_VERSION
     ERROR_VARIABLE  NumPy_VERSION_ERROR
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -84,7 +84,7 @@ ELSE(NOT PYTHON_EXECUTABLE)
   # now look for the NumPy include directory
   IF(NOT NumPy_VERSION_ERROR)
     EXECUTE_PROCESS(COMMAND
-      ${PYTHON_EXECUTABLE} -c "import numpy; print numpy.get_include()"
+      ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
       OUTPUT_VARIABLE NumPy_INCLUDE_DIR
       ERROR_VARIABLE  NumPy_INCLUDE_ERROR
       OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -102,7 +102,7 @@ ELSE(NOT PYTHON_EXECUTABLE)
     # and the wrong function name was called
     IF(NumPy_INCLUDE_ERROR)
       EXECUTE_PROCESS(COMMAND
-	${PYTHON_EXECUTABLE} -c "import numpy; print numpy.get_numpy_include()"
+	${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.get_numpy_include())"
         OUTPUT_VARIABLE NumPy_INCLUDE_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
 	)

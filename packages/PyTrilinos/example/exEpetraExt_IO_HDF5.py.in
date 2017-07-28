@@ -45,6 +45,7 @@
 
 #
 # System imports
+from __future__ import print_function
 import math
 from   optparse import *
 import sys
@@ -98,15 +99,15 @@ def main():
     filename = "Datafile.h5"
     Hdf5 = EpetraExt.HDF5(comm)
     Hdf5.Create(filename)
-    if iAmRoot: print "Writing map...",
+    if iAmRoot: print("Writing map...", end="")
     Hdf5.Write("map"   , map   )
-    if iAmRoot: print "ok"
-    if iAmRoot: print "Writing vector...",
+    if iAmRoot: print("ok")
+    if iAmRoot: print("Writing vector...", end="")
     Hdf5.Write("x"     , x     )
-    if iAmRoot: print "ok"
-    if iAmRoot: print "Writing matrix...",
+    if iAmRoot: print("ok")
+    if iAmRoot: print("Writing matrix...", end="")
     Hdf5.Write("matrix", matrix)
-    if iAmRoot: print "ok"
+    if iAmRoot: print("ok")
     Hdf5.Close()
 
     # ---------------------------------- #
@@ -117,23 +118,23 @@ def main():
     Hdf5.Open(filename)
     # Check group names
     for group in ("map", "map2", "x", "matrix"):
-        if iAmRoot: print group, "is", Hdf5.IsContained(group)
+        if iAmRoot: print(group, "is", Hdf5.IsContained(group))
 
     # Read the map and check that it is the same
     map2    = Hdf5.ReadMap("map")
     if not map2.SameAs(map):
-        print "map inconsistent on processor", myPID
+        print("map inconsistent on processor", myPID)
         failures += 1
 
     # Read the vector and check that it is the same
     x2 = Hdf5.ReadMultiVector("x")
     if iAmRoot:
-        print "x  =", x
-        print "x2 =", x2
+        print("x  =", x )
+        print("x2 =", x2)
     x2 = x2 - x
     error = math.sqrt((x2 * x2).sum())
     if error > 1.0e-8:
-        print "x inconsistent on processor", myPID
+        print("x inconsistent on processor", myPID)
         failures += 1
 
     # Read the matrix
@@ -151,5 +152,5 @@ def main():
 if __name__ == "__main__":
     failures = main()
     failures = comm.SumAll(failures)
-    if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if failures == 0 and iAmRoot: print("End Result: TEST PASSED")
     sys.exit(failures)

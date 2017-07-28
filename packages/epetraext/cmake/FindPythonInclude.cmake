@@ -11,7 +11,7 @@ IF(PYTHON_EXECUTABLE)
   # Obtain the candidate path for python include
   EXECUTE_PROCESS(COMMAND
     ${PYTHON_EXECUTABLE} -c 
-    "import sys; print sys.prefix + '/include/python' + sys.version[:3]"
+    "import sys; print(sys.prefix + '/include/python' + sys.version[:3])"
     OUTPUT_VARIABLE CANDIDATE
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
@@ -25,13 +25,13 @@ IF(PYTHON_EXECUTABLE)
   # Obtain the candidate path for python library
   EXECUTE_PROCESS(COMMAND
     ${PYTHON_EXECUTABLE} -c 
-    "import sys; print 'python' + sys.version[:3]"
+    "import sys; print('python' + sys.version[:3])"
     OUTPUT_VARIABLE PYVERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
   EXECUTE_PROCESS(COMMAND
     ${PYTHON_EXECUTABLE} -c 
-    "import sys; print sys.prefix + '/lib/python' + sys.version[:3] + '/config'"
+    "import sys; print(sys.prefix + '/lib/python' + sys.version[:3] + '/config')"
     OUTPUT_VARIABLE CANDIDATE
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )

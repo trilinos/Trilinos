@@ -18,6 +18,7 @@
 #include "Tempus_StepperHHTAlpha.hpp"
 #include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperDIRK.hpp"
+#include "Tempus_StepperIMEX_RK.hpp"
 
 
 namespace Tempus {
@@ -95,8 +96,9 @@ private:
       stepperType == "SDIRK 2 Stage 3rd order" ||
       stepperType == "SDIRK 3 Stage 4th order" ||
       stepperType == "SDIRK 5 Stage 4th order" ||
-      stepperType == "SDIRK 5 Stage 5th order"
-      //stepperType == "DIRK 2 Stage 3rd order"
+      stepperType == "SDIRK 5 Stage 5th order" ||
+      stepperType == "EDIRK 2 Stage 3rd order" ||
+      stepperType == "General DIRK"
       )
       return rcp(new StepperDIRK<Scalar>(model, stepperType, stepperPL));
     else if (
@@ -127,6 +129,12 @@ private:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error - Implicit RK not implemented yet!.\n");
     }
+    else if (
+      stepperType == "IMEX RK 1st order" ||
+      stepperType == "IMEX RK SSP2"      ||
+      stepperType == "IMEX RK ARS 233"   ||
+      stepperType == "General IMEX RK" )
+      return rcp(new StepperIMEX_RK<Scalar>(model, stepperType, stepperPL));
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Unknown 'Stepper Type' = " << stepperType);

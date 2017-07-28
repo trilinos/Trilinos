@@ -1989,7 +1989,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       FC hi_DofCoords, lo_DofCoords;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
       RCP<Basis> hi = rcp(new Basis(highPolyDegree,ptype));
-      Kokkos::Experimental::resize(hi_DofCoords,hi->getCardinality(),hi->getBaseCellTopology().getDimension());
+      Kokkos::resize(hi_DofCoords,hi->getCardinality(),hi->getBaseCellTopology().getDimension());
       hi->getDofCoords(hi_DofCoords);
 #else
       RCP<Basis> hi = rcp(new Basis(highPolyDegree,ptype));
@@ -2037,7 +2037,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         out << "Testing with high order " << highPolyDegree << ", low order " << lowPolyDegree << endl;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
         RCP<Basis> lo = rcp(new Basis(lowPolyDegree,ptype));
-        Kokkos::Experimental::resize(lo_DofCoords,lo->getCardinality(),lo->getBaseCellTopology().getDimension());
+        Kokkos::resize(lo_DofCoords,lo->getCardinality(),lo->getBaseCellTopology().getDimension());
         lo->getDofCoords(lo_DofCoords);
 #else
         RCP<Basis> lo = rcp(new Basis(lowPolyDegree,ptype));
@@ -2181,8 +2181,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
             // get the mapped dof coords for lo and high bases:
             FC lo_physDofCoords, hi_physDofCoords;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-            Kokkos::Experimental::resize(lo_physDofCoords, numCells, lo->getCardinality(), cellTopo.getDimension());
-            Kokkos::Experimental::resize(hi_physDofCoords, numCells, hi->getCardinality(), cellTopo.getDimension());
+            Kokkos::resize(lo_physDofCoords, numCells, lo->getCardinality(), cellTopo.getDimension());
+            Kokkos::resize(hi_physDofCoords, numCells, hi->getCardinality(), cellTopo.getDimension());
 #else
             lo_physDofCoords.resize(numCells,lo->getCardinality(),cellTopo.getDimension());
             hi_physDofCoords.resize(numCells,hi->getCardinality(),cellTopo.getDimension());

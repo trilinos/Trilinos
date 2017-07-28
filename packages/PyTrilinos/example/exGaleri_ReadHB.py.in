@@ -45,6 +45,7 @@
 
 #
 # System imports
+from   __future__ import print_function
 from   optparse import *
 import sys
 
@@ -77,15 +78,16 @@ Comm = Epetra.PyComm()
 failures = 0
 try:
   Map, Matrix, X, B, Xexact = Galeri.ReadHB("gre__115.rua", Comm);
-except Exception, e:
+except Exception as e:
   failures += 1
-  print "Problems reading matrix file.  Error message is:"
-  print "   ", e
+  print("Problems reading matrix file.  Error message is:")
+  print("   ", e)
 
 # At this point you can use the objects in any PyTrilinos module,
 # for example AztecOO, Amesos, IFPACK, ML, and so on. 
 
-# It is possible to get the following error message with this script:
+# It is possible to get a segmentation fault (python 3) or the following error
+# message (python 2) with this script:
 #
 # *** The MPI_comm_size() function was called after MPI_FINALIZE was invoked.
 # *** This is disallowed by the MPI standard.
@@ -98,5 +100,5 @@ except Exception, e:
 del Map, Matrix, X, B, Xexact
 
 failures = Comm.SumAll(failures)
-if failures == 0 and Comm.MyPID() == 0: print "End Result: TEST PASSED"
+if failures == 0 and Comm.MyPID() == 0: print("End Result: TEST PASSED")
 sys.exit(failures)

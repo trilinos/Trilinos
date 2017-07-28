@@ -1,185 +1,316 @@
-#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+// @HEADER
+// ***********************************************************************
+//
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
+// @HEADER
 
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Include Files
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Epetra
 #include "Epetra_Import.h"
 
-#include "Thyra_VectorBase.hpp"
-#include "Thyra_LinearOpBase.hpp"
+// Panzer
+#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+
+// Thyra
 #include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 
-namespace panzer {
-
-using Teuchos::RCP;
-
-void 
-EpetraVector_ReadOnly_GlobalEvaluationData::
-useConstantValues(const std::vector<int> & indices,double value)
+namespace panzer
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(isInitialized_,std::logic_error,
-                             "EpetraVector_ReadOnly_GED has been initialized, cannot call \"useConstantValues\"!");
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  useConstantValues()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  void
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  useConstantValues(
+    const std::vector<int>& indices,
+    double                  value)
+  {
+    using std::logic_error;
+    TEUCHOS_TEST_FOR_EXCEPTION(isInitialized_, logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData has been initialized; "     \
+      "cannot call \"useConstantValues()\"!");
 
-  // add this specification to the filetered pairs vector
-  FilteredPair pair;
-  pair.first = indices;
-  pair.second = value;
-  filteredPairs_.push_back(pair);
-}
+    // Add this specification to the filtered pairs vector.
+    FilteredPair fp;
+    fp.first  = indices;
+    fp.second = value;
+    filteredPairs_.push_back(fp);
+  } // end of useConstantValues()
 
-void
-EpetraVector_ReadOnly_GlobalEvaluationData::
-initialize(const RCP<const Epetra_Import>& importer,
-           const RCP<const Epetra_Map>&    ghostedMap,
-           const RCP<const Epetra_Map>&    ownedMap)
-{
-  importer_   = importer;
-  ghostedMap_ = ghostedMap;
-  ownedMap_   = ownedMap;
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  initialize()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  void
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  initialize(
+    const Teuchos::RCP<const Epetra_Import>& importer,
+    const Teuchos::RCP<const Epetra_Map>&    ghostedMap,
+    const Teuchos::RCP<const Epetra_Map>&    ownedMap)
+  {
+    using std::size_t;
+    using std::vector;
+    using Teuchos::rcp;
+    using Thyra::create_Vector;
+    using Thyra::create_VectorSpace;
 
-  // allocate the ghosted vector
-  ghostedVector_ = Teuchos::rcp(new Epetra_Vector(*ghostedMap_));
+    // Save the input.
+    importer_   = importer;
+    ghostedMap_ = ghostedMap;
+    ownedMap_   = ownedMap;
 
-  // build up the thyra conversion data structures
-  ghostedSpace_ = Thyra::create_VectorSpace(ghostedMap_);
-  ownedSpace_   = Thyra::create_VectorSpace(ownedMap_);
+    // Build up the Thyra conversion data structures.
+    ghostedSpace_ = create_VectorSpace(ghostedMap_);
+    ownedSpace_   = create_VectorSpace(ownedMap_  );
 
-  // translate filtered pair GIDs to LIDs
-   // initialize some ghosted values to the user specified values
-   for(std::size_t i=0;i<filteredPairs_.size();i++) {
-     std::vector<int> lids;
-     const std::vector<int> & gids = filteredPairs_[i].first;
-     for(std::size_t j=0;j<gids.size();j++) {
-       int lid = ghostedMap->LID(gids[j]);
+    // Allocate the ghosted vector.
+    ghostedVector_ = rcp(new Epetra_Vector(*ghostedMap_));
 
-       // add legit LIDs to list
-       if(lid>=0)
-         lids.push_back(lid);
-     }
+    // Allocate the owned vector.
+    auto ownedVector = rcp(new Epetra_Vector(*ownedMap_));
+    ownedVector_ = create_Vector(ownedVector, ownedSpace_);
 
-     // overwrite original GID vector with new LID vector
-     filteredPairs_[i].first = lids;
-   }
-  
-  isInitialized_ = true;
-}
+    // Translate filtered pair GIDs to LIDs and initialize some ghosted values
+    // to the user-specified values.
+    for (size_t i(0); i < filteredPairs_.size(); ++i)
+    {
+      vector<int> lids;
+      const vector<int>& gids = filteredPairs_[i].first;
+      for (size_t j(0); j < gids.size(); ++j)
+      {
+        // Add legitimate LIDs to the list.
+        int lid = ghostedMap->LID(gids[j]);
+        if (lid >= 0)
+          lids.push_back(lid);
+      } // end loop over gids
 
-void 
-EpetraVector_ReadOnly_GlobalEvaluationData::
-globalToGhost(int mem)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(ownedVector_ == Teuchos::null,std::logic_error,
-    "Owned vector has not been set, can't perform the halo exchange!");
+      // Overwrite the original GID vector with the new LID vector.
+      filteredPairs_[i].first = lids;
+    } // end loop over filteredPairs_
+    isInitialized_ = true;
 
-  // Initialize the ghosted data, zeroing out things, and filling in specified
-  // constants.
-  initializeData();
-  Teuchos::RCP<const Epetra_Vector> ownedVector_ep = Thyra::get_Epetra_Vector(
-    *ownedMap_, ownedVector_);
-  
-  // Do the global distribution.
-  ghostedVector_->Import(*ownedVector_ep, *importer_, Insert);
-}
+    // Get the Kokkos::Views corresponding to the owned and ghosted vectors.
+    ownedView_   =
+      panzer::kokkos_utils::getView<const Epetra_Vector>(*ownedVector_);
+    ghostedView_   =
+      panzer::kokkos_utils::getView<Epetra_Vector>(*getGhostedVector());
+  } // end of initialize()
 
-void 
-EpetraVector_ReadOnly_GlobalEvaluationData::
-initializeData()
-{
-   TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,
-                              "EpetraVector_ReadOnly_GED has not been initialized, cannot call \"initializeData\"!");
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  globalToGhost()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  void
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  globalToGhost(
+    int mem)
+  {
+    using std::logic_error;
+    using Teuchos::RCP;
+    using Thyra::get_Epetra_Vector;
+    TEUCHOS_TEST_FOR_EXCEPTION(ownedVector_.is_null(), logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData::globalToGhost():  Owned "  \
+      "vector has not been set; can't perform the halo exchange!")
 
-   ghostedVector_->PutScalar(0.0);
+    // Initialize the ghosted data, zeroing out things, and filling in
+    // specified constants.
+    initializeData();
+    RCP<const Epetra_Vector> ownedVector_ep =
+      get_Epetra_Vector(*ownedMap_, ownedVector_);
 
-   // initialize some ghosted values to the user specified values
-   for(std::size_t i=0;i<filteredPairs_.size();i++) {
-     const std::vector<int> & lids = filteredPairs_[i].first;
-     double value = filteredPairs_[i].second;
-     for(std::size_t j=0;j<lids.size();j++)
-       (*ghostedVector_)[lids[j]] = value;
-   }
-}
+    // Do the global distribution.
+    ghostedVector_->Import(*ownedVector_ep, *importer_, Insert);
+  } // end of globalToGhost()
 
-void 
-EpetraVector_ReadOnly_GlobalEvaluationData::
-setOwnedVector_Epetra(const Teuchos::RCP<const Epetra_Vector>& ownedVector)
-{
-  TEUCHOS_ASSERT(isInitialized_);
-  ownedVector_ = Thyra::create_Vector(ownedVector, ownedSpace_);
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  initializeData()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  void
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  initializeData()
+  {
+    using std::logic_error;
+    using std::size_t;
+    using std::vector;
+    TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData has not been initialized, " \
+      "cannot call \"initializeData()\"!");
+    ghostedVector_->PutScalar(0);
 
-Teuchos::RCP<Epetra_Vector> 
-EpetraVector_ReadOnly_GlobalEvaluationData::
-getGhostedVector_Epetra() const
-{
-  TEUCHOS_ASSERT(isInitialized_);
-  TEUCHOS_ASSERT(ghostedVector_!=Teuchos::null);
+    // Initialize some ghosted values to the user-specified values.
+    for (size_t i(0); i < filteredPairs_.size(); ++i)
+    {
+      const vector<int>& lids = filteredPairs_[i].first;
+      for (size_t j(0); j < lids.size(); ++j)
+        (*ghostedVector_)[lids[j]] = filteredPairs_[i].second;
+    } // end loop over filteredPairs_
+  } // end of initializeData()
 
-  return ghostedVector_;
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  setOwnedVector_Epetra()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  void
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  setOwnedVector_Epetra(
+    const Teuchos::RCP<const Epetra_Vector>& ownedVector)
+  {
+    using std::logic_error;
+    using Thyra::create_Vector;
+    TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData::"                          \
+      "setOwnedVector_Epetra():  This object hasn't yet been initialized.")
+    ownedVector_ = create_Vector(ownedVector, ownedSpace_);
+    ownedView_ =
+      panzer::kokkos_utils::getView<const Epetra_Vector>(*ownedVector_);
+  } // end of setOwnedVector_Epetra()
 
-void 
-EpetraVector_ReadOnly_GlobalEvaluationData::
-setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >&
-	ownedVector)
-{
-  TEUCHOS_ASSERT(isInitialized_);
-  // ownedVector_ep_ = Thyra::get_Epetra_Vector(*ownedMap_, ownedVector);
-  ownedVector_ = ownedVector;
-/*
-  std::cout << "SETTING OWNED" << std::endl;
-  std::cout << Teuchos::describe(*ownedVector, Teuchos::VERB_EXTREME) << std::endl;
-  ownedVector_->Print(std::cout);
-  std::cout << std::endl;
-*/
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  getGhostedVector_Epetra()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  Teuchos::RCP<Epetra_Vector>
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  getGhostedVector_Epetra() const
+  {
+    using std::logic_error;
+    TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData::"                          \
+      "getGhostedVector_Epetra():  This object hasn't yet been initialized.")
+    TEUCHOS_TEST_FOR_EXCEPTION(ghostedVector_.is_null(), logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData::"                          \
+      "getGhostedVector_Epetra():  The ghosted vector is just a null RCP.")
+    return ghostedVector_;
+  } // end of getGhostedVector_Epetra()
 
-Teuchos::RCP<const Thyra::VectorBase<double> > 
-EpetraVector_ReadOnly_GlobalEvaluationData::
-getOwnedVector() const
-{
-  TEUCHOS_ASSERT(isInitialized_);
-  // return (ownedVector_==Teuchos::null) ? Teuchos::null :
-  // 	 Thyra::create_Vector(ownedVector_, ownedSpace_);
-  return ownedVector_;
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  setOwnedVector()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  void
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  setOwnedVector(
+    const Teuchos::RCP<const Thyra::VectorBase<double>>& ownedVector)
+  {
+    using std::logic_error;
+    TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData::setOwnedVector():  This "  \
+      "object hasn't yet been initialized.")
+    ownedVector_ = ownedVector;
+    ownedView_ =
+      panzer::kokkos_utils::getView<const Epetra_Vector>(*ownedVector_);
+  } // end of setOwnedVector()
 
-Teuchos::RCP<Thyra::VectorBase<double> > 
-EpetraVector_ReadOnly_GlobalEvaluationData::
-getGhostedVector() const
-{
-  TEUCHOS_ASSERT(isInitialized_);
-  TEUCHOS_ASSERT(ghostedVector_!=Teuchos::null);
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  getOwnedVector()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  Teuchos::RCP<const Thyra::VectorBase<double>>
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  getOwnedVector() const
+  {
+    using std::logic_error;
+    TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData::getOwnedVector():  This "  \
+      "object hasn't yet been initialized.")
+    return ownedVector_;
+  } // end of getOwnedVector()
 
-  return Thyra::create_Vector(ghostedVector_,ghostedSpace_);
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  getGhostedVector()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  Teuchos::RCP<Thyra::VectorBase<double>>
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  getGhostedVector() const
+  {
+    using std::logic_error;
+    using Thyra::create_Vector;
+    TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData::getGhostedVector():  "     \
+      "This object hasn't yet been initialized.")
+    TEUCHOS_TEST_FOR_EXCEPTION(ghostedVector_.is_null(), logic_error,
+      "EpetraVector_ReadOnly_GlobalEvaluationData::getGhostedVector():  The " \
+      "ghosted vector is just a null RCP.")
+    return create_Vector(ghostedVector_, ghostedSpace_);
+  } // end of getGhostedVector()
 
-void
-EpetraVector_ReadOnly_GlobalEvaluationData::
-print(std::ostream & os) const
-{
-  const std::string tab = "    ";
-  os << "\n";
-  os << tab << "EpetraVector_ReadOnly_GlobalEvaluationData\n"
-     << tab << "  init    = " << isInitialized_ << "\n"
-     << tab << "  owned   = " << ownedVector_   << "\n"
-     << tab << "  ghosted = " << ghostedVector_ << "\n";
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  print()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  void
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  print(
+    std::ostream& os) const
+  {
+    using std::endl;
+    using std::string;
+    const string tab("    ");
+    os << endl
+       << tab << "EpetraVector_ReadOnly_GlobalEvaluationData" << endl
+       << tab << "  init    = " << isInitialized_             << endl
+       << tab << "  owned   = " << ownedVector_               << endl
+       << tab << "  ghosted = " << ghostedVector_             << endl;
+  } // end of print()
 
-  /*
-  os << "GHOSTED MAP\n";
-  ghostedMap_->Print(os);
-  os << "\n\n";
+} // end of namespace panzer
 
-  os << "GHOSTED Vector\n";
-  ghostedVector_->Print(os);
-  os << "\n\n";
-
-  os << "OWNED MAP\n";
-  ownedMap_->Print(os);
-  os << "\n\n";
-
-  os << "OWNED Vector\n";
-  ownedVector_->Print(os);
-  os << "\n\n";
-  */
-}
-
-
-}
+// end of Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.cpp

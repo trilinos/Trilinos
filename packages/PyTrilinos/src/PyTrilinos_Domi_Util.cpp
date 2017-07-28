@@ -76,7 +76,12 @@ convertToDomiSlice(PySliceObject * pySlice,
   Py_ssize_t pyStop   = 0;
   Py_ssize_t pyStep   = 0;
   Py_ssize_t sliceLen = 0;
-  int rcode = PySlice_GetIndicesEx(pySlice, length , &pyStart ,
+#if PY_VERSION_HEX >= 0x03020000
+  PyObject * pyObj = (PyObject*) pySlice;
+#else
+  PySliceObject * pyObj = pySlice;
+#endif
+  int rcode = PySlice_GetIndicesEx(pyObj  , length , &pyStart ,
                                    &pyStop, &pyStep, &sliceLen);
   Domi::Slice domiSlice((Domi::dim_type) pyStart,
                         (Domi::dim_type) pyStop ,

@@ -71,14 +71,13 @@ dimension_scalar_aligned(const view_type& view) {
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #include "Sacado_Traits.hpp"
-#include "impl/KokkosExp_ViewMapping.hpp"
+#include "impl/Kokkos_ViewMapping.hpp"
 #include "Kokkos_LayoutContiguous.hpp"
 #include "Kokkos_LayoutNatural.hpp"
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 struct ViewSpecializeSacadoFad {};
@@ -98,7 +97,6 @@ struct is_ViewSpecializeSacadoFad< Kokkos::View<D,P...> , Args... > {
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 namespace Kokkos {
@@ -108,9 +106,9 @@ struct is_view_fad< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+                  Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
+                  Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
 template <typename T, typename ... P>
@@ -118,7 +116,7 @@ struct is_view_fad_contiguous< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
+                  Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
 template <typename T, typename ... P>
@@ -163,9 +161,9 @@ void deep_copy(
   const typename Sacado::ScalarType< typename View<DT,DP...>::value_type >::type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+              , Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
+              , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -173,7 +171,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Experimental::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
 // Overload of deep_copy for Fad views intializing to a constant Fad
@@ -183,9 +181,9 @@ void deep_copy(
   const typename View<DT,DP...>::value_type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+              , Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
+              , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -193,7 +191,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Experimental::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
 /* Specialize for deep copy of FAD */
@@ -203,16 +201,16 @@ void deep_copy( const View<DT,DP...> & dst ,
                 const View<ST,SP...> & src
   , typename std::enable_if<(
   ( std::is_same< typename ViewTraits<DT,DP...>::specialize
-                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
     ||
     std::is_same< typename ViewTraits<DT,DP...>::specialize
-                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
   ( std::is_same< typename ViewTraits<ST,SP...>::specialize
-                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
     ||
     std::is_same< typename ViewTraits<ST,SP...>::specialize
-                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
   )>::type * = 0 )
 {
   static_assert(
@@ -237,7 +235,6 @@ void deep_copy( const View<DT,DP...> & dst ,
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 template< class DataType , class ArrayLayout , class ScalarType , unsigned DimFad >
@@ -401,7 +398,6 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -431,7 +427,6 @@ namespace ELRCacheFad { template< typename , int > class SLFad ; }
 }
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 #define KOKKOS_VIEW_DATA_ANALYSIS_SACADO_FAD( NS ) \
@@ -478,13 +473,164 @@ KOKKOS_VIEW_DATA_ANALYSIS_SACADO_FAD( ELRCacheFad )
 #undef KOKKOS_VIEW_DATA_ANALYSIS_SACADO_FAD
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
+
+// Copied from Sacado_ViewFactory
+template <class View, class ... ViewPack>
+unsigned dimension_scalar(const View& v, const ViewPack&... views) {
+  const unsigned dim0 = dimension_scalar(v);
+  const unsigned dim1 = dimension_scalar(views...);
+  return dim0 >= dim1 ? dim0 : dim1 ;
+}
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos { namespace Impl {
+
+template < typename Specialize, typename A, typename B >
+struct CommonViewValueType;
+
+template < typename A, typename B >
+struct CommonViewValueType< Kokkos::Impl::ViewSpecializeSacadoFad, A, B >
+{
+  using value_type = typename Sacado::Promote<A,B>::type ;
+};
+
+template < typename A, typename B >
+struct CommonViewValueType< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, A, B >
+{
+  using value_type = typename Sacado::Promote<A,B>::type ;
+};
+
+
+template < class Specialize, class ValueType >
+struct CommonViewAllocProp;
+
+template < class ValueType >
+struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFad, ValueType >
+{
+  using value_type = ValueType;
+  unsigned fad_dim;
+  bool is_view_type;
+
+  CommonViewAllocProp()
+  : fad_dim(0) , is_view_type(false) {}
+
+  // Assume all views are View or DynRankView
+  // TODO If assumption is insufficient, better deduction on is_view...
+  template < class View >
+  CommonViewAllocProp( const View & view )
+  : fad_dim ( dimension_scalar(view) )
+  {
+    is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
+    printf(" fad_dim = %i\n",fad_dim);
+  }
+
+  // TODO If assumption is insufficient, better deduction on is_view...
+  template < class View, class ... Views >
+  CommonViewAllocProp( const View & view,  const Views & ... views ) 
+  : fad_dim ( dimension_scalar(view, views... ) )
+  {
+    is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
+    printf(" fad_dim = %i\n",fad_dim);
+  }
+
+};
+
+template < class ValueType >
+struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, ValueType >
+{
+  using value_type = ValueType;
+  unsigned fad_dim;
+  bool is_view_type;
+
+  CommonViewAllocProp()
+  : fad_dim(0) , is_view_type(false) {}
+
+  // Assume all views are View or DynRankView
+  // TODO If assumption is insufficient, better deduction on is_view...
+  template < class View >
+  CommonViewAllocProp( const View & view )
+  : fad_dim ( dimension_scalar(view) )
+  {
+    is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
+    printf(" fad_dim = %i\n",fad_dim);
+  }
+
+  // TODO If assumption is insufficient, better deduction on is_view...
+  template < class View, class ... Views >
+  CommonViewAllocProp( const View & view,  const Views & ... views ) 
+  : fad_dim ( dimension_scalar(view, views... ) )
+  {
+    is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
+    printf(" fad_dim = %i\n",fad_dim);
+  }
+};
+
+// Detect if a ViewCtorProp contains a CommonViewAllocProp
+template < typename ... >
+struct has_common_view_alloc_prop : public std::false_type {};
+
+template < class Specialize, class ValueType >
+struct has_common_view_alloc_prop< CommonViewAllocProp<Specialize, ValueType> > : public std::true_type {};
+
+
+// Check for CommonViewAllocProp in pack of properties
+template < typename ... >
+struct check_has_common_view_alloc_prop;
+
+template <>
+struct check_has_common_view_alloc_prop<>
+{
+  enum { value = false };
+};
+
+template < typename P >
+struct check_has_common_view_alloc_prop<P>
+{
+  enum { value = has_common_view_alloc_prop< P >::value };
+};
+
+template < typename P0, typename ... P >
+struct check_has_common_view_alloc_prop<P0, P...>
+{
+  enum { value = ( (has_common_view_alloc_prop<P0>::value == true) ? true : check_has_common_view_alloc_prop<P...>::value ) };
+};
+
+template <typename Traits, typename CtorProp >
+struct appendFadToLayoutViewAllocHelper 
+{
+  using layout_type = typename Traits::array_layout;
+  using specialize = typename Traits::specialize;
+  
+  static layout_type returnNewLayoutPlusFad( const CtorProp & arg_prop, const layout_type & arg_layout ) {
+
+    using CVAP_type = CommonViewAllocProp< specialize, typename Traits::value_type >;
+
+    auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVAP_type> const &)arg_prop).value;
+
+    layout_type appended_layout( arg_layout );
+
+    // Static View case - DynRankView layout handled within createLayout calls
+    appended_layout.dimension[ Traits::rank ] = (cast_prop.fad_dim > 0) ? cast_prop.fad_dim : 1;
+
+    return appended_layout;
+  }
+};
+
+} } // namespace Kokkos::Impl
+
+
+//----------------------------------------------------------------------------
+
+
+namespace Kokkos {
 namespace Impl {
 
 template< class Traits >
@@ -507,7 +653,7 @@ class ViewMapping< Traits , /* View internal mapping */
 private:
 
   template< class , class ... > friend class ViewMapping ;
-  template< class , class ... > friend class Kokkos::Experimental::View ;
+  template< class , class ... > friend class Kokkos::View ;
 
   typedef typename Traits::value_type  fad_type ;
   typedef typename Sacado::ValueType< fad_type >::type fad_value_type ;
@@ -781,7 +927,16 @@ public:
     // Disallow padding
     typedef std::integral_constant< unsigned , 0 > padding ;
 
-    m_offset = offset_type( padding(), local_layout );
+    // Check if ViewCtorProp has CommonViewAllocProp - if so, retrieve the fad_size and append to layout
+    enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+    using CVTR = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad 
+                                                           , typename Traits::value_type >;
+    m_offset = offset_type( padding(), 
+                            ( test_traits_check == true
+                             && ((Kokkos::Impl::ViewCtorProp<void, CVTR> const &)prop).value.is_view_type) 
+                            ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, ctor_prop >::returnNewLayoutPlusFad(prop, local_layout) 
+                            : local_layout );
+
     const unsigned fad_dim =
       ( Rank == 0 ? m_offset.dimension_0() :
       ( Rank == 1 ? m_offset.dimension_1() :
@@ -838,13 +993,11 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 /**\brief  Assign compatible Sacado FAD view mappings.
@@ -875,7 +1028,7 @@ public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
@@ -952,13 +1105,11 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Subview mapping
@@ -1048,13 +1199,13 @@ private:
 
 public:
 
-  typedef Kokkos::Experimental::ViewTraits
+  typedef Kokkos::ViewTraits
     < data_type
     , array_layout
     , typename SrcTraits::device_type
     , typename SrcTraits::memory_traits > traits_type ;
 
-  typedef Kokkos::Experimental::View
+  typedef Kokkos::View
     < data_type
     , array_layout
     , typename SrcTraits::device_type
@@ -1091,7 +1242,6 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

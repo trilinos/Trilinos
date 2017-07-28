@@ -28,11 +28,45 @@ namespace Tacho {
       size_type_array _rptr;
       ordinal_type_array _cidx;
 
+      template<typename SizeTypeArray,
+               typename OrdinalTypeArray>
+      inline
+      void
+      init(const ordinal_type m, 
+           const size_type nnz, 
+           const SizeTypeArray &ap,
+           const OrdinalTypeArray &aj) {
+        _rptr = size_type_array("Graph::rptr", m + 1);
+        _cidx = ordinal_type_array("Graph::cidx", nnz);
+
+        _m = m;
+        _nnz = 0;
+        for (ordinal_type i=0;i<_m;++i) {
+          const size_type jbeg = ap(i), jend = ap(i+1);
+          _rptr(i) = _nnz;
+          for (size_type j=jbeg;j<jend;++j) {
+            // skip diagonal 
+            const ordinal_type col = aj(j);
+            if (i != col) _cidx(_nnz++) = col;
+          }
+        }
+        _rptr(_m) = _nnz;        
+      }
+
     public:
 
       Graph() = default;
       Graph(const Graph &b) = default;
 
+      template<typename SizeTypeArray,
+               typename OrdinalTypeArray>
+      Graph(const ordinal_type m, 
+            const size_type nnz, 
+            const SizeTypeArray &ap,
+            const OrdinalTypeArray &aj) {
+        init(m, nnz, ap, aj);
+      }
+      
       template<typename ValueType, typename SpaceType>
       inline
       Graph(const CrsMatrixBase<ValueType,SpaceType> &A) {
@@ -43,21 +77,7 @@ namespace Tacho {
         AA.createMirror(A);
         AA.copy(A);
         
-        _rptr = size_type_array("Graph::rptr", AA.NumRows() + 1);
-        _cidx = ordinal_type_array("Graph::cidx", AA.NumNonZeros());
-
-        _m = AA.NumRows();
-        _nnz = 0;
-        for (ordinal_type i=0;i<_m;++i) {
-          const size_type jbeg = AA.RowPtrBegin(i), jend = AA.RowPtrEnd(i);
-          _rptr(i) = _nnz;
-          for (size_type j=jbeg;j<jend;++j) {
-            // skip diagonal 
-            const ordinal_type aj = A.Col(j);
-            if (i != aj) _cidx(_nnz++) = aj;
-          }
-        }
-        _rptr(_m) = _nnz;        
+        init(AA.NumRows(), AA.NumNonZeros(), AA.RowPtr(), AA.Cols());
       }
 
       inline

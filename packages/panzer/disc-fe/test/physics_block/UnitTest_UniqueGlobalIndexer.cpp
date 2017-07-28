@@ -158,27 +158,92 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int
                       "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
 }
 
-void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+UniqueGlobalIndexer::
+getOwnedIndices(
+  std::vector<int>& indices) const
 {
-   indices.resize(12);
-   indices[0] = 0;
-   indices[1] = 1;
-   indices[2] = 2;
-   indices[3] = 3;
-   indices[4] = 4;
-   indices[5] = 5;
-   indices[6] = 6;
-   indices[7] = 7;
-   indices[8] = 8;
-   indices[9] = 9;
-   indices[10] = 10;
-   indices[11] = 11;
-}
+  indices.resize(12);
+  indices[0] = 0;
+  indices[1] = 1;
+  indices[2] = 2;
+  indices[3] = 3;
+  indices[4] = 4;
+  indices[5] = 5;
+  indices[6] = 6;
+  indices[7] = 7;
+  indices[8] = 8;
+  indices[9] = 9;
+  indices[10] = 10;
+  indices[11] = 11;
+} // end of getOwnedIndices()
 
-void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<int> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+UniqueGlobalIndexer::
+getGhostedIndices(
+  std::vector<int>& indices) const
 {
-   getOwnedIndices(indices);
-}
+  indices.resize(0);
+} // end of getGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedAndGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+UniqueGlobalIndexer::
+getOwnedAndGhostedIndices(
+  std::vector<int>& indices) const
+{
+  getOwnedIndices(indices);
+} // end of getOwnedAndGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwned()
+//
+///////////////////////////////////////////////////////////////////////////////
+int
+UniqueGlobalIndexer::
+getNumOwned() const
+{
+  return 12;
+} // end of getNumOwned()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+int
+UniqueGlobalIndexer::
+getNumGhosted() const
+{
+  return 0;
+} // end of getNumGhosted()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwnedAndGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+int
+UniqueGlobalIndexer::
+getNumOwnedAndGhosted() const
+{
+  return 12;
+} // end of getNumOwnedAndGhosted()
 
 void UniqueGlobalIndexer::ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const
 {

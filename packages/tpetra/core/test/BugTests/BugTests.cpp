@@ -52,16 +52,6 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#include "Tpetra_Map_def.hpp"
-#include "Tpetra_Directory_def.hpp"
-#include "Tpetra_CrsGraph_def.hpp"
-#include "Tpetra_CrsMatrix_def.hpp"
-#include "Tpetra_MatrixIO_def.hpp"
-#include "Tpetra_MultiVector_def.hpp"
-#include "Tpetra_Vector_def.hpp"
-#endif
-
 namespace {
 
   using Teuchos::RCP;
@@ -179,6 +169,7 @@ namespace {
   //   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   // }
 
+#ifdef HAVE_TPETRA_INST_INT_INT
   ////
   TEUCHOS_UNIT_TEST( DistObject, Bug5129_OverlyStrictMapComparison )
   {
@@ -209,7 +200,7 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-
+#endif // HAVE_TPETRA_INT_INT
 }
 
 

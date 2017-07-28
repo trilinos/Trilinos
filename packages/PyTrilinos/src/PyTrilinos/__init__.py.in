@@ -89,10 +89,10 @@ def version():
 
 #
 # Import utility class
-from PropertyBase import PropertyBase
+from .PropertyBase import PropertyBase
 #
 # Import the typed tuple factory and classes
-from typed_tuple import *
+from .typed_tuple import *
 #
 # Import the typed dict factory
-from typed_dict import *
+from .typed_dict import *

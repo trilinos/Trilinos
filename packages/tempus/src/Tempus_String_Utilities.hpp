@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef TEMPUS_STRING_UTILITIES_HPP
-#define TEMPUS_STRING_UTILITIES_HPP
+#ifndef Tempus_String_Utilities_hpp
+#define Tempus_String_Utilities_hpp
 
 #include <vector>
 #include <string>
@@ -18,7 +18,7 @@ namespace Tempus {
 
   //! Removes whitespace at beginning and end of string
   void trim(std::string& str);
-  
+
   //! Tokenize a string, put tokens in a vector
   void StringTokenizer(std::vector<std::string>& tokens,
 		       const std::string& str,
@@ -43,4 +43,4 @@ namespace Tempus {
   }
 }
 
-#endif
+#endif // Tempus_String_Utilities_hpp

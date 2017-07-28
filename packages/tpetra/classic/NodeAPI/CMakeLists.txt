@@ -39,7 +39,7 @@ ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_OpenMPNode)
 IF (${PACKAGE_NAME}_ENABLE_OpenMPNode)
-  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::OpenMPNode class was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set Trilinos_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest.")
+  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::OpenMPNode class was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest.")
 ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TBBNode)

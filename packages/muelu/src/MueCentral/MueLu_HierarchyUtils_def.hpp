@@ -224,10 +224,10 @@ namespace MueLu {
               level->Set(varName, Teuchos::getValue<Array<GlobalOrdinal> > (it2->second), NoFactory::get());
             else if(typeName == "array<lo>")
               level->Set(varName, Teuchos::getValue<Array<LocalOrdinal> >(it2->second), NoFactory::get());
-            else if(typeName == "array<bool>")
-              level->Set(varName, Teuchos::getValue<Array<bool> >(it2->second), NoFactory::get());
-            else if(typeName == "arrayrcp<bool>")
-              level->Set(varName, Teuchos::getValue<ArrayRCP<bool> >(it2->second), NoFactory::get());
+            else if(typeName == "arrayrcp<lo>")
+              level->Set(varName, Teuchos::getValue<ArrayRCP<LocalOrdinal> >(it2->second), NoFactory::get());
+            else if(typeName == "arrayrcp<go>")
+              level->Set(varName, Teuchos::getValue<ArrayRCP<GlobalOrdinal> >(it2->second), NoFactory::get());
             else
               throw std::runtime_error("Invalid non-serializable data on list");
           }

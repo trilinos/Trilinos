@@ -27,8 +27,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef KOKKOS_EXPERIMENTAL_LAYOUT_CONTIGUOUS_HPP
-#define KOKKOS_EXPERIMENTAL_LAYOUT_CONTIGUOUS_HPP
+#ifndef KOKKOS_LAYOUT_CONTIGUOUS_HPP
+#define KOKKOS_LAYOUT_CONTIGUOUS_HPP
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp"
@@ -80,10 +80,9 @@ namespace std {
 
 }
 
-#include "impl/KokkosExp_ViewMapping.hpp"
+#include "impl/Kokkos_ViewMapping.hpp"
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Implement ViewOffset for LayoutContiguous
@@ -125,7 +124,6 @@ struct LayoutScalarStride< LayoutContiguous<Layout,Stride> > {
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
-#endif // #ifndef KOKKOS_EXPERIMENTAL_LAYOUT_CONTIGUOUS_HPP
+#endif // #ifndef KOKKOS_LAYOUT_CONTIGUOUS_HPP

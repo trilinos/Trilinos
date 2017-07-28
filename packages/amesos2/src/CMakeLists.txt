@@ -249,16 +249,16 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
       Amesos2_Basker.cpp
       )
 
-      IF(NOT Trilinos_ENABLE_ShyLUBasker)      
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
-    APPEND_SET(HEADERS				
-        basker/basker.hpp
-        basker/basker_decl.hpp
-        basker/basker_def.hpp
-        basker/basker_scalartraits.hpp
-        basker/basker_types.hpp
-     )
-     ENDIF()
+   IF(NOT ${PACKAGE_NAME}_ENABLE_ShyLUBasker)
+   	INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
+   	APPEND_SET(HEADERS				
+       basker/basker.hpp
+       basker/basker_decl.hpp
+       basker/basker_def.hpp
+       basker/basker_scalartraits.hpp
+       basker/basker_types.hpp
+   	  )
+   ENDIF()
 
 ENDIF()
 
@@ -383,7 +383,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 ENDIF()
 ENDIF()
 
-IF (Trilinos_ENABLE_TrilinosSS)
+IF (${PACKAGE_NAME}_ENABLE_TrilinosSS)
     ADD_SUBDIRECTORY(KLU2/Source)
 ENDIF()
 

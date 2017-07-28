@@ -227,7 +227,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     LocalOrdinal nNodes = 0;
     LocalOrdinal nDofs  = 0;
     int maxDofPerNode = -1;
-    Teuchos::ArrayRCP<bool> dofPresent;
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent;
     {
       FILE* data_file;
       std::stringstream ss; ss << comm->getSize() << "dofPresent" << comm->getRank();
@@ -235,16 +235,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       TEUCHOS_TEST_FOR_EXCEPTION(data_file == NULL, MueLu::Exceptions::RuntimeError,"Problem opening file " << ss.str());
       // read in first line containing number of local nodes and maxDofPerNode
       fscanf(data_file,"%d %d\n", &nNodes, &maxDofPerNode);
-      dofPresent = Teuchos::ArrayRCP<bool>(nNodes * maxDofPerNode,false);
+      dofPresent = Teuchos::ArrayRCP<LocalOrdinal>(nNodes * maxDofPerNode,0);
       // loop over all local nodes
       for(LocalOrdinal i = 0; i < nNodes; i++) {
         for(int j=0; j<maxDofPerNode; j++) {
           int tmp = -1;
           fscanf(data_file,"%d",&tmp);
           if(tmp == 1) {
-            dofPresent[i*maxDofPerNode+j] = true; nDofs++;
+            dofPresent[i*maxDofPerNode+j] = 1; nDofs++;
           } else {
-            dofPresent[i*maxDofPerNode+j] = false;
+            dofPresent[i*maxDofPerNode+j] = 0;
           }
         }
       }
@@ -290,7 +290,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       GlobalOrdinal count = nDofs - 1;
       for(GlobalOrdinal i = nNodes - 1; i>=0; i--) {
         for(int j = maxDofPerNode-1; j >=0; j--) {
-          if(dofPresent[i*maxDofPerNode+j] == true)
+          if(dofPresent[i*maxDofPerNode+j] == 1)
             nodalGlobals[i] = dofGlobals[count--];
         }
       }
@@ -449,7 +449,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     const std::string userName = "user data";
     Teuchos::ParameterList& userParamList = paramList.sublist(userName);
     userParamList.set("multivector Coordinates",coordinates);
-    userParamList.set("ArrayRCP<bool> DofPresent", dofPresent);
+    userParamList.set("ArrayRCP<LO> DofPresent", dofPresent);
 
     RCP<Hierarchy> H;
     H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList, paramList /*coordinates*/);

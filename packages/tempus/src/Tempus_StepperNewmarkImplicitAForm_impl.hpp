@@ -88,7 +88,7 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 // StepperNewmarkImplicitAForm definitions:
 template<class Scalar>
 StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
@@ -100,36 +100,36 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
 
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->initialize();
 }
 
 
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->validSecondOrderODE_DAE(transientModel);
-  if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
-  residualModel_ =
-    Teuchos::rcp(new SecondOrderResidualModelEvaluator<Scalar>(transientModel,
+  this->validSecondOrderODE_DAE(appModel);
+  if (wrapperModel_ != Teuchos::null) wrapperModel_ = Teuchos::null;
+  wrapperModel_ =
+    Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                                       "Newmark Implicit a-Form"));
-  inArgs_  = residualModel_->getNominalValues();
-  outArgs_ = residualModel_->createOutArgs();
+  inArgs_  = wrapperModel_->getNominalValues();
+  outArgs_ = wrapperModel_->createOutArgs();
 }
 
 
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 
@@ -250,7 +250,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     *out_ << "IKT d_old = " << Thyra::max(*d_old) << "\n";
     *out_ << "IKT v_old = " << Thyra::max(*v_old) << "\n";
 #endif
-    
+
     //Get new values of d, v and a from current workingState
     //(to be updated here)
     RCP<Thyra::VectorBase<Scalar> > d_new = workingState->getX();
@@ -259,33 +259,33 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
 
     //Get time and dt
     const Scalar time = workingState->getTime();
-    const Scalar dt = workingState->getTimeStep(); 
+    const Scalar dt = workingState->getTimeStep();
     //Update time
     Scalar t = time+dt;
-    
+
     //Compute initial acceleration, a_old, using initial displacement (d_old) and initial
-    //velocity (v_old) if in 1st time step 
+    //velocity (v_old) if in 1st time step
     if (time == solutionHistory->minTime()) {
-      RCP<Thyra::VectorBase<Scalar> > d_init = Thyra::createMember(d_old->space());  
-      RCP<Thyra::VectorBase<Scalar> > v_init = Thyra::createMember(v_old->space());  
-      RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());  
-      Thyra::copy(*d_old, d_init.ptr());  
-      Thyra::copy(*v_old, v_init.ptr()); 
-      Thyra::put_scalar(0.0, a_init.ptr()); 
-      residualModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      RCP<Thyra::VectorBase<Scalar> > d_init = Thyra::createMember(d_old->space());
+      RCP<Thyra::VectorBase<Scalar> > v_init = Thyra::createMember(v_old->space());
+      RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());
+      Thyra::copy(*d_old, d_init.ptr());
+      Thyra::copy(*v_old, v_init.ptr());
+      Thyra::put_scalar(0.0, a_init.ptr());
+      wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<double> sStatus =
-        this->solveNonLinear(residualModel_, *solver_, a_init, inArgs_);
+        this->solveNonLinear(wrapperModel_, *solver_, a_init);
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
       else
         workingState->getStepperState()->stepperStatus_ = Status::FAILED;
-      Thyra::copy(*a_init, a_old.ptr()); 
+      Thyra::copy(*a_init, a_old.ptr());
     }
 #ifdef DEBUG_OUTPUT
     //IKT, 3/30/17, debug output: pring a_old to check for correctness.
     *out_ << "IKT a_old = " << Thyra::max(*a_old) << "\n";
 #endif
-    
+
 
     //allocate d and v predictors
     RCP<Thyra::VectorBase<Scalar> > d_pred =Thyra::createMember(d_old->space());
@@ -295,20 +295,20 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
-    //inject d_pred, v_pred, a and other relevant data into residualModel_
-    residualModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    //inject d_pred, v_pred, a and other relevant data into wrapperModel_
+    wrapperModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
 
     //Solve for new acceleration
     //IKT, 3/13/17: check how solveNonLinear works.
     const Thyra::SolveStatus<double> sStatus =
-      this->solveNonLinear(residualModel_, *solver_, a_old, inArgs_);
+      this->solveNonLinear(wrapperModel_, *solver_, a_old);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
 
-    Thyra::copy(*a_old, a_new.ptr()); 
+    Thyra::copy(*a_old, a_new.ptr());
     correctVelocity(*v_new, *v_pred, *a_new, dt);
     correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
@@ -359,7 +359,7 @@ void StepperNewmarkImplicitAForm<Scalar>::describe(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   out << description() << "::describe:" << std::endl
-      << "residualModel_ = " << residualModel_->description() << std::endl;
+      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
 }
 
 
@@ -394,40 +394,40 @@ void StepperNewmarkImplicitAForm<Scalar>::setParameterList(
       gamma_ = newmarkPL.get("Gamma", 0.5);
       TEUCHOS_TEST_FOR_EXCEPTION( (beta_ > 1.0) || (beta_ < 0.0),
         std::logic_error,
-           "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Beta = " << beta_ << ".  Please select Beta >= 0 and <= 1. \n"); 
+           "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Beta = " << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
       TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
         std::logic_error,
-           "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n"); 
+           "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
       *out_ << "\nSetting Beta = " << beta_ << " and Gamma = " << gamma_
             << " from Newmark Parameters in input file.\n";
-    } 
+    }
     else {
       *out_ << "\nScheme Name = " << scheme_name << ".  Using values \n"
             << "of Beta and Gamma for this scheme (ignoring values of Beta and Gamma \n"
-            << "in input file, if provided).\n"; 
+            << "in input file, if provided).\n";
        if (scheme_name == "Average Acceleration") {
-         beta_ = 0.25; gamma_ = 0.5; 
+         beta_ = 0.25; gamma_ = 0.5;
        }
        else if (scheme_name == "Linear Acceleration") {
-         beta_ = 0.25; gamma_ = 1.0/6.0; 
+         beta_ = 0.25; gamma_ = 1.0/6.0;
        }
        else if (scheme_name == "Central Difference") {
-         beta_ = 0.0; gamma_ = 0.5; 
+         beta_ = 0.0; gamma_ = 0.5;
        }
        else {
          TEUCHOS_TEST_FOR_EXCEPTION(true,
             std::logic_error,
-            "\nError in Tempus::StepperNewmarkImplicitAForm!  Invalid Scheme Name = " << scheme_name <<".  \n" 
+            "\nError in Tempus::StepperNewmarkImplicitAForm!  Invalid Scheme Name = " << scheme_name <<".  \n"
             <<"Valid Scheme Names are: 'Average Acceleration', 'Linear Acceleration', \n"
-            <<"'Central Difference' and 'Not Specified'.\n"); 
+            <<"'Central Difference' and 'Not Specified'.\n");
        }
-       *out_ << "===> Beta = " << beta_ << ", Gamma = " << gamma_ << "\n"; 
+       *out_ << "===> Beta = " << beta_ << ", Gamma = " << gamma_ << "\n";
     }
     if (beta_ == 0.0) {
       *out_ << "\nWARNING: Running (implicit implementation of) Newmark Implicit a-Form Stepper with Beta = 0.0, which \n"
-            << "specifies an explicit scheme.  Mass lumping is not possible, so this will be slow!  To run explicit \n" 
+            << "specifies an explicit scheme.  Mass lumping is not possible, so this will be slow!  To run explicit \n"
             << "implementation of Newmark Implicit a-Form Stepper, please re-run with 'Stepper Type' = 'Newmark Explicit a-Form'.\n"
-            << "This stepper allows for mass lumping when called through Piro::TempusSolver.\n"; 
+            << "This stepper allows for mass lumping when called through Piro::TempusSolver.\n";
     }
   }
   else {

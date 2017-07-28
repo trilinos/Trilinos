@@ -57,8 +57,9 @@
 
 #
 # System imports
-from numpy    import *
-from optparse import *
+from __future__ import print_function
+from numpy      import *
+from optparse   import *
 
 #
 # Parse the command-line arguments
@@ -85,30 +86,30 @@ def main():
     base = Comm.MyPID() + 1
     # Defines here some source variable.
     source = [1.0*base, 2.0*base, 3.0*base]
-    print "PE = ", base, ", source = ", source
+    print("PE = ", base, ", source = ", source)
 
     # get the mininum element
     #target = Comm.GlobalOp(Epetra.MINALL, source)
     target = Comm.MinAll(source)
     if Comm.MyPID() == 0:
-        print "MINALL = ", target
+        print("MINALL = ", target)
     Comm.Barrier()
 
     # get the maximum element
     target = Comm.MaxAll(source)
     if Comm.MyPID() == 0:
-        print "MAXALL = ", target
+        print("MAXALL = ", target)
     Comm.Barrier()
 
     # sum all the elements
     target = Comm.SumAll(source)
     if Comm.MyPID() == 0:
-        print "SUMALL = ", target
+        print("SUMALL = ", target)
     Comm.Barrier()
 
     # scansum
     target = Comm.ScanSum(source)
-    print "PE = ", base, ", SCANSUM = ", target
+    print("PE = ", base, ", SCANSUM = ", target)
     Comm.Barrier()
 
     # broadcast from processor 0
@@ -120,12 +121,12 @@ def main():
     #target = Comm.GlobalOp(Epetra.BROADCAST, source, 0)
     aSource = array(source,dtype='i')
     Comm.Broadcast(aSource,0)
-    print "PE = ", base, ", BROADCAST = ", aSource
+    print("PE = ", base, ", BROADCAST = ", aSource)
 
     # synchronize processors
     Comm.Barrier()
 
-    if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+    if Comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

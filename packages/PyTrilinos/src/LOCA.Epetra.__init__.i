@@ -166,14 +166,16 @@ from . import ___init__
 %import "NOX.Epetra.__init__.i"
 %import "NOX.Epetra.Interface.i"
 
-// Allow import from the parent directory
+// Allow import from this and parent directory. Force Interface to be
+// LOCA.Interface
 %pythoncode
 %{
 import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+thisDir   = op.dirname(op.abspath(__file__))
+parentDir = op.normpath(op.join(thisDir,".."))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-from .. import Abstract
 %}
 
 // LOCA base classes
@@ -207,10 +209,15 @@ from .. import Abstract
 
 // The above %import(module="Abstract") ... directives can cause an
 // "import Abstract" to appear in the .py file, causing Abstract to
-// point to NOX.Abstract.  Force it back to LOCA.Abstract.
+// point to NOX.Abstract.  Force it back to LOCA.Abstract.  Also,
+// Interface was pointing to NOX/Epetra/Interface, so I fix that, too.
 %pythoncode
 %{
+del Abstract
 from .. import Abstract
+if 'NOX' in Interface.__file__:
+  del Interface
+  from . import Interface
 %}
 
 // Director exception handling

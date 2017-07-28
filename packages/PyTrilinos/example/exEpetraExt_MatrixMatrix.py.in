@@ -45,6 +45,7 @@
 
 #
 # System imports
+from __future__ import print_function
 import sys
 
 #
@@ -87,8 +88,8 @@ def main():
     for i in rows:
         err = A.InsertGlobalValues(i, [2.0], [i])
         if err < 0:
-            raise RunTimeError, "Processor %d, global row %d of A, error code %d" \
-                  % (comm.MyPID(), i, err)
+            raise RunTimeError("Processor %d, global row %d of A, error code %d"
+                               % (comm.MyPID(), i, err))
     A.FillComplete()
 
     B = Epetra.CrsMatrix(Epetra.Copy, map, 0)
@@ -103,16 +104,16 @@ def main():
             values.append(-1)
         err = B.InsertGlobalValues(i, values, indices)
         if err < 0:
-            raise RunTimeError, "Processor %d, global row %d of B, error code %d" \
-                  % (comm.MyPID(), i, err)
+            raise RunTimeError("Processor %d, global row %d of B, error code %d"
+                               % (comm.MyPID(), i, err))
 
     EpetraExt.Add(A, False, 1.0, B, 1.0)
-    print B
+    print(B)
 
     return 0
 
 if __name__ == "__main__":
     failures = main()
     failures = comm.SumAll(failures)
-    if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if failures == 0 and iAmRoot: print("End Result: TEST PASSED")
     sys.exit(failures)

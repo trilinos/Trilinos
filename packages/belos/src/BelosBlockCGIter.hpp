@@ -436,7 +436,7 @@ public:
       "length and width.";
 
     // Create convenience variables for zero and one.
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    //const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero(); // unused
 
     if (newstate.R != Teuchos::null) {
 
@@ -509,7 +509,7 @@ public:
     // Create dense spd solver.
     Teuchos::SerialSpdDenseSolver<int,ScalarType> lltSolver;
 
-    // Create convenience variables for zero and one.
+    // Create convenience variable for one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
 
     // Get the current solution std::vector.

@@ -181,12 +181,21 @@ UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(co
                       "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+void
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getOwnedIndices(
+  std::vector<GlobalOrdinalT>& indices) const
 {
-   indices.resize(6);
-   switch(procRank_) {
-   case 0:
+  indices.resize(6);
+  switch (procRank_)
+  {
+    case 0:
       indices[0] = 0;
       indices[1] = 1;
       indices[2] = 2;
@@ -194,7 +203,7 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vec
       indices[4] = 6;
       indices[5] = 7;
       break;
-   case 1:
+    case 1:
       indices[0] = 8;
       indices[1] = 9;
       indices[2] = 10;
@@ -202,17 +211,53 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vec
       indices[4] = 4;
       indices[5] = 5;
       break;
-   default:
+    default:
       TEUCHOS_ASSERT(false);
-   }
-}
+  } // end switch (procRank_)
+} // end of getOwnedIndices()
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+void
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getGhostedIndices(
+  std::vector<GlobalOrdinalT>& indices) const
 {
-   indices.resize(8);
-   switch(procRank_) {
-   case 0:
+  indices.resize(2);
+  switch (procRank_)
+  {
+    case 0:
+      indices[0] = 4;
+      indices[1] = 5;
+      break;
+    case 1:
+      indices[0] = 2;
+      indices[1] = 3;
+      break;
+    default:
+      TEUCHOS_ASSERT(false);
+  } // end switch (procRank_)
+} // end of getGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedAndGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+void
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getOwnedAndGhostedIndices(
+  std::vector<GlobalOrdinalT>& indices) const
+{
+  indices.resize(8);
+  switch (procRank_)
+  {
+    case 0:
       indices[0] = 0;
       indices[1] = 1;
       indices[2] = 2;
@@ -222,7 +267,7 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndice
       indices[6] = 6;
       indices[7] = 7;
       break;
-   case 1:
+    case 1:
       indices[0] = 2;
       indices[1] = 3;
       indices[2] = 8;
@@ -232,10 +277,49 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndice
       indices[6] = 4;
       indices[7] = 5;
       break;
-   default:
+    default:
       TEUCHOS_ASSERT(false);
-   }
-}
+  } // end switch (procRank_)
+} // end of getOwnedAndGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwned()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+int
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getNumOwned() const
+{
+  return 6;
+} // end of getNumOwned()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+int
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getNumGhosted() const
+{
+  return 2;
+} // end of getNumGhosted()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwnedAndGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+int
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getNumOwnedAndGhosted() const
+{
+  return 8;
+} // end of getNumOwnedAndGhosted()
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const

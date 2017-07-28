@@ -61,33 +61,33 @@ correctVelocity(Thyra::VectorBase<Scalar>& v,
 // StepperNewmarkExplicitAForm definitions:
 template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->initialize();
 }
 
 template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->validExplicitODE(transientModel);
-  eODEModel_ = transientModel;
+  this->validExplicitODE(appModel);
+  appModel_ = appModel;
 
-  inArgs_  = eODEModel_->createInArgs();
-  outArgs_ = eODEModel_->createOutArgs();
-  inArgs_  = eODEModel_->getNominalValues();
+  inArgs_  = appModel_->createInArgs();
+  outArgs_ = appModel_->createOutArgs();
+  inArgs_  = appModel_->getNominalValues();
 }
 
 template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 template<class Scalar>
@@ -168,7 +168,7 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
       // x_dotdot = f(x, x_dot, t)
       if (inArgs_.supports(MEB::IN_ARG_x_dot_dot)) inArgs_.set_x_dot_dot(Teuchos::null);
       outArgs_.set_f(a_init);
-      eODEModel_->evalModel(inArgs_,outArgs_);
+      appModel_->evalModel(inArgs_,outArgs_);
       Thyra::copy(*a_init, a_old.ptr());
 #ifdef DEBUG_OUTPUT
       *out_ << "IKT a_init computed = " << Thyra::max(*a_old) << "\n";
@@ -207,7 +207,7 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
     if (inArgs_.supports(MEB::IN_ARG_x_dot_dot)) inArgs_.set_x_dot_dot(Teuchos::null);
     outArgs_.set_f(a_old);
 
-    eODEModel_->evalModel(inArgs_,outArgs_);
+    appModel_->evalModel(inArgs_,outArgs_);
 
     Thyra::copy(*(outArgs_.get_f()), a_new.ptr());
 #ifdef DEBUG_OUTPUT
@@ -261,7 +261,7 @@ void StepperNewmarkExplicitAForm<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out << description() << "::describe:" << std::endl
-      << "eODEModel_ = " << eODEModel_->description() << std::endl;
+      << "appModel_ = " << appModel_->description() << std::endl;
 }
 
 

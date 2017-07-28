@@ -48,7 +48,9 @@
 
 #
 # System imports
-from optparse import *
+from   __future__ import print_function
+from   optparse   import *
+import sys
 
 #
 # Parse the command-line arguments
@@ -81,7 +83,7 @@ def main():
   Matrix            = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
   NumMyElements     = Map.NumMyElements()
   MyGlobalElements  = Map.MyGlobalElements()
-  print "MyGlobalElements =", MyGlobalElements
+  print("MyGlobalElements =", MyGlobalElements)
   
   # Populates the matrix, element-by-element. Note that you *must* use global
   # IDs for rows and columns. However, you can only set *local* rows. When the
@@ -102,7 +104,7 @@ def main():
   # - if you ask for a non-valid element, the returned value is 0.0
   # - only elements in local rows can be queried.
   for i in MyGlobalElements:
-    print "PE%d: Matrix(%d, %d) = %e" %(Comm.MyPID(), i, i, Matrix[i, i])
+    print("PE%d: Matrix(%d, %d) = %e" %(Comm.MyPID(), i, i, Matrix[i, i]))
   
   Comm.Barrier()
   
@@ -110,13 +112,14 @@ def main():
   # 
   for i in MyGlobalElements:
     Indices, Values = Matrix.ExtractGlobalRowCopy(i)
-    for j in xrange(len(Indices)):
-      print "PE%d: Matrix(%d, %d) = %e" % (Comm.MyPID(), i, Indices[j], Values[j])
+    for j in range(len(Indices)):
+      print("PE%d: Matrix(%d, %d) = %e" %
+            (Comm.MyPID(), i, Indices[j], Values[j]))
 
   # synchronize processors
   Comm.Barrier()
 
-  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+  if Comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

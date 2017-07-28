@@ -268,7 +268,7 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
   // work, so it is time to throw an exception.
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_IntVector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   throw PythonException();
 }
 
@@ -419,7 +419,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
   // work, so it is time to set a Python error
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_MultiVector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   return NULL;
 }
 
@@ -557,7 +557,7 @@ convertPythonToEpetraVector(PyObject * pyobj,
   // work, so it is time to throw an exception.
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_Vector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   throw PythonException();
 }
 

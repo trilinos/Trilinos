@@ -40,86 +40,248 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_GatherSolution_BlockedEpetra_Hessian_hpp__
-#define __Panzer_GatherSolution_BlockedEpetra_Hessian_hpp__
+#ifndef   __Panzer_GatherSolution_BlockedEpetra_Hessian_hpp__
+#define   __Panzer_GatherSolution_BlockedEpetra_Hessian_hpp__
 
-// only do this if required by the user
-#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+// Only do this if required by the user.
+#ifdef    Panzer_BUILD_HESSIAN_SUPPORT
 
-// the includes for this file come in as a result of the includes in the main 
-// Epetra gather solution file
-
-namespace panzer {
-
-// **************************************************************
-// Hessian Specialization
-// **************************************************************
-template<typename TRAITS,typename LO,typename GO>
-class GatherSolution_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>
-  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
+namespace panzer
+{
+  /**
+   *  \brief `GatherSolution_BlockedEpetra` (Hessian Specialization).
+   *
+   *  Gathers solution values from the Newton solution vector into the nodal
+   *  fields of the field manager.
+   *
+   *  Currently makes an assumption that the stride is constant for degrees of
+   *  freedom (DOFs) and that the nmber of DOFs is equal to the size of the
+   *  solution names vector.
+   */
+  template<typename TRAITS, typename LO, typename GO>
+  class GatherSolution_BlockedEpetra<panzer::Traits::Hessian, TRAITS, LO, GO>
+    :
+    public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Hessian, TRAITS>,
-    public panzer::CloneableEvaluator  {
+    public panzer::CloneableEvaluator
+  {
+    public:
+    
+      /**
+       *  \brief Constructor.
+       *
+       *  Simply saves the input `indexers` as this object's `indexers_`.
+       *
+       *  \param[in] indexers The `vector` of `UniqueGlobalIndexer`s that
+       *                      handle the global unknown numbering.
+       */
+      GatherSolution_BlockedEpetra(
+        const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+          indexers)
+        :
+        indexers_(indexers)
+      {
+      } // end of Constructor
+    
+      /**
+       *  \brief Initializing Constructor.
+       *
+       *  Saves the input `indexers` as this object's `indexers_`, allocates
+       *  fields, sets up dependent tangent fields (if requested), and
+       *  determines the first active name.
+       *
+       *  \param[in] indexers The `vector` of `UniqueGlobalIndexer`s that
+       *                      handle the global unknown numbering.
+       *  \param[in] p        A `ParameterList` used as input for
+       *                      `GatherSolution_Input`.
+       */
+      GatherSolution_BlockedEpetra(
+        const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+          indexers,
+        const Teuchos::ParameterList& p);
+    
+      /**
+       *  \brief Post-Registration Setup.
+       *
+       *  Loops over the `gatherFields_` and sets the `indexerIds_` and
+       *  `subFieldIds_`.
+       *
+       *  \param[in] d  Unused.
+       *  \param[in] fm Unused.
+       */
+      void
+      postRegistrationSetup(
+        typename TRAITS::SetupData d,
+        PHX::FieldManager<TRAITS>& vm);
+    
+      /**
+       *  \brief Pre-Evaluate:  Sets the solution vector.
+       *
+       *  If using a `BlockedVector_ReadOnly_GlobalEvaluationData`, this saves
+       *  it for use later in `evaluateFields()`.  If using the older
+       *  `BlockedEpetraLinearObjContainer`, this sets the solution vector.
+       *
+       *  \param[in] d The `PreEvalData` containing the
+       *               `GlobalEvaluationDataContainer`.
+       */
+      void
+      preEvaluate(
+        typename TRAITS::PreEvalData d);
+    
+      /**
+       *  \brief Evaluate Fields:  Gather operation.
+       *
+       *  Loops over the fields to be gathered, the cells in the workset, and
+       *  the basis functions, and fills in the fields.
+       *
+       *  \param[in] d The `Workset` on which we're going to do all the work.
+       */
+      void
+      evaluateFields(
+        typename TRAITS::EvalData d);
+    
+      /**
+       *  \brief Create a copy.
+       *
+       *  Creates a `GatherSolution_BlockedEpetra` using the Initializing
+       *  Constructor and the current object's `indexers_`.
+       *
+       *  \param[in] pl A `ParameterList` used as input for
+       *                `GatherSolution_Input`.
+       *
+       *  \returns A `GatherSolution_BlockedEpetra` constructed with this
+       *           object's `indexers_` and the input `ParameterList`.
+       */
+      virtual Teuchos::RCP<CloneableEvaluator>
+      clone(
+        const Teuchos::ParameterList& pl) const
+      {
+        using panzer::GatherSolution_BlockedEpetra;
+        using panzer::Traits;
+        using Teuchos::rcp;
+        return rcp(new
+          GatherSolution_BlockedEpetra<Traits::Hessian, TRAITS, LO, GO>
+          (indexers_, pl));
+      } // end of clone()
+    
+    private:
 
+      /**
+       *  \brief The evaluation type.
+       */
+      typedef typename panzer::Traits::Hessian EvalT;
 
-public:
+      /**
+       *  \brief The scalar type.
+       */
+      typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
+    
+      /**
+       *  \brief A list of the names of the fields to be gathered.
+       */
+      std::vector<std::string> indexerNames_;
+    
+      /**
+       *  \brief The key identifying the `GlobalEvaluationData`.
+       */
+      std::string globalDataKey_;
+    
+      /**
+       *  \brief These map the local (field, element, basis) triplet to a
+       *         global ID for scattering.
+       */
+      std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>> indexers_;
 
-  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers)
-     : indexers_(indexers) {}
+      /**
+       *  \brief The block index into `indexers_`.
+       */
+      std::vector<int> indexerIds_;
 
-  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers,
-                               const Teuchos::ParameterList& p);
+      /**
+       *  \brief Sub-field IDs, which need to be mapped.
+       */
+      std::vector<int> subFieldIds_;
+    
+      /**
+       *  \brief The fields to be gathered.
+       */
+      std::vector< PHX::MDField<ScalarT, Cell, NODE>> gatherFields_;
+    
+      /**
+       *  \brief A flag indicating whether we should be working with \f$ x \f$
+       *         or \f$ \dot{x} \f$.
+       */
+      bool useTimeDerivativeSolutionVector_;
+    
+      /**
+       *  \brief Sets which gather operations have sensitivities.
+       */
+      std::string sensitivitiesName_;
+    
+      /**
+       *  \brief Which gather seed in the workset to use.
+       *
+       *  If it's less than zero, then use alpha or beta as appropriate.
+       */
+      int gatherSeedIndex_;
 
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& vm);
+      /**
+       *  \brief A flag indicating whether or not first sensitivities
+       *         information is available.
+       */
+      bool firstSensitivitiesAvailable_;
 
-  void preEvaluate(typename TRAITS::PreEvalData d);
+      /**
+       *  \brief Used by `evaluateFields()` to turn on/off the first
+       *         sensitivities.
+       */
+      bool firstApplySensitivities_;
+                            
+      /**
+       *  \brief The prefix for the field containing the second sensitivities.
+       */
+      std::string sensitivities2ndPrefix_;
 
-  void evaluateFields(typename TRAITS::EvalData d);
+      /**
+       *  \brief A flag indicating whether or not second sensitivities
+       *         information is available.
+       */
+      bool secondSensitivitiesAvailable_;
 
-  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(indexers_,pl)); }
+      /**
+       *  \brief Used by `evaluateFields()` to turn on/off the second
+       *         sensitivities.
+       */
+      bool secondApplySensitivities_;
+    
+      /**
+       *  \brief The solution vector.
+       */
+      Teuchos::RCP<Thyra::ProductVectorBase<double>> x_;
 
-private:
-  typedef typename panzer::Traits::Hessian EvalT;
-  typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
+      /**
+       *  \brief The `GlobalEvaluationData` containing both the owned and
+       *         ghosted solution vectors.
+       */
+      Teuchos::RCP<panzer::BlockedVector_ReadOnly_GlobalEvaluationData>
+      xBvRoGed_;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  std::vector<std::string> indexerNames_;
+      /**
+       *  \brief The `GlobalEvaluationData` containing both the owned and
+       *         ghosted derivative vectors.
+       */
+      Teuchos::RCP<panzer::BlockedVector_ReadOnly_GlobalEvaluationData>
+      dxBvRoGed_;
+    
+      /**
+       *  \brief Default Constructor (disabled)
+       */
+      GatherSolution_BlockedEpetra();
 
-  std::string globalDataKey_; // what global data does this fill?
+  }; // end of class GatherSolution_BlockedEpetra (Hessian Specialization)
 
-  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > indexers_;
-  std::vector<int> indexerIds_;   // block index
-  std::vector<int> subFieldIds_; // sub field numbers
+} // end of namespace panzer
 
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
+#endif // Panzer_BUILD_HESSIAN_SUPPORT
 
-  bool useTimeDerivativeSolutionVector_;
-
-  std::string sensitivitiesName_; // This sets which gather operations have sensitivities
-
-  // first derivative fields
-  int gatherSeedIndex_;              // what gather seed in the workset to use
-                                     // if less than zero then use alpha or beta
-                                     // as appropriate
-  bool firstSensitivitiesAvailable_; // Turn on the first derivative sensitivities 
-                                     // to turn on/off a certain set of sensitivities
-  bool firstApplySensitivities_;     // This is a local variable that is used by evaluateFields
-                        
-  // handle second derivatives                         
-  std::string sensitivities2ndPrefix_; // Prefix for field containing the sensitivities
-  bool secondSensitivitiesAvailable_;  // Turn on the second derivative sensitivities 
-  bool secondApplySensitivities_;      // This is a local variable that is used by evaluateFields
-
-  Teuchos::RCP<Thyra::ProductVectorBase<double> > x_;
-  Teuchos::RCP<Thyra::ProductVectorBase<double> > dx_;
-
-  GatherSolution_BlockedEpetra();
-};
-
-}
-
-#endif // end hessian support
-
-#endif
+#endif // __Panzer_GatherSolution_BlockedEpetra_Hessian_hpp__

@@ -84,14 +84,17 @@ namespace MueLuTests {
     virtual ~GeneralGeometricPFactoryTester() { }
     //@}
 
-    void TestComputeLinearInterpolationStencil(const GeneralGeometricPFactory& fac, const LO numDimension, const double coord[9][3], SC stencil[8]) const{
+    void TestComputeLinearInterpolationStencil(const GeneralGeometricPFactory& fac,
+                                               const LO numDimension, const double coord[9][3],
+                                               SC stencil[8]) const{
       // Call the method to be tested.
       MueLu::GeneralGeometricPFactory<SC,LO,GO,Node> myGGPFactory;
       myGGPFactory.ComputeLinearInterpolationStencil(numDimension, coord, stencil);
     };
   };
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, Constructor, Scalar, LocalOrdinal,
+                                    GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -104,7 +107,8 @@ namespace MueLuTests {
 
   } //Constructor
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, LinearInterpolation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, LinearInterpolation, Scalar,
+                                    LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -135,11 +139,14 @@ namespace MueLuTests {
       z += stencil[i]*coord[i+1][2];
     }
 
-    TEST_EQUALITY((std::fabs(x - coord[0][0]) < 1e-5) && (std::fabs(y - coord[0][1]) < 1e-5) && (std::fabs(z - coord[0][2]) < 1e-5), true);
+    TEST_EQUALITY((std::fabs(x - coord[0][0]) < 1e-5)
+                  && (std::fabs(y - coord[0][1]) < 1e-5)
+                  && (std::fabs(z - coord[0][2]) < 1e-5), true);
 
   } // LinearInterpolation
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, LinearExtrapolation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, LinearExtrapolation, Scalar,
+                                    LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -170,11 +177,13 @@ namespace MueLuTests {
       z += stencil[i]*coord[i+1][2];
     }
 
-    TEST_EQUALITY((std::fabs(x - coord[0][0]) < 1e-5) && (std::fabs(y - coord[0][1]) < 1e-5) && (std::fabs(z - coord[0][2]) < 1e-5), true);
+    TEST_EQUALITY((std::fabs(x - coord[0][0]) < 1e-5) && (std::fabs(y - coord[0][1]) < 1e-5)
+                  && (std::fabs(z - coord[0][2]) < 1e-5), true);
 
   } // LinearExtrapolation
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, PoissonOnCubeLinear, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, PoissonOnCubeLinear, Scalar,
+                                    LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -239,14 +248,18 @@ namespace MueLuTests {
     global_size_t numGlobalElements = numPoints;
     size_t numLocalElements = (comm->getRank() == 0 ? numPoints : 0);
     RCP<const Map> exportMap = MapFactory::Build(lib, numGlobalElements, numLocalElements, 0, comm);
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > source_coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(exportMap, 3);
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > source_coordinates
+      = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(exportMap, 3);
     if (comm->getRank() == 0) {
       for(LO k = 0; k < gNodesPerDim[2]; ++k) {
         for(LO j = 0; j < gNodesPerDim[1]; ++j) {
           for(LO i = 0; i < gNodesPerDim[0]; ++i) {
-            source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i] = i / Teuchos::as<double>(gNodesPerDim[0]-1);
-            source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i] = j / Teuchos::as<double>(gNodesPerDim[1]-1);
-            source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i] = k / Teuchos::as<double>(gNodesPerDim[2]-1);
+            source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i]
+              = i / Teuchos::as<double>(gNodesPerDim[0]-1);
+            source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i]
+              = j / Teuchos::as<double>(gNodesPerDim[1]-1);
+            source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i]
+              = k / Teuchos::as<double>(gNodesPerDim[2]-1);
           }
         }
       }
@@ -338,7 +351,8 @@ namespace MueLuTests {
       }
     }
 
-    PCrs->apply(*vector1, *vector0, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
+    PCrs->apply(*vector1, *vector0, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
+                Teuchos::ScalarTraits<SC>::zero());
 
     ArrayRCP<const SC> fine_data   = vector0->getData(0);
     LO indk, indj, indi;
@@ -371,7 +385,8 @@ namespace MueLuTests {
 
   } // PoissonOnCubeLinear
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, PoissonOnCubeConstant, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, PoissonOnCubeConstant, Scalar,
+                                    LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -441,15 +456,20 @@ namespace MueLuTests {
       for(LO k = 0; k < gNodesPerDim[2]; ++k) {
         for(LO j = 0; j < gNodesPerDim[1]; ++j) {
           for(LO i = 0; i < gNodesPerDim[0]; ++i) {
-            source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i] = i / Teuchos::as<double>(gNodesPerDim[0]-1);
-            source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i] = j / Teuchos::as<double>(gNodesPerDim[1]-1);
-            source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i] = k / Teuchos::as<double>(gNodesPerDim[2]-1);
+            source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i]
+              = i / Teuchos::as<double>(gNodesPerDim[0]-1);
+            source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i]
+              = j / Teuchos::as<double>(gNodesPerDim[1]-1);
+            source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i]
+              = k / Teuchos::as<double>(gNodesPerDim[2]-1);
           }
         }
       }
     }
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map,3);
-    RCP<Xpetra::Export<LO,GO,Node> > coords_exporter = Xpetra::ExportFactory<LO,GO,Node>::Build(exportMap, map);
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates
+      = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map,3);
+    RCP<Xpetra::Export<LO,GO,Node> > coords_exporter
+      = Xpetra::ExportFactory<LO,GO,Node>::Build(exportMap, map);
     coordinates->doExport(*source_coordinates, *coords_exporter, Xpetra::INSERT);
 
     // fill hierarchy
@@ -535,7 +555,8 @@ namespace MueLuTests {
       }
     }
 
-    PCrs->apply(*vector1, *vector0, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
+    PCrs->apply(*vector1, *vector0, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
+                Teuchos::ScalarTraits<SC>::zero());
 
     ArrayRCP<const SC> fine_data   = vector0->getData(0);
     LO indk, indj, indi;

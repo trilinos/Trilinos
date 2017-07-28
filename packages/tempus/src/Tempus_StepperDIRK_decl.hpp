@@ -12,16 +12,19 @@
 #include "Tempus_config.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
-#include "Tempus_ResidualModelEvaluator.hpp"
+#include "Tempus_WrapperModelEvaluator.hpp"
 
 namespace Tempus {
 
 
 /** \brief Diagonally Implicit Runge-Kutta (DIRK) time stepper.
- *  The general DIRK method for \f$s\f$-stages, can be written as
+ *
+ *  For the implicit ODE system, \f$\mathcal{F}(\dot{x},x,t) = 0\f$,
+ *  the general DIRK method for \f$s\f$-stages, can be written as
  *  \f[
- *    X_{i} - \Delta t\, a\,\bar{f}(X_{i},t_{n-1}+c_{i}\Delta t) = x_{n-1}
+ *    X_{i} = x_{n-1}
  *    + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\bar{f}(X_{j},t_{n-1}+c_{j}\Delta t)
+ *    + \Delta t\, a_{ii}\,\bar{f}(X_{i},t_{n-1}+c_{i}\Delta t)
  *  \f]
  *  \f[
  *    x_{n} = x_{n-1}
@@ -34,7 +37,7 @@ namespace Tempus {
  *  We should note that these lower-order approximations are combined
  *  through \f$b_{i}\f$ so that error terms cancel out and produce a
  *  more accurate solution. Note for DIRK methods that \f$a_{ii}=a\f$
- *  for all the diagonal components.  This is also referred to as
+ *  for all the diagonal components is referred to as
  *  Singly Diagonal Implicit Runge-Kutta (SDIRK) methods.
  *
  *  Note that the stage time derivatives,
@@ -42,10 +45,39 @@ namespace Tempus {
  *    \dot{X}_{i} = \bar{f}(X_{i},t_{n-1}+c_{i}\Delta t),
  *  \f]
  *  can be found via
+ *  \f{eqnarray*}{
+ *    \dot{X}_{i} & = & \frac{1}{a_{ii} \Delta t} [ X_{i} - x_{n-1}
+ *                     - \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j} ] \\
+ *    \dot{X}_{i} & = & \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}
+ *  \f}
+ *  where
  *  \f[
- *    \dot{X}_{i} = \frac{1}{\Delta t a_{ii}} [ X_{i} - x_{n-1}
- *                  - \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j} ]
+ *    \tilde{X} = x_{n-1} + \Delta t \sum_{j=1}^{i-1} a_{ij}\, \dot{X}_{j}
  *  \f]
+ *  Recalling that the definition for a DIRK is that for \f$j>i\f$,
+ *  \f$a_{ij} = 0\f$ and \f$a_{ii} \neq 0\f$ for at least one \f$i\f$.
+ *  Thus for stages where \f$a_{ii} = 0\f$, we can use the explicit RK
+ *  methods (see StepperExplicitRK for additional details).
+ *
+ *  <b> Algorithm </b>
+ *  The single-timestep algorithm for DIRK is,
+ *   - for \f$i = 1 \ldots s\f$ do
+ *     - if \f$a_{ii} = 0\f$
+ *       - \f$X_i \leftarrow x_{n-1}
+ *                + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_j\f$
+ *       - Evaluate \f$\bar{f}(X_{i},t_{n-1}+c_{i}\Delta t)\f$
+ *       - \f$\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)\f$
+ *     - else
+ *       - \f$\tilde{X} =
+ *           x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}\f$
+ *       - Define \f$\dot{X}_i \leftarrow
+ *                              \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
+ *       - Solve \f$f(\dot{x} =
+ *           \dot{X}_i,X_i,t_{n-1}+c_{i}\Delta t)=0\f$ for \f$X_i\f$
+ *       - \f$\dot{X}_i \leftarrow \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
+ *   - end for
+ *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
+ *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
  */
 template<class Scalar>
 class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
@@ -54,22 +86,22 @@ public:
 
   /// Constructor
   StepperDIRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     std::string stepperType,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return residualModel_->getTransientModel();}
+      getModel(){return wrapperModel_->getAppModel();}
 
     virtual void setSolver(std::string solverName);
     virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
+      Teuchos::RCP<Teuchos::ParameterList> solverPL = Teuchos::null);
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
 
@@ -114,26 +146,27 @@ private:
 
 protected:
 
-  std::string                                       description_;
-  Teuchos::RCP<Teuchos::ParameterList>              stepperPL_;
-  Teuchos::RCP<ResidualModelEvaluator<Scalar> >     residualModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
+  std::string                                            description_;
+  Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
+  Teuchos::RCP<WrapperModelEvaluator<Scalar> >          wrapperModel_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >      solver_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>         inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>        outArgs_;
+  Teuchos::RCP<const RKButcherTableau<Scalar> >          DIRK_ButcherTableau_;
 
-  Teuchos::RCP<const RKButcherTableau<Scalar> >     DIRK_ButcherTableau_;
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >     stageXDot_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >          stageX_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >          stageXPartial_;
+  // Used only for explicit stages (a_ii = 0)
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>              inArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>             outArgs_;
 
   // Compute the balancing time derivative as a function of x
   std::function<void (const Thyra::VectorBase<Scalar> &,
                             Thyra::VectorBase<Scalar> &)>
-  xDotFunction(Scalar s,Teuchos::RCP<const Thyra::VectorBase<Scalar> > stageX);
+  xDotFunction(Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > stageX);
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >          ee_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
 };
 } // namespace Tempus
 

@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_BLOCKED_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
-#define PANZER_BLOCKED_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
+#ifndef   __Panzer_BlockedEpetraLinearObjFactory_impl_hpp__
+#define   __Panzer_BlockedEpetraLinearObjFactory_impl_hpp__
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
@@ -528,36 +528,49 @@ applyDirichletBCs(const LinearObjContainer & counter,
   }
 }
 
-template <typename Traits,typename LocalOrdinalT>
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildDomainContainer()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
 Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>
-BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
 buildDomainContainer() const
 {
+  using panzer::BlockedVector_ReadOnly_GlobalEvaluationData;
+  using panzer::EpetraVector_ReadOnly_GlobalEvaluationData;
+  using std::vector;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using BVROGED = panzer::BlockedVector_ReadOnly_GlobalEvaluationData;
+  using EVROGED = panzer::EpetraVector_ReadOnly_GlobalEvaluationData;
+  using ROVGED  = panzer::ReadOnlyVector_GlobalEvaluationData;
 
-  // if a "single field" DOFManager is used, return a single RO_GED
-  if(!colDOFManagerContainer_->containsBlockedDOFManager()) {
-    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ged = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData);
-    ged->initialize(getGhostedColImport(0),getGhostedColMap(0),getColMap(0));
-
+  // If a "single field" DOFManager is used, return a single
+  // EpetraVector_ReadOnly_GlobalEvaluationData.
+  if (not colDOFManagerContainer_->containsBlockedDOFManager())
+  {
+    auto ged = rcp(new EVROGED);
+    ged->initialize(getGhostedColImport2(0), getGhostedColMap2(0),
+      getColMap(0));
     return ged;
-  }
+  } // end if a "single field" DOFManager is used
 
-  std::vector<RCP<ReadOnlyVector_GlobalEvaluationData> > gedBlocks;
-  for(int i=0;i<getBlockColCount();i++) {
-    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> vec_ged = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData);
-    vec_ged->initialize(getGhostedColImport(i),getGhostedColMap(i),getColMap(i));
-
-    gedBlocks.push_back(vec_ged);
-  }
-
-  RCP<BlockedVector_ReadOnly_GlobalEvaluationData> ged = rcp(new BlockedVector_ReadOnly_GlobalEvaluationData);
-  ged->initialize(getGhostedThyraDomainSpace(),getThyraDomainSpace(),gedBlocks);
-
+  // Otherwise, return a BlockedVector_ReadOnly_GlobalEvaluationData.
+  vector<RCP<ROVGED>> gedBlocks;
+  for (int i(0); i < getBlockColCount(); ++i)
+  {
+    auto vecGed = rcp(new EVROGED);
+    vecGed->initialize(getGhostedColImport2(i), getGhostedColMap2(i),
+      getColMap(i));
+    gedBlocks.push_back(vecGed);
+  } // end loop over the blocks
+  auto ged = rcp(new BVROGED);
+  ged->initialize(getGhostedThyraDomainSpace2(), getThyraDomainSpace(),
+    gedBlocks);
   return ged;
-}
-
+} // end of buildDomainContainer()
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::MpiComm<int> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
@@ -682,22 +695,34 @@ getColGlobalIndexer(int i) const
    return colDOFManagerContainer_->getFieldDOFManagers()[i];
 }
 
-template <typename Traits,typename LocalOrdinalT>
-void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-makeRoomForBlocks(std::size_t blockCnt,std::size_t colBlockCnt)
+///////////////////////////////////////////////////////////////////////////////
+//
+//  makeRoomForBlocks()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+void
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+makeRoomForBlocks(
+  std::size_t blockCnt,
+  std::size_t colBlockCnt)
 {
-   maps_.resize(blockCnt); 
-   ghostedMaps_.resize(blockCnt); 
-   importers_.resize(blockCnt); 
-   exporters_.resize(blockCnt); 
-
-   if(colBlockCnt>0) {
-     colMaps_.resize(colBlockCnt); 
-     colGhostedMaps_.resize(colBlockCnt); 
-     colImporters_.resize(colBlockCnt); 
-     colExporters_.resize(colBlockCnt); 
-   }
-}
+  maps_.resize(blockCnt); 
+  ghostedMaps_.resize(blockCnt); 
+  ghostedMaps2_.resize(blockCnt); 
+  importers_.resize(blockCnt); 
+  importers2_.resize(blockCnt); 
+  exporters_.resize(blockCnt); 
+  if (colBlockCnt > 0)
+  {
+    colMaps_.resize(colBlockCnt); 
+    colGhostedMaps_.resize(colBlockCnt); 
+    colGhostedMaps2_.resize(colBlockCnt); 
+    colImporters_.resize(colBlockCnt); 
+    colImporters2_.resize(colBlockCnt); 
+    colExporters_.resize(colBlockCnt); 
+  } // end if (colBlockCnt > 0)
+} // end of makeRoomForBlocks()
 
 // Thyra methods 
 /////////////////////////////////////////////////////////////////////
@@ -806,28 +831,75 @@ getThyraMatrix() const
    return blockedOp;
 }
 
-template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<const Thyra::VectorSpaceBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedThyraDomainSpace()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
 getGhostedThyraDomainSpace() const
 {
-   if(ghostedDomainSpace_==Teuchos::null) {
-     if(colDOFManagerContainer_->containsBlockedDOFManager()) {
-       // loop over all vectors and build the vector space
-       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<double> > > vsArray;
-       for(int i=0;i<getBlockColCount();i++)  
-          vsArray.push_back(Thyra::create_VectorSpace(getGhostedColMap(i)));
- 
-       ghostedDomainSpace_ = Thyra::productVectorSpace<double>(vsArray);
-     }
-     else {
-       // the domain space is not blocked (just an SPMD vector), build it from
-       // the zeroth column
-       ghostedDomainSpace_ = Thyra::create_VectorSpace(getGhostedColMap(0));
-     }
-   }
-   
-   return ghostedDomainSpace_;
-}
+  using std::vector;
+  using Teuchos::RCP;
+  using Thyra::create_VectorSpace;
+  using Thyra::productVectorSpace;
+  using Thyra::VectorSpaceBase;
+  if (ghostedDomainSpace_.is_null())
+  {
+    if (colDOFManagerContainer_->containsBlockedDOFManager())
+    {
+      // Loop over all vectors and build the vector space.
+      vector<RCP<const VectorSpaceBase<double>>> vsArray;
+      for (int i(0); i < getBlockColCount(); ++i)
+        vsArray.push_back(create_VectorSpace(getGhostedColMap(i)));
+      ghostedDomainSpace_ = productVectorSpace<double>(vsArray);
+    }
+    else // if (not colDOFManagerContainer_->containsBlockedDOFManager())
+    {
+      // The domain space is not blocked (that is, we're just dealing with a
+      // SPMD vector), so build it from the zeroth column.
+      ghostedDomainSpace_ = create_VectorSpace(getGhostedColMap(0));
+    } // end if (colDOFManagerContainer_->containsBlockedDOFManager()) or not
+  } // end if (ghostedDomainSpace_.is_null())
+  return ghostedDomainSpace_;
+} // end of getGhostedThyraDomainSpace()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedThyraDomainSpace2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedThyraDomainSpace2() const
+{
+  using std::vector;
+  using Teuchos::RCP;
+  using Thyra::create_VectorSpace;
+  using Thyra::productVectorSpace;
+  using Thyra::VectorSpaceBase;
+  if (ghostedDomainSpace_.is_null())
+  {
+    if (colDOFManagerContainer_->containsBlockedDOFManager())
+    {
+      // Loop over all vectors and build the vector space.
+      vector<RCP<const VectorSpaceBase<double>>> vsArray;
+      for (int i(0); i < getBlockColCount(); ++i)
+        vsArray.push_back(create_VectorSpace(getGhostedColMap2(i)));
+      ghostedDomainSpace_ = productVectorSpace<double>(vsArray);
+    }
+    else // if (not colDOFManagerContainer_->containsBlockedDOFManager())
+    {
+      // The domain space is not blocked (that is, we're just dealing with a
+      // SPMD vector), so build it from the zeroth column.
+      ghostedDomainSpace_ = create_VectorSpace(getGhostedColMap2(0));
+    } // end if (colDOFManagerContainer_->containsBlockedDOFManager()) or not
+  } // end if (ghostedDomainSpace_.is_null())
+  return ghostedDomainSpace_;
+} // end of getGhostedThyraDomainSpace2()
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<const Thyra::VectorSpaceBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
@@ -1098,28 +1170,73 @@ getColMap(int i) const
    return colMaps_[i];
 }
 
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-getGhostedMap(int i) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedMap()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedMap(
+  int i) const
 {
-   if(ghostedMaps_[i]==Teuchos::null) 
-      ghostedMaps_[i] = buildGhostedMap(i);
+  if (ghostedMaps_[i].is_null())
+    ghostedMaps_[i] = buildGhostedMap(i);
+  return ghostedMaps_[i];
+} // end of getGhostedMap()
 
-   return ghostedMaps_[i];
-}
-
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-getGhostedColMap(int i) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedMap2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedMap2(
+  int i) const
 {
-   if(not useColGidProviders_)
-     return getGhostedMap(i); 
+  if (ghostedMaps2_[i].is_null())
+    ghostedMaps2_[i] = buildGhostedMap2(i);
+  return ghostedMaps2_[i];
+} // end of getGhostedMap2()
 
-   if(colGhostedMaps_[i]==Teuchos::null) 
-      colGhostedMaps_[i] = buildColGhostedMap(i);
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedColMap()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedColMap(
+  int i) const
+{
+  if (not useColGidProviders_)
+    return getGhostedMap(i); 
+  if (colGhostedMaps_[i].is_null())
+    colGhostedMaps_[i] = buildColGhostedMap(i);
+  return colGhostedMaps_[i];
+} // end of getGhostedColMap()
 
-   return colGhostedMaps_[i];
-}
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedColMap2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedColMap2(
+  int i) const
+{
+  if (not useColGidProviders_)
+    return getGhostedMap2(i); 
+  if (colGhostedMaps2_[i].is_null())
+    colGhostedMaps2_[i] = buildColGhostedMap2(i);
+  return colGhostedMaps2_[i];
+} // end of getGhostedColMap2()
 
 // get the graph of the crs matrix
 template <typename Traits,typename LocalOrdinalT>
@@ -1160,51 +1277,153 @@ getGhostedGraph(int i,int j) const
    return ghostedGraph;
 }
 
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Import> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-getGhostedImport(int i) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedImport()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Import>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedImport(
+  int i) const
 {
-   if(importers_[i]==Teuchos::null)
-      importers_[i] = Teuchos::rcp(new Epetra_Import(*getGhostedMap(i),*getMap(i)));
+  using Teuchos::rcp;
+  if (importers_[i].is_null())
+    importers_[i] = rcp(new Epetra_Import(*getGhostedMap(i), *getMap(i)));
+  return importers_[i];
+} // end of getGhostedImport()
 
-   return importers_[i];
-}
-
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Import> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-getGhostedColImport(int i) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedImport2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Import>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedImport2(
+  int i) const
 {
-   if(not useColGidProviders_)
-     return getGhostedImport(i);
- 
-   if(colImporters_[i]==Teuchos::null)
-      colImporters_[i] = Teuchos::rcp(new Epetra_Import(*getGhostedColMap(i),*getColMap(i)));
+  using Teuchos::rcp;
+  if (importers2_[i].is_null())
+    importers2_[i] = rcp(new Epetra_Import(*getGhostedMap2(i), *getMap(i)));
+  return importers2_[i];
+} // end of getGhostedImport2()
 
-   return colImporters_[i];
-}
-
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Export> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-getGhostedExport(int i) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedColImport()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Import>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedColImport(
+  int i) const
 {
-   if(exporters_[i]==Teuchos::null)
-      exporters_[i] = Teuchos::rcp(new Epetra_Export(*getGhostedMap(i),*getMap(i)));
+  using Teuchos::rcp;
+  if (not useColGidProviders_)
+    return getGhostedImport(i);
+  if (colImporters_[i].is_null())
+    colImporters_[i] =
+      rcp(new Epetra_Import(*getGhostedColMap(i), *getColMap(i)));
+  return colImporters_[i];
+} // end of getGhostedColImport()
 
-   return exporters_[i];
-}
-
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Export> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-getGhostedColExport(int i) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedColImport2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Import>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedColImport2(
+  int i) const
 {
-   if(not useColGidProviders_)
-     return getGhostedExport(i);
+  using Teuchos::rcp;
+  if (not useColGidProviders_)
+    return getGhostedImport2(i);
+  if (colImporters2_[i].is_null())
+    colImporters2_[i] =
+      rcp(new Epetra_Import(*getGhostedColMap2(i), *getColMap(i)));
+  return colImporters2_[i];
+} // end of getGhostedColImport2()
 
-   if(colExporters_[i]==Teuchos::null)
-      colExporters_[i] = Teuchos::rcp(new Epetra_Export(*getGhostedColMap(i),*getColMap(i)));
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedExport()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Export>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedExport(
+  int i) const
+{
+  using Teuchos::rcp;
+  if (exporters_[i].is_null())
+    exporters_[i] = rcp(new Epetra_Export(*getGhostedMap(i), *getMap(i)));
+  return exporters_[i];
+} // end of getGhostedExport()
 
-   return colExporters_[i];
-}
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedExport2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Export>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedExport2(
+  int i) const
+{
+  using Teuchos::rcp;
+  if (exporters_[i].is_null())
+    exporters_[i] = rcp(new Epetra_Export(*getGhostedMap2(i), *getMap(i)));
+  return exporters_[i];
+} // end of getGhostedExport2()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedColExport()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Export>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedColExport(
+  int i) const
+{
+  using Teuchos::rcp;
+  if (not useColGidProviders_)
+    return getGhostedExport(i);
+  if (colExporters_[i].is_null())
+    colExporters_[i] = rcp(new Epetra_Export(*getGhostedColMap(i),
+      *getColMap(i)));
+  return colExporters_[i];
+} // end of getGhostedColExport()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedColExport2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Export>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedColExport2(
+  int i) const
+{
+  using Teuchos::rcp;
+  if (not useColGidProviders_)
+    return getGhostedExport(i);
+  if (colExporters_[i].is_null())
+    colExporters_[i] = rcp(new Epetra_Export(*getGhostedColMap2(i),
+      *getColMap(i)));
+  return colExporters_[i];
+} // end of getGhostedColExport2()
 
 template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Map> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
@@ -1233,34 +1452,81 @@ buildColMap(int i) const
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
 }
 
-// build the ghosted map
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-buildGhostedMap(int i) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildGhostedMap()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+buildGhostedMap(
+  int i) const
 {
-   std::vector<int> indices;
+  using std::vector;
+  using Teuchos::rcp;
+  vector<int> indices;
+  getGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
+  return rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0, *eComm_));
+} // end of buildGhostedMap()
 
-   // get the global indices
-   getGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
-
-   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
-}
-
-// build the ghosted map
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-buildColGhostedMap(int i) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildGhostedMap2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+buildGhostedMap2(
+  int i) const
 {
-   if(not useColGidProviders_)
-     return buildGhostedMap(i);
+  using std::vector;
+  using Teuchos::rcp;
+  vector<int> indices;
+  getGlobalIndexer(i)->getGhostedIndices(indices);
+  return rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0, *eComm_));
+} // end of buildGhostedMap2()
 
-   std::vector<int> indices;
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildColGhostedMap()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+buildColGhostedMap(
+  int i) const
+{
+  using std::vector;
+  using Teuchos::rcp;
+  if (not useColGidProviders_)
+    return buildGhostedMap(i);
+  vector<int> indices;
+  getColGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
+  return rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0, *eComm_));
+} // end of buildColGhostedMap()
 
-   // get the global indices
-   getColGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
-
-   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
-}
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildColGhostedMap2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+buildColGhostedMap2(
+  int i) const
+{
+  using std::vector;
+  using Teuchos::rcp;
+  if (not useColGidProviders_)
+    return buildGhostedMap2(i);
+  vector<int> indices;
+  getColGlobalIndexer(i)->getGhostedIndices(indices);
+  return rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0, *eComm_));
+} // end of buildColGhostedMap2()
 
 // get the graph of the crs matrix
 template <typename Traits,typename LocalOrdinalT>
@@ -1330,7 +1596,6 @@ buildGhostedGraph(int i,int j,bool optimizeStorage) const
 
       // loop over the elemnts
       for(std::size_t elmt=0;elmt<elements.size();elmt++) {
-
          rowProvider->getElementGIDs(elements[elmt],row_gids);
          colProvider->getElementGIDs(elements[elmt],col_gids);
 
@@ -1450,4 +1715,4 @@ getBlockColCount() const
 
 }
 
-#endif
+#endif // __Panzer_BlockedEpetraLinearObjFactory_impl_hpp__

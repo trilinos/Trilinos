@@ -62,12 +62,12 @@ this directory.
 #include <iostream>
 
 // Define default data types
-#include <Kokkos_DefaultNode.hpp>
+//#include <Kokkos_DefaultNode.hpp>
 
-typedef double                                                              Scalar;
-typedef int                                                                 LocalOrdinal;
-typedef int                                                                 GlobalOrdinal;
-typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node;
+//typedef double                                                              Scalar;
+//typedef int                                                                 LocalOrdinal;
+//typedef int                                                                 GlobalOrdinal;
+//typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node;
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -83,6 +83,7 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MueLu_SemiCoarsenPFactory_decl.hpp>
+#include "Teuchos_ScalarTraits.hpp"
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -94,7 +95,8 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node
 #include <BelosMueLuAdapter.hpp>
 #endif
 
-int main(int argc, char *argv[]) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
   // Most MueLu and Xpetra classes are templated on some or all of the
   // following template types: Scalar, LocalOrdinal, GlobalOrdinal,
   // and Node. In order to make types more concise, MueLu has an
@@ -134,7 +136,6 @@ int main(int argc, char *argv[]) {
   // undesirable if running with a large number of MPI processes.
   // You can avoid printing anything here by passing in either
   // NULL or the address of a Teuchos::oblackholestream.
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   // Get a pointer to the communicator object representing
   // MPI_COMM_WORLD.
@@ -151,6 +152,7 @@ int main(int argc, char *argv[]) {
   // different scalar types, like double, complex, or high precision
   // (i.e., double-double).
   typedef Teuchos::ScalarTraits<SC> STS;
+  typedef typename STS::magnitudeType MT;
   SC zero = STS::zero(), one = STS::one();
 
   // Make an output stream (for verbose output) that only prints on
@@ -161,7 +163,6 @@ int main(int argc, char *argv[]) {
   // Teuchos provides an interface to get arguments from the command
   // line. The first argument indicates that we don't want any
   // exceptions to be thrown during command line parsing.
-  Teuchos::CommandLineProcessor clp(false);
 
   // The list of valid parameters for the driver comes from three sources:
   //
@@ -354,7 +355,7 @@ printf("after level print\n");
     X->randomize();
     A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
-    Teuchos::Array<STS::magnitudeType> norms(1);
+    Teuchos::Array<MT> norms(1);
     B->norm2(norms);
     B->scale(one/norms[0]);
     X->putScalar(zero);
@@ -435,3 +436,15 @@ printf("after level print\n");
   // from main(). Isn't that helpful?
   return 0;
 }
+
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
+}
+
+
+

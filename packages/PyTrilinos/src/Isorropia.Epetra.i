@@ -151,6 +151,15 @@ The purpose of Isorropia.Epetra is to ....
 // Epetra interface import
 %import "Epetra.i"
 
+// Allow import from the current directory
+%pythoncode
+%{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
+del sys, op
+%}
+
 // Isorropia import (let SWIG know about the base classes that will be
 // needed for the derived classes below)
 %teuchos_rcp(Isorropia::Operator)
@@ -305,7 +314,8 @@ class Visualizer:
         """
 
         if Image_loaded == False:
-            print "Python Imaging Library, ImageMagick and colorsys libraries required for Visualizer function"
+            print("Python Imaging Library, ImageMagick and colorsys libraries "
+                  "required for Visualizer function")
             sys.exit(1)
 
         if isinstance(data, PyTrilinos.Epetra.CrsMatrix):
@@ -327,31 +337,31 @@ class Visualizer:
         self.loadThreshold = loadThreshold
 
         if isinstance(data, PyTrilinos.Epetra.CrsMatrix):
-            if iAmRoot and verbosity > 1: print "Proceeding with CrsMatrix"
+            if iAmRoot and verbosity > 1: print("Proceeding with CrsMatrix")
             
             self.dataType = "CrsMatrix"
             
-            if iAmRoot and verbosity > 2: print "Redistributing for visualization"
+            if iAmRoot and verbosity > 2: print("Redistributing for visualization")
         
             # Reset the values of the matrix to their respective processors
             self.centralizeMatrix()
         
         elif isinstance(data, PyTrilinos.Isorropia.Epetra.Partitioner):
-            if iAmRoot and verbosity > 1: print "Proceeding with Partitioner"
+            if iAmRoot and verbosity > 1: print("Proceeding with Partitioner")
             
             self.dataType = "Partitioner"
 
-            if iAmRoot and verbosity > 2: print "Redistributing for visualization"
+            if iAmRoot and verbosity > 2: print("Redistributing for visualization")
         
             # Reset the values of the matrix to their partitioned processors
             self.centralizePartitioner()
 
         elif isinstance(data, PyTrilinos.Isorropia.Epetra.Partitioner2D):
-            if iAmRoot and verbosity > 1: print "Proceeding with Partitioner2D"
+            if iAmRoot and verbosity > 1: print("Proceeding with Partitioner2D")
             
             self.dataType = "Partitioner2D"
 
-            if iAmRoot and verbosity > 2: print "Redistributing for visualization"
+            if iAmRoot and verbosity > 2: print("Redistributing for visualization")
         
             # Reset the values of the matrix to their partitioned processors
             self.centralizePartitioner2D()
@@ -370,7 +380,7 @@ class Visualizer:
 
         if not self.iAmRoot: return
 
-        if self.verbosity > 3: print "Processing row " + str(row)
+        if self.verbosity > 3: print("Processing row " + str(row))
 
         widthRatio = float(self.regionWidth) / float(self.imageWidth)
         heightRatio = float(self.regionHeight) / float(self.imageHeight)
@@ -407,13 +417,13 @@ class Visualizer:
                 # Take the matrix column and show us which pixel column it should go into
                 pixelColumn = int((colIndices[l] - self.pointTL[0]) / widthRatio)
                 if (pixelColumn >= len(procCount)):
-                    print "Invalid value found for pixelColumn. Quitting."
-                    print pixelColumn, len(procCount)
+                    print("Invalid value found for pixelColumn. Quitting.")
+                    print(str(pixelColumn) + " " + str(len(procCount)))
                     sys.exit(1)
 
                 # Increment the counter for whomever owns that nonzero
                 if (int(procNums[l]) >= len(procCount[pixelColumn])) or (int(procNums[l]) < 0):
-                    print "Invalid value found for part value. Quitting."
+                    print("Invalid value found for part value. Quitting.")
                     sys.exit(1)
                 else:
                     procCount[pixelColumn][int(procNums[l])] += 1
@@ -461,7 +471,8 @@ class Visualizer:
         # Generate an image that maintains aspect ratio if we have not been given a height.
         if self.imageHeight == -1:
             self.imageHeight = int(float(self.regionHeight) / self.regionWidth * self.imageWidth)
-            if self.verbosity > 3: print "Defining height as", self.imageHeight
+            if self.verbosity > 3: print("Defining height as " +
+                                         str(self.imageHeight))
 
         # Create Image and ImageDraw objects
         im = Image.new("RGB", (self.imageWidth, self.imageHeight), self.background)
@@ -485,7 +496,7 @@ class Visualizer:
 
         """ If we have more matrix rows or columns than we have pixels, can't use simpleGenerate() """
         if cellWidth == 0 and cellHeight == 0:    
-            if self.verbosity > 2: print "NOT using simpleGenerate()"
+            if self.verbosity > 2: print("NOT using simpleGenerate()")
             for i in range(self.imageHeight): # Go through the rows
                 self.processRow(i, draw)
         elif cellWidth == 0 or cellHeight == 0:
@@ -498,7 +509,7 @@ class Visualizer:
                 or both!
                 """)
         else:
-            if self.verbosity > 2: print "Using simpleGenerate()"
+            if self.verbosity > 2: print("Using simpleGenerate()")
             self.simpleGenerate(draw)
 
         
@@ -511,7 +522,8 @@ class Visualizer:
         if not self.iAmRoot: return
 
         if self.img == None:
-            print "Image must be computed before call to show(). Call generateImage() first."
+            print("Image must be computed before call to show(). Call "
+                  "generateImage() first.")
             return
         
         self.img.show()
@@ -525,7 +537,8 @@ class Visualizer:
         if not self.iAmRoot: return
 
         if self.img == None:
-            print "Image must be computed before call to save(). Call generateImage() first."
+            print("Image must be computed before call to save(). Call "
+                  "generateImage() first.")
             return
         
         self.img.save(filename)
@@ -671,7 +684,7 @@ class Visualizer:
             gid = map.GID(i)
             newLoc = self.data.index(i) ###########################################################
             if newLoc < 0 or newLoc > matrixHeight:
-                print "newLoc is wrong, quitting", newLoc
+                print("newLoc is wrong, quitting " + str(newLoc))
                 sys.exit(1)
             crsm.ReplaceMyValues(i, [newLoc + 1]*len(rowView[1]), rowView[1])
         crsm.FillComplete()

@@ -45,7 +45,8 @@
 
 #
 # System imports
-from   optparse import *
+from   __future__ import print_function
+from   optparse   import *
 import sys
 
 #
@@ -81,18 +82,18 @@ List = {"nx": nx,               # number of nodes in the X-direction
         }
 
 # Creating a map corresponding to a 2D Cartesian distribuion
-if iAmRoot: print "Creating a Map..."
+if iAmRoot: print("Creating a Map...")
 
 Map = Galeri.CreateMap("Cartesian2D", comm, List)
 
 # creates a point matrix based on the previously created map
-if iAmRoot: print "Creating an Epetra_CrsMatrix..."
+if iAmRoot: print("Creating an Epetra_CrsMatrix...")
 
 CrsMatrix = Galeri.CreateCrsMatrix("Laplace2D", Map, List)
 
 # extend the matrix into VBR format, by replicating each equation (twice
 # in this example)
-if iAmRoot: print "Extending the Epetra_CrsMatrix into an Epetra_VbrMatrix..."
+if iAmRoot: print("Extending the Epetra_CrsMatrix into an Epetra_VbrMatrix...")
 
 VbrMatrix = Galeri.CreateVbrMatrix(CrsMatrix, 2);
 
@@ -104,11 +105,11 @@ RHS = Epetra.Vector(Map)
 # Now the linear problem is not solved, use for example AztecOO with IFPACK or
 # ML, or Amesos
 norm = Galeri.ComputeNorm(CrsMatrix, LHS, RHS)
-if iAmRoot: print "||A x - b||_2 = ", norm
+if iAmRoot: print("||A x - b||_2 = ", norm)
 
 # Indicate success
 successes = comm.SumAll(1)
-if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
+if successes == numProc and iAmRoot: print("End Result: TEST PASSED")
 
 # It is possible to get the following error message with this script:
 #

@@ -27,8 +27,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef KOKKOS_EXPERIMENTAL_LAYOUT_NATURAL_HPP
-#define KOKKOS_EXPERIMENTAL_LAYOUT_NATURAL_HPP
+#ifndef KOKKOS_LAYOUT_NATURAL_HPP
+#define KOKKOS_LAYOUT_NATURAL_HPP
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp"
@@ -73,10 +73,9 @@ namespace std {
 
 }
 
-#include "impl/KokkosExp_ViewMapping.hpp"
+#include "impl/Kokkos_ViewMapping.hpp"
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Implement ViewOffset for LayoutNatural
@@ -106,7 +105,6 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
-#endif // #ifndef KOKKOS_EXPERIMENTAL_LAYOUT_NATURAL_HPP
+#endif // #ifndef KOKKOS_LAYOUT_NATURAL_HPP

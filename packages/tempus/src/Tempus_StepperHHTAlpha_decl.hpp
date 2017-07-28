@@ -10,7 +10,7 @@
 #define Tempus_StepperHHTAlpha_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
-#include "Tempus_SecondOrderResidualModelEvaluator.hpp"
+#include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
 
 namespace Tempus {
 
@@ -21,17 +21,17 @@ namespace Tempus {
  * (13)-(19) in: G.M. Hulbert, J. Chung, "Explicit time integration algorithms for structural
  * dynamics with optimal numerical dissipation", Comput. Methods Appl. Mech. Engrg. 137 175-188 (1996).
  *
- * There are four parameters in the scheme: \f$\alpha_m\f$, \f$\alpha_f\f$, 
- * \f$\beta\f$ and \f$\gamma\f$, all of which must be in the range \f$[0,1]\f$.  
- * When \f$\alpha_m=\alpha_f = 0\f$, the scheme reduces to the Newmark Beta scheme (see Tempus::StepperNewmark for details).  
- * Like the Newmark Beta scheme, the HHT-Alpha scheme can be either first or second order accurate, 
- * and either explicit or implicit.  
+ * There are four parameters in the scheme: \f$\alpha_m\f$, \f$\alpha_f\f$,
+ * \f$\beta\f$ and \f$\gamma\f$, all of which must be in the range \f$[0,1]\f$.
+ * When \f$\alpha_m=\alpha_f = 0\f$, the scheme reduces to the Newmark Beta scheme (see Tempus::StepperNewmark for details).
+ * Like the Newmark Beta scheme, the HHT-Alpha scheme can be either first or second order accurate,
+ * and either explicit or implicit.
  *
- * Although the general form of the scheme has been implemented in Tempus, it has only been 
+ * Although the general form of the scheme has been implemented in Tempus, it has only been
  * verified for the case when \f$\alpha_m=\alpha_f = 0\f$ (corresponding to the Newmark Beta) scheme,
- * so other values for these parameters are not allowed at the present time.  Also, note that, like the Newmark Beta 
+ * so other values for these parameters are not allowed at the present time.  Also, note that, like the Newmark Beta
  * stepper, the linear solve for the explicit version of this scheme has not been optimized (the mass matrix
- * is not lumped). 
+ * is not lumped).
  *
  */
 template<class Scalar>
@@ -41,17 +41,17 @@ public:
 
   /// Constructor
   StepperHHTAlpha(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return residualModel_->getTransientModel();}
+      getModel(){return wrapperModel_->getAppModel();}
 
     /// Set the solver
     virtual void setSolver(std::string solverName);
@@ -106,13 +106,13 @@ public:
                                const Scalar dt) const;
 
     void predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
-                                 const Thyra::VectorBase<Scalar>& v) const; 
+                                 const Thyra::VectorBase<Scalar>& v) const;
 
     void predictDisplacement_alpha_f(Thyra::VectorBase<Scalar>& dPred,
-                                     const Thyra::VectorBase<Scalar>& d) const; 
+                                     const Thyra::VectorBase<Scalar>& d) const;
 
     void correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
-                              const Thyra::VectorBase<Scalar>& a_n) const; 
+                              const Thyra::VectorBase<Scalar>& a_n) const;
 
     void correctVelocity(Thyra::VectorBase<Scalar>& v,
                              const Thyra::VectorBase<Scalar>& vPred,
@@ -132,16 +132,13 @@ private:
 private:
 
   Teuchos::RCP<Teuchos::ParameterList>                     stepperPL_;
-  Teuchos::RCP<SecondOrderResidualModelEvaluator<Scalar> > residualModel_;
+  Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >        solver_;
-
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>                inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>               outArgs_;
 
   Scalar beta_;
   Scalar gamma_;
-  Scalar alpha_f_; 
-  Scalar alpha_m_; 
+  Scalar alpha_f_;
+  Scalar alpha_m_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 

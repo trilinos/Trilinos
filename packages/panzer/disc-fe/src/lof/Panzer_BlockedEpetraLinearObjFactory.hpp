@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_BlockedEpetraLinearObjFactory_hpp__
-#define __Panzer_BlockedEpetraLinearObjFactory_hpp__
+#ifndef   __Panzer_BlockedEpetraLinearObjFactory_hpp__
+#define   __Panzer_BlockedEpetraLinearObjFactory_hpp__
 
 #include <map>
 
@@ -79,7 +79,8 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
-namespace panzer {
+namespace panzer
+{
 
 template <typename Traits,typename LocalOrdinalT>
 class BlockedEpetraLinearObjFactory : public LinearObjFactory<Traits>
@@ -242,6 +243,20 @@ public:
    //! Get the domain vector space (x and dxdt)
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getGhostedThyraDomainSpace() const;
 
+   /**
+    *  \brief Get or create the ghosted `Thyra` domain space.
+    *
+    *  Get the vector space corresponding to the ghosted domain.  If it does
+    *  not yet exist, create it from the ghosted column map(s).
+    *
+    *  \note This "version 2" routine works with non-overlapping owned and
+    *        ghosted maps.
+    *
+    *  \returns The vector space corresponding to the ghosted domain.
+    */
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
+   getGhostedThyraDomainSpace2() const;
+
    //! Get the range vector space (f)
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getGhostedThyraRangeSpace() const;
 
@@ -265,8 +280,36 @@ public:
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedMap(int i) const;
 
+   /**
+    *  \brief Get or create the `i`-th ghosted map.
+    *
+    *  \note This "version 2" routine works with non-overlapping owned and
+    *        ghosted maps.
+    *
+    *  \param[in] i The index into the list of ghosted maps.
+    *
+    *  \returns The `i`-th ghosted map.
+    */
+   virtual const Teuchos::RCP<Epetra_Map>
+   getGhostedMap2(
+     int i) const;
+
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap(int i) const;
+
+   /**
+    *  \brief Get or create the `i`-th ghosted column map.
+    *
+    *  \note This "version 2" routine works with non-overlapping owned and
+    *        ghosted maps.
+    *
+    *  \param[in] i The index into the list of ghosted column maps.
+    *
+    *  \returns The `i`-th ghosted column map.
+    */
+   virtual const Teuchos::RCP<Epetra_Map>
+   getGhostedColMap2(
+     int i) const;
 
    //! get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> getGraph(int i,int j) const;
@@ -277,14 +320,74 @@ public:
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Import> getGhostedImport(int i) const;
 
+   /**
+    *  \brief Get or create the `i`-th ghosted importer corresponding to the
+    *         `i`-th ghosted map.
+    *
+    *  \note This "version 2" routine works with non-overlapping owned and
+    *        ghosted maps.
+    *
+    *  \param[in] i The index into the list of ghosted importers.
+    *
+    *  \returns The `i`-th ghosted importer.
+    */
+   virtual const Teuchos::RCP<Epetra_Import>
+   getGhostedImport2(
+     int i) const;
+
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Import> getGhostedColImport(int i) const;
+
+   /**
+    *  \brief Get or create the `i`-th ghosted column importer corresponding to
+    *         the `i`-th ghosted column map.
+    *
+    *  \note This "version 2" routine works with non-overlapping owned and
+    *        ghosted maps.
+    *
+    *  \param[in] i The index into the list of ghosted column importers.
+    *
+    *  \returns The `i`-th ghosted column importer.
+    */
+   virtual const Teuchos::RCP<Epetra_Import>
+   getGhostedColImport2(
+     int i) const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getGhostedExport(int j) const;
 
+   /**
+    *  \brief Get or create the `i`-th ghosted exporter corresponding to the
+    *         `i`-th ghosted map.
+    *
+    *  \note This "version 2" routine works with non-overlapping owned and
+    *        ghosted maps.
+    *
+    *  \param[in] i The index into the list of ghosted exporters.
+    *
+    *  \returns The `i`-th ghosted exporter.
+    */
+   virtual const Teuchos::RCP<Epetra_Export>
+   getGhostedExport2(
+     int i) const;
+
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getGhostedColExport(int j) const;
+
+   /**
+    *  \brief Get or create the `i`-th ghosted column exporter corresponding to
+    *         the `i`-th ghosted column map.
+    *
+    *  \note This "version 2" routine works with non-overlapping owned and
+    *        ghosted maps.
+    *
+    *  \param[in] i The index into the list of ghosted column exporters.
+    *
+    *  \returns The `i`-th ghosted column exporter.
+    */
+   virtual const Teuchos::RCP<Epetra_Export>
+   getGhostedColExport2(
+     int i) const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Epetra_Comm> getEpetraComm() const;
@@ -459,12 +562,80 @@ protected:
    void ghostToGlobalEpetraMatrix(int blockRow,const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const;
 
    // get the map from the matrix
-   virtual const Teuchos::RCP<Epetra_Map> buildMap(int i) const;
-   virtual const Teuchos::RCP<Epetra_Map> buildGhostedMap(int i) const;
+
+   /**
+    *  \brief Build the `i`-th owned map from the owned indices of the `i`-th
+    *         global indexer.
+    *
+    *  \param[in] i The index into the list of global indexers.
+    *
+    *  \returns The `i`-th owned map.
+    */
+   virtual const Teuchos::RCP<Epetra_Map>
+   buildMap(
+     int i) const;
+
+   /**
+    *  \brief Build the `i`-th ghosted map from the owned and ghosted indices
+    *         of the `i`-th global indexer.
+    *
+    *  \param[in] i The index into the list of global indexers.
+    *
+    *  \returns The `i`-th owned and ghosted map.
+    */
+   virtual const Teuchos::RCP<Epetra_Map>
+   buildGhostedMap(
+     int i) const;
+
+   /**
+    *  \brief Build the `i`-th ghosted map from the ghosted indices of the
+    *         `i`-th global indexer.
+    *
+    *  \param[in] i The index into the list of global indexers.
+    *
+    *  \returns The `i`-th ghosted map.
+    */
+   virtual const Teuchos::RCP<Epetra_Map>
+   buildGhostedMap2(
+     int i) const;
 
    // get the map from the matrix
-   virtual const Teuchos::RCP<Epetra_Map> buildColMap(int i) const;
-   virtual const Teuchos::RCP<Epetra_Map> buildColGhostedMap(int i) const;
+
+   /**
+    *  \brief Build the `i`-th owned column map from the owned indices of the
+    *         `i`-th (column) global indexer.
+    *
+    *  \param[in] i The index into the list of (column) global indexers.
+    *
+    *  \returns The `i`-th owned column map.
+    */
+   virtual const Teuchos::RCP<Epetra_Map>
+   buildColMap(
+     int i) const;
+
+   /**
+    *  \brief Build the `i`-th ghosted column map from the owned and ghosted
+    *         indices of the `i`-th (column) global indexer.
+    *
+    *  \param[in] i The index into the list of (column) global indexers.
+    *
+    *  \returns The `i`-th owned and ghosted column map.
+    */
+   virtual const Teuchos::RCP<Epetra_Map>
+   buildColGhostedMap(
+     int i) const;
+
+   /**
+    *  \brief Build the `i`-th ghosted column map from the ghosted indices of
+    *         the `i`-th (column) global indexer.
+    *
+    *  \param[in] i The index into the list of (column) global indexers.
+    *
+    *  \returns The `i`-th ghosted column map.
+    */
+   virtual const Teuchos::RCP<Epetra_Map>
+   buildColGhostedMap2(
+     int i) const;
 
    // get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> buildGraph(int i,int j) const;
@@ -476,15 +647,66 @@ protected:
    Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm_;
    Teuchos::RCP<Teuchos::MpiComm<int> > tComm_;
 
-   mutable std::vector<Teuchos::RCP<Epetra_Map> > maps_;
-   mutable std::vector<Teuchos::RCP<Epetra_Map> > ghostedMaps_;
-   mutable std::vector<Teuchos::RCP<Epetra_Import> > importers_;
-   mutable std::vector<Teuchos::RCP<Epetra_Export> > exporters_;
+   /**
+    *  \brief The list of owned maps corresponding to the owned indices of the
+    *         global indexers.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Map>> maps_;
 
-   mutable std::vector<Teuchos::RCP<Epetra_Map> > colMaps_;
-   mutable std::vector<Teuchos::RCP<Epetra_Map> > colGhostedMaps_;
-   mutable std::vector<Teuchos::RCP<Epetra_Import> > colImporters_;
-   mutable std::vector<Teuchos::RCP<Epetra_Export> > colExporters_;
+   /**
+    *  \brief The list of ghosted maps corresponding to the owned and ghosted
+    *         indices of the global indexers.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Map>> ghostedMaps_;
+
+   /**
+    *  \brief The list of ghosted maps corresponding to the ghosted indices of
+    *         the global indexers.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Map>> ghostedMaps2_;
+
+   /**
+    *  \brief The list of ghosted importers corresponding to `ghostedMaps_`.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Import>> importers_;
+
+   /**
+    *  \brief The list of ghosted importers corresponding to `ghostedMaps2_`.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Import>> importers2_;
+
+   mutable std::vector<Teuchos::RCP<Epetra_Export>> exporters_;
+
+   /**
+    *  \brief The list of owned column maps corresponding to the owned indices
+    *         of the (column) global indexers.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Map>> colMaps_;
+
+   /**
+    *  \brief The list of ghosted column maps corresponding to the owned and
+    *         ghosted indices of the (column) global indexers.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Map>> colGhostedMaps_;
+
+   /**
+    *  \brief The list of ghosted column maps corresponding to the ghosted
+    *         indices of the (column) global indexers.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Map>> colGhostedMaps2_;
+
+   /**
+    *  \brief The list of ghosted importers corresponding to `colGhostedMaps_`.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Import>> colImporters_;
+
+   /**
+    *  \brief The list of ghosted importers corresponding to
+    *         `colGhostedMaps2_`.
+    */
+   mutable std::vector<Teuchos::RCP<Epetra_Import>> colImporters2_;
+
+   mutable std::vector<Teuchos::RCP<Epetra_Export>> colExporters_;
 
    mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> graphs_ ;
    mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> ghostedGraphs_;
@@ -492,6 +714,6 @@ protected:
    bool useDiscreteAdjoint_;
 };
 
-}
+} // end of namespace panzer
 
-#endif
+#endif // __Panzer_BlockedEpetraLinearObjFactory_hpp__

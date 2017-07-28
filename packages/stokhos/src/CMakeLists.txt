@@ -21,7 +21,7 @@ SET(HAVE_STOKHOS_DAKOTA ${${PACKAGE_NAME}_ENABLE_TriKota})
 # OpenMP support -- Add our own option to turn it off
 # without turning it off globally
 SET(Stokhos_ENABLE_OpenMP_Default OFF)
-IF(Trilinos_ENABLE_OpenMP)
+IF(${PROJECT_NAME}_ENABLE_OpenMP)
   SET(Stokhos_ENABLE_OpenMP_Default ON)
 ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(

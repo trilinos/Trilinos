@@ -40,7 +40,7 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
   RKMethods.push_back("SDIRK 1 Stage 1st order");
   RKMethods.push_back("SDIRK 2 Stage 2nd order");
   RKMethods.push_back("SDIRK 2 Stage 3rd order");
-//RKMethods.push_back("DIRK 2 Stage 3rd order");
+  RKMethods.push_back("EDIRK 2 Stage 3rd order");
   RKMethods.push_back("SDIRK 3 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethods.push_back("SDIRK 1 Stage 1st order");
   RKMethods.push_back("SDIRK 2 Stage 2nd order");
   RKMethods.push_back("SDIRK 2 Stage 3rd order");
-//  RKMethods.push_back("DIRK 2 Stage 3rd order");
+  RKMethods.push_back("EDIRK 2 Stage 3rd order");
   RKMethods.push_back("SDIRK 3 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
@@ -129,7 +129,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethodErrors.push_back(0.0486418);
   RKMethodErrors.push_back(0.000404087);
   RKMethodErrors.push_back(8.91985e-05);
-//  RKMethodErrors.push_back(8.33251e-07);
+  RKMethodErrors.push_back(1.38785e-05);
   RKMethodErrors.push_back(1.61576e-05);
   RKMethodErrors.push_back(8.46096e-08);
   RKMethodErrors.push_back(1.38629e-08);

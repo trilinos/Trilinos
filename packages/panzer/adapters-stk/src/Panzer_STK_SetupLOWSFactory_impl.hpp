@@ -428,9 +428,6 @@ namespace {
             // TODO add MueLu code...
             #ifdef PANZER_HAVE_MUELU
             if(useCoordinates) {
-              std::cout << dofVec[i] << std::endl;
-              //std::vector<GO> ownedIndices;
-              //dofVec[i]->getOwnedIndices(ownedIndices);
 
               typedef Xpetra::Map<int,GO> Map;
               typedef Xpetra::MultiVector<double,int,GO> MV;
@@ -450,8 +447,6 @@ namespace {
 
               for(unsigned d=0;d<dim;d++) {
                 // sanity check the size
-                std::cout << coords->getLocalLength() <<std::endl;
-                std::cout << xcoords.size() << std::endl;
                 TEUCHOS_ASSERT(coords->getLocalLength()==xcoords.size());
 
                 // fill appropriate coords vector
