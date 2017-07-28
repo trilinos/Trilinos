@@ -6,7 +6,7 @@ USAGE="sendTestSummary.sh [-d] <logfile>"
 while getopts d OPT; do
     case "$OPT" in
         d)
-            # debug mode, don't send email summary
+            # debug mode, send email summary to me only
             DEBUGMODE=1
             ;;
         \?)
@@ -27,28 +27,45 @@ if [ $# -eq 0 ]; then
 fi
 ### end parsing ###
 
-cd /home/jhu/code/trilinos-test
+#########################################################################
+# Variables you might want to modify.
+#########################################################################
 
+#Perl script to produce prettified HTML
+HTMLPERLSCRIPT=/home/jhu/bin/drakify-email.pl
+#root of cdash testing directory
+TESTLOCATION="/home/jhu/code/trilinos-test"
+LOGBACKUPDIRECTORY="/home/jhu/code/trilinos-test/logs"
+
+#packages to be summarized
+PATTERN="(Xpetra|MueLu)"
+
+#variables to be passed to the perl script
+MACHINENAME=`hostname -s`
+USER=`whoami`
+
+#who gets the email summary
+if [[ $DEBUGMODE == 1 ]]; then
+  RECIPIENTS=(
+    "${USER}"
+  )
+else
+  RECIPIENTS=(
+    "muelu-regression@software.sandia.gov"
+    "nvrober@sandia.gov"
+  )
+fi
+#suffix for all the log files
 timeStamp="$(date +%F_%R)"
 
 #cron driver log file
 INFILE=$1
-#packages to be summarized
-PATTERN="(Xpetra|MueLu)"
 #root of file to be emailed.  The correct suffix must be appended whenever you use this.
 OUTFILE="test-summary-${timeStamp}"
 MAILCOMMAND="/usr/sbin/sendmail"
-RECIPIENTS=(
-"caglusa@sandia.gov"
-"csiefer@sandia.gov"
-"jhu@sandia.gov"
-"lberge@sandia.gov"
-"mmayr@sandia.gov"
-"nvrober@sandia.gov"
-"prokopenkoav@ornl.gov"
-"rstumin@sandia.gov"
-"tawiesn@sandia.gov"
-)
+#########################################################################
+
+cd ${TESTLOCATION}
 
 backupFile="cron_driver.log.$timeStamp"
 cp cron_driver.log $backupFile
@@ -284,17 +301,14 @@ END {
 
 date2=`echo $(date) | sed "s/ /_/g"`
 cdashDate="$(date +%F)"
-cat ${OUTFILE}.txt | perl /home/jhu/bin/drakify-email.pl ${date2} ${cdashDate} > ${OUTFILE}.html
+cat ${OUTFILE}.txt | perl ${HTMLPERLSCRIPT} ${date2} ${cdashDate} ${MACHINENAME} ${USER} > ${OUTFILE}.html
 
-if [[ $DEBUGMODE == 1 ]]; then
-  mailCommand="cat ${OUTFILE}.html | ${MAILCOMMAND} ${RECIPIENTS[@]}"
-  echo "mail command: $mailCommand"
-  echo "Debug mode, mail not sent."
-else
-    cat ${OUTFILE}.html | ${MAILCOMMAND} ${RECIPIENTS[@]}
-fi
+${MAILCOMMAND} -it <<END_MESSAGE
+To: ${RECIPIENTS[@]}
+$(cat ${OUTFILE}.html)
+END_MESSAGE
 
 #clean up
 bzip2 --best $backupFile
-mv ${backupFile}.bz2 ${OUTFILE}.txt /home/jhu/code/trilinos-test/logs
+mv ${backupFile}.bz2 ${OUTFILE}.txt ${LOGBACKUPDIRECTORY}
 rm -f ${OUTFILE}.html
