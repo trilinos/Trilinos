@@ -188,11 +188,13 @@ for ($i=0; $i<$numLines; $i++)
 
 my $theDate = $ARGV[0];
 my $cdashDate = $ARGV[1];
+my $cdashMachine = $ARGV[2];
+my $senderName = $ARGV[3];
 $theDate =~ s/_/ /g;
 
 print <<EOF;
-From: jhu\@sandia.gov
-Subject: geminga test summary, $theDate
+From: $senderName\@sandia.gov
+Subject: $cdashMachine test summary, $theDate
 Mime-Version: 1.0
 Content-Type: text/html
 
@@ -316,7 +318,7 @@ Content-Type: text/html
   <body>
 
 Go to the <a
-href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueLu&filtercount=1&showfilters=1&field1=site&compare1=63&value1=geminga&date=$cdashDate">full report</a>
+href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueLu&filtercount=1&showfilters=1&field1=site&compare1=63&value1=$cdashMachine&date=$cdashDate">full report</a>
 <br>
 
 
