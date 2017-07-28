@@ -59,9 +59,9 @@
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describe Poisson's equation
     Teuchos::RCP<PDE_Nonlinear_Elliptic<RealT> > pde
       = Teuchos::rcp(new PDE_Nonlinear_Elliptic<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
       = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > hip
       = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,assembler));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
 
     // Initialize quadratic objective function
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
@@ -189,8 +189,9 @@ int main(int argc, char *argv[]) {
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
     zp->zero();
-    ROL::StochasticProblem<RealT> opt(*parlist,robj,sampler,zp,bnd);
-    opt.setSolutionStatistic(static_cast<RealT>(1));
+    ROL::OptimizationProblem<RealT> opt(robj,zp,bnd);
+    parlist->sublist("SOL").set("Initial Statistic", static_cast<RealT>(1));
+    opt.setStochasticObjective(*parlist,sampler);
 
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
     algo.run(opt,true,*outStream);

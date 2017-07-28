@@ -70,7 +70,7 @@ class Problem_005 : public ROL::NonlinearProgram<Real> {
 
   typedef ROL::Vector<Real>             V;
   typedef ROL::Objective<Real>          OBJ;
-  typedef ROL::NonlinearProgram<Real>  NP;
+  typedef ROL::NonlinearProgram<Real>   NP;
 
   const Real pi;
 

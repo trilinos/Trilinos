@@ -48,7 +48,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -120,10 +120,11 @@ namespace ROL {
 template <class Real>
 class MoreauYosidaPenaltyStep : public Step<Real> {
 private:
-  Teuchos::RCP<Algorithm<Real> > algo_;
-  Teuchos::RCP<Vector<Real> > x_; 
-  Teuchos::RCP<Vector<Real> > g_; 
-  Teuchos::RCP<Vector<Real> > l_; 
+  Teuchos::RCP<Algorithm<Real> >       algo_;
+  Teuchos::RCP<Vector<Real> >          x_; 
+  Teuchos::RCP<Vector<Real> >          g_; 
+  Teuchos::RCP<Vector<Real> >          l_; 
+  Teuchos::RCP<BoundConstraint<Real> > bnd_;
 
   Real compViolation_;
   Real gLnorm_;
@@ -132,10 +133,11 @@ private:
 
   Teuchos::ParameterList parlist_;
   int subproblemIter_;
+  bool hasEquality_;
 
   void updateState(const Vector<Real> &x, const Vector<Real> &l,
                    Objective<Real> &obj,
-                   EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
+                   Constraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state) {
     MoreauYosidaPenalty<Real> &myPen
       = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
@@ -161,6 +163,29 @@ private:
     algo_state.ncval++;
   }
 
+  void updateState(const Vector<Real> &x,
+                   Objective<Real> &obj,
+                   BoundConstraint<Real> &bnd,
+                   AlgorithmState<Real> &algo_state) {
+    MoreauYosidaPenalty<Real> &myPen
+      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    // Update objective and constraint.
+    myPen.update(x,true,algo_state.iter);
+    // Compute norm of the gradient of the Lagrangian
+    algo_state.value = myPen.value(x, zerotol);
+    myPen.gradient(*(state->gradientVec), x, zerotol);
+    gLnorm_ = (state->gradientVec)->norm();
+    // Compute constraint violation
+    algo_state.cnorm = static_cast<Real>(0);
+    compViolation_ = myPen.testComplementarity(x);
+    algo_state.gnorm = std::max(gLnorm_,compViolation_);
+    // Update state
+    algo_state.nfval++;
+    algo_state.ngrad++;
+  }
+
 public:
 
   using Step<Real>::initialize;
@@ -172,7 +197,8 @@ public:
   MoreauYosidaPenaltyStep(Teuchos::ParameterList &parlist)
     : Step<Real>(), algo_(Teuchos::null),
       x_(Teuchos::null), g_(Teuchos::null), l_(Teuchos::null),
-      tau_(10), print_(false), parlist_(parlist), subproblemIter_(0) {
+      tau_(10), print_(false), parlist_(parlist), subproblemIter_(0),
+      hasEquality_(false) {
     // Parse parameters
     Real ten(10), oem6(1.e-6), oem8(1.e-8);
     Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
@@ -193,10 +219,9 @@ public:
   /** \brief Initialize step with equality constraint.
   */
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
-                   Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
+                   Objective<Real> &obj, Constraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
-    // MoreauYosidaPenalty<Real> &myPen
-    //   = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
+    hasEquality_ = true;
     // Initialize step state
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
@@ -210,8 +235,6 @@ public:
     if ( bnd.isActivated() ) {
       bnd.project(x);
     }
-    // Update the Lagrangian
-    //myPen.updateMultipliers(state->searchSize,x);
     // Initialize the algorithm state
     algo_state.nfval = 0;
     algo_state.ncval = 0;
@@ -219,10 +242,36 @@ public:
     updateState(x,l,obj,con,bnd,algo_state);
   }
 
+  /** \brief Initialize step without equality constraint.
+  */
+  void initialize( Vector<Real> &x, const Vector<Real> &g,
+                   Objective<Real> &obj, BoundConstraint<Real> &bnd,
+                   AlgorithmState<Real> &algo_state ) {
+    // Initialize step state
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    state->descentVec    = x.clone();
+    state->gradientVec   = g.clone();
+    // Initialize additional storage
+    x_ = x.clone();
+    g_ = g.clone();
+    // Project x onto the feasible set
+    if ( bnd.isActivated() ) {
+      bnd.project(x);
+    }
+    // Initialize the algorithm state
+    algo_state.nfval = 0;
+    algo_state.ncval = 0;
+    algo_state.ngrad = 0;
+    updateState(x,obj,bnd,algo_state);
+
+    bnd_ = Teuchos::rcp(new BoundConstraint<Real>());
+    bnd_->deactivate();
+  }
+
   /** \brief Compute step (equality and bound constraints).
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                Objective<Real> &obj, Constraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
     Real one(1);
@@ -235,10 +284,26 @@ public:
     subproblemIter_ = (algo_->getState())->iter;
   }
 
+  /** \brief Compute step for bound constraints.
+  */
+  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj,
+                        BoundConstraint<Real> &bnd,
+                        AlgorithmState<Real> &algo_state ) {
+    Real one(1);
+    MoreauYosidaPenalty<Real> &myPen
+      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
+    algo_ = Teuchos::rcp(new Algorithm<Real>("Trust Region",parlist_,false));
+    x_->set(x);
+    algo_->run(*x_,myPen,*bnd_,print_);
+    s.set(*x_); s.axpy(-one,x);
+    subproblemIter_ = (algo_->getState())->iter;
+  }
+
+
   /** \brief Update step, if successful (equality and bound constraints).
   */
   void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-               Objective<Real> &obj, EqualityConstraint<Real> &con,
+               Objective<Real> &obj, Constraint<Real> &con,
                BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
     MoreauYosidaPenalty<Real> &myPen
@@ -265,6 +330,31 @@ public:
     algo_state.lagmultVec->set(l);
   }
 
+  /** \brief Update step, for bound constraints.
+  */
+  void update( Vector<Real> &x, const Vector<Real> &s,
+               Objective<Real> &obj, BoundConstraint<Real> &bnd,
+               AlgorithmState<Real> &algo_state ) {
+    MoreauYosidaPenalty<Real> &myPen
+      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    state->descentVec->set(s);
+    // Update iterate and Lagrange multiplier
+    x.plus(s);
+    // Update objective and constraint
+    algo_state.iter++;
+    myPen.update(x,true,algo_state.iter);
+    // Update state
+    updateState(x,obj,bnd,algo_state);
+    // Update multipliers
+    state->searchSize *= tau_;
+    myPen.updateMultipliers(state->searchSize,x);
+    algo_state.nfval += myPen.getNumberFunctionEvaluations() + ((algo_->getState())->nfval);
+    algo_state.ngrad += myPen.getNumberGradientEvaluations() + ((algo_->getState())->ngrad);
+    algo_state.snorm = s.norm();
+    algo_state.iterateVec->set(x);
+  }
+
   /** \brief Print iterate header.
   */
   std::string printHeader( void ) const {
@@ -272,14 +362,18 @@ public:
     hist << "  ";
     hist << std::setw(6)  << std::left << "iter";
     hist << std::setw(15) << std::left << "fval";
-    hist << std::setw(15) << std::left << "cnorm";
+    if (hasEquality_) {
+      hist << std::setw(15) << std::left << "cnorm";
+    }
     hist << std::setw(15) << std::left << "gnorm";
     hist << std::setw(15) << std::left << "ifeas";
     hist << std::setw(15) << std::left << "snorm";
     hist << std::setw(10) << std::left << "penalty";
     hist << std::setw(8) << std::left << "#fval";
     hist << std::setw(8) << std::left << "#grad";
-    hist << std::setw(8) << std::left << "#cval";
+    if (hasEquality_) {
+      hist << std::setw(8) << std::left << "#cval";
+    }
     hist << std::setw(8) << std::left << "subIter";
     hist << "\n";
     return hist.str();
@@ -309,7 +403,9 @@ public:
       hist << "  ";
       hist << std::setw(6)  << std::left << algo_state.iter;
       hist << std::setw(15) << std::left << algo_state.value;
-      hist << std::setw(15) << std::left << algo_state.cnorm;
+      if (hasEquality_) {
+        hist << std::setw(15) << std::left << algo_state.cnorm;
+      }
       hist << std::setw(15) << std::left << gLnorm_;
       hist << std::setw(15) << std::left << compViolation_;
       hist << std::setw(15) << std::left << " ";
@@ -321,7 +417,9 @@ public:
       hist << "  ";
       hist << std::setw(6)  << std::left << algo_state.iter;
       hist << std::setw(15) << std::left << algo_state.value;
-      hist << std::setw(15) << std::left << algo_state.cnorm;
+      if (hasEquality_) {
+        hist << std::setw(15) << std::left << algo_state.cnorm;
+      }
       hist << std::setw(15) << std::left << gLnorm_;
       hist << std::setw(15) << std::left << compViolation_;
       hist << std::setw(15) << std::left << algo_state.snorm;
@@ -330,26 +428,14 @@ public:
       hist << std::scientific << std::setprecision(6);
       hist << std::setw(8) << std::left << algo_state.nfval;
       hist << std::setw(8) << std::left << algo_state.ngrad;
-      hist << std::setw(8) << std::left << algo_state.ncval;
+      if (hasEquality_) {
+        hist << std::setw(8) << std::left << algo_state.ncval;
+      }
       hist << std::setw(8) << std::left << subproblemIter_;
       hist << "\n";
     }
     return hist.str();
   }
-
-  /** \brief Compute step for bound constraints; here only to satisfy the
-             interface requirements, does nothing, needs refactoring.
-  */
-  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj,
-                        BoundConstraint<Real> &con,
-                        AlgorithmState<Real> &algo_state ) {}
-
-  /** \brief Update step, for bound constraints; here only to satisfy the
-             interface requirements, does nothing, needs refactoring.
-  */
-  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj,
-                       BoundConstraint<Real> &con,
-                       AlgorithmState<Real> &algo_state ) {}
 
 }; // class MoreauYosidaPenaltyStep
 

@@ -63,7 +63,7 @@ public:
 
   int numBatches(void) { return comm_->NumProc(); }
 
-  void reduceAll(Real* input, Real* output,
+  void reduceAll(Real* input, Real* output, int dim,
                  const Elementwise::ReductionOp<Real> &r) {
     int nB = this->numBatches();
     std::vector<Real> receiveBuffer(nB);

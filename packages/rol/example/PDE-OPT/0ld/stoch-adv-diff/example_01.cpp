@@ -55,9 +55,10 @@
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
@@ -164,7 +165,7 @@ int main(int argc, char *argv[]) {
     /*** Build objective function, constraint and reduced objective function. ***/
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp));
@@ -173,7 +174,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > zlop = Teuchos::rcp(new ROL::StdVector<RealT>(zlo_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > zupp = Teuchos::rcp(new ROL::StdVector<RealT>(zup_rcp));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(zlop,zupp));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(zlop,zupp));
 
     /*** Build sampler ***/
     int sdim  = 37;
@@ -187,8 +188,9 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,bounds,bman));
     // Build stochastic problem
-    ROL::StochasticProblem<RealT> opt(*parlist,objReduced,sampler,zp,bnd);
-    opt.setSolutionStatistic(zero);
+    ROL::OptimizationProblem<RealT> opt(objReduced,zp,bnd);
+    parlist->sublist("SOL").set("Initial Statistic",zero);
+    opt.setStochasticObjective(*parlist,sampler);
 
     bool printMeanValueState = parlist->sublist("Problem").get("Print Mean Value State",false);
     if ( printMeanValueState ) {
@@ -221,8 +223,7 @@ int main(int argc, char *argv[]) {
       con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
       objReduced->checkGradient(*zp,*dzp,true,*outStream);
       objReduced->checkHessVec(*zp,*dzp,true,*outStream);
-      opt.checkObjectiveGradient(*dzp,true,*outStream);
-      opt.checkObjectiveHessVec(*dzp,true,*outStream);
+      opt.check(*outStream);
     }
 
     /*** Solve optimization problem. ***/

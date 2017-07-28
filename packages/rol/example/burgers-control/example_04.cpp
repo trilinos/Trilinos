@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
     /*************************************************************************/
     bool useEChessian = true;
-    EqualityConstraint_BurgersControl<RealT> con(fem, useEChessian);
+    Constraint_BurgersControl<RealT> con(fem, useEChessian);
     /*************************************************************************/
     /************* INITIALIZE BOUND CONSTRAINTS ******************************/
     /*************************************************************************/
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
     *outStream << "\n";
     // CHECK PENALTY OBJECTIVE DERIVATIVES
     Teuchos::RCP<ROL::Objective<RealT> > obj_ptr = Teuchos::rcpFromRef(obj);
-    Teuchos::RCP<ROL::EqualityConstraint<RealT> > con_ptr = Teuchos::rcpFromRef(con);
+    Teuchos::RCP<ROL::Constraint<RealT> > con_ptr = Teuchos::rcpFromRef(con);
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd_ptr = Teuchos::rcpFromRef(bnd);
     ROL::MoreauYosidaPenalty<RealT> myPen(obj_ptr,bnd_ptr,x,*parlist);
     myPen.checkGradient(x, y, true, *outStream);

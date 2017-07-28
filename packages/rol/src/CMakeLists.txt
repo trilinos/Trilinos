@@ -44,10 +44,22 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/function)
 INCLUDE_DIRECTORIES(${DIR}
-                    ${DIR}/operator)
+                    ${DIR}/boundconstraint
+                    ${DIR}/constraint
+                    ${DIR}/nlls
+                    ${DIR}/objective
+                    ${DIR}/operator
+                    ${DIR}/simopt
+                    ${DIR}/std)
 
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
-                    ${DIR}/operator/*.hpp)
+                    ${DIR}/boundconstraint/*.hpp
+                    ${DIR}/constraint/*.hpp
+                    ${DIR}/nlls/*.hpp
+                    ${DIR}/objective/*.hpp
+                    ${DIR}/operator/*.hpp
+                    ${DIR}/simopt/*.hpp
+                    ${DIR}/std/*.hpp)
 
 #
 # step headers
@@ -70,6 +82,8 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/secant/*.hpp
                     ${DIR}/krylov/*.hpp
                     ${DIR}/bundle/*.hpp
+                    ${DIR}/augmentedlagrangian/*.hpp
+                    ${DIR}/moreauyosidapenalty/*.hpp
                     ${DIR}/interiorpoint/*.hpp
                     ${DIR}/nonlinearcg/*.hpp
                    )

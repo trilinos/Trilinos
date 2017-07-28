@@ -45,13 +45,13 @@
 #ifndef ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_VOLUME_SimOpt_H
 #define ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_VOLUME_SimOpt_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "Amesos2.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_ElasticitySIMP_Volume_SimOpt : public ROL::EqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_PDEOPT_ElasticitySIMP_Volume_SimOpt : public ROL::Constraint_SimOpt<Real> {
 private:
 
   Real volFrac_;
@@ -64,7 +64,7 @@ public:
 	  volFrac_     = parlist->sublist("ElasticityTopoOpt").get("volfrac", 0.5);
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) 
   {
     Teuchos::RCP<std::vector<Real> > cp = (Teuchos::dyn_cast<ROL::StdVector<Real> >(c)).getVector();

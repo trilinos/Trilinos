@@ -45,13 +45,13 @@
 #ifndef ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_VOLUME_H
 #define ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_VOLUME_H
 
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_RiskVector.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_ElasticitySIMP_Volume : public ROL::EqualityConstraint<Real> {
+class EqualityConstraint_PDEOPT_ElasticitySIMP_Volume : public ROL::Constraint<Real> {
 private:
   Real volFrac_;
   Real totalMeasure_;
@@ -90,7 +90,7 @@ public:
 //              << std::endl;
   }
 
-  using ROL::EqualityConstraint<Real>::value;
+  using ROL::Constraint<Real>::value;
   void value(ROL::Vector<Real> &c,
        const ROL::Vector<Real> &z,
              Real &tol) {

@@ -73,7 +73,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  EqualityConstraintPartionedCheck
+  ConstraintPartionedCheck
   SOURCES test_09.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
@@ -82,7 +82,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CompositeEqualityConstraintCheck
+  CompositeConstraintCheck
   SOURCES test_10.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1

@@ -232,20 +232,24 @@ std::string NumberToString( T Number )
     switch(p) {
 
       case TYPE_U:    comp = ( (s == STEP_LINESEARCH) ||
-                                (s == STEP_TRUSTREGION) );
+                               (s == STEP_TRUSTREGION) ||
+                               (s == STEP_BUNDLE) );
         break;
 
       case TYPE_B:    comp = ( (s == STEP_LINESEARCH)  ||
-                                (s == STEP_TRUSTREGION) || 
-                                (s == STEP_MOREAUYOSIDAPENALTY) );
+                               (s == STEP_TRUSTREGION) || 
+                               (s == STEP_MOREAUYOSIDAPENALTY) ||
+                               (s == STEP_PRIMALDUALACTIVESET) ||
+                               (s == STEP_INTERIORPOINT) );
         break;
 
       case TYPE_E:    comp = ( (s == STEP_COMPOSITESTEP) || 
-                                (s == STEP_AUGMENTEDLAGRANGIAN) );  
+                               (s == STEP_AUGMENTEDLAGRANGIAN) );  
         break;
 
       case TYPE_EB:   comp = ( (s == STEP_AUGMENTEDLAGRANGIAN) || 
-                                (s == STEP_MOREAUYOSIDAPENALTY) );
+                               (s == STEP_MOREAUYOSIDAPENALTY) ||
+                               (s == STEP_INTERIORPOINT) );
         break;
 
       case TYPE_LAST: comp = 0; break;
@@ -312,74 +316,6 @@ std::string NumberToString( T Number )
       }
     }
     return STEP_TRUSTREGION;
-  }
-
-  /** \enum   ROL::EBoundAlgorithm
-      \brief  Enumeration of algorithms to handle bound constraints.
-
-      \arg    PROJECTED             describe
-      \arg    PRIMALDUALACTIVESET   describe
-      \arg    INTERIORPOINTS        describe
-   */
-  enum EBoundAlgorithm{
-    BOUNDALGORITHM_PROJECTED = 0,
-    BOUNDALGORITHM_PRIMALDUALACTIVESET,
-    BOUNDALGORITHM_INTERIORPOINTS,
-    BOUNDALGORITHM_LAST
-  };
-
-  inline std::string EBoundAlgorithmToString(EBoundAlgorithm tr) {
-    std::string retString;
-    switch(tr) {
-      case BOUNDALGORITHM_PROJECTED:           retString = "Projected";              break;
-      case BOUNDALGORITHM_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
-      case BOUNDALGORITHM_INTERIORPOINTS:      retString = "Interior Points";        break;
-      case BOUNDALGORITHM_LAST:                retString = "Last Type (Dummy)";      break;
-      default:                                 retString = "INVALID EBoundAlgorithm";
-    }
-    return retString;
-  }
-
-  /** \brief  Verifies validity of a Bound Algorithm enum.
-    
-      \param  tr  [in]  - enum of the Bound Algorithm
-      \return 1 if the argument is a valid Bound Algorithm; 0 otherwise.
-    */
-  inline int isValidBoundAlgorithm(EBoundAlgorithm d){
-    return( (d == BOUNDALGORITHM_PROJECTED)           ||
-            (d == BOUNDALGORITHM_PRIMALDUALACTIVESET) || 
-            (d == BOUNDALGORITHM_INTERIORPOINTS)  
-          );
-  }
-
-  inline EBoundAlgorithm & operator++(EBoundAlgorithm &type) {
-    return type = static_cast<EBoundAlgorithm>(type+1);
-  }
-
-  inline EBoundAlgorithm operator++(EBoundAlgorithm &type, int) {
-    EBoundAlgorithm oldval = type;
-    ++type;
-    return oldval;
-  }
-
-  inline EBoundAlgorithm & operator--(EBoundAlgorithm &type) {
-    return type = static_cast<EBoundAlgorithm>(type-1);
-  }
-
-  inline EBoundAlgorithm operator--(EBoundAlgorithm &type, int) {
-    EBoundAlgorithm oldval = type;
-    --type;
-    return oldval;
-  }
-
-  inline EBoundAlgorithm StringToEBoundAlgorithm(std::string s) {
-    s = removeStringFormat(s);
-    for ( EBoundAlgorithm des = BOUNDALGORITHM_PROJECTED; des < BOUNDALGORITHM_LAST; des++ ) {
-      if ( !s.compare(removeStringFormat(EBoundAlgorithmToString(des))) ) {
-        return des;
-      }
-    }
-    return BOUNDALGORITHM_PROJECTED;
   }
 
   /** \enum   ROL::EDescent
@@ -1082,69 +1018,6 @@ std::string NumberToString( T Number )
     return TESTOPTPROBLEM_HS1;
   }
 
-
-  /** \enum   ROL::EConstraint
-      \brief  Enumeration of constraint types.
-
-      \arg    EQUALITY        describe
-      \arg    INEQUALITY      describe
-   */
-  enum EConstraint{
-    CONSTRAINT_EQUALITY = 0,
-    CONSTRAINT_INEQUALITY,
-    CONSTRAINT_LAST
-  };
-
-  inline std::string EConstraintToString(EConstraint c) {
-    std::string retString;
-    switch(c) {
-      case CONSTRAINT_EQUALITY:     retString = "Equality";                           break;
-      case CONSTRAINT_INEQUALITY:   retString = "Inequality";                         break;
-      case CONSTRAINT_LAST:         retString = "Last Type (Dummy)";                  break;
-      default:                      retString = "INVALID EConstraint";
-    }
-    return retString;
-  }
-
-  /** \brief  Verifies validity of a Secant enum.
-    
-      \param  c  [in]  - enum of the Secant
-      \return 1 if the argument is a valid Secant; 0 otherwise.
-    */
-  inline int isValidConstraint(EConstraint c){
-    return( (c == CONSTRAINT_EQUALITY)      ||
-            (c == CONSTRAINT_INEQUALITY) );
-  }
-
-  inline EConstraint & operator++(EConstraint &type) {
-    return type = static_cast<EConstraint>(type+1);
-  }
-
-  inline EConstraint operator++(EConstraint &type, int) {
-    EConstraint oldval = type;
-    ++type;
-    return oldval;
-  }
-
-  inline EConstraint & operator--(EConstraint &type) {
-    return type = static_cast<EConstraint>(type-1);
-  }
-
-  inline EConstraint operator--(EConstraint &type, int) {
-    EConstraint oldval = type;
-    --type;
-    return oldval;
-  }
-
-  inline EConstraint StringToEConstraint(std::string s) {
-    s = removeStringFormat(s);
-    for ( EConstraint ctype = CONSTRAINT_EQUALITY; ctype < CONSTRAINT_LAST; ctype++ ) {
-      if ( !s.compare(removeStringFormat(EConstraintToString(ctype))) ) {
-        return ctype;
-      }
-    }
-    return CONSTRAINT_EQUALITY;
-  }
 
   // For use in gradient and Hessian checks
   namespace Finite_Difference_Arrays {

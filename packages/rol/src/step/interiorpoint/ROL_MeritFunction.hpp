@@ -69,7 +69,7 @@ class MeritFunction : public Objective<Real> {
   typedef Vector<Real>                V;
   typedef PartitionedVector<Real>     PV;
   typedef Objective<Real>             OBJ;
-  typedef EqualityConstraint<Real>    EQCON;
+  typedef Constraint<Real>    EQCON;
   typedef InequalityConstraint<Real>  INCON;
 
   typedef Teuchos::ParameterList      PLIST;
@@ -84,7 +84,7 @@ class MeritFunction : public Objective<Real> {
 private:
 
   Teuchos::RCP<OBJ>   obj_;       // Raw objective function
-  Teuchos::RCP<EQCON> eqcon_;     // Equality constraint
+  Teuchos::RCP<EQCON> eqcon_;     //  constraint
   Teuchos::RCP<INCON> incon_;     // Inequality constraint
   Teuchos::RCP<BND>   bnd_;       // Bound constraint
 
@@ -103,13 +103,13 @@ private:
   Teuchos::RCP<V> sfun_;          // store elementwise function of slack variable
 
 
-  Teuchos::RCP<V> eqmult_;        // Equality constraint Lagrange multiplier 
+  Teuchos::RCP<V> eqmult_;        //  constraint Lagrange multiplier 
   Teuchos::RCP<V> inmult_;        // Inequality constraint Lagrange multiplier
 
-  Teuchos::RCP<V> ce_;            // Equality constraint vector
+  Teuchos::RCP<V> ce_;            //  constraint vector
   Teuchos::RCP<V> ci_;            // Inequation constraint vector
 
-  Teuchos::RCP<V> jced_;          // Equality Jacobian applied to d
+  Teuchos::RCP<V> jced_;          //  Jacobian applied to d
   Teuchos::RCP<V> jcid_;          // Inequality Jacobian applied to d 
 
   Real cenorm_;

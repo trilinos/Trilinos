@@ -58,10 +58,10 @@
 //#include <fenv.h>
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing advection-diffusion equation
     Teuchos::RCP<PDE_stoch_adv_diff<RealT> > pde
       = Teuchos::rcp(new PDE_stoch_adv_diff<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     Teuchos::RCP<PDE_Constraint<RealT> > pdeCon
       = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > zhip
       = Teuchos::rcp(new PDE_OptVector<RealT>(Teuchos::rcp(new ROL::StdVector<RealT>(zhi_rcp))));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(zlop,zhip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(zlop,zhip));
 
     /*************************************************************************/
     /***************** BUILD SAMPLER *****************************************/
@@ -223,8 +223,9 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
-    ROL::StochasticProblem<RealT> opt(*parlist,objReduced,sampler,zp,bnd);
-    opt.setSolutionStatistic(one);
+    ROL::OptimizationProblem<RealT> opt(objReduced,zp,bnd);
+    parlist->sublist("SOL").set("Initial Statistic",one);
+    opt.setStochasticObjective(*parlist,sampler);
 
     /*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
@@ -265,8 +266,7 @@ int main(int argc, char *argv[]) {
       *outStream << "\n\nCheck Hessian of Reduced Objective Function\n";
       objReduced->checkHessVec(*zp,*dzp,true,*outStream);
 
-      opt.checkObjectiveGradient(*dzp,true,*outStream);
-      opt.checkObjectiveHessVec(*dzp,true,*outStream);
+      opt.check(*outStream);
     }
 
     /*************************************************************************/

@@ -43,7 +43,7 @@
 #define ROL_MiniTensor_BoundConstraint_hpp
 
 #include "MiniTensor_Solvers.h"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_MiniTensor_Vector.hpp"
 
 namespace ROL {
@@ -54,7 +54,7 @@ using Index = minitensor::Index;
 /// Function base class that defines the interface to Mini Solvers.
 ///
 template<typename T, Index N>
-class MiniTensor_BoundConstraint: public BoundConstraint<T> {
+class MiniTensor_BoundConstraint: public Bounds<T> {
 
 public:
 

@@ -157,8 +157,8 @@ int main(int argc, char* argv[]) {
     RealT alpha = 1.e-3;
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobjSimOpt
       = Teuchos::rcp(new Objective_BurgersControl<RealT>(alpha,nx));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pconSimOpt
-      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(nx));
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pconSimOpt
+      = Teuchos::rcp(new Constraint_BurgersControl<RealT>(nx));
     Teuchos::RCP<ROL::Objective<RealT> > pObj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,xp,pp));
     Teuchos::RCP<ROL::Objective<RealT> > obj;
@@ -176,9 +176,9 @@ int main(int argc, char* argv[]) {
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Neutral");
     list.sublist("SOL").set("Store Sampled Value and Gradient",true);
     // Build stochastic problem
-    ROL::StochasticProblem<RealT> optProb(list,pObj,sampler,xp);
-    optProb.checkObjectiveGradient(d,true,*outStream);
-    optProb.checkObjectiveHessVec(d,true,*outStream);
+    ROL::OptimizationProblem<RealT> optProb(pObj,xp);
+    optProb.setStochasticObjective(list,sampler);
+    optProb.check(*outStream);
     // Run ROL algorithm
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
     clock_t start = clock();

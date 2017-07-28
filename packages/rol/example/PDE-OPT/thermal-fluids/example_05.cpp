@@ -61,7 +61,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_SimulatedEqualityConstraint.hpp"
+#include "ROL_SimulatedConstraint.hpp"
 #include "ROL_SimulatedObjectiveCVaR.hpp"
 #include "ROL_SimulatedObjective.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing Navier-Stokes equations.
     Teuchos::RCP<PDE_ThermalFluids_ex03<RealT> > pde
       = Teuchos::rcp(new PDE_ThermalFluids_ex03<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
@@ -254,8 +254,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     bool useW    = parlist->sublist("SOL").sublist("Simulated").get("Use Constraint Weights", true);
     bool useCVaR = parlist->sublist("SOL").sublist("Simulated").get("Use CVaR", false);
-    Teuchos::RCP<ROL::EqualityConstraint<RealT> > simcon
-      = Teuchos::rcp(new ROL::SimulatedEqualityConstraint<RealT>(sampler, con, useW));
+    Teuchos::RCP<ROL::Constraint<RealT> > simcon
+      = Teuchos::rcp(new ROL::SimulatedConstraint<RealT>(sampler, con, useW));
     Teuchos::RCP<ROL::Objective<RealT> > simobj;
     if (useCVaR) {
       Teuchos::ParameterList list = parlist->sublist("SOL").sublist("Simulated");
@@ -303,7 +303,7 @@ int main(int argc, char *argv[]) {
 
     bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
     if (derivCheck) {
-      *outStream << std::endl << "TESTING SimulatedEqualityConstraint" << std::endl;
+      *outStream << std::endl << "TESTING SimulatedConstraint" << std::endl;
       simcon->checkApplyJacobian(x, p, *vu, true, *outStream);
       simcon->checkAdjointConsistencyJacobian(*vu, p, x, *vu, x, true, *outStream);
       simcon->checkApplyAdjointHessian(x, *vu, p, x, true, *outStream);

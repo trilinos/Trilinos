@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     RCP<V> lo = rcp( new SV(l_rcp) );
     RCP<V> up = rcp( new SV(u_rcp) ); 
       
-    ROL::BoundConstraint<RealT> icon(lo,up);
+    ROL::Bounds<RealT> icon(lo,up);
 
     // ROL components.
     RCP<ROL::Algorithm<RealT> > algo;

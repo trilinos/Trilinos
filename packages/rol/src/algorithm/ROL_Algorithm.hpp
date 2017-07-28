@@ -51,7 +51,7 @@
 #include "ROL_StatusTestFactory.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_ValidParameters.hpp"
 
@@ -138,9 +138,9 @@ public:
                                         std::ostream      &outStream = std::cout,
                                         bool              printVectors = false,
                                         std::ostream      &vectorStream = std::cout ) {
-    BoundConstraint<Real> con;
-    con.deactivate();
-    return run(x,x.dual(),obj,con,print,outStream,printVectors,vectorStream);
+    BoundConstraint<Real> bnd;
+    bnd.deactivate();
+    return run(x,x.dual(),obj,bnd,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
@@ -154,9 +154,9 @@ public:
                                         std::ostream       &outStream = std::cout,
                                         bool               printVectors = false,
                                         std::ostream       &vectorStream = std::cout ) {
-    BoundConstraint<Real> con;
-    con.deactivate();
-    return run(x,g,obj,con,print,outStream,printVectors,vectorStream);
+    BoundConstraint<Real> bnd;
+    bnd.deactivate();
+    return run(x,g,obj,bnd,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
@@ -164,12 +164,12 @@ public:
   */
   virtual std::vector<std::string> run( Vector<Real>          &x, 
                                         Objective<Real>       &obj,
-                                        BoundConstraint<Real> &con,
+                                        BoundConstraint<Real> &bnd,
                                         bool                  print = false,
                                         std::ostream          &outStream = std::cout,
                                         bool                  printVectors = false,
                                         std::ostream          &vectorStream = std::cout ) {
-    return run(x,x.dual(),obj,con,print,outStream,printVectors,vectorStream);
+    return run(x,x.dual(),obj,bnd,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
@@ -179,7 +179,7 @@ public:
   virtual std::vector<std::string> run( Vector<Real>          &x, 
                                         const Vector<Real>    &g, 
                                         Objective<Real>       &obj,
-                                        BoundConstraint<Real> &con,
+                                        BoundConstraint<Real> &bnd,
                                         bool                  print = false,
                                         std::ostream          &outStream = std::cout,
                                         bool                  printVectors = false,
@@ -200,7 +200,7 @@ public:
     Teuchos::RCP<Vector<Real> > s = x.clone();
 
     // Initialize Step
-    step_->initialize(x, g, obj, con, *state_);
+    step_->initialize(x, g, obj, bnd, *state_);
     output.push_back(step_->print(*state_,true));
     if ( print ) {
       outStream << step_->print(*state_,true);
@@ -216,8 +216,8 @@ public:
 
     // Run Algorithm
     while (status_->check(*state_)) {
-      step_->compute(*s, x, obj, con, *state_);
-      step_->update(x, *s, obj, con, *state_);
+      step_->compute(*s, x, obj, bnd, *state_);
+      step_->update(x, *s, obj, bnd, *state_);
 
       if( printVectors ) {
         x.print(vectorStream);
@@ -245,7 +245,7 @@ public:
   virtual std::vector<std::string> run( Vector<Real>             &x,
                                         Vector<Real>             &l, 
                                         Objective<Real>          &obj,
-                                        EqualityConstraint<Real> &con,
+                                        Constraint<Real>         &con,
                                         bool                     print = false,
                                         std::ostream             &outStream = std::cout,
                                         bool                     printVectors = false,
@@ -265,7 +265,7 @@ public:
                                         Vector<Real>             &l, 
                                         const Vector<Real>       &c, 
                                         Objective<Real>          &obj,
-                                        EqualityConstraint<Real> &con,
+                                        Constraint<Real>         &con,
                                         bool                     print = false,
                                         std::ostream             &outStream = std::cout,
                                         bool                     printVectors = false,
@@ -329,7 +329,7 @@ public:
   virtual std::vector<std::string> run( Vector<Real>             &x,
                                         Vector<Real>             &l, 
                                         Objective<Real>          &obj,
-                                        EqualityConstraint<Real> &con,
+                                        Constraint<Real>         &con,
                                         BoundConstraint<Real>    &bnd,
                                         bool                     print = false,
                                         std::ostream             &outStream = std::cout,
@@ -347,7 +347,7 @@ public:
                                         Vector<Real>             &l, 
                                         const Vector<Real>       &c, 
                                         Objective<Real>          &obj,
-                                        EqualityConstraint<Real> &con,
+                                        Constraint<Real>         &con,
                                         BoundConstraint<Real>    &bnd,
                                         bool                     print = false,
                                         std::ostream             &outStream = std::cout,
@@ -407,13 +407,13 @@ public:
   /** \brief Run algorithm using a ROL::OptimizationProblem.
   */
   virtual std::vector<std::string> run( OptimizationProblem<Real> &opt,
-                                        bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
+                                        bool                       print = false,
+                                        std::ostream              &outStream = std::cout ) {
     // Get components of optimization problem
     Teuchos::RCP<Objective<Real> >          obj = opt.getObjective();
     Teuchos::RCP<Vector<Real> >             x   = opt.getSolutionVector();
     Teuchos::RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    Teuchos::RCP<EqualityConstraint<Real> > con = opt.getEqualityConstraint();
+    Teuchos::RCP<Constraint<Real> >         con = opt.getConstraint();
     Teuchos::RCP<Vector<Real> >             l   = opt.getMultiplierVector();
 
     // Call appropriate run function

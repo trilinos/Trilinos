@@ -9,6 +9,7 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
 #include "ROL_Vector_SimOpt.hpp"
+#include "ROL_Bounds.hpp"
 // Teuchos includes
 #include "Teuchos_Time.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -85,7 +86,7 @@ int main( int argc, char *argv[] ) {
     Teuchos::RCP<ROL::Vector<double> > U = Teuchos::rcp(new ROL::StdVector<double>(U_rcp));
     Teuchos::RCP<std::vector<double> > L_rcp = Teuchos::rcp( new std::vector<double>(nx+1, -5.0) );
     Teuchos::RCP<ROL::Vector<double> > L = Teuchos::rcp(new ROL::StdVector<double>(L_rcp));
-    ROL::BoundConstraint<double> bnd(L,U);
+    ROL::Bounds<double> bnd(L,U);
   
     /***************************************************************************/
     /***************** INITIALIZE OBJECTIVE FUNCTION ***************************/
@@ -94,8 +95,8 @@ int main( int argc, char *argv[] ) {
     Teuchos::RCP<FEM<double> > fem = Teuchos::rcp(new FEM<double>(nx));
     Teuchos::RCP<ROL::Objective_SimOpt<double> > pObj
       = Teuchos::rcp(new DiffusionObjective<double>(fem, alpha));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<double> > pCon
-      = Teuchos::rcp(new DiffusionEqualityConstraint<double>(fem));
+    Teuchos::RCP<ROL::Constraint_SimOpt<double> > pCon
+      = Teuchos::rcp(new DiffusionConstraint<double>(fem));
     Teuchos::RCP<ROL::Objective<double> > robj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<double>(pObj,pCon,u,z,p));
     ROL::RiskNeutralObjective<double> obj(robj,sampler);
@@ -177,7 +178,7 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     int my_number_samples = sampler->numMySamples(), number_samples = 0;
     Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM,1,&my_number_samples,&number_samples);
-    int my_number_solves  = Teuchos::rcp_dynamic_cast<DiffusionEqualityConstraint<double> >(pCon)->getNumSolves(), number_solves = 0;
+    int my_number_solves  = Teuchos::rcp_dynamic_cast<DiffusionConstraint<double> >(pCon)->getNumSolves(), number_solves = 0;
     Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM,1,&my_number_solves,&number_solves);
     if (comm->getRank() == 0) {
       std::cout << "Number of Samples    = " << number_samples << "\n";

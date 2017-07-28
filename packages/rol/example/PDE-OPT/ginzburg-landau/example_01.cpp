@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing elasticity equations.
     Teuchos::RCP<PDE_GinzburgLandau<RealT> > pde
       = Teuchos::rcp(new PDE_GinzburgLandau_ex01<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon

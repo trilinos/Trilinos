@@ -71,8 +71,8 @@ private:
   
   const Teuchos::RCP<OBJ>       obj_;
   const Teuchos::RCP<BND>       bnd_;
-  const Teuchos::RCP<V>         lo_;
-  const Teuchos::RCP<V>         up_;
+  const Teuchos::RCP<const V>   lo_;
+  const Teuchos::RCP<const V>   up_;
 
   Teuchos::RCP<V>   g_;       // Gradient of penalized objective
 
@@ -146,10 +146,10 @@ public:
   InteriorPointPenalty( const Teuchos::RCP<Objective<Real> > &obj,
                         const Teuchos::RCP<BoundConstraint<Real> > &con, 
                         Teuchos::ParameterList &parlist ) :
-    obj_(obj), bnd_(con), lo_( con->getLowerVectorRCP() ), up_( con->getUpperVectorRCP() ) {
+    obj_(obj), bnd_(con), lo_( con->getLowerBound() ), up_( con->getUpperBound() ) {
 
-    Real one(1.0);
-    Real zero(0.0);
+    Real one(1);
+    Real zero(0);
 
     // Determine the index sets where the 
     ValueSet isBoundedBelow( ROL_NINF<Real>(), ValueSet::GREATER_THAN, one, zero );

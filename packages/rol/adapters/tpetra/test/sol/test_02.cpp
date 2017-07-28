@@ -135,8 +135,8 @@ int main(int argc, char* argv[]) {
     RealT alpha = 1.e-3;
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobjSimOpt
       = Teuchos::rcp(new Objective_BurgersControl<RealT>(alpha,nx));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pconSimOpt
-      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(nx));
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pconSimOpt
+      = Teuchos::rcp(new Constraint_BurgersControl<RealT>(nx));
     Teuchos::RCP<ROL::Objective<RealT> > pObj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,z,pp));
     //Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::RiskNeutralObjective<RealT>(pObj, sampler, true));
@@ -164,9 +164,9 @@ int main(int argc, char* argv[]) {
     /****************** CONSTRUCT SIMULATED CONSTRAINT AND VECTORS ********************************/
     /**********************************************************************************************/
 
-    // Construct SimulatedEqualityConstraint.
+    // Construct SimulatedConstraint.
     int useW = parlist->sublist("Problem Description").get("Use Constraint Weights", true);
-    ROL::SimulatedEqualityConstraint<RealT> simcon(sampler, pconSimOpt, useW);
+    ROL::SimulatedConstraint<RealT> simcon(sampler, pconSimOpt, useW);
     // Construct SimulatedObjective.
     ROL::SimulatedObjectiveCVaR<RealT> simobj(sampler, pobjSimOpt, pfunc, cvarLevel);
     // Simulated vectors.
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
     ROL::Vector_SimOpt<RealT> x(xu, rz);
     ROL::Vector_SimOpt<RealT> v(vu, rd);
 
-    *outStream << std::endl << "TESTING SimulatedEqualityConstraint" << std::endl; 
+    *outStream << std::endl << "TESTING SimulatedConstraint" << std::endl; 
     simcon.checkApplyJacobian(x, v, *vu, true, *outStream);
     simcon.checkAdjointConsistencyJacobian(*vu, v, x, *vu, x, true, *outStream);
     simcon.checkApplyAdjointHessian(x, *vu, v, x, true, *outStream);

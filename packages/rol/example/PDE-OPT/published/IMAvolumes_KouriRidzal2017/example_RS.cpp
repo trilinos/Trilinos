@@ -62,7 +62,7 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_SparseGridGenerator.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../../TOOLS/pdeconstraint.hpp"
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing Navier-Stokes equations.
     Teuchos::RCP<PDE_ThermalFluids_ex03<RealT> > pde
       = Teuchos::rcp(new PDE_ThermalFluids_ex03<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
@@ -282,8 +282,9 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
-    ROL::StochasticProblem<RealT> opt(*parlist,robj,vsampler,gsampler,zp);
-    opt.setSolutionStatistic(1.0);
+    ROL::OptimizationProblem<RealT> opt(robj,zp);
+    parlist->sublist("SOL").set("Initial Statistic", static_cast<RealT>(1));
+    opt.setStochasticObjective(*parlist,vsampler,gsampler);
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
@@ -340,8 +341,9 @@ int main(int argc, char *argv[]) {
 
     parlist->sublist("General").set("Inexact Objective Function", false);
     parlist->sublist("General").set("Inexact Gradient", false);
-    ROL::StochasticProblem<RealT> optFull(*parlist,robj,sampler,sampler,zp);
-    optFull.setSolutionStatistic(1.0);
+    ROL::OptimizationProblem<RealT> optFull(robj,zp);
+    parlist->sublist("SOL").set("Initial Statistic", static_cast<RealT>(1));
+    opt.setStochasticObjective(*parlist,sampler);
     ROL::Algorithm<RealT> algoFull("Trust Region",*parlist,false);
     std::clock_t timerFull = std::clock();
     algoFull.run(optFull,true,*outStream);

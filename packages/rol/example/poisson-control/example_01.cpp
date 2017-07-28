@@ -61,7 +61,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 
 
 template <class Real>
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
         (*u_rcp)[i] = 1.0;
       }
     }
-    ROL::BoundConstraint<RealT> icon(lo,up);
+    ROL::Bounds<RealT> icon(lo,up);
 
     // Primal dual active set.
     std::string filename = "input.xml";

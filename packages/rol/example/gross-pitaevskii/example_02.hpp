@@ -87,7 +87,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_CompositeStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
@@ -592,7 +592,7 @@ class Objective_GrossPitaevskii : public Objective<Real> {
 
 /** Constraint class */
 template<class Real, class XPrim=StdVector<Real>, class XDual=StdVector<Real>, class CPrim=StdVector<Real>, class CDual=StdVector<Real> >
-class Normalization_Constraint : public EqualityConstraint<Real> {
+class Normalization_Constraint : public Constraint<Real> {
 
     typedef std::vector<Real> vector;
     typedef typename vector::size_type uint;
@@ -743,7 +743,7 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
 	    return std::vector<Real>(0);
 	}     
 	else{
-	    return EqualityConstraint<Real>::solveAugmentedSystem(v1,v2,b1,b2,psi,tol);
+	    return Constraint<Real>::solveAugmentedSystem(v1,v2,b1,b2,psi,tol);
 	}
     }
 };

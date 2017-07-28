@@ -45,14 +45,14 @@
 #ifndef ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_H
 #define ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "Amesos2.hpp"
 #include "filter.hpp"
 #include "data.hpp"
 
 template<class Real>
-class ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP : public ROL::EqualityConstraint_SimOpt<Real> {
+class ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP : public ROL::Constraint_SimOpt<Real> {
 private:
 
   const Teuchos::RCP<ElasticitySIMPOperators<Real> > data_;
@@ -65,7 +65,7 @@ public:
                                                        const Teuchos::RCP<Teuchos::ParameterList> &parlist)
     : data_(data), filter_(filter) {}
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
   
   void value(ROL::Vector<Real> &c,
        const ROL::Vector<Real> &u,
@@ -78,7 +78,7 @@ public:
     
     data_->ApplyJacobian1ToVec(cp, up);
     Real one(1);
-    data_->updateF(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateF(ROL::Constraint_SimOpt<Real>::getParameter());
     cp->update(-one, *(data_->getVecF()), one);
   }
 
@@ -89,7 +89,7 @@ public:
     Teuchos::RCP<Tpetra::MultiVector<> > up
       = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(u)).getVector();
     // Solve PDE    
-    data_->updateF(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateF(ROL::Constraint_SimOpt<Real>::getParameter());
     data_->ApplyInverseJacobian1ToVec(up, data_->getVecF(), false);
     // Compute residual
     ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP<Real>::value(c,u,z,tol);

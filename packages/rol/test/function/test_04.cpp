@@ -42,7 +42,7 @@
 // @HEADER
 
 /*! \file  test_04.cpp
-    \brief Test default EqualityConstraint_SimOpt solve.
+    \brief Test default Constraint_SimOpt solve.
 */
 
 #include "Teuchos_oblackholestream.hpp"
@@ -97,11 +97,11 @@ int main(int argc, char *argv[]) {
     fem->test_inverse_mass(*outStream);
     fem->test_inverse_H1(*outStream);
     /*************************************************************************/
-    /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
+    /************* INITIALIZE SIMOPT CONSTRAINT ******************************/
     /*************************************************************************/
     bool hess = true;
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
-      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(fem,hess));
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
+      = Teuchos::rcp(new Constraint_BurgersControl<RealT>(fem,hess));
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
     /*************************************************************************/

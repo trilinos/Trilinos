@@ -42,10 +42,10 @@
 // @HEADER
 
 /*! \file  test_10.cpp
-    \brief Show how to use CompositeEqualityConstraint interface.
+    \brief Show how to use CompositeConstraint interface.
 */
 
-#include "ROL_CompositeEqualityConstraint_SimOpt.hpp"
+#include "ROL_CompositeConstraint_SimOpt.hpp"
 #include "ROL_StdVector.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -53,9 +53,9 @@
 #include <iostream>
 
 template<class Real>
-class valConstraint : public ROL::EqualityConstraint_SimOpt<Real> {
+class valConstraint : public ROL::Constraint_SimOpt<Real> {
 public:
-  valConstraint(void) : ROL::EqualityConstraint_SimOpt<Real>() {}
+  valConstraint(void) : ROL::Constraint_SimOpt<Real>() {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<std::vector<Real> > cp
@@ -191,9 +191,9 @@ public:
 };
 
 template<class Real>
-class redConstraint : public ROL::EqualityConstraint_SimOpt<Real> {
+class redConstraint : public ROL::Constraint_SimOpt<Real> {
 public:
-  redConstraint(void) : ROL::EqualityConstraint_SimOpt<Real>() {}
+  redConstraint(void) : ROL::Constraint_SimOpt<Real>() {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<std::vector<Real> > cp
@@ -411,7 +411,7 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> w(u,z);
     ROL::Vector_SimOpt<RealT> dw(du,dz);
 
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > valCon = Teuchos::rcp(new valConstraint<RealT>());
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > valCon = Teuchos::rcp(new valConstraint<RealT>());
     valCon->checkAdjointConsistencyJacobian_1(*c,*du,*u,*s,true,*outStream);
     valCon->checkAdjointConsistencyJacobian_2(*c,*dz,*u,*s,true,*outStream);
     valCon->checkApplyJacobian_1(*u,*s,*du,*c,true,*outStream);
@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
     valCon->checkApplyAdjointHessian_22(*u,*s,*c,*ds,*s,true,*outStream);
     valCon->checkApplyAdjointHessian(x,*c,dx,x,true,*outStream);
 
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > redCon = Teuchos::rcp(new redConstraint<RealT>());
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > redCon = Teuchos::rcp(new redConstraint<RealT>());
     redCon->checkAdjointConsistencyJacobian_1(*cz,*ds,*s,*z,true,*outStream);
     redCon->checkAdjointConsistencyJacobian_2(*cz,*dz,*s,*z,true,*outStream);
     redCon->checkInverseJacobian_1(*cz,*ds,*s,*z,true,*outStream); 
@@ -437,7 +437,7 @@ int main(int argc, char *argv[]) {
     redCon->checkApplyAdjointHessian_22(*s,*z,*cz,*dz,*z,true,*outStream);
     redCon->checkApplyAdjointHessian(y,*cz,dy,y,true,*outStream);
 
-    ROL::CompositeEqualityConstraint_SimOpt<RealT> con(valCon,redCon,*c,*cz,*u,*s,*z);
+    ROL::CompositeConstraint_SimOpt<RealT> con(valCon,redCon,*c,*cz,*u,*s,*z);
     con.checkAdjointConsistencyJacobian_1(*c,*du,*u,*z,true,*outStream);
     con.checkAdjointConsistencyJacobian_2(*c,*dz,*u,*z,true,*outStream);
     con.checkApplyJacobian_1(*u,*z,*du,*c,true,*outStream);

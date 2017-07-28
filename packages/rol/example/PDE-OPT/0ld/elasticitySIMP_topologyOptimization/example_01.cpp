@@ -61,7 +61,7 @@
 
 #include "ROL_ScaledStdVector.hpp"
 
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_Algorithm.hpp"
 
@@ -192,11 +192,11 @@ int main(int argc, char *argv[]) {
     /*** Build objective function, constraint and reduced objective function. ***/
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
        = Teuchos::rcp(new Objective_PDEOPT_ElasticitySIMP<RealT>(data, filter, parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
        = Teuchos::rcp(new EqualityConstraint_PDEOPT_ElasticitySIMP<RealT>(data, filter, parlist));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
        = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, dwp));
-    Teuchos::RCP<ROL::EqualityConstraint<RealT> > volcon
+    Teuchos::RCP<ROL::Constraint<RealT> > volcon
        = Teuchos::rcp(new EqualityConstraint_PDEOPT_ElasticitySIMP_Volume<RealT>(data, parlist));
 
     /*** Build bound constraint ***/
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(lo_rcp, zscale_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > hip
       = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(hi_rcp, zscale_rcp));
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
 
     /*** Check functional interface. ***/
     *outStream << "Checking Objective:" << "\n";

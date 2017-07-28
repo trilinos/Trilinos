@@ -61,7 +61,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_StdBoundConstraint.hpp"
@@ -434,7 +434,7 @@ public:
 };
 
 template<class Real>
-class EqualityConstraint_TopOpt : public ROL::EqualityConstraint_SimOpt<Real> {
+class Constraint_TopOpt : public ROL::Constraint_SimOpt<Real> {
 
   typedef std::vector<Real>    vector;
   typedef ROL::Vector<Real>    V;
@@ -457,7 +457,7 @@ private:
 
 public:
 
-  EqualityConstraint_TopOpt(Teuchos::RCP<FEM<Real> > & FEM) : FEM_(FEM) {}
+  Constraint_TopOpt(Teuchos::RCP<FEM<Real> > & FEM) : FEM_(FEM) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
 
@@ -1078,8 +1078,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Step<RealT> >                     step;   // Globalized step.
     Teuchos::RCP<ROL::StatusTest<RealT> >               status; // Status test.
     // Initialize equality constraint.
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = 
-      Teuchos::rcp(new EqualityConstraint_TopOpt<RealT>(pFEM));
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pcon = 
+      Teuchos::rcp(new Constraint_TopOpt<RealT>(pFEM));
     // Initialize bound constraints.
     std::vector<RealT> lo(pFEM->numZ(),1.e-3);
     std::vector<RealT> hi(pFEM->numZ(),1.0);

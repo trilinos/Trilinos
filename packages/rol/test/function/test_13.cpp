@@ -57,6 +57,7 @@
 #include "ROL_QuadraticObjective.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdVector.hpp"
+#include "ROL_Bounds.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -161,9 +162,9 @@ int main(int argc, char *argv[]) {
     (*xu_rcp)[2] = 1.0;   (*xu_rcp)[3] = INF;
 
 //    ROL::BoundConstraint<RealT> bnd(xl,xu);
-    auto bnd = rcp( new ROL::BoundConstraint<RealT>(xl,xu) );
+    auto bnd = rcp( new ROL::Bounds<RealT>(xl,xu) );
 
-    /*---- Equality Constraint and Lagrange Multiplier -----*/
+    /*---- Constraint and Lagrange Multiplier -----*/
 
     auto con = rcp( new ROL::BinaryConstraint<RealT>( bnd, gamma ) );
 

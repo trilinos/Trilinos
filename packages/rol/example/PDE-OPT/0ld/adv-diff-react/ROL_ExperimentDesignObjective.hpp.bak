@@ -92,7 +92,7 @@ class ExperimentDesignObjective : public Objective<Real> {
 
 public:
   ExperimentDesignObjective(const Teuchos::RCP<Objective_SimOpt<Real> > &obj,
-                            const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &con,
+                            const Teuchos::RCP<Constraint_SimOpt<Real> > &con,
                             const Teuchos::RCP<const Vector<Real> > &state,
                             const Teuchos::RCP<const Vector<Real> > &adjoint,
                             const Teuchos::RCP<const Vector<Real> > &control,
@@ -130,7 +130,7 @@ public:
 
 private:
   const Teuchos::RCP<Objective_SimOpt<Real> > obj_;
-  const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_;
+  const Teuchos::RCP<Constraint_SimOpt<Real> > con_;
   const Teuchos::RCP<const Vector<Real> > state_;
   const Teuchos::RCP<const Vector<Real> > adjoint_;
   const Teuchos::RCP<const Vector<Real> > control_;

@@ -58,7 +58,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 
 template<class Real>
 class Objective_BurgersControl : public ROL::Objective<Real> {

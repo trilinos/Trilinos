@@ -51,7 +51,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_InequalityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 
 
 namespace ROL {
@@ -117,7 +117,7 @@ public:
 
 
 template<class Real>
-class EqualityConstraint_HS32 : public EqualityConstraint<Real> {
+class EqualityConstraint_HS32 : public Constraint<Real> {
 
   typedef std::vector<Real> vector;
   typedef Vector<Real>      V;
@@ -136,6 +136,7 @@ private:
   }
 
 public:
+  EqualityConstraint_HS32() {}
 
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
@@ -180,13 +181,14 @@ public:
 
 
 template<class Real>
-class InequalityConstraint_HS32 : public InequalityConstraint<Real> {
+class InequalityConstraint_HS32 : public Constraint<Real> {
 
   typedef std::vector<Real> vector;  
   typedef Vector<Real>      V;
   typedef StdVector<Real>   SV;
 
 private:
+  InequalityConstraint_HS32(void) {}
   
   Teuchos::RCP<const vector> getVector( const V& x ) {
     using Teuchos::dyn_cast;

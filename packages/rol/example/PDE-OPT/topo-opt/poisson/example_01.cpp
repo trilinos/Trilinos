@@ -59,8 +59,8 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_CompositeEqualityConstraint_SimOpt.hpp"
+#include "ROL_Bounds.hpp"
+#include "ROL_CompositeConstraint_SimOpt.hpp"
 
 #include "../../TOOLS/pdeconstraint.hpp"
 #include "../../TOOLS/pdeobjective.hpp"
@@ -113,13 +113,13 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describe Poisson's equation
     Teuchos::RCP<PDE_Poisson_TopOpt<RealT> > pde
       = Teuchos::rcp(new PDE_Poisson_TopOpt<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     con->setSolveParameters(*parlist);
     // Initialize the filter PDE.
     Teuchos::RCP<PDE_Filter<RealT> > pdeFilter
       = Teuchos::rcp(new PDE_Filter<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > conFilter
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > conFilter
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pdeFilter,meshMgr,comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
@@ -174,10 +174,10 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     // Initialize "filtered" of "unfiltered" constraint.
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pdeWithFilter;
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
     bool useFilter = parlist->sublist("Problem").get("Use Filter", true);
     if (useFilter) {
-      pdeWithFilter = Teuchos::rcp(new ROL::CompositeEqualityConstraint_SimOpt<RealT>(con, conFilter, *rp, *rp, *up, *zp, *zp));
+      pdeWithFilter = Teuchos::rcp(new ROL::CompositeConstraint_SimOpt<RealT>(con, conFilter, *rp, *rp, *up, *zp, *zp));
     }
     else {
       pdeWithFilter = con;
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > hip
       = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,assembler,*parlist));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
 
     // Initialize Augmented Lagrangian functional.
     ROL::AugmentedLagrangian<RealT> augLag(robj,vcon,*c2p,1,*zp,*c1p,*parlist);

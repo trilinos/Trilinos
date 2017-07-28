@@ -73,7 +73,7 @@
 typedef double RealT;
 
 template<class Real>
-void checkDerivatives(const Teuchos::RCP<ROL::EqualityConstraint_SimOpt<Real> > & con,
+void checkDerivatives(const Teuchos::RCP<ROL::Constraint_SimOpt<Real> > & con,
                       std::ostream & outStream = std::cout) {
   // Cast the constraint and get the assembler.
   Teuchos::RCP<Linear_PDE_Constraint<Real> > pdecon
@@ -174,14 +174,14 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new MeshManager_Rectangle<RealT>(*parlist));
     Teuchos::RCP<PDE_Fractional_Poisson_Local<RealT> > pde_local
       = Teuchos::rcp(new PDE_Fractional_Poisson_Local<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con_local
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con_local
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pde_local,meshMgr_local,comm,*parlist,*outStream));
     // Initialize PDE describe Poisson's equation
     Teuchos::RCP<MeshManager<RealT> > meshMgr_cylinder
       = Teuchos::rcp(new MeshManager_Fractional_Cylinder<RealT>(*parlist));
     Teuchos::RCP<PDE_Fractional_Poisson_Cylinder<RealT> > pde_cylinder
       = Teuchos::rcp(new PDE_Fractional_Poisson_Cylinder<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con_cylinder
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con_cylinder
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pde_cylinder,meshMgr_cylinder,comm,*parlist,*outStream));
 
     // Check derivatives.

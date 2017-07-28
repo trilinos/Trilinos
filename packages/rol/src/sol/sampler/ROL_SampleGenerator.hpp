@@ -134,6 +134,10 @@ public:
     bman_->barrier();
   }
 
+  const Teuchos::RCP<BatchManager<Real> > getBatchManager(void) const {
+    return bman_;
+  }
+
   void print(const std::string &filename = "samples",
              const int prec = 12) const {
     int width = prec + 5 + 4;

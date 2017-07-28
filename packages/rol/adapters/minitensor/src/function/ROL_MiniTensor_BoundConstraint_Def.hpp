@@ -49,7 +49,7 @@ MiniTensor_BoundConstraint<T, N>::
 MiniTensor_BoundConstraint(
     MiniTensorVector<T, N> & lo,
     MiniTensorVector<T, N> & hi
-) : BoundConstraint<T>(
+) : Bounds<T>(
       Teuchos::rcp<MiniTensorVector<T, N>>(&lo, false),
       Teuchos::rcp<MiniTensorVector<T, N>>(&hi, false))
 {

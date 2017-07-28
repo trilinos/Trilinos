@@ -65,11 +65,11 @@
 #include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_Reduced_EqualityConstraint_SimOpt.hpp"
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_CompositeEqualityConstraint_SimOpt.hpp"
+#include "ROL_Reduced_Constraint_SimOpt.hpp"
+#include "ROL_Bounds.hpp"
+#include "ROL_CompositeConstraint_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../../TOOLS/pdeconstraint.hpp"
@@ -84,7 +84,7 @@
 typedef double RealT;
 
 template<class Real>
-void setUpAndSolve(ROL::StochasticProblem<Real> &opt,
+void setUpAndSolve(ROL::OptimizationProblem<Real> &opt,
                    Teuchos::ParameterList &parlist,
                    std::ostream &outStream) {
   ROL::Algorithm<RealT> algo("Trust Region",parlist,false);
@@ -196,12 +196,12 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing elasticity equations.
     Teuchos::RCP<PDE_TopoOpt<RealT> > pde
       = Teuchos::rcp(new PDE_TopoOpt<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     // Initialize the filter PDE.
     Teuchos::RCP<PDE_Filter<RealT> > pdeFilter
       = Teuchos::rcp(new PDE_Filter<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > conFilter
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > conFilter
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pdeFilter,meshMgr,serial_comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
@@ -261,11 +261,11 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     // Initialize "filtered" or "unfiltered" constraint.
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pdeWithFilter;
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
     bool useFilter  = parlist->sublist("Problem").get("Use Filter", true);
     if (useFilter) {
       pdeWithFilter
-        = Teuchos::rcp(new ROL::CompositeEqualityConstraint_SimOpt<RealT>(con, conFilter, *rp, *rp, *up, *zp, *zp));
+        = Teuchos::rcp(new ROL::CompositeConstraint_SimOpt<RealT>(con, conFilter, *rp, *rp, *up, *zp, *zp));
     }
     else {
       pdeWithFilter = con;
@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > hip
       = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,assembler));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
 
     /*************************************************************************/
     /***************** BUILD SAMPLER *****************************************/
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEMS ***************************/
     /*************************************************************************/
-    Teuchos::RCP<ROL::StochasticProblem<RealT> > opt;
+    Teuchos::RCP<ROL::OptimizationProblem<RealT> > opt;
     std::vector<RealT> vol;
     std::vector<RealT> var;
 
@@ -352,12 +352,13 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     // Solve.
     parlist->sublist("SOL").set("Stochastic Optimization Type","Risk Neutral");
-    opt = Teuchos::rcp(new ROL::StochasticProblem<RealT>(*parlist,objRed,sampler,zp,bnd));
-    opt->setSolutionStatistic(one);
+    opt = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(objRed,zp,bnd));
+    parlist->sublist("SOL").set("Initial Statistic",one);
+    opt->setStochasticObjective(*parlist,sampler);
     setUpAndSolve<RealT>(*opt,*parlist,*outStream);
     // Output.
     vol.push_back(volObj->value(*up,*zp,tol));
-    var.push_back(opt->getSolutionStatistic());
+    var.push_back(opt->getSolutionStatistic(*parlist));
     std::string DensRN = "density_RN.txt";
     pdecon->outputTpetraVector(z_rcp,DensRN);
     std::string ObjRN = "obj_samples_RN.txt";
@@ -379,12 +380,13 @@ int main(int argc, char *argv[]) {
       mu = static_cast<RealT>(N-i-1)/static_cast<RealT>(N);
       // Solve.
       parlist->sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Convex Combination Parameter",mu);
-      opt = Teuchos::rcp(new ROL::StochasticProblem<RealT>(*parlist,objRed,sampler,zp,bnd));
-      opt->setSolutionStatistic(var[i]);
+      opt = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(objRed,zp,bnd));
+      parlist->sublist("SOL").set("Initial Statistic",var[i]);
+      opt->setStochasticObjective(*parlist,sampler);
       setUpAndSolve<RealT>(*opt,*parlist,*outStream);
       // Output.
       vol.push_back(volObj->value(*up,*zp,tol));
-      var.push_back(opt->getSolutionStatistic());
+      var.push_back(opt->getSolutionStatistic(*parlist));
       std::stringstream nameDens;
       nameDens << "density_CVaR_" << N-i-1 << "_" << N << ".txt";
       pdecon->outputTpetraVector(z_rcp,nameDens.str().c_str());

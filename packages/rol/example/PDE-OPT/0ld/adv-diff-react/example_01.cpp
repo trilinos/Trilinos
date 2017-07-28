@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     wp->applyUnary(IsGreaterThan<RealT>(fnzw));
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj =
       Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, w_rcp, parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con =
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
     Teuchos::RCP<ROL::Objective<RealT> > objReduced =
       Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp));

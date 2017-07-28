@@ -47,6 +47,7 @@
  */
 
 
+#include "ROL_Bounds.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_StdVector.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -120,7 +121,7 @@ int main(int argc, char *argv[]) {
     RCP<V> g2p = rcp(new SV(g2_rcp));
 
 
-    ROL::BoundConstraint<RealT>     bc(lp,up);
+    ROL::Bounds<RealT>     bc(lp,up);
     ROL::StdBoundConstraint<RealT>  sbc(*l_rcp,*u_rcp);
 
     // Test project

@@ -52,6 +52,9 @@
 #include "qoi.hpp"
 #include "assembler.hpp"
 
+// Do not instantiate the template in this translation unit.
+extern template class Assembler<double>;
+
 template <class Real>
 class PDE_Objective : public ROL::Objective_SimOpt<Real> {
 private:

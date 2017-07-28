@@ -45,7 +45,7 @@
 #define ROL_PRIMALDUALINTERIORPOINTREDUCEDRESIDUAL_H
 
 #include "ROL_InteriorPointPenalty.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 
 #include <iostream>
 
@@ -108,14 +108,14 @@
 namespace ROL { 
 
 template<class Real> 
-class PrimalDualInteriorPointResidual : public EqualityConstraint<Real> {
+class PrimalDualInteriorPointResidual : public Constraint<Real> {
 
   typedef Teuchos::ParameterList     PL;
 
   typedef Vector<Real>               V;
   typedef PartitionedVector<Real>    PV;
   typedef Objective<Real>            OBJ;
-  typedef EqualityConstraint<Real>   CON;
+  typedef Constraint<Real>   CON;
   typedef BoundConstraint<Real>      BND;
   typedef LinearOperator<Real>       LOP;
   typedef InteriorPointPenalty<Real> PENALTY;
@@ -132,7 +132,7 @@ private:
   static const size_type UPPER = 3;
 
   Teuchos::RCP<const V>   x_;            // Optimization vector
-  Teuchos::RCP<const V>   l_;            // Equality constraint multiplier
+  Teuchos::RCP<const V>   l_;            //  constraint multiplier
   Teuchos::RCP<const V>   zl_;           // Lower bound multiplier
   Teuchos::RCP<const V>   zu_;           // Upper bound multiplier
 
@@ -162,8 +162,8 @@ public:
     maskU_ = penalty_->getUpperMask();
 
     Teuchos::RCP<BND> bnd = penalty_->getBoundConstraint();
-    xl_ = bnd->getLowerVectorRCP();
-    xu_ = bnd->getUpperVectorRCP();
+    xl_ = bnd->getLowerBound();
+    xu_ = bnd->getUpperBound();
 
 
     // Get access to the four components

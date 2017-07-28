@@ -108,7 +108,7 @@ public:
     }
     // Global sum
     Real sum = 0.;
-    bman_->reduceAll(&result,&sum,r);
+    bman_->reduceAll(&result,&sum,1,r);
     return sum;
   }
 };

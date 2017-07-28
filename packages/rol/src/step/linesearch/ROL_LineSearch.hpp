@@ -68,6 +68,7 @@ private:
   bool useralpha_;
   bool usePrevAlpha_; // Use the previous step's accepted alpha as an initial guess
   Real alpha0_;
+  Real alpha0bnd_;    // Lower bound for initial alpha...if below, set initial alpha to one
   int maxit_;
   Real c1_;
   Real c2_;
@@ -97,6 +98,7 @@ public:
     econd_ = StringToECurvatureCondition(parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Type","Strong Wolfe Conditions"));
     // Linesearch Parameters
     alpha0_       = parlist.sublist("Step").sublist("Line Search").get("Initial Step Size",one);
+    alpha0bnd_    = parlist.sublist("Step").sublist("Line Search").get("Lower Bound for Initial Step Size",one);
     useralpha_    = parlist.sublist("Step").sublist("Line Search").get("User Defined Initial Step Size",false);
     usePrevAlpha_ = parlist.sublist("Step").sublist("Line Search").get("Use Previous Step Length as Initial Guess",false);
     acceptMin_    = parlist.sublist("Step").sublist("Line Search").get("Accept Linesearch Minimizer",false);
@@ -265,7 +267,7 @@ protected:
   virtual Real getInitialAlpha(int &ls_neval, int &ls_ngrad, const Real fval, const Real gs, 
                                const Vector<Real> &x, const Vector<Real> &s, 
                                Objective<Real> &obj, BoundConstraint<Real> &con) {
-    Real val(1), one(1), half(0.5), p1(1.e-1);
+    Real val(1), one(1), half(0.5);
     if (useralpha_ || usePrevAlpha_ ) {
       val = alpha0_;
     }
@@ -280,10 +282,7 @@ protected:
         // Minimize quadratic interpolate to compute new alpha
         Real denom = (fnew - fval - gs);
         Real alpha = ((denom > ROL_EPSILON<Real>()) ? -half*gs/denom : one);
-        val = ((alpha > p1) ? alpha : one);
-
-        alpha0_ = val;
-        useralpha_ = true;
+        val = ((alpha > alpha0bnd_) ? alpha : one);
       }
       else {
         val = one;

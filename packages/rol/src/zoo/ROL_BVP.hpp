@@ -55,7 +55,7 @@
 
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 
 namespace ROL {
 namespace ZOO {
@@ -254,7 +254,7 @@ namespace ZOO {
     }
     Teuchos::RCP<Vector<Real> > l = Teuchos::rcp( new StdVector<Real>(lp) );
     Teuchos::RCP<Vector<Real> > u = Teuchos::rcp( new StdVector<Real>(up) );
-    con = Teuchos::rcp(new BoundConstraint<Real>(l,u));
+    con = Teuchos::rcp(new Bounds<Real>(l,u));
     con->project(*x0);
   }
 

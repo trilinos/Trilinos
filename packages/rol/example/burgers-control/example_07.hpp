@@ -49,7 +49,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_TeuchosBatchManager.hpp"
 
@@ -866,7 +866,7 @@ public:
 };
 
 template<class Real>
-class EqualityConstraint_BurgersControl : public ROL::EqualityConstraint_SimOpt<Real> {
+class Constraint_BurgersControl : public ROL::Constraint_SimOpt<Real> {
 private:
 
   typedef H1VectorPrimal<Real> PrimalStateVector;
@@ -884,7 +884,7 @@ private:
   bool useHessian_;
 
 public:
-  EqualityConstraint_BurgersControl(Teuchos::RCP<BurgersFEM<Real> > &fem, bool useHessian = true)
+  Constraint_BurgersControl(Teuchos::RCP<BurgersFEM<Real> > &fem, bool useHessian = true)
    : fem_(fem), useHessian_(useHessian) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 
@@ -897,7 +897,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->compute_residual(*cp,*up,*zp);
@@ -915,7 +915,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_pde_jacobian(*jvp,*vp,*up,*zp);
@@ -933,7 +933,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_control_jacobian(*jvp,*vp,*up,*zp);
@@ -951,7 +951,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_inverse_pde_jacobian(*ijvp,*vp,*up,*zp);
@@ -969,7 +969,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_adjoint_pde_jacobian(*jvp,*vp,*up,*zp);
@@ -987,7 +987,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_adjoint_control_jacobian(*jvp,*vp,*up,*zp);
@@ -1005,7 +1005,7 @@ public:
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
     const std::vector<Real> param
-      = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+      = ROL::Constraint_SimOpt<Real>::getParameter();
     fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
     fem_->apply_inverse_adjoint_pde_jacobian(*iajvp,*vp,*up,*zp);
@@ -1026,7 +1026,7 @@ public:
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
       const std::vector<Real> param
-        = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+        = ROL::Constraint_SimOpt<Real>::getParameter();
       fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
       fem_->apply_adjoint_pde_hessian(*ahwvp,*wp,*vp,*up,*zp);
@@ -1051,7 +1051,7 @@ public:
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
       const std::vector<Real> param
-        = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+        = ROL::Constraint_SimOpt<Real>::getParameter();
       fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
       fem_->apply_adjoint_control_pde_hessian(*ahwvp,*wp,*vp,*up,*zp);
@@ -1075,7 +1075,7 @@ public:
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
       const std::vector<Real> param
-        = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+        = ROL::Constraint_SimOpt<Real>::getParameter();
       fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
       fem_->apply_adjoint_pde_control_hessian(*ahwvp,*wp,*vp,*up,*zp);
@@ -1099,7 +1099,7 @@ public:
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
 
       const std::vector<Real> param
-        = ROL::EqualityConstraint_SimOpt<Real>::getParameter();
+        = ROL::Constraint_SimOpt<Real>::getParameter();
       fem_->set_problem_data(param[0],param[1],param[2],param[3]);
 
       fem_->apply_adjoint_control_hessian(*ahwvp,*wp,*vp,*up,*zp);
@@ -1231,6 +1231,8 @@ private:
   Real min_diff_;
   Real scale_;
   Teuchos::RCP<BurgersFEM<Real> > fem_;
+  Teuchos::RCP<ROL::Vector<Real> > l_;
+  Teuchos::RCP<ROL::Vector<Real> > u_;
 
   void cast_vector(Teuchos::RCP<std::vector<Real> > &xvec,
                    ROL::Vector<Real> &x) const {
@@ -1284,6 +1286,10 @@ public:
       }
     }
     min_diff_ *= 0.5;
+    l_ = Teuchos::rcp(new L2VectorPrimal<Real>(
+         Teuchos::rcp(new std::vector<Real>(l)), fem));
+    u_ = Teuchos::rcp(new L2VectorPrimal<Real>(
+         Teuchos::rcp(new std::vector<Real>(u)), fem));
   }
 
   bool isFeasible( const ROL::Vector<Real> &x ) {
@@ -1374,18 +1380,12 @@ public:
     }
   }
 
-  void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-    Teuchos::RCP<std::vector<Real> > us = Teuchos::rcp( new std::vector<Real>(dim_,0.0) );
-    us->assign(x_up_.begin(),x_up_.end());
-    Teuchos::RCP<ROL::Vector<Real> > up = Teuchos::rcp( new L2VectorPrimal<Real>(us,fem_) );
-    u.set(*up);
+  const Teuchos::RCP<const ROL::Vector<Real> > getLowerBound(void) const {
+    return l_;
   }
 
-  void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-    Teuchos::RCP<std::vector<Real> > ls = Teuchos::rcp( new std::vector<Real>(dim_,0.0) );
-    ls->assign(x_lo_.begin(),x_lo_.end());
-    Teuchos::RCP<ROL::Vector<Real> > lp = Teuchos::rcp( new L2VectorPrimal<Real>(ls,fem_) );
-    l.set(*lp);
+  const Teuchos::RCP<const ROL::Vector<Real> > getUpperBound(void) const {
+    return u_;
   }
 };
 
@@ -1398,6 +1398,8 @@ private:
   Real min_diff_;
   Real scale_;
   Teuchos::RCP<BurgersFEM<Real> > fem_;
+  Teuchos::RCP<ROL::Vector<Real> > l_;
+  Teuchos::RCP<ROL::Vector<Real> > u_;
 
   void cast_vector(Teuchos::RCP<std::vector<Real> > &xvec,
                    ROL::Vector<Real> &x) const {
@@ -1451,6 +1453,10 @@ public:
       }
     }
     min_diff_ *= 0.5;
+    l_ = Teuchos::rcp(new H1VectorPrimal<Real>(
+         Teuchos::rcp(new std::vector<Real>(l)), fem));
+    u_ = Teuchos::rcp(new H1VectorPrimal<Real>(
+         Teuchos::rcp(new std::vector<Real>(u)), fem));
   }
 
   bool isFeasible( const ROL::Vector<Real> &x ) {
@@ -1541,18 +1547,12 @@ public:
     }
   }
 
-  void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-    Teuchos::RCP<std::vector<Real> > us = Teuchos::rcp( new std::vector<Real>(dim_,0.0) );
-    us->assign(x_up_.begin(),x_up_.end());
-    Teuchos::RCP<ROL::Vector<Real> > up = Teuchos::rcp( new H1VectorPrimal<Real>(us,fem_) );
-    u.set(*up);
+  const Teuchos::RCP<const ROL::Vector<Real> > getLowerBound(void) const {
+    return l_;
   }
 
-  void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-    Teuchos::RCP<std::vector<Real> > ls = Teuchos::rcp( new std::vector<Real>(dim_,0.0) );
-    ls->assign(x_lo_.begin(),x_lo_.end());
-    Teuchos::RCP<ROL::Vector<Real> > lp = Teuchos::rcp( new H1VectorPrimal<Real>(ls,fem_) );
-    l.set(*lp);
+  const Teuchos::RCP<const ROL::Vector<Real> > getUpperBound(void) const {
+    return u_;
   }
 };
 

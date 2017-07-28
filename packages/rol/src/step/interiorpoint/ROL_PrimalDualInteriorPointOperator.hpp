@@ -57,7 +57,7 @@ class PrimalDualInteriorPointBlock11 : public LinearOperator<Real> {
   typedef Vector<Real>             V;
   typedef PartitionedVector<Real>  PV;
   typedef Objective<Real>          OBJ;
-  typedef EqualityConstraint<Real> CON;      
+  typedef Constraint<Real> CON;      
 
   static const size_type OPT   = 0;
   static const size_type EQUAL = 1;
@@ -65,7 +65,7 @@ class PrimalDualInteriorPointBlock11 : public LinearOperator<Real> {
   static const size_type UPPER = 1;
  
   Teuchos::RCP<const V>   x_;            // Optimization vector
-  Teuchos::RCP<const V>   l_;            // Equality constraint multiplier
+  Teuchos::RCP<const V>   l_;            //  constraint multiplier
 
   Teuchos::RCP<V> scratch_;
 
@@ -268,8 +268,8 @@ public:
     const PV &x_pv = Teuchos::dyn_cast<const PV>(x);
     
     x_  = x_pv.get(OPT);
-    xl_ = bnd.getLowerVectorRCP();
-    xu_ = bnd.getUpperVectorRCP();
+    xl_ = bnd.getLowerBound();
+    xu_ = bnd.getUpperBound();
 
   }
 
