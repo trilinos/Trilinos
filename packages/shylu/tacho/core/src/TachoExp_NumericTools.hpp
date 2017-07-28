@@ -390,7 +390,7 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         if (verbose) {
-          printf("Summary: NumericTools (SerialSolve: %3d)\n", x.dimension_1());
+          printf("Summary: NumericTools (SerialSolve: %3d)\n", ordinal_type(x.dimension_1()));
           printf("========================================\n");
 
           print_stat_solve();
@@ -410,7 +410,7 @@ namespace Tacho {
         timer.reset();
         typedef typename sched_type_host::memory_space memory_space;
         typedef TaskFunctor_FactorizeChol<value_type,host_exec_space> functor_type;
-        typedef Kokkos::Future<int,host_exec_space> future_type;
+        //typedef Kokkos::Future<int,host_exec_space> future_type;
         
         sched_type_host sched;
         {
@@ -519,7 +519,7 @@ namespace Tacho {
           typedef typename sched_type_host::memory_space memory_space;
           typedef TaskFunctor_SolveLowerChol<value_type,host_exec_space> functor_lower_type;
           typedef TaskFunctor_SolveUpperChol<value_type,host_exec_space> functor_upper_type;
-          typedef Kokkos::Future<int,host_exec_space> future_type;
+          //typedef Kokkos::Future<int,host_exec_space> future_type;
           
           sched_type_host sched;
           {
@@ -587,7 +587,7 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         if (verbose) {
-          printf("Summary: NumericTools (ParallelSolve: %3d)\n", x.dimension_1());
+          printf("Summary: NumericTools (ParallelSolve: %3d)\n", ordinal_type(x.dimension_1()));
           printf("==========================================\n");
 
           print_stat_solve();

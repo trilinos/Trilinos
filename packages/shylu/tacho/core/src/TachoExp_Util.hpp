@@ -32,6 +32,8 @@
 
 namespace Tacho {
 
+  const char* Version();
+
   namespace Experimental {
 
     ///

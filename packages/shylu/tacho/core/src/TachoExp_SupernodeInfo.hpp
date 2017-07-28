@@ -69,7 +69,7 @@ namespace Tacho {
       ///
       /// Phase 1: symbolic
       ///
-      ConstUnmanagedViewType<supernode_type_array> supernodes;;
+      ConstUnmanagedViewType<supernode_type_array> supernodes;
 
       /// dof mapping to sparse matrix
       ConstUnmanagedViewType<ordinal_type_array> gid_colidx;

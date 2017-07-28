@@ -1,5 +1,8 @@
 
-
-static int dummy = 1;
+namespace Tacho {
+  const char* Version() {
+    return "Tacho:: Trilinos Git";
+  }
+}
 
 

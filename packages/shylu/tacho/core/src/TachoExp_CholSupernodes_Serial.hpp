@@ -72,7 +72,7 @@ namespace Tacho {
         typedef SupernodeInfoType supernode_info_type;
 
         typedef typename supernode_info_type::value_type value_type;
-        typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
+        //typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
         typedef typename supernode_info_type::dense_block_type dense_block_type;
 
         const auto &cur = info.supernodes(sid);
@@ -94,7 +94,6 @@ namespace Tacho {
             tgtsize = tgtend - tgtbeg;
           
           if (srcsize == tgtsize) {
-            const ordinal_type kend = srcsize*srcsize;
             /* */ value_type *tgt = s.buf;
             const value_type *src = (value_type*)ABR.data();
 
@@ -228,8 +227,8 @@ namespace Tacho {
                          const SupernodeInfoType &info,
                          const typename SupernodeInfoType::value_type_matrix &xB,
                          const ordinal_type sid) {
-        typedef SupernodeInfoType supernode_info_type;
-        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+        //typedef SupernodeInfoType supernode_info_type;
+        //typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
         const auto &s = info.supernodes(sid);
         
@@ -301,8 +300,8 @@ namespace Tacho {
                          const typename SupernodeInfoType::value_type_matrix &xB,
                          const ordinal_type sid) {
 
-        typedef SupernodeInfoType supernode_info_type;
-        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+        //typedef SupernodeInfoType supernode_info_type;
+        //typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
         const auto &s = info.supernodes(sid);
 
