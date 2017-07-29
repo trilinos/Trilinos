@@ -45,16 +45,17 @@
     \author Created by P. Bochev, D. Ridzal, K. Peterson.
 */
 
+#include "../../L2_C0_FEM/test_01.hpp"
+
 #include "Kokkos_Core.hpp"
 
-#include "test_01.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
-  
-  const int r_val = Intrepid2::Test::BasisConst_Test01<double,Kokkos::OpenMP>(verbose);
+
+  const int r_val = Intrepid2::Test::BasisConst_Test01<double,Kokkos::Cuda>(verbose);
 
   Kokkos::finalize();
   return r_val;

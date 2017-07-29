@@ -44,8 +44,8 @@
     \author Created by Kyungjoo Kim
 */
 
-#ifndef __INTREPID2_BASIS_CONST_FEM_DEF_HPP__
-#define __INTREPID2_BASIS_CONST_FEM_DEF_HPP__
+#ifndef __INTREPID2_L2_C0_FEM_DEF_HPP__
+#define __INTREPID2_L2_C0_FEM_DEF_HPP__
 
 namespace Intrepid2 {
 
@@ -56,7 +56,7 @@ namespace Intrepid2 {
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_Constant_FEM::Serial<opType>::
+    Basis_L2_C0_FEM::Serial<opType>::
     getValues(       outputViewType output,
                const inputViewType input ) {
       switch (opType) {
@@ -76,7 +76,7 @@ namespace Intrepid2 {
       default: {
         INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                   opType != OPERATOR_MAX,
-                                  ">>> ERROR: (Intrepid2::Basis_Constant_FEM::Serial::getValues) operator is not supported");
+                                  ">>> ERROR: (Intrepid2::Basis_L2_C0_FEM::Serial::getValues) operator is not supported");
       }
       }
     }
@@ -85,7 +85,7 @@ namespace Intrepid2 {
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties>
     void
-    Basis_Constant_FEM::
+    Basis_L2_C0_FEM::
     getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const EOperator operatorType )  {
@@ -122,15 +122,15 @@ namespace Intrepid2 {
       }
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( !Intrepid2::isValidOperator(operatorType), std::invalid_argument,
-                                      ">>> ERROR (Basis_Constant_FEM): Invalid operator type");
+                                      ">>> ERROR (Basis_L2_C0_FEM): Invalid operator type");
       }
       }
     }
   }
 
   template<typename SpT, typename OT, typename PT>
-  Basis_Constant_FEM<SpT,OT,PT>::
-  Basis_Constant_FEM(const shards::CellTopology cellTopo) {
+  Basis_L2_C0_FEM<SpT,OT,PT>::
+  Basis_L2_C0_FEM(const shards::CellTopology cellTopo) {
     const ordinal_type spaceDim = cellTopo.getDimension();
 
     this->basisCardinality_  = 1;

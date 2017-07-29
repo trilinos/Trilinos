@@ -73,7 +73,7 @@
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
-#include "Intrepid2_Basis_Const_FEM.hpp"
+#include "Intrepid2_L2_C0_FEM.hpp"
 
 #include "Shards_BasicTopologies.hpp"
 
@@ -551,7 +551,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri2)
    shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
 
    // basis to build patterns from
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_Constant_FEM<PHX::exec_space,double,double>(tri));
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_L2_C0_FEM<PHX::exec_space,double,double>(tri));
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
 
@@ -572,7 +572,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad2)
    shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >()); 
 
    // basis to build patterns from
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_Constant_FEM<PHX::exec_space,double,double>(quad));
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_L2_C0_FEM<PHX::exec_space,double,double>(quad));
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
 

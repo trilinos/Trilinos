@@ -1,8 +1,3 @@
-## Const Basis
-## 
-
-ADD_SUBDIRECTORY(ConstBasis)
-
 ## HCurl 1st order space
 ## 
 
@@ -75,6 +70,11 @@ ADD_SUBDIRECTORY(HGRAD_TRI_Cn_FEM_ORTH)
 ADD_SUBDIRECTORY(HGRAD_TRI_Cn_FEM)
 ADD_SUBDIRECTORY(HGRAD_TET_Cn_FEM_ORTH)
 ADD_SUBDIRECTORY(HGRAD_TET_Cn_FEM)
+
+## L2 0th order space
+## 
+
+ADD_SUBDIRECTORY(L2_C0_FEM)
 
 ## L2 high order space
 ##

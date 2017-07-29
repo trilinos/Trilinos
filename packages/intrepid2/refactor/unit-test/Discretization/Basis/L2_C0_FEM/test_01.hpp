@@ -47,7 +47,7 @@
 #endif
 
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_Basis_Const_FEM.hpp"
+#include "Intrepid2_L2_C0_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -91,7 +91,7 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|                 Unit Test (Basis_Constant_FEM)                              |\n"
+        << "|                 Unit Test (Basis_L2_C0_FEM)                              |\n"
         << "|                                                                             |\n"
         << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
         << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
@@ -125,7 +125,7 @@ namespace Intrepid2 {
 
       try {
         for (ordinal_type id=0;id<6;++id) {
-          Basis_Constant_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);          
+          Basis_L2_C0_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);
         }
 
       } catch (std::logic_error err){
@@ -143,7 +143,7 @@ namespace Intrepid2 {
 
       try {
         for (ordinal_type id=0;id<6;++id) {
-          Basis_Constant_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);          
+          Basis_L2_C0_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);
 
           const ordinal_type numFields = basis.getCardinality();
           const auto allTags = basis.getAllDofTags();
@@ -210,7 +210,7 @@ namespace Intrepid2 {
       try {
         
         for (ordinal_type id=0;id<6;++id) {
-          Basis_Constant_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);          
+          Basis_L2_C0_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);
 
           const ordinal_type numFields = basis.getCardinality();
           const ordinal_type numPoints = 1;

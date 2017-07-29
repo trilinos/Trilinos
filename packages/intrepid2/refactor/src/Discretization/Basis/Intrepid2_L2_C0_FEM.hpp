@@ -44,8 +44,8 @@
     \author Created by Kyungjo Kim
 */
 
-#ifndef __INTREPID2_BASIS_CONST_FEM_HPP__
-#define __INTREPID2_BASIS_CONST_FEM_HPP__
+#ifndef __INTREPID2_L2_C0_FEM_HPP__
+#define __INTREPID2_L2_C0_FEM_HPP__
 
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_Basis.hpp"
@@ -54,7 +54,7 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    class Basis_Constant_FEM {
+    class Basis_L2_C0_FEM {
     public:
       template<EOperator opType>
       struct Serial {
@@ -105,7 +105,7 @@ namespace Intrepid2 {
           default: {
             INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                       opType != OPERATOR_MAX,
-                                      ">>> ERROR: (Intrepid2::Basis_Constant_FEM::Serial::getValues) operator is not supported");
+                                      ">>> ERROR: (Intrepid2::Basis_L2_C0_FEM::Serial::getValues) operator is not supported");
           }
           }
         }
@@ -116,7 +116,7 @@ namespace Intrepid2 {
   template<typename ExecSpaceType = void,
            typename outputValueType = double,
            typename pointValueType = double>
-  class Basis_Constant_FEM : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+  class Basis_L2_C0_FEM : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
@@ -124,11 +124,11 @@ namespace Intrepid2 {
 
     /** \brief Constructor.
      */
-    Basis_Constant_FEM() = delete;
+    Basis_L2_C0_FEM() = delete;
 
     /** \brief Constructor.
      */
-    Basis_Constant_FEM(const shards::CellTopology cellTopo);
+    Basis_L2_C0_FEM(const shards::CellTopology cellTopo);
 
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
@@ -149,7 +149,7 @@ namespace Intrepid2 {
                                       this->getBaseCellTopology(),
                                       this->getCardinality() );
 #endif
-      Impl::Basis_Constant_FEM::
+      Impl::Basis_L2_C0_FEM::
         getValues<ExecSpaceType>( outputValues,
                                   inputPoints,
                                   operatorType );
@@ -161,13 +161,13 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_Constant_FEM::getDofCoords) rank = 2 required for dofCoords array");
+                                    ">>> ERROR: (Intrepid2::Basis_L2_C0_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_Constant_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
+                                    ">>> ERROR: (Intrepid2::Basis_L2_C0_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
       // Verify 1st dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_Constant_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
+                                    ">>> ERROR: (Intrepid2::Basis_L2_C0_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
     }
@@ -179,6 +179,6 @@ namespace Intrepid2 {
   };
 }
 
-#include "Intrepid2_Basis_Const_FEMDef.hpp"
+#include "Intrepid2_L2_C0_FEMDef.hpp"
 
 #endif
