@@ -133,7 +133,7 @@ To enable support for ``std::complex<T>`` scalar types use::
 
 To disable Fortran use the following::
 
-  -DTrilinos_ENABLE_FORTRAN=OFF
+  -DTrilinos_ENABLE_Fortran=OFF
 
 To enable a package::
 
