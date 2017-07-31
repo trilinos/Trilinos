@@ -563,7 +563,7 @@ class checkerInterfaceNodes {
 		void writeGlobalMatrix()
 		{
 			std::string file_name;
-			file_name += "A_global.mtx";
+			file_name += "./output/A_global.mm";
                 	Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name, *globalMatrixData_);
 		}
 
@@ -572,11 +572,11 @@ class checkerInterfaceNodes {
 		{
 			for( int i = 0; i<num_total_regions_; ++i )
 			{
-				std::string region_str = std::to_string(i);
+				std::string region_str = std::to_string(i+1);
 				std::string file_name;
-				file_name += "A_region_";
+				file_name += "./output/A_region_";
 				file_name += region_str;
-				file_name += ".mtx";
+				file_name += ".mm";
                 		Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name.c_str(), *regionalMatrixData_[i]);
 			}
 		}

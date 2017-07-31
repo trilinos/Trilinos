@@ -29,7 +29,7 @@ function [global_indices, nodesToRegion, nodesOwnership, nodes_neighbourhood] = 
         
         for j = 1 : nregion_nodes_y
            
-            global_indices_region1( (i-1)*nregion_nodes_x + j ) = j + (i-1) * ntotal_nodes_x;
+            global_indices_region1( (i-1)*nregion_nodes_y + j ) = j + (i-1) * ntotal_nodes_y;
             
         end
         
