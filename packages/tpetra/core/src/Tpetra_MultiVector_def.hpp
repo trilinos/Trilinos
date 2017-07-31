@@ -55,6 +55,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 
 #include "KokkosCompat_View.hpp"
@@ -1163,20 +1164,8 @@ namespace Tpetra {
 
     const size_t numExportLIDs = exportLIDs.dimension_0 ();
     const size_t newExportsSize = numCols * numExportLIDs;
-    if (static_cast<size_t> (exports.dimension_0 ()) != newExportsSize) {
-      if (printDebugOutput) {
-        std::ostringstream os;
-        const int myRank = this->getMap ()->getComm ()->getRank ();
-        os << "$$$ MV::packAndPrepareNew (Proc " << myRank << ") realloc "
-          "exports from " << exports.dimension_0 () << " to " << newExportsSize
-           << std::endl;
-        std::cerr << os.str ();
-      }
-      // Resize 'exports' to fit.
-      execution_space::fence ();
-      exports = Kokkos::DualView<impl_scalar_type*, device_type> ("exports", newExportsSize);
-      execution_space::fence ();
-    }
+
+    Details::reallocDualViewIfNeeded (exports, newExportsSize, "exports");
 
     // Mark 'exports' here, since we might resize it above.  Resizing
     // currently requires calling the constructor, which clears out

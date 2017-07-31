@@ -51,6 +51,7 @@
 /// include "Tpetra_DistObject_decl.hpp".
 
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 
 namespace Tpetra {
 
@@ -439,68 +440,53 @@ namespace Tpetra {
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
+  bool
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   reallocImportsIfNeeded (const size_t newSize, const bool debug)
   {
-    if (static_cast<size_t> (imports_.dimension_0 ()) != newSize) {
-      if (debug) {
-        std::ostringstream os;
-        os << "*** Realloc imports_ from " << imports_.dimension_0 () << " to "
-           << newSize << std::endl;
-        std::cerr << os.str ();
-      }
-      // FIXME (mfh 28 Mar 2016, 25 Apr 2016) Fences around (UVM)
-      // allocations are for #227 debugging, but shouldn't be needed
-      // once #227 is fixed.
-      execution_space::fence ();
-      imports_ = decltype (imports_) ("imports", newSize);
-      execution_space::fence ();
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (imports_.dimension_0 ()) != newSize,
-         std::logic_error, "DualView reallocation failed: "
-         "imports_.dimension_0() = " << imports_.dimension_0 ()
-         << " != " << newSize << ".");
+    if (debug) {
+      std::ostringstream os;
+      os << "*** Reallocate (if needed) imports_ from "
+         << imports_.dimension_0 () << " to " << newSize << std::endl;
+      std::cerr << os.str ();
     }
+    using Details::reallocDualViewIfNeeded;
+    return reallocDualViewIfNeeded (this->imports_, newSize, "imports");
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
+  bool
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
                                     const size_t numImportLIDs)
   {
-    typedef Kokkos::DualView<size_t*, device_type> array_type;
+    using Details::reallocDualViewIfNeeded;
 
-    // Avoid the "middle" fence (before reallocating
-    // numImportPacketsPerLID_) if not needed.
-    bool fencedAfter = false;
+    // If an array is already allocated, and if is at least
+    // tooBigFactor times bigger than it needs to be, free it and
+    // reallocate to the size we need, in order to save space.
+    // Otherwise, take subviews to reduce allocation size.
+    constexpr size_t tooBigFactor = 10;
 
     // Reallocate numExportPacketsPerLID_ if needed.
-    const size_t curNumExportAlloc =
-      static_cast<size_t> (this->numExportPacketsPerLID_.dimension_0 ());
-    if (curNumExportAlloc != numExportLIDs) {
-      // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
-      // facilitate #227 debugging, but we shouldn't need them.
-      execution_space::fence ();
-      this->numExportPacketsPerLID_ = array_type ("numExportPacketsPerLID",
-                                                  numExportLIDs);
-      execution_space::fence ();
-      fencedAfter = true;
-    }
+    const bool firstReallocated =
+      reallocDualViewIfNeeded (this->numExportPacketsPerLID_,
+                               numExportLIDs,
+                               "numExportPacketsPerLID",
+                               tooBigFactor,
+                               true); // need fence before, if realloc'ing
 
-    // Reallocate numImportPacketsPerLID_ if needed.
-    const size_t curNumImportAlloc =
-      static_cast<size_t> (this->numImportPacketsPerLID_.dimension_0 ());
-    if (curNumImportAlloc != numImportLIDs) {
-      // We don't have to fence here, if we already fenced above.
-      if (! fencedAfter) {
-        execution_space::fence ();
-      }
-      this->numImportPacketsPerLID_ = array_type ("numImportPacketsPerLID",
-                                                  numImportLIDs);
-      execution_space::fence ();
-    }
+    // If we reallocated above, then we fenced after that
+    // reallocation.  This means that we don't need to fence again,
+    // before the next reallocation.
+    const bool needFenceBeforeNextAlloc = ! firstReallocated;
+    const bool secondReallocated =
+      reallocDualViewIfNeeded (this->numImportPacketsPerLID_,
+                               numImportLIDs,
+                               "numExportPacketsPerLID",
+                               tooBigFactor,
+                               needFenceBeforeNextAlloc);
+    return firstReallocated || secondReallocated;
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -517,6 +503,7 @@ namespace Tpetra {
               ReverseOption revOp)
   {
     using Tpetra::Details::getArrayViewFromDualView;
+    using Tpetra::Details::reallocDualViewIfNeeded;
     const bool debug = false;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -623,13 +610,7 @@ namespace Tpetra {
         packAndPrepare (src, exportLIDs, exportsOld, numExportPacketsPerLID,
                         constantNumPackets, distor);
         const size_t exportsLen = static_cast<size_t> (exportsOld.size ());
-        if (static_cast<size_t> (exports_.dimension_0 ()) != exportsLen) {
-          // FIXME (mfh 26 Apr 2016) Fences around (UVM) allocations
-          // facilitate #227 debugging, but we shouldn't need them.
-          execution_space::fence ();
-          exports_ = decltype (exports_) ("exports", exportsLen);
-          execution_space::fence ();
-        }
+        reallocDualViewIfNeeded (this->exports_, exportsLen, "exports");
         Kokkos::View<const packet_type*, Kokkos::HostSpace,
           Kokkos::MemoryUnmanaged> exportsOldK (exportsOld.getRawPtr (),
                                                 exportsLen);

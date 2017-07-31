@@ -539,10 +539,12 @@ namespace Tpetra {
     /// \param numImportLIDs [in] Number of entries in the remoteLIDs
     ///   input array argument of doTransfer().
     ///
+    /// \return Whether we actually reallocated either of the arrays.
+    ///
     /// \warning This is an implementation detail of doTransferOld()
     ///   and doTransferNew().  This needs to be protected, but that
     ///   doesn't mean users should call this method.
-    virtual void
+    virtual bool
     reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
                                       const size_t numImportLIDs);
 
@@ -803,7 +805,14 @@ namespace Tpetra {
     ///
     /// \param newSize [in] New size of imports_.
     /// \param debug [in] Whether to print (copious) debug output to stderr.
-    void
+    ///
+    /// \return Whether we actually reallocated.
+    ///
+    /// We don't need a "reallocExportsIfNeeded" method, because
+    /// <tt>exports_</tt> always gets passed into packAndPrepareNew()
+    /// by nonconst reference.  Thus, that method can resize the
+    /// DualView without needing to call other DistObject methods.
+    bool
     reallocImportsIfNeeded (const size_t newSize, const bool debug = false);
 
     /// \brief Number of packets to receive for each receive operation.

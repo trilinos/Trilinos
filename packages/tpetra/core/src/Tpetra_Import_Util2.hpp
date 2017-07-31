@@ -54,6 +54,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Kokkos_DualView.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
@@ -563,7 +564,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
   typedef typename Node::device_type device_type;
-  typedef typename device_type::execution_space execution_space;
+
   // The device type of the HostMirror of a device_type View.  This
   // might not necessarily be Kokkos::HostSpace!  In particular, if
   // device_type::memory_space is CudaUVMSpace and the CMake option
@@ -661,15 +662,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   // entries.  All the column indices (as global indices) go first,
   // then all their owning process ranks, and then the values.
   if (totalNumEntries > 0) {
-    if (static_cast<size_t> (exports.dimension_0 ()) !=
-        static_cast<size_t> (totalNumBytes)) {
-      // FIXME (26 Apr 2016) Fences around (UVM) allocations only
-      // temporarily needed for #227 debugging.  Should be able to
-      // remove them after that's fixed.
-      execution_space::fence ();
-      exports = Kokkos::DualView<char*, device_type> ("exports", totalNumBytes);
-      execution_space::fence ();
-    }
+    Details::reallocDualViewIfNeeded (exports, totalNumBytes, "exports");
 
     // mfh 26 Apr 2016: The code below currently fills on host.  We
     // may change this in the future.
