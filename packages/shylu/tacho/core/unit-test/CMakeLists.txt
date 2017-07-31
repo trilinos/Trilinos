@@ -20,7 +20,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS PrintItAll
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "  FAILED  "
-  TESTONLYLIBS kokkos_gtest
 )
 
 IF(Kokkos_ENABLE_Serial)
@@ -31,7 +30,6 @@ IF(Kokkos_ENABLE_Serial)
     ARGS PrintItAll
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
   )
 ENDIF()
 
@@ -43,7 +41,6 @@ IF(Kokkos_ENABLE_OpenMP)
     ARGS PrintItAll
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
   )
 ENDIF()
 
