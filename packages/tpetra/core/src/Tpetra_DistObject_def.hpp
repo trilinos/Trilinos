@@ -467,6 +467,45 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
+                                    const size_t numImportLIDs)
+  {
+    typedef Kokkos::DualView<size_t*, device_type> array_type;
+
+    // Avoid the "middle" fence (before reallocating
+    // numImportPacketsPerLID_) if not needed.
+    bool fencedAfter = false;
+
+    // Reallocate numExportPacketsPerLID_ if needed.
+    const size_t curNumExportAlloc =
+      static_cast<size_t> (this->numExportPacketsPerLID_.dimension_0 ());
+    if (curNumExportAlloc != numExportLIDs) {
+      // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
+      // facilitate #227 debugging, but we shouldn't need them.
+      execution_space::fence ();
+      this->numExportPacketsPerLID_ = array_type ("numExportPacketsPerLID",
+                                                  numExportLIDs);
+      execution_space::fence ();
+      fencedAfter = true;
+    }
+
+    // Reallocate numImportPacketsPerLID_ if needed.
+    const size_t curNumImportAlloc =
+      static_cast<size_t> (this->numImportPacketsPerLID_.dimension_0 ());
+    if (curNumImportAlloc != numImportLIDs) {
+      // We don't have to fence here, if we already fenced above.
+      if (! fencedAfter) {
+        execution_space::fence ();
+      }
+      this->numImportPacketsPerLID_ = array_type ("numImportPacketsPerLID",
+                                                  numImportLIDs);
+      execution_space::fence ();
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   doTransferOld (const SrcDistObject& src,
               CombineMode CM,
               size_t numSameIDs,
@@ -558,17 +597,8 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
-        // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
-        // facilitate #227 debugging, but we shouldn't need them.
-        execution_space::fence ();
-        numExportPacketsPerLID_ =
-          decltype (numExportPacketsPerLID_) ("numExportPacketsPerLID",
-                                              exportLIDs.size ());
-        execution_space::fence ();
-        numImportPacketsPerLID_ =
-          decltype (numImportPacketsPerLID_) ("numImportPacketsPerLID",
-                                              remoteLIDs.size ());
-        execution_space::fence ();
+        this->reallocArraysForNumPacketsPerLid (exportLIDs.size (),
+                                                remoteLIDs.size ());
       }
 
       {
@@ -892,28 +922,10 @@ namespace Tpetra {
         if (debug) {
           std::cerr << ">>> 3. Allocate num{Ex,Im}portPacketsPerLID" << std::endl;
         }
-
-        // Don't "realloc" unless you really need to.  That will avoid
-        // a bit of time for reinitializing the Views' data.
-
-        if (numExportPacketsPerLID_.dimension_0 () != exportLIDs.dimension_0 ()) {
-          // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
-          // facilitate #227 debugging, but shouldn't be needed.
-          execution_space::fence ();
-          numExportPacketsPerLID_ =
-            decltype (numExportPacketsPerLID_) ("numExportPacketsPerLID",
-                                                exportLIDs.dimension_0 ());
-          execution_space::fence ();
-        }
-        if (numImportPacketsPerLID_.dimension_0 () != remoteLIDs.dimension_0 ()) {
-          // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
-          // facilitate #227 debugging, but shouldn't be needed.
-          execution_space::fence ();
-          numImportPacketsPerLID_ =
-            decltype (numImportPacketsPerLID_) ("numImportPacketsPerLID",
+        // This only reallocates if necessary, that is, if the sizes
+        // don't match.
+        this->reallocArraysForNumPacketsPerLid (exportLIDs.dimension_0 (),
                                                 remoteLIDs.dimension_0 ());
-          execution_space::fence ();
-        }
       }
 
       if (debug) {

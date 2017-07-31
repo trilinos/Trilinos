@@ -530,6 +530,22 @@ namespace Tpetra {
                 Distributor &distor,
                 ReverseOption revOp);
 
+    /// \brief Reallocate numExportPacketsPerLID_ and/or
+    ///   numImportPacketsPerLID_, if necessary.
+    ///
+    /// \param numExportLIDs [in] Number of entries in the exportLIDs
+    ///   input array argument of doTransfer().
+    ///
+    /// \param numImportLIDs [in] Number of entries in the remoteLIDs
+    ///   input array argument of doTransfer().
+    ///
+    /// \warning This is an implementation detail of doTransferOld()
+    ///   and doTransferNew().  This needs to be protected, but that
+    ///   doesn't mean users should call this method.
+    virtual void
+    reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
+                                      const size_t numImportLIDs);
+
     virtual void
     doTransferOld (const SrcDistObject& src,
                    CombineMode CM,
@@ -778,7 +794,7 @@ namespace Tpetra {
     /// Unfortunately, I had to declare these protected, because
     /// CrsMatrix uses them at one point.  Please, nobody else use
     /// them.
-    Kokkos::DualView<packet_type*, execution_space> imports_;
+    Kokkos::DualView<packet_type*, device_type> imports_;
 
     /// \brief Reallocate imports_ if needed.
     ///
@@ -803,7 +819,7 @@ namespace Tpetra {
     ///
     /// Unfortunately, I had to declare this protected, because
     /// CrsMatrix uses it at one point.  Please, nobody else use it.
-    Kokkos::DualView<size_t*, execution_space> numImportPacketsPerLID_;
+    Kokkos::DualView<size_t*, device_type> numImportPacketsPerLID_;
 
     /// \brief Buffer from which packed data are exported (sent to
     ///   other processes).
@@ -825,7 +841,7 @@ namespace Tpetra {
     ///
     /// Unfortunately, I had to declare this protected, because
     /// CrsMatrix uses them at one point.  Please, nobody else use it.
-    Kokkos::DualView<size_t*, execution_space> numExportPacketsPerLID_;
+    Kokkos::DualView<size_t*, device_type> numExportPacketsPerLID_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
   private:

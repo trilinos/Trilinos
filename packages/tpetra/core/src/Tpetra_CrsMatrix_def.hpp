@@ -7775,17 +7775,8 @@ namespace Tpetra {
     // Tpetra-specific stuff
     size_t constantNumPackets = destMat->constantNumberOfPackets ();
     if (constantNumPackets == 0) {
-      // FIXME (mfh 25 Apr 2016) Once we've finished fixing #227, we
-      // may be able to remove these fences that protect allocations.
-      execution_space::fence ();
-      destMat->numExportPacketsPerLID_ =
-        decltype (destMat->numExportPacketsPerLID_) ("numExportPacketsPerLID",
-                                                     ExportLIDs.size ());
-      execution_space::fence ();
-      destMat->numImportPacketsPerLID_ =
-        decltype (destMat->numImportPacketsPerLID_) ("numImportPacketsPerLID",
-                                                     RemoteLIDs.size ());
-      execution_space::fence ();
+      destMat->reallocArraysForNumPacketsPerLid (ExportLIDs.size (),
+                                                 RemoteLIDs.size ());
     }
     else {
       // There are a constant number of packets per element.  We
