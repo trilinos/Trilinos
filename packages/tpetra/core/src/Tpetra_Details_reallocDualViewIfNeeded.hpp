@@ -49,7 +49,7 @@
 /// \warning This file, and its contents, are an implementation detail
 ///   of Tpetra.  DO NOT DEPEND ON THEM.
 
-#include "TpetraCore_config.h"
+#include "Tpetra_Details_Profiling.hpp"
 #include "Kokkos_DualView.hpp"
 
 namespace Tpetra {
@@ -89,6 +89,10 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
   typedef typename DeviceType::execution_space execution_space;
   typedef Kokkos::DualView<ValueType*, DeviceType> dual_view_type;
   typedef Kokkos::pair<size_t, size_t> range_type;
+
+  // Profiling this matters, because GPU allocations can be expensive.
+  using Tpetra::Details::ProfilingRegion;
+  ProfilingRegion region ("Tpetra::Details::reallocDualViewIfNeeded");
 
   const size_t curSize = static_cast<size_t> (dv.dimension_0 ());
   if (curSize == newSize) {

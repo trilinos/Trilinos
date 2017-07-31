@@ -217,6 +217,14 @@ public:
           const dual_view_type& view,
           const dual_view_type& origView);
 
+  /// \brief Create a Vector that views a single column of the input
+  ///   MultiVector.
+  ///
+  /// \param X [in] Input MultiVector to view (in possibly nonconst fashion).
+  /// \param j [in] The column of X to view.
+  Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+          const size_t j);
+
   //! Destructor.
   virtual ~Vector ();
 
