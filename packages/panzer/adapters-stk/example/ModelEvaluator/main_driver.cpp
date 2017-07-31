@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 
       mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
  
-      mesh->setupTransientExodusFile("output.exo");
+      mesh->setupExodusFile("output.exo");
     }
 
     // build worksets
