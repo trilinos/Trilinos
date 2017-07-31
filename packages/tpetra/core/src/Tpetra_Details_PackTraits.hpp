@@ -247,7 +247,7 @@ struct PackTraits {
       // T's size is run-time dependent, a default-constructed T might
       // not have the right size.  However, we require that all
       // entries of the input array have the correct size.
-      const T& val = packValueCount (outBuf(0));
+      const T& val = outBuf (0);
       const size_t numBytes = numEnt * packValueCount (val);
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
