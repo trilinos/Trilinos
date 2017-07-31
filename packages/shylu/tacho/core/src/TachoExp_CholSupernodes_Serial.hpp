@@ -230,18 +230,35 @@ namespace Tacho {
         //typedef SupernodeInfoType supernode_info_type;
         //typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-        const auto &s = info.supernodes(sid);
-        
-        const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
-        TACHO_TEST_FOR_ABORT(m != (s.n-s.m), "# of rows in xB does not match to super blocksize in sid");
+        const auto &cur = info.supernodes(sid);
+        const ordinal_type 
+          sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
 
-        const ordinal_type goffset = s.gid_col_begin + s.m;
-        for (ordinal_type j=0;j<n;++j)
-          for (ordinal_type i=0;i<m;++i) {
-            const ordinal_type row = info.gid_colidx(i+goffset);
-            Kokkos::atomic_fetch_add(&info.x(row, j), xB(i,j));
-            //x(row,j) += xB(i,j);
+        const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
+        TACHO_TEST_FOR_ABORT(m != (cur.n-cur.m), "# of rows in xB does not match to super blocksize in sid");
+        
+        for (ordinal_type i=sbeg,is=0;i<send;++i) {
+          const ordinal_type 
+            tbeg = info.sid_block_colidx(i).second,
+            tend = info.sid_block_colidx(i+1).second;
+          
+          // lock
+          const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+          while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
+          Kokkos::store_fence();            
+          
+          // both src and tgt increase index
+          for (ordinal_type it=tbeg;it<tend;++it,++is) {
+            const ordinal_type row = info.gid_colidx(cur.gid_col_begin + it);
+            for (ordinal_type j=0;j<n;++j) 
+              info.x(row,j) += xB(is,j);
           }
+          
+          // unlock
+          s.lock = 0;
+          Kokkos::load_fence();          
+        }
+        
         return 0;
       }
       
