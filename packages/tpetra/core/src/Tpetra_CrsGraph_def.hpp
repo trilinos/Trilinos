@@ -3612,9 +3612,9 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "resumeFill";
 
-#ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *rowMap_->getComm() );
 #endif // HAVE_TPETRA_DEBUG
     clearGlobalConstants();
