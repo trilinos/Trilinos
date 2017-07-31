@@ -593,7 +593,7 @@ namespace Tpetra {
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
 
-    computeTriangularProperties ();
+    computeLocalTriangularProperties ();
 
     haveLocalConstants_ = true;
     computeGlobalConstants ();
@@ -669,7 +669,7 @@ namespace Tpetra {
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
 
-    computeTriangularProperties ();
+    computeLocalTriangularProperties ();
 
     haveLocalConstants_ = true;
     computeGlobalConstants ();
@@ -4755,7 +4755,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  computeTriangularProperties ()
+  computeLocalTriangularProperties ()
   {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
@@ -4768,7 +4768,7 @@ namespace Tpetra {
     typename local_graph_type::row_map_type d_ptrs = lclGraph_.row_map;
     typename local_graph_type::entries_type d_inds = lclGraph_.entries;
 
-    const char tfecfFuncName[] = "computeTriangularProperties()";
+    const char tfecfFuncName[] = "computeLocalTriangularProperties()";
 
     // Reset local properties
     upperTriangular_ = true;

@@ -2184,7 +2184,11 @@ namespace Tpetra {
 
     /// \brief Forces computation of local triangular properties if they have
     /// not been computed yet.
-    void computeTriangularProperties();
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method. It may disappear or change at any time.
+    void computeLocalTriangularProperties();
 
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
