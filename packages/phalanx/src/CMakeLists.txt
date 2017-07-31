@@ -27,6 +27,7 @@ APPEND_SET(HEADERS
   Phalanx_DAG_Node.hpp
   Phalanx_DAG_Manager_Def.hpp
   Phalanx_DAG_Manager.hpp
+  Phalanx_DataLayout_DynamicLayout.hpp
   Phalanx_DataLayout_MDALayout_Def.hpp
   Phalanx_DataLayout_MDALayout.hpp
   Phalanx_DataLayout.hpp
@@ -80,6 +81,7 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
+  Phalanx_DataLayout_DynamicLayout.cpp
   Phalanx_DataLayout.cpp
   Phalanx_DimTag.cpp
   Phalanx_Exceptions.cpp
