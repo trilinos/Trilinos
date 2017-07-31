@@ -1831,31 +1831,28 @@ namespace Tpetra {
         // If we need sync to device, then data were last modified on
         // host, so we should run on host.
 
-        auto x_vec = x.getVectorNonConst (0);
-        auto y_vec = y.getVector (0);
-
         //const bool runOnHost = false;
-        const bool runOnHost = y_vec->template need_sync<dev_memory_space> ();
+        const bool runOnHost = y.template need_sync<dev_memory_space> ();
         // const_cast<MV&> (y).template sync<dev_memory_space> ();
         // const_cast<MV&> (x).template sync<dev_memory_space> ();
 
         if (runOnHost) {
           typedef host_memory_space cur_memory_space;
           // x is nonconst, so we may sync x where we need to sync it.
-          x_vec->template sync<cur_memory_space> ();
-          auto x_2d = x_vec->template getLocalView<cur_memory_space> ();
+          x.template sync<cur_memory_space> ();
+          auto x_2d = x.template getLocalView<cur_memory_space> ();
           auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
-          auto y_2d = y_vec->template getLocalView<cur_memory_space> ();
+          auto y_2d = y.template getLocalView<cur_memory_space> ();
           auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
           lclDot = KokkosBlas::dot (x_1d, y_1d);
         }
         else { // run on device
           typedef dev_memory_space cur_memory_space;
           // x is nonconst, so we may sync x where we need to sync it.
-          x_vec->template sync<cur_memory_space> ();
-          auto x_2d = x_vec->template getLocalView<cur_memory_space> ();
+          x.template sync<cur_memory_space> ();
+          auto x_2d = x.template getLocalView<cur_memory_space> ();
           auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
-          auto y_2d = y_vec->template getLocalView<cur_memory_space> ();
+          auto y_2d = y.template getLocalView<cur_memory_space> ();
           auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
           lclDot = KokkosBlas::dot (x_1d, y_1d);
         }
