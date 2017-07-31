@@ -438,10 +438,10 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(tri_crs_2->isFillComplete(), true);
     auto exporter = tri_crs_2->getGraph()->getExporter();
     auto importer = tri_crs_2->getGraph()->getImporter();
-    TEST_EQUALITY(tri_crs->getDomainMap()->isSameAs(*(importer->getSourceMap())), true);
-    TEST_EQUALITY(tri_crs->getColMap()   ->isSameAs(*(importer->getTargetMap())), true);
-    TEST_EQUALITY(tri_crs->getRowMap()   ->isSameAs(*(exporter->getSourceMap())), true);
-    TEST_EQUALITY(tri_crs->getRangeMap() ->isSameAs(*(exporter->getTargetMap())), true);
+    TEST_EQUALITY(importer.is_null() || tri_crs->getDomainMap()->isSameAs(*(importer->getSourceMap())), true);
+    TEST_EQUALITY(importer.is_null() || tri_crs->getColMap()   ->isSameAs(*(importer->getTargetMap())), true);
+    TEST_EQUALITY(exporter.is_null() || tri_crs->getRowMap()   ->isSameAs(*(exporter->getSourceMap())), true);
+    TEST_EQUALITY(exporter.is_null() || tri_crs->getRangeMap() ->isSameAs(*(exporter->getTargetMap())), true);
 
     // test the action
     mvout.randomize();
