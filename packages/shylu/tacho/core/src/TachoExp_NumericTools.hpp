@@ -125,6 +125,12 @@ namespace Tacho {
       ///
       ordinal_type _max_num_superblocks;
 
+      /// 
+      /// solve phase memoyr pool (reused when it repeat solve)
+      ///   - pool capacity returns garbage.
+      sched_type_host _sched_solve; size_type _sched_solve_capacity;
+      memory_pool_type_host _bufpool_solve; size_type _bufpool_solve_capacity;
+      
       ///
       /// statistics
       ///
@@ -194,9 +200,20 @@ namespace Tacho {
         printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
         printf("\n");
       }
+
+      inline
+      void
+      print_stat_memory() {
+        printf("  Memory\n"); // better get zero leak
+        printf("             leak (or not tracked) memory:                    %10.2f MB\n", stat.m_used/1024/1024);
+      }
       
     public:
-      NumericTools() = default;
+      NumericTools() 
+        : _m(0),
+          _sched_solve_capacity(0), 
+          _bufpool_solve_capacity(0) {}
+
       NumericTools(const NumericTools &b) = default;
       
       ///
@@ -250,6 +267,40 @@ namespace Tacho {
         /// max number of superblocks
         ///
         _max_num_superblocks = 4;
+
+        ///
+        /// initialize solve scheduler
+        ///
+        _sched_solve_capacity = 0;
+        _bufpool_solve_capacity = 0;
+      }
+
+      inline
+      void
+      release(const ordinal_type verbose = 0) {
+        // release bufpool for solve
+        if (_bufpool_solve_capacity) {
+          track_free(_bufpool_solve_capacity);
+          _bufpool_solve = memory_pool_type_host();
+        }
+
+        // release scheduler for solve
+        if (_sched_solve_capacity) {
+          track_free(_sched_solve_capacity);
+          _sched_solve = sched_type_host();
+        }
+
+        // release supernode buffer
+        track_free(_superpanel_buf.span()*sizeof(value_type));
+        _superpanel_buf = value_type_array_host();
+
+        if (verbose) {
+          printf("Summary: NumericTools (Release)\n");
+          printf("===============================\n");
+          
+          // this should be zero
+          print_stat_memory();
+        }
       }
 
       inline
@@ -480,6 +531,10 @@ namespace Tacho {
         track_free(bufpool.capacity());
         track_free(sched.memory()->capacity());
 
+        // reset solve scheduler and bufpool
+        _sched_solve_capacity = 0;
+        _bufpool_solve_capacity = 0;
+
         if (verbose) {
           printf("Summary: NumericTools (ParallelFactorization)\n");
           printf("=============================================\n");
@@ -521,7 +576,6 @@ namespace Tacho {
           typedef TaskFunctor_SolveUpperChol<value_type,host_exec_space> functor_upper_type;
           //typedef Kokkos::Future<int,host_exec_space> future_type;
           
-          sched_type_host sched;
           {
             const size_type max_functor_size = max(sizeof(functor_lower_type), sizeof(functor_upper_type));
             const size_type estimate_max_numtasks = _sid_block_colidx.dimension_0();
@@ -532,22 +586,23 @@ namespace Tacho {
               max_block_size  = max_functor_size,
               num_superblock  = 32, // various small size blocks
               superblock_size = task_queue_capacity/num_superblock;
-            
-            sched = sched_type_host(memory_space(),
-                                    task_queue_capacity,
-                                    min_block_size,
-                                    max_block_size,
-                                    superblock_size);
-            
-            track_alloc(sched.memory()->capacity());
+
+            if (_sched_solve_capacity < task_queue_capacity) {
+              _sched_solve = sched_type_host(memory_space(),
+                                             task_queue_capacity,
+                                             min_block_size,
+                                             max_block_size,
+                                             superblock_size);
+              _sched_solve_capacity = _sched_solve.memory()->capacity();
+              track_alloc(_sched_solve_capacity);
+            }
           }
           
-          memory_pool_type_host bufpool;
           {
             const size_type
               min_block_size  = 1,
               max_block_size  = 2*_info.max_schur_size*sizeof(value_type);
-
+            
             size_type superblock_size = 1;
             for ( ;superblock_size<max_block_size;superblock_size*=2);
             
@@ -555,30 +610,29 @@ namespace Tacho {
               //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
               num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
               memory_capacity = num_superblock*superblock_size;
-
-            bufpool = memory_pool_type_host(memory_space(),
-                                            memory_capacity,
-                                            min_block_size,
-                                            max_block_size,
-                                            superblock_size);
-
-            track_alloc(bufpool.capacity());
+            
+            if (_bufpool_solve_capacity < memory_capacity) {
+              _bufpool_solve = memory_pool_type_host(memory_space(),
+                                                     memory_capacity,
+                                                     min_block_size,
+                                                     max_block_size,
+                                                     superblock_size);
+              _bufpool_solve_capacity = _bufpool_solve.capacity();
+              track_alloc(_bufpool_solve_capacity);
+            }
           }
           stat.t_extra += timer.seconds();
           
           timer.reset();
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i) {
-            auto fl = Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                                         functor_lower_type(sched, bufpool, _info, _stree_roots(i)));
-            auto fu = Kokkos::host_spawn(Kokkos::TaskSingle(fl,    Kokkos::TaskPriority::High),
-                                         functor_upper_type(sched, bufpool, _info, _stree_roots(i)));
+            auto fl = Kokkos::host_spawn(Kokkos::TaskSingle(_sched_solve, Kokkos::TaskPriority::High),
+                                         functor_lower_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
+            auto fu = Kokkos::host_spawn(Kokkos::TaskSingle(fl,           Kokkos::TaskPriority::High),
+                                         functor_upper_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
           }
-          Kokkos::wait(sched);
+          Kokkos::wait(_sched_solve);
           stat.t_solve = timer.seconds();
-
-          track_free(bufpool.capacity());
-          track_free(sched.memory()->capacity());
         }
 
         // copy t -> x
@@ -685,6 +739,10 @@ namespace Tacho {
         
         track_free(bufpool.capacity());
         track_free(sched.memory()->capacity());
+
+        // reset solve scheduler and bufpool
+        _sched_solve_capacity = 0;
+        _bufpool_solve_capacity = 0;
 
         if (verbose) {
           printf("Summary: NumericTools (ParallelFactorizationByBlocks: %3d)\n", blksize);

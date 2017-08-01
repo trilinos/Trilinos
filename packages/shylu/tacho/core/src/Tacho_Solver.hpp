@@ -255,6 +255,17 @@ namespace Tacho {
 
       return _N.computeRelativeResidual(A, x, b);
     }
+
+    int release() {
+      if (_verbose) {
+        printf("TachoSolver: Release\n");
+        printf("====================\n");
+      }
+      _N.release(_verbose);
+
+      return 0;
+    }
+
   };
 
 }

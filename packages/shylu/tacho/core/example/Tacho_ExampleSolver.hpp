@@ -114,7 +114,9 @@ int driver (int argc, char *argv[]) {
     
     const double res = solver.computeRelativeResidual(A.Values(), x, b);
 
-    std::cout << "TachoSolver: residual = " << res << std::endl;
+    std::cout << "TachoSolver: residual = " << res << "\n\n";
+
+    solver.release();
   }
   Kokkos::finalize();
 
