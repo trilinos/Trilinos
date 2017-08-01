@@ -2940,9 +2940,9 @@ namespace Tpetra {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
       typedef Tpetra::MultiVector<DomainScalar, LO, GO, Node, classic> DMV;
-      typedef Tpetra::MultiVector<RangeScalar, LO, GO, Node, classic> RMV;
       typedef Tpetra::MultiVector<Scalar, LO, GO, Node, classic> MMV;
-      typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
+      typedef typename Node::device_type::memory_space dev_mem_space;
+      typedef Kokkos::HostSpace host_mem_space;
       typedef typename Graph::local_graph_type k_local_graph_type;
       typedef typename k_local_graph_type::size_type offset_type;
       const char prefix[] = "Tpetra::CrsMatrix::localGaussSeidel: ";
@@ -2961,9 +2961,17 @@ namespace Tpetra {
          prefix << "B.getLocalLength() = " << B.getLocalLength ()
          << " != this->getNodeNumRows() = " << lclNumRows << ".");
 
-      typename DMV::dual_view_type::t_host B_lcl = B.template getLocalView<HMDT> ();
-      typename RMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
-      typename MMV::dual_view_type::t_host D_lcl = D.template getLocalView<HMDT> ();
+      // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
+      // runs on host.  (See comments below.)  Thus, we need to access
+      // the host versions of these data.
+      const_cast<DMV&> (B).template sync<host_mem_space> ();
+      X.template sync<host_mem_space> ();
+      X.template modify<host_mem_space> ();
+      const_cast<MMV&> (D).template sync<host_mem_space> ();
+
+      auto B_lcl = B.template getLocalView<host_mem_space> ();
+      auto X_lcl = X.template getLocalView<host_mem_space> ();
+      auto D_lcl = D.template getLocalView<host_mem_space> ();
 
       offset_type B_stride[8], X_stride[8], D_stride[8];
       B_lcl.stride (B_stride);
@@ -2980,6 +2988,11 @@ namespace Tpetra {
       const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
       const std::string dir ((direction == KokkosClassic::Forward) ? "F" : "B");
+      // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
+      // that on GPUs without using a GPU-based sparse triangular
+      // solve to implement Gauss-Seidel.  This exists in cuSPARSE,
+      // but we would need to implement a wrapper with a fall-back
+      // algorithm for unsupported Scalar and LO types.
       KokkosSparse::Impl::Sequential::gaussSeidel (static_cast<LO> (lclNumRows),
                                                    static_cast<LO> (numVecs),
                                                    ptrRaw, indRaw, valRaw,
@@ -2988,6 +3001,9 @@ namespace Tpetra {
                                                    D_lcl.ptr_on_device (),
                                                    static_cast<impl_scalar_type> (dampingFactor),
                                                    dir.c_str ());
+      const_cast<DMV&> (B).template sync<dev_mem_space> ();
+      X.template sync<dev_mem_space> ();
+      const_cast<MMV&> (D).template sync<dev_mem_space> ();
     }
 
     /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
@@ -3028,9 +3044,9 @@ namespace Tpetra {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
       typedef Tpetra::MultiVector<DomainScalar, LO, GO, Node, classic> DMV;
-      typedef Tpetra::MultiVector<RangeScalar, LO, GO, Node, classic> RMV;
       typedef Tpetra::MultiVector<Scalar, LO, GO, Node, classic> MMV;
-      typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
+      typedef typename Node::device_type::memory_space dev_mem_space;
+      typedef Kokkos::HostSpace host_mem_space;
       typedef typename Graph::local_graph_type k_local_graph_type;
       typedef typename k_local_graph_type::size_type offset_type;
       const char prefix[] = "Tpetra::CrsMatrix::reorderedLocalGaussSeidel: ";
@@ -3054,9 +3070,17 @@ namespace Tpetra {
          << rowIndices.size () << " < this->getNodeNumRows() = "
          << lclNumRows << ".");
 
-      typename DMV::dual_view_type::t_host B_lcl = B.template getLocalView<HMDT> ();
-      typename RMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
-      typename MMV::dual_view_type::t_host D_lcl = D.template getLocalView<HMDT> ();
+      // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
+      // runs on host.  (See comments below.)  Thus, we need to access
+      // the host versions of these data.
+      const_cast<DMV&> (B).template sync<host_mem_space> ();
+      X.template sync<host_mem_space> ();
+      X.template modify<host_mem_space> ();
+      const_cast<MMV&> (D).template sync<host_mem_space> ();
+
+      auto B_lcl = B.template getLocalView<host_mem_space> ();
+      auto X_lcl = X.template getLocalView<host_mem_space> ();
+      auto D_lcl = D.template getLocalView<host_mem_space> ();
 
       offset_type B_stride[8], X_stride[8], D_stride[8];
       B_lcl.stride (B_stride);
@@ -3073,6 +3097,10 @@ namespace Tpetra {
       const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
       const std::string dir = (direction == KokkosClassic::Forward) ? "F" : "B";
+      // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
+      // that on GPUs without using a GPU-based sparse triangular
+      // solve to implement Gauss-Seidel, and also handling the
+      // permutations correctly.
       KokkosSparse::Impl::Sequential::reorderedGaussSeidel (static_cast<LO> (lclNumRows),
                                                             static_cast<LO> (numVecs),
                                                             ptrRaw, indRaw, valRaw,
@@ -3085,6 +3113,9 @@ namespace Tpetra {
                                                             static_cast<LO> (lclNumRows),
                                                             static_cast<impl_scalar_type> (dampingFactor),
                                                             dir.c_str ());
+      const_cast<DMV&> (B).template sync<dev_mem_space> ();
+      X.template sync<dev_mem_space> ();
+      const_cast<MMV&> (D).template sync<dev_mem_space> ();
     }
 
     /// \brief Solves a linear system when the underlying matrix is

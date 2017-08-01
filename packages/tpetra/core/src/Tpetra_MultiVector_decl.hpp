@@ -2339,6 +2339,13 @@ namespace Tpetra {
     //! Whether this class implements the old or new interface of DistObject.
     virtual bool useNewInterface () { return true; }
 
+    /// \typedef buffer_device_type
+    /// \brief Kokkos::Device specialization for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    typedef typename DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node,
+                                classic>::buffer_device_type buffer_device_type;
+
     virtual void
     copyAndPermuteNew (const SrcDistObject& sourceObj,
                        const size_t numSameIDs,
@@ -2348,15 +2355,15 @@ namespace Tpetra {
     virtual void
     packAndPrepareNew (const SrcDistObject& sourceObj,
                        const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                       Kokkos::DualView<impl_scalar_type*, device_type>& exports,
-                       const Kokkos::DualView<size_t*, device_type>& /* numPacketsPerLID */,
+                       Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
+                       const Kokkos::DualView<size_t*, buffer_device_type>& /* numPacketsPerLID */,
                        size_t& constantNumPackets,
                        Distributor& /* distor */);
 
     virtual void
     unpackAndCombineNew (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                         const Kokkos::DualView<const impl_scalar_type*, device_type>& imports,
-                         const Kokkos::DualView<const size_t*, device_type>& /* numPacketsPerLID */,
+                         const Kokkos::DualView<const impl_scalar_type*, buffer_device_type>& imports,
+                         const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
                          const size_t constantNumPackets,
                          Distributor& /* distor */,
                          const CombineMode CM);
