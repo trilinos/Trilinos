@@ -119,7 +119,6 @@ namespace MueLu {
       lCoarseNodesPerDim = Get<Array<LO> >(coarseLevel, "lCoarseNodesPerDim");
       Set<Array<GO> >(coarseLevel, "gNodesPerDim", gCoarseNodesPerDim);
       Set<Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDim);
-        ;
 
     } else {
 
@@ -137,6 +136,7 @@ namespace MueLu {
       // logical blocks in the matrix
 
       ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+
       LO                  blkSize      = 1;
       if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
         blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
@@ -175,12 +175,18 @@ namespace MueLu {
         ArrayRCP<const double> fineCoordsData = ghostedCoords->getData(j);
         ArrayRCP<double>     coarseCoordsData = coarseCoords->getDataNonConst(j);
 
-        for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++)
-        if (procWinner[lnode] == myPID)
-          coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
-
-        for (LO agg = 0; agg < numAggs; agg++)
+        for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++) {
+          if (procWinner[lnode] == myPID &&
+              lnode < vertex2AggID.size() &&
+              lnode < fineCoordsData.size() && // TAW do not access off-processor coordinates
+              vertex2AggID[lnode] < coarseCoordsData.size() &&
+              Teuchos::ScalarTraits<double>::isnaninf(fineCoordsData[lnode]) == false) {
+            coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
+          }
+        }
+        for (LO agg = 0; agg < numAggs; agg++) {
           coarseCoordsData[agg] /= aggSizes[agg];
+        }
       }
     } // if pL.get<bool>("Geometric") == true
 
