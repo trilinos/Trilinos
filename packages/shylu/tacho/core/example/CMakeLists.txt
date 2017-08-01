@@ -24,11 +24,19 @@ IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
     )
   ENDIF()
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolver
+    Tacho_ExampleSolver_double
     NOEXEPREFIX
-    SOURCES Tacho_ExampleSolver.cpp
+    SOURCES Tacho_ExampleSolver_double.cpp
     COMM serial mpi
   )
+  IF(Teuchos_ENABLE_COMPLEX) 
+    TRIBITS_ADD_EXECUTABLE(
+      Tacho_ExampleSolver_dcomplex
+      NOEXEPREFIX
+      SOURCES Tacho_ExampleSolver_dcomplex.cpp
+      COMM serial mpi
+    )
+  ENDIF()
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDenseByBlocks
     NOEXEPREFIX

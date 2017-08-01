@@ -3,7 +3,10 @@
 #include "Tacho.hpp"
 #include "Tacho_Solver.hpp"
 
-int main (int argc, char *argv[]) {
+using ordinal_type = Tacho::Experimental::ordinal_type;
+
+template<typename value_type>
+int driver (int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("This example program measure the performance of Pardiso Chol algorithms on Kokkos::OpenMP execution space.\n");
 
@@ -40,9 +43,9 @@ int main (int argc, char *argv[]) {
   
   {
     /// basic typedef
-    typedef int ordinal_type;
+    //typedef int ordinal_type;
     //typedef size_t size_type; // not used here
-    typedef double value_type;
+    //typedef double value_type;
     
     /// crs matrix format and dense multi vector
     typedef Tacho::Experimental::CrsMatrixBase<value_type,Kokkos::DefaultHostExecutionSpace> CrsMatrixBaseType;

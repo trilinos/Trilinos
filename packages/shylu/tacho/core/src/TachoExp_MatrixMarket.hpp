@@ -82,7 +82,7 @@ namespace Tacho {
         // reading mm header
         ordinal_type m, n;
         size_type nnz;
-        bool symmetry;
+        bool symmetry = false, hermitian = false; //, cmplx = false;
         {
           std::string header;
           std::getline(file, header);
@@ -94,8 +94,23 @@ namespace Tacho {
             }
             break;
           }
-          symmetry = (header.find("symmetric") != std::string::npos);
+          std::transform(header.begin(), header.end(), header.begin(), ::tolower);
+          symmetry = (header.find("symmetric") != std::string::npos || 
+                      header.find("hermitian") != std::string::npos);
 
+          hermitian = (header.find("hermitian") != std::string::npos);
+
+          //cmplx = (header.find("complex") != std::string::npos);
+          // typedef TypeTraits<ValueType>::scalar_type scalar_type;
+          // if (cmplx) {
+          //   TACHO_TEST_FOR_EXCEPTION(!std::is_same<ValueType,Kokkos::complex<scalar_type> >::value,
+          //                            std::logic_error,
+          //                            "input file is complex format but data type is not complex");
+          // } else {
+          //   TACHO_TEST_FOR_EXCEPTION(!std::is_same<ValueType,scalar_type>::value,
+          //                            std::logic_error,
+          //                            "input file is real format but data type is not real");
+          // }
           file >> m >> n >> nnz;
         }
 
@@ -117,10 +132,13 @@ namespace Tacho {
             col -= mm_base;
 
             mm.push_back(ijv_type(row, col, val));
-            if (symmetry && row != col)
-              mm.push_back(ijv_type(col, row, val));
+            if (symmetry && row != col) 
+              mm.push_back(ijv_type(col, row, hermitian ? conj(val) : val));
           }
           std::sort(mm.begin(), mm.end(), std::less<ijv_type>());
+
+          // update nnz
+          nnz = mm.size();
         }
 
         // change mm to crs
@@ -139,6 +157,7 @@ namespace Tacho {
 
           for (auto it=(mm.begin()+1);it<(mm.end());++it) {
             const ijv_type aij = (*it);
+
             if (aij.i != prev.i)
               ap[icnt++] = jcnt;
 
