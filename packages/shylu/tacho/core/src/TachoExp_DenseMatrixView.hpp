@@ -294,10 +294,33 @@ namespace Tacho {
                         const DenseMatrixViewTypeB &B,
                         const OrdinalTypeArray &p) {
       const ordinal_type m = A.dimension_0(), n = A.dimension_1();
-      for (ordinal_type j=0;j<n;++j)
-        for (ordinal_type i=0;i<m;++i)
+      for (ordinal_type i=0;i<m;++i)
+        for (ordinal_type j=0;j<n;++j)
           A(p(i), j) = B(i, j);
     }
+
+    template<typename DenseMatrixViewTypeA, 
+             typename DenseMatrixViewTypeB, 
+             typename OrdinalTypeArray>
+    inline
+    void
+    applyRowPermutation_Device(const DenseMatrixViewTypeA &A, 
+                               const DenseMatrixViewTypeB &B,
+                               const OrdinalTypeArray &p) {
+      const ordinal_type m = A.dimension_0(), n = A.dimension_1();
+      typedef typename DenseMatrixViewTypeA::execution_space exec_space;
+
+      Kokkos::TeamPolicy<exec_space,
+        Kokkos::Schedule<Kokkos::Static> > policy(m, 1 /* teamsize */, 1024 /* worksetsize */);
+
+      Kokkos::parallel_for
+        (policy, KOKKOS_LAMBDA (const typename Kokkos::TeamPolicy<exec_space>::member_type &member) {
+          const ordinal_type i = member.league_rank();
+          for (ordinal_type j=0;j<n;++j)
+            A(p(i), j) = B(i, j);
+        });
+    }
+
   }
 }
 

@@ -566,7 +566,7 @@ namespace Tacho {
 
         // copy b -> t
         timer.reset();
-        applyRowPermutation(t, b, _peri);
+        applyRowPermutation_Device(t, b, _peri);
         stat.t_extra = timer.seconds();
 
         {
@@ -637,7 +637,7 @@ namespace Tacho {
 
         // copy t -> x
         timer.reset();
-        applyRowPermutation(x, t, _perm);
+        applyRowPermutation_Device(x, t, _perm);
         stat.t_extra += timer.seconds();
 
         if (verbose) {
