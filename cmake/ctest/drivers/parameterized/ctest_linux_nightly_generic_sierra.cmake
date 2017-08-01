@@ -68,7 +68,7 @@ SET(CTEST_TEST_TYPE $ENV{JENKINS_JOB_TYPE})
 SET(CTEST_TEST_TIMEOUT 900)
 # SET(CTEST_DO_SUBMIT FALSE)
 
-SET(Trilinos_PACKAGES Amesos Amesos2 Anasazi AztecOO Belos Claps Epetra EpetraExt FEI Ifpack Ifpack2 Intrepid Kokkos Mesquite ML MueLu NOX Pamgen RTOp Sacado Shards Teuchos Thyra Tpetra TrilinosSS Triutils TrilinosCouplings Xpetra Zoltan Zoltan2)
+SET(Trilinos_PACKAGES Amesos Amesos2 Anasazi AztecOO Belos Claps Epetra EpetraExt FEI Ifpack Ifpack2 Intrepid Kokkos ML MueLu NOX Pamgen RTOp Sacado Shards Teuchos Thyra Tpetra TrilinosSS Triutils Xpetra Zoltan Zoltan2)
 
 SET(EXTRA_EXCLUDE_PACKAGES Galeri Intrepid2 Isorropia Stratimikos Teko SEACAS STK)
 
@@ -129,6 +129,11 @@ ENDIF()
 IF (DEFINED ENV{JENKINS_CMAKE_EXE_LINKER_FLAGS})
     SET(EXTRA_CONFIGURE_OPTIONS ${EXTRA_CONFIGURE_OPTIONS}
         "-DTrilinos_EXTRA_LINK_FLAGS=$ENV{JENKINS_CMAKE_EXE_LINKER_FLAGS}")
+ENDIF()
+
+IF (DEFINED ENV{JENKINS_CMAKE_DISABLE_MPI_WRAPPER})
+    SET(EXTRA_CONFIGURE_OPTIONS ${EXTRA_CONFIGURE_OPTIONS}
+        "-DMPI_USE_COMPILER_WRAPPERS=OFF")
 ENDIF()
 
 #"-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"
