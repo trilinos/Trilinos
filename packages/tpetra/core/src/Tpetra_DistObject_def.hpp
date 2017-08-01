@@ -688,8 +688,16 @@ namespace Tpetra {
             distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
                                            numImportPacketsPerLID);
             size_t totalImportPackets = 0;
-            for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
-              totalImportPackets += numImportPacketsPerLID[i];
+            {
+              typedef typename Kokkos::DualView<size_t*,
+                device_type>::t_host::execution_space host_exec_space;
+              typedef Kokkos::RangePolicy<host_exec_space, Array_size_type> range_type;
+              const size_t* const arrayToSum = numImportPacketsPerLID.getRawPtr ();
+              Kokkos::parallel_reduce ("Count import packets",
+                                       range_type (0, numImportPacketsPerLID.size ()),
+                                       [=] (const Array_size_type& i, size_t& lclSum) {
+                                         lclSum += arrayToSum[i];
+                                       }, totalImportPackets);
             }
 
             reallocImportsIfNeeded (totalImportPackets, debug);
@@ -749,8 +757,16 @@ namespace Tpetra {
             distor.doPostsAndWaits (numExportPacketsPerLID, 1,
                                     numImportPacketsPerLID);
             size_t totalImportPackets = 0;
-            for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
-              totalImportPackets += numImportPacketsPerLID[i];
+            {
+              typedef typename Kokkos::DualView<size_t*,
+                device_type>::t_host::execution_space host_exec_space;
+              typedef Kokkos::RangePolicy<host_exec_space, Array_size_type> range_type;
+              const size_t* const arrayToSum = numImportPacketsPerLID.getRawPtr ();
+              Kokkos::parallel_reduce ("Count import packets",
+                                       range_type (0, numImportPacketsPerLID.size ()),
+                                       [=] (const Array_size_type& i, size_t& lclSum) {
+                                         lclSum += arrayToSum[i];
+                                       }, totalImportPackets);
             }
 
             reallocImportsIfNeeded (totalImportPackets, debug);
@@ -1010,16 +1026,19 @@ namespace Tpetra {
             // many entries as the number of LIDs on the calling
             // process.
             {
-              typedef decltype (numImportPacketsPerLID_) dual_view_type;
-              typedef typename dual_view_type::t_host host_view_type;
-              typedef typename host_view_type::const_type const_host_view_type;
+              typedef decltype (this->numImportPacketsPerLID_) dual_view_type;
+              typedef typename dual_view_type::t_host::execution_space host_exec_space;
+              typedef Kokkos::RangePolicy<host_exec_space, LocalOrdinal> range_type;
 
-              const_host_view_type host_numImportPacketsPerLID =
-                numImportPacketsPerLID_.template view<host_memory_space> ();
-              const view_size_type numLids = host_numImportPacketsPerLID.size ();
-              for (view_size_type i = 0; i < numLids; ++i) {
-                totalImportPackets += host_numImportPacketsPerLID[i];
-              }
+              this->numImportPacketsPerLID_.template modify<host_memory_space> ();
+              auto host_numImportPacketsPerLID =
+                this->numImportPacketsPerLID_.template view<host_memory_space> ();
+              const LocalOrdinal numLids = host_numImportPacketsPerLID.dimension_0 ();
+              Kokkos::parallel_reduce ("Count import packets",
+                                       range_type (0, numLids),
+                                       [=] (const LocalOrdinal& i, size_t& lclSum) {
+                                         lclSum += host_numImportPacketsPerLID[i];
+                                       }, totalImportPackets);
             }
 
             if (debug) {
@@ -1104,20 +1123,19 @@ namespace Tpetra {
                                     numImportPacketsPerLID_.template view<host_memory_space> ());
             size_t totalImportPackets = 0;
             {
-              typedef decltype (numImportPacketsPerLID_) dual_view_type;
-              typedef typename dual_view_type::t_host host_view_type;
-              typedef typename host_view_type::const_type const_host_view_type;
-              const_host_view_type host_numImportPacketsPerLID =
-                numImportPacketsPerLID_.template view<host_memory_space> ();
+              typedef decltype (this->numImportPacketsPerLID_) dual_view_type;
+              typedef typename dual_view_type::t_host::execution_space host_exec_space;
+              typedef Kokkos::RangePolicy<host_exec_space, LocalOrdinal> range_type;
 
-              // FIXME (mfh 17 Feb 2014) This would be a good place for
-              // a Kokkos reduction.  numImportPacketsPerLID_ has as
-              // many entries as the number of LIDs on the calling
-              // process.
-              const view_size_type numLids = host_numImportPacketsPerLID.size ();
-              for (view_size_type i = 0; i < numLids; ++i) {
-                totalImportPackets += host_numImportPacketsPerLID[i];
-              }
+              this->numImportPacketsPerLID_.template modify<host_memory_space> ();
+              auto host_numImportPacketsPerLID =
+                this->numImportPacketsPerLID_.template view<host_memory_space> ();
+              const LocalOrdinal numLids = host_numImportPacketsPerLID.dimension_0 ();
+              Kokkos::parallel_reduce ("Count import packets",
+                                       range_type (0, numLids),
+                                       [=] (const LocalOrdinal& i, size_t& lclSum) {
+                                         lclSum += host_numImportPacketsPerLID[i];
+                                       }, totalImportPackets);
             }
 
             if (debug) {
