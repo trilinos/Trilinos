@@ -110,9 +110,6 @@ namespace {
   using Xpetra::DefaultPlatform;
   using Xpetra::Matrix;
   using Xpetra::CrsMatrix;
-#ifdef HAVE_XPETRA_TPETRA
-  using Xpetra::TpetraCrsMatrix; //TMP
-#endif
   using Xpetra::Map;
 
   using Xpetra::viewLabel_t;
@@ -121,7 +118,7 @@ namespace {
   double errorTolSlack = 1e+1;
 
 
-
+#if (defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)) || (defined(HAVE_XPETRA_TPETRA))
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
@@ -129,6 +126,7 @@ namespace {
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
+#endif
 
   /////////////////////////////////////////////////////
 
