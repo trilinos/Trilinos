@@ -831,6 +831,36 @@ namespace Tpetra {
     this->releaseViews ();
   }
 
+  namespace { // (anonymous)
+    template<class DeviceType, class IndexType = size_t>
+    struct SumFunctor {
+      SumFunctor (const Kokkos::View<const size_t*, DeviceType>& viewToSum) :
+        viewToSum_ (viewToSum) {}
+      KOKKOS_FUNCTION void operator() (const IndexType& i, size_t& lclSum) const {
+        lclSum += viewToSum_(i);
+      }
+      Kokkos::View<const size_t*, DeviceType> viewToSum_;
+    };
+
+    template<class DeviceType, class IndexType = size_t>
+    size_t
+    countTotalImportPackets (const Kokkos::View<const size_t*, DeviceType>& numImportPacketsPerLID)
+    {
+      using Kokkos::parallel_reduce;
+      typedef DeviceType DT;
+      typedef typename DT::execution_space DES;
+      typedef Kokkos::RangePolicy<DES, IndexType> range_type;
+
+      const IndexType numOut = numImportPacketsPerLID.dimension_0 ();
+      size_t totalImportPackets = 0;
+      parallel_reduce ("Count import packets",
+                       range_type (0, numOut),
+                       SumFunctor<DeviceType, IndexType> (numImportPacketsPerLID),
+                       totalImportPackets);
+      return totalImportPackets;
+    }
+  } // namespace (anonymous)
+
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
@@ -855,10 +885,11 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
     typedef LocalOrdinal LO;
-    typedef typename Kokkos::DualView<LO*,
-      device_type>::t_dev::memory_space dev_memory_space;
-    typedef typename Kokkos::DualView<LO*,
-      device_type>::t_host::memory_space host_memory_space;
+    typedef device_type DT;
+    typedef typename Kokkos::DualView<LO*, DT>::t_dev::execution_space DES;
+    typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space DMS;
+    //typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space HMS;
+    typedef Kokkos::HostSpace HMS; // prevent DualView with CudaUVMSpace issues
     const bool debug = false;
 
     if (debug) {
@@ -1015,67 +1046,80 @@ namespace Tpetra {
               std::cerr << ">>> 7.1. Variable # packets / LID: first comm"
                         << std::endl;
             }
-            numExportPacketsPerLID_.template sync<host_memory_space> ();
-            numImportPacketsPerLID_.template sync<host_memory_space> ();
-            distor.doReversePostsAndWaits (create_const_view (numExportPacketsPerLID_.template view<host_memory_space> ()),
-                                           1,
-                                           numImportPacketsPerLID_.template view<host_memory_space> ());
+
             size_t totalImportPackets = 0;
-            // FIXME (mfh 17 Feb 2014) This would be a good place for
-            // a Kokkos reduction.  numImportPacketsPerLID_ has as
-            // many entries as the number of LIDs on the calling
-            // process.
-            {
-              typedef decltype (this->numImportPacketsPerLID_) dual_view_type;
-              typedef typename dual_view_type::t_host::execution_space host_exec_space;
-              typedef Kokkos::RangePolicy<host_exec_space, LocalOrdinal> range_type;
+            if (commOnHost) {
+              this->numExportPacketsPerLID_.template sync<HMS> ();
+              this->numImportPacketsPerLID_.template sync<HMS> ();
+              this->numImportPacketsPerLID_.template modify<HMS> (); // output argument
+              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.template view<HMS> ());
+              auto numImp_h = this->numImportPacketsPerLID_.template view<HMS> ();
 
-              this->numImportPacketsPerLID_.template modify<host_memory_space> ();
-              auto host_numImportPacketsPerLID =
-                this->numImportPacketsPerLID_.template view<host_memory_space> ();
-              const LocalOrdinal numLids = host_numImportPacketsPerLID.dimension_0 ();
-              Kokkos::parallel_reduce ("Count import packets",
-                                       range_type (0, numLids),
-                                       [=] (const LocalOrdinal& i, size_t& lclSum) {
-                                         lclSum += host_numImportPacketsPerLID[i];
-                                       }, totalImportPackets);
+              // MPI communication happens here.
+              distor.doReversePostsAndWaits (numExp_h, 1, numImp_h);
+
+              DES::fence (); // just in case UVM doesn't behave right
+              typedef typename decltype (numImp_h)::device_type the_dev_type;
+              totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
+            }
+            else {
+              this->numExportPacketsPerLID_.template sync<DMS> ();
+              this->numImportPacketsPerLID_.template sync<DMS> ();
+              this->numImportPacketsPerLID_.template modify<DMS> (); // output argument
+              auto numExp_d = create_const_view (this->numExportPacketsPerLID_.template view<DMS> ());
+              auto numImp_d = this->numImportPacketsPerLID_.template view<DMS> ();
+
+              // MPI communication happens here.
+              distor.doReversePostsAndWaits (numExp_d, 1, numImp_d);
+
+              DES::fence (); // just in case UVM doesn't behave right
+              typedef typename decltype (numImp_d)::device_type the_dev_type;
+              totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_d);
             }
 
-            if (debug) {
-              std::cerr << ">>> 7.2. Realloc" << std::endl;
-            }
-
-            reallocImportsIfNeeded (totalImportPackets, debug);
+            this->reallocImportsIfNeeded (totalImportPackets, debug);
 
             if (debug) {
               std::cerr << ">>> 7.3. Second comm" << std::endl;
             }
 
+            // NOTE (mfh 25 Apr 2016, 01 Aug 2017) Since we need to
+            // launch MPI communication on host, we will need
+            // numExportPacketsPerLID and numImportPacketsPerLID on
+            // host.
+            this->numExportPacketsPerLID_.template sync<HMS> ();
+            this->numImportPacketsPerLID_.template sync<HMS> ();
+
+            // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
+            // doReversePostsAndWaits currently want
+            // numExportPacketsPerLID and numImportPacketsPerLID as
+            // Teuchos::ArrayView, rather than as Kokkos::View.
+            auto numExportPacketsPerLID_av =
+              getArrayViewFromDualView (this->numExportPacketsPerLID_);
+            auto numImportPacketsPerLID_av =
+              getArrayViewFromDualView (this->numImportPacketsPerLID_);
+
+            // imports_ is for output only, so we don't need to sync
+            // it before marking it as modified.  However, in order to
+            // prevent spurious debug-mode errors (e.g., "modified on
+            // both device and host"), we first need to clear its
+            // "modified" flags.
+            this->imports_.modified_device() = 0;
+            this->imports_.modified_host() = 0;
+
             if (commOnHost) {
-              numExportPacketsPerLID_.template sync<host_memory_space> ();
-              numImportPacketsPerLID_.template sync<host_memory_space> ();
-              // imports_ is for output only, so we don't need to sync it.
-              imports_.template modify<host_memory_space> ();
-              distor.doReversePostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
-                                             getArrayViewFromDualView (numExportPacketsPerLID_),
-                                             imports_.template view<host_memory_space> (),
-                                             getArrayViewFromDualView (numImportPacketsPerLID_));
+              this->imports_.template modify<HMS> ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<HMS> ()),
+                                             numExportPacketsPerLID_av,
+                                             this->imports_.template view<HMS> (),
+                                             numImportPacketsPerLID_av);
             }
             else {
-              // FIXME (mfh 25 Apr 2016) Once doReversePostsAndWaits
-              // can take numExportPacketsPerLID and
-              // numImportPacketsPerLID as View or DualView, rather
-              // than as Teuchos::ArrayView, then we can use their
-              // device versions.  For now, we'll use their host
-              // versions.
-              numExportPacketsPerLID_.template sync<host_memory_space> ();
-              numImportPacketsPerLID_.template sync<host_memory_space> ();
-              // imports_ is for output only, so we don't need to sync it.
-              imports_.template modify<dev_memory_space> ();
-              distor.doReversePostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
-                                             getArrayViewFromDualView (numExportPacketsPerLID_),
-                                             imports_.template view<dev_memory_space> (),
-                                             getArrayViewFromDualView (numImportPacketsPerLID_));
+              this->imports_.template modify<DMS> ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<DMS> ()),
+                                             numExportPacketsPerLID_av,
+                                             this->imports_.template view<DMS> (),
+                                             numImportPacketsPerLID_av);
             }
           }
           else {
@@ -1088,19 +1132,26 @@ namespace Tpetra {
                  << std::endl;
               std::cerr << os.str ();
             }
+
+            // imports_ is for output only, so we don't need to sync
+            // it before marking it as modified.  However, in order to
+            // prevent spurious debug-mode errors (e.g., "modified on
+            // both device and host"), we first need to clear its
+            // "modified" flags.
+            this->imports_.modified_device() = 0;
+            this->imports_.modified_host() = 0;
+
             if (commOnHost) {
-              // imports_ is for output only, so we don't need to sync it.
-              imports_.template modify<host_memory_space> ();
-              distor.doReversePostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+              this->imports_.template modify<HMS> ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<HMS> ()),
                                              constantNumPackets,
-                                             imports_.template view<host_memory_space> ());
+                                             this->imports_.template view<HMS> ());
             }
             else { // pack on device
-              // imports_ is for output only, so we don't need to sync it.
-              imports_.template modify<dev_memory_space> ();
-              distor.doReversePostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+              this->imports_.template modify<DMS> ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<DMS> ()),
                                              constantNumPackets,
-                                             imports_.template view<dev_memory_space> ());
+                                             this->imports_.template view<DMS> ());
             }
           }
         }
@@ -1117,61 +1168,79 @@ namespace Tpetra {
               std::cerr << ">>> 7.1. Variable # packets / LID: first comm" << std::endl;
             }
 
-            numExportPacketsPerLID_.template sync<host_memory_space> ();
-            numImportPacketsPerLID_.template sync<host_memory_space> ();
-            distor.doPostsAndWaits (create_const_view (numExportPacketsPerLID_.template view<host_memory_space> ()), 1,
-                                    numImportPacketsPerLID_.template view<host_memory_space> ());
             size_t totalImportPackets = 0;
-            {
-              typedef decltype (this->numImportPacketsPerLID_) dual_view_type;
-              typedef typename dual_view_type::t_host::execution_space host_exec_space;
-              typedef Kokkos::RangePolicy<host_exec_space, LocalOrdinal> range_type;
+            if (commOnHost) {
+              this->numExportPacketsPerLID_.template sync<HMS> ();
+              this->numImportPacketsPerLID_.template sync<HMS> ();
+              this->numImportPacketsPerLID_.template modify<HMS> (); // output argument
+              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.template view<HMS> ());
+              auto numImp_h = this->numImportPacketsPerLID_.template view<HMS> ();
 
-              this->numImportPacketsPerLID_.template modify<host_memory_space> ();
-              auto host_numImportPacketsPerLID =
-                this->numImportPacketsPerLID_.template view<host_memory_space> ();
-              const LocalOrdinal numLids = host_numImportPacketsPerLID.dimension_0 ();
-              Kokkos::parallel_reduce ("Count import packets",
-                                       range_type (0, numLids),
-                                       [=] (const LocalOrdinal& i, size_t& lclSum) {
-                                         lclSum += host_numImportPacketsPerLID[i];
-                                       }, totalImportPackets);
+              // MPI communication happens here.
+              distor.doPostsAndWaits (numExp_h, 1, numImp_h);
+
+              DES::fence (); // just in case UVM doesn't behave right
+              typedef typename decltype (numImp_h)::device_type the_dev_type;
+              totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
+            }
+            else {
+              this->numExportPacketsPerLID_.template sync<DMS> ();
+              this->numImportPacketsPerLID_.template sync<DMS> ();
+              this->numImportPacketsPerLID_.template modify<DMS> (); // output argument
+              auto numExp_d = create_const_view (this->numExportPacketsPerLID_.template view<DMS> ());
+              auto numImp_d = this->numImportPacketsPerLID_.template view<DMS> ();
+
+              // MPI communication happens here.
+              distor.doPostsAndWaits (numExp_d, 1, numImp_d);
+
+              DES::fence (); // just in case UVM doesn't behave right
+              typedef typename decltype (numImp_d)::device_type the_dev_type;
+              totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_d);
             }
 
-            if (debug) {
-              std::cerr << ">>> 7.2. Realloc" << std::endl;
-            }
-
-            reallocImportsIfNeeded (totalImportPackets, debug);
+            this->reallocImportsIfNeeded (totalImportPackets, debug);
 
             if (debug) {
               std::cerr << ">>> 7.3. Second comm" << std::endl;
             }
 
+            // NOTE (mfh 25 Apr 2016, 01 Aug 2017) Since we need to
+            // launch MPI communication on host, we will need
+            // numExportPacketsPerLID and numImportPacketsPerLID on
+            // host.
+            this->numExportPacketsPerLID_.template sync<HMS> ();
+            this->numImportPacketsPerLID_.template sync<HMS> ();
+
+            // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
+            // doReversePostsAndWaits currently want
+            // numExportPacketsPerLID and numImportPacketsPerLID as
+            // Teuchos::ArrayView, rather than as Kokkos::View.
+            auto numExportPacketsPerLID_av =
+              getArrayViewFromDualView (this->numExportPacketsPerLID_);
+            auto numImportPacketsPerLID_av =
+              getArrayViewFromDualView (this->numImportPacketsPerLID_);
+
+            // imports_ is for output only, so we don't need to sync
+            // it before marking it as modified.  However, in order to
+            // prevent spurious debug-mode errors (e.g., "modified on
+            // both device and host"), we first need to clear its
+            // "modified" flags.
+            this->imports_.modified_device() = 0;
+            this->imports_.modified_host() = 0;
+
             if (commOnHost) {
-              numExportPacketsPerLID_.template sync<host_memory_space> ();
-              numImportPacketsPerLID_.template sync<host_memory_space> ();
-              // imports_ is for output only, so we don't need to sync it.
-              imports_.template modify<host_memory_space> ();
-              distor.doPostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
-                                      getArrayViewFromDualView (numExportPacketsPerLID_),
-                                      imports_.template view<host_memory_space> (),
-                                      getArrayViewFromDualView (numImportPacketsPerLID_));
+              this->imports_.template modify<HMS> ();
+              distor.doPostsAndWaits (create_const_view (this->exports_.template view<HMS> ()),
+                                      numExportPacketsPerLID_av,
+                                      this->imports_.template view<HMS> (),
+                                      numImportPacketsPerLID_av);
             }
             else { // pack on device
-              // FIXME (mfh 25 Apr 2016) Once doReversePostsAndWaits
-              // can take numExportPacketsPerLID and
-              // numImportPacketsPerLID as a View or DualView, rather
-              // than as a Teuchos::ArrayView, then we can use their
-              // device version.  For now, we'll use the host version.
-              numExportPacketsPerLID_.template sync<host_memory_space> ();
-              numImportPacketsPerLID_.template sync<host_memory_space> ();
-              // imports_ is for output only, so we don't need to sync it.
-              imports_.template modify<dev_memory_space> ();
-              distor.doPostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
-                                      getArrayViewFromDualView (numExportPacketsPerLID_),
-                                      imports_.template view<dev_memory_space> (),
-                                      getArrayViewFromDualView (numImportPacketsPerLID_));
+              this->imports_.template modify<DMS> ();
+              distor.doPostsAndWaits (create_const_view (this->exports_.template view<DMS> ()),
+                                      numExportPacketsPerLID_av,
+                                      this->imports_.template view<DMS> (),
+                                      numImportPacketsPerLID_av);
             }
           }
           else {
@@ -1185,19 +1254,25 @@ namespace Tpetra {
               std::cerr << os.str ();
             }
 
+            // imports_ is for output only, so we don't need to sync
+            // it before marking it as modified.  However, in order to
+            // prevent spurious debug-mode errors (e.g., "modified on
+            // both device and host"), we first need to clear its
+            // "modified" flags.
+            this->imports_.modified_device() = 0;
+            this->imports_.modified_host() = 0;
+
             if (commOnHost) {
-              // imports_ is for output only, so we don't need to sync it.
-              imports_.template modify<host_memory_space> ();
-              distor.doPostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+              this->imports_.template modify<HMS> ();
+              distor.doPostsAndWaits (create_const_view (this->exports_.template view<HMS> ()),
                                       constantNumPackets,
-                                      imports_.template view<host_memory_space> ());
+                                      this->imports_.template view<HMS> ());
             }
             else { // pack on device
-              // imports_ is for output only, so we don't need to sync it.
-              imports_.template modify<dev_memory_space> ();
-              distor.doPostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+              this->imports_.template modify<DMS> ();
+              distor.doPostsAndWaits (create_const_view (this->exports_.template view<DMS> ()),
                                       constantNumPackets,
-                                      imports_.template view<dev_memory_space> ());
+                                      this->imports_.template view<DMS> ());
             }
           }
         }
