@@ -3,17 +3,70 @@
 
 /// \file TachoExp_MatrixMarket.hpp
 /// \brief IO utilities for matrix market format
-/// \author Kyungjoo Kim (kyukim@sandia.gov)  
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "TachoExp_Util.hpp"
 #include "TachoExp_CrsMatrixBase.hpp"
 
-namespace Tacho { 
+namespace Tacho {
   namespace Experimental {
     
     template<typename ValueType>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<std::is_same<ValueType,double>::value ||
+                            std::is_same<ValueType,float>::value>::type
+    impl_read_value_from_file(std::ifstream &file,
+                              ordinal_type &row,
+                              ordinal_type &col,
+                              ValueType &val) {
+      file >> row >> col >> val;
+    }  
+    template<typename ValueType>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<std::is_same<ValueType,Kokkos::complex<double> >::value ||
+                            std::is_same<ValueType,Kokkos::complex<float> >::value>::type
+    impl_read_value_from_file(std::ifstream &file,
+                              ordinal_type &row,
+                              ordinal_type &col,
+                              ValueType &val) {
+      typename TypeTraits<ValueType>::magnitude_type r, i;
+      file >> row >> col >> r >> i;
+      val = ValueType(r, i);
+    }
+
+    template<typename ValueType>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<std::is_same<ValueType,double>::value ||
+                            std::is_same<ValueType,float>::value>::type
+    impl_write_value_to_file(std::ofstream &file,
+                             const ordinal_type row,
+                             const ordinal_type col,
+                             const ValueType val,
+                             const ordinal_type w = 10) {
+      file << std::setw(w) << row << "  "
+           << std::setw(w) << col << "  "
+           << std::setw(w) << val << std::endl;
+    }  
+
+
+    template<typename ValueType>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<std::is_same<ValueType,Kokkos::complex<double> >::value ||
+                            std::is_same<ValueType,Kokkos::complex<float> >::value>::type
+    impl_write_value_to_file(std::ofstream &file,
+                             const ordinal_type row,
+                             const ordinal_type col,
+                             const ValueType val,
+                             const ordinal_type w = 10) {
+      file << std::setw(w) << row << "  "
+           << std::setw(w) << col << "  "
+           << std::setw(w) << val.real() << "  "
+           << std::setw(w) << val.imag() << std::endl;
+    }  
+
+    template<typename ValueType>
     struct MatrixMarket {
- 
+
       /// \brief matrix market reader
       static CrsMatrixBase<ValueType,Kokkos::DefaultHostExecutionSpace>
       read(const std::string &filename, const ordinal_type verbose = 0) {
@@ -23,9 +76,9 @@ namespace Tacho {
 
         std::ifstream file;
         file.open(filename);
-        // TACHO_TEST_FOR_EXCEPTION(!file.good(), std::runtime_error, 
+        // TACHO_TEST_FOR_EXCEPTION(!file.good(), std::runtime_error,
         //                          std::string("failed to open" + filename));
-      
+
         // reading mm header
         ordinal_type m, n;
         size_type nnz;
@@ -57,18 +110,19 @@ namespace Tacho {
           for (size_type i=0;i<nnz;++i) {
             ordinal_type row, col;
             value_type val;
-            file >> row >> col >> val;
-          
+
+            impl_read_value_from_file(file, row, col, val);
+
             row -= mm_base;
             col -= mm_base;
-          
+
             mm.push_back(ijv_type(row, col, val));
             if (symmetry && row != col)
               mm.push_back(ijv_type(col, row, val));
           }
           std::sort(mm.begin(), mm.end(), std::less<ijv_type>());
         }
-      
+
         // change mm to crs
         typedef Kokkos::DefaultHostExecutionSpace host_space;
         Kokkos::View<size_type*,   host_space> ap("ap", m+1);
@@ -78,16 +132,16 @@ namespace Tacho {
           ordinal_type icnt = 0;
           size_type jcnt = 0;
           ijv_type prev = mm[0];
-        
+
           ap[icnt++] = 0;
           aj[jcnt]   = prev.j;
           ax[jcnt++] = prev.val;
-        
+
           for (auto it=(mm.begin()+1);it<(mm.end());++it) {
             const ijv_type aij = (*it);
             if (aij.i != prev.i)
               ap[icnt++] = jcnt;
-          
+
             if (aij == prev) {
               aj[jcnt]  = aij.j;
               ax[jcnt] += aij.val;
@@ -126,7 +180,7 @@ namespace Tacho {
       /// \brief matrix marker writer
       template<typename uplo=void>
       static void
-      write(std::ofstream &file, 
+      write(std::ofstream &file,
             const CrsMatrixBase<ValueType,Kokkos::DefaultHostExecutionSpace> &A,
             const std::string comment = "%% Tacho::MatrixMarket::Export") {
         typedef ValueType value_type;
@@ -134,7 +188,7 @@ namespace Tacho {
         std::streamsize prec = file.precision();
         file.precision(16);
         file << std::scientific;
-      
+
         {
           file << "%%MatrixMarket matrix coordinate "
                << (is_complex_type<value_type>::value ? "complex " : "real ")
@@ -169,13 +223,11 @@ namespace Tacho {
               if (std::is_same<uplo,void>::value) flag = true;
               if (flag) {
                 value_type val = A.Value(j);
-                file << std::setw(w) << ( i+1) << "  "
-                     << std::setw(w) << (aj+1) << "  "
-                     << std::setw(w) <<    val << std::endl;
+                impl_write_value_to_file(file, i+1, aj+1, val, w);
               }
             }
           }
-        }      
+        }
 
         file.unsetf(std::ios::scientific);
         file.precision(prec);

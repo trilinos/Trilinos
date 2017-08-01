@@ -720,8 +720,8 @@ namespace Tacho {
               const ordinal_type col = A.Col(j);
               s += A.Value(j)*x(col,p);
             }
-            norm += b(i,p)*b(i,p);
-            diff += (b(i,p) - s)*(b(i,p) - s);
+            norm += real(b(i,p)*conj(b(i,p)));
+            diff += real((b(i,p) - s)*conj(b(i,p) - s));
           }
         }
         return sqrt(diff/norm);

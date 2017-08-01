@@ -39,7 +39,7 @@ TEST( DenseMatrixView, flat ) {
   }
 
   for (ordinal_type k=0;k<(m*n);++k) {
-    EXPECT_TRUE(a[k] == k);
+    EXPECT_TRUE(a[k] == ValueType(k));
   }  
 }
 

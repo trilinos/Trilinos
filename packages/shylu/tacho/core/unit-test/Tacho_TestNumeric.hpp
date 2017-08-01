@@ -64,8 +64,9 @@ TEST( Numeric, constructor ) {
 }
 
 TEST( Numeric, Cholesky_Serial ) {
+  std::string inputfilename = MM_TEST_FILE + ".mtx";
   CrsMatrixBaseHostType A("A");
-  A = MatrixMarket<ValueType>::read("test.mtx");
+  A = MatrixMarket<ValueType>::read(inputfilename);
 
   Graph G(A);
 
@@ -111,7 +112,7 @@ TEST( Numeric, Cholesky_Serial ) {
 
 // TEST( Numeric, factorizeCholesky_Parallel ) {
 //   CrsMatrixBaseHostType A("A");
-//   A = MatrixMarket<ValueType>::read("test.mtx");
+//   A = MatrixMarket<ValueType>::read("test_double.mtx");
 
 //   Graph G(A);
 

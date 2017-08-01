@@ -91,15 +91,18 @@ TEST( CrsMatrixBase, constructor ) {
 }
 
 TEST( CrsMatrixBase, matrixmarket ) {
-  CrsMatrixBaseHostType Ah("A host");
-  Ah = MatrixMarket<ValueType>::read("test.mtx");
+  std::string inputfilename  = MM_TEST_FILE + ".mtx";
+  std::string outputfilename = MM_TEST_FILE + "_read_output.mtx";      
 
-  std::ofstream out("test_mm_read_output.mtx");
+  CrsMatrixBaseHostType Ah("A host");
+  Ah = MatrixMarket<ValueType>::read(inputfilename);
+
+  std::ofstream out(outputfilename);
   MatrixMarket<ValueType>::write(out, Ah);
 
   CrsMatrixBaseHostType Bh("B host");
-  Bh = MatrixMarket<ValueType>::read("test_mm_read_output.mtx");
-  
+  Bh = MatrixMarket<ValueType>::read(outputfilename);
+
   ///
   /// read and write the matrix and read again, 
   /// then check if they are same

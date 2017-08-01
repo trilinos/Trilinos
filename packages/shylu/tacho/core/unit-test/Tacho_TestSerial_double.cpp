@@ -4,10 +4,12 @@
 #include <impl/Kokkos_Timer.hpp>
 
 typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
-typedef Kokkos::OpenMP DeviceSpaceType;
+typedef Kokkos::Serial DeviceSpaceType;
 typedef double ValueType;
 
-#define __TACHO_TEST_OPENMP__
+static const std::string MM_TEST_FILE="test_double";
+
+#define __TACHO_TEST_SERIAL__
 #include "ShyLUTacho_config.h"
 #include "Tacho_Test.hpp"
 

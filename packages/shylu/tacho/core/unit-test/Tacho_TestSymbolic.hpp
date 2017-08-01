@@ -58,8 +58,9 @@ TEST( Symbolic, constructor ) {
 }
 
 TEST( Symbolic, functions ) {
+  std::string inputfilename = MM_TEST_FILE + ".mtx";
   CrsMatrixBaseHostType A("A");
-  A = MatrixMarket<ValueType>::read("test.mtx");
+  A = MatrixMarket<ValueType>::read(inputfilename);
 
   Graph G(A);
 
@@ -141,8 +142,10 @@ TEST( Symbolic, functions ) {
 }
 
 TEST( Symbolic, interface ) {
+  std::string inputfilename = MM_TEST_FILE + ".mtx";
+
   CrsMatrixBaseHostType A("A");
-  A = MatrixMarket<ValueType>::read("test.mtx");
+  A = MatrixMarket<ValueType>::read(inputfilename);
 
   Graph G(A);
 

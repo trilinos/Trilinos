@@ -5,7 +5,9 @@
 
 typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 typedef Kokkos::Serial DeviceSpaceType;
-typedef double ValueType;
+typedef Kokkos::complex<double> ValueType;
+
+static const std::string MM_TEST_FILE="test_dcomplex";
 
 #define __TACHO_TEST_SERIAL__
 #include "ShyLUTacho_config.h"

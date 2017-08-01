@@ -99,42 +99,60 @@ namespace Tacho {
     struct TypeTraits<float> {
       typedef float type;
       typedef float value_type;
+      typedef float std_value_type;
+
       typedef float magnitude_type;
+      typedef float scalar_type;
     };
 
     template<>
     struct TypeTraits<double> {
       typedef double type;
       typedef double value_type;
+      typedef double std_value_type;
+
       typedef double magnitude_type;
+      typedef double scalar_type;
     };
 
     template<>
     struct TypeTraits<std::complex<float> > {
       typedef std::complex<float> type;
       typedef std::complex<float> value_type;
-      typedef std::complex<float> magnitude_type;
+      typedef std::complex<float> std_value_type;
+
+      typedef float magnitude_type;
+      typedef float scalar_type;
     };
 
     template<>
     struct TypeTraits<std::complex<double> > {
       typedef std::complex<double> type;
       typedef std::complex<double> value_type;
+      typedef std::complex<double> std_value_type;
+
       typedef double magnitude_type;
+      typedef double scalar_type;
     };
     
     template<>
     struct TypeTraits<Kokkos::complex<float> > {
       typedef Kokkos::complex<float> type;
       typedef Kokkos::complex<float> value_type;
+      typedef std::complex<float> std_value_type;
+
       typedef float magnitude_type;
+      typedef float scalar_type;
     };
 
     template<>
     struct TypeTraits<Kokkos::complex<double> > {
       typedef Kokkos::complex<double> type;
       typedef Kokkos::complex<double> value_type;
+      typedef std::complex<double> std_value_type;
+
       typedef double magnitude_type;
+      typedef double scalar_type;
     };
 
     // template<typename ValueType, typename ExecSpace>
@@ -213,6 +231,97 @@ namespace Tacho {
     static void swap(Ta &a, Tb &b) {
       Ta c(a); a = b; b = c;
     }
+
+    /// complex conj
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static T conj(const T a);
+
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double conj<double>(const double a) { 
+      return a;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float conj<float>(const float a) { 
+      return a;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    Kokkos::complex<double> conj<Kokkos::complex<double> >(const Kokkos::complex<double> a) { 
+      return Kokkos::complex<double>(a.real(), -a.imag());
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    Kokkos::complex<float> conj<Kokkos::complex<float> >(const Kokkos::complex<float> a) { 
+      return Kokkos::complex<float>(a.real(), -a.imag());
+    }
+
+    /// complex real
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static typename TypeTraits<T>::scalar_type real(const T a);
+
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double real<double>(const double a) { 
+      return a;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float real<float>(const float a) { 
+      return a;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double real<Kokkos::complex<double> >(const Kokkos::complex<double> a) { 
+      return a.real();
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float real<Kokkos::complex<float> >(const Kokkos::complex<float> a) { 
+      return a.real();
+    }
+
+    /// complex imag
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static typename TypeTraits<T>::scalar_type imag(const T a);
+
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double imag<double>(const double a) { 
+      return 0.0;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float imag<float>(const float a) { 
+      return 0.0;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double imag<Kokkos::complex<double> >(const Kokkos::complex<double> a) { 
+      return a.imag();
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float imag<Kokkos::complex<float> >(const Kokkos::complex<float> a) { 
+      return a.imag();
+    }
+
 
     KOKKOS_FORCEINLINE_FUNCTION
     static void clear(char *buf, size_type bufsize) {

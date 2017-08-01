@@ -33,11 +33,12 @@ namespace Tacho {
         if (m > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            Teuchos::LAPACK<ordinal_type,value_type> lapack;
+            typedef typename TypeTraits<value_type>::std_value_type std_value_type;
+            Teuchos::LAPACK<ordinal_type,std_value_type> lapack;
             const char lapack_uplo = ArgUplo::param;
             lapack.POTRF(lapack_uplo,
                          m, 
-                         A.data(), A.stride_1(),
+                         (std_value_type*)A.data(), A.stride_1(),
                          &r_val);
 
             TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, 

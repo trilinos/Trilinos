@@ -42,15 +42,16 @@ namespace Tacho {
         if (n > 0 && k > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            Teuchos::BLAS<ordinal_type,value_type> blas;
+            typedef typename TypeTraits<value_type>::std_value_type std_value_type; 
+            Teuchos::BLAS<ordinal_type,std_value_type> blas;
             
             blas.HERK(ArgUplo::teuchos_param,
                       ArgTrans::teuchos_param,
                       n, k,
-                      alpha,
-                      A.data(), A.stride_1(),
-                      beta,
-                      C.data(), C.stride_1());
+                      std_value_type(alpha),
+                      (std_value_type*)A.data(), A.stride_1(),
+                      std_value_type(beta),
+                      (std_value_type*)C.data(), C.stride_1());
 #else
             TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
 #endif
