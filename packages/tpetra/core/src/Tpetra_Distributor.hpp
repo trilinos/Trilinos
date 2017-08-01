@@ -64,7 +64,7 @@
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
-
+#include <type_traits>
 
 namespace Tpetra {
 
@@ -2099,6 +2099,13 @@ namespace Tpetra {
     typedef ExpView exports_view_type;
     typedef ImpView imports_view_type;
 
+#ifdef KOKKOS_HAVE_CUDA
+    static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
+                   ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
+                   "Please do not use Tpetra::Distributor with UVM "
+                   "allocations.  See GitHub issue #1088.");
+#endif // KOKKOS_HAVE_CUDA
+
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
@@ -2529,6 +2536,13 @@ namespace Tpetra {
     typedef Array<size_t>::size_type size_type;
     typedef ExpView exports_view_type;
     typedef ImpView imports_view_type;
+
+#ifdef KOKKOS_HAVE_CUDA
+    static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
+                   ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
+                   "Please do not use Tpetra::Distributor with UVM "
+                   "allocations.  See GitHub issue #1088.");
+#endif // KOKKOS_HAVE_CUDA
 
     Teuchos::OSTab tab (out_);
 
