@@ -2,17 +2,20 @@
 
 This is the simplest CI server you can possibily imagine.  I looked at setting
 this up with the TriBITS Dashboard Driver (TDD) system but that is such an
-ugly and hacked system that I just could not go through with it.  Therefore, I
-have decided that I am going to abandon that old system and create a new
-TriBITS Dashboard Driver Plus system that is the most simple and minimal
-possible to use CMake/CTest/CDash to drive and monitor the ctest -S script
-invocations.
+ugly system that I just could not go through with it.  Therefore, I have
+decided that I am going to abandon that old system and create a new TriBITS
+Dashboard Driver Plus system that is the most simple and minimal possible to
+use CMake/CTest/CDash to drive and monitor the ctest -S script invocations.
+But until I can do that, I went with a simple appraoch described below.
 
 To get this set up on a new machine, just do:
 
   mkdir <ci_base_dir>
   cd <ci_base_dir>/
   git clone git@github.com:trilinos/Trilinos.git
+  cd Trilinos/
+  git checkout --track origin/develop
+  git branch -d master
 
 Then create a cronjob (or Jenkins job) that does:
 
@@ -21,7 +24,7 @@ Then create a cronjob (or Jenkins job) that does:
 
 That is it!
 
-To set this up, I started with a basic ctest -S driver script:
+To set up this simple system, I started with a basic ctest -S driver script:
 
   ctest_linux_mpi_debug_shared_pt_ci.sems.cmake
 
@@ -52,11 +55,13 @@ TriBITS that is pulled by TribitsCTestDriverCore.cmake.  If that happens, one
 just needs to kill trilinos_ci_server.sh (using kill-pstree.py) and just run
 it again with nohup.
 
-2) If something goes wrong then the CI build just is not uploaded to the
-Trilinos CDash site and we can't see if there are any failures.
+2) If something goes wrong in the early stages of the CTest -S drivers script,
+then the CI build is just not uploaded to the Trilinos CDash site and we can't
+see if there are any failures.
 
 3) If things go well, the only way to see what the ctest -S script is doing is
-to look at the trilinos_ci_server.out log file.
+to look at the local trilinos_ci_server.out log file (since it never gets
+posted to a CDash site).
 
 Therefore, this is a temporary solution until we can get something better in
-place using a combination of CMake/CTest/CDash and Jenkins.
+place using a combination of CMake/CTest/CDash and/or Jenkins.

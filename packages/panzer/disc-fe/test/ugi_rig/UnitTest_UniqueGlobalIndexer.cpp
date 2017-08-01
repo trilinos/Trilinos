@@ -223,11 +223,20 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int
    } 
 }
 
-void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+UniqueGlobalIndexer::
+getOwnedIndices(
+  std::vector<int>& indices) const
 {
-   indices.resize(6);
-   switch(procRank_) {
-   case 0:
+  indices.resize(6);
+  switch (procRank_)
+  {
+    case 0:
       indices[0] = 0;
       indices[1] = 1;
       indices[2] = 2;
@@ -235,7 +244,7 @@ void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
       indices[4] = 6;
       indices[5] = 7;
       break;
-   case 1:
+    case 1:
       indices[0] = 8;
       indices[1] = 9;
       indices[2] = 10;
@@ -243,16 +252,51 @@ void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
       indices[4] = 4;
       indices[5] = 5;
       break;
-   default:
+    default:
       TEUCHOS_ASSERT(false);
-   }
-}
+  } // end switch (procRank_)
+} // end of getOwnedIndices()
 
-void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<int> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+UniqueGlobalIndexer::
+getGhostedIndices(
+  std::vector<int>& indices) const
 {
-   indices.resize(8);
-   switch(procRank_) {
-   case 0:
+  indices.resize(2);
+  switch (procRank_)
+  {
+    case 0:
+      indices[0] = 4;
+      indices[1] = 5;
+      break;
+    case 1:
+      indices[0] = 2;
+      indices[1] = 3;
+      break;
+    default:
+      TEUCHOS_ASSERT(false);
+  } // end switch (procRank_)
+} // end of getGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedAndGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+UniqueGlobalIndexer::
+getOwnedAndGhostedIndices(
+  std::vector<int>& indices) const
+{
+  indices.resize(8);
+  switch (procRank_)
+  {
+    case 0:
       indices[0] = 0;
       indices[1] = 1;
       indices[2] = 2;
@@ -262,7 +306,7 @@ void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<int> & indices) 
       indices[6] = 6;
       indices[7] = 7;
       break;
-   case 1:
+    case 1:
       indices[0] = 2;
       indices[1] = 3;
       indices[2] = 8;
@@ -272,10 +316,46 @@ void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<int> & indices) 
       indices[6] = 4;
       indices[7] = 5;
       break;
-   default:
+    default:
       TEUCHOS_ASSERT(false);
-   }
-}
+  } // end switch (procRank_)
+} // end of getOwnedAndGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwned()
+//
+///////////////////////////////////////////////////////////////////////////////
+int
+UniqueGlobalIndexer::
+getNumOwned() const
+{
+  return 6;
+} // end of getNumOwned()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+int
+UniqueGlobalIndexer::
+getNumGhosted() const
+{
+  return 2;
+} // end of getNumGhosted()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwnedAndGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+int
+UniqueGlobalIndexer::
+getNumOwnedAndGhosted() const
+{
+  return 8;
+} // end of getNumOwnedAndGhosted()
 
 void UniqueGlobalIndexer::ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const
 {

@@ -74,7 +74,6 @@ class Problem_038 : public ROL::NonlinearProgram<Real> {
   typedef ROL::NonlinearProgram<Real>     NP;
   typedef ROL::Vector<Real>               V;
   typedef ROL::Objective<Real>            OBJ;
-  typedef ROL::InequalityConstraint<Real> INCON;
 
 public:
 

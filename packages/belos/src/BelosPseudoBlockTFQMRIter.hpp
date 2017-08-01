@@ -62,7 +62,6 @@
 #include "BelosTypes.hpp"	
 
 #include "BelosLinearProblem.hpp"
-#include "BelosMatOrthoManager.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
@@ -172,32 +171,21 @@ namespace Belos {
     //! @name Solver methods
     //@{ 
     
-    /*! \brief This method performs block TFQMR iterations until the status
+    /*! \brief This method performs pseudo-block TFQMR iterations until the status
      * test indicates the need to stop or an error occurs (in which case, an
      * std::exception is thrown).
      *
      * iterate() will first determine whether the solver is inintialized; if
      * not, it will call initialize() using default arguments. After
-     * initialization, the solver performs block TFQMR iterations until the
+     * initialization, the solver performs pseudo-block TFQMR iterations until the
      * status test evaluates as ::Passed, at which point the method returns to
      * the caller. 
-     *
-     * The block TFQMR iteration proceeds as follows:
-     * -# The operator problem->applyOp() is applied to the newest \c blockSize vectors in the Krylov basis.
-     * -# The resulting vectors are orthogonalized against the previous basis vectors, and made orthonormal.
-     * -# The Hessenberg matrix is updated.
-     * -# The least squares system is updated.
-     *
-     * The status test is queried at the beginning of the iteration.
-     *
-     * Possible exceptions thrown include the PseudoBlockTFQMRIterOrthoFailure.
-     *
      */
     void iterate();
 
     /*! \brief Initialize the solver to an iterate, providing a complete state.
      *
-     * The %BlockPseudoBlockTFQMRIter contains a certain amount of state, consisting of the current 
+     * The %PseudoBlockTFQMRIter contains a certain amount of state, consisting of the current 
      * Krylov basis and the associated Hessenberg matrix.
      *
      * initialize() gives the user the opportunity to manually set these,
@@ -486,6 +474,7 @@ namespace Belos {
     const ScalarType STone = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType STzero = Teuchos::ScalarTraits<ScalarType>::zero();
     const MagnitudeType MTone = Teuchos::ScalarTraits<MagnitudeType>::one();
+    const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     std::vector< ScalarType > beta(numRHS_,STzero);
     std::vector<int> index(1);
     //
@@ -567,11 +556,15 @@ namespace Belos {
         //
         MVT::MvNorm( *W_, theta_ );     // theta = ||w|| / tau
 
+        bool breakdown=false;
         for (int i=0; i<numRHS_; ++i) {
           theta_[i] /= tau_[i];
           // cs = 1.0 / sqrt(1.0 + theta^2)
           MagnitudeType cs = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[i]*theta_[i]);  
           tau_[i] *= theta_[i]*cs;     // tau = tau * theta * cs
+          if ( tau_[i] == MTzero ) {
+            breakdown = true;
+          }
           eta_[i] = cs*cs*alpha_[i];     // eta = cs^2 * alpha
         }
         //
@@ -584,7 +577,15 @@ namespace Belos {
           Teuchos::RCP<const MV> D_i = MVT::CloneView( *D_, index );
           Teuchos::RCP<MV> update_i = MVT::CloneViewNonConst( *solnUpdate_, index );
 	  MVT::MvAddMv( STone, *update_i, eta_[i], *D_i, *update_i );
-        }      
+        } 
+        //
+        //--------------------------------------------------------
+        // Breakdown was detected above, return to status test to
+        // remove converged solutions.
+        //--------------------------------------------------------
+        if ( breakdown ) {
+          break;
+        }
         //
         if (iIter == 1) {
   	  //

@@ -97,7 +97,7 @@ void get_put_vars(int exo_file, ex_entity_type type, const std::vector<int> &ids
                   int num_vars, int num_time_steps, const std::vector<int> &num_per_block,
                   const char *mname);
 
-int matGetStr(const char *name, char *str);
+int matGetStr(const char *name, char *data);
 int matGetDbl(const char *name, size_t n1, size_t n2, std::vector<double> &data);
 int matGetInt(const char *name, size_t n1, size_t n2, std::vector<int> &data);
 int matGetInt(const char *name);
@@ -191,8 +191,9 @@ int main(int argc, char *argv[])
     std::vector<double> y;
     std::vector<double> z;
     matGetDbl("x0", num_nodes, 1, x);
-    if (num_axes > 1)
+    if (num_axes > 1) {
       matGetDbl("y0", num_nodes, 1, y);
+    }
     if (num_axes > 2) {
       matGetDbl("z0", num_nodes, 1, z);
     }
@@ -374,14 +375,14 @@ int main(int argc, char *argv[])
   /* node and element number maps */
   {
     std::vector<int> ids;
-    if (!matGetInt("node_num_map", num_nodes, 1, ids)) {
+    if (matGetInt("node_num_map", num_nodes, 1, ids) == 0) {
       ex_put_id_map(exo_file, EX_NODE_MAP, TOPTR(ids));
     }
   }
 
   {
     std::vector<int> ids;
-    if (!matGetInt("elem_num_map", num_elements, 1, ids)) {
+    if (matGetInt("elem_num_map", num_elements, 1, ids) == 0) {
       ex_put_id_map(exo_file, EX_ELEM_MAP, TOPTR(ids));
     }
   }
@@ -399,13 +400,15 @@ int main(int argc, char *argv[])
 int matGetStr(const char *name, char *data)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == nullptr)
+  if (matvar == nullptr) {
     return -1;
+  }
 
   int strlen = matvar->nbytes;
 
-  if (matvar->dims[0] != 1)
+  if (matvar->dims[0] != 1) {
     printf("Error: Multiline string copy attempted\n");
+  }
 
   memcpy(data, matvar->data, strlen);
 
@@ -417,8 +420,9 @@ int matGetStr(const char *name, char *data)
 int matGetDbl(const char *name, size_t n1, size_t n2, std::vector<double> &data)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == nullptr)
+  if (matvar == nullptr) {
     return -1;
+  }
 
   assert(matvar->dims[0] == n1);
   assert(matvar->dims[1] == n2);
@@ -434,8 +438,9 @@ int matGetDbl(const char *name, size_t n1, size_t n2, std::vector<double> &data)
 int matGetInt(const char *name, size_t n1, size_t n2, std::vector<int> &data)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == nullptr)
+  if (matvar == nullptr) {
     return -1;
+  }
 
   assert(matvar->dims[0] == n1);
   assert(matvar->dims[1] == n2);
@@ -451,8 +456,9 @@ int matGetInt(const char *name, size_t n1, size_t n2, std::vector<int> &data)
 int matGetInt(const char *name)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == nullptr)
+  if (matvar == nullptr) {
     return -1;
+  }
 
   assert(matvar->dims[0] == 1);
   assert(matvar->dims[1] == 1);
@@ -467,8 +473,9 @@ int matGetInt(const char *name)
 int matArrNRow(const char *name)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == nullptr)
+  if (matvar == nullptr) {
     return -1;
+  }
 
   int nrow = matvar->dims[0];
   Mat_VarFree(matvar);
@@ -479,8 +486,9 @@ int matArrNRow(const char *name)
 int matArrNCol(const char *name)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == nullptr)
+  if (matvar == nullptr) {
     return -1;
+  }
 
   int ncol = matvar->dims[1];
   Mat_VarFree(matvar);

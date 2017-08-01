@@ -46,8 +46,9 @@ namespace {
 
 template <typename T, typename INT> void index_qsort(const T v[], INT iv[], size_t N)
 {
-  if (N <= 1)
+  if (N <= 1) {
     return;
+  }
   iqsort(v, iv, 0, N - 1);
   iisort(v, iv, N);
   check(v, iv, N);
@@ -85,12 +86,15 @@ namespace {
   {
     size_t center = (left + right) / 2;
 
-    if (v[iv[left]] > v[iv[center]])
+    if (v[iv[left]] > v[iv[center]]) {
       swap_(iv, left, center);
-    if (v[iv[left]] > v[iv[right]])
+    }
+    if (v[iv[left]] > v[iv[right]]) {
       swap_(iv, left, right);
-    if (v[iv[center]] > v[iv[right]])
+    }
+    if (v[iv[center]] > v[iv[right]]) {
       swap_(iv, center, right);
+    }
 
     swap_(iv, center, right - 1);
     return iv[right - 1];
@@ -104,10 +108,12 @@ namespace {
       size_t j     = right - 1;
 
       for (;;) {
-        while (v[iv[++i]] < v[pivot])
+        while (v[iv[++i]] < v[pivot]) {
           ;
-        while (v[iv[--j]] > v[pivot])
+        }
+        while (v[iv[--j]] > v[pivot]) {
           ;
+        }
         if (i < j) {
           swap_(iv, i, j);
         }

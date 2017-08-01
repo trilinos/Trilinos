@@ -33,7 +33,7 @@ C
 
 C=======================================================================
       SUBROUTINE ZMNPS (NUMNPS, ISTAT, LNPSNL, LNPSDF,
-     &   IDNPS, NNNPS, IXNNPS, LTNNPS, FACNPS)
+     &   IDNPS, NNNPS, IXNNPS, LTNNPS, FACNPS, NAME)
 C=======================================================================
 C   --*** ZMNPS *** (GJOIN) Compress nodal point sets
 C   --   Written by Amy Gilkey - revised 01/20/88
@@ -51,12 +51,15 @@ C   --   IXNNPS - IN/OUT - the index of the first node for each set
 C   --   LTNNPS - IN/OUT - the nodes for all sets
 C   --   FACNPS - IN/OUT - the distribution factors for all sets
 
+      include 'gp_namlen.blk'
+
       INTEGER ISTAT(*)
       INTEGER IDNPS(*)
       INTEGER NNNPS(*)
       INTEGER IXNNPS(*)
       INTEGER LTNNPS(*)
       REAL FACNPS(*)
+      CHARACTER*(maxnam) NAME(*)
 
       IF (NUMNPS .LE. 0) RETURN
 
@@ -85,6 +88,7 @@ C   --   FACNPS - IN/OUT - the distribution factors for all sets
             IDNPS(JNPS) = IDNPS(INPS)
             NNNPS(JNPS) = N
             IXNNPS(JNPS) = JNNLST + 1
+            NAME(JNPS) = NAME(INPS)
           ELSE
             ISTAT(INPS) = -IDNPS(INPS)
          END IF

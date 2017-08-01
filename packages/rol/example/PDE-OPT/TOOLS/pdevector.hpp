@@ -50,6 +50,9 @@
 #include "assembler.hpp"
 #include "solver.hpp"
 
+// Do not instantiate the template in this translation unit.
+extern template class Assembler<double>;
+
 //// Global Timers.
 #ifdef ROL_TIMERS
 namespace ROL {

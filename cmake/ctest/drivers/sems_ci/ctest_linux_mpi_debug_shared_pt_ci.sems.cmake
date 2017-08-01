@@ -60,8 +60,6 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.sems.cmake")
 # Set the options specific to this build case
 #
 
-SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME MPI_RELEASE_DEBUG_SHARED_PT_CI)
 #SET(CTEST_TEST_TIMEOUT 900)
 

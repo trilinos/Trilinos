@@ -108,7 +108,7 @@ def fromPyTrilinosImport(name, fromBuild=False, globals={}, locals={}):
         PyTrilinosDir = os.path.join(buildDir, PyTrilinosStr)
         importDir = PyTrilinosPkg.__path__[0]
         if importDir != PyTrilinosDir:
-            raise ImportError, "PyTrilinos not imported from build directory"
+            raise ImportError("PyTrilinos not imported from build directory")
 
     # We have the module and it is from the expected location, so return it to
     # the user.

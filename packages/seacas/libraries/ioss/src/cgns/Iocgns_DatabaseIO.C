@@ -95,7 +95,9 @@ namespace Iocgns {
   {
     dbState = Ioss::STATE_UNKNOWN;
 
+#ifdef IOSS_DEBUG_OUTPUT
     std::cout << "CGNS DatabaseIO using " << CG_SIZEOF_SIZE << "-bit integers.\n";
+#endif
     if (CG_SIZEOF_SIZE == 64) {
       set_int_byte_size_api(Ioss::USE_INT64_API);
     }
@@ -321,7 +323,7 @@ namespace Iocgns {
         auto donor_iter = m_zoneNameMap.find(donorname);
         if (donor_iter != m_zoneNameMap.end() && (*donor_iter).second < zone) {
           num_shared += npnts;
-#if defined(IOSS_DEBUG_OUTPUT)
+#ifdef IOSS_DEBUG_OUTPUT
           std::cout << "Zone " << zone << " shares " << npnts << " nodes with " << donorname
                     << "\n";
 #endif
@@ -386,7 +388,7 @@ namespace Iocgns {
       if (parent_flag == 0 && total_elements > 0) {
         total_elements -= num_entity;
         std::string element_topo = Utils::map_cgns_to_topology_type(e_type);
-#if defined(IOSS_DEBUG_OUTPUT)
+#ifdef IOSS_DEBUG_OUTPUT
         std::cout << "Added block " << zone_name << ": CGNS topology = '"
                   << cg_ElementTypeName(e_type) << "', IOSS topology = '" << element_topo
                   << "' with " << num_entity << " elements\n";
@@ -415,7 +417,7 @@ namespace Iocgns {
           block_name += "/";
           block_name += section_name;
           std::string face_topo = Utils::map_cgns_to_topology_type(e_type);
-#if defined(IOSS_DEBUG_OUTPUT)
+#ifdef IOSS_DEBUG_OUTPUT
           std::cout << "Added sideset " << block_name << " of topo " << face_topo << " with "
                     << num_entity << " faces\n";
 #endif
@@ -492,7 +494,7 @@ namespace Iocgns {
     cgsize_t cell_dimension = 0;
     cgsize_t phys_dimension = 0;
     CGCHECK(cg_base_read(cgnsFilePtr, base, basename, &cell_dimension, &phys_dimension));
-#if defined(IOSS_DEBUG_OUTPUT)
+#ifdef IOSS_DEBUG_OUTPUT
     std::cout << "Physical dimension = " << phys_dimension << "\n";
 #endif
 
@@ -1286,8 +1288,9 @@ namespace Iocgns {
 
           CGCHECK(cg_field_write(cgnsFilePtr, base, zone, m_currentCellCenterSolutionIndex,
                                  CG_RealDouble, var_name.c_str(), cgns_data.data(), &cgns_field));
-          if (i == 0)
+          if (i == 0) {
             Utils::set_field_index(field, cgns_field, CG_CellCenter);
+          }
         }
       }
     }
@@ -1324,9 +1327,7 @@ namespace Iocgns {
           }
           auto it = nodes.begin();
           it++;
-          std::sort(it, nodes.end());
-          nodes.erase(std::unique(it, nodes.end()), nodes.end());
-          nodes.shrink_to_fit();
+	  Ioss::Utils::uniquify(nodes, true);
 
           // Now, we have the node count and cell count so we can create a zone...
           int      base    = 1;
@@ -1389,8 +1390,9 @@ namespace Iocgns {
 
             CGCHECK(cg_field_write(cgnsFilePtr, base, zone, m_currentCellCenterSolutionIndex,
                                    CG_RealDouble, var_name.c_str(), cgns_data.data(), &cgns_field));
-            if (i == 0)
+            if (i == 0) {
               Utils::set_field_index(field, cgns_field, CG_CellCenter);
+            }
           }
         }
       }
@@ -1554,8 +1556,9 @@ namespace Iocgns {
                 var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
             CGCHECK(cg_field_write(cgnsFilePtr, base, zone, m_currentVertexSolutionIndex,
                                    CG_RealDouble, var_name.c_str(), blk_data.data(), &cgns_field));
-            if (i == 0)
+            if (i == 0) {
               Utils::set_field_index(field, cgns_field, CG_Vertex);
+            }
           }
         }
       }
@@ -1654,9 +1657,8 @@ namespace Iocgns {
         CGCHECK(cg_parent_data_write(cgnsFilePtr, base, zone, sect, TOPTR(parent)));
         return num_to_get;
       }
-      else {
-        num_to_get = Ioss::Utils::field_warning(sb, field, "output");
-      }
+
+      num_to_get = Ioss::Utils::field_warning(sb, field, "output");
     }
     else {
       num_to_get = Ioss::Utils::field_warning(sb, field, "output");

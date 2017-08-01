@@ -55,7 +55,7 @@
 #include "Epetra_LAPACK_wrappers.h"
 
 #ifdef EPETRA_MPI
-#include "mpi.h"
+#include <mpi.h>
 #endif
 
 // LOGICAL as 4 bytes

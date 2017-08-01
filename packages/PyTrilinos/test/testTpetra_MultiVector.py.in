@@ -45,6 +45,7 @@
 
 #
 # System imports
+from   __future__ import print_function
 import numpy
 import sys
 import unittest
@@ -88,9 +89,9 @@ class TpetraMultiVectorTestCase(unittest.TestCase):
                                                     self.numMyEl)
         self.elSize           = 1
         self.indexBase        = 0
-        globalEls             = range(self.numGlobalEl)
+        globalEls             = list(range(self.numGlobalEl))
         globalEls.reverse()  # Force this to be different from the linear distribution
-        self.start            = 4*self.myPID + self.myPID*(self.myPID-1)/2
+        self.start            = 4*self.myPID + self.myPID*(self.myPID-1) // 2
         self.myGlobalEls      = globalEls[self.start:self.start+self.numMyEl]
 
         self.map1             = Tpetra.Map(self.numGlobalElConst,
@@ -114,22 +115,22 @@ class TpetraMultiVectorTestCase(unittest.TestCase):
 
     def testConstructor0(self):
         "Test Tpetra.MultiVector constructor with no arguments"
-        print >>sys.stderr, self.typeStr, "... ",
+        print(self.typeStr, end=" ... ", file=sys.stderr)
         vector = Tpetra.MultiVector(dtype=self.typeCode)
 
     def testConstructor1(self):
         "Test Tpetra.MultiVector constructor for uniform, linear Map"
-        print >>sys.stderr, self.typeStr, "... ",
+        print(self.typeStr, end=" ... ", file=sys.stderr)
         vector = Tpetra.MultiVector(self.map1, 2, dtype=self.typeCode)
 
     def testConstructor2(self):
         "Test Tpetra.MultiVector constructor for uniform, linear Map, without zero-out"
-        print >>sys.stderr, self.typeStr, "... ",
+        print(self.typeStr, end=" ... ", file=sys.stderr)
         vector = Tpetra.MultiVector(self.map1, 3, False, dtype=self.typeCode)
 
     def testConstructor3(self):
         "Test Tpetra.MultiVector copy constructors"
-        print >>sys.stderr, self.typeStr, "... ",
+        print(self.typeStr, end=" ... ", file=sys.stderr)
         vector1 = Tpetra.MultiVector(self.map2, 4, dtype=self.typeCode)
         vector2 = Tpetra.MultiVector(vector1)
         vector3 = Tpetra.MultiVector(vector1, Teuchos.Copy)
@@ -185,15 +186,16 @@ if __name__ == "__main__":
     iAmRoot = comm.getRank() == 0
 
     # Run the test suite
-    if iAmRoot: print >>sys.stderr, \
-       "\n**************************\nTesting Tpetra.MultiVector\n**************************\n"
+    if iAmRoot:
+        print("\n**************************\nTesting Tpetra.MultiVector\n"
+              "**************************\n", file=sys.stderr)
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
     # Compute the total number of errors and failures
     errsPlusFails = comm.reduceAll(Teuchos.REDUCE_SUM,
                                    len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
 
     # Some versions of python don't properly delete suite upon exit
     del suite

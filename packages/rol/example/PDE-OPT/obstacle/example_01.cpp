@@ -57,6 +57,8 @@
 #include <algorithm>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_Bounds.hpp"
+#include "ROL_Bundle.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeobjective.hpp"
@@ -180,7 +182,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > hip
       = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(hi_rcp,pde,assembler));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
 
     // Run derivative checks
     obj->checkGradient(*up,*dup,true,*outStream);

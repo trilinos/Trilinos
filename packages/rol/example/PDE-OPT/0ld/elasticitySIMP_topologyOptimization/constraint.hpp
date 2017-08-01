@@ -45,14 +45,14 @@
 #ifndef ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_H
 #define ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "Amesos2.hpp"
 #include "filter.hpp"
 #include "data.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_ElasticitySIMP : public ROL::EqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_PDEOPT_ElasticitySIMP : public ROL::Constraint_SimOpt<Real> {
 private:
 
   const Teuchos::RCP<ElasticitySIMPOperators<Real> > data_;
@@ -65,7 +65,7 @@ public:
                                            const Teuchos::RCP<Teuchos::ParameterList> &parlist)
     : data_(data), filter_(filter) {}
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
   
   void value(ROL::Vector<Real> &c,
        const ROL::Vector<Real> &u,

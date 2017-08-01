@@ -8,7 +8,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective_SimOpt.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 
 
 template<class Real>
@@ -400,10 +400,10 @@ public:
 };
 
 template<class Real>
-class DiffusionEqualityConstraint : public ROL::EqualityConstraint_SimOpt<Real> {
+class DiffusionConstraint : public ROL::Constraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<FEM<Real> > FEM_;
-  bool num_solves_;
+  int num_solves_;
 
 /***************************************************************/
 /********** BEGIN PRIVATE MEMBER FUNCTION DECLARATION **********/
@@ -429,7 +429,7 @@ private:
 /*************************************************************/
 
 public:
-  DiffusionEqualityConstraint(const Teuchos::RCP<FEM<Real> > &FEM) : FEM_(FEM), num_solves_(0) {}
+  DiffusionConstraint(const Teuchos::RCP<FEM<Real> > &FEM) : FEM_(FEM), num_solves_(0) {}
 
   int getNumSolves(void) const {
     return num_solves_;

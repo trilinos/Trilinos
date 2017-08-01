@@ -49,6 +49,7 @@
 #include "ROL_InteriorPoint.hpp"
 #include "ROL_ObjectiveFromBoundConstraint.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_Constraint_Partitioned.hpp"
 
 
 namespace ROL {
@@ -56,14 +57,8 @@ namespace ROL {
 template <class Real>
 class InteriorPointStep : public Step<Real> {
 
-typedef InteriorPoint::PenalizedObjective<Real>   IPOBJ;
-typedef InteriorPoint::CompositeConstraint<Real>  IPCON;
-
-typedef PartitionedVector<Real> PV;
-typedef typename PV::size_type  size_type; 
-
-const static size_type OPT   = 0;
-const static size_type SLACK = 1;
+typedef InteriorPoint::PenalizedObjective<Real> IPOBJ;
+typedef Constraint_Partitioned<Real>            IPCON;
 
 private:
 
@@ -73,9 +68,10 @@ private:
   Teuchos::RCP<IPCON>                   ipcon_;
   Teuchos::RCP<Algorithm<Real> >        algo_;
   Teuchos::RCP<Teuchos::ParameterList>  parlist_;
+  Teuchos::RCP<BoundConstraint<Real> >  bnd_;
 
   // Storage
-  Teuchos::RCP<PV> x_;
+  Teuchos::RCP<Vector<Real> > x_;
   Teuchos::RCP<Vector<Real> > g_;
   Teuchos::RCP<Vector<Real> > l_;
   Teuchos::RCP<Vector<Real> > c_;
@@ -93,6 +89,8 @@ private:
   int subproblemIter_;  // Status test maximum number of iterations
 
   int verbosity_;       // Adjust level of detail in printing step information
+
+  bool hasEquality_;
 
 public:
  
@@ -112,7 +110,8 @@ public:
     x_(Teuchos::null),
     g_(Teuchos::null),
     l_(Teuchos::null),
-    c_(Teuchos::null) {
+    c_(Teuchos::null),
+    hasEquality_(false) {
 
     using Teuchos::ParameterList;
     
@@ -137,15 +136,15 @@ public:
     maxit_ = stlist.get("Iteration Limit", 100);
  
     parlist_ = Teuchos::rcp(&parlist, false);
-
   }
 
   /** \brief Initialize step with equality constraint 
    */
   void initialize( Vector<Real> &x, const Vector<Real> &g, 
                    Vector<Real> &l, const Vector<Real> &c,
-                   Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                   Objective<Real> &obj, Constraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
+    hasEquality_ = true;
 
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
@@ -153,7 +152,7 @@ public:
     state->constraintVec = c.clone();
 
     // Initialize storage
-    x_ = Teuchos::rcp_static_cast<PV>(x.clone());
+    x_ = x.clone();
     g_ = g.clone();
     l_ = l.clone();
     c_ = c.clone();
@@ -171,13 +170,13 @@ public:
     algo_state.ngrad = 0;
 
     Real zerotol = 0.0;
-    obj.update(*x_,true,algo_state.iter);
-    algo_state.value = obj.value(*x_,zerotol);
+    obj.update(x,true,algo_state.iter);
+    algo_state.value = obj.value(x,zerotol);
 
-    obj.gradient(*g_,*x_,zerotol);
+    obj.gradient(*g_,x,zerotol);
     algo_state.gnorm = g_->norm();
 
-    con.value(*c_,*x_,zerotol);
+    con.value(*c_,x,zerotol);
     algo_state.cnorm = c_->norm();
 
     algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
@@ -189,48 +188,122 @@ public:
 
   
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
-                   Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd, 
+                   Objective<Real> &obj, Constraint<Real> &con, BoundConstraint<Real> &bnd, 
                    AlgorithmState<Real> &algo_state ) {
+    bnd.projectInterior(x);
     initialize(x,g,l,c,obj,con,algo_state);
   }
 
+
+  /** \brief Initialize step with no equality constraint 
+   */
+  void initialize( Vector<Real> &x, const Vector<Real> &g, 
+                   Objective<Real> &obj, BoundConstraint<Real> &bnd,
+                   AlgorithmState<Real> &algo_state ) {
+    bnd.projectInterior(x);
+
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    state->descentVec    = x.clone();
+    state->gradientVec   = g.clone();
+
+    // Initialize storage
+    x_ = x.clone(); x_->set(x);
+    g_ = g.clone();
+
+    // Set initial penalty
+    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
+    ipobj_->updatePenalty(mu_);
+
+    algo_state.nfval = 0;
+    algo_state.ncval = 0;
+    algo_state.ngrad = 0;
+
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
+    obj.update(x,true,algo_state.iter);
+    algo_state.value = obj.value(x,zerotol);
+
+    obj.gradient(*g_,x,zerotol);
+    algo_state.gnorm = g_->norm();
+
+    algo_state.cnorm = static_cast<Real>(0);
+
+    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
+
+    bnd_ = Teuchos::rcp(new BoundConstraint<Real>());
+    bnd_->deactivate();
+  }
 
 
 
   /** \brief Compute step (equality constraints).
   */
-  void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                Objective<Real> &obj, EqualityConstraint<Real> &con, 
+  void compute( Vector<Real>         &s,
+                const Vector<Real>   &x,
+                const Vector<Real>   &l,
+                Objective<Real>      &obj,
+                Constraint<Real>     &con, 
                 AlgorithmState<Real> &algo_state ) {
+    // Grab interior point objective and constraint
+    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
+    ipcon_ = Teuchos::rcp(&Teuchos::dyn_cast<IPCON>(con),false);
 
     // Create the algorithm 
     algo_ = Teuchos::rcp( new Algorithm<Real>("Composite Step",*parlist_,false) );
 
-    x_->set(x);
-
     //  Run the algorithm
+    x_->set(x);
     algo_->run(*x_,*g_,*l_,*c_,*ipobj_,*ipcon_,false);
-
     s.set(*x_); s.axpy(-1.0,x);
 
     // Get number of iterations from the subproblem solve
     subproblemIter_ = (algo_->getState())->iter;
-    
   }
 
-  virtual void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                        Objective<Real> &obj, EqualityConstraint<Real> &con, 
-                        BoundConstraint<Real> &bnd,
-                        AlgorithmState<Real> &algo_state ) {
+  void compute( Vector<Real>          &s,
+                const Vector<Real>    &x,
+                const Vector<Real>    &l,
+                Objective<Real>       &obj,
+                Constraint<Real>      &con, 
+                BoundConstraint<Real> &bnd,
+                AlgorithmState<Real>  &algo_state ) {
     compute(s,x,l,obj,con,algo_state); 
+  }
+
+  // Bound constrained
+  void compute( Vector<Real>          &s,
+                const Vector<Real>    &x,
+                Objective<Real>       &obj,
+                BoundConstraint<Real> &bnd,
+                AlgorithmState<Real>  &algo_state ) {
+    // Grab interior point objective and constraint
+    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
+
+    // Create the algorithm 
+    algo_ = Teuchos::rcp( new Algorithm<Real>("Trust Region",*parlist_,false) );
+
+    //  Run the algorithm
+    x_->set(x);
+    algo_->run(*x_,*g_,*ipobj_,*bnd_,false);
+    s.set(*x_); s.axpy(-1.0,x);
+
+    // Get number of iterations from the subproblem solve
+    subproblemIter_ = (algo_->getState())->iter;
   }
 
 
 
   /** \brief Update step, if successful (equality constraints).
   */
-  void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s, Objective<Real> &obj, 
-               EqualityConstraint<Real> &con,  AlgorithmState<Real> &algo_state ) {
+  void update( Vector<Real>         &x,
+               Vector<Real>         &l,
+               const Vector<Real>   &s,
+               Objective<Real>      &obj, 
+               Constraint<Real>     &con,
+               AlgorithmState<Real> &algo_state ) {
+    // Grab interior point objective and constraint
+    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
+    ipcon_ = Teuchos::rcp(&Teuchos::dyn_cast<IPCON>(con),false);
 
     // If we can change the barrier parameter, do so
     if( (rho_< 1.0 && mu_ > mumin_) || (rho_ > 1.0 && mu_ < mumax_) ) {
@@ -262,20 +335,7 @@ public:
     ipcon_->applyAdjointJacobian(*g_,*l_,x,zerotol);
     state->gradientVec->plus(*g_);    
 
-    x_->set(x);
-    x_->axpy(-1.0,state->gradientVec->dual());
-
-    Elementwise::ThresholdUpper<Real> threshold(0.0);
-
-    //PartitionedVector<Real> &xpv = Teuchos::dyn_cast<PartitionedVector<Real> >(*x_);
-
-    Teuchos::RCP<Vector<Real> > slack = x_->get(SLACK);
-   
-    slack->applyUnary(threshold);
-
-    x_->axpy(-1.0,x);
-
-    algo_state.gnorm = x_->norm();
+    algo_state.gnorm = g_->norm();
     algo_state.cnorm = state->constraintVec->norm();
     algo_state.snorm = s.norm();
 
@@ -285,28 +345,66 @@ public:
     
   }
 
-  void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-               Objective<Real> &obj, EqualityConstraint<Real> &con,
+  void update( Vector<Real>          &x,
+               Vector<Real>          &l,
+               const Vector<Real>    &s,
+               Objective<Real>       &obj,
+               Constraint<Real>      &con,
                BoundConstraint<Real> &bnd,
-               AlgorithmState<Real> &algo_state ) {
+               AlgorithmState<Real>  &algo_state ) {
     update(x,l,s,obj,con,algo_state); 
+
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    x_->set(x);
+    x_->axpy(static_cast<Real>(-1),state->gradientVec->dual());
+    bnd.project(*x_);
+    x_->axpy(static_cast<Real>(-1),x);
+    algo_state.gnorm = x_->norm();
   }
 
+  void update( Vector<Real>          &x,
+               const Vector<Real>    &s,
+               Objective<Real>       &obj, 
+               BoundConstraint<Real> &bnd,
+               AlgorithmState<Real>  &algo_state ) {
+    // Grab interior point objective
+    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
 
+    // If we can change the barrier parameter, do so
+    if( (rho_< 1.0 && mu_ > mumin_) || (rho_ > 1.0 && mu_ < mumax_) ) {
+      mu_ *= rho_;
+      ipobj_->updatePenalty(mu_);
+    }
 
-  /** \brief Compute step for bound constraints; here only to satisfy the
-             interface requirements, does nothing, needs refactoring.
-  */
-  virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, 
-                        BoundConstraint<Real> &con, 
-                        AlgorithmState<Real> &algo_state ) {}
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+ 
+    // Update optimization vector
+    x.plus(s);
 
-  /** \brief Update step, for bound constraints; here only to satisfy the
-             interface requirements, does nothing, needs refactoring.
-  */
-  virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
-                       BoundConstraint<Real> &con,
-                       AlgorithmState<Real> &algo_state ) {}
+    algo_state.iterateVec->set(x);
+    state->descentVec->set(s);
+    algo_state.snorm = s.norm();
+    algo_state.iter++;
+
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
+
+    algo_state.value = ipobj_->value(x,zerotol);
+    algo_state.value = ipobj_->getObjectiveValue();
+
+    ipobj_->gradient(*g_,x,zerotol);
+    state->gradientVec->set(*g_);
+
+    x_->set(x);
+    x_->axpy(static_cast<Real>(-1),state->gradientVec->dual());
+    bnd.project(*x_);
+    x_->axpy(static_cast<Real>(-1),x);
+
+    algo_state.gnorm = x_->norm();
+    algo_state.snorm = s.norm();
+
+    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
+  }
 
   /** \brief Print iterate header.
   */
@@ -319,31 +417,43 @@ public:
       hist << "Interior Point status output definitions\n\n";
    
       hist << "  IPiter  - Number of interior point steps taken\n";
-      hist << "  CSiter  - Number of Composite Steps taken in each subproblem\n";
+      hist << "  SPiter  - Number of subproblem solver iterations\n";
       hist << "  penalty - Penalty parameter multiplying the barrier objective\n";
       hist << "  fval    - Number of objective evaluations\n";
-      hist << "  cnorm   - Norm of the composite constraint\n";
-      hist << "  gLnorm  - Norm of the Lagrangian's gradient\n";
+      if (hasEquality_) {
+        hist << "  cnorm   - Norm of the composite constraint\n";
+        hist << "  gLnorm  - Norm of the Lagrangian's gradient\n";
+      }
+      else {
+        hist << "  gnorm   - Norm of the projected norm of the objective gradient\n";
+      }
       hist << "  snorm   - Norm of step (update to optimzation and slack vector)\n";
       hist << "  #fval   - Number of objective function evaluations\n";
       hist << "  #grad   - Number of gradient evaluations\n";
-      hist << "  #cval   - Number of composite constraint evaluations\n"; 
+      if (hasEquality_) {
+        hist << "  #cval   - Number of composite constraint evaluations\n"; 
+      }
       hist << std::string(116,'-') << "\n";
-      
-     
     }
 
     hist << "  ";
     hist << std::setw(9)  << std::left  << "IPiter";
-    hist << std::setw(9)  << std::left  << "CSiter";
+    hist << std::setw(9)  << std::left  << "SPiter";
     hist << std::setw(15) << std::left  << "penalty";
     hist << std::setw(15) << std::left  << "fval";
-    hist << std::setw(15) << std::left  << "cnorm";
-    hist << std::setw(15) << std::left  << "gLnorm";
+    if (hasEquality_) {
+      hist << std::setw(15) << std::left  << "cnorm";
+      hist << std::setw(15) << std::left  << "gLnorm";
+    }
+    else {
+      hist << std::setw(15) << std::left  << "gnorm";
+    }
     hist << std::setw(15) << std::left  << "snorm";
     hist << std::setw(8)  << std::left  << "#fval";
     hist << std::setw(8)  << std::left  << "#grad";
-    hist << std::setw(8)  << std::left  << "#cval";
+    if (hasEquality_) {
+      hist << std::setw(8)  << std::left  << "#cval";
+    }
 
     hist << "\n";
     return hist.str();
@@ -353,7 +463,7 @@ public:
   */
   std::string printName( void ) const {
     std::stringstream hist;
-    hist << "\n" << "Composite Step Interior Point Solver\n";
+    hist << "\n" << "Primal Interior Point Solver\n";
     return hist.str();
   }
 
@@ -374,7 +484,9 @@ public:
       hist << std::setw(9)  << std::left << subproblemIter_;
       hist << std::setw(15) << std::left << mu_;
       hist << std::setw(15) << std::left << algo_state.value;
-      hist << std::setw(15) << std::left << algo_state.cnorm;
+      if (hasEquality_) {
+        hist << std::setw(15) << std::left << algo_state.cnorm;
+      }
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << "\n";
     }
@@ -384,22 +496,21 @@ public:
       hist << std::setw(9)  << std::left << subproblemIter_;
       hist << std::setw(15) << std::left << mu_;
       hist << std::setw(15) << std::left << algo_state.value;
-      hist << std::setw(15) << std::left << algo_state.cnorm;
+      if (hasEquality_) {
+        hist << std::setw(15) << std::left << algo_state.cnorm;
+      }
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << std::setw(15) << std::left << algo_state.snorm;
 //      hist << std::scientific << std::setprecision(6);
       hist << std::setw(8) << std::left << algo_state.nfval;
       hist << std::setw(8) << std::left << algo_state.ngrad;
-      hist << std::setw(8) << std::left << algo_state.ncval;
+      if (hasEquality_) {
+        hist << std::setw(8) << std::left << algo_state.ncval;
+      }
       hist << "\n";
     }
-
     return hist.str(); 
   }
-
-
-
-
 
 }; // class InteriorPointStep
 

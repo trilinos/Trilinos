@@ -154,21 +154,20 @@ using namespace NOX::Epetra;
 // Trilinos interface import
 %import "Teuchos.i"
 %teuchos_rcp(NOX::Abstract::Group)
-// %teuchos_rcp(NOX::Abstract::MultiVector)
-// %teuchos_rcp(NOX::Abstract::Vector)
 %teuchos_rcp(NOX::Epetra::Interface::Required)
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)
 %teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
-// Allow import from the parent directory, and force correct import of
-// ___init__
+// Allow import from the this directory and its parent, and force
+// correct import of ___init__
 %pythoncode
 %{
 import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+thisDir   = op.dirname(op.abspath(__file__))
+parentDir = op.normpath(op.join(thisDir,".."))
+if not thisDir   in sys.path: sys.path.append(thisDir)
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-from .. import Abstract
 if "delete_Group" not in dir(___init__):
     del ___init__
     from . import ___init__
@@ -199,6 +198,7 @@ if "delete_Group" not in dir(___init__):
 
 // Epetra import
 %import "Epetra.i"
+%#if PY_VERSION_HEX >= 0x03000000
 
 // EpetraExt import
 #ifdef HAVE_NOX_EPETRAEXT

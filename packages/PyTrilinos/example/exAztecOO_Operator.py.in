@@ -61,7 +61,8 @@
 
 #
 # System imports
-from optparse import *
+from __future__ import print_function
+from optparse   import *
 
 #
 # Parse the command-line arguments
@@ -186,8 +187,8 @@ class Laplace1D_Operator(Epetra.Operator):
             # under numpy 0.9.8.  The simpler notation in the comment above
             # works for newer versions of numpy.
 
-        except Exception, e:
-            print "Laplace1D_Operator.Apply error:", e
+        except Exception as e:
+            print("Laplace1D_Operator.Apply error:", e)
             return -1
 
         return 0
@@ -247,8 +248,8 @@ def main():
     # Solve the problem
     solver.Iterate(n, tol)
     if comm.MyPID() == 0:
-        if solver.ScaledResidual() < tol: print "End Result: TEST PASSED"
-        else:                             print "End Result: TEST FAILED"
+        if solver.ScaledResidual() < tol: print("End Result: TEST PASSED")
+        else:                             print("End Result: TEST FAILED")
 
 ################################################################################
 

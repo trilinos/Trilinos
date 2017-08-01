@@ -298,6 +298,12 @@ GeneralizedDavidsonSolMgr<ScalarType,MV,OP>::GeneralizedDavidsonSolMgr(
     // Build solver
     d_outputMan->stream(Debug) << " >> Anasazi::GeneralizedDavidsonSolMgr: Building solver" << std::endl;
     d_solver = Teuchos::rcp( new GeneralizedDavidson<ScalarType,MV,OP>( problem, d_sortMan, d_outputMan, d_tester, d_orthoMan, pl ) );
+
+    TEUCHOS_TEST_FOR_EXCEPTION(d_solver->getMaxSubspaceDim() < d_restartDim, std::invalid_argument,
+        "The maximum size of the subspace dimension (" << d_solver->getMaxSubspaceDim() << ") must "
+        "not be smaller than the size of the restart space (" << d_restartDim << "). "
+        "Please adjust \"Restart Dimension\" and/or \"Maximum Subspace Dimension\" parameters.");
+
 }
 
 //---------------------------------------------------------------------------//

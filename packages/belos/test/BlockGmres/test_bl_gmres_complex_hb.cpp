@@ -49,6 +49,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosStatusTestLogResNorm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -204,6 +205,11 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
       return EXIT_FAILURE;
     }
+
+    // Use a debugging status test to save absolute residual history.
+    // Debugging status tests are peer to the native status tests that are called whenever convergence is checked.
+    Belos::StatusTestLogResNorm<ST,MV,OP> debugTest = Belos::StatusTestLogResNorm<ST,MV,OP>( maxits );
+
     //
     // *******************************************************************
     // *************Start the block Gmres iteration***********************
@@ -214,6 +220,9 @@ int main(int argc, char *argv[]) {
       solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
     else
       solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
+
+    solver->setDebugStatusTest( Teuchos::rcp(&debugTest, false) );
+
     //
     // **********Print out information about problem*******************
     //
@@ -245,6 +254,17 @@ int main(int argc, char *argv[]) {
       if ( norm_num[i] / norm_denom[i] > tol ) {
         norm_failure = true;
       }
+    }
+
+    // Print absolute residual norm logging.
+    const std::vector<MT> residualLog = debugTest.getLogResNorm();
+    if (numrhs==1 && proc_verbose && residualLog.size())
+    {
+      std::cout << "Absolute residual 2-norm [ " << residualLog.size() << " ] : ";
+      for (unsigned int i=0; i<residualLog.size(); i++)
+        std::cout << residualLog[i] << " ";
+      std::cout << std::endl;
+      std::cout << "Final abs 2-norm / rhs 2-norm : " << residualLog[residualLog.size()-1] / norm_denom[0] << std::endl;
     }
 
     // Clean up.

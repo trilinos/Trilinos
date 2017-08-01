@@ -618,7 +618,7 @@ namespace Belos {
 #endif
 
     ScalarType    ONE  = SCT::one();
-    //ScalarType    ZERO  = SCT::zero();
+    const MagnitudeType ZERO = MGT::zero();
 
     int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
@@ -722,11 +722,14 @@ namespace Belos {
         MVT::MvDot( X, *MX, diag );
       }
       (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
-      rank = 1;
-      MVT::MvScale( X, ONE/(*B)(0,0) );
-      if (this->_hasOp) {
-        // Update MXj.
-        MVT::MvScale( *MX, ONE/(*B)(0,0) );
+
+      if (SCT::magnitude((*B)(0,0)) > ZERO) {
+        rank = 1;
+        MVT::MvScale( X, ONE/(*B)(0,0) );
+        if (this->_hasOp) {
+          // Update MXj.
+          MVT::MvScale( *MX, ONE/(*B)(0,0) );
+        }
       }
     }
     else {

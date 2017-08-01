@@ -45,7 +45,8 @@
 
 #
 # System imports
-from   optparse import *
+from   __future__ import print_function
+from   optparse   import *
 import sys
 
 #
@@ -99,15 +100,15 @@ def main():
     XMLWriter = EpetraExt.XMLWriter(comm, "data.xml")
 
     XMLWriter.Create("test xml file")
-    if iAmRoot: print "Writing map ...",
+    if iAmRoot: print("Writing map ...", end="")
     XMLWriter.Write("map"   , map   )
-    if iAmRoot: print "ok"
-    if iAmRoot: print "Writing vector ...",
+    if iAmRoot: print("ok")
+    if iAmRoot: print("Writing vector ...", end="")
     XMLWriter.Write("x"     , x     )
-    if iAmRoot: print "ok"
-    if iAmRoot: print "Writing matrix ...",
+    if iAmRoot: print("ok")
+    if iAmRoot: print("Writing matrix ...", end="")
     XMLWriter.Write("matrix", matrix)
-    if iAmRoot: print "ok"
+    if iAmRoot: print("ok")
     XMLWriter.Close()
 
     # --------------------------------- #
@@ -116,38 +117,38 @@ def main():
 
     XMLReader = EpetraExt.XMLReader(comm, "data.xml")
 
-    if iAmRoot: print "Reading map ...",
+    if iAmRoot: print("Reading map ...", end="")
     map2 = XMLReader.ReadMap("map")
     if map2 is None:
-        print "FAIL:  map2 is None on processor", myPID
+        print("FAIL:  map2 is None on processor", myPID)
         return 1
-    if iAmRoot: print "ok"
+    if iAmRoot: print("ok")
 
-    if iAmRoot: print "Reading vector ...",
+    if iAmRoot: print("Reading vector ...", end="")
     x2 = XMLReader.ReadMultiVector("x")
     if x2 is None:
-        print "FAIL:  x2 is None on processor", myPID
+        print("FAIL:  x2 is None on processor", myPID)
         return 1
-    if iAmRoot: print "ok"
+    if iAmRoot: print("ok")
 
-    if iAmRoot: print "Reading matrix ...",
+    if iAmRoot: print("Reading matrix ...", end="")
     matrix2 = XMLReader.ReadCrsMatrix("matrix")
     if matrix2 is None:
-        print "FAIL: matrix2 is None on processor", myPID
+        print("FAIL: matrix2 is None on processor", myPID)
         return 1
-    if iAmRoot: print "ok"
+    if iAmRoot: print("ok")
 
     x2.Update(1.0, x, -1.0)
     norm = x2.Norm2()
 
-    if iAmRoot: print "Checking tolerance ...",
+    if iAmRoot: print("Checking tolerance ...", end="")
     if abs(norm) < tolerance:
-        if iAmRoot: print "ok"
+        if iAmRoot: print("ok")
     else:
         if iAmRoot:
-            print "FAILED:"
-            print "  abs(norm) =", abs(norm)
-            print "  tolerance =", tolerance
+            print("FAILED:")
+            print("  abs(norm) =", abs(norm))
+            print("  tolerance =", tolerance)
         return 1
 
     return 0
@@ -157,5 +158,5 @@ def main():
 if __name__ == "__main__":
     failures = main()
     failures = comm.SumAll(failures)
-    if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if failures == 0 and iAmRoot: print("End Result: TEST PASSED")
     sys.exit(failures)

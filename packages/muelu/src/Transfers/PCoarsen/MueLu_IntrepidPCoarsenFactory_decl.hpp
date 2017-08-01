@@ -74,10 +74,10 @@ namespace MueLu {
 
   /*!
     @class IntrepidPCoarsenFactory class.
-    @brief Factory for building transfer operators based on coarsening in polynomial degree, following the Intrepid basis functions
     @ingroup MueLuTransferClasses
+    @brief Factory for building transfer operators based on coarsening in polynomial degree, following the Intrepid basis functions
 
-    ## Input/output of IntrepidPCoarsenFractory ##
+    ## Input/output of IntrepidPCoarsenFactory ##
 
     ### User parameters of IntrepidPCoarsenFactory ###
     Parameter | type | default | master.xml | validated | requested | description
@@ -85,9 +85,9 @@ namespace MueLu {
     | pcoarsen: schedule                          | string  | ""    | * | * |   | String describing the higher order coarsening scheme to use |
     | pcoarsen: element                          | string  | ""    | * | * |   | String describing the class of element to use for higher order coarsening |
     | pcoarsen: hi basis                          | string  | ""    | * | * |   | String describing higher-order basis function used |
-    | pcoarsen: lo basis                          | string  | ""    | * | * |   | String describing lower-order basis function to be used for coarse grid|
-    | pcoarsen: element to node map               | RCP<Intrepid::FieldContainer<LocalOrdinal> > | null | * | * | A FieldContainer with the element-to-node map in local ids compatible with the matrix column map |
-    | A                                      | Factory | null  |   | * | * | Generating factory of the matrix A used during the prolongator smoothing process |
+    | pcoarsen: lo basis                          | string  | ""    | * | * |   | String describing lower-order basis function to be used for coarse grid |
+    | pcoarsen: element to node map               | RCP<Intrepid::FieldContainer<LocalOrdinal> > | null | * | * |   | A FieldContainer with the element-to-node map in local ids compatible with the matrix column map |
+    | A                                      | Factory | null      | * | * |   | Generating factory of the matrix A used during the prolongator smoothing process |
 
 
     The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>

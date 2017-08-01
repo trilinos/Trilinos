@@ -49,9 +49,6 @@
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
 
-#include "RTOpPack_TOpAbs.hpp"
-#include "RTOpPack_ROpNorm1.hpp"
-
 namespace Thyra {
 
 
@@ -177,9 +174,9 @@ absRowSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const
   using Teuchos::tuple;
 
   // compute absolute value of multi-vector
-  RTOpPack::TOpAbs<Scalar> abs_op;
   RCP<MultiVectorBase<Scalar> > abs_mv = createMembers(this->range(),this->domain());
-  ::Thyra::applyOp<Scalar>( abs_op, tuple(ptrFromRef(*this)), tuple(abs_mv.ptr()), Teuchos::null );
+  for (Ordinal i = 0; i < abs_mv->domain()->dim(); ++i)
+    abs_mv->col(i)->abs(*this->col(i));
 
   // compute sum over all rows
   RCP<VectorBase<Scalar> > ones = Thyra::createMember(this->domain());
@@ -199,26 +196,10 @@ absColSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const
 
   RTOpPack::SubVectorView<Scalar> view;
   output->acquireDetachedView(Thyra::Range1D(),&view);
-
-  // Thyra::norms_1<Scalar>(*this,view.values()());
-
-  ArrayView<Scalar> norms = view.values()();
-  RTOpPack::ROpNorm1<Scalar> op;
-
-  const int m = this->domain()->dim();
-  Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
-  Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
-  for( int kc = 0; kc < m; ++kc ) {
-    rcp_op_targs[kc] = op.reduct_obj_create();
-    op_targs[kc] = rcp_op_targs[kc].ptr();
-  }
-  ::Thyra::applyOp<Scalar>(op, tuple(ptrInArg(*this)),
-    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
-    op_targs );
-  for( int kc = 0; kc < m; ++kc ) {
-    norms[kc] = op(*op_targs[kc]);
-  }
-  
+  Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(view.values().size());
+  this->norms_1(norms());
+  for (Ordinal i = 0; i < norms.size(); ++i)
+    view[i] = Teuchos::as<Scalar>(norms[i]);
   output->commitDetachedView(&view);
 }
 

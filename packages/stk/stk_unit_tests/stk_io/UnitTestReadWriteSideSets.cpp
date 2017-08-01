@@ -15,8 +15,10 @@ TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
 
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     if ( stk::parallel_machine_size(comm) == 2)
+    {
         for(std::string& input_file_name : filesToTest)
             EXPECT_NO_THROW(stk::unit_test_util::sideset::test_reading_writing_sideset_from_file(comm, input_file_name, "new.e")) << " for file " << input_file_name;
+    }
 }
 
 TEST(StkIo, DISABLED_read_write_and_compare_exo_files_with_sidesets_because_PMR_for_coincident_not_implemented_yet)
@@ -27,8 +29,10 @@ TEST(StkIo, DISABLED_read_write_and_compare_exo_files_with_sidesets_because_PMR_
 
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     if ( stk::parallel_machine_size(comm) == 2)
+    {
         for(std::string& input_file_name : filesToTest)
             EXPECT_NO_THROW(stk::unit_test_util::sideset::test_reading_writing_sideset_from_file(comm, input_file_name, "new.e")) << " for file " << input_file_name;
+    }
 }
 
 bool does_entity_have_part(const stk::mesh::BulkData& bulk, stk::mesh::Entity entity, stk::mesh::Part& input_part)
@@ -63,9 +67,13 @@ TEST(StkIo, test_side_membership)
         stk::mesh::Entity side = bulk.declare_element_side(element, side_ord, parts);
 
         if(bulk.parallel_rank()==0)
+        {
             EXPECT_TRUE(does_entity_have_part(bulk, side, partProc0));
+        }
         else
+        {
             EXPECT_TRUE(does_entity_have_part(bulk, side, partProc1));
+        }
 
         bulk.modification_end();
 

@@ -96,7 +96,7 @@ void printVector( const ROL::Vector<Real> &x, std::ostream &outStream ) {
 
 // Exact residual for H&S Problem 41
 template<class Real>
-void value( ROL::Vector<Real> &c, const ROL::Vector<Real> &sol, const Real &mu ) { 
+void value( ROL::Vector<Real> &c, const ROL::Vector<Real> &sol, const Real &mu ) {
 
   typedef std::vector<Real>            vector;
   typedef ROL::StdVector<Real>         SV;
@@ -136,12 +136,12 @@ void value( ROL::Vector<Real> &c, const ROL::Vector<Real> &sol, const Real &mu )
   czl[1] = x[1]*zl[1] - mu;
   czl[2] = x[2]*zl[2] - mu;
   czl[3] = x[3]*zl[3] - mu;
-   
+ 
   czu[0] = (1.0-x[0])*zu[0] - mu;
   czu[1] = (1.0-x[1])*zu[1] - mu;
   czu[2] = (1.0-x[2])*zl[2] - mu;
   czu[3] = (2.0-x[3])*zl[3] - mu;
-}    
+}
  
 
 
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>                          V;
   typedef ROL::PartitionedVector<RealT>               PV;
   typedef ROL::Objective<RealT>                       OBJ;
-  typedef ROL::EqualityConstraint<RealT>              CON;
+  typedef ROL::Constraint<RealT>                      CON;
   typedef ROL::BoundConstraint<RealT>                 BND;
   typedef ROL::OptimizationProblem<RealT>             OPT;
   typedef ROL::NonlinearProgram<RealT>                NLP;
@@ -262,17 +262,17 @@ int main(int argc, char *argv[]) {
     RCP<V>   x   = opt->getSolutionVector();
     RCP<V>   l   = opt->getMultiplierVector();
     RCP<V>   zl  = x->clone();
-    RCP<V>   zu  = x->clone(); 
+    RCP<V>   zu  = x->clone();
 
     RCP<V>   scratch = x->clone();
 
     RCP<PV>  x_pv = Teuchos::rcp_dynamic_cast<PV>(x);
 
-    RCP<V>   sol = CreatePartitionedVector(x,l,zl,zu);   
+    RCP<V>   sol = CreatePartitionedVector(x,l,zl,zu);
 
     RCP<V>   c = sol->clone();
     RCP<V>   v = sol->clone();
-    RCP<V>  jv = sol->clone(); 
+    RCP<V>  jv = sol->clone();
 
     RCP<V>   c_exact = c->clone();
     RCP<V>  jv_exact = jv->clone();
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
 
 
     RCP<OBJ> obj = opt->getObjective();
-    RCP<CON> con = opt->getEqualityConstraint();
+    RCP<CON> con = opt->getConstraint();
     RCP<BND> bnd = opt->getBoundConstraint();
 
     PENALTY penalty(obj,bnd,parlist);

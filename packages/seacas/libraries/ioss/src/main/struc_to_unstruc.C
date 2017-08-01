@@ -613,8 +613,9 @@ namespace {
     // database...
     for (const auto &field_name : fields) {
       Ioss::Field field = ige->get_field(field_name);
-      if (field_name != "ids" && !oge->field_exists(field_name))
+      if (field_name != "ids" && !oge->field_exists(field_name)) {
         oge->field_add(field);
+      }
     }
   }
 

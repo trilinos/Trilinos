@@ -136,12 +136,11 @@ int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars)
     if (status == NC_EBADDIM) {
       EX_FUNC_LEAVE(EX_NOERR); /* no global variables defined */
     }
-    else {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s variable names in file id %d",
-               ex_name_of_object(obj_type), exoid);
-      ex_err("ex_get_variable_param", errmsg, status);
-      EX_FUNC_LEAVE(EX_FATAL);
-    }
+
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s variable names in file id %d",
+             ex_name_of_object(obj_type), exoid);
+    ex_err("ex_get_variable_param", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &dimlen)) != NC_NOERR) {

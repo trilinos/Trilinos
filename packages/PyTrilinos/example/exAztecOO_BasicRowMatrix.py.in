@@ -141,8 +141,8 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
             else:
                 NumEntries[0] = 3
             return 0
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             return -1
 
     def ExtractMyEntryView(self, CurIndex, Value, RowIndex, ColIndex):
@@ -176,8 +176,8 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
             RowIndex[0] = row
             ColIndex[0] = col + row - 1
             return 0
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             return -1
 
     def ExtractMyRowCopy(self, MyRow, Length, NumEntries, Values, Indices):
@@ -207,8 +207,8 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
                                  colMap.LID(globalRow  ),
                                  colMap.LID(globalRow+1)]
             return 0
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             return -1
 
 ################################################################################
@@ -246,8 +246,8 @@ def main():
     # Solve the problem
     solver.Iterate(n, tol)
     if comm.MyPID() == 0:
-        if solver.ScaledResidual() < tol: print "End Result: TEST PASSED"
-        else:                             print "End Result: TEST FAILED"
+        if solver.ScaledResidual() < tol: print("End Result: TEST PASSED")
+        else:                             print("End Result: TEST FAILED")
 
 ################################################################################
 

@@ -48,7 +48,7 @@
 #include "AnasaziTypes.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziRTRSolMgr.hpp"
+#include "AnasaziFactory.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -194,10 +194,10 @@ int main(int argc, char *argv[])
     MyPL.set( "Convergence Tolerance", tol );
     //
     // Create the solver manager
-    Anasazi::RTRSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
+    auto MySolverMgr = Anasazi::Factory::create("RTR", problem, MyPL);
 
     // Solve the problem to the specified tolerances or length
-    Anasazi::ReturnType returnCode = MySolverMgr.solve();
+    Anasazi::ReturnType returnCode = MySolverMgr->solve();
     success = (returnCode == Anasazi::Converged);
 
     // Get the eigenvalues and eigenvectors from the eigenproblem

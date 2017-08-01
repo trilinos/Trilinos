@@ -857,7 +857,8 @@ C     --Squeeze the nodal point sets
 
          IF (DELNP) THEN
             CALL ZMNPS (NUMNPS, IA(KINPSS), LNPSNL, LNPSDF,
-     *       IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KLTNNS), A(KFACNS))
+     *       IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KLTNNS), A(KFACNS),
+     *       C(KNAMNP))
          END IF
 
 C     ... Fix up the truth table if the nodeset count changes... 
@@ -871,9 +872,9 @@ C     ... Fix up the truth table if the nodeset count changes...
            call muntt(numnps0, numnps, nvarns, 
      $       ia(knsvok0), ia(knsvok), ia(kinpss))
 
-C ... check that the sidesets that are retained contain the same number
-C     of faces that the original sidesets contain.  At the current time,
-C     can only map sideset variables if the sidesets are the same...
+C ... check that the nodesets that are retained contain the same number
+C     of nodes that the original nodesets contain.  At the current time,
+C     can only map nodeset variables if the nodesets are the same...
             i1 = 0
             do i=0,numnps0-1
                if (ia(kinpss+i) .eq.0) then

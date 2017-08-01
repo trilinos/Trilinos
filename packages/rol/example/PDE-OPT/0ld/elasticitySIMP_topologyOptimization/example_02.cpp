@@ -54,12 +54,12 @@
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 
 #include "ROL_ScaledTpetraMultiVector.hpp"
 #include "ROL_ScaledStdVector.hpp"
 
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_Elementwise_Reduce.hpp"
@@ -197,9 +197,9 @@ int main(int argc, char *argv[]) {
       sum += buildSampler.get()->getMyWeight(i) * tmp;
     }
     ROL::Elementwise::ReductionMin<RealT> ROLmin;
-    buildSampler.getBatchManager()->reduceAll(&min,&gmin,ROLmin);
+    buildSampler.getBatchManager()->reduceAll(&min,&gmin,1,ROLmin);
     ROL::Elementwise::ReductionMax<RealT> ROLmax;
-    buildSampler.getBatchManager()->reduceAll(&max,&gmax,ROLmax);
+    buildSampler.getBatchManager()->reduceAll(&max,&gmax,1,ROLmax);
     buildSampler.getBatchManager()->sumAll(&sum,&gsum,1);
     bool useExpValScale = stoch_parlist->sublist("Problem").get("Use Expected Value Scaling",false);
     RealT scale = (useExpValScale ? gsum : gmin);
@@ -207,11 +207,11 @@ int main(int argc, char *argv[]) {
     /*** Build objective function, constraint and reduced objective function. ***/
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
        = Teuchos::rcp(new ParametrizedObjective_PDEOPT_ElasticitySIMP<RealT>(data, filter, parlist,scale));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
        = Teuchos::rcp(new ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP<RealT>(data, filter, parlist));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
        = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, dwp));
-    Teuchos::RCP<ROL::EqualityConstraint<RealT> > volcon
+    Teuchos::RCP<ROL::Constraint<RealT> > volcon
        = Teuchos::rcp(new EqualityConstraint_PDEOPT_ElasticitySIMP_Volume<RealT>(data, parlist));
 
     /*** Build bound constraint ***/
@@ -222,10 +222,11 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(lo_rcp, zscale_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > hip
       = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(hi_rcp, zscale_rcp));
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
 
     /*** Build Stochastic Functionality. ***/
-    ROL::StochasticProblem<RealT> opt(*stoch_parlist,objReduced,buildSampler.get(),zp,bnd);
+    ROL::OptimizationProblem<RealT> opt(objReduced,zp,bnd);
+    opt.setStochasticObjective(*stoch_parlist,buildSampler.get());
 
     /*** Check functional interface. ***/
     bool checkDeriv = parlist->sublist("Problem").get("Derivative Check",false);
@@ -243,8 +244,7 @@ int main(int argc, char *argv[]) {
 //      con->checkApplyJacobian(x,d,*up,true,*outStream);
 //      con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
       *outStream << "Checking Reduced Objective:" << "\n";
-      opt.checkObjectiveGradient(*dzp,true,*outStream);
-      opt.checkObjectiveHessVec(*dzp,true,*outStream);
+      opt.check(*outStream);
       *outStream << "Checking Volume Constraint:" << "\n";
       volcon->checkAdjointConsistencyJacobian(*vcp,*dzp,*zp,true,*outStream);
       volcon->checkApplyJacobian(*zp,*dzp,*vcp,true,*outStream);

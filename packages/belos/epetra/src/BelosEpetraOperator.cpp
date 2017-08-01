@@ -45,6 +45,7 @@
 */
 
 #include "BelosEpetraOperator.h"
+#include "BelosSolverFactory.hpp"
 
 namespace Belos {
 
@@ -80,17 +81,24 @@ EpetraOperator::EpetraOperator( const Teuchos::RCP<LinearProblem<double,Epetra_M
   // exist already and just be reset with a new RHS.
   //
   if (solver == "BlockGmres") {
-    solver_ = Teuchos::rcp( new BlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist_ ) );
+    solver = "Block Gmres";
   } 
   else if (solver == "PseudoBlockGmres") {
-    solver_ = Teuchos::rcp( new PseudoBlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist_ ) );
+    solver = "Pseudo Block Gmres";
   }
   else if (solver == "BlockCG") {
-    solver_ = Teuchos::rcp( new BlockCGSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist) );
+    solver = "Block CG";
   }
   else if (solver == "PseudoBlockCG") {
-    solver_ = Teuchos::rcp( new PseudoBlockCGSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist_ ) );
+    solver = "Pseudo Block CG";
   }
+
+  plist_->remove( "Solver" );
+  
+  Belos::SolverFactory<double,Epetra_MultiVector,Epetra_Operator> factory;
+  solver_ = factory.create( solver, plist );
+  solver_->setProblem( lp_ );
+
 }
 
 const Epetra_Comm& EpetraOperator::Comm() const 
@@ -110,12 +118,13 @@ const Epetra_Map& EpetraOperator::OperatorRangeMap() const
 
 int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
 {
-  Teuchos::RCP<const Epetra_MultiVector> vec_X;
-  Teuchos::RCP<Epetra_MultiVector> vec_Y;
-  vec_X = Teuchos::rcp( &X, false );
-  vec_Y = Teuchos::rcp( &Y, false );
+  Teuchos::RCP<const Epetra_MultiVector> vec_X = Teuchos::rcp( &X, false );
+  Teuchos::RCP<Epetra_MultiVector> vec_Y = Teuchos::rcp( &Y, false );
   if (initSolnVec_)
+  {
     vec_Y->PutScalar( 0.0 );
+    lp_->setInitResVec( vec_X );
+  }
   lp_->setProblem( vec_Y, vec_X );
   Belos::ReturnType ret = solver_->solve();
   
@@ -127,13 +136,14 @@ int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) 
 
 int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
 {
-  Teuchos::RCP<const Epetra_MultiVector> vec_X;
-  Teuchos::RCP<Epetra_MultiVector> vec_Y;
-  vec_X = Teuchos::rcp( &X, false );
-  vec_Y = Teuchos::rcp( &Y, false );
+  Teuchos::RCP<const Epetra_MultiVector> vec_X = Teuchos::rcp( &X, false );
+  Teuchos::RCP<Epetra_MultiVector> vec_Y = Teuchos::rcp( &Y, false );
   if (initSolnVec_)
+  {
     vec_Y->PutScalar( 0.0 );
-  lp_->setProblem( vec_Y, vec_X );
+    lp_->setInitResVec( vec_X );
+  }
+  lp_->setProblem( vec_Y, vec_X ); 
   Belos::ReturnType ret = solver_->solve();
   
   if (ret != Converged) 

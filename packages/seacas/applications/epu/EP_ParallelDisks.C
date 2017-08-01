@@ -48,7 +48,7 @@
 Excn::ParallelDisks::ParallelDisks() : number_of_raids(0), raid_offset(0) {}
 
 /*****************************************************************************/
-Excn::ParallelDisks::~ParallelDisks() {}
+Excn::ParallelDisks::~ParallelDisks() = default;
 
 /*****************************************************************************/
 void Excn::ParallelDisks::Number_of_Raids(int i)
@@ -79,7 +79,7 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   // Possible to have node layout without parallel disks
 
   std::string prepend;
-  if (rootdir.length()) {
+  if (rootdir.length() != 0u) {
     prepend = rootdir + "/";
   }
   else if (Excn::is_path_absolute(name)) {
@@ -90,14 +90,14 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   }
 
   int lnn = node;
-  if (number_of_raids) {
+  if (number_of_raids != 0) {
     int diskn = lnn % number_of_raids;
     Create_IO_Filename(name, lnn, numproc);
     name = disk_names[diskn] + "/" + subdir + "/" + name;
   }
   else {
     Create_IO_Filename(name, lnn, numproc);
-    if (subdir.length()) {
+    if (subdir.length() != 0u) {
       name = subdir + "/" + name;
     }
   }
@@ -109,8 +109,9 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
 void Excn::ParallelDisks::create_disk_names()
 {
 
-  if (!number_of_raids)
+  if (number_of_raids == 0) {
     return;
+  }
 
   disk_names.resize(number_of_raids);
   for (int i = 0; i < number_of_raids; i++) {

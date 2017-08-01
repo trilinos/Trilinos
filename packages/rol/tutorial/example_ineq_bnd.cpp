@@ -51,7 +51,8 @@
 
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdObjective.hpp"
-#include "ROL_StdInequalityConstraint.hpp"
+#include "ROL_StdConstraint.hpp"
+#include "ROL_Bounds.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -92,7 +93,7 @@ public:
 /* INEQUALITY CONSTRAINT */
 
 template<class Real> 
-class InequalityQL : public ROL::StdInequalityConstraint<Real> {
+class InequalityQL : public ROL::StdConstraint<Real> {
 private:
   std::vector<Real> coeff;
   Real offset;
@@ -158,15 +159,20 @@ int main(int argc, char *argv[]) {
 
     RCP<std::vector<RealT> > x_rcp  = rcp( new std::vector<RealT>(5,1.0) );
     RCP<std::vector<RealT> > li_rcp = rcp( new std::vector<RealT>(1,0.0) );
+    RCP<std::vector<RealT> > ll_rcp = rcp( new std::vector<RealT>(1,0.0) );
+    RCP<std::vector<RealT> > lu_rcp = rcp( new std::vector<RealT>(1,ROL::ROL_INF<RealT>()) );
 
     RCP<ROL::Vector<RealT> > x  = rcp( new ROL::StdVector<RealT>(x_rcp) );
     RCP<ROL::Vector<RealT> > li = rcp( new ROL::StdVector<RealT>(li_rcp) );
+    RCP<ROL::Vector<RealT> > ll = rcp( new ROL::StdVector<RealT>(ll_rcp) );
+    RCP<ROL::Vector<RealT> > lu = rcp( new ROL::StdVector<RealT>(lu_rcp) );
 
     RCP<ROL::Objective<RealT> >             obj  = rcp( new ObjectiveQL<RealT>() );
-    RCP<ROL::InequalityConstraint<RealT> >  ineq = rcp( new InequalityQL<RealT>() );
-    RCP<ROL::BoundConstraint<RealT> >       bnd  = rcp( new ROL::BoundConstraint<RealT>(lower,upper) );
+    RCP<ROL::BoundConstraint<RealT> >       bnd  = rcp( new ROL::Bounds<RealT>(lower,upper) );
+    RCP<ROL::Constraint<RealT> >            ineq = rcp( new InequalityQL<RealT>() );
+    RCP<ROL::BoundConstraint<RealT> >       ibnd = rcp( new ROL::Bounds<RealT>(ll,lu) );
 
-    ROL::OptimizationProblem<RealT> problem( obj, x, bnd, Teuchos::null, Teuchos::null, ineq, li );    
+    ROL::OptimizationProblem<RealT> problem( obj, x, bnd, ineq, li, ibnd);    
 
     /* checkAdjointJacobianConsistency fails for the OptimizationProblem if we don't do this first... why? */
     RCP<ROL::Vector<RealT> > u = x->clone(); 

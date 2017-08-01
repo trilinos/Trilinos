@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2016-10-20 16:13:25 mhoemme"
+#+DATE: Time-stamp: "2017-07-07 13:37:52 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -17,6 +17,160 @@ this with source code, error messages, and other such things that call
 for literalness.
 
 * Questions about building Tpetra
+** How do I build and run Tpetra to use OpenMP for threads?
+
+*** Introduction
+
+OpenMP is a portable standard for thread parallelism.  Tpetra uses
+Kokkos (see github.com/kokkos) to run in a thread-parallel way using
+any of various back-ends, including OpenMP.  You do not need to know
+OpenMP in order to build or use Tpetra on GPUs.  However, you should
+have some familiarity with thread parallelism and Kokkos ideas.
+
+*** Assumptions
+
+Tpetra relies on Kokkos for OpenMP support.  Thus, Tpetra inherits
+Kokkos' assumptions about OpenMP.  Kokkos's OpenMP back-end assumes
+only OpenMP 3.x; it does not currently require OpenMP 4.x.  (Kokkos
+has a separate OpenMP 4.x back-end in development.)
+
+In order for Tpetra to use OpenMP, you must build Trilinos with a
+compiler that supports OpenMP 3.x.
+
+*** How do I build Tpetra for OpenMP?
+
+Set the following CMake variable:
+
+#+BEGIN_EXAMPLE
+-D Trilinos_ENABLE_OpenMP:BOOL=ON
+#+END_EXAMPLE
+
+Setting this option tells Trilinos' build system to deduce any
+OpenMP-related compiler and linker flags.  Trilinos will then add
+those flags automatically to the compiler's or linker's command line.
+You generally do not need to add such flags to e.g.,
+~CMAKE_CXX_FLAGS~.  We have success with this approach with the GCC
+and Intel compilers; other compilers are supported too.  If Trilinos
+cannot figure out the OpenMP compiler or linker flags, the
+configuration process will fail with an informative error message.  In
+that case, you must add the required flags yourself.
+
+If you enable OpenMP using the above instructions, Kokkos will enable
+its OpenMP support by default.  If Kokkos enables its OpenMP support,
+Tpetra will enable its OpenMP support by default.  (See "How does
+Tpetra pick its default Kokkos execution space?" below.)  Avoid
+setting CMake options explicitly; this hinders portability and makes
+your build configuration unnecessarily complicated.
+
+** How do I build and run Tpetra for NVIDIA GPUs (CUDA)?
+*** Introduction
+
+Tpetra uses Kokkos (see github.com/kokkos) to run in a thread-parallel
+way on NVIDIA Graphics Processing Units (GPUs).  Tpetra does so using
+Kokkos' CUDA back-end.  CUDA is a programming language that extends a
+subset of the C++ programming language.  You do not need to know CUDA
+in order to build or use Tpetra on GPUs.  However, you should have
+some familiarity with Kokkos ideas of multiple memory spaces, multiple
+execution spaces, and asynchronous kernel launch.
+
+*** Assumptions
+
+Tpetra requires at least CUDA 7.5, and is regularly tested with CUDA
+8.0.  Tpetra itself requires C++11, but Tpetra does not currently need
+the "device lambdas" feature in order to build and pass tests.
+Trilinos currently tests CUDA builds only with MPI enabled, and only
+with the OpenMPI implementation of MPI. We recommend OpenMPI 1.8.x at
+a minimum, preferably newer.
+
+Tpetra currently assumes Unified Virtual Memory (UVM) with CUDA.  It
+currently requires kernel launches to block.  In particular, it
+requires the following environment variables to be set:
+
+#+BEGIN_EXAMPLE
+  export CUDA_LAUNCH_BLOCKING=1
+  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+#+END_EXAMPLE
+
+We are currently working on relaxing these restrictions.  This is not
+just a Tpetra issue, however; downstream solver libraries in Trilinos
+currently depend on these settings.  Those libraries must be changed
+in order to relax these restrictions for all Trilinos users.
+
+*** How do I build Tpetra for GPUs?
+
+First, set the following environment variables, in which
+~TRILINOS_PATH~ points to your Trilinos source directory:
+
+#+BEGIN_EXAMPLE
+  export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
+  export CUDA_LAUNCH_BLOCKING=1
+  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+#+END_EXAMPLE
+
+Then set the following CMake variables, in addition to the CMake
+variables that you would normally set:
+
+#+BEGIN_EXAMPLE
+-D TPL_ENABLE_MPI:BOOL=ON
+-D TPL_ENABLE_CUDA:BOOL=ON
+-D Kokkos_ENABLE_Cuda_UVM:BOOL=ON
+-D Tpetra_INST_CUDA:BOOL=ON
+#+END_EXAMPLE
+
+If the versions of ~nvcc~ and ~mpicxx~ that live in your path are
+correct, then this should work.
+
+If you enable CUDA using the above instructions, Kokkos will enable
+its CUDA support by default.  If Kokkos enables its CUDA support,
+Tpetra will enable its CUDA support by default.  (See "How does Tpetra
+pick its default Kokkos execution space?" below.)  Avoid setting CMake
+options explicitly; this hinders portability and makes your build
+configuration unnecessarily complicated.
+
+** What about Pthreads?  Does Tpetra support that?
+
+Tpetra does have an option to use Pthreads (POSIX Threads) for thread
+parallelism.  It does so through Kokkos, using the ~Kokkos::Threads~
+execution space.  However, Trilinos disables this option by default.
+This is for the following reasons:
+
+  1. Trilinos automatically enables Pthreads if it finds the library
+     on your system.  This surprises users who did not intend to run
+     with threads enabled.
+  2. Kokkos' Pthreads back-end is slower than its OpenMP back-end.
+  3. Use of OpenMP and Kokkos' Pthreads back-end in the same
+     application can hurt performance of both.  This is because
+     compilers' OpenMP implementations often set up their own threads
+     that keep running continuously to reserve hardware resources.
+     These threads fight the threads that Kokkos' Pthreads back-end
+     launches.
+  4. It is possible for multiple OpenMP libraries to work correctly
+     and performantly, as long as they share a common OpenMP run-time
+     environment.  It is /not/ possible for multiple libraries that
+     each launch their own Pthreads to work correctly and
+     performantly, for reasons analogous to those in (3) above.
+
+If you really /really/ want Tpetra to use Pthreads, you will need to
+do the following:
+
+  1. Make sure that Trilinos enables the Pthreads TPL, by checking
+     that the CMake variable ~TPL_ENABLE_Pthread~ is ~ON~.  If not,
+     you may need to tell Trilinos where to find the Pthreads library
+     and header file.
+  2. Enable Kokkos' Pthreads support, by setting
+     ~Kokkos_ENABLE_Pthread:BOOL=OFF~.
+  3. Enable Tpetra's Pthreads support, by setting 
+     ~Tpetra_INST_PTHREAD:BOOL=OFF~.
+  4. Make Tpetra use Pthreads by default, by setting
+     ~Tpetra_INST_SERIAL:BOOL=OFF~.
+
+If you choose to do this, we /highly/ recommend turning off OpenMP.
+Step 4 is optional, but if you do not do Step 3, Pthreads will not be
+Tpetra's default execution space.  In that case, if you want to use
+Pthreads in Tpetra, you must set the ~Node~ template parameter
+explicitly to
+~Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads>~.
+
 ** Weird C++ errors with Intel compiler
 
 The Intel compiler uses GCC header files for the C++ Standard Library.
@@ -96,7 +250,7 @@ the Kokkos execution space that Tpetra objects use for thread-parallel
 operations, and the Kokkos memory space that Tpetra objects use for
 memory allocations.
 
-The only valid Node types as of Trilinos 12.4 are specializations of
+The only valid Node types as of Trilinos 12.x are specializations of
 ~Kokkos::Compat::KokkosDeviceWrapperNode~, which lives in
 ~teuchos/kokkoscompat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp~.
 You do /not/ need to include this header file or worry about the
@@ -114,9 +268,10 @@ rules to decide which execution space to use by default:
 
   - If CUDA is enabled, use ~Kokkos::Cuda~.
   - Else, if OpenMP is enabled, use ~Kokkos::OpenMP~.
-  - Else, if Kokkos::Serial is enabled, use ~Kokkos::Serial~.
-  - Else, if Kokkos::Threads is enabled, use ~Kokkos::Threads~.
-  - Otherwise, report an error (no Kokkos execution spaces are enabled).
+  - Else, if ~Kokkos::Serial~ is enabled, use ~Kokkos::Serial~.
+  - Else, if ~Kokkos::Threads~ is enabled, use ~Kokkos::Threads~.
+  - Otherwise, report an error (no Kokkos execution spaces are
+    enabled).
 
 ** How do I enable other Kokkos execution spaces in Tpetra?
 

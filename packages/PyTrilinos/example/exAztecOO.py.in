@@ -45,7 +45,8 @@
 
 #
 # System imports
-from optparse import *
+from __future__ import print_function
+from optparse   import *
 import sys
 
 #
@@ -108,7 +109,7 @@ def main(comm, tol):
       # If AztecOO and its python wrappers have been compiled without Teuchos
       # support, then then the SetParameters method will not exist, thus raising
       # an AttributeError exception
-      print "Teuchos ParameterLists not supported"
+      print("Teuchos ParameterLists not supported")
       solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
       solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
       solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
@@ -136,11 +137,11 @@ if __name__ == "__main__":
 
    # Print results message
    if comm.MyPID() == 0:
-      print "solution error norm =", solnError
+      print("solution error norm =", solnError)
       if totalErrors == 0:
-         print "End Result: TEST PASSED"
+         print("End Result: TEST PASSED")
       else:
-         print "End Result: TEST FAILED"
+         print("End Result: TEST FAILED")
 
    # It is possible to get the following error message with this script:
    #

@@ -66,7 +66,7 @@ namespace MueLuTests {
   void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib, const LocalOrdinal numDimensions,
                       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
                       RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& Coordinates,
-                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal> >& map,
+                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                       Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
 #include "MueLu_UseShortNames.hpp"
 
@@ -242,7 +242,7 @@ namespace MueLuTests {
     LO maxLevels = 3, maxIter = 10;
     RCP<Matrix> Op;
     RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
-    RCP<Map> map;
+    RCP<Xpetra::Map<LO,GO,NO> > map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
     GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim, lNodesPerDim);

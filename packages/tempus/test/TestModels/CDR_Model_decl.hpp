@@ -57,10 +57,8 @@ public:
   /** \name Initializers/Accessors */
   //@{
 
-  /** \brief . */
   void set_x0(const Teuchos::ArrayView<const Scalar> &x0);
 
-  /** \brief . */
   void setShowGetInvalidArgs(bool showGetInvalidArg);
 
   void set_W_factory(const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<Scalar> >& W_factory);
@@ -88,9 +86,7 @@ private:
   /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
   //@{
 
-  /** \brief . */
   ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
-  /** \brief . */
   void evalModelImpl(
     const ::Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs

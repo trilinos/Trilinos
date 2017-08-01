@@ -135,11 +135,11 @@ def main():
     elif type == "Mumps":
         solver = Amesos.Mumps(problem)
     else:
-        print 'Selected solver (%s) not available' % type
-        print __doc__
+        print('Selected solver (%s) not available' % type)
+        print(__doc__)
         sys.exit(-2)
 
-    print solver
+    print(solver)
 
     # Set the solver parameters
     #amesosList = {"PrintStatus": True,
@@ -149,28 +149,28 @@ def main():
 
     # Perform the symbolic factorizations
     if iAmRoot:
-        print "1) Performing symbolic factorizations..."
+        print("1) Performing symbolic factorizations...")
     solver.SymbolicFactorization()
 
     # Perform the numeric factorizations
     if iAmRoot:
-        print "2) Performing numeric factorizations..."
+        print("2) Performing numeric factorizations...")
     solver.NumericFactorization()
 
     # Solve the linear system
     if iAmRoot:
-        print "3) Solving the linear system..."
+        print("3) Solving the linear system...")
     ierr = solver.Solve()
 
     # Output the return code
     if iAmRoot:
-        print "   solver.Solve() return code = ", ierr
+        print("   solver.Solve() return code = " + str(ierr))
 
     #del solver
 
     # Exit with a code that indicates the total number of successes
     failures = comm.SumAll(ierr)
-    if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if failures == 0 and iAmRoot: print("End Result: TEST PASSED")
     sys.exit(failures)
 
 if __name__ == "__main__":

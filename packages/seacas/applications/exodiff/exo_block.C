@@ -65,8 +65,9 @@ Exo_Block<INT>::Exo_Block(int file_id, size_t id, const char *type, size_t num_e
 
 template <typename INT> Exo_Block<INT>::~Exo_Block()
 {
-  if (conn)
+  if (conn) {
     delete[] conn;
+  }
 }
 
 template <typename INT> EXOTYPE Exo_Block<INT>::exodus_type() const { return EX_ELEM_BLOCK; }
@@ -105,13 +106,15 @@ template <typename INT> std::string Exo_Block<INT>::Load_Connectivity()
 {
   SMART_ASSERT(Check_State());
 
-  if (fileId < 0)
+  if (fileId < 0) {
     return "ERROR:  Invalid file id!";
-  if (id_ == EX_INVALID_ID)
+  }
+  if (id_ == EX_INVALID_ID) {
     return "ERROR:  Must initialize block parameters first!";
-
-  if (conn)
+  }
+  if (conn) {
     delete[] conn;
+  }
   conn = nullptr;
 
   if (numEntity && num_nodes_per_elmt) {
@@ -138,8 +141,9 @@ template <typename INT> std::string Exo_Block<INT>::Load_Connectivity()
 template <typename INT> std::string Exo_Block<INT>::Free_Connectivity()
 {
   SMART_ASSERT(Check_State());
-  if (conn)
+  if (conn) {
     delete[] conn;
+  }
   conn = nullptr;
   return "";
 }
@@ -148,8 +152,9 @@ template <typename INT> const INT *Exo_Block<INT>::Connectivity(size_t elmt_inde
 {
   SMART_ASSERT(Check_State());
 
-  if (!conn || elmt_index >= numEntity)
+  if (!conn || elmt_index >= numEntity) {
     return nullptr;
+  }
 
   return &conn[(size_t)elmt_index * num_nodes_per_elmt];
 }
@@ -157,9 +162,9 @@ template <typename INT> const INT *Exo_Block<INT>::Connectivity(size_t elmt_inde
 template <typename INT>
 std::string Exo_Block<INT>::Give_Connectivity(size_t &num_e, size_t &npe, INT *&recv_conn)
 {
-  if (num_nodes_per_elmt < 0)
+  if (num_nodes_per_elmt < 0) {
     return "ERROR:  Connectivity parameters have not been determined!";
-
+  }
   num_e     = numEntity;
   npe       = num_nodes_per_elmt;
   recv_conn = conn;
@@ -206,11 +211,13 @@ template <typename INT> void Exo_Block<INT>::Display(std::ostream &s) const
     size_t index = 0;
     s << "       connectivity = ";
     for (size_t e = 0; e < numEntity; ++e) {
-      if (e != 0)
+      if (e != 0) {
         s << "                      ";
+      }
       s << "(" << (e + 1) << ") ";
-      for (int n = 0; n < num_nodes_per_elmt; ++n)
+      for (int n = 0; n < num_nodes_per_elmt; ++n) {
         s << conn[index++] << " ";
+      }
       s << '\n';
     }
   }

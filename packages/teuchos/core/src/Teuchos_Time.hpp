@@ -53,7 +53,7 @@
 
 #include <ctime>
 #ifdef HAVE_MPI
-#include "mpi.h"
+#include <mpi.h>
 #else
 #if ICL || defined(_WIN32)
 #include <time.h>

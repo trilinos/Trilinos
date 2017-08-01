@@ -85,10 +85,14 @@ namespace Ioss {
       }
     }
 
-    template <typename T> static void uniquify(std::vector<T> &vec)
+    template <typename T> static void uniquify(std::vector<T> &vec, bool skip_first = false)
     {
-      std::sort(vec.begin(), vec.end());
-      vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
+      auto it = vec.begin();
+      if (skip_first) {
+        it++;
+      }
+      std::sort(it, vec.end());
+      vec.erase(std::unique(it, vec.end()), vec.end());
       vec.shrink_to_fit();
     }
 

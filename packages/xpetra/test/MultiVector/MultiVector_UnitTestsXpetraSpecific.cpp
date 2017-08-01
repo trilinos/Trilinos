@@ -175,7 +175,7 @@ namespace {
     TEST_EQUALITY(hostView.size(), numLocal * 3);
     for(size_t k=0; k < 3; k++) {
       for(size_t i = 0; i < hostView.dimension_0(); i++) {
-        TEST_EQUALITY(hostView(i,k), i*(k+1) + comm->getRank());
+        TEST_EQUALITY(Teuchos::as<Scalar>(hostView(i,k)), Teuchos::as<Scalar>(i*(k+1) + comm->getRank()));
       }
     }
 
@@ -191,7 +191,7 @@ namespace {
     for(size_t k=0; k < 3; k++) {
       Teuchos::ArrayRCP<const Scalar> vData = mv->getData(k);
       for(size_t i=0; i< numLocal; i++) {
-        TEST_EQUALITY(vData[i], comm->getRank() + k*hostView.dimension_1() + i + 42.0);
+        TEST_EQUALITY(Teuchos::as<Scalar>(vData[i]), Teuchos::as<Scalar>(comm->getRank() + k*hostView.dimension_1() + i + 42.0));
       }
     }
 
@@ -206,7 +206,7 @@ namespace {
     // check updated data in view
     for(size_t r = 0; r < hostView.dimension_0(); r++) {
       for(size_t c = 0; c < hostView.dimension_1(); c++) {
-        TEST_EQUALITY(hostView(r,c), c * numLocal + r);
+        TEST_EQUALITY(Teuchos::as<Scalar>(hostView(r,c)), Teuchos::as<Scalar>(c * numLocal + r));
       }
     }
 

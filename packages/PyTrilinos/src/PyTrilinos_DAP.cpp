@@ -66,7 +66,7 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
     throw PythonException();
   }
 #ifdef PYTRILINOS_DAP_VERBOSE
-  std::cout << "dim_dict = " << PyString_AsString(PyObject_Str(dim_dict))
+  std::cout << "dim_dict = " << convertPyStringToChar(PyObject_Str(dim_dict))
             << std::endl;
 #endif
 
@@ -80,6 +80,8 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
                     "'dim_dict' has no 'dist_type' key");
     throw PythonException();
   }
+  if (PyUnicode_Check(distTypeObj))
+    distTypeObj = PyUnicode_AsASCIIString(distTypeObj);
   if (!PyString_Check(distTypeObj))
   {
     PyErr_SetString(PyExc_TypeError,
@@ -434,7 +436,7 @@ DistArrayProtocol::DistArrayProtocol(PyObject * distarray)
   if (!PyDict_Check(distarray))
   {
     PyObject * pyType = PyObject_Type(distarray);
-    char * typeStr = PyString_AsString(PyObject_Str(pyType));
+    char * typeStr = convertPyStringToChar(PyObject_Str(pyType));
     //PyErr_SetString(PyExc_ValueError, "distarray object must be a dictionary");
     PyErr_Format(PyExc_ValueError, "distarray object must be a dictionary, "
                  "given '%s'", typeStr);
@@ -447,21 +449,15 @@ DistArrayProtocol::DistArrayProtocol(PyObject * distarray)
   // if (!PyMethod_Check(distarray))
   // {
   //   PyObject * pyType = PyObject_Type(distarray);
-  //   char * typeStr = PyString_AsString(PyObject_Str(pyType));
+  //   char * typeStr = convertPyStringToChar(PyObject_Str(pyType));
   //   PyErr_Format(PyExc_ValueError, "distarray attribute must be an instance "
   //                "method, given '%s'", typeStr);
   //   throw PythonException();    
   // }
-  // std::cout << "a" << std::endl;
   // //PyObject * self = PyMethod_Self(distarray);
-  // //std::cout << "b" << std::endl;
   // PyObject * function = PyMethod_Function(distarray);
-  // std::cout << "b" << std::endl;
   // if (function == NULL) throw PythonException();
-  // std::cout << "d" << std::endl;
   // __distarray__ = PyObject_CallObject(function, NULL);
-  // std::cout << "__distarray__ = "
-  //           << PyString_AsString(PyObject_Str(__distarray__)) << std::endl;
 
   //////////////////
   // Get the version
@@ -473,7 +469,7 @@ DistArrayProtocol::DistArrayProtocol(PyObject * distarray)
                     "present");
     throw PythonException();
   }
-  __version__ = PyString_AsString(versionObj);
+  __version__ = convertPyStringToChar(versionObj);
   if (PyErr_Occurred())
   {
     Py_XDECREF(__distarray__);
@@ -497,7 +493,7 @@ DistArrayProtocol::DistArrayProtocol(PyObject * distarray)
   // What is the appropriate type check for buffer?
   Py_INCREF(__buffer__);
 #ifdef PYTRILINOS_DAP_VERBOSE
-  std::cout << "buffer = " << PyString_AsString(PyObject_Str(__buffer__))
+  std::cout << "buffer = " << convertPyStringToChar(PyObject_Str(__buffer__))
             << std::endl;
 #endif
 

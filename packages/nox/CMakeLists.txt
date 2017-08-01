@@ -122,6 +122,13 @@ COMBINED_OPTION( NOX_ENABLE_THYRA_EPETRA_ADAPTERS
     " otherwise defaults to OFF"
   )
 
+COMBINED_OPTION( NOX_ENABLE_THYRA_TPETRA_ADAPTERS
+  DEP_OPTIONS_NAMES NOX_ENABLE_ThyraCore NOX_ENABLE_ThyraTpetraAdapters
+  DOCSTR "Enables support for the Thyra Tpetra adapters "
+    " Defaults to ON if Thyra and Thyra Tpetra adapters are both enabled,"
+    " otherwise defaults to OFF"
+  )
+
 # PETSc
 COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
   DEP_OPTIONS_NAMES NOX_ENABLE_PETSC

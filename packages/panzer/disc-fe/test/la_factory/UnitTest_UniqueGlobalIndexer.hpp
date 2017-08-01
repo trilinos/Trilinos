@@ -52,7 +52,7 @@
 
 #ifdef HAVE_MPI
    #include "Teuchos_DefaultMpiComm.hpp"
-   #include "mpi.h"
+   #include <mpi.h>
 #else
    #include "Teuchos_DefaultSerialComm.hpp"
 #endif
@@ -156,14 +156,65 @@ public:
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                                int subcellDim,int subcellId) const;
 
-   /** Get set of indices owned by this processor
-     */
-   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
+   /**
+    *  \brief Get the set of indices owned by this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *                      owned by this processor.
+    *
+    *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
+    */
+   virtual void
+   getOwnedIndices(
+     std::vector<GlobalOrdinalT> & indices) const;
 
-   /** Get set of indices owned and ghosted by this processor.
-     * This can be thought of as the ``ghosted'' indices.
-     */
-   virtual void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
+   /**
+    *  \brief Get the set of indices ghosted for this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *                      ghosted for this processor.
+    *
+    *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
+    */
+   virtual void
+   getGhostedIndices(
+     std::vector<GlobalOrdinalT> & indices) const;
+
+   /**
+    *  \brief Get the set of owned and ghosted indices for this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the owned and
+    *                      ghosted indices for this processor.
+    *
+    *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
+    */
+   virtual void
+   getOwnedAndGhostedIndices(
+     std::vector<GlobalOrdinalT> & indices) const;
+
+   /**
+    *  \brief Get the number of indices owned by this processor.
+    *
+    *  \returns The number of indices owned by this processor.
+    */
+   virtual int
+   getNumOwned() const;
+
+   /**
+    *  \brief Get the number of indices ghosted for this processor.
+    *
+    *  \returns The number of indices ghosted for this processor.
+    */
+   virtual int
+   getNumGhosted() const;
+
+   /**
+    *  \brief Get the number of owned and ghosted indices for this processor.
+    *
+    *  \returns The number of owned and ghosted indices for this processor.
+    */
+   virtual int
+   getNumOwnedAndGhosted() const;
 
    /** Get a yes/no on ownership for each index in a vector
      */

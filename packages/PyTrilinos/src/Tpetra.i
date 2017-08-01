@@ -300,7 +300,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
   // work, so it is time to set a Python error
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to a Tpetra::MultiVector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   return NULL;
 }
 
@@ -479,7 +479,7 @@ convertPythonToTpetraVector(PyObject * pyobj,
   // work, so it is time to set a Python error
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to a Tpetra::Vector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   return NULL;
 }
 

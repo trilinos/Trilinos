@@ -45,9 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-
 #include "Panzer_NodeType.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -103,13 +100,13 @@ namespace panzer {
 			 std::vector<panzer::BC>& bcs);
 
   struct AssemblyPieces {
-    RCP<panzer::FieldManagerBuilder> fmb;  
-    RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
-    RCP<panzer::GlobalData> gd;
-    RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
-    RCP<panzer::LinearObjFactory<panzer::Traits> > param_lof;
-    RCP<panzer::UniqueGlobalIndexerBase> dofManager;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > param_dofManager;
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
+    Teuchos::RCP<panzer::GlobalData> gd;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > param_lof;
+    Teuchos::RCP<panzer::UniqueGlobalIndexerBase> dofManager;
+    Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > param_dofManager;
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer;
     Teuchos::ParameterList user_data;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
@@ -802,15 +799,15 @@ namespace panzer {
       RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
       Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
 
-      RCP<VectorType> dx = Thyra::createMember(*me->get_x_space());
-      Thyra::assign(dx.ptr(),PERTURB_VALUE);
+      RCP<VectorType> dp = Thyra::createMember(*me->get_p_space(0));
+      Thyra::assign(dp.ptr(),PERTURB_VALUE);
 
       InArgs  in_args = me->createInArgs();
       in_args.set_x(x);
       in_args.set_alpha(1.0/0.1);
       in_args.set_beta(1.0);
 
-      me->evalModel_D2fDxDp(pIndex,in_args,dx,D2fDxDp);
+      me->evalModel_D2fDxDp(pIndex,in_args,dp,D2fDxDp);
 
       out << "D2fDxDp = \n" << Teuchos::describe(*D2fDxDp,Teuchos::VERB_EXTREME) << std::endl;
     }
@@ -1008,15 +1005,15 @@ namespace panzer {
       RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
       Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
 
-      RCP<VectorType> dx = Thyra::createMember(*me->get_x_space());
-      Thyra::assign(dx.ptr(),PERTURB_VALUE);
+      RCP<VectorType> dp = Thyra::createMember(*me->get_p_space(0));
+      Thyra::assign(dp.ptr(),PERTURB_VALUE);
 
       InArgs  in_args = me->createInArgs();
       in_args.set_x(x);
       in_args.set_alpha(1.0/0.1);
       in_args.set_beta(1.0);
 
-      me->evalModel_D2fDp2(pIndex,in_args,dx,D2fDp2);
+      me->evalModel_D2fDp2(pIndex,in_args,dp,D2fDp2);
 
       out << "D2fDp2 = \n" << Teuchos::describe(*D2fDp2,Teuchos::VERB_EXTREME) << std::endl;
     }
@@ -1157,7 +1154,7 @@ namespace panzer {
   {
     using Teuchos::RCP;
   
-    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
     pl->set("X Elements",6);
@@ -1213,7 +1210,11 @@ namespace panzer {
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,ap.physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<ap.physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(ap.physicsBlocks[i]->elementBlockID(),ap.physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
     ap.wkstContainer = wkstContainer;
 
     // build DOF Manager

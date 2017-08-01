@@ -5,8 +5,9 @@
 # @HEADER
 
 # System imports
-from   numpy    import *
-from   optparse import *
+from   __future__ import print_function
+from   numpy      import *
+from   optparse   import *
 import sys
 
 #
@@ -81,21 +82,21 @@ class ChanJac(Epetra.Operator):
 
     def Apply(self, x, y):
         try:
-            # print '--> alpha, beta = ', self.alpha_,', ',self.beta_
+            # print('--> alpha, beta = ', self.alpha_,', ',self.beta_)
             y.Multiply(2.0, x, self.x_jac, 0.0)
             y.Update(self.alpha_, y, self.beta_, x,0.0)
             return 0
         except Exception, e:
-            print "A python exception was raised in ChanJac>.Apply:"
-            print e
+            print("A python exception was raised in ChanJac>.Apply:")
+            print(e)
             return -1
 
     def ApplyInverse(self, x, y):
-        print "NOX Error"
+        print("NOX Error")
         return 1
 
     def NormInf(self):
-        print "NOX Error"
+        print("NOX Error")
         return 1
 
     def HasNormInf(self):
@@ -114,7 +115,7 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
   Jaco_ = []
   def __init__(self, comm, N, Jacob_ = None):
     # Initialize base class first
-    print '--> ChanProblemInterface.__init__, N = ',N
+    print('--> ChanProblemInterface.__init__, N = ',N)
     LOCA.Epetra.Interface.TimeDependent.__init__(self)
     NOX.Epetra.Interface.Jacobian.__init__(self)
 
@@ -133,7 +134,7 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
 
   def printSolution(self, x, conParam):
       self.history.append([conParam,x[1]])
-      print 'x = ', x, type(x), conParam, self.sigma_
+      print('x = ', x, type(x), conParam, self.sigma_)
 
   def computeF(self, x, F, fillFlag):
       # we ignore the fillFlag argument and always perform all computation
@@ -143,9 +144,9 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
               F[i] = x[i]**2 - self.sigma_ * float(i)
           return True
       except Exception, e:
-          print "Proc", self.__myPID, \
-                "ChanProblemInterface.computeF() has thrown an exception:"
-          print str(type(e))[18:-2] + ":", e
+          print("Proc", self.__myPID,
+                "ChanProblemInterface.computeF() has thrown an exception:")
+          print(str(type(e))[18:-2] + ":", e)
           return False
 
   def InitialGuess(self):
@@ -157,9 +158,9 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
           self.Jaco_.setShMat(1.0,0.0);
           return True
       except Exception, e:
-          print "Proc", self.__myPID, \
-                "ChanProblemInterface.computeJacobian() has thrown an exception:"
-          print str(type(e))[18:-2] + ":", e
+          print("Proc", self.__myPID, "ChanProblemInterface.computeJacobian() "
+                "has thrown an exception:")
+          print(str(type(e))[18:-2] + ":", e)
           return False
 
   def setParams(self, p):
@@ -172,7 +173,7 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
       pass
 
   def applyShiftedMatrix(self, alpha, beta, input, result):
-      print '--> applyShiftedMatrix'
+      print('--> applyShiftedMatrix')
       self.Jaco_.Apply(input, result)
       result.update(alpha,result,beta,input,0.0);
 
@@ -246,7 +247,7 @@ def main():
   noxSoln = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
 
 
-  print '--> initial guess, done!'
+  print('--> initial guess, done!')
   iReq = interface
   iJac = interface
 
@@ -267,10 +268,10 @@ def main():
   locaSoln = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
 
   globalData = LOCA.createGlobalData(paramList)
-  print '--> group',
+  print('--> group', end="")
   group = LOCA.Epetra.Group(globalData, printParams, iReq, locaSoln, linSys, p)
 
-  print 'done!'
+  print('done!')
 
   # Create the convergence tests
   normF = NOX.StatusTest.NormF(1.0e-8)
@@ -305,16 +306,16 @@ if __name__ == "__main__":
     status = main()
 
     if status == LOCA.Abstract.Iterator.NotFinished:
-      print "Iterator status = Not Finished"
-      print "End Result: TEST FAILED"
+      print("Iterator status = Not Finished")
+      print("End Result: TEST FAILED")
     elif status == LOCA.Abstract.Iterator.Failed:
-      print "Iterator status = Failed"
-      print "End Result: TEST FAILED"
+      print("Iterator status = Failed")
+      print("End Result: TEST FAILED")
     elif status == LOCA.Abstract.Iterator.Finished:
-      print "Iterator status = Finished"
-      print "End Result: TEST PASSED"
+      print("Iterator status = Finished")
+      print("End Result: TEST PASSED")
     elif status == LOCA.Abstract.Iterator.LastIteration:
-      print "Iterator status = Last Iteration"
-      print "End Result: TEST PASSED"
+      print("Iterator status = Last Iteration")
+      print("End Result: TEST PASSED")
 
     sys.exit(status)

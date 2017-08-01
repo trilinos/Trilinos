@@ -159,9 +159,7 @@ void Ioss::SideSet::block_membership(std::vector<std::string> &block_members)
       sb->block_membership(blocks);
       blockMembership.insert(blockMembership.end(), blocks.begin(), blocks.end());
     }
-    std::sort(blockMembership.begin(), blockMembership.end());
-    blockMembership.erase(std::unique(blockMembership.begin(), blockMembership.end()),
-                          blockMembership.end());
+    Ioss::Utils::uniquify(blockMembership);
   }
   block_members = blockMembership;
 }

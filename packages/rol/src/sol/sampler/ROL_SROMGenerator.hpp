@@ -44,21 +44,15 @@
 #ifndef ROL_SROMGENERATOR_HPP
 #define ROL_SROMGENERATOR_HPP
 
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_ScalarLinearConstraint.hpp"
 #include "ROL_SampleGenerator.hpp"
-
-#include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_ScalarLinearEqualityConstraint.hpp"
-
-#include "ROL_Algorithm.hpp"
-#include "ROL_BoundConstraint.hpp"
-
 #include "ROL_MomentObjective.hpp"
 #include "ROL_CDFObjective.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
 #include "ROL_SROMVector.hpp"
-
 #include "ROL_StdVector.hpp"
+#include "ROL_Bounds.hpp"
 
 namespace ROL {
 
@@ -176,9 +170,9 @@ public:
       initialize_objective(obj_vec,obj,dist,bman,optProb,optAtom,list);
       // Initialize constraints
       Teuchos::RCP<BoundConstraint<Real> > bnd
-        = Teuchos::rcp(new BoundConstraint<Real>(x_lo,x_hi));
-      Teuchos::RCP<EqualityConstraint<Real> > con
-        = Teuchos::rcp(new ScalarLinearEqualityConstraint<Real>(x_eq,1.0));
+        = Teuchos::rcp(new Bounds<Real>(x_lo,x_hi));
+      Teuchos::RCP<Constraint<Real> > con
+        = Teuchos::rcp(new ScalarLinearConstraint<Real>(x_eq,1.0));
       // Test objective and constraints
       if ( print_ ) { std::cout << "\nCheck derivatives of CDFObjective\n"; }
       check_objective(*x,obj_vec[0],bman,optProb,optAtom);
@@ -186,30 +180,15 @@ public:
       check_objective(*x,obj_vec[1],bman,optProb,optAtom);
       if ( print_ ) { std::cout << "\nCheck derivatives of LinearCombinationObjective\n"; }
       check_objective(*x,obj,bman,optProb,optAtom);
-      if ( print_ && optProb ) { std::cout << "\nCheck ScalarLinearEqualityConstraint\n"; }
+      if ( print_ && optProb ) { std::cout << "\nCheck ScalarLinearConstraint\n"; }
       check_constraint(*x,con,bman,optProb);
       // Solve optimization problems to sample
       Teuchos::RCP<Algorithm<Real> > algo;
       initialize_optimizer(algo,list,optProb);
       if ( optProb ) {
-        std::string type = list.sublist("Step").get("Type","Trust Region");
-        Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcpFromRef(list);
-        Teuchos::RCP<OptimizationProblem<Real> > optProblem;
-        if (type == "Augmented Lagrangian") {
-          Teuchos::RCP<Objective<Real> > augLag
-            = Teuchos::rcp(new AugmentedLagrangian<Real>(obj,con,*l,1.,*x,l->dual(),parlist));
-          optProblem = Teuchos::rcp(new OptimizationProblem<Real>(augLag,x,bnd,con,l,plist));
-        }
-        else if (type == "Moreau-Yosida Penalty") {
-          Teuchos::RCP<Objective<Real> > myPen
-            = Teuchos::rcp(new MoreauYosidaPenalty<Real>(obj,bnd,*x,10.0));
-          optProblem = Teuchos::rcp(new OptimizationProblem<Real>(myPen,x,bnd,con,l,plist));
-        }
-        else {
-          optProblem = Teuchos::rcp(new OptimizationProblem<Real>(obj,x,bnd,con,l,plist));
-        }
-        //ROL::OptimizationProblem<Real> optProblem(obj,x,bnd,con,l,plist);
-        algo->run(*optProblem,print_);
+        OptimizationProblem<Real> optProblem(obj,x,bnd,con,l);
+        OptimizationSolver<Real>  optSolver(optProblem, list);
+        optSolver.solve(std::cout);
       }
       else {
         algo->run(*x,*obj,*bnd,print_);
@@ -297,7 +276,7 @@ private:
     // Lower and upper bounds on SROM Vector
     vec_lo = Teuchos::rcp(new SROMVector<Real>(prob_lo,atom_lo));
     vec_hi = Teuchos::rcp(new SROMVector<Real>(prob_hi,atom_hi));
-    // Equality constraint vectors
+    // Constraint vectors
     prob_eq = Teuchos::rcp(new DualProbabilityVector<Real>(
               Teuchos::rcp(new std::vector<Real>(wt_eq)),bman,
               Teuchos::rcp(new std::vector<Real>(typw))));
@@ -382,7 +361,7 @@ private:
   }
 
   void check_constraint(const Vector<Real>                            &x,
-                        const Teuchos::RCP<EqualityConstraint<Real> > &con,
+                        const Teuchos::RCP<Constraint<Real> >         &con,
                         const Teuchos::RCP<BatchManager<Real> >       &bman,
                         const bool optProb) {
     if ( optProb ) {

@@ -45,8 +45,8 @@
 
 #
 # System imports
-#from   numpy    import *
-from   optparse import *
+from   __future__ import print_function
+from   optparse   import *
 import sys
 import time
 import unittest
@@ -76,8 +76,8 @@ class EpetraTimeTestCase(unittest.TestCase):
     # Implement our own assertGreaterEqual() method for older Python versions
     # that do not support it
     def assertGreaterEqual(self, first, second, msg=None):
-        print
-        print "P%d: first = %g, second = %g" % (self.comm.MyPID(), first, second)
+        print("\nP%d: first = %g, second = %g" %
+              (self.comm.MyPID(), first, second))
         pythonVersion = sys.version_info[0] + sys.version_info[1]/10.0
         if pythonVersion >= 2.7:
             return unittest.TestCase.assertGreaterEqual(self, first, second, msg)
@@ -153,14 +153,15 @@ if __name__ == "__main__":
     iAmRoot = comm.MyPID() == 0
 
     # Run the test suite
-    if iAmRoot: print >>sys.stderr, \
-          "\n*********************\nTesting Epetra.Object\n*********************\n"
+    if iAmRoot:
+        print("\n*********************\nTesting Epetra.Object\n"
+              "*********************\n", file=sys.stderr)
     verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
 
     # Some versions of python don't properly delete suite upon exit
     del suite

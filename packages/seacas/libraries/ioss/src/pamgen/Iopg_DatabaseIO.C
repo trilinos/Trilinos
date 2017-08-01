@@ -56,8 +56,8 @@
 #include <vector>
 
 namespace Iopg {
-  typedef std::set<std::string> SideSetSet;
-  typedef std::map<std::string, const std::string, std::less<const std::string>> SideSetMap;
+  using SideSetSet = std::set<std::string>;
+  using SideSetMap = std::map<std::string, const std::string, std::less<const std::string>>;
 
   struct TopologyMapCompare
   {
@@ -71,8 +71,7 @@ namespace Iopg {
     }
   };
 
-  typedef std::map<std::pair<std::string, const Ioss::ElementTopology *>, int, TopologyMapCompare>
-      TopologyMap;
+  using TopologyMap = std::map<std::pair<std::string, const Ioss::ElementTopology *>, int, TopologyMapCompare>;
 }
 
 namespace {

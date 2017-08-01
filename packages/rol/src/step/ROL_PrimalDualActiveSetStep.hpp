@@ -348,7 +348,6 @@ public:
     lambda_ = s.clone(); 
     lambda_->set((step_state->gradientVec)->dual());
     lambda_->scale(-one);
-    //con.setVectorToLowerBound(*lambda_);
   }
 
   /** \brief Compute step.
@@ -394,14 +393,14 @@ public:
       /********************************************************************/
       As_->zero();                               // As   = 0
    
-      con.setVectorToUpperBound(*xbnd_);         // xbnd = u
+      xbnd_->set(*con.getUpperBound());          // xbnd = u
       xbnd_->axpy(-one,x);                       // xbnd = u - x
       xtmp_->set(*xbnd_);                        // tmp  = u - x
       con.pruneUpperActive(*xtmp_,*xlam_,neps_); // tmp  = I(u - x)
       xbnd_->axpy(-one,*xtmp_);                  // xbnd = A(u - x)
       As_->plus(*xbnd_);                         // As  += A(u - x)
 
-      con.setVectorToLowerBound(*xbnd_);         // xbnd = l
+      xbnd_->set(*con.getLowerBound());          // xbnd = l
       xbnd_->axpy(-one,x);                       // xbnd = l - x
       xtmp_->set(*xbnd_);                        // tmp  = l - x
       con.pruneLowerActive(*xtmp_,*xlam_,neps_); // tmp  = I(l - x)

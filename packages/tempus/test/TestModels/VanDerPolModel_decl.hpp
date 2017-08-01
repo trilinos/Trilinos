@@ -18,14 +18,16 @@
 namespace Tempus_Test {
 
 /** \brief van der Pol model problem for nonlinear electrical circuit.
+  *
   * This is a canonical equation of a nonlinear oscillator (Hairer, Norsett,
   * and Wanner, pp. 111-115, and Hairer and Wanner, pp. 4-5) for an electrical
-  * circuit.  The scaled form of this problem can be written as
+  * circuit.  In implicit ODE form, \f$ \mathcal{F}(\dot{x},x,t) = 0 \f$,
+  * the scaled problem can be written as
   * \f{eqnarray*}{
-  *   f_0 & = & \dot{x}_0(t) - x_1(t) \\
-  *   f_1 & = & \dot{x}_1(t) - [(1-x_0^2)x_1-x_0]/\epsilon
+  *   \dot{x}_0(t) - x_1(t) & = & 0 \\
+  *   \dot{x}_1(t) - [(1-x_0^2)x_1-x_0]/\epsilon & = & 0
   * \f}
-  * where \f$\epsilon = 10^{-6}\f$ and the initial conditions are
+  * where the initial conditions are
   * \f{eqnarray*}{
   *   x_0(t_0=0) & = & 2 \\
   *   x_1(t_0=0) & = & 0
@@ -35,13 +37,74 @@ namespace Tempus_Test {
   *   \dot{x}_0(t_0=0) & = & x_1(t_0=0) = 0 \\
   *   \dot{x}_1(t_0=0) & = & [(1-x_0^2)x_1-x_0]/\epsilon = -2/\epsilon
   * \f}
-  * Hairer and Wanner suggest the output times of \f$t = 1,2,3,4,...,11\f$
+  * Hairer and Wanner suggest the output times of \f$t = 1,2,3,4,...,11\f$,
+  * and \f$\epsilon = 10^{-6}\f$ to make the problem very stiff.
   * For \f$\epsilon = 0\f$, the solution becomes
   * \f{eqnarray*}{
   *   \ln \left|x_0\right| - \frac{x_0^2}{2} & = & t + C \\
   *   x_1 & = & \frac{x_0}{1-x_0^2}
   * \f}
   * where \f$C =\ln \left|x_0(t=0)\right| - \frac{x_0^2(t=0)}{2} =-1.306853.\f$
+  *
+  * The components of iteration matrix, \f$W\f$, are defined to be
+  * \f[
+  *   W_{ij} \equiv \frac{d\mathcal{F}_i}{dx_j} = \frac{d}{dx_j}
+  *          \mathcal{F}_i (\dot{x}_i, x_0, \ldots, x_k, \ldots, x_K, t)
+  * \f]
+  * (not using Einstein summation).  Using the chain rule, we can write
+  * \f[
+  *   \frac{d\mathcal{F}_i}{dx_j} =
+  *    \frac{\partial\dot{x}_i}{\partial x_j}
+  *    \frac{\partial\mathcal{F}_i}{\partial \dot{x}_i}
+  *    + \sum_{k=0}^K \frac{\partial x_k}{\partial x_j}
+  *      \frac{\partial\mathcal{F}_i}{\partial x_k}
+  *    + \frac{\partial t}{\partial x_j}
+  *    \frac{\partial\mathcal{F}_i}{\partial t}
+  * \f]
+  * but noting that \f$\partial\mathcal{F}_i/\partial t = 0\f$ and
+  * \f[
+  *    \frac{\partial x_k}{\partial x_j} = \left\{
+  *      \begin{array}{c}
+  *        1 \mbox{ if } j = k \\
+  *        0 \mbox{ if } j \neq k
+  *      \end{array}
+  *    \right.
+  * \f]
+  * we can write
+  * \f[
+  *   \frac{d\mathcal{F}_i}{dx_j} =
+  *     \alpha \frac{\partial\mathcal{F}_i}{\partial \dot{x}_j}
+  *   + \beta \frac{\partial\mathcal{F}_i}{\partial x_j}
+  * \f]
+  * where
+  * \f[
+  *   \alpha = \left\{
+  *     \begin{array}{cl}
+  *       \frac{\partial\dot{x}_i}{\partial x_j} & \mbox{ if } i = j \\
+  *       0 & \mbox{ if } i \neq j
+  *     \end{array} \right.
+  *   \;\;\;\; \mbox{ and } \;\;\;\;
+  *   \beta = \left\{
+  *   \begin{array}{cl}
+  *     \frac{\partial x_k}{\partial x_j} = 1 & \mbox{ if } j = k \\
+  *     0 & \mbox{ if } j \neq k
+  *   \end{array} \right.
+  * \f]
+  * Thus for the van der Pol problem, we have
+  * \f{eqnarray*}{
+  *   W_{00} = \alpha \frac{\partial\mathcal{F}_0}{\partial \dot{x}_0}
+  *           + \beta \frac{\partial\mathcal{F}_0}{\partial x_0}
+  *        & = & \alpha \\
+  *   W_{01} = \alpha \frac{\partial\mathcal{F}_0}{\partial \dot{x}_1}
+  *           + \beta \frac{\partial\mathcal{F}_0}{\partial x_1}
+  *        & = & -\beta \\
+  *   W_{10} = \alpha \frac{\partial\mathcal{F}_1}{\partial \dot{x}_0}
+  *           + \beta \frac{\partial\mathcal{F}_1}{\partial x_0}
+  *        & = & \beta (2 x_0 x_1 + 1)/\epsilon \\
+  *   W_{11} = \alpha \frac{\partial\mathcal{F}_1}{\partial \dot{x}_1}
+  *           + \beta \frac{\partial\mathcal{F}_1}{\partial x_1}
+  *        & = & \alpha + \beta (x^2_0 - 1)/\epsilon \\
+  * \f}
   */
 
 template<class Scalar>
@@ -118,15 +181,6 @@ private:
   Scalar x0_ic_;   ///< initial condition for x0
   Scalar x1_ic_;   ///< initial condition for x1
 };
-
-
-/// Non-member constructor
-//Teuchos::RCP<VanDerPolModel> sineCosineModel(
-//  Teuchos::RCP<Teuchos::ParameterList> pList_)
-//{
-//  Teuchos::RCP<VanDerPolModel> model = rcp(new VanDerPolModel(pList_));
-//  return(model);
-//}
 
 
 } // namespace Tempus_Test

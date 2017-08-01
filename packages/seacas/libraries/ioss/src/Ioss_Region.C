@@ -86,13 +86,6 @@ namespace {
 
   std::string uppercase(const std::string &my_name);
 
-  template <typename T> void uniqify(std::vector<T> &container)
-  {
-    std::sort(container.begin(), container.end());
-    container.erase(std::unique(container.begin(), container.end()), container.end());
-    std::vector<T>(container).swap(container);
-  }
-
   void check_for_duplicate_names(const Ioss::Region *region, const Ioss::GroupingEntity *entity)
   {
     const std::string &name = entity->name();
@@ -256,7 +249,7 @@ namespace Ioss {
     if (elementBlocks.empty() && structuredBlocks.empty()) {
       return MeshType::UNSTRUCTURED;
     }
-    else if (!elementBlocks.empty() && !structuredBlocks.empty()) {
+    if (!elementBlocks.empty() && !structuredBlocks.empty()) {
       return MeshType::HYBRID;
     }
     else if (!structuredBlocks.empty()) {
@@ -333,7 +326,7 @@ namespace Ioss {
         for (auto block : blocks) {
           block->field_describe(Ioss::Field::TRANSIENT, &names);
         }
-        uniqify(names);
+	Ioss::Utils::uniquify(names);
         strm << " Number of element variables      =" << std::setw(12) << names.size() << "\n";
       }
 
@@ -343,7 +336,7 @@ namespace Ioss {
         for (auto block : blocks) {
           block->field_describe(Ioss::Field::TRANSIENT, &names);
         }
-        uniqify(names);
+	Ioss::Utils::uniquify(names);
         strm << " Number of structured block vars  =" << std::setw(12) << names.size() << "\n";
       }
 
@@ -353,7 +346,7 @@ namespace Ioss {
         for (auto block : blocks) {
           block->field_describe(Ioss::Field::TRANSIENT, &names);
         }
-        uniqify(names);
+	Ioss::Utils::uniquify(names);
         strm << " Number of nodeset variables      =" << std::setw(12) << names.size() << "\n";
       }
 
@@ -367,7 +360,7 @@ namespace Ioss {
           }
         }
 
-        uniqify(names);
+	Ioss::Utils::uniquify(names);
         strm << " Number of sideset variables      =" << std::setw(12) << names.size() << "\n";
       }
 
@@ -1323,7 +1316,7 @@ namespace Ioss {
     if (io_type == EDGEBLOCK) {
       return get_edge_block(my_name);
     }
-    else if (io_type == SIDESET) {
+    if (io_type == SIDESET) {
       return get_sideset(my_name);
     }
     else if (io_type == NODESET) {
@@ -1717,7 +1710,7 @@ namespace Ioss {
       }
       return true;
     }
-    else if (((io_type & STRUCTUREDBLOCK) != 0u) && get_structured_block(my_name) != nullptr) {
+    if (((io_type & STRUCTUREDBLOCK) != 0u) && get_structured_block(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "STRUCTURED_BLOCK";
       }

@@ -45,7 +45,7 @@
 #define ROL_PRIMALDUALINTERIORPOINTRESIDUAL_H
 
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_RandomVector.hpp"
@@ -75,14 +75,14 @@
 namespace ROL { 
 
 template<class Real> 
-class PrimalDualInteriorPointResidual : public EqualityConstraint<Real> {
+class PrimalDualInteriorPointResidual : public Constraint<Real> {
 
   typedef Teuchos::ParameterList     PL;
 
   typedef Vector<Real>               V;
   typedef PartitionedVector<Real>    PV;
   typedef Objective<Real>            OBJ;
-  typedef EqualityConstraint<Real>   CON;
+  typedef Constraint<Real>           CON;
   typedef BoundConstraint<Real>      BND;
 
   typedef Elementwise::ValueSet<Real>   ValueSet;
@@ -101,7 +101,7 @@ private:
   const Teuchos::RCP<BND> bnd_;
 
   Teuchos::RCP<const V>   x_;            // Optimization vector
-  Teuchos::RCP<const V>   l_;            // Equality constraint multiplier
+  Teuchos::RCP<const V>   l_;            //  constraint multiplier
   Teuchos::RCP<const V>   zl_;           // Lower bound multiplier
   Teuchos::RCP<const V>   zu_;           // Upper bound multiplier
 
@@ -181,8 +181,8 @@ public:
                                    const Teuchos::RCP<const V> &maskU,
                                          Teuchos::RCP<V> &scratch,
                                          Real mu, bool symmetrize ) :
-    obj_(obj), con_(con), bnd_(bnd), xl_(bnd->getLowerVectorRCP()),
-    xu_(bnd->getUpperVectorRCP()), maskL_(maskL), maskU_(maskU), scratch_(scratch),
+    obj_(obj), con_(con), bnd_(bnd), xl_(bnd->getLowerBound()),
+    xu_(bnd->getUpperBound()), maskL_(maskL), maskU_(maskU), scratch_(scratch),
     mu_(mu), symmetrize_(symmetrize), one_(1.0), zero_(0.0), nfval_(0),
     ngrad_(0), ncval_(0) {
 
@@ -248,7 +248,7 @@ public:
     cx->plus(*zu_);            // cx = g+J'l-zl+zu
 
     /********************************************************************************/
-    /* Equality Constraint Components                                               */
+    /*  Constraint Components                                               */
     /********************************************************************************/
 
     con_->value(*cl,*x_,tol);     
@@ -358,7 +358,7 @@ public:
     jvx->plus(*scratch_);
 
     /********************************************************************************/
-    /* Equality Constraint Components                                               */
+    /*  Constraint Components                                               */
     /********************************************************************************/
 
     con_->applyJacobian(*jvl,*vx,*x_,tol);

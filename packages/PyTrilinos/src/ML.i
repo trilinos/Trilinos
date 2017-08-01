@@ -167,10 +167,10 @@ example subdirectory of the PyTrilinos package:
 %include "Epetra_RowMatrix_Utils.i"
 %ignore Epetra_Version;
 %import  "Epetra.i"
-#if SWIG_VERSION >= 0x030000
+#if PY_VERSION_HEX >= 0x030000
 %pythoncode
 %{
-import Epetra
+Epetra = PyTrilinos.Epetra
 %}
 #endif
 
@@ -270,23 +270,12 @@ BaseObject::__str__;
     }
     else
     {
-      if (!PyFile_Check(ostream))
-      {
-	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
-	goto fail;
-      }
-      else
-      {
-	std::FILE * f = PyFile_AsFile(ostream);
-	PyTrilinos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->Print(os, verbose);
-	os.flush();
-      }
+      std::ostringstream s;
+      self->Print(s, verbose);
+      if (PyFile_WriteString(s.str().c_str(), ostream))
+        throw PyTrilinos::PythonException();
     }
     return Py_BuildValue("");
-  fail:
-    return NULL;
   }
   // Define the __str__() method, used by the python str() operator
   // on any object given to the python print command.

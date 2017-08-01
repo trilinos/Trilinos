@@ -54,6 +54,7 @@
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_CompositeStep.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
@@ -149,14 +150,14 @@ int main(int argc, char *argv[]) {
     /*** Build objective function, equality constraint, reduced objective function and bound constraint. ***/
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj =
       Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con =
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
     Teuchos::RCP<ROL::Objective<RealT> > objReduced =
       Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bcon_control =
-      Teuchos::rcp(new ROL::BoundConstraint<RealT>(z_lo_p, z_up_p));
+      Teuchos::rcp(new ROL::Bounds<RealT>(z_lo_p, z_up_p));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bcon_state =
-      Teuchos::rcp(new ROL::BoundConstraint<RealT>(u_lo_p, u_up_p));
+      Teuchos::rcp(new ROL::Bounds<RealT>(u_lo_p, u_up_p));
     // Initialize SimOpt bound constraint.
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bcon_simopt =
       Teuchos::rcp(new ROL::BoundConstraint_SimOpt<RealT>(bcon_state,bcon_control));
@@ -183,7 +184,7 @@ int main(int argc, char *argv[]) {
     data->outputTpetraVector(u_rcp, "state.txt");
     data->outputTpetraVector(z_rcp, "control.txt");
 
-    ROL::MoreauYosidaPenalty<RealT> obj_my(obj, bcon_simopt, x, 10.0);
+    ROL::MoreauYosidaPenalty<RealT> obj_my(obj, bcon_simopt, x, *parlist);
     ROL::Algorithm<RealT> algo_my("Moreau-Yosida Penalty", *parlist, false);
     x.zero(); // set zero initial guess
     std::vector<std::string> algo_output;

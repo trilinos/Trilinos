@@ -112,7 +112,7 @@ template <class Real>
 class ExperimentDesignObjective : public Objective<Real> {
 private:
   Teuchos::RCP<Objective_SimOpt<Real> > obj_;            // objective function used for the conventional inverse problem 
-  Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_;   // constraint function used for the conventional inverse problems
+  Teuchos::RCP<Constraint_SimOpt<Real> > con_;   // constraint function used for the conventional inverse problems
   Teuchos::RCP<Vector<Real> > state_;                    // state vector, used for cloning
   Teuchos::RCP<Vector<Real> > adjoint_;                  // adjoint vector, used for cloning
   Teuchos::RCP<Vector<Real> > control_;                  // control vector, used for cloning
@@ -130,7 +130,7 @@ private:
 
 public:
   ExperimentDesignObjective(const Teuchos::RCP<Objective_SimOpt<Real> > &obj,
-                            const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &con,
+                            const Teuchos::RCP<Constraint_SimOpt<Real> > &con,
                             const Teuchos::RCP<Vector<Real> > &state,
                             const Teuchos::RCP<Vector<Real> > &adjoint,
                             const Teuchos::RCP<Vector<Real> > &control,
@@ -213,7 +213,7 @@ public:
   Teuchos::RCP<Vector<Real> > getObservationVec() const { return observation_; }
   Teuchos::RCP<Vector<Real> > getConstraintVec() const { return constraint_; }
   Teuchos::RCP<Objective_SimOpt<Real> > getObjective() const { return obj_; }
-  Teuchos::RCP<EqualityConstraint_SimOpt<Real> > getConstraint() const { return con_; }
+  Teuchos::RCP<Constraint_SimOpt<Real> > getConstraint() const { return con_; }
 
 private:
 

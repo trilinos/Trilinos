@@ -12,11 +12,13 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
-#include "Tempus_StepperNewmark.hpp"
-#include "Tempus_StepperNewmarkExplicit.hpp"
+#include "Tempus_StepperNewmarkImplicitAForm.hpp"
+#include "Tempus_StepperNewmarkImplicitDForm.hpp"
+#include "Tempus_StepperNewmarkExplicitAForm.hpp"
 #include "Tempus_StepperHHTAlpha.hpp"
 #include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperDIRK.hpp"
+#include "Tempus_StepperIMEX_RK.hpp"
 
 
 namespace Tempus {
@@ -67,10 +69,12 @@ private:
       return rcp(new StepperForwardEuler<Scalar>(model, stepperPL));
     else if (stepperType == "Backward Euler")
       return rcp(new StepperBackwardEuler<Scalar>(model, stepperPL));
-    else if (stepperType == "Newmark Beta")
-      return rcp(new StepperNewmark<Scalar>(model, stepperPL));
-    else if (stepperType == "Newmark Beta Explicit")
-      return rcp(new StepperNewmarkExplicit<Scalar>(model, stepperPL));
+    else if (stepperType == "Newmark Implicit a-Form")
+      return rcp(new StepperNewmarkImplicitAForm<Scalar>(model, stepperPL));
+    else if (stepperType == "Newmark Implicit d-Form")
+      return rcp(new StepperNewmarkImplicitDForm<Scalar>(model, stepperPL));
+    else if (stepperType == "Newmark Explicit a-Form")
+      return rcp(new StepperNewmarkExplicitAForm<Scalar>(model, stepperPL));
     else if (stepperType == "HHT-Alpha")
       return rcp(new StepperHHTAlpha<Scalar>(model, stepperPL));
     else if (
@@ -92,8 +96,9 @@ private:
       stepperType == "SDIRK 2 Stage 3rd order" ||
       stepperType == "SDIRK 3 Stage 4th order" ||
       stepperType == "SDIRK 5 Stage 4th order" ||
-      stepperType == "SDIRK 5 Stage 5th order"
-      //stepperType == "DIRK 2 Stage 3rd order"
+      stepperType == "SDIRK 5 Stage 5th order" ||
+      stepperType == "EDIRK 2 Stage 3rd order" ||
+      stepperType == "General DIRK"
       )
       return rcp(new StepperDIRK<Scalar>(model, stepperType, stepperPL));
     else if (
@@ -124,6 +129,12 @@ private:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error - Implicit RK not implemented yet!.\n");
     }
+    else if (
+      stepperType == "IMEX RK 1st order" ||
+      stepperType == "IMEX RK SSP2"      ||
+      stepperType == "IMEX RK ARS 233"   ||
+      stepperType == "General IMEX RK" )
+      return rcp(new StepperIMEX_RK<Scalar>(model, stepperType, stepperPL));
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Unknown 'Stepper Type' = " << stepperType);

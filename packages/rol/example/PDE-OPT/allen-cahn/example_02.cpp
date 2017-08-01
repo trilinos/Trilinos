@@ -58,12 +58,12 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_UnaryFunctions.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
-#include "ROL_CompositeEqualityConstraint_SimOpt.hpp"
+#include "ROL_CompositeConstraint_SimOpt.hpp"
 
 #include "../TOOLS/linearpdeconstraint.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
@@ -123,13 +123,13 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describe Poisson's equation
     Teuchos::RCP<PDE_Poisson_Boltzmann_ex02<RealT> > pde
       = Teuchos::rcp(new PDE_Poisson_Boltzmann_ex02<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     Teuchos::RCP<PDE_Constraint<RealT> > pdeCon
       = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
     Teuchos::RCP<PDE_Doping<RealT> > pdeDoping
       = Teuchos::rcp(new PDE_Doping<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > conDoping
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > conDoping
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pdeDoping,meshMgr,serial_comm,*parlist,*outStream,true));
     const Teuchos::RCP<Assembler<RealT> > assembler = pdeCon->getAssembler();
     assembler->printMeshData(*outStream);
@@ -213,8 +213,8 @@ int main(int argc, char *argv[]) {
                                        assembler->getDofManager()->getCellDofs(),
                                        assembler->getCellIds(),*parlist));
     // Initialize "filtered" of "unfiltered" constraint.
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pdeWithDoping
-      = Teuchos::rcp(new ROL::CompositeEqualityConstraint_SimOpt<RealT>(con, conDoping,
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pdeWithDoping
+      = Teuchos::rcp(new ROL::CompositeConstraint_SimOpt<RealT>(con, conDoping,
         *rp, *rp, *up, *zp, *zp, true, true));
     pdeWithDoping->setSolveParameters(*parlist);
     dope->build(rz_rcp);
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
     lop = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(lo_rcp,pde,assembler));
     hip = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,assembler));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
     bool deactivate = parlist->sublist("Problem").get("Deactivate Bound Constraints",false);
     if (deactivate) {
       bnd->deactivate();
@@ -284,8 +284,9 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
-    ROL::StochasticProblem<RealT> opt(*parlist,objReduced,sampler,zp,bnd);
-    opt.setSolutionStatistic(static_cast<RealT>(1));
+    ROL::OptimizationProblem<RealT> opt(objReduced,zp,bnd);
+    parlist->sublist("SOL").set("Initial Statistic", static_cast<RealT>(1));
+    opt.setStochasticObjective(*parlist,sampler);
 
     /*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
@@ -326,8 +327,7 @@ int main(int argc, char *argv[]) {
       *outStream << "\n\nCheck Hessian of Reduced Objective Function\n";
       objReduced->checkHessVec(*zp,*dzp,true,*outStream);
 
-      opt.checkObjectiveGradient(*dzp,true,*outStream);
-      opt.checkObjectiveHessVec(*dzp,true,*outStream);
+      opt.check(*outStream);
     }
 
     /*************************************************************************/

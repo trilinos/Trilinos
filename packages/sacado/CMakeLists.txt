@@ -127,11 +127,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Sacado_ENABLE_CXX11
   HAVE_SACADO_CXX11
   "Enable C++11 support in Sacado."
-  "${Trilinos_ENABLE_CXX11}"
+  "${${PROJECT_NAME}_ENABLE_CXX11}"
   )
 
 IF(Sacado_NEW_FAD_DESIGN_IS_DEFAULT AND NOT Sacado_ENABLE_CXX11)
-  message(FATAL_ERROR "New Fad design requires C++11 enabled.  Please reconfigure with Trilinos_ENABLE_CXX11=ON.")
+  message(FATAL_ERROR "New Fad design requires C++11 enabled.  Please reconfigure with ${PROJECT_NAME}_ENABLE_CXX11=ON.")
 ENDIF()
 
 #

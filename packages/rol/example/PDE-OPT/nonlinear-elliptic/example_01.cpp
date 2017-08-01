@@ -59,7 +59,7 @@
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describe Poisson's equation
     Teuchos::RCP<PDE_Nonlinear_Elliptic<RealT> > pde
       = Teuchos::rcp(new PDE_Nonlinear_Elliptic<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
       = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > hip
       = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,assembler));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
 
     // Initialize quadratic objective function
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);

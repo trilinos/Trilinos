@@ -395,41 +395,14 @@ public:
 
     if ( bnd.isActivated() ) {
       // Make initial guess feasible
-      bnd.project(x);
+      if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
+        bnd.projectInterior(x);
+      }
+      else {
+        bnd.project(x);
+      }
       xnew_ = x.clone();
       xold_ = x.clone();
-
-      // Make initial guess strictly feasible
-      if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
-        xold_->set(*bnd.getUpperVectorRCP());       // u
-        xold_->axpy(-one,*bnd.getLowerVectorRCP()); // u - l
-        Real minDiff = static_cast<Real>(1e-1)
-          * std::min(one, half * xold_->reduce(Elementwise::ReductionMin<Real>()));
-
-        class LowerFeasible : public Elementwise::BinaryFunction<Real> {
-        private:
-          const Real eps_;
-        public:
-          LowerFeasible(const Real eps) : eps_(eps) {}
-          Real apply( const Real &x, const Real &y ) const {
-            const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
-            return (x < y+tol) ? y+eps_ : x;
-          }
-        };
-        x.applyBinary(LowerFeasible(minDiff), *bnd.getLowerVectorRCP());
-
-        class UpperFeasible : public Elementwise::BinaryFunction<Real> {
-        private:
-          const Real eps_;
-        public:
-          UpperFeasible(const Real eps) : eps_(eps) {}
-          Real apply( const Real &x, const Real &y ) const {
-            const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
-            return (x > y-tol) ? y-eps_ : x;
-          }
-        };
-        x.applyBinary(UpperFeasible(minDiff), *bnd.getUpperVectorRCP());
-      }
     }
     gp_ = g.clone();
 

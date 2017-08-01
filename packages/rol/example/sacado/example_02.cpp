@@ -55,12 +55,12 @@
 #include <iostream>
 
 #include "ROL_Sacado_Objective.hpp"
-#include "ROL_Sacado_EqualityConstraint.hpp"
+#include "ROL_Sacado_Constraint.hpp"
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_CompositeStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -100,8 +100,8 @@ int main(int argc, char **argv)
     Teuchos::RCP< Sacado_Objective<RealT,Example_Objective> > obj = 
         Teuchos::rcp( new Sacado_Objective<RealT,Example_Objective> ());
 
-    Teuchos::RCP< Sacado_EqualityConstraint<RealT,Example_Constraint > > constr =
-        Teuchos::rcp( new Sacado_EqualityConstraint<RealT,Example_Constraint > (nc));
+    Teuchos::RCP< Sacado_Constraint<RealT,Example_Constraint > > constr =
+        Teuchos::rcp( new Sacado_Constraint<RealT,Example_Constraint > (nc));
 
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
 

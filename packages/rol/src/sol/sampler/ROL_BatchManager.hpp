@@ -64,7 +64,7 @@ public:
   }
 
   virtual void sumAll(Real* input, Real* output, int dim) {
-    for (int i=0; i<dim; i++) {
+    for (int i=0; i<dim; ++i) {
       output[i] = input[i];
     }
   }
@@ -73,9 +73,11 @@ public:
     output.set(input);
   }
 
-  virtual void reduceAll(Real *input, Real* output,
+  virtual void reduceAll(Real *input, Real* output, int dim,
                          const Elementwise::ReductionOp<Real> &r) {
-    output[0] = input[0];
+    for (int i=0; i<dim; ++i) {
+      output[i] = input[i];
+    }
   }
 
   virtual void broadcast(Real *input, int cnt, int root) {}

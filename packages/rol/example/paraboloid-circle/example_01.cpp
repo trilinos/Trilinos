@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   try {
 
     Teuchos::RCP<ROL::Objective<RealT> > obj;
-    Teuchos::RCP<ROL::EqualityConstraint<RealT> > constr;
+    Teuchos::RCP<ROL::Constraint<RealT> > constr;
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
     Teuchos::RCP<std::vector<RealT> > sol_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
     ROL::StdVector<RealT> x(x_rcp);      // Iteration vector.

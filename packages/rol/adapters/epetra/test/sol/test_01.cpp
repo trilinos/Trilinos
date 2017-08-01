@@ -60,7 +60,7 @@
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdEpetraBatchManager.hpp"
 
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 
 typedef double RealT;
 
@@ -114,7 +114,8 @@ void setUpAndSolve(Teuchos::ParameterList &list,
                    Teuchos::RCP<ROL::Vector<RealT> > &d,
                    Teuchos::RCP<ROL::BoundConstraint<RealT> > &bnd,
                    std::ostream & outStream) {
-  ROL::StochasticProblem<RealT> opt(list,pObj,sampler,x,bnd);
+  ROL::OptimizationProblem<RealT> opt(pObj,x,bnd);
+  opt.setStochasticObjective(list,sampler);
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
   opt.checkObjectiveGradient(*d,true,outStream);
   opt.checkObjectiveHessVec(*d,true,outStream);

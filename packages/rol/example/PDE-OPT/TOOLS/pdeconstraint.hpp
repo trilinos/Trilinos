@@ -48,12 +48,14 @@
 #ifndef ROL_PDEOPT_PDECONSTRAINT_H
 #define ROL_PDEOPT_PDECONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "pde.hpp"
 #include "assembler.hpp"
 #include "solver.hpp"
 #include "pdevector.hpp"
 
+// Do not instantiate the template in this translation unit.
+extern template class Assembler<double>;
 
 //// Global Timers.
 #ifdef ROL_TIMERS
@@ -84,7 +86,7 @@ namespace ROL {
 
 
 template<class Real>
-class PDE_Constraint : public ROL::EqualityConstraint_SimOpt<Real> {
+class PDE_Constraint : public ROL::Constraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<PDE<Real> > pde_;
   Teuchos::RCP<Assembler<Real> > assembler_;
@@ -679,7 +681,7 @@ public:
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                  Teuchos::ParameterList &parlist,
                  std::ostream &outStream = std::cout)
-    : ROL::EqualityConstraint_SimOpt<Real>(),
+    : ROL::Constraint_SimOpt<Real>(),
       pde_(pde),
       computeJ1_(true),  computeJ2_(true),  computeJ3_(true),
       setSolver_(true),
@@ -703,7 +705,7 @@ public:
   PDE_Constraint(const Teuchos::RCP<PDE<Real> >       &pde,
                  const Teuchos::RCP<Assembler<Real> > &assembler,
                  const Teuchos::RCP<Solver<Real> >    &solver)
-    : ROL::EqualityConstraint_SimOpt<Real>(),
+    : ROL::Constraint_SimOpt<Real>(),
       pde_(pde), assembler_(assembler), solver_(solver),
       computeJ1_(true),  computeJ2_(true),  computeJ3_(true),
       setSolver_(true),
@@ -725,7 +727,7 @@ public:
   void setParameter(const std::vector<Real> &param) {
     computeJ1_  = true; computeJ2_  = true; computeJ3_  = true;
     setSolver_  = true;
-    ROL::EqualityConstraint_SimOpt<Real>::setParameter(param);
+    ROL::Constraint_SimOpt<Real>::setParameter(param);
     pde_->setParameter(param);
   }
 
@@ -737,27 +739,27 @@ public:
     return pde_;
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::update_1;
+  using ROL::Constraint_SimOpt<Real>::update_1;
   void update_1(const ROL::Vector<Real> &u, bool flag = true, int iter = -1) {
     computeJ1_ = (flag ? true : computeJ1_);
     computeJ2_ = (flag ? true : computeJ2_);
     computeJ3_ = (flag ? true : computeJ3_);
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::update_2;
+  using ROL::Constraint_SimOpt<Real>::update_2;
   void update_2(const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
     computeJ1_ = (flag ? true : computeJ1_);
     computeJ2_ = (flag ? true : computeJ2_);
     computeJ3_ = (flag ? true : computeJ3_);
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::update;
+  using ROL::Constraint_SimOpt<Real>::update;
   void update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
     update_1(u,flag,iter);
     update_2(z,flag,iter);
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<Tpetra::MultiVector<> >       cf = getField(c);
     Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
@@ -774,7 +776,7 @@ public:
                  const ROL::Vector<Real> &z, Real &tol) {
     assembleJ1(u,z);
     if (isJ1notImplemented_) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyJacobian_1(jv,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyJacobian_1(jv,v,u,z,tol);
     }
     else {
       Teuchos::RCP<Tpetra::MultiVector<> >      jvf = getField(jv);
@@ -795,7 +797,7 @@ public:
     bool useFD2 = (isJ2notImplemented_ && vf != Teuchos::null);
     bool useFD3 = (isJ3notImplemented_ && vp != Teuchos::null);
     if (useFD2 || useFD3) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyJacobian_2(jv,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyJacobian_2(jv,v,u,z,tol);
     }
     else {
       Teuchos::RCP<Tpetra::MultiVector<> > jvf = getField(jv);
@@ -817,7 +819,7 @@ public:
                         const ROL::Vector<Real> &z, Real &tol) {
     assembleJ1(u,z);
     if (isJ1notImplemented_) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointJacobian_1(ajv,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyAdjointJacobian_1(ajv,v,u,z,tol);
     }
     else {
       Teuchos::RCP<Tpetra::MultiVector<> >     ajvf = getField(ajv);
@@ -838,7 +840,7 @@ public:
     bool useFD2 = (isJ2notImplemented_ && ajvf != Teuchos::null);
     bool useFD3 = (isJ3notImplemented_ && ajvp != Teuchos::null);
     if (useFD2 || useFD3) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointJacobian_2(ajv,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyAdjointJacobian_2(ajv,v,u,z,tol);
     }
     else {
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
@@ -859,7 +861,7 @@ public:
                         const ROL::Vector<Real> &z, Real &tol) {
     assembleH11(w,u,z);
     if (isH11notImplemented_) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_11(ahwv,w,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyAdjointHessian_11(ahwv,w,v,u,z,tol);
     }
     else {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
@@ -881,7 +883,7 @@ public:
     bool useFD2 = (isH12notImplemented_ && ahwvf != Teuchos::null);
     bool useFD3 = (isH13notImplemented_ && ahwvp != Teuchos::null);
     if (useFD2 || useFD3) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_12(ahwv,w,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyAdjointHessian_12(ahwv,w,v,u,z,tol);
     }
     else {
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
@@ -907,7 +909,7 @@ public:
     bool useFD2 = (isH21notImplemented_ && vf != Teuchos::null);
     bool useFD3 = (isH31notImplemented_ && vp != Teuchos::null);
     if (useFD2 || useFD3) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_21(ahwv,w,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyAdjointHessian_21(ahwv,w,v,u,z,tol);
     }
     else {
       Teuchos::RCP<Tpetra::MultiVector<> > ahwvf = getField(ahwv);
@@ -942,7 +944,7 @@ public:
     bool useFD32 = (isH32notImplemented_ && ahwvf != Teuchos::null);
     bool useFD33 = (isH33notImplemented_ && ahwvp != Teuchos::null);
     if (useFD22 || useFD23 || useFD32 || useFD33) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_22(ahwv,w,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyAdjointHessian_22(ahwv,w,v,u,z,tol);
     }
     else {
       bool zeroOut = true;
@@ -970,7 +972,7 @@ public:
                         const ROL::Vector<Real> &z, Real &tol) {
     assembleJ1(u,z);
     if (isJ1notImplemented_) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyInverseJacobian_1(ijv,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyInverseJacobian_1(ijv,v,u,z,tol);
     }
     else {
       if (isJ1zero_) {
@@ -991,7 +993,7 @@ public:
                                const ROL::Vector<Real> &z, Real &tol) {
     assembleJ1(u,z);
     if (isJ1notImplemented_) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyInverseAdjointJacobian_1(iajv,v,u,z,tol);
+      ROL::Constraint_SimOpt<Real>::applyInverseAdjointJacobian_1(iajv,v,u,z,tol);
     }
     else {
       if (isJ1zero_) {

@@ -12,9 +12,9 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       COMM serial mpi
       )
 
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(tawiesn_cp
-      SOURCE_FILES xxx.mm yyy.mm 1dofPresent0 1proc0 1ProcLinear0 rhs.mm theMatrix
-      )
+    # TRIBITS_COPY_FILES_TO_BINARY_DIR(tawiesn_cp
+    #   SOURCE_FILES driver.xml
+    #   )
 
   ENDIF()
 

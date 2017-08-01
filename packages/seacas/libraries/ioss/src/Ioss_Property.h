@@ -63,8 +63,7 @@ namespace Ioss {
     Property(const GroupingEntity *ge, std::string name, BasicType type);
 
     Property(const Property &from);
-
-    bool operator<(const Property &other) const;
+    Property &operator=(Property rhs);
 
     ~Property();
 
@@ -111,7 +110,6 @@ namespace Ioss {
     BasicType get_type() const { return type_; }
 
   private:
-    Property &   operator=(const Property &); // Do not implement
     std::string  name_;
     BasicType    type_;
     VariableType storage_;

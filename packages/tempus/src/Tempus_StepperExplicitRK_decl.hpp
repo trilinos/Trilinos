@@ -18,7 +18,12 @@ namespace Tempus {
 
 
 /** \brief Explicit Runge-Kutta time stepper.
- *  The general explicit Runge-Kutta method for \f$s\f$-stages, can be
+ *
+ *  For the explicit ODE system,
+ *  \f[
+ *    \dot{x} = \bar{f}(x,t),
+ *  \f]
+ *  the general explicit Runge-Kutta method for \f$s\f$-stages can be
  *  written as
  *  \f[
  *    X_{i} = x_{n-1}
@@ -28,14 +33,32 @@ namespace Tempus {
  *    x_{n} = x_{n-1}
  *    + \Delta t\,\sum_{i=1}^{s}b_{i}\,\bar{f}(X_{i},t_{n-1}+c_{i}\Delta t)
  *  \f]
- *  where \f$\dot{x}=\bar{f}(x,t)\f$ is the explicit form of the
- *  ODE, \f$X_{i}\f$ are intermediate approximations to the solution
+ *  where \f$X_{i}\f$ are intermediate approximations to the solution
  *  at times, \f$t_{n-1}+c_{i}\Delta t\f$, (stage solutions) which may
  *  be correct to a lower order of accuracy than the solution, \f$x_{n}\f$.
  *  We should note that these lower-order approximations are combined
  *  through \f$b_{i}\f$ so that error terms cancel out and produce a
  *  more accurate solution. Note for explicit RK that \f$a_{ij}=0\f$ for
  *  \f$j \leq i\f$ and does not require any solves.
+ *  Note that the stage time derivatives are
+ *  \f[
+ *    \dot{X}_{i} = \bar{f}(X_{i},t_{n-1}+c_{i}\Delta t),
+ *  \f]
+ *  and the time derivative by definition is
+ *  \f[
+ *    \dot{x}_{n} = \bar{f}(x_{n},t_{n}),
+ *  \f]
+ *
+ *  <b> Algorithm </b>
+ *  The single-timestep algorithm for Explicit RK is simply,
+ *   - for \f$i = 1 \ldots s\f$ do
+ *     - \f$X_i \leftarrow x_{n-1}
+ *              + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_j\f$
+ *     - Evaluate \f$\bar{f}(X_{i},t_{n-1}+c_{i}\Delta t)\f$
+ *     - \f$\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)\f$
+ *   - end for
+ *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
+ *   - \f$\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})\f$ [Optional]
  */
 template<class Scalar>
 class StepperExplicitRK : virtual public Tempus::Stepper<Scalar>
@@ -44,18 +67,18 @@ public:
 
   /// Constructor
   StepperExplicitRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     std::string stepperType,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return eODEModel_;}
+      getModel(){return appModel_;}
 
     virtual void setSolver(std::string solverName);
     virtual void setSolver(
@@ -102,25 +125,23 @@ private:
   /// Default Constructor -- not allowed
   StepperExplicitRK();
 
-  void explicitEvalModel(Teuchos::RCP<SolutionState<Scalar> > currentState);
-
 protected:
 
-  std::string                                        description_;
-  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
+  std::string                                            description_;
+  Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
   /// Explicit ODE ModelEvaluator
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > eODEModel_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >     appModel_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>              inArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>             outArgs_;
 
-  Teuchos::RCP<const RKButcherTableau<Scalar> >      ERK_ButcherTableau_;
+  Teuchos::RCP<const RKButcherTableau<Scalar> >          ERK_ButcherTableau_;
 
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stagef_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >           stageX_;
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
 
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >           ee_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
 };
 } // namespace Tempus
 

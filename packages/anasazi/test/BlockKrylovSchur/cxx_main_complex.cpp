@@ -54,7 +54,7 @@
 #include "AnasaziTypes.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#include "AnasaziFactory.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef HAVE_MPI
@@ -251,10 +251,11 @@ int main(int argc, char *argv[])
   MyPL.set( "In Situ Restarting", insitu );
   //
   // Create the solver manager
-  Anasazi::BlockKrylovSchurSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
+  RCP<Anasazi::SolverManager<ST,MV,OP>> MySolverMgr =
+          Anasazi::Factory::create("BLOCK_KRYLOV_SCHUR", problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  Anasazi::ReturnType returnCode = MySolverMgr.solve();
+  Anasazi::ReturnType returnCode = MySolverMgr->solve();
   testFailed = false;
   if (returnCode != Anasazi::Converged && shortrun==false) {
     testFailed = true;

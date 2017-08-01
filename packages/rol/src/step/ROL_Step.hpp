@@ -47,7 +47,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_Types.hpp"
 
@@ -128,14 +128,14 @@ public:
   /** \brief Initialize step with equality constraint.
   */
   virtual void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
-                           Objective<Real> &obj, EqualityConstraint<Real> &con,
+                           Objective<Real> &obj, Constraint<Real> &con,
                            AlgorithmState<Real> &algo_state ) {
   }
 
   /** \brief Initialize step with equality constraint.
   */
   virtual void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
-                           Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
+                           Objective<Real> &obj, Constraint<Real> &con, BoundConstraint<Real> &bnd,
                            AlgorithmState<Real> &algo_state ) {
   }
 
@@ -158,15 +158,15 @@ public:
   /** \brief Compute step (equality constraints).
   */
   virtual void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                        Objective<Real> &obj, EqualityConstraint<Real> &con,
+                        Objective<Real> &obj, Constraint<Real> &con,
                         AlgorithmState<Real> &algo_state ) {
-    throw Exception::NotImplemented(">>> ROL::Step::compute(s,x,l,obj,bnd,con,algo_state) is not implemented!");
+    throw Exception::NotImplemented(">>> ROL::Step::compute(s,x,l,obj,con,algo_state) is not implemented!");
   }
 
   /** \brief Update step, if successful (equality constraints).
   */
   virtual void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-                       Objective<Real> &obj, EqualityConstraint<Real> &con,
+                       Objective<Real> &obj, Constraint<Real> &con,
                        AlgorithmState<Real> &algo_state ) {
     throw Exception::NotImplemented(">>> ROL::Step::update(x,s,l,obj,bnd,con,algo_state) is not implemented!");
   }
@@ -174,7 +174,7 @@ public:
   /** \brief Compute step (equality constraints).
   */
   virtual void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                        Objective<Real> &obj, EqualityConstraint<Real> &con,
+                        Objective<Real> &obj, Constraint<Real> &con,
                         BoundConstraint<Real> &bnd,
                         AlgorithmState<Real> &algo_state ) {
     throw Exception::NotImplemented(">>> ROL::Step::compute(s,x,l,obj,bnd,con,algo_state) is not implemented!");
@@ -183,7 +183,7 @@ public:
   /** \brief Update step, if successful (equality constraints).
   */
   virtual void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-                       Objective<Real> &obj, EqualityConstraint<Real> &con,
+                       Objective<Real> &obj, Constraint<Real> &con,
                        BoundConstraint<Real> &bnd,
                        AlgorithmState<Real> &algo_state ) {
     throw Exception::NotImplemented(">>> ROL::Step::update(x,s,l,obj,bnd,con,algo_state) is not implemented!");
@@ -200,7 +200,7 @@ public:
     RCP<Objective<Real> >          obj = opt.getObjective();
     RCP<Vector<Real> >             x   = opt.getSolutionVector();
     RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    RCP<EqualityConstraint<Real> > con = opt.getEqualityConstraint();
+    RCP<Constraint<Real> >         con = opt.getConstraint();
     RCP<Vector<Real> >             l   = opt.getMultiplierVector();
 
     if( con == Teuchos::null ) { // has no equality constraint
@@ -225,7 +225,7 @@ public:
     RCP<Objective<Real> >          obj = opt.getObjective();
     RCP<Vector<Real> >             x   = opt.getSolutionVector();
     RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    RCP<EqualityConstraint<Real> > con = opt.getEqualityConstraint();
+    RCP<Constraint<Real> >         con = opt.getConstraint();
     RCP<Vector<Real> >             l   = opt.getMultiplierVector();
 
     if( con == Teuchos::null ) { // has no equality constraint
@@ -250,7 +250,7 @@ public:
     RCP<Objective<Real> >          obj = opt.getObjective();
     RCP<Vector<Real> >             x   = opt.getSolutionVector();
     RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    RCP<EqualityConstraint<Real> > con = opt.getEqualityConstraint();
+    RCP<Constraint<Real> >         con = opt.getConstraint();
     RCP<Vector<Real> >             l   = opt.getMultiplierVector();
 
     if( con == Teuchos::null ) { // has no equality constraint

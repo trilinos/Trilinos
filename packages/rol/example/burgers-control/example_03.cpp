@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     RealT nu    = 1.e-2; // Set viscosity parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx,nt,T);
     // Initialize equality constraints
-    EqualityConstraint_BurgersControl<RealT> con(nx, nt, T, nu);
+    Constraint_BurgersControl<RealT> con(nx, nt, T, nu);
     // Initialize iteration vectors.
     Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT> ((nx+2)*(nt+1), 1.0) );
     Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> ((nx+2)*(nt+1), 1.0) );
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> p(p_rcp);
     Teuchos::RCP<ROL::Vector<RealT> > pp  = Teuchos::rcp(&p,false);
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,zp,pp);
     // Check derivatives.
     robj.checkGradient(z,z,yz,true,*outStream);

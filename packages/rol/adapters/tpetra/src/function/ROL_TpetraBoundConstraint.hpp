@@ -511,20 +511,6 @@ namespace ROL {
 
                 Kokkos::parallel_for(lclDim_,prune);                
             }
-
-            void setVectorToUpperBound(Vector<Real> &u) {
-                Teuchos::RCP<MV> up =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(u)).getVector());
-
-                up->assign(*up_);
-            }
-
-            void setVectorToLowerBound(Vector<Real> &l) {
-                Teuchos::RCP<MV> lp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(l)).getVector());
-
-                lp->assign(*lp_);
-            }
       }; // End class TpetraBoundConstraint 
 
 } // End ROL Namespace

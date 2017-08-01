@@ -56,6 +56,7 @@
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_CompositeStep.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
@@ -74,7 +75,7 @@ typedef double RealT;
 class MyInterfaceOED : public ROL::ExperimentDesignInterface<RealT> {
 public:
   MyInterfaceOED(const Teuchos::RCP<ROL::Objective_SimOpt<RealT> > &obj,
-                 const Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > &con,
+                 const Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > &con,
                  const Teuchos::RCP<ROL::Vector<RealT> > &state,
                  const Teuchos::RCP<ROL::Vector<RealT> > &stateDual,
                  const Teuchos::RCP<ROL::Vector<RealT> > &control,
@@ -204,7 +205,7 @@ int main(int argc, char *argv[]) {
     wp->applyUnary(IsGreaterThan<RealT>(fnzw, 1.0, 0.0));
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj =
       Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, w_rcp, parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con =
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
     Teuchos::RCP<ROL::Objective<RealT> > objReduced =
       Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp));
@@ -269,7 +270,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<MyInterfaceOED> oed =
       Teuchos::rcp(new MyInterfaceOED(obj, con, up, up, zp, zp, cp, cp, up, up, randvecs, training_models));
     ROL::ExperimentDesignObjective<RealT> objOED(oed, parlistOED);
-    ROL::BoundConstraint<RealT> bconOED(wlop, wupp);
+    ROL::Bounds<RealT> bconOED(wlop, wupp);
     w_rcp->putScalar(1e-2);
     *outStream << std::endl << "Checking OED objective gradient:" << std::endl;
     dwp->scale(1e-2);

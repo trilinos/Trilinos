@@ -389,7 +389,7 @@ void get_put_vars(int exo_file, ex_entity_type type, int num_blocks, int num_var
     dims[0] = 2;
     dims[1] = num_vars;
     matvar_t *cell_array =
-        Mat_VarCreate(var_name.c_str(), MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+        Mat_VarCreate(var_name.c_str(), MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
     assert(cell_array);
 
     std::vector<double> scr(num_vars * num_time_steps * num_entity);
@@ -407,12 +407,12 @@ void get_put_vars(int exo_file, ex_entity_type type, int num_blocks, int num_var
       size_t sdims[2];
       sdims[0]        = 1;
       sdims[1]        = names[i].length();
-      cell_element[j] = Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
+      cell_element[j] = Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
                                       (void *)names[i].c_str(), MAT_F_DONT_COPY_DATA);
       Mat_VarSetCell(cell_array, j, cell_element[j]);
       j++;
 
-      cell_element[j] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
+      cell_element[j] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
                                       MAT_F_DONT_COPY_DATA);
       assert(cell_element[j]);
       Mat_VarSetCell(cell_array, j, cell_element[j]);
@@ -480,7 +480,7 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
     dims[0] = num_field;
     dims[1] = num_blocks;
     matvar_t *cell_array =
-        Mat_VarCreate("element_blocks", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+        Mat_VarCreate("element_blocks", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
     assert(cell_array);
 
     std::vector<matvar_t *> cell_element(num_blocks * num_field);
@@ -495,7 +495,7 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       int  num_elem = 0;
       int  num_node = 0;
       int  num_attr = 0;
-      ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], type, &num_elem, &num_node, NULL, NULL,
+      ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], type, &num_elem, &num_node, nullptr, nullptr,
                    &num_attr);
       types[i]             = std::string(type);
       num_elem_in_block[i] = num_elem;
@@ -512,28 +512,28 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       dims[1]      = std::strlen(name.data());
       size_t index = num_field * i + 0;
       cell_element[index] =
-          Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
+          Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
       Mat_VarSetCell(cell_array, index, cell_element[index]);
 
       dims[0] = 1;
       dims[1] = 1;
       index   = num_field * i + 1;
       cell_element[index] =
-          Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i], MAT_F_DONT_COPY_DATA);
+          Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i], MAT_F_DONT_COPY_DATA);
       Mat_VarSetCell(cell_array, index, cell_element[index]);
 
       dims[0] = 1;
       dims[1] = types[i].length();
       index   = num_field * i + 2;
       cell_element[index] =
-          Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)types[i].c_str(), 0);
+          Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)types[i].c_str(), 0);
       Mat_VarSetCell(cell_array, index, cell_element[index]);
 
       dims[0] = num_node_per_elem[i];
       dims[1] = num_elem_in_block[i];
       index   = num_field * i + 3;
       ex_get_conn(exo_file, EX_ELEM_BLOCK, ids[i], &connect[conn_off], nullptr, nullptr);
-      cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+      cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                           &connect[conn_off], MAT_F_DONT_COPY_DATA);
       assert(cell_element[index]);
       Mat_VarSetCell(cell_array, index, cell_element[index]);
@@ -555,8 +555,8 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       int num_elem = 0;
       int num_node = 0;
       int num_attr = 0;
-      ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], TOPTR(type), &num_elem, &num_node, NULL, NULL,
-                   &num_attr);
+      ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], TOPTR(type), &num_elem, &num_node, nullptr,
+                   nullptr, &num_attr);
       types += type.data();
       types += "\n";
       num_elem_in_block[i] = num_elem;
@@ -624,9 +624,10 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
     // 4) distribution factors
     if (use_cell_arrays) {
       size_t dims[2];
-      dims[0]              = 4;
-      dims[1]              = num_sets;
-      matvar_t *cell_array = Mat_VarCreate("node_sets", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+      dims[0] = 4;
+      dims[1] = num_sets;
+      matvar_t *cell_array =
+          Mat_VarCreate("node_sets", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
 
       std::vector<matvar_t *> cell_element(num_sets * 4);
@@ -646,14 +647,14 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
         dims[1]      = std::strlen(name.data());
         size_t index = 4 * i + 0;
         cell_element[index] =
-            Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
+            Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
-        dims[0] = 1;
-        dims[1] = 1;
-        index   = 4 * i + 1;
-        cell_element[index] =
-            Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i], MAT_F_DONT_COPY_DATA);
+        dims[0]             = 1;
+        dims[1]             = 1;
+        index               = 4 * i + 1;
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i],
+                                            MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         dims[0] = num_nodes[i];
@@ -661,7 +662,7 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
         index   = 4 * i + 2;
         ex_get_set(exo_file, EX_NODE_SET, ids[i], &node_list[nl_off], nullptr);
         /* nodes list */
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &node_list[nl_off], MAT_F_DONT_COPY_DATA);
         assert(cell_element[index]);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
@@ -669,7 +670,7 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
         /* distribution-factors list */
         ex_get_set_dist_fact(exo_file, EX_NODE_SET, ids[i], &dist_fac[df_off]);
         index               = 4 * i + 3;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims,
                                             &dist_fac[df_off], MAT_F_DONT_COPY_DATA);
         assert(cell_element[index]);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
@@ -728,9 +729,10 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
 
     if (use_cell_arrays) {
       size_t dims[2];
-      dims[0]              = 7;
-      dims[1]              = num_sets;
-      matvar_t *cell_array = Mat_VarCreate("side_sets", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+      dims[0] = 7;
+      dims[1] = num_sets;
+      matvar_t *cell_array =
+          Mat_VarCreate("side_sets", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
 
       std::vector<matvar_t *> cell_element(num_sets * 7);
@@ -758,14 +760,14 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         dims[1]      = std::strlen(name.data());
         size_t index = 7 * i + 0;
         cell_element[index] =
-            Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
+            Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
-        dims[0] = 1;
-        dims[1] = 1;
-        index   = 7 * i + 1;
-        cell_element[index] =
-            Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i], MAT_F_DONT_COPY_DATA);
+        dims[0]             = 1;
+        dims[1]             = 1;
+        index               = 7 * i + 1;
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i],
+                                            MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         int n1, n2;
@@ -784,12 +786,12 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         dims[0]             = num_sideset_sides[i];
         dims[1]             = 1;
         index               = 7 * i + 2;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &elem_list[side_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         index               = 7 * i + 3;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &side_list[side_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
@@ -804,14 +806,14 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
 
         /* number-of-nodes-per-side list */
         index               = 7 * i + 4;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &num_nodes_per_side[side_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         dims[0]             = num_sideset_nodes[i];
         dims[1]             = 1;
         index               = 7 * i + 5;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &side_nodes[node_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
@@ -828,7 +830,7 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         dims[0]             = num_sideset_dfac[i];
         dims[1]             = 1;
         index               = 7 * i + 6;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims,
                                             &ssdfac[df_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
@@ -1169,7 +1171,7 @@ int main(int argc, char *argv[])
       size_t dims[2];
       dims[0]              = 2;
       dims[1]              = num_global_vars;
-      matvar_t *cell_array = Mat_VarCreate("gvar", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+      matvar_t *cell_array = Mat_VarCreate("gvar", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
       std::vector<double> scr(num_time_steps * num_global_vars);
       dims[0]       = num_time_steps;
@@ -1184,13 +1186,13 @@ int main(int argc, char *argv[])
         size_t sdims[2];
         sdims[0]        = 1;
         sdims[1]        = gnames[i].length();
-        cell_element[j] = Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
+        cell_element[j] = Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
                                         (void *)gnames[i].c_str(), MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, j, cell_element[j]);
         j++;
 
         ex_get_var_time(exo_file, EX_GLOBAL, i + 1, 1, 1, num_time_steps, &scr[offset]);
-        cell_element[j] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
+        cell_element[j] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
                                         MAT_F_DONT_COPY_DATA);
         assert(cell_element[j]);
         Mat_VarSetCell(cell_array, j, cell_element[j]);
@@ -1223,7 +1225,7 @@ int main(int argc, char *argv[])
       size_t dims[2];
       dims[0]              = 2;
       dims[1]              = num_nodal_vars;
-      matvar_t *cell_array = Mat_VarCreate("nvar", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+      matvar_t *cell_array = Mat_VarCreate("nvar", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
       std::vector<double> scr(num_nodal_vars * num_time_steps * num_nodes);
       dims[0]       = num_nodes;
@@ -1238,12 +1240,12 @@ int main(int argc, char *argv[])
         size_t sdims[2];
         sdims[0]        = 1;
         sdims[1]        = nnames[i].length();
-        cell_element[j] = Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
+        cell_element[j] = Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
                                         (void *)nnames[i].c_str(), MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, j, cell_element[j]);
         j++;
 
-        cell_element[j] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
+        cell_element[j] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
                                         MAT_F_DONT_COPY_DATA);
         assert(cell_element[j]);
         Mat_VarSetCell(cell_array, j, cell_element[j]);

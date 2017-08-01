@@ -54,7 +54,8 @@
 #include "AnasaziTypes.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBlockDavidsonSolMgr.hpp"
+#include "AnasaziFactory.hpp"
+
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef HAVE_MPI
@@ -242,8 +243,9 @@ int main(int argc, char *argv[])
   MyPL.set( "In Situ Restarting", insitu );
   //
   // Create the solver manager
-  Anasazi::BlockDavidsonSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
-  // 
+  RCP<Anasazi::SolverManager<ScalarType,MV,OP>> MySolverMan =
+          Anasazi::Factory::create("BLOCK_DAVIDSON", problem, MyPL);
+  //
   // Check that the parameters were all consumed
   if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
       MyPL.getEntryPtr("Which")->isUsed() == false ||
@@ -261,7 +263,7 @@ int main(int argc, char *argv[])
   }
 
   // Solve the problem to the specified tolerances or length
-  Anasazi::ReturnType returnCode = MySolverMan.solve();
+  Anasazi::ReturnType returnCode = MySolverMan->solve();
   testFailed = false;
   if (returnCode != Anasazi::Converged && shortrun==false) {
     testFailed = true;

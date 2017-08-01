@@ -48,12 +48,14 @@
 #ifndef ROL_PDEOPT_LINEARPDECONSTRAINT_H
 #define ROL_PDEOPT_LINEARPDECONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "pde.hpp"
 #include "assembler.hpp"
 #include "solver.hpp"
 #include "pdevector.hpp"
 
+// Do not instantiate the template in this translation unit.
+extern template class Assembler<double>;
 
 //// Global Timers.
 #ifdef ROL_TIMERS
@@ -75,7 +77,7 @@ namespace ROL {
 
 
 template<class Real>
-class Linear_PDE_Constraint : public ROL::EqualityConstraint_SimOpt<Real> {
+class Linear_PDE_Constraint : public ROL::Constraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<PDE<Real> > pde_;
   Teuchos::RCP<Assembler<Real> > assembler_;
@@ -235,7 +237,7 @@ public:
                         Teuchos::ParameterList &parlist,
                         std::ostream &outStream = std::cout,
                         const bool isStochastic = false)
-    : ROL::EqualityConstraint_SimOpt<Real>(), pde_(pde),
+    : ROL::Constraint_SimOpt<Real>(), pde_(pde),
       initZvec_(true), initZpar_(true), isStochastic_(isStochastic),
       assembleRHS_(true), assembleJ1_(true), assembleJ2_(true), assembleJ3_(true), setSolver_(true) {
     // Construct assembler.
@@ -251,7 +253,7 @@ public:
 
   void setParameter(const std::vector<Real> &param) {
     if (isStochastic_) {
-      ROL::EqualityConstraint_SimOpt<Real>::setParameter(param);
+      ROL::Constraint_SimOpt<Real>::setParameter(param);
       pde_->setParameter(param);
       assembleRHS_ = true;
       assembleJ1_  = true;
@@ -269,19 +271,19 @@ public:
     return pde_;
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::update_1;
+  using ROL::Constraint_SimOpt<Real>::update_1;
   void update_1(const ROL::Vector<Real> &u, bool flag = true, int iter = -1) {}
 
-  using ROL::EqualityConstraint_SimOpt<Real>::update_2;
+  using ROL::Constraint_SimOpt<Real>::update_2;
   void update_2(const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {}
 
-  using ROL::EqualityConstraint_SimOpt<Real>::update;
+  using ROL::Constraint_SimOpt<Real>::update;
   void update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
     update_1(u,flag,iter);
     update_2(z,flag,iter);
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<Tpetra::MultiVector<> >       cf = getField(c);
     Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);

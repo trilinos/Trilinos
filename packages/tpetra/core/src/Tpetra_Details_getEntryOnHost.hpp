@@ -89,10 +89,10 @@ struct GetEntryOnHost<ViewType, IndexType, false> {
     // the array, and copy to device.  Do not use host mirror, because
     // that could just be a UVM View if using UVM.
     static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
+#ifdef KOKKOS_HAVE_CUDA
     // Do not use Kokkos::create_mirror_view, because that could just
     // be a UVM View if using UVM.
     typedef typename ViewType::device_type device_type;
-#ifdef KOKKOS_HAVE_CUDA
     // Hide this in ifdef, to avoid unused typedef warning.
     typedef typename device_type::execution_space dev_exec_space;
 #endif // KOKKOS_HAVE_CUDA

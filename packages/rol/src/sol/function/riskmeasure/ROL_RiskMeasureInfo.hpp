@@ -62,6 +62,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
   if ( name == "CVaR"                           ||
        name == "HMCR"                           ||
        name == "Moreau-Yosida CVaR"             ||
+       name == "Generalized Moreau-Yosida CVaR" ||
        name == "Log-Exponential Quadrangle"     ||
        name == "Log-Quantile Quadrangle"        ||
        name == "Mean-Variance Quadrangle"       ||
@@ -135,6 +136,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       if ( riskString[i] == "CVaR"                           ||
            riskString[i] == "HMCR"                           ||
            riskString[i] == "Moreau-Yosida CVaR"             ||
+           riskString[i] == "Generalized Moreau-Yosida CVaR" ||
            riskString[i] == "Log-Exponential Quadrangle"     ||
            riskString[i] == "Log-Quantile Quadrangle"        ||
            riskString[i] == "Mean-Variance Quadrangle"       ||

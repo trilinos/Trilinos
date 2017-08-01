@@ -47,7 +47,7 @@
 
 #include "Teuchos_config.h"
 #ifdef HAVE_TEUCHOS_MPI
-#  include "mpi.h" // need this for MPI_Op (see below)
+#  include <mpi.h> // need this for MPI_Op (see below)
 #endif // HAVE_TEUCHOS_MPI
 
 namespace Teuchos {

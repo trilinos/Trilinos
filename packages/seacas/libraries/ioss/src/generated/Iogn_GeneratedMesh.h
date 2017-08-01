@@ -43,7 +43,7 @@
 #include <vector>            // for vector
 
 namespace Iogn {
-  typedef std::vector<int64_t> MapVector;
+  using MapVector = std::vector<int64_t>;
 
   class GeneratedMesh
   {

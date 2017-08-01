@@ -147,11 +147,19 @@ using namespace NOX::Petsc;
 // Trilinos interface import
 %import "Teuchos.i"
 
+%pythonbegin
+%{
+from .. import Abstract
+from .  import Interface
+%}
+
 // Allow import from the parent directory
 %pythoncode
 %{
 import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+thisDir   = op.dirname(op.abspath(__file__))
+parentDir = op.normpath(op.join(thisDir,".."))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}

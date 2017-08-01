@@ -68,6 +68,8 @@
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 #endif
 
 #ifdef PANZER_HAVE_IFPACK2
@@ -78,7 +80,7 @@ namespace panzer_stk {
 
 namespace {
 
-  bool 
+  bool
   determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName)
   {
     std::vector<std::string> elementBlocks;
@@ -110,7 +112,7 @@ namespace {
   }
 
   template<typename GO>
-  void 
+  void
   fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer,
                       const std::string & fieldName,
                       std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fieldPatterns)
@@ -227,7 +229,7 @@ namespace {
           // determine if you want rigid body null space modes...currently an extremely specialized case!
           if(strat_params->sublist("Preconditioner Types").isSublist("ML")) {
 /*           COMMENTING THIS OUT FOR NOW, this is causing problems with some of the preconditioners in optimization...not sure why
- 
+
              Teuchos::ParameterList & ml_params = strat_params->sublist("Preconditioner Types").sublist("ML").sublist("ML Settings");
 
              {
@@ -260,7 +262,7 @@ namespace {
                 std::vector<double> & xcoords = const_cast<std::vector<double> & >(callback->getXCoordsVector());
                 std::vector<double> & ycoords = const_cast<std::vector<double> & >(callback->getYCoordsVector());
                 std::vector<double> & zcoords = const_cast<std::vector<double> & >(callback->getZCoordsVector());
- 
+
                 // use ML to build the null space modes for ML
                 int Nnodes     = Teuchos::as<int>(xcoords.size());
                 int NscalarDof = 0;
@@ -268,7 +270,7 @@ namespace {
                 int nRBM       = spatialDim==3 ? 6 : (spatialDim==2 ? 3 : 1);
                 int rbmSize    = Nnodes*(nRBM+NscalarDof)*(Ndof+NscalarDof);
                 rbm_ref.resize(rbmSize);
- 
+
                 ML_Coord2RBM(Nnodes,&xcoords[0],&ycoords[0],&zcoords[0],&rbm_ref[0],Ndof,NscalarDof);
 
                 ml_params.set<double*>("null space: vectors",&rbm_ref[0]);
@@ -422,7 +424,49 @@ namespace {
             default:
                TEUCHOS_ASSERT(false);
             }
-          }
+
+            // TODO add MueLu code...
+            #ifdef PANZER_HAVE_MUELU
+            if(useCoordinates) {
+
+              typedef Xpetra::Map<int,GO> Map;
+              typedef Xpetra::MultiVector<double,int,GO> MV;
+
+              // TODO This is Epetra-specific
+              RCP<const Map> coords_map = Xpetra::MapFactory<int,GO>::Build(Xpetra::UseEpetra,
+                  Teuchos::OrdinalTraits<GO>::invalid(),
+                  //Teuchos::ArrayView<GO>(ownedIndices),
+                  xcoords.size(),
+                  0,
+                  mpi_comm
+              );
+
+              unsigned dim = Teuchos::as<unsigned>(spatialDim);
+
+              RCP<MV> coords = Xpetra::MultiVectorFactory<double,int,GO>::Build(coords_map,spatialDim);
+
+              for(unsigned d=0;d<dim;d++) {
+                // sanity check the size
+                TEUCHOS_ASSERT(coords->getLocalLength()==xcoords.size());
+
+                // fill appropriate coords vector
+                Teuchos::ArrayRCP<double> dest = coords->getDataNonConst(d);
+                for(std::size_t i=0;i<coords->getLocalLength();i++) {
+                  if (d == 0) dest[i] = xcoords[i];
+                  if (d == 1) dest[i] = ycoords[i];
+                  if (d == 2) dest[i] = zcoords[i];
+                }
+              }
+
+              // TODO This is Epetra-specific
+              // inject coordinates into parameter list
+              Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu");
+              muelu_params.set<RCP<MV> >("Coordinates",coords);
+
+            }
+            #endif
+
+          } /* end loop over all physical fields */
        }
 
        if(writeTopo) {

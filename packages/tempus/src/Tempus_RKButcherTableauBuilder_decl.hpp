@@ -42,15 +42,10 @@ class RKButcherTableauBuilder :
 
     /** \name Overridden from Teuchos::ParameterListAcceptor */
     //@{
-      /** \brief . */
       void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);
-      /** \brief . */
       Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-      /** \brief . */
       Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-      /** \brief. */
       Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-      /** \brief. */
       Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
     //@}
   private:

@@ -45,7 +45,7 @@
 
 #include <map>
 
-#include "mpi.h"
+#include <mpi.h>
 
 #include "PanzerDofMgr_config.hpp"
 #include "Panzer_FieldPattern.hpp"
@@ -260,22 +260,91 @@ Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::s
   return Teuchos::null;
 }
 
-template <typename LO, typename GO>
-void DOFManager<LO, GO>::getOwnedIndices(std::vector<GO>& indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LO, typename GO>
+void
+DOFManager<LO, GO>::
+getOwnedIndices(
+  std::vector<GO>& indices) const
 {
   indices = owned_;
-}
+} // end of getOwnedIndices()
 
-template <typename LO, typename GO>
-void DOFManager<LO, GO>::getOwnedAndGhostedIndices(std::vector<GO>& indices)
-	const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LO, typename GO>
+void
+DOFManager<LO, GO>::
+getGhostedIndices(
+  std::vector<GO>& indices) const
 {
+  indices = ghosted_;
+} // end of getGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedAndGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LO, typename GO>
+void
+DOFManager<LO, GO>::
+getOwnedAndGhostedIndices(
+  std::vector<GO>& indices) const
+{
+  using std::size_t;
   indices.resize(owned_.size() + ghosted_.size());
-  for (size_t i = 0; i < owned_.size(); ++i)
+  for (size_t i(0); i < owned_.size(); ++i)
     indices[i] = owned_[i];
-  for (size_t i = 0; i < ghosted_.size(); ++i)
+  for (size_t i(0); i < ghosted_.size(); ++i)
     indices[owned_.size() + i] = ghosted_[i];
-}
+} // end of getOwnedAndGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwned()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LO, typename GO>
+int
+DOFManager<LO, GO>::
+getNumOwned() const
+{
+  return owned_.size();
+} // end of getNumOwned()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LO, typename GO>
+int
+DOFManager<LO, GO>::
+getNumGhosted() const
+{
+  return ghosted_.size();
+} // end of getNumGhosted()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwnedAndGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LO, typename GO>
+int
+DOFManager<LO, GO>::
+getNumOwnedAndGhosted() const
+{
+  return owned_.size() + ghosted_.size();
+} // end of getNumOwnedAndGhosted()
 
   //gets the number of fields
 template <typename LO, typename GO>

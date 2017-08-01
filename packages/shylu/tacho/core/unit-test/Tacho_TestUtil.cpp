@@ -32,14 +32,14 @@ TEST( Util, coo ) {
 }
 
 TEST( util, tag ) {
-  EXPECT_TRUE(is_valid_partition_tag<Partition::Top>::value);
-  EXPECT_TRUE(is_valid_partition_tag<Partition::Bottom>::value);
-  EXPECT_TRUE(is_valid_partition_tag<Partition::Left>::value);
-  EXPECT_TRUE(is_valid_partition_tag<Partition::Right>::value);
-  EXPECT_TRUE(is_valid_partition_tag<Partition::TopLeft>::value);
-  EXPECT_TRUE(is_valid_partition_tag<Partition::TopRight>::value);
-  EXPECT_TRUE(is_valid_partition_tag<Partition::BottomLeft>::value);
-  EXPECT_TRUE(is_valid_partition_tag<Partition::BottomRight>::value);
+  // EXPECT_TRUE(is_valid_partition_tag<Partition::Top>::value);
+  // EXPECT_TRUE(is_valid_partition_tag<Partition::Bottom>::value);
+  // EXPECT_TRUE(is_valid_partition_tag<Partition::Left>::value);
+  // EXPECT_TRUE(is_valid_partition_tag<Partition::Right>::value);
+  // EXPECT_TRUE(is_valid_partition_tag<Partition::TopLeft>::value);
+  // EXPECT_TRUE(is_valid_partition_tag<Partition::TopRight>::value);
+  // EXPECT_TRUE(is_valid_partition_tag<Partition::BottomLeft>::value);
+  // EXPECT_TRUE(is_valid_partition_tag<Partition::BottomRight>::value);
 
   EXPECT_TRUE(is_valid_uplo_tag<Uplo::Upper>::value);
   EXPECT_TRUE(is_valid_uplo_tag<Uplo::Lower>::value);
@@ -54,7 +54,7 @@ TEST( util, tag ) {
   EXPECT_TRUE(is_valid_trans_tag<Trans::ConjTranspose>::value);
   EXPECT_TRUE(is_valid_trans_tag<Trans::NoTranspose>::value);
 
-  EXPECT_FALSE(is_valid_partition_tag<NullTag>::value);
+  // EXPECT_FALSE(is_valid_partition_tag<NullTag>::value);
   EXPECT_FALSE(is_valid_uplo_tag<NullTag>::value);
   EXPECT_FALSE(is_valid_side_tag<NullTag>::value);
   EXPECT_FALSE(is_valid_diag_tag<NullTag>::value);

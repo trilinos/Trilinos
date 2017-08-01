@@ -94,11 +94,19 @@ NOX::Abstract::MultiVector&
 NOX::Thyra::MultiVector::
 operator=(const NOX::Abstract::MultiVector& src)
 {
-  // NOTE that we only copy over values, we never copy over weighting.
-  // Weighting property only transfers via clone or copy ctor!
   const NOX::Thyra::MultiVector& source =
     dynamic_cast<const NOX::Thyra::MultiVector&>(src);
-  ::Thyra::assign(thyraMultiVec.ptr(), *source.thyraMultiVec);
+  this->operator=(source);
+  return *this;
+}
+
+NOX::Abstract::MultiVector&
+NOX::Thyra::MultiVector::
+operator=(const NOX::Thyra::MultiVector& src)
+{
+  // NOTE that we only copy over values, we never copy over weighting.
+  // Weighting property only transfers via clone or copy ctor!
+  ::Thyra::assign(thyraMultiVec.ptr(), *src.thyraMultiVec);
   return *this;
 }
 

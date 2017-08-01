@@ -95,7 +95,14 @@ the empty string."
   {
     PyObject * strObj = PyObject_Str(value);
     if (!strObj) throw PyTrilinos::PythonException();
+%#if PY_VERSION_HEX >= 0x03000000
+    PyObject * byteObj = PyUnicode_AsASCIIString(strObj);
+    if (!byteObj) throw PyTrilinos::PythonException();
+    self->addAttribute(name, std::string(PyBytes_AsString(byteObj)));
+    Py_DECREF(byteObj);
+%#else
     self->addAttribute(name, std::string(PyString_AsString(strObj)));
+%#endif
     Py_DECREF(strObj);
   }
   PyObject * getWithDefault(const std::string & name, PyObject * defaultValue)

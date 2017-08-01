@@ -122,10 +122,10 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
     inArgs.setSupports(MEB::IN_ARG_x_dot_dot);
   inArgs.setSupports(MEB::IN_ARG_step_size);
   inArgs.setSupports(MEB::IN_ARG_stage_number);
-  inArgs.template setSupports<Thyra::MockExtendedInArgs<Scalar>>(true);
+  inArgs.template setSupports<Thyra::MockExtendedInArgs<Scalar> >(true);
   // test the removal of support
   if (!supports_extended_inargs)
-    inArgs.template setSupports<Thyra::MockExtendedInArgs<Scalar>>(false);
+    inArgs.template setSupports<Thyra::MockExtendedInArgs<Scalar> >(false);
   prototypeInArgs_ = inArgs;
   
   MEB::OutArgsSetup<Scalar> outArgs;
@@ -134,10 +134,10 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
   outArgs.setSupports(MEB::OUT_ARG_W_prec);
-  outArgs.template setSupports<Thyra::MockExtendedOutArgs<Scalar>>(true);
+  outArgs.template setSupports<Thyra::MockExtendedOutArgs<Scalar> >(true);
   // test the removal of support
   if (!supports_extended_outargs)
-    outArgs.template setSupports<Thyra::MockExtendedOutArgs<Scalar>>(false);
+    outArgs.template setSupports<Thyra::MockExtendedOutArgs<Scalar> >(false);
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;

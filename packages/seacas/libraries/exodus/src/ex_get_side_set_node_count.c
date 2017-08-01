@@ -97,8 +97,9 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   }
 
   /* Lookup index of side set id in VAR_SS_IDS array */
-  if (ex_id_lkup(exoid, EX_SIDE_SET, side_set_id) <= 0)
+  if (ex_id_lkup(exoid, EX_SIDE_SET, side_set_id) <= 0) {
     ;
+  }
   ex_get_err(NULL, NULL, &status);
 
   if (status != 0) {

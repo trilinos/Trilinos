@@ -50,21 +50,21 @@ template <typename T, typename INT> class NemSpread
 public:
   void load_mesh();
   int  check_inp();
-  void read_coord(int mesh_exoid, int max_name_length);
+  void read_coord(int exoid, int max_name_length);
   void read_elem_blk_ids(int mesh_exoid, int max_name_length);
-  void read_elem_blk(int mesh_exoid);
+  void read_elem_blk(int exoid);
   void extract_elem_blk();
   void extract_global_element_ids(INT global_ids[], size_t Num_Elem, int iproc);
   void extract_global_node_ids(INT global_ids[], size_t Num_Node, int iproc);
   size_t extract_elem_connect(INT elem_blk[], int icurrent_elem_blk, size_t istart_elem,
-                              size_t iend_elem, int *local_ielem_blk, int indx);
+                              size_t iend_elem, int *local_ielem_blk, int iproc);
   void extract_elem_attr(T *elem_attr, int icurrent_elem_blk, size_t istart_elem, size_t iend_elem,
-                         int natt_p_elem, int indx);
-  void find_elem_block(INT *proc_elem_blk, int indx, int proc_for);
+                         int natt_p_elem, int iproc);
+  void find_elem_block(INT *proc_elem_blk, int iproc, int proc_for);
   void read_node_set_ids(int mesh_exoid, INT[], INT[], int max_name_length);
   void read_side_set_ids(int mesh_exoid, INT[], INT[], int max_name_length);
-  void read_node_sets(int mesh_exoid, INT *, INT *);
-  void read_side_sets(int mesh_exoid, INT *, INT *);
+  void read_node_sets(int exoid, INT *, INT *);
+  void read_side_sets(int exoid, INT *, INT *);
 
   void read_nodal_vars(int mesh_exoid);
 
@@ -81,13 +81,13 @@ public:
   void write_var_timestep(int exoid, int proc, int time_step, INT *eb_ids_global,
                           INT *ss_ids_global, INT *ns_ids_global);
 
-  void process_lb_data(INT *Integer_Vector, int index);
+  void process_lb_data(INT *Integer_Vector, int indx);
   void read_proc_init(int lb_exoid, int proc_info[], int **proc_ids_ptr);
-  void read_lb_init(int exoid, INT *Int_Space, INT *Int_Node_Num, INT *Bor_Node_Num,
+  void read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node_Num, INT *Bor_Node_Num,
                     INT *Ext_Node_Num, INT *Int_Elem_Num, INT *Bor_Elem_Num, INT *Node_Comm_Num,
                     INT *Elem_Comm_Num, char *Title);
 
-  void read_cmap_params(int exoid, INT *Node_Comm_Num, INT *Elem_Comm_Num, INT *Num_N_Comm_Maps,
+  void read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *Elem_Comm_Num, INT *Num_N_Comm_Maps,
                         INT *Num_E_Comm_Maps, ELEM_COMM_MAP<INT> **E_Comm_Map,
                         NODE_COMM_MAP<INT> **N_Comm_Map, INT *cmap_max_size, INT **comm_vec);
 
@@ -105,9 +105,9 @@ public:
   int read_elem_vars_1(int exoid, int index, INT *eb_ids, INT *eb_cnts, INT ***eb_map_ptr,
                        INT **eb_cnts_local, int iblk, int eb_offset, INT *local_offset);
   int read_sset_vars(int exoid, int index, INT *ss_ids, INT *ss_cnts);
-  int read_sset_vars_1(int exoid, int index, INT *ss_ids, INT *ss_cnts, int iblk);
+  int read_sset_vars_1(int exoid, int index, INT *ss_ids, INT *ss_cnts, int iset);
   int read_nset_vars(int exoid, int index, INT *ns_ids, INT *ns_cnts);
-  int read_nset_vars_1(int exoid, int index, INT *ns_ids, INT *ns_cnts, int iblk);
+  int read_nset_vars_1(int exoid, int index, INT *ns_ids, INT *ns_cnts, int iset);
   int read_nodal_vars(int exoid, int index);
   int compare_mesh_param(int exoid);
 

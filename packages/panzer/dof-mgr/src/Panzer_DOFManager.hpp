@@ -44,7 +44,7 @@
 #define __Panzer_DOFManager_hpp__
 #include <map>
 
-#include "mpi.h"
+#include <mpi.h>
 
 #include "PanzerDofMgr_config.hpp"
 #include "Panzer_FieldPattern.hpp"
@@ -135,8 +135,59 @@ public:
     */
   Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const;
 
-  void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
-  void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
+  /**
+   *  \brief Get the set of indices owned by this processor.
+   *
+   *  \param[out] indices A `vector` that will be fille with the indices owned
+   *                      by this processor.
+   */
+  void
+  getOwnedIndices(
+    std::vector<GlobalOrdinalT>& indices) const;
+
+  /**
+   *  \brief Get the set of indices ghosted for this processor.
+   *
+   *  \param[out] indices A `vector` that will be fille with the indices
+   *                      ghosted for this processor.
+   */
+  void
+  getGhostedIndices(
+    std::vector<GlobalOrdinalT>& indices) const;
+
+  /**
+   *  \brief Get the set of owned and ghosted indices for this processor.
+   *
+   *  \param[out] indices A `vector` that will be fille with the owned and
+   *                      ghosted indices for this processor.
+   */
+  void
+  getOwnedAndGhostedIndices(
+    std::vector<GlobalOrdinalT>& indices) const;
+
+  /**
+   *  \brief Get the number of indices owned by this processor.
+   *
+   *  \returns The number of indices owned by this processor.
+   */
+  int
+  getNumOwned() const;
+
+  /**
+   *  \brief Get the number of indices ghosted for this processor.
+   *
+   *  \returns The number of indices ghosted for this processor.
+   */
+  int
+  getNumGhosted() const;
+
+  /**
+   *  \brief Get the number of owned and ghosted indices for this processor.
+   *
+   *  \returns The number of owned and ghosted indices for this processor.
+   */
+  int
+  getNumOwnedAndGhosted() const;
 
   //! gets the number of fields
   int getNumFields() const;

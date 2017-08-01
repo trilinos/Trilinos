@@ -60,7 +60,7 @@ int main()
           break;
         case shuffle:
           for (; i < n; i++) {
-            x[i] = rng() % m ? (j += 2) : (k += 2);
+            x[i] = (rng() % m) != 0u ? (j += 2) : (k += 2);
           }
           break;
         }

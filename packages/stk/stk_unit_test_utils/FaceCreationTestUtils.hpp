@@ -65,8 +65,9 @@ inline void expect_side_exists_for_elem_side(const stk::mesh::BulkData& bulkData
 {
     stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, side.elementId);
     if(bulkData.is_valid(element) && bulkData.bucket(element).owned())
-        EXPECT_TRUE(can_find_face_for_elem_side(bulkData, element, side.sideOrdinal))
-                << filename << " couldn't find face for side: " << side.elementId << ", " << side.sideOrdinal << ".";
+    {
+        EXPECT_TRUE(can_find_face_for_elem_side(bulkData, element, side.sideOrdinal)) << filename << " couldn't find face for side: " << side.elementId << ", " << side.sideOrdinal << ".";
+    }
 }
 
 inline void expect_all_sides_exist_for_elem_side(const stk::mesh::BulkData& bulkData,

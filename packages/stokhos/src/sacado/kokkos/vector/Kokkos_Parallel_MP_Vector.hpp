@@ -59,6 +59,7 @@ struct MPVectorWorkConfig {
 
   typedef MPVectorWorkConfig execution_policy ;
   typedef ExecSpace          execution_space ;
+  typedef void               work_tag ;
 
   size_t range;
   size_t team;

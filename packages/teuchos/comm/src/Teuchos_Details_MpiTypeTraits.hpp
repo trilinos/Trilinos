@@ -50,7 +50,7 @@
 
 #ifdef HAVE_TEUCHOS_MPI
 
-#include "mpi.h"
+#include <mpi.h>
 #include <complex>
 
 namespace Teuchos {

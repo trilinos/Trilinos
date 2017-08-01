@@ -67,27 +67,6 @@ namespace {
 
     EXPECT_TRUE(db_io->ok());
 
-    int spatial_dim = db_io->spatial_dimension();
-    EXPECT_EQ(3, spatial_dim);
-
-    int64_t num_nodes = db_io->node_count();
-    EXPECT_EQ(12, num_nodes);
-
-    int64_t num_elems = db_io->element_count();
-    EXPECT_EQ(3, num_elems);
-
-    int num_node_blocks = db_io->node_block_count();
-    EXPECT_EQ(1, num_node_blocks);
-
-    int num_elem_blocks = db_io->element_block_count();
-    EXPECT_EQ(2, num_elem_blocks);
-
-    int num_sidesets = db_io->sideset_count();
-    EXPECT_EQ(2, num_sidesets);
-
-    int num_nodesets = db_io->nodeset_count();
-    EXPECT_EQ(0, num_nodesets);
-
     const std::vector<Ioss::ElementBlock *> &element_blocks = region.get_element_blocks();
     EXPECT_EQ(2u, element_blocks.size());
 
@@ -157,6 +136,9 @@ namespace {
     Ioss::NodeBlock *   nb = region.get_node_blocks()[0];
     std::vector<double> coordinates;
     nb->get_field_data("mesh_model_coordinates", coordinates);
+    int64_t num_nodes = nb->get_property("entity_count").get_int();
+    int64_t spatial_dim = nb->get_property("component_degree").get_int();
+
     size_t num_coordinates = num_nodes * spatial_dim;
 
     ASSERT_TRUE(coordinates.size() == num_coordinates);
@@ -280,8 +262,9 @@ namespace {
 
     std::string NodeBlockName = "nodeblock_1";
 
-    int64_t num_nodes   = db_in->node_count();
-    int     spatial_dim = db_in->spatial_dimension();
+    auto nb = input_region.get_node_blocks()[0];
+    int64_t num_nodes   = nb->get_property("entity_count").get_int();
+    int     spatial_dim =  nb->get_property("component_degree").get_int();
 
     Ioss::NodeBlock *output_node_block =
         new Ioss::NodeBlock(db_out, NodeBlockName, num_nodes, spatial_dim);

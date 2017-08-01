@@ -79,6 +79,8 @@ RCP<const ParameterList> RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal
 
   validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
   validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Factory for generating the non-rebalanced coarse level A. We need this to make sure the non-rebalanced coarse A is calculated first before rebalancing takes place.");
+
+  validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory for generating the non-rebalanced Coordinates.");
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   // SET_VALID_ENTRY("repartition: use subcommunicators");
 #undef SET_VALID_ENTRY
@@ -97,7 +99,6 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-
   Input(coarseLevel, "P");
   Input(coarseLevel, "A"); // we request the non-rebalanced coarse level A since we have to make sure it is calculated before rebalancing starts!
 
@@ -105,7 +106,12 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
     SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
     SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
+
+    // Request Importer and Coordinates (if defined in xml file)
+    // Note, that we have to use the Level::DeclareInput routine in order to use the FactoryManager *it (rather than the main factory manager)
     coarseLevel.DeclareInput("Importer",(*it)->GetFactory("Importer").get(), this);
+    if((*it)->hasFactory("Coordinates") == true)
+      coarseLevel.DeclareInput("Coordinates",(*it)->GetFactory("Coordinates").get(), this);
   }
 }
 
@@ -113,7 +119,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   Teuchos::RCP<Matrix> nonrebCoarseA = Get< RCP<Matrix> >(coarseLevel, "A");
 
@@ -156,6 +162,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
     SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
 
+    // TAW: use the Level::Get routine in order to access the data declared in (*it) factory manager (rather than the main factory manager)
     rebalanceImporter = coarseLevel.Get<Teuchos::RCP<const Import> >("Importer", (*it)->GetFactory("Importer").get());
 
     // extract diagonal matrix block
@@ -163,11 +170,10 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     Teuchos::RCP<CrsMatrixWrap> Pwii = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Pii);
     TEUCHOS_TEST_FOR_EXCEPTION(Pwii == Teuchos::null,Xpetra::Exceptions::BadCast, "MueLu::RebalanceBlockTransferFactory::Build: block " << curBlockId << " is not of type CrsMatrixWrap. We need an underlying CsrMatrix to replace domain map and importer!");
 
-    // TODO run this only in the debug version
-    TEUCHOS_TEST_FOR_EXCEPTION(bThyraRangeGIDs == true && Pii->getRowMap()->getMinAllGlobalIndex() != 0,
+    MUELU_TEST_FOR_EXCEPTION(bThyraRangeGIDs == true && Pii->getRowMap()->getMinAllGlobalIndex() != 0,
         Exceptions::RuntimeError,
         "MueLu::RebalanceBlockInterpolationFactory::Build: inconsistent Thyra GIDs. Thyra global ids for block range " << curBlockId << " start with " << Pii->getRowMap()->getMinAllGlobalIndex() << " but should start with 0");
-    TEUCHOS_TEST_FOR_EXCEPTION(bThyraDomainGIDs == true && Pii->getColMap()->getMinAllGlobalIndex() != 0,
+    MUELU_TEST_FOR_EXCEPTION(bThyraDomainGIDs == true && Pii->getColMap()->getMinAllGlobalIndex() != 0,
         Exceptions::RuntimeError,
         "MueLu::RebalanceBlockInterpolationFactory::Build: inconsistent Thyra GIDs. Thyra global ids for block domain " << curBlockId << " start with " << Pii->getColMap()->getMinAllGlobalIndex() << " but should start with 0");
 
@@ -201,6 +207,62 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
       // store rebalanced P block
       subBlockRebP.push_back(Pii);
+
+      // rebalance coordinates
+      // TAW: Note, that each sub-block manager overwrites the Coordinates. So far we only support one set of Coordinates
+      //      for a multiphysics problem (i.e., we only support volume coupled problems with the same mesh)
+
+      if((*it)->hasFactory("Coordinates") == true && coarseLevel.IsAvailable("Coordinates",(*it)->GetFactory("Coordinates").get()) == true) {
+        typedef Xpetra::MultiVector<double, LO, GO, NO> xdMV;
+        RCP<xdMV> coords = coarseLevel.Get< RCP<xdMV> >("Coordinates",(*it)->GetFactory("Coordinates").get());
+
+        // This line must be after the Get call
+        SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
+
+        LO nodeNumElts = coords->getMap()->getNodeNumElements();
+
+        // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
+        LO myBlkSize = 0, blkSize = 0;
+
+        if (nodeNumElts > 0) {
+          MUELU_TEST_FOR_EXCEPTION(rebalanceImporter->getSourceMap()->getNodeNumElements() % nodeNumElts != 0,
+                          Exceptions::RuntimeError,
+                          "MueLu::RebalanceBlockInterpolationFactory::Build: block size. " << rebalanceImporter->getSourceMap()->getNodeNumElements() << " not divisable by " << nodeNumElts);
+          myBlkSize = rebalanceImporter->getSourceMap()->getNodeNumElements() / nodeNumElts;
+        }
+
+        MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
+
+        RCP<const Import> coordImporter = Teuchos::null;
+        if (blkSize == 1) {
+          coordImporter = rebalanceImporter;
+
+        } else {
+          // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
+          // Proper fix would require using decomposition similar to how we construct importer in the
+          // RepartitionFactory
+          RCP<const Map> origMap   = coords->getMap();
+          GO             indexBase = origMap->getIndexBase();
+
+          ArrayView<const GO> OEntries   = rebalanceImporter->getTargetMap()->getNodeElementList();
+          LO                  numEntries = OEntries.size()/blkSize;
+          ArrayRCP<GO> Entries(numEntries);
+          for (LO i = 0; i < numEntries; i++)
+            Entries[i] = (OEntries[i*blkSize]-indexBase)/blkSize + indexBase;
+
+          RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
+          coordImporter = ImportFactory::Build(origMap, targetMap);
+        }
+
+        RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+        permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
+
+        const ParameterList& pL = GetParameterList();
+        if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
+          permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
+
+        Set(coarseLevel, "Coordinates", permutedCoords);
+      }
     } // end rebalance P(1,1)
     else {
       RCP<ParameterList> params = rcp(new ParameterList());
@@ -209,6 +271,14 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
       GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*Pii, ss.str(), params);
       // store rebalanced P block
       subBlockRebP.push_back(Pii);
+
+      // Store Coordinates on coarse level (generated by this)
+      // TAW: Note, that each sub-block manager overwrites the Coordinates. So far we only support one set of Coordinates
+      //      for a multiphysics problem (i.e., we only support volume coupled problems with the same mesh)
+      if((*it)->hasFactory("Coordinates") == true && coarseLevel.IsAvailable("Coordinates",(*it)->GetFactory("Coordinates").get()) == true) {
+        typedef Xpetra::MultiVector<double, LO, GO, NO> xdMV;
+        coarseLevel.Set("Coordinates", coarseLevel.Get< RCP<xdMV> >("Coordinates",(*it)->GetFactory("Coordinates").get()),this);
+      }
     }
 
     // fix striding information for rebalanced diagonal block Pii

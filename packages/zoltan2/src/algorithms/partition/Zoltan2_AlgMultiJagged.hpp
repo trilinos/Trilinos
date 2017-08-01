@@ -578,6 +578,8 @@ private:
     bool mj_keep_part_boxes; //if the boxes need to be kept.
 
     int check_migrate_avoid_migration_option; //whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
+    int migration_type; // when doing the migration, 0 will aim for perfect load-imbalance, 
+    			//1 - will aim for minimized number of messages with possibly bad load-imbalance
     mj_scalar_t minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
     int num_threads; //num threads
 
@@ -1304,12 +1306,13 @@ public:
      *  \param max_concurrent_part_calculation_ : how many parts we can calculate concurrently.
      *  \param check_migrate_avoid_migration_option_ : whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
      *  \param minimum_migration_imbalance_  : when MJ decides whether to migrate, the minimum imbalance for migration.
+     *  \param migration_type_ : when MJ migration whether to migrate for perfect load-imbalance or less messages
      */
     void set_partitioning_parameters(
                 bool distribute_points_on_cut_lines_,
                 int max_concurrent_part_calculation_,
                 int check_migrate_avoid_migration_option_,
-                mj_scalar_t minimum_migration_imbalance_);
+                mj_scalar_t minimum_migration_imbalance_, int migration_type_ = 0);
     /*! \brief Function call, if the part boxes are intended to be kept.
      *
      */
@@ -1911,7 +1914,7 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
         assigned_part_ids(NULL), part_xadj(NULL), new_part_xadj(NULL),
         distribute_points_on_cut_lines(true), max_concurrent_part_calculation(1),
         mj_run_as_rcb(false), mj_user_recursion_depth(0), mj_keep_part_boxes(false),
-        check_migrate_avoid_migration_option(0), minimum_migration_imbalance(0.30),
+        check_migrate_avoid_migration_option(0), migration_type(0), minimum_migration_imbalance(0.30),
         num_threads(1), total_num_cut(0), total_num_part(0), max_num_part_along_dim(0),
         max_num_cut_along_dim(0), max_num_total_part_along_dim(0), total_dim_num_reduce_all(0),
         last_dim_num_part(0), comm(), fEpsilon(0), sEpsilon(0), maxScalar_t(0), minScalar_t(0),
@@ -4343,6 +4346,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
     }
 
 
+    //std::cout << "Before migration: mig type:" << this->migration_type << std::endl;
     //Allocate memory for sorting data structure.
     uSignedSortItem<mj_part_t, mj_gno_t, char> * sort_item_num_part_points_in_procs = allocMemory <uSignedSortItem<mj_part_t, mj_gno_t, char> > (num_procs);
     for(mj_part_t i = 0; i < num_parts; ++i){
@@ -4473,8 +4477,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
             }
 #endif
 
-            //now sends the points to the assigned processors.
-            while (num_points_to_sent > 0){
+	    switch (migration_type){
+	      case 0:
+	      {
+              //now sends the points to the assigned processors.
+              while (num_points_to_sent > 0){
                 //if the processor has enough space.
                 if (num_points_to_sent <= space_left_in_sent_proc){
                         //reduce the space left in the processor.
@@ -4526,10 +4533,43 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
                     //set the new space in the processor.
                     space_left_in_sent_proc = ideal_num_points_in_a_proc - sort_item_num_part_points_in_procs[next_proc_to_send_index].val;
                 }
-            }
+            } 
+	    }
+	    break;
+	    default:
+	    {
+		//to minimize messages, we want each processor to send its coordinates to only a single point.
+		//we do not respect imbalances here, we send all points to the next processor.
+		if (this->myRank == nonassigned_proc_id){
+                  //set my sent count to the sent processor.
+                  send_count_to_each_proc[next_proc_to_send_id] = num_points_to_sent;
+                  //save the processor in the list (processor_chains_in_parts and part_assignment_proc_begin_indices)
+                  //that the processor will send its point in part-i.
+                  mj_part_t prev_begin = part_assignment_proc_begin_indices[i];
+                  part_assignment_proc_begin_indices[i] = next_proc_to_send_id;
+                  processor_chains_in_parts[next_proc_to_send_id] = prev_begin;
+                }
+                num_points_to_sent = 0;
+                ++next_proc_to_send_index;
+		
+		//if we made it to the heaviest processor we round robin and go to beginning
+		if (next_proc_to_send_index == num_procs){
+       		  next_proc_to_send_index = num_procs - required_proc_count;
+		}
+                //send the new id.
+                next_proc_to_send_id =  sort_item_num_part_points_in_procs[next_proc_to_send_index].id;
+                //set the new space in the processor.
+                space_left_in_sent_proc = ideal_num_points_in_a_proc - sort_item_num_part_points_in_procs[next_proc_to_send_index].val;
+	    }	
+          }
         }
     }
-
+    
+    /*
+    for (int i = 0; i < num_procs;++i){
+      std::cout << "me:" << this->myRank << " to part:" << i << " sends:" <<  send_count_to_each_proc[i] << std::endl;
+    } 
+    */  
 
 
     this->assign_send_destinations(
@@ -5864,6 +5904,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::free_work_memory(){
  *  \param max_concurrent_part_calculation_ : how many parts we can calculate concurrently.
  *  \param check_migrate_avoid_migration_option_ : whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
  *  \param minimum_migration_imbalance_  : when MJ decides whether to migrate, the minimum imbalance for migration.
+ *  \param migration_type : whether to migrate for perfect load imbalance (0) or less messages.
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -5871,11 +5912,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_partitioning_paramet
                 bool distribute_points_on_cut_lines_,
                 int max_concurrent_part_calculation_,
                 int check_migrate_avoid_migration_option_,
-                mj_scalar_t minimum_migration_imbalance_){
+                mj_scalar_t minimum_migration_imbalance_,
+		int migration_type_ ){
         this->distribute_points_on_cut_lines = distribute_points_on_cut_lines_;
         this->max_concurrent_part_calculation = max_concurrent_part_calculation_;
         this->check_migrate_avoid_migration_option = check_migrate_avoid_migration_option_;
         this->minimum_migration_imbalance = minimum_migration_imbalance_;
+	this->migration_type = migration_type_;
 
 }
 
@@ -6472,6 +6515,8 @@ private:
     bool distribute_points_on_cut_lines; //if partitioning can distribute points on same coordiante to different parts.
     mj_part_t max_concurrent_part_calculation; // how many parts we can calculate concurrently.
     int check_migrate_avoid_migration_option; //whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
+    int migration_type; // when doing the migration, 0 will aim for perfect load-imbalance, 
+ 			//1 for minimized messages
     mj_scalar_t minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
     bool mj_keep_part_boxes; //if the boxes need to be kept.
 
@@ -6516,7 +6561,7 @@ public:
                         mj_part_sizes(NULL),
                         distribute_points_on_cut_lines(true),
                         max_concurrent_part_calculation(1),
-                        check_migrate_avoid_migration_option(0),
+                        check_migrate_avoid_migration_option(0), migration_type(0),
                         minimum_migration_imbalance(0.30),
                         mj_keep_part_boxes(false), num_threads(1), mj_run_as_rcb(false),
                         comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
@@ -6552,6 +6597,13 @@ public:
         "depending on the imbalance, 1 for forcing migration, 2 for "
         "avoiding migration", mj_migration_option_validator);
 
+      
+      RCP<Teuchos::EnhancedNumberValidator<int>> mj_migration_type_validator =
+        Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1) );
+      pl.set("mj_migration_type", 0, "Migration type, 0 for migration to minimize the imbalance "
+        "1 for migration to minimize messages exchanged the migration." ,
+	mj_migration_option_validator);
+
       // bool parameter
       pl.set("mj_keep_part_boxes", false, "Keep the part boundaries of the "
         "geometric partitioning.", Environment::getBoolValidator());
@@ -6562,6 +6614,8 @@ public:
 
       pl.set("mj_recursion_depth", -1, "Recursion depth for MJ: Must be "
         "greater than 0.", Environment::getAnyIntValidator());
+
+
     }
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.
@@ -6616,7 +6670,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
                 this->distribute_points_on_cut_lines,
                 this->max_concurrent_part_calculation,
                 this->check_migrate_avoid_migration_option,
-                this->minimum_migration_imbalance);
+                this->minimum_migration_imbalance, this->migration_type);
 
     mj_part_t *result_assigned_part_ids = NULL;
     mj_gno_t *result_mj_gnos = NULL;
@@ -6812,7 +6866,8 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         int mj_user_recursion_depth = -1;
         this->mj_keep_part_boxes = false;
         this->check_migrate_avoid_migration_option = 0;
-        this->minimum_migration_imbalance = 0.35;
+        this->migration_type = 0;
+	this->minimum_migration_imbalance = 0.35;
 
         pe = pl.getEntryPtr("mj_minimum_migration_imbalance");
         if (pe){
@@ -6829,6 +6884,15 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         }
         if (this->check_migrate_avoid_migration_option > 1) this->check_migrate_avoid_migration_option = -1;
 
+	///
+        pe = pl.getEntryPtr("mj_migration_type");
+        if (pe){
+                this->migration_type = pe->getValue(&this->migration_type);
+        }else {
+                this->migration_type = 0;
+        }
+	//std::cout << " this->migration_type:" <<  this->migration_type << std::endl;
+	///
 
         pe = pl.getEntryPtr("mj_concurrent_part_count");
         if (pe){

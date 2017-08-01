@@ -48,6 +48,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -98,6 +99,7 @@ int main(int argc, char *argv[]) {
   try {
     int info = 0;
     int MyPID = 0;
+    bool pseudo = false;   // use pseudo block CG to solve this linear system.
     bool norm_failure = false;
     bool proc_verbose = false;
     bool use_single_red = false;
@@ -109,6 +111,7 @@ int main(int argc, char *argv[]) {
 
     CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block CG to solve the linear systems.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
@@ -199,15 +202,17 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
       return -1;
     }
+
     //
     // *******************************************************************
     // *************Start the block CG iteration***********************
     // *******************************************************************
     //
-    if (proc_verbose) {
-      std::cout << "Attempt to create Belos::BlockCGSolMgr" << std::endl;
-    }
-    Belos::BlockCGSolMgr<ST,MV,OP> solver( problem, rcp(&belosList,false) );
+    Teuchos::RCP< Belos::SolverManager<ST,MV,OP> > solver;
+    if (pseudo)
+      solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
+    else
+      solver = Teuchos::rcp( new Belos::BlockCGSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
 
     //
     // **********Print out information about problem*******************
@@ -224,7 +229,7 @@ int main(int argc, char *argv[]) {
     //
     // Perform solve
     //
-    Belos::ReturnType ret = solver.solve();
+    Belos::ReturnType ret = solver->solve();
     //
     // Compute actual residuals.
     //
@@ -243,7 +248,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Test achievedTol output
-    MT ach_tol = solver.achievedTol();
+    MT ach_tol = solver->achievedTol();
     if (proc_verbose)
       std::cout << "Achieved tol : "<<ach_tol<<std::endl;
 

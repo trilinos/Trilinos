@@ -73,6 +73,8 @@ class NOXSolver
 
   void reset(){ if(Teuchos::nonnull(solver)) solver->resetSolver(); }
 
+  Teuchos::RCP<Thyra::NOXNonlinearSolver> getSolver() {return solver;}
+
   private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
   //@{
@@ -90,6 +92,8 @@ class NOXSolver
   Teuchos::RCP<Teuchos::FancyOStream> out;
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
+
+  bool writeOnlyConvergedSol;
 };
 
 }

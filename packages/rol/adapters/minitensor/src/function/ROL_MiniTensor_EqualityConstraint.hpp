@@ -43,7 +43,7 @@
 #define ROL_MiniTensor_EqualityConstraint_hpp
 
 #include "MiniTensor_Solvers.h"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_MiniTensor_Vector.hpp"
 
 namespace ROL {
@@ -54,7 +54,7 @@ using Index = minitensor::Index;
 /// Function base class that defines the interface to Mini Solvers.
 ///
 template<typename MSEC, typename S, Index M, Index N>
-class MiniTensor_EqualityConstraint : public EqualityConstraint<S>
+class MiniTensor_EqualityConstraint : public Constraint<S>
 {
 public:
 

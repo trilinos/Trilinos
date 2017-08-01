@@ -11,17 +11,17 @@
 // IWYU pragma: begin_exports
 #if defined ( STK_SIMD_AVX512 )
 #include "avx512/Avx512.hpp"
+#define STK_HAVE_SIMD
 #elif defined ( STK_SIMD_AVX )
 #include "avx/Avx.hpp"
+#define STK_HAVE_SIMD
 #elif defined ( STK_SIMD_SSE )
 #include "sse/Sse.hpp"
+#define STK_HAVE_SIMD
 #else
 #include "no_simd/NoSimd.hpp"
+#define STK_HAVE_NO_SIMD
 #endif // Check SIMD version
-
-#if defined (USE_STK_SIMD_SSE) || (USE_STK_SIMD_AVX) || (USE_STK_SIMD_AVX512)
-#define STK_HAVE_SIMD
-#endif
 
 #include "AlignedAllocator.hpp"
 #include "Traits.hpp" // has to be included after Double, Bool, Float, Boolf are defined
@@ -52,6 +52,7 @@ namespace simd {
 //
 
 // double versions
+
 
 STK_MATH_FORCE_INLINE void store_part(double* x, const Double& z, const int numValid) {
   assert(numValid <= ndoubles);
@@ -111,6 +112,20 @@ STK_MATH_FORCE_INLINE double reduce_sum(const Double& x, const int sumNum) {
   }
   return ret;
 }
+
+//
+//  Masked +/=:
+//
+//  May be a faster way to do this with actual SIMD intrinsic masks, but just
+//  putting in a placeholder for now.
+//
+STK_MATH_FORCE_INLINE void plus_equal_part(Double& value, const Double& increment, const int numValid) {
+  assert(numValid <= ndoubles);
+  for(int n=0; n<numValid; ++n) value[n] += increment[n];
+}
+
+
+
 
 STK_MATH_FORCE_INLINE bool are_all(const Bool& a, const int sumNum=ndoubles) {
   assert(sumNum <= ndoubles);
@@ -306,6 +321,11 @@ STK_MATH_FORCE_INLINE double reduce_sum(const double& x) {
 
 STK_MATH_FORCE_INLINE double reduce_sum(const double& x, const int) {
   return x;
+}
+
+
+STK_MATH_FORCE_INLINE void plus_equal_part(double& value, const double& increment, const int numValid) {
+  value += increment;
 }
 
 STK_MATH_FORCE_INLINE float reduce_sum(const float& x) {

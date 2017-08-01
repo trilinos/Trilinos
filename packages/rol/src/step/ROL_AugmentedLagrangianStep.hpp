@@ -48,7 +48,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_StatusTest.hpp"
@@ -70,6 +70,7 @@ class AugmentedLagrangianStep : public Step<Real> {
 private:
   Teuchos::RCP<Algorithm<Real> > algo_;
   Teuchos::RCP<Vector<Real> > x_; 
+  Teuchos::RCP<BoundConstraint<Real> > bnd_;
 
   Teuchos::ParameterList parlist_;
   // Lagrange multiplier update
@@ -163,7 +164,17 @@ public:
   /** \brief Initialize step with equality constraint.
   */
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
-                   Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
+                   Objective<Real> &obj, Constraint<Real> &con,
+                   AlgorithmState<Real> &algo_state ) {
+    bnd_ = Teuchos::rcp(new BoundConstraint<Real>());
+    bnd_->deactivate();
+    initialize(x,g,l,c,obj,con,*bnd_,algo_state);
+  }
+
+  /** \brief Initialize step with equality and bound constraints.
+  */
+  void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
+                   Objective<Real> &obj, Constraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
     AugmentedLagrangian<Real> &augLag
       = Teuchos::dyn_cast<AugmentedLagrangian<Real> >(obj);
@@ -203,10 +214,18 @@ public:
                               feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
   }
 
+  /** \brief Compute step (equality constraint).
+  */
+  void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
+                Objective<Real> &obj, Constraint<Real> &con, 
+                AlgorithmState<Real> &algo_state ) {
+    compute(s,x,l,obj,con,*bnd_,algo_state);
+  }
+
   /** \brief Compute step (equality and bound constraints).
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                Objective<Real> &obj, Constraint<Real> &con, 
                 BoundConstraint<Real> &bnd, AlgorithmState<Real> &algo_state ) {
     Real one(1);
     AugmentedLagrangian<Real> &augLag
@@ -225,10 +244,18 @@ public:
     subproblemIter_ = (algo_->getState())->iter;
   }
 
+  /** \brief Update step, if successful (equality constraint).
+  */
+  void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
+               Objective<Real> &obj, Constraint<Real> &con,
+               AlgorithmState<Real> &algo_state ) {
+    update(x,l,s,obj,con,*bnd_,algo_state);
+  }
+
   /** \brief Update step, if successful (equality and bound constraints).
   */
   void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-               Objective<Real> &obj, EqualityConstraint<Real> &con,
+               Objective<Real> &obj, Constraint<Real> &con,
                BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
     Real one(1), oem2(1.e-2);

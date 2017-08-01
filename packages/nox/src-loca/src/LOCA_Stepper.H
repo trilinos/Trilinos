@@ -354,6 +354,9 @@ namespace LOCA {
 
     //! Flag indicating whether to return failed upon reaching max steps
     bool return_failed_on_max_steps;
+
+    //! Flag indicating whether to print only converged solution (default true)
+    bool printOnlyConvergedSol;
   };
 } // end namespace LOCA
 

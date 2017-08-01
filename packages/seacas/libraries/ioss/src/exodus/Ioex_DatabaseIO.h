@@ -132,15 +132,6 @@ namespace Ioex {
     bool end_state__(Ioss::Region *region, int state, double time) override;
     virtual void get_step_times__() override = 0;
 
-  public:
-    int     spatial_dimension() const { return spatialDimension; }
-    int64_t node_count() const { return nodeCount; }
-    int64_t side_count() const { return 0; }
-    int64_t element_count() const { return elementCount; }
-    int     node_block_count() const { return m_groupCount[EX_NODE_BLOCK]; }
-    int     element_block_count() const { return m_groupCount[EX_ELEM_BLOCK]; }
-    int     sideset_count() const { return m_groupCount[EX_SIDE_SET]; }
-    int     nodeset_count() const { return m_groupCount[EX_NODE_SET]; }
     int     maximum_symbol_length() const override { return maximumNameLength; }
 
     // NOTE: If this is called after write_meta_data, it will have no affect.
@@ -152,14 +143,13 @@ namespace Ioex {
       }
     }
 
-    void set_int_byte_size_api(Ioss::DataSize size) const override;
-
-  private:
     void get_block_adjacencies__(const Ioss::ElementBlock *eb,
                                  std::vector<std::string> &block_adjacency) const override;
 
     void compute_block_membership__(Ioss::SideBlock *         efblock,
                                     std::vector<std::string> &block_membership) const override;
+
+    void set_int_byte_size_api(Ioss::DataSize size) const override;
 
   protected:
     virtual int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field,

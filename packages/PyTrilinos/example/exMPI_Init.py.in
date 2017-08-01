@@ -43,6 +43,10 @@
 # ***********************************************************************
 # @HEADER
 
+# System imports
+from __future__ import print_function
+from optparse   import *
+
 # The point of this test is to make sure that if another python module calls
 # MPI_Init(), then the Epetra module will not register Epetra.Finalize with the
 # atexit module.
@@ -55,12 +59,11 @@ try:
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 except ImportError:
-    print "Python module 'mpi4py' not found -- skipping test"
-    print "End Result: TEST PASSED"
+    print("Python module 'mpi4py' not found -- skipping test")
+    print("End Result: TEST PASSED")
     exit()
 
 # Parse the command-line arguments
-from optparse import *
 parser = OptionParser()
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
@@ -88,10 +91,10 @@ def main():
 
     # Output a message
     if iAmRoot:
-        print "Module mpi4py has been imported and implicitly called MPI_Init()."
-        print "Under this circumstance the Epetra and Teuchos modules should"
-        print "not register their finalization functions with the atexit module."
-        print "Test status depends only upon this status.\n"
+        print("Module mpi4py has been imported and implicitly called MPI_Init().")
+        print("Under this circumstance the Epetra and Teuchos modules should")
+        print("not register their finalization functions with the atexit module.")
+        print("Test status depends only upon this status.\n")
 
     # Check the atexit module for instances of the Epetra or Teuchos
     # finalization functions
@@ -105,11 +108,11 @@ def main():
     # Output the results
     totalFails = comm.reduce(fails)
     if iAmRoot:
-        print "End Result: TEST",
+        print("End Result: TEST", end=" ")
         if totalFails > 0:
-            print "FAILED"
+            print("FAILED")
         else:
-            print "PASSED"
+            print("PASSED")
 
     return
 

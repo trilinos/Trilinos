@@ -45,6 +45,7 @@
 
 #
 # System imports
+from   __future__ import print_function
 from   numpy    import *
 from   optparse import *
 import os
@@ -205,10 +206,10 @@ class EpetraPyCommTestCase(unittest.TestCase):
     def testBroadcastString1(self):
         "Test Epetra.PyComm Broadcast method for single string"
         root = 0
-        data = "Now is the time for all good men to come to the " + \
-               "aid of their country."
+        data = b"Now is the time for all good men to come to the " + \
+               b"aid of their country."
         dtype = "|S%d" % len(data)
-        rootArray = array([""], dtype)
+        rootArray = array([b""], dtype)
         if self.comm.MyPID() == root:
             rootArray[0] = data
         self.comm.Broadcast(rootArray, root)
@@ -217,10 +218,10 @@ class EpetraPyCommTestCase(unittest.TestCase):
     def testBroadcastString2(self):
         "Test Epetra.PyComm Broadcast method for two strings"
         root = 0
-        data = ["Now is the time for all good men to come to the ",
-                "aid of their country."]
+        data = [b"Now is the time for all good men to come to the ",
+                b"aid of their country."]
         dtype = "|S%d" % len(data[0])
-        rootArray = array(["",""], dtype)
+        rootArray = array([b"",b""], dtype)
         if self.comm.MyPID() == root:
             rootArray[:] = data
         self.comm.Broadcast(rootArray, root)
@@ -752,14 +753,14 @@ if __name__ == "__main__":
     iAmRoot = comm.MyPID() == 0
 
     # Run the test suite
-    if iAmRoot: print >>sys.stderr, \
-          "\n*******************\nTesting Epetra.Comm\n*******************\n"
+    if iAmRoot: print("\n*******************\nTesting Epetra.Comm\n"
+                      "*******************\n", file=sys.stderr)
     verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
 
     # Some versions of python don't properly delete suite upon exit
     del suite

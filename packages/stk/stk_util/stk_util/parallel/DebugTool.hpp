@@ -105,12 +105,11 @@ inline std::string demangleFunctionNames(char** symbollist, int addrlen)
 inline std::string getStackTrace()
 {
 #if defined(__GNUC__) && !defined(__ICC)
-    void *trace[16];
-    char **mangledFunctionNames = (char **) nullptr;
-    int trace_size = 0;
-
-    trace_size = backtrace(trace, 16);
-    mangledFunctionNames = backtrace_symbols(trace, trace_size);
+    const int N = 16;
+    void *trace[N];
+    
+    int trace_size = backtrace(trace, N);
+    char** mangledFunctionNames = backtrace_symbols(trace, trace_size);
 
     std::string demangledNames = demangleFunctionNames(mangledFunctionNames, trace_size);
     free(mangledFunctionNames);

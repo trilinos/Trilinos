@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cgns/Iocgns_StructuredZoneData.h>
 
+#define IOSS_DEBUG_OUTPUT 0
 #define OUTPUT std::cerr
 
 namespace {
@@ -149,7 +150,9 @@ namespace {
   void propogate_zgc(Iocgns::StructuredZoneData *parent, Iocgns::StructuredZoneData *child,
                      int ordinal)
   {
-    OUTPUT << "Propogating ZGC from " << parent->m_name << " to " << child->m_name << "\n";
+#ifdef IOSS_DEBUG_OUTPUT
+    OUTPUT << "\t\tPropogating ZGC from " << parent->m_name << " to " << child->m_name << "\n";
+#endif
     for (auto zgc : parent->m_zoneConnectivity) {
       if (!zgc.m_intraBlock || zgc_overlaps(child, zgc)) {
         // Modify source and donor range to subset it to new block ranges.
@@ -158,9 +161,11 @@ namespace {
         child->m_zoneConnectivity.push_back(zgc);
       }
       else {
+#ifdef IOSS_DEBUG_OUTPUT
         OUTPUT << "\t\t" << zgc.m_donorName << ":\tName '" << zgc.m_connectionName
                << " does not overlap."
                << "\n";
+#endif
       }
     }
   }
@@ -268,6 +273,7 @@ namespace Iocgns {
     m_child2->m_splitOrdinal        = ordinal;
     m_child2->m_sibling             = m_child1;
 
+#ifdef IOSS_DEBUG_OUTPUT
     OUTPUT << "Zone " << m_zone << "(" << m_adam->m_zone << ") with intervals " << m_ordinal[0]
            << " " << m_ordinal[1] << " " << m_ordinal[2] << " work = " << work() << " with offset "
            << m_offset[0] << " " << m_offset[1] << " " << m_offset[2] << " split along ordinal "
@@ -282,6 +288,7 @@ namespace Iocgns {
            << m_child2->m_ordinal[2] << " work = " << m_child2->work() << " with offset "
            << m_child2->m_offset[0] << " " << m_child2->m_offset[1] << " " << m_child2->m_offset[2]
            << "\n";
+#endif
 
     // Add ZoneGridConnectivity instance to account for split...
     add_split_zgc(this, m_child1, m_child2, ordinal);

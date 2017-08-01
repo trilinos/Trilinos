@@ -34,9 +34,10 @@
 #include <algorithm>
 #include <tokenize.h>
 
-std::vector<std::string> Ioss::tokenize(const std::string &str, const std::string &separators)
+using TokenList = std::vector<std::string>;
+TokenList Ioss::tokenize(const std::string &str, const std::string &separators)
 {
-  std::vector<std::string> tokens;
+  TokenList tokens;
   auto                     first = std::begin(str);
   while (first != std::end(str)) {
     const auto second =
@@ -55,7 +56,6 @@ std::vector<std::string> Ioss::tokenize(const std::string &str, const std::strin
 #if 0
 #include <iostream>
 
-typedef std::vector<std::string> TokenList;
 
 int main()
 {
@@ -65,7 +65,7 @@ int main()
     std::cin.getline(s,128);
     std::string input_line(s);
     if (input_line != "quit") {
-      std::vector<std::string> tokens = Ioss::tokenize(input_line, ": \t\r\v\n");
+      auto tokens = Ioss::tokenize(input_line, ": \t\r\v\n");
       std::cout << "There were " << tokens.size() << " tokens in the line\n";
       for (auto token : tokens) {
 	std::cout << "'" << token << "'\t";

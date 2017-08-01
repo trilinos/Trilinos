@@ -45,8 +45,9 @@
 
 #
 # System imports
+from   __future__ import print_function
 import sys
-from   time     import sleep
+from   time       import sleep
 import unittest
 
 #
@@ -325,8 +326,6 @@ class TeuchosTimeTestCase(unittest.TestCase):
     #    self.timer.start()
     #    sleep(self.duration)
     #    self.timer.stop()
-    #    print "totalElapsedTime() =", self.timer.totalElapsedTime()
-    #    print "duration*0.9 =", self.duration*0.9
     #    self.failUnless(self.timer.totalElapsedTime() >= self.duration*0.9)
 
     def testReset(self):
@@ -369,15 +368,16 @@ if __name__ == "__main__":
     iAmRoot = comm.getRank() == 0
 
     # Run the test suite
-    if iAmRoot: print >>sys.stderr, \
-       "\n***************\nTesting Teuchos\n***************\n"
+    if iAmRoot:
+        print("\n***************\nTesting Teuchos\n***************\n",
+              file=sys.stderr)
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
     # Compute the total number of errors and failures
     errsPlusFails = comm.reduceAll(Teuchos.REDUCE_SUM,
                                    len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
 
     # Some versions of python don't properly delete suite upon exit
     del suite

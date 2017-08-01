@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describe Poisson's equation
     Teuchos::RCP<PDE_Poisson<RealT> > pde
       = Teuchos::rcp(new PDE_Poisson<RealT>(*parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<Linear_PDE_Constraint<RealT> > pdecon

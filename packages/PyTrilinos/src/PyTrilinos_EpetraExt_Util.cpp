@@ -41,6 +41,7 @@
 // @HEADER
 
 // Local includes
+#include "Python3Compat.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_Util.hpp"
@@ -933,7 +934,8 @@ convertInArgsFromPython(PyObject * source)
   ModelEvaluator::InArgsSetup result;
 
   // description attribute
-  result.setModelEvalDescription(std::string(PyTrilinos::getStringObjectAttr(source, "description")));
+  result.setModelEvalDescription(
+      std::string(PyTrilinos::getStringObjectAttr(source, "description")));
 
   // x attribute
   if (PyTrilinos::objectAttrIsTrue(source, "x"))
@@ -975,7 +977,7 @@ convertInArgsFromPython(PyObject * source)
     Py_DECREF(pObj);
     if (Np < 0) throw PyTrilinos::PythonException();
     result.set_Np(Np);
-    for (int i=0; i < Np; ++i)
+    for (int i = 0; i < Np; ++i)
       result.set_p(i, PyTrilinos::getConstEpetraVectorItemObjectAttr(source, "p", i));
   }
 

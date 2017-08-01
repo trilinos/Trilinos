@@ -385,14 +385,8 @@ namespace Belos {
           StatusTestCombo<ScalarType,MV,OP>::SEQ
       );
 
-    /// \brief Set a debug status test.
-    ///
-    /// A debug status test is not required. If you decide to set
-    /// one, the current implementation will apply it at the same
-    /// time it applies Pseudoblock GMRES' standard convergence test.
-    virtual void setDebugStatusTest(
-      const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest
-      );
+    //! Set a debug status test that will be checked at the same time as the top-level status test.
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest );
 
     //@}
 
@@ -830,15 +824,17 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
       isSTSet_ = false;
     }
 
-    // Check if user has specified his own status tests
-    if (params->isSublist ("User Status Tests")) {
-      Teuchos::ParameterList userStatusTestsList = params->sublist("User Status Tests",true);
-      if ( userStatusTestsList.numParams() > 0 ) {
-	std::string userCombo_string = params->get<std::string>("User Status Tests Combo Type", "SEQ");
-	Teuchos::RCP<StatusTestFactory<ScalarType,MV,OP> > testFactory = Teuchos::rcp(new StatusTestFactory<ScalarType,MV,OP>());
-	setUserConvStatusTest( testFactory->buildStatusTests(userStatusTestsList), testFactory->stringToComboType(userCombo_string) );
-	taggedTests_ = testFactory->getTaggedTests();
-      }
+  }
+
+  // Check if user has specified his own status tests
+  if (params->isSublist ("User Status Tests")) {
+    Teuchos::ParameterList userStatusTestsList = params->sublist("User Status Tests",true);
+    if ( userStatusTestsList.numParams() > 0 ) {
+      std::string userCombo_string = params->get<std::string>("User Status Tests Combo Type", "SEQ");
+      Teuchos::RCP<StatusTestFactory<ScalarType,MV,OP> > testFactory = Teuchos::rcp(new StatusTestFactory<ScalarType,MV,OP>());
+      setUserConvStatusTest( testFactory->buildStatusTests(userStatusTestsList), testFactory->stringToComboType(userCombo_string) );
+      taggedTests_ = testFactory->getTaggedTests();
+      isSTSet_ = false;
     }
   }
 
@@ -1243,12 +1239,6 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
     convTest_ = impConvTest_;
   }
 
-  if (nonnull(debugStatusTest_) ) {
-    // Add debug convergence test
-    convTest_ = Teuchos::rcp(
-      new StatusTestCombo_t( StatusTestCombo_t::AND, convTest_, debugStatusTest_ ) );
-  }
-
   if (nonnull(userConvStatusTest_) ) {
     // Override the overall convergence test with the users convergence test
     convTest_ = Teuchos::rcp(
@@ -1261,9 +1251,11 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
-  /*if(taggedTests_ != Teuchos::null) {
-    std::cout << "# tagged tests " << taggedTests_->size() << std::endl;
-  }*/
+  // Add debug status test, if one is provided by the user
+  if (nonnull(debugStatusTest_) ) {
+    // Add debug convergence test
+    Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(sTest_)->addStatusTest( debugStatusTest_ );
+  }
 
   // Create the status test output class.
   // This class manages and formats the output from the status test.

@@ -146,9 +146,9 @@ int ex_set_max_name_length(int exoid, int length)
     ex_err("ex_set_max_name_length", errmsg, NC_EMAXNAME);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-  else {
-    ex_set_option(exoid, EX_OPT_MAX_NAME_LENGTH, length);
-  }
+
+  ex_set_option(exoid, EX_OPT_MAX_NAME_LENGTH, length);
+
   EX_FUNC_LEAVE(EX_NOERR);
 }
 
@@ -414,7 +414,7 @@ ex_entity_type ex_var_type_to_ex_entity_type(char var_type)
   if (var_lower == 'n') {
     return EX_NODAL;
   }
-  else if (var_lower == 'l') {
+  if (var_lower == 'l') {
     return EX_EDGE_BLOCK;
   }
   else if (var_lower == 'f') {
@@ -1361,9 +1361,8 @@ int ex_large_model(int exoid)
       }
       EX_FUNC_LEAVE(1);
     }
-    else {
-      EX_FUNC_LEAVE(EXODUS_DEFAULT_SIZE); /* Specified in exodusII_int.h */
-    }
+
+    EX_FUNC_LEAVE(EXODUS_DEFAULT_SIZE); /* Specified in exodusII_int.h */
   }
   else {
     /* See if the ATT_FILESIZE attribute is defined in the file */

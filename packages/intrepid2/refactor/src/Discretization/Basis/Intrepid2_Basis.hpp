@@ -816,6 +816,24 @@ void getJacobyRecurrenceCoeffs (
                             const shards::CellTopology  cellTopo,
                             const ordinal_type          basisCard );
 
+  /** \brief  Runtime check of the arguments for the getValues method in an L2-conforming
+      FEM basis. Verifies that ranks and dimensions of <var>ViewType</var> input and output
+      arrays are consistent with the specified <var>operatorType</var>.
+
+      \param  outputValues     [in]  - array of variable rank for the output basis values
+      \param  inputPoints      [in]  - rank-2 array with dimensions (P,D) containing the points
+      \param  operatorType     [in]  - operator applied to basis functions
+      \param  cellTopo         [in]  - base cell topology on which the basis is defined
+      \param  basisCard        [in]  - cardinality of the basis
+  */
+  template<typename outputValueViewType,
+           typename inputPointViewType>
+  void getValues_L2_Args( const outputValueViewType   outputValues,
+                             const inputPointViewType    inputPoints,
+                             const EOperator             operatorType,
+                             const shards::CellTopology  cellTopo,
+                             const ordinal_type          basisCard );
+
 }// namespace Intrepid2
 
 #include <Intrepid2_BasisDef.hpp>

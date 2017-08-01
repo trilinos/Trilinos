@@ -59,13 +59,13 @@ namespace { // Internal helper functions
 
   void build_catalyst_plugin_paths(std::string &      plugin_library_path,
                                    std::string &      plugin_python_path,
-                                   const std::string &plugin_python_name);
+                                   const std::string &plugin_library_name);
 
   int number_of_catalyst_blocks = 0;
 } // End anonymous namespace
 
 namespace Iovs {
-  void *      globalCatalystIossDlHandle           = NULL;
+  void *      globalCatalystIossDlHandle           = nullptr;
   int         DatabaseIO::useCount                 = 0;
   std::string DatabaseIO::paraview_script_filename = "";
   int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
@@ -116,7 +116,7 @@ namespace Iovs {
       }
     }
     dbState                              = Ioss::STATE_UNKNOWN;
-    this->pvcsa                          = 0;
+    this->pvcsa                          = nullptr;
     this->globalNodeAndElementIDsCreated = false;
 
     if (props.exists("CATALYST_BLOCK_PARSE_JSON_STRING")) {
@@ -175,17 +175,19 @@ namespace Iovs {
   {
     useCount--;
     try {
-      if (this->pvcsa) {
+      if (this->pvcsa != nullptr) {
         this->pvcsa->DeletePipeline(this->DBFilename.c_str());
-        if (useCount <= 0)
+        if (useCount <= 0) {
           this->pvcsa->CleanupCatalyst();
+        }
         delete this->pvcsa;
-        this->pvcsa = 0;
+        this->pvcsa = nullptr;
       }
 
 #ifdef IOSS_DLOPEN_ENABLED
-      if (globalCatalystIossDlHandle && useCount <= 0)
+      if ((globalCatalystIossDlHandle != nullptr) && useCount <= 0) {
         dlclose(globalCatalystIossDlHandle);
+      }
 #endif
     }
     catch (...) {
@@ -206,8 +208,9 @@ namespace Iovs {
       s << input_deck_name << "." << number_of_catalyst_blocks << CATALYST_FILE_SUFFIX;
       return std::string(CATALYST_OUTPUT_DIRECTORY) + "/" + s.str();
     }
-    else
+    {
       return input_deck_name;
+    }
   }
 
   ParaViewCatalystIossAdapterBase *
@@ -221,11 +224,13 @@ namespace Iovs {
     build_catalyst_plugin_paths(plugin_library_path, plugin_python_module_path,
                                 plugin_library_name);
 
-    if (getenv("CATALYST_PLUGIN"))
+    if (getenv("CATALYST_PLUGIN") != nullptr) {
       plugin_library_path = getenv("CATALYST_PLUGIN");
+    }
 
-    if (DatabaseIO::paraview_script_filename.empty())
+    if (DatabaseIO::paraview_script_filename.empty()) {
       DatabaseIO::paraview_script_filename = plugin_python_module_path;
+    }
 
     if (!file_exists(DatabaseIO::paraview_script_filename)) {
       std::ostringstream errmsg;
@@ -236,8 +241,9 @@ namespace Iovs {
 
 #ifdef IOSS_DLOPEN_ENABLED
     globalCatalystIossDlHandle = dlopen(plugin_library_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    if (!globalCatalystIossDlHandle)
+    if (globalCatalystIossDlHandle == nullptr) {
       throw std::runtime_error(dlerror());
+    }
 
     typedef ParaViewCatalystIossAdapterBase *(*PvCatSrrAdapterMakerFuncType)();
 
@@ -246,7 +252,7 @@ namespace Iovs {
 #endif
         PvCatSrrAdapterMakerFuncType mkr = reinterpret_cast<PvCatSrrAdapterMakerFuncType>(
             dlsym(globalCatalystIossDlHandle, "ParaViewCatalystIossAdapterCreateInstance"));
-    if (!mkr) {
+    if (mkr == nullptr) {
       throw std::runtime_error("dlsym call failed to load function "
                                "'ParaViewCatalystIossAdapterCreateInstance'");
     }
@@ -261,7 +267,7 @@ namespace Iovs {
   {
     dbState              = state;
     Ioss::Region *region = this->get_region();
-    if (region->model_defined() && !this->pvcsa) {
+    if (region->model_defined() && (this->pvcsa == nullptr)) {
       this->pvcsa = DatabaseIO::load_plugin_library("ParaViewCatalystIossAdapter",
                                                     CATALYST_PLUGIN_DYNAMIC_LIBRARY);
 
@@ -279,20 +285,22 @@ namespace Iovs {
       std::vector<std::string> catalyst_sierra_data;
       catalyst_sierra_data.push_back(this->paraview_script_extra_filename);
 
-      if (this->pvcsa)
+      if (this->pvcsa != nullptr) {
         this->pvcsa->CreateNewPipeline(
             DatabaseIO::paraview_script_filename.c_str(), this->paraview_json_parse.c_str(),
             separator.c_str(), this->sierra_input_deck_name.c_str(), this->underscoreVectors,
             this->applyDisplacements, restart_tag.c_str(), this->enableLogging, this->debugLevel,
             this->DBFilename.c_str(), this->catalyst_output_directory.c_str(),
             catalyst_sierra_data);
+      }
       std::vector<int>                   element_block_id_list;
       Ioss::ElementBlockContainer const &ebc = region->get_element_blocks();
-      for (unsigned int i = 0; i < ebc.size(); i++) {
-        element_block_id_list.push_back(get_id(ebc[i], &ids_));
+      for (auto i : ebc) {
+        element_block_id_list.push_back(get_id(i, &ids_));
       }
-      if (this->pvcsa)
+      if (this->pvcsa != nullptr) {
         this->pvcsa->InitializeElementBlocks(element_block_id_list, this->DBFilename.c_str());
+      }
     }
     return true;
   }
@@ -329,24 +337,25 @@ namespace Iovs {
       this->create_global_node_and_element_ids();
     }
 
-    if (this->pvcsa)
+    if (this->pvcsa != nullptr) {
       this->pvcsa->SetTimeData(time, state - 1, this->DBFilename.c_str());
+    }
 
     return true;
   }
 
-  bool DatabaseIO::end_state__(Ioss::Region *, int state, double time)
+  bool DatabaseIO::end_state__(Ioss::Region * /*region*/, int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
-    if (this->pvcsa) {
+    if (this->pvcsa != nullptr) {
       std::vector<int>         error_codes;
       std::vector<std::string> error_messages;
       this->pvcsa->logMemoryUsageAndTakeTimerReading(this->DBFilename.c_str());
       this->pvcsa->PerformCoProcessing(this->DBFilename.c_str(), error_codes, error_messages);
       this->pvcsa->logMemoryUsageAndTakeTimerReading(this->DBFilename.c_str());
       this->pvcsa->ReleaseMemory(this->DBFilename.c_str());
-      if (error_codes.size() > 0 && error_messages.size() > 0 &&
+      if (!error_codes.empty() && !error_messages.empty() &&
           error_codes.size() == error_messages.size()) {
         for (unsigned int i = 0; i < error_codes.size(); i++) {
           if (error_codes[i] > 0) {
@@ -371,7 +380,7 @@ namespace Iovs {
 
   int DatabaseIO::parseCatalystFile(const std::string &filepath, std::string &json_result)
   {
-    ParaViewCatalystIossAdapterBase *pvcsp = NULL;
+    ParaViewCatalystIossAdapterBase *pvcsp = nullptr;
 
     pvcsp = DatabaseIO::load_plugin_library("ParaViewCatalystIossAdapter",
                                             CATALYST_PLUGIN_DYNAMIC_LIBRARY);
@@ -394,16 +403,18 @@ namespace Iovs {
     for (I = element_blocks.begin(); I != element_blocks.end(); ++I) {
       int     bid       = get_id((*I), &ids_);
       int64_t eb_offset = (*I)->get_offset();
-      if (this->pvcsa)
+      if (this->pvcsa != nullptr) {
         this->pvcsa->CreateElementVariable(
             component_names, bid, &this->elemMap.map()[eb_offset + 1], this->DBFilename.c_str());
+      }
     }
 
     component_names.clear();
     component_names.push_back("GlobalNodeId");
-    if (this->pvcsa)
+    if (this->pvcsa != nullptr) {
       this->pvcsa->CreateNodalVariable(component_names, &this->nodeMap.map()[1],
                                        this->DBFilename.c_str());
+    }
 
     this->globalNodeAndElementIDsCreated = true;
   }
@@ -432,8 +443,9 @@ namespace Iovs {
       int comp_count = var_type->component_count();
 
       int re_im = 1;
-      if (field.get_type() == Ioss::Field::COMPLEX)
+      if (field.get_type() == Ioss::Field::COMPLEX) {
         re_im = 2;
+      }
       for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
         std::string field_name = field.get_name();
         if (re_im == 2) {
@@ -448,16 +460,20 @@ namespace Iovs {
           component_names.push_back(var_name);
 
           // Transfer from 'variables' array.
-          if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+          if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
             globalValues.push_back(rvar[i]);
-          else if (ioss_type == Ioss::Field::INTEGER)
+          }
+          else if (ioss_type == Ioss::Field::INTEGER) {
             globalValues.push_back(ivar[i]);
-          else if (ioss_type == Ioss::Field::INT64)
+          }
+          else if (ioss_type == Ioss::Field::INT64) {
             globalValues.push_back(ivar64[i]);
+          }
         }
-        if (this->pvcsa)
+        if (this->pvcsa != nullptr) {
           this->pvcsa->CreateGlobalVariable(component_names, TOPTR(globalValues),
                                             this->DBFilename.c_str());
+        }
       }
     }
     else if (num_to_get != 1) {
@@ -488,10 +504,11 @@ namespace Iovs {
 
       if (role == Ioss::Field::MESH) {
         if (field.get_name() == "mesh_model_coordinates") {
-          if (this->pvcsa)
+          if (this->pvcsa != nullptr) {
             this->pvcsa->InitializeGlobalPoints(
                 num_to_get, nb->get_property("component_degree").get_int(),
                 static_cast<double *>(data), this->DBFilename.c_str());
+          }
         }
         else if (field.get_name() == "ids") {
           // The ids coming in are the global ids; their position is the
@@ -518,8 +535,9 @@ namespace Iovs {
         std::vector<double>       temp(num_to_get);
         int                       comp_count = var_type->component_count();
         int                       re_im      = 1;
-        if (ioss_type == Ioss::Field::COMPLEX)
+        if (ioss_type == Ioss::Field::COMPLEX) {
           re_im = 2;
+        }
         for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
           std::string field_name = field.get_name();
           if (re_im == 2) {
@@ -536,23 +554,28 @@ namespace Iovs {
             size_t begin_offset = (re_im * i) + complex_comp;
             size_t stride       = re_im * comp_count;
 
-            if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+            if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
               this->nodeMap.map_field_to_db_scalar_order(static_cast<double *>(data), temp,
                                                          begin_offset, num_to_get, stride, 0);
-            else if (ioss_type == Ioss::Field::INTEGER)
+            }
+            else if (ioss_type == Ioss::Field::INTEGER) {
               this->nodeMap.map_field_to_db_scalar_order(static_cast<int *>(data), temp,
                                                          begin_offset, num_to_get, stride, 0);
-            else if (ioss_type == Ioss::Field::INT64)
+            }
+            else if (ioss_type == Ioss::Field::INT64) {
               this->nodeMap.map_field_to_db_scalar_order(static_cast<int64_t *>(data), temp,
                                                          begin_offset, num_to_get, stride, 0);
+            }
 
-            for (unsigned int j                    = 0; j < num_to_get; j++)
+            for (unsigned int j = 0; j < num_to_get; j++) {
               interleaved_data[j * comp_count + i] = temp[j];
+            }
           }
 
-          if (this->pvcsa)
+          if (this->pvcsa != nullptr) {
             this->pvcsa->CreateNodalVariable(component_names, TOPTR(interleaved_data),
                                              this->DBFilename.c_str());
+          }
         }
       }
       else if (role == Ioss::Field::REDUCTION) {
@@ -591,18 +614,20 @@ namespace Iovs {
             int                    id        = get_id(eb, &ids_);
 
             if (ioss_type == Ioss::Field::INTEGER) {
-              if (this->pvcsa)
+              if (this->pvcsa != nullptr) {
                 this->pvcsa->CreateElementBlock(
                     eb->name().c_str(), id, eb->get_property("topology_type").get_string(),
                     element_nodes, num_to_get, &this->elemMap.map()[eb_offset + 1],
                     static_cast<int *>(data), this->DBFilename.c_str());
+              }
             }
             else if (ioss_type == Ioss::Field::INT64) {
-              if (this->pvcsa)
+              if (this->pvcsa != nullptr) {
                 this->pvcsa->CreateElementBlock(
                     eb->name().c_str(), id, eb->get_property("topology_type").get_string(),
                     element_nodes, num_to_get, &this->elemMap.map()[eb_offset + 1],
                     static_cast<int64_t *>(data), this->DBFilename.c_str());
+              }
             }
           }
         }
@@ -633,8 +658,9 @@ namespace Iovs {
         int                       bid        = get_id(eb, &ids_);
 
         int re_im = 1;
-        if (ioss_type == Ioss::Field::COMPLEX)
+        if (ioss_type == Ioss::Field::COMPLEX) {
           re_im = 2;
+        }
         for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
           std::string field_name = field.get_name();
           if (re_im == 2) {
@@ -651,21 +677,26 @@ namespace Iovs {
             ssize_t begin_offset = (re_im * i) + complex_comp;
             ssize_t stride       = re_im * comp_count;
 
-            if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+            if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
               this->elemMap.map_field_to_db_scalar_order(
                   static_cast<double *>(data), temp, begin_offset, num_to_get, stride, eb_offset);
-            else if (ioss_type == Ioss::Field::INTEGER)
+            }
+            else if (ioss_type == Ioss::Field::INTEGER) {
               this->elemMap.map_field_to_db_scalar_order(
                   static_cast<int *>(data), temp, begin_offset, num_to_get, stride, eb_offset);
-            else if (ioss_type == Ioss::Field::INT64)
+            }
+            else if (ioss_type == Ioss::Field::INT64) {
               this->elemMap.map_field_to_db_scalar_order(
                   static_cast<int64_t *>(data), temp, begin_offset, num_to_get, stride, eb_offset);
-            for (unsigned int j                    = 0; j < num_to_get; j++)
+            }
+            for (unsigned int j = 0; j < num_to_get; j++) {
               interleaved_data[j * comp_count + i] = temp[j];
+            }
           }
-          if (this->pvcsa)
+          if (this->pvcsa != nullptr) {
             this->pvcsa->CreateElementVariable(component_names, bid, TOPTR(interleaved_data),
                                                this->DBFilename.c_str());
+          }
         }
       }
       else if (role == Ioss::Field::REDUCTION) {
@@ -969,15 +1000,17 @@ namespace Iovs {
 
       if (field.get_type() == Ioss::Field::INTEGER) {
         this->nodeMap.reverse_map_data(data, field, num_to_get);
-        if (this->pvcsa)
+        if (this->pvcsa != nullptr) {
           this->pvcsa->CreateNodeSet(ns->name().c_str(), id, num_to_get, static_cast<int *>(data),
                                      this->DBFilename.c_str());
+        }
       }
       else if (field.get_type() == Ioss::Field::INT64) {
         this->nodeMap.reverse_map_data(data, field, num_to_get);
-        if (this->pvcsa)
+        if (this->pvcsa != nullptr) {
           this->pvcsa->CreateNodeSet(ns->name().c_str(), id, num_to_get,
                                      static_cast<int64_t *>(data), this->DBFilename.c_str());
+        }
       }
 
       if (this->createNodeSets == 0) {
@@ -1030,7 +1063,7 @@ namespace Iovs {
 
         // std::cerr << "Iovs_DatabaseIO::"
         //    "put_field_internal doing CreateSideSet (1)\n";
-        if (this->pvcsa) {
+        if (this->pvcsa != nullptr) {
           const Ioss::SideSet *ebowner = eb->owner();
           /*
           if(ebowner == NULL)
@@ -1086,7 +1119,7 @@ namespace Iovs {
 
         // std::cerr << "Iovs_DatabaseIO::"
         //    "put_field_internal doing CreateSideSet (2)\n";
-        if (this->pvcsa) {
+        if (this->pvcsa != nullptr) {
           const Ioss::SideSet *ebowner = eb->owner();
           /*
           if(ebowner == NULL)
@@ -1168,12 +1201,12 @@ namespace {
       id = entity->get_property(id_prop).get_int();
       return id;
     }
-    else {
-      // Try to decode an id from the name.
-      std::string name_string = entity->get_property(prop_name).get_string();
-      id                      = extract_id(name_string);
-      if (id <= 0)
-        id = 1;
+
+    // Try to decode an id from the name.
+    std::string name_string = entity->get_property(prop_name).get_string();
+    id                      = extract_id(name_string);
+    if (id <= 0) {
+      id = 1;
     }
 
     // At this point, we either have an id equal to '1' or we have an id
@@ -1223,8 +1256,9 @@ namespace {
   {
     std::vector<std::string> tokens = Ioss::tokenize(name_id, "_");
 
-    if (tokens.size() == 1)
+    if (tokens.size() == 1) {
       return 0;
+    }
 
     // Check whether last token is an integer...
     std::string str_id = tokens[tokens.size() - 1];
@@ -1236,8 +1270,9 @@ namespace {
         break;
       }
     }
-    if (is_int)
+    if (is_int) {
       return std::atoi(str_id.c_str());
+    }
 
     return 0;
   }
@@ -1247,7 +1282,7 @@ namespace {
                                    const std::string &plugin_library_name)
   {
 
-    if (getenv("CATALYST_ADAPTER_INSTALL_DIR")) {
+    if (getenv("CATALYST_ADAPTER_INSTALL_DIR") != nullptr) {
       std::string catalyst_ins_dir = getenv("CATALYST_ADAPTER_INSTALL_DIR");
 
       if (!file_exists(catalyst_ins_dir)) {
@@ -1266,7 +1301,7 @@ namespace {
     }
 
     std::string sierra_ins_dir;
-    if (getenv("SIERRA_INSTALL_DIR")) {
+    if (getenv("SIERRA_INSTALL_DIR") != nullptr) {
       sierra_ins_dir = getenv("SIERRA_INSTALL_DIR");
     }
     else {
@@ -1278,7 +1313,7 @@ namespace {
     }
 
     std::string sierra_system;
-    if (getenv("SIERRA_SYSTEM")) {
+    if (getenv("SIERRA_SYSTEM") != nullptr) {
       sierra_system = getenv("SIERRA_SYSTEM");
     }
     else {
@@ -1290,7 +1325,7 @@ namespace {
     }
 
     std::string sierra_version;
-    if (getenv("SIERRA_VERSION")) {
+    if (getenv("SIERRA_VERSION") != nullptr) {
       sierra_version = getenv("SIERRA_VERSION");
     }
     else {
@@ -1301,7 +1336,7 @@ namespace {
       return;
     }
 
-    char *      cbuf            = realpath(sierra_ins_dir.c_str(), 0);
+    char *      cbuf            = realpath(sierra_ins_dir.c_str(), nullptr);
     std::string sierra_ins_path = cbuf;
     free(cbuf);
 
@@ -1324,8 +1359,9 @@ namespace {
       dname = dirname(dname);
     }
 
-    if (strcmp(bname, "sierra") == 0)
+    if (strcmp(bname, "sierra") == 0) {
       sierra_ins_path = dname;
+    }
 
     free(cbase);
     free(cdir);

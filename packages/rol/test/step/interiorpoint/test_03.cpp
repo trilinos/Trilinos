@@ -49,7 +49,7 @@
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_InteriorPointPenalty.hpp"
 #include "ROL_PrimalDualInteriorPointResidual.hpp"
-#include "ROL_LinearOperatorFromEqualityConstraint.hpp"
+#include "ROL_LinearOperatorFromConstraint.hpp"
 #include "ROL_KrylovFactory.hpp"
 
 #include "HS_ProblemFactory.hpp"
@@ -130,12 +130,12 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>                               V;
   typedef ROL::PartitionedVector<RealT>                    PV;
   typedef ROL::Objective<RealT>                            OBJ;
-  typedef ROL::EqualityConstraint<RealT>                   CON;
+  typedef ROL::Constraint<RealT>                           CON;
   typedef ROL::BoundConstraint<RealT>                      BND;
   typedef ROL::OptimizationProblem<RealT>                  OPT;
   typedef ROL::NonlinearProgram<RealT>                     NLP;
   typedef ROL::LinearOperator<RealT>                       LOP;  
-  typedef ROL::LinearOperatorFromEqualityConstraint<RealT> LOPEC;
+  typedef ROL::LinearOperatorFromConstraint<RealT>         LOPEC;
   typedef ROL::Krylov<RealT>                               KRYLOV;
 
 
@@ -189,12 +189,16 @@ int main(int argc, char *argv[]) {
  
     RCP<V>   x   = opt->getSolutionVector();
     RCP<V>   l   = opt->getMultiplierVector();
-    RCP<V>   zl  = x->clone();
-    RCP<V>   zu  = x->clone(); 
+    RCP<V>   zl  = x->clone(); zl->zero();
+    RCP<V>   zu  = x->clone(); zu->zero();
 
     RCP<V>   scratch = x->clone();
 
     RCP<PV>  x_pv = Teuchos::rcp_dynamic_cast<PV>(x);
+    // New slack variable initialization does not guarantee strict feasibility.
+    // This ensures that the slack variables are the same as the previous
+    // implementation.
+    (*Teuchos::rcp_dynamic_cast<ROL::StdVector<RealT> >(x_pv->get(1))->getVector())[0] = 1.0;
 
     RCP<V>   sol = CreatePartitionedVector(x,l,zl,zu);   
 
@@ -214,14 +218,14 @@ int main(int argc, char *argv[]) {
 
     RCP<V>   gmres_sol = sol->clone();   gmres_sol->set(*sol);
     RCP<V>   cg_sol = sol->clone();      cg_sol->set(*sol);
-    
+ 
     IdentityOperator<RealT> identity;
 
     RandomizeVector(*u,-1.0,1.0);
     RandomizeVector(*v,-1.0,1.0);
 
     RCP<OBJ> obj = opt->getObjective();
-    RCP<CON> con = opt->getEqualityConstraint();
+    RCP<CON> con = opt->getConstraint();
     RCP<BND> bnd = opt->getBoundConstraint();
 
     PENALTY penalty(obj,bnd,parlist);
@@ -232,26 +236,23 @@ int main(int argc, char *argv[]) {
     zl->set(*maskL);
     zu->set(*maskU);
 
-
     /********************************************************************************/
     /* Nonsymmetric representation test                                             */
     /********************************************************************************/
- 
-   
+
     int gmres_iter = 0;
     int gmres_flag = 0;
 
-    // Form the residual's Jacobian operator 
-    RCP<CON> res = rcp( new RESIDUAL(obj,con,bnd,*sol,maskL,maskU,scratch,mu,false)  );
+    // Form the residual's Jacobian operator
+    RCP<CON> res = rcp( new RESIDUAL(obj,con,bnd,*sol,maskL,maskU,scratch,mu,false) );
     RCP<LOP> lop = rcp( new LOPEC( sol, res ) );
 
     // Evaluate the right-hand-side
     res->value(*rhs,*sol,tol);
 
     // Create a GMRES solver
-    krylist.set("Type","GMRES"); 
+    krylist.set("Type","GMRES");
     RCP<KRYLOV> gmres = ROL::KrylovFactory<RealT>(parlist);
-
 
      for( int k=0; k<sol->dimension(); ++k ) {
       res->applyJacobian(*(J[k]),*(I[k]),*sol,tol);
@@ -265,11 +266,9 @@ int main(int argc, char *argv[]) {
 
     errorFlag += gmres_flag;
 
-
     *outStream << "GMRES terminated after " << gmres_iter << " iterations "
                << "with exit flag " << gmres_flag << std::endl;
 
-    
 
     /********************************************************************************/
     /* Symmetric representation test                                                */
@@ -282,21 +281,21 @@ int main(int argc, char *argv[]) {
     RCP<V> ju = u->clone();
 
     iplist.set("Symmetrize Primal Dual System",true);
-    RCP<CON> symres = rcp( new RESIDUAL(obj,con,bnd,*sol,maskL,maskU,scratch,mu,true)  );
+    RCP<CON> symres = rcp( new RESIDUAL(obj,con,bnd,*sol,maskL,maskU,scratch,mu,true) );
     RCP<LOP> symlop = rcp( new LOPEC( sol, res ) );
     symres->value(*symrhs,*sol,tol);
 
     symres->applyJacobian(*jv,*v,*sol,tol);
     symres->applyJacobian(*ju,*u,*sol,tol);
-    *outStream << "Symmetry check |u.dot(jv)-v.dot(ju)| = " 
+    *outStream << "Symmetry check |u.dot(jv)-v.dot(ju)| = "
                << std::abs(u->dot(*jv)-v->dot(*ju)) << std::endl;
-    
+ 
     cg->run( *cg_sol, *symlop, *symrhs, identity, cg_iter, cg_flag );
 
-    *outStream << "CG terminated after " << cg_iter << " iterations " 
+    *outStream << "CG terminated after " << cg_iter << " iterations "
                << "with exit flag " << cg_flag << std::endl;
 
-    *outStream << "Check that GMRES solution also is a solution to the symmetrized system" 
+    *outStream << "Check that GMRES solution also is a solution to the symmetrized system"
                << std::endl;
 
     symres->applyJacobian(*ju,*gmres_sol,*sol,tol);

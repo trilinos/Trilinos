@@ -45,7 +45,7 @@ public:
       : SoloSideIdGenerator(numProcs, proc, maxSideId)
     {}
 
-    inline stk::mesh::EntityId test_get_solo_side_id_using_formula(unsigned elementId, unsigned sideOrdinal)
+    stk::mesh::EntityId test_get_solo_side_id_using_formula(unsigned elementId, unsigned sideOrdinal)
     {
         return get_solo_side_id_using_formula(elementId, sideOrdinal);
     }
@@ -94,8 +94,12 @@ TEST( SoloSideIdGenerator, test_id_space_per_proc )
     uint64_t maxPseudoElement = soloSideIdGenerator.max_pseudo_element();
 
     for(size_t elementIndex = myProcId+1; elementIndex <= maxPseudoElement; elementIndex+=numProcs)
+    {
         for(size_t ordinal = 6; ordinal < 10; ordinal++)
+        {
             EXPECT_EQ(soloSideIdGenerator.get_solo_side_id(), soloSideIdGenerator.test_get_solo_side_id_using_formula(elementIndex, ordinal));
+        }
+    }
 
     EXPECT_THROW(soloSideIdGenerator.get_solo_side_id(), std::exception);
 }

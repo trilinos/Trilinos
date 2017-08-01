@@ -68,7 +68,7 @@ class PrimalDualSystemStep : public Step<Real> {
   typedef PartitionedVector<Real>  PV;
   typedef Objective<Real>          OBJ;
   typedef BoundConstraint<Real>    BND;
-  typedef EqualityConstraint<Real> CON;
+  typedef Constraint<Real> CON;
   typedef AlgorithmState<Real>     AS;
   typedef SchurComplement<Real>    SCHUR;
 

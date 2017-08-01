@@ -112,7 +112,7 @@ namespace Xpetra {
           numAllElements += maps[v]->getGlobalNumElements();
         }
         TEUCHOS_TEST_FOR_EXCEPTION(fullmap->getGlobalNumElements() != numAllElements, std::logic_error,
-                                   "logic error. full map and sub maps have not same number of elements. We cannot build MapExtractor with Xpetra-style numbering. Please make sure that you want Xpetra-style numbering instead of Thyra-style numbering.");
+                                   "logic error. full map and sub maps have not same number of elements (" << fullmap->getGlobalNumElements() <<" versus " << numAllElements << "). We cannot build MapExtractor with Xpetra-style numbering. Please make sure that you want Xpetra-style numbering instead of Thyra-style numbering.");
 
         fullmap_ = fullmap;
         maps_ = maps;

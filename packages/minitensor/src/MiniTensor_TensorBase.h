@@ -403,6 +403,12 @@ protected:
   ///
   ST
   components_;
+
+  ///
+  /// dimension
+  ///
+  Index
+  dimension_{0};
 };
 
 ///

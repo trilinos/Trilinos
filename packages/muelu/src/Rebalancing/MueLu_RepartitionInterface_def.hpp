@@ -58,13 +58,13 @@ namespace MueLu {
       RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
       Set(level, "Partition", decomposition);
       return;
-    } else if (numParts == -1) {
+    }/* else if (numParts == -1) {
       // No repartitioning
       RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Teuchos::null; //Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
       //decomposition->putScalar(Teuchos::as<Scalar>(comm->getRank()));
       Set(level, "Partition", decomposition);
       return;
-    }
+    }*/
 
     ArrayRCP<GO> amalgPartitionData = amalgPartition->getDataNonConst(0);
     RCP<const Map> nodeMap       = amalgPartition->getMap();

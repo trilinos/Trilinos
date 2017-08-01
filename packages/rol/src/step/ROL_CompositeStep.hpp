@@ -207,7 +207,7 @@ public:
   /** \brief Initialize step.
   */
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
-                   Objective<Real> &obj, EqualityConstraint<Real> &con,
+                   Objective<Real> &obj, Constraint<Real> &con,
                    AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
@@ -250,7 +250,7 @@ public:
   /** \brief Compute step.
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                Objective<Real> &obj, EqualityConstraint<Real> &con,
+                Objective<Real> &obj, Constraint<Real> &con,
                 AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     Real zerotol = std::sqrt(ROL_EPSILON<Real>());
@@ -298,7 +298,7 @@ public:
   /** \brief Update step, if successful.
   */
   void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-               Objective<Real> &obj, EqualityConstraint<Real> &con,
+               Objective<Real> &obj, Constraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
 
@@ -465,7 +465,7 @@ public:
 
              On return ... fill the blanks.
   */
-  void computeLagrangeMultiplier(Vector<Real> &l, const Vector<Real> &x, const Vector<Real> &gf, EqualityConstraint<Real> &con) {
+  void computeLagrangeMultiplier(Vector<Real> &l, const Vector<Real> &x, const Vector<Real> &gf, Constraint<Real> &con) {
 
     Real one(1);
     Real zerotol = std::sqrt(ROL_EPSILON<Real>());
@@ -532,7 +532,7 @@ public:
              @param[in]       con   is the equality constraint object
 
   */
-  void computeQuasinormalStep(Vector<Real> &n, const Vector<Real> &c, const Vector<Real> &x, Real delta, EqualityConstraint<Real> &con) {
+  void computeQuasinormalStep(Vector<Real> &n, const Vector<Real> &c, const Vector<Real> &x, Real delta, Constraint<Real> &con) {
 
     if (infoQN_) {
       std::stringstream hist;
@@ -644,7 +644,7 @@ public:
   */
   void solveTangentialSubproblem(Vector<Real> &t, Vector<Real> &tCP, Vector<Real> &Wg,
                                  const Vector<Real> &x, const Vector<Real> &g, const Vector<Real> &n, const Vector<Real> &l,
-                                 Real delta, Objective<Real> &obj, EqualityConstraint<Real> &con) {
+                                 Real delta, Objective<Real> &obj, Constraint<Real> &con) {
 
     /* Initialization of the CG step. */
     bool orthocheck = true;  // set to true if want to check orthogonality
@@ -973,7 +973,7 @@ public:
               Vector<Real> &gf_new, Vector<Real> &l_new, Vector<Real> &g_new,
               const Vector<Real> &x, const Vector<Real> &l, Real f, const Vector<Real> &gf, const Vector<Real> &c,
               const Vector<Real> &g, Vector<Real> &tCP, Vector<Real> &Wg,
-              Objective<Real> &obj, EqualityConstraint<Real> &con, AlgorithmState<Real> &algo_state) {
+              Objective<Real> &obj, Constraint<Real> &con, AlgorithmState<Real> &algo_state) {
 
     Real beta         = 1e-8;              // predicted reduction parameter
     Real tol_red_tang = 1e-3;              // internal reduction factor for tangtol

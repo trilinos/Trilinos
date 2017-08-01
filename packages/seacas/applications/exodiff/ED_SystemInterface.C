@@ -32,10 +32,12 @@ namespace {
     const char *c1 = s1.c_str();
     const char *c2 = s2.c_str();
     for (;; c1++, c2++) {
-      if (std::tolower(*c1) != std::tolower(*c2))
+      if (std::tolower(*c1) != std::tolower(*c2)) {
         return (std::tolower(*c1) - std::tolower(*c2));
-      if (*c1 == '\0')
+      }
+      if (*c1 == '\0') {
         return 0;
+      }
     }
   }
   void file_help();
@@ -65,11 +67,13 @@ namespace {
 
   int File_Exists(const std::string &fname)
   {
-    if (fname.empty())
+    if (fname.empty()) {
       return 0;
+    }
     std::ifstream file_check(fname.c_str(), std::ios::in);
-    if (file_check.fail())
+    if (file_check.fail()) {
       return 0;
+    }
     file_check.close();
     return 1;
   }
@@ -117,8 +121,9 @@ namespace {
           }
 
           tmp_str[k] = '\0';
-          if (strlen(tmp_str) > 0)
+          if (strlen(tmp_str) > 0) {
             val = strtol(tmp_str, nullptr, 0);
+          }
 
           if (tokens[j++] == '\0') {
             break; // Reached end of string
@@ -141,10 +146,12 @@ namespace {
     int num_exclude = 0;
     for (auto &name : names) {
       SMART_ASSERT(name != "");
-      if (name[0] == '!')
+      if (name[0] == '!') {
         ++num_exclude;
-      else
+      }
+      else {
         ++num_include;
+      }
     }
     if (!all_flag && num_include > 0 && num_exclude > 0) {
       ERROR("Parsing error: Cannot specify both "
@@ -152,8 +159,9 @@ namespace {
             "'(all)' specifier.  Aborting...\n");
       exit(1);
     }
-    if (num_include == 0 && num_exclude > 0)
+    if (num_include == 0 && num_exclude > 0) {
       all_flag = true;
+    }
   }
 
   void parseExcludeTimes(std::string exclude_arg, std::vector<int> &exclude_steps)
@@ -194,8 +202,9 @@ namespace {
         }
 
         if (ival1 < ival2) {
-          for (int i = ival1 + 1; i <= ival2; ++i)
+          for (int i = ival1 + 1; i <= ival2; ++i) {
             ++num_excluded_steps;
+          }
         }
         else if (ival1 > ival2) {
           ERROR("parsing exclusion times from command "
@@ -233,8 +242,9 @@ namespace {
           int ival2 = atoi(subtok.c_str());
           SMART_ASSERT(errno == 0);
 
-          for (int i                            = ival1 + 1; i <= ival2; ++i)
+          for (int i = ival1 + 1; i <= ival2; ++i) {
             exclude_steps[num_excluded_steps++] = i;
+          }
         }
 
         tok = extract_token(exclude_arg, ",");
@@ -513,12 +523,13 @@ void SystemInterface::Set_Max_Names(int size)
 bool SystemInterface::parse_options(int argc, char **argv)
 {
   int option_index = options_.parse(argc, argv);
-  if (option_index < 1)
+  if (option_index < 1) {
     return false;
+  }
 
   {
     const char *temp = options_.retrieve("help");
-    if (temp) {
+    if (temp != nullptr) {
       if ((case_strcmp("usage", temp) == 0) || (case_strcmp("all", temp) == 0)) {
         options_.usage();
       }
@@ -534,17 +545,17 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("Help")) {
+  if (options_.retrieve("Help") != nullptr) {
     options_.usage();
     exit(EXIT_SUCCESS);
   }
 
-  if (options_.retrieve("version")) {
+  if (options_.retrieve("version") != nullptr) {
     show_version();
     exit(EXIT_SUCCESS);
   }
 
-  if (options_.retrieve("copyright")) {
+  if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
               << "Copyright(C) 2008 Sandia Corporation.\n"
               << "\n"
@@ -618,50 +629,52 @@ bool SystemInterface::parse_options(int argc, char **argv)
     options_.parse(options, options_.basename(*argv));
   }
 
-  if (options_.retrieve("summary")) {
+  if (options_.retrieve("summary") != nullptr) {
     summary_flag = true;
   }
 
-  if (options_.retrieve("min_coordinate_separation")) {
+  if (options_.retrieve("min_coordinate_separation") != nullptr) {
     coord_sep = true;
   }
 
   {
     const char *temp = options_.retrieve("exclude");
-    if (temp)
+    if (temp != nullptr) {
       parseExcludeTimes(temp, exclude_steps);
+    }
   }
 
   {
     const char *temp = options_.retrieve("x");
-    if (temp)
+    if (temp != nullptr) {
       parseExcludeTimes(temp, exclude_steps);
+    }
   }
 
   {
     const char *temp = options_.retrieve("tolerance");
-    if (temp) {
+    if (temp != nullptr) {
       default_tol.value = To_Double(temp);
     }
   }
 
   {
     const char *temp = options_.retrieve("Floor");
-    if (temp) {
+    if (temp != nullptr) {
       default_tol.floor = To_Double(temp);
     }
   }
 
   {
     const char *temp = options_.retrieve("TimeStepOffset");
-    if (temp) {
+    if (temp != nullptr) {
       errno            = 0;
       time_step_offset = atoi(temp);
       SMART_ASSERT(errno == 0);
     }
     else {
       const char *temp2 = options_.retrieve("T");
-      if (temp2) {
+      if (temp2 != nullptr) {
         errno            = 0;
         time_step_offset = atoi(temp2);
         SMART_ASSERT(errno == 0);
@@ -669,24 +682,24 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("TA")) {
+  if (options_.retrieve("TA") != nullptr) {
     time_step_offset = -1; // Signifies automatic offset calculation.
   }
 
-  if (options_.retrieve("TM")) {
+  if (options_.retrieve("TM") != nullptr) {
     time_step_offset = -2; // Signifies automatic offset calculation -- closest match
   }
 
   {
     const char *temp = options_.retrieve("steps");
-    if (temp) {
+    if (temp != nullptr) {
       Parse_Steps_Option(temp, time_step_start, time_step_stop, time_step_increment);
     }
   }
 
   {
     const char *temp = options_.retrieve("explicit");
-    if (temp) {
+    if (temp != nullptr) {
       // temp should be of the form <ts1>:<ts2>  where ts# is either a timestep number
       // (1-based) or 'last'
       std::vector<std::string> tokens = SLIB::tokenize(temp, ":");
@@ -716,168 +729,169 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("quiet")) {
+  if (options_.retrieve("quiet") != nullptr) {
     quiet_flag = true;
   }
 
-  if (options_.retrieve("show_all_diffs")) {
+  if (options_.retrieve("show_all_diffs") != nullptr) {
     show_all_diffs = true;
   }
 
-  if (options_.retrieve("partial") || options_.retrieve("p")) {
+  if ((options_.retrieve("partial") != nullptr) || (options_.retrieve("p") != nullptr)) {
     map_flag = PARTIAL;
   }
 
-  if (options_.retrieve("match_ids")) {
+  if (options_.retrieve("match_ids") != nullptr) {
     map_flag = USE_FILE_IDS;
   }
 
-  if (options_.retrieve("match_file_order")) {
+  if (options_.retrieve("match_file_order") != nullptr) {
     map_flag = FILE_ORDER;
   }
 
-  if (options_.retrieve("match_by_name")) {
+  if (options_.retrieve("match_by_name") != nullptr) {
     by_name = true;
   }
 
-  if (options_.retrieve("map") || options_.retrieve("m")) {
+  if ((options_.retrieve("map") != nullptr) || (options_.retrieve("m") != nullptr)) {
     map_flag = DISTANCE;
   }
-  if (options_.retrieve("nsmap")) {
+  if (options_.retrieve("nsmap") != nullptr) {
     nsmap_flag = true;
   }
-  if (options_.retrieve("no_nsmap")) {
+  if (options_.retrieve("no_nsmap") != nullptr) {
     nsmap_flag = false;
   }
-  if (options_.retrieve("ssmap")) {
+  if (options_.retrieve("ssmap") != nullptr) {
     ssmap_flag = true;
   }
-  if (options_.retrieve("no_ssmap")) {
+  if (options_.retrieve("no_ssmap") != nullptr) {
     ssmap_flag = false;
   }
-  if (options_.retrieve("short") || options_.retrieve("s")) {
+  if ((options_.retrieve("short") != nullptr) || (options_.retrieve("s") != nullptr)) {
     short_block_check = true;
   }
-  if (options_.retrieve("no_short")) {
+  if (options_.retrieve("no_short") != nullptr) {
     short_block_check = false;
   }
-  if (options_.retrieve("nosymmetric_name_check")) {
+  if (options_.retrieve("nosymmetric_name_check") != nullptr) {
     noSymmetricNameCheck = true;
   }
-  if (options_.retrieve("norms")) {
+  if (options_.retrieve("norms") != nullptr) {
     doL1Norm = true;
     doL2Norm = true;
   }
-  if (options_.retrieve("l2norms")) {
+  if (options_.retrieve("l2norms") != nullptr) {
     doL2Norm = true;
   }
-  if (options_.retrieve("l1norms")) {
+  if (options_.retrieve("l1norms") != nullptr) {
     doL1Norm = true;
   }
-  if (options_.retrieve("pedantic")) {
+  if (options_.retrieve("pedantic") != nullptr) {
     pedantic = true;
   }
-  if (options_.retrieve("interpolate")) {
+  if (options_.retrieve("interpolate") != nullptr) {
     interpolating = true;
   }
 
   {
     const char *temp = options_.retrieve("final_time_tolerance");
-    if (temp) {
+    if (temp != nullptr) {
       final_time_tol.value = To_Double(temp);
     }
   }
 
-  if (options_.retrieve("allow_name_mismatch")) {
+  if (options_.retrieve("allow_name_mismatch") != nullptr) {
     allowNameMismatch = true;
   }
-  if (options_.retrieve("ignore_case") || options_.retrieve("i")) {
+  if ((options_.retrieve("ignore_case") != nullptr) || (options_.retrieve("i") != nullptr)) {
     nocase_var_names = true;
   }
-  if (options_.retrieve("case_sensitive")) {
+  if (options_.retrieve("case_sensitive") != nullptr) {
     nocase_var_names = false;
   }
-  if (options_.retrieve("ignore_maps")) {
+  if (options_.retrieve("ignore_maps") != nullptr) {
     ignore_maps = true;
   }
-  if (options_.retrieve("ignore_nans")) {
+  if (options_.retrieve("ignore_nans") != nullptr) {
     ignore_nans = true;
   }
-  if (options_.retrieve("ignore_dups")) {
+  if (options_.retrieve("ignore_dups") != nullptr) {
     ignore_dups = true;
   }
-  if (options_.retrieve("64-bit")) {
+  if (options_.retrieve("64-bit") != nullptr) {
     ints_64_bits = true;
   }
-  if (options_.retrieve("ignore_attributes")) {
+  if (options_.retrieve("ignore_attributes") != nullptr) {
     ignore_attributes = true;
   }
-  if (options_.retrieve("ignore_sideset_df")) {
+  if (options_.retrieve("ignore_sideset_df") != nullptr) {
     ignore_sideset_df = true;
   }
-  if (options_.retrieve("relative")) {
+  if (options_.retrieve("relative") != nullptr) {
     output_type      = RELATIVE; // Change type to relative.
     default_tol.type = RELATIVE;
   }
-  if (options_.retrieve("ignore")) {
+  if (options_.retrieve("ignore") != nullptr) {
     output_type      = IGNORE; // Change type to ignored
     default_tol.type = IGNORE;
   }
-  if (options_.retrieve("absolute")) {
+  if (options_.retrieve("absolute") != nullptr) {
     output_type      = ABSOLUTE; // Change type to absolute
     default_tol.type = ABSOLUTE;
   }
-  if (options_.retrieve("combined")) {
+  if (options_.retrieve("combined") != nullptr) {
     output_type      = COMBINED; // Change type to combine
     default_tol.type = COMBINED;
   }
-  if (options_.retrieve("ulps_float")) {
+  if (options_.retrieve("ulps_float") != nullptr) {
     output_type      = ULPS_FLOAT;
     default_tol.type = ULPS_FLOAT;
   }
-  if (options_.retrieve("ulps_double")) {
+  if (options_.retrieve("ulps_double") != nullptr) {
     output_type      = ULPS_DOUBLE;
     default_tol.type = ULPS_DOUBLE;
   }
-  if (options_.retrieve("eigen_relative")) {
+  if (options_.retrieve("eigen_relative") != nullptr) {
     output_type      = EIGEN_REL; // Change type to relative.
     default_tol.type = EIGEN_REL;
   }
-  if (options_.retrieve("eigen_absolute")) {
+  if (options_.retrieve("eigen_absolute") != nullptr) {
     output_type      = EIGEN_ABS; // Change type to absolute
     default_tol.type = EIGEN_ABS;
   }
-  if (options_.retrieve("eigen_combined")) {
+  if (options_.retrieve("eigen_combined") != nullptr) {
     output_type      = EIGEN_COM; // Change type to combine
     default_tol.type = EIGEN_COM;
   }
-  if (options_.retrieve("dumpmap")) {
+  if (options_.retrieve("dumpmap") != nullptr) {
     dump_mapping = true;
   }
-  if (options_.retrieve("show_unmatched")) {
+  if (options_.retrieve("show_unmatched") != nullptr) {
     show_unmatched = true;
   }
 
   {
     const char *temp = options_.retrieve("maxnames");
-    if (temp) {
+    if (temp != nullptr) {
       errno   = 0;
       int tmp = atoi(temp);
       SMART_ASSERT(errno == 0);
-      if (tmp > 0)
+      if (tmp > 0) {
         Set_Max_Names(tmp);
+      }
     }
   }
 
-  if (options_.retrieve("status")) {
+  if (options_.retrieve("status") != nullptr) {
     exit_status_switch = true;
   }
 
-  if (options_.retrieve("ignore_status")) {
+  if (options_.retrieve("ignore_status") != nullptr) {
     exit_status_switch = false;
   }
 
-  if (options_.retrieve("use_old_floor")) {
+  if (options_.retrieve("use_old_floor") != nullptr) {
     Tolerance::use_old_floor = true; // Change type to relative.
   }
 
@@ -892,9 +906,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
     ss_var_default   = default_tol;
 
     const char *temp = options_.retrieve("file");
-    if (temp) {
+    if (temp != nullptr) {
       command_file = temp;
-      if (!summary_flag && !File_Exists(command_file)) {
+      if (!summary_flag && (File_Exists(command_file) == 0)) {
         ERROR("Can't open file \"" << command_file << "\".\n");
         exit(1);
       }
@@ -904,9 +918,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
     else {
       const char *t2 = options_.retrieve("f");
-      if (t2) {
+      if (t2 != nullptr) {
         command_file = t2;
-        if (!summary_flag && !File_Exists(command_file)) {
+        if (!summary_flag && (File_Exists(command_file) == 0)) {
           ERROR("Can't open file \"" << command_file << "\".\n");
           exit(1);
         }
@@ -948,8 +962,9 @@ void SystemInterface::Parse_Command_File()
       if (abbreviation(tok1, "default", 3) && abbreviation(tok2, "tolerance", 3)) {
         std::string tok = extract_token(xline, " \n\t=,");
         to_lower(tok);
-        if (tok == "")
+        if (tok == "") {
           Parse_Die(line);
+        }
 
         if (abbreviation(tok, "relative", 3)) {
           default_tol.type = RELATIVE;
@@ -979,8 +994,9 @@ void SystemInterface::Parse_Command_File()
           default_tol.type = IGNORE;
           tok              = extract_token(xline, " \n\t=,");
         }
-        if (tok == "")
+        if (tok == "") {
           Parse_Die(line);
+        }
 
         default_tol.value = To_Double(tok);
 
@@ -988,8 +1004,9 @@ void SystemInterface::Parse_Command_File()
         to_lower(tok);
         if (abbreviation(tok, "floor", 3)) {
           tok = extract_token(xline, " \n\t=,");
-          if (tok == "")
+          if (tok == "") {
             Parse_Die(line);
+          }
           default_tol.floor = To_Double(tok);
         }
         default_tol_specified = 1;
@@ -1000,8 +1017,9 @@ void SystemInterface::Parse_Command_File()
           errno   = 0;
           int tmp = atoi(tok.c_str());
           SMART_ASSERT(errno == 0);
-          if (tmp > 0)
+          if (tmp > 0) {
             Set_Max_Names(tmp);
+          }
         }
         else {
           ERROR(" expected an integer "
@@ -1020,8 +1038,9 @@ void SystemInterface::Parse_Command_File()
           exit(1);
         }
         std::string tok = extract_token(xline, " \n\t=,");
-        if (tok == "")
+        if (tok == "") {
           Parse_Die(line);
+        }
         final_time_tol.value = To_Double(tok);
       }
       else if (abbreviation(tok1, "return", 3) && abbreviation(tok2, "status", 3)) {
@@ -1032,8 +1051,9 @@ void SystemInterface::Parse_Command_File()
       }
       else if (abbreviation(tok1, "exclude", 3) && abbreviation(tok2, "times", 3)) {
         std::string tok = extract_token(xline, " \n\t=");
-        if (tok != "" && tok[0] != '#')
+        if (tok != "" && tok[0] != '#') {
           parseExcludeTimes(tok, exclude_steps);
+        }
       }
       else if (abbreviation(tok1, "apply", 3) && abbreviation(tok2, "matching", 3)) {
         map_flag = DISTANCE;
@@ -1106,7 +1126,7 @@ void SystemInterface::Parse_Command_File()
         }
       }
       else if (abbreviation(tok1, "coordinates", 4)) {
-        if (default_tol_specified) {
+        if (default_tol_specified != 0) {
           coord_tol = default_tol;
         }
         else {
@@ -1121,43 +1141,49 @@ void SystemInterface::Parse_Command_File()
           if (abbreviation(tok2, "relative", 3)) {
             coord_tol.type = RELATIVE;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             coord_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "absolute", 3)) {
             coord_tol.type = ABSOLUTE;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             coord_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "combine", 3)) {
             coord_tol.type = COMBINED;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             coord_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "eigen_relative", 7)) {
             coord_tol.type = EIGEN_REL;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             coord_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "eigen_absolute", 7)) {
             coord_tol.type = EIGEN_ABS;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             coord_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "eigen_combine", 7)) {
             coord_tol.type = EIGEN_COM;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             coord_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "ignore", 3)) {
@@ -1166,8 +1192,9 @@ void SystemInterface::Parse_Command_File()
           }
           else if (abbreviation(tok2, "floor", 3)) {
             tok2 = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             coord_tol.floor = To_Double(tok2);
           }
 
@@ -1175,8 +1202,9 @@ void SystemInterface::Parse_Command_File()
           to_lower(tok2);
           if (abbreviation(tok2, "floor", 3)) {
             tok2 = extract_token(xline, " \n\t=,");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             coord_tol.floor = To_Double(tok2);
           }
         }
@@ -1192,22 +1220,25 @@ void SystemInterface::Parse_Command_File()
           if (abbreviation(tok, "relative", 3)) {
             time_tol.type = RELATIVE;
             tok           = extract_token(xline, " \n\t=");
-            if (tok == "")
+            if (tok == "") {
               Parse_Die(line);
+            }
             time_tol.value = To_Double(tok);
           }
           else if (abbreviation(tok, "absolute", 3)) {
             time_tol.type = ABSOLUTE;
             tok           = extract_token(xline, " \n\t=");
-            if (tok == "")
+            if (tok == "") {
               Parse_Die(line);
+            }
             time_tol.value = To_Double(tok);
           }
           else if (abbreviation(tok, "combine", 3)) {
             time_tol.type = COMBINED;
             tok           = extract_token(xline, " \n\t=");
-            if (tok == "")
+            if (tok == "") {
               Parse_Die(line);
+            }
             time_tol.value = To_Double(tok);
           }
           else if (abbreviation(tok, "ignore", 3)) {
@@ -1216,8 +1247,9 @@ void SystemInterface::Parse_Command_File()
           }
           else if (abbreviation(tok, "floor", 3)) {
             tok = extract_token(xline, " \n\t=");
-            if (tok == "")
+            if (tok == "") {
               Parse_Die(line);
+            }
             time_tol.floor = To_Double(tok);
           }
 
@@ -1225,8 +1257,9 @@ void SystemInterface::Parse_Command_File()
           to_lower(tok2);
           if (abbreviation(tok2, "floor", 3)) {
             tok2 = extract_token(xline, " \n\t=,");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             time_tol.floor = To_Double(tok2);
           }
         }
@@ -1238,10 +1271,12 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(glob_var_names, glob_var_do_all_flag);
 
-        if (!xline.empty())
+        if (!xline.empty()) {
           strncpy(line, xline.c_str(), 255);
-        else
+        }
+        else {
           strcpy(line, "");
+        }
 
         continue;
       }
@@ -1252,10 +1287,12 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(node_var_names, node_var_do_all_flag);
 
-        if (!xline.empty())
+        if (!xline.empty()) {
           strncpy(line, xline.c_str(), 255);
-        else
+        }
+        else {
           strcpy(line, "");
+        }
 
         continue;
       }
@@ -1266,10 +1303,12 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(elmt_var_names, elmt_var_do_all_flag);
 
-        if (!xline.empty())
+        if (!xline.empty()) {
           strncpy(line, xline.c_str(), 255);
-        else
+        }
+        else {
           strcpy(line, "");
+        }
 
         continue;
       }
@@ -1280,10 +1319,12 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(ns_var_names, ns_var_do_all_flag);
 
-        if (!xline.empty())
+        if (!xline.empty()) {
           strncpy(line, xline.c_str(), 255);
-        else
+        }
+        else {
           strcpy(line, "");
+        }
 
         continue;
       }
@@ -1294,15 +1335,17 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(ss_var_names, ss_var_do_all_flag);
 
-        if (!xline.empty())
+        if (!xline.empty()) {
           strncpy(line, xline.c_str(), 255);
-        else
+        }
+        else {
           strcpy(line, "");
+        }
 
         continue;
       }
       else if (abbreviation(tok1, "sideset", 4) && abbreviation(tok2, "distribution", 4)) {
-        if (default_tol_specified) {
+        if (default_tol_specified != 0) {
           ss_df_tol = default_tol;
         }
         else {
@@ -1317,43 +1360,49 @@ void SystemInterface::Parse_Command_File()
           if (abbreviation(tok2, "relative", 3)) {
             ss_df_tol.type = RELATIVE;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             ss_df_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "absolute", 3)) {
             ss_df_tol.type = ABSOLUTE;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             ss_df_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "combine", 3)) {
             ss_df_tol.type = COMBINED;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             ss_df_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "eigen_relative", 7)) {
             ss_df_tol.type = EIGEN_REL;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             ss_df_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "eigen_absolute", 7)) {
             ss_df_tol.type = EIGEN_ABS;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             ss_df_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "eigen_combine", 7)) {
             ss_df_tol.type = EIGEN_COM;
             tok2           = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             ss_df_tol.value = To_Double(tok2);
           }
           else if (abbreviation(tok2, "ignore", 3)) {
@@ -1362,8 +1411,9 @@ void SystemInterface::Parse_Command_File()
           }
           else if (abbreviation(tok2, "floor", 3)) {
             tok2 = extract_token(xline, " \n\t=");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             ss_df_tol.floor = To_Double(tok2);
           }
 
@@ -1371,8 +1421,9 @@ void SystemInterface::Parse_Command_File()
           to_lower(tok2);
           if (abbreviation(tok2, "floor", 3)) {
             tok2 = extract_token(xline, " \n\t=,");
-            if (tok2 == "")
+            if (tok2 == "") {
               Parse_Die(line);
+            }
             ss_df_tol.floor = To_Double(tok2);
           }
         }
@@ -1384,15 +1435,18 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(elmt_att_names, elmt_att_do_all_flag);
 
-        if (!xline.empty())
+        if (!xline.empty()) {
           strncpy(line, xline.c_str(), 255);
-        else
+        }
+        else {
           strcpy(line, "");
+        }
 
         continue;
       }
-      else
+      else {
         Parse_Die(line);
+      }
     }
 
     cmd_file.getline(line, 256);
@@ -1550,14 +1604,16 @@ namespace {
     cmd_file.getline(line, 256);
     xline = line;
     while (!cmd_file.eof()) {
-      if (xline.empty() || (xline[0] != '\t' && first_character(xline) != '#'))
+      if (xline.empty() || (xline[0] != '\t' && first_character(xline) != '#')) {
         break;
+      }
 
       if (first_character(xline) != '#') {
         tok = extract_token(xline);
         chop_whitespace(tok);
-        if (tok == "")
+        if (tok == "") {
           continue; // Found tab but no name given.
+        }
 
         int idx = names.size();
         if (idx >= max_names) {
@@ -1573,8 +1629,9 @@ namespace {
           // A "!" in front of a name means to exclude the name so no
           // need to look for difference type and tolerance.
           std::string tmp = tok;
-          if (extract_token(tmp, "!") != "")
+          if (extract_token(tmp, "!") != "") {
             names.push_back(tok);
+          }
           cmd_file.getline(line, 256);
           xline = line;
           continue;
@@ -1615,25 +1672,29 @@ namespace {
             toler[idx].value = def_tol.value;
 
             tok = extract_token(xline, " \n\t=,");
-            if (tok == "")
+            if (tok == "") {
               Parse_Die(line);
+            }
             toler[idx].floor = To_Double(tok);
           }
           else {
-            if (tok == "")
+            if (tok == "") {
               Parse_Die(line);
+            }
             toler[idx].value = To_Double(tok);
 
             tok = extract_token(xline, " \n\t=,");
             to_lower(tok);
             if (abbreviation(tok, "floor", 3)) {
               tok = extract_token(xline, " \n\t=,");
-              if (tok == "")
+              if (tok == "") {
                 Parse_Die(line);
+              }
               toler[idx].floor = To_Double(tok);
             }
-            else
+            else {
               toler[idx].floor = def_tol.floor;
+            }
           }
         }
         else {
@@ -1645,8 +1706,9 @@ namespace {
       xline = line;
     }
 
-    if (names.empty())
+    if (names.empty()) {
       all_flag = true;
+    }
 
     return xline;
   }

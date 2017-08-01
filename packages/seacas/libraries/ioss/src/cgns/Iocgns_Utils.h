@@ -171,7 +171,7 @@ namespace Iocgns {
     static int find_solution_index(int cgnsFilePtr, int base, int zone, int step,
                                    CG_GridLocation_t location);
     static CG_ZoneType_t check_zone_type(int cgnsFilePtr);
-    static void common_write_meta_data(int cgnsFilePtr, const Ioss::Region &region,
+    static void common_write_meta_data(int file_ptr, const Ioss::Region &region,
                                        std::vector<size_t> &zone_offset);
     static size_t resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel);
     static void resolve_shared_nodes(Ioss::Region &region, int my_processor);

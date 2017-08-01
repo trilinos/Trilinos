@@ -42,13 +42,13 @@
 // @HEADER
 
 /*! \file  test_04.cpp
-    \brief Test default EqualityConstraint_SimOpt solve function.
+    \brief Test default Constraint_SimOpt solve function.
 */
 
 #include "ROL_Types.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_TeuchosBatchManager.hpp"
 
@@ -866,7 +866,7 @@ public:
 };
 
 template<class Real>
-class EqualityConstraint_BurgersControl : public ROL::EqualityConstraint_SimOpt<Real> {
+class Constraint_BurgersControl : public ROL::Constraint_SimOpt<Real> {
 private:
 
   typedef H1VectorPrimal<Real> PrimalStateVector;
@@ -882,8 +882,8 @@ private:
   bool useHessian_;
 
 public:
-  EqualityConstraint_BurgersControl(const Teuchos::RCP<BurgersFEM<Real> > &fem,
-                                    const bool useHessian = true)
+  Constraint_BurgersControl(const Teuchos::RCP<BurgersFEM<Real> > &fem,
+                            const bool useHessian = true)
    : fem_(fem), useHessian_(useHessian) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 

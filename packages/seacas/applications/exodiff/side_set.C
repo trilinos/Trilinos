@@ -158,11 +158,13 @@ template <typename INT> void Side_Set<INT>::load_sides(const INT *elmt_map) cons
 
 template <typename INT> void Side_Set<INT>::load_df() const
 {
-  if (elmts == nullptr)
+  if (elmts == nullptr) {
     load_sides();
+  }
 
-  if (dist_factors != nullptr)
+  if (dist_factors != nullptr) {
     return; // Already loaded.
+  }
 
   dfIndex = new INT[numEntity + 1];
   SMART_ASSERT(dfIndex != nullptr);
@@ -237,8 +239,9 @@ template <typename INT> size_t Side_Set<INT>::Side_Index(size_t position) const
 
 template <typename INT> const double *Side_Set<INT>::Distribution_Factors() const
 {
-  if (dist_factors == nullptr)
+  if (dist_factors == nullptr) {
     load_df();
+  }
   return dist_factors;
 }
 

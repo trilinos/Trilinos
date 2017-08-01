@@ -136,10 +136,10 @@ touch pristine_build.error updated_build.error pristine_test.failed updated_test
 echo "Grepping for Errors:"
 grep "error:" build_pristine/build.output | awk '{$1 = ""; print $0;}' &> pristine_build.error || true
 grep "error:" build_updated/build.output | awk '{$1 = ""; print $0;}' &> updated_build.error || true
-grep "(Failed)" build_pristine/test.output &> pristine_test.failed || true
-grep "(Failed)" build_updated/test.output &> updated_test.failed || true
-grep "(Not Run)" build_pristine/test.output &> pristine_test.notrun || true
-grep "(Not Run)" build_updated/test.output &> updated_test.notrun || true
+grep "(Failed)" build_pristine/test.output | cut -d " " -f 3- | sort -u &> pristine_test.failed || true
+grep "(Failed)" build_updated/test.output | cut -d " " -f 3- | sort -u &> updated_test.failed || true
+grep "(Not Run)" build_pristine/test.output | cut -d " " -f 3- | sort -u &> pristine_test.notrun || true
+grep "(Not Run)" build_updated/test.output | cut -d " " -f 3- | sort -u &> updated_test.notrun || true
 
 DIFF_ERRORS=`diff pristine_build.error updated_build.error | wc -l`
 DIFF_FAILED=`diff pristine_test.failed updated_test.failed | wc -l`

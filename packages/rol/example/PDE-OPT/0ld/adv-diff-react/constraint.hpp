@@ -48,13 +48,13 @@
 #ifndef ROL_PDEOPT_POISSON_CONSTRAINT_H
 #define ROL_PDEOPT_POISSON_CONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "Amesos2.hpp"
 #include "data.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_Poisson : public ROL::EqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_PDEOPT_Poisson : public ROL::Constraint_SimOpt<Real> {
 private:
 
   Teuchos::RCP<PoissonData<Real> > data_;
@@ -66,7 +66,7 @@ public:
     data_ = data;
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<Tpetra::MultiVector<> > cp =
       (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(c)).getVector();

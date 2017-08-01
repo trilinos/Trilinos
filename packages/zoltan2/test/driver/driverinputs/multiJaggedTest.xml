@@ -74,4 +74,35 @@
     
     
   </ParameterList>
+
+  <ParameterList name="test2">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
+      <Parameter name="mj_migration_type" type="int" value="1"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+      <ParameterList name="metriccheck2">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+    </ParameterList>
+    
+    
+  </ParameterList>
 </ParameterList>

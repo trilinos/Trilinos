@@ -80,17 +80,17 @@ def main():
 
     # Version
     if options.version:
-        print "copyWithCMakeSubstitutions.py version", __version__
+        print("copyWithCMakeSubstitutions.py version " + __version__)
         exit()
 
     # Arguments
     if len(args) != 2:
-        print "usage: copyWithCMakeSubstitutions.py infile outfile"
+        print("usage: copyWithCMakeSubstitutions.py infile outfile")
         exit(-1)
     infilename  = args[0]
     outfilename = args[1]
     if infilename == outfilename:
-        print "outfile must be distinct from infile"
+        print("outfile must be distinct from infile")
         exit(-2)
 
     # Obtain the dictionary of CMake cache variables

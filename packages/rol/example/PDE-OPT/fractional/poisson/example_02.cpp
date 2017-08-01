@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<PDE_Fractional_Poisson_Cylinder<RealT> > pde_cylinder
       = Teuchos::rcp(new PDE_Fractional_Poisson_Cylinder<RealT>(*parlist));
     // Build fractional constraint
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new FractionalConstraint<RealT>(pde_local,    meshMgr_local,    comm,
                                                      pde_cylinder, meshMgr_cylinder, comm,
                                                      *parlist, *outStream));

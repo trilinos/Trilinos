@@ -118,8 +118,9 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
   size_t max_files = get_free_descriptor_count();
   if (si.inputFiles_.size() <= max_files) {
     keepOpen_ = true;
-    if (si.debug() & 1)
+    if ((si.debug() & 1) != 0) {
       std::cout << "Files kept open... (Max open = " << max_files << ")\n\n";
+    }
   }
   else {
     keepOpen_ = false;
@@ -149,18 +150,20 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
       }
 
       int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      if (max_name_length > overall_max_name_length)
+      if (max_name_length > overall_max_name_length) {
         overall_max_name_length = max_name_length;
+      }
 
       ex_close(exoid);
 
-      if (io_wrd_size < (int)sizeof(float))
+      if (io_wrd_size < (int)sizeof(float)) {
         io_wrd_size = sizeof(float);
+      }
 
       ioWordSize_  = io_wrd_size;
       cpuWordSize_ = io_wrd_size;
 
-      if (ex_int64_status(exoid & EX_ALL_INT64_DB) || si.ints_64_bit()) {
+      if ((ex_int64_status(exoid & EX_ALL_INT64_DB) != 0) || si.ints_64_bit()) {
         exodusMode_ = EX_ALL_INT64_API;
       }
     }
@@ -195,8 +198,9 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
   outputFilename_ = si.outputName_;
 
   int mode = EX_CLOBBER | exodusMode_;
-  if (si.ints_64_bit())
+  if (si.ints_64_bit()) {
     mode |= EX_ALL_INT64_DB;
+  }
 
   std::cout << "Output:   '" << outputFilename_ << "'" << '\n';
   outputId_ = ex_create(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_);

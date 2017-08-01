@@ -47,6 +47,9 @@
 #include "ROL_LinearOperator.hpp"
 #include "../../TOOLS/assembler.hpp"
 
+// Do not instantiate the template in this translation unit.
+extern template class Assembler<double>;
+
 template <class Real>
 class FractionalOperator : public ROL::LinearOperator<Real> {
 private:

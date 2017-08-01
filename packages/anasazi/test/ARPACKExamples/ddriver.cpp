@@ -49,8 +49,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "AnasaziMVOPTester.hpp"
 #include "AnasaziBasicOutputManager.hpp"
-
-#include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#include "AnasaziFactory.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -199,10 +198,11 @@ int main(int argc, char *argv[])
   MyPL.set( "Orthogonalization", "DGKS" );
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Convergence Tolerance", tol );
-  Anasazi::BlockKrylovSchurSolMgr<ST,MV,OP> BKS(MyProblem, MyPL);
+  RCP<Anasazi::SolverManager<ST,MV,OP>> BKS =
+          Anasazi::Factory::create("BLOCK_KRYLOV_SCHUR", MyProblem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  Anasazi::ReturnType ret = BKS.solve();
+  Anasazi::ReturnType ret = BKS->solve();
   testFailed = false;
   if (ret != Anasazi::Converged) {
     testFailed = true; 

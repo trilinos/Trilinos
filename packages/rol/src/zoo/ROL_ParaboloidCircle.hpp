@@ -55,7 +55,7 @@
 
 #include "ROL_Objective.hpp"
 #include "ROL_StdVector.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseSolver.hpp"
 
@@ -162,10 +162,10 @@ namespace ZOO {
   };
 
 
-  /** \brief Equality constraint c(x,y) = (x-2)^2 + y^2 - 1.
+  /** \brief constraint c(x,y) = (x-2)^2 + y^2 - 1.
    */
   template<class Real, class XPrim=StdVector<Real>, class XDual=StdVector<Real>, class CPrim=StdVector<Real>, class CDual=StdVector<Real> >
-  class EqualityConstraint_ParaboloidCircle : public EqualityConstraint<Real> {
+  class Constraint_ParaboloidCircle : public Constraint<Real> {
 
     typedef std::vector<Real> vector;
     typedef Vector<Real>      V;
@@ -186,7 +186,7 @@ namespace ZOO {
     }
 
   public:
-    EqualityConstraint_ParaboloidCircle() {}
+    Constraint_ParaboloidCircle() {}
 
     void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
@@ -275,7 +275,7 @@ namespace ZOO {
       bool useFD = true;
 
       if (useFD) {
-        EqualityConstraint<Real>::applyAdjointHessian( ahuv, u, v, x, tol );
+        Constraint<Real>::applyAdjointHessian( ahuv, u, v, x, tol );
       }
       else {
         using Teuchos::RCP;
@@ -316,7 +316,7 @@ namespace ZOO {
 
   template<class Real, class XPrim, class XDual, class CPrim, class CDual>
   void getParaboloidCircle( Teuchos::RCP<Objective<Real> > &obj,
-                            Teuchos::RCP<EqualityConstraint<Real> > &constr,
+                            Teuchos::RCP<Constraint<Real> > &constr,
                             Vector<Real> &x0,
                             Vector<Real> &sol ) {
 
@@ -339,9 +339,9 @@ namespace ZOO {
     // Instantiate objective function.
     obj = Teuchos::rcp( new Objective_ParaboloidCircle<Real, XPrim, XDual> );
     // Instantiate constraints.
-    constr = Teuchos::rcp( new EqualityConstraint_ParaboloidCircle<Real, XPrim, XDual, CPrim, CDual> );
+    constr = Teuchos::rcp( new Constraint_ParaboloidCircle<Real, XPrim, XDual, CPrim, CDual> );
     // later we will bundle equality constraints into constraints ...
-    //std::vector<Teuchos::RCP<EqualityConstraint<Real> > > eqc( 1, Teuchos::rcp( new EqualityConstraint_ParaboloidCircle<Real> ) );
+    //std::vector<Teuchos::RCP<Constraint<Real> > > eqc( 1, Teuchos::rcp( new Constraint_ParaboloidCircle<Real> ) );
     //constr = Teuchos::rcp( new Constraints<Real>(eqc) );
 
     // Get initial guess.

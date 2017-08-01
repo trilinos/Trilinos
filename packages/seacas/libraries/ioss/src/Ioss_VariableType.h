@@ -45,8 +45,8 @@ namespace Ioss {
 } // namespace Ioss
 
 namespace Ioss {
-  typedef std::map<std::string, VariableType *, std::less<std::string>> VariableTypeMap;
-  using VTM_ValuePair = VariableTypeMap::value_type;
+  using VariableTypeMap = std::map<std::string, VariableType *, std::less<std::string>>;
+  using VTM_ValuePair   = VariableTypeMap::value_type;
 
   class Registry
   {

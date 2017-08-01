@@ -44,10 +44,8 @@
 #ifndef ROL_OPTIMIZATIONSOLVER_HPP
 #define ROL_OPTIMIZATIONSOLVER_HPP
 
-#define OPTIMIZATION_PROBLEM_REFACTOR
-
 #include "ROL_Algorithm.hpp"
-#include "ROL_OptimizationProblemRefactor.hpp"
+#include "ROL_OptimizationProblem.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 
@@ -60,27 +58,21 @@ namespace ROL {
 
 template<class Real>
 class OptimizationSolver {
-
-  typedef Vector<Real>               V;
-  typedef Objective<Real>            OBJ;
-  typedef EqualityConstraint<Real>   EQCON;
-  typedef BoundConstraint<Real>      BND;
-
 private:
 
-  Teuchos::RCP<Algorithm<Real> >             algo_;
-  Teuchos::RCP<Step<Real> >                  step_;
-  Teuchos::RCP<StatusTest<Real> >            status_;
-  Teuchos::RCP<AlgorithmState<Real> >        state_; 
+  Teuchos::RCP<Algorithm<Real> >      algo_;
+  Teuchos::RCP<Step<Real> >           step_;
+  Teuchos::RCP<StatusTest<Real> >     status_;
+  Teuchos::RCP<AlgorithmState<Real> > state_;
 
-  Teuchos::RCP<V>         x_;
-  Teuchos::RCP<V>         g_;
-  Teuchos::RCP<V>         l_;
-  Teuchos::RCP<V>         c_;
+  Teuchos::RCP<Vector<Real> > x_;
+  Teuchos::RCP<Vector<Real> > g_;
+  Teuchos::RCP<Vector<Real> > l_;
+  Teuchos::RCP<Vector<Real> > c_;
 
-  Teuchos::RCP<OBJ>       obj_;
-  Teuchos::RCP<BND>       bnd_;
-  Teuchos::RCP<EQCON>     eqcon_;
+  Teuchos::RCP<Objective<Real> >       obj_;
+  Teuchos::RCP<BoundConstraint<Real> > bnd_;
+  Teuchos::RCP<Constraint<Real> >      con_;
 
   std::vector<std::string>  output_;
   
@@ -90,31 +82,27 @@ public:
 
   OptimizationSolver( OptimizationProblem<Real> &opt,
                       Teuchos::ParameterList &parlist ) {
-
-    using Teuchos::RCP; using Teuchos::rcp;
-
+    // Get step name from parameterlist
     std::string stepname = parlist.sublist("Step").get("Type","Last Type (Dummy)");
-
     EStep stepType = StringToEStep(stepname);
-
-    problemType_ = opt.getProblemType();  
-
     TEUCHOS_TEST_FOR_EXCEPTION( !isValidStep(stepType), std::invalid_argument,
                                 "Invalid step name in OptimizationSolver constructor!" );
-                      
+
+    // Get optimization problem type: U, E, B, EB
+    problemType_ = opt.getProblemType();
     TEUCHOS_TEST_FOR_EXCEPTION( !isCompatibleStep(problemType_, stepType), std::logic_error,
       "Error in OptimizationSolver constructor: Step type " << stepname << " does not support "
-      << EProblemToString(problemType_) << " problems" << std::endl ); 
+      << EProblemToString(problemType_) << " problems" << std::endl );
 
+    // Build algorithmic components
     StepFactory<Real>        stepFactory;
     StatusTestFactory<Real>  statusTestFactory;
+    step_   = stepFactory.getStep(stepname,parlist);
+    status_ = statusTestFactory.getStatusTest(stepname,parlist);
+    state_  = Teuchos::rcp( new AlgorithmState<Real> );
+    algo_   = Teuchos::rcp( new Algorithm<Real>( step_, status_, state_ ) );
 
-    step_     = stepFactory.getStep(stepname,parlist);
-    status_   = statusTestFactory.getStatusTest(stepname,parlist);
-    state_    = rcp( new AlgorithmState<Real> );
-
-    algo_ = rcp( new Algorithm<Real>( step_, status_, state_ ) );
-
+    // Get optimization vector and a vector for the gradient
     x_ = opt.getSolutionVector();
     g_ = x_->dual().clone();
 
@@ -123,28 +111,32 @@ public:
       l_ = opt.getMultiplierVector();
       c_ = l_->dual().clone();
     }
-
     // Create modified objectives if needed
     if( stepType == STEP_AUGMENTEDLAGRANGIAN ) {
-      RCP<OBJ> raw_obj = opt.getObjective();
-      eqcon_ = opt.getEqualityConstraint();    
-
+      Teuchos::RCP<Objective<Real> > raw_obj = opt.getObjective();
+      con_ = opt.getConstraint();
       // TODO: Provide access to change initial penalty
-      obj_ = rcp( new AugmentedLagrangian<Real>(raw_obj,eqcon_,*l_,1.0,*x_,*c_,parlist) );
+      obj_ = Teuchos::rcp( new AugmentedLagrangian<Real>(raw_obj,con_,*l_,1.0,*x_,*c_,parlist) );
       bnd_ = opt.getBoundConstraint();
     }
     else if( stepType == STEP_MOREAUYOSIDAPENALTY ) {
-      RCP<OBJ> raw_obj = opt.getObjective();
-      bnd_ = opt.getBoundConstraint();        
-      eqcon_ = opt.getEqualityConstraint(); 
-
+      Teuchos::RCP<Objective<Real> > raw_obj = opt.getObjective();
+      bnd_ = opt.getBoundConstraint();
+      con_ = opt.getConstraint();
       // TODO: Provide access to change initial penalty
-      obj_ = rcp( new MoreauYosidaPenalty<Real>(raw_obj,bnd_,*x_,1.0) );
+      obj_ = Teuchos::rcp( new MoreauYosidaPenalty<Real>(raw_obj,bnd_,*x_,parlist) );
+    }
+    else if( stepType == STEP_INTERIORPOINT ) {
+      Teuchos::RCP<Objective<Real> > raw_obj = opt.getObjective();
+      bnd_ = opt.getBoundConstraint();
+      con_ = opt.getConstraint();
+      // TODO: Provide access to change initial penalty
+      obj_ = Teuchos::rcp( new InteriorPoint::PenalizedObjective<Real>(raw_obj,bnd_,*x_,parlist) );
     }
     else {
       obj_   = opt.getObjective();   
       bnd_   = opt.getBoundConstraint();
-      eqcon_ = opt.getEqualityConstraint();
+      con_   = opt.getConstraint();
     }
   }
 
@@ -167,10 +159,10 @@ public:
         output_ = algo_->run(*x_,*g_,*obj_,*bnd_,true,outStream);
       break;
       case TYPE_E:
-        output_ = algo_->run(*x_,*g_,*l_,*c_,*obj_,*eqcon_,true,outStream);
+        output_ = algo_->run(*x_,*g_,*l_,*c_,*obj_,*con_,true,outStream);
       break;
       case TYPE_EB:
-        output_ = algo_->run(*x_,*g_,*l_,*c_,*obj_,*eqcon_,*bnd_,true,outStream);
+        output_ = algo_->run(*x_,*g_,*l_,*c_,*obj_,*con_,*bnd_,true,outStream);
       break;
       case TYPE_LAST:
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,

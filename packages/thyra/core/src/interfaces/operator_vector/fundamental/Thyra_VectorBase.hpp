@@ -151,6 +151,119 @@ public:
   using MultiVectorBase<Scalar>::apply;
 #endif
 
+  /** @name Minimal mathematical functions */
+  //@{
+
+  // Overloading assign for VectorBase argument
+  using MultiVectorBase<Scalar>::assign;
+
+  /** \brief Vector assignment:
+   *
+   * <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
+   *
+   * NVI function.
+   */
+  void assign(const VectorBase<Scalar>& x)
+    { assignVecImpl(x); }
+
+  /** \brief Random vector generation:
+   *
+   * <tt>v(i) = rand(l,u), , i = 1...v->space()->dim()</tt>.
+   * 
+   * The elements <tt>v(i)</tt> are randomly generated between
+   * <tt>[l,u]</tt>.
+   *
+   * NVI function.
+   */
+  void randomize(Scalar l, Scalar u)
+    { randomizeImpl(l,u); }
+
+  // Overloading update for VectorBase argument.
+  using MultiVectorBase<Scalar>::update;
+
+  /** \brief AXPY:
+   *
+   * <tt>y(i) = alpha * x(i) + y(i), i = 0...y->space()->dim()-1</tt>.
+   *
+   * NVI function.
+   */
+  void update(
+    Scalar alpha,
+    const VectorBase<Scalar>& x)
+    { updateVecImpl(alpha, x); }
+
+  // Overloading linear_combination for VectorBase arguments.
+  using MultiVectorBase<Scalar>::linear_combination;
+
+  /** \brief Linear combination:
+   *
+   * <tt>y(i) = beta*y(i) + sum( alpha[k]*x[k](i), k=0...m-1 ), i = 0...y->space()->dim()-1</tt>.
+   *
+   * \param m [in] Number of vectors x[]
+   *
+   * \param alpha [in] Array (length <tt>m</tt>) of input scalars.
+   *
+   * \param x [in] Array (length <tt>m</tt>) of input vectors.
+   *
+   * \param beta [in] Scalar multiplier for y
+   *
+   * \param y [in/out] Target vector that is the result of the linear
+   * combination.
+   *
+   * This function implements a general linear combination:
+   \verbatim
+     y(i) = beta*y(i) + alpha[0]*x[0](i) + alpha[1]*x[1](i)
+            + ... + alpha[m-1]*x[m-1](i), i = 0...y->space()->dim()-1
+   \endverbatim
+   *
+   * NVI function.
+   */
+  void linear_combination(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+    const Scalar& beta
+    )
+    { linearCombinationVecImpl(alpha, x, beta); }
+
+  /** \brief  Euclidean dot product: <tt>result = x^H * this</tt>.
+   *
+   */
+  Scalar dot(const VectorBase<Scalar>& x) const
+    { return dotImpl(x); }
+
+  /** \brief  One (1) norm: <tt>result = ||v||1</tt>.
+   *
+   */
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_1() const
+    { return norm1Impl(); }
+
+  /** \brief Euclidean (2) norm: <tt>result = ||v||2</tt>.
+   *
+   * NVI function.
+   */
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_2() const
+    { return norm2Impl(); }
+
+  /** \brief Weighted Euclidean (2) norm: <tt>result = ||v||2</tt>.
+   *
+   * NVI function.
+   */
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_2(const VectorBase<Scalar>& x) const
+    { return norm2WeightedImpl(x); }
+
+  /** \brief Infinity norm: <tt>result = ||v||inf</tt>.
+   *
+   * NVI function.
+   */
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_inf() const
+    { return normInfImpl(); }
+
+  //@}
+
   /** @name Space membership */
   //@{
 
@@ -269,6 +382,76 @@ protected:
 
   /** @name Protected virtual functions to be overridden by subclasses */
   //@{
+
+  /** \brief Virtual implementation for NVI assign.
+   *
+   */
+  virtual void assignVecImpl(const VectorBase<Scalar>& x) = 0;
+
+  /** \brief Virtual implementation for NVI randomize.
+   *
+   */
+  virtual void randomizeImpl(Scalar l, Scalar u) = 0;
+
+  /** \brief Virtual implementation for NVI abs.
+   *
+   */
+  virtual void absImpl(const VectorBase<Scalar>& x) = 0;
+
+  /** \brief Virtual implementation for NVI reciprocal.
+   *
+   */
+  virtual void reciprocalImpl(const VectorBase<Scalar>& x) = 0;
+
+  /** \brief Virtual implementation for NVI ele_wise_scale.
+   *
+   */
+  virtual void eleWiseScaleImpl(const VectorBase<Scalar>& x) = 0;
+
+  /** \brief Virtual implementation for NVI update.
+   *
+   */
+  virtual void updateVecImpl(
+    Scalar alpha,
+    const VectorBase<Scalar>& x) = 0;
+
+  /** \brief Virtual implementation for NVI linear_combination.
+   *
+   */
+  virtual void linearCombinationVecImpl(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+    const Scalar& beta
+    ) = 0;
+
+  /** \brief Virtual implementation for NVI dot.
+   *
+   */
+  virtual Scalar dotImpl(const VectorBase<Scalar>& x) const = 0;
+
+  /** \brief Virtual implementation for NVI norm_1.
+   *
+   */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm1Impl() const = 0;
+
+  /** \brief Virtual implementation for NVI norm_2.
+   *
+   */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm2Impl() const = 0;
+
+  /** \brief Virtual implementation for NVI norm_2 (weighted).
+   *
+   */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm2WeightedImpl(const VectorBase<Scalar>& x) const = 0;
+
+  /** \brief Virtual implementation for NVI norm_inf.
+   *
+   */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  normInfImpl() const = 0;
 
   /** \brief Apply a reduction/transformation operator over a set of vectors:
    * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->
@@ -474,6 +657,29 @@ private:
   // Not defined and not to be called
   VectorBase<Scalar>&
   operator=(const VectorBase<Scalar>&);
+
+public:
+
+  // These are functions that may be removed in the future and should not be
+  // called by client code.
+
+  // Don't call this directly.  Use non-member Thyra::abs().  This is because
+  // this member function may disappear in the future. (see Trilinos GitHub
+  // issue #330)
+  void abs(const VectorBase<Scalar>& x)
+    { absImpl(x); }
+
+  // Don't call this directly.  Use non-member Thyra::reciprocal().  This is because
+  // this member function may disappear in the future. (see Trilinos GitHub
+  // issue #330)
+  void reciprocal(const VectorBase<Scalar>& x)
+    { reciprocalImpl(x); }
+
+  // Don't call this directly.  Use non-member Thyra::ele_wise_scale().  This
+  // is because this member function may disappear in the future. (see
+  // Trilinos GitHub issue #330)
+  void ele_wise_scale(const VectorBase<Scalar>& x)
+    { eleWiseScaleImpl(x); }
 
 };
 

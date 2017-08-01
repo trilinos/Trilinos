@@ -888,16 +888,6 @@ MACRO(TRIBITS_FIND_LAST_TEST_FAILED_LOG_FILE)
 ENDMACRO()
 
 
-# Set mapping of labels to subprojects for CDash
-MACRO(TRIBITS_SET_LABELS_TO_SUBPROJECTS_MAPPING)
-  IF (${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES)
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST})
-      CTEST_ADD_SUBPROJECT(${TRIBITS_PACKAGE} LABELS ${TRIBITS_PACKAGE})
-    ENDFOREACH()
-  ENDIF()
-ENDMACRO()
-
-
 # Get names of failed packages from failed tests
 FUNCTION(TRIBITS_GET_FAILED_PACKAGES_FROM_FAILED_TESTS
    LAST_TESTS_FAILED_FILE  FAILED_PACKAGES_OUT
@@ -1201,7 +1191,7 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
     "\n***")
 
   #
-  # A) Set up mapping of labels to subprojects and gather configure arguments
+  # A) Define mapping from labels to subprojects and gather configure arguments
   #
 
   TRIBITS_SET_LABELS_TO_SUBPROJECTS_MAPPING()

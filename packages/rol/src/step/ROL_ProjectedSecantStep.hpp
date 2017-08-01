@@ -120,7 +120,7 @@ public:
     bnd.pruneActive(s,*(step_state->gradientVec),x,algo_state.gnorm);
     // ---> Add in active gradient components
     gp_->set(*(step_state->gradientVec));
-    bnd.pruneInactive(*d_,*(step_state->gradientVec),x,algo_state.gnorm);
+    bnd.pruneInactive(*gp_,*(step_state->gradientVec),x,algo_state.gnorm);
     s.plus(gp_->dual());
     s.scale(-one);
   }
@@ -198,7 +198,7 @@ public:
   std::string printName( void ) const {
     std::stringstream hist;
     hist << "\n" << EDescentToString(DESCENT_SECANT);
-    hist << "with " << ESecantToString(esec_) << "\n";
+    hist << " with " << ESecantToString(esec_) << "\n";
     return hist.str();
   }
   std::string print( AlgorithmState<Real> &algo_state, bool print_header = false ) const {

@@ -218,7 +218,7 @@ evalModelImpl(
 
   if (inArgs.get_x_dot().is_null()) {
 
-    // Evaluate the Explicit ODE f(x,t) [= 0]
+    // Evaluate the Explicit ODE f(x,t) [= xdot]
     if (!is_null(f_out)) {
       Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
       f_out_view[0] = x_in_view[1];

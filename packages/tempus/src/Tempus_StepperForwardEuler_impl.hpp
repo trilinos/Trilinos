@@ -18,32 +18,32 @@ namespace Tempus {
 // StepperForwardEuler definitions:
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->initialize();
 }
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->validExplicitODE(transientModel);
-  eODEModel_ = transientModel;
+  this->validExplicitODE(appModel);
+  appModel_ = appModel;
 
-  inArgs_  = eODEModel_->createInArgs();
-  outArgs_ = eODEModel_->createOutArgs();
-  inArgs_  = eODEModel_->getNominalValues();
+  inArgs_  = appModel_->createInArgs();
+  outArgs_ = appModel_->createOutArgs();
+  inArgs_  = appModel_->getNominalValues();
 }
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 template<class Scalar>
@@ -101,7 +101,7 @@ void StepperForwardEuler<Scalar>::takeStep(
     if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
     outArgs_.set_f(currentState->getXDot());
 
-    eODEModel_->evalModel(inArgs_,outArgs_);
+    appModel_->evalModel(inArgs_,outArgs_);
 
     // Forward Euler update, x = x + dt*xdot
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
@@ -146,7 +146,7 @@ void StepperForwardEuler<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out << description() << "::describe:" << std::endl
-      << "eODEModel_ = " << eODEModel_->description() << std::endl;
+      << "appModel_ = " << appModel_->description() << std::endl;
 }
 
 

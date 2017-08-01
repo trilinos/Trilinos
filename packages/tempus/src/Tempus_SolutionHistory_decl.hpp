@@ -175,9 +175,8 @@ protected:
   Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
 };
 
-/** \brief Nonmember constructor.
- *
- * \relates SolutionHistory.
+/** \brief Nonmember constructor
+ * \relates SolutionHistory
  */
 template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >

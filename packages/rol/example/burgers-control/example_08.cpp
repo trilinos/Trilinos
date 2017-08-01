@@ -50,7 +50,7 @@
 
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -126,8 +126,8 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
     /*************************************************************************/
     bool hess = true;
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon
-      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(fem,hess));
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pcon
+      = Teuchos::rcp(new Constraint_BurgersControl<RealT>(fem,hess));
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
     /*************************************************************************/
@@ -214,7 +214,8 @@ int main(int argc, char *argv[]) {
     SOLlist.sublist("SOL").set("Store Sampled Value and Gradient",storage);
     SOLlist.sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");
     SOLlist.sublist("SOL").sublist("Risk Measure").sublist("KL Divergence").set("Threshold",1.e-2);
-    ROL::StochasticProblem<RealT> optProb(SOLlist,robj,sampler,zp,Zbnd);
+    ROL::OptimizationProblem<RealT> optProb(robj,zp,Zbnd);
+    optProb.setStochasticObjective(SOLlist,sampler);
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
@@ -242,8 +243,7 @@ int main(int argc, char *argv[]) {
         comm->barrier();
       }
     }
-    optProb.checkObjectiveGradient(*yzp,print0,*outStream0);
-    optProb.checkObjectiveHessVec(*yzp,print0,*outStream0);
+    optProb.check(*outStream0);
     /*************************************************************************/
     /************* RUN OPTIMIZATION ******************************************/
     /*************************************************************************/
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
       }
       ofs.close();
     }
-    *outStream0 << "Scalar Parameter: " << optProb.getSolutionStatistic() << "\n\n";
+    *outStream0 << "Scalar Parameter: " << optProb.getSolutionStatistic(SOLlist) << "\n\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

@@ -53,7 +53,8 @@
 #############################################################################
 
 # System imports
-from optparse import *
+from __future__ import print_function
+from optparse   import *
 
 #
 # Parse the command-line arguments
@@ -96,9 +97,9 @@ class MyProblem(NOX.Epetra.Interface.Required,
         try:
             F[0] = x[0]*x[0] + x[1]*x[1] - 1
             F[1] = x[1]      - x[0]*x[0]
-        except Exception, e:
-            print "Exception in MyProblem.computeF method"
-            print e
+        except Exception as e:
+            print("Exception in MyProblem.computeF method")
+            print(e)
             return False
         return True
 
@@ -107,9 +108,9 @@ class MyProblem(NOX.Epetra.Interface.Required,
             Jac.InsertGlobalValues(0, [ 2*x[0], 2*x[1]], [0,1])
             Jac.InsertGlobalValues(1, [-2*x[0], 1     ], [0,1])
             Jac.FillComplete()
-        except Exception, e:
-            print "Exception in MyProblem.computeJacobian method"
-            print e
+        except Exception as e:
+            print("Exception in MyProblem.computeJacobian method")
+            print(e)
             return False
         return True
 
@@ -130,19 +131,19 @@ def main():
                                             problem,
                                             jacobian,
                                             maxIters=40)
-    print solver.statusTest
+    print(solver.statusTest)
 
     # Solve
     solveStatus = solver.solve()
-    print
+    print()
     if solveStatus != NOX.StatusTest.Converged:
-        print "Nonlinear solver failed to converge"
-        print "End Result: TEST FAILED"
+        print("Nonlinear solver failed to converge")
+        print("End Result: TEST FAILED")
     else:
         group = solver.getSolutionGroup()
         soln  = group.getX()
-        print "Solution =", soln
-        print "End Result: TEST PASSED"
+        print("Solution =", soln)
+        print("End Result: TEST PASSED")
 
 #
 # Main script: call the main() function.

@@ -103,7 +103,7 @@ INCLUDE(TribitsSortListAccordingToMasterList)
 #    in this repo come before the project's native packages.  If the keyword
 #    ``POST`` is provided then the packages are listed after the project's
 #    native packages. The default is assumed to be ``POST`` if neither of
-#    these keywords are provided.  The keywords must be separated by a comm
+#    these keywords are provided.  The keywords must be separated by a comma
 #    with no spaces such as with "``PRE,HASPACKAGES``",
 #    "``HASPACKAGES,POST``", "``POST,NOPACKAGES``", etc.  If no keywords are
 #    provided, then the empty string "" must be used (which defaults to

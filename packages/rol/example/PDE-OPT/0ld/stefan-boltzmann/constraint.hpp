@@ -48,13 +48,13 @@
 #ifndef ROL_PDEOPT_STEFANBOLTZMANN_CONSTRAINT_H
 #define ROL_PDEOPT_STEFANBOLTZMANN_CONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "Amesos2.hpp"
 #include "data.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_StefanBoltzmann : public ROL::EqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_PDEOPT_StefanBoltzmann : public ROL::Constraint_SimOpt<Real> {
 private:
 
   Teuchos::RCP<StefanBoltzmannData<Real> > data_;
@@ -66,7 +66,7 @@ public:
     data_ = data;
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<Tpetra::MultiVector<> > cp =
       (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(c)).getVector();
@@ -78,14 +78,14 @@ public:
     Real one(1);
  
     // A*u
-    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::Constraint_SimOpt<Real>::getParameter());
     data_->getMatA()->apply(*up, *cp);
 
     // B*z + A*u
     data_->getMatB()->apply(*zp, *cp, Teuchos::NO_TRANS, one, one);
 
     // A*u + B*z - f
-    data_->updateF(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateF(ROL::Constraint_SimOpt<Real>::getParameter());
     cp->update(-one, *(data_->getVecF()), one);
   }
 
@@ -98,7 +98,7 @@ public:
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
 
     // A*v
-    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::Constraint_SimOpt<Real>::getParameter());
     data_->getMatA()->apply(*vp, *jvp);
   }
 
@@ -124,7 +124,7 @@ public:
 
     // A'*v
     bool transpose = true;
-    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::Constraint_SimOpt<Real>::getParameter());
     data_->getMatA(transpose)->apply(*vp, *ajvp);
   }
 

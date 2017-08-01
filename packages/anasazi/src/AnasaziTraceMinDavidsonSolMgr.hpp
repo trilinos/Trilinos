@@ -173,6 +173,26 @@ class TraceMinDavidsonSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
 };
 
 
+//---------------------------------------------------------------------------//
+// Prevent instantiation on complex scalar type
+// FIXME: this really is just a current flaw in the implementation, TraceMin
+// *should* work for Hermitian matrices
+//---------------------------------------------------------------------------//
+template <class MagnitudeType, class MV, class OP>
+class TraceMinDavidsonSolMgr<std::complex<MagnitudeType>,MV,OP>
+{
+  public:
+
+    typedef std::complex<MagnitudeType> ScalarType;
+    TraceMinDavidsonSolMgr(
+            const RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
+            Teuchos::ParameterList &pl )
+    {
+        // Provide a compile error when attempting to instantiate on complex type
+        MagnitudeType::this_class_is_missing_a_specialization();
+    }
+};
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Basic constructor for TraceMinDavidsonSolMgr
 template<class ScalarType, class MV, class OP>
