@@ -56,6 +56,9 @@ class PointGenerator {
 public:
   //! Get the points for a particular topology
   virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const = 0;
+
+  //! Get the points for a particular topology
+  virtual int numPoints(const shards::CellTopology & topo) const = 0;
 };
 
 }
