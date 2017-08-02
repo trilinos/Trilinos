@@ -91,7 +91,7 @@ namespace MueLuTests {
 
 //- -- --------------------------------------------------------
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::Time;
@@ -128,7 +128,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
     TimeMonitor globalTimeMonitor(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: S - Global Time"));
     
@@ -211,141 +210,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
  //main_
-
-//- -- --------------------------------------------------------
-
-
-
-int main(int argc, char *argv[]) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::Time;
-  using Teuchos::TimeMonitor;
-  using namespace MueLuTests;
-  bool verbose = true;
-  //
-  // MPI initialization using Teuchos
-  //
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-
-  bool success = false;
-  try {
-    //
-    // Parameters
-    //
-
-    Teuchos::CommandLineProcessor clp(false);
-    std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
-    Xpetra::Parameters xpetraParameters(clp);
-
-    switch (clp.parse(argc, argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
-    }
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, argc, argv);
-#else
-      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-    }
-
-    if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      if (node == "") {
-        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
-#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#else
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return main_<double,int,int,Node> (clp, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return main_<double,int,long long,Node>(clp, argc, argv);
-#  else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#  endif
-#endif
-      } else if (node == "serial") {
-#ifdef KOKKOS_HAVE_SERIAL
-        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return main_<double,int,int,Node> (clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return main_<double,int,long,Node>(clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return main_<double,int,long long,Node>(clp, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("Serial node type is disabled");
-#endif
-      } else if (node == "openmp") {
-#ifdef KOKKOS_HAVE_OPENMP
-        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return main_<double,int,int,Node> (clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return main_<double,int,long,Node>(clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return main_<double,int,long long,Node>(clp, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("OpenMP node type is disabled");
-#endif
-      } else if (node == "cuda") {
-#ifdef KOKKOS_HAVE_CUDA
-        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
-
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return main_<double,int,int,Node> (clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return main_<double,int,long,Node>(clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return main_<double,int,long long,Node>(clp, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("CUDA node type is disabled");
-#endif
-      } else {
-        throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
-      }
-#else
-      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-    }
-  }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-}
-
-
 
 namespace MueLuTests {
 
@@ -438,3 +302,15 @@ namespace MueLuTests {
   }
 
 }
+
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
+}
+
+
+

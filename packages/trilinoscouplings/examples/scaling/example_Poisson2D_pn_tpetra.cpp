@@ -365,7 +365,7 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 template<class FC1, class FC2>
 void CopyFieldContainer2D(const FC1 & c1, FC2 & c2) {
 #ifdef HAVE_TRILINOSCOUPLINGS_INTREPID2_REFACTOR
-  Kokkos::Experimental::resize(c2,c1.dimension(0),c1.dimension(1));
+  Kokkos::resize(c2,c1.dimension(0),c1.dimension(1));
 #else
   c2.resize(c1.dimension(0),c1.dimension(1));
 #endif

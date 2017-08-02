@@ -50,7 +50,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaAligned)
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
   typedef typename ViewType::traits TraitsType;
-  typedef Kokkos::Experimental::Impl::ViewMapping< TraitsType , void > MappingType;
+  typedef Kokkos::Impl::ViewMapping< TraitsType , void > MappingType;
   const int view_static_dim = MappingType::FadStaticDimension;
   TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
 
@@ -79,7 +79,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaNotAligned)
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
   typedef typename ViewType::traits TraitsType;
-  typedef Kokkos::Experimental::Impl::ViewMapping< TraitsType , void > MappingType;
+  typedef Kokkos::Impl::ViewMapping< TraitsType , void > MappingType;
   const int view_static_dim = MappingType::FadStaticDimension;
   TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
 

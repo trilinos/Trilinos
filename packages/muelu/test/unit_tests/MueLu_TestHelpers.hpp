@@ -733,11 +733,10 @@ namespace MueLuTests {
     //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
     ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter);
 
+
+
+
   } // namespace TestHelpers
-
-
-
-
 
 
 

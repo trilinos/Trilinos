@@ -48,7 +48,7 @@ namespace Experimental {
 namespace Impl {
 
 template <>
-struct DynRankDimTraits<ViewSpecializeSacadoFadContiguous> {
+struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFadContiguous> {
 
   enum : size_t{unspecified = ~size_t(0)};
 
@@ -89,6 +89,25 @@ struct DynRankDimTraits<ViewSpecializeSacadoFadContiguous> {
                       , layout.dimension[5]
                       , layout.dimension[6]
                       , layout.dimension[7] );
+  }
+
+  // Compute the rank of the view from the nonzero layout arguments and possible hidden dim
+  template <typename Layout, typename ... P>
+  KOKKOS_INLINE_FUNCTION
+  static size_t computeRank( const ViewCtorProp<P...>& prop, const Layout& layout )
+  {
+    size_t rank = computeRank( layout.dimension[0]
+                      , layout.dimension[1]
+                      , layout.dimension[2]
+                      , layout.dimension[3]
+                      , layout.dimension[4]
+                      , layout.dimension[5]
+                      , layout.dimension[6]
+                      , layout.dimension[7] );
+
+    // Check if has_common_view_alloc_prop; if so, return rank+1, else rank
+    enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+    return (test_traits_check == true) ? rank+1 : rank;
   }
 
   // Create the layout for the rank-7 view.
@@ -144,6 +163,82 @@ struct DynRankDimTraits<ViewSpecializeSacadoFadContiguous> {
     return l;
   }
 
+  // If fad_dim is stored in ViewCtorProp
+  // LayoutLeft or LayoutRight
+  template <typename Traits, typename ... P>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if< (std::is_same<typename Traits::array_layout , Kokkos::LayoutRight>::value || std::is_same<typename Traits::array_layout , Kokkos::LayoutLeft>::value) , typename Traits::array_layout >::type createLayout( const ViewCtorProp<P...> & arg_prop, const typename Traits::array_layout& layout )
+  {
+    using Layout = typename Traits::array_layout;
+
+    Layout l( layout.dimension[0] != unspecified ? layout.dimension[0] : 1
+            , layout.dimension[1] != unspecified ? layout.dimension[1] : 1
+            , layout.dimension[2] != unspecified ? layout.dimension[2] : 1
+            , layout.dimension[3] != unspecified ? layout.dimension[3] : 1
+            , layout.dimension[4] != unspecified ? layout.dimension[4] : 1
+            , layout.dimension[5] != unspecified ? layout.dimension[5] : 1
+            , layout.dimension[6] != unspecified ? layout.dimension[6] : 1
+            , layout.dimension[7] != unspecified ? layout.dimension[7] : 1 );
+
+    enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+    if (test_traits_check == true) {
+      using CVTR_type = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFadContiguous, typename Traits::value_type >;
+      auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVTR_type> const &)arg_prop).value;
+      l.dimension[7] = cast_prop.fad_dim;
+    }
+    else {
+      const unsigned fad_dim = computeRank(layout);
+      const size_t fad_size = layout.dimension[fad_dim];
+      l.dimension[fad_dim] = 1;
+      l.dimension[7] = fad_size;
+    }
+
+    return l;
+  }
+
+  // If fad_dim is stored in ViewCtorProp
+  //LayoutStride
+  template <typename Traits, typename ... P>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if< (std::is_same<typename Traits::array_layout , Kokkos::LayoutStride>::value) , typename Traits::array_layout>::type createLayout( const ViewCtorProp<P...> & arg_prop, const typename Traits::array_layout& layout )
+  {
+    using Layout = typename Traits::array_layout;
+
+    Layout      l( layout.dimension[0] != unspecified ? layout.dimension[0] : 1
+                 , layout.stride[0]
+                 , layout.dimension[1] != unspecified ? layout.dimension[1] : 1
+                 , layout.stride[1]
+                 , layout.dimension[2] != unspecified ? layout.dimension[2] : 1
+                 , layout.stride[2]
+                 , layout.dimension[3] != unspecified ? layout.dimension[3] : 1
+                 , layout.stride[3]
+                 , layout.dimension[4] != unspecified ? layout.dimension[4] : 1
+                 , layout.stride[4]
+                 , layout.dimension[5] != unspecified ? layout.dimension[5] : 1
+                 , layout.stride[5]
+                 , layout.dimension[6] != unspecified ? layout.dimension[6] : 1
+                 , layout.stride[6]
+                 , layout.dimension[7] != unspecified ? layout.dimension[7] : 1
+                 , layout.stride[7]
+                 );
+
+    enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+    if (test_traits_check == true) {
+      using CVTR_type = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFadContiguous, typename Traits::value_type >;
+      auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVTR_type> const &)arg_prop).value;
+      l.dimension[7] = cast_prop.fad_dim;
+    }
+    else {
+      const unsigned fad_dim = computeRank(layout);
+      const size_t fad_size = layout.dimension[fad_dim];
+      l.dimension[fad_dim] = 1;
+      l.dimension[7] = fad_size;
+    }
+
+    return l;
+  }
+
+
   // Create a view from the given dimension arguments.
   // This is only necessary because the shmem constructor doesn't take a layout.
   template <typename ViewType, typename ViewArg>
@@ -172,13 +267,18 @@ struct DynRankDimTraits<ViewSpecializeSacadoFadContiguous> {
 
 };
 
+}}} // end Kokkos::Experimental::Impl
+
+namespace Kokkos {
+namespace Impl {
+
 // Specializations for subdynrankview
 
 template< class SrcTraits , class ... Args >
 struct ViewMapping
   < typename std::enable_if<(
       std::is_same< typename SrcTraits::specialize ,
-                    ViewSpecializeSacadoFadContiguous >::value
+                    Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
       &&
       (
         std::is_same< typename SrcTraits::array_layout
@@ -186,7 +286,7 @@ struct ViewMapping
         std::is_same< typename SrcTraits::array_layout
                     , Kokkos::LayoutStride >::value
       )
-    ), DynRankSubviewTag >::type
+    ), Kokkos::Experimental::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
 {
@@ -214,13 +314,13 @@ private:
 
 public:
 
-  typedef Kokkos::Experimental::ViewTraits
+  typedef Kokkos::ViewTraits
     < data_type
     , array_layout
     , typename SrcTraits::device_type
     , typename SrcTraits::memory_traits > traits_type ;
 
-  typedef Kokkos::Experimental::View
+  typedef Kokkos::View
     < data_type
     , array_layout
     , typename SrcTraits::device_type
@@ -232,13 +332,13 @@ public:
 
     static_assert( Kokkos::Impl::is_memory_traits< MemoryTraits >::value , "" );
 
-    typedef Kokkos::Experimental::ViewTraits
+    typedef Kokkos::ViewTraits
       < data_type
       , array_layout
       , typename SrcTraits::device_type
       , MemoryTraits > traits_type ;
 
-    typedef Kokkos::Experimental::View
+    typedef Kokkos::View
       < data_type
       , array_layout
       , typename SrcTraits::device_type
@@ -374,11 +474,11 @@ template< class SrcTraits , class ... Args >
 struct ViewMapping
   < typename std::enable_if<(
       std::is_same< typename SrcTraits::specialize ,
-                    ViewSpecializeSacadoFadContiguous >::value
+                    Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
       &&
       std::is_same< typename SrcTraits::array_layout
                    , Kokkos::LayoutLeft >::value
-    ), DynRankSubviewTag >::type
+    ), Kokkos::Experimental::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
 {
@@ -406,13 +506,13 @@ private:
 
 public:
 
-  typedef Kokkos::Experimental::ViewTraits
+  typedef Kokkos::ViewTraits
     < data_type
     , array_layout
     , typename SrcTraits::device_type
     , typename SrcTraits::memory_traits > traits_type ;
 
-  typedef Kokkos::Experimental::View
+  typedef Kokkos::View
     < data_type
     , array_layout
     , typename SrcTraits::device_type
@@ -424,13 +524,13 @@ public:
 
     static_assert( Kokkos::Impl::is_memory_traits< MemoryTraits >::value , "" );
 
-    typedef Kokkos::Experimental::ViewTraits
+    typedef Kokkos::ViewTraits
       < data_type
       , array_layout
       , typename SrcTraits::device_type
       , MemoryTraits > traits_type ;
 
-    typedef Kokkos::Experimental::View
+    typedef Kokkos::View
       < data_type
       , array_layout
       , typename SrcTraits::device_type
@@ -587,18 +687,18 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Destination view has FAD only
     std::is_same< typename DstTraits::specialize
-                , ViewSpecializeSacadoFadContiguous >::value
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
     &&
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
-                , ViewSpecializeSacadoFadContiguous >::value
-  ), ViewToDynRankViewTag >::type >
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
+  ), Kokkos::Experimental::Impl::ViewToDynRankViewTag >::type >
 {
 public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
@@ -673,14 +773,14 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
-                , ViewSpecializeSacadoFadContiguous >::value
-  ), ViewToDynRankViewTag >::type >
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
+  ), Kokkos::Experimental::Impl::ViewToDynRankViewTag >::type >
 {
 public:
 
   enum { is_assignable = true };
 
-  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
@@ -724,11 +824,7 @@ public:
     }
 };
 
-} //end Impl
-
-} //end Experimental
-
-}
+}} //end Kokkos::Impl
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 

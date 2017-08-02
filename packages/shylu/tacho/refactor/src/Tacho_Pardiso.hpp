@@ -118,11 +118,12 @@ namespace Tacho {
         os << "- Phase: Analyze -" << std::endl
            << "Number of perturbed pivots          = " << _iparm[Fort(14)] << std::endl
            << "Number of peak memory symbolic      = " << _iparm[Fort(15)] << std::endl
-           << "Number of permenant memory symbolic = " << _iparm[Fort(16)] << std::endl;
+           << "Number of permenant memory symbolic = " << _iparm[Fort(16)] << " KB " << std::endl;
         break;
       case Factorize:
         os << "- Phase: Factorize -" << std::endl
-           << "Memory numerical factorization      = " << _iparm[Fort(17)] << std::endl
+           << "Peak memory used in factorization   = " << max(_iparm[Fort(15)], _iparm[Fort(16)]+_iparm[Fort(17)]) << " KB "<< std::endl
+           << "Memory numerical factorization      = " << _iparm[Fort(17)] << " KB " << std::endl
            << "Number of nonzeros in factors       = " << _iparm[Fort(18)] << std::endl
            << "Number of factorization MFLOP       = " << _iparm[Fort(19)] << std::endl
            << "MFLOPs                              = " << _iparm[Fort(19)] << std::endl;

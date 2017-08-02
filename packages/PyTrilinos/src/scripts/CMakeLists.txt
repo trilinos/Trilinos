@@ -43,7 +43,8 @@
 # @HEADER
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
-  COMMAND ${PyTrilinos_BINARY_DIR}/util/copyWithCMakeSubstitutions.py
+  COMMAND ${PYTHON_EXECUTABLE}
+          ${PyTrilinos_BINARY_DIR}/util/copyWithCMakeSubstitutions.py
           ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in
 	  ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in)
@@ -54,7 +55,8 @@ ADD_CUSTOM_TARGET(PyTrilinos_Scripts_testutil ALL
 MACRO(PyTrilinos_MAKE_SCRIPT SCRIPT_NAME)
 
   ADD_CUSTOM_COMMAND(OUTPUT ${SCRIPT_NAME}.py
-    COMMAND ${PyTrilinos_BINARY_DIR}/util/copyWithCMakeSubstitutions.py
+    COMMAND ${PYTHON_EXECUTABLE}
+            ${PyTrilinos_BINARY_DIR}/util/copyWithCMakeSubstitutions.py
             ${CMAKE_CURRENT_SOURCE_DIR}/${SCRIPT_NAME}.py.in
 	    ${CMAKE_CURRENT_BINARY_DIR}/${SCRIPT_NAME}.py
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SCRIPT_NAME}.py.in)

@@ -16,7 +16,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
     ${PACKAGE_NAME}_ENABLE_Ifpack AND
     ${PACKAGE_NAME}_ENABLE_Amesos)
 
-  IF(Trilinos_ENABLE_AztecOO)
+  IF(${PACKAGE_NAME}_ENABLE_AztecOO)
     # build only if AztecOO available, too
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2D_Epetra

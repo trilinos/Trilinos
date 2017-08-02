@@ -44,11 +44,11 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 # B) Set up package-specific options
 #
 
-IF (Trilinos_ENABLE_KokkosCore)
+IF (STKExp_ENABLE_KokkosCore)
   SET(HAVE_STK_KokkosCore ON)
 ENDIF()
 
-IF (Trilinos_ENABLE_STKIO)
+IF (${PROJECT_NAME}_ENABLE_STKIO)
   SET(HAVE_STKIO ON)
 ENDIF()
 

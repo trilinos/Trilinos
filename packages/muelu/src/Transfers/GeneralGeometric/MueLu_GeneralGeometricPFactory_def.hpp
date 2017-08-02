@@ -275,12 +275,14 @@ namespace MueLu {
     // require ghost nodes to compute a proper interpolation operator. Curvature could be check localy to avoid including extra
     // ghost nodes...
     bool ghostInterface[6] = {false, false, false, false, false, false};
-    for(LO i=0; i < numDimensions; ++i) {
-      if(  gIndices[i] != 0) {
-        ghostInterface[2*i]=true;
-      }
-      if( (gIndices[i]+lFineNodesPerDir[mapDirL2G[i]]) != gFineNodesPerDir[i] ) {
-        ghostInterface[2*i+1]=true;
+    for(LO i=0; i < 3; ++i) {
+      if(i < numDimensions) {
+        if(  gIndices[i] != 0) {
+          ghostInterface[2*i]=true;
+        }
+        if( (gIndices[i]+lFineNodesPerDir[mapDirL2G[i]]) != gFineNodesPerDir[i] ) {
+          ghostInterface[2*i+1]=true;
+        }
       }
     }
 

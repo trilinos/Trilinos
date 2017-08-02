@@ -10,7 +10,7 @@
 #define Tempus_StepperNewmarkImplicitAForm_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
-#include "Tempus_SecondOrderResidualModelEvaluator.hpp"
+#include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
 
 namespace Tempus {
 
@@ -42,17 +42,17 @@ public:
 
   /// Constructor
   StepperNewmarkImplicitAForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return residualModel_->getTransientModel();}
+      getModel(){return wrapperModel_->getAppModel();}
 
     /// Set the solver
     virtual void setSolver(std::string solverName);
@@ -124,7 +124,7 @@ private:
 private:
 
   Teuchos::RCP<Teuchos::ParameterList>                     stepperPL_;
-  Teuchos::RCP<SecondOrderResidualModelEvaluator<Scalar> > residualModel_;
+  Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >        solver_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>                inArgs_;

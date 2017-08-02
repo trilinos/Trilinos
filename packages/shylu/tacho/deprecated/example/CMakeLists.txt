@@ -113,7 +113,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Trilinos_ENABLE_Teuchos)
+# IF(${PROJECT_NAME}_ENABLE_Teuchos)
 
 # # symbolic factorization is guarded with Cholmod
 # IF(TPL_ENABLE_Cholmod)

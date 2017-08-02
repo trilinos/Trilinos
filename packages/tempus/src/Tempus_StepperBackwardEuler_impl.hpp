@@ -11,6 +11,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_WrapperModelEvaluatorBasic.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "NOX_Thyra.H"
 
@@ -39,7 +40,7 @@ StepperBackwardEuler<Scalar>::xDotFunction(
 // StepperBackwardEuler definitions:
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
   using Teuchos::RCP;
@@ -47,30 +48,27 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler(
 
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->initialize();
 }
 
 
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->validImplicitODE_DAE(transientModel);
-  if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
-  residualModel_ =
-    Teuchos::rcp(new ResidualModelEvaluator<Scalar>(transientModel));
-
-  inArgs_  = residualModel_->getNominalValues();
-  outArgs_ = residualModel_->createOutArgs();
+  this->validImplicitODE_DAE(appModel);
+  if (wrapperModel_ != Teuchos::null) wrapperModel_ = Teuchos::null;
+  wrapperModel_ =
+    Teuchos::rcp(new WrapperModelEvaluatorBasic<Scalar>(appModel));
 }
 
 
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 
@@ -188,7 +186,7 @@ void StepperBackwardEuler<Scalar>::setPredictor(
       RCP<StepperFactory<Scalar> > sf =
         Teuchos::rcp(new StepperFactory<Scalar>());
       predictorStepper_ =
-        sf->createStepper(residualModel_->getTransientModel(), predPL);
+        sf->createStepper(wrapperModel_->getAppModel(), predPL);
     }
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( predictorName == predPL->name(),
@@ -203,7 +201,7 @@ void StepperBackwardEuler<Scalar>::setPredictor(
     RCP<StepperFactory<Scalar> > sf =
       Teuchos::rcp(new StepperFactory<Scalar>());
     predictorStepper_ =
-      sf->createStepper(residualModel_->getTransientModel(), predPL);
+      sf->createStepper(wrapperModel_->getAppModel(), predPL);
   }
 }
 
@@ -246,10 +244,10 @@ void StepperBackwardEuler<Scalar>::takeStep(
     Scalar beta = 1.0;
     Scalar t = time+dt;
 
-    residualModel_->initialize(computeXDot, t, alpha, beta);
+    wrapperModel_->initialize(computeXDot, t, alpha, beta);
 
     const Thyra::SolveStatus<double> sStatus =
-      this->solveNonLinear(residualModel_, *solver_, x, inArgs_);
+      this->solveNonLinear(wrapperModel_, *solver_, x);
 
     computeXDot(*x, *xDot);
 
@@ -315,7 +313,7 @@ void StepperBackwardEuler<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out << description() << "::describe:" << std::endl
-      << "residualModel_ = " << residualModel_->description() << std::endl;
+      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
 }
 
 

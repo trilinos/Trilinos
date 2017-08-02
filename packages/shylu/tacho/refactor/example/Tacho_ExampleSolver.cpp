@@ -10,6 +10,9 @@ int main (int argc, char *argv[]) {
   int nthreads = 1;
   clp.setOption("kokkos-threads", &nthreads, "Number of threads");
 
+  int max_num_superblocks = 4;
+  clp.setOption("max-num-superblocks", &max_num_superblocks, "Max number of superblocks");
+
   bool verbose = true;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
   
@@ -81,6 +84,7 @@ int main (int argc, char *argv[]) {
     ///  
     Tacho::Solver<value_type,Kokkos::DefaultHostExecutionSpace> solver;
     solver.setVerbose(verbose);
+    solver.setMaxNumberOfSuperblocks(max_num_superblocks);
 
     /// inputs are used for graph reordering and analysis
     solver.analyze(A.NumRows(),

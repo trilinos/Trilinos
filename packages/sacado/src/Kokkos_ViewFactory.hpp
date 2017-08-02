@@ -62,12 +62,6 @@ struct ViewFactoryType<View,ViewPack...> {
 
 // Function to compute the scalar dimension (e.g., Fad dimesion) from one or
 // more views.  It relies on the overload for a single view provided by Sacado
-template <class View, class ... ViewPack>
-unsigned dimension_scalar(const View& v, const ViewPack&... views) {
-  const unsigned dim0 = dimension_scalar(v);
-  const unsigned dim1 = dimension_scalar(views...);
-  return dim0 >= dim1 ? dim0 : dim1 ;
-}
 
 // Traits class used to create a view for a given rank and dimension as a
 // function of one or more views.  The value_type for the view is determined

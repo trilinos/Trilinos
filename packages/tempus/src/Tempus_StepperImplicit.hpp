@@ -32,15 +32,13 @@ public:
     const Thyra::SolveStatus<Scalar> solveNonLinear(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,
       Thyra::NonlinearSolverBase<Scalar> & solver,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs);
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x);
 
-    /// Compute non-linear solve reserving x and returning solution.
+    /// Compute non-linear solve preserving x and returning solution.
     const Thyra::SolveStatus<Scalar> solveNonLinear(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,
       Thyra::NonlinearSolverBase<Scalar> & solver,
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x0,
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & solution_vec);
   //@}
 
@@ -50,8 +48,7 @@ template <typename Scalar>
 const Thyra::SolveStatus<Scalar> StepperImplicit<Scalar>::solveNonLinear(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,
   Thyra::NonlinearSolverBase<Scalar> & solver,
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs)
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x)
 {
   // Set the model to use
   solver.setModel(model);
@@ -68,7 +65,6 @@ const Thyra::SolveStatus<Scalar> StepperImplicit<Scalar>::solveNonLinear(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,
   Thyra::NonlinearSolverBase<Scalar> & solver,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x0,
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & solution_vec)
 {
   // Set the model to use

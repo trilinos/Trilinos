@@ -71,28 +71,28 @@ namespace Tacho {
         _ap_begin = size_type_array("CrsMatrixBase::RowPtrBeginArray", m);
       } else {
         // otherwise initialize it
-        Kokkos::Experimental::Impl::ViewFill<size_type_array>(_ap_begin, size_type());
+        Kokkos::Impl::ViewFill<size_type_array>(_ap_begin, size_type());
       }
 
       if (static_cast<ordinal_type>(_ap_end.dimension_0()) < m) {
         _ap_end = size_type_array("CrsMatrixBase::RowPtrEndArray", m);
       } else {
         // otherwise initialize it
-        Kokkos::Experimental::Impl::ViewFill<size_type_array>(_ap_end, size_type());
+        Kokkos::Impl::ViewFill<size_type_array>(_ap_end, size_type());
       }
 
       if (static_cast<size_type>(_aj.dimension_0()) < nnz) {
         _aj = ordinal_type_array("CrsMatrixBase::ColsArray", nnz);
       } else {
         // otherwise initialize it
-        Kokkos::Experimental::Impl::ViewFill<ordinal_type_array>(_aj, ordinal_type());
+        Kokkos::Impl::ViewFill<ordinal_type_array>(_aj, ordinal_type());
       }
 
       if (static_cast<size_type>(_ax.dimension_0()) < nnz) {
         _ax = value_type_array("CrsMatrixBase::ValuesArray", nnz);
       } else {
         // otherwise initialize it
-        Kokkos::Experimental::Impl::ViewFill<value_type_array>(_ax, value_type());
+        Kokkos::Impl::ViewFill<value_type_array>(_ax, value_type());
       }
     }
     

@@ -177,6 +177,15 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
      }
    }
 
+  // check ghosted
+  {
+    std::vector<int> indices, indices_f;
+    dofManager->getGhostedIndices(indices);
+    filtered_ugi.getGhostedIndices(indices_f);
+    TEST_EQUALITY(indices.size(), indices_f.size());
+    for (std::size_t i(0); i < indices.size(); ++i)
+      TEST_EQUALITY(indices[i], indices_f[i])
+  }
 }
 
 // this just excercises a bunch of functions
@@ -274,29 +283,21 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   out << "check the LIDs" << std::endl;
-   {
-     const std::vector<int> & lids = dofManager->getElementLIDs(0);
-     const std::vector<int> & lids_f = filtered_ugi.getElementLIDs(0);
-
-     TEST_EQUALITY(lids.size(),lids_f.size());
-     for(std::size_t i=0;i<lids.size();i++) {
-       TEST_EQUALITY(lids[i],lids_f[i]);
-     }
-   }
-   
-   out << "check owned and ghosted" << std::endl;
-   {
-     std::vector<int> indices, indices_f;
-
-     dofManager->getOwnedAndGhostedIndices(indices);
-     filtered_ugi.getOwnedAndGhostedIndices(indices_f);
-
-     TEST_EQUALITY(indices.size(),indices_f.size());
-     for(std::size_t i=0;i<indices.size();i++) {
-       TEST_EQUALITY(indices[i],indices_f[i]);
-     }
-   }
+  out << "check owned and ghosted" << std::endl;
+  {
+    using std::size_t;
+    using std::unordered_set;
+    using std::vector;
+    vector<int> indices, filteredIndices;
+    dofManager->getOwnedAndGhostedIndices(indices);
+    filtered_ugi.getOwnedAndGhostedIndices(filteredIndices);
+    TEST_EQUALITY(indices.size(), filteredIndices.size());
+    unordered_set<int> indicesSet;
+    for (size_t i(0); i < indices.size(); ++i)
+      indicesSet.insert(indices[i]);
+    for (size_t i(0); i < filteredIndices.size(); ++i)
+      TEST_EQUALITY(indicesSet.count(filteredIndices[i]), 1)
+  }
 
    out << "check owned" << std::endl;
    {
@@ -331,6 +332,37 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
        TEST_ASSERT(std::find(my_filtered.begin(),my_filtered.end(),indices_f[i])==my_filtered.end());
      }
    }
+
+  out << "Check the ghosted indices." << std::endl;
+  {
+    using std::find;
+    using std::set_difference;
+    using std::size_t;
+    using std::sort;
+    using std::vector;
+    vector<int> indices, filteredIndices, diff;
+    dofManager->getGhostedIndices(indices);
+    filtered_ugi.getGhostedIndices(filteredIndices);
+
+    // Check that the size didn't shrink.
+    TEST_ASSERT(filteredIndices.size() >= indices.size())
+
+    // Sort each set of ghosted indices, and then do a set difference and 
+    // crop the difference indices.
+    diff.resize(filteredIndices.size()); 
+    sort(indices.begin(), indices.end());
+    sort(filteredIndices.begin(), filteredIndices.end());
+    vector<int>::iterator it = set_difference(filteredIndices.begin(),
+      filteredIndices.end(), indices.begin(), indices.end(), diff.begin());
+    diff.resize(it - diff.begin());
+
+    // Look at the difference, and make sure they are all in the filtering
+    // vector.
+    TEST_ASSERT(diff.size() <= my_filtered.size())
+    for (size_t i(0); i < diff.size(); ++i)
+      TEST_ASSERT(find(my_filtered.begin(), my_filtered.end(), diff[i]) !=
+        my_filtered.end())
+  }
 
    out << "testing getOwnedAndGhostedNotFilteredIndicator" << std::endl;
    {
@@ -391,7 +423,6 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
        TEST_ASSERT(std::find(all_filtered.begin(),all_filtered.end(),indices_f[i])==all_filtered.end());
      }
    }
-
 }
 
 // this just excercises a bunch of functions
@@ -488,8 +519,8 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
      ////////////////////////////////////////////////////////////////////////////////////
 
      // check that parallel communication works as expected
-     RCP<Epetra_Import> importer   = lof.getGhostedImport(0);
-     RCP<Epetra_Map>    ghostedMap = lof.getGhostedMap(0);
+     RCP<Epetra_Import> importer   = lof.getGhostedImport2(0);
+     RCP<Epetra_Map>    ghostedMap = lof.getGhostedMap2(0);
      RCP<Epetra_Map>    ownedMap   = lof.getMap(0);
 
      TEST_ASSERT(importer   != Teuchos::null);

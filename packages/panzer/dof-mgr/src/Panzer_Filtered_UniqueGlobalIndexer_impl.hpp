@@ -59,37 +59,52 @@ Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
 Filtered_UniqueGlobalIndexer()
 { }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
+///////////////////////////////////////////////////////////////////////////////
+//
+//  initialize()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
 void
-Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-initialize(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi,
-           const std::vector<GlobalOrdinalT> & filtered)
-{ 
-  typedef std::unordered_set<GlobalOrdinalT> HashTable;
-
+Filtered_UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+initialize(
+  const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>>&
+    ugi,
+  const std::vector<GlobalOrdinalT>& filtered)
+{
+  using std::size_t;
+  using std::vector;
+  using HashTable = std::unordered_set<GlobalOrdinalT>;
+  owned_.clear();
+  ghosted_.clear();
   base_ = ugi;
 
-  // ensure the localIDs match with the users 
-  // this is essential for a class to be a decorator
-  this->shareLocalIDs(*base_);
-
-  // from base global indexer build the filtered owned indices
-  std::vector<GlobalOrdinalT> baseOwned;
+  // From the base global indexer, build the filtered owned indices.
+  vector<GlobalOrdinalT> baseOwned, baseGhosted;
   base_->getOwnedIndices(baseOwned);
+  base_->getGhostedIndices(baseGhosted);
 
-  // build a hash table for fast searching
+  // Build a hash table for fast searching.
   HashTable filteredHash;
-  for(std::size_t i=0;i<filtered.size();i++)
+  for (size_t i(0); i < filtered.size(); ++i)
     filteredHash.insert(filtered[i]);
 
-  // search for indices in filtered array, add to owned_ if not found
-  for(std::size_t i=0;i<baseOwned.size();i++) {
-    typename HashTable::const_iterator itr = filteredHash.find(baseOwned[i]);    
-
-    if(itr==filteredHash.end())
+  // Search for indices in the filtered array; add to owned_ if not found, and
+  // add to ghosted_ otherwise.
+  for (size_t i(0); i < baseOwned.size(); ++i)
+  {
+    auto itr = filteredHash.find(baseOwned[i]);
+    if (itr == filteredHash.end())
       owned_.push_back(baseOwned[i]);
+    else
+      ghosted_.push_back(baseOwned[i]);
   }
-}
+  ghosted_.insert(ghosted_.end(), baseGhosted.begin(), baseGhosted.end());
+
+  // Now that we've change the owned_ and ghosted_ vectors, we need to rebuild
+  // the local IDs.
+  this->buildLocalIds();
+} // end of initialize()
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void 
@@ -157,17 +172,6 @@ getFilteredOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
   for(std::size_t i=0;i<indicators.size();i++) {
     if(indicators[i]==1)
       indices.push_back(ghostedIndices[i]);
-  }
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void 
-Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
-{
-  indices.resize(owned_.size());
-  for (size_t i = 0; i < owned_.size(); ++i) {
-    indices[i]=owned_[i];
   }
 }
 

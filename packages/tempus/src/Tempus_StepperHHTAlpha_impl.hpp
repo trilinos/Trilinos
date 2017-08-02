@@ -90,7 +90,7 @@ correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  Scalar c = 1.0/(1.0-alpha_m_); 
+  Scalar c = 1.0/(1.0-alpha_m_);
   //a_n_plus1 = 1.0/(1.0-alpha_m_)*a_n_plus1 - alpha_m/(1.0-alpha_m)*a_n = (1-alpha_f)*vPred + alpha_f*v
   Thyra::V_StVpStV(Teuchos::ptrFromRef(a_n_plus1), c, a_n_plus1, -c*alpha_m_, a_n);
 }
@@ -129,7 +129,7 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 // StepperHHTAlpha definitions:
 template<class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
@@ -141,36 +141,34 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
 
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(transientModel);
+  this->setModel(appModel);
   this->initialize();
 }
 
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->validSecondOrderODE_DAE(transientModel);
-  if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
-  residualModel_ =
-    Teuchos::rcp(new SecondOrderResidualModelEvaluator<Scalar>(transientModel,
+  this->validSecondOrderODE_DAE(appModel);
+  if (wrapperModel_ != Teuchos::null) wrapperModel_ = Teuchos::null;
+  wrapperModel_ =
+    Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                                       "HHT-Alpha"));
-  inArgs_  = residualModel_->getNominalValues();
-  outArgs_ = residualModel_->createOutArgs();
 }
 
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  this->setModel(transientModel);
+  this->setModel(appModel);
 }
 
 
@@ -302,30 +300,30 @@ void StepperHHTAlpha<Scalar>::takeStep(
     const Scalar dt   = workingState->getTimeStep();
     //Update time
     Scalar t = time+dt;
-    
+
     //Compute initial acceleration, a_old, using initial displacement (d_old) and initial
-    //velocity (v_old) if in 1st time step 
+    //velocity (v_old) if in 1st time step
     if (time == solutionHistory->minTime()) {
-      RCP<Thyra::VectorBase<Scalar> > d_init = Thyra::createMember(d_old->space());  
-      RCP<Thyra::VectorBase<Scalar> > v_init = Thyra::createMember(v_old->space());  
-      RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());  
-      Thyra::copy(*d_old, d_init.ptr());  
-      Thyra::copy(*v_old, v_init.ptr()); 
-      Thyra::put_scalar(0.0, a_init.ptr()); 
-      residualModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      RCP<Thyra::VectorBase<Scalar> > d_init = Thyra::createMember(d_old->space());
+      RCP<Thyra::VectorBase<Scalar> > v_init = Thyra::createMember(v_old->space());
+      RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());
+      Thyra::copy(*d_old, d_init.ptr());
+      Thyra::copy(*v_old, v_init.ptr());
+      Thyra::put_scalar(0.0, a_init.ptr());
+      wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<double> sStatus =
-        this->solveNonLinear(residualModel_, *solver_, a_init, inArgs_);
+        this->solveNonLinear(wrapperModel_, *solver_, a_init);
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
       else
         workingState->getStepperState()->stepperStatus_ = Status::FAILED;
-      Thyra::copy(*a_init, a_old.ptr()); 
+      Thyra::copy(*a_init, a_old.ptr());
     }
 #ifdef DEBUG_OUTPUT
     //IKT, 3/30/17, debug output: pring a_old to check for correctness.
     *out_ << "IKT a_old = " << Thyra::max(*a_old) << "\n";
 #endif
-    
+
 
     //allocate d and v predictors
     RCP<Thyra::VectorBase<Scalar> > d_pred =Thyra::createMember(d_old->space());
@@ -335,21 +333,21 @@ void StepperHHTAlpha<Scalar>::takeStep(
     predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
-    //compute second displacement and velocity predictors (those that are functions of alpha_f) 
-    predictDisplacement_alpha_f(*d_pred, *d_old); 
-    predictVelocity_alpha_f(*v_pred, *v_old);  
+    //compute second displacement and velocity predictors (those that are functions of alpha_f)
+    predictDisplacement_alpha_f(*d_pred, *d_old);
+    predictVelocity_alpha_f(*v_pred, *v_old);
 
-    //inject d_pred, v_pred, a and other relevant data into residualModel_
-    residualModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    //inject d_pred, v_pred, a and other relevant data into wrapperModel_
+    wrapperModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
 
     //Solve for new acceleration
     const Thyra::SolveStatus<double> sStatus =
-      this->solveNonLinear(residualModel_, *solver_, a_new, inArgs_);
+      this->solveNonLinear(wrapperModel_, *solver_, a_new);
 
-    //correct acceleration (function of alpha_m) 
-    correctAcceleration(*a_new, *a_old); 
+    //correct acceleration (function of alpha_m)
+    correctAcceleration(*a_new, *a_old);
 
-    //correct velocity and displacement 
+    //correct velocity and displacement
     correctVelocity(*v_new, *v_pred, *a_new, dt);
     correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
@@ -404,7 +402,7 @@ void StepperHHTAlpha<Scalar>::describe(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   out << description() << "::describe:" << std::endl
-      << "residualModel_ = " << residualModel_->description() << std::endl;
+      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
 }
 
 
@@ -429,9 +427,9 @@ void StepperHHTAlpha<Scalar>::setParameterList(
     << "Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
   beta_ = 0.25; //default value
   gamma_ = 0.5; //default value
-  //IKT, FIXME: test this scheme for alpha_f and alpha_m != 0.0. 
-  //Once that is done, logic should be changed to allow user to select these options from 
-  //the parameter list. 
+  //IKT, FIXME: test this scheme for alpha_f and alpha_m != 0.0.
+  //Once that is done, logic should be changed to allow user to select these options from
+  //the parameter list.
   alpha_f_ = 0.0; //default value.  Hard-coded for Newmark-Beta for now.
   alpha_m_ = 0.0; //default value.  Hard-coded for Newmark-Beta for now.
   Teuchos::RCP<Teuchos::FancyOStream> out =
@@ -444,10 +442,10 @@ void StepperHHTAlpha<Scalar>::setParameterList(
     alpha_f_ = HHTalphaPL.get("Alpha_f", 0.0);
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_m_ >= 1.0) || (alpha_m_ < 0.0),
       std::logic_error,
-         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_m = " << alpha_m_ << ".  Please select Alpha_m >= 0 and < 1. \n"); 
+         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_m = " << alpha_m_ << ".  Please select Alpha_m >= 0 and < 1. \n");
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_f_ > 1.0) || (alpha_f_ < 0.0),
       std::logic_error,
-         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_f = " << alpha_f_ << ".  Please select Alpha_f >= 0 and <= 1. \n"); 
+         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_f = " << alpha_f_ << ".  Please select Alpha_f >= 0 and <= 1. \n");
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_m_ != 0.0) || (alpha_f_ != 0.0),
       std::logic_error,
          "\nError - 'HHT-Alpha' stepper has not been verified yet for Alpha_m, Alpha_f != 0! \n"
@@ -457,39 +455,39 @@ void StepperHHTAlpha<Scalar>::setParameterList(
       gamma_ = HHTalphaPL.get("Gamma", 0.5);
       TEUCHOS_TEST_FOR_EXCEPTION( (beta_ > 1.0) || (beta_ < 0.0),
         std::logic_error,
-           "\nError in 'HHT-Alpha' stepper: invalid value of Beta = " << beta_ << ".  Please select Beta >= 0 and <= 1. \n"); 
+           "\nError in 'HHT-Alpha' stepper: invalid value of Beta = " << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
       TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
         std::logic_error,
-           "\nError in 'HHT-Alpha' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n"); 
+           "\nError in 'HHT-Alpha' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
       *out << "\n \nScheme Name = Newmark Beta.  Setting Alpha_f = Alpha_m = 0. Setting \n"
            << "Beta = " << beta_ << " and Gamma = " << gamma_ << " from HHT-Alpha Parameters in input file.\n\n";
-    } 
+    }
     else {
       *out << "\n \nScheme Name = " << scheme_name << ".  Using values of Alpha_m, Alpha_f, \n"
            << "Beta and Gamma for this scheme (ignoring values of Alpha_m, Alpha_f, Beta and Gamma \n"
-           << "in input file, if provided).\n"; 
+           << "in input file, if provided).\n";
        if (scheme_name == "Newmark Beta Average Acceleration") {
-         beta_ = 0.25; gamma_ = 0.5; 
+         beta_ = 0.25; gamma_ = 0.5;
        }
        else if (scheme_name == "Newmark Beta Linear Acceleration") {
-         beta_ = 0.25; gamma_ = 1.0/6.0; 
+         beta_ = 0.25; gamma_ = 1.0/6.0;
        }
        else if (scheme_name == "Newmark Beta Central Difference") {
-         beta_ = 0.0; gamma_ = 0.5; 
+         beta_ = 0.0; gamma_ = 0.5;
        }
        else {
          TEUCHOS_TEST_FOR_EXCEPTION(true,
             std::logic_error,
-            "\nError in Tempus::StepperHHTAlpha!  Invalid Scheme Name = " << scheme_name <<".  \n" 
+            "\nError in Tempus::StepperHHTAlpha!  Invalid Scheme Name = " << scheme_name <<".  \n"
             <<"Valid Scheme Names are: 'Newmark Beta', 'Newmark Beta Average Acceleration', \n"
-            <<"'Newmark Beta Linear Acceleration', and 'Newmark Beta Central Difference'.\n"); 
+            <<"'Newmark Beta Linear Acceleration', and 'Newmark Beta Central Difference'.\n");
        }
-       *out << "===> Alpha_m = " << alpha_m_ << ", Alpha_f = " << alpha_f_ << ", Beta = " << beta_ << ", Gamma = " << gamma_ << "\n"; 
+       *out << "===> Alpha_m = " << alpha_m_ << ", Alpha_f = " << alpha_f_ << ", Beta = " << beta_ << ", Gamma = " << gamma_ << "\n";
     }
     if (beta_ == 0.0) {
       *out << "\n \nRunning  HHT-Alpha Stepper with Beta = 0.0, which \n"
            << "specifies an explicit scheme.  WARNING: code has not been optimized \n"
-           << "yet for this case (no mass lumping)\n"; 
+           << "yet for this case (no mass lumping)\n";
     }
   }
   else {

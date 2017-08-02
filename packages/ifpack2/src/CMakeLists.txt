@@ -219,6 +219,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     SparseContainer
     SparsityFilter
     TriDiContainer
+    ContainerFactory
     Details::Chebyshev
     Details::DenseSolver
     Details::Factory

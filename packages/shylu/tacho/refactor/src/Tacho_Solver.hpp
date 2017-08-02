@@ -66,6 +66,9 @@ namespace Tacho {
     ordinal_type _serial_thres_size;    // serialization threshold size
     ordinal_type _mb;                   // block size for byblocks algorithms
 
+    // parallelism and memory constraint is made via this parameter
+    ordinal_type _max_num_superblocks;  // # of superblocks in the memoyrpool
+    
   public:
     Solver()
       : _m(0), _nnz(0),
@@ -86,6 +89,9 @@ namespace Tacho {
     }
     void setBlocksize(const ordinal_type mb = -1) {
       _mb = mb;
+    }
+    void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1) {
+      _max_num_superblocks = max_num_superblocks;
     }
 
     /// need to figure out how HTS options are set here
@@ -169,9 +175,16 @@ namespace Tacho {
                                 _S.SupernodesTreeParent(), _S.SupernodesTreePtr(), _S.SupernodesTreeChildren(),
                                 _S.SupernodesTreeRoots());
         
-        if (_serial_thres_size < 0) _serial_thres_size = 64;
+        if (_serial_thres_size < 0) { // set default values
+          _serial_thres_size = 64;
+        }
         _N.setSerialThresholdSize(_serial_thres_size);
-        
+
+        if (_max_num_superblocks < 0) { // set default values
+          _max_num_superblocks = 4;
+        }
+        _N.setMaxNumberOfSuperblocks(_max_num_superblocks);
+
         const ordinal_type nthreads = device_exec_space::thread_pool_size(0);
         if (nthreads == 1) {
           _N.factorizeCholesky_Serial(ax, _verbose);

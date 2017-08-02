@@ -40,50 +40,54 @@
 // ***********************************************************************
 // @HEADER
 
-#include <Teuchos_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_TimeMonitor.hpp>
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Include Files
+//
+///////////////////////////////////////////////////////////////////////////////
 
-using Teuchos::RCP;
-using Teuchos::rcp;
+// C++
+#include <cstdio>
+#include <string>
+#include <vector>
 
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-
-#include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_DOFManager.hpp"
-#include "Panzer_BlockedDOFManager.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
-#include "Panzer_PureBasis.hpp"
-#include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Workset.hpp"
-#include "Panzer_GatherOrientation.hpp"
-
-#include "Panzer_STK_Version.hpp"
-#include "PanzerAdaptersSTK_config.hpp"
-#include "Panzer_STK_Interface.hpp"
-#include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Panzer_STK_SetupUtilities.hpp"
-#include "Panzer_STKConnManager.hpp"
-
-#include "Teuchos_DefaultMpiComm.hpp"
-#include "Teuchos_OpaqueWrapper.hpp"
-
-#include "Thyra_VectorStdOps.hpp"
-#include "Thyra_ProductVectorBase.hpp"
-
+// Epetra
 #include "Epetra_MpiComm.h"
 
-#include "user_app_EquationSetFactory.hpp"
-
-#include <cstdio> // for get char
-#include <vector>
-#include <string>
-
+// Panzer
+#include "PanzerAdaptersSTK_config.hpp"
+#include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_BlockedDOFManager.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
+#include "Panzer_DOFManager.hpp"
+#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
+#include "Panzer_FieldManagerBuilder.hpp"
+#include "Panzer_GatherOrientation.hpp"
+#include "Panzer_PureBasis.hpp"
+#include "Panzer_STKConnManager.hpp"
+#include "Panzer_STK_Interface.hpp"
+#include "Panzer_STK_SetupUtilities.hpp"
+#include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_Version.hpp"
+#include "Panzer_Workset.hpp"
+
+// Teuchos
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_OpaqueWrapper.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+
+// Thyra
+#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
+// user_app
+#include "user_app_EquationSetFactory.hpp"
 
 typedef double ScalarT;
 typedef int LocalOrdinalT;
@@ -165,7 +169,7 @@ namespace panzer {
 
     // build connection manager and field manager
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
-    RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
+    Teuchos::RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
     dofManager->addField(fieldName1_q1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
     dofManager->addField(fieldName2_q1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
@@ -195,21 +199,30 @@ namespace panzer {
     Teuchos::RCP<Thyra::VectorBase<double> > x_vec = e_loc->get_x_th();
     Thyra::assign(x_vec.ptr(),123.0+myRank);
 
-    // Setup tangent data containers
-    std::vector< Teuchos::RCP<LinearObjContainer> > tan_locs;
-    if (enable_tangents) {
-      for (int i=0; i<num_tangent; ++i) {
-        Teuchos::RCP<LinearObjContainer> tan_loc = e_lof->buildGhostedLinearObjContainer();
-        e_lof->initializeGhostedContainer(LinearObjContainer::X,*tan_loc);
-
-        Teuchos::RCP<EpetraLinearObjContainer> e_tan_loc
-          = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(tan_loc);
-        Teuchos::RCP<Thyra::VectorBase<double> > tan_vec = e_tan_loc->get_x_th();
-        Thyra::assign(tan_vec.ptr(),0.123+myRank+i);
-
-        tan_locs.push_back(tan_loc);
-      }
-    }
+    // Set up the tangent data containers.
+    std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>>
+      tangentContainers;
+    if (enable_tangents)
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp_dynamic_cast;
+      using Thyra::VectorBase;
+      using EVROGED = panzer::EpetraVector_ReadOnly_GlobalEvaluationData;
+      using ROVGED  = panzer::ReadOnlyVector_GlobalEvaluationData;
+      for (int i(0); i < num_tangent; ++i)
+      {
+        RCP<ROVGED> tangentContainer = e_lof->buildDomainContainer();
+        auto tanContainerEpetra = rcp_dynamic_cast<EVROGED>(tangentContainer);
+        RCP<VectorBase<double>> tanVecOwned =
+          tanContainerEpetra->getOwnedVector()->clone_v();
+        assign(tanVecOwned.ptr(), 0.123 + myRank + i);
+        tanContainerEpetra->setOwnedVector(tanVecOwned);
+        RCP<VectorBase<double>> tanVecGhosted =
+          tanContainerEpetra->getGhostedVector();
+        assign(tanVecGhosted.ptr(), 0.123 + myRank + i);
+        tangentContainers.push_back(tangentContainer);
+      } // end loop over the tangents
+    } // end if (enable_tangents)
 
     // setup field manager, add evaluator under test
     /////////////////////////////////////////////////////////////
@@ -436,12 +449,14 @@ namespace panzer {
     fm.postRegistrationSetup(sd);
 
     panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Solution Gather Container",loc);
-    if (enable_tangents) {
-      for (int i=0; i<num_tangent; ++i) {
+    ped.gedc.addDataObject("Solution Gather Container", loc);
+    if (enable_tangents)
+    {
+      for (int i(0); i < num_tangent; ++i)
+      {
         std::stringstream ss;
         ss << "Tangent Container " << i;
-        ped.gedc.addDataObject(ss.str(),tan_locs[i]);
+        ped.gedc.addDataObject(ss.str(), tangentContainers[i]);
       }
     }
 
@@ -615,7 +630,7 @@ namespace panzer {
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
   {
-    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);
     pl->set("X Elements",elemX);
@@ -623,7 +638,7 @@ namespace panzer {
     
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
 
     return mesh;
