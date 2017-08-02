@@ -748,6 +748,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       ExportVTK<Scalar,LocalOrdinal,GlobalOrdinal,Node> expVTK;
       expVTK.writeFile(fout,coordinates,X);
       fout.close();
+
+      size_t start_pos = strOutputFilename.find(".vtu");
+      strOutputFilename.replace(start_pos, 4, ".m");
+      Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(strOutputFilename,*X);
     }
 
     // print timings
