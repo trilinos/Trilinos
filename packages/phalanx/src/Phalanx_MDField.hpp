@@ -177,56 +177,10 @@ namespace PHX {
     PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>&
     operator=(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source);    
     
-    template<typename iType0, typename iType1, typename iType2, typename iType3,
-	     typename iType4, typename iType5, typename iType6, typename iType7>
+    template<typename... index_pack>
     KOKKOS_FORCEINLINE_FUNCTION
     typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3, iType4 index4, iType5 index5,
-	       iType6 index6, iType7 index7) const;
-
-    template<typename iType0, typename iType1, typename iType2, typename iType3,
-	     typename iType4, typename iType5, typename iType6>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3, iType4 index4, iType5 index5,
-	       iType6 index6) const;
-
-    template<typename iType0, typename iType1, typename iType2, typename iType3,
-	     typename iType4, typename iType5>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3, iType4 index4, iType5 index5)const;
-    
-    template<typename iType0, typename iType1, typename iType2, typename iType3,
-	     typename iType4>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3, iType4 index4)const;
-    
-    template<typename iType0, typename iType1, typename iType2, typename iType3>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2, 
-	       iType3 index3)const;
-
-    template<typename iType0, typename iType1, typename iType2>
-    KOKKOS_FORCEINLINE_FUNCTION    
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1, iType2 index2)const;
-    
-    template<typename iType0, typename iType1>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0, iType1 index1)const;
-    
-    template<typename iType0>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
-    operator()(iType0 index0) const;
+    operator()(const index_pack&...) const;
 
     KOKKOS_FORCEINLINE_FUNCTION
     size_type rank() const;

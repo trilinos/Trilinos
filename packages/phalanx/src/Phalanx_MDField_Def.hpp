@@ -190,139 +190,19 @@ operator=(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source)
 template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename iType0, typename iType1, typename iType2, typename iType3,
-	 typename iType4, typename iType5, typename iType6, typename iType7>
+template<typename... index_pack>
 KOKKOS_FORCEINLINE_FUNCTION
 typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(iType0 index0, iType1 index1, iType2 index2, 
-	   iType3 index3, iType4 index4, iType5 index5,
-	   iType6 index6, iType7 index7) const
+operator()(const index_pack&... indices) const
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+  // only support up to rank 8 array
+  static_assert(sizeof...(indices) > 0, "operator() : number of indices must be greater than 0!");
+  static_assert(sizeof...(indices) < 9, "operator() : number of indices must be less than 9!");
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
-  return m_field_data(index0,index1,index2,index3,index4,index5,index6,index7);
-}
-
-//**********************************************************************
-template<typename DataT,
-	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename iType0, typename iType1, typename iType2, typename iType3,
-	 typename iType4, typename iType5, typename iType6>
-KOKKOS_FORCEINLINE_FUNCTION
-typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type
-PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(iType0 index0, iType1 index1, iType2 index2, 
-	   iType3 index3, iType4 index4, iType5 index5,
-	   iType6 index6)const
-{ 
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
-  return m_field_data(index0,index1,index2,index3,index4,index5,index6);
-}
-
-//**********************************************************************
-template<typename DataT,
-	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename iType0, typename iType1, typename iType2, typename iType3,
-	 typename iType4, typename iType5>
-KOKKOS_FORCEINLINE_FUNCTION
-typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type
-PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(iType0 index0, iType1 index1, iType2 index2, 
-	   iType3 index3, iType4 index4, iType5 index5)const
-{ 
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
-  return m_field_data(index0,index1,index2,index3,index4,index5);
-}
-
-//**********************************************************************
-template<typename DataT,
-	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename iType0, typename iType1, typename iType2, typename iType3,
-	 typename iType4>
-KOKKOS_FORCEINLINE_FUNCTION
-typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type
-PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(iType0 index0, iType1 index1, iType2 index2, 
-	   iType3 index3, iType4 index4)const
-{ 
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
-  return m_field_data(index0,index1,index2,index3,index4);
-}
-
-//**********************************************************************
-template<typename DataT,
-	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename iType0, typename iType1, typename iType2, typename iType3>
-KOKKOS_FORCEINLINE_FUNCTION
-typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type
-PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(iType0 index0, iType1 index1, iType2 index2, 
-	   iType3 index3)const
-{ 
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
-  return m_field_data(index0,index1,index2,index3);
-}
-
-//**********************************************************************
-template<typename DataT,
-	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename iType0, typename iType1, typename iType2>
-KOKKOS_FORCEINLINE_FUNCTION
-typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type
-PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(iType0 index0, iType1 index1, iType2 index2) const
-{ 
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
-  return m_field_data(index0,index1,index2);
-}
-
-//**********************************************************************
-template<typename DataT,
-	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename iType0, typename iType1>
-KOKKOS_FORCEINLINE_FUNCTION
-typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type
-PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(iType0 index0, iType1 index1) const
-{ 
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
-  return m_field_data(index0,index1);
-}
-
-//**********************************************************************
-template<typename DataT,
-	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename iType0>
-KOKKOS_FORCEINLINE_FUNCTION
-typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type
-PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(iType0 index1) const
-{ 
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-#endif
-  return m_field_data(index1);
+  return m_field_data(indices...);
 }
 
 //**********************************************************************
