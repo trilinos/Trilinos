@@ -1282,7 +1282,7 @@ int Zoltan2_Directory_Comm::do_reverse(
   // This information is only available after the above create_reverse_plan is
   // called so we can setup the return data with proper buffer size now.
   // However should we do this here?
-  recv_data.resize(plan_forward->plan_reverse->total_recv_size);
+  recv_data.resize(plan_forward->plan_reverse->total_recv_size*nbytes);
 
   if (status == 0) {
 

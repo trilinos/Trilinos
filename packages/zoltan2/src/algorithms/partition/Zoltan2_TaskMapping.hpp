@@ -323,6 +323,7 @@ void getCoarsenedPartGraph(
         localNumEdges,
         NULL
         );
+
     Zoltan_DD_Destroy(&dd);
   } else
 #endif

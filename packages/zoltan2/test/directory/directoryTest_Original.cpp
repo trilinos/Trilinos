@@ -43,11 +43,11 @@
 //
 // @HEADER
 
-#define CONVERT_DIRECTORY_RELIC
+#define CONVERT_DIRECTORY_ORIGINAL
 
-#include "directoryComparisonTest_Impl.hpp"
+#include "directoryTest_Impl.hpp"
 
 int main(int narg, char **arg)
 {
-  return runDirectoryComparisonTest(narg, arg);
+  return runDirectoryTests(narg, arg);
 }

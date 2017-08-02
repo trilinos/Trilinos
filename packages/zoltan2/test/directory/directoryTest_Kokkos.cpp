@@ -43,15 +43,11 @@
 //
 // @HEADER
 
-#define CONVERT_DIRECTORY_TPETRA
+#define CONVERT_DIRECTORY_KOKKOS
 
-#include "directoryComparisonTest_Impl.hpp"
+#include "directoryTest_Impl.hpp"
 
 int main(int narg, char **arg)
 {
-#ifdef TEMP_TRIAL_USER_ARRAY_TYPE
-  return 1; // not implemented - fail as a reminder
-#else
-  return runDirectoryComparisonTest(narg, arg);
-#endif
+  return runDirectoryTests(narg, arg);
 }

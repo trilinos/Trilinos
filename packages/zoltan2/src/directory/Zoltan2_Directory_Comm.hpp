@@ -228,7 +228,7 @@ class Zoltan2_Directory_Comm {
     #endif
 // -----------------------------------------------------------------------------
 
-}; // end namespace Zoltan2
+} // end namespace Zoltan2
 
 #endif // #ifdef HAVE_MPI
 
