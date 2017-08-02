@@ -607,7 +607,7 @@ namespace Tacho {
           {
             const size_type
               min_block_size  = 1,
-              max_block_size  = 2*_info.max_schur_size*sizeof(value_type);
+              max_block_size  = 2*_info.max_schur_size*sizeof(value_type)*x.dimension_1();
             
             size_type superblock_size = 1;
             for ( ;superblock_size<max_block_size;superblock_size*=2);

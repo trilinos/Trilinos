@@ -62,17 +62,17 @@ namespace Tacho {
               cblas_cherk (CblasColMajor, ArgUplo::mkl_param, ArgTrans::mkl_param, 
                            n, k, 
                            (const float)real(alpha), 
-                           (const void *)A.data(), (const MKL_INT)A.stride_1(), 
+                           (const MKL_Complex8 *)A.data(), (const MKL_INT)A.stride_1(), 
                            (const float)real(beta), 
-                           (void *)C.data(), (const MKL_INT)C.stride_1());              
+                           (MKL_Complex8 *)C.data(), (const MKL_INT)C.stride_1());              
             else if (std::is_same<value_type,Kokkos::complex<double> >::value ||
                      std::is_same<value_type,   std::complex<double> >::value)
               cblas_zherk (CblasColMajor, ArgUplo::mkl_param, ArgTrans::mkl_param, 
                            n, k, 
                            (const double)real(alpha), 
-                           (const void *)A.data(), (const MKL_INT)A.stride_1(), 
+                           (const MKL_Complex16 *)A.data(), (const MKL_INT)A.stride_1(), 
                            (const double)real(beta), 
-                           (void *)C.data(), (const MKL_INT)C.stride_1());              
+                           (MKL_Complex16 *)C.data(), (const MKL_INT)C.stride_1());              
             else {
               TACHO_TEST_FOR_ABORT( true, ">> Datatype is not supported.");                           
             }

@@ -73,20 +73,20 @@ namespace Tacho {
                        std::is_same<value_type,   std::complex<double> >::value)
                 cblas_cgemv (CblasColMajor, ArgTrans::mkl_param, 
                              m, n, 
-                             (const void *)&alpha_value, 
-                             (const void *)A.data(), (const MKL_INT)A.stride_1(),
-                             (const void *)(B.data() + offsB), (const MKL_INT)B.stride_0(),
-                             (const void *)&beta_value, 
-                             (double *)(C.data() + offsC), (const MKL_INT)C.stride_0());                
+                             (const MKL_Complex8 *)&alpha_value, 
+                             (const MKL_Complex8 *)A.data(), (const MKL_INT)A.stride_1(),
+                             (const MKL_Complex8 *)(B.data() + offsB), (const MKL_INT)B.stride_0(),
+                             (const MKL_Complex8 *)&beta_value, 
+                             (MKL_Complex8 *)(C.data() + offsC), (const MKL_INT)C.stride_0());                
               else if (std::is_same<value_type,Kokkos::complex<double> >::value ||
                        std::is_same<value_type,   std::complex<double> >::value)
                 cblas_zgemv (CblasColMajor, ArgTrans::mkl_param, 
                              m, n, 
-                             (const void *)&alpha_value, 
-                             (const void *)A.data(), (const MKL_INT)A.stride_1(),
-                             (const void *)(B.data() + offsB), (const MKL_INT)B.stride_0(),
-                             (const void *)&beta_value, 
-                             (double *)(C.data() + offsC), (const MKL_INT)C.stride_0());                
+                             (const MKL_Complex16 *)&alpha_value, 
+                             (const MKL_Complex16 *)A.data(), (const MKL_INT)A.stride_1(),
+                             (const MKL_Complex16 *)(B.data() + offsB), (const MKL_INT)B.stride_0(),
+                             (const MKL_Complex16 *)&beta_value, 
+                             (MKL_Complex16 *)(C.data() + offsC), (const MKL_INT)C.stride_0());                
               else {
                 TACHO_TEST_FOR_ABORT( true, ">> Datatype is not supported.");                           
               }

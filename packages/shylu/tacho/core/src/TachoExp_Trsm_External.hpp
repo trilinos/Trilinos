@@ -63,17 +63,17 @@ namespace Tacho {
               cblas_ctrsm (CblasColMajor, ArgSide::mkl_param, ArgUplo::mkl_param, ArgTransA::mkl_param, 
                            diagA.mkl_param, 
                            m, n, 
-                           (const void *)&alpha_value, 
-                           (const void *)A.data(), (const MKL_INT)A.stride_1(), 
-                           (void *)B.data(), (const MKL_INT)B.stride_1());
+                           (const MKL_Complex8 *)&alpha_value, 
+                           (const MKL_Complex8 *)A.data(), (const MKL_INT)A.stride_1(), 
+                           (MKL_Complex8 *)B.data(), (const MKL_INT)B.stride_1());
             else if (std::is_same<value_type,Kokkos::complex<double> >::value ||
                      std::is_same<value_type,   std::complex<double> >::value)
               cblas_ztrsm (CblasColMajor, ArgSide::mkl_param, ArgUplo::mkl_param, ArgTransA::mkl_param, 
                            diagA.mkl_param, 
                            m, n, 
-                           (const void *)&alpha_value, 
-                           (const void *)A.data(), (const MKL_INT)A.stride_1(), 
-                           (void *)B.data(), (const MKL_INT)B.stride_1());
+                           (const MKL_Complex16 *)&alpha_value, 
+                           (const MKL_Complex16 *)A.data(), (const MKL_INT)A.stride_1(), 
+                           (MKL_Complex16 *)B.data(), (const MKL_INT)B.stride_1());
             else {
               TACHO_TEST_FOR_ABORT( true, ">> Datatype is not supported.");                           
             }
