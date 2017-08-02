@@ -48,6 +48,7 @@
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
+#include "Panzer_PointGenerator.hpp"
 
 panzer::PointRule::
 PointRule(const std::string & ptName,
@@ -67,6 +68,17 @@ PointRule(const std::string & point_rule_name,
           const Teuchos::RCP<const shards::CellTopology> & cell_topology)
 {
   setup(point_rule_name, num_cells, num_points_per_cell, num_faces, num_points_per_face, cell_topology);
+}
+
+/** Constructor from a point description.
+*/
+panzer::PointRule::
+PointRule(const panzer::PointDescriptor& description,
+          const Teuchos::RCP<const shards::CellTopology> & cell_topology,
+          const int num_cells)
+{
+  int num_points_per_cell = description.getGenerator().numPoints(*cell_topology);
+  setup(description.getType(), num_cells, num_points_per_cell, 0, 0, cell_topology);
 }
 
 void panzer::PointRule::

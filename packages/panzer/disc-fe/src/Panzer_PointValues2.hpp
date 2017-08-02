@@ -56,7 +56,7 @@ namespace panzer {
   template <typename Scalar>
   class PointValues2 {
   public:
-    typedef typename ArrayTraits<Scalar, PHX::MDField<Scalar,void,void,void,void,void,void,void,void> >::size_type size_type;
+    typedef typename ArrayTraits<Scalar, PHX::MDField<Scalar> >::size_type size_type;
 
     template<typename SourceScalar>
     PointValues2<Scalar>&
@@ -113,15 +113,16 @@ namespace panzer {
     PHX::MDField<Scalar,Cell,NODE,Dim> & getVertexCoordinates() const
     { return node_coordinates; }
 
-    // input fields
-    mutable PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> coords_ref;      // <IP,Dim>
-    mutable PHX::MDField<Scalar,Cell,NODE,Dim,void,void,void,void,void> node_coordinates; // <Cell,NODE,Dim>
+    // input fields: both mutable because of getRefCoordinates/getVertexCoordinates
+    //               Not sure this is the best design, but works for this iteration
+    mutable PHX::MDField<Scalar,IP,Dim>        coords_ref;       // <IP,Dim>
+    mutable PHX::MDField<Scalar,Cell,NODE,Dim> node_coordinates; // <Cell,NODE,Dim>
 
     // output fields
-    PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> jac;              // <Cell,IP,Dim,Dim>
-    PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> jac_inv;          // <Cell,IP,Dim,Dim>
-    PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> jac_det;        // <Cell,IP>
-    PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> point_coords;    // <Cell,IP,Dim> // cell points
+    PHX::MDField<Scalar,Cell,IP,Dim,Dim>       jac;              // <Cell,IP,Dim,Dim>
+    PHX::MDField<Scalar,Cell,IP,Dim,Dim>       jac_inv;          // <Cell,IP,Dim,Dim>
+    PHX::MDField<Scalar,Cell,IP>               jac_det;          // <Cell,IP>
+    PHX::MDField<Scalar,Cell,IP,Dim>           point_coords;     // <Cell,IP,Dim> // cell points
 
     Teuchos::RCP<const panzer::PointRule> point_rule;
 

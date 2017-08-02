@@ -49,6 +49,8 @@
 
 #include "Shards_CellTopology.hpp"
 
+#include "Panzer_PointDescriptor.hpp"
+
 namespace panzer {
 
   class CellData;
@@ -83,6 +85,12 @@ namespace panzer {
               const int num_faces,
               const int num_points_per_face,
               const Teuchos::RCP<const shards::CellTopology> & cell_topology);
+
+    /** Constructor from a point description.
+      */
+    PointRule(const panzer::PointDescriptor& description,
+              const Teuchos::RCP<const shards::CellTopology> & cell_topology,
+              const int num_cells);
 
     //! Destructor (Satisfying the compiler)
     virtual ~PointRule() {}

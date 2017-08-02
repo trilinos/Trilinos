@@ -51,6 +51,7 @@
 
 #include "Panzer_Dimension.hpp"
 #include "Panzer_BasisValues2.hpp"
+#include "Panzer_PointValues2.hpp"
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_Dimension.hpp"
 
@@ -120,6 +121,13 @@ namespace panzer {
     /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
     const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, const panzer::IntegrationDescriptor & integration_description) const;
 
+    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
+    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
+                                                        const panzer::PointDescriptor & integration_description) const;
+
+    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
+    const panzer::PointValues2<double> & getPointValues(const panzer::PointDescriptor & integration_description) const;
+
     /// Grab the pure basis (contains data layouts) for a given basis description (throws error if integration doesn't exist)
     const panzer::PureBasis & getBasis(const panzer::BasisDescriptor & description) const;
 
@@ -143,6 +151,9 @@ namespace panzer {
 
     std::map<size_t,Teuchos::RCP<const panzer::PureBasis > > _pure_basis_map;
     std::map<size_t,std::map<size_t,Teuchos::RCP<const panzer::BasisValues2<double> > > > _basis_map;
+
+    std::map<size_t,Teuchos::RCP<const panzer::PointRule > > _point_rule_map;
+    std::map<size_t,Teuchos::RCP<const panzer::PointValues2<double> > > _point_map;
 
     Teuchos::RCP<panzer::SubcellConnectivity> _face_connectivity;
 

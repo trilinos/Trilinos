@@ -63,8 +63,11 @@ namespace panzer {
 class PointDescriptor
 {
 public:
+
+  /// Default constructor, no version
+  PointDescriptor() = delete;
  
-  /** \brief Constructor for the point descriptor. Protected and used by constructors.
+  /** \brief Constructor for the point descriptor. 
     *
     * \param[in] type String that defines the "type" of this point descriptor,
     *                 used to generate unique hashes
@@ -98,9 +101,6 @@ public:
   std::size_t getKey() const {return _key;}
 
 protected:
-
-  /// Default constructor, no user version
-  PointDescriptor() {}
 
   /** \brief Setup the point descriptor. Protected and used by constructors.
     *

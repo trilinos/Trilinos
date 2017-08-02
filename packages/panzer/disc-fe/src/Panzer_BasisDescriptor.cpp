@@ -63,6 +63,8 @@ class BasisCoordsGenerator :
 public:
   BasisCoordsGenerator(const int basis_order, const std::string & basis_type)
     : _basis_type(basis_type), _basis_order(basis_order) {}
+ 
+  virtual ~BasisCoordsGenerator() = default;
 
   virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const
   {
@@ -74,6 +76,13 @@ public:
     intrepid_basis->getDofCoords(view);
   
     return view;
+  }
+
+  virtual int numPoints(const shards::CellTopology & topo) const
+  {
+    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+        intrepid_basis = createIntrepid2Basis<PHX::Device::execution_space,double,double>(_basis_type,_basis_order,topo);
+    return intrepid_basis->getCardinality();
   }
 
 protected:
