@@ -563,12 +563,12 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              const Teuchos::RCP<const map_type>& colMap,
-              const Teuchos::RCP<const map_type>& domainMap,
-              const Teuchos::RCP<const map_type>& rangeMap,
-              const local_graph_type& lclGraph,
-              const Teuchos::RCP<Teuchos::ParameterList>& params);
+    CrsGraph (const local_graph_type& lclGraph,
+              const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<const map_type>& colMap = Teuchos::null,
+              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Create a cloned CrsGraph for a different Node type.
     ///

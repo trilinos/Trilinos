@@ -539,8 +539,8 @@ namespace Tpetra {
       "RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
-      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, domainMap, rangeMap,
-                                                lclMatrix.graph, params));
+      graph = Teuchos::rcp (new crs_graph_type (lclMatrix.graph, rowMap, colMap,
+                                                domainMap, rangeMap, params));
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC

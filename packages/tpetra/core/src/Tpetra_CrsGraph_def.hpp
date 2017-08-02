@@ -540,75 +540,17 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& colMap,
             const local_graph_type& k_local_graph_,
             const Teuchos::RCP<Teuchos::ParameterList>& params)
-    : DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
-    , rowMap_ (rowMap)
-    , colMap_ (colMap)
-    , lclGraph_ (k_local_graph_)
-    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
-    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
-    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
-    , pftype_ (StaticProfile)
-    , numAllocForAllRows_ (0)
-    , storageStatus_ (Details::STORAGE_1D_PACKED)
-    , indicesAreAllocated_ (true)
-    , indicesAreLocal_ (true)
-    , indicesAreGlobal_ (false)
-    , fillComplete_ (false)
-    , indicesAreSorted_ (true)
-    , noRedundancies_ (true)
-    , haveLocalConstants_ (false)
-    , haveGlobalConstants_ (false)
-    , sortGhostsAssociatedWithEachProcessor_(true)
+    : CrsGraph(k_local_graph_, rowMap, colMap, Teuchos::null, Teuchos::null, params)
   {
-    staticAssertions();
-    const char tfecfFuncName[] = "CrsGraph(Map,Map,Kokkos::LocalStaticCrsGraph)";
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      colMap.is_null (), std::runtime_error,
-      ": The input column Map must be nonnull.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      k_local_graph_.numRows () != rowMap->getNodeNumElements (),
-      std::runtime_error,
-      ": The input row Map and the input local graph need to have the same "
-      "number of rows.  The row Map claims " << rowMap->getNodeNumElements ()
-      << " row(s), but the local graph claims " << k_local_graph_.numRows ()
-      << " row(s).");
-    // NOTE (mfh 17 Mar 2014) getNodeNumRows() returns
-    // rowMap_->getNodeNumElements(), but it doesn't have to.
-    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    //   k_local_graph_.numRows () != getNodeNumRows (), std::runtime_error,
-    //   ": The input row Map and the input local graph need to have the same "
-    //   "number of rows.  The row Map claims " << getNodeNumRows () << " row(s), "
-    //   "but the local graph claims " << k_local_graph_.numRows () << " row(s).");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      k_lclInds1D_.dimension_0 () != 0 || k_gblInds1D_.dimension_0 () != 0, std::logic_error,
-      ": cannot have 1D data structures allocated.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! lclInds2D_.is_null () || ! gblInds2D_.is_null (), std::logic_error,
-      ": cannot have 2D data structures allocated.");
-
-    setDomainRangeMaps (rowMap_, rowMap_);
-    makeImportExport ();
-
-    k_lclInds1D_ = lclGraph_.entries;
-    k_rowPtrs_ = lclGraph_.row_map;
-
-    computeLocalTriangularProperties ();
-
-    haveLocalConstants_ = true;
-    computeGlobalConstants ();
-
-    fillComplete_ = true;
-    checkInternalState ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+  CrsGraph (const local_graph_type& k_local_graph_,
+            const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const Teuchos::RCP<const map_type>& domainMap,
             const Teuchos::RCP<const map_type>& rangeMap,
-            const local_graph_type& k_local_graph_,
             const Teuchos::RCP<Teuchos::ParameterList>& params)
     : DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
     , rowMap_ (rowMap)
@@ -631,17 +573,11 @@ namespace Tpetra {
     , sortGhostsAssociatedWithEachProcessor_(true)
   {
     staticAssertions();
-    const char tfecfFuncName[] = "CrsGraph(Map,Map,Map,Map,Kokkos::LocalStaticCrsGraph)";
+    const char tfecfFuncName[] = "CrsGraph(Kokkos::LocalStaticCrsGraph,Map,Map,Map,Map)";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       colMap.is_null (), std::runtime_error,
       ": The input column Map must be nonnull.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      domainMap.is_null (), std::runtime_error,
-      ": The input domain Map must be nonnull.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      rangeMap.is_null (), std::runtime_error,
-      ": The input range Map must be nonnull.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       k_local_graph_.numRows () != rowMap->getNodeNumElements (),
       std::runtime_error,
@@ -663,7 +599,8 @@ namespace Tpetra {
       ! lclInds2D_.is_null () || ! gblInds2D_.is_null (), std::logic_error,
       ": cannot have 2D data structures allocated.");
 
-    setDomainRangeMaps (domainMap, rangeMap);
+    setDomainRangeMaps (domainMap.is_null() ? rowMap_ : domainMap,
+                        rangeMap .is_null() ? rowMap_ : rangeMap);
     makeImportExport ();
 
     k_lclInds1D_ = lclGraph_.entries;
