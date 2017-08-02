@@ -179,13 +179,13 @@ namespace {
         }
       }
       Kokkos::deep_copy (x2, x_orig);
-      for (int i = 0; i < x2.dimension_0 (); ++i) {
+      for (int i = 0; i < static_cast<int> (x2.dimension_0 ()); ++i) {
         const mag_type curAbs =
           Kokkos::ArithTraits<entry_type>::abs (x2(i));
         x_norm = (curAbs > x_norm) ? curAbs : x_norm;
       }
       Kokkos::deep_copy (y2, y_orig);
-      for (int i = 0; i < y2.dimension_0 (); ++i) {
+      for (int i = 0; i < static_cast<int> (y2.dimension_0 ()); ++i) {
         const mag_type curAbs =
           Kokkos::ArithTraits<entry_type>::abs (y2(i));
         y_norm = (curAbs > y_norm) ? curAbs : y_norm;
@@ -275,7 +275,7 @@ namespace {
             Kokkos::deep_copy (x_host, x);
 
             mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero ();
-            for (LO i = 0; i < x.dimension_0 (); ++i) {
+            for (LO i = 0; i < static_cast<LO> (x.dimension_0 ()); ++i) {
               const mag_type curErr =
                 Kokkos::ArithTraits<entry_type>::abs (x_host(i) - x2(i));
               maxErr = (curErr > maxErr) ? curErr : maxErr;
@@ -299,7 +299,7 @@ namespace {
             Kokkos::deep_copy (y_host, y);
 
             mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero ();
-            for (LO i = 0; i < y.dimension_0 (); ++i) {
+            for (LO i = 0; i < static_cast<LO> (y.dimension_0 ()); ++i) {
               const mag_type curErr =
                 Kokkos::ArithTraits<entry_type>::abs (y_host(i) - y2(i));
               maxErr = (curErr > maxErr) ? curErr : maxErr;
