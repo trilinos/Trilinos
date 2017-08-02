@@ -124,7 +124,7 @@ void MultiVectorDefaultBase<Scalar>::scaleImpl(Scalar alpha)
     return;
   }
   RTOpPack::TOpScaleVector<Scalar> scale_vector_op(alpha);
-  applyOp<Scalar>(scale_vector_op,
+  Thyra::applyOp<Scalar>(scale_vector_op,
     ArrayView<Ptr<const MultiVectorBase<Scalar> > >(null),
     tuple<Ptr<MultiVectorBase<Scalar> > >(ptr(this)), null );
 }
@@ -138,7 +138,7 @@ void MultiVectorDefaultBase<Scalar>::updateImpl(
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
-  applyOp<Scalar>( axpy_op, tuple(ptrInArg(mv)),
+  Thyra::applyOp<Scalar>( axpy_op, tuple(ptrInArg(mv)),
     tuple<Ptr<MultiVectorBase<Scalar> > >(ptr(this)), null );
 }
 
@@ -183,7 +183,7 @@ void MultiVectorDefaultBase<Scalar>::norms1Impl(
     rcp_op_targs[kc] = norm_op.reduct_obj_create();
     op_targs[kc] = rcp_op_targs[kc].ptr();
   }
-  applyOp<Scalar>(norm_op,
+  Thyra::applyOp<Scalar>(norm_op,
     tuple<Ptr<const MultiVectorBase<Scalar> > >(ptrInArg(*this)),
     ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
     op_targs);
@@ -207,7 +207,7 @@ void MultiVectorDefaultBase<Scalar>::norms2Impl(
     rcp_op_targs[kc] = norm_op.reduct_obj_create();
     op_targs[kc] = rcp_op_targs[kc].ptr();
   }
-  applyOp<Scalar>(norm_op,
+  Thyra::applyOp<Scalar>(norm_op,
     tuple<Ptr<const MultiVectorBase<Scalar> > >(ptrInArg(*this)),
     ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
     op_targs);
@@ -232,7 +232,7 @@ void MultiVectorDefaultBase<Scalar>::dotsImpl(
     rcp_dot_targs[kc] = dot_op.reduct_obj_create();
     dot_targs[kc] = rcp_dot_targs[kc].ptr();
   }
-  applyOp<Scalar>( dot_op,
+  Thyra::applyOp<Scalar>( dot_op,
     tuple<Ptr<const MultiVectorBase<Scalar> > >(ptrInArg(mv), ptrInArg(*this)),
     ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
     dot_targs );
@@ -256,7 +256,7 @@ void MultiVectorDefaultBase<Scalar>::normsInfImpl(
     rcp_op_targs[kc] = norm_op.reduct_obj_create();
     op_targs[kc] = rcp_op_targs[kc].ptr();
   }
-  applyOp<Scalar>(norm_op,
+  Thyra::applyOp<Scalar>(norm_op,
     tuple<Ptr<const MultiVectorBase<Scalar> > >(ptrInArg(*this)),
     ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
     op_targs);
