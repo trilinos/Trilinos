@@ -210,7 +210,7 @@ void VectorDefaultBase<Scalar>::randomizeImpl(Scalar l, Scalar u)
 {
   using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpRandomize<Scalar> random_vector_op(l,u);
-  applyOp<Scalar>(random_vector_op,
+  Thyra::applyOp<Scalar>(random_vector_op,
     ArrayView<Ptr<const VectorBase<Scalar> > >(null),
     tuple<Ptr<VectorBase<Scalar> > >(ptr(this)),
     null);
@@ -222,7 +222,7 @@ void VectorDefaultBase<Scalar>::absImpl(const VectorBase<Scalar>& x)
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpAbs<Scalar> abs_op;
-  applyOp<Scalar>(abs_op, tuple(ptrInArg(x)),
+  Thyra::applyOp<Scalar>(abs_op, tuple(ptrInArg(x)),
     tuple<Ptr<VectorBase<Scalar> > >(ptr(this)), null);
 }
 
@@ -232,7 +232,7 @@ void VectorDefaultBase<Scalar>::reciprocalImpl(const VectorBase<Scalar>& x)
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpReciprocal<Scalar> recip_op;
-  applyOp<Scalar>(recip_op, tuple(ptrInArg(x)),
+  Thyra::applyOp<Scalar>(recip_op, tuple(ptrInArg(x)),
     tuple<Ptr<VectorBase<Scalar> > >(ptr(this)), null);
 }
 
@@ -242,7 +242,7 @@ void VectorDefaultBase<Scalar>::eleWiseScaleImpl(const VectorBase<Scalar>& x)
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpEleWiseScale<Scalar> scale_op;
-  applyOp<Scalar>(scale_op, tuple(ptrInArg(x)),
+  Thyra::applyOp<Scalar>(scale_op, tuple(ptrInArg(x)),
     tuple<Ptr<VectorBase<Scalar> > >(ptr(this)), null);
 }
 
@@ -306,7 +306,7 @@ VectorDefaultBase<Scalar>::norm2WeightedImpl(const VectorBase<Scalar>& x) const
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpWeightedNorm2<Scalar> norm_op;
   Teuchos::RCP<RTOpPack::ReductTarget> norm_targ = norm_op.reduct_obj_create();
-  applyOp<Scalar>(norm_op,
+  Thyra::applyOp<Scalar>(norm_op,
     tuple(ptrInArg(x), ptrInArg<const VectorBase<Scalar> >(*this)),
     ArrayView<const Ptr<VectorBase<Scalar> > >(null),
     norm_targ.ptr());
