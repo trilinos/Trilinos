@@ -40,3 +40,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  workset_container 
+  SOURCES workset_container.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  )

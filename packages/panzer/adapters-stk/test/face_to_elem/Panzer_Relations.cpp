@@ -58,7 +58,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
       for (unsigned id=0;id<localIDs.size(); ++id) {
         int n_conn = conn_->getConnectivitySize(localIDs[id]);
         const GlobalOrdinal * connectivity = conn_->getConnectivity(localIDs[id]);
-        assert(n_conn==1);
+        TEUCHOS_ASSERT(n_conn==1);
         elem_gids[localIDs[id]] = connectivity[0];
       }
     }

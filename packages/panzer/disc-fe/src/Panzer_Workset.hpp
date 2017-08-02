@@ -74,7 +74,8 @@ namespace panzer {
     * an easier task. This basically allows separation of the workset abstraction
     * from how it is accessed.
     */
-  struct WorksetDetails {
+  class WorksetDetails {
+  public:
     typedef PHX::MDField<double,Cell,NODE,Dim> CellCoordArray;
 
     typedef std::size_t GO;
@@ -119,14 +120,15 @@ namespace panzer {
     const panzer::IntegrationRule & getIntegrationRule(const panzer::IntegrationDescriptor & description) const;
 
     /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
-    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, const panzer::IntegrationDescriptor & integration_description) const;
+    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
+                                                        const panzer::IntegrationDescriptor & integration_description) const;
 
     /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
     const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
-                                                        const panzer::PointDescriptor & integration_description) const;
+                                                        const panzer::PointDescriptor & point_description) const;
 
     /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
-    const panzer::PointValues2<double> & getPointValues(const panzer::PointDescriptor & integration_description) const;
+    const panzer::PointValues2<double> & getPointValues(const panzer::PointDescriptor & point_description) const;
 
     /// Grab the pure basis (contains data layouts) for a given basis description (throws error if integration doesn't exist)
     const panzer::PureBasis & getBasis(const panzer::BasisDescriptor & description) const;
@@ -163,8 +165,19 @@ namespace panzer {
     * is to maintain backwards compatibility in the use of the workset object. The addition
     * of a details vector supports things like DG based assembly.
     */
-  struct Workset : public WorksetDetails {
-    Workset() {}
+  class Workset : public WorksetDetails {
+  public:
+    //! Default constructor, identifier is a useless 0 by default
+    Workset() : identifier_(0) {}
+
+    //! Constructor that that requires a unique identifier
+    Workset(std::size_t identifier) : identifier_(identifier) {}
+
+    //! Set the unique identifier for this workset, this is not an index!
+    void setIdentifier(std::size_t identifier) { identifier_ = identifier; }
+
+    //! Get the unique identifier for this workset, this is not an index!
+    std::size_t getIdentifier() const { return identifier_; }
 
     index_t num_cells;
     int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
@@ -197,6 +210,9 @@ namespace panzer {
     const WorksetDetails& details(const int i) const { return operator()(i); }
     //! Return the number of WorksetDetails this Workset holds.
     size_t numDetails() const { return Teuchos::nonnull(other) ? 2 : 1; }
+
+  private:
+    std::size_t identifier_;    
   };
 
   std::ostream& operator<<(std::ostream& os, const panzer::Workset& w);
