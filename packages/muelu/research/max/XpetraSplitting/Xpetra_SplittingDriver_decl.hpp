@@ -87,8 +87,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		GlobalOrdinal GetNumGlobalElements(){return num_total_nodes_;};
 		GlobalOrdinal GetNumTotalRegions(){return num_total_regions_;};
 		Array<GlobalOrdinal> GetGlobalRowMap(){return maps_.global_map_;};
-		Array<GlobalOrdinal> GetRegionalRowMap(GlobalOrdinal region_index);
-		Array<Array<GlobalOrdinal> > GetRegionalRowMaps(){return maps_.region_maps_;};
+		Array<GlobalOrdinal> GetRegionRowMap(GlobalOrdinal region_index);
+		Array<Array<GlobalOrdinal> > GetRegionRowMaps(){return maps_.region_maps_;};
 		Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >  GetRegionToAll(GlobalOrdinal);//used as a map for a RegionToAll node index
 		Array<std::tuple<int, Array<GlobalOrdinal> > > GetInterfaceNodes(){return interfaceNodes_;};
 	//}

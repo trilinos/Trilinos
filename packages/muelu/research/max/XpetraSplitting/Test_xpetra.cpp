@@ -15,6 +15,7 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_IO.hpp"
 #include "Xpetra_MatrixSplitting.hpp"
+#include "Xpetra_RegionalAMG_def.hpp"
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
 #endif
@@ -70,24 +71,22 @@ int main(int argc, char* argv[])
 	if (CommEpetra.MyPID() == 0)
 		std::cout<<"Number of processors: "<<CommEpetra.NumProc()<<std::endl;
 
+/*
 	//SplittingDriver
 	Xpetra::SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> driver("node.txt", comm);
 	Teuchos::Array<GlobalOrdinal> elementlist = driver.GetGlobalRowMap();
 	Teuchos::Array<GlobalOrdinal> elementlist_region1 = driver.GetRegionalRowMap(1);
-	/*driver.printView();
-	driver.printNodesToRegion();*/
 	driver.printInactive();
-	/*std::cout<<"PID: "<<comm->getRank()<<" beginning map: "<<elementlist[0]<<std::endl;
-	std::cout<<"PID: "<<comm->getRank()<<" end of map: "<<*(elementlist.end()-1)<<std::endl;
-	if( elementlist_region1.size()>0 )
-		std::cout<<"PID: "<<comm->getRank()<<" num local nodes in region 1: "<<elementlist_region1.size()<<" min_index= "<<*(std::min_element(elementlist_region1.begin(), elementlist_region1.end()))<<" max_index= "<<*(std::max_element(elementlist_region1.begin(), elementlist_region1.end()))<<std::endl;
-	else
-		std::cout<<"PID: "<<comm->getRank()<<" num local nodes in region 1: "<<elementlist_region1.size()<<std::endl;*/
-
 	Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseTpetra> xpetraWrapper( argv[1], argv[2], comm );
 	std::string output_file="A_write.mtx";
 	xpetraWrapper.writeGlobalMatrix();	
 	xpetraWrapper.writeRegionalMatrices();
+*/
+
+	Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
+	A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[1], Xpetra::UseTpetra, comm);
+
+	Xpetra::RegionalAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner( argv[1], argv[2], comm, 4 );
 
 	#ifdef HAVE_MPI
  	  MPI_Finalize();

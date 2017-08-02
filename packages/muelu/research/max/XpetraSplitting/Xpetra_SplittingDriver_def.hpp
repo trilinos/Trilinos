@@ -176,7 +176,7 @@ namespace Xpetra{
 
 
 	//This routine associates a globally indexed node with the list of regions it belongs to
-	//This is helpful to spot which nodes lie on a interregional interface. In fact, these nodes must have 
+	//This is helpful to spot which nodes lie on a interregion interface. In fact, these nodes must have 
 	//the list of regions with more than one element
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NodesToRegion()
@@ -496,7 +496,7 @@ namespace Xpetra{
 
 // Get methods to allow a user interface with private members of the SplittingDriver class
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	Array<GlobalOrdinal> SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionalRowMap(GlobalOrdinal region_index)
+	Array<GlobalOrdinal> SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionRowMap(GlobalOrdinal region_index)
 	{
 		TEUCHOS_TEST_FOR_EXCEPTION( region_index>num_total_regions_, Exceptions::RuntimeError, "Value of region index exceeds total number of regions stored \n"<<"Trying to access informaiton about region "<<region_index<<" when the total number of regions stored is "<<num_total_regions_<<"\n");
 		return maps_.region_maps_[region_index-1];

@@ -106,7 +106,8 @@ class checkerInterfaceNodes {
 	    class LocalOrdinal  = Operator<>::local_ordinal_type,
 	    class GlobalOrdinal = typename Operator<LocalOrdinal>::global_ordinal_type,
 	    class Node          = typename Operator<LocalOrdinal, GlobalOrdinal>::node_type,
-	    UnderlyingLib lib		= Xpetra::UseEpetra>
+	    UnderlyingLib lib		= Xpetra::UseEpetra, 
+			bool collapse 			= false>
 	class MatrixSplitting : public Matrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
 
 	typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
@@ -153,7 +154,7 @@ class checkerInterfaceNodes {
 			//Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
 			globalMatrixData_ = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matrix_file_name, xpetraMap);
 
-			CreateRegionalMatrices( driver_->GetRegionalRowMaps() );
+			CreateRegionMatrices( driver_->GetRegionRowMaps() );
 		}
 
 		//! Destructor
@@ -337,6 +338,16 @@ class checkerInterfaceNodes {
 		size_t getNodeMaxNumRowEntries() const {
 		  return globalMatrixData_->getNodeMaxNumRowEntries();
 		}
+
+		//! \brief Returns the number of regions in the composite domain.
+		global_size_t getNumRegions() const {
+			TEUCHOS_TEST_FOR_EXCEPTION( region_matrix_initialized_.size()==0 , Exceptions::RuntimeError, "Regions have not been initialized yet \n");
+			for( int i = 0; i<region_matrix_initialized_.size(); ++i )
+				TEUCHOS_TEST_FOR_EXCEPTION( !region_matrix_initialized_[i] , Exceptions::RuntimeError, "Region matrix for region "<< i+1 << "has not been initialized yet \n");
+
+		  return num_total_regions_;
+		}
+
 
 		//! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
 		bool isLocallyIndexed() const {
@@ -557,6 +568,21 @@ class checkerInterfaceNodes {
 
 		RCP<CrsMatrix> getCrsMatrix() const {  return globalMatrixData_; }
 
+		RCP<Matrix> getMatrix() const {  return globalMatrixData_; }
+
+		RCP<Matrix> getRegionMatrix( GlobalOrdinal region_idx ) const 
+		{
+			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_<=0, Exceptions::RuntimeError, "Regions not initialized yet ( total number of regions is <=0 ) \n");
+			TEUCHOS_TEST_FOR_EXCEPTION( region_idx > num_total_regions_, Exceptions::RuntimeError, "Region index not valid \n");
+			
+			return regionMatrixData_[ region_idx-1 ];
+		}
+
+		RCP<SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getSplittingDriver() const
+		{
+			return driver_; 
+		}
+
 
 		//! Implements DistObject interface
 		//{@
@@ -568,7 +594,7 @@ class checkerInterfaceNodes {
 		}
 
 
-		void writeRegionalMatrices()
+		void writeRegionMatrices()
 		{
 			for( int i = 0; i<num_total_regions_; ++i )
 			{
@@ -577,7 +603,7 @@ class checkerInterfaceNodes {
 				file_name += "./output/A_region_";
 				file_name += region_str;
 				file_name += ".mm";
-                		Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name.c_str(), *regionalMatrixData_[i]);
+                		Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name.c_str(), *regionMatrixData_[i]);
 			}
 		}
 		// @}
@@ -608,24 +634,27 @@ class checkerInterfaceNodes {
 
 		//! Support Functions
 		//{@
-		void RegionalMatrix(GlobalOrdinal region_idx)
+		void RegionMatrix(GlobalOrdinal region_idx)
 		{	
-			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=regionalMatrixData_.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of regionalMatrixData_ structure \n");
-			RCP<Matrix> region_matrix = regionalMatrixData_[region_idx];
+			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=regionMatrixData_.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of regionMatrixData_ structure \n");
+			RCP<Matrix> region_matrix = regionMatrixData_[region_idx];
 			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
 
 			RCP<tpetra_crs_matrix > tpetraGlobalMatrix = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(globalMatrixData_);
 			Ifpack2::OverlappingRowMatrix<tpetra_row_matrix> enlargedMatrix(tpetraGlobalMatrix, 2);
 
 			region_matrix->resumeFill();
-			InitializeRegionalMatrices( region_idx, region_matrix, enlargedMatrix );
-			RegionalCollapse( region_idx, region_matrix, enlargedMatrix );
+			InitializeRegionMatrices( region_idx, region_matrix, enlargedMatrix );
+
+			if( collapse )
+				RegionCollapse( region_idx, region_matrix, enlargedMatrix );
+
 			region_matrix->fillComplete();
 		};
 		// @}
 
 
-		void InitializeRegionalMatrices(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
+		void InitializeRegionMatrices(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
 		{
 			TEUCHOS_TEST_FOR_EXCEPTION( region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "Surrogate region stiffness matrices are already initialized by chopping the global stiffness matrix \n");
 
@@ -633,8 +662,8 @@ class checkerInterfaceNodes {
 
 			//THIS IS THE CORE OF THE PROBLEM WHERE ONE NEEDS TO POPULATE THE REGIONAL MATRICES BY ACCESSING ENTRIES OF THE GLOBAL MATRIX
 			//
-      			ArrayView<const GlobalOrdinal> MyRegionalElements =region_matrix->getRowMap()->getNodeElementList();
- 			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionalElements.begin(); iter!=MyRegionalElements.end(); ++iter )	
+      ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
+ 			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionElements.begin(); iter!=MyRegionElements.end(); ++iter )	
 			{
 				//Nodes are saved in data structures with 1 as base index
 				checkerRegionToAll<GlobalOrdinal> unaryPredicate(*iter+1);
@@ -672,10 +701,10 @@ class checkerInterfaceNodes {
 		}
 
 
-		void RegionalCollapse(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
+		void RegionCollapse(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
 		{
 			TEUCHOS_TEST_FOR_EXCEPTION( !region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "The global stiffness matrix must be chopped into surrogate region matrices before collapsing \n");
-			TEUCHOS_TEST_FOR_EXCEPTION( driver_->num_region_nodes_[region_idx]!=regionalMatrixData_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes in region "<<region_idx+1<<" does not coincide with the value returned by regionalMatrixData_["<<region_idx+1<<"]->getGlobalNumRows() \n");
+			TEUCHOS_TEST_FOR_EXCEPTION( driver_->num_region_nodes_[region_idx]!=regionMatrixData_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes in region "<<region_idx+1<<" does not coincide with the value returned by regionMatrixData_["<<region_idx+1<<"]->getGlobalNumRows() \n");
 
 			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
 
@@ -693,8 +722,8 @@ class checkerInterfaceNodes {
 			//interfaceNodes contains nodes on an interface between any regions
 			Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes = driver_->GetInterfaceNodes();	
 
-			ArrayView<const GlobalOrdinal> MyRegionalElements =region_matrix->getRowMap()->getNodeElementList();
- 			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionalElements.begin(); iter!=MyRegionalElements.end(); ++iter )	
+			ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
+ 			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionElements.begin(); iter!=MyRegionElements.end(); ++iter )	
 			{
 			
 				//Nodes are saved in data structures with 1 as base index
@@ -1021,11 +1050,11 @@ class checkerInterfaceNodes {
 
 		//! @name Creation of Region matrices
 		//@{
-		void CreateRegionalMatrices( Array<Array<GlobalOrdinal> > region_maps){ 
+		void CreateRegionMatrices( Array<Array<GlobalOrdinal> > region_maps){ 
 
 			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=region_maps.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of region_maps structure \n");
 
-			regionalMatrixData_.clear( );		
+			regionMatrixData_.clear( );		
 
 			for( int i = 0; i<num_total_regions_; ++i )
 			{
@@ -1043,11 +1072,11 @@ class checkerInterfaceNodes {
 					std::cerr<<" The library to build matrices must be either Epetra or Tpetra \n";
 
 				RCP<Matrix> matrixPointer = rcp(new CrsMatrixWrap(crs_matrix));
-				regionalMatrixData_.push_back( matrixPointer );
+				regionMatrixData_.push_back( matrixPointer );
 			}
 
 			for( GlobalOrdinal i = 0; i<num_total_regions_; ++i )
-				RegionalMatrix(i);
+				RegionMatrix(i);
 
 		};
 		//@}
@@ -1055,13 +1084,14 @@ class checkerInterfaceNodes {
 		// The boolean finalDefaultView_ keep track of the status of the default view (= already updated or not)
 		// See also MatrixSplitting::updateDefaultView()
 		mutable bool finalDefaultView_;
+
 		Array<bool> region_matrix_initialized_;
 
 		RCP<const Teuchos::Comm<int> > comm_;
 
 		RCP<SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> > driver_;
 		RCP<Matrix> globalMatrixData_;
-		Array<RCP<Matrix> > regionalMatrixData_;
+		Array<RCP<Matrix> > regionMatrixData_;
 
 		GlobalOrdinal num_total_elements_ = 0;
 		GlobalOrdinal num_total_regions_ = 0;
@@ -1070,5 +1100,4 @@ class checkerInterfaceNodes {
 
 } //namespace Xpetra
 
-#define XPETRA_MATRIX_SHORT
 #endif //XPETRA_MATRIXSPLITTING_HPP
