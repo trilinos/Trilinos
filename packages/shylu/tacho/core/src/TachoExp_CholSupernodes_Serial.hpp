@@ -197,7 +197,7 @@ namespace Tacho {
         value_type *ptr = s.buf; 
 
         // panel is divided into diagonal and interface block
-        const ordinal_type m = s.m, n = s.n - s.m;
+        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.dimension_1();
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
@@ -205,13 +205,21 @@ namespace Tacho {
           UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
           auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
 
-          Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-            ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
-
+          if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+            Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
+              ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+          else
+            Trsv<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+              ::invoke(sched, member, Diag::NonUnit(), AL, xT);
+            
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-            Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
-              ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
+            if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+              Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
+                ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
+            else
+              Gemv<Trans::ConjTranspose,Algo::External>
+                ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
           }
         }
         return 0;
@@ -286,7 +294,7 @@ namespace Tacho {
         value_type *ptr = s.buf;
 
         // panel is divided into diagonal and interface block
-        const ordinal_type m = s.m, n = s.n - s.m;
+        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.dimension_1();
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
@@ -297,11 +305,19 @@ namespace Tacho {
 
           if (n > 0) {
             const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-            Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
-              ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
+            if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+              Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
+                ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
+            else
+              Gemv<Trans::NoTranspose,Algo::External>
+                ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
           }
-          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
-            ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+          if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+            Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
+              ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+          else
+            Trsv<Uplo::Upper,Trans::NoTranspose,Algo::External>
+              ::invoke(sched, member, Diag::NonUnit(), AL, xT);
         }
         return 0;
       }

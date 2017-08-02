@@ -22,6 +22,12 @@
 #include "TachoExp_Gemm.hpp"
 #include "TachoExp_Gemm_External.hpp"
 
+#include "TachoExp_Trsv.hpp"
+#include "TachoExp_Trsv_External.hpp"
+
+#include "TachoExp_Gemv.hpp"
+#include "TachoExp_Gemv_External.hpp"
+
 #include "TachoExp_SupernodeInfo.hpp"
 
 #include "TachoExp_CholSupernodes.hpp"

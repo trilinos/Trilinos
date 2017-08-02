@@ -46,10 +46,50 @@ namespace Tacho {
           m = C.dimension_0(),
           n = C.dimension_1(),
           k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.dimension_0() : B.dimension_1());
-
+        
         if (m > 0 && n > 0 && k > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+#if defined( HAVE_SHYLUTACHO_MKL )
+            const value_type alpha_value(alpha), beta_value(beta);
+            if      (std::is_same<value_type,float>::value) 
+              cblas_sgemm (CblasColMajor, ArgTransA::mkl_param, ArgTransB::mkl_param, 
+                           m, n, k, 
+                           (const float)alpha, 
+                           (const float *)A.data(), (const MKL_INT)A.stride_1(), 
+                           (const float *)B.data(), (const MKL_INT)B.stride_1(), 
+                           (const float)beta, 
+                           (float *)C.data(), (const MKL_INT)C.stride_1());
+            else if (std::is_same<value_type,double>::value) 
+              cblas_dgemm (CblasColMajor, ArgTransA::mkl_param, ArgTransB::mkl_param, 
+                           m, n, k, 
+                           (const double)alpha, 
+                           (const double *)A.data(), (const MKL_INT)A.stride_1(), 
+                           (const double *)B.data(), (const MKL_INT)B.stride_1(), 
+                           (const double)beta, 
+                           (double *)C.data(), (const MKL_INT)C.stride_1());
+            else if (std::is_same<value_type,Kokkos::complex<float> >::value ||
+                     std::is_same<value_type,   std::complex<float> >::value)
+              cblas_cgemm (CblasColMajor, ArgTransA::mkl_param, ArgTransB::mkl_param, 
+                           m, n, k, 
+                           (const void*)&alpha_value, 
+                           (const void *)A.data(), (const MKL_INT)A.stride_1(), 
+                           (const void *)B.data(), (const MKL_INT)B.stride_1(), 
+                           (const void*)&beta_value, 
+                           (void *)C.data(), (const MKL_INT)C.stride_1());
+            else if (std::is_same<value_type,Kokkos::complex<double> >::value ||
+                     std::is_same<value_type,   std::complex<double> >::value)
+              cblas_zgemm (CblasColMajor, ArgTransA::mkl_param, ArgTransB::mkl_param, 
+                           m, n, k, 
+                           (const void*)&alpha_value, 
+                           (const void *)A.data(), (const MKL_INT)A.stride_1(), 
+                           (const void *)B.data(), (const MKL_INT)B.stride_1(), 
+                           (const void*)&beta_value, 
+                           (void *)C.data(), (const MKL_INT)C.stride_1());
+            else {
+              TACHO_TEST_FOR_ABORT( true, ">> Datatype is not supported.");                           
+            }
+#else
             typedef typename TypeTraits<value_type>::std_value_type std_value_type; 
             Teuchos::BLAS<ordinal_type,std_value_type> blas;
             
@@ -59,8 +99,9 @@ namespace Tacho {
                       std_value_type(alpha),
                       (std_value_type*)A.data(), A.stride_1(),
                       (std_value_type*)B.data(), B.stride_1(),
-                      value_type(beta),
+                      std_value_type(beta),
                       (std_value_type*)C.data(), C.stride_1());
+#endif
 #else
             TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
 #endif

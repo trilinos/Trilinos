@@ -26,6 +26,10 @@
 
 #include "Teuchos_BLAS_types.hpp"
 
+#ifdef HAVE_SHYLUTACHO_MKL
+#include "mkl.h"
+#endif
+
 /// \file TachoExp_Util.hpp
 /// \brief Utility functions and constant integer class like an enum class.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -89,9 +93,12 @@ namespace Tacho {
     ///
     /// label size used to identify object name
     ///
-    enum : int { LabelSize = 64,
-                 MaxDependenceSize = 4 };
-
+    enum : int { 
+      LabelSize = 64,
+      MaxDependenceSize = 4,
+      ThresholdSolvePhaseUsingBlas3 = 12 
+    };
+    
     template<typename T>
     struct TypeTraits;
 
@@ -436,8 +443,22 @@ namespace Tacho {
     // };
 
     struct Uplo {
-      struct Upper        { enum : int { tag = 401 }; static constexpr char param = 'U'; static constexpr Teuchos::EUplo teuchos_param = Teuchos::UPPER_TRI; };
-      struct Lower        { enum : int { tag = 402 }; static constexpr char param = 'L'; static constexpr Teuchos::EUplo teuchos_param = Teuchos::LOWER_TRI; };
+      struct Upper        { 
+        enum : int { tag = 401 }; 
+        static constexpr char param = 'U'; 
+        static constexpr Teuchos::EUplo teuchos_param = Teuchos::UPPER_TRI; 
+#ifdef HAVE_SHYLUTACHO_MKL  
+        static constexpr CBLAS_UPLO mkl_param = CblasUpper;
+#endif
+      };
+      struct Lower        { 
+        enum : int { tag = 402 }; 
+        static constexpr char param = 'L'; 
+        static constexpr Teuchos::EUplo teuchos_param = Teuchos::LOWER_TRI; 
+#ifdef HAVE_SHYLUTACHO_MKL  
+        static constexpr CBLAS_UPLO mkl_param = CblasLower;
+#endif
+      };
     };
     template<typename T>
     struct is_valid_uplo_tag {
@@ -451,8 +472,22 @@ namespace Tacho {
     
 
     struct Side {
-      struct Left         { enum : int { tag = 501 }; static constexpr char param = 'L'; static constexpr Teuchos::ESide teuchos_param = Teuchos::LEFT_SIDE; };
-      struct Right        { enum : int { tag = 502 }; static constexpr char param = 'R'; static constexpr Teuchos::ESide teuchos_param = Teuchos::RIGHT_SIDE; };
+      struct Left         { 
+        enum : int { tag = 501 }; 
+        static constexpr char param = 'L'; 
+        static constexpr Teuchos::ESide teuchos_param = Teuchos::LEFT_SIDE; 
+#ifdef HAVE_SHYLUTACHO_MKL  
+        static constexpr CBLAS_SIDE mkl_param = CblasLeft;
+#endif
+      };
+      struct Right        { 
+        enum : int { tag = 502 }; 
+        static constexpr char param = 'R'; 
+        static constexpr Teuchos::ESide teuchos_param = Teuchos::RIGHT_SIDE;
+#ifdef HAVE_SHYLUTACHO_MKL  
+        static constexpr CBLAS_SIDE mkl_param = CblasRight;
+#endif
+      };
     };
     template<typename T>
     struct is_valid_side_tag {
@@ -465,8 +500,22 @@ namespace Tacho {
     template<>           struct flip_side_tag<Side::Right> { typedef Side::Left type; };
 
     struct Diag {
-      struct Unit         { enum : int { tag = 601 }; static constexpr char param = 'U'; static constexpr Teuchos::EDiag teuchos_param = Teuchos::UNIT_DIAG; };
-      struct NonUnit      { enum : int { tag = 602 }; static constexpr char param = 'N'; static constexpr Teuchos::EDiag teuchos_param = Teuchos::NON_UNIT_DIAG; };
+      struct Unit         { 
+        enum : int { tag = 601 }; 
+        static constexpr char param = 'U'; 
+        static constexpr Teuchos::EDiag teuchos_param = Teuchos::UNIT_DIAG;
+#ifdef HAVE_SHYLUTACHO_MKL  
+        static constexpr CBLAS_DIAG mkl_param = CblasUnit;
+#endif
+      };
+      struct NonUnit      { 
+        enum : int { tag = 602 }; 
+        static constexpr char param = 'N'; 
+        static constexpr Teuchos::EDiag teuchos_param = Teuchos::NON_UNIT_DIAG; 
+#ifdef HAVE_SHYLUTACHO_MKL  
+        static constexpr CBLAS_DIAG mkl_param = CblasNonUnit;
+#endif
+      };
     };
     template<typename T>
     struct is_valid_diag_tag {
@@ -476,9 +525,30 @@ namespace Tacho {
     };
 
     struct Trans {
-      struct Transpose      { enum : int { tag = 701 }; static constexpr char param = 'T'; static constexpr Teuchos::ETransp teuchos_param = Teuchos::TRANS; };
-      struct ConjTranspose  { enum : int { tag = 702 }; static constexpr char param = 'C'; static constexpr Teuchos::ETransp teuchos_param = Teuchos::CONJ_TRANS; };
-      struct NoTranspose    { enum : int { tag = 703 }; static constexpr char param = 'N'; static constexpr Teuchos::ETransp teuchos_param = Teuchos::NO_TRANS; };
+      struct Transpose      { 
+        enum : int { tag = 701 }; 
+        static constexpr char param = 'T'; 
+        static constexpr Teuchos::ETransp teuchos_param = Teuchos::TRANS; 
+#ifdef HAVE_SHYLUTACHO_MKL  
+        static constexpr CBLAS_TRANSPOSE mkl_param = CblasTrans;
+#endif
+      };
+      struct ConjTranspose  { 
+        enum : int { tag = 702 }; 
+        static constexpr char param = 'C'; 
+        static constexpr Teuchos::ETransp teuchos_param = Teuchos::CONJ_TRANS; 
+#ifdef HAVE_SHYLUTACHO_MKL  
+        static constexpr CBLAS_TRANSPOSE mkl_param = CblasConjTrans;
+#endif
+      };
+      struct NoTranspose    { 
+        enum : int { tag = 703 }; 
+        static constexpr char param = 'N'; 
+        static constexpr Teuchos::ETransp teuchos_param = Teuchos::NO_TRANS; 
+#ifdef HAVE_SHYLUTACHO_MKL  
+        static constexpr CBLAS_TRANSPOSE mkl_param = CblasNoTrans;
+#endif
+      };
     };
     template<typename T>
     struct is_valid_trans_tag {
