@@ -46,7 +46,6 @@
 #include <algorithm>
 #include "Panzer_PointRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Panzer_CommonArrayFactories.hpp"
 
 namespace panzer {
 
@@ -97,10 +96,9 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
 
   int space_dim = basis->dimension();
 
-  panzer::MDFieldArrayFactory af_pv(pointRule->getName()+"_",false);
-       
   // setup all fields to be evaluated and constructed
-  pointValues.setupArrays(pointRule,af_pv);
+  pointValues = PointValues2<ScalarT>(pointRule->getName()+"_",false);
+  pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
   {

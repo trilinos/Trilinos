@@ -40,49 +40,44 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_POINT_VALUES_EVALUATOR_DECL_HPP
-#define PANZER_POINT_VALUES_EVALUATOR_DECL_HPP
+#include "Panzer_PointDescriptor.hpp"
 
-#include <string>
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Panzer_PointValues2.hpp"
-#include "Panzer_Evaluator_Macros.hpp"
+#include "Panzer_HashUtils.hpp"
 
-namespace panzer {
-    
-//! Interpolates basis DOF values to IP DOF values
-PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
+#include "Teuchos_Assert.hpp"
 
-  // is anything other than ScalarT really needed here?
-  PointValues2<ScalarT> pointValues;
- 
-  PHX::MDField<double,NODE,Dim> refPointArray;
+namespace panzer
+{
 
-  bool useBasisValuesRefArray; // if true then basis is non-null
-  Teuchos::RCP<const panzer::PureBasis> basis;
-  std::size_t basis_index;
+PointDescriptor::
+PointDescriptor(const std::string & type,const Teuchos::RCP<PointGenerator> & generator)
+{
+  setup(type,generator);
+}
 
-  //! Initialization method to unify the constructors.
-  template <typename ArrayT>
-  void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                  const Teuchos::Ptr<const ArrayT> & userArray,
-                  // const Teuchos::Ptr<const Kokkos::DynRankView<double,PHX::Device> > & userArray,
-                  const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
+void
+PointDescriptor::
+setup(const std::string & type,const Teuchos::RCP<PointGenerator> & generator)
+{
+  _type = type;
+  _generator = generator;
 
-public:
-  PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const Kokkos::DynRankView<double,PHX::Device> & userArray);
+  // sanity check
+  TEUCHOS_ASSERT(_generator!=Teuchos::null);
 
-  PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const PHX::MDField<double, panzer::IP, panzer::Dim> & userArray);
-
-  //! This builds a point rule from the basis function reference points in the workset
-  PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
-
-PANZER_EVALUATOR_CLASS_END
+  _key = std::hash<PointDescriptor>()(*this);
+}
 
 }
 
-#endif
+std::size_t
+std::hash<panzer::PointDescriptor>::operator()(const panzer::PointDescriptor& desc) const
+{
+  std::size_t seed = 0;
+  const std::string prefix = "point_desc";
+
+  panzer::hash_combine(seed,prefix);   // prevent collisions with other descriptors
+  panzer::hash_combine(seed,desc.getType());
+
+  return seed;
+}
