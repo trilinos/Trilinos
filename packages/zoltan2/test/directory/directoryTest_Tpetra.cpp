@@ -43,14 +43,11 @@
 //
 // @HEADER
 
-// For now only Kokkos can implement the new variable sized arrays
-#define TEMP_TRIAL_USER_ARRAY_TYPE
+#define CONVERT_DIRECTORY_TPETRA
 
-#define CONVERT_DIRECTORY_KOKKOS
-
-#include "directoryComparisonTest_Impl.hpp"
+#include "directoryTest_Impl.hpp"
 
 int main(int narg, char **arg)
 {
-  return runDirectoryComparisonTest(narg, arg);
+  return runDirectoryTests(narg, arg);
 }
