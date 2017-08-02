@@ -54,7 +54,6 @@
 #include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_MDFieldToKokkos.hpp"
 #include "Phalanx_MDField_TypeTraits.hpp"
 #include "Sacado.hpp"
 
