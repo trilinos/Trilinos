@@ -47,21 +47,10 @@
 #include "TeuchosCore_ConfigDefs.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 
-// all MT unit testing requires HAVE_TEUCHOSCORE_CXX11 which is
-// defined through TeuchosCore_ConfigDefs.hpp
-//
-// HAVE_TEUCHOS_THREAD_SAFE is defined using Trilinos_ENABLE_THREAD_SAFE
-// or Teuchos_ENABLE_THREAD_SAFE
-//
-// HAVE_TEUCHOS_THREAD_SAFE_UNIT_TESTS currently is enabled only if the TPL
-// PThread is also enabled
-//
-// Note that all of this code is only relevant to the unit tests
-#if defined(HAVE_TEUCHOSCORE_CXX11) &&             \
-    defined(HAVE_TEUCHOS_THREAD_SAFE) &&           \
-    defined(HAVE_TEUCHOS_THREAD_SAFE_UNIT_TESTS)
+// This file only gets included and built if thread safe tests are turned on
 #define RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS
-#endif
+// Trilinos GitHub #229: ToDo: Get rid of this macro!
+
 
 #ifdef RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS
 

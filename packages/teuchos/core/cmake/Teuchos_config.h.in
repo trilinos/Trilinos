@@ -81,8 +81,6 @@
 
 #cmakedefine HAVE_TEUCHOS_THREAD_SAFE
 
-#cmakedefine HAVE_TEUCHOS_THREAD_SAFE_UNIT_TESTS
-
 #cmakedefine HAVE_TEUCHOS_LAPACKLARND
 
 /* Deprecated */
