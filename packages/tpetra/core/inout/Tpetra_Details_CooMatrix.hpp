@@ -51,6 +51,7 @@
 #include "Tpetra_Details_PackTriples.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
 #include <initializer_list>
@@ -1208,7 +1209,6 @@ protected:
     using ::Teuchos::RCP;
     using std::endl;
     typedef CooMatrix<SC, LO, GO, NT> this_type;
-    typedef ::Kokkos::DualView<packet_type*, device_type> out_buf_dv_type;
     const char prefix[] = "Tpetra::Details::CooMatrix::packAndPrepareNew: ";
     const char suffix[] = "  This should never happen.  "
       "Please report this bug to the Tpetra developers.";
@@ -1239,7 +1239,7 @@ protected:
     // numPacketsPerLID with zeros.
     if (* (this->localError_)) {
       // Resize 'exports' to zero, so we won't be tempted to read it.
-      exports = out_buf_dv_type ("CooMatrix exports", 0);
+      Details::reallocDualViewIfNeeded (exports, 0, "CooMatrix exports");
       // Trick to get around const DualView& being const.
       {
         using ::Kokkos::DualView;
@@ -1256,7 +1256,7 @@ protected:
 
     const size_t numExports = exportLIDs.dimension_0 ();
     if (numExports == 0) {
-      exports = out_buf_dv_type (exports.h_view.label (), 0);
+      Details::reallocDualViewIfNeeded (exports, 0, exports.h_view.label ());
       return; // nothing to send
     }
     RCP<const Comm<int> > comm = src->getMap ().is_null () ?
@@ -1366,9 +1366,13 @@ protected:
       return;
     }
 
-    if (static_cast<int> (exports.dimension_0 ()) != totalNumPackets) {
-      exports = out_buf_dv_type ("CooMatrix exports", totalNumPackets);
-      exports.template sync<Kokkos::HostSpace> (); // make sure alloc'd on host
+    {
+      const bool reallocated =
+        Details::reallocDualViewIfNeeded (exports, totalNumPackets,
+                                          "CooMatrix exports");
+      if (reallocated) {
+        exports.template sync<Kokkos::HostSpace> (); // make sure alloc'd on host
+      }
     }
     exports.template modify<Kokkos::HostSpace> ();
 

@@ -3051,7 +3051,7 @@ namespace Tpetra {
         // we encounter a nonowned column index.
         std::vector<GlobalOrdinal> badColInds;
         bool allInColMap = true;
-        for (size_t k = 0; k < numInputInds; ++k) {
+        for (LO k = 0; k < numInputInds; ++k) {
           if (! colMap.isNodeGlobalElement (inputGblColInds[k])) {
             allInColMap = false;
             badColInds.push_back (inputGblColInds[k]);
@@ -3061,9 +3061,9 @@ namespace Tpetra {
           std::ostringstream os;
           os << "You attempted to insert entries in owned row " << gblRow
              << ", at the following column indices: [";
-          for (size_t k = 0; k < numInputInds; ++k) {
+          for (LO k = 0; k < numInputInds; ++k) {
             os << inputGblColInds[k];
-            if (k + size_t (1) < numInputInds) {
+            if (k + static_cast<LO> (1) < numInputInds) {
               os << ",";
             }
           }

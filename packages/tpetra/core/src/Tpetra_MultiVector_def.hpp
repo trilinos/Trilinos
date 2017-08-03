@@ -55,6 +55,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 
 #include "KokkosCompat_View.hpp"
@@ -1163,20 +1164,8 @@ namespace Tpetra {
 
     const size_t numExportLIDs = exportLIDs.dimension_0 ();
     const size_t newExportsSize = numCols * numExportLIDs;
-    if (static_cast<size_t> (exports.dimension_0 ()) != newExportsSize) {
-      if (printDebugOutput) {
-        std::ostringstream os;
-        const int myRank = this->getMap ()->getComm ()->getRank ();
-        os << "$$$ MV::packAndPrepareNew (Proc " << myRank << ") realloc "
-          "exports from " << exports.dimension_0 () << " to " << newExportsSize
-           << std::endl;
-        std::cerr << os.str ();
-      }
-      // Resize 'exports' to fit.
-      execution_space::fence ();
-      exports = Kokkos::DualView<impl_scalar_type*, device_type> ("exports", newExportsSize);
-      execution_space::fence ();
-    }
+
+    Details::reallocDualViewIfNeeded (exports, newExportsSize, "exports");
 
     // Mark 'exports' here, since we might resize it above.  Resizing
     // currently requires calling the constructor, which clears out
@@ -1842,31 +1831,28 @@ namespace Tpetra {
         // If we need sync to device, then data were last modified on
         // host, so we should run on host.
 
-        auto x_vec = x.getVectorNonConst (0);
-        auto y_vec = y.getVector (0);
-
         //const bool runOnHost = false;
-        const bool runOnHost = y_vec->template need_sync<dev_memory_space> ();
+        const bool runOnHost = y.template need_sync<dev_memory_space> ();
         // const_cast<MV&> (y).template sync<dev_memory_space> ();
         // const_cast<MV&> (x).template sync<dev_memory_space> ();
 
         if (runOnHost) {
           typedef host_memory_space cur_memory_space;
           // x is nonconst, so we may sync x where we need to sync it.
-          x_vec->template sync<cur_memory_space> ();
-          auto x_2d = x_vec->template getLocalView<cur_memory_space> ();
+          x.template sync<cur_memory_space> ();
+          auto x_2d = x.template getLocalView<cur_memory_space> ();
           auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
-          auto y_2d = y_vec->template getLocalView<cur_memory_space> ();
+          auto y_2d = y.template getLocalView<cur_memory_space> ();
           auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
           lclDot = KokkosBlas::dot (x_1d, y_1d);
         }
         else { // run on device
           typedef dev_memory_space cur_memory_space;
           // x is nonconst, so we may sync x where we need to sync it.
-          x_vec->template sync<cur_memory_space> ();
-          auto x_2d = x_vec->template getLocalView<cur_memory_space> ();
+          x.template sync<cur_memory_space> ();
+          auto x_2d = x.template getLocalView<cur_memory_space> ();
           auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
-          auto y_2d = y_vec->template getLocalView<cur_memory_space> ();
+          auto y_2d = y.template getLocalView<cur_memory_space> ();
           auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
           lclDot = KokkosBlas::dot (x_1d, y_1d);
         }
@@ -3718,29 +3704,60 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+               const size_t j)
+    : base_type (X.getMap ())
+  {
+    using Kokkos::subview;
+    typedef std::pair<size_t, size_t> range_type;
+    const char tfecfFuncName[] = "MultiVector(const MultiVector&, const size_t): ";
+
+    const size_t numCols = X.getNumVectors ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (j >= numCols, std::invalid_argument, "Input index j (== " << j
+       << ") exceeds valid column index range [0, " << numCols << " - 1].");
+    const size_t jj = X.isConstantStride () ?
+      static_cast<size_t> (j) :
+      static_cast<size_t> (X.whichVectors_[j]);
+    this->view_ = takeSubview (X.view_, Kokkos::ALL (), range_type (jj, jj+1));
+    this->origView_ = X.origView_;
+
+    // mfh 31 Jul 2017: It would be unwise to execute concurrent
+    // Export or Import operations with different subviews of a
+    // MultiVector.  Thus, it is safe to reuse communication buffers.
+    // See #1560 discussion.
+    //
+    // We only need one column's worth of buffer for imports_ and
+    // exports_.  Taking subviews now ensures that their lengths will
+    // be exactly what we need, so we won't have to resize them later.
+    {
+      const size_t newSize = X.imports_.dimension_0 () / numCols;
+      auto newImports = X.imports_;
+      newImports.d_view = subview (X.imports_.d_view, range_type (0, newSize));
+      newImports.h_view = subview (X.imports_.h_view, range_type (0, newSize));
+    }
+    {
+      const size_t newSize = X.exports_.dimension_0 () / numCols;
+      auto newExports = X.exports_;
+      newExports.d_view = subview (X.exports_.d_view, range_type (0, newSize));
+      newExports.h_view = subview (X.exports_.h_view, range_type (0, newSize));
+    }
+    // These two DualViews already either have the right number of
+    // entries, or zero entries.  This means that we don't need to
+    // resize them.
+    this->numImportPacketsPerLID_ = X.numImportPacketsPerLID_;
+    this->numExportPacketsPerLID_ = X.numExportPacketsPerLID_;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getVector (const size_t j) const
   {
-    using Kokkos::ALL;
-    using Kokkos::subview;
-    using Teuchos::rcp;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> V;
-
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "getVector(NonConst): ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      this->vectorIndexOutOfRange (j), std::runtime_error, "Input index j (== "
-      << j << ") exceeds valid range [0, " << this->getNumVectors ()
-      << " - 1].");
-#endif // HAVE_TPETRA_DEBUG
-    const size_t jj = this->isConstantStride () ?
-      static_cast<size_t> (j) :
-      static_cast<size_t> (this->whichVectors_[j]);
-    const std::pair<size_t, size_t> rng (jj, jj+1);
-    return rcp (new V (this->getMap (),
-                       takeSubview (this->view_, ALL (), rng),
-                       origView_));
+    return Teuchos::rcp (new V (*this, j));
   }
 
 
@@ -3750,7 +3767,7 @@ namespace Tpetra {
   getVectorNonConst (const size_t j)
   {
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> V;
-    return Teuchos::rcp_const_cast<V> (this->getVector (j));
+    return Teuchos::rcp (new V (*this, j));
   }
 
 

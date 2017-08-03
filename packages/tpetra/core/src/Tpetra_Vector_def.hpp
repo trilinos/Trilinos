@@ -101,6 +101,13 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+          const size_t j)
+    : base_type (X, j)
+  {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   ~Vector ()
   {}
 

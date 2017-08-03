@@ -632,6 +632,17 @@ namespace Tpetra {
                  const dual_view_type& view,
                  const dual_view_type& origView);
 
+  protected:
+
+    /// \brief Single-column subview constructor, for derived classes ONLY.
+    ///
+    /// \param X [in] Input MultiVector to view (in possibly nonconst fashion).
+    /// \param j [in] The column of X to view.
+    MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+                 const size_t j);
+
+  public:
+
     /// \brief Expert mode constructor for noncontiguous views.
     ///
     /// \warning This constructor is only for expert users.  We make
