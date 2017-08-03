@@ -390,7 +390,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
                                                      const Epetra_CrsMatrix& epB,
                                                      Teuchos::FancyOStream& fos) {
       throw(Xpetra::Exceptions::RuntimeError("MLTwoMatrixMultiply only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 #endif //ifdef HAVE_XPETRA_EPETRAEXT
 
@@ -1108,7 +1108,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 #else // no MUELU_ML
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "No ML multiplication available. This feature is currently not supported by Xpetra.");
-      return Teuchos::null;
+       TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 #endif
     }
 #endif //ifdef HAVE_XPETRA_EPETRAEXT
@@ -1712,7 +1712,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
                                                      Teuchos::FancyOStream& fos) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "No ML multiplication available. This feature is currently not supported by Xpetra.");
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 #endif //ifdef HAVE_XPETRA_EPETRAEXT
 

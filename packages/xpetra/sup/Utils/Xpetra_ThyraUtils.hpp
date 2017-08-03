@@ -726,13 +726,13 @@ public:
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. Guess, matrix should be Epetra then, but no Epetra available.");
 #endif
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 #endif // endif HAVE_XPETRA_TPETRA
 
 #ifdef HAVE_XPETRA_EPETRA
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
-    return Teuchos::null;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 #endif // endif HAVE_XPETRA_EPETRA
   }
 
@@ -960,7 +960,7 @@ public:
       return xpMultVec;
     } // end standard case
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector.");
-    return Teuchos::null;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
   // non-const version

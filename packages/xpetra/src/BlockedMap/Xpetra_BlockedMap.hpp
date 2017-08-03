@@ -283,13 +283,13 @@ namespace Xpetra {
     //! Return the process ranks and corresponding local indices for the given global indices.
     virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMap::getRemoteIndexList: routine not implemented.");
-      return IDNotPresent;
+      TEUCHOS_UNREACHABLE_RETURN(IDNotPresent);
     };
 
     //! Return the process ranks for the given global indices.
     virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMap::getRemoteIndexList: routine not implemented.");
-      return IDNotPresent;
+      TEUCHOS_UNREACHABLE_RETURN(IDNotPresent);
     };
 
     //! Return a view of the global indices owned by this process.
@@ -311,7 +311,7 @@ namespace Xpetra {
     //! True if this Map is distributed contiguously, else false.
     virtual bool isContiguous() const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMap::isContiguous: routine not implemented.");
-      return false;
+      TEUCHOS_UNREACHABLE_RETURN(false);
     };
 
     //! Whether this Map is globally distributed or locally replicated.
