@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     ROL::OptimizationSolver<RealT> optSolver(optProblem,*parlist);
     Teuchos::RCP<ROL::StatusTest<RealT> > myStatus
       = Teuchos::rcp( new myStatusTest<RealT>(1.e-8) );
-    optSolver.solve(*outStream, myStatus, true);
+    optSolver.solve(*outStream, myStatus, false);
 
     // Compute Error
     e->set(*x);
