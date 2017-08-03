@@ -129,8 +129,8 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       convert << i;
       std::string si = convert.str();
       Teuchos::ParameterList &ilist = list.sublist(si);
-      std::string name = ilist.get<std::string>("Name");
-      riskString.push_back(name);
+      std::string namei = ilist.get<std::string>("Name");
+      riskString.push_back(namei);
     }
     for (typename std::vector<Real>::size_type i = 0; i < riskString.size(); ++i) {
       if ( riskString[i] == "CVaR"                           ||
