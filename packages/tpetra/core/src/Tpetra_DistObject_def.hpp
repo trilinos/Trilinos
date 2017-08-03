@@ -52,6 +52,10 @@
 
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#ifdef KOKKOS_HAVE_CUDA
+// mfh 03 Aug 2017: See #1088 and #1571.
+#  include "Tpetra_Details_Environment.hpp"
+#endif // KOKKOS_HAVE_CUDA
 
 namespace Tpetra {
 
@@ -59,7 +63,22 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   DistObject (const Teuchos::RCP<const map_type>& map) :
     map_ (map)
+#ifdef KOKKOS_HAVE_CUDA
+    , allowCudaCommBuffers_ (false)
+#endif // KOKKOS_HAVE_CUDA
   {
+#ifdef KOKKOS_HAVE_CUDA
+    {
+      using Tpetra::Details::Environment;
+      // The variable must not only exist, it must be set to some
+      // recognizably non-false value, e.g., "1", "ON", or "TRUE".
+      constexpr char paramName[] = "TPETRA_ASSUME_CUDA_AWARE_MPI";
+      Environment& env = Environment::getInstance ();
+      const bool allowCudaCommBuffers = env.getBooleanValue (paramName);
+      this->allowCudaCommBuffers_ = allowCudaCommBuffers;
+    }
+#endif // KOKKOS_HAVE_CUDA
+
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     using Teuchos::RCP;
     using Teuchos::Time;
@@ -111,6 +130,9 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>& rhs)
     : map_ (rhs.map_)
+#ifdef KOKKOS_HAVE_CUDA
+    , allowCudaCommBuffers_ (rhs.allowCudaCommBuffers_)
+#endif // KOKKOS_HAVE_CUDA
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -418,7 +440,13 @@ namespace Tpetra {
     constexpr bool debug = false;
 
     if (this->useNewInterface ()) {
-      const bool commOnHost = false;
+#ifdef KOKKOS_HAVE_CUDA
+      const bool allowDeviceCommBuffers = this->allowCudaCommBuffers_;
+#else
+      const bool allowDeviceCommBuffers = false;
+#endif // KOKKOS_HAVE_CUDA
+      // Do we need all communication buffers to live on host?
+      const bool commOnHost = ! allowDeviceCommBuffers;
 
       // Convert arguments to Kokkos::DualView.  This currently
       // involves deep copy, either to host or to device (depending on
