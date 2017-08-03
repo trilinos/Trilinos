@@ -67,9 +67,11 @@ bool Environment::variableIsCached(const std::string& variableName) {
 }
 
 bool Environment::getBooleanValue(const std::string& variableName,
-                                  const std::string& defaultValue) {
+                                  const bool defaultValue) {
+
+
   // Get the value of the environment variable variableName.
-  std::string variableValue(getValue(variableName, defaultValue));
+  std::string variableValue (getValue (variableName, defaultValue ? "TRUE" : "FALSE"));
   std::transform(variableValue.begin(), variableValue.end(),
                  variableValue.begin(), ::toupper);
 
