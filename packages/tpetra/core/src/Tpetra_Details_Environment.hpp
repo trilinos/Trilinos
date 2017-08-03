@@ -16,37 +16,36 @@ class DefaultEnvironmentVariables {
    *
    */
  public:
-  static const std::list<std::string> getDefaults() {
-    const std::list<std::string> defaultVariables {"TPETRA_DEBUG",
-      "TPETRA_USE_BLAS"};
-    return defaultVariables;
-  }
+  static std::list<std::string> getDefaults();
 };
 
-
+/// \class Environment
+/// \brief Access environment variables, and cache their values.
+///
+/// "Environment" here refers to the operating system or shell.  For
+/// example, PATH is a commonly used environment variable.  Tpetra can
+/// read any environment variable, but it would be wise to restrict
+/// yourself to variables that start with the prefix "TPETRA_".
+///
+/// First, get the singleton instance of this class:
+/// \code
+/// Environment& env = Environment::getInstance ();
+/// \endcode
+/// Then, use it to read the environment:
+/// \code
+/// const bool exists = env.variableExists ("TPETRA_DEBUG");
+/// const bool debug = exists && env.getBooleanValue ("TPETRA_DEBUG");
+/// const std::string val =
+///   env.getValues ("TPETRA_NAME_OF_THING", "DEFAULT_NAME");
+/// \endcode
 class Environment {
- public:
-  // Get singleton instance
-  static Environment& getInstance() {
-    // The following construction guarantees that theInstance_ will be
-    // destroyed and is instantiated only on first use.
-    static Environment theInstance_;
-    return theInstance_;
-  }
+public:
+  //! Get singleton instance.
+  static Environment& getInstance();
 
- private:
-  Environment() {
-    // Initialize the instance
-    std::string variableValue;
-    std::list<std::string>::iterator variableName;
-    std::list<std::string> std_vars(DefaultEnvironmentVariables::getDefaults());
-    for (variableName = std_vars.begin();
-         variableName != std_vars.end();
-         ++variableName) {
-      // By getting the value, it will be cached
-      variableValue = getValue(*variableName);
-    }
-  }
+private:
+  Environment ();
+
   std::map<std::string, const char *> environCache_;
   void cacheVariable(const std::string& variableName,
                      const char* variableValue);
