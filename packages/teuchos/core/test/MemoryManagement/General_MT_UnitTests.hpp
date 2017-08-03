@@ -47,13 +47,6 @@
 #include "TeuchosCore_ConfigDefs.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 
-// This file only gets included and built if thread safe tests are turned on
-#define RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS
-// Trilinos GitHub #229: ToDo: Get rid of this macro!
-
-
-#ifdef RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS
-
 // NUM_TOTAL_CORES_USED = 4 set in CMake
 #define TEUCHOS_THREAD_SAFE_UNIT_TESTS_THREADS_USED 4
 
@@ -153,7 +146,5 @@ struct Cycle_Index_Tracker
 };
 
 } // end namespace
-
-#endif // end #ifdef RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS
 
 #endif // end #ifdef TEUCHOS_GENERAL_MT_UNITTESTS_HPP

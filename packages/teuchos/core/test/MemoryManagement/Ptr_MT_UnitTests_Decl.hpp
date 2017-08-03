@@ -43,16 +43,15 @@
 
 // These unit tests are used for both a Nightly version and a Basic version
 
-#include "General_MT_UnitTests.hpp"
-
-#ifdef RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS // from General_MT_UnitTests.hpp
-
 // this test is only meaningful in DEBUG and would crash in RELEASE
 // with undefined behavior. This is because the test involves debug checks
 // to detect weak ptrs and in release these errors are ignored. So here we
 // are checking whether debug code can safely detectly badly written code.
+#include "Teuchos_ConfigDefs.hpp" // get TEUCHOS_DEBUG
+
 #ifdef TEUCHOS_DEBUG
 
+#include "General_MT_UnitTests.hpp"
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -81,9 +80,11 @@ static void share_ptr_to_threads(Ptr<int> shared_ptr, int theTestValue,
   while (!ThreadTestManager::s_bAllowThreadsToRun) {}
   int cycle = 0;
   try {
-    // 10000 is somewhat arbitrary and a safety exit
-    // once the loop hits an event it exits
-    for(cycle = 0; cycle < 10000; ++cycle) {
+    // If there is lots of competition for threads setting this to some
+    // safety limit of counts may fail because another thread was held up.
+    // So looping while(true) may be the cleanest and then we just
+    // time out if something goes wrong.
+    while(true) {
       // check if the main thread has released the RCP which we point to.
       bool bCheckStatus = ThreadTestManager::s_bMainThreadSetToNull;
       // keep track of which cycle we are on
@@ -254,6 +255,3 @@ TEUCHOS_UNIT_TEST( Ptr, mtPtrDangling )
 } // end namespace
 
 #endif // TEUCHOS_DEBUG
-
-#endif // end RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS
-

@@ -45,8 +45,6 @@
 
 #include "General_MT_UnitTests.hpp"
 
-#ifdef RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS // from General_MT_UnitTests.hpp
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_RCPNode.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -713,7 +711,7 @@ TEUCHOS_UNIT_TEST( RCP, mtRCPMixedWeakAndStrongConvertToStrong )
   // determined that the weak to strong conversion was not possible.
   // for basic I am disabling this check because we just run a few times and
   // it's possible we won't get enough checks to be sure to hit each type
-  if(NUM_TESTS_TO_RUN >= 1000) {
+  if(NUM_TESTS_TO_RUN >= 100) {
     // this has to be a mixed result or the test is not doing anything useful
     TEST_INEQUALITY_CONST(s_count_failed_conversions, 0);
     // this has to be a mixed result or the test is not doing anything useful
@@ -724,5 +722,3 @@ TEUCHOS_UNIT_TEST( RCP, mtRCPMixedWeakAndStrongConvertToStrong )
 }
 
 } // namespace
-
-#endif // RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS

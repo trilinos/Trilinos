@@ -45,8 +45,6 @@
 
 #include "General_MT_UnitTests.hpp"
 
-#ifdef RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS // from General_MT_UnitTests.hpp
-
 #include "Teuchos_Tuple.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -158,5 +156,3 @@ TEUCHOS_UNIT_TEST( Tuple, mtTupleMultipleReads )
 }
 
 } // end namespace
-
-#endif // end RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS

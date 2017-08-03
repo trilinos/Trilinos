@@ -45,8 +45,6 @@
 
 #include "General_MT_UnitTests.hpp"
 
-#ifdef RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS // from General_MT_UnitTests.hpp
-
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
@@ -787,8 +785,6 @@ TEUCHOS_UNIT_TEST( Array, mtArrayDanglingReferenceFirstCycle_Const )
 #endif // TEUCHOS_DEBUG
 
 } // end namespace
-
-#endif // RUN_TEUCHOS_RCP_THREAD_SAFE_UNIT_TESTS
 
 
 
