@@ -43,8 +43,8 @@
 // @HEADER
 
 %{
-// C includes
-#include <string.h>
+// System includes
+#include <string>
 
 // Teuchos includes
 #include "Teuchos_VerbosityLevel.hpp"

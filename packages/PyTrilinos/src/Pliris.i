@@ -63,11 +63,6 @@ python version of the Pliris package supports the following class:
 	docstring = %pliris_docstring) Pliris
 
 %{
-// System includes
-// #include <iostream>
-// #include <sstream>
-// #include <vector>
-
 // Configuration includes
 #include "PyTrilinos_config.h"
 
@@ -82,7 +77,7 @@ python version of the Pliris package supports the following class:
 #include "numpy_include.hpp"
 
 // Pliris includes
-// #include "Pliris_config.h"
+#include "PlirisVersion.h"
 #include "Pliris.h"
 
 #endif
@@ -91,6 +86,14 @@ python version of the Pliris package supports the following class:
 
 // Auto-documentation feature
 %feature("autodoc", "1");
+
+// C++ STL support.  If the wrapped class uses standard template
+// library containers, the following %include wraps the containers
+// and makes certain conversions seamless, such as between std::string
+// and python strings.
+%include "std_except.i"
+%include "std_string.i"
+using std::string;
 
 // Include Pliris documentation
 // %include "Pliris_dox.i"
@@ -105,9 +108,15 @@ python version of the Pliris package supports the following class:
 // Pliris configuration support //
 ///////////////////////////////////
 %include "Pliris_config.h"
+
+////////////////////////////
+// Pliris Version support //
+////////////////////////////
+%rename(Version) Pliris_Version;
+%include "PlirisVersion.h"
 %pythoncode
 {
-__version__ = PACKAGE_VERSION
+  __version__ = Version()
 }
 
 ////////////////////
