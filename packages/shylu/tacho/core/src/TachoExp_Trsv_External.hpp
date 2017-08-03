@@ -73,6 +73,7 @@ namespace Tacho {
               }
             }
 #else
+            // trsv does not exist
             typedef typename TypeTraits<value_type>::std_value_type std_value_type;
             Teuchos::BLAS<ordinal_type,std_value_type> blas;
             blas.TRSM(Side::Left::teuchos_param, 
@@ -80,7 +81,7 @@ namespace Tacho {
                       ArgTransA::teuchos_param, 
                       diagA.teuchos_param,
                       m, n,
-                      std_value_type(alpha),
+                      std_value_type(1.0),
                       (std_value_type*)A.data(), A.stride_1(),
                       (std_value_type*)B.data(), B.stride_1());
 #endif

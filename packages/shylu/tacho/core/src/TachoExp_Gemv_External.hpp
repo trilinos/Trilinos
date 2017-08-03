@@ -94,15 +94,16 @@ namespace Tacho {
 #else
             typedef typename TypeTraits<value_type>::std_value_type std_value_type; 
             Teuchos::BLAS<ordinal_type,std_value_type> blas;
-            
-            blas.GEMM(ArgTransA::teuchos_param,
-                      ArgTransB::teuchos_param,
-                      m, k, n,
-                      std_value_type(alpha),
-                      (std_value_type*)A.data(), A.stride_1(),
-                      (std_value_type*)B.data(), B.stride_1(),
-                      value_type(beta),
-                      (std_value_type*)C.data(), C.stride_1());
+
+            for (ordinal_type p=0,offsB=0,offsC=0;p<k;++p,offsB+=B.stride_1(),offsC+=C.stride_1()) {
+              blas.GEMV(ArgTrans::teuchos_param, 
+                        m, n, 
+                        std_value_type(alpha),
+                        (std_value_type*)A.data(), A.stride_1(),
+                        (std_value_type*)(B.data() + offsB), B.stride_0(),
+                        std_value_type(beta), 
+                        (std_value_type*)(C.data() + offsC), C.stride_0());
+            }
 #endif
 #else
             TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");

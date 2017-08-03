@@ -24,6 +24,12 @@ int driver (int argc, char *argv[]) {
 
   int nrhs = 1;
   clp.setOption("nrhs", &nrhs, "Number of RHS vectors");
+
+  int sym = 3;
+  clp.setOption("symmetric", &sym, "Symmetric type: 0 - unsym, 1 - structure sym, 2 - symmetric, 3 - hermitian");
+  
+  int posdef = 1;
+  clp.setOption("posdef", &nrhs, "Positive definite: 0 - indef, 1 - positive definite");
   
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -86,6 +92,7 @@ int driver (int argc, char *argv[]) {
     ///   A.setExternalMatrix(nrows, ncols, nnzm ap, aj, ax);
     ///  
     Tacho::Solver<value_type,Kokkos::DefaultHostExecutionSpace> solver;
+    solver.setMatrixType(sym, posdef);
     solver.setVerbose(verbose);
     solver.setMaxNumberOfSuperblocks(max_num_superblocks);
 

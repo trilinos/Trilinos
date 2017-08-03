@@ -43,6 +43,15 @@ namespace Tacho {
     typedef NumericTools<value_type,device_exec_space> numeric_tools_type;
 
   private:
+    enum : int { Cholesky = 1,
+                 UtDU = 2,
+                 SymLU = 3,
+                 LU = 4 };
+
+    // solver mode
+    bool _transpose;
+    ordinal_type _mode;
+
     // problem
     ordinal_type _m;
     size_type _nnz;
@@ -93,8 +102,48 @@ namespace Tacho {
     void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1) {
       _max_num_superblocks = max_num_superblocks;
     }
-
-    /// need to figure out how HTS options are set here
+    void setTransposeSolve(const bool transpose) {
+      _transpose = transpose; // this option is not used yet
+    }
+    void setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric, 3 - hermitian
+                       const bool is_positive_definite) { 
+      switch (symmetric) {
+      case 0: { _mode = LU; break; }
+      case 1: { _mode = SymLU; break; }
+      case 2: {
+        if (is_positive_definite) {
+          if (std::is_same<ValueType,double>::value ||
+              std::is_same<ValueType,float>::value) { // real symmetric posdef
+            _mode = Cholesky;
+          } else { // complex symmetric posdef - does not exist; should be hermitian if the matrix is posdef
+            TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
+                                     "symmetric positive definite with complex values are not right combination: try hermitian positive definite");
+          }
+        } else { // real or complex symmetric indef
+          _mode = UtDU;
+        }
+        break;
+      }
+      case 3: {
+        if (is_positive_definite) { // real or complex hermitian posdef
+          _mode = Cholesky;
+        } else {
+          if (std::is_same<ValueType,double>::value ||
+              std::is_same<ValueType,float>::value) { // real symmetric indef 
+            _mode = UtDU;
+          } else { // complex hermitian indef
+            _mode = SymLU; 
+          }
+        }
+        break;
+      }
+      default: {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "symmetric argument is wrong");
+        break;
+      }
+      }
+      TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
+    }
 
     int analyze(const ordinal_type m,
                 const size_type_array &ap,
