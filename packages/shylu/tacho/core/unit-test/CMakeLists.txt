@@ -31,16 +31,14 @@ IF(Kokkos_ENABLE_Serial)
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "  FAILED  "
   )
-  IF(Teuchos_ENABLE_COMPLEX)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Tacho_TestSerial_dcomplex
-      NOEXEPREFIX
-      SOURCES Tacho_TestSerial_dcomplex.cpp
-      ARGS PrintItAll
-      NUM_MPI_PROCS 1
-      FAIL_REGULAR_EXPRESSION "  FAILED  "
-    )
-  ENDIF()
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tacho_TestSerial_dcomplex
+    NOEXEPREFIX
+    SOURCES Tacho_TestSerial_dcomplex.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "  FAILED  "
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_OpenMP)

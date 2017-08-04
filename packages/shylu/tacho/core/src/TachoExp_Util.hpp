@@ -24,8 +24,6 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "Teuchos_BLAS_types.hpp"
-
 #ifdef HAVE_SHYLUTACHO_MKL
 #include "mkl.h"
 #endif
@@ -443,10 +441,10 @@ namespace Tacho {
     // };
 
     struct Uplo {
+      enum : int { tag = 400 };
       struct Upper        { 
         enum : int { tag = 401 }; 
         static constexpr char param = 'U'; 
-        static constexpr Teuchos::EUplo teuchos_param = Teuchos::UPPER_TRI; 
 #ifdef HAVE_SHYLUTACHO_MKL  
         static constexpr CBLAS_UPLO mkl_param = CblasUpper;
 #endif
@@ -454,7 +452,6 @@ namespace Tacho {
       struct Lower        { 
         enum : int { tag = 402 }; 
         static constexpr char param = 'L'; 
-        static constexpr Teuchos::EUplo teuchos_param = Teuchos::LOWER_TRI; 
 #ifdef HAVE_SHYLUTACHO_MKL  
         static constexpr CBLAS_UPLO mkl_param = CblasLower;
 #endif
@@ -472,10 +469,10 @@ namespace Tacho {
     
 
     struct Side {
+      enum : int { tag = 500 };
       struct Left         { 
         enum : int { tag = 501 }; 
         static constexpr char param = 'L'; 
-        static constexpr Teuchos::ESide teuchos_param = Teuchos::LEFT_SIDE; 
 #ifdef HAVE_SHYLUTACHO_MKL  
         static constexpr CBLAS_SIDE mkl_param = CblasLeft;
 #endif
@@ -483,7 +480,6 @@ namespace Tacho {
       struct Right        { 
         enum : int { tag = 502 }; 
         static constexpr char param = 'R'; 
-        static constexpr Teuchos::ESide teuchos_param = Teuchos::RIGHT_SIDE;
 #ifdef HAVE_SHYLUTACHO_MKL  
         static constexpr CBLAS_SIDE mkl_param = CblasRight;
 #endif
@@ -500,10 +496,10 @@ namespace Tacho {
     template<>           struct flip_side_tag<Side::Right> { typedef Side::Left type; };
 
     struct Diag {
+      enum : int { tag = 600 };
       struct Unit         { 
         enum : int { tag = 601 }; 
         static constexpr char param = 'U'; 
-        static constexpr Teuchos::EDiag teuchos_param = Teuchos::UNIT_DIAG;
 #ifdef HAVE_SHYLUTACHO_MKL  
         static constexpr CBLAS_DIAG mkl_param = CblasUnit;
 #endif
@@ -511,7 +507,6 @@ namespace Tacho {
       struct NonUnit      { 
         enum : int { tag = 602 }; 
         static constexpr char param = 'N'; 
-        static constexpr Teuchos::EDiag teuchos_param = Teuchos::NON_UNIT_DIAG; 
 #ifdef HAVE_SHYLUTACHO_MKL  
         static constexpr CBLAS_DIAG mkl_param = CblasNonUnit;
 #endif
@@ -525,10 +520,10 @@ namespace Tacho {
     };
 
     struct Trans {
+      enum : int { tag = 700 };
       struct Transpose      { 
         enum : int { tag = 701 }; 
         static constexpr char param = 'T'; 
-        static constexpr Teuchos::ETransp teuchos_param = Teuchos::TRANS; 
 #ifdef HAVE_SHYLUTACHO_MKL  
         static constexpr CBLAS_TRANSPOSE mkl_param = CblasTrans;
 #endif
@@ -536,7 +531,6 @@ namespace Tacho {
       struct ConjTranspose  { 
         enum : int { tag = 702 }; 
         static constexpr char param = 'C'; 
-        static constexpr Teuchos::ETransp teuchos_param = Teuchos::CONJ_TRANS; 
 #ifdef HAVE_SHYLUTACHO_MKL  
         static constexpr CBLAS_TRANSPOSE mkl_param = CblasConjTrans;
 #endif
@@ -544,7 +538,6 @@ namespace Tacho {
       struct NoTranspose    { 
         enum : int { tag = 703 }; 
         static constexpr char param = 'N'; 
-        static constexpr Teuchos::ETransp teuchos_param = Teuchos::NO_TRANS; 
 #ifdef HAVE_SHYLUTACHO_MKL  
         static constexpr CBLAS_TRANSPOSE mkl_param = CblasNoTrans;
 #endif

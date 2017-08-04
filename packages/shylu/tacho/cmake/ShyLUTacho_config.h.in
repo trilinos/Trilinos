@@ -31,4 +31,8 @@
 ///* Define if want to build with Teuchos enabled */
 //#cmakedefine HAVE_SHYLUTACHO_TRILINOSSS
 
+#ifndef F77_BLAS_MANGLE
+# define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#endif
+
 #endif

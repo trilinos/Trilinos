@@ -6,8 +6,6 @@
 /// \brief BLAS hermitian rank-k update
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Teuchos_BLAS.hpp"
-
 #include "TachoExp_Partition.hpp"
 
 #include "TachoExp_Herk.hpp"

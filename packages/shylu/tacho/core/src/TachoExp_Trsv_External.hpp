@@ -6,7 +6,7 @@
 /// \brief BLAS triangular solve matrix
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Teuchos_BLAS.hpp"
+#include "TachoExp_Blas_External.hpp"
 
 namespace Tacho {
   
@@ -40,51 +40,13 @@ namespace Tacho {
         if (m > 0 && n > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-#if defined( HAVE_SHYLUTACHO_MKL )
             for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
-              if      (std::is_same<value_type,float>::value) 
-                cblas_strsv (CblasColMajor, ArgUplo::mkl_param, ArgTransA::mkl_param, 
-                             diagA.mkl_param, 
-                             m,
-                             (const float *)A.data(), (const MKL_INT)A.stride_1(), 
-                             (float *)(B.data() + offsB), (const MKL_INT)B.stride_0());
-              else if (std::is_same<value_type,double>::value) 
-                cblas_dtrsv (CblasColMajor, ArgUplo::mkl_param, ArgTransA::mkl_param, 
-                             diagA.mkl_param, 
-                             m,
-                             (const double *)A.data(), (const MKL_INT)A.stride_1(), 
-                             (double *)(B.data() + offsB), (const MKL_INT)B.stride_0());
-              else if (std::is_same<value_type,Kokkos::complex<float> >::value ||
-                       std::is_same<value_type,   std::complex<float> >::value)
-                cblas_ctrsv (CblasColMajor, ArgUplo::mkl_param, ArgTransA::mkl_param, 
-                             diagA.mkl_param, 
-                             m,
-                             (const MKL_Complex8 *)A.data(), (const MKL_INT)A.stride_1(), 
-                             (MKL_Complex8 *)(B.data() + offsB), (const MKL_INT)B.stride_0());
-              else if (std::is_same<value_type,Kokkos::complex<double> >::value ||
-                       std::is_same<value_type,   std::complex<double> >::value)
-                cblas_ztrsv (CblasColMajor, ArgUplo::mkl_param, ArgTransA::mkl_param, 
-                             diagA.mkl_param, 
-                             m,
-                             (const MKL_Complex16 *)A.data(), (const MKL_INT)A.stride_1(), 
-                             (MKL_Complex16 *)(B.data() + offsB), (const MKL_INT)B.stride_0());
-              else {
-                TACHO_TEST_FOR_ABORT( true, ">> Datatype is not supported.");                           
-              }
+              Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, 
+                                     diagA.param, 
+                                     m,
+                                     A.data(), A.stride_1(), 
+                                     (B.data() + offsB), B.stride_0());
             }
-#else
-            // trsv does not exist
-            typedef typename TypeTraits<value_type>::std_value_type std_value_type;
-            Teuchos::BLAS<ordinal_type,std_value_type> blas;
-            blas.TRSM(Side::Left::teuchos_param, 
-                      ArgUplo::teuchos_param, 
-                      ArgTransA::teuchos_param, 
-                      diagA.teuchos_param,
-                      m, n,
-                      std_value_type(1.0),
-                      (std_value_type*)A.data(), A.stride_1(),
-                      (std_value_type*)B.data(), B.stride_1());
-#endif
 #else
             TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
 #endif
