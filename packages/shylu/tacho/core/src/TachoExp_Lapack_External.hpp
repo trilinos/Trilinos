@@ -12,7 +12,7 @@ extern "C" {
   ///
   /// POTRF
   ///
-
+#if !defined( HAVE_SHYLUTACHO_MKL )
   void F77_BLAS_MANGLE(spotrf,SPOTRF)( const char*, 
                                        int*, 
                                        float*, int*,
@@ -29,6 +29,7 @@ extern "C" {
                                        int*, 
                                        Kokkos::complex<double>*, int*,
                                        int*);
+#endif
 }
 
 namespace Tacho {
@@ -79,10 +80,17 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *info) {
+#if defined( HAVE_SHYLUTACHO_MKL )
+        F77_FUNC_CPOTRF(&uplo,
+                        &m,
+                        (MKL_Complex8 *)a, &lda,
+                        info);
+#else
         F77_FUNC_CPOTRF(&uplo,
                         &m,
                         a, &lda,
                         info);
+#endif
       }
     };
 
@@ -94,10 +102,17 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *info) {
+#if defined( HAVE_SHYLUTACHO_MKL )
+        F77_FUNC_ZPOTRF(&uplo,
+                        &m,
+                        (MKL_Complex16 *)a, &lda,
+                        info);
+#else
         F77_FUNC_ZPOTRF(&uplo,
                         &m,
                         a, &lda,
                         info);
+#endif
       }
     };
   }
