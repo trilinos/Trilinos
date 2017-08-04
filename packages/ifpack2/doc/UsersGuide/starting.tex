@@ -227,7 +227,7 @@ Then, one can define a \texttt{Belos::LinearProblem} object where the
 
  Teuchos::RCP<Belos_LinearProblem> problem =
    Teuchos::rcp( new Belos_LinearProblem( A, X, B ) );
- problem->setLeftPrec( mueLuPreconditioner );
+ problem->setLeftPrec( ifpack2Preconditioner );
  bool set = problem.setProblem();
 \end{lstlisting}
 
