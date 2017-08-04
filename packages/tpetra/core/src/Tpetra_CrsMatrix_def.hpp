@@ -61,7 +61,7 @@
 #include "Tpetra_Details_createMirrorView.hpp"
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Kokkos_Sparse_getDiagCopy.hpp"
+#include "KokkosSparse_getDiagCopy.hpp"
 #include "Tpetra_Details_copyConvert.hpp"
 #include "Tpetra_Details_Environment.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"

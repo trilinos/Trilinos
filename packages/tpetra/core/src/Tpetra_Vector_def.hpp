@@ -53,7 +53,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "KokkosCompat_View.hpp"
-#include "Kokkos_Blas1_MV.hpp"
+#include "KokkosBlas1_nrm2w_squared.hpp"
 
 namespace Tpetra {
 

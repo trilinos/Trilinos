@@ -60,8 +60,8 @@
 
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_MV_GEMM.hpp"
-#include "Kokkos_Blas1_MV.hpp"
-#include "Kokkos_Blas1.hpp"
+#include "KokkosBlas.hpp"
+#include "KokkosKernels_Utils.hpp"
 #include "Kokkos_Random.hpp"
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
@@ -2145,7 +2145,7 @@ namespace Tpetra {
       else { // lclNumRows != 0
         if (constantStride) {
           if (whichNorm == IMPL_NORM_INF) {
-            KokkosBlas::nrmInf (theNorms, X);
+            KokkosBlas::nrminf (theNorms, X);
           }
           else if (whichNorm == IMPL_NORM_ONE) {
             KokkosBlas::nrm1 (theNorms, X);
@@ -2166,7 +2166,7 @@ namespace Tpetra {
           for (size_t k = 0; k < numVecs; ++k) {
             const size_t X_col = constantStride ? k : whichVecs[k];
             if (whichNorm == IMPL_NORM_INF) {
-              KokkosBlas::nrmInf (subview (theNorms, k),
+              KokkosBlas::nrminf (subview (theNorms, k),
                                   subview (X, ALL (), X_col));
             }
             else if (whichNorm == IMPL_NORM_ONE) {
@@ -2245,11 +2245,14 @@ namespace Tpetra {
           }
         }
         else {
+	  //TODO:mndevec below depends on impl namespace of KokkosKernels. 
+	  //We either need to move it to out of impl, or tpetra should implement it itself.
+	  
           // There's not as much parallelism now, but that's OK.  The
           // point of doing parallel dispatch here is to keep the norm
           // results on the device, thus avoiding a copy to the host and
           // back again.
-          KokkosBlas::Impl::SquareRootFunctor<RV> f (normsOut);
+          KokkosKernels::Impl::SquareRootFunctor<RV> f (normsOut);
           typedef typename RV::execution_space execution_space;
           typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
           Kokkos::parallel_for (range_type (0, numVecs), f);

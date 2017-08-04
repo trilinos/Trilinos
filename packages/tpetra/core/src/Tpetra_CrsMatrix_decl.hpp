@@ -61,7 +61,7 @@
 // localMultiply is templated on DomainScalar and RangeScalar, so we
 // have to include this header file here, rather than in the _def
 // header file, so that we can get KokkosSparse::spmv.
-#include "Kokkos_Sparse.hpp"
+#include "KokkosSparse.hpp"
 // localGaussSeidel and reorderedLocalGaussSeidel are templated on
 // DomainScalar and RangeScalar, so we have to include this header
 // file here, rather than in the _def header file, so that we can get
