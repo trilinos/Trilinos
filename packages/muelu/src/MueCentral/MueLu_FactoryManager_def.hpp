@@ -97,7 +97,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const bool FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasFactory(const std::string& varName) const {
+  bool FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasFactory(const std::string& varName) const {
     if (factoryTable_.count(varName)) return true;
     return false;
   }
