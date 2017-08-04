@@ -730,7 +730,9 @@ public:
     }
 #endif // endif HAVE_XPETRA_TPETRA
 
-#ifdef HAVE_XPETRA_EPETRA
+//4-Aug-2017 JJH Added 2nd condition to avoid "warning: dynamic initialization in unreachable code"
+//               If HAVE_XPETRA_TPETRA is defined, then this method will always return or throw in the if-then-else above.
+#if defined(HAVE_XPETRA_EPETRA) && !defined(HAVE_XPETRA_TPETRA)
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 #endif // endif HAVE_XPETRA_EPETRA
@@ -959,7 +961,6 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
       return xpMultVec;
     } // end standard case
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector.");
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
