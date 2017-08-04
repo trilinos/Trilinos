@@ -648,6 +648,8 @@ class checkerInterfaceNodes {
 
 			if( collapse )
 				RegionCollapse( region_idx, region_matrix, enlargedMatrix );
+			else
+				RegionSplitting( region_idx, region_matrix, enlargedMatrix );
 
 			region_matrix->fillComplete();
 		};
@@ -662,7 +664,7 @@ class checkerInterfaceNodes {
 
 			//THIS IS THE CORE OF THE PROBLEM WHERE ONE NEEDS TO POPULATE THE REGIONAL MATRICES BY ACCESSING ENTRIES OF THE GLOBAL MATRIX
 			//
-      ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
+      			ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
  			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionElements.begin(); iter!=MyRegionElements.end(); ++iter )	
 			{
 				//Nodes are saved in data structures with 1 as base index
@@ -1046,6 +1048,263 @@ class checkerInterfaceNodes {
 	
 			}					
 		}
+
+
+	void RegionSplitting(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
+		{
+			TEUCHOS_TEST_FOR_EXCEPTION( !region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "The global stiffness matrix must be chopped into surrogate region matrices before collapsing \n");
+			TEUCHOS_TEST_FOR_EXCEPTION( driver_->num_region_nodes_[region_idx]!=regionMatrixData_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes in region "<<region_idx+1<<" does not coincide with the value returned by regionMatrixData_["<<region_idx+1<<"]->getGlobalNumRows() \n");
+
+			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
+
+			//This portion of the code assumes that the number of region nodes is the same on each direction of the domain 
+			//Foir a 2D problem we have then nx = ny = sqrt( num_region_ndoes_ )
+			GlobalOrdinal n;
+			GlobalOrdinal nx;
+			GlobalOrdinal ny;
+
+			n = driver_->num_region_nodes_[region_idx];
+			nx = std::sqrt(n);
+			ny = nx;
+			TEUCHOS_TEST_FOR_EXCEPTION( static_cast<double>( nx - std::floor(static_cast<double>( std::sqrt(static_cast<double>(n)) )))!=0.0 , Exceptions::RuntimeError, "The code assumes that the regions are 2D and that the number of region nodes is the same on each direction of the domain \n");
+
+			//interfaceNodes contains nodes on an interface between any regions
+			Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes = driver_->GetInterfaceNodes();	
+
+			ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
+ 			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionElements.begin(); iter!=MyRegionElements.end(); ++iter )	
+			{
+			
+				//Nodes are saved in data structures with 1 as base index
+				GlobalOrdinal region_node_idx	= *iter+1;
+				checkerRegionToAll<GlobalOrdinal> unaryPredicate(region_node_idx);
+				typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator;
+				global_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicate);
+				TEUCHOS_TEST_FOR_EXCEPTION( global_iterator==regionToAll.end(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with region index: "<<region_node_idx<<" is not in regionToAll["<<region_idx<<"]"<<"\n" );
+
+				GlobalOrdinal global_node_idx = std::get<1>( *global_iterator );
+				checkerInterfaceNodes<GlobalOrdinal> unaryPredicate2( global_node_idx );
+				typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator interface_iterator;
+				interface_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal, Array<GlobalOrdinal> > >::iterator, checkerInterfaceNodes<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicate2);
+
+				GlobalOrdinal region_node_idx_neighbor_w = 0;
+				GlobalOrdinal region_node_idx_neighbor_e = 0;
+				GlobalOrdinal region_node_idx_neighbor_n = 0;
+				GlobalOrdinal region_node_idx_neighbor_s = 0;
+
+				int count_neighbours = 0;
+	
+				//Horizontal-Vertical Collapse
+				if( interface_iterator!=interfaceNodes.end() && region_node_idx>ny )  
+				{
+					region_node_idx_neighbor_w = region_node_idx-ny;
+					count_neighbours++;
+				}
+
+				if( interface_iterator!=interfaceNodes.end() && region_node_idx<=(nx-1)*ny )
+				{
+					region_node_idx_neighbor_e = region_node_idx+ny;	
+					count_neighbours++;
+				}
+
+				if( interface_iterator!=interfaceNodes.end() && region_node_idx%ny!=1 )
+				{
+					region_node_idx_neighbor_s = region_node_idx-1;
+					count_neighbours++;
+				}
+
+				if( interface_iterator!=interfaceNodes.end() && region_node_idx%ny!=0 )
+				{
+					region_node_idx_neighbor_n= region_node_idx+1;	
+					count_neighbours++;
+				}
+				
+				bool interface_line = false;
+				bool interface_corner = false;
+		
+				if( 3==count_neighbours )
+					interface_line = true;
+				else if( 2==count_neighbours )
+					interface_corner = true;
+		
+				if( interface_line || interface_corner )					
+				{
+					//Computation of global index for East node
+					checkerRegionToAll<GlobalOrdinal> unaryPredicateEast(region_node_idx_neighbor_e);
+					typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator_neighbor_e;
+					global_iterator_neighbor_e = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicateEast);
+
+					//Check to see if neighbor_e node lies on a coarse line
+					GlobalOrdinal global_node_idx_neighbor_e = std::get<1>( *global_iterator_neighbor_e );
+					checkerInterfaceNodes<GlobalOrdinal> unaryPredicate2neighborEast( global_node_idx_neighbor_e );
+					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator interface_iterator_neighbor_e;
+					interface_iterator_neighbor_e = std::find_if<typename Array< std::tuple< GlobalOrdinal, Array<GlobalOrdinal> > >::iterator, checkerInterfaceNodes<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicate2neighborEast);
+
+					//Computation of global index for West node
+					checkerRegionToAll<GlobalOrdinal> unaryPredicateWest(region_node_idx_neighbor_w);
+					typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator_neighbor_w;
+					global_iterator_neighbor_w = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicateWest);
+
+					//Check to see if neighbor_w node lies on a coarse line
+					GlobalOrdinal global_node_idx_neighbor_w = std::get<1>( *global_iterator_neighbor_w );
+					checkerInterfaceNodes<GlobalOrdinal> unaryPredicate2neighborWest( global_node_idx_neighbor_w );
+					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator interface_iterator_neighbor_w;
+					interface_iterator_neighbor_w = std::find_if<typename Array< std::tuple< GlobalOrdinal, Array<GlobalOrdinal> > >::iterator, checkerInterfaceNodes<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicate2neighborWest);
+
+					//Computation of global index for South node
+					checkerRegionToAll<GlobalOrdinal> unaryPredicateSouth(region_node_idx_neighbor_s);
+					typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator_neighbor_s;
+					global_iterator_neighbor_s = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicateSouth);
+
+					//Check to see if neighbor_s node lies on a coarse line
+					GlobalOrdinal global_node_idx_neighbor_s = std::get<1>( *global_iterator_neighbor_s );
+					checkerInterfaceNodes<GlobalOrdinal> unaryPredicate2neighborSouth( global_node_idx_neighbor_s );
+					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator interface_iterator_neighbor_s;
+					interface_iterator_neighbor_s = std::find_if<typename Array< std::tuple< GlobalOrdinal, Array<GlobalOrdinal> > >::iterator, checkerInterfaceNodes<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicate2neighborSouth);
+
+					//Computation of global index for North node
+					checkerRegionToAll<GlobalOrdinal> unaryPredicateNorth(region_node_idx_neighbor_n);
+					typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator_neighbor_n;
+					global_iterator_neighbor_n = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicateNorth);
+
+					//Check to see if neighbor_n node lies on a coarse line
+					GlobalOrdinal global_node_idx_neighbor_n = std::get<1>( *global_iterator_neighbor_n );
+					checkerInterfaceNodes<GlobalOrdinal> unaryPredicate2neighborNorth( global_node_idx_neighbor_n );
+					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator interface_iterator_neighbor_n;
+					interface_iterator_neighbor_n = std::find_if<typename Array< std::tuple< GlobalOrdinal, Array<GlobalOrdinal> > >::iterator, checkerInterfaceNodes<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicate2neighborNorth);
+
+					int count_neighbours_interface = 0;
+					if( interface_iterator_neighbor_e!=interfaceNodes.end() )
+						count_neighbours_interface++;
+					if( interface_iterator_neighbor_w!=interfaceNodes.end() )
+						count_neighbours_interface++;
+					if( interface_iterator_neighbor_s!=interfaceNodes.end() )
+						count_neighbours_interface++;
+					if( interface_iterator_neighbor_n!=interfaceNodes.end() )
+						count_neighbours_interface++;
+
+					//First the splitting is applied on extradiagonal entries	
+
+					//Computation of local indices for central node and its neighbors
+					LocalOrdinal local_region_node_idx = region_matrix->getRowMap()->getLocalElement( region_node_idx-1 );
+					LocalOrdinal local_region_node_idx_neighbor_e = region_matrix->getRowMap()->getLocalElement( region_node_idx_neighbor_e-1 );
+					LocalOrdinal local_region_node_idx_neighbor_w = region_matrix->getRowMap()->getLocalElement( region_node_idx_neighbor_w-1 );
+					LocalOrdinal local_region_node_idx_neighbor_s = region_matrix->getRowMap()->getLocalElement( region_node_idx_neighbor_s-1 );
+					LocalOrdinal local_region_node_idx_neighbor_n = region_matrix->getRowMap()->getLocalElement( region_node_idx_neighbor_n-1 );
+
+					ArrayView<const GlobalOrdinal> region_col;
+					ArrayView<const Scalar> region_val;
+	
+					//Extract Row view of the region matrix before collapsing
+					if( region_matrix -> isLocallyIndexed() )
+						region_matrix -> getLocalRowView( local_region_node_idx, region_col, region_val );
+					else
+						region_matrix -> getGlobalRowView( *iter, region_col, region_val );
+
+					std::vector<LocalOrdinal> region_col_vector = createVector(region_col);
+					std::vector<LocalOrdinal> ind_vector(0);
+					std::vector<Scalar> val_vector(0);
+					if( interface_iterator_neighbor_e!=interfaceNodes.end() )
+					{
+						typename std::vector<GlobalOrdinal>::iterator iter_east_vector;
+						GlobalOrdinal east_ind;
+						if( region_matrix -> isLocallyIndexed() )
+						{
+							iter_east_vector = std::find( region_col_vector.begin(), region_col_vector.end(), local_region_node_idx_neighbor_e );
+							east_ind = region_matrix->getRowMap()->getGlobalElement( *iter_east_vector ); 
+						}
+						else
+						{
+							iter_east_vector = std::find( region_col_vector.begin(), region_col_vector.end(), region_node_idx_neighbor_e );
+							east_ind = *iter_east_vector; 
+						}
+						Scalar east_val = - 0.5 * region_val[iter_east_vector-region_col_vector.begin()];
+						ind_vector.push_back( east_ind );
+						val_vector.push_back( east_val );
+					}
+					if( interface_iterator_neighbor_w!=interfaceNodes.end() )
+					{
+						typename std::vector<GlobalOrdinal>::iterator iter_west_vector;
+						GlobalOrdinal west_ind;
+						if( region_matrix -> isLocallyIndexed() )
+						{
+							iter_west_vector = std::find( region_col_vector.begin(), region_col_vector.end(), local_region_node_idx_neighbor_w );
+							west_ind = region_matrix->getRowMap()->getGlobalElement( *iter_west_vector ); 
+						}
+						else
+						{
+							iter_west_vector = std::find( region_col_vector.begin(), region_col_vector.end(), region_node_idx_neighbor_w-1 );
+							west_ind = *iter_west_vector; 
+						}
+						Scalar west_val = - 0.5 * region_val[iter_west_vector-region_col_vector.begin()];
+						ind_vector.push_back( west_ind );
+						val_vector.push_back( west_val );
+					}
+					if( interface_iterator_neighbor_s!=interfaceNodes.end() )
+					{
+						typename std::vector<GlobalOrdinal>::iterator iter_south_vector;
+						GlobalOrdinal south_ind;
+						if( region_matrix -> isLocallyIndexed() )
+						{
+							iter_south_vector = std::find( region_col_vector.begin(), region_col_vector.end(), local_region_node_idx_neighbor_s );
+							south_ind = region_matrix->getRowMap()->getGlobalElement( *iter_south_vector ); 
+						}
+						else
+						{
+							iter_south_vector = std::find( region_col_vector.begin(), region_col_vector.end(), region_node_idx_neighbor_s-1 );
+							south_ind = *iter_south_vector; 
+						}
+						Scalar south_val = - 0.5 * region_val[iter_south_vector-region_col_vector.begin()];
+						ind_vector.push_back( south_ind );
+						val_vector.push_back( south_val );
+					}
+					if( interface_iterator_neighbor_n!=interfaceNodes.end() )
+					{
+						typename std::vector<GlobalOrdinal>::iterator iter_north_vector;
+						GlobalOrdinal north_ind;
+						if( region_matrix -> isLocallyIndexed() )
+						{
+							iter_north_vector = std::find( region_col_vector.begin(), region_col_vector.end(), local_region_node_idx_neighbor_n );
+							north_ind = region_matrix->getRowMap()->getGlobalElement( *iter_north_vector ); 
+						}
+						else
+						{
+							iter_north_vector = std::find( region_col_vector.begin(), region_col_vector.end(), region_node_idx_neighbor_n-1 );
+							north_ind = *iter_north_vector; 
+						}
+						Scalar north_val = - 0.5 * region_val[iter_north_vector-region_col_vector.begin()];
+						ind_vector.push_back( north_ind );
+						val_vector.push_back( north_val );
+					}
+					
+					typename std::vector<LocalOrdinal>::iterator iter_center_vector;
+					GlobalOrdinal center_ind;
+					if( region_matrix -> isLocallyIndexed() )
+					{
+						iter_center_vector = std::find( region_col_vector.begin(), region_col_vector.end(), local_region_node_idx );
+						center_ind = region_matrix->getRowMap()->getGlobalElement( *iter_center_vector ); 
+					}
+					else
+					{
+						iter_center_vector = std::find( region_col_vector.begin(), region_col_vector.end(), region_node_idx-1 );
+						center_ind = *iter_center_vector; 
+					}
+					Scalar center_val;
+					if(count_neighbours_interface<4)
+						center_val = - 0.5 * region_val[iter_center_vector-region_col_vector.begin()];
+					else 
+						center_val = - 0.75 * region_val[iter_center_vector-region_col_vector.begin()];
+					ind_vector.push_back( center_ind );
+					val_vector.push_back( center_val );
+
+					ArrayView<GlobalOrdinal> aux(ind_vector);
+
+					region_matrix -> insertGlobalValues( region_node_idx-1, ind_vector, val_vector );
+
+				}	
+			}					
+		}
+
 
 
 		//! @name Creation of Region matrices
