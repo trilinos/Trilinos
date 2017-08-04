@@ -3,6 +3,8 @@
 # project!
 #
 
+INCLUDE(CombinedOption)
+
 
 IF (TRIBITS_PROCESSING_PACKAGE)
 
@@ -181,9 +183,36 @@ IF (DEFINED BUILD_SHARED_LIBS)
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
+  HAVE_TEUCHOS_THREAD_SAFE
+  "Enable thread safe code for RCP classes."
+  ${Trilinos_ENABLE_THREAD_SAFE}
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_THREAD_SAFE AND NOT ${PROJECT_NAME}_ENABLE_CXX11)
+  MESSAGE(FATAL_ERROR
+    "You set ${PACKAGE_NAME}_ENABLE_THREAD_SAFE=ON, but ${PACKAGE_NAME}' support"
+    " for CXX11 is not enabled (${PROJECT_NAME}_ENABLE_CXX11=OFF)."
+    "  This is not allowed.  Please enable ${PACKAGE_NAME}_ENABLE_CXX11 in"
+    " ${PACKAGE_NAME} before attempting to enable ${PACKAGE_NAME}_ENABLE_THREAD_SAFE"
+    " or leave ${PACKAGE_NAME}_ENABLE_THREAD_SAFE off.")
+ENDIF ()
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_THREAD_SAFE)
+ASSERT_DEFINED(${PACKAGE_NAME}Core_ENABLE_Pthread)
+COMBINED_OPTION(
+  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE_UNIT_TESTS
+  DEP_OPTIONS_NAMES
+    ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
+    ${PACKAGE_NAME}Core_ENABLE_Pthread
+  DOCSTR
+    "Enable thread safe unit tests for ${PACKAGE_NAME} Memory Management classes."
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC
   HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  "Enable Teuchos features for array bounds checking."
+  "Enable ${PACKAGE_NAME} features for array bounds checking."
   ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
 
