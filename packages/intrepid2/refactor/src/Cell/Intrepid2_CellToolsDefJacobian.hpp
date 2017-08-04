@@ -135,7 +135,7 @@ namespace Intrepid2 {
     // the following does not work for RCP; its * operator returns reference not the object
     //typedef typename decltype(*basis)::output_value_type gradValueType;
     //typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> gradViewType;
-    
+
     auto vcprop = Kokkos::common_view_alloc_prop(points);
     typedef Kokkos::DynRankView<typename decltype(vcprop)::value_type,SpT> gradViewType;
 
