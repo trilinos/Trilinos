@@ -150,9 +150,7 @@ typename PHX::MDFieldTypeTraits<typename PHX::Field<DataT,Rank>::array_type>::re
 PHX::Field<DataT,Rank>::operator()(const index_pack&... indices) const
 {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  // only support up to rank 8 array
-  static_assert(sizeof...(indices) > 0, "operator() : number of indices must be greater than 0!");
-  static_assert(sizeof...(indices) < 9, "operator() : number of indices must be less than 9!");
+  static_assert(Rank == sizeof...(indices), "PHX::MDField::operator(const index_pack&... indices) : must have number of indices equal to rank!");
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
 

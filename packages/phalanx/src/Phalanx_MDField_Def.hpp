@@ -197,9 +197,7 @@ PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(const index_pack&... indices) const
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  // only support up to rank 8 array
-  static_assert(sizeof...(indices) > 0, "operator() : number of indices must be greater than 0!");
-  static_assert(sizeof...(indices) < 9, "operator() : number of indices must be less than 9!");
+  static_assert(ArrayRank == sizeof...(indices), "PHX::MDField::operator(const index_pack&... indices) : must have number of indices equal to rank!");
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(indices...);
@@ -284,9 +282,9 @@ setFieldData(const PHX::any& a)
   m_data_set = true;
 #endif
 
-  // any object is always the non-const data type.  To correctly cast
-  // the any object to the Kokkos::View, need to pull the const off
-  // the scalar type if this MDField has a const scalar type.
+  // PHX::any object is always the non-const data type.  To correctly
+  // cast the any object to the Kokkos::View, need to pull the const
+  // off the scalar type if this MDField has a const scalar type.
   typedef Kokkos::View<typename array_type::non_const_data_type,PHX::Device> non_const_view;
   try {
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
