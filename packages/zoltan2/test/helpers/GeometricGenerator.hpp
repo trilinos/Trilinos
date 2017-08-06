@@ -1810,28 +1810,34 @@ public:
     for(int ii = 0; ii < this->numWeightsPerCoord; ++ii){
       switch(this->coordinate_dimension){
       case 1:
+ 	{
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
         for (lno_t i = 0; i < this->numLocalCoords; ++i){
           this->wghts[ii][i] = this->wd[ii]->get1DWeight(this->coords[0][i]);
         }
+	}
         break;
       case 2:
+	{
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
         for (lno_t i = 0; i < this->numLocalCoords; ++i){
           this->wghts[ii][i] = this->wd[ii]->get2DWeight(this->coords[0][i], this->coords[1][i]);
         }
+	}
         break;
       case 3:
+	{
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
         for (lno_t i = 0; i < this->numLocalCoords; ++i){
           this->wghts[ii][i] = this->wd[ii]->get3DWeight(this->coords[0][i], this->coords[1][i], this->coords[2][i]);
         }
+	}
         break;
       }
     }
