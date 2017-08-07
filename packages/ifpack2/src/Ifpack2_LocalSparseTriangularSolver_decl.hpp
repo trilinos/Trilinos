@@ -183,6 +183,9 @@ public:
   ///
   /// \param plist [in] List of parameters.
   ///
+  /// - "trisolver: reverse U" (\c bool): reverse storage for upper triangular matrices
+  ///   to be more cache-efficient
+  ///
   /// If Trilinos_ENABLE_ShyLUHTS=TRUE, then these parameters are available:
   ///   - "trisolver: type" (\c string): One of {"Internal" (default), "HTS"}.
   ///   - "trisolver: block size" (\c int): The triangular matrix can usefully be
@@ -347,6 +350,7 @@ private:
   bool isInitialized_;
   bool isComputed_;
   bool isInternallyChanged_;
+  bool reverseStorage_;
 
   mutable int numInitialize_;
   mutable int numCompute_;

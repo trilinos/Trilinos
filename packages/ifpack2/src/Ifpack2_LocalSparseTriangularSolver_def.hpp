@@ -278,6 +278,7 @@ void LocalSparseTriangularSolver<MatrixType>::initializeState ()
 {
   isInitialized_ = false;
   isComputed_ = false;
+  reverseStorage_ = false;
   isInternallyChanged_ = false;
   numInitialize_ = 0;
   numCompute_ = 0;
@@ -321,6 +322,9 @@ setParameters (const Teuchos::ParameterList& pl)
     htsImpl_ = Teuchos::rcp (new HtsImpl ());
     htsImpl_->setParameters (pl);
   }
+
+  if (pl.isParameter("trisolver: reverse U"))
+    reverseStorage_ = pl.get<bool>("trisolver: reverse U");
 }
 
 template<class MatrixType>
@@ -359,7 +363,7 @@ initialize ()
     (! G->isFillComplete (), std::runtime_error, "If you call this method, "
      "the matrix's graph must be fill complete.  It is not.");
 
-  if (A_crs_->isUpperTriangular() && htsImpl_.is_null()) {
+  if (reverseStorage_ && A_crs_->isUpperTriangular() && htsImpl_.is_null()) {
     // Reverse the storage for an upper triangular matrix
     using local_matrix_type = typename crs_matrix_type::local_matrix_type;
 
