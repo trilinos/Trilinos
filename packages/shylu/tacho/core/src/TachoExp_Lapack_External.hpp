@@ -67,10 +67,6 @@ namespace Tacho {
     template<typename T, typename dummy = T>
     struct Lapack;
 
-    ///
-    /// Chol
-    ///
-
     template<typename T>
     struct Lapack<T, typename std::enable_if<std::is_same<T, float>::value, T>::type> {
       static inline
@@ -83,72 +79,6 @@ namespace Tacho {
                         a, &lda,
                         info);
       }
-    };
-
-    template<typename T>
-    struct Lapack<T, typename std::enable_if<std::is_same<T, double>::value, T>::type> {
-      static inline
-      void potrf(const char uplo,
-                 int m,
-                 T *a, int lda,
-                 int *info) {
-        F77_FUNC_DPOTRF(&uplo,
-                        &m,
-                        a, &lda,
-                        info);
-      }
-    };
-
-    template<typename T>
-    struct Lapack<T, typename std::enable_if<std::is_same<T, std   ::complex<float> >::value ||
-                                             std::is_same<T, Kokkos::complex<float> >::value, T>::type> {
-      static inline
-      void potrf(const char uplo,
-                 int m,
-                 T *a, int lda,
-                 int *info) {
-#if defined( HAVE_SHYLUTACHO_MKL )
-        F77_FUNC_CPOTRF(&uplo,
-                        &m,
-                        (MKL_Complex8 *)a, &lda,
-                        info);
-#else
-        F77_FUNC_CPOTRF(&uplo,
-                        &m,
-                        a, &lda,
-                        info);
-#endif
-      }
-    };
-
-    template<typename T>
-    struct Lapack<T, typename std::enable_if<std::is_same<T, std   ::complex<double> >::value ||
-                                             std::is_same<T, Kokkos::complex<double> >::value, T>::type> {
-      static inline
-      void potrf(const char uplo,
-                 int m,
-                 T *a, int lda,
-                 int *info) {
-#if defined( HAVE_SHYLUTACHO_MKL )
-        F77_FUNC_ZPOTRF(&uplo,
-                        &m,
-                        (MKL_Complex16 *)a, &lda,
-                        info);
-#else
-        F77_FUNC_ZPOTRF(&uplo,
-                        &m,
-                        a, &lda,
-                        info);
-#endif
-      }
-    };
-
-    ///
-    /// LDL^t
-    ///
-
-    template<typename T>
-    struct Lapack<T, typename std::enable_if<std::is_same<T, float>::value, T>::type> {
       static inline
       void sytrf(const char uplo,
                  int m,
@@ -166,6 +96,16 @@ namespace Tacho {
     template<typename T>
     struct Lapack<T, typename std::enable_if<std::is_same<T, double>::value, T>::type> {
       static inline
+      void potrf(const char uplo,
+                 int m,
+                 T *a, int lda,
+                 int *info) {
+        F77_FUNC_DPOTRF(&uplo,
+                        &m,
+                        a, &lda,
+                        info);
+      }
+      static inline
       void sytrf(const char uplo,
                  int m,
                  T *a, int lda,
@@ -177,11 +117,29 @@ namespace Tacho {
                         ipiv,
                         info);
       }
+
     };
 
     template<typename T>
     struct Lapack<T, typename std::enable_if<std::is_same<T, std   ::complex<float> >::value ||
                                              std::is_same<T, Kokkos::complex<float> >::value, T>::type> {
+      static inline
+      void potrf(const char uplo,
+                 int m,
+                 T *a, int lda,
+                 int *info) {
+#if defined( HAVE_SHYLUTACHO_MKL )
+        F77_FUNC_CPOTRF(&uplo,
+                        &m,
+                        (MKL_Complex8 *)a, &lda,
+                        info);
+#else
+        F77_FUNC_CPOTRF(&uplo,
+                        &m,
+                        a, &lda,
+                        info);
+#endif
+      }
       static inline
       void sytrf(const char uplo,
                  int m,
@@ -208,6 +166,23 @@ namespace Tacho {
     struct Lapack<T, typename std::enable_if<std::is_same<T, std   ::complex<double> >::value ||
                                              std::is_same<T, Kokkos::complex<double> >::value, T>::type> {
       static inline
+      void potrf(const char uplo,
+                 int m,
+                 T *a, int lda,
+                 int *info) {
+#if defined( HAVE_SHYLUTACHO_MKL )
+        F77_FUNC_ZPOTRF(&uplo,
+                        &m,
+                        (MKL_Complex16 *)a, &lda,
+                        info);
+#else
+        F77_FUNC_ZPOTRF(&uplo,
+                        &m,
+                        a, &lda,
+                        info);
+#endif
+      }
+      static inline
       void sytrf(const char uplo,
                  int m,
                  T *a, int lda,
@@ -228,7 +203,6 @@ namespace Tacho {
 #endif
       }
     };
-
   }
 }
 
