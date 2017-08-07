@@ -364,6 +364,8 @@ private:
   //! Copy constructor (declared private and undefined; may not be used)
   ILUT (const ILUT<MatrixType>& RHS);
 
+  void allocateSolvers ();
+
   //! operator= (declared private and undefined; may not be used)
   ILUT<MatrixType>& operator= (const ILUT<MatrixType>& RHS);
 

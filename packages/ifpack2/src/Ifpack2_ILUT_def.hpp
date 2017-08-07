@@ -128,11 +128,21 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   NumApply_ (0),
   IsInitialized_ (false),
   IsComputed_ (false)
-{}
+{
+  allocateSolvers();
+}
 
 template <class MatrixType>
 ILUT<MatrixType>::~ILUT()
 {}
+
+template<class MatrixType>
+void ILUT<MatrixType>::allocateSolvers ()
+{
+  L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+}
+
 
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
@@ -236,6 +246,10 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   catch (InvalidParameterName&) {
     // Accept the default value.
   }
+
+  // Forward to trisolvers.
+  L_solver_->setParameters(params);
+  U_solver_->setParameters(params);
 
   // "Commit" the values only after validating all of them.  This
   // ensures that there are no side effects if this routine throws an
@@ -777,11 +791,11 @@ void ILUT<MatrixType>::compute ()
     L_->fillComplete();
     U_->fillComplete();
 
-    L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> (L_));
+    L_solver_->setMatrix(L_);
     L_solver_->initialize ();
     L_solver_->compute ();
 
-    U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> (U_));
+    U_solver_->setMatrix(U_);
     U_solver_->initialize ();
     U_solver_->compute ();
   }
