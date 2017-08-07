@@ -15,17 +15,15 @@ IF (${PACKAGE_NAME}_ENABLE_BUGTESTS)
     EXEDEPS BugTests
     )
 
-  IF (Tpetra_INST_INT_INT)  
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      BlankRowBugTest
-      SOURCES
-      BlankRowBugTest
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-      COMM mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 2
-      )
-  ENDIF()
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BlankRowBugTest
+    SOURCES
+    BlankRowBugTest
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CompilationTests
