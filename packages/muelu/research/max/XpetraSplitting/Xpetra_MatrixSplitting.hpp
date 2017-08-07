@@ -656,6 +656,8 @@ class checkerInterfaceNodes {
 		// @}
 
 
+		//! @name Initialization of Region matrices
+		//@{
 		void InitializeRegionMatrices(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
 		{
 			TEUCHOS_TEST_FOR_EXCEPTION( region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "Surrogate region stiffness matrices are already initialized by chopping the global stiffness matrix \n");
@@ -701,8 +703,11 @@ class checkerInterfaceNodes {
 			}
 			region_matrix_initialized_[region_idx] = true;
 		}
+		//@}
 
 
+		//! @name Collapse of External neighbouring nodes information on Region matrices
+		//@{
 		void RegionCollapse(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
 		{
 			TEUCHOS_TEST_FOR_EXCEPTION( !region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "The global stiffness matrix must be chopped into surrogate region matrices before collapsing \n");
@@ -1048,9 +1053,12 @@ class checkerInterfaceNodes {
 	
 			}					
 		}
+		//@}
 
 
-	void RegionSplitting(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
+		//! @name Creation of Region Splitting
+		//@{
+		void RegionSplitting(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
 		{
 			TEUCHOS_TEST_FOR_EXCEPTION( !region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "The global stiffness matrix must be chopped into surrogate region matrices before collapsing \n");
 			TEUCHOS_TEST_FOR_EXCEPTION( driver_->num_region_nodes_[region_idx]!=regionMatrixData_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes in region "<<region_idx+1<<" does not coincide with the value returned by regionMatrixData_["<<region_idx+1<<"]->getGlobalNumRows() \n");
@@ -1186,6 +1194,8 @@ class checkerInterfaceNodes {
 					//First the splitting is applied on extradiagonal entries	
 
 					//Computation of local indices for central node and its neighbors
+					//Node index base start from 1 in the structures used, but Trilinos maps start from 0, so 
+					//indices must be shifted by 1
 					LocalOrdinal local_region_node_idx = region_matrix->getRowMap()->getLocalElement( region_node_idx-1 );
 					LocalOrdinal local_region_node_idx_neighbor_e = region_matrix->getRowMap()->getLocalElement( region_node_idx_neighbor_e-1 );
 					LocalOrdinal local_region_node_idx_neighbor_w = region_matrix->getRowMap()->getLocalElement( region_node_idx_neighbor_w-1 );
@@ -1195,7 +1205,7 @@ class checkerInterfaceNodes {
 					ArrayView<const GlobalOrdinal> region_col;
 					ArrayView<const Scalar> region_val;
 	
-					//Extract Row view of the region matrix before collapsing
+					//Extract Row view of the region matrix 
 					if( region_matrix -> isLocallyIndexed() )
 						region_matrix -> getLocalRowView( local_region_node_idx, region_col, region_val );
 					else
@@ -1204,6 +1214,8 @@ class checkerInterfaceNodes {
 					std::vector<LocalOrdinal> region_col_vector = createVector(region_col);
 					std::vector<LocalOrdinal> ind_vector(0);
 					std::vector<Scalar> val_vector(0);
+
+					//Extraction of the info about East neighbour to halve the associated entry in the matrix
 					if( interface_iterator_neighbor_e!=interfaceNodes.end() )
 					{
 						typename std::vector<GlobalOrdinal>::iterator iter_east_vector;
@@ -1222,6 +1234,8 @@ class checkerInterfaceNodes {
 						ind_vector.push_back( east_ind );
 						val_vector.push_back( east_val );
 					}
+
+					//Extraction of the info about West neighbour to halve the associated entry in the matrix
 					if( interface_iterator_neighbor_w!=interfaceNodes.end() )
 					{
 						typename std::vector<GlobalOrdinal>::iterator iter_west_vector;
@@ -1240,6 +1254,8 @@ class checkerInterfaceNodes {
 						ind_vector.push_back( west_ind );
 						val_vector.push_back( west_val );
 					}
+
+					//Extraction of the info about South neighbour to halve the associated entry in the matrix
 					if( interface_iterator_neighbor_s!=interfaceNodes.end() )
 					{
 						typename std::vector<GlobalOrdinal>::iterator iter_south_vector;
@@ -1258,6 +1274,8 @@ class checkerInterfaceNodes {
 						ind_vector.push_back( south_ind );
 						val_vector.push_back( south_val );
 					}
+
+					//Extraction of the info about North neighbour to halve the associated entry in the matrix
 					if( interface_iterator_neighbor_n!=interfaceNodes.end() )
 					{
 						typename std::vector<GlobalOrdinal>::iterator iter_north_vector;
@@ -1277,6 +1295,9 @@ class checkerInterfaceNodes {
 						val_vector.push_back( north_val );
 					}
 					
+					//Extraction of the info about my Node ID to split the associated entry in the matrix
+					//The ratio used for the splitting depends on the num ber of regions this current node 
+					//belongs to
 					typename std::vector<LocalOrdinal>::iterator iter_center_vector;
 					GlobalOrdinal center_ind;
 					if( region_matrix -> isLocallyIndexed() )
@@ -1289,11 +1310,16 @@ class checkerInterfaceNodes {
 						iter_center_vector = std::find( region_col_vector.begin(), region_col_vector.end(), region_node_idx-1 );
 						center_ind = *iter_center_vector; 
 					}
+
+					//Count of the nubmer of regions the current node belogns to 
+					GlobalOrdinal region_belonging = std::get<1>(*interface_iterator).size();
+					TEUCHOS_TEST_FOR_EXCEPTION( region_belonging<2, Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Region: "<<region_idx<<" - "<<" node with composite index: "<<std::get<0>(*interface_iterator)<<" should lie on an interface between regions but the nubmer of regions it belongs to is only "<<region_belonging<<"\n" );
+
 					Scalar center_val;
-					if(count_neighbours_interface<4)
-						center_val = - 0.5 * region_val[iter_center_vector-region_col_vector.begin()];
-					else 
-						center_val = - 0.75 * region_val[iter_center_vector-region_col_vector.begin()];
+					//If a node is on a corner between four itnerfaces, then each the entry A(node_idx,node_idx) must be split in four parts
+					//otherwise the entry must be divided by two, similarly to what done for the neighbours
+
+					center_val = - (1 - static_cast<Scalar>(1/static_cast<Scalar>(region_belonging))) * region_val[iter_center_vector-region_col_vector.begin()];
 					ind_vector.push_back( center_ind );
 					val_vector.push_back( center_val );
 
@@ -1304,7 +1330,7 @@ class checkerInterfaceNodes {
 				}	
 			}					
 		}
-
+		//@}
 
 
 		//! @name Creation of Region matrices
