@@ -50,7 +50,7 @@ private:
 
   int nx_;
   int ny_;
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
 public: 
 
@@ -65,7 +65,7 @@ public:
   void computeSideSets() {
 
     int numSideSets = 4;
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(numSideSets));
+    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<std::vector<int> > >(numSideSets));
 
     int ny3 = ny_ / 3;
     int nyr = ny_ % 3;
@@ -100,31 +100,31 @@ public:
     (*meshSideSets_)[3][3].resize(n3);
     
     for (int i=0; i<nx_; ++i) {
-      (*meshSideSets_)[0][0](i) = i;
+      (*meshSideSets_)[0][0][i] = i;
     }
     for (int i=0; i<ny_; ++i) {
-      (*meshSideSets_)[0][1](i) = (i+1)*nx_-1;
+      (*meshSideSets_)[0][1][i] = (i+1)*nx_-1;
     }
     for (int i=0; i<nx_; ++i) {
-      (*meshSideSets_)[0][2](i) = i + nx_*(ny_-1);
+      (*meshSideSets_)[0][2][i] = i + nx_*(ny_-1);
     }
     for (int i=0; i<ny_; ++i) {
       if ( i < n1 ) {
-        (*meshSideSets_)[1][3](i) = i*nx_;
+        (*meshSideSets_)[1][3][i] = i*nx_;
       }
       if ( i >= n1 && i < n1+n2 ) {
-        (*meshSideSets_)[2][3](i-n1) = i*nx_;
+        (*meshSideSets_)[2][3][i-n1] = i*nx_;
       }
       if ( i >= n1+n2 ) {
-        (*meshSideSets_)[3][3](i-n1-n2) = i*nx_;
+        (*meshSideSets_)[3][3][i-n1-n2] = i*nx_;
       }
     }
 
   } // computeSideSets
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-      std::ostream & outStream = std::cout,
-      const bool verbose = false) const {
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
     if ( verbose ) {
       outStream << "Mesh_Poisson_TopOpt: getSideSets called" << std::endl;
       outStream << "Mesh_Poisson_TopOpt: numSideSets = " << meshSideSets_->size() << std::endl;

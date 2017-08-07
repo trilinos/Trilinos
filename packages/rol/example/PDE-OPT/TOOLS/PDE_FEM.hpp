@@ -521,17 +521,17 @@ public:
       *outStream_ << std::endl;
     }
     //
-    Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
-    std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
+    Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > dirichletSideSets = meshMgr_->getSideSets();
+    std::vector<std::vector<std::vector<int> > > &dss = *dirichletSideSets;
     Teuchos::Array<int> mySortedCellIds_(myCellIds_);
     std::sort(mySortedCellIds_.begin(), mySortedCellIds_.end());
     mySortedCellIds_.erase( std::unique(mySortedCellIds_.begin(), mySortedCellIds_.end()), mySortedCellIds_.end() );
     
     myBoundaryCellIds_.resize(dss[0].size());
     for (int i=0; i<static_cast<int>(dss[0].size()); ++i) {
-      for (int j=0; j<dss[0][i].dimension(0); ++j) {
-        if (std::binary_search(mySortedCellIds_.begin(), mySortedCellIds_.end(), dss[0][i](j))) {
-          myBoundaryCellIds_[i].push_back(dss[0][i](j));
+      for (int j=0; j<dss[0][i].size(); ++j) {
+        if (std::binary_search(mySortedCellIds_.begin(), mySortedCellIds_.end(), dss[0][i][j])) {
+          myBoundaryCellIds_[i].push_back(dss[0][i][j]);
         }
       }
     }
