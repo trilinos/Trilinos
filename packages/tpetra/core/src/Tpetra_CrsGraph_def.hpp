@@ -889,11 +889,15 @@ namespace Tpetra {
           }
         }
         else { // k_numRowEntries_ is populated
-          // k_numRowEntries_ could actually be a host View, so run
-          // the sum in the View's native execution space.
-          typedef typename decltype (numEntPerRow)::execution_space
-            dev_exec_space;
-          typedef Kokkos::RangePolicy<dev_exec_space, LO> range_type;
+          // k_numRowEntries_ is actually be a host View, so we run
+          // the sum in its native execution space.  This also means
+          // that we can use explicit capture (which could perhaps
+          // improve build time) instead of KOKKOS_LAMBDA, and avoid
+          // any CUDA build issues with trying to run a __device__ -
+          // only function on host.
+          typedef typename num_row_entries_type::execution_space
+            host_exec_space;
+          typedef Kokkos::RangePolicy<host_exec_space, LO> range_type;
 
           const LO upperLoopBound = lclNumRows < numNumEntPerRow ?
             lclNumRows :
@@ -901,7 +905,7 @@ namespace Tpetra {
           size_t nodeNumEnt = 0;
           Kokkos::parallel_reduce ("Tpetra::CrsGraph::getNumNodeEntries",
                                    range_type (0, upperLoopBound),
-                                   KOKKOS_LAMBDA (const LO& k, size_t& lclSum) {
+                                   [=] (const LO& k, size_t& lclSum) {
                                      lclSum += numEntPerRow(k);
                                    }, nodeNumEnt);
           return nodeNumEnt;
@@ -3164,7 +3168,7 @@ namespace Tpetra {
     clearGlobalConstants ();
 
     if (k_numRowEntries_.dimension_0 () != 0) {
-      k_numRowEntries_(lrow) = 0;
+      this->k_numRowEntries_(lrow) = 0;
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
