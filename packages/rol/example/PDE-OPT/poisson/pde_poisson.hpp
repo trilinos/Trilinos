@@ -89,12 +89,22 @@ private:
 public:
   PDE_Poisson(Teuchos::ParameterList &parlist) {
     // Finite element fields.
-    int basisOrder = parlist.sublist("PDE Poisson").get("Basis Order",1);
-    if (basisOrder == 1) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
-    }
-    else if (basisOrder == 2) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+    int basisOrder = parlist.sublist("Problem").get("Basis Order",1);
+    int probDim = parlist.sublist("Problem").get("Problem Dimension",2);
+    if (probDim == 2) {
+      if (basisOrder == 1) {
+        basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
+      }
+      else if (basisOrder == 2) {
+        basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+      }
+    } else if (probDim == 3) {
+      if (basisOrder == 1) {
+        basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
+      }
+      else if (basisOrder == 2) {
+        basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+      }
     }
     basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
     // Quadrature rules.

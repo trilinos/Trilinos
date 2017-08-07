@@ -154,7 +154,7 @@ private:
 
   // Set in SetCellNodes.
   Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  bdryCellIds_;
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > >  bdryCellIds_;
   //std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > >  bdryCellLocIds_;
   std::vector<std::vector<std::vector<int> > >  bdryCellLocIds_;
   std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
@@ -340,7 +340,7 @@ private:
       }
     }
     // Build boundary cell nodes
-    bdryCellIds_    = meshMgr_->getSideSets(outStream, (verbose_ && myRank_==0));
+    bdryCellIds_    = meshMgr_->getSideSets((verbose_ && myRank_==0), outStream);
     int numSideSets = bdryCellIds_->size();
     if (numSideSets > 0) {
       bdryCellNodes_.resize(numSideSets);
@@ -350,10 +350,10 @@ private:
         bdryCellNodes_[i].resize(numLocSides);
         bdryCellLocIds_[i].resize(numLocSides);
         for (int j=0; j<numLocSides; ++j) {
-          if ((*bdryCellIds_)[i][j].rank() > 0) {
-            int numCellsSide = (*bdryCellIds_)[i][j].dimension(0);
+          if ((*bdryCellIds_)[i][j].size() > 0) {
+            int numCellsSide = (*bdryCellIds_)[i][j].size();
             for (int k=0; k<numCellsSide; ++k) {
-              int idx = mapGlobalToLocalCellId((*bdryCellIds_)[i][j](k));
+              int idx = mapGlobalToLocalCellId((*bdryCellIds_)[i][j][k]);
               if (idx > -1) {
                 bdryCellLocIds_[i][j].push_back(idx);
                 //if (myRank_==1) {std::cout << "\nrank " << myRank_ << "   bcid " << i << "  " << j << "  " << k << "  " << myCellIds_[idx] << "  " << idx;}

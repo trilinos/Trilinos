@@ -90,9 +90,12 @@ public:
                      the FieldConTainer is a 1D array of cell indices.
              Input:  Sideset number.  Its meaning is context-dependent.
   */
-  virtual Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-              std::ostream & outStream = std::cout,
-              const bool verbose = false) const = 0;
+  //virtual Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+  //            std::ostream & outStream = std::cout,
+  //            const bool verbose = false) const = 0;
+  virtual Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const = 0;
 
   /** \brief Returns number of cells.
   */
