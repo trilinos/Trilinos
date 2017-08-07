@@ -1918,14 +1918,33 @@ namespace Tpetra {
     /// for that row.
     Teuchos::ArrayRCP<Teuchos::Array<GlobalOrdinal> > gblInds2D_;
 
+    /// \brief The type of k_numRowEntries_ (see below).
+    ///
+    /// This View gets used only on host.  However, making this
+    /// literally a host View (of Kokkos::HostSpace) causes
+    /// inexplicable test failures only on CUDA.  Thus, I left it as a
+    /// HostMirror, which means (given Trilinos' current UVM
+    /// requirement) that it will be a UVM allocation.
+    typedef typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror num_row_entries_type;
+
+    // typedef Kokkos::View<
+    //   size_t*,
+    //   Kokkos::LayoutLeft,
+    //   Kokkos::Device<
+    //     typename Kokkos::View<
+    //       size_t*,
+    //       Kokkos::LayoutLeft,
+    //       device_type>::HostMirror::execution_space,
+    //     Kokkos::HostSpace> > num_row_entries_type;
+
     /// \brief The number of local entries in each locally owned row.
     ///
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
     ///
     /// This may also exist with 1-D storage, if storage is unpacked.
-    typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror
-      k_numRowEntries_;
+    num_row_entries_type k_numRowEntries_;
+
     //@}
 
     /// \brief Status of the graph's storage, when not in a
