@@ -137,7 +137,7 @@ int Ifpack_ILUT::SetParameters(Teuchos::ParameterList& List)
     IFPACK_CHK_ERR(-1);
   }
 
-  return(0);
+  //return(0); // unreachable
 }
 
 //==========================================================================
