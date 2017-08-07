@@ -253,7 +253,7 @@ template<class Scalar>
 
     // Error out
     throw std::runtime_error(myerror);
-    return Teuchos::null;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 /*********************************************************************************************************/
