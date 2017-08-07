@@ -1,11 +1,11 @@
-#ifndef __TACHOEXP_COMMANDLINEPARSER_HPP__
-#define __TACHOEXP_COMMANDLINEPARSER_HPP__
-
-#include <tuple>
+#ifndef __TACHOEXP_COMMAND_LINE_PARSER_HPP__
+#define __TACHOEXP_COMMAND_LINE_PARSER_HPP__
 
 /// \file TachoExp_CommandLineParser.hpp
 /// \brief Command line parser
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+
+#include "TachoExp_Util.hpp"
 
 namespace Tacho {
 

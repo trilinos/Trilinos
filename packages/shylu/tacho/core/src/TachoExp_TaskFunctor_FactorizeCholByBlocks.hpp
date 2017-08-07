@@ -198,7 +198,7 @@ namespace Tacho {
                   }
                 Kokkos::respawn(this, Kokkos::when_all(dep, bn2), Kokkos::TaskPriority::Regular);
                 
-                for (ordinal_type k=0;k<bn2;++k) (dep+k)->~future_type();
+                for (ordinal_type k=0;k<static_cast<ordinal_type>(bn2);++k) (dep+k)->~future_type();
                 _sched.memory()->deallocate((void*)dep, depsize);
               } else {
                 if (_bufsize)

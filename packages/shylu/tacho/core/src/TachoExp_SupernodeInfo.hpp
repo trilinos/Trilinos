@@ -137,7 +137,7 @@ namespace Tacho {
           s.gid_col_begin = gid_ptr_(sid); s.gid_col_end = gid_ptr_(sid+1);
           s.sid_col_begin = sid_ptr_(sid); s.sid_col_end = sid_ptr_(sid+1);
 
-          for (ordinal_type i=s.sid_col_begin;i<sid_ptr_(sid+1);++i) {
+          for (ordinal_type i=s.sid_col_begin;i<static_cast<ordinal_type>(sid_ptr_(sid+1));++i) {
             sid_block_colidx_(i).first  = sid_colidx_(i);
             sid_block_colidx_(i).second = blk_colidx_(i);
           }

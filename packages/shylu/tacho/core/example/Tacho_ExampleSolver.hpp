@@ -1,6 +1,8 @@
 #include "Tacho.hpp"
 #include "Tacho_Solver.hpp"
 
+#include "TachoExp_CommandLineParser.hpp" 
+
 using ordinal_type = Tacho::Experimental::ordinal_type;
 
 template<typename value_type>

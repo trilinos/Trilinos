@@ -15,6 +15,7 @@
 #include <set>
 #include <map>
 #include <memory>
+#include <tuple>
 
 #include <cmath>
 #include <complex>
@@ -222,19 +223,19 @@ namespace Tacho {
     template<typename Ta, typename Tb>
     KOKKOS_FORCEINLINE_FUNCTION
     static Ta min(const Ta a, const Tb b) {
-      return (a < b ? a : b);
+      return (a < static_cast<Ta>(b) ? a : static_cast<Ta>(b));
     }
 
     template<typename Ta, typename Tb>
     KOKKOS_FORCEINLINE_FUNCTION
     static Ta max(const Ta a, const Tb b) {
-      return (a > b ? a : b);
+      return (a > static_cast<Ta>(b) ? a : static_cast<Ta>(b));
     }
 
     template<typename Ta, typename Tb>
     KOKKOS_FORCEINLINE_FUNCTION
     static void swap(Ta &a, Tb &b) {
-      Ta c(a); a = b; b = c;
+      Ta c(a); a = static_cast<Ta>(b); b = static_cast<Tb>(c);
     }
 
     /// complex conj

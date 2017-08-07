@@ -47,8 +47,8 @@ namespace Tacho {
             Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
               ::invoke(sched, member, Diag::NonUnit(), 1.0, ATL, ATR);
 
-            TACHO_TEST_FOR_ABORT(ABR.dimension_0() != n ||
-                                 ABR.dimension_1() != n,
+            TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.dimension_0()) != n ||
+                                 static_cast<ordinal_type>(ABR.dimension_1()) != n,
                                  "ABR dimension does not match to supernodes");
             Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
               ::invoke(sched, member, -1.0, ATR, 0.0, ABR);
@@ -379,7 +379,8 @@ namespace Tacho {
         {
           const size_type n = s.n - s.m, bufsize_required = n*(n+1)*sizeof(value_type);
 
-          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+                               "bufsize is smaller than required");
 
           UnmanagedViewType<value_type_matrix> ABR((value_type*)buf, n, n);
 
@@ -425,7 +426,8 @@ namespace Tacho {
           const size_type n = s.n - s.m, nrhs = info.x.dimension_1(), 
             bufsize_required = n*nrhs*sizeof(value_type);
 
-          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+                               "bufsize is smaller than required");
 
           UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
 
@@ -461,8 +463,9 @@ namespace Tacho {
         {
           const size_type n = s.n - s.m, nrhs = info.x.dimension_1(), 
             bufsize_required = n*nrhs*sizeof(value_type);
-
-          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+          
+          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+                               "bufsize is smaller than required");
 
           UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
 
