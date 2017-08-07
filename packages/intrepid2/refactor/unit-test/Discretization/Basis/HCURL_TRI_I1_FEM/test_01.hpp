@@ -138,11 +138,11 @@ namespace Intrepid2 {
     DynRankView ConstructWithLabel(triNodes, 7, 2);
 
     // Generic array for the output values; needs to be properly resized depending on the operator type
-    const ordinal_type numFields = triBasis.getCardinality();
+    const ordinal_type cardinality = triBasis.getCardinality();
     const ordinal_type numPoints = triNodes.dimension(0);
 
     DynRankView vals;
-    vals = DynRankView("vals", numFields, numPoints);
+    vals = DynRankView("vals", cardinality, numPoints);
 
     {
     // exception #1: GRAD cannot be applied to HCURL functions 
@@ -162,7 +162,7 @@ namespace Intrepid2 {
     // exception #5
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofOrdinal(0,4,1) );
     // exception #6
-      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(numFields) );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(cardinality) );
     // exception #7
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(-1) );
     }
@@ -324,22 +324,22 @@ namespace Intrepid2 {
     Kokkos::deep_copy(triNodes, triNodesHost);
 
     // Dimensions for the output arrays:
-    const ordinal_type numFields = triBasis.getCardinality();
+    const ordinal_type cardinality = triBasis.getCardinality();
     const ordinal_type numPoints = triNodes.dimension(0);
     const ordinal_type spaceDim  = triBasis.getBaseCellTopology().getDimension();
     
     {
     // Check VALUE of basis functions: resize vals to rank-3 container:
-    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+    DynRankView ConstructWithLabel(vals, cardinality, numPoints, spaceDim);
     triBasis.getValues(vals, triNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (ordinal_type i = 0; i < numFields; ++i) {
+    for (ordinal_type i = 0; i < cardinality; ++i) {
       for (ordinal_type j = 0; j < numPoints; ++j) {
         for (ordinal_type k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
+           ordinal_type l = k + i * spaceDim + j * spaceDim * cardinality;
            if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -357,13 +357,13 @@ namespace Intrepid2 {
     
     {
     // Check CURL of basis function: resize vals to rank-2 container
-    DynRankView ConstructWithLabel(vals, numFields, numPoints);
+    DynRankView ConstructWithLabel(vals, cardinality, numPoints);
     triBasis.getValues(vals, triNodes, OPERATOR_CURL);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (ordinal_type i = 0; i < numFields; ++i) {
+    for (ordinal_type i = 0; i < cardinality; ++i) {
       for (ordinal_type j = 0; j < numPoints; ++j) {
-        ordinal_type l =  i + j * numFields;
+        ordinal_type l =  i + j * cardinality;
         if (std::abs(vals_host(i,j) - basisCurls[l]) > tol) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -392,7 +392,7 @@ namespace Intrepid2 {
     << "===============================================================================\n";
 
   try{
-    const ordinal_type numFields = triBasis.getCardinality();
+    const ordinal_type cardinality = triBasis.getCardinality();
     const ordinal_type spaceDim  = triBasis.getBaseCellTopology().getDimension();
 
     // Check exceptions.
@@ -419,39 +419,36 @@ namespace Intrepid2 {
     }
 
     // Check mathematical correctness
-    DynRankView ConstructWithLabel(bvals, numFields, numFields, spaceDim);
-    DynRankView ConstructWithLabel(cvals, numFields, spaceDim); 
+    DynRankView ConstructWithLabel(bvals, cardinality, cardinality, spaceDim);
+    DynRankView ConstructWithLabel(cvals, cardinality, spaceDim);
+    DynRankView ConstructWithLabel(dofCoeffs, cardinality, spaceDim);
+    triBasis.getDofCoeffs(dofCoeffs);
     triBasis.getDofCoords(cvals);
     triBasis.getValues(bvals, cvals, OPERATOR_VALUE);
 
     auto cvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals);
     Kokkos::deep_copy(cvals_host, cvals);
+    auto dofCoeffs_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), dofCoeffs);
+    Kokkos::deep_copy(dofCoeffs_host, dofCoeffs);
     auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
     Kokkos::deep_copy(bvals_host, bvals);
 
-    //Kokkos::View<ValueType**, typename DynRankView::array_layout, typename HostSpaceType::execution_space> ConstructWithLabel(tangents, numFields, spaceDim); 
-    DynRankViewHost ConstructWithLabel(tangents, numFields, spaceDim);
-    tangents(0,0) =  1.0; tangents(0,1) =  0.0;
-    tangents(1,0) = -1.0; tangents(1,1) =  1.0;
-    tangents(2,0) =  0.0; tangents(2,1) = -1.0;
-
     char buffer[120];
-    ordinal_type b_dim0(bvals_host.dimension(0)), b_dim1(bvals_host.dimension(1));
-    for (ordinal_type i=0; i<b_dim0; ++i) {
-      for (ordinal_type j=0; j<b_dim1; ++j) {
+    for (ordinal_type i=0; i<cardinality; ++i) {
+      for (ordinal_type j=0; j<cardinality; ++j) {
 
-        double tangent = 0.0;
-        for(ordinal_type d=0;d<spaceDim;d++)
-           tangent += bvals_host(i,j,d)*tangents(j,d);
+        double dofValue = 0.0;
+        for(ordinal_type d=0;d<spaceDim;++d)
+          dofValue += bvals_host(i,j,d)*dofCoeffs_host(j,d);
 
-        if ((i != j) && (std::abs(tangent - 0.0) > tol )) {
+        if ((i != j) && (std::abs(dofValue - 0.0) > tol )) {
           errorFlag++;
-          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), tangent, 0.0);
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), dofValue, 0.0);
           *outStream << buffer;
         }
-        else if ((i == j) && (std::abs(tangent - 1.0) > tol )) {
+        else if ((i == j) && (std::abs(dofValue - 1.0) > tol )) {
           errorFlag++;
-          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), tangent, 1.0);
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), dofValue, 1.0);
           *outStream << buffer;
         }
       }

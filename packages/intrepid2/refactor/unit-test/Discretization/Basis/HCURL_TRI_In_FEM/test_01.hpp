@@ -137,8 +137,63 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "===============================================================================\n"
-    << "| TEST 1: Testing OPERATOR_VALUE (Kronecker property)                         |\n"
+    << "| TEST 1: Testing OPERATOR_VALUE (Kronecker property using getDofCoeffs)      |\n"
     << "===============================================================================\n";
+
+
+    const ordinal_type order = std::min(4, maxOrder);
+    TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
+
+    const ordinal_type cardinality = triBasis.getCardinality();
+    DynRankView ConstructWithLabel(dofCoords, cardinality , dim);
+    triBasis.getDofCoords(dofCoords);
+
+    DynRankView ConstructWithLabel(dofCoeffs, cardinality , dim);
+    triBasis.getDofCoeffs(dofCoeffs);
+
+    DynRankView ConstructWithLabel(basisAtDofCoords, cardinality , cardinality, dim);
+    triBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
+
+    auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
+    Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
+
+    auto h_dofCoeffs = Kokkos::create_mirror_view(dofCoeffs);
+    Kokkos::deep_copy(h_dofCoeffs, dofCoeffs);
+
+    // test for Kronecker property
+    for (int i=0;i<cardinality;i++) {
+      for (int j=0;j<cardinality;j++) {
+        outputValueType dofValue = 0;
+        for (ordinal_type k=0;k<dim; k++)
+          dofValue += h_basisAtDofCoords(i,j,k)*h_dofCoeffs(j,k);
+
+        if ( i==j && std::abs( dofValue - 1.0 ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not have unit value at its node (" << dofValue <<")\n";
+        }
+        if ( i!=j && std::abs( dofValue ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+        }
+
+      }
+    }
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+
+  try {
+
+    *outStream
+    << "\n"
+    << "=======================================================================================\n"
+    << "| TEST 2: Testing OPERATOR_VALUE (Kronecker property, reconstructing dofs using tags) |\n"
+    << "=======================================================================================\n";
 
 
     const ordinal_type order = std::min(4, maxOrder);
@@ -206,7 +261,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "===============================================================================\n"
-    << "| TEST 2: Testing OPERATOR_VALUE (orthogonality with HDiv)                    |\n"
+    << "| TEST 3: Testing OPERATOR_VALUE (orthogonality with HDiv)                    |\n"
     << "===============================================================================\n";
 
 
@@ -271,7 +326,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "===============================================================================\n"
-    << "| TEST 3: Testing OPERATOR_VALUE (FIAT Values)                                |\n"
+    << "| TEST 4: Testing OPERATOR_VALUE (FIAT Values)                                |\n"
     << "===============================================================================\n";
 
 
@@ -381,7 +436,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "===============================================================================\n"
-    << "| TEST 4: Testing Operator CURL                                               |\n"
+    << "| TEST 5: Testing Operator CURL                                               |\n"
     << "===============================================================================\n";
 
 

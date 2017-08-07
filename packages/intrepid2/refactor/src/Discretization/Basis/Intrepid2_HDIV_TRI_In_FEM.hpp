@@ -232,6 +232,23 @@ class Basis_HDIV_TRI_In_FEM
     Kokkos::deep_copy(dofCoords, this->dofCoords_);
   }
 
+  virtual
+  void
+  getDofCoeffs( scalarViewType dofCoeffs ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+    // Verify rank of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 2, std::invalid_argument,
+        ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::getDofCoeffs) rank = 2 required for dofCoeffs array");
+    // Verify 0th dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.dimension(0)) != this->getCardinality(), std::invalid_argument,
+        ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::getDofCoeffs) mismatch in number of dof and 0th dimension of dofCoeffs array");
+    // Verify 1st dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+        ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::getDofCoeffs) incorrect reference cell (1st) dimension in dofCoeffs array");
+#endif
+    Kokkos::deep_copy(dofCoeffs, this->dofCoeffs_);
+  }
+
   void
   getExpansionCoeffs( scalarViewType coeffs ) const {
     // has to be same rank and dimensions

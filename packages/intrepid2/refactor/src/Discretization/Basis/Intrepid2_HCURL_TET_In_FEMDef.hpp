@@ -210,6 +210,9 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
   Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
   coeffs("Hcurl::Tet::In::coeffs", cardVecPn, card);
 
+  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  dofCoeffs("Hcurl::Tet::In::dofCoeffs", card, spaceDim);
+
   // first, need to project the basis for RT space onto the
   // orthogonal basis of degree n
   // get coefficients of PkHx
@@ -351,9 +354,10 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
     CellTools<Kokkos::HostSpace::execution_space>::getReferenceEdgeTangent( edgeTan ,
         i ,
         this->basisCellTopology_ );
-    /* multiply by 2.0 to account for a Jacobian in Pavel's definition */
+    /* multiply by measure of reference edge so that magnitude of the edgeTan is equal to the edge measure */
+    const scalarType refEdgeMeasure = 2.0;
     for (ordinal_type j=0;j<spaceDim;j++)
-      edgeTan(j) *= 2.0;
+      edgeTan(j) *= refEdgeMeasure;
 
     CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( edgePts ,
         linePts ,
@@ -373,9 +377,11 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
         for (ordinal_type d=0;d<spaceDim;d++)
           V2(i_card,k+d*cardPn) = edgeTan(d) * phisAtEdgePoints(k,j);
 
-      //save dof coordinates
-      for(ordinal_type k=0; k<spaceDim; ++k)
+      //save dof coordinates and coefficients
+      for(ordinal_type k=0; k<spaceDim; ++k) {
         dofCoords(i_card,k) = edgePts(j,k);
+        dofCoeffs(i_card,k) = edgeTan(k);
+      }
 
       tags[i_card][0] = 1; // edge dof
       tags[i_card][1] = i; // edge id
@@ -419,6 +425,8 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
         for(ordinal_type k=0; k<spaceDim; ++k) {
           dofCoords(i_card,k) = facePts(j,k);
           dofCoords(i_card+1,k) = facePts(j,k);
+          dofCoeffs(i_card,k) = faceTan1(k);
+          dofCoeffs(i_card+1,k) = faceTan2(k);
         }
 
         tags[i_card][0] = 2; // face dof
@@ -462,9 +470,10 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
 
       //save dof coordinates
       for(ordinal_type d=0; d<spaceDim; ++d) {
-        for(ordinal_type dim=0; dim<spaceDim; ++dim)
+        for(ordinal_type dim=0; dim<spaceDim; ++dim) {
           dofCoords(i_card+d*numPtsPerCell,dim) = cellPoints(j,dim);
-
+          dofCoeffs(i_card+d*numPtsPerCell,dim) = (d==dim);
+        }
 
         tags[i_card+d*numPtsPerCell][0] = spaceDim; // elem dof
         tags[i_card+d*numPtsPerCell][1] = 0; // elem id
@@ -527,6 +536,9 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
 
   this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
   Kokkos::deep_copy(this->dofCoords_, dofCoords);
+
+  this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);
+  Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
 
 
   // set tags

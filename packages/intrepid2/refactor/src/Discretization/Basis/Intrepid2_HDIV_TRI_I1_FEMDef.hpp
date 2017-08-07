@@ -232,6 +232,18 @@ namespace Intrepid2 {
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
+
+    // dofCoords on host and create its mirror view to device
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+
+    // dofCoeffs are normals to edges, having magnitude equal to edges' measures
+    dofCoeffs(0,0) =  0.0;   dofCoeffs(0,1) = -1.0;
+    dofCoeffs(1,0) =  1.0;   dofCoeffs(1,1) =  1.0;
+    dofCoeffs(2,0) = -1.0;   dofCoeffs(2,1) =  0.0;
+
+    this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);    Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
+
   }
 
 }// namespace Intrepid2

@@ -133,83 +133,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
   *outStream
   << "\n"
   << "===============================================================================\n"
-  << "| TEST 1: Testing OPERATOR_VALUE (Kronecker property)                         |\n"
-  << "===============================================================================\n";
-
-  try {
-
-    const ordinal_type order = std::min(3, maxOrder);
-    HexBasisType hexBasis(order);
-
-    shards::CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >());
-    const ordinal_type numFields = hexBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, numFields, dim);
-    hexBasis.getDofCoords(dofCoords);
-
-    // test for Kronecker property
-    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, dim);
-    hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
-
-    auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
-    Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
-
-    // Face normals
-    //   Note normals are indexed by face following Shards numbering, but
-    //   directions are consistent with basis defintion and not Shards orientation
-    DynRankViewHost ConstructWithLabel(normals, numFields,dim); // normals at each point basis point
-    normals(0,0)  =  0.0; normals(0,1)  =  1.0; normals(0,2)  =  0.0;
-    normals(1,0)  =  1.0; normals(1,1)  =  0.0; normals(1,2)  =  0.0;
-    normals(2,0)  =  0.0; normals(2,1)  =  1.0; normals(2,2)  =  0.0;
-    normals(3,0)  =  1.0; normals(3,1)  =  0.0; normals(3,2)  =  0.0;
-    normals(4,0)  =  0.0; normals(4,1)  =  0.0; normals(4,2)  =  1.0;
-    normals(5,0)  =  0.0; normals(5,1)  =  0.0; normals(5,2)  =  1.0;
-
-    const auto allTags = hexBasis.getAllDofTags();
-    
-    // test for Kronecker property
-    for (int i=0;i<numFields;i++) {
-      for (int j=0;j<numFields;j++) {
-
-        // initialize
-        outputValueType dofValue = 0;
-
-        if(allTags(j,0) == dim-1) { //face
-          auto faceId = allTags(j,1);
-          for (ordinal_type k=0;k<dim; k++)
-            dofValue += h_basisAtDofCoords(i,j,k)*normals(faceId,k);
-        }
-        else { //elem
-           auto dofsPerDim = numFields/dim;
-           auto k_ind = j/dofsPerDim;
-           dofValue = h_basisAtDofCoords(i,j,k_ind);
-        }
-
-        // check values
-        if ( i==j && std::abs( dofValue - 1.0 ) > tol ) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << " Basis function " << i << " does not have unit value at its node (" << dofValue <<")\n";
-        }
-        if ( i!=j && std::abs( dofValue ) > tol ) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << " Basis function " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
-        }
-
-      }
-    }
-
-  } catch (std::exception err) {
-    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-    *outStream << err.what() << '\n';
-    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-    errorFlag = -1000;
-  };
-
-  *outStream
-  << "\n"
-  << "===============================================================================\n"
-  << "| TEST 2: Exception testing                                                   |\n"
+  << "| TEST 1: Exception testing                                                   |\n"
   << "===============================================================================\n";
 
   try {
@@ -336,7 +260,138 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
   *outStream
   << "\n"
   << "===============================================================================\n"
-  << "| TEST 3: Test correctness of basis function values and divs                  |\n"
+  << "| TEST 2: Testing OPERATOR_VALUE (Kronecker property using dof coefficients)  |\n"
+  << "===============================================================================\n";
+
+  try {
+
+    const ordinal_type order = std::min(3, maxOrder);
+    HexBasisType hexBasis(order);
+
+    const ordinal_type numFields = hexBasis.getCardinality();
+    DynRankView ConstructWithLabel(dofCoords, numFields, dim);
+    hexBasis.getDofCoords(dofCoords);
+
+    DynRankView ConstructWithLabel(dofCoeffs, numFields, dim);
+    hexBasis.getDofCoeffs(dofCoeffs);
+
+    // test for Kronecker property
+    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, dim);
+    hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
+
+    auto h_dofCoords = Kokkos::create_mirror_view(dofCoords);
+    Kokkos::deep_copy(h_dofCoords, dofCoords);
+
+    auto h_dofCoeffs = Kokkos::create_mirror_view(dofCoeffs);
+    Kokkos::deep_copy(h_dofCoeffs, dofCoeffs);
+
+    auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
+    Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
+
+    for (int i=0;i<numFields;i++) {
+      for (int j=0;j<numFields;j++) {
+
+        outputValueType dofValue = 0.0;
+        for(ordinal_type d=0;d<dim;++d)
+          dofValue += h_basisAtDofCoords(i,j,d)*h_dofCoeffs(j,d);
+
+        // check values
+        const outputValueType expected_dofValue = (i == j);
+        if (std::abs(dofValue - expected_dofValue) > tol) {
+          errorFlag++;
+          std::stringstream ss;
+          ss << "\nValue of basis function " << i << " at (" << h_dofCoords(i,0) << ", " << h_dofCoords(i,1) << ", "<< h_dofCoords(i,2) << ") is " << dofValue << " but should be " << expected_dofValue << "\n";
+          *outStream << ss.str();
+        }
+      }
+    }
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+
+  *outStream
+  << "\n"
+  << "===============================================================================\n"
+  << "| TEST 3: Testing OPERATOR_VALUE (Kronecker property using tags)              |\n"
+  << "===============================================================================\n";
+
+  try {
+
+    const ordinal_type order = std::min(3, maxOrder);
+    HexBasisType hexBasis(order);
+
+    shards::CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >());
+    const ordinal_type numFields = hexBasis.getCardinality();
+    DynRankView ConstructWithLabel(dofCoords, numFields, dim);
+    hexBasis.getDofCoords(dofCoords);
+
+    // test for Kronecker property
+    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, dim);
+    hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
+
+    auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
+    Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
+
+    // Face normals
+    //   Note normals are indexed by face following Shards numbering, but
+    //   directions are consistent with basis defintion and not Shards orientation
+    DynRankViewHost ConstructWithLabel(normals, numFields,dim); // normals at each point basis point
+    normals(0,0)  =  0.0; normals(0,1)  =  1.0; normals(0,2)  =  0.0;
+    normals(1,0)  =  1.0; normals(1,1)  =  0.0; normals(1,2)  =  0.0;
+    normals(2,0)  =  0.0; normals(2,1)  =  1.0; normals(2,2)  =  0.0;
+    normals(3,0)  =  1.0; normals(3,1)  =  0.0; normals(3,2)  =  0.0;
+    normals(4,0)  =  0.0; normals(4,1)  =  0.0; normals(4,2)  =  1.0;
+    normals(5,0)  =  0.0; normals(5,1)  =  0.0; normals(5,2)  =  1.0;
+
+    const auto allTags = hexBasis.getAllDofTags();
+
+    // test for Kronecker property
+    for (int i=0;i<numFields;i++) {
+      for (int j=0;j<numFields;j++) {
+
+        // initialize
+        outputValueType dofValue = 0;
+
+        if(allTags(j,0) == dim-1) { //face
+          auto faceId = allTags(j,1);
+          for (ordinal_type k=0;k<dim; k++)
+            dofValue += h_basisAtDofCoords(i,j,k)*normals(faceId,k);
+        }
+        else { //elem
+           auto dofsPerDim = numFields/dim;
+           auto k_ind = j/dofsPerDim;
+           dofValue = h_basisAtDofCoords(i,j,k_ind);
+        }
+
+        // check values
+        if ( i==j && std::abs( dofValue - 1.0 ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not have unit value at its node (" << dofValue <<")\n";
+        }
+        if ( i!=j && std::abs( dofValue ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+        }
+
+      }
+    }
+
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+
+  *outStream
+  << "\n"
+  << "===============================================================================\n"
+  << "| TEST 4: Test correctness of basis function values and divs                  |\n"
   << "===============================================================================\n";
 
      outStream -> precision(20);

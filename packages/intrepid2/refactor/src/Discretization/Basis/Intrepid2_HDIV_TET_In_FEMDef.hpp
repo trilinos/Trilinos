@@ -199,10 +199,13 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
 
   // points are computed in the host and will be copied
   Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
-  dofCoords("Hdiv::Tet::In::dofCoords", card, spaceDim);
+    dofCoords("Hdiv::Tet::In::dofCoords", card, spaceDim);
 
   Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
-  coeffs("Hdiv::Tet::In::coeffs", cardVecPn, card);
+    dofCoeffs("Hdiv::Tet::In::dofCoeffs", card, spaceDim);
+
+  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+    coeffs("Hdiv::Tet::In::coeffs", cardVecPn, card);
 
   // first, need to project the basis for RT space onto the
   // orthogonal basis of degree n
@@ -288,21 +291,11 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
         face ,
         this->basisCellTopology_ );
 
-    // multiply to account for reference face areas
+    // multiply to account for reference face areas, so that magnitude of faceNormal is equal to the face measure
+    const scalarType refTriangleMeasure = 0.5;
     for (ordinal_type j=0;j<spaceDim;j++)
-      faceNormal(j) *= 0.5;
+      faceNormal(j) *= refTriangleMeasure;
 
-/*
-    // multiply to account for reference face areas
-    for (ordinal_type j=0;j<spaceDim;j++)
-      faceNormal(j) *= 0.5;
-    if (face == 1)
-    {
-      for (ordinal_type j=0;j<spaceDim;j++)
-         faceNormal(j) *= sqrt(3);
-    }
-
-*/
 
     CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( facePts ,
         triPts ,
@@ -320,16 +313,16 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
 
       // loop over orthonormal basis functions (columns of V2)
       for (ordinal_type k=0;k<cardPn;k++) {
-
         // loop over space dimension
-        for (ordinal_type l=0; l<spaceDim; l++){
-           V2(i_card,k+l*cardPn) = faceNormal(l) * phisAtFacePoints(k,j);
-        }
+        for (ordinal_type l=0; l<spaceDim; l++)
+          V2(i_card,k+l*cardPn) = faceNormal(l) * phisAtFacePoints(k,j);
       }
 
-      //save dof coordinates
-      for(ordinal_type l=0; l<spaceDim; ++l)
+      //save dof coordinates and coefficients
+      for(ordinal_type l=0; l<spaceDim; ++l) {
         dofCoords(i_card,l) = facePts(j,l);
+        dofCoeffs(i_card,l) = faceNormal(l);
+      }
 
       tags[i_card][0] = 2;    // face dof
       tags[i_card][1] = face; // face id
@@ -371,19 +364,18 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
         }
       }
 
-      //save dof coordinates
+      //save dof coordinates and coefficients
       for(ordinal_type d=0; d<spaceDim; ++d) {
-        dofCoords(i_card,d) = internalPoints(j,d);
-        dofCoords(i_card+numPtsPerCell,d) = internalPoints(j,d);
-        dofCoords(i_card+2*numPtsPerCell,d) = internalPoints(j,d);
-
+        for(ordinal_type l=0; l<spaceDim; ++l) {
+          dofCoords(i_card+d*numPtsPerCell,l) = internalPoints(j,l);
+          dofCoeffs(i_card+d*numPtsPerCell,l) = (l==d);
+        }
 
         tags[i_card+d*numPtsPerCell][0] = spaceDim; // elem dof
         tags[i_card+d*numPtsPerCell][1] = 0; // elem id
         tags[i_card+d*numPtsPerCell][2] = spaceDim*j+d; // local dof id
         tags[i_card+d*numPtsPerCell][3] = spaceDim*numPtsPerCell; // total vert dof
       }
-
     }
   }
 
@@ -439,6 +431,9 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
 
   this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
   Kokkos::deep_copy(this->dofCoords_, dofCoords);
+
+  this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);
+  Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
 
 
   // set tags

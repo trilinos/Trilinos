@@ -201,7 +201,10 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   dofCoords("Hdiv::Tri::In::dofCoords", card, spaceDim);
 
   Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
-  coeffs("Hdiv::Tri::In::coeffs", cardVecPn, card);
+    dofCoeffs("Hdiv::Tri::In::dofCoeffs", card, spaceDim);
+
+  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+    coeffs("Hdiv::Tri::In::coeffs", cardVecPn, card);
 
   // first, need to project the basis for RT space onto the
   // orthogonal basis of degree n
@@ -283,9 +286,10 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
         edge ,
         this->basisCellTopology_ );
 
-    /* multiply by 2.0 to account for a Jacobian in Pavel's definition */
+    /* multiply by measure of reference edge so that magnitude of the edgeTan is equal to the edge measure */
+    const scalarType refEdgeMeasure = 2.0;
     for (ordinal_type j=0;j<spaceDim;j++)
-      edgeNormal(j) *= 2.0;
+      edgeNormal(j) *= refEdgeMeasure;
 
 
     CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( edgePts ,
@@ -303,14 +307,17 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
 
       // loop over orthonormal basis functions (columns of V2)
       for (ordinal_type k=0;k<cardPn;k++) {
-        V2(i_card,k) = edgeNormal(0) * phisAtEdgePoints(k,j);
-        V2(i_card,k+cardPn) = edgeNormal(1) * phisAtEdgePoints(k,j);
+        // loop over space dimension
+        for (ordinal_type l=0; l<spaceDim; l++)
+          V2(i_card,k+l*cardPn) = edgeNormal(l) * phisAtEdgePoints(k,j);
       }
 
 
-      //save dof coordinates
-      for(ordinal_type k=0; k<spaceDim; ++k)
-        dofCoords(i_card,k) = edgePts(j,k);
+      //save dof coordinates and coefficients
+      for(ordinal_type l=0; l<spaceDim; ++l) {
+        dofCoords(i_card,l) = edgePts(j,l);
+        dofCoeffs(i_card,l) = edgeNormal(l);
+      }
 
       tags[i_card][0] = 1; // edge dof
       tags[i_card][1] = edge; // edge id
@@ -351,17 +358,17 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
       const ordinal_type i_card = numEdges*order+j;
 
       for (ordinal_type k=0;k<cardPn;k++) {
-        // x component
-        V2(i_card,k) = phisAtInternalPoints(k,j);
-        // y component
-        V2(i_card+numPtsPerCell,cardPn+k) = phisAtInternalPoints(k,j);
+        for (ordinal_type l=0;l<spaceDim;l++) {
+           V2(i_card+l*numPtsPerCell,l*cardPn+k) = phisAtInternalPoints(k,j);
+        }
       }
 
-      //save dof coordinates
+      //save dof coordinates and coefficients
       for(ordinal_type d=0; d<spaceDim; ++d) {
-        dofCoords(i_card,d) = internalPoints(j,d);
-        dofCoords(i_card+numPtsPerCell,d) = internalPoints(j,d);
-
+        for(ordinal_type l=0; l<spaceDim; ++l) {
+          dofCoords(i_card+d*numPtsPerCell,l) = internalPoints(j,l);
+          dofCoeffs(i_card+d*numPtsPerCell,l) = (l==d);
+        }
 
         tags[i_card+d*numPtsPerCell][0] = spaceDim; // elem dof
         tags[i_card+d*numPtsPerCell][1] = 0; // elem id
@@ -423,6 +430,9 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
 
   this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
   Kokkos::deep_copy(this->dofCoords_, dofCoords);
+
+  this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);
+  Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
 
 
   // set tags

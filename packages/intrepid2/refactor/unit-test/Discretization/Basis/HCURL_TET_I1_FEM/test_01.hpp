@@ -136,11 +136,11 @@ namespace Intrepid2 {
     DynRankView ConstructWithLabel( tetNodes, 10, 3 );
 
     // Generic array for the output values; needs to be properly resized depending on the operator type
-    const ordinal_type numFields = tetBasis.getCardinality();
+    const ordinal_type cardinality = tetBasis.getCardinality();
     const ordinal_type numPoints = tetNodes.dimension(0);
 
     DynRankView vals;
-    vals = DynRankView("vals", numFields, numPoints);
+    vals = DynRankView("vals", cardinality, numPoints);
 
     {
     // exception #1: GRAD cannot be applied to HCURL functions 
@@ -162,7 +162,7 @@ namespace Intrepid2 {
     // exception #5
       INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(0,4,1) );
     // exception #6
-      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(numFields) );
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(cardinality) );
     // exception #7
       INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(-1) );
     }
@@ -186,17 +186,17 @@ namespace Intrepid2 {
     }
     { 
     // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-      DynRankView ConstructWithLabel(badVals2, numFields+1, numPoints, 3);
+      DynRankView ConstructWithLabel(badVals2, cardinality+1, numPoints, 3);
       INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals2,tetNodes,OPERATOR_VALUE) );
     }
     { 
     // exception #13 incorrect 1st dimension of output array (must equal number of points)
-      DynRankView ConstructWithLabel(badVals3, numFields, numPoints+1, 3);
+      DynRankView ConstructWithLabel(badVals3, cardinality, numPoints+1, 3);
       INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals3,tetNodes,OPERATOR_VALUE) );
     }
     {
     // exception #14: incorrect 2nd dimension of output array (must equal the space dimension)
-      DynRankView ConstructWithLabel(badVals4, numFields, numPoints, 4);
+      DynRankView ConstructWithLabel(badVals4, cardinality, numPoints, 4);
       INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals4,tetNodes,OPERATOR_VALUE) );
     // exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
       INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals4,tetNodes,OPERATOR_CURL) );
@@ -371,22 +371,22 @@ namespace Intrepid2 {
     Kokkos::deep_copy(tetNodes, tetNodesHost);
         
     // Dimensions for the output arrays:
-    const ordinal_type numFields = tetBasis.getCardinality();
+    const ordinal_type cardinality = tetBasis.getCardinality();
     const ordinal_type numPoints = tetNodes.dimension(0);
     const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
     
     { 
     // Check VALUE of basis functions: resize vals to rank-3 container:
-    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+    DynRankView ConstructWithLabel(vals, cardinality, numPoints, spaceDim);
     tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (ordinal_type i = 0; i < numFields; ++i) {
+    for (ordinal_type i = 0; i < cardinality; ++i) {
       for (ordinal_type j = 0; j < numPoints; ++j) {
         for (ordinal_type k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
+           const ordinal_type l = k + i * spaceDim + j * spaceDim * cardinality;
            if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol ) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -403,16 +403,16 @@ namespace Intrepid2 {
     }
     { 
     // Check CURL of basis function: resize vals to rank-3 container
-    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+    DynRankView ConstructWithLabel(vals, cardinality, numPoints, spaceDim);
     tetBasis.getValues(vals, tetNodes, OPERATOR_CURL);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (ordinal_type i = 0; i < numFields; ++i) {
+    for (ordinal_type i = 0; i < cardinality; ++i) {
       for (ordinal_type j = 0; j < numPoints; ++j) {
         for (ordinal_type k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
+           const ordinal_type l = k + i * spaceDim + j * spaceDim * cardinality;
            if (std::abs(vals_host(i,j,k) - basisCurls[l]) > tol ) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -443,7 +443,7 @@ namespace Intrepid2 {
     << "===============================================================================\n";
 
   try{
-    const ordinal_type numFields = tetBasis.getCardinality();
+    const ordinal_type cardinality = tetBasis.getCardinality();
     const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
 
     // Check exceptions.
@@ -470,42 +470,36 @@ namespace Intrepid2 {
     }
 
     // Check mathematical correctness
-    DynRankView ConstructWithLabel(bvals, numFields, numFields, spaceDim);
-    DynRankView ConstructWithLabel(cvals, 6, spaceDim); 
+    DynRankView ConstructWithLabel(bvals, cardinality, cardinality, spaceDim);
+    DynRankView ConstructWithLabel(cvals, cardinality, spaceDim);
+    DynRankView ConstructWithLabel(dofCoeffs, cardinality, spaceDim);
     tetBasis.getDofCoords(cvals);
+    tetBasis.getDofCoeffs(dofCoeffs);
     tetBasis.getValues(bvals, cvals, OPERATOR_VALUE);
 
     auto cvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals);
     Kokkos::deep_copy(cvals_host, cvals);
+    auto dofCoeffs_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), dofCoeffs);
+    Kokkos::deep_copy(dofCoeffs_host, dofCoeffs);
     auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
     Kokkos::deep_copy(bvals_host, bvals);
 
-//    Kokkos::View<ValueType**, typename DynRankView::array_layout, typename HostSpaceType::execution_space> ConstructWithLabel(tangents, numFields, spaceDim); 
-    DynRankViewHost ConstructWithLabel(tangents, numFields, spaceDim);
-    tangents(0,0)  =  1.0; tangents(0,1)  =  0.0; tangents(0,2)  =  0.0;
-    tangents(1,0)  = -1.0; tangents(1,1)  =  1.0; tangents(1,2)  =  0.0;
-    tangents(2,0)  =  0.0; tangents(2,1)  = -1.0; tangents(2,2)  =  0.0;
-    tangents(3,0)  =  0.0; tangents(3,1)  =  0.0; tangents(3,2)  =  1.0;
-    tangents(4,0)  = -1.0; tangents(4,1)  =  0.0; tangents(4,2)  =  1.0;
-    tangents(5,0)  =  0.0; tangents(5,1)  = -1.0; tangents(5,2)  =  1.0;
-
     char buffer[120];
-    ordinal_type b_dim0(bvals_host.dimension(0)), b_dim1(bvals_host.dimension(1));
-    for (ordinal_type i=0; i<b_dim0; ++i) {
-      for (ordinal_type j=0; j<b_dim1; ++j) {
+    for (ordinal_type i=0; i<cardinality; ++i) {
+      for (ordinal_type j=0; j<cardinality; ++j) {
 
-        double tangent = 0.0;
+        double dofValue = 0.0;
         for(ordinal_type d=0;d<spaceDim;++d)
-           tangent += bvals_host(i,j,d)*tangents(j,d);
+          dofValue += bvals_host(i,j,d)*dofCoeffs_host(j,d);
 
-        if ((i != j) && (std::abs(tangent - 0.0) > tol )) {
+        if ((i != j) && (std::abs(dofValue - 0.0) > tol )) {
           errorFlag++;
-          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), cvals_host(i,2), tangent, 0.0);
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), cvals_host(i,2), dofValue, 0.0);
           *outStream << buffer;
         }
-        else if ((i == j) && (std::abs(tangent - 1.0) > tol )) {
+        else if ((i == j) && (std::abs(dofValue - 1.0) > tol )) {
           errorFlag++;
-          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), cvals_host(i,2), tangent, 1.0);
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), cvals_host(i,2), dofValue, 1.0);
           *outStream << buffer;
         }
       }
