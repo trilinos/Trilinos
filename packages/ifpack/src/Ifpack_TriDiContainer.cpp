@@ -252,7 +252,7 @@ int Ifpack_TriDiContainer::Compute(const Epetra_RowMatrix& Matrix_in)
    // #ifdef IFPACK_FLOPCOUNTERS
    //   ApplyFlops_ += 2 * NumRows_ * NumRows_;
    // #endif
-   return(0);
+   //return(0); // unreachable
  }
 
 //==============================================================================
