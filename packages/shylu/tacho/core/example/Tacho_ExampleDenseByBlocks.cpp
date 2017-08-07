@@ -1,5 +1,3 @@
-#include "Teuchos_CommandLineProcessor.hpp"
-
 #include "ShyLUTacho_config.h"
 
 #include <Kokkos_Core.hpp>
@@ -14,6 +12,8 @@
 #include "TachoExp_Herk_ByBlocks.hpp"
 #include "TachoExp_Trsm_ByBlocks.hpp"
 
+#include "TachoExp_CommandLineParser.hpp" 
+
 #ifdef HAVE_SHYLUTACHO_MKL
 #include "mkl_service.h"
 #endif
@@ -22,37 +22,26 @@ using namespace Tacho;
 using namespace Tacho::Experimental;
 
 int main (int argc, char *argv[]) {
-  Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of dense-by-blocks algorithms on Kokkos::OpenMP execution space.\n");
+  CommandLineParser opts("This example program measure the performance of dense-by-blocks on Kokkos::OpenMP");  
 
   bool serial = false;
-  clp.setOption("enable-serial", "disable-verbose", &serial, "Flag for invoking serial algorithm");
-
   int nthreads = 1;
-  clp.setOption("kokkos-threads", &nthreads, "Number of threads");
-
   bool verbose = true;
-  clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
-
   int mbeg = 1000;
-  clp.setOption("begin", &mbeg, "Test problem begin size");
-
   int mend = 6000;
-  clp.setOption("end", &mend, "Test problem end size");
-
   int step = 1000;
-  clp.setOption("step", &step, "Test problem step size");
-
   int mb = 128;
-  clp.setOption("mb", &mb, "Blocksize");
 
-  clp.recogniseAllOptions(true);
-  clp.throwExceptions(false);
+  opts.set_option<bool>("enable-serial", "Flag for invoking serial algorithm", &serial);
+  opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
+  opts.set_option<bool>("enable-verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<int>("begin", "Test problem begin size", &mbeg);  
+  opts.set_option<int>("end", "Test problem end size", &mend);  
+  opts.set_option<int>("step", "Test problem step size", &step);  
+  opts.set_option<int>("mb", "Blocksize", &mb);  
 
-  Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
-
-  if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
-  if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+  const bool r_parse = opts.parse(argc, argv);
+  if (r_parse) return 0; // print help return 
 
   Kokkos::initialize(argc, argv);
   if (std::is_same<Kokkos::DefaultHostExecutionSpace,Kokkos::Serial>::value) 

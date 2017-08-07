@@ -1,5 +1,3 @@
-#include "Teuchos_CommandLineProcessor.hpp"
-
 #include "ShyLUTacho_config.h"
 
 #include <Kokkos_Core.hpp>
@@ -24,6 +22,8 @@
 
 #include "TachoExp_NumericTools.hpp"
 
+#include "TachoExp_CommandLineParser.hpp"
+
 #ifdef HAVE_SHYLUTACHO_MKL
 #include "mkl_service.h"
 #endif
@@ -32,37 +32,26 @@ using namespace Tacho;
 using namespace Tacho::Experimental;
 
 int main (int argc, char *argv[]) {
-  Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of Pardiso Chol algorithms on Kokkos::OpenMP execution space.\n");
+  CommandLineParser opts("This example program measure the performance of Tacho on Kokkos::OpenMP");
 
   bool serial = false;
-  clp.setOption("enable-serial", "disable-verbose", &serial, "Flag for invoking serial algorithm");
-
   int nthreads = 1;
-  clp.setOption("kokkos-threads", &nthreads, "Number of threads");
-
   bool verbose = true;
-  clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
-
   std::string file = "test.mtx";
-  clp.setOption("file", &file, "Input file (MatrixMarket SPD matrix)");
-
   int nrhs = 1;
-  clp.setOption("nrhs", &nrhs, "Number of RHS vectors");
-
   int serial_thres_size = -1; // 32 is better
-  clp.setOption("serial-thres", &serial_thres_size, "Serial threshold");  
-  
   int mb = 0;
-  clp.setOption("mb", &mb, "Blocksize");
 
-  clp.recogniseAllOptions(true);
-  clp.throwExceptions(false);
+  opts.set_option<bool>("enable-serial", "Flag to use serial algorithm", &serial);
+  opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
+  opts.set_option<bool>("enable-verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
+  opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
+  opts.set_option<int>("serial-thres", "Serialization threshold size", &serial_thres_size);
+  opts.set_option<int>("mb", "Blocksize", &mb);
 
-  Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
-
-  if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
-  //if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+  const bool r_parse = opts.parse(argc, argv);
+  if (r_parse) return 0; // print help return
 
   Kokkos::initialize(argc, argv);
   if (std::is_same<Kokkos::DefaultHostExecutionSpace,Kokkos::Serial>::value) 
