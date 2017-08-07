@@ -100,7 +100,7 @@ namespace MueLu {
     GO offset    = 0;
     LO blockid          = -1;  // block id in strided map
     LO nStridedOffset   = 0;   // DOF offset for strided block id "blockid" (default = 0)
-    LO stridedblocksize = blockdim; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
+    //LO stridedblocksize = blockdim; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
 
     // 1) check for blocking/striding information
     //    fill above variables
@@ -116,11 +116,11 @@ namespace MueLu {
         std::vector<size_t> stridingInfo = strMap->getStridingData();
         for (size_t j = 0; j < Teuchos::as<size_t>(blockid); j++)
           nStridedOffset += stridingInfo[j];
-        stridedblocksize = Teuchos::as<LocalOrdinal>(stridingInfo[blockid]);
+        //stridedblocksize = Teuchos::as<LocalOrdinal>(stridingInfo[blockid]);
 
-      } else {
-        stridedblocksize = blockdim;
-      }
+      }// else {
+      //  stridedblocksize = blockdim;
+      //}
       oldView = A->SwitchToView(oldView);
       //GetOStream(Statistics0) << "IsorropiaInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
     } else GetOStream(Statistics0) << "IsorropiaInterface::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;

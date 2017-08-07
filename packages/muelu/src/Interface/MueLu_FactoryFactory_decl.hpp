@@ -342,7 +342,7 @@ namespace MueLu {
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory: unknown factory name : " << factoryName);
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 
     //
