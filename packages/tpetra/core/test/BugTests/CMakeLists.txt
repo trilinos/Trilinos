@@ -1,16 +1,21 @@
 
 IF (${PACKAGE_NAME}_ENABLE_BUGTESTS)
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BugTests
+    SOURCES
+    BugTests
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraBugTests
+    SOURCE_FILES addA2.hb
+    EXEDEPS BugTests
+    )
+
   IF (Tpetra_INST_INT_INT)  
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      BugTests
-      SOURCES
-      BugTests
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      )
-    
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       BlankRowBugTest
       SOURCES
@@ -19,11 +24,6 @@ IF (${PACKAGE_NAME}_ENABLE_BUGTESTS)
       COMM mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 2
-      )
-
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraBugTests
-      SOURCE_FILES addA2.hb
-      EXEDEPS BugTests
       )
   ENDIF()
   
