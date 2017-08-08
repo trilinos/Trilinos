@@ -355,7 +355,6 @@ namespace MueLuTests {
                 Teuchos::ScalarTraits<SC>::zero());
 
     ArrayRCP<const SC> fine_data   = vector0->getData(0);
-    LO indk, indj, indi;
     bool is_linear = true, is_injected = true;
     Array<LO> fine_inds(9);
     Array<LO> coarse_inds(9);
@@ -559,7 +558,6 @@ namespace MueLuTests {
                 Teuchos::ScalarTraits<SC>::zero());
 
     ArrayRCP<const SC> fine_data   = vector0->getData(0);
-    LO indk, indj, indi;
     bool is_constant = true, is_injected = true;
     Array<LO> fine_inds(9);
     Array<LO> coarse_inds(9);
