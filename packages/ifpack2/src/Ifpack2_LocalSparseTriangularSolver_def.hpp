@@ -372,7 +372,9 @@ initialize ()
     auto ind    = Alocal.graph.entries;
     auto val    = Alocal.values;
 
-    auto numRows = Alocal.numRows(), numCols = Alocal.numCols(), numNnz = Alocal.nnz();
+    auto numRows = Alocal.numRows();
+    auto numCols = Alocal.numCols();
+    auto numNnz = Alocal.nnz();
 
     typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.dimension_0 ());
     typename decltype(ind)::non_const_type  newind ("ind", ind.dimension_0 ());
