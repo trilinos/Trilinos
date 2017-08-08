@@ -31,9 +31,9 @@ namespace Tacho {
     typedef typename supernode_info_type::value_type_array value_type_array;
     typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-#if   defined(HAVE_SHYLUTACHO_METIS)
+#if   defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
-#elif defined(HAVE_SHYLUTACHO_SCOTCH)
+#elif defined(TACHO_HAVE_SCOTCH)
     typedef GraphTools_Scotch graph_tools_type;
 #else
     typedef GraphTools_CAMD graph_tools_type;

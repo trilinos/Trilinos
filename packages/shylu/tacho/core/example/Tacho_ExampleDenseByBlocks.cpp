@@ -14,7 +14,7 @@
 
 #include "TachoExp_CommandLineParser.hpp" 
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef TACHO_HAVE_MKL
 #include "mkl_service.h"
 #endif
 

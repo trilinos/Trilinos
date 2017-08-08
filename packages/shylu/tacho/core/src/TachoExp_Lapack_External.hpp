@@ -12,7 +12,7 @@ extern "C" {
   ///
   /// POTRF
   ///
-#if !defined( HAVE_SHYLUTACHO_MKL )
+#if !defined( TACHO_HAVE_MKL )
   void F77_BLAS_MANGLE(spotrf,SPOTRF)( const char*, 
                                        int*, 
                                        float*, int*,
@@ -128,7 +128,7 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *info) {
-#if defined( HAVE_SHYLUTACHO_MKL )
+#if defined( TACHO_HAVE_MKL )
         F77_FUNC_CPOTRF(&uplo,
                         &m,
                         (MKL_Complex8 *)a, &lda,
@@ -146,7 +146,7 @@ namespace Tacho {
                  T *a, int lda,
                  int *ipiv,
                  int *info) {
-#if defined( HAVE_SHYLUTACHO_MKL )
+#if defined( TACHO_HAVE_MKL )
         F77_FUNC_CSYTRF(&uplo,
                         &m,
                         (MKL_Complex8 *)a, &lda,
@@ -170,7 +170,7 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *info) {
-#if defined( HAVE_SHYLUTACHO_MKL )
+#if defined( TACHO_HAVE_MKL )
         F77_FUNC_ZPOTRF(&uplo,
                         &m,
                         (MKL_Complex16 *)a, &lda,
@@ -188,7 +188,7 @@ namespace Tacho {
                  T *a, int lda,
                  int *ipiv,
                  int *info) {
-#if defined( HAVE_SHYLUTACHO_MKL )
+#if defined( TACHO_HAVE_MKL )
         F77_FUNC_ZSYTRF(&uplo,
                         &m,
                         (MKL_Complex16 *)a, &lda,
