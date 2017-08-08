@@ -60,6 +60,8 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
+#include "Intrepid_DefaultCubatureFactory.hpp"
+
 #include "fe.hpp"
 #include "fe_curl.hpp"
 #include "pde.hpp"
@@ -101,6 +103,14 @@ namespace ROL {
   }
 }
 #endif
+
+template<class Real>
+class Solution {
+public:
+  virtual ~Solution() {}
+  Solution(void) {}
+  virtual Real evaluate(const std::vector<Real> &x) const = 0;
+};
 
 template<class Real>
 class Assembler {
@@ -1825,6 +1835,116 @@ public:
   /* End of functions for Riesz operator of optimization variables.          */
   /***************************************************************************/
 
+
+  /***************************************************************************/
+  /* Compute error routines.                                                 */
+  /***************************************************************************/
+  Real computeStateError(const Teuchos::RCP<const Tpetra::MultiVector<> > &soln,
+                         const Teuchos::RCP<Solution<Real> > &trueSoln,
+                         const int cubDeg = 6) const {
+    // create fe object for error computation
+    Intrepid::DefaultCubatureFactory<Real> cubFactory;
+    shards::CellTopology cellType = basisPtrs_[0]->getBaseCellTopology();
+    Teuchos::RCP<Intrepid::Cubature<Real> > cellCub = cubFactory.create(cellType, cubDeg);
+    Teuchos::RCP<FE<Real> > fe
+      = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrs_[0],cellCub));
+
+    // get dimensions
+    int c = fe->gradN()->dimension(0);
+    int f = fe->gradN()->dimension(1);
+    int p = fe->gradN()->dimension(2);
+    int d = fe->gradN()->dimension(3);
+
+    // populate inCoeffs
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > inCoeffs
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    getCoeffFromStateVector(inCoeffs, soln);
+
+    // evaluate input coefficients on fe basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > funcVals
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe->evaluateValue(funcVals, inCoeffs);
+
+    // subtract off true solution
+    std::vector<Real> x(d);
+    for (int i=0; i<c; ++i) {
+      for (int j=0; j<p; ++j) {
+        for (int k=0; k<d; ++k) {
+          x[k] = (*fe->cubPts())(i, j, k);
+        }
+        (*funcVals)(i, j) -= trueSoln->evaluate(x);
+      }
+    }
+
+    // compute norm squared of local error
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > normSquaredError
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
+    fe->computeIntegral(normSquaredError, funcVals, funcVals, false);
+
+    Real localErrorSum(0);
+    Real globalErrorSum(0);
+    for (int i=0; i<numCells_; ++i) {
+      localErrorSum += (*normSquaredError)(i);
+    }
+    Teuchos::reduceAll<int, Real>(*comm_, Teuchos::REDUCE_SUM, 1, &localErrorSum, &globalErrorSum);
+
+    return globalErrorSum;
+  }
+
+  Real computeControlError(const Teuchos::RCP<const Tpetra::MultiVector<> > &soln,
+                           const Teuchos::RCP<Solution<Real> > &trueSoln,
+                           const int cubDeg = 6) const {
+    // create fe object for error computation
+    Intrepid::DefaultCubatureFactory<Real> cubFactory;
+    shards::CellTopology cellType = basisPtrs_[0]->getBaseCellTopology();
+    Teuchos::RCP<Intrepid::Cubature<Real> > cellCub = cubFactory.create(cellType, cubDeg);
+    Teuchos::RCP<FE<Real> > fe
+      = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrs_[0],cellCub));
+
+    // get dimensions
+    int c = fe->gradN()->dimension(0);
+    int f = fe->gradN()->dimension(1);
+    int p = fe->gradN()->dimension(2);
+    int d = fe->gradN()->dimension(3);
+
+    // populate inCoeffs
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > inCoeffs
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    getCoeffFromControlVector(inCoeffs, soln);
+
+    // evaluate input coefficients on fe basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > funcVals
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe->evaluateValue(funcVals, inCoeffs);
+
+    // subtract off true solution
+    std::vector<Real> x(d);
+    for (int i=0; i<c; ++i) {
+      for (int j=0; j<p; ++j) {
+        for (int k=0; k<d; ++k) {
+          x[k] = (*fe->cubPts())(i, j, k);
+        }
+        (*funcVals)(i, j) -= trueSoln->evaluate(x);
+      }
+    }
+
+    // compute norm squared of local error
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > normSquaredError
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
+    fe->computeIntegral(normSquaredError, funcVals, funcVals, false);
+
+    Real localErrorSum(0);
+    Real globalErrorSum(0);
+    for (int i=0; i<numCells_; ++i) {
+      localErrorSum += (*normSquaredError)(i);
+    }
+    Teuchos::reduceAll<int, Real>(*comm_, Teuchos::REDUCE_SUM, 1, &localErrorSum, &globalErrorSum);
+
+    return globalErrorSum;
+  }
+  /***************************************************************************/
+  /* End of compute solution routines.                                       */
+  /***************************************************************************/
 
   /***************************************************************************/
   /* Output routines.                                                        */
