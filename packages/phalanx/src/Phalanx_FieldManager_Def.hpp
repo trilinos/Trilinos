@@ -467,5 +467,22 @@ std::ostream& PHX::operator<<(std::ostream& os,
 }
 
 // **************************************************************
+template<typename Traits>
+template<typename EvalT>
+void PHX::FieldManager<Traits>::buildDagForType()
+{
+  m_eval_containers.template getAsObject<EvalT>()->buildDag();
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT>
+const std::vector<Teuchos::RCP<const PHX::FieldTag>>&
+PHX::FieldManager<Traits>::getFieldTagsForType() const
+{
+  return m_eval_containers.template getAsObject<EvalT>()->getFieldTags();
+}
+
+// **************************************************************
 
 #endif

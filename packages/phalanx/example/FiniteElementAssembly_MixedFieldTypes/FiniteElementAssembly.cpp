@@ -244,6 +244,18 @@ int main(int argc, char *argv[])
       fm.requireField<Jacobian>(*scatter_tag_j);
     }
 
+    // *********************************************
+    // This block is not in FiniteElementAssembly_MDField. It is used
+    // to unit test a power user feature for building the DAG separate
+    // from allocating and binding the field memory.
+    {
+      const auto& tags = fm.getFieldTagsForType<Residual>();
+      TEUCHOS_ASSERT(tags.size() == 0);
+      fm.buildDagForType<Residual>();
+      TEUCHOS_ASSERT(tags.size() == static_cast<std::size_t>(num_equations * 4 + 1));
+    }
+    // *********************************************
+
     fm.postRegistrationSetup(nullptr);
     fm.writeGraphvizFile("example_fem",".dot",true,true);
 

@@ -187,7 +187,7 @@ namespace PHX {
     void setUnmanagedField(const FieldTag& ft,
                            Kokkos::View<DataT,PHX::Device>& f);
 
-    /* \brief Makes two fields point to (alias) the same memory for all evaluation types. 
+    /*! \brief Makes two fields point to (alias) the same memory for all evaluation types. 
 
        WARNING: this is a very dangerous power user capability. This
        allows users to tell the FieldManager to create a new field
@@ -208,7 +208,7 @@ namespace PHX {
     void aliasFieldForAllEvaluationTypes(const PHX::FieldTag& aliasedField,
                                          const PHX::FieldTag& targetField);
 
-    /* \brief Makes two fields point to (alias) the same memory for a specific evaluation type. 
+    /*! \brief Makes two fields point to (alias) the same memory for a specific evaluation type. 
 
        WARNING: this is a very dangerous power user capability. This
        allows users to tell the FieldManager to create a new field
@@ -287,6 +287,30 @@ namespace PHX {
 
     template<typename EvalT>
     void analyzeGraph(double& speedup, double& parallelizability) const;
+
+    /*! Builds the DAG for the evalaution type. This should only be
+        called after all evaluators are registered and all required
+        fields are requested. This method is for power users
+        only. This is automatically called during
+        postRegistrationSetup() and normally does not have to be
+        called by the users. This method allows users to build the DAG
+        but then perform other activities prior to allocating the
+        fields. An example use case is to delay the sizing of the
+        fields in the DataLayouts until right before allocation. The
+        user could create the dag and access a list of required fields
+        and then do sizing based on information aboutrequired fields.
+    */
+    template<typename EvalT>
+    void buildDagForType();
+
+    /*! Returns the FieldTags for all fields involved in the
+        evaluation. Will throw if postRegistrationSetup(),
+        postRegistrationSetupForType() or buildDagForType() have not
+        been called yet.
+     */
+    template<typename EvalT>
+    const std::vector<Teuchos::RCP<const PHX::FieldTag>>&
+    getFieldTagsForType() const;
 
   private:
 

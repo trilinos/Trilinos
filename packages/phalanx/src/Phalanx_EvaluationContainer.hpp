@@ -120,6 +120,20 @@ namespace PHX {
 
     void analyzeGraph(double& speedup, double& parallelizability) const;
 
+    /*! Build the DAG. This is automatically called by the
+        postRegistrationSetup() method. This function is a power user
+        feature that allows for cases where the user would like to
+        build the dag and query it to use information form the DAG
+        prior to allocating and binding the memory to fields.
+     */
+    void buildDag();
+
+    /*! Returns the FieldTags for all fields required in the DAG for
+        evalaution. This will be empty if the DAG has not yet been
+        constructed.
+     */
+    const std::vector<Teuchos::RCP<const PHX::FieldTag>>& getFieldTags() const;
+
   protected:
 
     bool post_registration_setup_called_;

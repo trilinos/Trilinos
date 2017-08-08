@@ -140,7 +140,7 @@ namespace PHX {
     
     void setEvaluationTypeName(const std::string& evaluation_type_name);
     
-    const std::vector< Teuchos::RCP<PHX::FieldTag> >& getFieldTags();
+    const std::vector<Teuchos::RCP<const PHX::FieldTag>>& getFieldTags() const;
 
     bool sortingCalled() const;
 
@@ -218,7 +218,7 @@ namespace PHX {
       contributed_field_to_node_index_;
     
     //! All fields that are needed for the evaluation.
-    std::vector< Teuchos::RCP<PHX::FieldTag> > fields_;
+    std::vector< Teuchos::RCP<const PHX::FieldTag> > fields_;
 
     // Timers used when configured with Phalanx_ENABLE_TEUCHOS_TIME_MONITOR.
     std::vector<Teuchos::RCP<Teuchos::Time> > evalTimers;

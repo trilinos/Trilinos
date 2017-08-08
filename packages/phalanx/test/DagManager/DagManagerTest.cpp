@@ -171,7 +171,7 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   }
 
   // Test some class methods
-  const std::vector< Teuchos::RCP<PHX::FieldTag> >& tags = em.getFieldTags();
+  const std::vector< Teuchos::RCP<const PHX::FieldTag> >& tags = em.getFieldTags();
   TEST_EQUALITY(tags.size(),5);
   em.writeGraphvizFile("basic_dag.dot",true,true,false);
   cout << "\n" << em << endl;   cout << "\n" << em << endl;  
