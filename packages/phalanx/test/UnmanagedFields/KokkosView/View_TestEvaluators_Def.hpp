@@ -42,55 +42,67 @@
 // @HEADER
 
 
-#ifndef PHX_EVALUATOR_UTILITIES_H
-#define PHX_EVALUATOR_UTILITIES_H
+//**********************************************************************
+#include "Phalanx_DataLayout_DynamicLayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 
-#include <vector>
-
-#include "Phalanx_FieldManager.hpp"
+struct CELL;
+struct BASIS;
 
 namespace PHX {
 
-  // Forward declaration
-  template<typename DataT, int Rank> class Field;
+  PHX_EVALUATOR_CTOR(EvalUnmanaged,plist) :
+    tag_a("a",plist.get<Teuchos::RCP<PHX::DataLayout>>("dl")),
+    tag_b("b",plist.get<Teuchos::RCP<PHX::DataLayout>>("dl")),
+    tag_c("c",plist.get<Teuchos::RCP<PHX::DataLayout>>("dl")),
+    tag_d("d",plist.get<Teuchos::RCP<PHX::DataLayout>>("dl"))  
+  {
+    // static
+    this->addEvaluatedField(tag_a,a);
+    this->addDependentField(tag_b,b);
 
-  // Forward declaration
-  template <typename DataT,
-            typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-            typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-  class MDField;
+    // dynamic
+    this->addEvaluatedField(tag_c,c);
+    this->addDependentField(tag_d,d);
+  }
 
-  /*! @brief Utilities to hide templating in concrete Evaluators.
-   
-  */
-  template<typename EvalT, typename Traits> 
-  struct EvaluatorUtilities {
+  PHX_POST_REGISTRATION_SETUP(EvalUnmanaged,data,fm)
+  {
+    this->utils.setFieldData(tag_a,a,fm);
+    this->utils.setFieldData(tag_b,b,fm);
+    this->utils.setFieldData(tag_c,c,fm);
+    this->utils.setFieldData(tag_d,d,fm);
+  }
 
-    template <typename DataT,
-	      typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	      typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void setFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
-		      Tag6,Tag7>& f, PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<DataT,EvalT>(f);
-    }
+  PHX_EVALUATE_FIELDS(EvalUnmanaged,data)
+  {
+    Kokkos::deep_copy(a,b);
+    Kokkos::deep_copy(c,d);
+  }
 
-    template <typename DataT,int Rank>
-              void setFieldData(PHX::Field<DataT,Rank>& f,
-                                PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<EvalT,DataT>(f);
-    }
+  PHX_EVALUATOR_CTOR(EvalDummy,plist) :
+      tag_b("b",plist.get<Teuchos::RCP<PHX::DataLayout>>("dl")),
+      tag_d("d",plist.get<Teuchos::RCP<PHX::DataLayout>>("dl"))  
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
 
-    template<typename DataT,typename... Props>
-    void setFieldData(const PHX::FieldTag& ft,
-                      Kokkos::View<DataT,Props...>& f,
-                      PHX::FieldManager<Traits>& fm)
-    {
+    // static
+    this->addEvaluatedField(tag_b,b);
 
-    }
+    // dynamic
+    this->addEvaluatedField(tag_d,d);
+  }
 
-  };
-}
+  PHX_POST_REGISTRATION_SETUP(EvalDummy,data,fm)
+  {
+    this->utils.setFieldData(tag_b,b,fm);
+    this->utils.setFieldData(tag_d,d,fm);
+  }
 
-#endif
+  PHX_EVALUATE_FIELDS(EvalDummy,data)
+  {
+    // do nothing - they are unmanaged - data values are set by user
+  }
+
+} 

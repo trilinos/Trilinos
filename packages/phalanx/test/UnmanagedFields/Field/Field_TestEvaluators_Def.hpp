@@ -42,55 +42,79 @@
 // @HEADER
 
 
-#ifndef PHX_EVALUATOR_UTILITIES_H
-#define PHX_EVALUATOR_UTILITIES_H
+//**********************************************************************
+#include "Phalanx_DataLayout_DynamicLayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 
-#include <vector>
-
-#include "Phalanx_FieldManager.hpp"
+struct CELL;
+struct BASIS;
 
 namespace PHX {
 
-  // Forward declaration
-  template<typename DataT, int Rank> class Field;
+  PHX_EVALUATOR_CTOR(EvalUnmanaged,plist)
 
-  // Forward declaration
-  template <typename DataT,
-            typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-            typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-  class MDField;
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
 
-  /*! @brief Utilities to hide templating in concrete Evaluators.
-   
-  */
-  template<typename EvalT, typename Traits> 
-  struct EvaluatorUtilities {
+    RCP<PHX::DataLayout> dl = 
+      rcp(new PHX::Layout("H-Grad<CELL,BASIS>",100,4));
 
-    template <typename DataT,
-	      typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	      typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void setFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
-		      Tag6,Tag7>& f, PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<DataT,EvalT>(f);
-    }
+    a = PHX::Field<double,2>("a",dl);
+    b = PHX::Field<const double,2>("b",dl);
+    c = PHX::Field<double,2>("c",dl);
+    d = PHX::Field<const double,2>("d",dl);
 
-    template <typename DataT,int Rank>
-              void setFieldData(PHX::Field<DataT,Rank>& f,
-                                PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<EvalT,DataT>(f);
-    }
+    // static
+    this->addEvaluatedField(a);
+    this->addDependentField(b);
 
-    template<typename DataT,typename... Props>
-    void setFieldData(const PHX::FieldTag& ft,
-                      Kokkos::View<DataT,Props...>& f,
-                      PHX::FieldManager<Traits>& fm)
-    {
+    // dynamic
+    this->addEvaluatedField(c);
+    this->addDependentField(d);
+  }
 
-    }
+  PHX_POST_REGISTRATION_SETUP(EvalUnmanaged,data,fm)
+  {
+    this->utils.setFieldData(a,fm);
+    this->utils.setFieldData(b,fm);
+    this->utils.setFieldData(c,fm);
+    this->utils.setFieldData(d,fm);
+  }
 
-  };
-}
+  PHX_EVALUATE_FIELDS(EvalUnmanaged,data)
+  {
+    a.deep_copy(b);
+    c.deep_copy(d);
+  }
 
-#endif
+  PHX_EVALUATOR_CTOR(EvalDummy,plist)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    RCP<PHX::DataLayout> dl = 
+      rcp(new PHX::Layout("H-Grad<CELL,BASIS>",100,4));
+
+    b = PHX::Field<double,2>("b",dl);
+    d = PHX::Field<double,2>("d",dl);
+
+    // static
+    this->addEvaluatedField(b);
+
+    // dynamic
+    this->addEvaluatedField(d);
+  }
+
+  PHX_POST_REGISTRATION_SETUP(EvalDummy,data,fm)
+  {
+    this->utils.setFieldData(b,fm);
+    this->utils.setFieldData(d,fm);
+  }
+
+  PHX_EVALUATE_FIELDS(EvalDummy,data)
+  {
+    // do nothing - they are unmanaged - data values are set by user
+  }
+
+} 

@@ -41,56 +41,41 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_FIELD_TEST_EVALUATORS_HPP
+#define PHX_FIELD_TEST_EVALUATORS_HPP
 
-#ifndef PHX_EVALUATOR_UTILITIES_H
-#define PHX_EVALUATOR_UTILITIES_H
+#include "Phalanx_Evaluator_Macros.hpp"
 
-#include <vector>
-
-#include "Phalanx_FieldManager.hpp"
+// Forward declaration
+namespace Kokkos {
+  template<typename DataT,typename... Props> class View;
+}
 
 namespace PHX {
 
-  // Forward declaration
-  template<typename DataT, int Rank> class Field;
+  // Both required and dependent fields are all unmanaged.  Covers all
+  // combinations of data types (static/dynamic, const/nonconst).
+  PHX_EVALUATOR_CLASS(EvalUnmanaged)
+    Tag<double> tag_a;
+    Tag<double> tag_b;
+    Tag<double> tag_c;
+    Tag<double> tag_d;
+    Kokkos::View<double**,PHX::Device> a; // static evaluated
+    Kokkos::View<const double**,PHX::Device> b; // static dependent
+    Kokkos::View<double**,PHX::Device> c; // dynamic evalauted
+    Kokkos::View<const double**,PHX::Device> d; // dynamic dependent
+  PHX_EVALUATOR_CLASS_END
 
-  // Forward declaration
-  template <typename DataT,
-            typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-            typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-  class MDField;
+  // Dummy to satisfy dependent unmanaged fields
+  PHX_EVALUATOR_CLASS(EvalDummy)
+    Tag<double> tag_b;
+    Tag<double> tag_d;
+    Kokkos::View<double**,PHX::Device> b;
+    Kokkos::View<double**,PHX::Device> d;
+  PHX_EVALUATOR_CLASS_END
 
-  /*! @brief Utilities to hide templating in concrete Evaluators.
-   
-  */
-  template<typename EvalT, typename Traits> 
-  struct EvaluatorUtilities {
-
-    template <typename DataT,
-	      typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	      typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void setFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
-		      Tag6,Tag7>& f, PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<DataT,EvalT>(f);
-    }
-
-    template <typename DataT,int Rank>
-              void setFieldData(PHX::Field<DataT,Rank>& f,
-                                PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<EvalT,DataT>(f);
-    }
-
-    template<typename DataT,typename... Props>
-    void setFieldData(const PHX::FieldTag& ft,
-                      Kokkos::View<DataT,Props...>& f,
-                      PHX::FieldManager<Traits>& fm)
-    {
-
-    }
-
-  };
 }
+
+#include "View_TestEvaluators_Def.hpp"
 
 #endif

@@ -41,31 +41,43 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EVALUATOR_WITH_MACROS_HPP
-#define PHX_EVALUATOR_WITH_MACROS_HPP
+#ifndef PHX_TESTING_MY_TRAITS_HPP
+#define PHX_TESTING_MY_TRAITS_HPP
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
+#include "Phalanx_config.hpp" // for std::vector
+#include "Phalanx_Traits.hpp"
+#include "Sacado_mpl_vector.hpp"
 
 namespace PHX {
 
-  // Both required and dependent fields are all unmanaged.  Covers all
-  // combinations of data types (static/dynamic, const/nonconst).
-  PHX_EVALUATOR_CLASS(EvalUnmanaged)
-  PHX::MDField<double,CELL,BASIS> a; // static evaluated
-  PHX::MDField<const double,CELL,BASIS> b; // static dependent
-  PHX::MDField<double> c; // dynamic evalauted
-  PHX::MDField<const double> d; // dynamic dependent
-  PHX_EVALUATOR_CLASS_END
+  /*! \brief Traits class for testing.
+    
+  */
+  struct MyTraits {
 
-  // Dummy to satisfy dependent unmanaged fields
-  PHX_EVALUATOR_CLASS(EvalDummy)
-  PHX::MDField<double,CELL,BASIS> b;
-  PHX::MDField<double> d;
-  PHX_EVALUATOR_CLASS_END
+    // ******************************************************************
+    // *** Evaluation Types
+    // ******************************************************************
+    struct Residual { typedef double ScalarT; };
+    typedef Sacado::mpl::vector<Residual> EvalTypes;
+
+    // ******************************************************************
+    // *** User Defined Object Passed in for Evaluation Method
+    // ******************************************************************
+    typedef int SetupData;
+    typedef int EvalData;
+    typedef int PreEvalData;
+    typedef int PostEvalData;
+
+  };
+
 
 }
 
-#include "TestEvaluators_Def.hpp"
+namespace PHX {
+  template<>
+  struct eval_scalar_types<PHX::MyTraits::Residual> 
+  { typedef Sacado::mpl::vector<double> type; };
+}
 
 #endif

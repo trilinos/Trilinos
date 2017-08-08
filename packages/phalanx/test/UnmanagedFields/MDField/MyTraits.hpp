@@ -41,56 +41,43 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_TESTING_MY_TRAITS_HPP
+#define PHX_TESTING_MY_TRAITS_HPP
 
-#ifndef PHX_EVALUATOR_UTILITIES_H
-#define PHX_EVALUATOR_UTILITIES_H
-
-#include <vector>
-
-#include "Phalanx_FieldManager.hpp"
+#include "Phalanx_config.hpp" // for std::vector
+#include "Phalanx_Traits.hpp"
+#include "Sacado_mpl_vector.hpp"
 
 namespace PHX {
 
-  // Forward declaration
-  template<typename DataT, int Rank> class Field;
-
-  // Forward declaration
-  template <typename DataT,
-            typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-            typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-  class MDField;
-
-  /*! @brief Utilities to hide templating in concrete Evaluators.
-   
+  /*! \brief Traits class for testing.
+    
   */
-  template<typename EvalT, typename Traits> 
-  struct EvaluatorUtilities {
+  struct MyTraits {
 
-    template <typename DataT,
-	      typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	      typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void setFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
-		      Tag6,Tag7>& f, PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<DataT,EvalT>(f);
-    }
+    // ******************************************************************
+    // *** Evaluation Types
+    // ******************************************************************
+    struct Residual { typedef double ScalarT; };
+    typedef Sacado::mpl::vector<Residual> EvalTypes;
 
-    template <typename DataT,int Rank>
-              void setFieldData(PHX::Field<DataT,Rank>& f,
-                                PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<EvalT,DataT>(f);
-    }
-
-    template<typename DataT,typename... Props>
-    void setFieldData(const PHX::FieldTag& ft,
-                      Kokkos::View<DataT,Props...>& f,
-                      PHX::FieldManager<Traits>& fm)
-    {
-
-    }
+    // ******************************************************************
+    // *** User Defined Object Passed in for Evaluation Method
+    // ******************************************************************
+    typedef int SetupData;
+    typedef int EvalData;
+    typedef int PreEvalData;
+    typedef int PostEvalData;
 
   };
+
+
+}
+
+namespace PHX {
+  template<>
+  struct eval_scalar_types<PHX::MyTraits::Residual> 
+  { typedef Sacado::mpl::vector<double> type; };
 }
 
 #endif
