@@ -96,9 +96,9 @@ module load sems-gcc/5.3.0
 module load sems-boost/1.58.0/base
 module load sems-python/2.7.9
 module load sems-zlib/1.2.8/base
-module load kokkos-openmpi/1.8.7/cuda
 module load kokkos-cuda/8.0.44
 module load kokkos-nvcc_wrapper/1
+module load kokkos-openmpi/1.8.7/cuda
 module load sems-hdf5/1.8.12/parallel
 module load sems-netcdf/4.3.2/base
 
