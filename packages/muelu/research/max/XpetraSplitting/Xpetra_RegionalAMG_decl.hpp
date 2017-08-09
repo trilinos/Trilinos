@@ -97,7 +97,7 @@ namespace Xpetra{
 			Array<RCP<Hierarchy> > regionHierarchies_;
 
 			//Array of levels in the new hierarchy (each levels contains quantities associaed with every region for that level)
-			ArrayRCP<level> levels_;
+			Array<RCP<level> > levels_;
 
 			//This methods construct the levels using the quantities stored in the MueLu hierarchies
 			void SetUpHierarchy();

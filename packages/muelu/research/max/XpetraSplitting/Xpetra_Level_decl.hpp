@@ -20,6 +20,8 @@ namespace Xpetra{
 
 			GlobalOrdinal GetLevelID() const {return levelID_;}
 
+			virtual ~Level(){};
+
 			virtual void
 				apply (const multivector_type& X, multivector_type& Y, 
 				Teuchos::ETransp mode = Teuchos::NO_TRANS, 
@@ -35,6 +37,8 @@ namespace Xpetra{
 			int GetNumRegions() const;
 
 			GlobalOrdinal GetNumRegionNodes( GlobalOrdinal region_idx)const{return regionA_[region_idx]->getCrsGraph()->getGlobalNumRows();};
+
+			RCP<matrix_type> GetRegionMatrix( GlobalOrdinal region_idx)const{return regionA_[region_idx];};
 
 			//! Extract regionToAll from the level
 			Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > GetRegionToAll() const;

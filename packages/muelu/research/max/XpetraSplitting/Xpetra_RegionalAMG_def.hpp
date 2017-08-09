@@ -111,7 +111,7 @@ namespace Xpetra{
 	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		void RegionalAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DefineLevels ( )
 		{ 
-			Array<level> levels;
+			levels_.clear();
 			Array<RCP<matrix_type> > P;
 			P.clear();
 			Array<RCP<matrix_type> > R;
@@ -126,7 +126,7 @@ namespace Xpetra{
 				R.clear();
 				A.clear();
 	
-				level new_level(i,num_regions_);
+				RCP<level> new_level = rcp( new level(i,num_regions_) );
 				for( int region_idx = 0; region_idx<num_regions_; ++region_idx )					
 				{
 					TEUCHOS_TEST_FOR_EXCEPTION( !regionHierarchies_[region_idx]->GetLevel(i)->IsAvailable("A") , Exceptions::RuntimeError, "No existing operator at level "<<i<<" of region "<<region_idx<<"\n");
@@ -141,26 +141,25 @@ namespace Xpetra{
 				}
 				if( i>0 )
 				{
-					new_level.SetP( P );
-					new_level.SetR( R );
+					new_level->SetP( P );
+					new_level->SetR( R );
 				}
-				new_level.SetA( A );
+				new_level->SetA( A );
 
 				//We pick regionToAll and we pass it to the fine level as it is
 				if( 0==i )
-					new_level.SetRegionToAll( matrixSplitting_->getSplittingDriver()->GetRegionToAll() );	
+					new_level->SetRegionToAll( matrixSplitting_->getSplittingDriver()->GetRegionToAll() );	
 				else
 				{
 					Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > coarse_regionToAll;
-					regionToAllCoarsen( levels[i-1], new_level );
+					regionToAllCoarsen( *(levels_[i-1]), *new_level );
 				}	
 
 				//new_level.checkConsistency();
 				//new_level.ComputeRegionalJacobi();
 
-				levels.push_back( new_level );
+				levels_.push_back( new_level );
 			}
-			levels_=arcpFromArray( levels );	
 		}
 
 
@@ -204,10 +203,40 @@ namespace Xpetra{
 
 
 	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-		void
-			RegionalAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply (const multivector_type& X, multivector_type& Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta)const
+		void RegionalAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply (const multivector_type& X, multivector_type& Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta)const
 		{ 
 
+			//At first we check that input and output vector have matching maps with the composite matrix
+			//The Map of X must coincide with the Domain map of compositeA
+			//The Map of Y must coincide with the Range map of compositeA 
+			TEUCHOS_TEST_FOR_EXCEPTION( !(X.getMap()->isSameAs( *(matrixSplitting_->getMatrix()->getDomainMap()) ) ), Exceptions::RuntimeError, "Map of composite input multivector X does not coincide with Domain Map of composite matrix \n" );
+			TEUCHOS_TEST_FOR_EXCEPTION( !(Y.getMap()->isSameAs( *(matrixSplitting_->getMatrix()->getRangeMap()) ) ), Exceptions::RuntimeError, "Map of composite input multivector X does not coincide with Range Map of composite matrix \n" );
+			TEUCHOS_TEST_FOR_EXCEPTION( X.getNumVectors()!=Y.getNumVectors(), Exceptions::RuntimeError, "Number of vectors in input numltivector X does NOT match number of vectors in output multivector Y \n" );
+
+			//We split at first the input and output multivectors into regional ones
+			Array<RCP<multivector_type> > regionX;
+			Array<RCP<multivector_type> > regionY;
+			regionX.resize( num_regions_ );
+			regionY.resize( num_regions_ );
+
+			for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
+			{
+				regionX[region_idx] =  MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(levels_[0]->GetRegionMatrix(region_idx)->getDomainMap(), X.getNumVectors());
+				regionY[region_idx] =  MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(levels_[0]->GetRegionMatrix(region_idx)->getRangeMap(), Y.getNumVectors());
+			}
+			
+			//Copy values from composite input multivector X into regional multivectors regionX	
+			for( int i = 0; i<X.getNumVectors(); ++i )
+			{
+				for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
+				{
+					LocalOrdinal num_elements = regionX[region_idx]->getMap()->getNodeNumElements();
+					for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
+					{
+						GlobalOrdinal global_region_index = regionX[region_idx]->getMap()->getGlobalElement(local_region_index);
+					}
+				}
+			}
 
 		}
 

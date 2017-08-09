@@ -52,6 +52,8 @@ int main(int argc, char* argv[])
 	typedef global_ordinal_type 												GlobalOrdinal;
 	typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
+	typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
+
 	#ifdef HAVE_MPI
 	  MPI_Init(&argc, &argv);
 	  Epetra_MpiComm CommEpetra(MPI_COMM_WORLD);
@@ -65,12 +67,12 @@ int main(int argc, char* argv[])
 	//
 	// with Matrix arising from a 5-point formula discretization.
   
-	TEUCHOS_TEST_FOR_EXCEPT_MSG(argc<3, "\nInvalid name for input matrix and output file\n");
+	TEUCHOS_TEST_FOR_EXCEPT_MSG(argc<4, "\nInvalid name for input matrix and output file\n");
 
 
 	Teuchos::ParameterList xmlParams;
 	Teuchos::ParameterList mueluParams;
-	Teuchos::updateParametersFromXmlFile(std::string("base.xml"), Teuchos::inoutArg(xmlParams));
+	Teuchos::updateParametersFromXmlFile(argv[1], Teuchos::inoutArg(xmlParams));
 
 	mueluParams   = xmlParams.sublist(static_cast<const std::string>("MueLu"));
 
@@ -91,12 +93,21 @@ int main(int argc, char* argv[])
 
 
 	Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
-	A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[1], Xpetra::UseTpetra, comm);
+	A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[2], Xpetra::UseTpetra, comm);
 
 	int max_num_levels = 4;
 	int coarsening_factor = 3;
 
-	Xpetra::RegionalAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner( argv[1], argv[2], comm, mueluParams, max_num_levels, coarsening_factor );
+	Xpetra::RegionalAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner( argv[2], argv[3], comm, mueluParams, max_num_levels, coarsening_factor );
+
+
+	Teuchos::RCP<multivector_type> X = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getDomainMap(), 1) ;
+	Teuchos::RCP<multivector_type> Y = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getRangeMap(), 1) ;
+	X->randomize();
+	Y->putScalar((scalar_type) 0.0);
+
+	
+	preconditioner.apply(*X,*Y);
 
 	#ifdef HAVE_MPI
  	  MPI_Finalize();
