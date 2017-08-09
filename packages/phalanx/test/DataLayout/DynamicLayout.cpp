@@ -141,13 +141,6 @@ TEUCHOS_UNIT_TEST(DynamicLayout, basic)
   }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  // names()
-  {
-    std::vector<std::string> names;
-    TEST_THROW(n_mat.names(names),std::runtime_error);
-  }
-
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // size()
   TEST_EQUALITY(n_mat.size(),1600);
 
@@ -450,10 +443,6 @@ TEUCHOS_UNIT_TEST(DynamicLayout, basic)
     TEST_EQUALITY(e8.extent_int(6),7);
     TEST_EQUALITY(e8.extent_int(7),8);
   }
-
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  // name()
-  TEST_THROW(dl1.name(0),std::runtime_error);
 
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // ostream

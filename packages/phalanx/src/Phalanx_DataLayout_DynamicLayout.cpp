@@ -87,12 +87,6 @@ void PHX::Layout::dimensions(std::vector<PHX::Device::size_type>& dim) const
 }
 
 //**********************************************************************
-void PHX::Layout::names(std::vector<std::string>& names) const
-{
-  throw std::runtime_error("ERROR: PHX::Layout::names() - this function is not supported!");
-}
-
-//**********************************************************************
 PHX::Device::size_type PHX::Layout::size() const
 {
   PHX::Device::size_type my_size = 0;
@@ -127,13 +121,6 @@ PHX::Device::size_type PHX::Layout::extent(size_type ordinal) const
 int PHX::Layout::extent_int(size_type ordinal) const
 {
   return static_cast<int>(m_extents[ordinal]);
-}
-
-//**********************************************************************
-std::string PHX::Layout::name(size_type ordinal) const
-{
-  throw std::runtime_error("ERROR: PHX::Layout::name() - this function is not supported!");
-  return "ERROR";
 }
 
 //**********************************************************************

@@ -124,10 +124,6 @@ namespace PHX {
 
     virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const override;
 
-    virtual std::string name(size_type ordinal) const override;
-
-    virtual void names(std::vector<std::string>& names) const override;
-
     virtual PHX::Device::size_type size() const override;
 
     virtual std::string identifier() const override;
