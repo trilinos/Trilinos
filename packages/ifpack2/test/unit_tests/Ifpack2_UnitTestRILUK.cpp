@@ -122,10 +122,6 @@ static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalO
   GlobalOrdinal lof=1;
   params.set("fact: iluk level-of-fill", lof);
   params.set("fact: iluk level-of-overlap", 0);
-#ifdef IFPACK2_ILUK_EXPERIMENTAL
-  params.set("fact: iluk experimental", true);
-  params.set("fact: iluk experimental threads" , 2);
-#endif
 
   prec->setParameters(params);
   return prec;
