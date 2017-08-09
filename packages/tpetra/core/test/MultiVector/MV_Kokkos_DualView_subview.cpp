@@ -41,63 +41,13 @@
 // @HEADER
 */
 
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
-#include "Teuchos_UnitTestHarness.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include <cstdlib> // atexit
 
 namespace { // (anonymous)
-
-  // atexit() callback that finalizes the given Kokkos execution
-  // space, if it is currently initialized.
-  template<class ExecSpace>
-  void finalizeExecSpace () {
-    if (ExecSpace::is_initialized ()) {
-      ExecSpace::finalize ();
-    }
-  }
-
-  // Take care of Kokkos execution space initialization automatically.
-  // This ensures that each execution space gets initialized and
-  // finalized at most once, in that order, over all the tests in this
-  // file.  Kokkos requires this, just like MPI does for MPI_Init and
-  // MPI_Finalize.
-  template<class ExecSpace>
-  struct InitExecSpace {
-    InitExecSpace () {
-#ifdef KOKKOS_HAVE_CUDA
-      if (std::is_same<ExecSpace, Kokkos::Cuda>::value) {
-        // Make sure that HostSpace's execution space is initialized
-        // before Kokkos::Cuda.  Otherwise, Kokkos::Cuda::initialize()
-        // throws an exception.
-        InitExecSpace<Kokkos::HostSpace::execution_space> init2;
-      }
-#endif // KOKKOS_HAVE_CUDA
-
-      if (! ExecSpace::is_initialized ()) {
-        ExecSpace::initialize ();
-      }
-      // How should we respond if atexit() fails to register our hook?
-      // That means that the Kokkos execution space won't get
-      // finalized at the end of the program.  Kokkos already prints
-      // out a message in that case.  Thus, we don't have to do
-      // anything here.  It's not Kokkos' fault if atexit() ran out of
-      // space for all the hooks.
-      if (! registeredExitHook_) {
-        (void) atexit (finalizeExecSpace<ExecSpace>);
-        registeredExitHook_ = true;
-      }
-    }
-
-    bool isInitialized () {
-      return ExecSpace::is_initialized ();
-    }
-
-    static bool registeredExitHook_;
-  };
-
-  template<class ExecSpace>
-  bool InitExecSpace<ExecSpace>::registeredExitHook_ = false;
 
   //
   // UNIT TESTS
@@ -123,21 +73,17 @@ namespace { // (anonymous)
     typedef typename dual_view_type::execution_space execution_space;
     typedef typename dual_view_type::size_type size_type;
 
+    Teuchos::OSTab tab0 (out);
     out << "Make sure that taking a subview of a Kokkos::DualView "
       "with zero rows and nonzero columns produces a Kokkos::DualView "
       "with the correct number of columns." << endl;
-    Teuchos::OSTab tab0 (out);
+    Teuchos::OSTab tab1 (out);
 
-    // Initialize the execution space, if it hasn't already been
-    // initialized.  I'm not so worried about giving the execution
-    // space the best parameters for performance; the point is to test
-    // taking subviews of a Kokkos::DualView.
-    InitExecSpace<execution_space> init;
-    // This avoids warnings for 'init' being unused.
-    TEST_ASSERT( init.isInitialized () );
-    if (! init.isInitialized ()) {
-      return; // avoid crashes if initialization failed
-    }
+    auto comm = Tpetra::TestingUtilities::getDefaultComm ();
+    // Creating a Map instance takes care of Kokkos initialization and
+    // finalization automatically.
+    Tpetra::Map<> map (comm->getSize (), 1, 0, comm);
+
     TEST_ASSERT( execution_space::is_initialized () );
     if (! execution_space::is_initialized ()) {
       return; // avoid crashes if initialization failed
