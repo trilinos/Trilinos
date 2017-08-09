@@ -110,29 +110,29 @@ namespace PHX {
       PHX::SetExtentsImpl<extent_pack...>::setExtents(0,m_extents,extents...);
     }
 
-    ~Layout() {}
+    virtual ~Layout() {}
 
-    virtual bool operator==(const DataLayout& src) const;
+    virtual bool operator==(const DataLayout& src) const override;
 
-    virtual PHX::Device::size_type rank() const;
+    virtual PHX::Device::size_type rank() const override;
 
-    virtual PHX::Device::size_type dimension(size_type ordinal) const;
+    virtual PHX::Device::size_type dimension(size_type ordinal) const override;
 
-    virtual PHX::Device::size_type extent(size_type ordinal) const;
+    virtual PHX::Device::size_type extent(size_type ordinal) const override;
 
-    virtual int extent_int(size_type ordinal) const;
+    virtual int extent_int(size_type ordinal) const override;
 
-    virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const;
+    virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const override;
 
-    virtual std::string name(size_type ordinal) const;
+    virtual std::string name(size_type ordinal) const override;
 
-    virtual void names(std::vector<std::string>& names) const;
+    virtual void names(std::vector<std::string>& names) const override;
 
-    virtual PHX::Device::size_type size() const;
+    virtual PHX::Device::size_type size() const override;
 
-    virtual std::string identifier() const;
+    virtual std::string identifier() const override;
 
-    virtual void print(std::ostream& os, int offset) const;
+    virtual void print(std::ostream& os, int offset) const override;
 
   private:
 
