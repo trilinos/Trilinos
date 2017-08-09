@@ -93,6 +93,9 @@ namespace Tacho {
     void setVerbose(const ordinal_type verbose = 1) {
       _verbose = verbose;
     }
+    void setSmallProblemThresholdSize(const ordinal_type small_problem_thres = 1024) {
+      _small_problem_thres = small_problem_thres;
+    }
     void setSerialThresholdSize(const ordinal_type serial_thres_size = -1) {
       _serial_thres_size = serial_thres_size;
     }
