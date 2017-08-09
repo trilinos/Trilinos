@@ -218,7 +218,8 @@ namespace Tacho {
       NumericTools() 
         : _m(0),
           _sched_solve_capacity(0), 
-          _bufpool_solve_capacity(0) {}
+          _bufpool_solve_capacity(0),
+          stat() {}
 
       NumericTools(const NumericTools &b) = default;
       
