@@ -80,6 +80,8 @@ public:
                         const Teuchos::RCP<const panzer::PureBasis> & basis,
                         bool derivativesRequired);
 
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations_;
+
 PANZER_EVALUATOR_CLASS_END
 
 }
