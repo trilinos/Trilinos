@@ -73,6 +73,7 @@
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 
@@ -114,13 +115,20 @@ int main(int argc,char * argv[])
    ////////////////////////////////////////////////////
 
    int x_elements=10,y_elements=10,basis_order=1;
+   std::string celltype = "Quad"; // or "Tri"
    Teuchos::CommandLineProcessor clp;
+   clp.throwExceptions(false);
+   clp.setDocString("This example solves Poisson problem with Quad and Tri inline mesh with high order.\n");
+
+   clp.setOption("cell",&celltype);
    clp.setOption("x-elements",&x_elements);
    clp.setOption("y-elements",&y_elements);
    clp.setOption("basis-order",&basis_order); 
 
    // parse commandline argument
-   TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
+   Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
+   if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return  0;
+   if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -130,8 +138,12 @@ int main(int argc,char * argv[])
      Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
    Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
 
-   panzer_stk::SquareQuadMeshFactory mesh_factory;
-
+   Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
+   if      (celltype == "Quad") mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
+   else if (celltype == "Tri")  mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
+   else 
+     throw std::runtime_error("not supported celltype argument: try Quad or Tri");
+   
    // other declarations
    const std::size_t workset_size = 20;
 
@@ -144,9 +156,9 @@ int main(int argc,char * argv[])
    pl->set("Y Blocks",1);
    pl->set("X Elements",x_elements);
    pl->set("Y Elements",y_elements);
-   mesh_factory.setParameterList(pl);
+   mesh_factory->setParameterList(pl);
 
-   RCP<panzer_stk::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
+   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
 
    // construct input physics and physics block
    ////////////////////////////////////////////////////////
@@ -198,7 +210,7 @@ int main(int argc,char * argv[])
       for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
          mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
 
-      mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+      mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
 
    // build worksets
@@ -293,6 +305,8 @@ int main(int argc,char * argv[])
    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
                              *linObjFactory,user_data);
 
+   fmb->writeVolumeGraphvizDependencyFiles("Poisson", physicsBlocks);
+
    // setup assembly engine
    /////////////////////////////////////////////////////////////
 
@@ -358,7 +372,7 @@ int main(int argc,char * argv[])
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
    // solve the linear system
-   solver.Iterate(1000,1e-5);
+   solver.Iterate(1000,1e-9);
 
    // we have now solved for the residual correction from
    // zero in the context of a Newton solve.

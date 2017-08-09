@@ -51,10 +51,6 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_ArrayTraits.hpp"
 
-#ifndef __KK__
-#define __KK__
-#endif
-
 namespace panzer {
 
   /** Data structure that holds all evaluated fields associated
@@ -112,11 +108,11 @@ namespace panzer {
 
 
     //! Method to apply orientations to a basis values container.
+    // some evaluators use this apply orientation (this will be deprecated)
     void applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations);
 
-#if defined(__KK__)
+    // this is used in workset factory
     void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations);
-#endif
 
     void setExtendedDimensions(const std::vector<PHX::index_size_type> & ddims)
     { ddims_ = ddims; }
