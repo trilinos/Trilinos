@@ -65,7 +65,7 @@ if [ ! -w "$INSTALL_DIR/include" ]; then
     false
 fi
 
-if [ ! -f "$SOURCE_DIR/src/function/ROL_Objective.hpp" ]; then
+if [ ! -f "$SOURCE_DIR/src/function/objective/ROL_Objective.hpp" ]; then
   echo "ERROR:   Can't recognize directory " $SOURCE_DIR/src
   echo "         or the header files contained in it."
   echo "         Have you set the ROL_SOURCE environment variable?"
