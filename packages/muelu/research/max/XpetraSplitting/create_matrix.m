@@ -24,7 +24,12 @@ function [nodes, A] = create_matrix(nregion_nodes_x, nregion_nodes_y, nintervals
         
         for j = 1:length(cols)
             
-            A(i, cols(j)) = nodesOwnership(cols(j));
+            %A(i, cols(j)) = nodesOwnership(cols(j));
+            if( i==cols(j) )
+                A(i, cols(j)) = 8;
+            else
+                A(i, cols(j)) = -1;
+            end
             
         end
         

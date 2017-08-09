@@ -496,16 +496,24 @@ namespace Xpetra{
 
 // Get methods to allow a user interface with private members of the SplittingDriver class
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	Array<GlobalOrdinal> SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionRowMap(GlobalOrdinal region_index)
+	Array<GlobalOrdinal> SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionRowMap(GlobalOrdinal region_index)const
 	{
-		TEUCHOS_TEST_FOR_EXCEPTION( region_index>num_total_regions_, Exceptions::RuntimeError, "Value of region index exceeds total number of regions stored \n"<<"Trying to access informaiton about region "<<region_index<<" when the total number of regions stored is "<<num_total_regions_<<"\n");
-		return maps_.region_maps_[region_index-1];
+		TEUCHOS_TEST_FOR_EXCEPTION( region_index>=num_total_regions_, Exceptions::RuntimeError, "Value of region index exceeds total number of regions stored \n"<<"Trying to access informaiton about region "<<region_index<<" when the total number of regions stored is "<<num_total_regions_<<"\n");
+		return maps_.region_maps_[region_index];
 	}
 
+
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionToAll(GlobalOrdinal region_index)
+	Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionToAll()const
 	{
-		TEUCHOS_TEST_FOR_EXCEPTION( region_index>num_total_regions_, Exceptions::RuntimeError, "Value of region index exceeds total number of regions stored \n"<<"Trying to access informaiton about region "<<region_index<<" when the total number of regions stored is "<<num_total_regions_<<"\n");
+		return maps_.regionToAll_;
+	}
+
+
+	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+	Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionToAll(GlobalOrdinal region_index)const
+	{
+		TEUCHOS_TEST_FOR_EXCEPTION( region_index>=num_total_regions_, Exceptions::RuntimeError, "Value of region index exceeds total number of regions stored \n"<<"Trying to access informaiton about region "<<region_index<<" when the total number of regions stored is "<<num_total_regions_<<"\n");
 		return maps_.regionToAll_[region_index];
 	}
 

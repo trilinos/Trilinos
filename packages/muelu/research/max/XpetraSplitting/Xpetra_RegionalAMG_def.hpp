@@ -72,7 +72,6 @@ namespace Xpetra{
 				//Creation of coordinates to pass to MueLu for the construction of the Hierarchy
 				GlobalOrdinal n = matrixSplitting_->getSplittingDriver()->GetNumRegionNodes(region_idx);
 				GlobalOrdinal nx = std::sqrt(n);
-				GlobalOrdinal ny = nx;
 
 				RCP<const map_type> map = matrixSplitting_->getRegionMatrix(region_idx)->getRowMap();
 				size_t NumMyElements = map->getNodeNumElements();
@@ -91,12 +90,8 @@ namespace Xpetra{
 					GlobalOrdinal ix = MyGlobalElements[i] % nx;
 					GlobalOrdinal iy = (MyGlobalElements[i] - ix) / nx;
 
-					//Coord[0][i] = delta_x * Teuchos::as<Scalar>(ix);
-					//Coord[1][i] = delta_y * Teuchos::as<Scalar>(iy);
 					Coord[0][i] = Teuchos::as<Scalar>(ix);
 					Coord[1][i] = Teuchos::as<Scalar>(iy);
-
-					//std::cout<<"Region: "<<region_idx <<" coordinates: "<<Coord[0][i]<<" - "<<Coord[1][i]<<std::endl;
 				}
 
 				//regionHierarchies_[region_idx] = MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>( matrixSplitting_->getRegionMatrix( region_idx), *list, coords );

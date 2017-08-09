@@ -79,17 +79,16 @@ int main(int argc, char* argv[])
 	if (CommEpetra.MyPID() == 0)
 		std::cout<<"Number of processors: "<<CommEpetra.NumProc()<<std::endl;
 
-/*
+
 	//SplittingDriver
-	Xpetra::SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> driver("node.txt", comm);
+	/*Xpetra::SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> driver("node.txt", comm);
 	Teuchos::Array<GlobalOrdinal> elementlist = driver.GetGlobalRowMap();
-	Teuchos::Array<GlobalOrdinal> elementlist_region1 = driver.GetRegionalRowMap(1);
 	driver.printInactive();
 	Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseTpetra> xpetraWrapper( argv[1], argv[2], comm );
 	std::string output_file="A_write.mtx";
 	xpetraWrapper.writeGlobalMatrix();	
-	xpetraWrapper.writeRegionalMatrices();
-*/
+	xpetraWrapper.writeRegionMatrices();*/
+
 
 	Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
 	A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[1], Xpetra::UseTpetra, comm);

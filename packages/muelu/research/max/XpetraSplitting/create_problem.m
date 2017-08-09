@@ -2,16 +2,16 @@
 addpath('../MatrixMarket_routines/')
 
 %number of nodes in x direction for each region
-nregion_nodes_x = 82;
+nregion_nodes_x = 244;
 
 %number of nodes in y direction for each region
-nregion_nodes_y = 82;
+nregion_nodes_y = 244;
 
 %number of intervals splitting the x dicretion of the domain
-nintervals_x = 2;
+nintervals_x = 3;
 
 %number of intervals splitting the y direction of the domain
-nintervals_y = 2;
+nintervals_y = 3;
 
 %total number of regions
 nregions = nintervals_x * nintervals_y;

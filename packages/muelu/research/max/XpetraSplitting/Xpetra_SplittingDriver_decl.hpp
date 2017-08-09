@@ -84,13 +84,15 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	//}
 	//! @Interface methods
 	//@{
-		GlobalOrdinal GetNumGlobalElements(){return num_total_nodes_;};
-		GlobalOrdinal GetNumTotalRegions(){return num_total_regions_;};
-		Array<GlobalOrdinal> GetGlobalRowMap(){return maps_.global_map_;};
-		Array<GlobalOrdinal> GetRegionRowMap(GlobalOrdinal region_index);
-		Array<Array<GlobalOrdinal> > GetRegionRowMaps(){return maps_.region_maps_;};
-		Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >  GetRegionToAll(GlobalOrdinal);//used as a map for a RegionToAll node index
-		Array<std::tuple<int, Array<GlobalOrdinal> > > GetInterfaceNodes(){return interfaceNodes_;};
+		GlobalOrdinal GetNumGlobalElements()const{return num_total_nodes_;};
+		GlobalOrdinal GetNumTotalRegions()const{return num_total_regions_;};
+		GlobalOrdinal GetNumRegionNodes(GlobalOrdinal region_idx)const{return num_region_nodes_[region_idx];};
+		Array<GlobalOrdinal> GetGlobalRowMap()const{return maps_.global_map_;};
+		Array<GlobalOrdinal> GetRegionRowMap(GlobalOrdinal region_index)const;
+		Array<Array<GlobalOrdinal> > GetRegionRowMaps()const{return maps_.region_maps_;};
+		Array<Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > >  GetRegionToAll()const;//used as a map for a RegionToAll node index
+		Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   GetRegionToAll(GlobalOrdinal)const;//used as a map for a RegionToAll node index
+		Array<std::tuple<int, Array<GlobalOrdinal> > > GetInterfaceNodes()const{return interfaceNodes_;};
 	//}
 	//! @Printout methods
 		void printView();
@@ -100,13 +102,11 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
 		void CreateRowMaps();
 
-	// Publicly accessible vector which contains the number of region nodes for each domain region
-		Array<GlobalOrdinal> num_region_nodes_;
 		
 	private:
 		RCP< const Teuchos::Comm<int> > comm_;
 		bool nodes_sorted_by_regions_ = false;
-
+	
 		//Global information
 		GlobalOrdinal num_total_nodes_ = 0;
 		GlobalOrdinal num_total_regions_ = 0;	
@@ -118,6 +118,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
 		Array<std::tuple<int, Array<GlobalOrdinal> > > nodesToRegion_; //for each node it lists the regions it belongs to
 		Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes_; //for each node on the interface it lists the regions it belongs to
+		//vector which contains the number of region nodes for each domain region
+		Array<GlobalOrdinal> num_region_nodes_;
 
 		//Maps used for global and region operators
 		Splitting_MapsInfo<Scalar, LocalOrdinal, GlobalOrdinal, Node> maps_;
