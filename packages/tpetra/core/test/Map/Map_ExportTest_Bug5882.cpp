@@ -16,8 +16,8 @@ int main(int argc, char *argv[]) {
   using Teuchos::Array;
   using Teuchos::rcp;
 
-  typedef int    LO;
-  typedef int    GO;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
   typedef Tpetra::Details::DefaultTypes::node_type NO;
   typedef Tpetra::Map<LO, GO, NO> mapType;
   typedef Tpetra::Vector<GO, LO, GO, NO> vectorType;
