@@ -86,7 +86,7 @@ function [global_indices, nodesToRegion, nodesOwnership, nodes_neighbourhood] = 
             neighbours = intersect( neighbours, regional_nodes );
 
             if(~isempty(neighbours))
-                    neighbourhood = [ neighbourhood  neighbours];
+                    neighbourhood = [neighbourhood; neighbours];
             end
 
         end

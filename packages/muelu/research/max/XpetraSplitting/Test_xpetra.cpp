@@ -67,6 +67,14 @@ int main(int argc, char* argv[])
   
 	TEUCHOS_TEST_FOR_EXCEPT_MSG(argc<3, "\nInvalid name for input matrix and output file\n");
 
+
+	Teuchos::ParameterList xmlParams;
+	Teuchos::ParameterList mueluParams;
+	Teuchos::updateParametersFromXmlFile(std::string("base.xml"), Teuchos::inoutArg(xmlParams));
+
+	mueluParams   = xmlParams.sublist(static_cast<const std::string>("MueLu"));
+
+
 	Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 	if (CommEpetra.MyPID() == 0)
 		std::cout<<"Number of processors: "<<CommEpetra.NumProc()<<std::endl;
@@ -86,7 +94,10 @@ int main(int argc, char* argv[])
 	Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
 	A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[1], Xpetra::UseTpetra, comm);
 
-	Xpetra::RegionalAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner( argv[1], argv[2], comm, 4 );
+	int max_num_levels = 4;
+	int coarsening_factor = 3;
+
+	Xpetra::RegionalAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner( argv[1], argv[2], comm, mueluParams, max_num_levels, coarsening_factor );
 
 	#ifdef HAVE_MPI
  	  MPI_Finalize();

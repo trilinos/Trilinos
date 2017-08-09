@@ -2,13 +2,13 @@
 addpath('../MatrixMarket_routines/')
 
 %number of nodes in x direction for each region
-nregion_nodes_x = 28;
+nregion_nodes_x = 82;
 
 %number of nodes in y direction for each region
-nregion_nodes_y = 10;
+nregion_nodes_y = 82;
 
 %number of intervals splitting the x dicretion of the domain
-nintervals_x = 5;
+nintervals_x = 2;
 
 %number of intervals splitting the y direction of the domain
 nintervals_y = 2;
@@ -17,7 +17,7 @@ nintervals_y = 2;
 nregions = nintervals_x * nintervals_y;
 
 %Output file names
-node_filename = 'nodes_multiregional.txt';
+node_filename = 'node_multiregional.txt';
 matrix_filename = 'A_multiregional.mm';
 
 % routine that creates nodes structure and composite stiffness matrix
