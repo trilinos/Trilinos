@@ -1,14 +1,10 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Control penalty parameter"   type="double"    value="1e-5"  />
-    <Parameter name="Control lower bound"         type="double"    value="0"     />
-    <Parameter name="Control upper bound"         type="double"    value="10"    />
-    <!--
-    <Parameter name="State lower bound"           type="double"    value="0.0"   />
-    <Parameter name="State upper bound"           type="double"    value="1.0"   />
-    -->
-    <Parameter name="Order of FE discretization"  type="int"       value="1"     />
+    <Parameter name="Control penalty parameter"   type="double"    value="1e-2"  />
+    <Parameter name="Basis Order"                 type="int"       value="1"     />
+    <Parameter name="Cubature Degree"             type="int"       value="4"     />
+    <Parameter name="Problem Dimension"           type="int"       value="3"     />
     <Parameter name="Use State Riesz Map"         type="bool"      value="false" />
     <Parameter name="Use Control Riesz Map"       type="bool"      value="false" />
   </ParameterList>
@@ -19,6 +15,38 @@
     <ParameterList name="Direct">
       <Parameter name="Solver Type"               type="string"  value="KLU2"          />
     </ParameterList>
+    <ParameterList name="MueLu">
+      <Parameter name="verbosity"                 type="string"  value="none"          />
+      <Parameter name="number of equations"       type="int"     value="1"             />
+      <Parameter name="problem: symmetric"        type="bool"    value="false"         />
+      <Parameter name="multigrid algorithm"       type="string"  value="sa"            />
+      <Parameter name="coarse: type"              type="string"  value="KLU2"          />
+    </ParameterList>
+    <ParameterList name="Belos">
+      <Parameter name="Block Size"                type="int"     value="1"             />
+      <Parameter name="Maximum Iterations"        type="int"     value="100"            />
+      <Parameter name="Convergence Tolerance"     type="double"  value="1e-10"         />
+      <Parameter name="Output Style"              type="int"     value="1"             />
+      <Parameter name="Output Frequency"          type="int"     value="1"             />
+      <Parameter name="Verbosity"                 type="int"     value="0"             />
+    </ParameterList>
+  </ParameterList>
+
+  <!-- VECTOR INFORMATION -->
+  <ParameterList name="Vector">
+    <ParameterList name="Sim">
+      <Parameter name="Use Riesz Map"             type="bool"    value="false"         />
+      <Parameter name="Lump Riesz Map"            type="bool"    value="false"         />
+    </ParameterList>
+    <ParameterList name="Opt">
+      <Parameter name="Use Riesz Map"             type="bool"    value="true"         />
+      <Parameter name="Lump Riesz Map"            type="bool"    value="true"         />
+    </ParameterList>
+  </ParameterList>
+
+  <!-- ===========  MESH INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Mesh">
+    <Parameter name="File Name"         type="string"  value="cube.txt"  />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->

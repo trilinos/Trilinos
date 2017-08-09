@@ -51,8 +51,11 @@
 #include "../TOOLS/pde.hpp"
 #include "../TOOLS/fe.hpp"
 
+#include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
@@ -81,17 +84,58 @@ private:
 
   bool useStateRiesz_;
   bool useControlRiesz_;
+  Real alpha_;
 
   Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId) const {
     return 0;
+  }
+
+  Real evaluateRHS(const std::vector<Real> &x) const {
+    const Real pi(M_PI), eight(8);
+    Real s1(1), s2(1);
+    int dim = x.size();
+    for (int i=0; i<dim; ++i) {
+      s1 *= std::sin(eight*pi*x[i]);
+      s2 *= std::sin(pi*x[i]);
+    }
+    Real coeff1(64), coeff2(dim);
+    return s1/(alpha_*coeff1*coeff2*pi*pi) + coeff2*pi*pi*s2;
+  }
+
+  void computeRHS(Teuchos::RCP<Intrepid::FieldContainer<Real> > &rhs) const {
+    // GET DIMENSIONS
+    int c = fe_vol_->gradN()->dimension(0);
+    int p = fe_vol_->gradN()->dimension(2);
+    int d = fe_vol_->gradN()->dimension(3);
+    std::vector<Real> pt(d);
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        for ( int k = 0; k < d; ++k) {
+          pt[k] = (*fe_vol_->cubPts())(i,j,k);
+        }
+        // Compute forcing term f
+        (*rhs)(i,j) = -evaluateRHS(pt);
+      }
+    }
   }
 
 public:
   PDE_Poisson(Teuchos::ParameterList &parlist) {
     // Finite element fields.
     int basisOrder = parlist.sublist("Problem").get("Basis Order",1);
-    int probDim = parlist.sublist("Problem").get("Problem Dimension",2);
-    if (probDim == 2) {
+    int cubDegree  = parlist.sublist("Problem").get("Cubature Degree",4);
+    int probDim    = parlist.sublist("Problem").get("Problem Dimension",2);
+    if (probDim > 3 || probDim < 1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> PDE-OPT/poisson/pde_poisson.hpp: Problem dimension is not 1, 2 or 3!");
+    }
+    if (basisOrder > 2 || basisOrder < 1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> PDE-OPT/poisson/pde_poisson.hpp: Basis order is not 1 or 2!");
+    }
+    if (probDim == 1) {
+      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_LINE_Cn_FEM<Real, Intrepid::FieldContainer<Real> >(basisOrder,Intrepid::POINTTYPE_EQUISPACED));
+    } else if (probDim == 2) {
       if (basisOrder == 1) {
         basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
       }
@@ -108,12 +152,13 @@ public:
     }
     basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
     // Quadrature rules.
-    shards::CellTopology cellType = basisPtr_->getBaseCellTopology();                  // get the cell type from any basis
-    Intrepid::DefaultCubatureFactory<Real> cubFactory;                                 // create cubature factory
-    int cubDegree = parlist.sublist("PDE Poisson").get("Cubature Degree",2);           // set cubature degree, e.g., 2
-    cellCub_ = cubFactory.create(cellType, cubDegree);                                 // create default cubature
-    useStateRiesz_  = parlist.sublist("Problem").get("Use State Riesz Map", true);     // use Riesz map for state variables?
-    useControlRiesz_  = parlist.sublist("Problem").get("Use Control Riesz Map", true); // use Riesz map for control variables?
+    shards::CellTopology cellType = basisPtr_->getBaseCellTopology();
+    Intrepid::DefaultCubatureFactory<Real> cubFactory;
+    cellCub_ = cubFactory.create(cellType, cubDegree);
+    // Problem data.
+    useStateRiesz_   = parlist.sublist("Problem").get("Use State Riesz Map", true);      // use Riesz map for state variables?
+    useControlRiesz_ = parlist.sublist("Problem").get("Use Control Riesz Map", true);    // use Riesz map for control variables?
+    alpha_           = parlist.sublist("Problem").get("Control penalty parameter",1e-2);
   }
 
   void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
@@ -128,15 +173,21 @@ public:
     // INITIALIZE RESIDUAL
     res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
     // COMPUTE STIFFNESS TERM
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
     fe_vol_->evaluateGradient(gradU_eval, u_coeff);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res, *gradU_eval, *(fe_vol_->gradNdetJ()), Intrepid::COMP_CPP, false);
+    // COMPUTE RHS
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    computeRHS(rhs);
+    Intrepid::FunctionSpaceTools::integrate<Real>(*res, *rhs, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
     // ADD CONTROL TERM TO RESIDUAL
     if ( z_coeff != Teuchos::null ) {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
         Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
       fe_vol_->evaluateValue(valZ_eval, z_coeff);
+      Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,static_cast<Real>(-1));
       Intrepid::FunctionSpaceTools::integrate<Real>(*res, *valZ_eval, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
     }
     // APPLY DIRICHLET CONDITIONS
@@ -205,6 +256,7 @@ public:
       jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
       // ADD CONTROL TERM
       Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *(fe_vol_->N()), *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, false);
+      Intrepid::RealSpaceTools<Real>::scale(*jac,static_cast<Real>(-1));
       // APPLY DIRICHLET CONDITIONS
       int numSideSets = bdryCellLocIds_.size();
       if (numSideSets > 0) {
