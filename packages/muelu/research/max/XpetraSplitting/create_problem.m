@@ -32,7 +32,7 @@ fprintf(node_fileID, '%s \n', '%TotalNodes %TotalRegions');
 fprintf(node_fileID, '%d \t %d\n', size(A,1), nregions);
 fprintf(node_fileID, '%s\n', '%Node %Region');
 fclose(node_fileID);
-dlmwrite(node_filename, nodes, '-append', 'delimiter', '\t');
+dlmwrite(node_filename, nodes, '-append', 'delimiter', '\t', 'precision', '%8d');
 
 %Writing the matrix in a file with Matrix Market format
 mmwriteNonOptimized(matrix_filename, A);

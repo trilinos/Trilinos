@@ -12,7 +12,7 @@ function [nodes, A] = create_matrix(nregion_nodes_x, nregion_nodes_y, nintervals
 % 		
 %		A(i,j) = k if node j belongs to regions to region k
 
-    [nodes, nodesToRegion, nodesOwnership, nodes_neighbourhood] = create_regions( nregion_nodes_x, nregion_nodes_y, nintervals_x, nintervals_y );
+    [nodes, nodesToRegion, ~, nodes_neighbourhood] = create_regions( nregion_nodes_x, nregion_nodes_y, nintervals_x, nintervals_y );
     
     nTotal_nodes = size(nodesToRegion,1);
     

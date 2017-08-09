@@ -54,7 +54,7 @@ function [global_indices, nodesToRegion, nodesOwnership, nodes_neighbourhood] = 
     
     nodesToRegion = cell(ntotal_nodes, 1);
     
-    for i = 1 : ntotal_nodes
+    parfor i = 1 : ntotal_nodes
        
         find_result = global_indices(:,1)==i;
         regions = global_indices(find_result,2);
@@ -64,15 +64,15 @@ function [global_indices, nodesToRegion, nodesOwnership, nodes_neighbourhood] = 
     
     nodesOwnership = zeros(ntotal_nodes, 1);
     
-    for i = 1 : ntotal_nodes
-       
-        nodesOwnership(i) = min(nodesToRegion{i});
-        
-    end
+%     for i = 1 : ntotal_nodes
+%        
+%         nodesOwnership(i) = min(nodesToRegion{i});
+%         
+%     end
     
     nodes_neighbourhood = cell(ntotal_nodes, 1);
     
-    for i = 1 : ntotal_nodes
+    parfor i = 1 : ntotal_nodes
         
         neighbourhood = [];
         regions =  nodesToRegion{i};
