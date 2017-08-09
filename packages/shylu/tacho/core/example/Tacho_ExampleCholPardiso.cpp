@@ -28,7 +28,7 @@ int main (int argc, char *argv[]) {
   int nrhs = 1;
 
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
-  opts.set_option<bool>("enable-verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file_input);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
 

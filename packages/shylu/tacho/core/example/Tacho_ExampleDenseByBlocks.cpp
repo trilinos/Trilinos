@@ -32,9 +32,9 @@ int main (int argc, char *argv[]) {
   int step = 1000;
   int mb = 128;
 
-  opts.set_option<bool>("enable-serial", "Flag for invoking serial algorithm", &serial);
+  opts.set_option<bool>("serial", "Flag for invoking serial algorithm", &serial);
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
-  opts.set_option<bool>("enable-verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
   opts.set_option<int>("begin", "Test problem begin size", &mbeg);  
   opts.set_option<int>("end", "Test problem end size", &mend);  
   opts.set_option<int>("step", "Test problem step size", &step);  

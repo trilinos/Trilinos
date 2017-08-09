@@ -19,7 +19,7 @@ int driver (int argc, char *argv[]) {
 
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<int>("max-num-superblocks", "Max number of superblocks", &max_num_superblocks);
-  opts.set_option<bool>("enable-verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<int>("symmetric", "Symmetric type: 0 - unsym, 1 - structure sym, 2 - symmetric, 3 - hermitian", &sym);

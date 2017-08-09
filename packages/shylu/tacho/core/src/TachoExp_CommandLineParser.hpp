@@ -61,7 +61,10 @@ namespace Tacho {
                     << std::get<0>(val)
                     << "\n";
           if (std::get<1>(val) == "bool") {
-            // do nothing
+            if (it->first != "help" && it->first != "echo-command-line")
+              std::cout << std::setw(42) << " "
+                        << "(default: " << key << "=" << (std::get<2>(val) == "0" ? "false" : "true")
+                        << ")\n";
           } else {
             std::cout << std::setw(42) << " "
                       << "(default: " << key << "=" << std::get<2>(val)
@@ -108,13 +111,16 @@ namespace Tacho {
                         *((int*)tval) = atoi(sval.c_str());
                       } else if (type == "string") {
                         *((std::string*)tval) = sval;
+                      } else if (type == "bool") {
+                        *((bool*)tval) = (sval == "true");
                       } else {
                         std::cout << " int somethng wrong\n";
                       }
                       _map[it->first] = std::make_tuple(desc, type, sval, (void*)NULL);
                     }
                   }
-                } else {
+                } 
+                else {
                   // --opt (bool)
                   std::string key = s.substr(2, s.length());
                   if (key == it->first) {
