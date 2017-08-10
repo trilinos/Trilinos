@@ -345,70 +345,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
 
     // read in matrix
-    GlobalOrdinal NumRows = 0; // number of rows in matrix
-    GlobalOrdinal NumElements = 0; // number of elements in matrix
-    GlobalOrdinal Offset = 0; // number of elements in matrix
-    Teuchos::RCP<Matrix> SerialMatrix = Teuchos::null;
-    {
-      std::ifstream data_file;
-      if (comm->getRank() == 0) {
-        // proc 0 reads the number of rows, columns and nonzero elements
-        data_file.open("theMatrix");
-        TEUCHOS_TEST_FOR_EXCEPTION(data_file.good() == false, MueLu::Exceptions::RuntimeError,"Problem opening file theMatrix");
-        data_file >> NumRows;
-        data_file >> NumElements;
-        data_file >> Offset;
+    Teuchos::RCP<const Map>    DistributedMap  = Teuchos::null;
+    Teuchos::RCP<Matrix>       DistributedMatrix = Teuchos::null;
 
-      }
+    // read in matrix to determine number of rows
+    Teuchos::RCP<Matrix> SerialMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("theMatrix.m",lib,comm);
+    GlobalOrdinal NumRows = SerialMatrix->getRowMap()->getGlobalNumElements();
 
-      // create a standard (serial) row map for the Matrix data (only elements on proc 0)
-      Teuchos::RCP<Map> SerialMap = MapFactory::Build(lib,NumRows,NumRows,0,comm);
-      SerialMatrix = MatrixFactory::Build(SerialMap, 33);
-      if (comm->getRank() == 0) {
-        for(decltype(NumElements) i = 0; i < NumElements; ++i) {
-          GlobalOrdinal row;
-          GlobalOrdinal col;
-          Scalar val;
-          data_file >> row;
-          data_file >> col;
-          data_file >> val;
-          row -= Offset;
-          col -= Offset;
-          SerialMatrix->insertGlobalValues(row,Teuchos::Array<GlobalOrdinal>(1,col)(),Teuchos::Array<Scalar>(1,val)());
-          if (i % 10000 == 0) {
-            double percent = i * 100 / NumElements;
-            out << "Read matrix: " << percent << "% complete" << std::endl;
-          }
-        }
-        SerialMatrix->fillComplete();
-
-        data_file.close();
-      }
-
-      //SerialMatrix->describe(out, Teuchos::VERB_EXTREME);
-
-    } // end read in file
-
-    // distribute map and matrix over processors
-    Teuchos::RCP<const Map>    DistributedMap    = Teuchos::null;
-    Teuchos::RCP<Matrix> DistributedMatrix = Teuchos::null;
-    {
-      if(comm->getSize() > 1) {
-        Teuchos::broadcast(*comm,0,1,&NumRows);
-
-        DistributedMap    = MapFactory::Build(lib,NumRows,dofGlobals(),0,comm);
-        DistributedMatrix = MatrixFactory::Build(DistributedMap,33);
-
-        Teuchos::RCP<Import> dofMatrixImporter = ImportFactory::Build(SerialMatrix->getRowMap(), DistributedMap);
-
-        DistributedMatrix->doImport(*SerialMatrix,*dofMatrixImporter,Xpetra::INSERT);
-        DistributedMatrix->fillComplete();
-      } else {
-        DistributedMap = SerialMatrix->getRowMap();
-        DistributedMatrix = SerialMatrix;
-      }
-
-    } // end distribute matrix
+    // re-read in matrix and distribute it using the user-given distribution over processors
+    DistributedMap    = MapFactory::Build(lib,NumRows,dofGlobals(),0,comm);
+    DistributedMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("theMatrix.m",
+              DistributedMap,
+              Teuchos::null,
+              DistributedMap,
+              DistributedMap,
+              true,   //           callFillComplete = true,
+              false,  //           binary           = false,
+              false,  //           tolerant         = false,
+              false); //           debug            = false)
 
     // read in global vectors (e.g. rhs)
     GlobalOrdinal nGlobalDof = 0;
@@ -443,8 +397,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-
-    std::cout << paramList << std::endl;
 
     const std::string userName = "user data";
     Teuchos::ParameterList& userParamList = paramList.sublist(userName);
