@@ -141,6 +141,31 @@ public:
   void addStepControlFactory(const std::string & stepControlName,
                              const Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > & step_control_strategy);
 
+  //! Set start time for time-integration
+  void
+  setStartTime(const Scalar start_time);
+
+  //! Get start time for time-integration
+  Scalar
+  getStartTime() const;
+
+  //! Set final time for time-integration
+  void
+  setFinalTime(const Scalar final_time);
+
+  //! Get final time for time-integration
+  Scalar
+  getFinalTime() const;
+  
+  //! Set initial time step for time-integration
+  void
+  setInitTimeStep(const Scalar init_time_step);
+  
+  //! Get initial time step for time-integration
+  Scalar
+  getInitTimeStep() const;
+  
+
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
   //@{
