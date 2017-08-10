@@ -21,7 +21,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     PoissonDataCopy
     SOURCE_FILES
-      input.xml plotresults.m cube.txt
+      input.xml plotresults.m p-cube-4x4x4.txt p-cube-4x4x4.e p-cube-8x8x8.txt p-cube-8x8x8.e
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
