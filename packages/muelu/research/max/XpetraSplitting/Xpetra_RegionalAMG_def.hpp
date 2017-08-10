@@ -29,13 +29,13 @@ namespace Xpetra{
 			RCP<ParameterList> list = rcp(new Teuchos::ParameterList());
 			list->setName("MueLu");
 
-			list->set("verbosity", "none"); 
+			list->set("verbosity", "low"); 
 			list->set("number of equations", 1);
 			list->set("max levels", num_levels_);
 			list->set("multigrid algorithm", "unsmoothed");
 			list->set("smoother: pre or post", "none");
 			list->set("coarse: type", "RELAXATION"); 
-			//list->set("coarse: max size", 100);
+			list->set("coarse: max size", 16);
 
 			////Geometric multigrid
 			//ParameterList& factory_sublist = list->sublist("Factories");
@@ -46,7 +46,7 @@ namespace Xpetra{
 			//geometric_sublist.set("order", 0);
 
 			//Brick aggregation
-			list->set("aggregation: type", "brick");
+			/*list->set("aggregation: type", "brick");
 			list->set("aggregation: preserve Dirichlet points", true);
 			list->set("aggregation: brick x size", coarsening_factor_);
 			list->set("aggregation: brick y size", coarsening_factor_);
@@ -56,7 +56,7 @@ namespace Xpetra{
 			ParameterList& coarse_smooth_sublist = list->sublist("coarse: params");
 			coarse_smooth_sublist.set("relaxation: type", "Jacobi");
 			coarse_smooth_sublist.set("relaxation: sweeps", 1);
-			coarse_smooth_sublist.set("relaxation: damping factor", 1.0);
+			coarse_smooth_sublist.set("relaxation: damping factor", 1.0);*/
 
 			//ParameterList& print_sublist = list->sublist("export data");
 			//print_sublist.set("P", "{1}");
