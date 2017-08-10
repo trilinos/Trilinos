@@ -54,6 +54,12 @@
 #include "Piro_TempusStepperFactory.hpp"
 #include "Piro_TempusStepControlFactory.hpp"
 
+// This "define" turns on the extended template interface in TempusSolver.
+// Is it necessary??
+#if defined(HAVE_PIRO_TEMPUS) 
+#define ALBANY_BUILD
+#endif
+
 #ifdef ALBANY_BUILD
 #include "Kokkos_DefaultNode.hpp"
 #endif
