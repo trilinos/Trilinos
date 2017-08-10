@@ -89,6 +89,7 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     Traits::SetupData setupData;
     const WorksetDescriptor wd = blockDescriptor(blockId);
     setupData.worksets_ = wkstContainer.getWorksets(wd);
+    setupData.orientations_ = wkstContainer.getOrientations();
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers[blockId] = fm;
@@ -140,6 +141,7 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     Traits::SetupData setupData;
     const WorksetDescriptor wd = blockDescriptor(blockId);
     setupData.worksets_ = wkstContainer.getWorksets(wd);
+    setupData.orientations_ = wkstContainer.getOrientations();
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers[blockId] = fm;

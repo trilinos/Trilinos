@@ -168,6 +168,8 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
 {
   int space_dim = basis->dimension();
 
+  orientations_ = sd.orientations_;
+
   basisValues->setExtendedDimensions(fm.template getKokkosExtendedDataTypeDimensions<EvalT>());
 
   // setup the pointers for the point values data structure
@@ -229,7 +231,10 @@ PHX_EVALUATE_FIELDS(BasisValues_Evaluator,workset)
 
   if(   basis->getElementSpace()==panzer::PureBasis::HCURL
      || basis->getElementSpace()==panzer::PureBasis::HDIV) {
-    basisValues->applyOrientations(orientation);
+
+    std::cout << "ORIENTATION PTR = " << orientations_ << std::endl;
+    std::cout << "ORIENTATION cnt = " << orientations_->size() << std::endl;
+    basisValues->applyOrientations(*orientations_);
   }
 }
 

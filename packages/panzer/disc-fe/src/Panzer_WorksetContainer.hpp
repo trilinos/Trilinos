@@ -143,6 +143,11 @@ public:
      */
    void addBasis(const std::string & type,int order,const std::string & rep_field);
 
+   /** Get the cell orientations used to build the basis values objects.
+     */
+   Teuchos::RCP<const std::vector<Intrepid2::Orientation> >  getOrientations() const
+   { return orientations_; }
+
    ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 1
@@ -205,7 +210,6 @@ private:
      */
    void applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
 
-#if defined(__KK__)
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.
      */
@@ -218,7 +222,6 @@ private:
    void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
                           const WorksetDescriptor & desc,
                           std::map<unsigned,Workset> & worksets) const;
-#endif
 
    typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > WorksetMap;
    typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::map<unsigned,Workset> > > SideMap;

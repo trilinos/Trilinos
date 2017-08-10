@@ -204,60 +204,56 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# FIXME (mfh 26 Sep 2015) Many (if not all) of these tests should not
-# depend on GO = int; they should be able to use the default GO type.
-#IF (Tpetra_INST_INT_INT)
-  # This test only makes sense for exactly 2 MPI processes.
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_Bug5978
-    SOURCES
-    Bug5978
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS
-    COMM mpi
-    NUM_MPI_PROCS 2
-    STANDARD_PASS_OUTPUT
-    )
+# This test only makes sense for exactly 2 MPI processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug5978
+  SOURCES
+  Bug5978
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
 
-  # First test for Bug 6069.  This test only makes sense for exactly 3
-  # MPI processes.  Run under Valgrind for best results.
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_Bug6069_1
-    SOURCES
-    Bug6069_1
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS
-    COMM mpi
-    NUM_MPI_PROCS 3
-    STANDARD_PASS_OUTPUT
-    )
+# First test for Bug 6069.  This test only makes sense for exactly 3
+# MPI processes.  Run under Valgrind for best results.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6069_1
+  SOURCES
+  Bug6069_1
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
 
-  # Second test for Bug 6069.  This test only makes sense for exactly 2
-  # MPI processes.  Run under Valgrind for best results.
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_Bug6069_2
-    SOURCES
-    Bug6069_2
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS
-    COMM mpi
-    NUM_MPI_PROCS 2
-    STANDARD_PASS_OUTPUT
-    )
+# Second test for Bug 6069.  This test only makes sense for exactly 2
+# MPI processes.  Run under Valgrind for best results.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6069_2
+  SOURCES
+  Bug6069_2
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
 
-  # Test for Bug 6171.  This test only makes sense for exactly 2 MPI
-  # processes.
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_Bug6171
-    SOURCES
-    Bug6171
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS
-    COMM mpi
-    NUM_MPI_PROCS 2
-    STANDARD_PASS_OUTPUT
-    )
-#ENDIF()
+# Test for Bug 6171.  This test only makes sense for exactly 2 MPI
+# processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6171
+  SOURCES
+  Bug6171
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceLocalValues

@@ -244,7 +244,7 @@ int main(int argc,char * argv[])
    RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
 
    // other declarations
-   const std::size_t workset_size = 2*2;
+   const std::size_t workset_size = 8;
 
    // construct input physics and physics block
    ////////////////////////////////////////////////////////
@@ -450,6 +450,9 @@ int main(int argc,char * argv[])
    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
                              *linObjFactory,user_data);
 
+   fmb->writeVolumeGraphvizDependencyFiles("volume",physicsBlocks);
+   fmb->writeBCGraphvizDependencyFiles("saucy");
+
    // setup assembly engine
    /////////////////////////////////////////////////////////////
 
@@ -467,13 +470,13 @@ int main(int argc,char * argv[])
       stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                         cm_factory,
                                         closure_models,
-                                        user_data);
+                                        user_data,true,"io");
 
       user_data.set<int>("Workset Size",workset_size);
       errorResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                                     cm_factory,
                                                     closure_models,
-                                                    user_data);
+                                                    user_data,true,"error");
    }
 
    // assemble linear system

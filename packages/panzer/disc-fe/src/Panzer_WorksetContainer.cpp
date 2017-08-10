@@ -240,7 +240,6 @@ setIdentifiers(const WorksetDescriptor & wd,std::map<unsigned,Workset> & workset
   }
 }
 
-#if defined(__KK__)
 void WorksetContainer::
 applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) const
 {
