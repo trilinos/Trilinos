@@ -119,6 +119,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   const int cellDim = parentCell.getDimension();
 
+  // face only, subcellOrd does not include edge count
   const int subcellDim = 2;
   const int subcellOrd = this->wda(workset).subcell_index;
 
@@ -126,7 +127,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
   const int numFaceDofs = dof.extent_int(1);
 
   TEUCHOS_ASSERT(cellDim == dof.extent_int(2));
-  
+
   if(workset.num_cells<=0)
     return;
   else {

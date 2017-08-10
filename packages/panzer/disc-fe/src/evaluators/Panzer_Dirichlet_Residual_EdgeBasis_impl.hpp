@@ -112,7 +112,11 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,sd,fm)
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  edgeTan = Kokkos::createDynRankView(residual.get_static_view(),"edgeTan",dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  edgeTan = Kokkos::createDynRankView(residual.get_static_view(),
+                                      "edgeTan",
+                                      dof.dimension(0),
+                                      dof.dimension(1),
+                                      dof.dimension(2));
 }
 
 //**********************************************************************
@@ -127,75 +131,42 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   const int cellDim = parentCell.getDimension();
 
-  const int subcellDim = workset.subcell_dim;
+  // edge only, subcellOrd only counts edge enumeration
+  const int subcellDim = 1;
   const int subcellOrd = this->wda(workset).subcell_index;
 
-  const int numEdges = parentCell.getSubcellCount(1);
+  const int numEdges = parentCell.getSubcellCount(subcellDim);
   const int numEdgeDofs = dof.extent_int(1);
 
-  if(subcellDim==1) {
+  TEUCHOS_ASSERT(cellDim == dof.extent_int(2));
+
+  if (workset.num_cells<=0) 
+    return;
+  else {
     Intrepid2::CellTools<PHX::exec_space>::getPhysicalEdgeTangents(edgeTan,
                                                                    pointValues.jac.get_view(),
                                                                    subcellOrd,
                                                                    parentCell);
+
+    const auto subcellTopo = shards::CellTopology(parentCell.getBaseCellTopologyData(subcellDim, subcellOrd));
+    TEUCHOS_ASSERT(subcellTopo.getBaseKey() == shards::Line<>::key);
+
+    WorksetDetails & details = workset;
+
+    int edgeOrts[12] = {};
     for(index_t c=0;c<workset.num_cells;c++) {
+      const auto ort = orientations->at(details.cell_local_ids[c]);
+      ort.getEdgeOrientation(edgeOrts, numEdges);
+
+      const double ortVal = edgeOrts[subcellOrd] == 1 ? -1.0 : 1.0;
       for(int b=0;b<numEdgeDofs;b++) {
+        // residual(c,b) += ScalarT(0.0); // not sure if residual is accumulated or not
         for(int d=0;d<cellDim;d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
+        // if residual is accumulated this value should be individually computed and added later to residual
+        residual(c,b) *= ortVal;
       } 
     }
-  }
-  else if(subcellDim==2) {
-    // we need to compute the tangents on each edge for each cell.
-    // how do we do this????
-    refEdgeTan = Kokkos::createDynRankView(residual.get_static_view(),"refEdgeTan",numEdgeDofs,cellDim);
-
-    for(int i=0;i<numEdgeDofs;i++) {
-      Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
-      Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
-
-      for(int d=0;d<cellDim;d++) 
-        refEdgeTan(i,d) = refEdgeTan_local(d);
-    }
-
-    // Loop over workset faces and edge points
-    for(index_t c=0;c<workset.num_cells;c++) {
-      for(int pt = 0; pt < numEdgeDofs; pt++) {
-
-        // Apply parent cell Jacobian to ref. edge tangent
-        for(int i = 0; i < cellDim; i++) {
-          edgeTan(c, pt, i) = 0.0;
-          for(int j = 0; j < cellDim; j++){
-            edgeTan(c, pt, i) +=  pointValues.jac(c, pt, i, j)*refEdgeTan(pt,j);
-          }// for j
-        }// for i
-      }// for pt
-    }// for pCell
-
-    for(index_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<numEdgeDofs;b++) {
-        for(int d=0;d<cellDim;d++)
-          residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
-      } 
-    }
-  }
-  else {
-    // don't know what to do 
-    TEUCHOS_ASSERT(false);
-  }
-
-  // loop over residuals scaling by orientation. This gurantees
-  // everything is oriented in the "positive" direction, this allows
-  // sums acrossed processor to be oriented in the same way (right?)
-
-  WorksetDetails & details = workset;
-  for(index_t c=0;c<workset.num_cells;c++) {    
-    const auto ort = orientations->at(details.cell_local_ids[c]);
-
-    int edgeOrts[12] = {}; ort.getEdgeOrientation(edgeOrts, numEdges);
-    if (edgeOrts[subcellOrd] == 1) 
-      for(int b=0;b<numEdgeDofs;b++) 
-        residual(c,b) *= -1.0;
   }
 }
   

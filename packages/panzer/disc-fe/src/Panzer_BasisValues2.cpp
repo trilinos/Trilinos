@@ -1283,6 +1283,8 @@ template <typename Scalar>
 void BasisValues2<Scalar>::
 applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations)
 {
+  // for debugging, calling this is prevented
+  throw std::logic_error("should not be called");
   int num_cell  = orientations.dimension(0);
   int num_basis = orientations.dimension(1);
   int num_dim   = basis_layout->dimension();
