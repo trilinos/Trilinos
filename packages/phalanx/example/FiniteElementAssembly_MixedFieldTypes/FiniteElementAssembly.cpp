@@ -113,14 +113,12 @@ int main(int argc, char *argv[])
     // Global objects
     constexpr int num_dofs = (nx+1)*(ny+1)*(nz+1)*num_equations;
     constexpr int max_deriv_entries_per_row = 8 * 8 * num_equations;
-    Kokkos::View<double*,PHX::Device> x("x",num_dofs); // solution
-    Kokkos::View<double*> f("global_residual",num_dofs); // residual
-    Kokkos::View<double**> J("global_jacobian",num_dofs,max_deriv_entries_per_row); // Jacobian
         
-    RCP<const PHX::DataLayout> qp_layout = rcp(new Layout("DL<CELL,QP>",workset_size,8));
-    RCP<const PHX::DataLayout> grad_qp_layout = rcp(new Layout("DL<CELL,QP,DIM>",workset_size,8,3));
-    RCP<const PHX::DataLayout> basis_layout = rcp(new Layout("DL<CELL,BASIS>",workset_size,8));
-    RCP<const PHX::DataLayout> scatter_layout = rcp(new Layout("DL<SCATTER>",0));
+    // We will size the layouts later 
+    RCP<const PHX::DataLayout> qp_layout = rcp(new Layout("DL<CELL,QP>"));
+    RCP<const PHX::DataLayout> grad_qp_layout = rcp(new Layout("DL<CELL,QP,DIM>"));
+    RCP<const PHX::DataLayout> basis_layout = rcp(new Layout("DL<CELL,BASIS>"));
+    RCP<const PHX::DataLayout> scatter_layout = rcp(new Layout("DL<SCATTER>"));
     
     PHX::FieldManager<MyTraits> fm;
     {
@@ -130,6 +128,7 @@ int main(int argc, char *argv[])
     }
     
     // Gather DOFs
+    Kokkos::View<double*,PHX::Device> x("x",num_dofs); // solution
     for (int eq=0; eq < num_equations; ++eq) {
       std::stringstream s;
       s << "equation_" << eq;
@@ -225,6 +224,8 @@ int main(int argc, char *argv[])
     }
 
     // Scatter DOFs
+    Kokkos::View<double*> f("global_residual",num_dofs); // residual
+    Kokkos::View<double**> J("global_jacobian",num_dofs,max_deriv_entries_per_row); // Jacobian
     for (int eq=0; eq < num_equations; ++eq) {
       std::stringstream s;
       s << "residual_" << eq;
@@ -244,15 +245,31 @@ int main(int argc, char *argv[])
       fm.requireField<Jacobian>(*scatter_tag_j);
     }
 
-    // *********************************************
-    // This block is not in FiniteElementAssembly_MDField. It is used
-    // to unit test a power user feature for building the DAG separate
-    // from allocating and binding the field memory.
+    // ********************************************* 
+    // This block is not in the base FiniteElementAssembly example. It
+    // is used to demonstrate and unit test a power user feature for
+    // building the DAG separate from setting the field sizes and
+    // allocating/binding the field memory.
     {
-      const auto& tags = fm.getFieldTagsForType<Residual>();
+      const auto& tags = fm.getFieldTagsForSizing<Residual>();
       TEUCHOS_ASSERT(tags.size() == 0);
       fm.buildDagForType<Residual>();
-      TEUCHOS_ASSERT(tags.size() == static_cast<std::size_t>(num_equations * 4 + 1));
+      TEUCHOS_ASSERT(tags.size() == static_cast<std::size_t>(num_equations * 4 + 1)); 
+
+      for (auto& t : tags) {
+        if (t->dataLayout().identifier() == "DL<CELL,QP>")
+          dynamic_cast<PHX::Layout&>(const_cast<PHX::DataLayout&>(t->dataLayout())).setExtents(workset_size,8);
+        else if (t->dataLayout().identifier() == "DL<CELL,QP,DIM>")
+          dynamic_cast<PHX::Layout&>(const_cast<PHX::DataLayout&>(t->dataLayout())).setExtents(workset_size,8,3);
+        else if (t->dataLayout().identifier() == "DL<CELL,BASIS>")
+          dynamic_cast<PHX::Layout&>(const_cast<PHX::DataLayout&>(t->dataLayout())).setExtents(workset_size,8);
+        else if (t->dataLayout().identifier() == "DL<SCATTER>")
+          dynamic_cast<PHX::Layout&>(const_cast<PHX::DataLayout&>(t->dataLayout())).setExtents(0);
+        else
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                                     "ERROR: unknown DataLayout identifier:" <<
+                                     t->dataLayout().identifier());
+      }
     }
     // *********************************************
 

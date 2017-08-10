@@ -72,9 +72,9 @@ namespace PHX{
     // typedef long unsigned int size_type;
     typedef PHX::Device::size_type size_type;
 
-    DataLayout() {}
+    DataLayout() = default;
 
-    virtual ~DataLayout() {}
+    virtual ~DataLayout() = default;
 
     virtual PHX::Device::size_type rank() const = 0; 
 

@@ -304,13 +304,18 @@ namespace PHX {
     void buildDagForType();
 
     /*! Returns the FieldTags for all fields involved in the
-        evaluation. Will throw if postRegistrationSetup(),
-        postRegistrationSetupForType() or buildDagForType() have not
-        been called yet.
+        evaluation. Will return an empty vector unless the user has
+        built the DAG using one of the following calls:
+        postRegistrationSetup(), postRegistrationSetupForType() or
+        buildDagForType().
+
+        WARNING: This is a dangerous power user feature. It returns
+        non-const field tags so that the fields can be sized after the
+        DAG has been created.
      */
     template<typename EvalT>
-    const std::vector<Teuchos::RCP<const PHX::FieldTag>>&
-    getFieldTagsForType() const;
+    const std::vector<Teuchos::RCP<PHX::FieldTag>>&
+    getFieldTagsForSizing();
 
   private:
 

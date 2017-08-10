@@ -126,10 +126,10 @@ postRegistrationSetup(typename Traits::SetupData d,
 
 
   // Allocate memory for all fields that are needed
-  const std::vector< Teuchos::RCP<const PHX::FieldTag> >& var_list = 
+  const std::vector< Teuchos::RCP<PHX::FieldTag> >& var_list = 
     this->dag_manager_.getFieldTags();
 
-  std::vector< Teuchos::RCP<const PHX::FieldTag> >::const_iterator  var;
+  std::vector< Teuchos::RCP<PHX::FieldTag> >::const_iterator  var;
 
   for (var = var_list.begin(); var != var_list.end(); ++var) {
     // skip allocation if this is an aliased field or an unmanaged field
@@ -356,8 +356,8 @@ PHX::EvaluationContainer<EvalT, Traits>::buildDag()
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
-const std::vector<Teuchos::RCP<const PHX::FieldTag>>&
-PHX::EvaluationContainer<EvalT, Traits>::getFieldTags() const
+const std::vector<Teuchos::RCP<PHX::FieldTag>>&
+PHX::EvaluationContainer<EvalT, Traits>::getFieldTags()
 {
   return this->dag_manager_.getFieldTags();
 }

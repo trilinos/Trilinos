@@ -477,8 +477,8 @@ void PHX::FieldManager<Traits>::buildDagForType()
 // **************************************************************
 template<typename Traits>
 template<typename EvalT>
-const std::vector<Teuchos::RCP<const PHX::FieldTag>>&
-PHX::FieldManager<Traits>::getFieldTagsForType() const
+const std::vector<Teuchos::RCP<PHX::FieldTag>>&
+PHX::FieldManager<Traits>::getFieldTagsForSizing()
 {
   return m_eval_containers.template getAsObject<EvalT>()->getFieldTags();
 }

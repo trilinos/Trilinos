@@ -128,11 +128,17 @@ namespace PHX {
      */
     void buildDag();
 
-    /*! Returns the FieldTags for all fields required in the DAG for
-        evalaution. This will be empty if the DAG has not yet been
-        constructed.
+    /*! Returns the FieldTags for all fields involved in the
+        evaluation. Will return an empty vector unless the user has
+        built the DAG using one of the following calls:
+        postRegistrationSetup(), postRegistrationSetupForType() or
+        buildDagForType().
+
+        WARNING: This is a dangerous power user feature. It returns
+        non-const field tags so that the fields can be sized after the
+        DAG has been created.
      */
-    const std::vector<Teuchos::RCP<const PHX::FieldTag>>& getFieldTags() const;
+    const std::vector<Teuchos::RCP<PHX::FieldTag>>& getFieldTags();
 
   protected:
 

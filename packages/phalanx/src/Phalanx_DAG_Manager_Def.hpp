@@ -686,8 +686,8 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
 
 //=======================================================================
 template<typename Traits>
-const std::vector< Teuchos::RCP<const PHX::FieldTag> >& 
-PHX::DagManager<Traits>::getFieldTags() const
+const std::vector<Teuchos::RCP<PHX::FieldTag>>& 
+PHX::DagManager<Traits>::getFieldTags()
 {
   return fields_;
 }
