@@ -2,8 +2,17 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Development version (12.9)
---------------------------
+Development version (12.??)
+---------------------------
+
+* Tpetra now enforces CUDA >= 7.5 (see #1278)
+
+Tpetra has required CUDA >= 7.5 for a while, if building with CUDA
+enabled.  Now, Tpetra's CMake logic enforces CUDA_VERSION >= 7.5 at
+configure time.  See #1278 for discussion.
+
+Development version (12.10)
+---------------------------
 
 * Build time and size improvements (fix #700)
 

@@ -24,6 +24,15 @@ IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
   MESSAGE(FATAL_ERROR "As of Trilinos 12.0, C++11 is REQUIRED when building Kokkos and its downstream packages, which include Tpetra.  You MUST enable C++11 when building these packages.  Trilinos should enable this by default, if your C++11 compiler supports C++11 (that is, if it's not too old).  If you set ${PROJECT_NAME}_ENABLE_CXX11=OFF, then you are disabling C++11.  DON'T DO THAT if you want to build Kokkos or its downstream packages, including Tpetra.  If you aren't happy about that, then you need to disable Kokkos explicitly, by setting ${PROJECT_NAME}_ENABLE_Kokkos=OFF.  This WILL disable Tpetra and its downstream packages.")
 ENDIF ()
 
+# As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
+ASSERT_DEFINED(TPL_ENABLE_CUDA)
+IF (TPL_ENABLE_CUDA AND DEFINED CUDA_VERSION)
+  # Don't check a variable's value unless we know it is defined.
+  IF (CUDA_VERSION VERSION_LESS "7.5")
+     MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra requires at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+  ENDIF ()
+ENDIF ()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_Refactor
   TPETRA_ENABLE_KOKKOS_REFACTOR
