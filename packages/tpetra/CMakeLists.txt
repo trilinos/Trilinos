@@ -34,6 +34,12 @@ IF (TPL_ENABLE_CUDA AND DEFINED CUDA_VERSION)
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ASSUME_CUDA_AWARE_MPI
+  TPETRA_ASSUME_CUDA_AWARE_MPI
+  "Assume that the MPI implementation that Tpetra uses is CUDA aware.  \"CUDA aware\" means that MPI can use CUDA device allocations (the result of cudaMalloc) as send and receive buffers.  If MPI is CUDA aware, then Tpetra can give CUDA device allocations directly to MPI sends and receives.  MPI implementations might not support all MPI communication operations.  For example, different versions of OpenMPI support different subsets of MPI operations (see https://www.open-mpi.org/faq/?category=runcuda ).  Tpetra developers may safely assume that MPI_*[Ss]end and MPI*_[Rr]ecv work.  Anything more than that should be considered specific to the MPI implementation."
+  OFF)
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_Refactor
   TPETRA_ENABLE_KOKKOS_REFACTOR
   "Enable the \"Kokkos refactor\" version of Tpetra.  DO NOT SET THIS EXPLICITLY!  It is ON by default and that is the only supported value."
