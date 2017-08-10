@@ -83,7 +83,17 @@ public:
              Format: number_of_cells x number_of_edges_per_cell (int)
                      (cell_index)  edge_index1  edge_index2  ...
   */
-  virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const = 0;
+  virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+    return Teuchos::null; // default due to lack of edges in 1D
+  }
+
+  /** \brief Returns cell to edge adjacencies.
+             Format: number_of_cells x number_of_edges_per_cell (int)
+                     (cell_index)  edge_index1  edge_index2  ...
+  */
+  virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToFaceMap() const {
+    return Teuchos::null; // default due to lack of faces in 1D and 2D
+  }
 
   /** \brief Returns sideset information.
              Format: The std::vector components are indexed by the local side number (0, 1, 2, ...);
@@ -107,7 +117,15 @@ public:
 
   /** \brief Returns number of edges.
   */
-  virtual int getNumEdges() const = 0;
+  virtual int getNumEdges() const {
+    return 0; // default due to lack of edges in 1D
+  }
+
+  /** \brief Returns number of faces.
+  */
+  virtual int getNumFaces() const {
+    return 0; // default due to lack of faces in 1D and 2D
+  }
 
 }; // MeshManager
 
@@ -644,11 +662,9 @@ private:
 
   int numCells_;
   int numNodes_;
-  int numEdges_;
 
   Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
   Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
 
   Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > meshSideSets_;
 
@@ -665,12 +681,10 @@ public:
 
     numCells_ = nx_;
     numNodes_ = nx_+1;
-    numEdges_ = 2;
 
     // Compute and store mesh data structures
     computeNodes();
     computeCellToNodeMap();
-    computeCellToEdgeMap();
     computeSideSets();
 
   }
@@ -683,13 +697,9 @@ public:
     return meshCellToNodeMap_;
   }
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
-    return meshCellToEdgeMap_;
-  }
-
   Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > getSideSets(
               const bool verbose = false,
-              std::ostream & outStream = std::cout) const { 
+              std::ostream & outStream = std::cout) const {
     return meshSideSets_;
   }
 
@@ -702,12 +712,7 @@ public:
   } // getNumNodes
 
 
-  int getNumEdges() const {
-    return numEdges_;
-  } // getNumEdges
-
-
-private: 
+private:
 
   void computeNodes() {
 
@@ -732,18 +737,6 @@ private:
       ctn(i,1) = i+1;
     }
   } // computeCellToNodeMap
-
-
-  void computeCellToEdgeMap() {
-
-    meshCellToEdgeMap_ = Teuchos::rcp( new Intrepid::FieldContainer<int>(numCells_,1) );
-    Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
-
-    for( int i=0; i<nx_; ++i ) {
-      cte(i,0) = i;
-    }
-
-  } // computeCellToEdgeMap
 
 
   virtual void computeSideSets() {

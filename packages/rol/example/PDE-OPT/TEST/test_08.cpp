@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_04.cpp
-    \brief Unit test for the FE class on quads.
+/*! \file  test_08.cpp
+    \brief Unit test for the FE class on hexes.
 */
 
 #include "ROL_Types.hpp"
@@ -51,11 +51,11 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 
-#include "../TOOLS/meshmanager.hpp"
+#include "../TOOLS/meshreader.hpp"
 #include "../TOOLS/dofmanager.hpp"
 #include "../TOOLS/fe.hpp"
 
@@ -79,13 +79,13 @@ int main(int argc, char *argv[]) {
   try {
 
     /*** Read in XML input ***/
-    std::string filename = "input_04.xml";
+    std::string filename = "input_08.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist
       = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
-    MeshManager_Rectangle<RealT> meshmgr(*parlist);
+    MeshReader<RealT> meshmgr(*parlist);
     Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
 
@@ -94,17 +94,18 @@ int main(int argc, char *argv[]) {
     *outStream << "Number of nodes = " << meshmgr.getNumNodes() << std::endl;
     *outStream << "Number of cells = " << meshmgr.getNumCells() << std::endl;
     *outStream << "Number of edges = " << meshmgr.getNumEdges() << std::endl;
+    *outStream << "Number of edges = " << meshmgr.getNumFaces() << std::endl;
 
     Teuchos::RCP<MeshManager<RealT> > meshmgrPtr = Teuchos::rcpFromRef(meshmgr);
 
     // Basis.
     Teuchos::RCP<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > >    basis =
-      Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<RealT, Intrepid::FieldContainer<RealT> >);
+      Teuchos::rcp(new Intrepid::Basis_HGRAD_HEX_C2_FEM<RealT, Intrepid::FieldContainer<RealT> >);
     // Cubature.
     Teuchos::RCP<Intrepid::Cubature<RealT, Intrepid::FieldContainer<RealT> > > cubature;
     shards::CellTopology cellType = basis->getBaseCellTopology();                        // get the cell type from any basis
     Intrepid::DefaultCubatureFactory<RealT> cubFactory;                                  // create cubature factory
-    int cubDegree = 4;                                                                   // set cubature degree, e.g., 2
+    int cubDegree = 6;                                                                   // set cubature degree, e.g., 2
     cubature = cubFactory.create(cellType, cubDegree);                                   // create default cubature
     // Cell nodes.
     Intrepid::FieldContainer<RealT> cellNodes(meshmgr.getNumCells(), cellType.getNodeCount(), cellType.getDimension());
@@ -136,7 +137,7 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<meshmgr.getNumCells(); ++i) {
       valval += feIntegral(i);
     }
-    if (std::abs(valval - static_cast<RealT>(1000)) > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
+    if (std::abs(valval - static_cast<RealT>(6)) > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag = -1;
     }
     // gradients
@@ -146,8 +147,9 @@ int main(int argc, char *argv[]) {
       for (int j=0; j<basis->getCardinality(); ++j) {
         RealT x = dofCoords(i,j,0);
         RealT y = dofCoords(i,j,1);
-        feCoeffs1(i,j) = x + y;
-        feCoeffs2(i,j) = static_cast<RealT>(2)*x + static_cast<RealT>(3)*y;
+        RealT z = dofCoords(i,j,2);
+        feCoeffs1(i,j) = x + y + z;
+        feCoeffs2(i,j) = static_cast<RealT>(2)*x + static_cast<RealT>(3)*y + static_cast<RealT>(4)*z;
       }
     }
     fe.evaluateGradient(Teuchos::rcpFromRef(feGrads1), Teuchos::rcpFromRef(feCoeffs1));
@@ -157,7 +159,7 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<meshmgr.getNumCells(); ++i) {
       gradgrad += feIntegral(i);
     }
-    if (std::abs(gradgrad - static_cast<RealT>(2500)) > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
+    if (std::abs(gradgrad - static_cast<RealT>(27)) > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag = -1;
     }
     *outStream << std::setprecision(14) << "\nvalvalIntegral=" << valval << "  " << "gradgradIntegral=" << gradgrad << std::endl;

@@ -268,9 +268,9 @@ public:
     // Get coordinates of DOFs in reference cell.
     Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
       Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
-    if (d_ > 1) {
+    //if (d_ > 1) {
       coord_iface->getDofCoords(*dofPoints_);
-    }
+    //}
 
     /*** END: Fill multidimensional arrays. ***/
 
@@ -684,10 +684,10 @@ public:
           }
         }
         tagToIdCompact[i].push_back(ids);
-        //int dofordcompact = tagToIdCompact[i][j].size();
-        //for (int k=0; k<dofordcompact; ++k) {
-        //  std::cout << "\n  i=" << i << "  j=" << j << "  k=" << k << "  id=" << tagToIdCompact[i][j][k];
-        //}
+        int dofordcompact = tagToIdCompact[i][j].size();
+        for (int k=0; k<dofordcompact; ++k) {
+          std::cout << "\n  i=" << i << "  j=" << j << "  k=" << k << "  id=" << tagToIdCompact[i][j][k];
+        }
       }
     }
 
