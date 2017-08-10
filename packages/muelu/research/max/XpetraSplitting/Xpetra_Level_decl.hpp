@@ -44,6 +44,9 @@ namespace Xpetra{
 			Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > GetRegionToAll() const;
 
 			//@}
+			
+			//! Take a regional index and returns the composite index for a given mesh node
+			GlobalOrdinal GetCompositeIndex(int, GlobalOrdinal)const;
 
 
 			//! Set up methods
@@ -63,7 +66,7 @@ namespace Xpetra{
 			//! Set the regionToAll structure for the current level by using information coming from the finer level
 			void SetRegionToAll( Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > );
 
-			//@
+			//@}
 			
 			//! Check method
 			//@{

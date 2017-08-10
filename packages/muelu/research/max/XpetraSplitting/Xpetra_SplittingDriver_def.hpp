@@ -15,9 +15,17 @@ namespace Xpetra{
 		std::sort(nodes_.begin(), nodes_.end(), compareRegions<GlobalOrdinal>);
 		nodes_sorted_by_regions_ = true;
 
+		if(comm_->getRank()==0)
+			std::cout<<"Started NodesToRegion"<<std::endl;
 		NodesToRegion();
+		if(comm_->getRank()==0)
+			std::cout<<"Finished NodesToRegion"<<std::endl;
 		ComputeProcRegions();
+		if(comm_->getRank()==0)
+			std::cout<<"Started RowMaps"<<std::endl;
 		CreateRowMaps();
+		if(comm_->getRank()==0)
+			std::cout<<"Finished RowMaps"<<std::endl;
 
 		num_region_nodes_.clear();
 		num_region_nodes_.resize(num_total_regions_);

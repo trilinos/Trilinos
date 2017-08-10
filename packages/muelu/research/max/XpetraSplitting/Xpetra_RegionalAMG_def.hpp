@@ -26,7 +26,7 @@ namespace Xpetra{
 			TEUCHOS_TEST_FOR_EXCEPTION( num_regions_<=0 , Exceptions::RuntimeError, "No existing regions \n");
 
 			//Creation of the MueLu list for the region multigrid preconditioner
-			/*RCP<ParameterList> list = rcp(new Teuchos::ParameterList());
+			RCP<ParameterList> list = rcp(new Teuchos::ParameterList());
 			list->setName("MueLu");
 
 			list->set("verbosity", "none"); 
@@ -47,7 +47,7 @@ namespace Xpetra{
 
 			//Brick aggregation
 			list->set("aggregation: type", "brick");
-			list->set("aggregation: preserve Dirichlet nodes", true);
+			list->set("aggregation: preserve Dirichlet points", true);
 			list->set("aggregation: brick x size", coarsening_factor_);
 			list->set("aggregation: brick y size", coarsening_factor_);
 			list->set("aggregation: drop scheme", "classical");
@@ -56,7 +56,7 @@ namespace Xpetra{
 			ParameterList& coarse_smooth_sublist = list->sublist("coarse: params");
 			coarse_smooth_sublist.set("relaxation: type", "Jacobi");
 			coarse_smooth_sublist.set("relaxation: sweeps", 1);
-			coarse_smooth_sublist.set("relaxation: damping factor", 1.0);*/
+			coarse_smooth_sublist.set("relaxation: damping factor", 1.0);
 
 			//ParameterList& print_sublist = list->sublist("export data");
 			//print_sublist.set("P", "{1}");
@@ -94,8 +94,8 @@ namespace Xpetra{
 					Coord[1][i] = Teuchos::as<Scalar>(iy);
 				}
 
-				//regionHierarchies_[region_idx] = MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>( matrixSplitting_->getRegionMatrix( region_idx), *list, coords );
-				regionHierarchies_[region_idx] = MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>( matrixSplitting_->getRegionMatrix( region_idx), muelu_, coords );
+				regionHierarchies_[region_idx] = MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>( matrixSplitting_->getRegionMatrix( region_idx), *list, coords );
+				//regionHierarchies_[region_idx] = MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>( matrixSplitting_->getRegionMatrix( region_idx), muelu_, coords );
 
 				//Different regions may have meshes with different size, or the number of levels the user wants to create may be too big
 				//with respect to the number of levels MueLu allows (i.e. the minimum coarse size may be reached for a smaller number of levels)
@@ -233,7 +233,8 @@ namespace Xpetra{
 					LocalOrdinal num_elements = regionX[region_idx]->getMap()->getNodeNumElements();
 					for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
 					{
-						GlobalOrdinal global_region_index = regionX[region_idx]->getMap()->getGlobalElement(local_region_index);
+						GlobalOrdinal global_region_index = regionX[region_idx]->getMap()->getGlobalElement(local_region_index+1);
+						GlobalOrdinal global_composite_index = levels_[0]->GetCompositeIndex(region_idx, global_region_index);
 					}
 				}
 			}

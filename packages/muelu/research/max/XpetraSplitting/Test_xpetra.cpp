@@ -72,10 +72,7 @@ int main(int argc, char* argv[])
 
 	Teuchos::ParameterList xmlParams;
 	Teuchos::ParameterList mueluParams;
-	Teuchos::updateParametersFromXmlFile(argv[1], Teuchos::inoutArg(xmlParams));
-
-	mueluParams   = xmlParams.sublist(static_cast<const std::string>("MueLu"));
-
+	Teuchos::updateParametersFromXmlFile(argv[1], Teuchos::inoutArg(mueluParams));
 
 	Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 	if (CommEpetra.MyPID() == 0)
@@ -92,8 +89,8 @@ int main(int argc, char* argv[])
 	xpetraWrapper.writeRegionMatrices();*/
 
 
-	Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
-	A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[2], Xpetra::UseTpetra, comm);
+	//Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
+	//A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[2], Xpetra::UseTpetra, comm);
 
 	int max_num_levels = 4;
 	int coarsening_factor = 3;

@@ -67,6 +67,27 @@ namespace Xpetra
 	}
 
 
+	
+	template< class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node >
+	GlobalOrdinal Level<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetCompositeIndex(int region_idx, GlobalOrdinal region_node_idx ) const
+	{
+		TEUCHOS_TEST_FOR_EXCEPTION( level_regionToAll_.size()==0, Exceptions::RuntimeError, "level ID: "<<levelID_<<" does NOT have level_regionToAll_ initialized yet \n" );
+		TEUCHOS_TEST_FOR_EXCEPTION( level_regionToAll_.size()!=num_regions_, Exceptions::RuntimeError, "level ID: "<<levelID_<<" has information stored for a number of regions that does NOT match with the declared number of regions \n" );
+		TEUCHOS_TEST_FOR_EXCEPTION( region_idx>=num_regions_, Exceptions::RuntimeError, "level ID: "<<levelID_<<" Invalid region index \n" );
+
+		GlobalOrdinal composite_index = -1;
+
+		checkerRegionToAll<GlobalOrdinal> unaryPredicate(region_node_idx);
+		typename Array< std::tuple<GlobalOrdinal, GlobalOrdinal > >::iterator global_iterator;
+		Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = level_regionToAll_[region_idx];
+		global_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,GlobalOrdinal > >::iterator, checkerRegionToAll<GlobalOrdinal> >(regionToAll.begin(), regionToAll.end(), unaryPredicate);
+		TEUCHOS_TEST_FOR_EXCEPTION( global_iterator==level_regionToAll_[region_idx].end(), Exceptions::RuntimeError, " - Region: "<<region_idx<<" - "<<" node with region index: "<<region_idx<<" is not in regionToAll["<<region_idx<<"]"<<"\n" );
+		composite_index = std::get<1>( *global_iterator );
+
+		return composite_index;	
+	}
+
+
 	template< class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node >
 	void Level<Scalar, LocalOrdinal, GlobalOrdinal, Node>::checkConsistency( ) const
 	{

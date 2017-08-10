@@ -22,7 +22,7 @@ Declarations for the class Xpetra::MatrixSplitting.
 namespace Xpetra {
 
 
-//Definition of the predicate for the node_ structure.
+//Definition of the predicate for the regionToAll structure.
 //Given a tuple made of node index and a specific region it belongs to,
 //this predicate returns true if the node has global index which coincides with the index specified in input.
 template<class GlobalOrdinal>
@@ -143,16 +143,26 @@ class checkerInterfaceNodes {
 			num_total_elements_ = driver_->GetNumGlobalElements();
 			num_total_regions_ = driver_->GetNumTotalRegions();
 
+			if(comm_->getRank()==0)	
+				std::cout<<"MatrixSplitting constructor initialized"<<std::endl;
 			region_matrix_initialized_.clear();
 			for( int i = 0; i<num_total_regions_; ++i )
 				region_matrix_initialized_.push_back(false);
 
 			//Create Xpetra map for global stiffness matrix
+			if(comm_->getRank()==0)	
+				std::cout<<"Starting construction of Composite Map"<<std::endl;
 			RCP<const Xpetra::Map<int,GlobalOrdinal,Node> > xpetraMap;
 			xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Node>::Build(lib, num_total_elements_, elementlist, 0, comm); 
+			if(comm_->getRank()==0)	
+				std::cout<<"Finished construction of Composite Map"<<std::endl;
 
+			if(comm_->getRank()==0)
+				std::cout<<"Started reading composite matrix"<<std::endl;
 			//Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
 			globalMatrixData_ = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matrix_file_name, xpetraMap);
+			if(comm_->getRank()==0)
+				std::cout<<"Finished reading composite matrix"<<std::endl;
 
 			CreateRegionMatrices( driver_->GetRegionRowMaps() );
 		}

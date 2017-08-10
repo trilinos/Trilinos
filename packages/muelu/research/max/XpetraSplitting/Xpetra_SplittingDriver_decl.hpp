@@ -99,9 +99,6 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		void printNodesToRegion();
 		void printInactive();
 	//}
-
-		void CreateRowMaps();
-
 		
 	private:
 		RCP< const Teuchos::Comm<int> > comm_;
@@ -128,6 +125,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		void ReadFileInfo(const std::string &);
 		void ComputeProcRegions();
 		void NodesToRegion();
+		void CreateRowMaps();
 
   	}; //class SplittingDriver
 
