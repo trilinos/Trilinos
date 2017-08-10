@@ -364,7 +364,6 @@ namespace Xpetra {
         Kokkos::deep_copy(offsetsOut, offsetsTmp);
       }
 
-      // mtx_->getLocalDiagOffsets(offsets);
     }
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
