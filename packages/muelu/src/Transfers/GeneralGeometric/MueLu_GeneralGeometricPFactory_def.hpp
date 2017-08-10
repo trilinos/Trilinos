@@ -76,17 +76,29 @@ namespace MueLu {
   RCP<const ParameterList> GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    // Coarsen can come in two forms, either a single char that will be interpreted as an integer which is used as the coarsening
-    // rate in every spatial dimentions, or it can be a longer string that will then be interpreted as an array of integers.
-    // By default coarsen is set as "{2}", hence a coarsening rate of 2 in every spatial dimension is the default setting!
-    validParamList->set<std::string >           ("Coarsen",                 "{2}", "Coarsening rate in all spatial dimensions");
-    validParamList->set<int>                    ("order",                   1, "Order of the interpolation scheme used");
-    validParamList->set<RCP<const FactoryBase> >("A",                         Teuchos::null, "Generating factory of the matrix A");
-    validParamList->set<RCP<const FactoryBase> >("Nullspace",                 Teuchos::null, "Generating factory of the nullspace");
-    validParamList->set<RCP<const FactoryBase> >("Coordinates",               Teuchos::null, "Generating factory for coorindates");
-    validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
-    validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
-    validParamList->set<std::string >("axisPermutation",                    "{0,1,2}", "Assuming a global (x,y,z) orientation, local might be (z,y,x). This vector gives a permutation from global to local orientation.");
+    // Coarsen can come in two forms, either a single char that will be interpreted as an integer
+    // which is used as the coarsening rate in every spatial dimentions, or it can be a longer
+    // string that will then be interpreted as an array of integers.
+    // By default coarsen is set as "{2}", hence a coarsening rate of 2 in every spatial dimension
+    // is the default setting!
+    validParamList->set<std::string >           ("Coarsen",                 "{2}",
+                                                 "Coarsening rate in all spatial dimensions");
+    validParamList->set<int>                    ("order",                   1,
+                                                 "Order of the interpolation scheme used");
+    validParamList->set<RCP<const FactoryBase> >("A",                       Teuchos::null,
+                                                 "Generating factory of the matrix A");
+    validParamList->set<RCP<const FactoryBase> >("Nullspace",               Teuchos::null,
+                                                 "Generating factory of the nullspace");
+    validParamList->set<RCP<const FactoryBase> >("Coordinates",             Teuchos::null,
+                                                 "Generating factory for coorindates");
+    validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",            Teuchos::null,
+                                                 "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
+    validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",            Teuchos::null,
+                                                 "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
+    validParamList->set<std::string >           ("meshLayout",              "Global Lexicographic",
+                                                 "Type of mesh ordering");
+    validParamList->set<RCP<const FactoryBase> >("meshData",                Teuchos::null,
+                                                 "Mesh ordering associated data");
 
     return validParamList;
   }
@@ -196,20 +208,23 @@ namespace MueLu {
       }
     }
 
+    // Load the mesh layout type and the associated mesh data
+    myGeometry.meshLayout = pL.get<std::string>("meshLayout");
+    if(fineLevel.GetLevelID() == 0) {
+      if(myGeometry.meshLayout != "Global Lexicographic") {
+        myGeometry.meshData = fineLevel.Get<Array<GO> >("meshData", NoFactory::get());
+      }
+    }
+
     int interpolationOrder = pL.get<int>("order");
     TEUCHOS_TEST_FOR_EXCEPTION((interpolationOrder < 0) || (interpolationOrder > 1),
                                Exceptions::RuntimeError,
                                "The interpolation order can only be set to 0 or 1.");
 
     // Get the axis permutation from Global axis to Local axis
-    std::string axisPermutation = pL.get<std::string>("axisPermutation");
     Array<LO> mapDirG2L(3), mapDirL2G(3);
-    try {
-      mapDirG2L = Teuchos::fromStringToArray<LO>(axisPermutation);
-    } catch(const Teuchos::InvalidArrayStringRepresentation e) {
-      GetOStream(Errors,-1) << " *** axisPermutation must be a string convertible into array! *** "
-                            << std::endl;
-      throw e;
+    for(LO i = 0; i < myGeometry.numDimensions; ++i) {
+      mapDirG2L[i] = i;
     }
     for(LO i = 0; i < myGeometry.numDimensions; ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION(mapDirG2L[i] > myGeometry.numDimensions,
@@ -273,6 +288,8 @@ namespace MueLu {
     }
     /* At this point the local geometrical discovery is over */
 
+    DataInterface(myGeometry);
+
     Array<GO> ghostsGIDs;
     GetCoarsePoints(&myGeometry, ghostsGIDs, blkSize);
 
@@ -323,12 +340,15 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DataInterface() const{
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DataInterface(GeometricData myGeometry) const{
     // The goal here is to produce maps that globally labels the mesh lexicographically.
     // These maps will replace the current maps of A, the coordinate vector and the nullspace.
     // Ideally if the user provides the necessary maps then nothing needs to be done, otherwise
     // it could be advantageous to allow the user to register a re-labeling function. Ultimately
     // for common ordering schemes, some re-labeling can be directly implemented here.
+
+    std::cout << "Mesh layout: " << myGeometry.meshLayout << std::endl;
+    std::cout << "Mesh data: " << myGeometry.meshData << std::endl;
 
   } // DataInterface
 

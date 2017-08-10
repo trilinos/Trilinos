@@ -154,12 +154,13 @@ namespace MueLu {
       // will reduce the amount of input/output parameters of methods in the class. Additionally
       // the struct can be rewritten to accomodate constraints of Kokkos/CUDA data types
 
+      std::string meshLayout = "Global Lexicographic";
       int numDimensions;
-      LO lNumFineNodes=-1, lNumCoarseNodes=-1, lNumGhostNodes=-1, lNumFineNodes10=-1;
-      GO gNumFineNodes=-1, gNumCoarseNodes=-1, gNumFineNodes10=-1, minGlobalIndex=-1;
+      LO lNumFineNodes = -1, lNumCoarseNodes = -1, lNumGhostNodes = -1, lNumFineNodes10 = -1;
+      GO gNumFineNodes = -1, gNumCoarseNodes = -1, gNumFineNodes10 = -1, minGlobalIndex = -1;
       Array<int> coarseRate, endRate;
       Array<LO> lFineNodesPerDir, lCoarseNodesPerDir, offsets;
-      Array<GO> startIndices, gFineNodesPerDir, gCoarseNodesPerDir;
+      Array<GO> startIndices, gFineNodesPerDir, gCoarseNodesPerDir, meshData;
       bool ghostInterface[6] = {false, false, false, false, false, false};
 
       GeometricData() {
@@ -174,7 +175,7 @@ namespace MueLu {
       }
     };
 
-    void DataInterface() const;
+    void DataInterface(GeometricData myGeometry) const;
 
     void GetCoarsePoints(GeometricData* myGeometry, Array<GO>& ghostsGIDs, const LO blkSize) const;
 
