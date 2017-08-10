@@ -1,4 +1,3 @@
-
 // @HEADER
 // ************************************************************************
 //
@@ -42,77 +41,105 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_ELEMENTWISE_VECTOR_H
-#define ROL_ELEMENTWISE_VECTOR_H
 
-#include "ROL_Vector.hpp"
+#pragma once
 
-/** @ingroup la_group
-    \class ROL::ElementwiseVector
-    \brief Intermediate abstract class which does not require users 
-           implements plus, set, scale, axpy, norm, dot, or zero if 
-           they implement the three elementwise functions: applyUnary,
-           applyBinary, and reduce
+#include "ROL_ElementwiseVector.hpp"
+#include <Eigen/Core>
 
-           dot and norm are unweighted dot products and Euclidean norm 
-           by default
+/** \class ROL::EigenVector
+    \brief Provides the Eigen 3 vector implementation of the ROL::Vector interface.
 */
+
 
 namespace ROL {
 
-template< class Real>
-class ElementwiseVector : public Vector<Real> {
+template<class Real>
+class Eigen3Vector : public ElementwiseVector<Real> {
 
-public: 
+  template <typename T> using RCP = Teuchos::RCP<T>;
+  
+  using V = Vector<Real>;
 
-  virtual ~ElementwiseVector() {}
+  using EV = Eigen::Matrix<Real,Eigen::Dynamic,1>;
 
-  void plus( const Vector<Real> &x ) {
-    this->applyBinary(Elementwise::Plus<Real>(),x);
+  using UF = Elementwise::UnaryFunction<Real>;
+  using BF = Elementwise::BinaryFunction<Real>;
+  using RO = Elementwise::ReductionOp<Real>;
+
+private:
+
+  RCP<EV> vec_;
+
+  int dim_;
+
+public:
+
+  Eigen3Vector( const RCP<EV> &vec ) : vec_(vec), dim_(vec->size()) {
+  }
+ 
+  Eigen3Vector( int dim, bool zeroOut=false ) : dim_(dim) {
+    if( zeroOut ) {
+      vec_ = Teuchos::rcp( new EV(EV::Zero(dim_)) );
+    }
+    else {
+      vec_ = Teuchos::rcp( new EV(dim_) );
+    }
   }
 
-  void scale( const Real alpha ) {
-    this->applyUnary(Elementwise::Scale<Real>(alpha));
+  void applyUnary( const UF &f ) {
+    for( int i=0; i<dim_; ++i ) 
+      (*vec_)(i) = f.apply((*vec_)(i));
   }
 
-  virtual Real dot( const Vector<Real> &x ) const {
-    Teuchos::RCP<Vector<Real> > y = this->clone();
-    y->set(*this);
-    y->applyBinary(Elementwise::Multiply<Real>(),x);
-    return y->reduce(Elementwise::ReductionSum<Real>());    
+  void applyBinary( const BF &f, const V &x ) {
+    auto ex = Teuchos::dyn_cast<const Eigen3Vector>(x);
+    for( int i=0; i<dim_; ++i ) 
+      (*vec_)(i) = f.apply((*vec_)(i),ex(i));
   }
 
-  virtual Real norm() const {
-      return std::sqrt(this->dot(*this));
+  Real reduce( const RO &r ) const {
+    Real result = r.initialValue();
+    for( int i=0; i<dim_; ++i ) 
+      r.reduce((*vec_)(i),result);
+    return result;
   }
 
-  void axpy( const Real alpha, const Vector<Real> &x ) {
-    this->applyBinary(Elementwise::Axpy<Real>(alpha),x);
+  int dimension() const {
+    return dim_;
   }
 
-  void zero() {
-    this->applyUnary(Elementwise::Fill<Real>(Real(0)));
+  RCP<V> basis( const int i ) const {
+    auto data = Teuchos::rcp( new EV(dim_,true) );
+    (*data)(i) = static_cast<Real>(1.0);
+    return Teuchos::rcp( new Eigen3Vector(data) );
   }
 
-  void set( const Vector<Real> &x ) {
-    this->applyBinary(Elementwise::Set<Real>(),x);
+  RCP<V> clone() const {
+    return Teuchos::rcp( new Eigen3Vector(dim_) ); 
   }
 
-  // MUST overload these three functions
-  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &uf ) = 0;
+  RCP<EV> getVector() {
+    return vec_;
+  }
 
-  virtual void applyBinary( const Elementwise::BinaryFunction<Real> &bf,
-                            const Vector<Real> &x ) = 0;
+  RCP<const EV> getVector() const {
+    return vec_;
+  }
 
-  virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const = 0;
+  Real& operator() ( int i ) {
+    return (*vec_)(i);
+  }
 
-}; // class ElementwiseVector
+  const Real& operator() ( int i ) const {
+    return (*vec_)(i);
+  }
 
+  void print( std::ostream &os ) const {
+    os << *vec_ << std::endl;
+  }
+  
+}; // class Vector
 
 } // namespace ROL
-
-
-
-
-#endif // ROL_ELEMENTWISE_VECTOR_H
 

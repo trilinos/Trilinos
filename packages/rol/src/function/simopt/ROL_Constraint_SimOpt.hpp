@@ -1558,6 +1558,9 @@ public:
     return ahpvCheck;
   } // checkApplyAdjointHessian_11
 
+  /** 
+     \brief \f$ u\in U \f$, \f$ z\in Z \f$, \f$ p\in C^\ast \f$, \f$ v \in U \f$, \f$ hv \in U^\ast \f$ 
+  */
   std::vector<std::vector<Real> > checkApplyAdjointHessian_21(const Vector<Real> &u,
                                                               const Vector<Real> &z,
                                                               const Vector<Real> &p,
@@ -1576,6 +1579,9 @@ public:
   
   }
   
+  /** 
+     \brief \f$ u\in U \f$, \f$ z\in Z \f$, \f$ p\in C^\ast \f$, \f$ v \in U \f$, \f$ hv \in U^\ast \f$ 
+  */
   std::vector<std::vector<Real> > checkApplyAdjointHessian_21(const Vector<Real> &u,
                                                               const Vector<Real> &z,
                                                               const Vector<Real> &p,
@@ -1678,6 +1684,9 @@ public:
     return ahpvCheck;
   } // checkApplyAdjointHessian_21
 
+  /** 
+     \brief \f$ u\in U \f$, \f$ z\in Z \f$, \f$ p\in C^\ast \f$, \f$ v \in U \f$, \f$ hv \in U^\ast \f$ 
+  */
   std::vector<std::vector<Real> > checkApplyAdjointHessian_12(const Vector<Real> &u,
                                                               const Vector<Real> &z,
                                                               const Vector<Real> &p,
@@ -1696,6 +1705,7 @@ public:
   
   }
   
+
   std::vector<std::vector<Real> > checkApplyAdjointHessian_12(const Vector<Real> &u,
                                                               const Vector<Real> &z,
                                                               const Vector<Real> &p,
