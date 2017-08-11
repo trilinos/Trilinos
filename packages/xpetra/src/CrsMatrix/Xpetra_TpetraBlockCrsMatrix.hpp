@@ -341,6 +341,11 @@ namespace Xpetra {
     void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
       XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalDiagOffsets");
 
+      const size_t lclNumRows = mtx_->getGraph()->getNodeNumRows();
+      if (static_cast<size_t>(offsets.size()) < lclNumRows) {
+        offsets.resize(lclNumRows);
+      }
+
       // The input ArrayRCP must always be a host pointer.  Thus, if
       // device_type::memory_space is Kokkos::HostSpace, it's OK for us
       // to write to that allocation directly as a Kokkos::View.
