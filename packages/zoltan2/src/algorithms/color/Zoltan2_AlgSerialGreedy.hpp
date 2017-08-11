@@ -128,10 +128,10 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     HELLO;
   
     // Find max degree, since (max degree)+1 is an upper bound.
-    lno_t maxDegree = 0; 
+    offset_t maxDegree = 0; 
     for (size_t i=0; i<nVtx; i++){
-      if (offsets[i+1]-offsets[i] > static_cast<offset_t>(maxDegree))
-        maxDegree = static_cast<lno_t>(offsets[i+1]-offsets[i]);
+      if (offsets[i+1]-offsets[i] > maxDegree)
+        maxDegree = offsets[i+1]-offsets[i];
     }
 
     // Greedy coloring.
