@@ -257,7 +257,7 @@ class Basis_HCURL_TRI_In_FEM
   virtual
   bool
   requireOrientation() const {
-    return (this->basisDegree_ > 1);
+    return true;
   }
 
     private:

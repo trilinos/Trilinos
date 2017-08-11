@@ -267,7 +267,7 @@ class Basis_HCURL_TET_In_FEM
   virtual
   bool
   requireOrientation() const {
-    return (this->basisDegree_ > 1);
+    return true;
   }
 
     private:
