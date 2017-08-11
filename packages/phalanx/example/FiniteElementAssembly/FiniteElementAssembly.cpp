@@ -114,9 +114,6 @@ int main(int argc, char *argv[])
     // Global objects
     constexpr int num_dofs = (nx+1)*(ny+1)*(nz+1)*num_equations;
     constexpr int max_deriv_entries_per_row = 8 * 8 * num_equations;
-    Kokkos::View<double*,PHX::Device> x("x",num_dofs); // solution
-    Kokkos::View<double*> f("global_residual",num_dofs); // residual
-    Kokkos::View<double**> J("global_jacobian",num_dofs,max_deriv_entries_per_row); // Jacobian
         
     RCP<const PHX::DataLayout> qp_layout = rcp(new MDALayout<CELL,QP>("qp",workset_size,8));
     RCP<const PHX::DataLayout> grad_qp_layout = rcp(new MDALayout<CELL,QP,DIM>("grad_qp",workset_size,8,3));
@@ -131,6 +128,7 @@ int main(int argc, char *argv[])
     }
     
     // Gather DOFs
+    Kokkos::View<double*,PHX::Device> x("x",num_dofs); // solution
     for (int eq=0; eq < num_equations; ++eq) {
       std::stringstream s;
       s << "equation_" << eq;
@@ -226,6 +224,8 @@ int main(int argc, char *argv[])
     }
 
     // Scatter DOFs
+    Kokkos::View<double*> f("global_residual",num_dofs); // residual
+    Kokkos::View<double**> J("global_jacobian",num_dofs,max_deriv_entries_per_row); // Jacobian
     for (int eq=0; eq < num_equations; ++eq) {
       std::stringstream s;
       s << "residual_" << eq;

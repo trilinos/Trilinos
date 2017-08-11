@@ -56,7 +56,6 @@
 #include "Phalanx_any.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_MDFieldToKokkos.hpp"
 #include "Phalanx_MDField_TypeTraits.hpp"
 
 namespace PHX {

@@ -67,9 +67,9 @@ PHX_DIM_TAG_IMPLEMENTATION(CELL)
 PHX_DIM_TAG_DECLARATION(BASIS)
 PHX_DIM_TAG_IMPLEMENTATION(BASIS)
 
-#include "TestEvaluators.hpp"
+#include "MDField_TestEvaluators.hpp"
 
-TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
+TEUCHOS_UNIT_TEST(unmanaged_mdfield, basic)
 {
   using namespace std;
   using namespace Teuchos;
@@ -155,9 +155,9 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
   // sure the internally stored views in the field manager are
   // pointing to the same memory.
   MDField<double,CELL,BASIS> a("a",dl);
-  MDField<double,CELL,BASIS> b("b",dl);
+  MDField<const double,CELL,BASIS> b("b",dl); // test const accessor
   MDField<double> c("c",dl);
-  MDField<double> d("d",dl);
+  MDField<const double> d("d",dl); // test const accessor
   
   fm.getFieldData<double,MyTraits::Residual,CELL,BASIS>(a);
   fm.getFieldData<double,MyTraits::Residual,CELL,BASIS>(b);
