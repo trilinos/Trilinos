@@ -309,7 +309,9 @@ void IOSSConnManager<GO>::buildEdgeFaceCornerNodeMapping() {
   getElementBlockIds(elementBlockIds);
 
   size_t dim;
-  int nodesPerElement, edgesPerElement, facesPerElement;
+  int nodesPerElement = 0;
+  int edgesPerElement = 0;
+  int facesPerElement = 0;
   int numCornerNodesThisSubcell;
   std::vector<int> numCornerNodesOnEdges, numCornerNodesOnFaces;
   std::vector<std::vector<int>> edgeConnectivities, faceConnectivities;
@@ -693,7 +695,7 @@ typename IOSSConnManager<GO>::LocalOrdinal IOSSConnManager<GO>::addSubcellConnec
 
 
    LocalOrdinal numIds = 0;
-   GlobalOrdinal subcellId;
+   GlobalOrdinal subcellId = 0;
 
    // loop over all subcells
    for(std::size_t subcell=0; subcell < subcellsPerElement; ++subcell) {
@@ -739,7 +741,8 @@ bool IOSSConnManager<GO>::compatibleTopology(const panzer::FieldPattern & fp) co
    int numCornerNodes = int(baseTopologyData->subcell_count[0]);
    bool extended = numNodes > numCornerNodes;
 
-   int numEdges, numFaces;
+   int numEdges = 0;
+   int numFaces = 0;
    int numEdgeCornerNodes, numFaceCornerNodes;
    int uniqueNumEdgeCornerNodes = 1 + MAX_SUBCELL_CORNER_NODES_; // Needed for Zoltan2::findUniqueGids()
    int uniqueNumFaceCornerNodes = 1 + MAX_SUBCELL_CORNER_NODES_; // Needed for Zoltan2::findUniqueGids()
