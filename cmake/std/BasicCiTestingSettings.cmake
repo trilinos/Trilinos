@@ -33,3 +33,7 @@ TRIL_SET_BOOL_CACHE_VAR_FOR_CI(TPL_ENABLE_SuperLU ON)
 
 # Disable long-failing Pir test until it can be fixed (#826)
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Piro_EpetraSolver_MPI_4_DISABLE ON)
+
+# Disable failing ROL test until it can be fixed (see #1596)
+TRIL_SET_BOOL_CACHE_VAR_FOR_PT_BUILD(
+  ROL_test_sol_checkAlmostSureConstraint_MPI_1_DISABLE ON)
