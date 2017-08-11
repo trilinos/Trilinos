@@ -94,7 +94,22 @@ namespace Intrepid2 {
                                     "cellDim must be greater than subcellDim.");
 
       const auto subcellBaseKey = subcellTopo.getBaseKey();
-      //const auto cellBaseKey = cellTopo.getBaseKey();
+      const auto cellBaseKey = cellTopo.getBaseKey();
+
+      INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key &&
+                                    subcellBaseKey != shards::Quadrilateral<>::key &&
+                                    subcellBaseKey != shards::Triangle<>::key,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
+                                    "subcellBasis must have line, quad, or triangle topology.");
+
+      INTREPID2_TEST_FOR_EXCEPTION( cellBaseKey != shards::Quadrilateral<>::key &&
+                                    cellBaseKey != shards::Triangle<>::key &&
+                                    cellBaseKey != shards::Hexahedron<>::key &&
+                                    cellBaseKey != shards::Tetrahedron<>::key,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
+                                    "cellBasis must have quad, triangle, hexhedron or tetrahedron topology.");
         
       // if node map has left handed system, orientation should be re-enumerated.
       ordinal_type ort = -1;
@@ -120,25 +135,53 @@ namespace Intrepid2 {
         }
         break;
       }
-      default: {
-        INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key ||
-                                      subcellBaseKey != shards::Quadrilateral<>::key ||
-                                      subcellBaseKey != shards::Triangle<>::key,
-                                      std::logic_error,
-                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
-                                      "subcellBasis must have line, quad, or triangle topology.");
-      }
       }
       INTREPID2_TEST_FOR_EXCEPTION( ort == -1,
                                     std::logic_error,
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
                                     "Orientation is not properly setup.");
       
+
+      ///
+      /// Scale is computed from Jacobian between reference subcell coord and oriented subcell coord
+      ///
+      double scale = -1.0;
+      switch (subcellBaseKey) {
+      case shards::Line<>::key: {
+        if        (cellBaseKey == shards::Quadrilateral<>::key || 
+                   cellBaseKey == shards::Hexahedron<>::key) {
+          scale = 1.0;
+        } else if (cellBaseKey == shards::Triangle<>::key) {
+          const double jacDet[] = { 1.0, sqrt(2), 1.0 };
+          scale = jacDet[subcellId];
+        } else if (cellBaseKey == shards::Tetrahedron<>::key) {
+          const double jacDet[] = { 1.0, sqrt(2.0), 1.0, 
+                                    1.0, sqrt(2.0), sqrt(2.0) };
+          scale = jacDet[subcellId];
+        } 
+        break;
+      }
+      case shards::Triangle<>::key: {
+        if (cellBaseKey == shards::Tetrahedron<>::key) {
+          scale = 1.0;
+        }         
+        break;
+      }
+      case shards::Quadrilateral<>::key: {
+        if (cellBaseKey == shards::Hexahedron<>::key) {
+          scale = 1.0;
+        }         
+        break;
+      }
+      }
+      INTREPID2_TEST_FOR_EXCEPTION( scale < 0,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
+                                    "Scale is not properly setup.");
+
       ///
       /// Function space
       ///
-
-      
       {
         const std::string cellBasisName(cellBasis.getName());
         if (cellBasisName.find("HDIV") != std::string::npos) {
@@ -360,7 +403,7 @@ namespace Intrepid2 {
         const ordinal_type iout = subcellBasis.getDofOrdinal(subcellDim, 0, i);
 
         for (ordinal_type j=0;j<nptsSubcell;++j) {
-          refMat(j,i) = refValues(iref,j);
+          refMat(j,i) = refValues(iref,j)*scale;
           ortMat(j,i) = outValues(iout,j);
         }
       }

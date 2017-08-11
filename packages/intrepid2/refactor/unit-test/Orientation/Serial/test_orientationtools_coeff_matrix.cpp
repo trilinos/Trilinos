@@ -47,10 +47,9 @@
 
 #include "Kokkos_Core.hpp"
 
+#include "test_orientationtools_tri_coeff_matrix.hpp"
 #include "test_orientationtools_quad_coeff_matrix.hpp"
 #include "test_orientationtools_hex_coeff_matrix.hpp"
-
-#include "test_orientationtools_tri_coeff_matrix.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -58,9 +57,10 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
   
   int r_val = 0;
+
+  r_val += Intrepid2::Test::OrientationToolsTriCoeffMatrix<Kokkos::Serial>(verbose);
   r_val += Intrepid2::Test::OrientationToolsQuadCoeffMatrix<Kokkos::Serial>(verbose);
   r_val += Intrepid2::Test::OrientationToolsHexCoeffMatrix<Kokkos::Serial>(verbose);
-  r_val += Intrepid2::Test::OrientationToolsTriCoeffMatrix<Kokkos::Serial>(verbose);
 
   Kokkos::finalize();
   return r_val;

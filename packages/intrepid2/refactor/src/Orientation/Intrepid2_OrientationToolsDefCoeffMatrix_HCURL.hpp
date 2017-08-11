@@ -84,7 +84,7 @@ namespace Intrepid2 {
       // populate points on a subcell and map to subcell
       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
       const shards::CellTopology subcellTopo = subcellBasis.getBaseCellTopology();
-      
+
       const ordinal_type cellDim = cellTopo.getDimension();
       const ordinal_type subcellDim = subcellTopo.getDimension();
       
@@ -94,7 +94,22 @@ namespace Intrepid2 {
                                     "cellDim must be greater than subcellDim.");
 
       const auto subcellBaseKey = subcellTopo.getBaseKey();
-      //const auto cellBaseKey = cellTopo.getBaseKey();
+      const auto cellBaseKey = cellTopo.getBaseKey();
+
+      INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key &&
+                                    subcellBaseKey != shards::Quadrilateral<>::key &&
+                                    subcellBaseKey != shards::Triangle<>::key,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
+                                    "subcellBasis must have line, quad, or triangle topology.");
+
+      INTREPID2_TEST_FOR_EXCEPTION( cellBaseKey != shards::Quadrilateral<>::key &&
+                                    cellBaseKey != shards::Triangle<>::key &&
+                                    cellBaseKey != shards::Hexahedron<>::key &&
+                                    cellBaseKey != shards::Tetrahedron<>::key,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
+                                    "cellBasis must have quad, triangle, hexhedron or tetrahedron topology.");
 
       // if node map has left handed system, orientation should be re-enumerated.
       ordinal_type ort = -1;
@@ -120,25 +135,51 @@ namespace Intrepid2 {
         }
         break;
       }
-      default: {
-        INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key ||
-                                      subcellBaseKey != shards::Quadrilateral<>::key ||
-                                      subcellBaseKey != shards::Triangle<>::key,
-                                      std::logic_error,
-                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
-                                      "subcellBasis must have line, quad, or triangle topology.");
-      }
       }
       INTREPID2_TEST_FOR_EXCEPTION( ort == -1,
                                     std::logic_error,
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
                                     "Orientation is not properly setup.");
-      
+      ///
+      /// Scale is computed from Jacobian between reference subcell coord and oriented subcell coord
+      ///
+      double scale = -1.0;
+      switch (subcellBaseKey) {
+      case shards::Line<>::key: {
+        if        (cellBaseKey == shards::Quadrilateral<>::key || 
+                   cellBaseKey == shards::Hexahedron<>::key) {
+          scale = 1.0;
+        } else if (cellBaseKey == shards::Triangle<>::key) {
+          const double jacDet[] = { 1.0, sqrt(2), 1.0 };
+          scale = jacDet[subcellId];
+        } else if (cellBaseKey == shards::Tetrahedron<>::key) {
+          const double jacDet[] = { 1.0, sqrt(2.0), 1.0, 
+                                    1.0, sqrt(2.0), sqrt(2.0) };
+          scale = jacDet[subcellId];
+        } 
+        break;
+      }
+      case shards::Triangle<>::key: {
+        if (cellBaseKey == shards::Tetrahedron<>::key) {
+          scale = 1.0;
+        }         
+        break;
+      }
+      case shards::Quadrilateral<>::key: {
+        if (cellBaseKey == shards::Hexahedron<>::key) {
+          scale = 1.0;
+        }         
+        break;
+      }
+      }
+      INTREPID2_TEST_FOR_EXCEPTION( scale < 0,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
+                                    "Scale is not properly setup.");
 
       ///
       /// Function space
       ///
-
       
       {
         const std::string cellBasisName(cellBasis.getName());
@@ -401,7 +442,7 @@ namespace Intrepid2 {
         for (ordinal_type j=0;j<nptsSubcell;++j) {
           const ordinal_type joff = j*dofDim;
           for (ordinal_type k=0;k<dofDim;++k) {
-            refMat(joff+k,i) = refValues(iref,j,k);
+            refMat(joff+k,i) = refValues(iref,j,k)*scale;
             ortMat(joff+k,i) = outValues(iout,j,k);
           }
         }
