@@ -136,6 +136,13 @@ namespace Intrepid2 {
                                                    { 1, 0, 0 },
                                                    { 1, 1, 0 } };
           
+          *outStream << "Triangle element edge reference configuration\n";
+          for (auto edgeId=0;edgeId<3;++edgeId) {
+            const auto v0 = cellTopo.getNodeMap(1, edgeId, 0);
+            const auto v1 = cellTopo.getNodeMap(1, edgeId, 1);
+            *outStream << std::setw(3) << edgeId << " edge :: " << v0 << " " << v1 << "\n";
+          }
+          *outStream << "Triangle element edge orientation with vertex permutations\n";          
           for (auto i=0;i<6;++i) {
             // find orientation
             const auto nodes = Kokkos::View<const ordinal_type[3],HostSpaceType>(elemNodes[i]);
@@ -222,6 +229,13 @@ namespace Intrepid2 {
                                                     { 1, 1, 0, 0 },
                                                     { 1, 1, 1, 0 } };
 
+          *outStream << "Quadrilateral element edge reference configuration\n";
+          for (auto edgeId=0;edgeId<4;++edgeId) {
+            const auto v0 = cellTopo.getNodeMap(1, edgeId, 0);
+            const auto v1 = cellTopo.getNodeMap(1, edgeId, 1);
+            *outStream << std::setw(3) << edgeId << " edge :: " << v0 << " " << v1 << "\n";
+          }
+          *outStream << "Quadrilateral element edge orientation with vertex permutations\n";          
           for (auto i=0;i<24;++i) {
             // find orientation
             const auto nodes = Kokkos::View<const ordinal_type[4],HostSpaceType>(elemNodes[i]);
@@ -352,6 +366,14 @@ namespace Intrepid2 {
                                                     {  5, 5, 0, 3, 6, 5  },
                                                     {  5, 5, 5, 3, 1, 3  } };
                                                                              
+
+          *outStream << "Hexahedral element edge reference configuration\n";
+          for (auto edgeId=0;edgeId<12;++edgeId) {
+            const auto v0 = cellTopo.getNodeMap(1, edgeId, 0);
+            const auto v1 = cellTopo.getNodeMap(1, edgeId, 1);
+            *outStream << std::setw(3) << edgeId << " edge :: " << v0 << " " << v1 << "\n";
+          }
+          *outStream << "Hexahedral element edge orientation with vertex permutations\n";          
           for (auto i=0;i<24;++i) {                                          
             // find orientation                                              
             const auto nodes = Kokkos::View<const ordinal_type[8],HostSpaceType>(elemNodes[i]);
@@ -414,7 +436,15 @@ namespace Intrepid2 {
               ++errorFlag;
             }
           }
-
+          *outStream << "Hexahedral element face reference configuration\n";
+          for (auto faceId=0;faceId<6;++faceId) {
+            const auto v0 = cellTopo.getNodeMap(2, faceId, 0);
+            const auto v1 = cellTopo.getNodeMap(2, faceId, 1);
+            const auto v2 = cellTopo.getNodeMap(2, faceId, 2);
+            const auto v3 = cellTopo.getNodeMap(2, faceId, 3);
+            *outStream << std::setw(3) << faceId << " face :: " << v0 << " " << v1 << " " << v2 << " " << v3 << "\n";
+          }
+          *outStream << "Hexahedral element face orientation with vertex permutations\n";          
           for (auto i=0;i<24;++i) {                                          
             // find orientation                                              
             const auto nodes = Kokkos::View<const ordinal_type[8],HostSpaceType>(elemNodes[i]);
@@ -458,10 +488,192 @@ namespace Intrepid2 {
               *outStream << "        ^^^^^^^^^^^^^^^^ FAILURE\n";
               ++errorFlag;
             }
+          }
+        }
 
+        {
+          *outStream << "\n -- Testing tetrahedron \n\n";
+          const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
+          const ordinal_type elemNodes[24][4] = {  {   1,   2,   3,   4  },
+                                                   {   2,   1,   3,   4  },
+                                                   {   1,   3,   2,   4  },
+                                                   {   2,   3,   1,   4  },
+                                                                       
+                                                   {   3,   1,   2,   4  },
+                                                   {   3,   2,   1,   4  },
+                                                   {   1,   2,   4,   3  },
+                                                   {   2,   1,   4,   3  },
+                                                                       
+                                                   {   1,   3,   4,   2  },
+                                                   {   2,   3,   4,   1  },
+                                                   {   3,   1,   4,   2  },
+                                                   {   3,   2,   4,   1  },
+                                                   
+                                                   {   1,   4,   2,   3  },
+                                                   {   2,   4,   1,   3  },
+                                                   {   1,   4,   3,   2  },
+                                                   {   2,   4,   3,   1  },
+                                                                       
+                                                   {   3,   4,   1,   2  },
+                                                   {   3,   4,   2,   1  },
+                                                   {   4,   1,   2,   3  },
+                                                   {   4,   2,   1,   3  },
+                                                                       
+                                                   {   4,   1,   3,   2  },
+                                                   {   4,   2,   3,   1  },
+                                                   {   4,   3,   1,   2  },
+                                                   {   4,   3,   2,   1  } };
 
+          const ordinal_type refEdgeOrts[24][6] = { { 0, 0, 1, 0, 0, 0 },
+                                                    { 1, 0, 1, 0, 0, 0 },
+                                                    { 0, 1, 1, 0, 0, 0 },
+                                                    { 0, 1, 0, 0, 0, 0 },
+                                                    
+                                                    { 1, 0, 0, 0, 0, 0 },
+                                                    { 1, 1, 0, 0, 0, 0 },
+                                                    { 0, 0, 1, 0, 0, 1 },
+                                                    { 1, 0, 1, 0, 0, 1 },
+                                                    
+                                                    { 0, 0, 1, 0, 1, 1 },
+                                                    { 0, 0, 1, 1, 1, 1 },
+                                                    { 1, 0, 1, 1, 0, 1 },
+                                                    { 1, 0, 1, 1, 1, 1 },
+                                                    
+                                                    { 0, 1, 1, 0, 1, 0 },
+                                                    { 0, 1, 0, 0, 1, 0 },
+                                                    { 0, 1, 1, 0, 1, 1 },
+                                                    { 0, 1, 1, 1, 1, 1 },
+                                                    
+                                                    { 0, 1, 0, 1, 1, 0 },
+                                                    { 0, 1, 0, 1, 1, 1 },
+                                                    { 1, 0, 0, 1, 0, 0 },
+                                                    { 1, 1, 0, 1, 0, 0 },
+                                                    
+                                                    { 1, 0, 0, 1, 0, 1 },
+                                                    { 1, 0, 0, 1, 1, 1 },
+                                                    { 1, 1, 0, 1, 1, 0 },
+                                                    { 1, 1, 0, 1, 1, 1 } };
+          
+          const ordinal_type refFaceOrts[24][4] = { { 0, 0, 3, 3 },
+                                                    { 4, 0, 3, 2 },
+                                                    { 0, 4, 3, 0 },
+                                                    { 0, 4, 2, 4 },
+                                                                 
+                                                    { 4, 0, 2, 5 },
+                                                    { 4, 4, 2, 1 },
+                                                    { 0, 3, 0, 3 },
+                                                    { 4, 3, 0, 2 },
+                                                                 
+                                                    { 3, 2, 0, 3 },
+                                                    { 2, 2, 4, 3 },
+                                                    { 1, 3, 4, 2 },
+                                                    { 5, 2, 4, 2 },
+                                                                 
+                                                    { 3, 1, 3, 0 },
+                                                    { 3, 1, 2, 4 },
+                                                    { 3, 5, 0, 0 },
+                                                    { 2, 5, 4, 0 },
+                                                                 
+                                                    { 2, 1, 5, 4 },
+                                                    { 2, 5, 1, 4 },
+                                                    { 1, 0, 5, 5 },
+                                                    { 1, 4, 5, 1 },
+                                                                 
+                                                    { 1, 3, 1, 5 },
+                                                    { 5, 2, 1, 5 },
+                                                    { 5, 1, 5, 1 },
+                                                    { 5, 5, 1, 1 } };
+          
+          *outStream << "Tetrahedral element edge reference configuration\n";
+          for (auto edgeId=0;edgeId<6;++edgeId) {
+            const auto v0 = cellTopo.getNodeMap(1, edgeId, 0);
+            const auto v1 = cellTopo.getNodeMap(1, edgeId, 1);
+            *outStream << std::setw(3) << edgeId << " edge :: " << v0 << " " << v1 << "\n";
+          }
+          *outStream << "Tetrahedral element edge orientation with vertex permutations\n";          
+          for (auto i=0;i<24;++i) {                                          
+            // find orientation                                              
+            const auto nodes = Kokkos::View<const ordinal_type[4],HostSpaceType>(elemNodes[i]);
+            const auto ort = Orientation::getOrientation(cellTopo, nodes);
+            
+            // decode orientation
+            ordinal_type edgeOrt[6] = {};
+            for (auto edgeId=0;edgeId<6;++edgeId) 
+              ort.getEdgeOrientation(edgeOrt, 6);
+            
+            *outStream << " elemNodes = " 
+                       << elemNodes[i][0] << " " 
+                       << elemNodes[i][1] << " " 
+                       << elemNodes[i][2] << " " 
+                       << elemNodes[i][3] << " "
+                       << " computed edgeOrts = " 
+                       << edgeOrt[0] << " "
+                       << edgeOrt[1] << " "
+                       << edgeOrt[2] << " "
+                       << edgeOrt[3] << " "
+                       << edgeOrt[4] << " "
+                       << edgeOrt[5] << " "
+                       << " reference edgeOrts = " 
+                       << refEdgeOrts[i][0] << " "
+                       << refEdgeOrts[i][1] << " "
+                       << refEdgeOrts[i][2] << " "
+                       << refEdgeOrts[i][3] << " "
+                       << refEdgeOrts[i][4] << " "
+                       << refEdgeOrts[i][5] << " ::\n";
+            
+            if (edgeOrt[0] != refEdgeOrts[i][0] || 
+                edgeOrt[1] != refEdgeOrts[i][1] || 
+                edgeOrt[2] != refEdgeOrts[i][2] ||
+                edgeOrt[3] != refEdgeOrts[i][3] ||
+                edgeOrt[4] != refEdgeOrts[i][4] || 
+                edgeOrt[5] != refEdgeOrts[i][5]) {
+              *outStream << "        ^^^^^^^^^^^^^^^^ FAILURE\n";
+              ++errorFlag;
+            }
           }
 
+          *outStream << "Tetrahedral element face reference configuration\n";
+          for (auto faceId=0;faceId<4;++faceId) {
+            const auto v0 = cellTopo.getNodeMap(2, faceId, 0);
+            const auto v1 = cellTopo.getNodeMap(2, faceId, 1);
+            const auto v2 = cellTopo.getNodeMap(2, faceId, 2);
+            *outStream << std::setw(3) << faceId << " face :: " << v0 << " " << v1 << " " << v2 << "\n";
+          }
+          *outStream << "Tetrahedral element face orientation with vertex permutations\n";          
+          for (auto i=0;i<24;++i) {                                          
+            // find orientation                                              
+            const auto nodes = Kokkos::View<const ordinal_type[4],HostSpaceType>(elemNodes[i]);
+            const auto ort = Orientation::getOrientation(cellTopo, nodes);
+            
+            // decode orientation
+            ordinal_type faceOrt[4] = {};
+            for (auto faceId=0;faceId<4;++faceId) 
+              ort.getFaceOrientation(faceOrt, 4);
+            
+            *outStream << " elemNodes = " 
+                       << elemNodes[i][0] << " " 
+                       << elemNodes[i][1] << " " 
+                       << elemNodes[i][2] << " " 
+                       << elemNodes[i][3] << " "
+                       << " computed faceOrts = " 
+                       << faceOrt[0] << " "
+                       << faceOrt[1] << " "
+                       << faceOrt[2] << " "
+                       << faceOrt[3] << " "
+                       << " reference faceOrts = " 
+                       << refFaceOrts[i][0] << " "
+                       << refFaceOrts[i][1] << " "
+                       << refFaceOrts[i][2] << " "
+                       << refFaceOrts[i][3] << " ::\n";
+            
+            if (faceOrt[0] != refFaceOrts[i][0] || 
+                faceOrt[1] != refFaceOrts[i][1] || 
+                faceOrt[2] != refFaceOrts[i][2] ||
+                faceOrt[3] != refFaceOrts[i][3]) {
+              *outStream << "        ^^^^^^^^^^^^^^^^ FAILURE\n";
+              ++errorFlag;
+            }
+          }
         }
 
       } catch (std::exception err) {
