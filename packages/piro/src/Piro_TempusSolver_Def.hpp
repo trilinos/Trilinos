@@ -909,6 +909,20 @@ getInitTimeStep() const
   return init_time_step; 
 } 
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+void Piro::TempusSolver<Scalar>::
+#endif
+setInitialState(Scalar t0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0) 
+{
+   fwdStateIntegrator->setInitialState(t0, x0, xdot0, xdotdot0);  
+}
 
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
