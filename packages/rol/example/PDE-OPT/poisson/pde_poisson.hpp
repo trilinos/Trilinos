@@ -201,7 +201,7 @@ public:
           for (int k = 0; k < numCellsSide; ++k) {
             int cidx = bdryCellLocIds_[i][j][k];
             for (int l = 0; l < numBdryDofs; ++l) {
-              //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+              //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx_[j][l];
               (*res)(cidx,fidx_[j][l]) = (*u_coeff)(cidx,fidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fidx_[j][l]);
             }
           }
@@ -360,11 +360,6 @@ public:
     fe_vol_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
     // Set local boundary DOFs.
     fidx_ = fe_vol_->getBoundaryDofs();
-for (unsigned i=0; i<fidx_.size(); ++i) {
-  for (unsigned j=0; j<fidx_[i].size(); ++j) {
-    std::cout << "i,j  " << i << "," << j << "  fidx=" << fidx_[i][j] << std::endl;
-  }
-}
     // Compute Dirichlet values at DOFs.
     int d = basisPtr_->getBaseCellTopology().getDimension();
     int numSidesets = bdryCellLocIds_.size();

@@ -686,7 +686,7 @@ public:
         tagToIdCompact[i].push_back(ids);
         int dofordcompact = tagToIdCompact[i][j].size();
         for (int k=0; k<dofordcompact; ++k) {
-          std::cout << "\n  i=" << i << "  j=" << j << "  k=" << k << "  id=" << tagToIdCompact[i][j][k];
+          //std::cout << "\n  i=" << i << "  j=" << j << "  k=" << k << "  id=" << tagToIdCompact[i][j][k];
         }
       }
     }

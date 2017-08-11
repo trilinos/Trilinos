@@ -104,6 +104,8 @@ private:
   Teuchos::RCP<Intrepid::FieldContainer<int> > voidDofs_;  // global face dofs, of size [numFaces_ x numLocalFaceDofs_]
   Teuchos::RCP<Intrepid::FieldContainer<int> > cellDofs_;  // global cell dofs, of size [numCells_ x numLocalDofs_];
                                                            // ordered by subcell (node, then edge, then face) and basis index
+  std::vector<int> mapToIntrepidPattern_;
+  std::vector<int> mapToFieldPattern_;
 
   std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > fieldDofs_;  // global cell dofs, indexed by field/basis, of size [numCells_ x basis cardinality];
                                                                           // ordered by subcell (node, then edge, then face)
@@ -181,6 +183,7 @@ public:
     computeDofArrays();
     computeCellDofs();
     computeFieldDofs();
+    computeDofTransforms();
   }
 
 
@@ -268,6 +271,73 @@ public:
     return fieldPattern_[fieldNumber];
   }
 
+  void transformToIntrepidPattern(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &array) const {
+    if ( array != Teuchos::null ) {
+      int rank = array->rank();
+      int nc   = array->dimension(0);
+      if ( rank == 2 ) {
+        int nf = array->dimension(1);
+        Intrepid::FieldContainer<Real> tmp(nc, nf);
+        for (int c = 0; c < nc; ++c) {
+          for (int f = 0; f < nf; ++f) {
+            tmp(c, mapToIntrepidPattern_[f]) = (*array)(c, f);
+          }
+        }
+        *array = tmp;
+      }
+      else if (rank == 3 ) {
+        int nf1 = array->dimension(1);
+        int nf2 = array->dimension(2);
+        Intrepid::FieldContainer<Real> tmp(nc, nf1, nf2);
+        for (int c = 0; c < nc; ++c) {
+          for (int f1 = 0; f1 < nf1; ++f1) {
+            for (int f2 = 0; f2 < nf2; ++f2) {
+              tmp(c, mapToIntrepidPattern_[f1], mapToIntrepidPattern_[f2]) = (*array)(c, f1, f2);
+            }
+          }
+        }
+        *array = tmp;
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+          ">>> PDE-OPT/TOOLS/dofmanager.hpp (transformToIntrepidPattern): Input array rank not 2 or 3!");
+      }
+    }
+  }
+
+  void transformToFieldPattern(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &array) const {
+    if ( array != Teuchos::null ) {
+      int rank = array->rank();
+      int nc   = array->dimension(0);
+      if ( rank == 2 ) {
+        int nf = array->dimension(1);
+        Intrepid::FieldContainer<Real> tmp(nc, nf);
+        for (int c = 0; c < nc; ++c) {
+          for (int f = 0; f < nf; ++f) {
+            tmp(c, mapToFieldPattern_[f]) = (*array)(c, f);
+          }
+        }
+        *array = tmp;
+      }
+      else if (rank == 3 ) {
+        int nf1 = array->dimension(1);
+        int nf2 = array->dimension(2);
+        Intrepid::FieldContainer<Real> tmp(nc, nf1, nf2);
+        for (int c = 0; c < nc; ++c) {
+          for (int f1 = 0; f1 < nf1; ++f1) {
+            for (int f2 = 0; f2 < nf2; ++f2) {
+              tmp(c, mapToFieldPattern_[f1], mapToFieldPattern_[f2]) = (*array)(c, f1, f2);
+            }
+          }
+        }
+        *array = tmp;
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+          ">>> PDE-OPT/TOOLS/dofmanager.hpp (transformToFieldPattern): Input array rank not 2 or 3!");
+      }
+    }
+  }
 
 private:
 
@@ -453,6 +523,72 @@ private:
       }
     }
   } // computeFieldDofs
+
+  void computeDofTransforms(void) {
+    // Build basis maps
+    std::vector<std::vector<int> > map2IP(numBases_);
+    std::vector<std::vector<int> > map2FP(numBases_);
+    for (int f=0; f<numBases_; ++f) { 
+      int basisDeg = intrepidBasis_[f]->getDegree();
+      if (cellDim_ == 1) {
+        if (basisDeg == 1) {
+          map2IP[f] = {0, 1};
+          map2FP[f] = {0, 1};
+        }
+        else if (basisDeg == 2) {
+          map2IP[f] = {0, 2, 1};
+          map2FP[f] = {0, 2, 1};
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+            ">>> PDE-OPT/TOOLS/dofmanager.hpp (ComputeDofTransforms): basisDeg > 2");
+        }
+      }
+      else if (cellDim_ == 2) {
+        if (basisDeg == 1) {
+          map2IP[f] = {0, 1, 2, 3};
+          map2FP[f] = {0, 1, 2, 3};
+        }
+        else if (basisDeg == 2) {
+          map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+          map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+            ">>> PDE-OPT/TOOLS/dofmanager.hpp (ComputeDofTransforms): basisDeg > 2");
+        }
+      }
+      else if (cellDim_ == 3) {
+        if (basisDeg == 1) {
+          map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7};
+          map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7};
+        }
+        else if (basisDeg == 2) {
+          map2IP[f] = {0, 1, 2, 3, 4 ,5, 6, 7,                       // Nodes
+                       8, 9, 10, 11, 16, 17, 18, 19, 12, 13, 14, 15, // Edges
+                       25, 24, 26, 23, 21, 22,                       // Faces
+                       20};                                          // Voids
+          map2FP[f] = {0, 1, 2, 3, 4 ,5, 6, 7,                       // Nodes
+                       8, 9, 10, 11, 16, 17, 18, 19, 12, 13, 14, 15, // Edges
+                       26,                                           // Voids
+                       24, 25, 23, 21, 20, 22};                      // Faces
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+            ">>> PDE-OPT/TOOLS/dofmanager.hpp (ComputeDofTransforms): basisDeg > 2");
+        }
+      }
+    }
+    // Apply transformation to ind
+    mapToIntrepidPattern_.clear(); mapToIntrepidPattern_.resize(numDofs_);
+    mapToFieldPattern_.clear();    mapToFieldPattern_.resize(numDofs_);
+    for (int i = 0; i < numBases_; ++i) {
+      for (int j = 0; j < static_cast<int>(map2IP[i].size()); ++j) {
+        mapToIntrepidPattern_[fieldPattern_[i][j]] = fieldPattern_[i][map2IP[i][j]];
+        mapToFieldPattern_[fieldPattern_[i][j]]    = fieldPattern_[i][map2FP[i][j]];
+      }
+    }
+  }
 
 }; // DofManager
 

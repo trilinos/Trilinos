@@ -409,7 +409,7 @@ public:
         outStream << "\nSideset " << i << std::endl;
         for (int j=0; j<numFacesPerCell_; ++j) {
           outStream << "    Local side " << j << ":";
-          for (int k=0; k<(*meshSideSets_)[i][j].size(); ++k) {
+          for (int k=0; k<static_cast<int>((*meshSideSets_)[i][j].size()); ++k) {
             outStream << " " << (*meshSideSets_)[i][j][k];
           }
           outStream << std::endl;

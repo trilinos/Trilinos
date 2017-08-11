@@ -84,7 +84,7 @@ public:
                      (cell_index)  edge_index1  edge_index2  ...
   */
   virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
-    return Teuchos::null; // default due to lack of edges in 1D
+    return Teuchos::rcp(new Intrepid::FieldContainer<int>); // default due to lack of edges in 1D
   }
 
   /** \brief Returns cell to edge adjacencies.
@@ -92,7 +92,7 @@ public:
                      (cell_index)  edge_index1  edge_index2  ...
   */
   virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToFaceMap() const {
-    return Teuchos::null; // default due to lack of faces in 1D and 2D
+    return Teuchos::rcp(new Intrepid::FieldContainer<int>); // default due to lack of faces in 1D and 2D
   }
 
   /** \brief Returns sideset information.
