@@ -164,6 +164,12 @@ public:
   //! Get initial time step for time-integration
   Scalar
   getInitTimeStep() const;
+
+  //! Set initial time, initial solution, velocity and acceleration
+  void setInitialState(Scalar t0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
   
 
 private:
