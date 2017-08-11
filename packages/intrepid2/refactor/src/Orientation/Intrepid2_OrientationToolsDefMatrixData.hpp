@@ -156,6 +156,16 @@ namespace Intrepid2 {
 
       init_HCURL_TRI_In_FEM(matData, order);
     } 
+    else if (name == "Intrepid2_HCURL_TET_In_FEM") {
+      const ordinal_type matDim = ordinalToTag(tagToOrdinal((order < 2 ? 1 : 2), 0, 0), 3), numSubcells = 10, numOrts = 6;
+      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_TET_In_FEM",
+                                        numSubcells,
+                                        numOrts,
+                                        matDim, 
+                                        matDim);
+
+      init_HCURL_TET_In_FEM(matData, order);
+    } 
 
     //
     // High order HDIV Elements
@@ -190,6 +200,16 @@ namespace Intrepid2 {
                                         matDim);
       
       init_HDIV_TRI_In_FEM(matData, order);
+    } 
+    else if (name == "Intrepid2_HDIV_TET_In_FEM") {
+      const ordinal_type matDim = ordinalToTag(tagToOrdinal(2, 0, 0), 3), numSubcells = 10, numOrts = 6;
+      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_TRI_In_FEM",
+                                        numSubcells,
+                                        numOrts,
+                                        matDim, 
+                                        matDim);
+      
+      init_HDIV_TET_In_FEM(matData, order);
     } 
 
     //
@@ -570,6 +590,62 @@ namespace Intrepid2 {
     }
   }
 
+  template<typename SpT>
+  void
+  OrientationTools<SpT>::
+  init_HCURL_TET_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                        const ordinal_type order) {
+    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
+    Basis_HCURL_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order);
+    Basis_HCURL_TET_In_FEM<Kokkos::DefaultHostExecutionSpace>  cellBasis(order);
+      
+    const ordinal_type numEdge = 6, numFace = 4;    
+    {
+      const ordinal_type numOrt = 2;
+      for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
+        for (ordinal_type edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
+          auto mat = Kokkos::subview(matData, 
+                                     edgeId, edgeOrt,
+                                     Kokkos::ALL(), Kokkos::ALL());
+          Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
+                                                       bubbleBasis, cellBasis, 
+                                                       edgeId, edgeOrt);
+        }
+    }
+    if (order > 1) {
+      const ordinal_type numOrt = 6;
+      for (ordinal_type faceId=0;faceId<numFace;++faceId)
+        for (ordinal_type faceOrt=0;faceOrt<numOrt;++faceOrt) {
+          auto mat = Kokkos::subview(matData, 
+                                     numEdge+faceId, faceOrt,
+                                     Kokkos::ALL(), Kokkos::ALL());
+          Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
+                                                       triBasis, cellBasis, 
+                                                       faceId, faceOrt);
+        }
+    }
+  }
+
+  template<typename SpT>
+  void
+  OrientationTools<SpT>::
+  init_HDIV_TET_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                       const ordinal_type order) {
+    Basis_HDIV_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order);
+    Basis_HDIV_TET_In_FEM<Kokkos::DefaultHostExecutionSpace>  cellBasis(order);
+    
+    const ordinal_type numEdge = 6, numFace = 4, numOrt = 6;
+    for (ordinal_type faceId=0;faceId<numFace;++faceId)
+      for (ordinal_type faceOrt=0;faceOrt<numOrt;++faceOrt) {
+        auto mat = Kokkos::subview(matData, 
+                                   numEdge+faceId, faceOrt,
+                                   Kokkos::ALL(), Kokkos::ALL());
+        Impl::OrientationTools::getCoeffMatrix_HDIV(mat,
+                                                    triBasis, cellBasis, 
+                                                    faceId, faceOrt);
+      }
+  }
+  
   ///
   /// Lower order I1 elements
   ///
@@ -623,17 +699,17 @@ namespace Intrepid2 {
     }
   }
 
-template<typename SpT>
+  template<typename SpT>
   template<typename BasisPtrType>
   typename OrientationTools<SpT>::CoeffMatrixDataViewType
   OrientationTools<SpT>::createCoeffMatrix(BasisPtrType basis) {
-  // #ifdef HAVE_INTREPID2_DEBUG
-  //     INTREPID2_TEST_FOR_EXCEPTION( !basis->requireOrientation(), std::invalid_argument,
-  //                                   ">>> ERROR (OrientationTools::createCoeffMatrix): basis does not require orientations." );
-  // #endif
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( !basis->requireOrientation(), std::invalid_argument,
+                                  ">>> ERROR (OrientationTools::createCoeffMatrix): basis does not require orientations." );
+#endif
     const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
     const auto found = ortCoeffData.find(key);
-
+    
     CoeffMatrixDataViewType matData;
     if (found == ortCoeffData.end()) {
       matData = createCoeffMatrixInternal(basis);

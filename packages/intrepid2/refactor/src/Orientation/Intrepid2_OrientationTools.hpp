@@ -68,7 +68,6 @@
 #include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
 
 // -- HCURL family
-//#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
 #include "Intrepid2_HCURL_HEX_In_FEM.hpp"
 
@@ -76,13 +75,11 @@
 #include "Intrepid2_HCURL_TET_In_FEM.hpp"
 
 // -- HDIV family
-//#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
-//#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_HDIV_HEX_In_FEM.hpp"
 
 #include "Intrepid2_HDIV_TRI_In_FEM.hpp"
-//#include "Intrepid2_HDIV_TET_In_FEM.hpp"
+#include "Intrepid2_HDIV_TET_In_FEM.hpp"
 
 // -- Lower order family
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"

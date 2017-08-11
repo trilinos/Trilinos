@@ -110,7 +110,7 @@ namespace Intrepid2 {
       typedef OrientationTools<DeviceSpaceType> ots;
       try {
 
-        const ordinal_type testOrderBegin = std::min(2, maxOrder), testOrderEnd = std::min(4, maxOrder);
+        const ordinal_type testOrderBegin = 1, testOrderEnd = std::min(4, maxOrder);
         for (ordinal_type testOrder=testOrderBegin;testOrder<testOrderEnd;++testOrder) {
           *outStream << "\n -- Testing order " << testOrder << "\n" 
                      << "===============================================================================\n"
@@ -123,27 +123,35 @@ namespace Intrepid2 {
             {
               *outStream << "\n -- Testing Hexahedral HGRAD \n\n";
               Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType> cellBasis(order);
-              const auto matData = ots::createCoeffMatrix(&cellBasis);
-
-              auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-              Kokkos::deep_copy(matDataHost, matData);
-            
-              // check face only
-              const ordinal_type faceDim = 2, numEdge = 12, numFace = 6, numOrt = 8;
-              for (auto faceId=0;faceId<numFace;++faceId) {
-                const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
-                const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
-              
-                const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
-                for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
-                  *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
-                  const auto mat = Kokkos::subview(matDataHost, numEdge + faceId, faceOrt, range, range);
-                  for (auto i=0;i<ndofFace;++i) {
-                    for (auto j=0;j<ndofFace;++j)
-                      *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
-                    *outStream << "\n";
+              if (cellBasis.requireOrientation()) {
+                const auto matData = ots::createCoeffMatrix(&cellBasis);
+                
+                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                Kokkos::deep_copy(matDataHost, matData);
+                
+                // check face only
+                const ordinal_type faceDim = 2, numEdge = 12, numFace = 6, numOrt = 8;
+                for (auto faceId=0;faceId<numFace;++faceId) {
+                  if (cellBasis.getDofCount(faceDim, faceId)) {
+                    const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
+                    const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
+                    
+                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
+                    for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
+                      *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
+                      const auto mat = Kokkos::subview(matDataHost, numEdge + faceId, faceOrt, range, range);
+                      for (auto i=0;i<ndofFace;++i) {
+                        for (auto j=0;j<ndofFace;++j)
+                          *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
+                        *outStream << "\n";
+                      }
+                    }
+                  } else {
+                    *outStream << "  " << cellBasis.getName() << "  face " << faceId <<" does not have DOFs\n";
                   }
-                } 
+                }
+              } else {
+                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";                
               }
             }
             ots::clearCoeffMatrix();
@@ -157,27 +165,35 @@ namespace Intrepid2 {
             {
               *outStream << "\n -- Testing Hexahedral HCURL \n\n";
               Basis_HCURL_HEX_In_FEM<DeviceSpaceType> cellBasis(order);
-              const auto matData = ots::createCoeffMatrix(&cellBasis);
-
-              auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-              Kokkos::deep_copy(matDataHost, matData);
-            
-              // check face only
-              const ordinal_type faceDim = 2, numEdge = 12, numFace = 6, numOrt = 8;
-              for (auto faceId=0;faceId<numFace;++faceId) {
-                const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
-                const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
-              
-                const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
-                for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
-                  *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
-                  const auto mat = Kokkos::subview(matDataHost, numEdge + faceId, faceOrt, range, range);
-                  for (auto i=0;i<ndofFace;++i) {
-                    for (auto j=0;j<ndofFace;++j)
-                      *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
-                    *outStream << "\n";
+              if (cellBasis.requireOrientation()) {
+                const auto matData = ots::createCoeffMatrix(&cellBasis);
+                
+                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                Kokkos::deep_copy(matDataHost, matData);
+                
+                // check face only
+                const ordinal_type faceDim = 2, numEdge = 12, numFace = 6, numOrt = 8;
+                for (auto faceId=0;faceId<numFace;++faceId) {
+                  if (cellBasis.getDofCount(faceDim, faceId)) {
+                    const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
+                    const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
+                    
+                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
+                    for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
+                      *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
+                      const auto mat = Kokkos::subview(matDataHost, numEdge + faceId, faceOrt, range, range);
+                      for (auto i=0;i<ndofFace;++i) {
+                        for (auto j=0;j<ndofFace;++j)
+                          *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
+                        *outStream << "\n";
+                      }
+                    } 
+                  } else {
+                    *outStream << "  " << cellBasis.getName() << "  face " << faceId <<" does not have DOFs\n";                    
                   }
-                } 
+                }
+              } else {
+                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";
               }
             }
             ots::clearCoeffMatrix();
@@ -191,27 +207,35 @@ namespace Intrepid2 {
             {
               *outStream << "\n -- Testing Hexahedral HDIV \n\n";
               Basis_HDIV_HEX_In_FEM<DeviceSpaceType> cellBasis(order);
-              const auto matData = ots::createCoeffMatrix(&cellBasis);
+              if (cellBasis.requireOrientation()) {
+                const auto matData = ots::createCoeffMatrix(&cellBasis);
 
-              auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-              Kokkos::deep_copy(matDataHost, matData);
-            
-              // check face only
-              const ordinal_type faceDim = 2, numFace = 6, numOrt = 8;
-              for (auto faceId=0;faceId<numFace;++faceId) {
-                const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
-                const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
-              
-                const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
-                for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
-                  *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
-                  const auto mat = Kokkos::subview(matDataHost, faceId, faceOrt, range, range);
-                  for (auto i=0;i<ndofFace;++i) {
-                    for (auto j=0;j<ndofFace;++j)
-                      *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
-                    *outStream << "\n";
+                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                Kokkos::deep_copy(matDataHost, matData);
+                
+                // check face only
+                const ordinal_type faceDim = 2, numFace = 6, numOrt = 8;
+                for (auto faceId=0;faceId<numFace;++faceId) {
+                  if (cellBasis.getDofCount(faceDim, faceId)) {
+                    const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
+                    const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
+                    
+                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
+                    for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
+                      *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
+                      const auto mat = Kokkos::subview(matDataHost, faceId, faceOrt, range, range);
+                      for (auto i=0;i<ndofFace;++i) {
+                        for (auto j=0;j<ndofFace;++j)
+                          *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
+                        *outStream << "\n";
+                      }
+                    } 
+                  } else {
+                    *outStream << "  " << cellBasis.getName() << "  face " << faceId <<" does not have DOFs\n";
                   }
-                } 
+                }
+              } else {
+                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";
               }
             }
             ots::clearCoeffMatrix();
