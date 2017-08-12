@@ -170,6 +170,10 @@ public:
       Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
+
+  //! Return RCP to Tempus::SolutionHistory
+  Teuchos::RCP<Tempus::SolutionHistory<Scalar> > 
+  getSolutionHistory() const; 
   
 
 private:
