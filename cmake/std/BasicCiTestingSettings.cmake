@@ -31,6 +31,10 @@ TRIL_SET_BOOL_CACHE_VAR_FOR_CI(TPL_ENABLE_HDF5 ON)
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(TPL_ENABLE_Netcdf ON)
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(TPL_ENABLE_SuperLU ON)
 
+# We want to see tracing of added tests to help in debugging
+# problems.
+TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Trilinos_TRACE_ADD_TEST ON)
+
 # Disable long-failing Pir test until it can be fixed (#826)
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Piro_EpetraSolver_MPI_4_DISABLE ON)
 
