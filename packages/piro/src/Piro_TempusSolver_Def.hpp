@@ -926,6 +926,18 @@ setInitialState(Scalar t0,
 
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<Tempus::SolutionHistory<Scalar> > Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+Teuchos::RCP<Tempus::SolutionHistory<Scalar> > Piro::TempusSolver<Scalar>::
+#endif
+getSolutionHistory() const
+{
+  return fwdStateIntegrator->getSolutionHistory();
+}
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #else
 template <typename Scalar>
