@@ -1280,7 +1280,7 @@ public:
     }
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valHeat_eval;
     valHeat_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    feThr_->evaluateValue(valHeat_eval, L[3]);
+    feThr_->evaluateValue(valHeat_eval, L[d+1]);
 
     // Compute nonlinear terms in the Navier-Stokes equations.
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > valVelPhi_vec(d);

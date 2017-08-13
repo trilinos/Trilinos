@@ -60,6 +60,8 @@
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_OptimizationSolver.hpp"
+#include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/pdeconstraint.hpp"
 #include "../TOOLS/pdeobjective.hpp"
@@ -69,6 +71,68 @@
 #include "obj_thermal-fluids_ex03.hpp"
 
 typedef double RealT;
+
+template<class Real>
+void print(ROL::Objective<Real> &obj,
+           const ROL::Vector<Real> &z,
+           ROL::SampleGenerator<Real> &sampler,
+           const int ngsamp,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           const std::string &filename) {
+  Real tol(1e-8);
+  // Build objective function distribution
+  int nsamp = sampler.numMySamples();
+  std::vector<Real> myvalues(nsamp), myzerovec(nsamp, 0);
+  std::vector<double> gvalues(ngsamp), gzerovec(ngsamp, 0);
+  std::vector<Real> sample = sampler.getMyPoint(0);
+  int sdim = sample.size();
+  std::vector<std::vector<Real> > mysamples(sdim, myzerovec);
+  std::vector<std::vector<double> > gsamples(sdim, gzerovec);
+  for (int i = 0; i < nsamp; ++i) {
+    sample = sampler.getMyPoint(i);
+    obj.setParameter(sample);
+    myvalues[i] = static_cast<double>(obj.value(z,tol));
+    for (int j = 0; j < sdim; ++j) {
+      mysamples[j][i] = static_cast<double>(sample[j]);
+    }
+  }
+
+  // Send data to root processor
+#ifdef HAVE_MPI
+  Teuchos::RCP<const Teuchos::MpiComm<int> > mpicomm
+    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+  int nproc = Teuchos::size<int>(*mpicomm);
+  std::vector<int> sampleCounts(nproc, 0), sampleDispls(nproc, 0);
+  MPI_Gather(&nsamp,1,MPI_INT,&sampleCounts[0],1,MPI_INT,0,*(mpicomm->getRawMpiComm())());
+  for (int i = 1; i < nproc; ++i) {
+    sampleDispls[i] = sampleDispls[i-1] + sampleCounts[i-1];
+  }
+  MPI_Gatherv(&myvalues[0],nsamp,MPI_DOUBLE,&gvalues[0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
+  for (int j = 0; j < sdim; ++j) {
+    MPI_Gatherv(&mysamples[j][0],nsamp,MPI_DOUBLE,&gsamples[j][0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
+  }
+#else
+  gvalues.assign(myvalues.begin(),myvalues.end());
+  for (int j = 0; j < sdim; ++j) {
+    gsamples[j].assign(mysamples[j].begin(),mysamples[j].end());
+  }
+#endif
+
+  // Print
+  int rank  = Teuchos::rank<int>(*comm);
+  if ( rank==0 ) {
+    std::ofstream file;
+    file.open(filename);
+    file << std::scientific << std::setprecision(15);
+    for (int i = 0; i < ngsamp; ++i) {
+      for (int j = 0; j < sdim; ++j) {
+        file << std::setw(25) << std::left << gsamples[j][i];
+      }
+      file << std::setw(25) << std::left << gvalues[i] << std::endl;
+    }
+    file.close();
+  }
+}
 
 int main(int argc, char *argv[]) {
 //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
@@ -82,6 +146,8 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   Teuchos::RCP<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > serial_comm
+    = Teuchos::rcp(new Teuchos::SerialComm<int>());
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
     outStream = Teuchos::rcp(&std::cout, false);
@@ -106,7 +172,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<PDE_ThermalFluids_ex07<RealT> > pde
       = Teuchos::rcp(new PDE_ThermalFluids_ex07<RealT>(*parlist));
     Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
-      = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
+      = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
       = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
@@ -155,10 +221,43 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, stateStore, up, zp, pp, true, false));
 
+    /*************************************************************************/
+    /***************** BUILD SAMPLER *****************************************/
+    /*************************************************************************/
+    int Nbottom = parlist->sublist("Problem").get("Bottom KL Truncation Order",5);
+    int N0      = parlist->sublist("Problem").get("Side 0 KL Truncation Order",5);
+    int N1      = parlist->sublist("Problem").get("Side 1 KL Truncation Order",5);
+    int N2      = parlist->sublist("Problem").get("Side 2 KL Truncation Order",5);
+    int N3      = parlist->sublist("Problem").get("Side 3 KL Truncation Order",5);
+    int stochDim = 2*(Nbottom + N0 + N1 + N2 + N3) + 3;
+    int nsamp = parlist->sublist("Problem").get("Number of samples",100);
+    int nsamp_dist = parlist->sublist("Problem").get("Number of output samples",100);
+    // Build vector of distributions
+    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec(stochDim);
+    Teuchos::ParameterList UList;
+    UList.sublist("Distribution").set("Name","Uniform");
+    UList.sublist("Distribution").sublist("Uniform").set("Lower Bound",-1.0);
+    UList.sublist("Distribution").sublist("Uniform").set("Upper Bound", 1.0);
+    for (int i = 0; i < stochDim; ++i) {
+      distVec[i] = ROL::DistributionFactory<RealT>(UList);
+    }
+    // Sampler
+    Teuchos::RCP<ROL::BatchManager<RealT> > bman
+      = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
+    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
+      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,distVec,bman));
+    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler_dist
+      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp_dist,distVec,bman));
+
     // Set up optimization problem, check derivatives and solve
     ROL::OptimizationProblem<RealT> optProb(robj,zp);
+    optProb.setStochasticObjective(*parlist,sampler);
     if ( parlist->sublist("Problem").get("Check derivatives",false) ) {
       optProb.check();
+      Teuchos::RCP<ROL::Vector<RealT> > xp
+        = Teuchos::rcp(new ROL::Vector_SimOpt<RealT>(up,zp));
+      ROL::OptimizationProblem<RealT> op(obj,xp,con,pp);
+      op.check();
     }
     zp->zero();
     ROL::OptimizationSolver<RealT> optSolver(optProb,*parlist);
@@ -166,23 +265,22 @@ int main(int argc, char *argv[]) {
 
     // Output.
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
-    std::vector<RealT> param;
-    stateStore->get(*up,param);
-    assembler->printMeshData(*outStream);
-    Teuchos::Array<RealT> res(1,0);
-    //con->solve(*rp,*up,*zp,tol);
+    std::vector<RealT> pt;
+    RealT wt;
+    up->zero(); pp->zero();
+    for (int i = 0; i < sampler->numMySamples(); ++i) {
+      pt = sampler->getMyPoint(i);
+      wt = sampler->getMyWeight(i);
+      con->solve(*rp,*up,*zp,tol);
+      pp->axpy(wt,*up);
+    }
+    up->zero();
+    sampler->sumAll(*pp,*up);
     pdecon->outputTpetraVector(u_rcp,"state.txt");
-    pdecon->outputTpetraVector(z_rcp,"control.txt");
-    con->value(*rp,*up,*zp,tol);
-    r_rcp->norm2(res.view(0,1));
-    *outStream << "Residual Norm: " << res[0] << std::endl;
-    errorFlag += (res[0] > 1.e-6 ? 1 : 0);
-    pdecon->outputTpetraData();
 
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj0
-      = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[0],assembler));
-    RealT val = obj0->value(*up,*zp,tol);
-    *outStream << "Vorticity Value: " << val << std::endl;
+    pdecon->outputTpetraVector(z_rcp,"control.txt");
+    assembler->printMeshData(*outStream);
+    print<RealT>(*robj,*zp,*sampler_dist,nsamp_dist,comm,"obj_samples.txt");
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
