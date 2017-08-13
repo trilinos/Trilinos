@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   r_val += Intrepid2::Test::OrientationToolsHexCoeffMatrix<Kokkos::Serial>(verbose);
 
   r_val += Intrepid2::Test::OrientationToolsTriCoeffMatrix<Kokkos::Serial>(verbose);
-  //r_val += Intrepid2::Test::OrientationToolsTetCoeffMatrix<Kokkos::Serial>(verbose);
+  r_val += Intrepid2::Test::OrientationToolsTetCoeffMatrix<Kokkos::Serial>(verbose);
 
   Kokkos::finalize();
   return r_val;

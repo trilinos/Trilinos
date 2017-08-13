@@ -320,64 +320,57 @@ namespace Intrepid2 {
           tags[i][3] = 1; // total vert dof
         }
         else if (xi2 < eps) { // face 0
-          tags[i][0] = 2; // face dof
-          tags[i][1] = 0; // face id
-          tags[i][2] = faceId[0]++; // local dof id
-          tags[i][3] = numFaceDof; // total vert dof
-
           if (xi3 < eps) { // edge 0
             tags[i][0] = 1; // edge dof
             tags[i][1] = 0; // edge id
             tags[i][2] = edgeId[0]++; // local dof id
             tags[i][3] = numEdgeDof; // total vert dof
-          }
-
-          if (xi1 < eps) { // edge 3
+          } else if (xi1 < eps) { // edge 3
             tags[i][0] = 1; // edge dof
             tags[i][1] = 3; // edge id
             tags[i][2] = edgeId[3]++; // local dof id
             tags[i][3] = numEdgeDof; // total vert dof
-          }
-
-          if (xi0 < eps) { // edge 4
+          } else if (xi0 < eps) { // edge 4
             tags[i][0] = 1; // edge dof
             tags[i][1] = 4; // edge id
             tags[i][2] = edgeId[4]++; // local dof id
             tags[i][3] = numEdgeDof; // total vert dof
+          } else {
+            tags[i][0] = 2; // face dof
+            tags[i][1] = 0; // face id
+            tags[i][2] = faceId[0]++; // local dof id
+            tags[i][3] = numFaceDof; // total vert dof
           }
-
         } 
         else if (xi0 < eps) { // face 1
-          tags[i][0] = 2; // face dof
-          tags[i][1] = 1; // face id
-          tags[i][2] = faceId[1]++; // local dof id
-          tags[i][3] = numFaceDof; // total vert dof
-
           if (xi3 < eps) { // edge 1
             tags[i][0] = 1; // edge dof
             tags[i][1] = 1; // edge id
             tags[i][2] = edgeId[1]++; // local dof id
             tags[i][3] = numEdgeDof; // total vert dof
-          }
-
-          if (xi1 < eps) { // edge 5
+          } else if (xi1 < eps) { // edge 5
             tags[i][0] = 1; // edge dof
             tags[i][1] = 5; // edge id
             tags[i][2] = edgeId[5]++; // local dof id
             tags[i][3] = numEdgeDof; // total vert dof
+          } else {
+            tags[i][0] = 2; // face dof
+            tags[i][1] = 1; // face id
+            tags[i][2] = faceId[1]++; // local dof id
+            tags[i][3] = numFaceDof; // total vert dof
           }
         } 
         else if (xi1 < eps) { // face 2
-          tags[i][0] = 2; // face dof
-          tags[i][1] = 2; // face id
-          tags[i][2] = faceId[2]++; // local dof id
-          tags[i][3] = numFaceDof; // total vert dof
-
           if (xi3 < eps) { // edge 2
             tags[i][0] = 1; // edge dof
             tags[i][1] = 2; // edge id
             tags[i][2] = edgeId[2]++; // local dof id
             tags[i][3] = numEdgeDof; // total vert dof
+          } else {
+            tags[i][0] = 2; // face dof
+            tags[i][1] = 2; // face id
+            tags[i][2] = faceId[2]++; // local dof id
+            tags[i][3] = numFaceDof; // total vert dof
           }
         }
         else if (xi3 < eps) { // face 3
@@ -395,7 +388,7 @@ namespace Intrepid2 {
       }
 
       ordinal_type_array_1d_host tagView(&tags[0][0], card*tagSize);
-      
+
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host
       this->setOrdinalTagData(this->tagToOrdinal_,

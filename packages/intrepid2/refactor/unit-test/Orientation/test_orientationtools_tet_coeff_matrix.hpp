@@ -73,10 +73,10 @@ namespace Intrepid2 {
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
-    
+
     template<typename DeviceSpaceType>
-    int OrientationToolsHexCoeffMatrix(const bool verbose) {
-      
+    int OrientationToolsTetCoeffMatrix(const bool verbose) {
+
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
 
@@ -95,7 +95,7 @@ namespace Intrepid2 {
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
       *outStream << "\n";
 
-      
+
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
@@ -109,34 +109,33 @@ namespace Intrepid2 {
 
       typedef OrientationTools<DeviceSpaceType> ots;
       try {
-
         const ordinal_type testOrderBegin = 1, testOrderEnd = std::min(4, maxOrder);
         for (ordinal_type testOrder=testOrderBegin;testOrder<=testOrderEnd;++testOrder) {
-          *outStream << "\n -- Testing order " << testOrder << "\n" 
+          *outStream << "\n -- Testing order " << testOrder << "\n"
                      << "===============================================================================\n"
                      << "\n";
           {
-            // I do not know how I can provide reference permutation for hexa or any 3D elements
-            const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+            // I do not know how I can provide reference permutation for tet or any 3D elements
+            const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
             const ordinal_type order = testOrder;
-          
+
             {
-              *outStream << "\n -- Testing Hexahedral HGRAD \n\n";
-              Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType> cellBasis(order);
+              *outStream << "\n -- Testing Tetrahedral HGRAD \n\n";
+              Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType> cellBasis(order);
               if (cellBasis.requireOrientation()) {
                 const auto matData = ots::createCoeffMatrix(&cellBasis);
-                
+
                 auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
                 Kokkos::deep_copy(matDataHost, matData);
-                
+
                 // check face only
-                const ordinal_type faceDim = 2, numEdge = 12, numFace = 6, numOrt = 8;
+                const ordinal_type faceDim = 2, numEdge = 6, numFace = 4, numOrt = 6;
                 for (auto faceId=0;faceId<numFace;++faceId) {
                   if (cellBasis.getDofCount(faceDim, faceId)) {
                     const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
                     const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
-                    
-                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
+
+                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);
                     for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
                       *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
                       const auto mat = Kokkos::subview(matDataHost, numEdge + faceId, faceOrt, range, range);
@@ -151,34 +150,33 @@ namespace Intrepid2 {
                   }
                 }
               } else {
-                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";                
+                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";
               }
             }
             ots::clearCoeffMatrix();
           }
 
           {
-            // I do not know how I can provide reference permutation for hexa or any 3D elements
-            const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+            const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
             const ordinal_type order = testOrder;
-          
+
             {
-              *outStream << "\n -- Testing Hexahedral HCURL \n\n";
-              Basis_HCURL_HEX_In_FEM<DeviceSpaceType> cellBasis(order);
+              *outStream << "\n -- Testing Tetrahedral HCURL \n\n";
+              Basis_HCURL_TET_In_FEM<DeviceSpaceType> cellBasis(order);
               if (cellBasis.requireOrientation()) {
                 const auto matData = ots::createCoeffMatrix(&cellBasis);
-                
+
                 auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
                 Kokkos::deep_copy(matDataHost, matData);
-                
+
                 // check face only
-                const ordinal_type faceDim = 2, numEdge = 12, numFace = 6, numOrt = 8;
+                const ordinal_type faceDim = 2, numEdge = 6, numFace = 4, numOrt = 6;
                 for (auto faceId=0;faceId<numFace;++faceId) {
                   if (cellBasis.getDofCount(faceDim, faceId)) {
                     const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
                     const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
-                    
-                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
+
+                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);
                     for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
                       *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
                       const auto mat = Kokkos::subview(matDataHost, numEdge + faceId, faceOrt, range, range);
@@ -187,49 +185,7 @@ namespace Intrepid2 {
                           *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
                         *outStream << "\n";
                       }
-                    } 
-                  } else {
-                    *outStream << "  " << cellBasis.getName() << "  face " << faceId <<" does not have DOFs\n";                    
-                  }
-                }
-              } else {
-                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";
-              }
-            }
-            ots::clearCoeffMatrix();
-          }
-
-          {
-            // I do not know how I can provide reference permutation for hexa or any 3D elements
-            const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
-            const ordinal_type order = testOrder;
-          
-            {
-              *outStream << "\n -- Testing Hexahedral HDIV \n\n";
-              Basis_HDIV_HEX_In_FEM<DeviceSpaceType> cellBasis(order);
-              if (cellBasis.requireOrientation()) {
-                const auto matData = ots::createCoeffMatrix(&cellBasis);
-
-                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-                Kokkos::deep_copy(matDataHost, matData);
-                
-                // check face only
-                const ordinal_type faceDim = 2, numFace = 6, numOrt = 8;
-                for (auto faceId=0;faceId<numFace;++faceId) {
-                  if (cellBasis.getDofCount(faceDim, faceId)) {
-                    const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
-                    const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
-                    
-                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
-                    for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
-                      *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
-                      const auto mat = Kokkos::subview(matDataHost, faceId, faceOrt, range, range);
-                      for (auto i=0;i<ndofFace;++i) {
-                        for (auto j=0;j<ndofFace;++j)
-                          *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
-                        *outStream << "\n";
-                      }
-                    } 
+                    }
                   } else {
                     *outStream << "  " << cellBasis.getName() << "  face " << faceId <<" does not have DOFs\n";
                   }
@@ -241,7 +197,46 @@ namespace Intrepid2 {
             ots::clearCoeffMatrix();
           }
 
+          {
+            const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
+            const ordinal_type order = testOrder;
 
+            {
+              *outStream << "\n -- Testing Tetrahedral HDIV \n\n";
+              Basis_HDIV_TET_In_FEM<DeviceSpaceType> cellBasis(order);
+              if (cellBasis.requireOrientation()) {
+                const auto matData = ots::createCoeffMatrix(&cellBasis);
+
+                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                Kokkos::deep_copy(matDataHost, matData);
+
+                // check face only
+                const ordinal_type faceDim = 2, numFace = 4, numOrt = 6;
+                for (auto faceId=0;faceId<numFace;++faceId) {
+                  if (cellBasis.getDofCount(faceDim, faceId)) {
+                    const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
+                    const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
+
+                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);
+                    for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
+                      *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
+                      const auto mat = Kokkos::subview(matDataHost, faceId, faceOrt, range, range);
+                      for (auto i=0;i<ndofFace;++i) {
+                        for (auto j=0;j<ndofFace;++j)
+                          *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
+                        *outStream << "\n";
+                      }
+                    }
+                  } else {
+                    *outStream << "  " << cellBasis.getName() << "  face " << faceId <<" does not have DOFs\n";
+                  }
+                }
+              } else {
+                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";
+              }
+            }
+            ots::clearCoeffMatrix();
+          }
         }
 
       } catch (std::exception err) {
@@ -254,12 +249,12 @@ namespace Intrepid2 {
         std::cout << "End Result: TEST FAILED = " << errorFlag << "\n";
       else
         std::cout << "End Result: TEST PASSED\n";
-      
+
       // reset format state of std::cout
       std::cout.copyfmt(oldFormatState);
-      
+
       return errorFlag;
     }
   }
 }
-    
+

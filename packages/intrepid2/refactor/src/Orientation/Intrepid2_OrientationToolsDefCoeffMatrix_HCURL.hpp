@@ -150,18 +150,19 @@ namespace Intrepid2 {
                    cellBaseKey == shards::Hexahedron<>::key) {
           scale = 1.0;
         } else if (cellBaseKey == shards::Triangle<>::key) {
-          const double jacDet[] = { 1.0, sqrt(2), 1.0 };
-          scale = jacDet[subcellId];
+          const double scale_edge[] = { 1.0, sqrt(2), 1.0 };
+          scale = scale_edge[subcellId];
         } else if (cellBaseKey == shards::Tetrahedron<>::key) {
-          const double jacDet[] = { 1.0, sqrt(2.0), 1.0, 
-                                    1.0, sqrt(2.0), sqrt(2.0) };
-          scale = jacDet[subcellId];
+          const double scale_edge[] = { 1.0, sqrt(2.0), 1.0, 
+                                        1.0, sqrt(2.0), sqrt(2.0) };
+          scale = scale_edge[subcellId];
         } 
         break;
       }
       case shards::Triangle<>::key: {
         if (cellBaseKey == shards::Tetrahedron<>::key) {
-          scale = 1.0;
+          const double scale_face[] = { 1.0, sqrt(2.0), 1.0, 1.0 };
+          scale = scale_face[subcellId];          
         }         
         break;
       }
@@ -179,8 +180,7 @@ namespace Intrepid2 {
 
       ///
       /// Function space
-      ///
-      
+      ///      
       {
         const std::string cellBasisName(cellBasis.getName());
         if (cellBasisName.find("HCURL") != std::string::npos) {
@@ -235,10 +235,6 @@ namespace Intrepid2 {
                                degree+1,
                                1, // offset by 1 so the points are located inside
                                POINTTYPE_EQUISPACED);
-        INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != ndofLine,
-                                      std::logic_error,
-                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
-                                      "The number of DOFs in line should be equal to the number of collocation points.");
         break;
       }
       case shards::Quadrilateral<>::key: {
@@ -399,7 +395,8 @@ namespace Intrepid2 {
         refValues = tmpValues;
         break;
       }
-      case shards::Quadrilateral<>::key: {
+      case shards::Quadrilateral<>::key: 
+      case shards::Triangle<>::key: {
         DynRankViewHostType faceTanU("faceTanU", cellDim), faceTanV("faceTanV", cellDim);
         CellTools<host_space_type>::getReferenceFaceTangents(faceTanU, faceTanV,subcellId, cellTopo);
 
@@ -416,9 +413,6 @@ namespace Intrepid2 {
         refValues = tmpValues;
         break;
       }
-      // case shards::Triangle<>::key: {
-      //   // the procedure may not be as simple as quad
-      // }
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, "Should not come here" );        
       }
