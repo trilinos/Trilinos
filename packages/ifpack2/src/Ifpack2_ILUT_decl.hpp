@@ -357,6 +357,7 @@ public:
   //@}
 
 private:
+  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef typename Teuchos::Array<local_ordinal_type>::size_type size_type;
