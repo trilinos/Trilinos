@@ -959,7 +959,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
         U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
       }
-      else { // Solve U^P (D^P (U^P Y)) = X for Y (where P is * or T).
+      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
 
         // Start by solving U^P Y = X for Y.
         U_solver_->apply (X, Y, mode);
@@ -976,14 +976,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     }
     else { // alpha != 1 or beta != 0
       if (alpha == zero) {
+        // The special case for beta == 0 ensures that if Y contains Inf
+        // or NaN values, we replace them with 0 (following BLAS
+        // convention), rather than multiplying them by 0 to get NaN.
         if (beta == zero) {
           Y.putScalar (zero);
         } else {
           Y.scale (beta);
         }
       } else { // alpha != zero
-        apply (X, Y, mode);
-        Y.update (alpha, Y, beta);
+        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+        apply (X, Y_tmp, mode);
+        Y.update (alpha, Y_tmp, beta);
       }
     }
   }//end timing
