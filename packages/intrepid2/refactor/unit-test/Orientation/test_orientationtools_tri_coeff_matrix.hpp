@@ -74,6 +74,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
+    // test
     template<typename DeviceSpaceType>
     int OrientationToolsTriCoeffMatrix(const bool verbose) {
 

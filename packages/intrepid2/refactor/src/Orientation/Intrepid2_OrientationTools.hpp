@@ -98,6 +98,7 @@
 
 #include "Teuchos_LAPACK.hpp"
 
+
 namespace Intrepid2 {
 
   namespace Impl {
