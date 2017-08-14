@@ -90,16 +90,7 @@ ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
 ELSE ()
   # The user did not set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
 
-  # This is annoying, but necessary, because expressions like "DEFINED
-  # X AND (NOT X)" may not be valid CMake syntax.
-  SET (Tpetra_CROSSCOMPILING OFF)
-  IF (DEFINED CMAKE_CROSSCOMPILING)
-    IF (CMAKE_CROSSCOMPILING)
-      SET (Tpetra_CROSSCOMPILING ON)
-    ENDIF ()
-  ENDIF ()
-
-  IF (Tpetra_CROSSCOMPILING)
+  IF (DEFINED CMAKE_CROSSCOMPILING AND CMAKE_CROSSCOMPILING)
     MESSAGE (STATUS "  - Since you are cross compiling, if you wish Tpetra to assume that MPI is CUDA aware, you must set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.  For now, Tpetra will assume that MPI is NOT CUDA aware; this is always the safe option, but it may reduce performance if it is not true.")
   ELSE ()
     # We are not cross compiling, so it is safe to try to auto-detect
@@ -108,28 +99,31 @@ ELSE ()
 
     SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE OFF)
 
-    # First, try the directory where MPI_CXX_COMPILER lives.
-    # This only makes sense if MPI_USE_COMPILER_WRAPPERS is ON.
+    # First, try the directory where MPI_CXX_COMPILER lives.  This
+    # only makes sense if MPI_USE_COMPILER_WRAPPERS is ON.  We don't
+    # have to test Tpetra_FOUND_OMPI_INFO_EXECUTABLE here, but I find
+    # it helpful to leave in the redundant test, for consistency with
+    # the tests below, and to prevent a bug if we later decide to
+    # change the order of the tests.
 
-    IF (DEFINED MPI_USE_COMPILER_WRAPPERS)
-      IF (MPI_USE_COMPILER_WRAPPERS AND DEFINED MPI_CXX_COMPILER AND (NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE))
-        # Paths are returned with (forward) slashes, and no trailing slash:
-        # 
-        # https://cmake.org/cmake/help/v2.8.12/cmake.html#command%3aget_filename_component
-        #
-        GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_ABS_PATH "${MPI_CXX_COMPILER}" ABSOLUTE)
-        # In the command below, PATH is a "legacy alias" for DIRECTORY; it
-        # works with CMake <= 2.8.11.  DIRECTORY requires CMake >= 2.8.12.
-        GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_PARENT_DIR "${Tpetra_MPI_CXX_COMPILER_ABS_PATH}" PATH)
-        FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${Tpetra_MPI_CXX_COMPILER_PARENT_DIR} NO_DEFAULT_PATH)
-        IF (Tpetra_OMPI_INFO_EXECUTABLE)
-          SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
-        ENDIF ()
+
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_USE_COMPILER_WRAPPERS) AND MPI_USE_COMPILER_WRAPPERS AND (DEFINED MPI_CXX_COMPILER))
+      # Paths are returned with (forward) slashes, and no trailing slash:
+      # 
+      # https://cmake.org/cmake/help/v2.8.12/cmake.html#command%3aget_filename_component
+      #
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_ABS_PATH "${MPI_CXX_COMPILER}" ABSOLUTE)
+      # In the command below, PATH is a "legacy alias" for DIRECTORY; it
+      # works with CMake <= 2.8.11.  DIRECTORY requires CMake >= 2.8.12.
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_PARENT_DIR "${Tpetra_MPI_CXX_COMPILER_ABS_PATH}" PATH)
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${Tpetra_MPI_CXX_COMPILER_PARENT_DIR} NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
       ENDIF ()
     ENDIF ()
 
     # Next, try MPI_BIN_DIR.
-    IF (DEFINED MPI_BIN_DIR AND (NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE))
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_BIN_DIR))
       FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${MPI_BIN_DIR} NO_DEFAULT_PATH)
       IF (Tpetra_OMPI_INFO_EXECUTABLE)
         SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
@@ -137,12 +131,10 @@ ELSE ()
     ENDIF ()
 
     # Finally, try "${MPI_BASE_DIR}/bin" (which may not exist).
-    IF (DEFINED MPI_BASE_DIR AND (NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE))
-      IF (NOT (MPI_BASE_DIR STREQUAL "") AND (IS_DIRECTORY "${MPI_BASE_DIR}/bin"))
-        FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" "${MPI_BASE_DIR}/bin" NO_DEFAULT_PATH)
-        IF (Tpetra_OMPI_INFO_EXECUTABLE)
-          SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
-        ENDIF ()
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_BASE_DIR) AND (NOT (MPI_BASE_DIR STREQUAL "")) AND (IS_DIRECTORY "${MPI_BASE_DIR}/bin"))
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" "${MPI_BASE_DIR}/bin" NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
       ENDIF ()
     ENDIF ()
 
@@ -162,6 +154,7 @@ ELSE ()
         STRING (FIND "${Tpetra_OMPI_INFO_OUTPUT}" "mca:mpi:base:param:mpi_built_with_cuda_support:value:true" Tpetra_OMPI_INFO_OUTPUT_FOUND_TRUE)
         STRING (FIND "${Tpetra_OMPI_INFO_OUTPUT}" "mca:mpi:base:param:mpi_built_with_cuda_support:value:false" Tpetra_OMPI_INFO_OUTPUT_FOUND_FALSE)
 
+        # STRING FIND returns -1 if it didn't find the substring.
         IF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_TRUE EQUAL -1))
           MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is CUDA aware.")
           SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
@@ -175,9 +168,9 @@ ELSE ()
       ENDIF ()
     ELSE ()
       MESSAGE (STATUS "  - Tpetra did not find the \"ompi_info\" executable.  This may not be bad; for example, if your MPI implementation is not OpenMPI, then you won't have this executable.  Tpetra will conservatively assume that your MPI implementation is NOT CUDA aware.  If you would like to change this, please set this CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.")
-    ENDIF ()
-  ENDIF ()
-ENDIF ()
+    ENDIF () # Tpetra_FOUND_OMPI_INFO_EXECUTABLE
+  ENDIF () # Whether we are cross compiling
+ENDIF () # Whether we have CUDA and MPI
 
 # Sanity checks for Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT.
 
