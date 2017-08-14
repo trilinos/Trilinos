@@ -87,14 +87,27 @@ public:
     // Get step name from parameterlist
     std::string stepname = parlist.sublist("Step").get("Type","Last Type (Dummy)");
     EStep stepType = StringToEStep(stepname);
-    TEUCHOS_TEST_FOR_EXCEPTION( !isValidStep(stepType), std::invalid_argument,
-                                "Invalid step name in OptimizationSolver constructor!" );
 
     // Get optimization problem type: U, E, B, EB
     problemType_ = opt.getProblemType();
-    TEUCHOS_TEST_FOR_EXCEPTION( !isCompatibleStep(problemType_, stepType), std::logic_error,
-      "Error in OptimizationSolver constructor: Step type " << stepname << " does not support "
-      << EProblemToString(problemType_) << " problems" << std::endl );
+
+    // Set default algorithm if provided step is incompatible with problem type
+    if ( !isCompatibleStep(problemType_, stepType) ) {
+      switch ( problemType_ ) {
+        case TYPE_U:
+          stepType = STEP_TRUSTREGION;          break;
+        case TYPE_B:
+          stepType = STEP_TRUSTREGION;          break;
+        case TYPE_E:
+          stepType = STEP_COMPOSITESTEP;        break;
+        case TYPE_EB:
+          stepType = STEP_AUGMENTEDLAGRANGIAN;  break;
+        case TYPE_LAST:
+        default:
+          throw Exception::NotImplemented(">>> ROL::OptimizationSolver: Unknown problem type!");
+      }
+    }
+    stepname = EStepToString(stepType);
 
     // Build algorithmic components
     StepFactory<Real>        stepFactory;

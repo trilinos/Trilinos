@@ -251,13 +251,16 @@ int main(int argc, char *argv[]) {
 
     // Set up optimization problem, check derivatives and solve
     ROL::OptimizationProblem<RealT> optProb(robj,zp);
-    optProb.setStochasticObjective(*parlist,sampler);
+    bool isStoch = parlist->sublist("Problem").get("Is stochastic?",false);
+    if (isStoch) {
+      optProb.setStochasticObjective(*parlist,sampler);
+    }
     if ( parlist->sublist("Problem").get("Check derivatives",false) ) {
-      optProb.check();
+      optProb.check(*outStream);
       Teuchos::RCP<ROL::Vector<RealT> > xp
         = Teuchos::rcp(new ROL::Vector_SimOpt<RealT>(up,zp));
       ROL::OptimizationProblem<RealT> op(obj,xp,con,pp);
-      op.check();
+      op.check(*outStream);
     }
     zp->zero();
     ROL::OptimizationSolver<RealT> optSolver(optProb,*parlist);
