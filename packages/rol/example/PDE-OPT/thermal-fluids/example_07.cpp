@@ -181,23 +181,19 @@ int main(int argc, char *argv[]) {
     pdecon->outputTpetraData();
 
     // Create state vector and set to zeroes
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp, p_rcp, du_rcp, r_rcp, z_rcp, dz_rcp;
-    u_rcp  = assembler->createStateVector();     u_rcp->randomize();
-    p_rcp  = assembler->createStateVector();     p_rcp->randomize();
-    du_rcp = assembler->createStateVector();     du_rcp->randomize();
-    r_rcp  = assembler->createResidualVector();  r_rcp->randomize();
-    z_rcp  = assembler->createControlVector();   z_rcp->randomize();
-    dz_rcp = assembler->createControlVector();   dz_rcp->randomize();
-    Teuchos::RCP<ROL::Vector<RealT> > up, pp, dup, rp, zp, dzp;
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp, p_rcp, r_rcp, z_rcp;
+    u_rcp  = assembler->createStateVector();
+    p_rcp  = assembler->createStateVector();
+    r_rcp  = assembler->createResidualVector();
+    z_rcp  = assembler->createControlVector();
+    Teuchos::RCP<ROL::Vector<RealT> > up, pp, rp, zp;
     up  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
     pp  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
-    dup = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
     rp  = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
     zp  = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
-    dzp = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
+
     // Create ROL SimOpt vectors
-    ROL::Vector_SimOpt<RealT> x(up,zp);
-    ROL::Vector_SimOpt<RealT> d(dup,dzp);
+    //ROL::Vector_SimOpt<RealT> x(up,zp);
 
     // Initialize objective function.
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
@@ -250,6 +246,7 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp_dist,distVec,bman));
 
     // Set up optimization problem, check derivatives and solve
+    zp->zero();
     ROL::OptimizationProblem<RealT> optProb(robj,zp);
     bool isStoch = parlist->sublist("Problem").get("Is stochastic?",false);
     if (isStoch) {
@@ -262,7 +259,6 @@ int main(int argc, char *argv[]) {
       ROL::OptimizationProblem<RealT> op(obj,xp,con,pp);
       op.check(*outStream);
     }
-    zp->zero();
     ROL::OptimizationSolver<RealT> optSolver(optProb,*parlist);
     optSolver.solve(*outStream);
 
