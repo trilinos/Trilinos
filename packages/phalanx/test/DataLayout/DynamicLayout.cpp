@@ -141,6 +141,17 @@ TEUCHOS_UNIT_TEST(DynamicLayout, basic)
   }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // names()
+  {
+    std::vector<std::string> names;
+    n_mat.names(names);
+    TEST_EQUALITY(names[0],"EXT0");
+    TEST_EQUALITY(names[1],"EXT1");
+    TEST_EQUALITY(names[2],"EXT2");
+    TEST_EQUALITY(names[3],"EXT3");
+  }
+
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // size()
   TEST_EQUALITY(n_mat.size(),1600);
 
@@ -442,6 +453,56 @@ TEUCHOS_UNIT_TEST(DynamicLayout, basic)
     TEST_EQUALITY(e8.extent_int(5),6);
     TEST_EQUALITY(e8.extent_int(6),7);
     TEST_EQUALITY(e8.extent_int(7),8);
+  }
+
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // name()
+  {
+    cout << "\n" << e1.name(0) << std::endl;
+
+    TEST_EQUALITY(e1.name(0),"EXT0");
+
+    TEST_EQUALITY(e2.name(0),"EXT0");
+    TEST_EQUALITY(e2.name(1),"EXT1");
+
+    TEST_EQUALITY(e3.name(0),"EXT0");
+    TEST_EQUALITY(e3.name(1),"EXT1");
+    TEST_EQUALITY(e3.name(2),"EXT2");
+
+    TEST_EQUALITY(e4.name(0),"EXT0");
+    TEST_EQUALITY(e4.name(1),"EXT1");
+    TEST_EQUALITY(e4.name(2),"EXT2");
+    TEST_EQUALITY(e4.name(3),"EXT3");
+
+    TEST_EQUALITY(e5.name(0),"EXT0");
+    TEST_EQUALITY(e5.name(1),"EXT1");
+    TEST_EQUALITY(e5.name(2),"EXT2");
+    TEST_EQUALITY(e5.name(3),"EXT3");
+    TEST_EQUALITY(e5.name(4),"EXT4");
+
+    TEST_EQUALITY(e6.name(0),"EXT0");
+    TEST_EQUALITY(e6.name(1),"EXT1");
+    TEST_EQUALITY(e6.name(2),"EXT2");
+    TEST_EQUALITY(e6.name(3),"EXT3");
+    TEST_EQUALITY(e6.name(4),"EXT4");
+    TEST_EQUALITY(e6.name(5),"EXT5");
+
+    TEST_EQUALITY(e7.name(0),"EXT0");
+    TEST_EQUALITY(e7.name(1),"EXT1");
+    TEST_EQUALITY(e7.name(2),"EXT2");
+    TEST_EQUALITY(e7.name(3),"EXT3");
+    TEST_EQUALITY(e7.name(4),"EXT4");
+    TEST_EQUALITY(e7.name(5),"EXT5");
+    TEST_EQUALITY(e7.name(6),"EXT6");
+
+    TEST_EQUALITY(e8.name(0),"EXT0");
+    TEST_EQUALITY(e8.name(1),"EXT1");
+    TEST_EQUALITY(e8.name(2),"EXT2");
+    TEST_EQUALITY(e8.name(3),"EXT3");
+    TEST_EQUALITY(e8.name(4),"EXT4");
+    TEST_EQUALITY(e8.name(5),"EXT5");
+    TEST_EQUALITY(e8.name(6),"EXT6");
+    TEST_EQUALITY(e8.name(7),"EXT7");
   }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

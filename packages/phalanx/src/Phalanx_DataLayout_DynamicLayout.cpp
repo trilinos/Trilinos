@@ -124,6 +124,20 @@ int PHX::Layout::extent_int(size_type ordinal) const
 }
 
 //**********************************************************************
+std::string PHX::Layout::name(size_type ordinal) const
+{
+  return "EXT"+std::to_string(ordinal);
+}
+
+//**********************************************************************
+void PHX::Layout::names(std::vector<std::string>& names) const
+{
+  names.resize(m_extents.size());
+  for (std::size_t i=0; i < m_extents.size(); ++i)
+    names[i] = "EXT"+std::to_string(i);
+}
+
+//**********************************************************************
 void PHX::Layout::print(std::ostream& os, int offset) const
 {
   os << m_identifier << "(";

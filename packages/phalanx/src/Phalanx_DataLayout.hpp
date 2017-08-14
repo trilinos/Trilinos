@@ -89,6 +89,10 @@ namespace PHX{
 
     virtual PHX::Device::size_type size() const = 0;
 
+    virtual std::string name(size_type ordinal) const = 0;
+
+    virtual void names(std::vector<std::string>& names) const = 0; 
+
     virtual bool operator==(const DataLayout& left) const = 0;
 
     virtual bool operator!=(const DataLayout& left) const
