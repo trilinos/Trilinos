@@ -985,8 +985,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           Y.scale (beta);
         }
       } else { // alpha != zero
-        apply (X, Y, mode);
-        Y.update (alpha, Y, beta);
+        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+        apply (X, Y_tmp, mode);
+        Y.update (alpha, Y_tmp, beta);
       }
     }
   }//end timing
