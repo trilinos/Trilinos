@@ -75,6 +75,10 @@ ELSEIF (NOT TPL_ENABLE_MPI)
 ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
   # The user set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
   # Just use that value as the default.
+  #
+  # It may seem a little strange to set a default value for a
+  # variable that the user explicitly set.  However, it ensures 
+  # consistency over all cases and can help debugging.
 
   IF (Tpetra_ASSUME_CUDA_AWARE_MPI)
     SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
