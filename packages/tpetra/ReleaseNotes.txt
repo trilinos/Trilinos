@@ -2,8 +2,47 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Development version (12.9)
---------------------------
+Development version (12.??)
+---------------------------
+
+* Add CMake option for whether Tpetra should assume that MPI
+  is CUDA aware (#1571)
+
+Add a CMake option Tpetra_ASSUME_CUDA_AWARE_MPI, with associated macro
+TPETRA_ASSUME_CUDA_AWARE_MPI defined in TpetraCore_config.h.  If the
+CMake option is ON, Tpetra may assume that the MPI implementation it
+uses is CUDA aware.  See #1571 for discussion, and #1088 for an
+application.
+
+Tpetra's CMake logic attempts to detect whether the MPI implementation
+is CUDA aware.  If automatic detection does not succeed, Tpetra just
+makes the safe assumption that MPI is not CUDA aware.
+
+Currently, automatic detection requires OpenMPI.  If not using
+OpenMPI, Tpetra conservatively assumes lack of CUDA awareness.  It
+would be wise for us to extend detection to support other MPI
+implementations, but for now, this covers a common use case for
+Trilinos testing.
+
+Automatic detection depends on running an executable.  This is
+relevant for cross compilation, so I have added two measures to
+protect against misleading results in that case:
+
+  1. If CMAKE_CROSSCOMPILING is ON, Tpetra skips detection and prints
+     a configure-time message telling users that they may set
+     Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
+
+  2. If users set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly, Tpetra
+     skips detection and assumes the user's value as the default.
+
+* Tpetra now enforces CUDA >= 7.5 (see #1278)
+
+Tpetra has required CUDA >= 7.5 for a while, if building with CUDA
+enabled.  Now, Tpetra's CMake logic enforces CUDA_VERSION >= 7.5 at
+configure time.  See #1278 for discussion.
+
+Development version (12.10)
+---------------------------
 
 * Build time and size improvements (fix #700)
 
