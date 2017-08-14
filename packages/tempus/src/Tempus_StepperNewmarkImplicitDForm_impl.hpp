@@ -15,7 +15,7 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 //#define VERBOSE_DEBUG_OUTPUT
-#define DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
 
 namespace Tempus {
 

@@ -864,6 +864,7 @@ void Piro::TempusSolver<Scalar>::
 setFinalTime(const Scalar final_time)
 {
   Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  t_final = final_time; 
   tsc->setFinalTime(final_time); 
 } 
 
