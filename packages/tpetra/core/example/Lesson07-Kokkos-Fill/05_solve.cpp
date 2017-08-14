@@ -45,11 +45,16 @@
 \ref Tpetra_Lesson07 explains this example in detail.
 */
 
-#include <Teuchos_DefaultMpiComm.hpp>
 // This is the only header file you need to include for the "core"
 // part of Kokkos.  That includes Kokkos::View, Kokkos::parallel_*,
 // and atomic updates.
 #include <Kokkos_Core.hpp>
+
+#include <iostream>
+
+#ifdef KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA
+
+#include <Teuchos_DefaultMpiComm.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 
@@ -441,3 +446,13 @@ int main (int argc, char* argv[]) {
 
   return EXIT_SUCCESS;
 }
+
+#else
+
+int main() {
+  std::cout <<
+    "This lesson was not compiled because Kokkos\n" <<
+    "was not configured with lambda support for all backends.\n";
+}
+
+#endif
