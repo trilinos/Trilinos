@@ -64,7 +64,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     ThermalFluidsDataCopy
     SOURCE_FILES
-      input.xml input_ex03.xml input_ex04.xml input_ex05.xml input_ex06.xml input_ex07.xml tf-cube-3x3x3.txt tf-cube-15x15x15.txt plotresults.m plotresults_ex03.m plotresults_ex04.m
+      input.xml input_ex03.xml input_ex04.xml input_ex05.xml input_ex06.xml input_ex07.xml tf-cube-3x3x3.txt tf-cube-15x15x15.txt plotresults.m plotresults_ex03.m plotresults_ex04.m process3D.sh
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

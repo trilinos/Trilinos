@@ -264,22 +264,29 @@ int main(int argc, char *argv[]) {
 
     // Output.
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
-    std::vector<RealT> pt;
-    RealT wt;
-    up->zero(); pp->zero();
-    for (int i = 0; i < sampler->numMySamples(); ++i) {
-      pt = sampler->getMyPoint(i);
-      wt = sampler->getMyWeight(i);
+    if (isStoch) {
+      std::vector<RealT> pt;
+      RealT wt;
+      up->zero(); pp->zero();
+      for (int i = 0; i < sampler->numMySamples(); ++i) {
+        pt = sampler->getMyPoint(i);
+        wt = sampler->getMyWeight(i);
+        con->setParameter(pt);
+        con->solve(*rp,*up,*zp,tol);
+        pp->axpy(wt,*up);
+      }
+      up->zero();
+      sampler->sumAll(*pp,*up);
+    } else {
       con->solve(*rp,*up,*zp,tol);
-      pp->axpy(wt,*up);
     }
-    up->zero();
-    sampler->sumAll(*pp,*up);
     pdecon->outputTpetraVector(u_rcp,"state.txt");
 
     pdecon->outputTpetraVector(z_rcp,"control.txt");
     assembler->printMeshData(*outStream);
-    print<RealT>(*robj,*zp,*sampler_dist,nsamp_dist,comm,"obj_samples.txt");
+    if (isStoch) {
+      print<RealT>(*robj,*zp,*sampler_dist,nsamp_dist,comm,"obj_samples.txt");
+    }
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

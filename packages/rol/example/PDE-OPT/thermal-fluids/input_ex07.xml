@@ -4,23 +4,29 @@
     <!-- OUTPUT -->
     <Parameter name="Check derivatives"           type="bool"    value="false"       />
     <!-- STOCHASTIC INFORMATION -->
-    <Parameter name="Number of samples"             type="int"     value="4"           />
-    <Parameter name="Number of output samples"      type="int"     value="4"           />
+    <Parameter name="Is stochastic?"                type="bool"    value="false"       />
+    <Parameter name="Number of samples"             type="int"     value="20"          />
+    <Parameter name="Number of output samples"      type="int"     value="100"         />
     <Parameter name="Bottom KL Truncation Order"    type="int"     value="5"           />
     <Parameter name="Side 0 KL Truncation Order"    type="int"     value="5"           />
     <Parameter name="Side 1 KL Truncation Order"    type="int"     value="5"           />
     <Parameter name="Side 2 KL Truncation Order"    type="int"     value="5"           />
     <Parameter name="Side 3 KL Truncation Order"    type="int"     value="5"           />
+    <Parameter name="Reynolds Number Noise Scale"        type="double"  value="1e-2"        />
+    <Parameter name="Prandtl Number Noise Scale"         type="double"  value="1e-2"        />
+    <Parameter name="Grashof Number Noise Scale"         type="double"  value="1e-2"        />
+    <Parameter name="Robin Noise Scale"                  type="double"  value="2.5e-2"      />
+    <Parameter name="Bottom Temperature Noise Scale"     type="double"  value="2.5e-2"      />
     <!-- PROBLEM INFORMATION -->
     <Parameter name="Objective type"              type="string"  value="Vorticity"   />
-    <Parameter name="Control penalty parameter"   type="double"  value="1e-2"        />
+    <Parameter name="Control penalty parameter"   type="double"  value="1e-1"        />
     <Parameter name="Reynolds Number"             type="double"  value="100.0"       />
     <Parameter name="Prandtl Number"              type="double"  value="0.72"        />
     <Parameter name="Grashof Number"              type="double"  value="10000.0"     />
     <Parameter name="Robin Coefficient"           type="double"  value="1.0"         />
-    <Parameter name="Pin Pressure"                type="bool"    value="true"        />
+    <Parameter name="Pin Pressure"                type="bool"    value="false"       />
     <!-- FINITE ELEMENT INFORMATION -->
-    <Parameter name="Cubature Degree"             type="int"     value="4"           />
+    <Parameter name="Cubature Degree"             type="int"     value="6"           />
   </ParameterList>
 
   <!-- ===========  MESH INPUT PARAMETER SUBLIST  =========== -->
@@ -72,11 +78,11 @@
     <ParameterList name="Solve">
       <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-12" />
       <Parameter name="Relative Residual Tolerance"   type="double"  value="1.e0"   />
-      <Parameter name="Iteration Limit"               type="int"     value="100"     />
+      <Parameter name="Iteration Limit"               type="int"     value="100"    />
       <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
       <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
       <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
-      <Parameter name="Output Iteration History"      type="bool"    value="true"   />
+      <Parameter name="Output Iteration History"      type="bool"    value="false"  />
       <Parameter name="Zero Initial Guess"            type="bool"    value="false"  />
       <Parameter name="Solver Type"                   type="int"     value="0"      />
     </ParameterList>
@@ -84,11 +90,11 @@
 
   <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
   <ParameterList name="SOL">
-    <Parameter name="Stochastic Optimization Type" type="string" value="Mean Value"   />
+    <Parameter name="Stochastic Optimization Type" type="string" value="Risk Neutral" />
     <!--
-      <Parameter name="Stochastic Optimization Type" type="string" value="Risk Averse"  />
-      <Parameter name="Stochastic Optimization Type" type="string" value="Risk Neutral" />
-      <Parameter name="Stochastic Optimization Type" type="string" value="BPOE"         />
+    <Parameter name="Stochastic Optimization Type" type="string" value="Mean Value"   />
+    <Parameter name="Stochastic Optimization Type" type="string" value="Risk Averse"  />
+    <Parameter name="Stochastic Optimization Type" type="string" value="BPOE"         />
     -->
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="Quantile-Based Quadrangle" />
@@ -335,9 +341,9 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-6"   />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-5"   />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-6"   />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="50"      />
+    <Parameter name="Iteration Limit"      type="int"    value="4"       />
   </ParameterList>
 </ParameterList>
