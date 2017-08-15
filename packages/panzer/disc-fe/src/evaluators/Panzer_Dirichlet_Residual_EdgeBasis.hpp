@@ -73,7 +73,8 @@ PANZER_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
   Teuchos::RCP<const panzer::PureBasis> basis; 
   Teuchos::RCP<const panzer::PointRule> pointRule; 
   Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
-  Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
+  Kokkos::DynRankView<ScalarT,PHX::Device> faceTanU; // edge tangents
+  Kokkos::DynRankView<ScalarT,PHX::Device> faceTanV; // edge tangents
 
   PointValues2<ScalarT> pointValues;
   PHX::MDField<const ScalarT, Cell, IP, Dim, Dim, void, void, void, void>

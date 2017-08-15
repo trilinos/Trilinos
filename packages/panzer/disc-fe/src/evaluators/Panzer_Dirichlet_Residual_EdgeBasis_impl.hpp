@@ -112,11 +112,10 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,sd,fm)
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  edgeTan = Kokkos::createDynRankView(residual.get_static_view(),
-                                      "edgeTan",
-                                      dof.dimension(0),
-                                      dof.dimension(1),
-                                      dof.dimension(2));
+  // C, P, D
+  edgeTan  = Kokkos::createDynRankView(residual.get_static_view(),"edgeTan" ,dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  faceTanU = Kokkos::createDynRankView(residual.get_static_view(),"faceTanU",dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  faceTanV = Kokkos::createDynRankView(residual.get_static_view(),"faceTanV",dof.dimension(0),dof.dimension(1),dof.dimension(2));
 }
 
 //**********************************************************************
@@ -124,50 +123,56 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
 { 
   if(workset.num_cells<=0)
     return;
-
-  residual.deep_copy(ScalarT(0.0));
-
-  // basic cell topology data
-  const shards::CellTopology & parentCell = *basis->getCellTopology();
-  const int cellDim = parentCell.getDimension();
-
-  // edge only, subcellOrd only counts edge enumeration
-  const int subcellDim = 1;
-  const int subcellOrd = this->wda(workset).subcell_index;
-
-  const int numEdges = parentCell.getSubcellCount(subcellDim);
-  const int numEdgeDofs = dof.extent_int(1);
-
-  TEUCHOS_ASSERT(cellDim == dof.extent_int(2));
-
-  if (workset.num_cells<=0) 
-    return;
   else {
-    Intrepid2::CellTools<PHX::exec_space>::getPhysicalEdgeTangents(edgeTan,
-                                                                   pointValues.jac.get_view(),
-                                                                   subcellOrd,
-                                                                   parentCell);
+    // dofs shoiuld be already account orientations, we don't need to apply orientation separately
+    // we need to distinguish if this ordinal is just within edge or face or edge + face.
+    const int subcellOrd = this->wda(workset).subcell_index;
+    const int edgeOrd = subcellOrd, faceOrd = -1;
 
-    const auto subcellTopo = shards::CellTopology(parentCell.getBaseCellTopologyData(subcellDim, subcellOrd));
-    TEUCHOS_ASSERT(subcellTopo.getBaseKey() == shards::Line<>::key);
+    const auto cellTopo = *basis->getCellTopology();
+    const auto worksetJacobians = pointValues.jac.get_view();
 
+    const int numEdges = cellTopo.getEdgeCount(), numFaces = cellTopo.getFaceCount();
+
+    auto intrepid_basis = basis->getIntrepid2Basis();
     WorksetDetails & details = workset;
-
-    int edgeOrts[12] = {};
-    for(index_t c=0;c<workset.num_cells;c++) {
-      const auto ort = orientations->at(details.cell_local_ids[c]);
-      ort.getEdgeOrientation(edgeOrts, numEdges);
-
-      const double ortVal = edgeOrts[subcellOrd] == 1 ? -1.0 : 1.0;
-      for(int b=0;b<numEdgeDofs;b++) {
-        // residual(c,b) += ScalarT(0.0); // not sure if residual is accumulated or not
-        for(int d=0;d<cellDim;d++)
-          residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
-        // if residual is accumulated this value should be individually computed and added later to residual
-        residual(c,b) *= ortVal;
-      } 
+    
+    if (edgeOrd > 0 && intrepid_basis->getDofCount(1, edgeOrd)) {
+      Intrepid2::CellTools<PHX::exec_space>::getPhysicalEdgeTangents(edgeTan,
+                                                                     worksetJacobians,
+                                                                     edgeOrd,
+                                                                     cellTopo);
+      int edgeOrts[12] = {};
+      for(index_t c=0;c<workset.num_cells;c++) {
+        orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
+        const int signVal = edgeOrts[edgeOrd] ? 1.0 : -1.0;
+        for(int b=0;b<dof.extent_int(1);b++) {
+          residual(c,b) = ScalarT(0.0);
+          for(int d=0;d<dof.extent_int(2);d++)
+            residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
+          residual(c,b) *= signVal;
+        }
+      }
+      
+    } 
+    else if (faceOrd > 0 && intrepid_basis->getDofCount(2, faceOrd)) {
+      // Intrepid2::CellTools<PHX::exec_space>::getPhysicalFaceTangents(faceTanU,
+      //                                                                faceTanV,
+      //                                                                worksetJacobians,
+      //                                                                faceOrd,
+      //                                                                cellTopo);
+      // for(index_t c=0;c<workset.num_cells;c++) {
+      //   for(int b=0;b<dof.extent_int(1);b++) {
+      //     residual(c,b) = ScalarT(0.0);
+      //     for(int d=0;d<dof.extent_int(2);d++) {
+      //       residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceTanU(c,b,d);
+      //       residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceTanV(c,b,d);
+      //     }
+      //   }
+      // }      
     }
   }
+  
 }
   
 //**********************************************************************
