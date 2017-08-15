@@ -74,7 +74,7 @@
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
-//#include "Panzer_STK_CubeTetMeshFactory.hpp"
+#include "Panzer_STK_CubeTetMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
@@ -158,10 +158,14 @@ int main(int argc,char * argv[])
        Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
      Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
   
-     panzer_stk::CubeHexMeshFactory mesh_factory;
-  
+     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
+     if      (celltype == "Hex") mesh_factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory);
+     else if (celltype == "Tet") mesh_factory = Teuchos::rcp(new panzer_stk::CubeTetMeshFactory);
+     else
+       throw std::runtime_error("not supported celltype argument: try Hex or Tet");
+     
      // other declarations
-     const std::size_t workset_size = 500;
+     const std::size_t workset_size = 20;
   
      // construction of uncommitted (no elements) mesh 
      ////////////////////////////////////////////////////////
@@ -174,9 +178,9 @@ int main(int argc,char * argv[])
      pl->set("X Elements",x_elements);
      pl->set("Y Elements",y_elements);
      pl->set("Z Elements",z_elements);
-     mesh_factory.setParameterList(pl);
+     mesh_factory->setParameterList(pl);
   
-     RCP<panzer_stk::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
+     RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   
      // construct input physics and physics block
      ////////////////////////////////////////////////////////
@@ -244,7 +248,7 @@ int main(int argc,char * argv[])
            }
         }
   
-        mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+        mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
      }
   
      // build DOF Manager and linear object factory
