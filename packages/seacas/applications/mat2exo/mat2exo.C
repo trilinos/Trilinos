@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2012 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2012 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *   disclaimer in the documentation and/or other materials provided
  *   with the distribution.
  *
- * * Neither the name of Sandia Corporation nor the names of its
+ * * Neither the name of NTESS nor the names of its
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -30,7 +30,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 /**********************************************************************/
 /* matlab mat file to exodus II.  This takes .mat files exactly as
@@ -60,14 +59,14 @@
 #include "matio.h"         // for matvar_t, Mat_VarFree, etc
 #include "matio_pubconf.h" // for MATIO_VERSION
 #include <SL_tokenize.h>   // for tokenize
-#include <assert.h>        // for assert
+#include <cassert>         // for assert
+#include <cstddef>         // for size_t
+#include <cstdio>          // for sprintf, printf, fprintf, etc
+#include <cstdlib>         // for calloc, free, exit
+#include <cstring>         // for strtok, memcpy, strlen, etc
 #include <exodusII.h>      // for ex_put_variable_param, etc
 #include <iostream>        // for operator<<, basic_ostream, etc
 #include <numeric>         // for accumulate
-#include <stddef.h>        // for size_t
-#include <stdio.h>         // for sprintf, printf, fprintf, etc
-#include <stdlib.h>        // for calloc, free, exit
-#include <string.h>        // for strtok, memcpy, strlen, etc
 #include <string>          // for char_traits, string
 #include <vector>          // for vector
 
@@ -86,7 +85,7 @@ mat_t *mat_file = nullptr; /* file for binary .mat input */
 
 /**********************************************************************/
 static const char *qainfo[] = {
-    "mat2exo", "2017/03/31", "4.00",
+    "mat2exo", "2017/07/18", "4.01",
 };
 
 /**********************************************************************/
@@ -97,7 +96,7 @@ void get_put_vars(int exo_file, ex_entity_type type, const std::vector<int> &ids
                   int num_vars, int num_time_steps, const std::vector<int> &num_per_block,
                   const char *mname);
 
-int matGetStr(const char *name, char *data);
+std::vector<std::string> matGetStr(const char *name);
 int matGetDbl(const char *name, size_t n1, size_t n2, std::vector<double> &data);
 int matGetInt(const char *name, size_t n1, size_t n2, std::vector<int> &data);
 int matGetInt(const char *name);
@@ -136,7 +135,7 @@ int main(int argc, char *argv[])
   /* Possibly overestimates size, but that is ok */
   const char *ext       = ".exo";
   size_t      line_size = strlen(argv[1]) + strlen(ext) + 1;
-  char *      line      = (char *)calloc(line_size, sizeof(char));
+  char *      line      = reinterpret_cast<char *>(calloc(line_size, sizeof(char)));
   strcpy(line, argv[1]);
   strtok(line, ".");
   strcat(line, ext);
@@ -227,7 +226,9 @@ int main(int argc, char *argv[])
 
       sprintf(name, "ssfac%02d", i + 1);
       matGetDbl(name, nssdfac[i], 1, dist_fact);
-      ex_put_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], TOPTR(dist_fact));
+      if (nssdfac[i] > 0) {
+        ex_put_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], TOPTR(dist_fact));
+      }
     }
 
     get_put_user_names(exo_file, EX_SIDE_SET, num_side_sets, "ssusernames");
@@ -240,23 +241,25 @@ int main(int argc, char *argv[])
     std::vector<int> ids;
     matGetInt("nsids", num_node_sets, 1, ids);
     matGetInt("nnsnodes", num_node_sets, 1, num_nodeset_nodes);
-    std::vector<int> nnsdfac;
-    matGetInt("nnsdfac", num_node_sets, 1, nnsdfac);
+    std::vector<int> ndfac;
+    matGetInt("nnsdfac", num_node_sets, 1, ndfac);
 
     std::vector<double> dist_fact;
     std::vector<int>    node_list;
     for (int i = 0; i < num_node_sets; i++) {
       char name[32];
 
-      ex_put_set_param(exo_file, EX_NODE_SET, ids[i], num_nodeset_nodes[i], nnsdfac[i]);
+      ex_put_set_param(exo_file, EX_NODE_SET, ids[i], num_nodeset_nodes[i], ndfac[i]);
 
       sprintf(name, "nsnod%02d", i + 1);
       matGetInt(name, num_nodeset_nodes[i], 1, node_list);
       ex_put_set(exo_file, EX_NODE_SET, ids[i], TOPTR(node_list), nullptr);
 
       sprintf(name, "nsfac%02d", i + 1);
-      matGetDbl(name, nnsdfac[i], 1, dist_fact);
-      ex_put_set_dist_fact(exo_file, EX_NODE_SET, ids[i], TOPTR(dist_fact));
+      matGetDbl(name, ndfac[i], 1, dist_fact);
+      if (ndfac[i] > 0) {
+        ex_put_set_dist_fact(exo_file, EX_NODE_SET, ids[i], TOPTR(dist_fact));
+      }
     }
 
     get_put_user_names(exo_file, EX_NODE_SET, num_node_sets, "nsusernames");
@@ -269,9 +272,7 @@ int main(int argc, char *argv[])
     matGetInt("blkids", num_blocks, 1, ids);
 
     /* get elem block types */
-    char *blknames = (char *)calloc(num_blocks * (MAX_STR_LENGTH + 1), sizeof(char));
-    matGetStr("blknames", blknames);
-    auto block_names = SLIB::tokenize(blknames, "\n");
+    auto block_names = matGetStr("blknames");
     assert(block_names.size() == (size_t)num_blocks);
     std::vector<int> connect;
     for (int i = 0; i < num_blocks; i++) {
@@ -299,7 +300,6 @@ int main(int argc, char *argv[])
       }
     }
     get_put_user_names(exo_file, EX_ELEM_BLOCK, num_blocks, "blkusernames");
-    free(blknames);
   }
 
   /* time values */
@@ -397,23 +397,22 @@ int main(int argc, char *argv[])
 }
 
 /**********************************************************************/
-int matGetStr(const char *name, char *data)
+std::vector<std::string> matGetStr(const char *name)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
   if (matvar == nullptr) {
-    return -1;
+    return std::vector<std::string>();
   }
-
-  int strlen = matvar->nbytes;
 
   if (matvar->dims[0] != 1) {
     printf("Error: Multiline string copy attempted\n");
   }
 
-  memcpy(data, matvar->data, strlen);
-
+  std::string mat_names(reinterpret_cast<char *>(matvar->data), matvar->nbytes);
+  auto        names = SLIB::tokenize(mat_names, "\n", true);
   Mat_VarFree(matvar);
-  return 0;
+
+  return names;
 }
 
 /**********************************************************************/
@@ -508,57 +507,40 @@ void del_arg(int *argc, char *argv[], int j)
 
 void get_put_names(int exo_file, ex_entity_type entity, int num_vars, const std::string &name)
 {
-  int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-  max_name_length     = max_name_length < 32 ? 32 : max_name_length;
-  char *str           = (char *)calloc(num_vars * (max_name_length + 1), sizeof(char));
-  matGetStr(name.c_str(), str);
-  char **str2 = (char **)calloc(num_vars, sizeof(char *));
-  char * curr = strtok(str, "\n");
+  auto names = matGetStr(name.c_str());
+  assert(names.size() == (size_t)num_vars);
+  const char **str2 = reinterpret_cast<const char **>(calloc(num_vars, sizeof(char *)));
   for (int i = 0; i < num_vars; i++) {
-    str2[i] = curr;
-    curr    = strtok(nullptr, "\n");
+    str2[i] = names[i].c_str();
   }
-  ex_put_variable_names(exo_file, entity, num_vars, str2);
-  free(str);
+  ex_put_variable_names(exo_file, entity, num_vars, const_cast<char **>(str2));
   free(str2);
 }
 
 void get_put_user_names(int exo_file, ex_entity_type entity, int num_entity, const char *mname)
 {
-  int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-  max_name_length     = max_name_length < 32 ? 32 : max_name_length;
-  char *names         = (char *)calloc(num_entity * (max_name_length + 1), sizeof(char));
-
-  matGetStr(mname, names);
-  char **str2 = (char **)calloc(num_entity, sizeof(char *));
-  char * curr = strtok(names, "\n");
+  auto names = matGetStr(mname);
+  assert(names.size() == (size_t)num_entity);
+  const char **str2 = reinterpret_cast<const char **>(calloc(num_entity, sizeof(char *)));
   for (int i = 0; i < num_entity; i++) {
-    str2[i] = curr;
-    curr    = strtok(nullptr, "\n");
+    str2[i] = names[i].c_str();
   }
-  ex_put_names(exo_file, entity, str2);
-  free(names);
+  ex_put_names(exo_file, entity, const_cast<char **>(str2));
   free(str2);
 }
 
 void get_put_attr_names(int exo_file, int seq, int id, int num_attr)
 {
-  int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-  max_name_length     = max_name_length < 32 ? 32 : max_name_length;
-  char *names         = (char *)calloc(num_attr * (max_name_length + 1), sizeof(char));
-
   char str[32];
   sprintf(str, "blk%02d_attrnames", seq);
 
-  matGetStr(str, names);
-  char **str2 = (char **)calloc(num_attr, sizeof(char *));
-  char * curr = strtok(names, "\n");
+  auto names = matGetStr(str);
+  assert(names.size() == (size_t)num_attr);
+  const char **str2 = reinterpret_cast<const char **>(calloc(num_attr, sizeof(char *)));
   for (int i = 0; i < num_attr; i++) {
-    str2[i] = curr;
-    curr    = strtok(nullptr, "\n");
+    str2[i] = names[i].c_str();
   }
-  ex_put_attr_names(exo_file, EX_ELEM_BLOCK, id, str2);
-  free(names);
+  ex_put_attr_names(exo_file, EX_ELEM_BLOCK, id, const_cast<char **>(str2));
   free(str2);
 }
 

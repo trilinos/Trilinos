@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -36,25 +36,25 @@
 #include "exo_block.h"      // for Exo_Block
 #include "exodusII.h"       // for ex_init_params, ex_opts, etc
 #include "node_set.h"       // for Node_Set
-#include "side_set.h"       // for Side_Set
 #include "smart_assert.h"   // for SMART_ASSERT, Assert, etc
 #include "stringx.h"        // for chop_whitespace
 #include "terminal_color.h" // for operator<<, normal, red
 #include "util.h"           // for free_name_array, etc
 #include <algorithm>        // for copy
+#include <cstdint>          // for int64_t
 #include <cstdio>           // for fclose, FILE, fopen
 #include <cstdlib>          // for exit
 #include <cstring>          // for strlen
-#include <iostream>         // for operator<<, basic_ostream, etc
-#include <set>              // for set
-#include <stdint.h>         // for int64_t
-#include <string>           // for string, char_traits, etc
-#include <vector>           // for vector
+#include <iostream>
+#include <iostream> // for operator<<, basic_ostream, etc
+#include <set>      // for set
+#include <string>   // for string, char_traits, etc
+#include <vector>   // for vector
 
 namespace {
   void read_vars(int file_id, EXOTYPE flag, const char *type, int num_vars,
                  std::vector<std::string> &varlist);
-}
+} // namespace
 
 template <typename INT>
 ExoII_Read<INT>::ExoII_Read()
@@ -85,9 +85,10 @@ template <typename INT> ExoII_Read<INT>::~ExoII_Read()
 
     if (file_id >= 0) {
       std::string err = Close_File();
-      if (!err.empty())
+      if (!err.empty()) {
         ERROR("ExoII_Read destructor(): closing file:"
               << " \"" << err << "\"\n");
+      }
     }
 
     delete[] eblocks;
@@ -96,8 +97,9 @@ template <typename INT> ExoII_Read<INT>::~ExoII_Read()
     delete[] nodes;
     delete[] times;
     if (results) {
-      for (unsigned i = 0; i < nodal_vars.size(); ++i)
+      for (unsigned i = 0; i < nodal_vars.size(); ++i) {
         delete[] results[i];
+      }
       delete[] results;
     }
     delete[] global_vals;
@@ -114,9 +116,9 @@ template <typename INT> std::string ExoII_Read<INT>::Close_File()
 {
   SMART_ASSERT(Check_State());
 
-  if (file_id < 0)
+  if (file_id < 0) {
     return "exodiff: ERROR: File is not open!";
-
+  }
   int err = ex_close(file_id);
 
   if (err < 0) {
@@ -338,9 +340,9 @@ template <typename INT>
 std::string ExoII_Read<INT>::Load_Elmt_Block_Description(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
-  if (!Open())
+  if (!Open()) {
     return "exodiff: ERROR:  Must open file before loading blocks!";
-
+  }
   SMART_ASSERT(block_index < num_elmt_blocks);
 
   eblocks[block_index].Load_Connectivity();
@@ -353,9 +355,9 @@ std::string ExoII_Read<INT>::Load_Elmt_Block_Description(size_t block_index) con
 template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Block_Descriptions() const
 {
   SMART_ASSERT(Check_State());
-  if (!Open())
+  if (!Open()) {
     return "exodiff: ERROR:  Must open file before loading blocks!";
-
+  }
   for (size_t b = 0; b < num_elmt_blocks; ++b) {
     eblocks[b].Load_Connectivity();
     //    eblocks[b].Load_Attributes();
@@ -410,15 +412,15 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Node_Map()
 {
   SMART_ASSERT(Check_State());
 
-  if (!Open())
+  if (!Open()) {
     return "WARNING:  File not open!";
-
+  }
   delete[] node_map;
   node_map = nullptr;
 
-  if (num_nodes == 0)
+  if (num_nodes == 0) {
     return "WARNING:  There are no nodes!";
-
+  }
   node_map = new INT[num_nodes];
   SMART_ASSERT(node_map != nullptr);
 
@@ -431,9 +433,9 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Node_Map()
           << "Exodus error = " << err << ".  Aborting...\n");
     exit(1);
   }
-  else if (err > 0)
+  else if (err > 0) {
     return "WARNING: Default node map being used.";
-
+  }
   return "";
 }
 
@@ -451,15 +453,15 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Map()
 {
   SMART_ASSERT(Check_State());
 
-  if (!Open())
+  if (!Open()) {
     return "WARNING:  File not open!";
-
+  }
   delete[] elmt_map;
   elmt_map = nullptr;
 
-  if (num_elmts == 0)
+  if (num_elmts == 0) {
     return "WARNING:  There are no elements!";
-
+  }
   elmt_map = new INT[num_elmts];
   SMART_ASSERT(elmt_map != nullptr);
 
@@ -472,9 +474,9 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Map()
           << "Exodus error = " << err << ".  Aborting...\n");
     exit(1);
   }
-  else if (err > 0)
+  else if (err > 0) {
     return "WARNING: Default element map being used.";
-
+  }
   return "";
 }
 
@@ -492,18 +494,20 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Nodal_Coordinates()
 {
   SMART_ASSERT(Check_State());
 
-  if (!Open())
+  if (!Open()) {
     return "WARNING:  File not open!";
-
+  }
   if (num_nodes) {
     size_t count = num_nodes * dimension;
     nodes        = new double[count];
     SMART_ASSERT(nodes != nullptr);
     double *x = nodes, *y = nodes, *z = nodes;
-    if (dimension > 1)
+    if (dimension > 1) {
       y = nodes + num_nodes;
-    if (dimension > 2)
+    }
+    if (dimension > 2) {
       z = nodes + (2 * num_nodes);
+    }
 
     int err = ex_get_coord(file_id, x, y, z);
     if (err < 0) {
@@ -521,9 +525,9 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Nodal_Coordinates()
       return oss.str();
     }
   }
-  else
+  else {
     return "WARNING:  There are no nodes!";
-
+  }
   return "";
 }
 
@@ -541,9 +545,9 @@ std::string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index
   SMART_ASSERT(time_step_num > 0 && time_step_num <= num_times);
   SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
 
-  if (!Open())
+  if (!Open()) {
     return "WARNING:  File not open!";
-
+  }
   if (cur_time != time_step_num) {
     for (unsigned i = 0; i < nodal_vars.size(); ++i) {
       delete[] results[i];
@@ -572,9 +576,9 @@ std::string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index
       return oss.str();
     }
   }
-  else
+  else {
     return "WARNING:  There are no nodes!";
-
+  }
   return "";
 }
 
@@ -590,10 +594,11 @@ const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
   SMART_ASSERT(t2 > 0 && t2 <= num_times);
   SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
 
-  if (!Open())
+  if (!Open()) {
     return nullptr;
+  }
 
-  if (!st_results) {
+  if (st_results == nullptr) {
     st_results = new double[num_nodes];
   }
 
@@ -605,7 +610,7 @@ const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
   }
 
   if (t1 != t2) {
-    if (!st_results2) {
+    if (st_results2 == nullptr) {
       st_results2 = new double[num_nodes];
     }
 
@@ -627,11 +632,12 @@ const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
 template <typename INT> void ExoII_Read<INT>::Free_Nodal_Results()
 {
   SMART_ASSERT(Check_State());
-  if (results)
+  if (results) {
     for (unsigned i = 0; i < nodal_vars.size(); ++i) {
       delete[] results[i];
       results[i] = nullptr;
     }
+  }
 }
 
 template <typename INT> void ExoII_Read<INT>::Free_Nodal_Results(int var_index)
@@ -648,8 +654,9 @@ template <typename INT> void ExoII_Read<INT>::Free_Nodal_Results(int var_index)
 template <typename INT> const double *ExoII_Read<INT>::Get_Nodal_Results(int var_index) const
 {
   SMART_ASSERT(Check_State());
-  if (cur_time == 0)
+  if (cur_time == 0) {
     return nullptr;
+  }
   SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
 
   return results[var_index];
@@ -660,34 +667,37 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Global_Results(int tim
   SMART_ASSERT(Check_State());
   SMART_ASSERT(time_step_num > 0 && time_step_num <= num_times);
 
-  if (!Open())
+  if (!Open()) {
     return "WARNING:  File not open!";
-  if (global_vars.empty())
+  }
+  if (global_vars.empty()) {
     return "WARNING:  No global variables! (doing nothing)";
+  }
 
-  if (!global_vals) {
+  if (global_vals == nullptr) {
     global_vals = new double[global_vars.size()];
     SMART_ASSERT(global_vals != nullptr);
   }
 
-  if (global_vals)
-    for (unsigned j  = 0; j < global_vars.size(); ++j)
+  if (global_vals) {
+    for (unsigned j = 0; j < global_vars.size(); ++j) {
       global_vals[j] = 0.0;
+    }
 
-  int err = ex_get_var(file_id, time_step_num, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
+    int err = ex_get_var(file_id, time_step_num, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
 
-  if (err < 0) {
-    ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
-          << "global variable values!  Aborting...\n");
-    exit(1);
+    if (err < 0) {
+      ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
+            << "global variable values!  Aborting...\n");
+      exit(1);
+    }
+    else if (err > 0) {
+      std::ostringstream oss;
+      oss << "ExoII_Read::Load_Global_Results(): WARNING:  "
+          << "Exodus issued warning \"" << err << "\" on call to ex_get_glob_vars()!";
+      return oss.str();
+    }
   }
-  else if (err > 0) {
-    std::ostringstream oss;
-    oss << "ExoII_Read::Load_Global_Results(): WARNING:  "
-        << "Exodus issued warning \"" << err << "\" on call to ex_get_glob_vars()!";
-    return oss.str();
-  }
-
   return "";
 }
 
@@ -698,47 +708,49 @@ std::string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proporti
   SMART_ASSERT(t1 > 0 && t1 <= num_times);
   SMART_ASSERT(t2 > 0 && t2 <= num_times);
 
-  if (!Open())
+  if (!Open()) {
     return "WARNING:  File not open!";
-  if (global_vars.empty())
+  }
+  if (global_vars.empty()) {
     return "WARNING:  No global variables! (doing nothing)";
-
-  if (!global_vals) {
+  }
+  if (global_vals == nullptr) {
     global_vals = new double[global_vars.size()];
     SMART_ASSERT(global_vals != nullptr);
   }
 
-  if (t2 != t1 && !global_vals2) {
+  if (t2 != t1 && (global_vals2 == nullptr)) {
     global_vals2 = new double[global_vars.size()];
     SMART_ASSERT(global_vals2 != nullptr);
   }
 
-  if (global_vals)
-    for (unsigned j  = 0; j < global_vars.size(); ++j)
+  if (global_vals) {
+    for (unsigned j = 0; j < global_vars.size(); ++j) {
       global_vals[j] = 0.0;
+    }
 
-  int err = ex_get_var(file_id, t1, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
+    int err = ex_get_var(file_id, t1, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
 
-  if (err < 0) {
-    ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
-          << "global variable values!  Aborting...\n");
-    exit(1);
-  }
-
-  if (t2 != t1) {
-    err = ex_get_var(file_id, t2, EX_GLOBAL, 1, 1, global_vars.size(), global_vals2);
     if (err < 0) {
       ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
             << "global variable values!  Aborting...\n");
       exit(1);
     }
 
-    // Do the interpolation...
-    for (size_t j = 0; j < global_vars.size(); j++) {
-      global_vals[j] = (1.0 - proportion) * global_vals[j] + proportion * global_vals2[j];
+    if (t2 != t1) {
+      err = ex_get_var(file_id, t2, EX_GLOBAL, 1, 1, global_vars.size(), global_vals2);
+      if (err < 0) {
+        ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
+              << "global variable values!  Aborting...\n");
+        exit(1);
+      }
+
+      // Do the interpolation...
+      for (size_t j = 0; j < global_vars.size(); j++) {
+        global_vals[j] = (1.0 - proportion) * global_vals[j] + proportion * global_vals2[j];
+      }
     }
   }
-
   return "";
 }
 
@@ -747,8 +759,9 @@ Side_Set<INT> *ExoII_Read<INT>::Get_Side_Set_by_Index(size_t side_set_index) con
 {
   SMART_ASSERT(Check_State());
 
-  if (side_set_index >= num_side_sets)
+  if (side_set_index >= num_side_sets) {
     return nullptr;
+  }
 
   return &ssets[side_set_index];
 }
@@ -758,8 +771,9 @@ Node_Set<INT> *ExoII_Read<INT>::Get_Node_Set_by_Index(size_t set_index) const
 {
   SMART_ASSERT(Check_State());
 
-  if (set_index >= num_node_sets)
+  if (set_index >= num_node_sets) {
     return nullptr;
+  }
 
   return &nsets[set_index];
 }
@@ -774,8 +788,9 @@ std::string ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num, int &
 {
   SMART_ASSERT(Check_State());
 
-  if (!Open())
+  if (!Open()) {
     return "exodiff: ERROR:  File not open!";
+  }
   if (global_elmt_num < 1 || global_elmt_num > num_elmts) {
     std::ostringstream oss;
     oss << "exodiff: ERROR:  global_elmt_num = " << global_elmt_num << " is out of bounds [1, "
@@ -786,8 +801,9 @@ std::string ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num, int &
   block_index = 0;
 
   size_t total = 0;
-  while (total + eblocks[block_index].Size() < global_elmt_num)
+  while (total + eblocks[block_index].Size() < global_elmt_num) {
     total += eblocks[block_index++].Size();
+  }
 
   local_elmt_index = global_elmt_num - total - 1;
 
@@ -802,36 +818,43 @@ template <typename INT> void ExoII_Read<INT>::Display(std::ostream &s) const
 
   s << "ExoII_Read::Display():  file name = " << file_name << '\n';
 
-  if (title != "")
+  if (title != "") {
     s << "                             title = " << title << '\n';
-
+  }
   s << "                           file id = ";
-  if (file_id >= 0)
+  if (file_id >= 0) {
     s << file_id << '\n';
-  else
+  }
+  else {
     s << "(not open)\n";
-
+  }
   s << "                         dimension = " << dimension << '\n'
     << "                   number of nodes = " << num_nodes << '\n'
     << "                number of elements = " << num_elmts << '\n';
 
   if (dimension >= 1) {
-    if (coord_names.size() >= 1)
+    if (!coord_names.empty()) {
       s << "             first coordinate name = " << coord_names[0] << '\n';
-    else
+    }
+    else {
       s << "             first coordinate name = \n";
+    }
   }
   if (dimension >= 2) {
-    if (coord_names.size() >= 2)
+    if (coord_names.size() >= 2) {
       s << "            second coordinate name = " << coord_names[1] << '\n';
-    else
+    }
+    else {
       s << "            second coordinate name = \n";
+    }
   }
   if (dimension >= 3) {
-    if (coord_names.size() >= 3)
+    if (coord_names.size() >= 3) {
       s << "             third coordinate name = " << coord_names[2] << '\n';
-    else
+    }
+    else {
       s << "             third coordinate name = \n";
+    }
   }
 
   s << separator << '\n';
@@ -873,25 +896,30 @@ template <typename INT> void ExoII_Read<INT>::Display(std::ostream &s) const
     }
   }
 
-  if (io_word_size || db_version > 0.0 || api_version > 0.0)
+  if (io_word_size || db_version > 0.0 || api_version > 0.0) {
     s << separator << '\n';
-  if (io_word_size)
+  }
+  if (io_word_size) {
     s << "                  file's data size = " << io_word_size << " bytes\n";
-  if (db_version > 0.0)
+  }
+  if (db_version > 0.0) {
     s << "           Exodus database version = " << db_version << '\n';
-  if (api_version > 0.0)
+  }
+  if (api_version > 0.0) {
     s << "            Exodus library version = " << api_version << '\n';
-
+  }
   s << separator << '\n';
 
   if (nodes) {
     s << "\tNodal Coordinates:\n";
     for (size_t n = 0; n < num_nodes; ++n) {
       s << "\t" << (n + 1) << "\t" << nodes[n];
-      if (dimension > 1)
+      if (dimension > 1) {
         s << "\t" << nodes[num_nodes + n];
-      if (dimension > 2)
+      }
+      if (dimension > 2) {
         s << "\t" << nodes[num_nodes * 2 + n];
+      }
       s << '\n';
     }
     s << separator << '\n';
@@ -911,28 +939,36 @@ template <typename INT> void ExoII_Read<INT>::Display(std::ostream &s) const
     unsigned max = global_vars.size() > nodal_vars.size() ? global_vars.size() : nodal_vars.size();
     max          = elmt_vars.size() > max ? elmt_vars.size() : max;
 
-    if (max)
+    if (max != 0u) {
       s << "\t  GLOBAL    \t  NODAL    \t  ELEMENT\n";
+    }
     for (unsigned i = 0; i < max; ++i) {
-      if (i < global_vars.size())
+      if (i < global_vars.size()) {
         s << "\t    " << global_vars[i];
-      else
+      }
+      else {
         s << "\t          ";
-      if (i < nodal_vars.size())
+      }
+      if (i < nodal_vars.size()) {
         s << "\t    " << nodal_vars[i];
-      else
+      }
+      else {
         s << "\t          ";
-      if (i < elmt_vars.size())
+      }
+      if (i < elmt_vars.size()) {
         s << "\t    " << elmt_vars[i] << '\n';
-      else
+      }
+      else {
         s << '\n';
+      }
     }
 
     s << separator << '\n';
 
     s << "                   number of times = " << num_times << '\n';
-    for (int t = 0; t < num_times; ++t)
+    for (int t = 0; t < num_times; ++t) {
       s << "\t\t(" << (t + 1) << ") " << times[t] << '\n';
+    }
   }
 }
 
@@ -941,22 +977,25 @@ template <typename INT> void ExoII_Read<INT>::Display_Maps(std::ostream &s) cons
   SMART_ASSERT(Check_State());
 
   s << "ExoII_Read::Display_Maps()  file name = " << file_name << '\n';
-  if (node_map == nullptr)
+  if (node_map == nullptr) {
     s << "                       (node map is not loaded)\n";
-  if (elmt_map == nullptr)
+  }
+  if (elmt_map == nullptr) {
     s << "                       (elmt map is not loaded)\n";
-
+  }
   if (node_map != nullptr || elmt_map != nullptr) {
     s << "\tNode Map\tElmt Map\n";
 
     size_t max = num_nodes > num_elmts ? num_nodes : num_elmts;
     for (size_t i = 0; i < max; ++i) {
       s << "   " << (i + 1) << ")\t";
-      if (i < num_nodes && node_map != nullptr)
+      if (i < num_nodes && node_map != nullptr) {
         s << node_map[i];
+      }
       s << "\t";
-      if (i < num_elmts && elmt_map != nullptr)
+      if (i < num_elmts && elmt_map != nullptr) {
         s << elmt_map[i];
+      }
       s << '\n';
     }
   }
@@ -992,11 +1031,12 @@ template <typename INT> std::string ExoII_Read<INT>::File_Name(const char *fname
 {
   SMART_ASSERT(Check_State());
 
-  if (Open())
+  if (Open()) {
     return "exodiff: ERROR: File is already open!";
-  if (!fname || std::strlen(fname) == 0)
+  }
+  if ((fname == nullptr) || std::strlen(fname) == 0) {
     return "exodiff: ERROR: File name is empty!";
-
+  }
   file_name = fname;
 
   return "";
@@ -1006,14 +1046,15 @@ template <typename INT> std::string ExoII_Read<INT>::Open_File(const char *fname
 {
   SMART_ASSERT(Check_State());
 
-  if (Open())
+  if (Open()) {
     return "exodiff: ERROR: File already open!";
-
-  if (fname && std::strlen(fname) > 0)
+  }
+  if ((fname != nullptr) && std::strlen(fname) > 0) {
     file_name = fname;
-  else if (file_name == "")
+  }
+  else if (file_name == "") {
     return "exodiff: ERROR: No file name to open!";
-
+  }
   int   ws = 0, comp_ws = 8;
   float dum  = 0.0;
   int   mode = EX_READ;
@@ -1055,7 +1096,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   int name_length = ex_inquire_int(file_id, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   ex_set_max_name_length(file_id, name_length);
 
-  ex_init_params info;
+  ex_init_params info{};
   info.title[0] = '\0';
 
   int err = ex_get_init_ext(file_id, &info);
@@ -1073,8 +1114,9 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   num_side_sets   = info.num_side_sets;
   title           = info.title;
 
-  if (err > 0 && !interface.quiet_flag)
+  if (err > 0 && !interface.quiet_flag) {
     std::cerr << "exodiff: WARNING: was issued, number = " << err << '\n';
+  }
   if (dimension < 1 || dimension > 3) {
     ERROR("Init data appears corrupt:\n"
           << "         dimension = " << dimension << '\n'
@@ -1116,8 +1158,9 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   //                 Element Block Data...
 
-  if (eblocks)
+  if (eblocks) {
     delete[] eblocks;
+  }
   eblocks = nullptr;
   if (num_elmt_blocks > 0) {
     eblocks = new Exo_Block<INT>[ num_elmt_blocks ];
@@ -1164,8 +1207,9 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   //                     Node & Side sets...
 
-  if (nsets)
+  if (nsets) {
     delete[] nsets;
+  }
   nsets = nullptr;
   if (num_node_sets > 0) {
     nsets = new Node_Set<INT>[ num_node_sets ];
@@ -1190,8 +1234,9 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     }
   }
 
-  if (ssets)
+  if (ssets) {
     delete[] ssets;
+  }
   ssets = nullptr;
   if (num_side_sets) {
     ssets = new Side_Set<INT>[ num_side_sets ];
@@ -1287,15 +1332,16 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     err = ex_get_all_times(file_id, times);
   }
 
-  if (num_nodal_vars) {
+  if (num_nodal_vars != 0) {
     if (num_times == 0) {
       ERROR("Consistency error--The database contains "
             << num_nodal_vars << " nodal variables, but there are no time steps defined.\n");
     }
     if (num_times) {
       results = new double *[num_nodal_vars];
-      for (int i   = 0; i < num_nodal_vars; ++i)
+      for (int i = 0; i < num_nodal_vars; ++i) {
         results[i] = nullptr;
+      }
     }
   }
 
@@ -1305,7 +1351,7 @@ namespace {
   void read_vars(int file_id, EXOTYPE flag, const char *type, int num_vars,
                  std::vector<std::string> &varlist)
   {
-    if (num_vars) {
+    if (num_vars != 0) {
       int    name_size = ex_inquire_int(file_id, EX_INQ_MAX_READ_NAME_LENGTH);
       char **varnames  = get_name_array(num_vars, name_size);
       int    err       = ex_get_variable_names(file_id, flag, num_vars, varnames);
@@ -1314,20 +1360,23 @@ namespace {
         ERROR("Failed to get " << type << " variable names!  Aborting...\n");
         exit(1);
       }
-      else if (err > 0 && !interface.quiet_flag)
+      else if (err > 0 && !interface.quiet_flag) {
         std::cerr << "exodiff: WARNING: Exodus issued warning "
                   << "\"" << err << "\" on call to ex_get_var_names()!\n";
+      }
       for (int vg = 0; vg < num_vars; ++vg) {
         SMART_ASSERT(varnames[vg] != nullptr);
-        if (std::strlen(varnames[vg]) == 0 || (int)std::strlen(varnames[vg]) > name_size) {
+        if (std::strlen(varnames[vg]) == 0 ||
+            static_cast<int>(std::strlen(varnames[vg])) > name_size) {
           std::cerr << trmclr::red << "exodiff: ERROR: " << type
                     << " variable names appear corrupt\n"
                     << "                A length is 0 or greater than "
                     << "name_size(" << name_size << ")\n"
                     << "                Here are the names that I received from"
                     << " a call to ex_get_var_names(...):\n";
-          for (int k = 1; k <= num_vars; ++k)
+          for (int k = 1; k <= num_vars; ++k) {
             std::cerr << "\t\t" << k << ") \"" << varnames[k - 1] << "\"\n";
+          }
           std::cerr << "                 Aborting...\n" << trmclr::normal;
           exit(1);
         }
@@ -1339,6 +1388,6 @@ namespace {
       free_name_array(varnames, num_vars);
     }
   }
-}
+} // namespace
 template class ExoII_Read<int>;
 template class ExoII_Read<int64_t>;

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -93,10 +93,12 @@ void time_out(FILE *outfile /* file to print output to */
 
   for (i = 0; i < 2; i++) {
     if (i == 1) { /* Print to file? */
-      if (ECHO < 0)
+      if (ECHO < 0) {
         tempfile = outfile;
-      else
+      }
+      else {
         break;
+      }
     }
     else { /* Print to stdout. */
       tempfile = stdout;
@@ -105,91 +107,123 @@ void time_out(FILE *outfile /* file to print output to */
     if (OUTPUT_TIME > 0) {
       if (total_time != 0) {
         fprintf(tempfile, "\nTotal time: %g sec.\n", total_time);
-        if (input_time != 0)
+        if (input_time != 0) {
           fprintf(tempfile, "  input %g\n", input_time);
-        if (reformat_time != 0)
+        }
+        if (reformat_time != 0) {
           fprintf(tempfile, "  reformatting %g\n", reformat_time);
-        if (check_input_time != 0)
+        }
+        if (check_input_time != 0) {
           fprintf(tempfile, "  checking input %g\n", check_input_time);
-        if (partition_time != 0)
+        }
+        if (partition_time != 0) {
           fprintf(tempfile, "  partitioning %g\n", partition_time);
-        if (sequence_time != 0)
+        }
+        if (sequence_time != 0) {
           fprintf(tempfile, "  sequencing %g\n", sequence_time);
-        if (kernel_time != 0)
+        }
+        if (kernel_time != 0) {
           fprintf(tempfile, "  kernel benchmarking %g\n", kernel_time);
-        if (count_time != 0)
+        }
+        if (count_time != 0) {
           fprintf(tempfile, "  evaluation %g\n", count_time);
-        if (print_assign_time != 0)
+        }
+        if (print_assign_time != 0) {
           fprintf(tempfile, "  printing assignment file %g\n", print_assign_time);
+        }
 
-        if (sim_time != 0)
+        if (sim_time != 0) {
           fprintf(tempfile, "  simulating %g\n", sim_time);
+        }
         other_time = total_time - input_time - reformat_time - check_input_time - partition_time -
                      count_time - print_assign_time - sim_time - sequence_time - kernel_time;
-        if (other_time > time_tol)
+        if (other_time > time_tol) {
           fprintf(tempfile, "  other %g\n", other_time);
+        }
       }
     }
 
     if (OUTPUT_TIME > 1) {
       if (inertial_time != 0) {
-        if (inertial_time != 0)
+        if (inertial_time != 0) {
           fprintf(tempfile, "\nInertial time: %g sec.\n", inertial_time);
-        if (inertial_axis_time != 0)
+        }
+        if (inertial_axis_time != 0) {
           fprintf(tempfile, "  inertial axis %g\n", inertial_axis_time);
-        if (median_time != 0)
+        }
+        if (median_time != 0) {
           fprintf(tempfile, "  median finding %g\n", median_time);
+        }
         other_time = inertial_time - inertial_axis_time - median_time;
-        if (other_time > time_tol)
+        if (other_time > time_tol) {
           fprintf(tempfile, "  other %g\n", other_time);
+        }
       }
 
       if (kl_total_time != 0) {
-        if (kl_total_time != 0)
+        if (kl_total_time != 0) {
           fprintf(tempfile, "\nKL time: %g sec.\n", kl_total_time);
-        if (kl_init_time != 0)
+        }
+        if (kl_init_time != 0) {
           fprintf(tempfile, "  initialization %g\n", kl_init_time);
-        if (nway_kl_time != 0)
+        }
+        if (nway_kl_time != 0) {
           fprintf(tempfile, "  nway refinement %g\n", nway_kl_time);
-        if (kl_bucket_time != 0)
+        }
+        if (kl_bucket_time != 0) {
           fprintf(tempfile, "    bucket sorting %g\n", kl_bucket_time);
+        }
         other_time = kl_total_time - kl_init_time - nway_kl_time;
-        if (other_time > time_tol)
+        if (other_time > time_tol) {
           fprintf(tempfile, "  other %g\n", other_time);
+        }
       }
 
       if (coarsen_time != 0 && rqi_symmlq_time == 0) {
         fprintf(tempfile, "\nCoarsening %g sec.\n", coarsen_time);
-        if (match_time != 0)
+        if (match_time != 0) {
           fprintf(tempfile, "  maxmatch %g\n", match_time);
-        if (make_cgraph_time != 0)
+        }
+        if (make_cgraph_time != 0) {
           fprintf(tempfile, "  makecgraph %g\n", make_cgraph_time);
+        }
       }
 
       if (lanczos_time != 0) {
         fprintf(tempfile, "\nLanczos time: %g sec.\n", lanczos_time);
-        if (splarax_time != 0)
+        if (splarax_time != 0) {
           fprintf(tempfile, "  matvec/solve %g\n", splarax_time);
-        if (blas_time != 0)
+        }
+        if (blas_time != 0) {
           fprintf(tempfile, "  vector ops %g\n", blas_time);
-        if (evec_time != 0)
+        }
+        if (evec_time != 0) {
           fprintf(tempfile, "  assemble evec %g\n", evec_time);
-        if (init_time != 0)
+        }
+        if (init_time != 0) {
           fprintf(tempfile, "  malloc/init/free %g\n", init_time);
-        if (orthog_time != 0)
+        }
+        if (orthog_time != 0) {
           fprintf(tempfile, "  maintain orthog %g\n", orthog_time);
-        if (scan_time != 0)
+        }
+        if (scan_time != 0) {
           fprintf(tempfile, "  scan %g\n", scan_time);
-        if (debug_time != 0)
+        }
+        if (debug_time != 0) {
           fprintf(tempfile, "  debug/warning/check %g\n", debug_time);
-        if (ql_time != 0)
+        }
+        if (ql_time != 0) {
           fprintf(tempfile, "  ql/bisection %g\n", ql_time);
-        if (tevec_time != 0)
+        }
+        if (tevec_time != 0) {
           fprintf(tempfile, "  tevec %g\n", tevec_time);
-        if (ritz_time != 0)
+        }
+        if (ritz_time != 0) {
           fprintf(tempfile, "  compute ritz %g\n", ritz_time);
-        if (pause_time != 0)
+        }
+        if (pause_time != 0) {
           fprintf(tempfile, "  pause %g\n", pause_time);
+        }
         other_time = lanczos_time - splarax_time - orthog_time - ql_time - tevec_time - ritz_time -
                      evec_time - blas_time - init_time - scan_time - debug_time - pause_time;
         if (other_time > time_tol && other_time != lanczos_time) {
@@ -199,19 +233,25 @@ void time_out(FILE *outfile /* file to print output to */
 
       if (rqi_symmlq_time != 0) {
         fprintf(tempfile, "\nRQI/Symmlq time: %g sec.\n", rqi_symmlq_time);
-        if (coarsen_time != 0)
+        if (coarsen_time != 0) {
           fprintf(tempfile, "  coarsening %g\n", coarsen_time);
-        if (match_time != 0)
+        }
+        if (match_time != 0) {
           fprintf(tempfile, "    maxmatch %g\n", match_time);
-        if (make_cgraph_time != 0)
+        }
+        if (make_cgraph_time != 0) {
           fprintf(tempfile, "    makecgraph %g\n", make_cgraph_time);
-        if (refine_time != 0)
+        }
+        if (refine_time != 0) {
           fprintf(tempfile, "  refinement %g\n", refine_time);
-        if (lanczos_time != 0)
+        }
+        if (lanczos_time != 0) {
           fprintf(tempfile, "  lanczos %g\n", lanczos_time);
+        }
         other_time = rqi_symmlq_time - coarsen_time - refine_time - lanczos_time;
-        if (other_time > time_tol)
+        if (other_time > time_tol) {
           fprintf(tempfile, "  other %g\n", other_time);
+        }
       }
     }
   }

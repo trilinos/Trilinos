@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -40,7 +40,7 @@ namespace {
      for the potential portability problems with the union and bit-fields below.
   */
   union Float_t {
-    Float_t(float num = 0.0f) : f(num) {}
+    explicit Float_t(float num = 0.0f) : f(num) {}
     // Portable extraction of components.
     bool Negative() const { return (i >> 31) != 0; }
 
@@ -49,7 +49,7 @@ namespace {
   };
 
   union Double_t {
-    Double_t(double num = 0.0) : f(num) {}
+    explicit Double_t(double num = 0.0) : f(num) {}
     // Portable extraction of components.
     bool Negative() const { return (i >> 63) != 0; }
 
@@ -88,7 +88,7 @@ namespace {
     int ulpsDiff = std::abs(uA.i - uB.i);
     return (ulpsDiff <= maxUlpsDiff);
   }
-}
+} // namespace
 
 bool Tolerance::use_old_floor = false;
 
@@ -136,11 +136,11 @@ bool Tolerance::Diff(double v1, double v2) const
     // to do a better check to ensure that ratio of one shape to other
     // is 1 or -1...
   }
-  else if (type == ULPS_FLOAT) {
-    return !AlmostEqualUlpsFloat(v1, v2, (int)value);
+  if (type == ULPS_FLOAT) {
+    return !AlmostEqualUlpsFloat(v1, v2, static_cast<int>(value));
   }
   else if (type == ULPS_DOUBLE) {
-    return !AlmostEqualUlpsDouble(v1, v2, (int)value);
+    return !AlmostEqualUlpsDouble(v1, v2, static_cast<int>(value));
   }
   else if (type == EIGEN_REL) {
     if (v1 == 0.0 && v2 == 0.0) {
@@ -173,7 +173,7 @@ const char *Tolerance::typestr() const
   if (type == RELATIVE) {
     return "relative";
   }
-  else if (type == ABSOLUTE) {
+  if (type == ABSOLUTE) {
     return "absolute";
   }
   else if (type == COMBINED) {
@@ -204,7 +204,7 @@ const char *Tolerance::abrstr() const
   if (type == RELATIVE) {
     return "rel";
   }
-  else if (type == ABSOLUTE) {
+  if (type == ABSOLUTE) {
     return "abs";
   }
   else if (type == COMBINED) {

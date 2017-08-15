@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -66,21 +66,24 @@ void update_cube_edata(int                   vertex,     /* graph vertex being w
 
   if (new_desire != old_desire) { /* Update linked list if necessary. */
     eguy->swap_desire = new_desire;
-    if (new_desire > *best_desire)
+    if (new_desire > *best_desire) {
       *best_desire = new_desire;
+    }
 
     /* Remove eguy from it's current place in list. */
     if (eguy->prev == NULL) {
       /* Round up for index into desire_ptr. */
       if (old_desire >= 0) {
         k = old_desire;
-        if (k != old_desire)
+        if (k != old_desire) {
           k++;
+        }
       }
       else {
         k = -old_desire;
-        if (k != -old_desire)
+        if (k != -old_desire) {
           k++;
+        }
         k = -k;
       }
       k += imax;
@@ -89,27 +92,31 @@ void update_cube_edata(int                   vertex,     /* graph vertex being w
     else {
       eguy->prev->next = eguy->next;
     }
-    if (eguy->next != NULL)
+    if (eguy->next != NULL) {
       eguy->next->prev = eguy->prev;
+    }
 
     /* Now add eguy to it's new desire bucket. */
     if (new_desire >= 0) {
       k = new_desire;
-      if (k != new_desire)
+      if (k != new_desire) {
         k++;
+      }
     }
     else {
       k = -new_desire;
-      if (k != -new_desire)
+      if (k != -new_desire) {
         k++;
+      }
       k = -k;
     }
     k += imax;
 
     eguy->prev = NULL;
     eguy->next = desire_ptr[k];
-    if (desire_ptr[k] != NULL)
+    if (desire_ptr[k] != NULL) {
       desire_ptr[k]->prev = eguy;
-    desire_ptr[k]         = eguy;
+    }
+    desire_ptr[k] = eguy;
   }
 }

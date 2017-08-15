@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -135,14 +135,17 @@ void coarsen_klv(
 
     max_dev      = (step == 0) ? vwgt_max : 5 * vwgt_max;
     total_weight = 0;
-    for (i = 0; i < nsets; i++)
+    for (i = 0; i < nsets; i++) {
       total_weight += real_goal[i];
+    }
 
-    if (max_dev > total_weight)
-      max_dev   = vwgt_max;
+    if (max_dev > total_weight) {
+      max_dev = vwgt_max;
+    }
     goal_weight = total_weight * KL_IMBALANCE / nsets;
-    if (goal_weight > max_dev)
+    if (goal_weight > max_dev) {
       max_dev = goal_weight;
+    }
 
     if (COARSE_KLV) {
       klvspiff(graph, nvtxs, assignment, real_goal, max_dev, &bndy_list, weights);
@@ -214,19 +217,23 @@ void coarsen_klv(
   if (COARSEN_VWGTS) {
     cvwgt_max = 0;
     for (i = 1; i <= cnvtxs; i++) {
-      if (cgraph[i]->vwgt > cvwgt_max)
+      if (cgraph[i]->vwgt > cvwgt_max) {
         cvwgt_max = cgraph[i]->vwgt;
+      }
     }
   }
 
-  else
+  else {
     cvwgt_max = 1;
+  }
 
   cassignment = smalloc((cnvtxs + 1) * sizeof(int));
-  if (flattened)
+  if (flattened) {
     nextstep = step;
-  else
+  }
+  else {
     nextstep = step + 1;
+  }
   coarsen_klv(cgraph, cnvtxs, cnedges, COARSEN_VWGTS, COARSEN_EWGTS, cterm_wgts, igeom, ccoords,
               cvwgt_max, cassignment, goal, architecture, hops, solver_flag, ndims, nsets, vmax,
               mediantype, mkconnected, eigtol, nstep, nextstep, &cbndy_list, weights, give_up);
@@ -247,16 +254,18 @@ void coarsen_klv(
 
   list_length = 0;
   for (i = 1; i <= nvtxs; i++) {
-    if (flag[v2cv[i]])
+    if (flag[v2cv[i]]) {
       ++list_length;
+    }
   }
 
   bndy_list = smalloc((list_length + 1) * sizeof(int));
 
   list_length = 0;
   for (i = 1; i <= nvtxs; i++) {
-    if (flag[v2cv[i]])
+    if (flag[v2cv[i]]) {
       bndy_list[list_length++] = i;
+    }
   }
   bndy_list[list_length] = 0;
 
@@ -276,14 +285,17 @@ void coarsen_klv(
   if (!(step % nstep) && !flattened) {
     if (!COARSEN_VWGTS && step != 0) { /* Construct new goal */
       goal_weight = 0;
-      for (i = 0; i < nsets; i++)
+      for (i = 0; i < nsets; i++) {
         goal_weight += goal[i];
-      for (i        = 0; i < nsets; i++)
+      }
+      for (i = 0; i < nsets; i++) {
         new_goal[i] = goal[i] * (nvtxs / goal_weight);
-      real_goal     = new_goal;
+      }
+      real_goal = new_goal;
     }
-    else
+    else {
       real_goal = goal;
+    }
 
     if (LIMIT_KL_EWGTS) {
       find_maxdeg(graph, nvtxs, using_ewgts, &ewgt_max);
@@ -303,12 +315,15 @@ void coarsen_klv(
         twptr  = term_wgts[j];
         ctwptr = new_term_wgts[j];
         for (i = 1; i <= nvtxs; i++) {
-          if (twptr[i] > .5)
+          if (twptr[i] > .5) {
             ctwptr[i] = 1;
-          else if (twptr[i] < -.5)
+          }
+          else if (twptr[i] < -.5) {
             ctwptr[i] = -1;
-          else
+          }
+          else {
             ctwptr[i] = 0;
+          }
         }
       }
       real_term_wgts = new_term_wgts;
@@ -323,8 +338,9 @@ void coarsen_klv(
     for (i = 0; i < nsets; i++) {
       total_weight += real_goal[i];
     }
-    if (max_dev > total_weight)
-      max_dev   = vwgt_max;
+    if (max_dev > total_weight) {
+      max_dev = vwgt_max;
+    }
     goal_weight = total_weight * KL_IMBALANCE / nsets;
     if (goal_weight > max_dev) {
       max_dev = goal_weight;
@@ -345,8 +361,9 @@ void coarsen_klv(
       sfree(real_term_wgts[1]);
     }
 
-    if (LIMIT_KL_EWGTS)
+    if (LIMIT_KL_EWGTS) {
       restore_ewgts(graph, nvtxs);
+    }
   }
 
   *pbndy_list = bndy_list;
@@ -358,8 +375,9 @@ void coarsen_klv(
 
   /* Free the space that was allocated. */
   if (ccoords != NULL) {
-    for (i = 0; i < igeom; i++)
+    for (i = 0; i < igeom; i++) {
       sfree(ccoords[i]);
+    }
     sfree(ccoords);
   }
 

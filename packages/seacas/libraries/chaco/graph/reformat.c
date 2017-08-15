@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -68,16 +68,18 @@ int reformat(int *              start,     /* start of edge list for each vertex
 
   graph   = smalloc_ret((nvtxs + 1) * sizeof(struct vtx_data *));
   *pgraph = graph;
-  if (graph == NULL)
+  if (graph == NULL) {
     return (1);
+  }
 
   graph[1] = NULL;
 
   /* Set up all the basic data structure for the vertices. */
   /* Replace many small mallocs by a few large ones. */
   links = smalloc_ret((nvtxs) * sizeof(struct vtx_data));
-  if (links == NULL)
+  if (links == NULL) {
     return (1);
+  }
 
   for (i = 1; i <= nvtxs; i++) {
     graph[i] = links++;
@@ -87,19 +89,23 @@ int reformat(int *              start,     /* start of edge list for each vertex
   graph[1]->ewgts = NULL;
 
   /* Now fill in all the data fields. */
-  if (start != NULL)
+  if (start != NULL) {
     *pnedges = start[nvtxs] / 2;
-  else
+  }
+  else {
     *pnedges = 0;
-  size       = 2 * (*pnedges) + nvtxs;
-  edges      = smalloc_ret(size * sizeof(int));
-  if (edges == NULL)
+  }
+  size  = 2 * (*pnedges) + nvtxs;
+  edges = smalloc_ret(size * sizeof(int));
+  if (edges == NULL) {
     return (1);
+  }
 
   if (using_ewgts) {
     eweights = smalloc_ret(size * sizeof(float));
-    if (eweights == NULL)
+    if (eweights == NULL) {
       return (1);
+    }
   }
 
   if (start != NULL) {
@@ -109,21 +115,26 @@ int reformat(int *              start,     /* start of edge list for each vertex
   self_edge = 0;
 
   for (i = 1; i <= nvtxs; i++) {
-    if (using_vwgts)
+    if (using_vwgts) {
       graph[i]->vwgt = *(vwgts++);
-    else
+    }
+    else {
       graph[i]->vwgt = 1;
-    if (start != NULL)
+    }
+    if (start != NULL) {
       size = start[i] - start[i - 1];
-    else
-      size           = 0;
+    }
+    else {
+      size = 0;
+    }
     graph[i]->nedges = size + 1;
     graph[i]->edges  = edges;
     *edges++         = i;
     eptr_save        = eptr;
     for (j = size; j; j--) {
-      if (*eptr != i)
+      if (*eptr != i) {
         *edges++ = *eptr++;
+      }
       else { /* Self edge, skip it. */
         if (!self_edge) {
           printf("WARNING: Self edge (%d,%d) being ignored\n", i, i);
@@ -146,13 +157,15 @@ int reformat(int *              start,     /* start of edge list for each vertex
           sum += *wptr;
           *eweights++ = *wptr++;
         }
-        else
+        else {
           wptr++;
+        }
       }
       graph[i]->ewgts[0] = -sum;
     }
-    else
+    else {
       graph[i]->ewgts = NULL;
+    }
   }
   if (self_edge > 1) {
     printf("WARNING: %d self edges were detected and ignored\n", self_edge);

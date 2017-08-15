@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -35,7 +35,7 @@
 #define NODE_SET_H
 
 #include "exo_entity.h"
-#include <iostream>
+#include "side_set.h" // for Side_Set
 
 template <typename INT> class ExoII_Read;
 
@@ -55,7 +55,7 @@ public:
   const double *Distribution_Factors() const;
   void          Free_Distribution_Factors() const;
 
-  void Display(std::ostream & = std::cout);
+  void Display(std::ostream & /*s*/ = std::cout);
   int  Check_State() const;
 
 private:

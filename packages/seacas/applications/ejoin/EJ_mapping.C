@@ -1,7 +1,6 @@
-// Copyright(C) 2010 Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -37,9 +37,9 @@
 #include "Ioss_Property.h"       // for Property
 #include "Ioss_Region.h"         // for Region, etc
 #include <algorithm>             // for sort, unique
+#include <cstddef>               // for size_t
 #include <iostream>              // for operator<<, basic_ostream, etc
 #include <smart_assert.h>        // for SMART_ASSERT
-#include <stddef.h>              // for size_t
 #include <utility>               // for make_pair, pair
 
 namespace {
@@ -51,7 +51,7 @@ namespace {
     }
     return omitted;
   }
-}
+} // namespace
 
 template <typename INT>
 void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_node_map,
@@ -99,7 +99,7 @@ template void eliminate_omitted_nodes(RegionVector &        part_mesh,
                                       std::vector<int64_t> &local_node_map);
 
 template <typename INT>
-void build_reverse_node_map(Ioss::Region &global, RegionVector &part_mesh,
+void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
                             std::vector<INT> &global_node_map, std::vector<INT> &local_node_map)
 {
   // Instead of using <set> and <map>, consider using a sorted vector...

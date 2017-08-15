@@ -1,3 +1,35 @@
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//
+//     * Neither the name of NTESS nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_StructuredBlock.h>
@@ -16,7 +48,6 @@
 
 #include <assert.h>
 
-#define IOSS_DEBUG_OUTPUT 0
 namespace {
   int rank = 0;
 #define OUTPUT                                                                                     \
@@ -148,7 +179,7 @@ namespace {
         Ioss::IJK_t donor_beg{{donor_range[0], donor_range[1], donor_range[2]}};
         Ioss::IJK_t donor_end{{donor_range[3], donor_range[4], donor_range[5]}};
 
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
         OUTPUT << "Adding zgc " << connectname << " to " << zone_name << " donor: " << donorname
                << "\n";
 #endif
@@ -353,7 +384,7 @@ namespace Iocgns {
       std::exit(EXIT_FAILURE);
     }
 
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     OUTPUT << "========================================================================\n";
     OUTPUT << "Pre-Splitting:\n";
 #endif
@@ -364,21 +395,21 @@ namespace Iocgns {
       split = false;
       for (auto zone : m_structuredZones) {
         if (zone->is_active() && zone->work() > avg_work * m_loadBalanceThreshold) {
-	  // The ratio seems to be a good idea, but it needs some more intelligence
-	  // at times.  For example, if splitting a 4x4x1 across 4 processors, it will
-	  // correctly split it into 1x4x1 and 3x4x1 the first split, but then the
-	  // next split will split ordinal 1 into 3x1x1 and 3x3x1.  
-	  // Would be good to be able to do subsequent splits along same ordinal as
-	  // first split if it made sense, ...
-	  // For now, if only single zone in model, use equal splits; else use ratio splits.
-	  // TODO: Add control via property?
-	  //
-	  
-	  double ratio = zone->work() / avg_work;
-	  if (single_zone) {
-	    ratio = 0.5;
-	  }
-	  auto children = zone->split(new_zone_id, ratio);
+          // The ratio seems to be a good idea, but it needs some more intelligence
+          // at times.  For example, if splitting a 4x4x1 across 4 processors, it will
+          // correctly split it into 1x4x1 and 3x4x1 the first split, but then the
+          // next split will split ordinal 1 into 3x1x1 and 3x3x1.
+          // Would be good to be able to do subsequent splits along same ordinal as
+          // first split if it made sense, ...
+          // For now, if only single zone in model, use equal splits; else use ratio splits.
+          // TODO: Add control via property?
+          //
+
+          double ratio = zone->work() / avg_work;
+          if (single_zone) {
+            ratio = 0.5;
+          }
+          auto children = zone->split(new_zone_id, ratio);
 
           if (children.first != nullptr && children.second != nullptr) {
             zone_new.push_back(children.first);
@@ -386,16 +417,16 @@ namespace Iocgns {
             split = true;
             new_zone_id += 2;
           }
-	  num_active++; // Add 2 children; parent goes inactive
-	  if (single_zone && num_active >= (size_t)m_decomposition.m_processorCount) {
-	    split = false;
-	    break;
-	  }
+          num_active++; // Add 2 children; parent goes inactive
+          if (single_zone && num_active >= (size_t)m_decomposition.m_processorCount) {
+            split = false;
+            break;
+          }
         }
       }
       std::swap(zone_new, m_structuredZones);
     } while (split);
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     OUTPUT << "========================================================================\n";
 #endif
     do {
@@ -430,7 +461,7 @@ namespace Iocgns {
 
           zone->m_proc = proc;
           work_vector[proc] += zone->work();
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
           OUTPUT << "Assigning zone " << zone->m_zone << " with work " << zone->work()
                  << " to processor " << proc << "\n";
 #endif
@@ -442,7 +473,7 @@ namespace Iocgns {
       std::vector<bool> exceeds(m_decomposition.m_processorCount);
       for (size_t i = 0; i < work_vector.size(); i++) {
         double workload_ratio = double(work_vector[i]) / double(avg_work);
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
         OUTPUT << "Processor " << i << " work: " << work_vector[i]
                << ", workload ratio: " << workload_ratio << "\n";
 #endif
@@ -451,15 +482,15 @@ namespace Iocgns {
           px++;
         }
       }
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
       OUTPUT << "Workload threshold exceeded on " << px << " processors.\n";
 #endif
       if (single_zone) {
-	auto active = std::count_if(m_structuredZones.begin(), m_structuredZones.end(),
-				    [](Iocgns::StructuredZoneData *a) { return a->is_active(); });
-	if (active >= m_decomposition.m_processorCount) {
-	  px = 0;
-	}
+        auto active = std::count_if(m_structuredZones.begin(), m_structuredZones.end(),
+                                    [](Iocgns::StructuredZoneData *a) { return a->is_active(); });
+        if (active >= m_decomposition.m_processorCount) {
+          px = 0;
+        }
       }
       num_split = 0;
       if (px > 0) {
@@ -488,7 +519,7 @@ namespace Iocgns {
       }
       auto active = std::count_if(m_structuredZones.begin(), m_structuredZones.end(),
                                   [](Iocgns::StructuredZoneData *a) { return a->is_active(); });
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
       OUTPUT << "Number of active zones = " << active << ", average work = " << avg_work << "\n";
       OUTPUT << "========================================================================\n";
 #endif
@@ -509,7 +540,7 @@ namespace Iocgns {
     for (auto &zone : m_structuredZones) {
       if (zone->is_active()) {
         zone->update_zgc_processor(m_structuredZones);
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
         OUTPUT << "Zone " << zone->m_zone << " assigned to processor " << zone->m_proc
                << ", Adam zone = " << zone->m_adam->m_zone << "\n";
         auto zgcs = zone->m_zoneConnectivity;
@@ -526,7 +557,7 @@ namespace Iocgns {
       }
     }
 
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     MPI_Barrier(m_decomposition.m_comm);
     OUTPUT << Ioss::trmclr::green << "Returning from decomposition\n" << Ioss::trmclr::normal;
 #endif
@@ -535,7 +566,7 @@ namespace Iocgns {
   template <typename INT> void DecompositionData<INT>::decompose_unstructured(int filePtr)
   {
     m_decomposition.show_progress(__func__);
-    
+
     // Initial decomposition is linear where processor #p contains
     // elements from (#p * #element/#proc) to (#p+1 * #element/#proc)
 
@@ -721,7 +752,7 @@ namespace Iocgns {
         }
 
         if (dz != zone) {
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
           std::cerr << "Zone " << zone << " shares " << npnts << " nodes with " << donorname
                     << "\n";
 #endif
@@ -1050,7 +1081,7 @@ namespace Iocgns {
         start  = 0;
         finish = 0;
       }
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
       OUTPUT << m_decomposition.m_processor << ": reading " << count << " nodes from zone " << zone
              << " starting at " << start << " with an offset of " << offset << " ending at "
              << finish << "\n";

@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -38,9 +38,9 @@
 #include "smart_assert.h" // for SMART_ASSERT
 #include "stringx.h"      // for find_string, etc
 #include "util.h"         // for TOPTR
+#include <cstddef>        // for size_t
 #include <cstdio>         // for sprintf, nullptr
 #include <iostream>       // for operator<<, basic_ostream, etc
-#include <stddef.h>       // for size_t
 #include <string>         // for string, char_traits, etc
 #include <vector>         // for vector
 template <typename INT> class ExoII_Read;
@@ -62,11 +62,11 @@ namespace {
   void output_diff_names(const char *type, const std::vector<std::string> &names);
   void output_compare_names(const char *type, const std::vector<std::string> &names,
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2);
-}
+} // namespace
 
 namespace {
   char buf[256];
-}
+} // namespace
 
 template <typename INT>
 void Build_Variable_Names(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool *diff_found)
@@ -260,7 +260,7 @@ namespace {
     if (!names.empty()) {
       std::vector<char *> vars(names.size());
       for (unsigned i = 0; i < names.size(); ++i) {
-        vars[i] = (char *)(names[i].c_str());
+        vars[i] = const_cast<char *>(names[i].c_str());
         SMART_ASSERT(vars[i] != nullptr);
       }
       ex_put_variable_names(file_id, type, names.size(), TOPTR(vars));

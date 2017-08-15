@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -77,16 +77,19 @@ void rec_median_1(struct vtx_data **graph,        /* data structure with vertex 
   if (!cube_or_mesh) {
     for (i = 0; i < 2; i++) {
       merged_goal[i] = 0;
-      for (j = i; j < nsets; j += 2)
+      for (j = i; j < nsets; j += 2) {
         merged_goal[i] += goal[j];
+      }
     }
   }
   else {
     merged_goal[0] = merged_goal[1] = 0;
-    for (i = 0; i < (nsets + 1) / 2; i++)
+    for (i = 0; i < (nsets + 1) / 2; i++) {
       merged_goal[0] += goal[i];
-    for (i = (nsets + 1) / 2; i < nsets; i++)
+    }
+    for (i = (nsets + 1) / 2; i < nsets; i++) {
       merged_goal[1] += goal[i];
+    }
   }
 
   median(graph, vals, nvtxs, active, merged_goal, using_vwgts, assign);
@@ -94,17 +97,20 @@ void rec_median_1(struct vtx_data **graph,        /* data structure with vertex 
   if (nsets > 2) {
     /* Find size of largest subproblem. */
     setsize[0] = setsize[1] = 0;
-    for (i = 1; i <= nvtxs; i++)
+    for (i = 1; i <= nvtxs; i++) {
       ++setsize[assign[i]];
+    }
     maxsize = max(setsize[0], setsize[1]);
 
     sub_assign = smalloc((maxsize + 1) * sizeof(int));
     sub_vals   = smalloc((maxsize + 1) * sizeof(double));
     loc2glob   = smalloc((maxsize + 1) * sizeof(int));
-    if (!using_vwgts)
+    if (!using_vwgts) {
       sub_graph = NULL;
-    else
+    }
+    else {
       sub_graph = (struct vtx_data **)smalloc((maxsize + 1) * sizeof(struct vtx_data *));
+    }
 
     for (i = 0; i < 2; i++) {
       /* Construct subproblem. */
@@ -116,8 +122,9 @@ void rec_median_1(struct vtx_data **graph,        /* data structure with vertex 
       }
       sub_nvtxs = setsize[i];
 
-      for (j          = 1; j <= sub_nvtxs; j++)
+      for (j = 1; j <= sub_nvtxs; j++) {
         sub_assign[j] = 0;
+      }
       make_maps2(assign, nvtxs, i, (int *)NULL, loc2glob);
 
       if (sub_nsets > 1) {
@@ -150,18 +157,22 @@ void rec_median_1(struct vtx_data **graph,        /* data structure with vertex 
     /* Now I have the set striped in bit reversed order. */
     if (top) {
       ndims = 0;
-      for (i = 1; i < nsets; i <<= 1)
+      for (i = 1; i < nsets; i <<= 1) {
         ndims++;
+      }
 
-      for (i       = 0; i < nsets; i++)
+      for (i = 0; i < nsets; i++) {
         mapping[i] = bit_reverse(i, ndims);
+      }
 
-      for (i      = 1; i <= nvtxs; i++)
+      for (i = 1; i <= nvtxs; i++) {
         assign[i] = mapping[assign[i]];
+      }
     }
 
-    if (sub_graph != NULL)
+    if (sub_graph != NULL) {
       sfree(sub_graph);
+    }
     sfree(loc2glob);
     sfree(sub_vals);
     sfree(sub_assign);
@@ -205,8 +216,9 @@ void rec_median_k(struct vtx_data **graph,        /* data structure with vertex 
   nsets = 1 << ndims;
   for (i = 0; i < 2; i++) {
     merged_goal[i] = 0;
-    for (j = i; j < nsets; j += 2)
+    for (j = i; j < nsets; j += 2) {
       merged_goal[i] += goal[j];
+    }
   }
 
   median(graph, vals[1], nvtxs, active, merged_goal, using_vwgts, assign);
@@ -214,8 +226,9 @@ void rec_median_k(struct vtx_data **graph,        /* data structure with vertex 
   if (ndims > 1) {
     /* Find size of largest subproblem. */
     setsize[0] = setsize[1] = 0;
-    for (i = 1; i <= nvtxs; i++)
+    for (i = 1; i <= nvtxs; i++) {
       ++setsize[assign[i]];
+    }
     maxsize = max(setsize[0], setsize[1]);
 
     sub_assign = smalloc((maxsize + 1) * sizeof(int));
@@ -223,23 +236,27 @@ void rec_median_k(struct vtx_data **graph,        /* data structure with vertex 
       sub_vals[i] = smalloc((maxsize + 1) * sizeof(double));
     }
     loc2glob = smalloc((maxsize + 1) * sizeof(int));
-    if (!using_vwgts)
+    if (!using_vwgts) {
       sub_graph = NULL;
-    else
+    }
+    else {
       sub_graph = (struct vtx_data **)smalloc((maxsize + 1) * sizeof(struct vtx_data *));
+    }
 
     for (i = 0; i < 2; i++) {
       /* Construct subproblem. */
 
       sub_nvtxs = setsize[i];
 
-      for (j          = 1; j <= sub_nvtxs; j++)
+      for (j = 1; j <= sub_nvtxs; j++) {
         sub_assign[j] = 0;
+      }
 
       make_maps2(assign, nvtxs, i, (int *)NULL, loc2glob);
 
-      if (!using_vwgts)
+      if (!using_vwgts) {
         sub_vwgt_sum = sub_nvtxs;
+      }
       else {
         sub_vwgt_sum = 0;
         for (j = 1; j <= sub_nvtxs; j++) {
@@ -264,11 +281,13 @@ void rec_median_k(struct vtx_data **graph,        /* data structure with vertex 
       }
     }
 
-    if (sub_graph != NULL)
+    if (sub_graph != NULL) {
       sfree(sub_graph);
+    }
     sfree(loc2glob);
-    for (i = 1; i < ndims; i++)
+    for (i = 1; i < ndims; i++) {
       sfree(sub_vals[i]);
+    }
     sfree(sub_assign);
   }
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2010 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -81,8 +81,9 @@ int main(int argc, char **argv)
                   &version);         /* ExodusII library version */
 
   printf("\nafter ex_open\n");
-  if (exoid < 0)
+  if (exoid < 0) {
     exit(1);
+  }
 
   printf("test.exo is an EXODUSII file; version %4.2f\n", version);
   printf("         I/O word size %1d\n", IO_word_size);
@@ -144,8 +145,9 @@ int main(int argc, char **argv)
   printf("y coord name = '%s'\n", coord_names[1]);
   printf("z coord name = '%s'\n", coord_names[2]);
 
-  for (i = 0; i < num_dim; i++)
+  for (i = 0; i < num_dim; i++) {
     free(coord_names[i]);
+  }
 
   /* read element block parameters */
   if (num_elem_blk > 0) {

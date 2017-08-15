@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -81,13 +81,15 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
   nsets_tot = mesh_dims[0] * mesh_dims[1] * mesh_dims[2];
 
   imax = maxdesire;
-  if (imax != maxdesire)
+  if (imax != maxdesire) {
     imax++;
+  }
 
   vdata = (struct refine_vdata *)smalloc_ret((cube_or_mesh * nsets_tot + 1) *
                                              sizeof(struct refine_vdata));
-  if (vdata == NULL)
+  if (vdata == NULL) {
     goto skip;
+  }
 
   /* Compute each node's desires to move or stay put. */
   vptr = vdata;
@@ -103,8 +105,9 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
 
   edata   = smalloc_ret((nwires + 1) * sizeof(struct refine_edata));
   desires = smalloc_ret(nwires * sizeof(double));
-  if (vdata == NULL || desires == NULL)
+  if (vdata == NULL || desires == NULL) {
     goto skip;
+  }
 
   /* Initialize all the edge values. */
   init_mesh_edata(edata, mesh_dims);
@@ -119,8 +122,9 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
   /* I now need to sort all the wire preference values */
   indices = smalloc_ret(nwires * sizeof(int));
   space   = smalloc_ret(nwires * sizeof(int));
-  if (indices == NULL || space == NULL)
+  if (indices == NULL || space == NULL) {
     goto skip;
+  }
 
   mergesort(desires, nwires, indices, space);
 
@@ -136,24 +140,28 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
   if (best_desire > 0) {
     desire_ptr =
         (struct refine_edata **)smalloc_ret((2 * imax + 1) * sizeof(struct refine_edata *));
-    if (desire_ptr == NULL)
+    if (desire_ptr == NULL) {
       goto skip;
+    }
 
-    for (i          = 2 * imax; i >= 0; i--)
+    for (i = 2 * imax; i >= 0; i--) {
       desire_ptr[i] = NULL;
+    }
 
     for (i = nwires - 1; i >= 0; i--) {
       eguy = &(edata[indices[i]]);
       /* Round the swap desire up. */
       if (eguy->swap_desire >= 0) {
         k = eguy->swap_desire;
-        if (k != eguy->swap_desire)
+        if (k != eguy->swap_desire) {
           k++;
+        }
       }
       else {
         k = -eguy->swap_desire;
-        if (k != -eguy->swap_desire)
+        if (k != -eguy->swap_desire) {
           k++;
+        }
         k = -k;
       }
 
@@ -161,9 +169,10 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
 
       eguy->prev = NULL;
       eguy->next = desire_ptr[k];
-      if (desire_ptr[k] != NULL)
+      if (desire_ptr[k] != NULL) {
         desire_ptr[k]->prev = eguy;
-      desire_ptr[k]         = eguy;
+      }
+      desire_ptr[k] = eguy;
     }
   }
   else {
@@ -180,10 +189,12 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
 
   while (best_desire > 0) {
     k = best_desire + 1 + imax;
-    if (k > 2 * imax)
+    if (k > 2 * imax) {
       k = 2 * imax;
-    while (k > imax && desire_ptr[k] == NULL)
+    }
+    while (k > imax && desire_ptr[k] == NULL) {
       k--;
+    }
     eguy = desire_ptr[k];
 
     dim   = eguy->dim;
@@ -205,24 +216,26 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
     }
 
     /* Now swap the vertices. */
-    node2vtx[node1] = (int)vtx2;
-    node2vtx[node2] = (int)vtx1;
-    vtx2node[vtx1]  = (int)node2;
-    vtx2node[vtx2]  = (int)node1;
+    node2vtx[node1] = vtx2;
+    node2vtx[node2] = vtx1;
+    vtx2node[vtx1]  = node2;
+    vtx2node[vtx2]  = node1;
 
     /* First update all the vdata fields for vertices effected by this flip. */
     for (j = 1; j < comm_graph[vtx1]->nedges; j++) {
       neighbor = comm_graph[vtx1]->edges[j];
-      if (neighbor != vtx2)
+      if (neighbor != vtx2) {
         update_mesh_vdata(loc1, loc2, dim, comm_graph[vtx1]->ewgts[j], vdata, mesh_dims, neighbor,
                           vtx2node);
+      }
     }
 
     for (j = 1; j < comm_graph[vtx2]->nedges; j++) {
       neighbor = comm_graph[vtx2]->edges[j];
-      if (neighbor != vtx1)
+      if (neighbor != vtx1) {
         update_mesh_vdata(loc2, loc1, dim, comm_graph[vtx2]->ewgts[j], vdata, mesh_dims, neighbor,
                           vtx2node);
+      }
     }
 
     /* Now recompute all preferences for vertices that were moved. */
@@ -241,16 +254,18 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
 
     for (j = 1; j < comm_graph[vtx1]->nedges; j++) {
       neighbor = comm_graph[vtx1]->edges[j];
-      if (neighbor != vtx2)
+      if (neighbor != vtx2) {
         update_mesh_edata(neighbor, dim, edata, vdata, comm_graph, mesh_dims, node2vtx, vtx2node,
                           &best_desire, imax, desire_ptr);
+      }
     }
 
     for (j = 1; j < comm_graph[vtx2]->nedges; j++) {
       neighbor = comm_graph[vtx2]->edges[j];
-      if (neighbor != vtx1)
+      if (neighbor != vtx1) {
         update_mesh_edata(neighbor, dim, edata, vdata, comm_graph, mesh_dims, node2vtx, vtx2node,
                           &best_desire, imax, desire_ptr);
+      }
     }
     for (j = 0; j < cube_or_mesh; j++) {
       update_mesh_edata(vtx1, j, edata, vdata, comm_graph, mesh_dims, node2vtx, vtx2node,
@@ -260,10 +275,12 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
     }
 
     k = best_desire + 1 + imax;
-    if (k > 2 * imax)
+    if (k > 2 * imax) {
       k = 2 * imax;
-    while (k > imax && desire_ptr[k] == NULL)
+    }
+    while (k > imax && desire_ptr[k] == NULL) {
       k--;
+    }
     best_desire = k - imax;
   }
   error = 0;

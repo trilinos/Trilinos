@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -56,7 +56,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int proc, int nproc)
+void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int /*proc*/, int nproc)
 /*
  * This function generates a map of which processor ID writes to which
  * RAID. Note that this is for each processor in the list, not necessarily
@@ -70,7 +70,8 @@ void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int proc, int n
   /*------------------------ EXECUTION BEGINS ------------------------------*/
 
   /* Allocate memory for the list */
-  pio_info->RDsk_List = (int **)array_alloc(__FILE__, __LINE__, 2, proc_info[0], 2, sizeof(int));
+  pio_info->RDsk_List =
+      reinterpret_cast<int **>(array_alloc(__FILE__, __LINE__, 2, proc_info[0], 2, sizeof(int)));
   if ((pio_info->RDsk_List) == nullptr) {
     fprintf(stderr, "%s: ERROR, insufficient memory\n", yo);
     exit(1);
@@ -239,6 +240,4 @@ void add_fname_ext(char *cOrigFile, const char *cExt)
     cPtr[i1] = cExt[i1];
   }
   cPtr[i1] = '\0';
-
-  return;
 }

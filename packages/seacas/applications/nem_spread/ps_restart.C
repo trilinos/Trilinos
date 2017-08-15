@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -55,7 +55,7 @@ namespace {
   template <typename INT>
   size_t find_gnode_inter(INT *intersect, size_t num_g_nodes, INT *glob_vec, size_t num_int_nodes,
                           size_t num_bor_nodes, size_t num_ext_nodes, INT *loc_vec);
-}
+} // namespace
 
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
@@ -130,8 +130,6 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_params(
 
   /* Close the ExodusII file */
   ex_close(exoid);
-
-  return;
 }
 
 template void NemSpread<double, int>::read_restart_data();
@@ -183,7 +181,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
    * then the cpu_ws must be the machine precision.
    */
   int cpu_ws;
-  if (io_ws < (int)sizeof(float)) {
+  if (io_ws < static_cast<int>(sizeof(float))) {
     cpu_ws = sizeof(float);
   }
   else {
@@ -989,7 +987,7 @@ template <typename T, typename INT> int NemSpread<T, INT>::compare_mesh_param(in
 {
   int ret = 1;
 
-  ex_init_params info;
+  ex_init_params info{};
   info.title[0] = '\0';
   int error     = ex_get_init_ext(exoid, &info);
   check_exodus_error(error, "ex_get_init");
@@ -998,10 +996,10 @@ template <typename T, typename INT> int NemSpread<T, INT>::compare_mesh_param(in
   if (info.num_dim != globals.Num_Dim) {
     ret = 0;
   }
-  else if ((size_t)info.num_nodes != globals.Num_Node) {
+  else if (static_cast<size_t>(info.num_nodes) != globals.Num_Node) {
     ret = 0;
   }
-  else if ((size_t)info.num_elem != globals.Num_Elem) {
+  else if (static_cast<size_t>(info.num_elem) != globals.Num_Elem) {
     ret = 0;
   }
   else if (info.num_elem_blk != globals.Num_Elem_Blk) {
@@ -1147,4 +1145,4 @@ namespace {
      * returned -- take that as 1 more than the current count of open files.
      */
   }
-}
+} // namespace

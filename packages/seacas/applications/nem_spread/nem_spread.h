@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -36,8 +36,10 @@
 #define NEM_SPREAD_H
 
 #include "globals.h"
+#include "nem_spread.h"        // for NemSpread, etc
+#include "pe_str_util_const.h" // for strip_string, token_compare, etc
+#include "rf_allo.h"
 #include "rf_io_const.h"
-#include <rf_allo.h>
 
 #define UTIL_NAME "nem_spread"
 #define VER_STR "6.16 (2016/08/25)"
@@ -61,10 +63,12 @@ public:
   void extract_elem_attr(T *elem_attr, int icurrent_elem_blk, size_t istart_elem, size_t iend_elem,
                          int natt_p_elem, int iproc);
   void find_elem_block(INT *proc_elem_blk, int iproc, int proc_for);
-  void read_node_set_ids(int mesh_exoid, INT[], INT[], int max_name_length);
-  void read_side_set_ids(int mesh_exoid, INT[], INT[], int max_name_length);
-  void read_node_sets(int exoid, INT *, INT *);
-  void read_side_sets(int exoid, INT *, INT *);
+  void read_node_set_ids(int mesh_exoid, INT /*num_nodes_in_node_set*/[], INT /*num_df_in_nsets*/[],
+                         int max_name_length);
+  void read_side_set_ids(int mesh_exoid, INT /*num_elem_in_ssets*/[], INT /*num_df_in_ssets*/[],
+                         int max_name_length);
+  void read_node_sets(int exoid, INT * /*num_nodes_in_node_set*/, INT * /*num_df_in_nsets*/);
+  void read_side_sets(int exoid, INT * /*num_elem_in_ssets*/, INT * /*num_df_in_ssets*/);
 
   void read_nodal_vars(int mesh_exoid);
 
@@ -173,9 +177,9 @@ public:
                        * facilitate the reading of the side *
                        * set distribution factors.          */
 
-  char *Coord_Name[3]; /* The name(s) of the coordinate axes.   */
+  char *Coord_Name[3]{}; /* The name(s) of the coordinate axes.   */
 
-  int  Proc_Info[6];
+  int  Proc_Info[6]{};
   int *Proc_Ids;
 
   NemSpread()

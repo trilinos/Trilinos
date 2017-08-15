@@ -1,7 +1,6 @@
-// Copyright(C) 2009-2010 Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2009 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,7 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -29,6 +28,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 #if !defined(SMART_ASSERT_H)
 #define SMART_ASSERT_H
 
@@ -79,7 +79,7 @@ enum {
 */
 class assert_context
 {
-  typedef std::string string;
+  using string = std::string;
 
 public:
   assert_context() : line_(0), level_(lvl_debug) {}
@@ -98,7 +98,7 @@ public:
   const string &              get_expr() const { return expr_; }
 
   typedef std::pair<string, string> val_and_str;
-  typedef std::vector<val_and_str> vals_array;
+  using vals_array = std::vector<val_and_str>;
   // return values array as a vector of pairs:
   // [Value, corresponding string]
   const vals_array &get_vals_array() const { return vals_; }
@@ -112,10 +112,12 @@ public:
   // get/set (user-friendly) message
   void set_level_msg(const char *strMsg)
   {
-    if (strMsg)
+    if (strMsg != nullptr) {
       msg_ = strMsg;
-    else
+    }
+    else {
       msg_.erase();
+    }
   }
   const string &get_level_msg() const { return msg_; }
 
@@ -135,7 +137,7 @@ private:
 
 namespace smart_assert {
 
-  typedef void (*assert_func)(const assert_context &context);
+  using assert_func = void (*)(const assert_context &);
 
   // helpers
   std::string get_typeof_level(int nLevel);
@@ -161,7 +163,7 @@ namespace Private {
   // directly!!!
   template <class T> struct is_null_finder
   {
-    bool is(const T &) const { return false; }
+    bool is(const T & /*unused*/) const { return false; }
   };
 
   template <> struct is_null_finder<char *>
@@ -178,13 +180,14 @@ namespace Private {
 
 struct Assert
 {
-  typedef smart_assert::assert_func assert_func;
+  using assert_func = smart_assert::assert_func;
 
   // helpers, in order to be able to compile the code
   Assert &SMART_ASSERT_A;
   Assert &SMART_ASSERT_B;
 
-  Assert(const char *expr) : SMART_ASSERT_A(*this), SMART_ASSERT_B(*this), needs_handling_(true)
+  explicit Assert(const char *expr)
+      : SMART_ASSERT_A(*this), SMART_ASSERT_B(*this), needs_handling_(true)
   {
     context_.set_expr(expr);
 
@@ -203,8 +206,9 @@ struct Assert
 
   ~Assert()
   {
-    if (needs_handling_)
+    if (needs_handling_) {
       handle_assert();
+    }
   }
 
   template <class type> Assert &print_current_val(const type &val, const char *my_msg)
@@ -213,11 +217,13 @@ struct Assert
 
     Private::is_null_finder<type> f;
     bool                          bIsNull = f.is(val);
-    if (!bIsNull)
+    if (!bIsNull) {
       out << val;
-    else
+    }
+    else {
       // null string
       out << "null";
+    }
     context_.add_val(out.str(), my_msg);
     return *this;
   }
@@ -305,11 +311,12 @@ private:
   static assert_func get_handler(int nLevel)
   {
     handlers_collection::const_iterator found = handlers().find(nLevel);
-    if (found != handlers().end())
+    if (found != handlers().end()) {
       return (*found).second;
-    else
-      // we always assume the debug handler has been set
-      return (*handlers().find(lvl_debug)).second;
+    }
+
+    // we always assume the debug handler has been set
+    return (*handlers().find(lvl_debug)).second;
   }
 
 private:
