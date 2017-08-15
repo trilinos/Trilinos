@@ -1609,21 +1609,18 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 	  }
 	}
 
-
-#if 0
-	// This section causes errors in some codes when enabled.
-	// ifdef'd out until can figure out why.  May be called too early before the counts are available...
 	// 3. If any entity count exceeds INT_MAX, then use 64-bit integers.
-	std::vector<size_t> entityCounts;
-	stk::mesh::comm_mesh_counts(*m_bulk_data, entityCounts);
-	for (size_t i=0; i < entityCounts.size(); i++) {
-	  if (entityCounts[i] > (size_t)std::numeric_limits<int>::max()) {
-	    return 8;
-	  }
-	}
-#endif
-
-	// 4. Should also check if the maximum node or element id exceeds INT_MAX.
+        if ( !Teuchos::is_null(m_bulk_data) ) {
+          std::vector<size_t> entityCounts;
+          stk::mesh::comm_mesh_counts(*m_bulk_data, entityCounts);
+          for (size_t i=0; i < entityCounts.size(); i++) {
+            if (entityCounts[i] > (size_t)std::numeric_limits<int>::max()) {
+              return 8;
+            }
+          }
+        }
+	
+        // 4. Should also check if the maximum node or element id exceeds INT_MAX.
 
 	// 5. Default to 4-byte integers...
 	return 4;

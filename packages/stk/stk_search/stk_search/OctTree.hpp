@@ -150,11 +150,6 @@ struct OctTreeSize
   enum { value = 1 + 8 * OctTreeSize<Depth-1>::value };
 };
 
-/** \brief  Number of nodes in an oct-tree of a given depth */
-unsigned oct_tree_size( const unsigned Depth );
-
-/** \brief  Offset of a oct-tree node in a dense tree of a given depth. */
-unsigned oct_tree_offset( const unsigned Depth , const OctTreeKey & k);
 }
 
 #endif

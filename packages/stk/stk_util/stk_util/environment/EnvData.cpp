@@ -34,7 +34,7 @@
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/EnvData.hpp>
 #if defined( STK_HAS_MPI)
-#  include <mpi.h>                        // for MPI_COMM_NULL, MPI_Comm, etc
+#  include "mpi.h"                        // for MPI_COMM_NULL, MPI_Comm, etc
 #endif
 #include <time.h>                       // for time
 #include <iostream>                     // for cout, cerr

@@ -33,7 +33,7 @@
 
 #include <stk_util/stk_config.h>
 #if defined ( STK_HAS_MPI )
-#  include <mpi.h>
+#  include "mpi.h"
 #endif
 
 #include <stk_util/diag/PrintTimer.hpp>

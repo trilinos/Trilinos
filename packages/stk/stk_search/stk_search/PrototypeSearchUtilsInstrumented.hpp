@@ -1,16 +1,22 @@
 #ifndef PROTOTYPE_SEARCH_UTILS_INSTRUMENTED_H_
 #define PROTOTYPE_SEARCH_UTILS_INSTRUMENTED_H_
 
+#include <functional>
+
 #include <tuple>
-#include <unordered_set>
+#include <map>
+#include <unordered_map>
 
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <stk_util/parallel/CommNeighbors.hpp>
 #include <stk_util/parallel/MPI.hpp>
 
+#include <stk_search/CommonSearchUtilsInstrumented.hpp>
+
 namespace stk {
 namespace search {
 namespace experimental {
+
 
 struct GhostingSearchTimeBreakdown {
   double computeProcBoundingVolume;
@@ -33,7 +39,7 @@ struct GhostingSearchTimeBreakdown {
         = writeRangeBoxesAndGhostIdentifiers = 0.0;
   }
 
-  std::ostream &streamit(std::ostream &os) {
+  std::ostream &streamit(std::ostream &os) const {
     std::cout << "    computeProcBoundingVolume = " << computeProcBoundingVolume << std::endl
               << "     findNeighborsFromScratch = " << (findNeighbors_rasterize
                                                         + findNeighbors_ghostingRegionResidents
@@ -69,26 +75,49 @@ struct TilingIndices {
 
 typedef std::map<TilingIndices, std::vector<int> > ResidencyMapT;
 
-
-//
-// For robustness wrt discontinuous decompositions, we'll must be able to associate a
-// decomp region with multiple bounding volumes (AABBs for now).
-//
-
-typedef stk::search::Box<double> Box3D;
-
-struct OwnedBox3D
-{
-  int   owner;
-  Box3D box;
-
-  typedef double value_type;
+enum NeighborMsgTypeEnum {
+  DOMAIN_NEIGHBORING_MSG,
+  RANGE_NEIGHBORING_MSG
 };
 
-typedef std::map<TilingIndices, std::vector<OwnedBox3D> > ResidencyBoxMapT;
+struct NeighboringRankMsg {
+  NeighborMsgTypeEnum msgType;
+  int neighborRank;
+};
 
-struct BoxedTilingIndices : public TilingIndices {
-  Box3D box;
+struct TilingIndicesMsg {
+  int xIdx, yIdx, zIdx;
+  int pRank;
+};
+
+
+template <typename T>
+struct GS_Types {
+
+  typedef stk::search::Box<T> Box3D;
+
+  struct OwnedBox3D
+  {
+    int   owner;
+    Box3D box;
+
+    typedef T value_type;
+  };
+
+  typedef std::map<TilingIndices, std::vector<OwnedBox3D> > ResidencyBoxMapT;
+
+  struct NeighboringProcBoxMsg {
+    NeighborMsgTypeEnum msgType;
+    OwnedBox3D          rankBox;
+  };
+
+  struct BoxedTilingIndices : public TilingIndices {
+    Box3D box;
+  };
+
+  struct BoxedTilingIndicesMsg : public TilingIndicesMsg {
+    Box3D box;
+  };
 };
 
 
@@ -99,7 +128,8 @@ inline bool operator<(const TilingIndices &a, const TilingIndices &b) {
                   || ((a.yIdx == b.yIdx) && (a.zIdx < b.zIdx)))));
 }
 
-inline bool operator<(const OwnedBox3D &a, const OwnedBox3D &b)
+
+inline bool operator<(const typename GS_Types<float>::OwnedBox3D &a, const typename GS_Types<float>::OwnedBox3D &b)
 {
   if (a.owner < b.owner) {
     return true;
@@ -107,8 +137,8 @@ inline bool operator<(const OwnedBox3D &a, const OwnedBox3D &b)
   if (a.owner > b.owner) {
     return false;
   }
-  const Box3D &boxA = a.box;
-  const Box3D &boxB = b.box;
+  const typename GS_Types<float>::Box3D &boxA = a.box;
+  const typename GS_Types<float>::Box3D &boxB = b.box;
 
   return ((boxA.get_x_min() < boxB.get_x_min())
           || ((boxA.get_x_min() == boxB.get_x_min())
@@ -123,13 +153,101 @@ inline bool operator<(const OwnedBox3D &a, const OwnedBox3D &b)
                                               && ((boxA.get_z_max() < boxB.get_z_max()))))))))))));
 }
 
+
+inline bool operator<(const typename GS_Types<double>::OwnedBox3D &a, const typename GS_Types<double>::OwnedBox3D &b)
+{
+  if (a.owner < b.owner) {
+    return true;
+  }
+  if (a.owner > b.owner) {
+    return false;
+  }
+  const typename GS_Types<double>::Box3D &boxA = a.box;
+  const typename GS_Types<double>::Box3D &boxB = b.box;
+
+  return ((boxA.get_x_min() < boxB.get_x_min())
+          || ((boxA.get_x_min() == boxB.get_x_min())
+              && ((boxA.get_y_min() < boxB.get_y_min())
+                  || ((boxA.get_y_min() == boxB.get_y_min())
+                      && ((boxA.get_z_min() < boxB.get_z_min())
+                          || ((boxA.get_z_min() == boxB.get_z_min())
+                              && ((boxA.get_x_max() < boxB.get_x_max())
+                                  || ((boxA.get_x_max() == boxB.get_x_max())
+                                      && ((boxA.get_y_max() < boxB.get_y_max())
+                                          || ((boxA.get_y_max() == boxB.get_y_max())
+                                              && ((boxA.get_z_max() < boxB.get_z_max()))))))))))));
+}
+
+
 void findGhostingRegionResidents(const SuperTile3D &tilingPattern, MPI_Comm comm, int mpiRank, int mpiSize,
                                  const std::vector<TilingIndices> &tilesOccupied,
                                  ResidencyMapT &residencyMapOfGhostingRegion);
 
-void findGhostingRegionResidentsDDRobust(const SuperTile3D &tilingPattern, MPI_Comm comm, int mpiRank, int mpiSize,
-                                         const std::vector<BoxedTilingIndices> &tilesOccupied,
-                                         ResidencyBoxMapT &residencyMapOfGhostingRegion);
+template <typename T>
+void findGhostingRegionResidentsDDEfficient(const SuperTile3D &tilingPattern, MPI_Comm comm, int mpiRank, int mpiSize,
+                                         const std::vector<typename GS_Types<T>::BoxedTilingIndices> &tilesOccupied,
+                                         typename GS_Types<T>::ResidencyBoxMapT &residencyMap)
+{
+  typedef typename GS_Types<T>::BoxedTilingIndices    BoxedTilingIndices;
+  typedef typename GS_Types<T>::BoxedTilingIndicesMsg BoxedTilingIndicesMsg;
+  typedef typename GS_Types<T>::OwnedBox3D            OwnedBox3D;
+
+  // std::cout << "p_" << mpiRank << ": " << "fGRR -- tilesOccupied.size() returns " << tilesOccupied.size() << std::endl;
+
+  residencyMap.clear();
+
+  stk::CommSparse commsparse(comm);
+
+  int sendCount = 0;
+  for(int phase = 0; phase < 2; ++phase) {
+    for (const BoxedTilingIndices &tileId : tilesOccupied) {
+      int proc = getGhostingRegionRank(tileId, tilingPattern, mpiSize);
+      if (mpiRank != proc) {
+        stk::CommBuffer &procBuff = commsparse.send_buffer(proc);
+        BoxedTilingIndicesMsg msg;
+        msg.xIdx = tileId.xIdx;
+        msg.yIdx = tileId.yIdx;
+        msg.zIdx = tileId.zIdx;
+        msg.pRank = mpiRank;
+        msg.box = tileId.box;
+        procBuff.pack<BoxedTilingIndicesMsg>(msg);
+
+        if (phase != 0) {
+          ++sendCount;
+        }
+      }
+      else if (phase == 1){
+        residencyMap[tileId].push_back(OwnedBox3D{mpiRank,tileId.box});
+      }
+    }
+    if (phase == 0) {
+      commsparse.allocate_buffers();
+    }
+    else {
+      commsparse.communicate();
+    }
+  }
+  // std::cout  << "p_" << mpiRank << ": (domain) sent " << sendCount << " boxes" << std::endl;
+
+  int recvCount = 0;
+  for(int proc=0; proc < mpiSize; ++proc) {
+    if (proc == mpiRank) {
+      continue;
+    }
+    stk::CommBuffer& procBuff = commsparse.recv_buffer(proc);
+    int numItems = procBuff.remaining()/sizeof(BoxedTilingIndicesMsg);
+    for (int i = 0; i < numItems; ++i) {
+      BoxedTilingIndicesMsg msg;
+      procBuff.unpack<BoxedTilingIndicesMsg>(msg);
+      TilingIndices tileId{msg.xIdx, msg.yIdx, msg.zIdx};
+      residencyMap[tileId].push_back(OwnedBox3D{msg.pRank, msg.box});
+
+      ++recvCount;
+    }
+  }
+  // std::cout  << "p_" << mpiRank << ": (ghosting region) received " << recvCount << " boxes" << std::endl;
+}
+
 
 inline int getGhostingRegionRank(const TilingIndices &tileId, const SuperTile3D &tilingPattern, int mpiSize) {
   int xIdx = tileId.xIdx % tilingPattern.numXTiles;
@@ -147,10 +265,32 @@ inline int getGhostingRegionRank(const TilingIndices &tileId, const SuperTile3D 
   return proc;
 }
 
-void optimizeTile3D(SuperTile3D &tile, int maxTiles);
+
+template<typename BoxType>
+BoxType computeGlobalBoundingBox(MPI_Comm mpiComm, const BoxType &box)
+{
+  double minCornerIn[3], maxCornerIn[3];
+  minCornerIn[0] = box.get_x_min();
+  minCornerIn[1] = box.get_y_min();
+  minCornerIn[2] = box.get_z_min();
+  maxCornerIn[0] = box.get_x_max();
+  maxCornerIn[1] = box.get_y_max();
+  maxCornerIn[2] = box.get_z_max();
+
+  double minCornerOut[3], maxCornerOut[3];
+  MPI_Allreduce(minCornerIn, minCornerOut, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
+  MPI_Allreduce(maxCornerIn, maxCornerOut, 3, MPI_DOUBLE, MPI_MAX, mpiComm);
+
+  BoxType retval(minCornerOut[0], minCornerOut[1], minCornerOut[2],
+                   maxCornerOut[0], maxCornerOut[1], maxCornerOut[2]);
+  return retval;
+}
+
+
+void optimizeTiling3D(SuperTile3D &tile, int maxTiles);
 
 template<typename BoxedType>
-void rasterizeToTiling(const SuperTile3D &tilingPattern, int decompRank,
+void rasterizeToTiling(const SuperTile3D &tilingPattern,
                        const stk::search::ObjectBoundingBox_T<BoxedType> &box,
                        std::vector<TilingIndices> &tilesOccupied)
 {
@@ -182,25 +322,39 @@ void rasterizeToTiling(const SuperTile3D &tilingPattern, int decompRank,
   }
 }
 
+struct HashRegionId {
+  inline std::size_t operator()(const std::tuple<int,int,int>& id) const
+  {
+    // Try to avoid collisions within 3D patches up to 1000 * cell_diameter.
+    return std::hash<int>()((std::get<0>(id) << 20) ^ (std::get<1>(id) << 10) ^ std::get<2>(id));
+  }
+};
 
-template<typename ObjType, typename IdentType>
-void rasterizeToTilingDDRobust(const SuperTile3D &tilingPattern, int decompRank,
-                               const std::vector<std::pair<ObjType, IdentType> >& objs,
-                               std::vector<BoxedTilingIndices> &tilesOccupied)
+template<typename ObjType>
+void rasterizeToTilingDDEfficient(const SuperTile3D &tilingPattern,
+                               const std::vector<ObjType>& objs,
+                               std::vector<typename GS_Types<typename ObjType::value_type>::BoxedTilingIndices> &tilesOccupied)
 {
   typedef typename ObjType::value_type  valueType;
   typedef stk::search::Box<valueType>   Box;
   typedef std::tuple<int,int,int>       RegionId;
 
-  std::map<RegionId, Box> occupancyMap;
+  //  Need to do experiments to see what works best as a function of the
+  //  number and spatial spread (wrt ghosting region cell diameter).
+#ifdef RASTERIZE_FOR_GHOSTING_DDE_USE_UNORDERED_MAP
+  typedef std::unordered_map<RegionId, Box, HashRegionId> OccupancyMapT;
+#else
+  typedef std::map<RegionId, Box> OccupancyMapT;
+#endif
+  OccupancyMapT occupancyMap;
 
   double xTileLen = tilingPattern.xLen;
   double yTileLen = tilingPattern.yLen;
   double zTileLen = tilingPattern.zLen;
 
-  for (const std::pair<ObjType, IdentType> &obj : objs) {
+  for (const ObjType &obj : objs) {
     Box box;
-    stk::search::add_to_box(box, obj.first);
+    stk::search::add_to_box(box, obj);
 
     double boxXMin = box.get_x_min();
     double boxYMin = box.get_y_min();
@@ -216,50 +370,353 @@ void rasterizeToTilingDDRobust(const SuperTile3D &tilingPattern, int decompRank,
     int lastYInd  = floor(boxYMax / yTileLen);
     int lastZInd  = floor(boxZMax / zTileLen);
 
-    tilesOccupied.clear();
     for (int i = firstXInd; i <= lastXInd; ++i) {
       for (int j = firstYInd; j <= lastYInd; ++j) {
         for (int k = firstZInd; k <= lastZInd; ++k) {
           RegionId regionId(i,j,k);
-          if (occupancyMap.find(regionId) == occupancyMap.end()) {
-            occupancyMap[regionId] = box;
+          auto probe = occupancyMap.find(regionId);
+          if (probe == occupancyMap.end()) {
+            // TRS: Clang does not like emplace_hint,
+            // use insert instead it should be overloaded.
+            //occupancyMap.emplace_hint(probe, regionId, box);
+            occupancyMap.insert(probe, std::pair<RegionId,Box>(regionId, box));
           }
           else {
-            stk::search::add_to_box(occupancyMap[regionId], box);
+            stk::search::add_to_box(probe->second, box);
           }
         }
       }
     }
   }
-  // Now need to write the output vector.
+
+  // Now write the output vector.
+  tilesOccupied.clear();
+  tilesOccupied.resize(occupancyMap.size());
+  int i = 0;
   for (auto mappedBox : occupancyMap) {
     const RegionId &tileId = mappedBox.first;
-    const Box &bbox        = mappedBox.second;
-    BoxedTilingIndices idxBox;
+    Box &bbox = mappedBox.second;
+    typename GS_Types<typename ObjType::value_type>::BoxedTilingIndices idxBox;
     idxBox.xIdx = std::get<0>(tileId);
     idxBox.yIdx = std::get<1>(tileId);
     idxBox.zIdx = std::get<2>(tileId);
     idxBox.box = bbox;
-    tilesOccupied.push_back(idxBox);
+    tilesOccupied[i] = idxBox;
+    ++i;
   }
 }
+
 
 void witnessAndComputeNeighborRanks(MPI_Comm mpiComm, int pSize,
                                     const ResidencyMapT &myDomainResidents,
                                     const ResidencyMapT &myRangeResidents,
                                     std::vector<int> &neighborDomainRanks, std::vector<int> &neighborRangeRanks);
 
-void witnessAndComputeNeighborRanksDDRobust(MPI_Comm mpiComm, int pSize,
-                                            const ResidencyBoxMapT &myDomainResidents,
-                                            const ResidencyBoxMapT &myRangeResidents,
-                                            std::vector<OwnedBox3D> &neighborDomainRanks,
-                                            std::vector<OwnedBox3D> &neighborRangeRanks);
+template <typename T>
+void witnessAndComputeNeighborRanksDDEfficient(MPI_Comm mpiComm, int pSize,
+                                               const typename GS_Types<T>::ResidencyBoxMapT &myDomainResidents,
+                                               const typename GS_Types<T>::ResidencyBoxMapT &myRangeResidents,
+                                               std::vector<std::pair<typename GS_Types<T>::OwnedBox3D, typename GS_Types<T>::OwnedBox3D> > &neighborPairs)
+{
+  typedef typename GS_Types<T>::ResidencyBoxMapT ResidencyBoxMapT;
+  typedef typename GS_Types<T>::OwnedBox3D       OwnedBox3D;
 
+  int myRank = -1;
+  MPI_Comm_rank(mpiComm, &myRank);
+
+  typename ResidencyBoxMapT::const_iterator domResIter = myDomainResidents.begin();
+  typename ResidencyBoxMapT::const_iterator domResEnd  = myDomainResidents.end();
+  typename ResidencyBoxMapT::const_iterator rngResEnd  = myRangeResidents.end();
+
+  //
+  // Witness, and per-Ghosting-Region neighbor computation
+  //
+  for (; domResIter != domResEnd; ++domResIter) {
+    const TilingIndices &tileId = domResIter->first;
+    const std::vector<OwnedBox3D> &domainResidents = domResIter->second;
+    typename ResidencyBoxMapT::const_iterator rngResProbe = myRangeResidents.find(tileId);
+    if (rngResProbe != rngResEnd) {
+      const std::vector<OwnedBox3D> &rangeResidents = rngResProbe->second;
+      for (const OwnedBox3D &domainBox : domainResidents) {
+        for (const OwnedBox3D &rangeBox : rangeResidents) {
+          if ((domainBox.owner != rangeBox.owner) && intersects(domainBox.box, rangeBox.box)) {
+            neighborPairs.push_back(std::pair<OwnedBox3D, OwnedBox3D>(domainBox, rangeBox));
+          }
+        }
+      }
+    }
+  }
+
+  // std::cout << "p_" << myRank << ": I witness " << neighborPairs.size() << " neighbor pairs" << std::endl;
+
+}
+
+
+
+template<typename DomainBox, typename RangeBox>
+void communicateNeighborObjectBBs(
+    MPI_Comm mpiComm,
+    const std::vector<int> &neighborDomainRanks, const std::vector<int> &neighborRangeRanks,
+    const stk::search::ObjectBoundingBox_T<DomainBox> domainObjBBox,
+    const stk::search::ObjectBoundingBox_T<RangeBox> rangeObjBBox,
+    std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
+    std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > &boxB_proc_box_array)
+{
+  typedef stk::search::ObjectBoundingBox_T<DomainBox> DomObjBBoxT;
+
+  stk::CommNeighbors commneighborsR2D(mpiComm, neighborRangeRanks, neighborDomainRanks);
+
+  for (int nbrRangeProc : neighborRangeRanks) {
+    stk::CommBufferV& procBuff = commneighborsR2D.send_buffer(nbrRangeProc);
+    procBuff.pack<DomObjBBoxT>(domainObjBBox);
+  }
+  commneighborsR2D.communicate();
+  for(int nbrDomProc : neighborDomainRanks) {
+    stk::CommBufferV& procBuff = commneighborsR2D.recv_buffer(nbrDomProc  );
+    DomObjBBoxT box;
+    procBuff.unpack(box);
+    boxA_proc_box_array[box.get_object_number()] = box;
+  }
+
+  typedef stk::search::ObjectBoundingBox_T<RangeBox> RngObjBBoxT;
+
+  stk::CommNeighbors commneighborsD2R(mpiComm, neighborDomainRanks, neighborRangeRanks);
+
+  for (int nbrDomainProc : neighborDomainRanks) {
+    stk::CommBufferV& procBuff = commneighborsD2R.send_buffer(nbrDomainProc);
+    procBuff.pack<RngObjBBoxT>(rangeObjBBox);
+  }
+  commneighborsD2R.communicate();
+  for(int nbrRngProc : neighborRangeRanks) {
+    stk::CommBufferV& procBuff = commneighborsD2R.recv_buffer(nbrRngProc);
+    RngObjBBoxT box;
+    procBuff.unpack(box);
+    boxB_proc_box_array[box.get_object_number()] = box;
+  }
+}
+
+template <typename T>
+void communicateNeighborObjectBoundingBoxesDDEfficient(
+    MPI_Comm comm, int mpiSize, const std::vector<std::pair<typename GS_Types<T>::OwnedBox3D, typename GS_Types<T>::OwnedBox3D> > &neighborPairs,
+    std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<T>::Box3D> > &boxesA_proc_box_array,
+    std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<T>::Box3D> > &boxesB_proc_box_array)
+{
+  typedef typename GS_Types<T>::NeighboringProcBoxMsg NeighboringProcBoxMsg;
+  typedef typename GS_Types<T>::OwnedBox3D            OwnedBox3D;
+  //
+  // Communication and finish global neighbor computation.
+  //
+
+  stk::CommSparse commsparse(comm);
+  for(int phase = 0; phase < 2; ++phase) {
+    for (const std::pair<OwnedBox3D, OwnedBox3D> &neighborPair : neighborPairs) {
+      OwnedBox3D domainBoxProc = neighborPair.first;
+      OwnedBox3D rangeBoxProc  = neighborPair.second;
+      int domainProc = domainBoxProc.owner;
+      int rangeProc  = rangeBoxProc.owner;
+      stk::CommBuffer &domainProcBuff = commsparse.send_buffer(domainProc);
+      domainProcBuff.pack<NeighboringProcBoxMsg>(NeighboringProcBoxMsg{RANGE_NEIGHBORING_MSG, rangeBoxProc});
+      stk::CommBuffer &rangeProcBuff = commsparse.send_buffer(rangeProc);
+      rangeProcBuff.pack<NeighboringProcBoxMsg>(NeighboringProcBoxMsg{DOMAIN_NEIGHBORING_MSG, domainBoxProc});
+    }
+    if (phase == 0) {
+      commsparse.allocate_buffers();
+    }
+    else {
+      commsparse.communicate();
+    }
+  }
+  std::set<OwnedBox3D> nbrDomRanks, nbrRngRanks;
+  for(int proc=0; proc < mpiSize; ++proc) {
+    stk::CommBuffer& procBuff = commsparse.recv_buffer(proc);
+    int numItems = procBuff.remaining()/sizeof(NeighboringProcBoxMsg);
+    for (int i = 0; i < numItems; ++i) {
+      NeighboringProcBoxMsg msg;
+      procBuff.unpack<NeighboringProcBoxMsg>(msg);
+      if (msg.msgType == DOMAIN_NEIGHBORING_MSG) {
+        if (nbrDomRanks.find(msg.rankBox) == nbrDomRanks.end()) {
+          nbrDomRanks.insert(msg.rankBox);
+        }
+      }
+      else if (nbrRngRanks.find(msg.rankBox) == nbrRngRanks.end()) {
+        nbrRngRanks.insert(msg.rankBox);
+      }
+    }
+  }
+
+  typedef stk::search::ObjectBoundingBox_T<typename GS_Types<T>::Box3D> ObjBoxT;
+
+  boxesA_proc_box_array.clear();
+  for (const typename GS_Types<T>::OwnedBox3D &nbrBox : nbrDomRanks) {
+    boxesA_proc_box_array.push_back(ObjBoxT(nbrBox.box, nbrBox.owner));
+  }
+  boxesB_proc_box_array.clear();
+  for (const typename GS_Types<T>::OwnedBox3D &nbrBox : nbrRngRanks) {
+    boxesB_proc_box_array.push_back(ObjBoxT(nbrBox.box, nbrBox.owner));
+  }
+}
+
+
+
+template<typename FilterBoxType, typename BaseBoxType>
+void filterProcBoundingBoxes(int skipRank, const FilterBoxType &filterBox,
+                             std::vector<stk::search::ObjectBoundingBox_T<BaseBoxType> > &objectBoxes)
+{
+  std::vector<stk::search::ObjectBoundingBox_T<BaseBoxType> > collected;
+  int numProcs = objectBoxes.size();
+  for (int iproc = 0; iproc < numProcs; ++iproc) {
+    if ((iproc != skipRank) && intersects(objectBoxes[iproc].GetBox(), filterBox)) {
+      collected.push_back(objectBoxes[iproc]);
+    }
+  }
+
+  objectBoxes = collected;
+}
+
+
+template<typename DomainBox, typename RangeBox>
+void findGhostingNeighborsFromScratch(MPI_Comm comm, int mpiRank, int mpiSize,
+                                      const stk::search::ObjectBoundingBox_T<DomainBox> boxA_proc,
+                                      const stk::search::ObjectBoundingBox_T<RangeBox> boxB_proc,
+                                      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
+                                      std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > &boxB_proc_box_array,
+                                      experimental::GhostingSearchTimeBreakdown &timeBreakdown,
+                                      stk::search::SplitTimer &stopwatch)
+{
+  DomainBox globalDomBox = computeGlobalBoundingBox(comm, boxA_proc.GetBox());
+  timeBreakdown.computeProcBoundingVolume += stopwatch.split();
+
+  SuperTile3D tiling = {globalDomBox.get_x_max() - globalDomBox.get_x_min(),
+                        globalDomBox.get_y_max() - globalDomBox.get_y_min(),
+                        globalDomBox.get_z_max() - globalDomBox.get_z_min(),
+                        1, 1, 1};
+
+  // Guess at good trade-off between AABBs overlapping more ghosting regions
+  // versus having more neighbors in a region.
+  const int cellDiamFactor = 2;
+  int maxCells =  mpiSize / (cellDiamFactor * cellDiamFactor * cellDiamFactor);
+  // optimizeTiling3D(tile, pSize);
+  optimizeTiling3D(tiling, std::max(1, maxCells));
+
+  // Ghosting Regions are identified by their TilingIndices.
+  // We need find which regions our domain and our range occupies (3D raster).
+  std::vector<TilingIndices> myDomainOccupancies;
+  std::vector<TilingIndices> myRangeOccupancies;
+  rasterizeToTiling(tiling, boxA_proc, myDomainOccupancies);
+  rasterizeToTiling(tiling, boxB_proc, myRangeOccupancies);
+  timeBreakdown.findNeighbors_rasterize += stopwatch.split();
+
+  // In role of Decomp Region: Send Ghosting Regions corresponding myDomainOccupancies info.
+  // In role of Decomp Region: Send Ghosting Regions corresponding myRangeOccupancies info.
+  // In role of Ghosting Region: Receive Domain occupancy info.
+  // In role of Ghosting Region: Receive Range occupancy info.
+  ResidencyMapT myDomainResidents;
+  ResidencyMapT myRangeResidents;
+  findGhostingRegionResidents(tiling, comm, mpiRank, mpiSize, myDomainOccupancies, myDomainResidents);
+  findGhostingRegionResidents(tiling, comm, mpiRank, mpiSize, myRangeOccupancies, myRangeResidents);
+  timeBreakdown.findNeighbors_ghostingRegionResidents += stopwatch.split();
+
+  // Now can witness all pairs of (domain_rank, range_rank) neighbor relationships that exist
+  // on my Ghosting Region....
+  // In role of Ghosting Region: send each range_rank the (domain_aabb, domain_rank) information
+  // about its neighbor relationships I witness.
+  // In role of Decomp Region: Receive my neighbor information.
+  std::vector<int> domainRanksNeighboringMyRange, rangeRanksNeighboringMyDomain;
+  witnessAndComputeNeighborRanks(comm, mpiSize, myDomainResidents, myRangeResidents,
+                                 domainRanksNeighboringMyRange, rangeRanksNeighboringMyDomain);
+  timeBreakdown.findNeighbors_witnessAndComputeNeighbors += stopwatch.split();
+
+  communicateNeighborObjectBBs(comm, domainRanksNeighboringMyRange, rangeRanksNeighboringMyDomain,
+                               boxA_proc, boxB_proc, boxA_proc_box_array, boxB_proc_box_array);
+
+  filterProcBoundingBoxes(mpiRank, boxB_proc.GetBox(), boxA_proc_box_array);
+  filterProcBoundingBoxes(mpiRank, boxA_proc.GetBox(), boxB_proc_box_array);
+
+  timeBreakdown.findNeighbors_communicateNeighborObjectBBs += stopwatch.split();
+}
+
+template<typename DomainBox, typename RangeBox>
+void findGhostingNeighborsFromScratchDDEfficient(MPI_Comm comm, int mpiRank, int mpiSize,
+                                                 const stk::search::ObjectBoundingBox_T<DomainBox> boxA_proc,
+                                                 const stk::search::ObjectBoundingBox_T<RangeBox> boxB_proc,
+                                                 const std::vector<DomainBox> &localDomain,
+                                                 const std::vector<RangeBox>  &localRange,
+                                                 std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
+                                                 std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > &boxB_proc_box_array,
+                                                 experimental::GhostingSearchTimeBreakdown &timeBreakdown,
+                                                 stk::search::SplitTimer &stopwatch)
+{
+  typedef typename DomainBox::value_type ValT;
+
+  DomainBox globalDomBox = computeGlobalBoundingBox(comm, boxA_proc.GetBox());
+
+  timeBreakdown.computeProcBoundingVolume += stopwatch.split();
+
+  SuperTile3D tiling = {globalDomBox.get_x_max() - globalDomBox.get_x_min(),
+                        globalDomBox.get_y_max() - globalDomBox.get_y_min(),
+                        globalDomBox.get_z_max() - globalDomBox.get_z_min(),
+                        1, 1, 1};
+
+  // Guess at good trade-off between AABBs overlapping more ghosting regions
+  // versus having more neighbors in a region.
+  const int cellDiamFactor = 2;
+  int maxCells =  mpiSize / (cellDiamFactor * cellDiamFactor * cellDiamFactor);
+  // optimizeTiling3D(tile, pSize);
+  optimizeTiling3D(tiling, std::max(1, maxCells));
+  // if (pRank == 0) {
+  //   std::cout << "SuperTile3D: dims = (" << tile.xLen << "," << tile.yLen << "," << tile.zLen << ")"
+  //             << "  subtiles = ("  << tile.numXTiles << "," << tile.numYTiles << "," << tile.numZTiles << ")" << std::endl;
+  // }
+
+  // Ghosting Regions are identified by their TilingIndices.
+  // We need find which regions our domain and our range occupies (3D raster).
+  std::vector<typename GS_Types<ValT>::BoxedTilingIndices> myDomainOccupanciesDDE;
+  std::vector<typename GS_Types<ValT>::BoxedTilingIndices> myRangeOccupanciesDDE;
+  rasterizeToTilingDDEfficient(tiling, localDomain, myDomainOccupanciesDDE);
+  rasterizeToTilingDDEfficient(tiling, localRange, myRangeOccupanciesDDE);
+
+  // if ((pRank == 0) || (pRank == 63)) {
+  //   std::cout << "p_" << pRank << ": myDomainOccupancies = {";
+  //   for (auto bti : myDomainOccupanciesDDE) {
+  //     std::cout << "{(" << bti.xIdx << "," << bti.yIdx << "," <<  bti.zIdx << ") " << bti.box << "} ";
+  //   }
+  //   std::cout <<"}" << std::endl;
+  // }
+
+  timeBreakdown.findNeighbors_rasterize += stopwatch.split();
+
+  // In role of Decomp Region: Send Ghosting Regions corresponding myDomainOccupancies info.
+  // In role of Decomp Region: Send Ghosting Regions corresponding myRangeOccupancies info.
+  // In role of Ghosting Region: Receive Domain occupancy info.
+  // In role of Ghosting Region: Receive Range occupancy info.
+  typename GS_Types<ValT>::ResidencyBoxMapT myDomainResidentsDDE;
+  typename GS_Types<ValT>::ResidencyBoxMapT myRangeResidentsDDE;
+  findGhostingRegionResidentsDDEfficient<ValT>(tiling, comm, mpiRank, mpiSize, myDomainOccupanciesDDE, myDomainResidentsDDE);
+  findGhostingRegionResidentsDDEfficient<ValT>(tiling, comm, mpiRank, mpiSize, myRangeOccupanciesDDE, myRangeResidentsDDE);
+
+  timeBreakdown.findNeighbors_ghostingRegionResidents += stopwatch.split();
+
+  // Now can witness all pairs of (domain_rank, range_rank) neighbor relationships that exist
+  // on my Ghosting Region....
+  // In role of Ghosting Region: send each range_rank the (domain_aabb, domain_rank) information
+  // about its neighbor relationships I witness.
+  // In role of Decomp Region: Receive my neighbor information.
+  std::vector<std::pair<typename GS_Types<ValT>::OwnedBox3D, typename GS_Types<ValT>::OwnedBox3D> > neighborPairs;
+  witnessAndComputeNeighborRanksDDEfficient<ValT>(comm, mpiSize, myDomainResidentsDDE, myRangeResidentsDDE,
+                                                  neighborPairs);
+
+  timeBreakdown.findNeighbors_witnessAndComputeNeighbors += stopwatch.split();
+
+  communicateNeighborObjectBoundingBoxesDDEfficient<ValT>(comm, mpiSize, neighborPairs,
+                                                          boxA_proc_box_array, boxB_proc_box_array);
+
+  timeBreakdown.findNeighbors_communicateNeighborObjectBBs += stopwatch.split();
+}
 
 enum FindNeighborsAlgorithmChoice {
   ORIGINAL_FIND_NEIGHBORS,
   SCALABLE_FIND_NEIGHBORS,
-  SCALABLE_AND_DISCONTINUOUS_DECOMP_ROBUST_FIND_NEIGHBORS
+  SCALABLE_AND_DISCONTINUOUS_DECOMP_EFFICIENT_FIND_NEIGHBORS
 };
 
 template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
@@ -301,12 +758,11 @@ class GhostingSearcher {
   int      pSize;
   int      pRank;
 
-  DomainBox computeGlobalBoundingBox(const DomainBox &box);
-
   void findNeighborsFromScratch(
       const std::vector<std::pair<DomainObjType, DomainIdentifier> >& local_domain,
       const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
       std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
+      std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > &boxB_proc_box_array,
       experimental::GhostingSearchTimeBreakdown &timeBreakdown,
       SplitTimer &stopwatch);
 
@@ -314,25 +770,17 @@ class GhostingSearcher {
       const std::vector<std::pair<DomainObjType, DomainIdentifier> >& local_domain,
       const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
       std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
+      std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > &boxB_proc_box_array,
       experimental::GhostingSearchTimeBreakdown &timeBreakdown,
       SplitTimer &stopwatch);
 
-  void findNeighborsFromScratchDDRobust(
+  void findNeighborsFromScratchDDEfficient(
       const std::vector<std::pair<DomainObjType, DomainIdentifier> >& local_domain,
       const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
-      std::vector<stk::search::ObjectBoundingBox_T<Box3D> > &boxesA_proc_box_array,
+      std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<typename DomainObjType::value_type>::Box3D> > &boxesA_proc_box_array,
+      std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<typename RangeBoxType::value_type>::Box3D> > &boxesB_proc_box_array,
       experimental::GhostingSearchTimeBreakdown &timeBreakdown,
       SplitTimer &stopwatch);
-
-  void communicateDomainNeighborObjectBoundingBoxes(
-      const std::vector<int> &neighborDomainRanks, const std::vector<int> &neighborRangeRanks,
-      const stk::search::ObjectBoundingBox_T<DomainBox> &domainObjBBox,
-      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array);
-
-  void communicateDomainNeighborObjectBoundingBoxesDDRobust(
-      const std::vector<OwnedBox3D> &neighborDomainRanks, const std::vector<OwnedBox3D> &neighborRangeRanks,
-      const std::vector<BoxedTilingIndices> &domainOccupancies,
-      std::vector<stk::search::ObjectBoundingBox_T<Box3D> > &boxesA_proc_box_array);
 
   void intersectLocalRangeBoxesWithNeighborBVs(
       std::vector<stk::search::ObjectBoundingBox_T<DomainBox> >& boxA_proc_box_array,
@@ -343,8 +791,8 @@ class GhostingSearcher {
       experimental::GhostingSearchTimeBreakdown& timeBreakdown,
       SplitTimer& stopwatch);
 
-  void intersectLocalRangeBoxesWithNeighborBVsDDRobust(
-      std::vector<stk::search::ObjectBoundingBox_T<Box3D> >& boxA_proc_box_array,
+  void intersectLocalRangeBoxesWithNeighborBVsDDEfficient(
+      std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<typename DomainObjType::value_type>::Box3D> >& boxA_proc_box_array,
       const unsigned numBoxRange,
       const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
       std::vector<std::vector<BoxIdPair> >& send_list,
@@ -353,8 +801,8 @@ class GhostingSearcher {
       SplitTimer& stopwatch);
 
   void commIntersectingRangeBoxesToNeighbors(
-      std::vector<std::vector<BoxIdPair> > send_list,
-      std::vector<std::vector<BoxIdPair> >& recv_list,
+      std::vector<std::vector<BoxIdPair> > &send_list,
+      std::vector<std::vector<BoxIdPair> > &recv_list,
       experimental::GhostingSearchTimeBreakdown& timeBreakdown,
       SplitTimer& stopwatch);
 
@@ -363,10 +811,6 @@ class GhostingSearcher {
       SplitTimer stopwatch, std::vector<RangeIdentifier>& rangeGhostIdentifiers,
       std::vector<RangeBoxType>& rangeBoxes,
       experimental::GhostingSearchTimeBreakdown& timeBreakdown);
-
-  void filterBoxAProcArrayByLocalRange(
-      const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
-      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> >& boxA_proc_box_array);
 };
 
 
@@ -385,56 +829,11 @@ GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>
 
 
 template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
-typename GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>::DomainBox
-GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>::computeGlobalBoundingBox(const DomainBox &box)
-{
-  double minCornerIn[3], maxCornerIn[3];
-  minCornerIn[0] = box.get_x_min();
-  minCornerIn[1] = box.get_y_min();
-  minCornerIn[2] = box.get_z_min();
-  maxCornerIn[0] = box.get_x_max();
-  maxCornerIn[1] = box.get_y_max();
-  maxCornerIn[2] = box.get_z_max();
-
-  double minCornerOut[3], maxCornerOut[3];
-  MPI_Allreduce(minCornerIn, minCornerOut, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
-  MPI_Allreduce(maxCornerIn, maxCornerOut, 3, MPI_DOUBLE, MPI_MAX, mpiComm);
-
-  DomainBox retval(minCornerOut[0], minCornerOut[1], minCornerOut[2],
-                   maxCornerOut[0], maxCornerOut[1], maxCornerOut[2]);
-
-  return retval;
-}
-
-template<typename DomainIdentifier, typename RangeIdentifier,
-    typename DomainObjType, typename RangeBoxType>
-void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType,
-    RangeBoxType>::filterBoxAProcArrayByLocalRange(
-    const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
-    std::vector<stk::search::ObjectBoundingBox_T<DomainBox> >& boxA_proc_box_array)
-{
-  stk::search::Box<typename RangeBoxType::value_type> localRangeAABB;
-  int numRangeBoxes = local_range.size();
-  for (int i = 0; i < numRangeBoxes; ++i) {
-    stk::search::add_to_box(localRangeAABB, local_range[i].first);
-  }
-
-  std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > neighbors;
-  for (int iproc = 0; iproc < pSize; ++iproc) {
-    if ((iproc != pRank) && intersects(boxA_proc_box_array[iproc].GetBox(), localRangeAABB)) {
-      neighbors.push_back(boxA_proc_box_array[iproc]);
-    }
-  }
-
-  boxA_proc_box_array = neighbors;
-}
-
-
-template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
 void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>::findNeighborsFromScratch(
     const std::vector<std::pair<DomainObjType, DomainIdentifier> >& local_domain,
     const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
     std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
+    std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > &boxB_proc_box_array,
     experimental::GhostingSearchTimeBreakdown &timeBreakdown,
     SplitTimer &stopwatch)
 {
@@ -448,7 +847,13 @@ void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBox
   for(unsigned iboxA = 0; iboxA < numBoxDomain; ++iboxA) {
     stk::search::add_to_box(boxA_proc.GetBox(), local_domain[iboxA].first);
   }
-  boxA_proc_box_array[pRank] = boxA_proc;
+
+  stk::search::ObjectBoundingBox_T<RangeBox> boxB_proc;
+  boxB_proc.set_object_number(pRank);
+  const unsigned numBoxRange = local_range.size();
+  for(unsigned iboxB = 0; iboxB < numBoxRange; ++iboxB) {
+    stk::search::add_to_box(boxB_proc.GetBox(), local_range[iboxB].first);
+  }
 
   timeBreakdown.computeProcBoundingVolume += stopwatch.split();
 
@@ -456,50 +861,20 @@ void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBox
   //  Do a global communication to communicate all processor boxA bounding boxes
   //  to all processors in the group
   //
-  instrumented::GlobalBoxCombine(boxA_proc_box_array, mpiComm);
+  stk::search::AllGatherHelper(boxA_proc, boxA_proc_box_array, mpiComm);
   for(int iproc = 0; iproc < pSize; ++iproc) {
     boxA_proc_box_array[iproc].set_object_number(iproc);
   }
-  filterBoxAProcArrayByLocalRange(local_range, boxA_proc_box_array);
+  stk::search::AllGatherHelper(boxB_proc, boxB_proc_box_array, mpiComm);
+  for(int iproc = 0; iproc < pSize; ++iproc) {
+    boxB_proc_box_array[iproc].set_object_number(iproc);
+  }
+
+  filterProcBoundingBoxes(pRank, boxB_proc.GetBox(), boxA_proc_box_array);
+  filterProcBoundingBoxes(pRank, boxA_proc.GetBox(), boxB_proc_box_array);
+
   timeBreakdown.findNeighbors_communicateNeighborObjectBBs += stopwatch.split();
 
-}
-
-
-template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
-void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>::communicateDomainNeighborObjectBoundingBoxes(
-    const std::vector<int> &neighborDomainRanks, const std::vector<int> &neighborRangeRanks,
-    const stk::search::ObjectBoundingBox_T<DomainBox> &domainObjBBox,
-    std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array)
-{
-  typedef stk::search::ObjectBoundingBox_T<DomainBox> ObjBBoxT;
-
-  stk::CommNeighbors commneighbors(mpiComm, neighborRangeRanks, neighborDomainRanks);
-
-  for (int nbrRangeProc : neighborRangeRanks) {
-    stk::CommBufferV& procBuff = commneighbors.send_buffer(nbrRangeProc);
-    procBuff.pack<ObjBBoxT>(domainObjBBox);
-  }
-  commneighbors.communicate();
-  for(int nbrDomProc : neighborDomainRanks) {
-    stk::CommBufferV& procBuff = commneighbors.recv_buffer(nbrDomProc  );
-    ObjBBoxT box;
-    procBuff.unpack(box);
-    boxA_proc_box_array[box.get_object_number()] = box;
-  }
-}
-
-template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
-void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>::communicateDomainNeighborObjectBoundingBoxesDDRobust(
-    const std::vector<OwnedBox3D> &neighborDomainRanks, const std::vector<OwnedBox3D> &neighborRangeRanks,
-    const std::vector<BoxedTilingIndices> &domainOccupancies,
-    std::vector<stk::search::ObjectBoundingBox_T<Box3D> > &boxesA_proc_box_array)
-{
-  typedef stk::search::ObjectBoundingBox_T<Box3D> ObjBoxT;
-
-  for(auto nbrBox : neighborDomainRanks) {
-    boxesA_proc_box_array.push_back(ObjBoxT(nbrBox.box, nbrBox.owner));
-  }
 }
 
 
@@ -508,6 +883,7 @@ void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBox
     const std::vector<std::pair<DomainObjType, DomainIdentifier> >& local_domain,
     const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
     std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
+    std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > &boxB_proc_box_array,
     experimental::GhostingSearchTimeBreakdown &timeBreakdown,
     SplitTimer &stopwatch)
 {
@@ -529,141 +905,65 @@ void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBox
   for(unsigned iboxB = 0; iboxB < numBoxRange; ++iboxB) {
     stk::search::add_to_box(boxB_proc.GetBox(), local_range[iboxB].first);
   }
+  boxB_proc_box_array[pRank] = boxB_proc;
 
-  DomainBox globalDomBox = computeGlobalBoundingBox(boxA_proc.GetBox());
-
-  timeBreakdown.computeProcBoundingVolume += stopwatch.split();
-
-  SuperTile3D tile = {globalDomBox.get_x_max() - globalDomBox.get_x_min(),
-                      globalDomBox.get_y_max() - globalDomBox.get_y_min(),
-                      globalDomBox.get_z_max() - globalDomBox.get_z_min(),
-                      1, 1, 1};
-
-  // optimizeTile3D(tile, pSize);
-  optimizeTile3D(tile, std::max(1, pSize/8));
-
-  // Ghosting Regions are identified by their TilingIndices.
-  // We need find which regions our domain and our range occupies (3D raster).
-  std::vector<TilingIndices> myDomainOccupancies;
-  std::vector<TilingIndices> myRangeOccupancies;
-  rasterizeToTiling(tile, pRank, boxA_proc, myDomainOccupancies);
-  rasterizeToTiling(tile, pRank, boxB_proc, myRangeOccupancies);
-  timeBreakdown.findNeighbors_rasterize += stopwatch.split();
-
-  // In role of Decomp Region: Send Ghosting Regions corresponding myDomainOccupancies info.
-  // In role of Decomp Region: Send Ghosting Regions corresponding myRangeOccupancies info.
-  // In role of Ghosting Region: Receive Domain occupancy info.
-  // In role of Ghosting Region: Receive Range occupancy info.
-  ResidencyMapT myDomainResidents;
-  ResidencyMapT myRangeResidents;
-  findGhostingRegionResidents(tile, mpiComm, pRank, pSize, myDomainOccupancies, myDomainResidents);
-  findGhostingRegionResidents(tile, mpiComm, pRank, pSize, myRangeOccupancies, myRangeResidents);
-  timeBreakdown.findNeighbors_ghostingRegionResidents += stopwatch.split();
-
-  // Now can witness all pairs of (domain_rank, range_rank) neighbor relationships that exist
-  // on my Ghosting Region....
-  // In role of Ghosting Region: send each range_rank the (domain_aabb, domain_rank) information
-  // about its neighbor relationships I witness.
-  // In role of Decomp Region: Receive my neighbor information.
-  std::vector<int> domainRanksNeighboringMyRange, rangeRanksNeighboringMyDomain;
-  witnessAndComputeNeighborRanks(mpiComm, pSize, myDomainResidents, myRangeResidents,
-                                 domainRanksNeighboringMyRange, rangeRanksNeighboringMyDomain);
-  timeBreakdown.findNeighbors_witnessAndComputeNeighbors += stopwatch.split();
-
-  communicateDomainNeighborObjectBoundingBoxes(domainRanksNeighboringMyRange, rangeRanksNeighboringMyDomain,
-                                               boxA_proc, boxA_proc_box_array);
-  filterBoxAProcArrayByLocalRange(local_range, boxA_proc_box_array);
-  timeBreakdown.findNeighbors_communicateNeighborObjectBBs += stopwatch.split();
-
+  findGhostingNeighborsFromScratch(mpiComm, pRank, pSize, boxA_proc, boxB_proc,
+                                   boxA_proc_box_array, boxB_proc_box_array,
+                                   timeBreakdown, stopwatch);
 }
 
 
+template<typename BoxableObjType, typename BoxType, typename IdentType>
+void ComputeBoxVector(const std::vector<std::pair<BoxableObjType, IdentType> >& input,
+                     std::vector<BoxType> &output)
+{
+  const unsigned numObj = input.size();
+  output.resize(input.size());
+  for (unsigned i = 0; i < numObj; ++i) {
+    BoxType box;
+    stk::search::add_to_box(box, input[i].first);
+    output[i] = box;
+  }
+}
+
 
 template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
-void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>::findNeighborsFromScratchDDRobust(
+void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>::findNeighborsFromScratchDDEfficient(
     const std::vector<std::pair<DomainObjType, DomainIdentifier> >& local_domain,
     const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
-    std::vector<stk::search::ObjectBoundingBox_T<Box3D> > &boxesA_proc_box_array,
+    std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<typename DomainObjType::value_type>::Box3D> > &boxesA_proc_box_array,
+    std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<typename RangeBoxType::value_type>::Box3D> > &boxesB_proc_box_array,
     experimental::GhostingSearchTimeBreakdown &timeBreakdown,
     SplitTimer &stopwatch)
 {
+  std::vector<DomainBox> localDomain;
+  std::vector<RangeBox>  localRange;
+  ComputeBoxVector(local_domain, localDomain);
+  ComputeBoxVector(local_range, localRange);
+
   //
   //  Compute the processor local bounding boxes for the box sets
   //  Store the boxes in unique entries in a global processor bounding box array.
   //
   stk::search::ObjectBoundingBox_T<DomainBox> boxA_proc;
   boxA_proc.set_object_number(pRank);
-  const unsigned numBoxDomain = local_domain.size();
+  const unsigned numBoxDomain = localDomain.size();
   for(unsigned iboxA = 0; iboxA < numBoxDomain; ++iboxA) {
-    stk::search::add_to_box(boxA_proc.GetBox(), local_domain[iboxA].first);
+    stk::search::add_to_box(boxA_proc.GetBox(), localDomain[iboxA]);
   }
 
   stk::search::ObjectBoundingBox_T<RangeBox> boxB_proc;
   boxB_proc.set_object_number(pRank);
-  const unsigned numBoxRange = local_range.size();
+  const unsigned numBoxRange = localRange.size();
   for(unsigned iboxB = 0; iboxB < numBoxRange; ++iboxB) {
-    stk::search::add_to_box(boxB_proc.GetBox(), local_range[iboxB].first);
+    stk::search::add_to_box(boxB_proc.GetBox(), localRange[iboxB]);
   }
 
-  DomainBox globalDomBox = computeGlobalBoundingBox(boxA_proc.GetBox());
+  findGhostingNeighborsFromScratchDDEfficient(mpiComm, pRank, pSize, boxA_proc, boxB_proc,
+                                              localDomain, localRange,
+                                              boxesA_proc_box_array, boxesB_proc_box_array,
+                                              timeBreakdown, stopwatch);
 
-  timeBreakdown.computeProcBoundingVolume += stopwatch.split();
-
-  SuperTile3D tile = {globalDomBox.get_x_max() - globalDomBox.get_x_min(),
-                      globalDomBox.get_y_max() - globalDomBox.get_y_min(),
-                      globalDomBox.get_z_max() - globalDomBox.get_z_min(),
-                      1, 1, 1};
-
-  // optimizeTile3D(tile, pSize);
-  optimizeTile3D(tile, std::max(1, pSize/8));
-  // if (pRank == 0) {
-  //   std::cout << "SuperTile3D: dims = (" << tile.xLen << "," << tile.yLen << "," << tile.zLen << ")"
-  //             << "  subtiles = ("  << tile.numXTiles << "," << tile.numYTiles << "," << tile.numZTiles << ")" << std::endl;
-  // }
-
-  // Ghosting Regions are identified by their TilingIndices.
-  // We need find which regions our domain and our range occupies (3D raster).
-  std::vector<BoxedTilingIndices> myDomainOccupanciesDDR;
-  std::vector<BoxedTilingIndices> myRangeOccupanciesDDR;
-  rasterizeToTilingDDRobust(tile, pRank, local_domain, myDomainOccupanciesDDR);
-  rasterizeToTilingDDRobust(tile, pRank, local_range, myRangeOccupanciesDDR);
-
-  // if ((pRank == 0) || (pRank == 63)) {
-  //   std::cout << "p_" << pRank << ": myDomainOccupancies = {";
-  //   for (auto bti : myDomainOccupanciesDDR) {
-  //     std::cout << "{(" << bti.xIdx << "," << bti.yIdx << "," <<  bti.zIdx << ") " << bti.box << "} ";
-  //   }
-  //   std::cout <<"}" << std::endl;
-  // }
-
-  timeBreakdown.findNeighbors_rasterize += stopwatch.split();
-
-  // In role of Decomp Region: Send Ghosting Regions corresponding myDomainOccupancies info.
-  // In role of Decomp Region: Send Ghosting Regions corresponding myRangeOccupancies info.
-  // In role of Ghosting Region: Receive Domain occupancy info.
-  // In role of Ghosting Region: Receive Range occupancy info.
-  ResidencyBoxMapT myDomainResidentsDDR;
-  ResidencyBoxMapT myRangeResidentsDDR;
-  findGhostingRegionResidentsDDRobust(tile, mpiComm, pRank, pSize, myDomainOccupanciesDDR, myDomainResidentsDDR);
-  findGhostingRegionResidentsDDRobust(tile, mpiComm, pRank, pSize, myRangeOccupanciesDDR, myRangeResidentsDDR);
-
-  timeBreakdown.findNeighbors_ghostingRegionResidents += stopwatch.split();
-
-  // Now can witness all pairs of (domain_rank, range_rank) neighbor relationships that exist
-  // on my Ghosting Region....
-  // In role of Ghosting Region: send each range_rank the (domain_aabb, domain_rank) information
-  // about its neighbor relationships I witness.
-  // In role of Decomp Region: Receive my neighbor information.
-  std::vector<OwnedBox3D> domainRanksNeighboringMyRangeDDR, rangeRanksNeighboringMyDomainDDR;
-  witnessAndComputeNeighborRanksDDRobust(mpiComm, pSize, myDomainResidentsDDR, myRangeResidentsDDR,
-                                         domainRanksNeighboringMyRangeDDR, rangeRanksNeighboringMyDomainDDR);
-
-  timeBreakdown.findNeighbors_witnessAndComputeNeighbors += stopwatch.split();
-
-  communicateDomainNeighborObjectBoundingBoxesDDRobust(domainRanksNeighboringMyRangeDDR, rangeRanksNeighboringMyDomainDDR,
-                                                       myDomainOccupanciesDDR, boxesA_proc_box_array);
-
-  timeBreakdown.findNeighbors_communicateNeighborObjectBBs += stopwatch.split();
 }
 
 
@@ -704,8 +1004,8 @@ void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType,
 
 template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
 void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType,
-  RangeBoxType>::intersectLocalRangeBoxesWithNeighborBVsDDRobust(
-    std::vector<stk::search::ObjectBoundingBox_T<Box3D> >& boxA_proc_box_array,
+  RangeBoxType>::intersectLocalRangeBoxesWithNeighborBVsDDEfficient(
+    std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<typename DomainObjType::value_type>::Box3D> >& boxA_proc_box_array,
     const unsigned numBoxRange,
     const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
     std::vector<std::vector<BoxIdPair> >& send_list,
@@ -716,7 +1016,7 @@ void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType,
   //  Create a hierarchy of boxA processor bounding boxes.
   //  This hierarchy will be used to search for overlaps between processors and
   //  objects.
-  stk::search::ProximitySearchTree_T<Box3D> boxA_box_hierarchy(
+  stk::search::ProximitySearchTree_T<typename GS_Types<typename DomainObjType::value_type>::Box3D> boxA_box_hierarchy(
       boxA_proc_box_array);
 
   //  Determine what to ghost.  If a boxB box from this processor overlaps another processor's
@@ -746,10 +1046,13 @@ template<typename DomainIdentifier, typename RangeIdentifier,
     typename DomainObjType, typename RangeBoxType>
 void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType,
     RangeBoxType>::commIntersectingRangeBoxesToNeighbors(
-    std::vector<std::vector<BoxIdPair> > send_list,
-    std::vector<std::vector<BoxIdPair> >& recv_list,
+    std::vector<std::vector<BoxIdPair> > &send_list,
+    std::vector<std::vector<BoxIdPair> > &recv_list,
     experimental::GhostingSearchTimeBreakdown& timeBreakdown,
-    SplitTimer& stopwatch) {
+    SplitTimer& stopwatch)
+{
+  // Deep inside the implementation, there is an MPI_Allreduce, but at 8K ranks,
+  // this is outweighed by each of the current versions of findNeighbors(..).
   stk::parallel_data_exchange_t(send_list, recv_list, mpiComm);
   timeBreakdown.communicateRangeBoxesToNeighbors += stopwatch.split();
 }
@@ -786,6 +1089,7 @@ GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>
     experimental::GhostingSearchTimeBreakdown &timeBreakdown,
     FindNeighborsAlgorithmChoice findNeighborsAlgorithm)
 {
+  typedef typename DomainObjType::value_type ValT;
   // Pretend-o-type for TDD.
 
   const unsigned numBoxRange  = local_range.size();
@@ -803,41 +1107,36 @@ GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>
   SplitTimer stopwatch;
 
   std::vector<std::vector<BoxIdPair> > recv_list(pSize);
+  std::vector<std::vector<BoxIdPair> > send_list(pSize);
 
-  if (findNeighborsAlgorithm == SCALABLE_AND_DISCONTINUOUS_DECOMP_ROBUST_FIND_NEIGHBORS) {
-    std::vector<stk::search::ObjectBoundingBox_T<Box3D> > boxA_proc_box_array;
-    findNeighborsFromScratchDDRobust(local_domain, local_range, boxA_proc_box_array,
-                                     timeBreakdown, stopwatch);
-    std::vector<std::vector<BoxIdPair> > send_list(pSize);
-    intersectLocalRangeBoxesWithNeighborBVsDDRobust(boxA_proc_box_array, numBoxRange,
+  if (findNeighborsAlgorithm == SCALABLE_AND_DISCONTINUOUS_DECOMP_EFFICIENT_FIND_NEIGHBORS) {
+    std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<ValT>::Box3D> > boxA_proc_box_array(pSize);
+    std::vector<stk::search::ObjectBoundingBox_T<typename GS_Types<ValT>::Box3D> > boxB_proc_box_array(pSize);
+    findNeighborsFromScratchDDEfficient(local_domain, local_range,
+                                        boxA_proc_box_array, boxB_proc_box_array,
+                                        timeBreakdown, stopwatch);
+    intersectLocalRangeBoxesWithNeighborBVsDDEfficient(boxA_proc_box_array, numBoxRange,
                                                     local_range, send_list, rangeBoxes,
                                                     timeBreakdown, stopwatch);
-    commIntersectingRangeBoxesToNeighbors(send_list, recv_list, timeBreakdown,
-                                          stopwatch);
   }
-  else if (findNeighborsAlgorithm == SCALABLE_FIND_NEIGHBORS){
+  else {
     std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array(pSize);
-    findNeighborsFromScratchScalable(local_domain, local_range, boxA_proc_box_array,
-                                    timeBreakdown, stopwatch);
-    std::vector<std::vector<BoxIdPair> > send_list(pSize);
+    std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > boxB_proc_box_array(pSize);
+    if (findNeighborsAlgorithm == SCALABLE_FIND_NEIGHBORS){
+      findNeighborsFromScratchScalable(local_domain, local_range, boxA_proc_box_array, boxB_proc_box_array,
+                                       timeBreakdown, stopwatch);
+    }
+    else { // ORIGINAL_FIND_NEIGHBORS
+      findNeighborsFromScratch(local_domain, local_range, boxA_proc_box_array, boxB_proc_box_array,
+                               timeBreakdown, stopwatch);
+    }
     intersectLocalRangeBoxesWithNeighborBVs(boxA_proc_box_array, numBoxRange,
                                             local_range, send_list, rangeBoxes,
                                             timeBreakdown, stopwatch);
-    commIntersectingRangeBoxesToNeighbors(send_list, recv_list, timeBreakdown,
-                                          stopwatch);
-  }
-  else { // ORIGINAL_FIND_NEIGHBORS
-    std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array(pSize);
-    findNeighborsFromScratchScalable(local_domain, local_range, boxA_proc_box_array,
-                                    timeBreakdown, stopwatch);
-    std::vector<std::vector<BoxIdPair> > send_list(pSize);
-    intersectLocalRangeBoxesWithNeighborBVs(boxA_proc_box_array, numBoxRange,
-                                            local_range, send_list, rangeBoxes,
-                                            timeBreakdown, stopwatch);
-    commIntersectingRangeBoxesToNeighbors(send_list, recv_list, timeBreakdown,
-                                          stopwatch);
   }
 
+  commIntersectingRangeBoxesToNeighbors(send_list, recv_list, timeBreakdown,
+                                        stopwatch);
   writeRangeBoxesAndGhostIdentifiers(recv_list, stopwatch,
                                      rangeGhostIdentifiers, rangeBoxes,
                                      timeBreakdown);
@@ -861,5 +1160,12 @@ GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>
 
 
 }}}
+
+
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const typename stk::search::experimental::GS_Types<T>::BoxedTilingIndices &bti) {
+  os << "{(" << bti.xIdx << " " << bti.yIdx << " " << bti.zIdx << ") " << bti.box << "}";
+  return os;
+}
 
 #endif // PROTOTYPE_SEARCH_UTILS_INSTRUMENTED_H_

@@ -20,9 +20,9 @@
 #define __AVX_X__
 #endif
 
-//## #if defined(__AVX512F__)
-//## #define __AVX512_X__
-//## #endif
+#if defined(__AVX512F__)
+#define __AVX512_X__
+#endif
 
 #else // using cuda
 
@@ -45,14 +45,9 @@
 #define USE_STK_SIMD_AUTO // default to SSE or less capability
 #endif
 
-#ifdef USE_STK_SIMD_NONE
+#define STK_NO_SIMD
 
-#  define STK_NO_SIMD
-#  ifdef STK_SIMD
-#    undef STK_SIMD
-#  endif
-
-#else
+#ifndef USE_STK_SIMD_NONE
 
 #  if defined (USE_STK_SIMD_SSE)
 #    if defined(__SSE_23__) || defined(__SSE4_X__) || defined(__x86_64__)
@@ -80,9 +75,7 @@
 
 #  if defined(STK_SIMD_SSE) || defined(STK_SIMD_AVX) || defined(STK_SIMD_AVX512)
 #    define STK_SIMD
-#    ifdef STK_NO_SIMD
-#      undef STK_NO_SIMD
-#    endif
+#    undef STK_NO_SIMD
 #  endif
 
 #  if defined(STK_SIMD_SSE) && defined(STK_SIMD_AVX)

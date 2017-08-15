@@ -1,4 +1,4 @@
-#include <mpi.h>
+#include "mpi.h"
 #include <stk_util/command_line/CommandLineParser.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>

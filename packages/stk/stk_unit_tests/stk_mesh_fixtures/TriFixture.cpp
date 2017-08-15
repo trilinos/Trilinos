@@ -85,6 +85,38 @@ TriFixture::TriFixture(   stk::ParallelMachine pm
 
 }
 
+TriFixture::TriFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , const std::string& coordsName
+              , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
+              , ConnectivityMap const* connectivity_map
+            )
+  : m_spatial_dimension(2),
+    m_nx(nx),
+    m_ny(ny),
+    m_meta( m_spatial_dimension ),
+    m_bulk_data(  m_meta
+                , pm
+                , autoAuraOption
+#ifdef SIERRA_MIGRATION
+                , false
+#endif
+                , connectivity_map
+               ),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("tri_part", stk::topology::TRI_3) ),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, coordsName) )
+{
+
+  //put coord-field on all nodes:
+  put_field(
+    m_coord_field,
+    m_meta.universal_part(),
+    m_spatial_dimension);
+
+}
+
 void TriFixture::generate_mesh()
 {
   std::vector<size_t> quad_range_on_this_processor;

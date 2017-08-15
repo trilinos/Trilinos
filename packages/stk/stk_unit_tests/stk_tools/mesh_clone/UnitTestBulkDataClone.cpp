@@ -490,6 +490,8 @@ TEST(BulkDataSize, sizeChanges_needToUpdateCopyMesh)
 // KHP: different versions of gcc give different values for the sizeof bulk.
 #if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
     EXPECT_EQ(1200u, sizeof(bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";
+#elif (__GNUC__ == 7)
+    EXPECT_EQ(1240u, sizeof(bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";
 #else
 #if defined(__clang__)
     EXPECT_EQ(1200u, sizeof(bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";

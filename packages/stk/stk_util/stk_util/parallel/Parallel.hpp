@@ -44,7 +44,7 @@
 
 #if defined( STK_HAS_MPI )
 
-#include <mpi.h>
+#include "mpi.h"
 
 namespace stk {
 

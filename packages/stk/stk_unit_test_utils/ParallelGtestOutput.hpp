@@ -1,7 +1,7 @@
 #ifndef STK_PARALLEL_GTEST_OUTPUT_H
 #define STK_PARALLEL_GTEST_OUTPUT_H
 
-#include <mpi.h>
+#include "mpi.h"
 
 namespace stk
 {

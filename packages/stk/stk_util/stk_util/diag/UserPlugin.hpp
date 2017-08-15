@@ -48,8 +48,6 @@ namespace stk { namespace diag { class Writer; } }
 
 
 /**
- * @file
- *
  * Historically, the term User Subroutine has referred to Fortran subroutines which are
  * generally called from within a procedure, allowing the user to create or select a
  * mathematical calculation to be applied to set of arguments.

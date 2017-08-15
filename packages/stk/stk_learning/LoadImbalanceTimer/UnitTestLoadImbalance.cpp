@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <mpi.h>
+#include "mpi.h"
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_unit_test_utils/getOption.h>

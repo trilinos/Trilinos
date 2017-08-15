@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include <mpi.h>
+#include "mpi.h"
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>

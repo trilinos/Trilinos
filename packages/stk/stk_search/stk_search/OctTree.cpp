@@ -158,64 +158,11 @@ bool OctTreeKey::intersect( const OctTreeKey & k ) const
 }
 
 //----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
-namespace {
-
-const unsigned TreeMaxDepth = 10;
-const unsigned tree_size[TreeMaxDepth+1] = {
-  OctTreeSize< 0>::value ,
-  OctTreeSize< 1>::value ,
-  OctTreeSize< 2>::value ,
-  OctTreeSize< 3>::value ,
-  OctTreeSize< 4>::value ,
-  OctTreeSize< 5>::value ,
-  OctTreeSize< 6>::value ,
-  OctTreeSize< 7>::value ,
-  OctTreeSize< 8>::value ,
-  OctTreeSize< 9>::value ,
-  OctTreeSize<10>::value
-};
-
-}
-
-unsigned oct_tree_size( const unsigned Depth )
-{
-  if ( TreeMaxDepth < Depth )
-    { throw_depth( 0, Depth, TreeMaxDepth ); }
-
-  return tree_size[ Depth ];
-}
-
-unsigned oct_tree_offset( const unsigned Depth , const OctTreeKey & k )
-{
-  if ( TreeMaxDepth < Depth )
-    { throw_depth( 0, Depth, TreeMaxDepth ); }
-
-  unsigned index = 0 ;
-
-  unsigned d = Depth ;
-
-  while ( d ) {
-    --d ;
-    const unsigned i = k.index( Depth - d );
-    if ( i ) { index += 1 + ( i - 1 ) * tree_size[ d ] ; }
-    else     { d = 0 ; } // Stop at a zero index
-  }
-
-  return index ;
-}
-
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
 
 OctTreeKey hsfc3d( const unsigned Depth , const unsigned * const coord )
 {
   // Gray & Inverse Gray coding for 3D octree
 
-/*
-  const unsigned gray_fwd[8] = { 0 , 1 , 3 , 2 , 6 , 7 , 5 , 4 };
-*/
   const unsigned gray_inv[8] = { 0 , 1 , 3 , 2 , 7 , 6 , 4 , 5 };
 
   // Three dimensional HSFC rotation data

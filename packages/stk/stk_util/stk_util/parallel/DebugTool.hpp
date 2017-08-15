@@ -40,16 +40,6 @@
 #include <string>
 #include <iostream>
 
-
-const int STRING_SIZE_TAG = 111;
-const int STRING_TAG = 112;
-const int MESHDATA_SIZE_TAG = 113;
-const int MESHDATA_TAG = 114;
-const int FIELDDATA_SIZE_TAG = 115;
-const int FIELDDATA_TAG = 116;
-//const char *testStringValue = "test string";
-const int oneForNullTerminator = 1;
-
 inline std::string demangleFunctionNames(char** symbollist, int addrlen)
 {
     std::string mangledNamesString("");

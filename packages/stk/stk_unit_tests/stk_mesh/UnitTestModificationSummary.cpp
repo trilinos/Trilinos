@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>                // for TEST
-#include <mpi.h>                        // for MPI_COMM_WORLD, etc
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/ModificationSummary.hpp>
 #include <string>                       // for string

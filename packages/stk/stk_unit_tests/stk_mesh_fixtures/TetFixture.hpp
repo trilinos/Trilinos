@@ -89,6 +89,15 @@ class TetFixture
               , ConnectivityMap const* connectivity_map = NULL
             );
 
+  TetFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , size_t nz
+              , const std::string& coordsName
+              , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
+              , ConnectivityMap const* connectivity_map = NULL
+            );
+
   ~TetFixture();
 
   const int         m_spatial_dimension;

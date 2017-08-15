@@ -33,18 +33,20 @@
 // 
  */
 
-#include <stk_util/stk_config.h>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <stk_util/parallel/mpi_filebuf.hpp>
 #include <assert.h>
 
 #if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
 #include <aprepro.h>
 #include <apr_tokenize.h>
 #endif
+
+#include <stk_util/stk_config.h>
+#include <stk_util/parallel/mpi_filebuf.hpp>
+#include <stk_util/environment/Env.hpp>
 
 enum { buffer_default_length = 4096 };
 enum { buffer_putback_length =   16 };
@@ -194,6 +196,7 @@ mpi_filebuf * mpi_filebuf::open(
       }
 
       SEAMS::Aprepro aprepro;
+      aprepro.set_error_streams(&sierra::Env::output(), &sierra::Env::output(), &sierra::Env::output());
 
       add_aprepro_defines(aprepro, aprepro_defines);
 

@@ -2,7 +2,7 @@
 #define STK_ELEM_GRAPH_SHELL_CONNECTIONS_HPP
 
 #include <vector>
-#include <mpi.h>
+#include "mpi.h"
 #include "GraphEdgeData.hpp"
 #include "ElemElemGraphImpl.hpp"
 

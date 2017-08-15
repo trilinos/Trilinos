@@ -105,11 +105,7 @@ namespace {
 	  stk::io::MeshField mf(pressure, dbFieldNameShell);
 	  mf.set_read_time(time);
 	  mf.add_subset(*all_parts[i]);
-#if 0
-	  stkIo.read_input_field(mf);
-#else
 	  stkIo.add_input_field(mf);
-#endif
 	}
       }
 

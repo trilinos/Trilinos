@@ -5,10 +5,11 @@
 #include <omp.h>
 #endif
 
-#include <stk_search/OctTreeOps.hpp>
+#include <set>
 #include "stk_util/environment/WallTime.hpp"
 #include "stk_search/KDTree_BoundingBox.hpp"
 #include "stk_search/KDTree.hpp"
+#include "stk_search/CommonSearchUtil.hpp"
 
 namespace stk {
   namespace search {
@@ -48,7 +49,7 @@ namespace stk {
           = communicateRangeBoxesToNeighbors = writeRangeBoxesAndGhostIdentifiers = 0.0;
     }
 
-    std::ostream &streamit(std::ostream &os) {
+    std::ostream &streamit(std::ostream &os) const {
       std::cout << "    computeProcBoundingVolume = " << computeProcBoundingVolume << std::endl
                 << "                findNeighbors = " << findNeighbors << std::endl
                 << "    isectLocalRngBsWithNbrBVs = " << intersectLocalRangeBoxesWithNeighborBVs << std::endl
@@ -178,18 +179,23 @@ namespace stk {
     }
 #endif
 
-    std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array(num_procs);
-    boxA_proc_box_array[current_proc] = boxA_proc;
-
+    std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array;
+    boxA_proc_box_array.reserve(num_procs);
     timeBreakdown.computeProcBoundingVolume += stopwatch.split();
 
     //
     //  Do a global communication to communicate all processor boxA bounding boxes
     //  to all processors in the group
     //
-    instrumented::GlobalBoxCombine(boxA_proc_box_array, comm);
+    std::vector<DomainBox> boxGather;
+
+    stk::search::AllGatherHelper(boxA_proc.GetBox(), boxGather, comm);
+
+
+
+
     for(int iproc = 0; iproc < num_procs; ++iproc) {
-      boxA_proc_box_array[iproc].set_object_number(iproc);
+      boxA_proc_box_array.emplace_back(boxGather[iproc], iproc);
     }
     timeBreakdown.findNeighbors += stopwatch.split();
 

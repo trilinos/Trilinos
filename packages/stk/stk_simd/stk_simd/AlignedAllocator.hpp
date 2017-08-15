@@ -23,15 +23,15 @@ struct AlignedAllocator
   template <class U>
   struct rebind { typedef AlignedAllocator<U,Alignment> other; };
 
-  AlignedAllocator() throw() { }
+  AlignedAllocator() noexcept { }
 
-  AlignedAllocator(const AlignedAllocator& other) throw()
+  AlignedAllocator(const AlignedAllocator& other) noexcept
     : std::allocator<T>(other) { }
 
   template <class U>
-  AlignedAllocator(const AlignedAllocator<U,Alignment>&) throw() { }
+  AlignedAllocator(const AlignedAllocator<U,Alignment>&) noexcept { }
 
-  ~AlignedAllocator() throw() { }
+  ~AlignedAllocator() noexcept { }
 
   inline pointer allocate(size_type n) {
     return allocate(n, const_pointer(0));

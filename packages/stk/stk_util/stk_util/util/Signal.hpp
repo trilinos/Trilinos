@@ -39,8 +39,6 @@
 #include <setjmp.h>
 
 /**
- * @file
- *
  * Signal handling is enabled via the <b>activate_signals()</b> function.  The
  * following signal behaviors are actived:
  *
@@ -49,10 +47,7 @@
  *	SEGV		Long jumps with Segmentation violation error message.
  *	BUS		Long jumps with Bus error message.
  *	ILL		Long jumps with Illegal instruction error message.
- *
- *
  */
-
 namespace sierra {
 namespace Env {
 

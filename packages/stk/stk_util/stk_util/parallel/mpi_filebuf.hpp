@@ -32,13 +32,13 @@
 // 
 
 
-#ifndef STK_UTIL_PARALLEL_mpi_filebuf_hpp
-#define STK_UTIL_PARALLEL_mpi_filebuf_hpp
+#ifndef STK_UTIL_PARALLEL_MPI_FILEBUF_HPP
+#define STK_UTIL_PARALLEL_MPI_FILEBUF_HPP
 
 #include <stk_util/stk_config.h>
 
 #if defined( STK_HAS_MPI )
-#include <mpi.h>                        // for MPI_Comm, etc
+#include "mpi.h"                        // for MPI_Comm, etc
 #endif
 #include <stddef.h>                     // for size_t
 #include <cstdio>                       // for NULL, EOF, FILE
@@ -149,13 +149,9 @@ private:
 
 inline int  mpi_filebuf::is_open() const { return nullptr != comm_buffer ; }
 
-/* The SUN has the 'streambuf::pptr()' as a non-const method,
-   which violates the ISO/ANSI standard specification.
-   Therefore, must cast away the const. */
-
 inline void mpi_filebuf::get_buffer( const char * & b , size_t & n ) const
 { b = comm_buffer ; n = (const_cast<mpi_filebuf*>(this))->pptr() - comm_buffer ; }
 
 inline double mpi_filebuf::wtime() const { return comm_time ; }
 
-#endif // STK_UTIL_PARALLEL_mpi_filebuf_hpp
+#endif // STK_UTIL_PARALLEL_MPI_FILEBUF_HPP
