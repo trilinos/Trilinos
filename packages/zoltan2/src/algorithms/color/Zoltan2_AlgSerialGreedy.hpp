@@ -61,6 +61,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
   private:
     typedef typename Adapter::lno_t lno_t;
     typedef typename Adapter::gno_t gno_t;
+    typedef typename Adapter::offset_t offset_t;
     typedef typename Adapter::scalar_t scalar_t;
     // Class member variables
     RCP<GraphModel<typename Adapter::base_adapter_t> > model_;
@@ -88,7 +89,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     // Color local graph. Global coloring is supported in Zoltan (not Zoltan2).
     // Get local graph.
     ArrayView<const gno_t> edgeIds;
-    ArrayView<const lno_t> offsets;
+    ArrayView<const offset_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts; // Not used; needed by getLocalEdgeList
   
     const size_t nVtx = model_->getLocalNumVertices(); // Assume (0,nvtx-1)
@@ -120,14 +121,14 @@ class AlgSerialGreedy : public Algorithm<Adapter>
   void colorCrsGraph(
     const size_t nVtx,
     ArrayView<const gno_t> edgeIds,
-    ArrayView<const lno_t> offsets,
+    ArrayView<const offset_t> offsets,
     ArrayRCP<int> colors
   )
   {
     HELLO;
   
     // Find max degree, since (max degree)+1 is an upper bound.
-    lno_t maxDegree = 0; 
+    offset_t maxDegree = 0; 
     for (size_t i=0; i<nVtx; i++){
       if (offsets[i+1]-offsets[i] > maxDegree)
         maxDegree = offsets[i+1]-offsets[i];
@@ -151,7 +152,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     for (size_t i=0; i<nVtx; i++){
       //std::cout << "Debug: i= " << i << std::endl;
       lno_t v=i; // TODO: Use ordering here.
-      for (lno_t j=offsets[v]; j<offsets[v+1]; j++){
+      for (offset_t j=offsets[v]; j<offsets[v+1]; j++){
         gno_t nbor = edgeIds[j];
         //std::cout << "Debug: nbor= " << nbor << ", color= " << colors[nbor] << std::endl;
         if (colors[nbor] > 0){

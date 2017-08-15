@@ -81,6 +81,7 @@ int AlgSpectral(
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr= 0;
@@ -98,7 +99,7 @@ int AlgSpectral(
 
   // Get local graph.
   ArrayView<const gno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
   model->getEdgeList(edgeIds, offsets, wgts);

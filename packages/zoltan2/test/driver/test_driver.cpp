@@ -357,7 +357,7 @@ bool run(const UserInputForTests &uinput,
     lno_t localNumObj = xscrsGraphAdapter->getLocalNumVertices();
     const gno_t *vertexIds;
     xscrsGraphAdapter->getVertexIDsView(vertexIds);
-    const lno_t *offsets;
+    const offset_t *offsets;
     const gno_t *adjIds;
     xscrsGraphAdapter->getEdgesView(offsets, adjIds);
     for (int edim = 0; edim < ewgtDim; edim++) {
@@ -365,7 +365,7 @@ bool run(const UserInputForTests &uinput,
       int stride=0;
       xscrsGraphAdapter->getEdgeWeightsView(weights, stride, edim);
       for (lno_t i=0; i < localNumObj; i++)
-        for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
+        for (offset_t j=offsets[i]; j < offsets[i+1]; j++)
           std::cout << edim << " " << vertexIds[i] << " " 
                     << adjIds[j] << " " << weights[stride*j] << std::endl;
     }

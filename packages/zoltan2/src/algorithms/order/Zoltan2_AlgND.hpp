@@ -423,6 +423,7 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
   std::cout << "HI1" << std::endl;
 
   typedef typename Adapter::lno_t lno_t;         // local ids
+  typedef typename Adapter::offset_t offset_t;   // offset_t
   typedef typename Adapter::scalar_t scalar_t;   // scalars
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -430,7 +431,7 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
 
   //Teuchos ArrayView
   ArrayView< const lno_t > eIDs;
-  ArrayView< const lno_t > vOffsets;
+  ArrayView< const offset_t > vOffsets;
   ArrayView< input_t > wgts;
 
   // For some reason getLocalEdgeList seems to be returning empty eIDs
@@ -468,7 +469,7 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
 
     //Loop over edges connected to v1
     //MMW figure out how to get this from Zoltan2
-    for(int j=vOffsets[v1];j<vOffsets[v1+1];j++)
+    for(offset_t j=vOffsets[v1];j<vOffsets[v1+1];j++)
     {
 
       int v2 = eIDs[j];

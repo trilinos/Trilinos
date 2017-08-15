@@ -189,11 +189,11 @@ namespace Zoltan2_TestingFramework {
   typedef Zoltan2::BasicVectorAdapter<tMVector_t>         basic_vector_adapter;
 
 #ifdef HAVE_ZOLTAN2_PAMGEN
-  typedef Zoltan2::PamgenMeshAdapter<tMVector_t>          pamgen_adapter_t;
+  typedef Zoltan2::PamgenMeshAdapter<userTypes_t>          pamgen_adapter_t;
 #else
   // This typedef exists only to satisfy the compiler.
   // PamgenMeshAdapter cannot be used when Trilinos is not built with Pamgen
-  typedef Zoltan2::BasicVectorAdapter<tMVector_t>         pamgen_adapter_t;
+  typedef Zoltan2::BasicVectorAdapter<userTypes_t>         pamgen_adapter_t;
 #endif
 
 // when test objects are created they set an enum to define the adapter type
