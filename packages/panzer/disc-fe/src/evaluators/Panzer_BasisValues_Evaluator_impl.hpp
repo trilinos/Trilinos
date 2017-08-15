@@ -150,15 +150,6 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
     }
   }
 
-  // inject orientations as needed
-  if(   basis->getElementSpace()==panzer::PureBasis::HCURL
-     || basis->getElementSpace()==panzer::PureBasis::HDIV) {
-    std::string orientationFieldName = basis->name()+" Orientation";
-    orientation = PHX::MDField<const ScalarT,panzer::Cell,panzer::BASIS>(orientationFieldName,
-                                                                         basis->functional);
-    this->addDependentField(orientation);
-  }
-
   std::string n = "BasisValues_Evaluator: " +basis->name() + "_" + pointRule->getName();
   this->setName(n);
 }
@@ -168,7 +159,7 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
 {
   int space_dim = basis->dimension();
 
-  orientations_ = sd.orientations_;
+  orientations = sd.orientations_;
 
   basisValues->setExtendedDimensions(fm.template getKokkosExtendedDataTypeDimensions<EvalT>());
 
@@ -214,10 +205,6 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
     }
   }
 
-  if(   basis->getElementSpace()==panzer::PureBasis::HCURL
-     || basis->getElementSpace()==panzer::PureBasis::HDIV) {
-    this->utils.setFieldData(orientation,fm);        
-  }
 }
 
 //**********************************************************************
@@ -229,12 +216,13 @@ PHX_EVALUATE_FIELDS(BasisValues_Evaluator,workset)
                               pointValues.jac_det,
                               pointValues.jac_inv);
 
-  if(   basis->getElementSpace()==panzer::PureBasis::HCURL
-     || basis->getElementSpace()==panzer::PureBasis::HDIV) {
-
-    std::cout << "ORIENTATION PTR = " << orientations_ << std::endl;
-    std::cout << "ORIENTATION cnt = " << orientations_->size() << std::endl;
-    basisValues->applyOrientations(*orientations_);
+  // we need to access to intrepid_basis in basisValues
+  if (basis->requiresOrientations()) {
+    WorksetDetails & details = workset;
+    std::vector<Intrepid2::Orientation> orts;
+    for (int k=0;k<workset.num_cells;++k) 
+      orts.push_back(orientations->at(details.cell_local_ids[k]));
+    basisValues->applyOrientations(*orientations);
   }
 }
 

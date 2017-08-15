@@ -63,8 +63,6 @@ PANZER_EVALUATOR_CLASS(BasisValues_Evaluator)
   PointValues2<ScalarT> pointValues;
   PointValues2<const ScalarT> constPointValues;
 
-  PHX::MDField<const ScalarT,panzer::Cell,panzer::BASIS> orientation;
-
   bool derivativesRequired_;
  
   //! Initialization method to unify the constructors.
@@ -80,7 +78,7 @@ public:
                         const Teuchos::RCP<const panzer::PureBasis> & basis,
                         bool derivativesRequired);
 
-  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations_;
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 
 PANZER_EVALUATOR_CLASS_END
 
