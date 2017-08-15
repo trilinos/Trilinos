@@ -144,9 +144,6 @@ namespace Intrepid2 {
 
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(input.dimension(1)) != basis->getCardinality(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
-      if (input.rank() == 4)
-        INTREPID2_TEST_FOR_EXCEPTION( input.dimension(3) != basis->getBaseCellTopology().getDimension(), std::invalid_argument,
-                                      ">>> ERROR (OrientationTools::modifyBasisByOrientation): Space dimension of input/output does not match to topology dimension.");
     }
 #endif
     if (basis->requireOrientation()) {
