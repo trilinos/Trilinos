@@ -216,13 +216,15 @@ PHX_EVALUATE_FIELDS(BasisValues_Evaluator,workset)
                               pointValues.jac_det,
                               pointValues.jac_inv);
 
-  // we need to access to intrepid_basis in basisValues
-  if (basis->requiresOrientations()) {
+  // this can be over-ridden in basisValues e.g., DG element setting
+  if(basis->requiresOrientations()) {
     WorksetDetails & details = workset;
-    std::vector<Intrepid2::Orientation> orts;
-    for (int k=0;k<workset.num_cells;++k) 
-      orts.push_back(orientations->at(details.cell_local_ids[k]));
-    basisValues->applyOrientations(*orientations);
+    
+    std::vector<Intrepid2::Orientation> ortPerWorkset;
+    for (index_t c=0;c<workset.num_cells;++c)
+      ortPerWorkset.push_back((*orientations)[details.cell_local_ids[c]]);
+    
+    basisValues->applyOrientations(ortPerWorkset);
   }
 }
 

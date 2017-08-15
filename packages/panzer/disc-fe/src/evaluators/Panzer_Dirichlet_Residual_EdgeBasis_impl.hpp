@@ -83,11 +83,6 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   dof      = PHX::MDField<const ScalarT,Cell,Point,Dim>(dof_name, vector_layout_dof);
   value    = PHX::MDField<const ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
 
-  // setup the orientation field
-  std::string orientationFieldName = basis->name() + " Orientation";
-  dof_orientation = PHX::MDField<const ScalarT,Cell,BASIS>(orientationFieldName,
-	                                                   basis_layout);
-
   // setup all basis fields that are required
 
   // setup all fields to be evaluated and constructed
@@ -101,7 +96,6 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
-  this->addDependentField(dof_orientation);
   this->addDependentField(value);
  
   std::string n = "Dirichlet Residual Edge Basis Evaluator";
@@ -109,15 +103,20 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,worksets,fm)
+PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,sd,fm)
 {
+  orientations = sd.orientations_;
+
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(dof,fm);
-  this->utils.setFieldData(dof_orientation,fm);
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  edgeTan = Kokkos::createDynRankView(residual.get_static_view(),"edgeTan",dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  edgeTan = Kokkos::createDynRankView(residual.get_static_view(),
+                                      "edgeTan",
+                                      dof.dimension(0),
+                                      dof.dimension(1),
+                                      dof.dimension(2));
 }
 
 //**********************************************************************
@@ -128,73 +127,49 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
 
   residual.deep_copy(ScalarT(0.0));
 
-  if(workset.subcell_dim==1) {
+  // basic cell topology data
+  const shards::CellTopology & parentCell = *basis->getCellTopology();
+  const int cellDim = parentCell.getDimension();
+
+  // edge only, subcellOrd only counts edge enumeration
+  const int subcellDim = 1;
+  const int subcellOrd = this->wda(workset).subcell_index;
+
+  const int numEdges = parentCell.getSubcellCount(subcellDim);
+  const int numEdgeDofs = dof.extent_int(1);
+
+  TEUCHOS_ASSERT(cellDim == dof.extent_int(2));
+
+  if (workset.num_cells<=0) 
+    return;
+  else {
     Intrepid2::CellTools<PHX::exec_space>::getPhysicalEdgeTangents(edgeTan,
                                                                    pointValues.jac.get_view(),
-                                                                   this->wda(workset).subcell_index, 
-                                                                   *basis->getCellTopology());
+                                                                   subcellOrd,
+                                                                   parentCell);
 
+    const auto subcellTopo = shards::CellTopology(parentCell.getBaseCellTopologyData(subcellDim, subcellOrd));
+    TEUCHOS_ASSERT(subcellTopo.getBaseKey() == shards::Line<>::key);
+
+    WorksetDetails & details = workset;
+
+    int edgeOrts[12] = {};
     for(index_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.extent_int(1);b++) {
-        for(int d=0;d<dof.extent_int(2);d++)
+      const auto ort = orientations->at(details.cell_local_ids[c]);
+      ort.getEdgeOrientation(edgeOrts, numEdges);
+
+      const double ortVal = edgeOrts[subcellOrd] == 1 ? -1.0 : 1.0;
+      for(int b=0;b<numEdgeDofs;b++) {
+        // residual(c,b) += ScalarT(0.0); // not sure if residual is accumulated or not
+        for(int d=0;d<cellDim;d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
+        // if residual is accumulated this value should be individually computed and added later to residual
+        residual(c,b) *= ortVal;
       } 
-    }
-  }
-  else if(workset.subcell_dim==2) {
-    // we need to compute the tangents on each edge for each cell.
-    // how do we do this????
-    const shards::CellTopology & parentCell = *basis->getCellTopology();
-    int cellDim = parentCell.getDimension();
-    int numEdges = dof.extent_int(1);
-
-    refEdgeTan = Kokkos::createDynRankView(residual.get_static_view(),"refEdgeTan",numEdges,cellDim);
-
-    for(int i=0;i<numEdges;i++) {
-      Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
-      Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
-
-      for(int d=0;d<cellDim;d++) 
-        refEdgeTan(i,d) = refEdgeTan_local(d);
-    }
-
-    // Loop over workset faces and edge points
-    for(index_t c=0;c<workset.num_cells;c++) {
-      for(int pt = 0; pt < numEdges; pt++) {
-
-        // Apply parent cell Jacobian to ref. edge tangent
-        for(int i = 0; i < cellDim; i++) {
-          edgeTan(c, pt, i) = 0.0;
-          for(int j = 0; j < cellDim; j++){
-            edgeTan(c, pt, i) +=  pointValues.jac(c, pt, i, j)*refEdgeTan(pt,j);
-          }// for j
-        }// for i
-      }// for pt
-    }// for pCell
-
-    for(index_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.extent_int(1);b++) {
-        for(int d=0;d<dof.extent_int(2);d++)
-          residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
-      } 
-    }
-
-  }
-  else {
-    // don't know what to do 
-    TEUCHOS_ASSERT(false);
-  }
-
-  // loop over residuals scaling by orientation. This gurantees
-  // everything is oriented in the "positive" direction, this allows
-  // sums acrossed processor to be oriented in the same way (right?)
-  for(index_t c=0;c<workset.num_cells;c++) {
-    for(int b=0;b<dof.extent_int(1);b++) {
-      residual(c,b) *= dof_orientation(c,b);
     }
   }
 }
-
+  
 //**********************************************************************
 
 }

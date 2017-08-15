@@ -1126,7 +1126,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
                                                                    "drv_curl_basis_scalar_tmp", 
                                                                    drv_curl_basis_scalar.dimension(0),  // C
                                                                    drv_curl_basis_scalar.dimension(1),  // F
-                                                                   drv_curl_basis_scalar.dimension(2));  // P
+                                                                   drv_curl_basis_scalar.dimension(2));  // P        
         Kokkos::deep_copy(drv_curl_basis_scalar_tmp, drv_curl_basis_scalar);
         ots::modifyBasisByOrientation(drv_curl_basis_scalar, 
                                       drv_curl_basis_scalar_tmp, 
@@ -1140,8 +1140,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
                                                                    "drv_curl_basis_scalar_tmp", 
                                                                    drv_curl_basis_scalar.dimension(0),  // C
                                                                    drv_curl_basis_scalar.dimension(1),  // F
-                                                                   drv_curl_basis_scalar.dimension(2));  // P
-        
+                                                                   drv_curl_basis_scalar.dimension(2));  // P        
         Kokkos::deep_copy(drv_curl_basis_scalar_tmp, drv_curl_basis_scalar);
         ots::modifyBasisByOrientation(drv_curl_basis_scalar, 
                                       drv_curl_basis_scalar_tmp, 
@@ -1194,7 +1193,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
                                                                    drv_curl_basis_vector.dimension(0),  // C
                                                                    drv_curl_basis_vector.dimension(1),  // F
                                                                    drv_curl_basis_vector.dimension(2),  // P
-                                                                   drv_curl_basis_vector.dimension(3));  // D
+                                                                   drv_curl_basis_vector.dimension(3));  // D        
         Kokkos::deep_copy(drv_curl_basis_vector_tmp, drv_curl_basis_vector);
         ots::modifyBasisByOrientation(drv_curl_basis_vector, 
                                       drv_curl_basis_vector_tmp, 
@@ -1208,7 +1207,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
                                                                    drv_curl_basis_vector.dimension(0),  // C
                                                                    drv_curl_basis_vector.dimension(1),  // F
                                                                    drv_curl_basis_vector.dimension(2),  // P
-                                                                   drv_curl_basis_vector.dimension(3));  // D
+                                                                   drv_curl_basis_vector.dimension(3));  // D        
         Kokkos::deep_copy(drv_curl_basis_vector_tmp, drv_curl_basis_vector);
         ots::modifyBasisByOrientation(drv_curl_basis_vector, 
                                       drv_curl_basis_vector_tmp, 
@@ -1258,7 +1257,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
                                                            "drv_div_basis_tmp", 
                                                            drv_div_basis.dimension(0),  // C
                                                            drv_div_basis.dimension(1),  // F
-                                                           drv_div_basis.dimension(2));  // P
+                                                           drv_div_basis.dimension(2));  // P        
         Kokkos::deep_copy(drv_div_basis_tmp, drv_div_basis);
         ots::modifyBasisByOrientation(drv_div_basis, 
                                       drv_div_basis_tmp, 
@@ -1287,7 +1286,9 @@ template <typename Scalar>
 void BasisValues2<Scalar>::
 applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations)
 {
+
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"panzer::BasisValues2::applyOrientations : this should not be called.");
+
   int num_cell  = orientations.dimension(0);
   int num_basis = orientations.dimension(1);
   int num_dim   = basis_layout->dimension();
