@@ -95,6 +95,7 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
+  typedef typename InputTraits<User>::offset_t offset_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
@@ -238,7 +239,7 @@ public:
   }
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
-		   const lno_t *&offsets, const gno_t *& adjacencyIds) const
+		   const offset_t *&offsets, const gno_t *& adjacencyIds) const
   {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
@@ -292,7 +293,7 @@ public:
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const lno_t *&offsets, const gno_t *&adjacencyIds) const
+		      const offset_t *&offsets, const gno_t *&adjacencyIds) const
   {
     if (through == MESH_VERTEX &&
 	((sourcetarget == MESH_REGION && dimension_ == 3) ||
@@ -327,15 +328,15 @@ private:
   int dimension_, num_nodes_global_, num_elems_global_, num_nodes_, num_elem_;
   gno_t *element_num_map_, *node_num_map_;
   gno_t *elemToNode_;
-  lno_t tnoct_, *elemOffsets_;
+  offset_t tnoct_, *elemOffsets_;
   gno_t *nodeToElem_; 
-  lno_t telct_, *nodeOffsets_;
+  offset_t telct_, *nodeOffsets_;
 
   int nWeightsPerEntity_;
   bool *entityDegreeWeight_;
 
   scalar_t *coords_, *Acoords_;
-  lno_t *eStart_, *nStart_;
+  offset_t *eStart_, *nStart_;
   gno_t *eAdj_, *nAdj_;
   size_t nEadj_, nNadj_;
   EntityTopologyType* nodeTopology;
@@ -495,7 +496,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   int nnodes_per_elem = num_nodes_per_elem[0];
   elemToNode_ = new gno_t[num_elem_ * nnodes_per_elem];
   int telct = 0;
-  elemOffsets_ = new lno_t [num_elem_+1];
+  elemOffsets_ = new offset_t [num_elem_+1];
   tnoct_ = 0;
   int **reconnect = new int * [num_elem_];
   size_t max_nsur = 0;
@@ -559,7 +560,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   }
 
   nodeToElem_ = new gno_t[num_nodes_ * max_nsur];
-  nodeOffsets_ = new lno_t[num_nodes_+1];
+  nodeOffsets_ = new offset_t[num_nodes_+1];
   telct_ = 0;
 
   for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {

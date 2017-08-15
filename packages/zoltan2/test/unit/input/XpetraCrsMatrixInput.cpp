@@ -72,8 +72,9 @@ using Teuchos::DefaultComm;
 typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tmatrix_t;
 typedef Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> xmatrix_t;
 
+template<typename offset_t>
 void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
-    const zgno_t *rowIds, const zlno_t *offsets, const zgno_t *colIds)
+    const zgno_t *rowIds, const offset_t *offsets, const zgno_t *colIds)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -83,7 +84,7 @@ void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
       std::cout << rank << ":" << std::endl;
       for (zlno_t i=0; i < nrows; i++){
         std::cout << " row " << rowIds[i] << ": ";
-        for (zlno_t j=offsets[i]; j < offsets[i+1]; j++){
+        for (offset_t j=offsets[i]; j < offsets[i+1]; j++){
           std::cout << colIds[j] << " ";
         }
         std::cout << std::endl;
@@ -99,6 +100,8 @@ template <typename User>
 int verifyInputAdapter(
   Zoltan2::XpetraCrsMatrixAdapter<User> &ia, tmatrix_t &M)
 {
+  typedef typename Zoltan2::InputTraits<User>::offset_t offset_t;
+
   RCP<const Comm<int> > comm = M.getComm();
   int fail = 0, gfail=0;
 
@@ -113,7 +116,7 @@ int verifyInputAdapter(
   gfail = globalFail(comm, fail);
 
   const zgno_t *rowIds=NULL, *colIds=NULL;
-  const zlno_t *offsets=NULL;
+  const offset_t *offsets=NULL;
   size_t nrows=0;
 
   if (!gfail){
@@ -128,7 +131,7 @@ int verifyInputAdapter(
     gfail = globalFail(comm, fail);
 
     if (gfail == 0){
-      printMatrix(comm, nrows, rowIds, offsets, colIds);
+      printMatrix<offset_t>(comm, nrows, rowIds, offsets, colIds);
     }
     else{
       if (!fail) fail = 10;

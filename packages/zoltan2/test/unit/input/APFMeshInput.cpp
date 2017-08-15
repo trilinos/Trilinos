@@ -118,6 +118,7 @@ int main(int narg, char *arg[]) {
   typedef Adapter::lno_t lno_t;
   typedef Adapter::gno_t gno_t;
   typedef Adapter::scalar_t scalar_t;
+  typedef Adapter::offset_t offset_t;
 
   std::string pri = "face";
   std::string adj = "vertex";
@@ -174,7 +175,7 @@ int main(int narg, char *arg[]) {
     int x_stride;
     int y_stride;
     int z_stride;
-    const lno_t** offsets = new const lno_t*[dim];
+    const offset_t** offsets = new const offset_t*[dim];
     const gno_t** adj_gids = new const gno_t*[dim];
 
     ia.getIDsViewOf(ents[i],gids);
@@ -251,7 +252,7 @@ int main(int narg, char *arg[]) {
         }
         apf::Adjacent adjs;
         m->getAdjacent(ent,k,adjs);
-        lno_t ind = offsets[k][j];
+        offset_t ind = offsets[k][j];
         for (unsigned int l=0;l<adjs.getSize();l++) {
           if (apf::getNumber(gnums[k],apf::Node(adjs[l],0))!=adj_gids[k][ind]) {
             std::cerr<<"First adjacency does not match in dimension " <<i<<" to dimension "<<k
