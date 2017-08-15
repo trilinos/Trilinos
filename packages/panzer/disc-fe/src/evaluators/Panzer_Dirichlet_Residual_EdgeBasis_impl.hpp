@@ -48,6 +48,7 @@
 #include <vector>
 
 #include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_OrientationTools.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Kokkos_ViewFactory.hpp"
@@ -121,55 +122,112 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
 { 
-  if(workset.num_cells<=0)
+  const int numCells = workset.num_cells;
+  if(numCells <= 0)
     return;
   else {
+    residual.deep_copy(ScalarT(0.0));
+
     // dofs shoiuld be already account orientations, we don't need to apply orientation separately
     // we need to distinguish if this ordinal is just within edge or face or edge + face.
+    const int subcellDim = workset.subcell_dim;
     const int subcellOrd = this->wda(workset).subcell_index;
-    const int edgeOrd = subcellOrd, faceOrd = -1;
-
+    
     const auto cellTopo = *basis->getCellTopology();
     const auto worksetJacobians = pointValues.jac.get_view();
-
-    const int numEdges = cellTopo.getEdgeCount(), numFaces = cellTopo.getFaceCount();
 
     auto intrepid_basis = basis->getIntrepid2Basis();
     WorksetDetails & details = workset;
     
-    if (edgeOrd > 0 && intrepid_basis->getDofCount(1, edgeOrd)) {
-      Intrepid2::CellTools<PHX::exec_space>::getPhysicalEdgeTangents(edgeTan,
-                                                                     worksetJacobians,
-                                                                     edgeOrd,
-                                                                     cellTopo);
-      int edgeOrts[12] = {};
+    // orient dof (this should be done before this)
+    typedef Intrepid2::OrientationTools<PHX::Device> ots;
+    Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> orts("orts", numCells);
+    
+    for (int c=0;c<numCells;++c) 
+      orts(c) = orientations->at(details.cell_local_ids[c]);
+
+    auto dof_tmp = Kokkos::createDynRankView(dof.get_view(),
+                                             "dof_tmp",
+                                             dof.dimension_0(),
+                                             dof.dimension_1(),
+                                             dof.dimension_2());
+    ots::modifyBasisByOrientation(dof_tmp, dof.get_view(), orts, intrepid_basis);
+
+    // compute residual
+    switch (subcellDim) {
+    case 1: {  // cellDim is 2
+      if (intrepid_basis->getDofCount(1, subcellOrd)) {
+        const int numEdges = cellTopo.getEdgeCount();
+        Intrepid2::CellTools<PHX::exec_space>::getPhysicalEdgeTangents(edgeTan,
+                                                                       worksetJacobians,
+                                                                       subcellOrd,
+                                                                       cellTopo);
+        for(index_t c=0;c<workset.num_cells;c++) {
+          for(int b=0;b<dof_tmp.extent_int(1);b++) {
+            for(int d=0;d<dof_tmp.extent_int(2);d++)
+              residual(c,b) += (dof_tmp(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
+          }
+        }
+      }
+      break;
+    } 
+    case 2: {
+      const int cellDim = 3;
+      // subcelOrd --> subcellTopo (tri or quad) --> subcellTopo.getEdgeCount();
+      const int numEdges = dof.extent_int(1); // this should be subcellTopo.getEdgeCount();
+      auto refEdgeTan = Kokkos::createDynRankView(residual.get_static_view(),"refEdgeTan",numEdges,3);
+
+      // subcellTopo --> edgeOrd within the subcell
+      // then we don't need the following transformation
+      
+      for(int i=0;i<numEdges;i++) {
+        Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
+        Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, cellTopo);
+        
+        for(int d=0;d<cellDim;d++)
+          refEdgeTan(i,d) = refEdgeTan_local(d);
+      }
+      
+      // Loop over workset faces and edge points
       for(index_t c=0;c<workset.num_cells;c++) {
-        orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
-        const int signVal = edgeOrts[edgeOrd] ? 1.0 : -1.0;
+        for(int pt = 0; pt < numEdges; pt++) {
+          
+          // Apply parent cell Jacobian to ref. edge tangent
+          for(int i = 0; i < cellDim; i++) {
+            edgeTan(c, pt, i) = 0.0;
+            for(int j = 0; j < cellDim; j++){
+              edgeTan(c, pt, i) +=  pointValues.jac(c, pt, i, j)*refEdgeTan(pt,j);
+            }// for j
+          }// for i
+        }// for pt
+      }// for pCell
+
+      for(index_t c=0;c<workset.num_cells;c++) {
         for(int b=0;b<dof.extent_int(1);b++) {
-          residual(c,b) = ScalarT(0.0);
           for(int d=0;d<dof.extent_int(2);d++)
-            residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
-          residual(c,b) *= signVal;
+            residual(c,b) += (dof_tmp(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
+        }
+      }
+
+      // now face DOF
+      if (intrepid_basis->getDofCount(2, subcellOrd)) {
+        Intrepid2::CellTools<PHX::exec_space>::getPhysicalFaceTangents(faceTanU,
+                                                                       faceTanV,
+                                                                       worksetJacobians,
+                                                                       subcellOrd,
+                                                                       cellTopo);
+        for(index_t c=0;c<workset.num_cells;c++) {
+          for(int b=0;b<dof_tmp.extent_int(1);b++) {
+            for(int d=0;d<dof_tmp.extent_int(2);d++) {
+              residual(c,b) += (dof_tmp(c,b,d)-value(c,b,d))*faceTanU(c,b,d);
+              residual(c,b) += (dof_tmp(c,b,d)-value(c,b,d))*faceTanV(c,b,d);
+            }
+          }
         }
       }
       
-    } 
-    else if (faceOrd > 0 && intrepid_basis->getDofCount(2, faceOrd)) {
-      // Intrepid2::CellTools<PHX::exec_space>::getPhysicalFaceTangents(faceTanU,
-      //                                                                faceTanV,
-      //                                                                worksetJacobians,
-      //                                                                faceOrd,
-      //                                                                cellTopo);
-      // for(index_t c=0;c<workset.num_cells;c++) {
-      //   for(int b=0;b<dof.extent_int(1);b++) {
-      //     residual(c,b) = ScalarT(0.0);
-      //     for(int d=0;d<dof.extent_int(2);d++) {
-      //       residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceTanU(c,b,d);
-      //       residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceTanV(c,b,d);
-      //     }
-      //   }
-      // }      
+      break;
+    }
     }
   }
   

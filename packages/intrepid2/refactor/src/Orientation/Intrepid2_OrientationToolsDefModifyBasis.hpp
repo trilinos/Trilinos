@@ -146,6 +146,8 @@ namespace Intrepid2 {
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
     }
 #endif
+    typedef typename decltype(input)::non_const_value_type input_value_type;
+
     if (basis->requireOrientation()) {
       auto ordinalToTag = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofTags());
       auto tagToOrdinal = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofOrdinal());
@@ -220,7 +222,7 @@ namespace Intrepid2 {
                   const ordinal_type ii = tagToOrdinal(1, edgeId, i);
                   
                   for (ordinal_type k=0;k<dimBasis;++k) {
-                    inputValueType temp = 0.0;
+                    input_value_type temp = 0.0;
                     for (ordinal_type l=0;l<ndofEdge;++l) {
                       const ordinal_type ll = tagToOrdinal(1, edgeId, l);
                       temp += mat(i,l)*in(ll, j, k);
@@ -252,7 +254,7 @@ namespace Intrepid2 {
                   const ordinal_type ii = tagToOrdinal(2, faceId, i);
                   
                   for (ordinal_type k=0;k<dimBasis;++k) {
-                    inputValueType temp = 0.0;
+                    input_value_type temp = 0.0;
                     for (ordinal_type l=0;l<ndofFace;++l) {
                       const ordinal_type ll = tagToOrdinal(2, faceId, l);
                       temp += mat(i,l)*in(ll, j, k);
