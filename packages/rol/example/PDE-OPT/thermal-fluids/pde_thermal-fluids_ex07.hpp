@@ -136,7 +136,7 @@ private:
         }
       }
     }
-    else if (sideset==5) {
+    else if (sideset==6) {
       val = static_cast<Real>(0);
     }
     return val;
@@ -232,30 +232,38 @@ private:
   
   Real ThicknessNumber(const std::vector<Real> &x, const int sideset) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
-    Real val = h_;
+    Real val = h_, x1(0), x2(0);
     if ( param.size()) {
       const Real root2(std::sqrt(2.0)), pi(M_PI), ln2(std::log(2.0));
       int offset = 0, N = 0;
       if ( sideset == 0 ) {
         offset = 2*Nbottom_;
         N      = N0_;
+        x1     = x[1];
+        x2     = x[2];
       }
       else if ( sideset == 1 ) {
         offset = 2*(Nbottom_+N0_);
         N      = N1_;
+        x1     = x[0];
+        x2     = x[1];
       }
       else if ( sideset == 2 ) {
         offset = 2*(Nbottom_+N0_+N1_);
         N      = N2_;
+        x1     = x[1];
+        x2     = x[2];
       }
       else if ( sideset == 3 ) {
         offset = 2*(Nbottom_+N0_+N1_+N2_);
         N      = N3_;
+        x1     = x[0];
+        x2     = x[1];
       }
       for (int i = 0; i < N; ++i) {
         Real di(i+1);
-        Real xcomp = param[2*(i+offset)  ]/ln2 * (root2 * std::sin(di * pi * x[0]))/(di * pi);
-        Real ycomp = param[2*(i+offset)+1]/ln2 * (root2 * std::sin(di * pi * x[1]))/(di * pi);
+        Real xcomp = param[2*(i+offset)  ]/ln2 * (root2 * std::sin(di * pi * x1))/(di * pi);
+        Real ycomp = param[2*(i+offset)+1]/ln2 * (root2 * std::sin(di * pi * x2))/(di * pi);
         val += hScale_*xcomp*ycomp;
       }
     }
