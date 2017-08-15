@@ -1375,7 +1375,7 @@ namespace MueLu {
         std::sort(nearbyCs.begin(), nearbyCs.begin() + numNearbyCs);
 
         if (numNearbyCs != 0) {
-          SC norm = zero, vec1[3], vec2[3];
+          SC norm = zero, vec1[3] = {0.0, 0.0, 0.0}, vec2[3] = {0.0, 0.0, 0.0};
           for (int k = 0; k < NDim; k++) {
             vec1[k] =  coords1D[k][i] - coords1D[k][cpts[0]];
             norm   += vec1[k]*vec1[k];
@@ -1580,7 +1580,7 @@ namespace MueLu {
             lookedAt[curNeigh] = 'y';
 
             // Make sure we have enough space
-            if (sameCGroup.size() <= numSameGrp)
+            if (Teuchos::as<int>(sameCGroup.size()) <= numSameGrp)
               sameCGroup.resize(2*numSameGrp);
 
             sameCGroup[numSameGrp++] = curNeigh;

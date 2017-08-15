@@ -290,46 +290,45 @@ namespace {
       my_num_rows = total_rows;
     }
     const Tpetra::Map<int,int> redist_map(total_rows, my_num_rows, 0,
-					  to_teuchos_comm(rcp(comm,false)));
+                                          to_teuchos_comm(rcp(comm,false)));
 
     // Get first the global data copy
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter),
-					     global_copy(),
-					     total_rows,
-					     Amesos2::GLOBALLY_REPLICATED);
+                                             global_copy(),
+                                             total_rows,
+                                             Amesos2::GLOBALLY_REPLICATED);
 
     // Now get a copy using the map
     Array<double> my_copy(numVectors * my_num_rows);
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter),
-					     my_copy(),
-					     my_num_rows,
-					     ptrInArg(redist_map));
+                                             my_copy(),
+                                             my_num_rows,
+                                             ptrInArg(redist_map));
 
     // Check that you have the data you wanted
     if ( numprocs > 1 ){
       if ( rank == 0 ){
-	// Should get the first ceil(total_rows/2) rows
-	size_t vec_num = 0;
-	size_t vec_ind = 0;
-	for( ; vec_ind < numVectors; ++vec_ind ){
-	  for( size_t i = 0; i < my_num_rows; ++i ){
-	    double mv_value = global_copy[total_rows*vec_num + i];
-	    double my_value = my_copy[my_num_rows*vec_num + i];
-	    TEST_EQUALITY( mv_value, my_value );
-	  }
-	}
+        // Should get the first ceil(total_rows/2) rows
+        size_t vec_ind = 0;
+        for( ; vec_ind < numVectors; ++vec_ind ){
+          for( size_t i = 0; i < my_num_rows; ++i ){
+            double mv_value = global_copy[total_rows*vec_ind + i];
+            double my_value = my_copy[my_num_rows*vec_ind + i];
+            TEST_EQUALITY( mv_value, my_value );
+          }
+        }
       } else if ( rank == 1 ){
-	// Should get the last floor(total_rows/2) rows
-	size_t vec_num = 0;
-	size_t vec_ind = 0;
-	for( ; vec_ind < numVectors; ++vec_ind ){
-	  // Iterate backwards through rows
-	  for( size_t i = total_rows-1; i >= total_rows - my_num_rows; --i ){
-	    double mv_value = global_copy[total_rows*vec_num + i];
-	    double my_value = my_copy[my_num_rows*vec_num + i];
-	    TEST_EQUALITY( mv_value, my_value );
-	  }
-	}
+        // Should get the last floor(total_rows/2) rows
+        size_t vec_ind = 0;
+        size_t firstRow = total_rows - (total_rows / 2);
+        for( ; vec_ind < numVectors; ++vec_ind ){
+          // Iterate backwards through rows
+          for( size_t i = 0; i < my_num_rows; i++) {
+            double mv_value = global_copy[total_rows*vec_ind + i + firstRow];
+            double my_value = my_copy[my_num_rows*vec_ind + i];
+            TEST_EQUALITY( mv_value, my_value );
+          }
+        }
       }
     } else {
       // Otherwise, rank=0 should have gotten the whole thing

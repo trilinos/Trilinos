@@ -41,31 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EVALUATOR_WITH_MACROS_HPP
-#define PHX_EVALUATOR_WITH_MACROS_HPP
-
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-
-namespace PHX {
-
-  // Both required and dependent fields are all unmanaged.  Covers all
-  // combinations of data types (static/dynamic, const/nonconst).
-  PHX_EVALUATOR_CLASS(EvalUnmanaged)
-  PHX::MDField<double,CELL,BASIS> a; // static evaluated
-  PHX::MDField<const double,CELL,BASIS> b; // static dependent
-  PHX::MDField<double> c; // dynamic evalauted
-  PHX::MDField<const double> d; // dynamic dependent
-  PHX_EVALUATOR_CLASS_END
-
-  // Dummy to satisfy dependent unmanaged fields
-  PHX_EVALUATOR_CLASS(EvalDummy)
-  PHX::MDField<double,CELL,BASIS> b;
-  PHX::MDField<double> d;
-  PHX_EVALUATOR_CLASS_END
-
-}
-
-#include "TestEvaluators_Def.hpp"
-
-#endif
+#include "ExplicitTemplateInstantiation.hpp"
+#include "GatherSolution.hpp"
+#include "GatherSolution_Def.hpp"
+PHX_INSTANTIATE_TEMPLATE_CLASS(GatherSolution)

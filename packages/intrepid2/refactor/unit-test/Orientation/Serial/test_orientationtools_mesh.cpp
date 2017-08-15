@@ -47,6 +47,7 @@
 
 #include "Kokkos_Core.hpp"
 
+#include "test_orientationtools_tri_mesh.hpp"
 #include "test_orientationtools_quad_mesh.hpp"
 #include "test_orientationtools_hex_mesh.hpp"
 
@@ -57,6 +58,7 @@ int main(int argc, char *argv[]) {
   
   int r_val = 0;
 
+  r_val += Intrepid2::Test::OrientationToolsTriMesh<Kokkos::Serial>(verbose);
   r_val += Intrepid2::Test::OrientationToolsQuadMesh<Kokkos::Serial>(verbose);
   r_val += Intrepid2::Test::OrientationToolsHexMesh<Kokkos::Serial>(verbose);
 

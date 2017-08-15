@@ -814,7 +814,6 @@ addStepperFactory(const std::string & stepperName,const Teuchos::RCP<Piro::Tempu
   stepperFactories[stepperName] = factory;
 }
 
-
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -826,6 +825,116 @@ addStepControlFactory(const std::string & stepControlName,
                       const Teuchos::RCP<Piro::TempusStepControlFactory<Scalar>> & step_control_strategy)
 {
   stepControlFactories[stepControlName] = step_control_strategy;
+}
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+void Piro::TempusSolver<Scalar>::
+#endif
+setStartTime(const Scalar start_time)
+{
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  tsc->setInitTime(start_time); 
+} 
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Scalar Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+Scalar Piro::TempusSolver<Scalar>::
+#endif
+getStartTime() const
+{
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  Scalar start_time = tsc->getInitTime(); 
+  return start_time; 
+} 
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+void Piro::TempusSolver<Scalar>::
+#endif
+setFinalTime(const Scalar final_time)
+{
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  t_final = final_time; 
+  tsc->setFinalTime(final_time); 
+} 
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Scalar Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+Scalar Piro::TempusSolver<Scalar>::
+#endif
+getFinalTime() const
+{
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  Scalar final_time = tsc->getFinalTime(); 
+  return final_time; 
+} 
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+void Piro::TempusSolver<Scalar>::
+#endif
+setInitTimeStep(const Scalar init_time_step)
+{
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  tsc->setInitTimeStep(init_time_step); 
+} 
+
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Scalar Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+Scalar Piro::TempusSolver<Scalar>::
+#endif
+getInitTimeStep() const
+{
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  auto init_time_step = tsc->getInitTimeStep(); 
+  return init_time_step; 
+} 
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+void Piro::TempusSolver<Scalar>::
+#endif
+setInitialState(Scalar t0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0) 
+{
+   fwdStateIntegrator->setInitialState(t0, x0, xdot0, xdotdot0);  
+}
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<Tempus::SolutionHistory<Scalar> > Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+Teuchos::RCP<Tempus::SolutionHistory<Scalar> > Piro::TempusSolver<Scalar>::
+#endif
+getSolutionHistory() const
+{
+  return fwdStateIntegrator->getSolutionHistory();
 }
 
 #ifdef ALBANY_BUILD

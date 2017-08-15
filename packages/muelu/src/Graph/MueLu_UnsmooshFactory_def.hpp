@@ -105,19 +105,19 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(dofStatus.size()) == Teuchos::as<size_t>(unamalgA->getRowMap()->getNodeNumElements()), MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: User provided dofStatus on level 0 does not fit to size of unamalgamted A");
     } else {
       // dof status is the dirichlet information of unsmooshed/unamalgamated A (fine level)
-      dofStatus = Teuchos::Array<char>(amalgP->getRowMap()->getNodeNumElements() * maxDofPerNode,'s');
+      dofStatus = Teuchos::Array<char>(unamalgA->getRowMap()->getNodeNumElements() /*amalgP->getRowMap()->getNodeNumElements() * maxDofPerNode*/,'s');
 
       bool bHasZeroDiagonal = false;
       Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*unamalgA,bHasZeroDiagonal,STS::magnitude(0.5));
 
-      TEUCHOS_TEST_FOR_EXCEPTION(dirOrNot.size() != dofStatus.size(), MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: inconsistent number of coarse DBC array and dofStatus array.");
+      TEUCHOS_TEST_FOR_EXCEPTION(dirOrNot.size() != dofStatus.size(), MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: inconsistent number of coarse DBC array and dofStatus array. dirOrNot.size() = " << dirOrNot.size() << " dofStatus.size() = " << dofStatus.size());
       for(decltype(dirOrNot.size()) i = 0; i < dirOrNot.size(); ++i) {
         if(dirOrNot[i] == true) dofStatus[i] = 'p';
       }
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(amalgP->getDomainMap()->isSameAs(*amalgP->getColMap()) == false, MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: only support for non-overlapping aggregates. (column map of Ptent must be the same as domain map of Ptent)");
-
+    // TODO: TAW the following check is invalid for SA-AMG based input prolongators
+    //TEUCHOS_TEST_FOR_EXCEPTION(amalgP->getDomainMap()->isSameAs(*amalgP->getColMap()) == false, MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: only support for non-overlapping aggregates. (column map of Ptent must be the same as domain map of Ptent)");
 
     // extract CRS information from amalgamated prolongation operator
     Teuchos::ArrayRCP<const size_t> amalgRowPtr(amalgP->getNodeNumRows());

@@ -49,7 +49,9 @@
 #include <functional>
 #include <unordered_map>
 #include "Phalanx_Evaluator.hpp"
+#include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
+#include "Kokkos_View.hpp"
 
 namespace PHX {
 
@@ -81,7 +83,13 @@ namespace PHX {
     void addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
 			   Tag4,Tag5,Tag6,Tag7>& f);
 
+    template<typename DataT,int Rank>
+    void addEvaluatedField(const PHX::Field<DataT,Rank>& f);
 
+    template<typename DataT,typename... Properties>
+    void addEvaluatedField(const PHX::FieldTag& ft,
+                           const Kokkos::View<DataT,Properties...>& f);
+    
     virtual void addContributedField(const PHX::FieldTag& ft);
 
     template<typename DataT,
@@ -89,6 +97,13 @@ namespace PHX {
 	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
     void addContributedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
                              Tag4,Tag5,Tag6,Tag7>& f);
+
+    template<typename DataT,int Rank>
+    void addContributedField(const PHX::Field<DataT,Rank>& f);
+
+    template<typename DataT,typename... Properties>
+    void addContributedField(const PHX::FieldTag& ft,
+                             const Kokkos::View<DataT,Properties...>& f);
 
     virtual void addDependentField(const PHX::FieldTag& ft);
 
@@ -105,6 +120,23 @@ namespace PHX {
 	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
     void addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
 			   Tag4,Tag5,Tag6,Tag7>& f);
+
+    template<typename DataT,int Rank>
+    void addDependentField(const PHX::Field<const DataT,Rank>& f);
+
+    /** Add dependent field using raw Kokkos::View, DataT must be const. 
+
+        NOTE: Since DataT is not a true scalar (it contains rank
+        information as well), the template deduction fails if we try
+        to enforce const on the DataT within the view (as we do for
+        the other addDependentField() methods). We will enforce with a
+        static_assert within this function instead. Not ideal. Could
+        also work around with SFINAE but debugging would be more
+        difficult.
+    */
+    template<typename DataT,typename... Properties>
+    void addDependentField(const PHX::FieldTag& ft,
+                           const Kokkos::View<DataT,Properties...>& f);
 
     virtual void setName(const std::string& name);
 

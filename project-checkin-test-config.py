@@ -25,9 +25,6 @@ configuration = {
             '-DBUILD_SHARED_LIBS=ON',
             # For graceful disables, we want to turn this on.
             '-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON',
-            # We want to see tracing of added tests to help in debugging
-            # problems.
-            '-DTrilinos_TRACE_ADD_TEST=ON',
             ],
 
         # Setup for the builds that should be run by default for a

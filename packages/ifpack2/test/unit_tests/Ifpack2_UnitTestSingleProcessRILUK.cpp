@@ -222,99 +222,53 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
     }
   }
 
-  // Now test alpha != 1 and beta == 0.
-  Scalar alpha = Teuchos::as<Scalar> (2.0);
-  Scalar beta = Teuchos::as<Scalar> (0.0);
-  out << "Testing apply() for alpha = " << alpha
-      << " and beta = " << beta << endl;
-  MV x_copy = Tpetra::createCopy (x);
-  MV y_copy = Tpetra::createCopy (y);
-  crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
+  auto test_alpha_beta = [&] (const Scalar& alpha, const Scalar& beta,
+                              const Teuchos::ETransp& mode) {
+    out << "Testing apply() for alpha = " << alpha
+        << " and beta = " << beta << endl;
+    const Scalar x_magic_number = -0.42;
+    x.putScalar (x_magic_number);
+    crsmatrix->apply (x, y, mode);
+    MV z = Tpetra::createCopy (x);
+    const Scalar z_magic_number = 2.1;
+    z.putScalar (z_magic_number);
+    // z = beta z + alpha inv(A) y
+    //   = beta z + alpha x
+    //   = (beta z_magic_number + alpha x_magic_number) 1s
+    prec.apply(y, z, mode, alpha, beta);
 
-  out << "y_copy should be 2*y now" << endl;
-  {
-    // FIXME (mfh 04 Oct 2016) This is the bound that I found here
-    // when I fixed this test.  Not sure if it's sensible.
-    const mag_type bound = 10.0 * ArithTraits<val_type>::eps ();
+    MV z_true = Tpetra::createCopy (x);
+    const Scalar z_true_scalar = beta*z_magic_number + alpha*x_magic_number;
+    z_true.putScalar(z_true_scalar);
 
-    // diff := y_copy - 2*y
-    diff.assign (y);
-    diff.scale (Teuchos::as<Scalar> (2.0));
-    diff.update (STS::one (), y_copy, -STS::one ());
-    diff.normInf (norms);
-    Kokkos::deep_copy (norms_h, norms);
+    {
+      // FIXME (mfh 04 Oct 2016) This is the bound that I found here
+      // when I fixed this test.  Not sure if it's sensible.
+      const mag_type bound = 10.0 * ArithTraits<val_type>::eps ();
 
-    for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
-      const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
-      TEST_ASSERT( absVal <= bound );
-      if (absVal > bound) {
-        out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
-            << absVal << " > " << bound
-            << "; the norm equals " << norms_h(j)
-            << endl;
+      diff.putScalar (z_true_scalar);
+      diff.update (STS::one (), z, -STS::one ());
+      diff.normInf (norms);
+      Kokkos::deep_copy (norms_h, norms);
+
+      for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
+        const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
+        TEST_ASSERT( absVal <= bound );
+        if (absVal > bound) {
+          out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
+              << absVal << " > " << bound
+              << "; the norm equals " << norms_h(j)
+              << endl;
+        }
       }
     }
-  }
+  };
 
-  // Now test alpha == 0 and beta == 0.
-  alpha = Teuchos::as<Scalar> (0.0);
-  beta = Teuchos::as<Scalar> (0.0);
-  out << "Testing apply() for alpha = " << alpha
-      << " and beta = " << beta << endl;
-  Tpetra::deep_copy (x_copy, x);
-  Tpetra::deep_copy (y_copy, y);
-  crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
-
-  out << "y_copy should be zero now" << endl;
-  //TEST_COMPARE_FLOATING_ARRAYS(y_zero.get1dView (), y_copy.get1dView (), Teuchos::ScalarTraits<Scalar>::zero ());
-  {
-    const mag_type bound = ArithTraits<mag_type>::zero ();
-
-    y_copy.normInf (norms);
-    Kokkos::deep_copy (norms_h, norms);
-    for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
-      const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
-      TEST_ASSERT( absVal <= bound );
-      if (absVal > bound) {
-        out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
-            << absVal << " > " << bound
-            << "; the norm equals " << norms_h(j)
-            << endl;
-      }
-    }
-  }
-
-  // Now test alpha == 0 and beta == -1.
-  alpha = Teuchos::as<Scalar> (0.0);
-  beta = Teuchos::as<Scalar> (-1.0);
-  out << "Testing apply() for alpha = " << alpha
-      << " and beta = " << beta << endl;
-  x_copy = Tpetra::createCopy (x);
-  y_copy = Tpetra::createCopy (y);
-  crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
-
-  out << "y_copy should be -y now" << endl;
-  //TEST_COMPARE_FLOATING_ARRAYS(y_neg.get1dView (), y_copy.get1dView (), Teuchos::as<Scalar> (0));
-  {
-    const mag_type bound = ArithTraits<mag_type>::zero ();
-
-    // diff := y_copy - (-y)
-    diff.assign (y);
-    diff.scale (Teuchos::as<Scalar> (-1.0));
-    diff.update (STS::one (), y_copy, -STS::one ());
-    diff.normInf (norms);
-    Kokkos::deep_copy (norms_h, norms);
-
-    for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
-      const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
-      TEST_ASSERT( absVal <= bound );
-      if (absVal > bound) {
-        out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
-            << absVal << " > " << bound
-            << "; the norm equals " << norms_h(j)
-            << endl;
-      }
-    }
+  for (const auto mode : {Teuchos::NO_TRANS, Teuchos::TRANS}) {
+    test_alpha_beta(0.0, 0.0, mode);
+    test_alpha_beta(2.0, 0.0, mode);
+    test_alpha_beta(0.0, -1.5, mode);
+    test_alpha_beta(-0.42, 4.2, mode);
   }
 
   out << "Done with test" << endl;
