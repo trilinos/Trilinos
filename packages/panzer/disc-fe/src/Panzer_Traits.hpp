@@ -71,7 +71,7 @@
 // forward declaration
 namespace Intrepid2 {
 class Orientation;
-};
+}
 
 namespace panzer {
   
