@@ -116,6 +116,7 @@ public:
   typedef GraphModel<typename Adapter::base_adapter_t> graphModel_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
 
@@ -181,7 +182,7 @@ void AlgParMETIS<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> adjgnos;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
   int nEwgt = model->getNumWeightsPerEdge();
   size_t nEdge = model->getEdgeList(adjgnos, offsets, ewgts);
@@ -194,7 +195,7 @@ void AlgParMETIS<Adapter>::partition(
 
   // Convert index types for edges, if needed
   pm_idx_t *pm_offsets;  
-  TPL_Traits<pm_idx_t,const lno_t>::ASSIGN_ARRAY(&pm_offsets, offsets);
+  TPL_Traits<pm_idx_t,const offset_t>::ASSIGN_ARRAY(&pm_offsets, offsets);
   pm_idx_t *pm_adjs;  
   pm_idx_t pm_dummy_adj;
   if (nEdge)

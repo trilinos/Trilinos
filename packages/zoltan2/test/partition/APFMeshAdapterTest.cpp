@@ -99,6 +99,7 @@ void PrintGhostMetrics(Zoltan2::HyperGraphModel<Adapter>& mdl) {
   typedef typename Adapter::gno_t       gno_t;
   typedef typename Adapter::lno_t       lno_t;
   typedef typename Adapter::scalar_t       scalar_t;
+  typedef typename Adapter::offset_t       offset_t;
   typedef Zoltan2::StridedData<lno_t, scalar_t>  input_t;
 
   ArrayView<const gno_t> Ids;
@@ -108,7 +109,7 @@ void PrintGhostMetrics(Zoltan2::HyperGraphModel<Adapter>& mdl) {
   mdl.getOwnedList(isOwner);
   size_t numOwned = mdl.getLocalNumOwnedVertices();
   ArrayView<const gno_t> pins;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   mdl.getPinList(pins,offsets,wgts);
   
   std::set<gno_t> gids;

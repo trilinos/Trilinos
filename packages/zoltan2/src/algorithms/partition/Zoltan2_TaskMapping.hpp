@@ -247,6 +247,7 @@ void getCoarsenedPartGraph(
   typedef typename Adapter::lno_t t_lno_t;
   typedef typename Adapter::gno_t t_gno_t;
   typedef typename Adapter::scalar_t t_scalar_t;
+  typedef typename Adapter::offset_t t_offset_t;
   typedef typename Zoltan2::GraphModel<typename Adapter::base_adapter_t>::input_t t_input_t;
 
   //int numRanks = comm->getSize();
@@ -273,7 +274,7 @@ void getCoarsenedPartGraph(
 
   //get the edge ids, and weights
   ArrayView<const t_gno_t> edgeIds;
-  ArrayView<const t_lno_t> offsets;
+  ArrayView<const t_offset_t> offsets;
   ArrayView<t_input_t> e_wgts;
   graph->getEdgeList(edgeIds, offsets, e_wgts);
 
@@ -369,7 +370,7 @@ void getCoarsenedPartGraph(
       //get part i, and first vertex in this part v.
       while (v != -1){
         //now get the neightbors of v.
-        for (t_lno_t j = offsets[v]; j < offsets[v+1]; ++j){
+        for (t_offset_t j = offsets[v]; j < offsets[v+1]; ++j){
           //get the part of the second vertex.
           part_t ep = e_parts[j];
 
@@ -434,7 +435,7 @@ void getCoarsenedPartGraph(
       //get part i, and first vertex in this part v.
       while (v != -1){
         //now get the neightbors of v.
-        for (t_lno_t j = offsets[v]; j < offsets[v+1]; ++j){
+        for (t_offset_t j = offsets[v]; j < offsets[v+1]; ++j){
           //get the part of the second vertex.
           part_t ep = e_parts[j];
 
