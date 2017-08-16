@@ -1,5 +1,5 @@
-#ifndef XPETRA_SPLITTINGDRIVER_DECL_HPP
-#define XPETRA_SPLITTINGDRIVER_DECL_HPP
+#ifndef XPETRA_REGIONHANDLER_DECL_HPP
+#define XPETRA_REGIONHANDLER_DECL_HPP
 
 #include "Xpetra_Map.hpp"
 #include <string>
@@ -69,9 +69,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	};
 
 
-// This is the actual class that defines the driver
+// This is the actual class that defines the regionHandler
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  	class SplittingDriver{
+  	class RegionHandler{
 
 	public:
 
@@ -79,7 +79,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	//@{
 
 		//! Constructor specifying the file name containing region information.
-		SplittingDriver (const std::string &, RCP< const Teuchos::Comm<int> >);
+		RegionHandler (const std::string &, RCP< const Teuchos::Comm<int> >);
 
 	//}
 	//! @Interface methods
@@ -127,7 +127,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		void NodesToRegion();
 		void CreateRowMaps();
 
-  	}; //class SplittingDriver
+  	}; //class RegionHandler
 
 //This compare class is used to run the sorting algorithm on the list of nodes with associated regions they belong to. 
 //First, nodes are sorted in ascending order for region labels. Then, the sorting shuffles the nodes in ascending node index for

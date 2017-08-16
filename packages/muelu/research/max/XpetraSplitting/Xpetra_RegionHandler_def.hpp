@@ -1,13 +1,13 @@
-#ifndef XPETRA_SPLITTINGDRIVER_DEF_HPP
-#define XPETRA_SPLITTINGDRIVER_DEF_HPP
+#ifndef XPETRA_REGIONHANDLER_DEF_HPP
+#define XPETRA_REGIONHANDLER_DEF_HPP
 
-#include "Xpetra_SplittingDriver_decl.hpp"
+#include "Xpetra_RegionHandler_decl.hpp"
 #include <algorithm>
 
 namespace Xpetra{
 
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SplittingDriver(const std::string &file_name, RCP< const Teuchos::Comm<int> > comm): comm_(comm)
+	RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RegionHandler(const std::string &file_name, RCP< const Teuchos::Comm<int> > comm): comm_(comm)
 	{
 		ReadFileInfo(file_name);
 
@@ -45,7 +45,7 @@ namespace Xpetra{
 
 
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReadFileInfo(const std::string &file_name)
+	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReadFileInfo(const std::string &file_name)
 	{
 		std::ifstream input_file_(file_name, std::ifstream::in);
 		std::string  line;
@@ -97,7 +97,7 @@ namespace Xpetra{
 	//ASSUMPTION: A PROCESS CANNOT OWN CHUNKS OF MULTIPLE REGIONS. EITHER A PROCESS IS CONFINED INSIDE A SINGLE REGION
 	//OR IT MUST POSSESS ENTIRE MULTIPLE REGIONS.
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeProcRegions()
+	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeProcRegions()
 	{
 		int tot_num_proc = comm_->getSize();
 		int myPID = comm_->getRank();
@@ -187,7 +187,7 @@ namespace Xpetra{
 	//This is helpful to spot which nodes lie on a interregion interface. In fact, these nodes must have 
 	//the list of regions with more than one element
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NodesToRegion()
+	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NodesToRegion()
 	{
 		nodesToRegion_.clear();
 		interfaceNodes_.clear();
@@ -237,7 +237,7 @@ namespace Xpetra{
 
 	//This routine creates row maps for global and region matrices
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateRowMaps()
+	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateRowMaps()
 	{
 		TEUCHOS_TEST_FOR_EXCEPTION( ( procs_per_region_.empty() && regions_per_proc_.empty() ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Information about region partitioning across processors is not consistent: incorrect values for number of processors or number of regions \n");
 		Array<GlobalOrdinal> elements;
@@ -308,7 +308,7 @@ namespace Xpetra{
 		{
 			bool region_found = false;			
 			GlobalOrdinal myRegion = -1;
-			TEUCHOS_TEST_FOR_EXCEPTION( !( procs_per_region_.size() == num_total_regions_ ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of total regions does not match with driver structures \n");
+			TEUCHOS_TEST_FOR_EXCEPTION( !( procs_per_region_.size() == num_total_regions_ ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of total regions does not match with regionHandler structures \n");
 
 			Array<GlobalOrdinal> region_procs;
 			while( !region_found )
@@ -502,9 +502,9 @@ namespace Xpetra{
 	}
 
 
-// Get methods to allow a user interface with private members of the SplittingDriver class
+// Get methods to allow a user interface with private members of the RegionHandler class
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	Array<GlobalOrdinal> SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionRowMap(GlobalOrdinal region_index)const
+	Array<GlobalOrdinal> RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionRowMap(GlobalOrdinal region_index)const
 	{
 		TEUCHOS_TEST_FOR_EXCEPTION( region_index>=num_total_regions_, Exceptions::RuntimeError, "Value of region index exceeds total number of regions stored \n"<<"Trying to access informaiton about region "<<region_index<<" when the total number of regions stored is "<<num_total_regions_<<"\n");
 		return maps_.region_maps_[region_index];
@@ -512,21 +512,21 @@ namespace Xpetra{
 
 
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionToAll()const
+	Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionToAll()const
 	{
 		return maps_.regionToAll_;
 	}
 
 
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionToAll(GlobalOrdinal region_index)const
+	Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionToAll(GlobalOrdinal region_index)const
 	{
 		TEUCHOS_TEST_FOR_EXCEPTION( region_index>=num_total_regions_, Exceptions::RuntimeError, "Value of region index exceeds total number of regions stored \n"<<"Trying to access informaiton about region "<<region_index<<" when the total number of regions stored is "<<num_total_regions_<<"\n");
 		return maps_.regionToAll_[region_index];
 	}
 
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printView()
+	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printView()
 	{
 		if( 0==comm_->getRank() )
 		{
@@ -542,7 +542,7 @@ namespace Xpetra{
 
 //Print methods
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printNodesToRegion()
+	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printNodesToRegion()
 	{
 		if( 0==comm_->getRank() )
 		{
@@ -557,7 +557,7 @@ namespace Xpetra{
 	}
 
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	void SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printInactive()
+	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printInactive()
 	{
 		if( maps_.global_map_.empty() )
 			std::cout<<"INACTIVE PROC ID: "<<comm_->getRank()<<std::endl;

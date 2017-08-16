@@ -7,7 +7,7 @@
 #include "Xpetra_Matrix.hpp"
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include "Xpetra_IO.hpp"
-#include "Xpetra_SplittingDriver_def.hpp"
+#include "Xpetra_RegionHandler_def.hpp"
 
 //Ifpack2
 #include "Ifpack2_OverlappingRowMatrix_def.hpp"
@@ -138,10 +138,10 @@ class checkerInterfaceNodes {
 		MatrixSplitting(const char* matrix_file_name, const char* elements_file_name, RCP<const Teuchos::Comm<int> > comm)
 		{
 			comm_ = comm;
-			driver_ = rcp( new Xpetra::SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> (elements_file_name, comm_) );
-			Array<GlobalOrdinal> elementlist = driver_->GetGlobalRowMap();
-			num_total_elements_ = driver_->GetNumGlobalElements();
-			num_total_regions_ = driver_->GetNumTotalRegions();
+			regionHandler_ = rcp( new Xpetra::RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> (elements_file_name, comm_) );
+			Array<GlobalOrdinal> elementlist = regionHandler_->GetGlobalRowMap();
+			num_total_elements_ = regionHandler_->GetNumGlobalElements();
+			num_total_regions_ = regionHandler_->GetNumTotalRegions();
 
 			if(comm_->getRank()==0)	
 				std::cout<<"MatrixSplitting constructor initialized"<<std::endl;
@@ -164,7 +164,7 @@ class checkerInterfaceNodes {
 			if(comm_->getRank()==0)
 				std::cout<<"Finished reading composite matrix"<<std::endl;
 
-			CreateRegionMatrices( driver_->GetRegionRowMaps() );
+			CreateRegionMatrices( regionHandler_->GetRegionRowMaps() );
 		}
 
 		//! Destructor
@@ -584,9 +584,9 @@ class checkerInterfaceNodes {
 			return regionMatrixData_[ region_idx ];
 		}
 
-		RCP<SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getSplittingDriver() const
+		RCP<RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getRegionHandler() const
 		{
-			return driver_; 
+			return regionHandler_; 
 		}
 		//@}
 
@@ -667,7 +667,7 @@ class checkerInterfaceNodes {
 		{
 			TEUCHOS_TEST_FOR_EXCEPTION( region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "Surrogate region stiffness matrices are already initialized by chopping the global stiffness matrix \n");
 
-			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
+			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = regionHandler_->GetRegionToAll(region_idx);
 
 			//THIS IS THE CORE OF THE PROBLEM WHERE ONE NEEDS TO POPULATE THE REGIONAL MATRICES BY ACCESSING ENTRIES OF THE GLOBAL MATRIX
 			//
@@ -716,9 +716,9 @@ class checkerInterfaceNodes {
 		void RegionCollapse(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
 		{
 			TEUCHOS_TEST_FOR_EXCEPTION( !region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "The global stiffness matrix must be chopped into surrogate region matrices before collapsing \n");
-			TEUCHOS_TEST_FOR_EXCEPTION( driver_->GetNumRegionNodes(region_idx)!=regionMatrixData_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes in region "<<region_idx+1<<" does not coincide with the value returned by regionMatrixData_["<<region_idx+1<<"]->getGlobalNumRows() \n");
+			TEUCHOS_TEST_FOR_EXCEPTION( regionHandler_->GetNumRegionNodes(region_idx)!=regionMatrixData_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes in region "<<region_idx+1<<" does not coincide with the value returned by regionMatrixData_["<<region_idx+1<<"]->getGlobalNumRows() \n");
 
-			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
+			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = regionHandler_->GetRegionToAll(region_idx);
 
 			//This portion of the code assumes that the number of region nodes is the same on each direction of the domain 
 			//Foir a 2D problem we have then nx = ny = sqrt( num_region_ndoes_ )
@@ -726,13 +726,13 @@ class checkerInterfaceNodes {
 			GlobalOrdinal nx;
 			GlobalOrdinal ny;
 
-			n = driver_->GetNumRegionNodes(region_idx);
+			n = regionHandler_->GetNumRegionNodes(region_idx);
 			nx = std::sqrt(n);
 			ny = nx;
 			TEUCHOS_TEST_FOR_EXCEPTION( static_cast<double>( nx - std::floor(static_cast<double>( std::sqrt(static_cast<double>(n)) )))!=0.0 , Exceptions::RuntimeError, "The code assumes that the regions are 2D and that the number of region nodes is the same on each direction of the domain \n");
 
 			//interfaceNodes contains nodes on an interface between any regions
-			Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes = driver_->GetInterfaceNodes();	
+			Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes = regionHandler_->GetInterfaceNodes();	
 
 			ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
  			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionElements.begin(); iter!=MyRegionElements.end(); ++iter )	
@@ -1066,9 +1066,9 @@ class checkerInterfaceNodes {
 		void RegionSplitting(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
 		{
 			TEUCHOS_TEST_FOR_EXCEPTION( !region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "The global stiffness matrix must be chopped into surrogate region matrices before collapsing \n");
-			TEUCHOS_TEST_FOR_EXCEPTION( driver_->GetNumRegionNodes(region_idx)!=regionMatrixData_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes in region "<<region_idx+1<<" does not coincide with the value returned by regionMatrixData_["<<region_idx+1<<"]->getGlobalNumRows() \n");
+			TEUCHOS_TEST_FOR_EXCEPTION( regionHandler_->GetNumRegionNodes(region_idx)!=regionMatrixData_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes in region "<<region_idx+1<<" does not coincide with the value returned by regionMatrixData_["<<region_idx+1<<"]->getGlobalNumRows() \n");
 
-			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = driver_->GetRegionToAll(region_idx);
+			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = regionHandler_->GetRegionToAll(region_idx);
 
 			//This portion of the code assumes that the number of region nodes is the same on each direction of the domain 
 			//Foir a 2D problem we have then nx = ny = sqrt( num_region_ndoes_ )
@@ -1076,13 +1076,13 @@ class checkerInterfaceNodes {
 			GlobalOrdinal nx;
 			GlobalOrdinal ny;
 
-			n = driver_->GetNumRegionNodes(region_idx);
+			n = regionHandler_->GetNumRegionNodes(region_idx);
 			nx = std::sqrt(n);
 			ny = nx;
 			TEUCHOS_TEST_FOR_EXCEPTION( static_cast<double>( nx - std::floor(static_cast<double>( std::sqrt(static_cast<double>(n)) )))!=0.0 , Exceptions::RuntimeError, "The code assumes that the regions are 2D and that the number of region nodes is the same on each direction of the domain \n");
 
 			//interfaceNodes contains nodes on an interface between any regions
-			Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes = driver_->GetInterfaceNodes();	
+			Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes = regionHandler_->GetInterfaceNodes();	
 
 			ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
  			for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionElements.begin(); iter!=MyRegionElements.end(); ++iter )	
@@ -1370,7 +1370,7 @@ class checkerInterfaceNodes {
 			{
 				//Create Xpetra map for region stiffness matrix
 				RCP<const Xpetra::Map<int,GlobalOrdinal,Node> > xpetraMap;
-				xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Node>::Build(lib, driver_->GetNumRegionNodes(i), region_maps[i], 0, comm_); 			
+				xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Node>::Build(lib, regionHandler_->GetNumRegionNodes(i), region_maps[i], 0, comm_); 			
 				int num_elements = xpetraMap->getGlobalNumElements();
 				
 				RCP<CrsMatrix> crs_matrix;
@@ -1404,7 +1404,7 @@ class checkerInterfaceNodes {
 
 		RCP<const Teuchos::Comm<int> > comm_;
 
-		RCP<SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> > driver_;
+		RCP<RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionHandler_;
 		RCP<Matrix> compositeMatrixData_;
 		Array<RCP<Matrix> > regionMatrixData_;
 

@@ -102,7 +102,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		{
 
 			//The parameter n is the total number of mesh nodes in a region
-			GlobalOrdinal n = matrixSplitting_->getSplittingDriver()->GetNumRegionNodes(region_idx);
+			GlobalOrdinal n = matrixSplitting_->getRegionHandler()->GetNumRegionNodes(region_idx);
 
 			// N.B. The following instructions is based on the assumption that each region is a square. If not, then another instruciton
 			// must be used to specify the size of the region mesh along teh x-direction
@@ -192,7 +192,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
 			//The structure regionToAll is passed to the fine level as it is
 			if( 0==i )
-				new_level->SetRegionToAll( matrixSplitting_->getSplittingDriver()->GetRegionToAll() );	
+				new_level->SetRegionToAll( matrixSplitting_->getRegionHandler()->GetRegionToAll() );	
 			else
 			{
 				//Coarsening level own a regionToAll structure whcih is the result of an injected coarsened regionToAll from the upper level of the hierarchy
@@ -391,7 +391,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	{
 
 		Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > regionToAll = levels_[0]->GetRegionToAll();
-		Array<std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > > interfaceNodes = matrixSplitting_->getSplittingDriver()->GetInterfaceNodes();
+		Array<std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > > interfaceNodes = matrixSplitting_->getRegionHandler()->GetInterfaceNodes();
 
 		TEUCHOS_TEST_FOR_EXCEPTION( num_regions_!=regionToAll.size(), Exceptions::RuntimeError, "Regions stored in Level 0 do not match with total number of regions in RegionAMG class \n" );
 
