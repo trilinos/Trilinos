@@ -185,6 +185,179 @@ namespace Intrepid2 {
     return ort;
   }
 
+  inline
+  ordinal_type 
+  Orientation::getEdgeOrdinalOfFace(const ordinal_type subsubcellOrd,
+                                    const ordinal_type subcellOrd,
+                                    const shards::CellTopology cellTopo) {
+    ordinal_type r_val = -1;
+
+    const auto cellBaseKey    = cellTopo.getBaseKey();
+    if        (cellBaseKey == shards::Hexahedron<>::key) {
+      INTREPID2_TEST_FOR_EXCEPTION( !(subcellOrd < 6) && 
+                                    !(subsubcellOrd < 4),
+                                    std::logic_error,
+                                    "subcell and subsubcell information are not correct" );
+      const int quad_to_hex_edges[6][4] = { { 0, 9, 4, 8 },
+                                            { 1,10, 5, 9 },
+                                            { 2,11, 6,10 },
+                                            { 8, 7,11, 3 },
+                                            { 3, 2, 1, 0 },
+                                            { 4, 5, 6, 7 } };
+      r_val = quad_to_hex_edges[subcellOrd][subsubcellOrd];
+    } else if (cellBaseKey == shards::Tetrahedron<>::key) {
+      INTREPID2_TEST_FOR_EXCEPTION( !(subcellOrd < 4) && 
+                                    !(subsubcellOrd < 3),
+                                    std::logic_error,
+                                    "subcell and subsubcell information are not correct" );
+      const ordinal_type tri_to_tet_edges[4][3] = { { 0, 4, 3 },
+                                                    { 1, 5, 4 },
+                                                    { 3, 5, 2 },
+                                                    { 2, 1, 0 } };
+      r_val = tri_to_tet_edges[subcellOrd][subsubcellOrd];      
+    } else {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    "cellTopo is not supported: try TET and HEX" );
+    }
+    return r_val;
+  }
+
+  template<typename refTanType>
+  inline
+  void
+  Orientation::getReferenceEdgeTangents(const refTanType &tanE,
+                                        const ordinal_type subcellOrd,
+                                        const shards::CellTopology cellTopo,
+                                        const ordinal_type ort) {
+    const auto cellBaseKey    = cellTopo.getBaseKey();
+    INTREPID2_TEST_FOR_EXCEPTION( !(cellBaseKey == shards::Hexahedron<>::key && subcellOrd < 12) &&
+                                  !(cellBaseKey == shards::Tetrahedron<>::key && subcellOrd < 6) &&
+                                  !(cellBaseKey == shards::Quadrilateral<>::key && subcellOrd < 4) &&
+                                  !(cellBaseKey == shards::Triangle<>::key && subcellOrd < 3),
+                                  std::logic_error,
+                                  "subcell information are not correct" );
+    const ordinal_type i[2][2] = { { 0, 1 },
+                                   { 1, 0 } };    
+    const unsigned int v[2] = { cellTopo.getNodeMap(1, subcellOrd, 0),
+                                cellTopo.getNodeMap(1, subcellOrd, 1) };
+    
+    if        (cellBaseKey == shards::Hexahedron<>::key) {
+      const double hex_verts[8][3] = { { -1.0, -1.0, -1.0 },
+                                       {  1.0, -1.0, -1.0 },
+                                       {  1.0,  1.0, -1.0 },
+                                       { -1.0,  1.0, -1.0 },
+                                       //
+                                       { -1.0, -1.0,  1.0 },
+                                       {  1.0, -1.0,  1.0 },
+                                       {  1.0,  1.0,  1.0 },
+                                       { -1.0,  1.0,  1.0 } };
+      for (ordinal_type k=0;k<3;++k) {
+        const ordinal_type *ii = &i[ort][0];
+        tanE(k) = hex_verts[v[ii[1]]][k] - hex_verts[v[ii[0]]][k];
+      }
+    } else if (cellBaseKey == shards::Tetrahedron<>::key) {
+      const double tet_verts[4][3] = { {  0.0,  0.0,  0.0 },
+                                       {  1.0,  0.0,  0.0 },
+                                       {  0.0,  1.0,  0.0 },
+                                       {  0.0,  0.0,  1.0 } };
+      for (ordinal_type k=0;k<3;++k) {
+        const ordinal_type *ii = &i[ort][0];
+        tanE(k) = tet_verts[v[ii[1]]][k] - tet_verts[v[ii[0]]][k];
+      }
+    } else if (cellBaseKey == shards::Quadrilateral<>::key) {
+      const double quad_verts[8][3] = { { -1.0, -1.0 },
+                                        {  1.0, -1.0 },
+                                        {  1.0,  1.0 },
+                                        { -1.0,  1.0 } };
+      for (ordinal_type k=0;k<2;++k) {
+        const ordinal_type *ii = &i[ort][0];
+        tanE(k) = quad_verts[v[ii[1]]][k] - quad_verts[v[ii[0]]][k];
+      }
+    } else if (cellBaseKey == shards::Triangle<>::key) {
+      const double tri_verts[4][3] = { {  0.0,  0.0 },
+                                       {  1.0,  0.0 },
+                                       {  0.0,  1.0 } };
+      for (ordinal_type k=0;k<2;++k) {
+        const ordinal_type *ii = &i[ort][0];
+        tanE(k) = tri_verts[v[ii[1]]][k] - tri_verts[v[ii[0]]][k];
+      }
+    } else {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    "cellTopo is not supported: try TET and HEX" );
+    }
+  }
+
+  template<typename refTanType>
+  inline
+  void
+  Orientation::getReferenceFaceTangents(const refTanType &tanU,
+                                        const refTanType &tanV,
+                                        const ordinal_type subcellOrd,
+                                        const shards::CellTopology cellTopo,
+                                        const ordinal_type ort) {
+    const auto cellBaseKey    = cellTopo.getBaseKey();
+    if        (cellBaseKey == shards::Hexahedron<>::key) {
+      INTREPID2_TEST_FOR_EXCEPTION( !(subcellOrd < 6),
+                                    std::logic_error,
+                                    "subcell information are not correct" );
+      const double hex_verts[8][3] = { { -1.0, -1.0, -1.0 },
+                                       {  1.0, -1.0, -1.0 },
+                                       {  1.0,  1.0, -1.0 },
+                                       { -1.0,  1.0, -1.0 },
+                                       //
+                                       { -1.0, -1.0,  1.0 },
+                                       {  1.0, -1.0,  1.0 },
+                                       {  1.0,  1.0,  1.0 },
+                                       { -1.0,  1.0,  1.0 } };
+      const unsigned int v[4] = { cellTopo.getNodeMap(2, subcellOrd, 0),
+                                  cellTopo.getNodeMap(2, subcellOrd, 1),
+                                  cellTopo.getNodeMap(2, subcellOrd, 2),
+                                  cellTopo.getNodeMap(2, subcellOrd, 3) };
+      const ordinal_type i[8][4] = { { 0, 1, 2, 3 },
+                                     { 1, 2, 3, 0 },
+                                     { 2, 3, 0, 1 },
+                                     { 3, 0, 1, 2 },
+                                     //
+                                     { 0, 3, 2, 1 },
+                                     { 1, 0, 3, 2 },
+                                     { 2, 1, 0, 3 },
+                                     { 3, 2, 1, 0 } };
+      for (ordinal_type k=0;k<3;++k) {
+        const ordinal_type *ii = &i[ort][0];
+
+        tanU(k) = hex_verts[v[ii[1]]][k] - hex_verts[v[ii[0]]][k];
+        tanV(k) = hex_verts[v[ii[3]]][k] - hex_verts[v[ii[0]]][k];
+      }
+    } else if (cellBaseKey == shards::Tetrahedron<>::key) {
+      INTREPID2_TEST_FOR_EXCEPTION( !(subcellOrd < 4),
+                                    std::logic_error,
+                                    "subcell information are not correct" );
+      const double tet_verts[4][3] = { {  0.0,  0.0,  0.0 },
+                                       {  1.0,  0.0,  0.0 },
+                                       {  0.0,  1.0,  0.0 },
+                                       {  0.0,  0.0,  1.0 } };
+      const unsigned int v[4] = { cellTopo.getNodeMap(2, subcellOrd, 0),
+                                  cellTopo.getNodeMap(2, subcellOrd, 1),
+                                  cellTopo.getNodeMap(2, subcellOrd, 2) };
+      const ordinal_type i[6][3] = { { 0, 1, 2 },
+                                     { 1, 2, 0 },
+                                     { 2, 0, 1 },
+                                     //
+                                     { 0, 2, 1 },
+                                     { 1, 0, 2 },
+                                     { 2, 1, 0 } };
+      for (ordinal_type k=0;k<3;++k) {
+        const ordinal_type *ii = &i[ort][0];
+
+        tanU(k) = tet_verts[v[ii[1]]][k] - tet_verts[v[ii[0]]][k];
+        tanV(k) = tet_verts[v[ii[2]]][k] - tet_verts[v[ii[0]]][k];
+      }
+    } else {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    "cellTopo is not supported: try TET and HEX" );
+    }
+  }
+  
   KOKKOS_INLINE_FUNCTION
   Orientation::Orientation()
     : _edgeOrt(0), _faceOrt(0) {}

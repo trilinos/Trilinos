@@ -80,6 +80,23 @@ namespace Intrepid2 {
     static Orientation getOrientation(const shards::CellTopology cellTopo,
                                       const elemNodeViewType elemNodes);
     
+    static ordinal_type getEdgeOrdinalOfFace(const ordinal_type subsubcellOrd,
+                                             const ordinal_type subcellOrd,
+                                             const shards::CellTopology cellTopo);
+
+    template<typename refTanViewType>
+    static void getReferenceEdgeTangents(const refTanViewType &tanE,
+                                         const ordinal_type subcellOrd,
+                                         const shards::CellTopology cellTopo,
+                                         const ordinal_type ort);
+
+    template<typename refTanViewType>
+    static void getReferenceFaceTangents(const refTanViewType &tanU,
+                                         const refTanViewType &tanV,
+                                         const ordinal_type subcellOrd,
+                                         const shards::CellTopology cellTopo,
+                                         const ordinal_type ort);
+      
   private:
     ordinal_type _edgeOrt, _faceOrt;
     
