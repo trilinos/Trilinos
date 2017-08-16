@@ -105,7 +105,9 @@ struct PackTraits {
   ///   size (possibly determined at run time).
   ///
   /// \return The "number of values" that make up \c x.
-  static size_t numValuesPerScalar (const value_type& /* x */) {
+  KOKKOS_INLINE_FUNCTION
+  static size_t
+  numValuesPerScalar (const value_type& /* x */) {
     // If your type T is something like Stokhos::UQ::PCE<S>, you must
     // reimplement this function.
     return static_cast<size_t> (1);
@@ -164,21 +166,25 @@ struct PackTraits {
   ///   least \c numEnt entries.
   /// \param numEnt [in] Number of entries to pack.
   ///
-  /// \return The number of bytes used to pack \c inBuf into \c outBuf.
-  static size_t
+  /// \return {The number of bytes used to pack \c inBuf into \c outBuf,
+  //    packArray error code (success = 0)}
+  KOKKOS_INLINE_FUNCTION
+  static Kokkos::pair<int, size_t>
   packArray (const output_buffer_type& outBuf,
              const input_array_type& inBuf,
              const size_t numEnt)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (inBuf.dimension_0 ()) < numEnt,
-      std::invalid_argument, "PackTraits::packArray: inBuf.dimension_0() = "
-      << inBuf.dimension_0 () << " < numEnt = " << numEnt << ".");
-#endif // HAVE_TPETRA_DEBUG
+    size_t numBytes = 0;
+    int errorCode = 0;
+    typedef Kokkos::pair<int, size_t> pair_type;
+    if (static_cast<size_t> (inBuf.dimension_0 ()) < numEnt) {
+      // inBuf.dimension_0() must be >= numEnt
+      errorCode = 1;
+      return pair_type(errorCode, numBytes);
+    }
 
     if (numEnt == 0) {
-      return 0;
+      return pair_type(errorCode, numBytes);
     }
     else {
       // NOTE (mfh 02 Feb 2015) This assumes that all instances of T
@@ -191,19 +197,18 @@ struct PackTraits {
       // T's size is run-time dependent, a default-constructed T might
       // not have the right size.  However, we require that all
       // entries of the input array have the correct size.
-      const size_t numBytes = numEnt * packValueCount (inBuf(0));
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (outBuf.dimension_0 ()) < numBytes,
-        std::invalid_argument, "PackTraits::packArray: outBuf.dimension_0() = "
-        << outBuf.dimension_0 () << " < numBytes = " << numBytes << ".");
-#endif // HAVE_TPETRA_DEBUG
+      numBytes = numEnt * packValueCount (inBuf(0));
 
-      // FIXME (mfh 02,05 Feb 2015) This may assume UVM.  On the other
-      // hand, reinterpret_cast may break aliasing and/or alignment
-      // rules.
+      if (static_cast<size_t> (outBuf.dimension_0 ()) < numBytes) {
+        // outBuf.dimension_0() must be >= numEnt
+        errorCode = 2;
+        return pair_type(errorCode, numBytes);
+      }
+
+      // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
+      // function.  It does what one would expect.
       memcpy (outBuf.ptr_on_device (), inBuf.ptr_on_device (), numBytes);
-      return numBytes;
+      return pair_type(errorCode, numBytes);
     }
   }
 
@@ -220,21 +225,26 @@ struct PackTraits {
   /// \param inBuf [out] Input buffer of bytes (\c char).
   /// \param numEnt [in] Number of \c value_type entries to unpack.
   ///
-  /// \return The number of bytes unpacked (i.e., read from \c inBuf).
-  static size_t
+  /// \return {The number of bytes unpacked (i.e., read from \c inBuf).
+  //    unpackArray error code (success = 0)}
+  KOKKOS_INLINE_FUNCTION
+  static Kokkos::pair<int, size_t>
   unpackArray (const output_array_type& outBuf,
                const input_buffer_type& inBuf,
                const size_t numEnt)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (outBuf.size ()) < numEnt, std::invalid_argument,
-      "PackTraits::unpackArray: outBuf.size() = " << outBuf.size ()
-      << " < numEnt = " << numEnt << ".");
-#endif // HAVE_TPETRA_DEBUG
+    size_t numBytes = 0;
+    int errorCode = 0;
+    typedef Kokkos::pair<int, size_t> pair_type;
+
+    if (static_cast<size_t> (outBuf.size ()) < numEnt) {
+      // outBuf.size() must be >= numEnt
+      errorCode = 1;
+      return pair_type(errorCode, numBytes);
+    }
 
     if (numEnt == 0) {
-      return static_cast<size_t> (0);
+      return pair_type(errorCode, numBytes);
     }
     else {
       // NOTE (mfh 02 Feb 2015) This assumes that all instances of T
@@ -247,20 +257,19 @@ struct PackTraits {
       // T's size is run-time dependent, a default-constructed T might
       // not have the right size.  However, we require that all
       // entries of the input array have the correct size.
-      const T& val = outBuf (0);
-      const size_t numBytes = numEnt * packValueCount (val);
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (inBuf.dimension_0 ()) < numBytes,
-        std::invalid_argument, "PackTraits::unpackArray: inBuf.dimension_0() = "
-        << inBuf.dimension_0 () << " < numBytes = " << numBytes << ".");
-#endif // HAVE_TPETRA_DEBUG
+      const T& val = outBuf(0);
+      numBytes = numEnt * packValueCount (val);
 
-      // FIXME (mfh 02,05 Feb 2015) This may assume UVM.  On the other
-      // hand, reinterpret_cast may break aliasing and/or alignment
-      // rules.
+      if (static_cast<size_t> (inBuf.dimension_0 ()) < numBytes) {
+        // inBuf.dimension_0() must be >= numBytes
+        errorCode = 1;
+        return pair_type(errorCode, numBytes);
+      }
+
+      // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
+      // function.  It does what one would expect.
       memcpy (outBuf.ptr_on_device (), inBuf.ptr_on_device (), numBytes);
-      return numBytes;
+      return pair_type(errorCode, numBytes);
     }
   }
 
@@ -287,6 +296,7 @@ struct PackTraits {
   /// instance of \c value_type, in case we want to relax this
   /// assumption in the future.  That's why the brief description of
   /// this function says "the given value of type \c value_type."
+  KOKKOS_INLINE_FUNCTION
   static size_t
   packValueCount (const T& /* inVal */)
   {
@@ -302,6 +312,7 @@ struct PackTraits {
   /// \param inVal [in] Input value to pack.
   ///
   /// \return The number of bytes used to pack \c inVal.
+  KOKKOS_INLINE_FUNCTION
   static size_t
   packValue (const output_buffer_type& outBuf,
              const T& inVal)
@@ -311,10 +322,37 @@ struct PackTraits {
     // any included padding as well as the actual data.
     const size_t numBytes = packValueCount (inVal);
 
-    // FIXME (mfh 02,05 Feb 2015) This may assume UVM.  On the other
-    // hand, reinterpret_cast may break aliasing and/or alignment
-    // rules.
+    // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
+    // function.  It does what one would expect.
     memcpy (outBuf.ptr_on_device (), &inVal, numBytes);
+    return numBytes;
+  }
+
+  /// \brief Pack the given value of type \c value_type into the given
+  ///   output buffer of bytes (\c char).
+  ///
+  /// \pre \c outBuf has at least \c packValueCount(inVal) entries.
+  ///
+  /// \param outBuf [out] Output buffer of bytes.
+  /// \param outBufIndex [in] Index in to output buffer
+  /// \param inVal [in] Input value to pack.
+  ///
+  /// \return The number of bytes used to pack \c inVal.
+  KOKKOS_INLINE_FUNCTION
+  static size_t
+  packValue (const output_buffer_type& outBuf,
+             const size_t outBufIndex,
+             const T& inVal)
+  {
+    // It's actually OK for packValueCount to return an upper bound
+    // (e.g., padding for alignment).  The memcpy call below will copy
+    // any included padding as well as the actual data.
+    const size_t numBytes = packValueCount (inVal);
+    const size_t offset = outBufIndex * numBytes;
+
+    // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
+    // function.  It does what one would expect.
+    memcpy (outBuf.ptr_on_device () + offset, &inVal, numBytes);
     return numBytes;
   }
 
@@ -330,6 +368,7 @@ struct PackTraits {
   /// does not depend on the unpacked data.  That is, \c outVal on
   /// input requires the same number of packed bytes as it should on
   /// output.
+  KOKKOS_INLINE_FUNCTION
   static size_t
   unpackValue (T& outVal, const input_buffer_type& inBuf)
   {
@@ -338,9 +377,8 @@ struct PackTraits {
     // any included padding as well as the actual data.
     const size_t numBytes = packValueCount (outVal);
 
-    // FIXME (mfh 02,05 Feb 2015) This may assume UVM.  On the other
-    // hand, reinterpret_cast may break aliasing and/or alignment
-    // rules.
+    // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
+    // function.  It does what one would expect.
     memcpy (&outVal, inBuf.ptr_on_device (), numBytes);
     return numBytes;
   }

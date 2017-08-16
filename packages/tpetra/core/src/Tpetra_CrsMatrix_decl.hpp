@@ -56,6 +56,7 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_PackTraits.hpp"
 
 // localMultiply is templated on DomainScalar and RangeScalar, so we
 // have to include this header file here, rather than in the _def
@@ -3714,12 +3715,13 @@ namespace Tpetra {
     /// build).
     ///
     /// \return \c true if the method succeeded, else \c false.
-    bool
-    packRow (char* const numEntOut,
-             char* const valOut,
-             char* const indOut,
+    size_t
+    packRow (const typename Tpetra::Details::PackTraits<LocalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_buffer_type& exports,
+             const size_t offset,
              const size_t numEnt,
-             const LocalOrdinal lclRow) const;
+             const typename Tpetra::Details::PackTraits<GlobalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_array_type& gidsIn,
+             const typename Tpetra::Details::PackTraits<impl_scalar_type, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_array_type& valsIn,
+             const size_t numBytesPerValue) const;
 
     /// \brief Pack data for the current row to send, if the matrix's
     ///   graph is known to be static (and therefore fill complete,
@@ -3773,15 +3775,14 @@ namespace Tpetra {
     ///   the same row with the same column index).
     ///
     /// \return \c true if the method succeeded, else \c false.
-    bool
-    unpackRow (impl_scalar_type* const valInTmp,
-               GlobalOrdinal* const indInTmp,
-               const size_t tmpNumEnt,
-               const char* const valIn,
-               const char* const indIn,
+    size_t
+    unpackRow (const typename Tpetra::Details::PackTraits<GlobalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_array_type& gidsOut,
+               const typename Tpetra::Details::PackTraits<impl_scalar_type, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_array_type& valsOut,
+               const typename Tpetra::Details::PackTraits<int, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_buffer_type& imports,
+               const size_t offset,
+               const size_t numBytes,
                const size_t numEnt,
-               const LocalOrdinal lclRow,
-               const Tpetra::CombineMode combineMode);
+               const size_t numBytesPerValue);
 
     /// \brief Allocate space for pack() to pack entries to send.
     ///

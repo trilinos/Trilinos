@@ -56,6 +56,9 @@
 
 namespace { // anonymous
 
+#define NUM_ROW_PER_PROC 4
+#define NUM_NZ_COLS 100
+
 template<class T>
 bool
 essentially_equal(T a, T b) {
@@ -65,23 +68,24 @@ essentially_equal(T a, T b) {
   return KAT::abs(a - b) <= ( (KAT::abs(a) > KAT::abs(b) ? KAT::abs(b) : KAT::abs(a)) * eps);
 }
 
-template<class MatrixType>
-Teuchos::RCP<MatrixType>
+template<class CrsMatrixType>
+Teuchos::RCP<CrsMatrixType>
 generate_test_matrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   using Teuchos::rcp;
   using Teuchos::RCP;
   using Teuchos::Array;
   using Teuchos::OrdinalTraits;
-  typedef typename MatrixType::scalar_type SC;
-  typedef typename MatrixType::local_ordinal_type LO;
-  typedef typename MatrixType::global_ordinal_type GO;
-  typedef typename MatrixType::node_type NT;
+  typedef CrsMatrixType crs_matrix_type;
+  typedef typename crs_matrix_type::scalar_type SC;
+  typedef typename crs_matrix_type::local_ordinal_type LO;
+  typedef typename crs_matrix_type::global_ordinal_type GO;
+  typedef typename crs_matrix_type::node_type NT;
   typedef Tpetra::Map<LO, GO, NT> MapType;
 
   const int world_rank = comm->getRank();
 
-  const LO num_row_per_proc = 4;
+  const LO num_row_per_proc = NUM_ROW_PER_PROC; // 4;
   Array<GO> row_gids(num_row_per_proc);
 
   GO start = static_cast<GO>(num_row_per_proc * world_rank);
@@ -90,7 +94,7 @@ generate_test_matrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   }
 
   // Create random, unique column GIDs.
-  const LO num_nz_cols = 100;
+  const LO num_nz_cols = NUM_NZ_COLS; //100;
   std::random_device rand_dev;
   std::mt19937 generator(rand_dev());
   std::uniform_int_distribution<GO>  distr(1, 2000);
@@ -113,7 +117,7 @@ generate_test_matrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   RCP<const MapType> row_map = rcp(new MapType(INVALID, row_gids(), 0, comm));
   RCP<const MapType> col_map = rcp(new MapType(INVALID, col_gids(), 0, comm));
 
-  auto A = rcp (new MatrixType (row_map, col_map, num_nz_cols));
+  auto A = rcp (new crs_matrix_type (row_map, col_map, num_nz_cols));
 
   Array<LO> columns(num_nz_cols);
   Array<SC> entries(num_nz_cols);
@@ -146,8 +150,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   using Teuchos::REDUCE_MIN;
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
-  typedef CrsMatrix<SC, LO, GO, NT, false> MatrixType;
-  typedef typename MatrixType::local_matrix_type LocalMatrixType;
+  typedef CrsMatrix<SC, LO, GO, NT, false> crs_matrix_type;
   typedef typename NT::device_type device_type;
   typedef typename device_type::execution_space execution_space;
 
@@ -171,7 +174,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
 
   out << "Creating matrix" << endl;
 
-  auto A = generate_test_matrix<MatrixType> (comm);
+  auto A = generate_test_matrix<crs_matrix_type> (comm);
   auto col_map = A->getColMap();
   auto row_map = A->getRowMap();
 
@@ -186,28 +189,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   Array<size_t> numPacketsPerLID (num_loc_rows, 0); // output argument
   size_t constantNumPackets; // output argument
   Tpetra::Distributor distor (comm); // argument required, but not used
-  LocalMatrixType A_lcl = A->getLocalMatrix (); // local matrix; input argument
-  std::unique_ptr<std::string> errStr; // error string output argument
 
   out << "Calling packCrsMatrix" << endl;
 
-  const bool lcl_pack_OK =
-    packCrsMatrix (A_lcl, col_map->getLocalMap(), errStr,
-                   exports, numPacketsPerLID (), constantNumPackets,
-                   exportLIDs (), world_rank, distor);
-  TEST_ASSERT( lcl_pack_OK );
-  lclSuccess = success ? 1 : 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  TEST_EQUALITY_CONST( gblSuccess, 1 );
-  if (gblSuccess != 1) {
-    if (world_rank == 0) {
-      out << "packCrsMatrix reported an error!" << endl;
+  {
+    int local_op_ok;
+    std::ostringstream msg;
+    try {
+      packCrsMatrix<SC,LO,GO,NT>(*A, exports, numPacketsPerLID(), exportLIDs(),
+          constantNumPackets, distor);
+      local_op_ok = 1;
+    } catch (std::exception& e) {
+      local_op_ok = 0;
+      msg << e.what();
     }
-    const std::string errStr2 =
-      errStr.get () == NULL ? std::string ("") : *errStr;
-    gathervPrint (out, errStr2, *comm);
-    out << endl << "Abandoning test; no point in continuing." << endl;
-    return;
+    TEST_ASSERT(local_op_ok == 1);
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      if (world_rank == 0) {
+        out << "packCrsMatrix reported an error!" << endl;
+      }
+      gathervPrint (out, msg.str(), *comm);
+      out << endl << "Abandoning test; no point in continuing." << endl;
+      return;
+    }
   }
 
   // Now make sure that the pack is correct by building a matrix of zeros and
@@ -216,10 +223,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   // should be the same as the above matrix.
   out << "Building second matrix" << endl;
   auto graph = A->getCrsGraph();
-  RCP<MatrixType> B = rcp(new MatrixType(graph));
+  RCP<crs_matrix_type> B = rcp(new crs_matrix_type(graph));
   B->setAllToScalar(static_cast<SC>(0.));
   B->fillComplete();
-  LocalMatrixType B_lcl = B->getLocalMatrix();
 
 #ifdef KOKKOS_HAVE_SERIAL
   typedef typename device_type::execution_space ES;
@@ -230,23 +236,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
 
   out << "Calling unpackCrsMatrixAndCombine with "
       << "CombineMode=Tpetra::REPLACE" << endl;
-  bool lcl_unpack_OK =
-    unpackCrsMatrixAndCombine (B_lcl, col_map->getLocalMap (), errStr,
-                               exportLIDs (), exports, numPacketsPerLID (),
-                               constantNumPackets, world_rank, distor, Tpetra::REPLACE,
-                               atomic_updates);
-  TEST_ASSERT( lcl_unpack_OK );
-  lclSuccess = success ? 1 : 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  TEST_EQUALITY_CONST( gblSuccess, 1 );
-  if (gblSuccess != 1) {
-    if (world_rank == 0) {
-      out << "unpackCrsMatrixAndCombine reported an error!" << endl;
+
+  {
+    int local_op_ok;
+    std::ostringstream msg;
+    try {
+      unpackCrsMatrixAndCombine<SC,LO,GO,NT>(*B, exports, numPacketsPerLID(),
+          exportLIDs(), constantNumPackets, distor, Tpetra::REPLACE, atomic_updates);
+      local_op_ok = 1;
+    } catch (std::exception& e) {
+      local_op_ok = 0;
+      msg << e.what();
     }
-    const std::string errStr2 =
-      errStr.get () == NULL ? std::string ("") : *errStr;
-    gathervPrint (out, errStr2, *comm);
-    return; // no point in continuing
+
+    TEST_ASSERT(local_op_ok == 1);
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      if (world_rank == 0) {
+        out << "unpackCrsMatrixAndCombine reported an error!" << endl;
+      }
+      gathervPrint(out, msg.str(), *comm);
+      return; // no point in continuing
+    }
   }
 
   // The test below uses the host Tpetra::CrsMatrix interface to
@@ -314,24 +327,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
   // The resultant matrix should then be twice the original.
   out << "Calling unpackCrsMatrixAndCombine with "
       << "CombineMode=Tpetra::ADD" << endl;
-  lcl_unpack_OK =
-    unpackCrsMatrixAndCombine (B_lcl, col_map->getLocalMap (), errStr,
-                               exportLIDs (), exports, numPacketsPerLID (),
-                               constantNumPackets, world_rank, distor, Tpetra::ADD,
-                               atomic_updates);
-  TEST_ASSERT( lcl_unpack_OK );
-  lclSuccess = success ? 1 : 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  TEST_EQUALITY_CONST( gblSuccess, 1 );
-  if (gblSuccess != 1) {
-    if (world_rank == 0) {
-      out << "unpackCrsMatrixAndCombine reported an error!" << endl;
+  {
+    int local_op_ok;
+    std::ostringstream msg;
+    try {
+      unpackCrsMatrixAndCombine<SC,LO,GO,NT>(*B, exports, numPacketsPerLID(), exportLIDs(),
+          constantNumPackets, distor, Tpetra::ADD, atomic_updates);
+      local_op_ok = 1;
+    } catch (std::exception& e) {
+      local_op_ok = 0;
+      msg << e.what();
     }
-    const std::string errStr2 =
-      errStr.get () == NULL ? std::string ("") : *errStr;
-    gathervPrint (out, errStr2, *comm);
-    out << endl << "Abandoning test; no point in continuing." << endl;
-    return;
+    TEST_ASSERT(local_op_ok == 1);
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      if (world_rank == 0) {
+        out << "unpackCrsMatrixAndCombine reported an error!" << endl;
+      }
+      gathervPrint (out, msg.str(), *comm);
+      out << endl << "Abandoning test; no point in continuing." << endl;
+      return;
+    }
   }
 
   // Loop through rows and compare matrix values
@@ -390,19 +408,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
     }
   }
 
-  lclSuccess = success ? 1 : 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  TEST_EQUALITY_CONST( gblSuccess, 1 );
-
-  if (gblSuccess != 1) {
-    if (world_rank == 0) {
-      out << "Error in packCrsMatrix!" << endl;
-    }
-    using ::Tpetra::Details::gathervPrint;
-    const std::string errStr2 =
-      errStr.get () == NULL ? std::string ("") : *errStr;
-    gathervPrint (out, errStr2, *comm);
-  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackError, SC, LO, GO, NT)
@@ -422,8 +427,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackError, SC, LO, GO, NT)
   using Teuchos::reduceAll;
   using std::endl;
 
-  typedef CrsMatrix<SC, LO, GO, NT, false> MatrixType;
-  typedef typename MatrixType::local_matrix_type LocalMatrixType;
+  typedef CrsMatrix<SC, LO, GO, NT, false> crs_matrix_type;
 
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
 
@@ -442,7 +446,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackError, SC, LO, GO, NT)
 
   out << "Creating matrix" << endl;
 
-  auto A = generate_test_matrix<MatrixType> (comm);
+  auto A = generate_test_matrix<crs_matrix_type> (comm);
   auto col_map = A->getColMap();
   auto row_map = A->getRowMap();
 
@@ -454,7 +458,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackError, SC, LO, GO, NT)
   int gblSuccess = 0; // output argument
   std::ostringstream errStrm; // for error string local to each process
 
-  bool lcl_pack_OK = false;
   {
     LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
     Array<LO> exportLIDs(num_loc_rows);
@@ -467,18 +470,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackError, SC, LO, GO, NT)
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
     Distributor distor(comm);
-    LocalMatrixType A_lcl = A->getLocalMatrix();
-    std::unique_ptr<std::string> errStr;
-    lcl_pack_OK =
-      packCrsMatrix (A_lcl, col_map->getLocalMap(), errStr,
-                     exports, numPacketsPerLID (), constantNumPackets,
-                     exportLIDs (), world_rank, distor);
-    if (lcl_pack_OK) {
-      // Local pack should not be OK!  We requested bad local IDs be exported!
-      errStrm << "Proc " << world_rank
-              << ": packCrsMatrix returned OK, but bad local IDs were requested!"
-              << endl;
-      lclSuccess = 0;
+    {
+      int local_op_ok;
+      std::ostringstream msg;
+      try {
+        packCrsMatrix<SC,LO,GO,NT>(*A, exports, numPacketsPerLID(), exportLIDs(),
+            constantNumPackets, distor);
+        local_op_ok = 1;
+      } catch (std::exception& e) {
+        local_op_ok = 0;
+        msg << e.what();
+      }
+      if (local_op_ok == 1) {
+        // Local pack should not be OK!  We requested bad local IDs be exported!
+        errStrm << "Proc " << world_rank
+                << ": packCrsMatrix returned OK, but bad local IDs were requested!"
+                << endl;
+        lclSuccess = 0;
+      }
     }
   }
 
@@ -504,20 +513,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackError, SC, LO, GO, NT)
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
     Distributor distor(comm);
-    LocalMatrixType A_lcl = A->getLocalMatrix();
-    std::unique_ptr<std::string> errStr;
     out << "Calling packCrsMatrix" << endl;
-    lcl_pack_OK =
-      packCrsMatrix (A_lcl, col_map->getLocalMap(), errStr,
-                     exports, numPacketsPerLID (), constantNumPackets,
-                     exportLIDs (), world_rank, distor);
-    if (lcl_pack_OK) {
-      // Local pack should not be OK!  We requested too few local IDs be exported!
-      errStrm << "Proc " << world_rank
-              << ": packCrsMatrix returned OK, but too few IDs "
-              << "were requested to be exported!"
-              << endl;
-      lclSuccess = 0;
+    {
+      int local_op_ok;
+      std::ostringstream msg;
+      try {
+        packCrsMatrix<SC,LO,GO,NT>(*A, exports, numPacketsPerLID(), exportLIDs(),
+            constantNumPackets, distor);
+        local_op_ok = 1;
+      } catch (std::exception& e) {
+        local_op_ok = 0;
+        msg << e.what();
+      }
+      if (local_op_ok == 1) {
+        // Local pack should not be OK!  We requested too few local IDs be exported!
+        errStrm << "Proc " << world_rank
+                << ": packCrsMatrix returned OK, but too few IDs "
+                << "were requested to be exported!"
+                << endl;
+        lclSuccess = 0;
+      }
     }
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_EQUALITY( gblSuccess, 1 );
