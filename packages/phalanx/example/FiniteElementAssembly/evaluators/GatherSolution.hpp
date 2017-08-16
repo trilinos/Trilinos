@@ -85,7 +85,7 @@ class GatherSolution<PHX::MyTraits::Residual,Traits>
 
 public:
   GatherSolution(const std::string& field_name,
-                 const Teuchos::RCP<const PHX::DataLayout>& layout,
+                 const Teuchos::RCP<PHX::DataLayout>& layout,
                  const int& in_num_equations,
                  const int& in_field_index,
                  const Kokkos::View<double*,PHX::Device>& x);
@@ -112,7 +112,7 @@ class GatherSolution<PHX::MyTraits::Jacobian,Traits>
   
 public:
   GatherSolution(const std::string& field_name,
-                 const Teuchos::RCP<const PHX::DataLayout>& layout,
+                 const Teuchos::RCP<PHX::DataLayout>& layout,
                  const int& in_num_equations,
                  const int& in_field_index,
                  const Kokkos::View<double*,PHX::Device>& x);

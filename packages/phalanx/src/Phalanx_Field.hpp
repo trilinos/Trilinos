@@ -115,7 +115,7 @@ namespace PHX {
     typedef typename PHX::Device::size_type size_type;
     typedef typename array_type::execution_space execution_space;
 
-    Field(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& t);
+    Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
 
     Field(const PHX::Tag<DataT>& v);
 

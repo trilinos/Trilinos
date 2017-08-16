@@ -61,8 +61,8 @@ class ProjectValueToQP : public PHX::EvaluatorWithBaseImpl<Traits>,
   
 public:
   ProjectValueToQP(const std::string& field_name,
-                   const Teuchos::RCP<const PHX::DataLayout>& basis_layout,
-                   const Teuchos::RCP<const PHX::DataLayout>& qp_layout);
+                   const Teuchos::RCP<PHX::DataLayout>& basis_layout,
+                   const Teuchos::RCP<PHX::DataLayout>& qp_layout);
   void evaluateFields(typename Traits::EvalData d) override;
   KOKKOS_INLINE_FUNCTION
   void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;

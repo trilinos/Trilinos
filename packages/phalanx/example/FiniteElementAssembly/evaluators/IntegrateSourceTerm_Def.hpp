@@ -46,9 +46,9 @@
 template<typename EvalT, typename Traits>
 IntegrateSourceTerm<EvalT,Traits>::
 IntegrateSourceTerm(const std::string& source_name,
-                    const Teuchos::RCP<const PHX::DataLayout>& source_layout,
+                    const Teuchos::RCP<PHX::DataLayout>& source_layout,
                     const std::string& residual_name,
-                    const Teuchos::RCP<const PHX::DataLayout>& residual_layout) :
+                    const Teuchos::RCP<PHX::DataLayout>& residual_layout) :
   source(source_name,source_layout),
   residual(residual_name,residual_layout)
 {

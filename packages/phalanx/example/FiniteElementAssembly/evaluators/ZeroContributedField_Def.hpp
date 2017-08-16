@@ -46,7 +46,7 @@
 template<typename EvalT, typename Traits>
 ZeroContributedField<EvalT,Traits>::
 ZeroContributedField(const std::string& field_name,
-                     const Teuchos::RCP<const PHX::DataLayout>& layout) :
+                     const Teuchos::RCP<PHX::DataLayout>& layout) :
   field(field_name,layout)
 {
   // "Evalauted" is always called before "Contributed" for the same field

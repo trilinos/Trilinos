@@ -115,10 +115,10 @@ int main(int argc, char *argv[])
     constexpr int max_deriv_entries_per_row = 8 * 8 * num_equations;
         
     // We will size the layouts later 
-    RCP<const PHX::DataLayout> qp_layout = rcp(new Layout("DL<CELL,QP>"));
-    RCP<const PHX::DataLayout> grad_qp_layout = rcp(new Layout("DL<CELL,QP,DIM>"));
-    RCP<const PHX::DataLayout> basis_layout = rcp(new Layout("DL<CELL,BASIS>"));
-    RCP<const PHX::DataLayout> scatter_layout = rcp(new Layout("DL<SCATTER>"));
+    RCP<PHX::DataLayout> qp_layout = rcp(new Layout("DL<CELL,QP>"));
+    RCP<PHX::DataLayout> grad_qp_layout = rcp(new Layout("DL<CELL,QP,DIM>"));
+    RCP<PHX::DataLayout> basis_layout = rcp(new Layout("DL<CELL,BASIS>"));
+    RCP<PHX::DataLayout> scatter_layout = rcp(new Layout("DL<SCATTER>"));
     
     PHX::FieldManager<MyTraits> fm;
     {
@@ -258,13 +258,13 @@ int main(int argc, char *argv[])
 
       for (auto& t : tags) {
         if (t->dataLayout().identifier() == "DL<CELL,QP>")
-          dynamic_cast<PHX::Layout&>(const_cast<PHX::DataLayout&>(t->dataLayout())).setExtents(workset_size,8);
+          dynamic_cast<PHX::Layout&>(t->nonConstDataLayout()).setExtents(workset_size,8);
         else if (t->dataLayout().identifier() == "DL<CELL,QP,DIM>")
-          dynamic_cast<PHX::Layout&>(const_cast<PHX::DataLayout&>(t->dataLayout())).setExtents(workset_size,8,3);
+          dynamic_cast<PHX::Layout&>(t->nonConstDataLayout()).setExtents(workset_size,8,3);
         else if (t->dataLayout().identifier() == "DL<CELL,BASIS>")
-          dynamic_cast<PHX::Layout&>(const_cast<PHX::DataLayout&>(t->dataLayout())).setExtents(workset_size,8);
+          dynamic_cast<PHX::Layout&>(t->nonConstDataLayout()).setExtents(workset_size,8);
         else if (t->dataLayout().identifier() == "DL<SCATTER>")
-          dynamic_cast<PHX::Layout&>(const_cast<PHX::DataLayout&>(t->dataLayout())).setExtents(0);
+          dynamic_cast<PHX::Layout&>(t->nonConstDataLayout()).setExtents(0);
         else
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                      "ERROR: unknown DataLayout identifier:" <<

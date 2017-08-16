@@ -54,7 +54,7 @@ template<typename Traits>
 ScatterResidual<PHX::MyTraits::Residual, Traits>::
 ScatterResidual(const Teuchos::RCP<PHX::FieldTag>& in_scatter_tag,
                 const std::string& residual_name,
-                const Teuchos::RCP<const PHX::DataLayout>& residual_layout,
+                const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                 const int& in_equation_index,
                 const int& in_num_equations,
                 const Kokkos::View<double*,PHX::Device>& in_global_residual) :
@@ -99,7 +99,7 @@ template<typename Traits>
 ScatterResidual<PHX::MyTraits::Jacobian, Traits>::
 ScatterResidual(const Teuchos::RCP<PHX::FieldTag>& in_scatter_tag,
                 const std::string& residual_name,
-                const Teuchos::RCP<const PHX::DataLayout>& residual_layout,
+                const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                 const int& in_equation_index,
                 const int& in_num_equations,
                 const Kokkos::View<double*,PHX::Device>& in_global_residual,
