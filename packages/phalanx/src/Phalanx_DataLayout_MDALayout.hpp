@@ -176,6 +176,11 @@ namespace PHX {
     typename std::enable_if<std::is_unsigned<IndexType>::value>::type
     checkForValidRank(const IndexType& ordinal) const;
 
+  protected:
+
+    virtual void 
+    setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents) override;
+
   private:
 
     std::vector<const char*> m_dim_name;

@@ -149,6 +149,14 @@ void PHX::Layout::print(std::ostream& os, int offset) const
 }
 
 //**********************************************************************
+void
+PHX::Layout::
+setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents)
+{
+  m_extents = std::move(extents);
+}
+
+//**********************************************************************
 std::ostream& PHX::operator<<(std::ostream& os, const PHX::Layout& v)
 {
   v.print(os,0);
