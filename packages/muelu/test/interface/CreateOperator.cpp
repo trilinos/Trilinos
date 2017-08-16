@@ -107,7 +107,8 @@ namespace MueLuExamples {
       }
 
       RCP<Tpetra_CrsMatrix> At = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(A);
-      RCP<Tpetra_Operator>  Mt = MueLu::CreateTpetraPreconditioner(At, mueluList);
+      RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > opA(At);
+      RCP<Tpetra_Operator>  Mt = MueLu::CreateTpetraPreconditioner(opA, mueluList);
 
       if (myRank == 0) {
         // Redirect output back
