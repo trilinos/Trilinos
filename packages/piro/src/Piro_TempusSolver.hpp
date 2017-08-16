@@ -120,8 +120,7 @@ public:
 
   void initialize(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model);
 
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
   //@{
@@ -218,6 +217,14 @@ private:
   std::map<std::string,Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > > stepControlFactories;
 
   bool isInitialized;
+
+  Teuchos::RCP<Piro::ObserverBase<Scalar> > piroObserver_;
+
+  bool supports_x_dotdot_; 
+ 
+  //! Set observer
+  void setObserver(); 
+
 };
 
 /** \brief Non-member constructor function */

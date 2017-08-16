@@ -110,7 +110,9 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver):
   computeSensitivities_(computeSensitivities),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-  isInitialized(false)
+  isInitialized(false),
+  piroObserver_(piroObserver),
+  supports_x_dotdot_(false)
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -123,10 +125,10 @@ Piro::TempusSolver<Scalar>::TempusSolver(
                            appParams->get<double>("Matrix-Free Perturbation")));
     }
     else model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model));
-    initialize(appParams, model, piroObserver);
+    initialize(appParams, model);
   }
   else
-    initialize(appParams, in_model, piroObserver);
+    initialize(appParams, in_model);
 }
 
 #ifdef ALBANY_BUILD
@@ -137,8 +139,7 @@ template <typename Scalar>
 void Piro::TempusSolver<Scalar>::initialize(
 #endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-    const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
-    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
+    const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model)
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -280,24 +281,8 @@ void Piro::TempusSolver<Scalar>::initialize(
     fwdStateStepper = fwdStateIntegrator->getStepper();
 
     //Set observer
-    Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
-    bool supports_x_dotdot = model->createInArgs().supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot);
- 
-    if (Teuchos::nonnull(piroObserver)) {
-      //Get solutionHistory from integrator
-      const RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
-      const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
-      //Create Tempus::IntegratorObserverBasic object
-      observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory, timeStepControl, piroObserver, supports_x_dotdot));
-    }
-
-    if (Teuchos::nonnull(observer)) {
-      //Set observer in integrator
-      fwdStateIntegrator->setObserver(observer);
-      //Reinitialize everything in integrator class, since we have changed the observer.
-      fwdStateIntegrator->initialize();
-    }
-
+    supports_x_dotdot_ = model->createInArgs().supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot);
+    setObserver();  
 
   }
   else {
@@ -909,6 +894,31 @@ getInitTimeStep() const
   auto init_time_step = tsc->getInitTimeStep(); 
   return init_time_step; 
 } 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+void Piro::TempusSolver<Scalar>::
+#endif
+setObserver()
+{
+  Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
+  if (Teuchos::nonnull(piroObserver_)) {
+    //Get solutionHistory from integrator
+    const Teuchos::RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
+    const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
+    //Create Tempus::IntegratorObserverBasic object
+    observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory,
+                                timeStepControl, piroObserver_, supports_x_dotdot_));
+  }
+  if (Teuchos::nonnull(observer)) {
+    //Set observer in integrator
+    fwdStateIntegrator->setObserver(observer);
+    //Reinitialize everything in integrator class, since we have changed the observer.
+    fwdStateIntegrator->initialize();
+  }
+}
 
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -922,7 +932,11 @@ setInitialState(Scalar t0,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0) 
 {
-   fwdStateIntegrator->setInitialState(t0, x0, xdot0, xdotdot0);  
+   fwdStateIntegrator->setInitialState(t0, x0, xdot0, xdotdot0); 
+   //Reset observer.  This is necessary for correct observation of solution
+   //since setInitialState modifies the solutionHistory object.
+   setObserver(); 
+ 
 }
 
 #ifdef ALBANY_BUILD
