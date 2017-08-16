@@ -160,7 +160,7 @@ class checkerInterfaceNodes {
 			if(comm_->getRank()==0)
 				std::cout<<"Started reading composite matrix"<<std::endl;
 			//Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
-			globalMatrixData_ = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matrix_file_name, xpetraMap);
+			compositeMatrixData_ = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matrix_file_name, xpetraMap);
 			if(comm_->getRank()==0)
 				std::cout<<"Finished reading composite matrix"<<std::endl;
 
@@ -187,7 +187,7 @@ class checkerInterfaceNodes {
 		    \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
 		*/
 		void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
-		  globalMatrixData_->insertGlobalValues(globalRow, cols, vals);
+		  compositeMatrixData_->insertGlobalValues(globalRow, cols, vals);
 		}
 
 		//! Insert matrix entries, using local IDs.
@@ -199,7 +199,7 @@ class checkerInterfaceNodes {
 		    \post <tt>isLocallyIndexed() == true</tt>
 		*/
 		void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
-		  globalMatrixData_->insertLocalValues(localRow, cols, vals);
+		  compositeMatrixData_->insertLocalValues(localRow, cols, vals);
 		}
 
 		//! \brief Replace matrix entries, using global IDs.
@@ -210,7 +210,7 @@ class checkerInterfaceNodes {
 		\note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
 		void replaceGlobalValues(GlobalOrdinal globalRow,
 		                         const ArrayView<const GlobalOrdinal> &cols,
-		                         const ArrayView<const Scalar>        &vals) { globalMatrixData_->replaceGlobalValues(globalRow, cols, vals); }
+		                         const ArrayView<const Scalar>        &vals) { compositeMatrixData_->replaceGlobalValues(globalRow, cols, vals); }
 
 		//! Replace matrix entries, using local IDs.
 		/** All index values must be in the local space.
@@ -218,14 +218,14 @@ class checkerInterfaceNodes {
 		*/
 		void replaceLocalValues(LocalOrdinal localRow,
 		                        const ArrayView<const LocalOrdinal> &cols,
-		                        const ArrayView<const Scalar>       &vals) { globalMatrixData_->replaceLocalValues(localRow, cols, vals); }
+		                        const ArrayView<const Scalar>       &vals) { compositeMatrixData_->replaceLocalValues(localRow, cols, vals); }
 
 		//! Set all matrix entries equal to scalar
-		virtual void setAllToScalar(const Scalar &alpha) { globalMatrixData_->setAllToScalar(alpha); }
+		virtual void setAllToScalar(const Scalar &alpha) { compositeMatrixData_->setAllToScalar(alpha); }
 
 		//! Scale the current values of a matrix, this = alpha*this.
 		void scale(const Scalar &alpha) {
-		  globalMatrixData_->scale(alpha);
+		  compositeMatrixData_->scale(alpha);
 		}
 
 		//@}
@@ -242,7 +242,7 @@ class checkerInterfaceNodes {
 		  \post  <tt>isFillComplete() == false<tt>
 		*/
 		void resumeFill(const RCP< ParameterList > &params=null) {
-		  globalMatrixData_->resumeFill(params);
+		  compositeMatrixData_->resumeFill(params);
 		}
 
 		/*! \brief Signal that data entry is complete, specifying domain and range maps.
@@ -257,7 +257,7 @@ class checkerInterfaceNodes {
 		\post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
 		*/
 		void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, const RCP<Teuchos::ParameterList> &params = null) {
-		  globalMatrixData_->fillComplete(domainMap, rangeMap, params);
+		  compositeMatrixData_->fillComplete(domainMap, rangeMap, params);
 
 		  // Update default view with the colMap because colMap can be <tt>null</tt> until fillComplete() is called.
 		  updateDefaultView();
@@ -278,7 +278,7 @@ class checkerInterfaceNodes {
 		*/
 		//TODO : Get ride of "Tpetra"::OptimizeOption
 		void fillComplete(const RCP<ParameterList> &params = null) {
-		  globalMatrixData_->fillComplete(params);
+		  compositeMatrixData_->fillComplete(params);
 
 		  // Update default view with the colMap because colMap can be <tt>null</tt> until fillComplete() is called.
 		  updateDefaultView();
@@ -290,63 +290,63 @@ class checkerInterfaceNodes {
 		/** Undefined if isFillActive().
 		 */
 		global_size_t getGlobalNumRows() const {
-		  return globalMatrixData_->getGlobalNumRows();
+		  return compositeMatrixData_->getGlobalNumRows();
 		}
 
 		//! \brief Returns the number of global columns in the matrix.
 		/** Undefined if isFillActive().
 		 */
 		global_size_t getGlobalNumCols() const {
-		  return globalMatrixData_->getGlobalNumCols();
+		  return compositeMatrixData_->getGlobalNumCols();
 		}
 
 		//! Returns the number of matrix rows owned on the calling node.
 		size_t getNodeNumRows() const {
-		  return globalMatrixData_->getNodeNumRows();
+		  return compositeMatrixData_->getNodeNumRows();
 		}
 
 		//! Returns the global number of entries in this matrix.
 		global_size_t getGlobalNumEntries() const {
-		  return globalMatrixData_->getGlobalNumEntries();
+		  return compositeMatrixData_->getGlobalNumEntries();
 		}
 
 		//! Returns the local number of entries in this matrix.
 		size_t getNodeNumEntries() const {
-		  return globalMatrixData_->getNodeNumEntries();
+		  return compositeMatrixData_->getNodeNumEntries();
 		}
 
 		//! Returns the current number of entries on this node in the specified local row.
 		/*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
 		size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
-		  return globalMatrixData_->getNumEntriesInLocalRow(localRow);
+		  return compositeMatrixData_->getNumEntriesInLocalRow(localRow);
 		}
 
 		//! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
 		/** Undefined if isFillActive().
 		 */
 		global_size_t getGlobalNumDiags() const {
-		  return globalMatrixData_->getGlobalNumDiags();
+		  return compositeMatrixData_->getGlobalNumDiags();
 		}
 
 		//! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
 		/** Undefined if isFillActive().
 		 */
 		size_t getNodeNumDiags() const {
-		  return globalMatrixData_->getNodeNumDiags();
+		  return compositeMatrixData_->getNodeNumDiags();
 		}
 
 		//! \brief Returns the maximum number of entries across all rows/columns on all nodes.
 		/** Undefined if isFillActive().
 		 */
 		size_t getGlobalMaxNumRowEntries() const {
-		  return globalMatrixData_->getGlobalMaxNumRowEntries();
+		  return compositeMatrixData_->getGlobalMaxNumRowEntries();
 		}
 
 		//! \brief Returns the maximum number of entries across all rows/columns on this node.
 		/** Undefined if isFillActive().
 		 */
 		size_t getNodeMaxNumRowEntries() const {
-		  return globalMatrixData_->getNodeMaxNumRowEntries();
+		  return compositeMatrixData_->getNodeMaxNumRowEntries();
 		}
 
 		//! \brief Returns the number of regions in the composite domain.
@@ -361,17 +361,17 @@ class checkerInterfaceNodes {
 
 		//! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
 		bool isLocallyIndexed() const {
-		  return globalMatrixData_->isLocallyIndexed();
+		  return compositeMatrixData_->isLocallyIndexed();
 		}
 
 		//! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
 		bool isGloballyIndexed() const {
-		  return globalMatrixData_->isGloballyIndexed();
+		  return compositeMatrixData_->isGloballyIndexed();
 		}
 
 		//! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
 		bool isFillComplete() const {
-		  return globalMatrixData_->isFillComplete();
+		  return compositeMatrixData_->isFillComplete();
 		}
 
 		//! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
@@ -392,7 +392,7 @@ class checkerInterfaceNodes {
 		                     const ArrayView<Scalar> &Values,
 		                     size_t &NumEntries
 		                     ) const {
-		  globalMatrixData_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
+		  compositeMatrixData_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
 		}
 
 		//! Extract a const, non-persisting view of global indices in a specified row of the matrix.
@@ -406,7 +406,7 @@ class checkerInterfaceNodes {
 		  Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
 		*/
 		void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const {
-		   globalMatrixData_->getGlobalRowView(GlobalRow, indices, values);
+		   compositeMatrixData_->getGlobalRowView(GlobalRow, indices, values);
 		}
 
 		//! Extract a const, non-persisting view of local indices in a specified row of the matrix.
@@ -420,44 +420,44 @@ class checkerInterfaceNodes {
 		  Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
 		*/
 		void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const {
-		   globalMatrixData_->getLocalRowView(LocalRow, indices, values);
+		   compositeMatrixData_->getLocalRowView(LocalRow, indices, values);
 		}
 
 		//! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
 		/*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
 		  the zero and non-zero diagonals owned by this node. */
 		void getLocalDiagCopy(Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
-		  globalMatrixData_->getLocalDiagCopy(diag);
+		  compositeMatrixData_->getLocalDiagCopy(diag);
 		}
 
 		//! Get offsets of the diagonal entries in the matrix.
 		void getLocalDiagOffsets(ArrayRCP<size_t> &offsets) const {
-		  globalMatrixData_->getLocalDiagOffsets(offsets);
+		  compositeMatrixData_->getLocalDiagOffsets(offsets);
 		}
 
 		//! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
 		void getLocalDiagCopy(Xpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const ArrayView<const size_t> &offsets) const {
-		  globalMatrixData_->getLocalDiagCopy(diag,offsets);
+		  compositeMatrixData_->getLocalDiagCopy(diag,offsets);
 		}
 
 		//! Get Frobenius norm of the matrix
 		typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const {
-		  return globalMatrixData_->getFrobeniusNorm();
+		  return compositeMatrixData_->getFrobeniusNorm();
 		}
 
 		//! Left scale matrix using the given vector entries
 		void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-		  globalMatrixData_->leftScale(x);
+		  compositeMatrixData_->leftScale(x);
 		}
 
 		//! Neighbor2 scale matrix using the given vector entries
 		void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-		  globalMatrixData_->rightScale(x);
+		  compositeMatrixData_->rightScale(x);
 		}
 
 		//! Returns true if globalConstants have been computed; false otherwise
 		bool haveGlobalConstants() const {
-		  return globalMatrixData_->haveGlobalConstants();
+		  return compositeMatrixData_->haveGlobalConstants();
 		}
 
 		//@}
@@ -475,19 +475,19 @@ class checkerInterfaceNodes {
 			   Scalar alpha = ScalarTraits<Scalar>::one(),
 			   Scalar beta = ScalarTraits<Scalar>::zero()) const {
 
-			globalMatrixData_->apply(X,Y,mode,alpha,beta);
+			compositeMatrixData_->apply(X,Y,mode,alpha,beta);
 		}
 
 		//! \brief Returns the Map associated with the domain of this operator.
 		//! This will be <tt>null</tt> until fillComplete() is called.
 		RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
-		return globalMatrixData_->getDomainMap();
+		return compositeMatrixData_->getDomainMap();
 		}
 
 		//! Returns the Map associated with the domain of this operator.
 		//! This will be <tt>null</tt> until fillComplete() is called.
 		RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
-		return globalMatrixData_->getRangeMap();
+		return compositeMatrixData_->getRangeMap();
 		}
 
 		//! \brief Returns the Map that describes the column distribution in this matrix.
@@ -502,9 +502,9 @@ class checkerInterfaceNodes {
 		}
 
 		void removeEmptyProcessesInPlace(const RCP<const Map>& newMap) {
-		globalMatrixData_->removeEmptyProcessesInPlace(newMap);
-		this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetRowMap(globalMatrixData_->getRowMap());
-		this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetColMap(globalMatrixData_->getColMap());
+		compositeMatrixData_->removeEmptyProcessesInPlace(newMap);
+		this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetRowMap(compositeMatrixData_->getRowMap());
+		this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetColMap(compositeMatrixData_->getColMap());
 		}
 
 		//@}
@@ -514,7 +514,7 @@ class checkerInterfaceNodes {
 
 		//! Access function for the Tpetra::Map this DistObject was constructed with.
 		const RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const {
-		return globalMatrixData_->getMap();
+		return compositeMatrixData_->getMap();
 		}
 
 		//! Import.
@@ -522,7 +522,7 @@ class checkerInterfaceNodes {
 			const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {
 			std::cout<<"Import not implemented"<<std::endl;
 		//const MatrixSplitting & sourceWrp = dynamic_cast<const MatrixSplitting &>(source);
-		//globalMatrixData_->doImport(*sourceWrp.getCrsMatrix(), importer, CM);
+		//compositeMatrixData_->doImport(*sourceWrp.getCrsMatrix(), importer, CM);
 		}
 
 		//! Export.
@@ -530,7 +530,7 @@ class checkerInterfaceNodes {
 			const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
 			std::cout<<"Export not implemented"<<std::endl;
 		//const MatrixSplitting & destWrp = dynamic_cast<const MatrixSplitting &>(dest);
-		//globalMatrixData_->doExport(*destWrp.getCrsMatrix(), importer, CM);
+		//compositeMatrixData_->doExport(*destWrp.getCrsMatrix(), importer, CM);
 		}
 
 		//! Import (using an Exporter).
@@ -538,7 +538,7 @@ class checkerInterfaceNodes {
 			const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
 			std::cout<<"Import not implemented"<<std::endl;
 		//const MatrixSplitting & sourceWrp = dynamic_cast<const MatrixSplitting &>(source);
-		//globalMatrixData_->doImport(*sourceWrp.getCrsMatrix(), exporter, CM);
+		//compositeMatrixData_->doImport(*sourceWrp.getCrsMatrix(), exporter, CM);
 		}
 
 		//! Export (using an Importer).
@@ -546,7 +546,7 @@ class checkerInterfaceNodes {
 			const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
 			std::cout<<"Export not implemented"<<std::endl;
 		//const MatrixSplitting & destWrp = dynamic_cast<const MatrixSplitting &>(dest);
-		//globalMatrixData_->doExport(*destWrp.getCrsMatrix(), exporter, CM);
+		//compositeMatrixData_->doExport(*destWrp.getCrsMatrix(), exporter, CM);
 		}
 
 		// @}
@@ -562,23 +562,19 @@ class checkerInterfaceNodes {
 
 		/** \brief Print the object with some verbosity level to an FancyOStream object. */
 		void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
-		//     Teuchos::EVerbosityLevel vl = verbLevel;
-		//     if (vl == VERB_DEFAULT) vl = VERB_LOW;
-		//     RCP<const Comm<int> > comm = this->getComm();
-		//     const int myImageID = comm->getRank(),
-		//       numImages = comm->getSize();
-
-		//     if (myImageID == 0) out << this->description() << std::endl;
-
-		globalMatrixData_->describe(out,verbLevel);
+			compositeMatrixData_->describe(out,verbLevel);
 		}
+		//@}
+
+		//! Get methods
+		//@{
 
 		//! Returns the CrsGraph associated with this matrix.
-		RCP<const CrsGraph> getCrsGraph() const { return globalMatrixData_->getCrsGraph(); }
+		RCP<const CrsGraph> getCrsGraph() const { return compositeMatrixData_->getCrsGraph(); }
 
-		RCP<CrsMatrix> getCrsMatrix() const {  return globalMatrixData_; }
+		RCP<CrsMatrix> getCrsMatrix() const {  return compositeMatrixData_; }
 
-		RCP<Matrix> getMatrix() const {  return globalMatrixData_; }
+		RCP<Matrix> getMatrix() const {  return compositeMatrixData_; }
 
 		RCP<Matrix> getRegionMatrix( GlobalOrdinal region_idx ) const 
 		{
@@ -592,15 +588,15 @@ class checkerInterfaceNodes {
 		{
 			return driver_; 
 		}
+		//@}
 
-
-		//! Implements DistObject interface
+		//! Write methods
 		//{@
 		void writeGlobalMatrix()
 		{
 			std::string file_name;
 			file_name += "./output/A_global.mm";
-                	Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name, *globalMatrixData_);
+                	Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(file_name, *compositeMatrixData_);
 		}
 
 
@@ -626,7 +622,7 @@ class checkerInterfaceNodes {
 
 		  // Create default view
 		  this->defaultViewLabel_ = "point";
-		  this->CreateView(this->GetDefaultViewLabel(), globalMatrixData_->getRowMap(), globalMatrixData_->getColMap());
+		  this->CreateView(this->GetDefaultViewLabel(), compositeMatrixData_->getRowMap(), compositeMatrixData_->getColMap());
 
 		  // Set current view
 		  this->currentViewLabel_ = this->GetDefaultViewLabel();
@@ -635,9 +631,9 @@ class checkerInterfaceNodes {
 		// The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Matrix have to be updated when fillComplete() is called.
 		// If CrsMatrix::fillComplete() have been used instead of MatrixSplitting::fillComplete(), the default view is updated when getColMap() is called.
 		void updateDefaultView() const {
-		  if ((finalDefaultView_ == false) &&  globalMatrixData_->isFillComplete() ) {
+		  if ((finalDefaultView_ == false) &&  compositeMatrixData_->isFillComplete() ) {
 		    // Update default view with the colMap
-		    Matrix::operatorViewTable_.get(Matrix::GetDefaultViewLabel())->SetColMap(globalMatrixData_->getColMap());
+		    Matrix::operatorViewTable_.get(Matrix::GetDefaultViewLabel())->SetColMap(compositeMatrixData_->getColMap());
 		    finalDefaultView_ = true;
 		  }
 		}
@@ -649,7 +645,7 @@ class checkerInterfaceNodes {
 			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=regionMatrixData_.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of regionMatrixData_ structure \n");
 			RCP<Matrix> region_matrix = regionMatrixData_[region_idx];
 
-			RCP<tpetra_crs_matrix > tpetraGlobalMatrix = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(globalMatrixData_);
+			RCP<tpetra_crs_matrix > tpetraGlobalMatrix = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(compositeMatrixData_);
 			Ifpack2::OverlappingRowMatrix<tpetra_row_matrix> enlargedMatrix(tpetraGlobalMatrix, 2);
 
 			region_matrix->resumeFill();
@@ -1395,6 +1391,11 @@ class checkerInterfaceNodes {
 		};
 		//@}
 
+		//@}
+		
+		//! Private variables
+		//@{
+
 		// The boolean finalDefaultView_ keep track of the status of the default view (= already updated or not)
 		// See also MatrixSplitting::updateDefaultView()
 		mutable bool finalDefaultView_;
@@ -1404,11 +1405,13 @@ class checkerInterfaceNodes {
 		RCP<const Teuchos::Comm<int> > comm_;
 
 		RCP<SplittingDriver<Scalar, LocalOrdinal, GlobalOrdinal, Node> > driver_;
-		RCP<Matrix> globalMatrixData_;
+		RCP<Matrix> compositeMatrixData_;
 		Array<RCP<Matrix> > regionMatrixData_;
 
 		GlobalOrdinal num_total_elements_ = 0;
 		GlobalOrdinal num_total_regions_ = 0;
+
+		//@}
 
 	}; //class MatrixSplitting
 
