@@ -262,8 +262,8 @@ private:
       }
       for (int i = 0; i < N; ++i) {
         Real di(i+1);
-        Real xcomp = param[2*(i+offset)  ]/ln2 * (root2 * std::sin(di * pi * x1))/(di * pi);
-        Real ycomp = param[2*(i+offset)+1]/ln2 * (root2 * std::sin(di * pi * x2))/(di * pi);
+        Real xcomp = param[offset + 2*i  ]/ln2 * (root2 * std::sin(di * pi * x1))/(di * pi);
+        Real ycomp = param[offset + 2*i+1]/ln2 * (root2 * std::sin(di * pi * x2))/(di * pi);
         val += hScale_*xcomp*ycomp;
       }
     }
