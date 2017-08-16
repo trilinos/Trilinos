@@ -68,7 +68,6 @@ namespace panzer {
 class FieldManagerBuilder;
 template<typename> class LinearObjFactory;
 struct GlobalData;
-class ReadOnlyVectorGlobalEvaluationData;
 
 template<typename Scalar>
 class ModelEvaluator

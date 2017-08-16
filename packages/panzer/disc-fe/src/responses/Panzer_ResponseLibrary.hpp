@@ -72,8 +72,6 @@
 
 namespace panzer {
 
-template <typename TraitsT> class ResponseContainerBase;
-template <typename EvalT,typename TraitsT> class ResponseContainer;
 class LinearObjContainer;
 
 /** This contains, collects and serves as a resource for

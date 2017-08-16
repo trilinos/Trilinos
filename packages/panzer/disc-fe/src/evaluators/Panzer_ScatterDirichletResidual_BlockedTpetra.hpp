@@ -64,9 +64,6 @@ namespace Thyra {
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class UniqueGlobalIndexer;
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class BlockedDOFManager; //forward declaration
 
 /** \brief Pushes residual values into the residual vector for a 

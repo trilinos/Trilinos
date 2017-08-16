@@ -70,8 +70,6 @@
 
 namespace panzer {
   
-  class LinearObjContainer;
-
   struct Traits {
 
     // ******************************************************************

@@ -65,9 +65,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-class Epetra_Map;
-class Epetra_Vector;
-class ParameterList;
 namespace panzer
 {
   template<typename LocalOrdinalT, typename GlobalOrdinalT>

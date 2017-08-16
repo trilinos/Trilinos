@@ -57,7 +57,6 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 class Epetra_Vector;
-class Epetra_CrsMatrix;
 
 namespace panzer {
 
