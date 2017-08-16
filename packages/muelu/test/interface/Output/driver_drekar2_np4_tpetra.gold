@@ -88,8 +88,7 @@ Level 1
    repartition: max imbalance = 1.327
    
    Build (MueLu::Zoltan2Interface)
-   rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x4e7aee8,node=0x4e8bde0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x134de18,node=0x1333790,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
@@ -134,6 +133,6 @@ Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: tr
 
 Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.95184, alpha: 20, lambdaMin: 0.0975919, boost factor: 1.1}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 
-Smoother (level 3) pre  : KLU2 solver interface
+Smoother (level 3) pre  : SuperLU solver interface, direct solve
 Smoother (level 3) post : no smoother
 
