@@ -46,7 +46,7 @@
 template<typename EvalT, typename Traits>
 Constant<EvalT,Traits>::
 Constant(const std::string& field_name,
-         const Teuchos::RCP<const PHX::DataLayout>& layout,
+         const Teuchos::RCP<PHX::DataLayout>& layout,
          const double& val) :
   value(val),
   constant(field_name,layout)

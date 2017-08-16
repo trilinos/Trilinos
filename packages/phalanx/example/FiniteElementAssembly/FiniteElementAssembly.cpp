@@ -115,10 +115,10 @@ int main(int argc, char *argv[])
     constexpr int num_dofs = (nx+1)*(ny+1)*(nz+1)*num_equations;
     constexpr int max_deriv_entries_per_row = 8 * 8 * num_equations;
         
-    RCP<const PHX::DataLayout> qp_layout = rcp(new MDALayout<CELL,QP>("qp",workset_size,8));
-    RCP<const PHX::DataLayout> grad_qp_layout = rcp(new MDALayout<CELL,QP,DIM>("grad_qp",workset_size,8,3));
-    RCP<const PHX::DataLayout> basis_layout = rcp(new MDALayout<CELL,BASIS>("basis",workset_size,8));
-    RCP<const PHX::DataLayout> scatter_layout = rcp(new MDALayout<CELL>("scatter",0));
+    RCP<PHX::DataLayout> qp_layout = rcp(new MDALayout<CELL,QP>("qp",workset_size,8));
+    RCP<PHX::DataLayout> grad_qp_layout = rcp(new MDALayout<CELL,QP,DIM>("grad_qp",workset_size,8,3));
+    RCP<PHX::DataLayout> basis_layout = rcp(new MDALayout<CELL,BASIS>("basis",workset_size,8));
+    RCP<PHX::DataLayout> scatter_layout = rcp(new MDALayout<CELL>("scatter",0));
     
     PHX::FieldManager<MyTraits> fm;
     {

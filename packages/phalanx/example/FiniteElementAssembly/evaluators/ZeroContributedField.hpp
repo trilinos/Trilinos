@@ -60,7 +60,7 @@ class ZeroContributedField : public PHX::EvaluatorWithBaseImpl<Traits>,
   
 public:
   ZeroContributedField(const std::string& field_name,
-                       const Teuchos::RCP<const PHX::DataLayout>& layout);
+                       const Teuchos::RCP<PHX::DataLayout>& layout);
   void evaluateFields(typename Traits::EvalData d) override;
 };
 

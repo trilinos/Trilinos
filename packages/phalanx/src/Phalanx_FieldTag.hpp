@@ -74,6 +74,8 @@ namespace PHX {
 
     virtual const PHX::DataLayout& dataLayout() const = 0;
 
+    virtual PHX::DataLayout& nonConstDataLayout() = 0;
+
     virtual const std::type_info& dataTypeInfo() const = 0;
     
     //! Unique name identifier that can be used for strict weak ordering in stl std::map keys.

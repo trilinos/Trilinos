@@ -70,7 +70,7 @@ namespace PHX {
 
     typedef DataT value_type;
 
-    Tag(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& dl);
+    Tag(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl);
 
     // Use SFINAE to remove this ctor if the data types are not the
     // same (excluding const differences). This works but the error
@@ -101,6 +101,8 @@ namespace PHX {
 
     const PHX::DataLayout& dataLayout() const override;
 
+    PHX::DataLayout& nonConstDataLayout() override;
+
     const std::type_info& dataTypeInfo() const override;
 
     const std::string identifier() const override;
@@ -113,7 +115,7 @@ namespace PHX {
 
     std::string m_name;
     
-    Teuchos::RCP<const PHX::DataLayout> m_data_layout;
+    Teuchos::RCP<PHX::DataLayout> m_data_layout;
 
   };
 

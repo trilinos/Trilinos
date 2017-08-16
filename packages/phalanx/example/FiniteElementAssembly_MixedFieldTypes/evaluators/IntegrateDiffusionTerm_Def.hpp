@@ -46,9 +46,9 @@
 template<typename EvalT, typename Traits>
 IntegrateDiffusionTerm<EvalT,Traits>::
 IntegrateDiffusionTerm(const std::string& flux_name,
-                       const Teuchos::RCP<const PHX::DataLayout>& flux_layout,
+                       const Teuchos::RCP<PHX::DataLayout>& flux_layout,
                        const std::string& residual_name,
-                       const Teuchos::RCP<const PHX::DataLayout>& residual_layout) :
+                       const Teuchos::RCP<PHX::DataLayout>& residual_layout) :
   flux(flux_name,flux_layout),
   residual(residual_name,residual_layout)
 {
