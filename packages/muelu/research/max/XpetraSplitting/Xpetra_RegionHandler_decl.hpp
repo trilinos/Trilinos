@@ -58,13 +58,13 @@ class checkerNodesToRegion {
 }; 
 
 
-//This is an auxiliary class to store row maps for the global matrix, region matrices and
-//a regionToAll map to link region node indices with the global ones
+//This is an auxiliary class to store row maps for the composite matrix, region matrices and
+//a regionToAll map to link region node indices with the composite ones
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	class Splitting_MapsInfo{
 	public:
 		Array<Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > > regionToAll_;//used as a map for a RegionToAll node index
-		Array<GlobalOrdinal> global_map_; //used as RowMap for global matrices
+		Array<GlobalOrdinal> composite_map_; //used as RowMap for composite matrices
 		Array<Array<GlobalOrdinal> > region_maps_; //used as RowMap for region matrices
 	};
 
@@ -87,7 +87,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		GlobalOrdinal GetNumGlobalElements()const{return num_total_nodes_;};
 		GlobalOrdinal GetNumTotalRegions()const{return num_total_regions_;};
 		GlobalOrdinal GetNumRegionNodes(GlobalOrdinal region_idx)const{return num_region_nodes_[region_idx];};
-		Array<GlobalOrdinal> GetGlobalRowMap()const{return maps_.global_map_;};
+		Array<GlobalOrdinal> GetGlobalRowMap()const{return maps_.composite_map_;};
 		Array<GlobalOrdinal> GetRegionRowMap(GlobalOrdinal region_index)const;
 		Array<Array<GlobalOrdinal> > GetRegionRowMaps()const{return maps_.region_maps_;};
 		Array<Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > >  GetRegionToAll()const;//used as a map for a RegionToAll node index
@@ -118,7 +118,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		//vector which contains the number of region nodes for each domain region
 		Array<GlobalOrdinal> num_region_nodes_;
 
-		//Maps used for global and region operators
+		//Maps used for composite and region operators
 		Splitting_MapsInfo<Scalar, LocalOrdinal, GlobalOrdinal, Node> maps_;
 
 		//Interface routines
@@ -136,7 +136,7 @@ template<class GlobalOrdinal>
 	bool compareRegions(const std::tuple<GlobalOrdinal, GlobalOrdinal> &lhs, const std::tuple<GlobalOrdinal, GlobalOrdinal> &rhs)
 	{
 		//First we prioritize the sorting according to the region label
-		//If the region is the same, then the sorting looks at the global node index
+		//If the region is the same, then the sorting looks at the composite node index
 		if( std::get<1>(lhs) < std::get<1>(rhs) )
 			return true;
 		else if( std::get<1>(lhs) == std::get<1>(rhs) )

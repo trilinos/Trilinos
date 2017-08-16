@@ -203,7 +203,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 			new_level->checkConsistency();
 			
 			// // The following routine should be dedicated to the construction of the region smoother (where it could be possible to define 
-			// the region smoother as a local visualization of the global smoother)
+			// the region smoother as a local visualization of the composite smoother)
 			// FIXME ComputeRegionJacobi AS FOR NOW LOCAL JACOBI IS THE ACTUAL REGIONAL SMOOTHER 
 			// (THIS HAS TO BE CHANGED SO THAT A PORTION OF THE COMPOSITE SMOOTHER IS STORED INSTEAD)
 			new_level->ComputeRegionJacobi();
@@ -265,9 +265,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 			LocalOrdinal num_elements = regionX[region_idx]->getMap()->getNodeNumElements();
 			for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
 			{
-				GlobalOrdinal global_region_index = regionX[region_idx]->getMap()->getGlobalElement(local_region_index);
-				GlobalOrdinal global_composite_index = levels_[0]->GetCompositeIndex(region_idx, global_region_index+1);
-				overlapped_composite.push_back( global_composite_index-1 );
+				GlobalOrdinal composite_region_index = regionX[region_idx]->getMap()->getGlobalElement(local_region_index);
+				GlobalOrdinal composite_composite_index = levels_[0]->GetCompositeIndex(region_idx, composite_region_index+1);
+				overlapped_composite.push_back( composite_composite_index-1 );
 			}
 			overlapping_composite_array.push_back( overlapped_composite );
 		}
@@ -307,9 +307,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 				ArrayRCP<Scalar> region_column = regionX[region_idx]->getDataNonConst( i );
 				for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
 				{
-					GlobalOrdinal global_region_index = regionX[region_idx]->getMap()->getGlobalElement(local_region_index);
-					GlobalOrdinal global_composite_index = levels_[0]->GetCompositeIndex(region_idx, global_region_index+1);
-					LocalOrdinal local_composite_index =  composite_overlapping_X[region_idx]->getMap()->getLocalElement( global_composite_index-1 );
+					GlobalOrdinal composite_region_index = regionX[region_idx]->getMap()->getGlobalElement(local_region_index);
+					GlobalOrdinal composite_composite_index = levels_[0]->GetCompositeIndex(region_idx, composite_region_index+1);
+					LocalOrdinal local_composite_index =  composite_overlapping_X[region_idx]->getMap()->getLocalElement( composite_composite_index-1 );
 					region_column[local_region_index] = composite_column[local_composite_index];
 				}
 			}
@@ -332,9 +332,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 			LocalOrdinal num_elements = regionY[region_idx]->getMap()->getNodeNumElements();
 			for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
 			{
-				GlobalOrdinal global_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
-				GlobalOrdinal global_composite_index = levels_[0]->GetCompositeIndex(region_idx, global_region_index+1);
-				overlapping_composite.push_back( global_composite_index-1 );
+				GlobalOrdinal composite_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
+				GlobalOrdinal composite_composite_index = levels_[0]->GetCompositeIndex(region_idx, composite_region_index+1);
+				overlapping_composite.push_back( composite_composite_index-1 );
 			}
 		}
 
@@ -367,9 +367,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 				ArrayRCP<const Scalar> region_column = regionY[region_idx]->getData( i );
 				for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
 				{
-					GlobalOrdinal global_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
-					GlobalOrdinal global_composite_index = levels_[0]->GetCompositeIndex(region_idx, global_region_index+1);
-					LocalOrdinal local_composite_index =  composite_overlapping_Y->getMap()->getLocalElement( global_composite_index-1 );
+					GlobalOrdinal composite_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
+					GlobalOrdinal composite_composite_index = levels_[0]->GetCompositeIndex(region_idx, composite_region_index+1);
+					LocalOrdinal local_composite_index =  composite_overlapping_Y->getMap()->getLocalElement( composite_composite_index-1 );
 					composite_column[local_composite_index] += region_column[local_region_index];
 				}
 			}
@@ -400,9 +400,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 			LocalOrdinal num_elements = regionY[region_idx]->getMap()->getNodeNumElements();
 			for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
 			{
-				GlobalOrdinal global_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
-				GlobalOrdinal global_composite_index = levels_[0]->GetCompositeIndex(region_idx, global_region_index+1);
-				checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(global_composite_index);
+				GlobalOrdinal composite_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
+				GlobalOrdinal composite_composite_index = levels_[0]->GetCompositeIndex(region_idx, composite_region_index+1);
+				checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(composite_composite_index);
 				typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 				nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicateNode);	
 				//The rescaling must be applied only to entries associated with mesh on the interface

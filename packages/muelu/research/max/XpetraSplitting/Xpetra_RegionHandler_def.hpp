@@ -54,26 +54,26 @@ namespace Xpetra{
 		GlobalOrdinal line_index = 0;
 	
 		//The information contained in the file is imported and stored in a Teuchos::Array of tuples.
-		//The first field of the tuple is the global node index, the second field of the tuple is the region index 
+		//The first field of the tuple is the composite node index, the second field of the tuple is the region index 
 		while ( std::getline (input_file_,line) )
 		{
 			std::istringstream is( line );
 			GlobalOrdinal number;
  			Array<GlobalOrdinal> node;
 			std::tuple<GlobalOrdinal, GlobalOrdinal> node_region;
-			Array<GlobalOrdinal> global_info;
+			Array<GlobalOrdinal> composite_info;
 
 			node.clear();
-			global_info.clear();
+			composite_info.clear();
 
 			if( 1==line_index )
 			{	
 				while(is>>number)
-					global_info.push_back(number);
+					composite_info.push_back(number);
 
-				TEUCHOS_TEST_FOR_EXCEPTION( global_info.size()!=2, Exceptions::RuntimeError, "The global information must be a couple of integers: nTotal of nodes + nTotal of regions \n");
-				num_total_nodes_ = global_info[0];
-				num_total_regions_ = global_info[1];
+				TEUCHOS_TEST_FOR_EXCEPTION( composite_info.size()!=2, Exceptions::RuntimeError, "The composite information must be a couple of integers: nTotal of nodes + nTotal of regions \n");
+				num_total_nodes_ = composite_info[0];
+				num_total_regions_ = composite_info[1];
 			}
 			else if( line_index>2 )
 			{
@@ -235,7 +235,7 @@ namespace Xpetra{
 		TEUCHOS_TEST_FOR_EXCEPTION( !( nodesToRegion_.size()==num_total_nodes_ ), Exceptions::RuntimeError, "Number of nodes detected does not match with the initially declared one \n"<<"nodesToRegion tracks "<<nodesToRegion_.size()<<" nodes whereas num_total_nodes_ ="<<num_total_nodes_<<"\n");
 	}
 
-	//This routine creates row maps for global and region matrices
+	//This routine creates row maps for composite and region matrices
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateRowMaps()
 	{
@@ -281,7 +281,7 @@ namespace Xpetra{
 					Array<GlobalOrdinal> nodal_regions =  std::get<1>(*nodes_to_region_iterator);
 
 					//By default, I choose that a node is owned by the process associated with the region that shows up first in its list of beloning
-					//This guarantees that each row of the global stiffness matrix is owned only by a single process, as Trilinos requires
+					//This guarantees that each row of the composite stiffness matrix is owned only by a single process, as Trilinos requires
 					if( *iter_array==nodal_regions[0] )
 						elements.push_back( node );
 
@@ -290,7 +290,7 @@ namespace Xpetra{
 					region_elements.push_back(region_node_label);
 
 					//If a process owns a region (or even a portion of it), we provide to it a map
-					//from region indices to global indices for all the nodes inside that region, 
+					//from region indices to composite indices for all the nodes inside that region, 
 					//even if a specific node is not owned by the calling process
 					regionToAll[*iter_array-1].push_back( std::make_tuple( region_node_label,std::get<0>(*nodes_iterator_aux) ) );
 					region_node_label++;
@@ -363,7 +363,7 @@ namespace Xpetra{
 				}
 
 				//If a process owns a region (or even a portion of it), we provide to it a map
-				//from region indices to global indices for all the nodes inside that region, 
+				//from region indices to composite indices for all the nodes inside that region, 
 				//even if a specific node is not owned by the calling process
 				for( proc_iterator=region_procs_reduced.begin(); proc_iterator!=region_procs_reduced.end(); ++proc_iterator )
 				{
@@ -396,7 +396,7 @@ namespace Xpetra{
 				}
 
 				//If a process owns a region (or even a portion of it), we provide to it a map
-				//from region indices to global indices for all the nodes inside that region, 
+				//from region indices to composite indices for all the nodes inside that region, 
 				//even if a specific node is not owned by the calling process
 				for( proc_iterator=region_procs.begin(); proc_iterator!=region_procs.end(); ++proc_iterator )
 				{
@@ -452,7 +452,7 @@ namespace Xpetra{
 				}	
 
 				//If a process owns a region (or even a portion of it), we provide to it a map
-				//from region indices to global indices for all the nodes inside that region, 
+				//from region indices to composite indices for all the nodes inside that region, 
 				//even if a specific node is not owned by the calling process
 				for( proc_iterator=region_procs.begin(); proc_iterator!=region_procs.end(); ++proc_iterator )
 				{
@@ -496,7 +496,7 @@ namespace Xpetra{
 		for( typename Array<GlobalOrdinal>::iterator iter = elements.begin(); iter!=elements.end(); ++iter )
 			*iter = *iter - 1;
 
-		maps_.global_map_ = elements;
+		maps_.composite_map_ = elements;
 		maps_.region_maps_ = elements_per_region;
 		maps_.regionToAll_ = regionToAll;
 	}
@@ -559,7 +559,7 @@ namespace Xpetra{
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printInactive()
 	{
-		if( maps_.global_map_.empty() )
+		if( maps_.composite_map_.empty() )
 			std::cout<<"INACTIVE PROC ID: "<<comm_->getRank()<<std::endl;
 	}
 
