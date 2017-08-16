@@ -42,7 +42,8 @@
 
 // MP::Vector and Matrix
 #include "Stokhos_Sacado_Kokkos.hpp"
-#include "Kokkos_Sparse_CrsMatrix.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv.hpp"
 #include "Kokkos_CrsMatrix_MP_Vector.hpp"
 
 // Compile-time loops

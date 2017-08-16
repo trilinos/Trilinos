@@ -47,7 +47,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
-#include "Kokkos_CrsMatrix.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 namespace Kokkos {
 namespace Example {
