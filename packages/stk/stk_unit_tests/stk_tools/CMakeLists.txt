@@ -38,11 +38,11 @@ FILE(GLOB SOURCES mesh_clone/*.cpp block_extractor/*.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/UnitTestExtractBlocks.cpp)
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_tools_unit_tests
-    SOURCES ${SOURCES}
-    ARGS ""
-    COMM serial mpi
-    NUM_MPI_PROCS 1-4
-    )
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    stk_tools_unit_tests
+#    SOURCES ${SOURCES}
+#    ARGS ""
+#    COMM serial mpi
+#    NUM_MPI_PROCS 1-4
+#    )
 
