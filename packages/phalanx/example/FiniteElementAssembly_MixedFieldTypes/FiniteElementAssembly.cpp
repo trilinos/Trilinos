@@ -258,13 +258,13 @@ int main(int argc, char *argv[])
 
       for (auto& t : tags) {
         if (t->dataLayout().identifier() == "DL<CELL,QP>")
-          dynamic_cast<PHX::Layout&>(t->nonConstDataLayout()).setExtents(workset_size,8);
+          t->nonConstDataLayout().setExtents(workset_size,8);
         else if (t->dataLayout().identifier() == "DL<CELL,QP,DIM>")
-          dynamic_cast<PHX::Layout&>(t->nonConstDataLayout()).setExtents(workset_size,8,3);
+          t->nonConstDataLayout().setExtents(workset_size,8,3);
         else if (t->dataLayout().identifier() == "DL<CELL,BASIS>")
-          dynamic_cast<PHX::Layout&>(t->nonConstDataLayout()).setExtents(workset_size,8);
+          t->nonConstDataLayout().setExtents(workset_size,8);
         else if (t->dataLayout().identifier() == "DL<SCATTER>")
-          dynamic_cast<PHX::Layout&>(t->nonConstDataLayout()).setExtents(0);
+          t->nonConstDataLayout().setExtents(0);
         else
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                      "ERROR: unknown DataLayout identifier:" <<
