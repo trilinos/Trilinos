@@ -181,7 +181,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
 			TEUCHOS_TEST_FOR_EXCEPTION( (nx-1)%coarsening_factor_!=0 || (ny-1)%coarsening_factor_!=0, Exceptions::RuntimeError, "Region: "<<region_idx<<" cannot be coarsened by factor equal to "<<coarsening_factor_<<"n: "<<n<<" - nx: "<<nx<<" - ny: "<<ny<<" \n" );
 
-			//here below we explot the fact that the regionToAll has been sorted in ascending order for the region node index
+			//here below we exploit the fact that the regionToAll has been sorted in ascending order for the region node index
 			GlobalOrdinal count = 1;
 			
 			while( count<=fine_regionToAll[region_idx].size() )
@@ -201,30 +201,11 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	}
 
 
-
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	void RegionalAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply (const multivector_type& X, multivector_type& Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta)const
-	{ 
+	void RegionalAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeRegionX (const multivector_type& X, Array<RCP<multivector_type> > regionX)const
+	{
 
-		//At first we check that input and output vector have matching maps with the composite matrix
-		//The Map of X must coincide with the Domain map of compositeA
-		//The Map of Y must coincide with the Range map of compositeA 
-		TEUCHOS_TEST_FOR_EXCEPTION( !(X.getMap()->isSameAs( *(matrixSplitting_->getMatrix()->getDomainMap()) ) ), Exceptions::RuntimeError, "Map of composite input multivector X does not coincide with Domain Map of composite matrix \n" );
-		TEUCHOS_TEST_FOR_EXCEPTION( !(Y.getMap()->isSameAs( *(matrixSplitting_->getMatrix()->getRangeMap()) ) ), Exceptions::RuntimeError, "Map of composite input multivector X does not coincide with Range Map of composite matrix \n" );
-		TEUCHOS_TEST_FOR_EXCEPTION( X.getNumVectors()!=Y.getNumVectors(), Exceptions::RuntimeError, "Number of vectors in input numltivector X does NOT match number of vectors in output multivector Y \n" );
-
-		//We split at first the input and output multivectors into regional ones
-		Array<RCP<multivector_type> > regionX;
-		Array<RCP<multivector_type> > regionY;
-		regionX.resize( num_regions_ );
-		regionY.resize( num_regions_ );
-
-		for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
-		{
-			regionX[region_idx] =  MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(levels_[0]->GetRegionMatrix(region_idx)->getDomainMap(), X.getNumVectors());
-			regionY[region_idx] =  MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(levels_[0]->GetRegionMatrix(region_idx)->getRangeMap(), Y.getNumVectors());
-		}
-	
+		//Array to store extended region Maps (needed to copy composite entries of the input vector into region partitioning of it)
 		Teuchos::Array<Teuchos::Array<GlobalOrdinal> > overlapping_composite_array;	
 
 		//Create Overlapping composite maps	
@@ -246,6 +227,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 		composite_overlapping_X.resize( num_regions_ );
 		for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
 		{
+			//The new Map associated with a process must contain entries currently owned plus new ones previously owned only by neighbouring processes
 			Teuchos::Array<GlobalOrdinal> aux;
 			if( overlapping_composite_array[region_idx].size()>0 )
 			{
@@ -259,10 +241,10 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 			}
 			RCP<map_type> overlapping_composite_map = MapFactory< LocalOrdinal, GlobalOrdinal, Node >::Build( Xpetra::UseTpetra, X.getGlobalLength(), aux, 0, comm_ );
 			composite_overlapping_X[region_idx] = MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(overlapping_composite_map, X.getNumVectors());
-			RCP<Export<LocalOrdinal, GlobalOrdinal, Node> > Export1 = ExportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build( X.getMap(), overlapping_composite_map );
+			RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Import1 = ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build( X.getMap(), overlapping_composite_map );
 			TEUCHOS_TEST_FOR_EXCEPTION( X.getMap()->getMinAllGlobalIndex()!=composite_overlapping_X[region_idx]->getMap()->getMinAllGlobalIndex(), Exceptions::RuntimeError, "Minimal index in old an new maps do not coincide \n" );
 			TEUCHOS_TEST_FOR_EXCEPTION( X.getMap()->getMaxAllGlobalIndex()!=composite_overlapping_X[region_idx]->getMap()->getMaxAllGlobalIndex(), Exceptions::RuntimeError, "Maximal index in old an new maps do not coincide \n" );
-			composite_overlapping_X[region_idx]->doImport( X, *Export1, Xpetra::INSERT );
+			composite_overlapping_X[region_idx]->doImport( X, *Import1, Xpetra::INSERT );
 		}			
 
 		//Copy values from composite input multivector X into regional multivectors regionX	
@@ -283,10 +265,163 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 			}
 		}
 
+	}
+
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+	void RegionalAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeCompositeY (Array<RCP<const multivector_type> > regionY, multivector_type& Y)const
+	{
+
+		//Array to store extended region Maps (needed to copy composite entries of the input vector into region partitioning of it)
+		Teuchos::Array<GlobalOrdinal>  overlapping_composite;	
+
+		//Create Overlapping composite maps	
+		for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
+		{
+			LocalOrdinal num_elements = regionY[region_idx]->getMap()->getNodeNumElements();
+			for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
+			{
+				GlobalOrdinal global_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
+				GlobalOrdinal global_composite_index = levels_[0]->GetCompositeIndex(region_idx, global_region_index+1);
+				overlapping_composite.push_back( global_composite_index-1 );
+			}
+		}
+
+		//The new Map associated with a process must contain entries currently owned plus new ones previously owned only by neighbouring processes
+		Teuchos::Array<GlobalOrdinal> aux;
+		aux = overlapping_composite;	
+
+		typename Teuchos::Array<GlobalOrdinal>::iterator last;
+		std::sort(aux.begin(), aux.end());
+		last = std::unique(aux.begin(), aux.end());
+    		aux.erase(last, aux.end()); 
+
+		//We split at first the input and output multivectors into regional ones
+		RCP<multivector_type> composite_overlapping_Y;
+		RCP<map_type> overlapping_composite_map = MapFactory< LocalOrdinal, GlobalOrdinal, Node >::Build( Xpetra::UseTpetra, Y.getGlobalLength(), aux, 0, comm_ );
+		composite_overlapping_Y = MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(overlapping_composite_map, Y.getNumVectors());
+
+		TEUCHOS_TEST_FOR_EXCEPTION( Y.getMap()->getMinAllGlobalIndex()!=composite_overlapping_Y->getMap()->getMinAllGlobalIndex(), Exceptions::RuntimeError, "Minimal index in old an new maps do not coincide \n" );
+		TEUCHOS_TEST_FOR_EXCEPTION( Y.getMap()->getMaxAllGlobalIndex()!=composite_overlapping_Y->getMap()->getMaxAllGlobalIndex(), Exceptions::RuntimeError, "Maximal index in old an new maps do not coincide \n" );
+		TEUCHOS_TEST_FOR_EXCEPTION( Y.getMap()->getMinGlobalIndex()<composite_overlapping_Y->getMap()->getMinGlobalIndex(), Exceptions::RuntimeError, "Local minimal index in old an new maps do not coincide \n" );
+		TEUCHOS_TEST_FOR_EXCEPTION( Y.getMap()->getMaxGlobalIndex()>composite_overlapping_Y->getMap()->getMaxGlobalIndex(), Exceptions::RuntimeError, "Local maximal index in old an new maps do not coincide \n" );
+
+		//Copy values from output regional multivectors regionY into output composite multivector Y
+		for( int i = 0; i<Y.getNumVectors(); ++i )
+		{
+			for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
+			{
+				ArrayRCP<Scalar> composite_column = composite_overlapping_Y->getDataNonConst( i );
+				LocalOrdinal num_elements = regionY[region_idx]->getMap()->getNodeNumElements();
+				ArrayRCP<const Scalar> regional_column = regionY[region_idx]->getData( i );
+				for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
+				{
+					GlobalOrdinal global_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
+					GlobalOrdinal global_composite_index = levels_[0]->GetCompositeIndex(region_idx, global_region_index+1);
+					LocalOrdinal local_composite_index =  composite_overlapping_Y->getMap()->getLocalElement( global_composite_index-1 );
+					composite_column[local_composite_index] += regional_column[local_region_index];
+				}
+			}
+		}
+
+		RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Import1 = ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build( composite_overlapping_Y->getMap(), Y.getMap() );
+		Teuchos::Array<GlobalOrdinal> original_map = Y.getMap()->getNodeElementList();
+		Teuchos::Array<GlobalOrdinal> overlapping_map = composite_overlapping_Y->getMap()->getNodeElementList();
+		std::sort(original_map.begin(), original_map.end());
+		std::sort(overlapping_map.begin(), overlapping_map.end());
+		TEUCHOS_TEST_FOR_EXCEPTION( !( std::includes(overlapping_map.begin(), overlapping_map.end(), original_map.begin(), original_map.end()) ), Exceptions::RuntimeError, "Overlapping map does not include original one \n" );
+		
+		Y.doImport( *composite_overlapping_Y, *Import1, Xpetra::ADD );
+
+	}
+
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+	void RegionalAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::rescaleInterfaceEntries (Array<RCP<multivector_type> > regionY)const
+	{
+
+		Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > regionToAll = levels_[0]->GetRegionToAll();
+		Array<std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > > interfaceNodes = matrixSplitting_->getSplittingDriver()->GetInterfaceNodes();
+
+		TEUCHOS_TEST_FOR_EXCEPTION( num_regions_!=regionToAll.size(), Exceptions::RuntimeError, "Regions stored in Level 0 do not match with total number of regions in RegionAMG class \n" );
+
+		for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
+		{
+			LocalOrdinal num_elements = regionY[region_idx]->getMap()->getNodeNumElements();
+			for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
+			{
+				GlobalOrdinal global_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
+				GlobalOrdinal global_composite_index = levels_[0]->GetCompositeIndex(region_idx, global_region_index+1);
+				checkerNodesToRegion<GlobalOrdinal> unaryPredicateNode(global_composite_index);
+				typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
+				nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(interfaceNodes.begin(), interfaceNodes.end(), unaryPredicateNode);	
+				if( nodes_to_region_iterator!=interfaceNodes.end() )
+				{
+					Array<GlobalOrdinal> nodal_regions =  std::get<1>(*nodes_to_region_iterator);
+					for( int i = 0; i<regionY[region_idx]->getNumVectors(); ++i)
+					{
+						ArrayRCP<Scalar> regional_column = regionY[region_idx]->getDataNonConst( i );
+						if( nodal_regions.size()>1 )
+							regional_column[ local_region_index ] = regional_column[ local_region_index ]/( nodal_regions.size()  );
+					}
+				}	
+			}
+		}
+
+	}
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+	void RegionalAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply (const multivector_type& X, multivector_type& Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta)const
+	{ 
+
+		//N.B.: currently Scalar quantities alpha and beta are passed as input parameters to have the apply method signature match with the apply signature of an Xpetra::Operator
+		//however we are not currently using them (for us alpha=0 and beta=1)
+
+		//At first we check that input and output vector have matching maps with the composite matrix
+		//The Map of X must coincide with the Domain map of compositeA
+		//The Map of Y must coincide with the Range map of compositeA 
+		TEUCHOS_TEST_FOR_EXCEPTION( !(X.getMap()->isSameAs( *(matrixSplitting_->getMatrix()->getDomainMap()) ) ), Exceptions::RuntimeError, "Map of composite input multivector X does not coincide with Domain Map of composite matrix \n" );
+		TEUCHOS_TEST_FOR_EXCEPTION( !(Y.getMap()->isSameAs( *(matrixSplitting_->getMatrix()->getRangeMap()) ) ), Exceptions::RuntimeError, "Map of composite input multivector X does not coincide with Range Map of composite matrix \n" );
+		TEUCHOS_TEST_FOR_EXCEPTION( X.getNumVectors()!=Y.getNumVectors(), Exceptions::RuntimeError, "Number of vectors in input numltivector X does NOT match number of vectors in output multivector Y \n" );
+
+		//We split at first the input and output multivectors into regional ones
+		Array<RCP<multivector_type> > regionX;
+		Array<RCP<multivector_type> > regionY;
+		regionX.resize( num_regions_ );
+		regionY.resize( num_regions_ );
+
+		//Associate Maps to region input (regionX) and output vectors (regionY)
+		for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
+		{
+			regionX[region_idx] =  MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(levels_[0]->GetRegionMatrix(region_idx)->getDomainMap(), X.getNumVectors());
+			regionY[region_idx] =  MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(levels_[0]->GetRegionMatrix(region_idx)->getRangeMap(), Y.getNumVectors());
+		}
+
+		//Split the composite input multivector	X into region multivector regionX
+		computeRegionX( X, regionX );
+
+		//This is the portion where the V-cycle is executed (for now we only have region V-cycles)
 		for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
 		{
 			regionHierarchies_[region_idx]->Iterate( *regionX[region_idx],*regionY[region_idx] );			
 		}
+
+		//We rescale entries of region multivector regionY that are associated with mesh nodes on an interface
+		rescaleInterfaceEntries( regionY );
+
+		//We create const view of the region multivector regionY because we want to guarantee that the composite output multivector Y
+		//is constructed without modifying any information given from each region
+		Array<RCP<const multivector_type> > regionYconst;
+		for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
+		{
+			regionYconst.push_back( regionY[region_idx].getConst() );
+		}
+
+		//Assemble composite output multivector Y from region multivector regionY
+		computeCompositeY( regionYconst, Y );
 
 	}
 

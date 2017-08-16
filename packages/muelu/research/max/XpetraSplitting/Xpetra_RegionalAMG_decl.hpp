@@ -104,6 +104,12 @@ namespace Xpetra{
 
 			void DefineLevels();
 
+			void computeRegionX(const multivector_type& , Array<RCP<multivector_type> > )const;
+
+			void computeCompositeY(Array<RCP<const multivector_type> >, multivector_type& )const;
+
+			void rescaleInterfaceEntries( Array<RCP<multivector_type> > )const;
+
 			virtual void regionToAllCoarsen(const level&, level& );
 
 	};

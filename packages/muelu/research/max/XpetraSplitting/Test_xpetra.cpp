@@ -102,7 +102,6 @@ int main(int argc, char* argv[])
 	Teuchos::RCP<multivector_type> Y = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getRangeMap(), 1) ;
 	X->randomize();
 	Y->putScalar((scalar_type) 0.0);
-
 	
 	preconditioner.apply(*X,*Y);
 
