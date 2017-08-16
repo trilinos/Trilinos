@@ -47,7 +47,7 @@ namespace
 {
   TEST(StkUtilTestForDocumentation, Parameters)
   {
-    //-BEGIN-init
+    //BEGINParametersInit
     //+ INITIALIZATION
     std::vector<std::string> expected_name;
     std::vector<stk::util::ParameterType::Type> expected_type;
@@ -102,9 +102,9 @@ namespace
     names.push_back("liberty"); names.push_back("I have spaces");
     expected_name.push_back("Names");
     expected_type.push_back(stk::util::ParameterType::STRINGVECTOR);
-    //-END-init
+    //ENDParametersInit
     
-    //-BEGIN-define
+    //BEGINParametersDefine
     //+ Define parameters...
     stk::util::ParameterList params;
     params.set_param("PI",           pi);
@@ -117,9 +117,9 @@ namespace
     params.set_param("Ages",         ages); 
     params.set_param("Ages_64",      ages_64); 
     params.set_param("Names",        names); 
-    //-END-define
+    //ENDParametersDefine
 
-    //-BEGIN-access
+    //BEGINParametersAccessingValues
     //+ Write parameters to stdout...
     params.write_parameter_list(std::cout);
       
@@ -194,9 +194,9 @@ namespace
       EXPECT_EQ(static_cast<double>(new_answer), value_as_double);
     }
     
-    //-END-access
+    //ENDParametersAccessingValues
 
-    //-BEGIN-error
+    //BEGINParametersErrors
     //+ If the requested parameter does not exist, 
     //+ an error message is printed to stderr and an invalid
     //+ parameter object is returned
@@ -224,13 +224,13 @@ namespace
     //+ printed and an empty vector of the requested type is returned.
     std::vector<double> pies = params.get_value<std::vector<double> >("PI");
     EXPECT_EQ(0u, pies.size());
-    //-END-error
+    //ENDParametersErrors
 
     //+ The parameter query by name is case-sensitive
     double not_found = params.get_value<double>("pi");
     EXPECT_EQ(0.0, not_found);
     
-    //-BEGIN-usertype
+    //BEGINUnsupportedTypes
     //+ Adding a parameter of "unsupported" type...
     stk::util::ParameterList more_params;
     std::complex<double> phase(3.14,2.718);
@@ -251,7 +251,7 @@ namespace
 
     //+ If the wrong type is specified, an exception will be thrown...
     EXPECT_ANY_THROW(more_params.get_value<std::complex<int> >("phase"));
-    //-END-usertype
+    //ENDUnsupportedTypes
   }
 }
 

@@ -151,17 +151,6 @@ int main()
   }
 
   {
-    string parameterName("bisection_num_test_cuts");
-    RCP<const Teuchos::EnhancedNumberValidator<int> > intValidatorP =
-      rcp(new Teuchos::EnhancedNumberValidator<int>(1,250,1));
-    ostringstream docString;
-    intValidatorP->printDoc(
-     "Experimental: number of test cuts to do simultaneously (default is 1)\n",
-        docString);
-    pl.set<int>(parameterName, 1, docString.str(), intValidatorP);
-  }
-
-  {
     string parameterName("debug_procs");
     typedef Zoltan2::IntegerRangeListValidator<int> irl_t;
     RCP<const irl_t> intRangeValidatorP = rcp(new irl_t);

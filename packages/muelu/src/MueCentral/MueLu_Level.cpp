@@ -451,9 +451,9 @@ namespace MueLu {
         const container_type& requestedBy = it->second->Requests();
         std::ostringstream ss;
         for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
-          if (ct != requestedBy.begin())    ss << ",";
-                                            ss << ct->first;
-          if (ct->second > 1)               ss << "(" << ct->second << ")";
+          if (ct != requestedBy.begin()) ss << ",";
+          ss << ct->first;
+          if (ct->second > 1) ss << "(" << ct->second << ")";
         }
         outputter.outputField(ss.str());
 

@@ -51,8 +51,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -67,15 +65,13 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,
-                std::vector<stk_classic::mesh::EntityId> & nodeIds);
-
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
                         std::vector<panzer::BC>& bcs, const int integration_order);
 
 void testIpMatch(const panzer::WorksetDetails& d0, const panzer::WorksetDetails& d1,
-                 const std::size_t num_cells, Teuchos::FancyOStream& out, bool& success);
+                 const index_t num_cells, Teuchos::FancyOStream& out, bool& success);
 
+/*
 namespace {
 std::string prws (const panzer::Workset& w) {
   std::stringstream ss;
@@ -85,7 +81,8 @@ std::string prws (const panzer::Workset& w) {
     const panzer::WorksetDetails& d = w.details(i);
     for (size_t j = 0; j < d.int_rules.size(); ++j) {
       const panzer::IntegrationValues2<double>& ir = *d.int_rules[j];
-      const size_t num_ip = ir.ip_coordinates.dimension(1), num_dim = ir.ip_coordinates.dimension(2);
+      const int num_ip = ir.ip_coordinates.extent_int(1);
+      const size_t num_dim = ir.ip_coordinates.dimension(2);
       ss << "int_rule " << j << ":\n";
       ss << "cub_points:\n";
       for (int ip = 0; ip < num_ip; ++ip) {
@@ -106,7 +103,7 @@ std::string prws (const panzer::Workset& w) {
       for (size_t cell = 0; cell < w.num_cells; ++cell) {
         ss << "cell " << cell << ":\n";
         ss << "ip_coordinates:\n";
-        for (size_t ip = 0; ip < num_ip; ++ip) {
+        for (int ip = 0; ip < num_ip; ++ip) {
           for (size_t dim = 0; dim < num_dim; ++dim)
             ss << " " << ir.ip_coordinates(cell, ip, dim);
           ss << "\n";
@@ -143,10 +140,10 @@ std::string prws (const panzer::Workset& w) {
   return ss.str();
 }
 }
+*/
 
 TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
 {
-  PHX::KokkosDeviceSession session;
 
   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
   pl->set("X Blocks",2);
@@ -160,9 +157,9 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
   int myRank=0;
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
-  panzer_stk_classic::CubeHexMeshFactory factory;
+  panzer_stk::CubeHexMeshFactory factory;
   factory.setParameterList(pl);
-  RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+  RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
   mesh->writeToExodus("test.exo");
 
   std::vector<std::string> element_blocks;
@@ -206,10 +203,12 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
   const int eb_idxs[2][2] = {{0,1}, {1,0}};
   for (int ebi = 0; ebi < 2; ++ebi) {
     std::string sideset = "vertical_0";
-    Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk_classic::buildBCWorksets(
+    Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][0]], physicsBlocks);
+    Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][1]], physicsBlocks);
+    Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
       *mesh,
-      *(panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][0]], physicsBlocks)),
-      *(panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][1]], physicsBlocks)),
+      pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
+      pb_b->getWorksetNeeds(),pb_b->elementBlockID(), 
       sideset);
 
     TEST_EQUALITY(worksets->size(), 1);
@@ -220,16 +219,6 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
   }    
 }
 
-void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,
-                std::vector<stk_classic::mesh::EntityId> & nodeIds)
-{
-  stk_classic::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
-    
-  stk_classic::mesh::PairIterRelation::iterator itr;
-  for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 
-    nodeIds.push_back(itr->entity()->identifier());
-}
-  
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
                         std::vector<panzer::BC>& bcs, const int integration_order)
 {
@@ -299,14 +288,14 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 }
 
 void testIpMatch(const panzer::WorksetDetails& d0, const panzer::WorksetDetails& d1,
-                 const std::size_t num_cells, Teuchos::FancyOStream& out, bool& success)
+                 const index_t num_cells, Teuchos::FancyOStream& out, bool& success)
 {
 #define TED01(m) TEST_EQUALITY(d0.m, d1.m)
   TED01(int_rules.size());
   for (std::size_t iri = 0; iri < d0.int_rules.size(); ++iri) {
     const std::size_t num_ip = d0.int_rules[iri]->cub_points.dimension(0),
       num_dim = d0.int_rules[iri]->cub_points.dimension(1);
-    for (std::size_t cell = 0; cell < num_cells; ++cell)
+    for (index_t cell = 0; cell < num_cells; ++cell)
       for (std::size_t ip = 0; ip < num_ip; ++ip)
         for (std::size_t dim = 0; dim < num_dim; ++dim)
           TED01(int_rules[iri]->ip_coordinates(cell, ip, dim));

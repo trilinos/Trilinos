@@ -35,7 +35,7 @@
 #include <stddef.h>                     // for size_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for string, allocator, etc
 #include <vector>                       // for vector
@@ -60,7 +60,6 @@ using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::BaseEntityRank;
 using stk::mesh::PairIterRelation;
 using stk::mesh::EntityProc;
 using stk::mesh::Entity;
@@ -162,7 +161,6 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   //
 
   // Create elements
-  const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   Entity elem = Entity();
 
   mesh.modification_begin();
@@ -171,12 +169,12 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
     {
       if (static_cast<int>(elems_0[ielem][3]) == p_rank)
         {
-          elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], elem_part);
+          elem = mesh.declare_element(elems_0[ielem][0], {&elem_part});
 
           EntityVector nodes;
           // Create node on all procs
-          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][2], node_part) );
-          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][1], node_part) );
+          nodes.push_back( mesh.declare_node(elems_0[ielem][2], {&node_part}) );
+          nodes.push_back( mesh.declare_node(elems_0[ielem][1], {&node_part}) );
 
           // Add relations to nodes
           mesh.declare_relation( elem, nodes[0], 0 );

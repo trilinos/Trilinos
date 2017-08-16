@@ -59,13 +59,6 @@ set_max_warning_count(
 }
 
 
-unsigned 
-get_max_warning_count()
-{
-  return   get_max_message_count(MSG_WARNING);
-}
-
-
 void
 report_warning(
   const char *          message,

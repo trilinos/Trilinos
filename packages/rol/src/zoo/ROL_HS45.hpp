@@ -55,7 +55,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -153,7 +153,7 @@ void getHS45( Teuchos::RCP<Objective<Real> >       &obj,
               Teuchos::RCP<Vector<Real> >          &x0,
               Teuchos::RCP<Vector<Real> >          &x ) {
   // Problem dimension
-  int n = 5;
+  int n = 10;
 
   // Get Initial Guess
   Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
@@ -181,7 +181,7 @@ void getHS45( Teuchos::RCP<Objective<Real> >       &obj,
   }
   Teuchos::RCP<Vector<Real> > l = Teuchos::rcp(new StdVector<Real>(lp));
   Teuchos::RCP<Vector<Real> > u = Teuchos::rcp(new StdVector<Real>(up));
-  con = Teuchos::rcp(new BoundConstraint<Real>(l,u));
+  con = Teuchos::rcp(new Bounds<Real>(l,u));
   con->project(*x0);
 }
 

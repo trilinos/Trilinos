@@ -17,7 +17,7 @@ using namespace PG_RuntimeCompiler;
 int Block::indent = 0;
 
 /*****************************************************************************/
-Block::Block(const map<string, Variable*>& vars) 
+Block::Block(const map<string, Variable*>& vars)
   : _vars(vars)
 /*****************************************************************************/
 {
@@ -25,11 +25,11 @@ Block::Block(const map<string, Variable*>& vars)
 }
 
 /*****************************************************************************/
-Block::~Block() 
+Block::~Block()
 /*****************************************************************************/
 {
   list<Executable*>::iterator itr = _statements.begin();
-  
+
   //delete all sub-blocks/sub-lines
   while(itr != _statements.end()) {
     delete (*itr);
@@ -44,14 +44,14 @@ Block::~Block()
 }
 
 /*****************************************************************************/
-void Block::addStatement(Executable* statement) 
+void Block::addStatement(Executable* statement)
 /*****************************************************************************/
 {
   _statements.push_back(statement);
 }
 
 /*****************************************************************************/
-void Block::addVariable(Variable* var) 
+void Block::addVariable(Variable* var)
 /*****************************************************************************/
 {
   _vars[var->getName()] = var;
@@ -59,7 +59,7 @@ void Block::addVariable(Variable* var)
 }
 
 /*****************************************************************************/
-Variable* Block::getVar(const string& name) 
+Variable* Block::getVar(const string& name)
 /*****************************************************************************/
 {
   map<string, Variable*>::iterator itr = _vars.find(name);
@@ -79,22 +79,22 @@ void Block::createSubStatements(Tokenizer& lines, string& errs)
     if (lines.token().type() == BLOCKOPENER) {
       if (lines.token().value() == "if")
 	addStatement(new IfElseifElseBlock(_vars, lines, errs));
-      else if (lines.token().value() == "while") 
+      else if (lines.token().value() == "while")
 	addStatement(new WhileBlock(_vars, lines, errs));
       else if (lines.token().value() == "for")
 	addStatement(new ForBlock(_vars, lines, errs));
-      else 
-	errs += "Unexpected block opener: " + lines.token().value() + 
+      else
+	errs += "Unexpected block opener: " + lines.token().value() +
 	  " at line: " + intToString(lines.lineNum());
     }
     //otherwise we are dealing with an ordinary line
-    else 
+    else
       addStatement(new Line(lines, this, errs, false));
-    
+
     if (errs != "") return;
   }
-  
-  //move past the closing brace 
+
+  //move past the closing brace
   if (!lines.eof())
     lines.nextLine();
 }

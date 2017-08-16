@@ -76,7 +76,12 @@ convertToDomiSlice(PySliceObject * pySlice,
   Py_ssize_t pyStop   = 0;
   Py_ssize_t pyStep   = 0;
   Py_ssize_t sliceLen = 0;
-  int rcode = PySlice_GetIndicesEx(pySlice, length , &pyStart ,
+#if PY_VERSION_HEX >= 0x03020000
+  PyObject * pyObj = (PyObject*) pySlice;
+#else
+  PySliceObject * pyObj = pySlice;
+#endif
+  int rcode = PySlice_GetIndicesEx(pyObj  , length , &pyStart ,
                                    &pyStop, &pyStep, &sliceLen);
   Domi::Slice domiSlice((Domi::dim_type) pyStart,
                         (Domi::dim_type) pyStop ,
@@ -158,6 +163,7 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   // Allocate the MDMap constructor arrays
   Teuchos::Array< Domi::Slice > myGlobalBounds(numDims);
   Teuchos::Array< PaddingType > padding(numDims);
+  Teuchos::Array< int >         repBndry;
 
   // Fill in the MDMap constructor arrays
   for (int axis = 0; axis < numDims; ++axis)
@@ -179,6 +185,7 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
     return Teuchos::rcp(new Domi::MDMap<>(mdComm,
                                           myGlobalBounds,
                                           padding,
+                                          repBndry,
                                           layout));
   }
   catch (Domi::InvalidArgument & e)

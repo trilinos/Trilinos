@@ -14,14 +14,20 @@
 # is recommended.
 #
 
-# --> ACTION: include makefile export files ('install mode') for Trilinos; use RELEASE install
-include /home/dridzal/research/Trilinos/BUILD/gcc-4.5.1_intrepid-ML_release/Makefile.export.Trilinos_install
+# --> ACTION: define Trilinos install directory
+TRILINOS_INSTALL_DIR = /home/dridzal/research/Trilinos/BUILD/intrelab/install
 
-# --> ACTION: point to your mex compiler; use the mex option -largeArrayDims 
-MEX = /usr/local/MATLAB/R2010b/bin/mex -largeArrayDims
+# --> ACTION: define Matlab binary directory
+MATLAB_BIN_DIR = /home/dridzal/software/MATLAB/R2016b/bin
 
 # --> ACTION: define install directory (full path or relative to the intrelab directory)
 INST_DIR = install
+
+# include Trilinos Makefile.export file
+include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.Trilinos
+
+# set Matlab mex path with -largeArrayDims option
+MEX = $(MATLAB_BIN_DIR)/mex -largeArrayDims
 
 # Set compilers to Trilinos compilers
 CXX = $(Trilinos_CXX_COMPILER)
@@ -73,7 +79,6 @@ MOBJS = intrepid_setJacobian.mexa64 \
 	stress.mexa64 \
 	tangentStiffnessElastostaticsTL.mexa64 \
 	tensorMultiplyDataField.mexa64 \
-        mlmex.mexa64 \
         myMatVecProductDataField.mexa64 \
         myMatVecProductDataData.mexa64
 

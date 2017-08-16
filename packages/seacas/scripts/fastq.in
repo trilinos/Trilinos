@@ -22,7 +22,7 @@ exit 1
 
 function show_device {
  echo " "
- tempA=`find ${ACCESS}/bin -name ${codename}.\* |grep -v ${codename}.o |sed -e s:${ACCESS}/bin/${codename}.::`
+ tempA=`find ${ACCESS}/bin -name ${codename}${sep}\* |grep -v ${codename}.o |sed -e s:${ACCESS}/bin/${codename}${sep}::`
  echo "Standard options for 'device':" 
  echo "${txtgrn}" $tempA "${txtrst}"
  echo " "

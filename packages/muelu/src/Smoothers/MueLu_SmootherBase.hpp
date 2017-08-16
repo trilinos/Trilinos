@@ -90,6 +90,9 @@ namespace MueLu {
     //! Apply smoother.
     virtual void Apply(MultiVector& x, const MultiVector& rhs, bool InitialGuessIsZero = false) const = 0;
 
+    //! Compute a rough estimate of the cost to apply this smoother on this MPI rank.  Return Teuchos::OrdinalTraits<size_t>::invalid() if such an estimate cannot be computed.
+    virtual size_t getNodeSmootherComplexity() const= 0;
+
     //@}
 
   }; //class SmootherBase

@@ -96,7 +96,7 @@ inline double drand48()
   return (double(rand()) / RAND_MAX);
 }
 
-float tgammaf(float z){
+inline float tgammaf(float z){
   static unsigned int c = 9;
   static float lanczos_coefficients[] = {1.000000000000000174663f,
                                          5716.400188274341379136f,
@@ -124,7 +124,7 @@ float tgammaf(float z){
   return return_val;
 }
 
-double tgamma(double z){
+inline double tgamma(double z){
   static unsigned int c = 9;
   static double lanczos_coefficients[] = {1.000000000000000174663,
                                          5716.400188274341379136,
@@ -152,7 +152,7 @@ double tgamma(double z){
   return return_val;
 }
 
-long double tgammal(long double z){
+inline long double tgammal(long double z){
   static unsigned int c = 9;
   static long double lanczos_coefficients[] = {1.000000000000000174663,
                                          5716.400188274341379136,
@@ -183,7 +183,7 @@ long double tgammal(long double z){
 // This function was adapted from a public domain implementation of erf 
 // which is available at http://www.johndcook.com/cpp_erf.html. The only
 // changes made were to change the type from double to float.
-float erff(float x)
+inline float erff(float x)
 {
     // constants
     float a1 =  0.254829592f;

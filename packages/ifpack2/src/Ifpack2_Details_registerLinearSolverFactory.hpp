@@ -2,7 +2,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -74,7 +74,7 @@ namespace Details {
 /// configured with automatic registration turned off
 /// (<tt>Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION</tt> was
 /// set to <tt>OFF</tt>).  It never hurts to invoke this function
-/// manually, though.
+/// manually, though, since it is idempotent.
 ///
 /// If you need to register Ifpack2's LinearSolverFactory for a set of
 /// template parameters that is <i>not</i> enabled, see

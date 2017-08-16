@@ -64,8 +64,8 @@
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MapExtractor.hpp>
@@ -250,10 +250,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // build blocked operator
     Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(mapExtractor,mapExtractor,10));
 
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat11 = Op11->getCrsMatrix();
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat22 = Op22->getCrsMatrix();
-    bOp->setMatrix(0,0,crsMat11);
-    bOp->setMatrix(1,1,crsMat22);
+    bOp->setMatrix(0,0,Op11);
+    bOp->setMatrix(1,1,Op22);
 
     bOp->fillComplete();
 
@@ -374,125 +372,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
-int main(int argc, char* argv[]) {
-  bool success = false;
-  bool verbose = true;
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
 
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-
-  try {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
-
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
-    Xpetra::Parameters xpetraParameters(clp);
-
-    std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
-
-    switch (clp.parse(argc, argv, NULL)) {
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
-    }
-
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
-#else
-      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-    }
-
-    if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      if (node == "") {
-        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
-#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#else
-#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
-        return main_<double,int,int,Node> (clp, lib, argc, argv);
-#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#  else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#  endif
-#endif
-      } else if (node == "serial") {
-#ifdef KOKKOS_HAVE_SERIAL
-        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT)
-        return main_<double,int,int,Node> (clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG)
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("Serial node type is disabled");
-#endif
-      } else if (node == "openmp") {
-#ifdef KOKKOS_HAVE_OPENMP
-        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)
-        return main_<double,int,int,Node> (clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG)
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("OpenMP node type is disabled");
-#endif
-      } else if (node == "cuda") {
-#ifdef KOKKOS_HAVE_CUDA
-        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
-
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  else
-#    if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_INT)
-        return main_<double,int,int,Node> (clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_LONG)
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("CUDA node type is disabled");
-#endif
-      } else {
-        throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
-      }
-#else
-      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-    }
-  }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }

@@ -110,7 +110,7 @@ int Zoltan_PHG_rdivide(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  Zoltan_PHG_Tree_Set(zz, father, lo, hi);
+  if (hgp->keep_tree) Zoltan_PHG_Tree_Set(zz, father, lo, hi);
 
   if (!gnVtx) { /* UVC: no vertex; no need for recursion!? */
       if (level>0)
@@ -207,8 +207,10 @@ int Zoltan_PHG_rdivide(
     
   /* if only two parts total, record results and exit */
   if (lo + 1 == hi)  {
-    Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
-    Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
+    if (hgp->keep_tree) {
+      Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
+      Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
+    }
     for (i = 0; i < hg->nVtx; ++i)
       final[hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
     ZOLTAN_FREE (&part);
@@ -259,7 +261,7 @@ int Zoltan_PHG_rdivide(
           if (part[i]==0)
               final[hg->vmap[i]] = lo;
       /* No recursion for the tree */
-      Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
+      if (hgp->keep_tree) Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
   }
 
   if (hi>mid+1) { /* only split if we need it */
@@ -279,7 +281,7 @@ int Zoltan_PHG_rdivide(
           if (part[i]==1)
               final[hg->vmap[i]] = hi;
       /* No recursion for the tree */
-      Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
+      if (hgp->keep_tree) Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
   }
 
   

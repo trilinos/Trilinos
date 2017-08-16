@@ -78,6 +78,10 @@ namespace MueLu {
     const virtual RCP<const FactoryBase> GetFactory(const std::string& varName) const = 0;
     //@}
 
+    //! Check
+    // Return true if Factory associated with varName is registered
+    virtual bool hasFactory(const std::string& varName) const = 0;
+
     // Free temporarily hold data at the end of Hierarchy::Setup()
     // This method is const because the clean concerns only mutable data.
     virtual void Clean() const { } // TODO: should be used inside of MueLu::Hierarchy

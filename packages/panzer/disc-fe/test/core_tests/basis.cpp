@@ -45,8 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
@@ -55,7 +53,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis, Q2_2D_volume)
   {
-    PHX::InitializeKokkosDevice();
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -80,29 +77,27 @@ namespace panzer {
     TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
     TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: HGrad:2");
 
-    Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > >
+    Teuchos::RCP< Intrepid2::Basis<PHX::exec_space,double,double> >
       intrepid_basis = basis.getIntrepid2Basis();
 
     TEST_ASSERT(!Teuchos::is_null(intrepid_basis));
 
     const int dim = base_cell_dimension;
 
-    TEST_EQUALITY(basis.basis_ref->size(), 9 * 4);
-    TEST_EQUALITY(basis.basis->size(), num_cells * 9 * 4);
-    TEST_EQUALITY(basis.basis_grad_ref->size(), 9 * 4 * dim);
-    TEST_EQUALITY(basis.basis_grad->size(), num_cells * 9 * 4 * dim);
-    TEST_EQUALITY(basis.basis_D2_ref->size(), 9 * 4 * dim * dim);
-    TEST_EQUALITY(basis.basis_D2->size(), num_cells * 9 * 4 * dim * dim);
-    TEST_EQUALITY(basis.functional->size(), num_cells * 9);
-    TEST_EQUALITY(basis.functional_grad->size(), num_cells * 9 * dim);
-    TEST_EQUALITY(basis.functional_D2->size(), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_ref->size()), 9 * 4);
+    TEST_EQUALITY(static_cast<int>(basis.basis->size()), num_cells * 9 * 4);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad_ref->size()), 9 * 4 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad->size()), num_cells * 9 * 4 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2_ref->size()), 9 * 4 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2->size()), num_cells * 9 * 4 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional->size()), num_cells * 9);
+    TEST_EQUALITY(static_cast<int>(basis.functional_grad->size()), num_cells * 9 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional_D2->size()), num_cells * 9 * dim * dim);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, Q2_2D_side)
   {
-    PHX::InitializeKokkosDevice();
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -128,29 +123,27 @@ namespace panzer {
     TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
     TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: HGrad:2");
 
-    Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > >
+    Teuchos::RCP< Intrepid2::Basis<PHX::exec_space,double,double> >
       intrepid_basis = basis.getIntrepid2Basis();
 
     TEST_ASSERT(!Teuchos::is_null(intrepid_basis));
 
     const int dim = base_cell_dimension;
 
-    TEST_EQUALITY(basis.basis_ref->size(), 9 * 2);
-    TEST_EQUALITY(basis.basis->size(), num_cells * 9 * 2);
-    TEST_EQUALITY(basis.basis_grad_ref->size(), 9 * 2 * dim);
-    TEST_EQUALITY(basis.basis_grad->size(), num_cells * 9 * 2 * dim);
-    TEST_EQUALITY(basis.basis_D2_ref->size(), 9 * 2 * dim * dim);
-    TEST_EQUALITY(basis.basis_D2->size(), num_cells * 9 * 2 * dim * dim);
-    TEST_EQUALITY(basis.functional->size(), num_cells * 9);
-    TEST_EQUALITY(basis.functional_grad->size(), num_cells * 9 * dim);
-    TEST_EQUALITY(basis.functional_D2->size(), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_ref->size()), 9 * 2);
+    TEST_EQUALITY(static_cast<int>(basis.basis->size()), num_cells * 9 * 2);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad_ref->size()), 9 * 2 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad->size()), num_cells * 9 * 2 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2_ref->size()), 9 * 2 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2->size()), num_cells * 9 * 2 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional->size()), num_cells * 9);
+    TEST_EQUALITY(static_cast<int>(basis.functional_grad->size()), num_cells * 9 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional_D2->size()), num_cells * 9 * dim * dim);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, TEdge1_2D_volume)
   {
-    PHX::InitializeKokkosDevice();
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()));
@@ -170,12 +163,10 @@ namespace panzer {
     TEST_ASSERT(basis->getIntrepid2Basis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, QEdge1_2D_volume)
   {
-    PHX::InitializeKokkosDevice();
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -195,12 +186,10 @@ namespace panzer {
     TEST_ASSERT(basis->getIntrepid2Basis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, supported_bases)
   {
-    PHX::InitializeKokkosDevice();
     
     const int num_cells = 20;
     Teuchos::RCP<PureBasis> basis;
@@ -285,12 +274,10 @@ namespace panzer {
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
     }
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, deprecated_bases)
   {
-    PHX::InitializeKokkosDevice();
     
     const int num_cells = 20;
 
@@ -366,7 +353,6 @@ namespace panzer {
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HCURL);
     }
 
-    PHX::FinalizeKokkosDevice();
   }
 
 }

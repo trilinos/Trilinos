@@ -79,6 +79,16 @@ namespace ML_Epetra
                              const bool ComputePrec = true);
     //@}
 
+    // Parameter-list driven version of main constructor
+    // Paramters of relevance (below) should be RCP's to matrices:
+    // D0    - D0_Clean_Matrix
+    // Ms    - Ms_Matrix
+    // M0inv - M0inv_Matrix
+    // M1    - M1_Matrix
+    RefMaxwellPreconditioner(const Epetra_CrsMatrix& SM_Matrix,      //S+M
+                             const Teuchos::ParameterList& List,
+                             const bool ComputePrec = true);
+    //@}
 
     //! @name Destructor
     //@{
@@ -125,7 +135,7 @@ namespace ML_Epetra
     int ComputePreconditioner(const bool CheckFiltering = false);
 
     //! Recomputes the preconditioner
-    int ReComputePreconditioner(){return(-1);}
+    int ReComputePreconditioner();
 
     //! Print the individual operators in the multigrid hierarchy.
     void Print(int whichHierarchy = 11);

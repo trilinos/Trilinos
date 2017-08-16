@@ -175,6 +175,131 @@ void DefaultColumnwiseMultiVector<Scalar>::assignImpl(Scalar alpha)
 }
 
 
+template<class Scalar>
+void DefaultColumnwiseMultiVector<Scalar>::assignMultiVecImpl(
+  const MultiVectorBase<Scalar>& mv
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(col_vecs_.size(), mv.domain()->dim());
+  TEUCHOS_ASSERT(range_->isCompatible(*mv.range()));
+#endif
+  for (Ordinal col_j = 0; col_j < col_vecs_.size(); ++col_j) {
+    col_vecs_[col_j]->assign(*mv.col(col_j));
+  }
+}
+
+
+template<class Scalar>
+void DefaultColumnwiseMultiVector<Scalar>::scaleImpl(Scalar alpha)
+{
+  for (Ordinal col_j = 0; col_j < col_vecs_.size(); ++col_j) {
+    col_vecs_[col_j]->scale(alpha);
+  }
+}
+
+
+template<class Scalar>
+void DefaultColumnwiseMultiVector<Scalar>::updateImpl(
+  Scalar alpha,
+  const MultiVectorBase<Scalar>& mv
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(col_vecs_.size(), mv.domain()->dim());
+  TEUCHOS_ASSERT(range_->isCompatible(*mv.range()));
+#endif
+  for (Ordinal col_j = 0; col_j < col_vecs_.size(); ++col_j) {
+    col_vecs_[col_j]->update(alpha, *mv.col(col_j));
+  }
+}
+
+
+template<class Scalar>
+void DefaultColumnwiseMultiVector<Scalar>::linearCombinationImpl(
+  const ArrayView<const Scalar>& alpha,
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+  const Scalar& beta
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(alpha.size(), mv.size());
+  for (Ordinal i = 0; i < mv.size(); ++i) {
+    TEUCHOS_ASSERT_EQUALITY(col_vecs_.size(), mv[i]->domain()->dim());
+    TEUCHOS_ASSERT(range_->isCompatible(*mv[i]->range()));
+  }
+#endif
+  Array<RCP<const VectorBase<Scalar> > > v_rcp(mv.size());
+  Array<Ptr<const VectorBase<Scalar> > > v(mv.size());
+  for (Ordinal col_j = 0; col_j < col_vecs_.size(); ++col_j) {
+    for (Ordinal i = 0; i < mv.size(); ++i) {
+      v_rcp[i] = mv[i]->col(col_j);
+      v[i] = v_rcp[i].ptr();
+    }
+    col_vecs_[col_j]->linear_combination(alpha, v(), beta);
+  }
+}
+
+
+template<class Scalar>
+void DefaultColumnwiseMultiVector<Scalar>::dotsImpl(
+  const MultiVectorBase<Scalar>& mv,
+  const ArrayView<Scalar>& prods
+  ) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(col_vecs_.size(), mv.domain()->dim());
+  TEUCHOS_ASSERT_EQUALITY(col_vecs_.size(), prods.size());
+  TEUCHOS_ASSERT(range_->isCompatible(*mv.range()));
+#endif
+  for (Ordinal col_j = 0; col_j < col_vecs_.size(); ++col_j) {
+    prods[col_j] = col_vecs_[col_j]->dot(*mv.col(col_j));
+  }
+}
+
+
+template<class Scalar>
+void DefaultColumnwiseMultiVector<Scalar>::norms1Impl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(col_vecs_.size(), norms.size());
+#endif
+  for (Ordinal col_j = 0; col_j < col_vecs_.size(); ++col_j) {
+    norms[col_j] = col_vecs_[col_j]->norm_1();
+  }
+}
+
+
+template<class Scalar>
+void DefaultColumnwiseMultiVector<Scalar>::norms2Impl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(col_vecs_.size(), norms.size());
+#endif
+  for (Ordinal col_j = 0; col_j < col_vecs_.size(); ++col_j) {
+    norms[col_j] = col_vecs_[col_j]->norm_2();
+  }
+}
+
+
+template<class Scalar>
+void DefaultColumnwiseMultiVector<Scalar>::normsInfImpl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(col_vecs_.size(), norms.size());
+#endif
+  for (Ordinal col_j = 0; col_j < col_vecs_.size(); ++col_j) {
+    norms[col_j] = col_vecs_[col_j]->norm_inf();
+  }
+}
+
+
 // Overridden protected functions from LinearOpBase
 
 

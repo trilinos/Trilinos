@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
     // Tracking Objective
     RCP<Objective_SimOpt<RealT>> obj = rcp( new TrackingObjective<RealT>(disc,utarget,gamma) );
 
-    // Equality Constraint
-    RCP<EqualityConstraint_SimOpt<RealT>> con = rcp( new BVPConstraint<RealT>(disc) );
+    // Constraint
+    RCP<Constraint_SimOpt<RealT>> con = rcp( new BVPConstraint<RealT>(disc) );
  
     obj->checkGradient(uz,y,true,*outStream);
     obj->checkHessVec(uz,y,true,*outStream);

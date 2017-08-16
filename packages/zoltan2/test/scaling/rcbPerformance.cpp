@@ -438,11 +438,8 @@ int main(int argc, char *argv[])
   if (numGlobalParts != nprocs)
     params.set("num_global_parts" , numGlobalParts);
 
-  params.set("bisection_num_test_cuts", numTestCuts);
-
   if (rank==0){
     cout << "Number of parts: " << numGlobalParts << endl;
-    cout << "bisection_num_test_cuts: " << numTestCuts << endl;
   }
 
   // Create a problem, solve it, and display the quality.

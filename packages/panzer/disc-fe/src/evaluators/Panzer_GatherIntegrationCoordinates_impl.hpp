@@ -90,13 +90,13 @@ template<typename EvalT,typename TRAITS>
 void panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  // const Intrepid2::FieldContainer<double> & quadCoords = this->wda(workset).int_rules[quadIndex_]->ip_coordinates;  
+  // const Kokkos::DynRankView<double,PHX::Device> & quadCoords = this->wda(workset).int_rules[quadIndex_]->ip_coordinates;  
   const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quadIndex_];
 
   // just copy the array
-  for(int i=0;i<iv.ip_coordinates.dimension(0);i++)
-    for(int j=0;j<iv.ip_coordinates.dimension(1);j++)
-      for(int k=0;k<iv.ip_coordinates.dimension(2);k++)
+  for(int i=0;i<iv.ip_coordinates.extent_int(0);i++)
+    for(int j=0;j<iv.ip_coordinates.extent_int(1);j++)
+      for(int k=0;k<iv.ip_coordinates.extent_int(2);k++)
 	quadCoordinates_(i,j,k) = iv.ip_coordinates(i,j,k);
 }
 

@@ -48,18 +48,15 @@
 */
 
 #include <Zoltan2_Parameters.hpp>
-#include <Zoltan2_IntegerRangeList.hpp>
 
-#include <Teuchos_StringInputSource.hpp>
-#include <Teuchos_XMLParser.hpp>
-#include <Teuchos_XMLObject.hpp>
-#include <Teuchos_XMLParameterListReader.hpp>
-#include <Teuchos_ValidatorXMLConverterDB.hpp>
-
-// A generated header file in {zoltan2-binary-directory}/src
-// which defines ZOLTAN2_XML_PARAMETER_STRING.
-
-#include <Zoltan2_XML_Parameters.hpp>  
+// Parameters.cpp builds the full lists from a series of member statics
+#include <Zoltan2_InputTraits.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
+#include <Zoltan2_Problem.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_OrderingProblem.hpp>
+#include <Zoltan2_MappingProblem.hpp>
+#include <Zoltan2_ColoringProblem.hpp>
 
 namespace Zoltan2 {
 
@@ -73,48 +70,28 @@ namespace Zoltan2 {
 
 void createAllParameters(Teuchos::ParameterList &pList)
 {
-  // An XML converter for IntegerRangeListValidator
-  // needs to be added to the converter database.
+  // the old method loads from a larger #define XML string
+  // the new way loads from a series of static functions
 
-  typedef Zoltan2::IntegerRangeListValidator<int> irl_t;
-  typedef Zoltan2::IntegerRangeListValidatorXMLConverter<int> irlConverter_t;
+  // The dummy adapter is arbitrary
+  // It allows us to keep the getValidParameters method in the class
+  // However currently that has no template dependence
+  typedef Zoltan2::BasicUserTypes<int, int, int> dummyTypes;
+  typedef Zoltan2::BasicIdentifierAdapter< dummyTypes > dummyAdapter;
 
-  RCP<const irl_t> intRangeValidatorP = rcp(new irl_t); // dummy
-  RCP<irlConverter_t > converter = rcp(new irlConverter_t);
-  Teuchos::ValidatorXMLConverterDB::addConverter(
-        intRangeValidatorP,
-        converter);
+  // environment has some of it's own parameters to provide
+  Environment::getValidParameters(pList);
 
-  // Create a Teuchos::ParameterList from an XML string.
-  // To add a parameter to Zoltan2, edit zoltan2/data/parameters.xml.
+  // Problem provides the base set of parameters for all problems
+  Zoltan2::Problem<dummyAdapter>::getValidParameters(pList);
 
-  std::string xmlParameterString(ZOLTAN2_XML_PARAMETER_STRING);
-  Teuchos::StringInputSource src(xmlParameterString);
+  // PartitioningProblem will also add parameters for each Algorithm
+  Zoltan2::PartitioningProblem<dummyAdapter>::getValidParameters(pList);
 
-  Teuchos::XMLObject xmlObj;
-  std::ostringstream errMsg;
-
-  Teuchos::XMLParser parser(src.stream());
-
-  try{
-    xmlObj = parser.parse();
-  }
-  catch (std::exception &e){
-    errMsg << e.what() << " invalid xml";
-  }
-
-  if (errMsg.str().size() == 0){
-    try{
-      Teuchos::XMLParameterListReader rdr;
-      pList = rdr.toParameterList(xmlObj);
-    }
-    catch (std::exception &e){
-      errMsg << e.what() << " invalid parameter list";
-    }
-  }
-
-  if (errMsg.str().size() > 0)
-    throw std::logic_error(errMsg.str().c_str());
+  // Other problems have their own unique parameters
+  Zoltan2::OrderingProblem<dummyAdapter>::getValidParameters(pList);
+  Zoltan2::MappingProblem<dummyAdapter>::getValidParameters(pList);
+  Zoltan2::ColoringProblem<dummyAdapter>::getValidParameters(pList);
 }
 
 /*! \brief  Create a parameter list that can validate a

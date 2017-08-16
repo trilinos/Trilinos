@@ -36,7 +36,7 @@
 
 extern "C" {
 
-#include "amesos_klu_decl.h"
+#include "trilinos_klu_decl.h"
 
 }
 
@@ -49,7 +49,7 @@ class DeallocFunctorDeleteWithCommon
 {
 public:
   DeallocFunctorDeleteWithCommon(
-				 const RCP<klu_common>  &common
+				 const RCP<trilinos_klu_common>  &common
 				 ,DeleteFunctor         deleteFunctor
 				 )
     : common_(common), deleteFunctor_(deleteFunctor)
@@ -59,7 +59,7 @@ public:
     if(ptr) deleteFunctor_(&ptr,&*common_);
   }
 private:
-  Teuchos::RCP<klu_common> common_;
+  Teuchos::RCP<trilinos_klu_common> common_;
   DeleteFunctor deleteFunctor_;
   DeallocFunctorDeleteWithCommon(); // Not defined and not to be called!
 };
@@ -67,7 +67,7 @@ private:
 template<class T, class DeleteFunctor>
 DeallocFunctorDeleteWithCommon<T,DeleteFunctor>
 deallocFunctorDeleteWithCommon(
-			       const RCP<klu_common>  &common
+			       const RCP<trilinos_klu_common>  &common
 			       ,DeleteFunctor                        deleteFunctor
 			       )
 {
@@ -80,9 +80,9 @@ deallocFunctorDeleteWithCommon(
 class Amesos_Klu_Pimpl 
 {
 public:
-  Teuchos::RCP<klu_symbolic> Symbolic_;
-  Teuchos::RCP<klu_numeric> Numeric_;
-  Teuchos::RCP<klu_common> common_;
+  Teuchos::RCP<trilinos_klu_symbolic> Symbolic_;
+  Teuchos::RCP<trilinos_klu_numeric> Numeric_;
+  Teuchos::RCP<trilinos_klu_common> common_;
 };
 
 //=============================================================================
@@ -483,17 +483,17 @@ int Amesos_Klu::PerformSymbolicFactorization()
 
   if (MyPID_ == 0) {
 
-    PrivateKluData_->common_ = rcp(new klu_common());
-    amesos_klu_defaults(&*PrivateKluData_->common_) ;
+    PrivateKluData_->common_ = rcp(new trilinos_klu_common());
+    trilinos_klu_defaults(&*PrivateKluData_->common_) ;
     PrivateKluData_->Symbolic_ =
       rcpWithDealloc(
-	  amesos_klu_analyze (static_cast<int>(NumGlobalElements_), &Ap[0], Ai,  &*PrivateKluData_->common_ ) 
-	  ,deallocFunctorDeleteWithCommon<klu_symbolic>(PrivateKluData_->common_,amesos_klu_free_symbolic)
+	  trilinos_klu_analyze (static_cast<int>(NumGlobalElements_), &Ap[0], Ai,  &*PrivateKluData_->common_ ) 
+	  ,deallocFunctorDeleteWithCommon<trilinos_klu_symbolic>(PrivateKluData_->common_,trilinos_klu_free_symbolic)
 	  ,true
 	  );
     
     symbolic_ok = (PrivateKluData_->Symbolic_.get() != NULL) 
-      && PrivateKluData_->common_->status == KLU_OK ;
+      && PrivateKluData_->common_->status == TRILINOS_KLU_OK ;
 
   }
 
@@ -541,14 +541,14 @@ int Amesos_Klu::PerformNumericFactorization( )
       // refactorize using the existing Symbolic and Numeric objects, and
       // using the identical pivot ordering as the prior klu_factor.
       // No partial pivoting is done.
-      int result = amesos_klu_refactor (&Ap[0], Ai, Aval,
+      int result = trilinos_klu_refactor (&Ap[0], Ai, Aval,
 					&*PrivateKluData_->Symbolic_, 
 					&*PrivateKluData_->Numeric_, &*PrivateKluData_->common_) ;
       // Did it work?
-      const  bool refactor_ok = result == 1 && PrivateKluData_->common_->status == KLU_OK ;
+      const  bool refactor_ok = result == 1 && PrivateKluData_->common_->status == TRILINOS_KLU_OK ;
       if ( refactor_ok ) { 
 	
-	amesos_klu_rcond (&*PrivateKluData_->Symbolic_,
+	trilinos_klu_rcond (&*PrivateKluData_->Symbolic_,
 			  &*PrivateKluData_->Numeric_,
 			  &*PrivateKluData_->common_) ;
 	
@@ -570,14 +570,14 @@ int Amesos_Klu::PerformNumericFactorization( )
       
       // factor the matrix using partial pivoting
       PrivateKluData_->Numeric_ =
-	rcpWithDealloc( amesos_klu_factor(&Ap[0], Ai, Aval,
+	rcpWithDealloc( trilinos_klu_factor(&Ap[0], Ai, Aval,
 			       &*PrivateKluData_->Symbolic_, &*PrivateKluData_->common_),
-	     deallocFunctorDeleteWithCommon<klu_numeric>(PrivateKluData_->common_,amesos_klu_free_numeric)
+	     deallocFunctorDeleteWithCommon<trilinos_klu_numeric>(PrivateKluData_->common_,trilinos_klu_free_numeric)
 	     ,true
 	     );
       
       numeric_ok =  PrivateKluData_->Numeric_.get()!=NULL 
-	&& PrivateKluData_->common_->status == KLU_OK ;
+	&& PrivateKluData_->common_->status == TRILINOS_KLU_OK ;
       
     }
   }
@@ -875,10 +875,10 @@ int Amesos_Klu::Solve()
       SerialX_->Scale(1.0, *SerialB_ ) ;    // X = B (Klu overwrites B with X)
     }
     if (UseTranspose()) {
-      amesos_klu_solve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
+      trilinos_klu_solve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
 			SerialXlda_, NumVectors_, &SerialXBvalues_[0], &*PrivateKluData_->common_ );
     } else {
-      amesos_klu_tsolve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
+      trilinos_klu_tsolve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
 			 SerialXlda_, NumVectors_, &SerialXBvalues_[0], &*PrivateKluData_->common_ );
     }
   }

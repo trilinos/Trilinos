@@ -17,6 +17,19 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
+ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
+ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
+ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
+if (${PACKAGE_NAME}_ENABLE_Tpetra)
+  ASSERT_DEFINED(Tpetra_INST_DOUBLE)
+  ASSERT_DEFINED(Tpetra_INST_INT_INT)
+  ASSERT_DEFINED(Tpetra_INST_INT_LONG)
+  ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
+  ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+  ASSERT_DEFINED(Tpetra_INST_FLOAT)
+  ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
+ENDIF()
+
 # JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
 # This is redundant, since MueLu also requires Kokkos, and Kokkos requires C++11.
 # "I left a special case for CUDA because I'm not sure whether TriBITS
@@ -29,7 +42,7 @@ IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
 ENDIF ()
 
 # The following Tribits macro sets MueLu_ENABLE_EXPLICIT_INSTANTIATION
-# to be true if Trilinos_ENABLE_EXPLICIT_INSTANTIATION is true.
+# to be true if ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION is true.
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION  OFF)
@@ -73,6 +86,20 @@ ENDIF ()
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   MESSAGE(STATUS "Enabling MueLu experimental code")
 ENDIF()
+
+# Enable additive variant
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_ADDITIVE_VARIANT
+  HAVE_${PACKAGE_NAME_UC}_ADDITIVE_VARIANT
+  "Enable Additive Variant."
+  NO)
+
+# cmake option to enable building of MueLu Tutorial
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Tutorial
+  ""
+  "Enable MueLu tutorial."
+  YES)
 
 # Split ETI cpp files
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -128,6 +155,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
   "Enable MueLu code refactored to use Kokkos."
   NO)
+
+# Intrepid2 Refactor support
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Intrepid2_Refactor
+  HAVE_${PACKAGE_NAME_UC}_INTREPID2_REFACTOR
+  "Enable Intrepid2 Refactor."
+  "${Intrepid2_ENABLE_KokkosDynRankView}")
+
+
 
 IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
   MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
@@ -303,10 +339,10 @@ ADD_SUBDIRECTORY(src)
 
 if(TPL_ENABLE_MATLAB)
   if (NOT ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-    MESSAGE(FATAL_ERROR "Muemex interfaces require \"-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\".")
+    MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\".")
   ENDIF()
   IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra OR NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-      MESSAGE(FATAL_ERROR "Muemex interfaces require \"-DTrilinos_ENABLE_Epetra:BOOL=ON\" and \"-DTrilinos_ENABLE_Tpetra:BOOL=ON\".")
+      MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PACKAGE_NAME}_ENABLE_Epetra:BOOL=ON\" and \"-D${PACKAGE_NAME}_ENABLE_Tpetra:BOOL=ON\".")
   ENDIF()
 ENDIF()
 

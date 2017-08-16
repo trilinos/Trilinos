@@ -63,6 +63,7 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
 
 namespace Zoltan2 {
 
@@ -103,23 +104,44 @@ public:
    *  \param problemParams  the parameters supplied by the user, and
    *                          not yet validated by the Environment
    *  \param comm           the default communicator for the application
-   *
-   *   Note that the communicator is for the application, not the problem.
    */
   Environment(Teuchos::ParameterList &problemParams,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm );
 
-  /*! \brief Default Constructor
+  /*! \brief Constructor
    *
-   *    The default constructor uses the Teuchos default communicator,
+   *    This constructor does not take a Parameter list,
    *    BASIC_STATUS for debug_level, and does not timing or memory profiling.
    *    It has error_check_level BASIC_ASSERTION. It has no other parameters.
+   *  \param comm           the default communicator for the application
    */
-  Environment();
+  Environment(const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
   /*! \brief Destructor
    */
   ~Environment();
+
+  /*! \brief resetParameters and validate them - preserve the comm
+   */
+  void resetParameters(Teuchos::ParameterList &problemParams);
+
+  /*! \brief Collect the paramaters specific to Environment
+   */
+  static void getValidParameters(ParameterList & pl);
+
+  /*! \brief Exists to make setting up validators less cluttered
+   */
+  static RCP<Teuchos::BoolParameterEntryValidator> getBoolValidator();
+
+  /*! \brief Exists to make setting up validators less cluttered
+   */
+  static RCP<Teuchos::AnyNumberParameterEntryValidator>
+    getAnyDoubleValidator();
+
+  /*! \brief Exists to make setting up validators less cluttered
+   */
+  static RCP<Teuchos::AnyNumberParameterEntryValidator>
+    getAnyIntValidator();
 
   /*! \brief Provide the Timer object to the Environment.
    *
@@ -131,24 +153,24 @@ public:
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 
-  void localInputAssertion(const char *file, int lineNum,
+  inline void localInputAssertion(const char *file, int lineNum,
     const char *msg, bool ok, AssertionLevel level) const {}
 
-  void globalInputAssertion(const char *file, int lineNum,
+  inline void globalInputAssertion(const char *file, int lineNum,
     const char *msg, bool ok, AssertionLevel level, 
     const Comm_t &comm=comm_) const {}
 
-  void localBugAssertion(const char *file, int lineNum,
+  inline void localBugAssertion(const char *file, int lineNum,
     const char *msg, bool ok, AssertionLevel level) const {}
 
-  void globalBugAssertion(const char *file, int lineNum,
+  inline void globalBugAssertion(const char *file, int lineNum,
     const char *msg, bool ok, AssertionLevel level, 
     const Comm_t &comm=comm_) const {}
 
-  void localMemoryAssertion(const char *file, int lineNum,
+  inline void localMemoryAssertion(const char *file, int lineNum,
     size_t nobj, bool ok) const {}
 
-  void globalMemoryAssertion(const char *file, int lineNum,
+  inline void globalMemoryAssertion(const char *file, int lineNum,
     size_t nobj, bool ok, const Comm_t &comm=comm_) const {}
 
 #else
@@ -166,7 +188,7 @@ public:
    *  is thrown if it is false.
    */
 
-  void localInputAssertion(const char *file, int lineNum,
+  inline void localInputAssertion(const char *file, int lineNum,
     const char *msg, bool ok, AssertionLevel level) const {
 
     if (level <= errorCheckLevel_ && !ok){
@@ -193,7 +215,7 @@ public:
    *  is thrown.
    */
 
-  void globalInputAssertion(const char *file, int lineNum,
+  inline void globalInputAssertion(const char *file, int lineNum,
     const char *msg, bool ok, AssertionLevel level, 
     const Comm_t &comm) const {
 
@@ -233,7 +255,7 @@ public:
    *  to be executed (the default in a switch for example).
    */
 
-  void localBugAssertion(const char *file, int lineNum,
+  inline void localBugAssertion(const char *file, int lineNum,
     const char *msg, bool ok, AssertionLevel level) const {
 
     if (level <= errorCheckLevel_ && !ok){
@@ -266,7 +288,7 @@ public:
    *  to be executed (the default in a switch for example).
    */
 
-  void globalBugAssertion(const char *file, int lineNum,
+  inline void globalBugAssertion(const char *file, int lineNum,
     const char *msg, bool ok, AssertionLevel level, 
    const Comm_t &comm) const {
 
@@ -301,7 +323,7 @@ public:
    *  with -DZ2_OMIT_ALL_ERROR_CHECKING.
    */
 
-  void localMemoryAssertion(const char *file, int lineNum, size_t nobj, 
+  inline void localMemoryAssertion(const char *file, int lineNum, size_t nobj, 
     bool ok) const {
 
    if (!ok){ 
@@ -326,7 +348,7 @@ public:
    *  with -DZ2_OMIT_ALL_ERROR_CHECKING.
    */
 
-  void globalMemoryAssertion(const char *file, int lineNum,
+  inline void globalMemoryAssertion(const char *file, int lineNum,
     size_t nobj, bool ok, const Comm_t &comm) const {
 
     int anyFail=0, fail = (!ok ? 1 : 0); 
@@ -387,33 +409,33 @@ public:
 
 #ifdef Z2_OMIT_ALL_PROFILING
 
-  void timerStart(TimerType tt, const char * timerName) const  {return;}
-  void timerStart(TimerType tt, const std::string &timerName) const  {return;}
-  void timerStart(TimerType tt, const char * timerName, int, 
+  inline void timerStart(TimerType tt, const char * timerName) const  {return;}
+  inline void timerStart(TimerType tt, const std::string &timerName) const  {return;}
+  inline void timerStart(TimerType tt, const char * timerName, int, 
     int fieldWidth=0) const  {return;}
-  void timerStart(TimerType tt, const std::string &timerName, int, 
+  inline void timerStart(TimerType tt, const std::string &timerName, int, 
     int fieldWidth=0) const  {return;}
 
-  void timerStop(TimerType tt, const char * timerName) const {return;}
-  void timerStop(TimerType tt, const std::string &timerName) const {return;}
-  void timerStop(TimerType tt, const char * timerName, int, 
+  inline void timerStop(TimerType tt, const char * timerName) const {return;}
+  inline void timerStop(TimerType tt, const std::string &timerName) const {return;}
+  inline void timerStop(TimerType tt, const char * timerName, int, 
     int fieldWidth=0) const {return;}
-  void timerStop(TimerType tt, const std::string &timerName, int, 
+  inline void timerStop(TimerType tt, const std::string &timerName, int, 
     int fieldWidth=0) const {return;}
 
 #else
   /*! \brief  Start a named timer.
    */
 
-  void timerStart(TimerType tt, const char *timerName) const  {
+  inline void timerStart(TimerType tt, const char *timerName) const  {
     if (timingOn_) timerOut_->start(tt, timerName); }
 
-  void timerStart(TimerType tt, const std::string &timerName) const  {
+  inline void timerStart(TimerType tt, const std::string &timerName) const  {
     if (timingOn_) timerOut_->start(tt, timerName); }
 
   /*! \brief  Start a named timer, with a number as part of the name.
    */
-  void timerStart(TimerType tt, const char *timerName, int num, 
+  inline void timerStart(TimerType tt, const char *timerName, int num, 
     int fieldWidth=0) const  {
     if (timingOn_){
       std::ostringstream oss;
@@ -427,7 +449,7 @@ public:
     }
   }
 
-  void timerStart(TimerType tt, const std::string &timerName, int num, 
+  inline void timerStart(TimerType tt, const std::string &timerName, int num, 
     int fieldWidth=0) const  {
     if (timingOn_){
       std::ostringstream oss;
@@ -444,16 +466,16 @@ public:
   /*! \brief  Stop a named timer.
    */
 
-  void timerStop(TimerType tt, const char *timerName) const {
+  inline void timerStop(TimerType tt, const char *timerName) const {
     if (timingOn_) timerOut_->stop(tt, timerName); }
 
-  void timerStop(TimerType tt, const std::string &timerName) const {
+  inline void timerStop(TimerType tt, const std::string &timerName) const {
     if (timingOn_) timerOut_->stop(tt, timerName); }
 
   /*! \brief  Stop a named timer, with a number as part of the name.
    */
 
-  void timerStop(TimerType tt, const char *timerName, int num, 
+  inline void timerStop(TimerType tt, const char *timerName, int num, 
     int fieldWidth=0) const {
     if (timingOn_){
       std::ostringstream oss;
@@ -467,7 +489,7 @@ public:
     }
   }
 
-  void timerStop(TimerType tt, const std::string &timerName, int num, 
+  inline void timerStop(TimerType tt, const std::string &timerName, int num, 
     int fieldWidth=0) const {
     if (timingOn_){
       std::ostringstream oss;
@@ -499,15 +521,15 @@ public:
    */
 
 #ifdef Z2_OMIT_ALL_PROFILING
-  void memory(const char *msg) const {return;}
+  inline void memory(const char *msg) const {return;}
 
-  void memory(const std::string &msg) const {return; }
+  inline void memory(const std::string &msg) const {return; }
 #else
-  void memory(const char *msg) const
+  inline void memory(const char *msg) const
     {if (memoryOn_)
        memoryOut_->print(msg, getProcessKilobytes());}
 
-  void memory(const std::string &msg) const
+  inline void memory(const std::string &msg) const
     {if (memoryOn_)
       memoryOut_->print(msg, getProcessKilobytes());}
 #endif
@@ -570,13 +592,16 @@ public:
   /*! \brief Convert parameters of type 
    *  Teuchos::StringToIntegralParameterEntryValidator<int> to integer.
    *
+   *  Teuchos::StringToIntegralParameterEntryValidator<bool> to bool.
+   *
    * \param params  on input, a list of parameter, on return, all of the
    *                     StringToIntegral parameters have been converted
-   *                     to integer values.
+   *                     to integer values or bool values.
    *
    *    Given a parameter list, this function converts all of the entries that
    *    have valiator of type StringToIntegralParameterEntryValidator<int>
    *    from their string value to their int value.
+   *    Also StringToIntegralParameterEntryValidator<bool> to bool
    *
    */
 
@@ -597,8 +622,8 @@ private:
   /*! \brief The validated user parameters.
    *
    *  When the constructor calls commitParameters(), some of the
-   *  input parameters are changed. For example, "yes"/"no" types
-   *  of parameters are changed to the integers 0 or 1.  So
+   *  input parameters are changed. For example, "true"/"false" types
+   *  of parameters are changed to the integers 1 or 0.  So
    *  this list of parameters provided to Problems and algorithms
    *  is this validated/converted list.
    */

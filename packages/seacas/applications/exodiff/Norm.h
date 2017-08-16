@@ -1,23 +1,23 @@
 // Copyright(C) 2015 Sandia Corporation.  Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,84 +29,85 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 #ifndef ED_NORM_H
 #define ED_NORM_H
 
 #include <cmath>
 class Norm
 {
- public:
+public:
   Norm()
-    : l1_norm_1(0.0), l1_norm_2(0.0), l1_norm_d(0.0),
-    l2_norm_1(0.0), l2_norm_2(0.0), l2_norm_d(0.0)
-    {}
+      : l1_norm_1(0.0), l1_norm_2(0.0), l1_norm_d(0.0), l2_norm_1(0.0), l2_norm_2(0.0),
+        l2_norm_d(0.0)
+  {
+  }
 
-    double diff(int order) const
-    {
-      if (order == 1) {
-	return l1_norm_d;
-      }
-      else if (order == 2) {
-	return std::sqrt(l2_norm_d);
-      }
-      else {
-	return 0.0;
-      }
+  double diff(int order) const
+  {
+    if (order == 1) {
+      return l1_norm_d;
     }
+    else if (order == 2) {
+      return std::sqrt(l2_norm_d);
+    }
+    else {
+      return 0.0;
+    }
+  }
 
-    double left(int order) const
-    {
-      if (order == 1) {
-	return l1_norm_1;
-      }
-      else if (order == 2) {
-	return std::sqrt(l2_norm_1);
-      }
-      else {
-	return 0.0;
-      }
+  double left(int order) const
+  {
+    if (order == 1) {
+      return l1_norm_1;
     }
+    else if (order == 2) {
+      return std::sqrt(l2_norm_1);
+    }
+    else {
+      return 0.0;
+    }
+  }
 
-    double right(int order) const
-    {
-      if (order == 1) {
-	return l1_norm_2;
-      }
-      else if (order == 2) {
-	return std::sqrt(l2_norm_2);
-      }
-      else {
-	return 0.0;
-      }
+  double right(int order) const
+  {
+    if (order == 1) {
+      return l1_norm_2;
     }
+    else if (order == 2) {
+      return std::sqrt(l2_norm_2);
+    }
+    else {
+      return 0.0;
+    }
+  }
 
-    double relative(int order) const
-    {
-      double l = left(order);
-      double r = right(order);
-      double lr_max = l > r ? l : r;
-      return diff(order) / lr_max;
-    }
+  double relative(int order) const
+  {
+    double l      = left(order);
+    double r      = right(order);
+    double lr_max = l > r ? l : r;
+    return diff(order) / lr_max;
+  }
 
-    void add_value(double val1, double val2)
-    {
-      l1_norm_d += std::fabs(val1-val2);
-      l1_norm_1 += std::fabs(val1);
-      l1_norm_2 += std::fabs(val2);
-      
-      l2_norm_d += (val1-val2)*(val1-val2);
-      l2_norm_1 += val1*val1;
-      l2_norm_2 += val2*val2;
-    }
-    
-    double l1_norm_1;
-    double l1_norm_2;
-    double l1_norm_d;
-    
-    double l2_norm_1;
-    double l2_norm_2;
-    double l2_norm_d;
+  void add_value(double val1, double val2)
+  {
+    l1_norm_d += std::fabs(val1 - val2);
+    l1_norm_1 += std::fabs(val1);
+    l1_norm_2 += std::fabs(val2);
+
+    l2_norm_d += (val1 - val2) * (val1 - val2);
+    l2_norm_1 += val1 * val1;
+    l2_norm_2 += val2 * val2;
+  }
+
+  double l1_norm_1;
+  double l1_norm_2;
+  double l1_norm_d;
+
+  double l2_norm_1;
+  double l2_norm_2;
+  double l2_norm_d;
 };
 
 #endif

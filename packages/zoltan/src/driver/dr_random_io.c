@@ -87,7 +87,7 @@ extern "C" {
 /****************************************************************************/
 
 /* Don't generate coords and graph file if nvtxs > this number */
-#define OUTPUT_FILES_MAX_NVTXS 1000
+#define OUTPUT_FILES_MAX_NVTXS 1
 
 /* Use "size" as number of triangles - generate three points for each,
  * this gives us some adjacencies in the .graph file - also can
@@ -327,7 +327,7 @@ int create_random_input(
      * and then let random input be distributed as a Chaco graph would be. */
 
     /* read the array in on processor 0 */
-    nvtxs = pio_info->init_size;
+    nvtxs = pio_info->init_size*Num_Proc;
     ndim = pio_info->init_dim;
     vwgt_dim = pio_info->init_vwgt_dim;
     if (vwgt_dim<1) vwgt_dim=1; /* For now, insist on 1 or more weights. */

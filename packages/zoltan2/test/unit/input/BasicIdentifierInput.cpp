@@ -72,10 +72,10 @@ int main(int argc, char *argv[])
 
   zgno_t *myIds = new zgno_t[numLocalIds];
   zscalar_t *weights = new zscalar_t [numLocalIds*nWeights];
-  zgno_t base = rank * numLocalIds * numLocalIds;
+  zgno_t myFirstId = rank * numLocalIds * numLocalIds;
 
   for (zlno_t i=0; i < numLocalIds; i++){
-    myIds[i] = zgno_t(base+i);
+    myIds[i] = zgno_t(myFirstId+i);
     weights[i*nWeights] = 1.0;
     weights[i*nWeights + 1] = (nprocs-rank) / (i+1);
   }
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 
   for (zlno_t i=0; !fail && i < numLocalIds; i++){
 
-    if (globalIdsIn[i] != zgno_t(base+i))
+    if (globalIdsIn[i] != zgno_t(myFirstId+i))
       fail = 8;
     
     if (!fail && w1[i*incr1] != 1.0)

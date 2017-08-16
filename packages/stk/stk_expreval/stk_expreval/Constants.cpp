@@ -42,10 +42,11 @@ getConstantMap()
   static ConstantMap s_constantMap;
 
   if (s_constantMap.empty()) {
-    s_constantMap["E"]     = s_e;
-    s_constantMap["PI"]    = s_pi;
-    s_constantMap["FALSE"] = s_false;
-    s_constantMap["TRUE"]  = s_true;
+    s_constantMap["E"]      = s_e;
+    s_constantMap["PI"]     = s_pi;
+    s_constantMap["TWO_PI"] = s_two_pi;
+    s_constantMap["FALSE"]  = s_false;
+    s_constantMap["TRUE"]   = s_true;
   }
 
   return s_constantMap;

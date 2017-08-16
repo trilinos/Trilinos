@@ -84,14 +84,15 @@ void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupDat
 template <typename EvalT,typename Traits>
 void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < source.dimension(1); ++point) {
+  using panzer::index_t;
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (int point = 0; point < source.extent_int(1); ++point) {
 
       const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
-      source(cell,point,0) = 2.0+y-y*y;
-      source(cell,point,1) = 2.0+x-x*x;
+      source(cell,point,0) = 2.0+y-y*y + cos(2.0*M_PI*x)*sin(2.0*M_PI*y);
+      source(cell,point,1) = 2.0+x-x*x + sin(2.0*M_PI*x)*cos(2.0*M_PI*y);
 
       // if three d
       if(source.dimension(2)==3)

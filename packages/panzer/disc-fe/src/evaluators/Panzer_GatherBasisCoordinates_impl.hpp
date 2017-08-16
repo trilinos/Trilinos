@@ -91,13 +91,13 @@ template<typename EvalT,typename TRAITS>
 void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  // const Intrepid2::FieldContainer<double> & basisCoords = this->wda(workset).bases[basisIndex_]->basis_coordinates;  
+  // const Kokkos::DynRankView<double,PHX::Device> & basisCoords = this->wda(workset).bases[basisIndex_]->basis_coordinates;  
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basisIndex_];
 
   // just copy the array
-  for(int i=0;i<bv->basis_coordinates.dimension(0);i++)
-    for(int j=0;j<bv->basis_coordinates.dimension(1);j++)
-      for(int k=0;k<bv->basis_coordinates.dimension(2);k++)
+  for(int i=0;i<bv->basis_coordinates.extent_int(0);i++)
+    for(int j=0;j<bv->basis_coordinates.extent_int(1);j++)
+      for(int k=0;k<bv->basis_coordinates.extent_int(2);k++)
           basisCoordinates_(i,j,k)= bv->basis_coordinates(i,j,k);
 }
 

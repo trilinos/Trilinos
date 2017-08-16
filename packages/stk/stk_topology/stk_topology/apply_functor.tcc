@@ -58,10 +58,12 @@ struct topology::apply_functor
 {
   typedef typename Functor::result_type result_type;
 
+  STK_FUNCTION
   apply_functor()
     : m_functor()
   {}
 
+  STK_FUNCTION
   apply_functor(Functor f)
     : m_functor(f)
   {}
@@ -69,6 +71,7 @@ struct topology::apply_functor
 #ifdef __CUDACC__
 #pragma hd_warning_disable
 #endif
+  STK_FUNCTION
   result_type operator()(topology_t t) const
   {
     switch(t)
@@ -123,6 +126,7 @@ struct topology::apply_functor
 #ifdef __CUDACC__
 #pragma hd_warning_disable
 #endif
+  STK_FUNCTION
   result_type operator()(topology_t t)
   {
     switch(t)

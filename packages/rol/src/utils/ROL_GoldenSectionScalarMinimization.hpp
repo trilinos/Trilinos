@@ -73,14 +73,15 @@ public:
            ScalarFunction<Real> &f,
            const Real A, const Real B,
            ScalarMinimizationStatusTest<Real> &test) const {
+    Real one(1), two(2), five(5);
     nfval = 0; ngrad = 0;
     // Reciprocal of golden ratio
-    const Real c = 2.0/(1.0 + std::sqrt(5.0));
+    const Real c = two/(one + std::sqrt(five));
     // Compute value f(a), f(b), f(u), and f(v)
     Real a = A,               fa = f.value(a); nfval++;
     Real b = B,               fb = f.value(b); nfval++;
-    Real u = c*a + (1.0-c)*b, fu = f.value(u); nfval++;
-    Real v = (1.0-c)*a + c*b, fv = f.value(v); nfval++;
+    Real u = c*a + (one-c)*b, fu = f.value(u); nfval++;
+    Real v = (one-c)*a + c*b, fv = f.value(v); nfval++;
     Real gx = ROL_INF<Real>();
     bool deriv = false;
     // Find minimum of all function evaluations
@@ -104,12 +105,12 @@ public:
       if ( fu > fv ) {
         a = u;               fa = fu;
         u = v;               fu = fv;
-        v = (1.0-c)*a + c*b; fv = f.value(v); nfval++;
+        v = (one-c)*a + c*b; fv = f.value(v); nfval++;
       }
       else {
         b = v;               fb = fv;
         v = u;               fv = fu;
-        u = c*a + (1.0-c)*b; fu = f.value(u); nfval++;
+        u = c*a + (one-c)*b; fu = f.value(u); nfval++;
       }
       if ( fa <= fu && fa <= fv && fa <= fb ) {
         x = a; fx = fa;

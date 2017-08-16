@@ -11,6 +11,7 @@
   <li>\ref TeuchosParameterList_src
   <li>\ref TeuchosComm_src
   <li>\ref TeuchosNumerics_src
+  <li>\ref TeuchosParser_src
   <li>\ref TeuchosRemainder_src
   </ul>
 <li>\ref Teuchos_browser
@@ -39,6 +40,7 @@ The following people have contributed to the development of Teuchos:
   <li> Roscoe Bartlett, Sandia National Labs, rabartl@sandia.gov
   <li> Michael Heroux, Sandia National Labs, maherou@sandia.gov
   <li> Mark Hoemmen, Sandia National Labs, mhoemme@sandia.gov
+  <li> Daniel Ibanez, Sandia National Labs, daibane@sandia.gov
   <li> Kris Kampshoff, University of Minnesota, kamp@cs.umn.edu
   <li> Kevin Long, Sandia National Labs, krlong@sandia.gov
   <li> Kurtis Nusbaum, University of Illinois Urbana-Champaign, klnusbaum@gmail.com
@@ -119,6 +121,11 @@ contains basic, general-purpose utilities.
   implementing the "runtime protection of const" idiom.
 
   </ul>
+
+  By default, these classes are not thread-safe but when configured with
+  <tt>-DTeuchos_ENABLE_THREAD_SAFE=ON</tt> (or
+  <tt>-DTrilinos_ENABLE_THREAD_SAFE=ON</tt>), they become thread-safe.  (The
+  default may be switched to on in a future version.)
 
   All the Teuchos memory management classes are configured by default
   to be as efficient as possible.  When building Trilinos, you may set
@@ -400,6 +407,26 @@ matrices and vectors.
      can be turned on at compile time with the
      <tt>Teuchos_ENABLE_DEBUG=ON</tt> configure flag.
 
+</ul>
+
+
+\subsection TeuchosParser_src Teuchos Parser Subpackage
+
+The Teuchos Parser subpackage (Trilinos_ENABLE_TeuchosParser=ON) contains
+classes to parse text-based file formats described as formal grammars.
+It can be used to parse XML, YAML, and other complex textual input formats.
+It can be thought of as a version of
+<a href="https://github.com/westes/flex">Flex</a> and
+<a href="https://www.gnu.org/software/bison/">Bison</a>
+which is a set of C++ functions acting on C++ objects as opposed to a set
+of programs acting on source files.
+The two main classes in Teuchos Parser are:
+
+<ul>
+<li> Teuchos::Language: Stores the user's specification of the file format as a Context Free Grammar
+     plus token regular expressions. </li>
+<li> Teuchos::Reader: Is subclassed by the user to specify what actions to perform at each
+     stage of parsing a text stream. </li>
 </ul>
 
 

@@ -577,6 +577,7 @@ INPUT                  = ../src/vector \
                          ../src/function/ROL_EqualityConstraint_SimOpt.hpp \
                          ../src/function/ROL_Reduced_Objective_SimOpt.hpp \
                          ../src/function/ \
+                         ../example/PDE-OPT/adv-diff-react/ROL_ExperimentDesignObjective.hpp \
                          ../src/algorithm \
                          ../src/status \
                          ../src/step \

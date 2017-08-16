@@ -67,8 +67,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
 
@@ -85,12 +83,11 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    PHX::InitializeKokkosDevice();
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     // setup mesh
     /////////////////////////////////////////////
-    RCP<panzer_stk_classic::STK_Interface> mesh;
+    RCP<panzer_stk::STK_Interface> mesh;
     {
       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
       pl->set<int>("X Elements",2);
@@ -98,10 +95,10 @@ namespace panzer {
       pl->set<int>("X Blocks",2);
       pl->set<int>("Y Blocks",1);
 
-      panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
+      panzer_stk::SquareQuadMeshFactory mesh_factory;
       mesh_factory.setParameterList(pl);
       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
-      mesh->writeToExodus("test.exo");
+      mesh->writeToExodus("initial_condition_control.exo");
     }
 
     RCP<const shards::CellTopology> ct = mesh->getCellTopology("eblock-0_0");
@@ -129,7 +126,7 @@ namespace panzer {
     // setup DOF manager
     /////////////////////////////////////////////
     RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     RCP<panzer::DOFManager<int,int> > dofManager
         = rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
@@ -138,7 +135,7 @@ namespace panzer {
     dofManager->buildGlobalUnknowns();
 
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > elof 
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 
@@ -156,8 +153,8 @@ namespace panzer {
     needs["eblock-1_0"].bases          = { const_basis,    hgrad_basis};
     needs["eblock-1_0"].rep_field_name = {   densDesc.fieldName, condDesc.fieldName};
 
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-        = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer              // attach it to a workset container (uses lazy evaluation)
         = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,needs));
 
@@ -208,7 +205,6 @@ namespace panzer {
       TEST_ASSERT(v==3.0 || v==9.0); 
     }
 
-    PHX::FinalizeKokkosDevice();
   }
 
 }

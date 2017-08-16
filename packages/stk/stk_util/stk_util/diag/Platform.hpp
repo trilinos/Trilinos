@@ -47,8 +47,6 @@ namespace Env {
 
 /**
  * @ingroup EnvRuntimeInformationDetail
- * @brief Function <b>startup_preparallel_platform</b> ...
- *
  */
 void startup_preparallel_platform();
 
@@ -153,7 +151,6 @@ int pgrp();
  *
  * @param largest_free		a <b>size_t</b> returns the largest free block
  * of memory.
- *
  */
 void get_heap_info(size_t &heap_size, size_t &largest_free);
 
@@ -175,15 +172,6 @@ inline size_t get_heap_usage() {
 
 /**
  * @ingroup EnvRuntimeInformationDetail
- * @brief Function <b>get_available_memory</b> returns an estimation of the amount of memory available to the process.
- *
- * @return			a <b>size_t</b> value of the number of bytes available to the process.
- */
-size_t get_available_memory();
-
-
-/**
- * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>get_memory_info</b> returns the total memory usage of the
  * process and the number of page faults accumulated by the process.
  *
@@ -192,7 +180,6 @@ size_t get_available_memory();
  *
  * @param faults		a <b>size_t</b> reference to treceive the number of
  *				page faults incurred by the process.
- *
  */
 void get_memory_info(size_t &memory_usage, size_t &faults);
 
@@ -241,20 +228,6 @@ bool path_read_access(const std::string &path);
 
 /**
  * @ingroup EnvRuntimeInformationDetail EnvOutputDetail
- * @brief Function <b>path_write_access</b> returns true if the process has write
- * access to the path.
- *
- * @param path			a <b>String</b> const reference to the path to check
- *				for write access.
- *
- * @return			a <b>bool</b> value of true of the process has
- *				permission to access the path with write access.
- */
-bool path_write_access(const std::string &path);
-
-
-/**
- * @ingroup EnvRuntimeInformationDetail EnvOutputDetail
  * @brief Function <b>read_lock</b> returns true if the process was able to place
  * a shared lock on the specified file descriptor.
  *
@@ -278,7 +251,6 @@ bool read_lock(int fd);
  */
 bool write_lock(int fd);
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail EnvOutputDetail
  * @brief Function <b>append_lock</b> returns true if the process was able to place
@@ -291,7 +263,6 @@ bool write_lock(int fd);
  * @return			a <b>bool</b> value of true of the lock succeeded.
  */
 bool append_lock(int fd);
-
 
 /**
  * @ingroup EnvRuntimeInformationDetail EnvOutputDetail

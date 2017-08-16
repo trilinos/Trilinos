@@ -74,6 +74,14 @@ public:
 
    virtual void set_A_th(const Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > & in) = 0;
    virtual Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > get_A_th() const = 0;
+
+   void clear()
+   {
+     set_x_th(Teuchos::null);
+     set_dxdt_th(Teuchos::null);
+     set_f_th(Teuchos::null);
+     set_A_th(Teuchos::null);
+   }
 };
 
 }

@@ -84,7 +84,7 @@ private:
   std::vector<std::vector<int> > fieldPattern_;   // local indexing of fields into the array [0,1,...,numLocalDofs-1];
                                                   // contains [number of bases] index vectors, where each index vector
                                                   // is of size [basis cardinality]
-  // Global dof information. 
+  // Global dof information.
   int numNodeDofs_;  // number of global node dofs
   int numEdgeDofs_;  // number of global edge dofs
   int numFaceDofs_;  // number of global face dofs
@@ -210,6 +210,11 @@ public:
   }
 
 
+  int getLocalFieldSize() const {
+    return numLocalDofs_;
+  }
+
+
   int getLocalFieldSize(const int & fieldNumber) const {
     return (intrepidBasis_[fieldNumber])->getCardinality();
   }
@@ -328,7 +333,7 @@ private:
 
 
   void computeFieldPattern() {
-    
+
     fieldPattern_.resize(numBases_);
 
     int dofCt = -1;
@@ -381,6 +386,6 @@ private:
     }
   } // computeFieldDofs
 
-};
+}; // DofManager
 
 #endif

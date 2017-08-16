@@ -44,6 +44,7 @@
 #define KOKKOS_COMPLEX_HPP
 
 #include <Kokkos_Atomic.hpp>
+#include <Kokkos_NumericTraits.hpp>
 #include <complex>
 #include <iostream>
 
@@ -121,13 +122,22 @@ public:
     return *this;
   }
 
-  //! Assignment operator.
+  /// \brief Assignment operator, for volatile <tt>*this</tt> and
+  ///   nonvolatile input.
+  ///
+  /// \param src [in] Input; right-hand side of the assignment.
+  ///
+  /// This operator returns \c void instead of <tt>volatile
+  /// complex<RealType>& </tt>.  See Kokkos Issue #177 for the
+  /// explanation.  In practice, this means that you should not chain
+  /// assignments with volatile lvalues.
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION
-  volatile complex<RealType>& operator= (const complex<InputRealType>& src) volatile {
+  void operator= (const complex<InputRealType>& src) volatile {
     re_ = src.re_;
     im_ = src.im_;
-    return *this;
+    // We deliberately do not return anything here.  See explanation
+    // in public documentation above.
   }
 
   //! Assignment operator.
@@ -315,14 +325,51 @@ public:
     im_ /= src;
     return *this;
   }
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator == (const complex<RealType>& src) {
+    return (re_ == src.re_) && (im_ == src.im_);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator == (const RealType src) {
+    return (re_ == src) && (im_ == RealType(0));
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator != (const complex<RealType>& src) {
+    return (re_ != src.re_) || (im_ != src.im_);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator != (const RealType src) {
+    return (re_ != src) || (im_ != RealType(0));
+  }
+
 };
 
-//! Binary + operator for complex.
+//! Binary + operator for complex complex.
 template<class RealType>
 KOKKOS_INLINE_FUNCTION
 complex<RealType>
 operator + (const complex<RealType>& x, const complex<RealType>& y) {
   return complex<RealType> (x.real () + y.real (), x.imag () + y.imag ());
+}
+
+//! Binary + operator for complex scalar.
+template<class RealType>
+KOKKOS_INLINE_FUNCTION
+complex<RealType>
+operator + (const complex<RealType>& x, const RealType& y) {
+  return complex<RealType> (x.real () + y , x.imag ());
+}
+
+//! Binary + operator for scalar complex.
+template<class RealType>
+KOKKOS_INLINE_FUNCTION
+complex<RealType>
+operator + (const RealType& x, const complex<RealType>& y) {
+  return complex<RealType> (x + y.real (), y.imag ());
 }
 
 //! Unary + operator for complex.
@@ -339,6 +386,22 @@ KOKKOS_INLINE_FUNCTION
 complex<RealType>
 operator - (const complex<RealType>& x, const complex<RealType>& y) {
   return complex<RealType> (x.real () - y.real (), x.imag () - y.imag ());
+}
+
+//! Binary - operator for complex scalar.
+template<class RealType>
+KOKKOS_INLINE_FUNCTION
+complex<RealType>
+operator - (const complex<RealType>& x, const RealType& y) {
+  return complex<RealType> (x.real () - y , x.imag ());
+}
+
+//! Binary - operator for scalar complex.
+template<class RealType>
+KOKKOS_INLINE_FUNCTION
+complex<RealType>
+operator - (const RealType& x, const complex<RealType>& y) {
+  return complex<RealType> (x - y.real (), - y.imag ());
 }
 
 //! Unary - operator for complex.
@@ -386,6 +449,16 @@ operator * (const RealType& x, const complex<RealType>& y) {
   return complex<RealType> (x * y.real (), x * y.imag ());
 }
 
+/// \brief Binary * operator for RealType times complex.
+///
+/// This function exists because the compiler doesn't know that
+/// RealType and complex<RealType> commute with respect to operator*.
+template<class RealType>
+KOKKOS_INLINE_FUNCTION
+complex<RealType>
+operator * (const complex<RealType>& y, const RealType& x) {
+  return complex<RealType> (x * y.real (), x * y.imag ());
+}
 
 //! Imaginary part of a complex number.
 template<class RealType>
@@ -406,7 +479,25 @@ template<class RealType>
 KOKKOS_INLINE_FUNCTION
 RealType abs (const complex<RealType>& x) {
   // FIXME (mfh 31 Oct 2014) Scale to avoid unwarranted overflow.
-  return ::sqrt (real (x) * real (x) + imag (x) * imag (x));
+  return std::sqrt (real (x) * real (x) + imag (x) * imag (x));
+}
+
+//! Power of a complex number
+template<class RealType>
+KOKKOS_INLINE_FUNCTION
+Kokkos::complex<RealType> pow (const complex<RealType>& x, const RealType& e) {
+  RealType r = abs(x);
+  RealType phi = std::atan(x.imag()/x.real());
+  return std::pow(r,e) * Kokkos::complex<RealType>(std::cos(phi*e),std::sin(phi*e)); 
+}
+
+//! Square root of a complex number.
+template<class RealType>
+KOKKOS_INLINE_FUNCTION
+Kokkos::complex<RealType> sqrt (const complex<RealType>& x) {
+  RealType r = abs(x);
+  RealType phi = std::atan(x.imag()/x.real());
+  return std::sqrt(r) * Kokkos::complex<RealType>(std::cos(phi*0.5),std::sin(phi*0.5));
 }
 
 //! Conjugate of a complex number.
@@ -416,6 +507,19 @@ complex<RealType> conj (const complex<RealType>& x) {
   return complex<RealType> (real (x), -imag (x));
 }
 
+//! Exponential of a complex number.
+template<class RealType>
+KOKKOS_INLINE_FUNCTION
+complex<RealType> exp (const complex<RealType>& x) {
+  return std::exp(x.real()) * complex<RealType> (std::cos (x.imag()),  std::sin(x.imag()));
+}
+
+//! Exponential of a complex number.
+template<class RealType>
+KOKKOS_INLINE_FUNCTION
+complex<RealType> pow (const complex<RealType>& x) {
+  return std::exp(x.real()) * complex<RealType> (std::cos (x.imag()),  std::sin(x.imag()));
+}
 
 //! Binary operator / for complex and real numbers
 template<class RealType1, class RealType2>
@@ -452,6 +556,14 @@ operator / (const complex<RealType>& x, const complex<RealType>& y) {
   }
 }
 
+//! Binary operator / for complex and real numbers
+template<class RealType1, class RealType2>
+KOKKOS_INLINE_FUNCTION
+complex<RealType1>
+operator / (const RealType1& x, const complex<RealType2>& y) {
+  return complex<RealType1> (x)/y;
+}
+
 //! Equality operator for two complex numbers.
 template<class RealType>
 KOKKOS_INLINE_FUNCTION
@@ -459,9 +571,13 @@ bool operator == (const complex<RealType>& x, const complex<RealType>& y) {
   return real (x) == real (y) && imag (x) == imag (y);
 }
 
-//! Equality operator for std::complex and Kokkos::complex.
+/// \brief Equality operator for std::complex and Kokkos::complex.
+///
+/// This cannot be a device function, since std::real is not.
+/// Otherwise, CUDA builds will give compiler warnings ("warning:
+/// calling a constexpr __host__ function("real") from a __host__
+/// __device__ function("operator==") is not allowed").
 template<class RealType>
-KOKKOS_INLINE_FUNCTION
 bool operator == (const std::complex<RealType>& x, const complex<RealType>& y) {
   return std::real (x) == real (y) && std::imag (x) == imag (y);
 }
@@ -523,6 +639,15 @@ std::ostream& operator >> (std::ostream& os, complex<RealType>& x) {
   return os;
 }
 
+
+template<class T>
+struct reduction_identity<Kokkos::complex<T> > {
+  typedef reduction_identity<T> t_red_ident;
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Kokkos::complex<T> sum()
+      {return Kokkos::complex<T>(t_red_ident::sum(),t_red_ident::sum());}
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Kokkos::complex<T> prod()
+      {return Kokkos::complex<T>(t_red_ident::prod(),t_red_ident::sum());}
+};
 
 } // namespace Kokkos
 

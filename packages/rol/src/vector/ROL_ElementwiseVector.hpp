@@ -83,10 +83,7 @@ public:
   }
 
   virtual Real norm() const {
-    Teuchos::RCP<Vector<Real> > y = this->clone();
-    y->set(*this);
-    y->applyBinary(Elementwise::Multiply<Real>(), *y);
-    return std::sqrt( y->reduce(Elementwise::ReductionSum<Real>()) );       
+      return std::sqrt(this->dot(*this));
   }
 
   void axpy( const Real alpha, const Vector<Real> &x ) {

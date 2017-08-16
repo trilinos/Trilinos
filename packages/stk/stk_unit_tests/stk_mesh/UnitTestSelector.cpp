@@ -39,7 +39,7 @@
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator|, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, BucketVector, etc
-#include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
+#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <string>                       // for basic_string, operator==, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector
@@ -194,7 +194,7 @@ TEST(Verify, selectorEmptyDuringMeshMod)
     if (bulk.parallel_rank()==0) {
 
         stk::mesh::EntityId elem1Id = 1;
-        stk::mesh::Entity elem1 = bulk.declare_entity(stk::topology::ELEM_RANK, elem1Id, block1);
+        stk::mesh::Entity elem1 = bulk.declare_element(elem1Id, {&block1});
 
         EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
 
@@ -519,117 +519,6 @@ TEST(Verify, usingCopyConstructor)
     EXPECT_TRUE(selector == anotherSelector);
 }
 
-TEST(Verify, selectorAlgorithmicComplexity)
-{
-    //
-    //  Verify expected algorithmic complexity is obtained by selector classes.
-    //  Only test serial, in parallel this gets a bit ill posed as some procs have empty bucket selections
-    //  and the complexity is not meaningful.
-    //
-
-    SelectorFixture fix;
-    initialize(fix);
-
-    if (fix.get_BulkData().parallel_size() > 1) return;
-
-    stk::mesh::Part & partA = fix.m_partA;
-    stk::mesh::Part & partB = fix.m_partB;
-    stk::mesh::Part & partC = fix.m_partC;
-    stk::mesh::Part & partD = fix.m_partD;
-
-    stk::mesh::Selector selectABC = partA & partB & partC;
-    stk::mesh::Selector selectA   = partA;
-    stk::mesh::Selector selectB   = partB;
-    stk::mesh::Selector selectC   = partC;
-    stk::mesh::Selector selectD   = partD;
-
-    unsigned numCopiesBase = 1000000;
-    std::vector<unsigned> trialLen;
-
-    trialLen.push_back(128);
-    trialLen.push_back(256);
-    trialLen.push_back(512);
-    trialLen.push_back(1024);
-    trialLen.push_back(2048);
-    trialLen.push_back(4096);
-
-    std::vector<double> elapsedTime(trialLen.size());
-
-    //
-    //  Test complexity of construction of large binary selector as would be made of selectUnion of a large number of parts
-    //
-    for(unsigned j=0; j<trialLen.size(); ++j) {
-
-      unsigned numCopies = (numCopiesBase/2)/trialLen[j];
-
-      double startTime = stk::cpu_time();
-      for(unsigned i=0; i<numCopies; ++i) {
-        stk::mesh::Selector selectBig ;
-        for(unsigned k=0; k< trialLen[j] ; ++k) {
-          selectBig |= selectC & selectD;
-        }
-      }
-      elapsedTime[j] = (stk::cpu_time()-startTime)/(double)numCopies;
-      std::cout<<"Selector Constructor Complexity Check, Length: "<<trialLen[j]
-               <<" time: "<<elapsedTime[j]<<" Expecting linear complexity"<<std::endl;
-    }
-    //  Expected factor = N, which implies the |= algorithm is O(N) where N is the number of times or is called
-    //  Due to cache effects and random runtime variability though keep a pretty loose tolerane around this expectation
-    double expectedFactor = ((double)trialLen.back())/trialLen[0];
-    double factor         = elapsedTime.back()/elapsedTime[0];
-    double relative_factor = std::abs(expectedFactor-factor)/expectedFactor;
-
-    std::cout << "relative_factor= " << relative_factor << std::endl;
-
-    double gold_relative_factor = 0.40;
-#ifdef __APPLE__
-    // KHP: Ugly I admit...mac is slower than the other platforms
-    gold_relative_factor = 0.57;
-#endif
-    EXPECT_TRUE( relative_factor < gold_relative_factor );
-
-    std::cout<<"  Speedup factors: "<<expectedFactor<<" vs. "<<factor<<std::endl;
-
-    //
-    //  Test complexity of traversal of the large selector.  Some buckets will be found immediately and some will require traversal of
-    //  the entire selector to exclude thus this operation should be O(N) in selector size.
-    const stk::mesh::BucketVector& buckets = fix.get_BulkData().get_buckets(stk::topology::NODE_RANK, fix.get_MetaData().locally_owned_part());
-
-    for(unsigned j=0; j<trialLen.size(); ++j) {
-      unsigned count=0;
-
-      unsigned numCopies = numCopiesBase/trialLen[j];
-
-      stk::mesh::Selector selectCD = selectC | selectD;
-      stk::mesh::Selector selectBig = selectCD;
-      for(int i=0; i< ((int)trialLen[j]-1) ; ++i) {
-        selectBig &= selectCD;
-      }
-      double startTime = stk::cpu_time();
-      for(unsigned i=0; i<numCopies; ++i) {
-        for(unsigned ibucket=0, n=buckets.size(); ibucket<n; ++ibucket) {
-          if(selectBig(*(buckets[ibucket]))) {
-            count++;
-          }
-        }
-      }
-
-      EXPECT_TRUE(count == 2 * numCopies);
-
-      elapsedTime[j] = (stk::cpu_time()-startTime)/(double)numCopies;
-      std::cout<<"Selector Traversal Complexity Check, Length: "<<trialLen[j]
-               <<" time: "<<elapsedTime[j]<<" Expecting linear complexity"<<std::endl;
-    }
-
-    expectedFactor = ((double)trialLen.back())/trialLen[0];
-    factor         = elapsedTime.back()/elapsedTime[0];
-
-    std::cout<<"  Speedup factors: "<<expectedFactor<<" vs. "<<factor<<std::endl;
-
-    relative_factor = std::abs(expectedFactor-factor)/expectedFactor;
-    std::cout <<" relative_factor= " << relative_factor << "\n";
-    EXPECT_TRUE( relative_factor < 0.60);
-}
 
 TEST(Verify, usingSelectField)
 {
@@ -970,17 +859,19 @@ TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
     stk::mesh::BulkData mesh(meta, pm);
 
     stk::mesh::Part * triPart = &meta.declare_part_with_topology("tri_part", stk::topology::TRI_3);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3);
     meta.commit();
 
     mesh.modification_begin();
 
     std::array<int, 3> node_ids = {{1,2,3}};
     stk::mesh::PartVector empty;
-    stk::mesh::Entity tri3 = mesh.declare_entity(stk::topology::FACE_RANK, 1u, *triPart);
+    stk::mesh::Entity shell3 = mesh.declare_element(1u, {shellPart});
     for(unsigned i = 0; i<node_ids.size(); ++i) {
-        stk::mesh::Entity node = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i], empty);
-        mesh.declare_relation(tri3, node, i);
+        stk::mesh::Entity node = mesh.declare_node(node_ids[i], empty);
+        mesh.declare_relation(shell3, node, i);
     }
+    mesh.declare_element_side(shell3, 0u, stk::mesh::ConstPartVector{triPart} );
 
     mesh.modification_end();
 

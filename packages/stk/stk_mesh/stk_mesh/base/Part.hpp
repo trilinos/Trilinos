@@ -199,6 +199,10 @@ struct PartLess {
 
   inline bool operator()( const Part * lhs , const Part * rhs ) const
     { return lhs->mesh_meta_data_ordinal() < rhs->mesh_meta_data_ordinal(); }
+
+  bool operator()(const stk::mesh::Part *lhs, unsigned rhs) const {
+    return lhs->mesh_meta_data_ordinal() < rhs;
+  }
 };
 
 /** \brief  Insert a part into a properly ordered collection of parts.
@@ -206,6 +210,7 @@ struct PartLess {
  */
 bool insert( ConstPartVector & , const Part & );
 bool insert( PartVector & , Part & );
+bool contains( const PartVector & v , const Part & part );
 
 inline
 bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
@@ -231,8 +236,16 @@ void remove( PartVector & , Part & );
 Part * find( const PartVector & , const std::string & );
 
 /** \brief  Query containment within properly ordered PartVector */
-bool contain( const ConstPartVector & , const Part & );
-bool contain( const PartVector & , const Part & );
+template<class PARTVECTOR>
+bool contain( const PARTVECTOR & v , const Part & part )
+{
+  typename PARTVECTOR::const_iterator e = v.end();
+  typename PARTVECTOR::const_iterator i = v.begin();
+
+  i = std::lower_bound( i , e , part , PartLess() );
+
+  return i != e && *i == & part ;
+}
 
 template<class Iterator>
 inline
@@ -245,21 +258,39 @@ bool contains_ordinal( Iterator beg, Iterator end, unsigned part_ordinal )
   return false;
 }
 
+template<class Iterator>
 inline
-bool contains_ordinal_part( PartVector::const_iterator beg, PartVector::const_iterator end, unsigned part_ordinal )
+bool contains_ordinal_part( Iterator beg, Iterator end, unsigned part_ordinal )
 {
-  for(PartVector::const_iterator i=beg; i!=end; ++i) {
+  for(Iterator i=beg; i!=end; ++i) {
     if ((*i)->mesh_meta_data_ordinal() == part_ordinal) return true;
   }
 
   return false;
 }
 
-/** \brief  Query containment for two properly ordered PartVector */
-bool contain( const PartVector & , const PartVector & );
-
 /** \brief  Query cardinality of intersection of two PartVectors */
-size_t intersect( const PartVector & , const PartVector & );
+template<class PARTVECTOR>
+size_t intersect( const PARTVECTOR & v , const PARTVECTOR & p )
+{
+  // Both lists must be sorted, assume v.size() > p.size()
+
+  typename PARTVECTOR::const_iterator ev = v.end();
+  typename PARTVECTOR::const_iterator iv = v.begin();
+
+  typename PARTVECTOR::const_iterator ep = p.end();
+  typename PARTVECTOR::const_iterator ip = p.begin();
+
+  size_t count = 0 ;
+
+  for ( ; ip != ep && iv != ev ; ++ip ) {
+    Part * const q = *ip ;
+    iv = std::lower_bound( iv , ev , q , PartLess() );
+    if ( iv != ev && *iv == q ) { ++count ; }
+  }
+
+  return count ;
+}
 
 /** \brief  Generate the intersection of two PartVectors */
 size_t intersect( const PartVector & , const PartVector & , PartVector & );

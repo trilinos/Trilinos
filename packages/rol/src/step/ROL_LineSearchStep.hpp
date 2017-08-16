@@ -149,17 +149,18 @@ private:
 
   ELineSearch         els_;   ///< enum determines type of line search
   ECurvatureCondition econd_; ///< enum determines type of curvature condition
- 
-  int ls_nfval_; ///< Number of function evaluations during line search
-  int ls_ngrad_; ///< Number of gradient evaluations during line search
 
   bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
+
+  bool usePreviousAlpha_; ///< If true, use the previously accepted step length (if any) as the new initial step length
 
   int verbosity_;
   bool computeObj_;
   Real fval_;
 
   Teuchos::ParameterList parlist_;
+
+  std::string lineSearchName_;  
 
   Real GradDotStep(const Vector<Real> &g, const Vector<Real> &s,
                    const Vector<Real> &x,
@@ -210,20 +211,25 @@ public:
     : Step<Real>(), desc_(Teuchos::null), secant_(secant),
       krylov_(krylov), nlcg_(nlcg), lineSearch_(lineSearch),
       els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
-      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), computeObj_(true),
-      fval_(0), parlist_(parlist) {
+      verbosity_(0), computeObj_(true), fval_(0), parlist_(parlist) {
     // Parse parameter list
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
     acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
     verbosity_ = Glist.get("Print Verbosity",0);
-    computeObj_ = Glist.get("Recompute Objective Function",true);
+    computeObj_ = Glist.get("Recompute Objective Function",false);
     // Initialize Line Search
     if (lineSearch_ == Teuchos::null) {
-      els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
+      lineSearchName_ = Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation"); 
+      els_ = StringToELineSearch(lineSearchName_);
       lineSearch_ = LineSearchFactory<Real>(parlist);
+    } 
+    else { // User-defined linesearch provided
+      lineSearchName_ = Llist.sublist("Line-Search Method").get("User Defined Line-Search Name",
+                                                                "Unspecified User Defined Line-Search");
     }
+
   }
 
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
@@ -293,7 +299,7 @@ public:
 
     // Initialize line search
     lineSearch_->initialize(x,s,g,obj,bnd);
-    //Teuchos::RCP<const StepState<Real> > desc_state = desc_->getStepState();
+    //const Teuchos::RCP<const StepState<Real> > desc_state = desc_->getStepState();
     //lineSearch_->initialize(x,s,*(desc_state->gradientVec),obj,bnd);
   }
 
@@ -319,7 +325,7 @@ public:
 
     // Ensure that s is a descent direction
     // ---> If not, then default to steepest descent
-    Teuchos::RCP<const StepState<Real> > desc_state = desc_->getStepState();
+    const Teuchos::RCP<const StepState<Real> > desc_state = desc_->getStepState();
     Real gs = GradDotStep(*(desc_state->gradientVec),s,x,bnd,algo_state.gnorm);
     if (gs >= zero) {
       s.set((desc_state->gradientVec)->dual());
@@ -330,17 +336,22 @@ public:
     // Perform line search
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     fval_ = algo_state.value;
-    ls_nfval_ = 0; ls_ngrad_ = 0;
+    step_state->nfval = 0; step_state->ngrad = 0;
     lineSearch_->setData(algo_state.gnorm,*(desc_state->gradientVec));
-    lineSearch_->run(step_state->searchSize,fval_,ls_nfval_,ls_ngrad_,gs,s,x,obj,bnd);
+    lineSearch_->run(step_state->searchSize,fval_,step_state->nfval,step_state->ngrad,gs,s,x,obj,bnd);
 
     // Make correction if maximum function evaluations reached
-    if(!acceptLastAlpha_) {  
+    if(!acceptLastAlpha_) {
       lineSearch_->setMaxitUpdate(step_state->searchSize,fval_,algo_state.value);
     }
 
     // Compute scaled descent direction
     s.scale(step_state->searchSize);
+    if ( bnd.isActivated() ) {
+      s.plus(x);
+      bnd.project(s);
+      s.axpy(static_cast<Real>(-1),x);
+    }
   }
 
   /** \brief Update step, if successful.
@@ -357,8 +368,9 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s,
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
-    algo_state.nfval += ls_nfval_;
-    algo_state.ngrad += ls_ngrad_;
+    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    algo_state.nfval += step_state->nfval;
+    algo_state.ngrad += step_state->ngrad;
     desc_->update(x,s,obj,bnd,algo_state);
     if ( !computeObj_ ) {
       algo_state.value = fval_;
@@ -388,7 +400,7 @@ public:
     std::string name = desc_->printName();
     std::stringstream hist;
     hist << name;
-    hist << "Line Search: " << ELineSearchToString(els_);
+    hist << "Line Search: " << lineSearchName_;
     hist << " satisfying " << ECurvatureConditionToString(econd_) << "\n";
     return hist.str();
   }
@@ -401,6 +413,7 @@ public:
       @param[in]     printHeader   if ste to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool print_header = false ) const  {
+    const Teuchos::RCP<const StepState<Real> > step_state = Step<Real>::getStepState();
     std::string desc = desc_->print(algo_state,false);
     desc.erase(std::remove(desc.end()-3,desc.end(),'\n'), desc.end());
     std::string name = desc_->printName();
@@ -421,8 +434,8 @@ public:
       hist << "\n";
     }
     else {
-      hist << std::setw(10) << std::left << ls_nfval_;              
-      hist << std::setw(10) << std::left << ls_ngrad_;              
+      hist << std::setw(10) << std::left << step_state->nfval;              
+      hist << std::setw(10) << std::left << step_state->ngrad;
       hist << "\n";
     }
     return hist.str();

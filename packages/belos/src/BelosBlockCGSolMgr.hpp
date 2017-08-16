@@ -53,6 +53,7 @@
 #include "BelosSolverManager.hpp"
 
 #include "BelosCGIter.hpp"
+#include "BelosCGSingleRedIter.hpp"
 #include "BelosBlockCGIter.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
@@ -191,6 +192,8 @@ namespace Belos {
      *                    conjugate-gradient solver. Default: 1
      *   - "Adaptive Block Size" - a \c bool specifying whether the block size can be modified
      *                             throughout the solve. Default: true
+     *   - "Use Single Reduction" - a \c bool specifying whether the iteration should apply a single
+     *                              reduction (only for block size of 1). Default: false
      *   - "Maximum Iterations" - an \c int specifying the maximum number of iterations the
      *                            underlying solver is allowed to perform. Default: 1000
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms
@@ -359,10 +362,12 @@ namespace Belos {
     static const int maxIters_default_;
     static const bool adaptiveBlockSize_default_;
     static const bool showMaxResNormOnly_default_;
+    static const bool useSingleReduction_default_;
     static const int blockSize_default_;
     static const int verbosity_default_;
     static const int outputStyle_default_;
     static const int outputFreq_default_;
+    static const std::string resScale_default_;
     static const std::string label_default_;
     static const std::string orthoType_default_;
     static const Teuchos::RCP<std::ostream> outputStream_default_;
@@ -390,9 +395,10 @@ namespace Belos {
     //! Number of iterations taken by the last \c solve() invocation.
     int numIters_;
 
+    //! Current solver values
     int blockSize_, verbosity_, outputStyle_, outputFreq_;
-    bool adaptiveBlockSize_, showMaxResNormOnly_;
-    std::string orthoType_;
+    bool adaptiveBlockSize_, showMaxResNormOnly_, useSingleReduction_;
+    std::string orthoType_, resScale_;
 
     //! Prefix label for all the timers.
     std::string label_;
@@ -422,6 +428,9 @@ template<class ScalarType, class MV, class OP>
 const bool BlockCGSolMgr<ScalarType,MV,OP,true>::showMaxResNormOnly_default_ = false;
 
 template<class ScalarType, class MV, class OP>
+const bool BlockCGSolMgr<ScalarType,MV,OP,true>::useSingleReduction_default_ = false;
+
+template<class ScalarType, class MV, class OP>
 const int BlockCGSolMgr<ScalarType,MV,OP,true>::blockSize_default_ = 1;
 
 template<class ScalarType, class MV, class OP>
@@ -432,6 +441,9 @@ const int BlockCGSolMgr<ScalarType,MV,OP,true>::outputStyle_default_ = Belos::Ge
 
 template<class ScalarType, class MV, class OP>
 const int BlockCGSolMgr<ScalarType,MV,OP,true>::outputFreq_default_ = -1;
+
+template<class ScalarType, class MV, class OP>
+const std::string BlockCGSolMgr<ScalarType,MV,OP,true>::resScale_default_ = "Norm of Initial Residual";
 
 template<class ScalarType, class MV, class OP>
 const std::string BlockCGSolMgr<ScalarType,MV,OP,true>::label_default_ = "Belos";
@@ -458,7 +470,9 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::BlockCGSolMgr() :
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  useSingleReduction_(useSingleReduction_default_),
   orthoType_(orthoType_default_),
+  resScale_(resScale_default_),
   label_(label_default_),
   isSet_(false)
 {}
@@ -482,7 +496,9 @@ BlockCGSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  useSingleReduction_(useSingleReduction_default_),
   orthoType_(orthoType_default_),
+  resScale_(resScale_default_),
   label_(label_default_),
   isSet_(false)
 {
@@ -538,6 +554,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     params_->set("Adaptive Block Size", adaptiveBlockSize_);
   }
 
+  // Check if the user is requesting the single-reduction version of CG (only for blocksize == 1)
+  if (params->isParameter("Use Single Reduction")) {
+    useSingleReduction_ = params->get("Use Single Reduction", useSingleReduction_default_);
+  }
+
   // Check to see if the timer label changed.
   if (params->isParameter("Timer Label")) {
     std::string tempLabel = params->get("Timer Label", label_default_);
@@ -564,6 +585,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
                         "Belos::BlockCGSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
+      params_->set("Orthogonalization", orthoType_);
       // Create orthogonalization manager
       if (orthoType_=="DGKS") {
         if (orthoKappa_ <= 0) {
@@ -673,6 +695,35 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       convTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
   }
 
+  // Check for a change in scaling, if so we need to build new residual tests.
+  bool newResTest = false;
+  {
+    std::string tempResScale = resScale_;
+    if (params->isParameter ("Implicit Residual Scaling")) {
+      tempResScale = params->get<std::string> ("Implicit Residual Scaling");
+    }
+
+    // Only update the scaling if it's different.
+    if (resScale_ != tempResScale) {
+      const Belos::ScaleType resScaleType =
+        convertStringToScaleType (tempResScale);
+      resScale_ = tempResScale;
+
+      // Update parameter in our list and residual tests
+      params_->set ("Implicit Residual Scaling", resScale_);
+
+      if (! convTest_.is_null ()) {
+        try {
+          convTest_->defineScaleForm (resScaleType, Belos::TwoNorm);
+        }
+        catch (std::exception& e) {
+          // Make sure the convergence test gets constructed again.
+          newResTest = true;
+        }
+      }
+    }
+  }
+
   // Create status tests if we need to.
 
   // Basic test checks maximum iterations and native residual.
@@ -680,13 +731,15 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
-  if (convTest_ == Teuchos::null)
-    convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
+  if (convTest_.is_null () || newResTest) {
+    convTest_ = rcp (new StatusTestResNorm_t (convtol_, 1, showMaxResNormOnly_));
+    convTest_->defineScaleForm (convertStringToScaleType (resScale_), Belos::TwoNorm);
+  }
 
-  if (sTest_ == Teuchos::null)
+  if (sTest_.is_null () || newResTest)
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
-  if (outputTest_ == Teuchos::null) {
+  if (outputTest_.is_null () || newResTest) {
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
@@ -701,6 +754,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null) {
+    params_->set("Orthogonalization", orthoType_);
     if (orthoType_=="DGKS") {
       if (orthoKappa_ <= 0) {
         ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
@@ -770,9 +824,12 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
+    pl->set("Use Single Reduction", useSingleReduction_default_,
+      "Use single reduction iteration when the block size is one.");
+    pl->set("Implicit Residual Scaling", resScale_default_,
+      "The type of scaling used in the residual convergence test.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
-    //  pl->set("Restart Timers", restartTimers_);
     pl->set("Orthogonalization", orthoType_default_,
       "The type of orthogonalization to use: DGKS, ICGS, or IMGS.");
     pl->set("Orthogonalization Constant",orthoKappa_default_,
@@ -856,10 +913,18 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
   RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
   if (blockSize_ == 1) {
     // Standard (nonblock) CG is faster for the special case of a
-    // block size of 1.
-    block_cg_iter =
-      rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_,
-                                         outputTest_, plist));
+    // block size of 1.  A single reduction iteration can also be used
+    // if collectives are more expensive than vector updates.
+    if (useSingleReduction_) {
+      block_cg_iter =
+        rcp (new CGSingleRedIter<ScalarType,MV,OP> (problem_, printer_,
+                                                    outputTest_, plist));
+    }
+    else {
+      block_cg_iter =
+        rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_,
+                                           outputTest_, plist));
+    }
   } else {
     block_cg_iter =
       rcp (new BlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_,

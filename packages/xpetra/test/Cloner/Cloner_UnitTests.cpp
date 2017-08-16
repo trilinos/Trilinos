@@ -63,6 +63,8 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_Cloner.hpp"
 
+#include <type_traits> // NOTE (mfh 20 Jul 2016) part of fix for #508
+
 namespace {
   using std::sort;
   using std::find;
@@ -146,27 +148,39 @@ namespace {
 #ifdef HAVE_XPETRA_EPETRA
     typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
 
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-
-    const size_t numLocal = 10;
-    const size_t INVALID = OrdinalTraits<size_t>::invalid();
-
-    RCP<N1> n1(new N1());
-    RCP<N2> n2(new N2());
-
-    typedef Map<LO,GO,N1> Map1;
-    typedef Map<LO,GO,N2> Map2;
-    RCP<const Map1> map1 = MapFactory<LO,GO,N1>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
-
-    bool thrown = false;
-    try {
-      RCP<const Map2> map2 = clone(*map1, n2);
-    } catch (...) {
-      thrown = true;
+    // NOTE (mfh 20 Jul 2016) This fixes #508.  Epetra only works for
+    // Node = Xpetra::EpetraNode.  This typedef is currently defined
+    // in Xpetra_Map.hpp.
+    if (! std::is_same<N1, Xpetra::EpetraNode>::value ||
+        ! std::is_same<N2, Xpetra::EpetraNode>::value) {
+      out << "MapCloneEpetra test only makes sense if N1 and N2 are both "
+        "Xpetra::EpetraNode.  This is not the case, so I'm leaving the test "
+        "early." << std::endl;
+      return;
     }
-    // Check that Epetra throws
-    TEST_EQUALITY(thrown, true);
+    else {
+      // create a comm
+      RCP<const Comm<int> > comm = getDefaultComm();
+
+      const size_t numLocal = 10;
+      const size_t INVALID = OrdinalTraits<size_t>::invalid();
+
+      RCP<N1> n1(new N1());
+      RCP<N2> n2(new N2());
+
+      typedef Map<LO,GO,N1> Map1;
+      typedef Map<LO,GO,N2> Map2;
+      RCP<const Map1> map1 = MapFactory<LO,GO,N1>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
+
+      bool thrown = false;
+      try {
+        RCP<const Map2> map2 = clone(*map1, n2);
+      } catch (...) {
+        thrown = true;
+      }
+      // Check that Epetra throws
+      TEST_EQUALITY(thrown, true);
+    }
 #endif
   }
 
@@ -265,78 +279,78 @@ namespace {
   // type is defined, we have no choice but to use it.
 
 #if defined(HAVE_TPETRA_DEFAULTNODE_OPENMPNODE)
-#if defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(HAVE_TPETRA_INST_PTHREAD)
   typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_OPENMP)
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
   typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
 #  endif
 #elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
-#  if defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  if defined(HAVE_TPETRA_INST_PTHREAD)
   typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_OPENMP)
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
-// #  elif defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+// #  elif defined(HAVE_TPETRA_INST_CUDA)
 //   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
   typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
 #  endif
 #elif defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
-#  if defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  if defined(HAVE_TPETRA_INST_PTHREAD)
   typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
-// #  elif defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+// #  elif defined(HAVE_TPETRA_INST_OPENMP)
 //   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
   typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
 #  endif
 #elif defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
-#  if defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  if defined(HAVE_TPETRA_INST_OPENMP)
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
-// #  elif defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+// #  elif defined(HAVE_TPETRA_INST_PTHREAD)
 //   typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
   typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
 #  endif
 #elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
-#  if defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  if defined(HAVE_TPETRA_INST_PTHREAD)
   typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_OPENMP)
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-// #  elif defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+// #  elif defined(HAVE_TPETRA_INST_SERIAL)
 //   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
   typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
 #  endif
 #elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALNODE)
-#  if defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  if defined(HAVE_TPETRA_INST_PTHREAD)
   typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_OPENMP)
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  elif defined(HAVE_TPETRA_INST_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
@@ -348,15 +362,27 @@ namespace {
 #endif
 
 
-#ifndef XPETRA_TEST_USE_LONGLONG_GO
-        typedef int GO;
-#else
-        typedef long long GO;
+#if defined(HAVE_XPETRA_TPETRA)
+#ifdef HAVE_TPETRA_INST_INT_INT
+        TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, int, NodeType )
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG
+        TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, long, NodeType )
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+        typedef long long LongLong;
+        TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, LongLong, NodeType )
+#endif
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, GO, NodeType )
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, GO, NodeType )
+#if defined(HAVE_XPETRA_EPETRA)
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, int, NodeType )
+#endif
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, LongLong, NodeType )
+#endif
 #endif
 
   // FIXME (mfh 28 Sep 2013) I disabled this test.  Please uncomment

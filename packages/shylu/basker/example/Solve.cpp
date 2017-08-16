@@ -12,14 +12,10 @@
 
 #include <Kokkos_Core.hpp>
 
-
 using namespace std;
-
 
 int main(int argc, char* argv[])
 {
-
-
   typedef int                        LO;
   typedef int                        GO;
   typedef double                     VAL;
@@ -63,14 +59,8 @@ int main(int argc, char* argv[])
   X->randomize();
   A->apply(*X,*Y);
 
-  printf("Check Point One\n");
-  
   Teuchos::RCP<Amesos2::Solver<MAT,VEC> > solver
     = Amesos2::create<MAT, VEC>("Basker", A, X, Y);
-
-  
-
-  //return 0;
 
   //Paradiso options
   /*
@@ -78,11 +68,8 @@ int main(int argc, char* argv[])
   if(solver_name.compare("pardiso_mkl")==0)
     {
       myplist->set("IPARM(2)", 3); //there ND
- 
-
     }
   */
-
 
   cout << "Before Sfactor" << endl;
   //Teuchos::Time::Time ts("stime",true);

@@ -69,18 +69,20 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET(CTEST_BUILD_FLAGS     "-j35 -i" )
 
   SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
-  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+
+      "-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
 
       "-DBUILD_SHARED_LIBS:BOOL=ON"
 
       ### COMPILERS AND FLAGS ###
       "-DTrilinos_ENABLE_CXX11:BOOL=ON"
         "-DTrilinos_CXX11_FLAGS:STRING='-std=c++11 -expt-extended-lambda'"
-      "-DCMAKE_CXX_FLAGS:STRING='-g -G -Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow'"
+      "-DCMAKE_CXX_FLAGS:STRING='-Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow'"
       "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
 
       ### TPLS ###
@@ -91,7 +93,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       ### PACKAGE CONFIGURATION ###
           "-DKokkos_ENABLE_Cuda:BOOL=ON"
           "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-          "-DTpetra_ENABLE_MPI_CUDA_RDMA:BOOL=ON"
           "-DMueLu_ENABLE_BROKEN_TESTS:BOOL=ON"
           "-DXpetra_ENABLE_BROKEN_TESTS:BOOL=ON"
 
@@ -99,7 +100,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
   )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.2")
+  SET_DEFAULT(COMPILER_VERSION "$ENV{SEMS_COMPILER_NAME}-$ENV{SEMS_COMPILER_VERSION}")
 
   # Ensure that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
@@ -107,16 +108,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
         "-DTPL_ENABLE_MPI:BOOL=ON"
-            "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.10.0"
+            "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
        )
-
-  ELSE()
-
-    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/gcc-4.9.2/bin/g++"
-        "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/gcc-4.9.2/bin/gcc"
-      )
 
   ENDIF()
 

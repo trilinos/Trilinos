@@ -111,7 +111,7 @@ getPidGidPairs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
 
   // Get the distributor's data
   size_t NumReceives                           = D.getNumReceives();
-  Teuchos::ArrayView<const int> ProcsFrom      = D.getImagesFrom();
+  Teuchos::ArrayView<const int> ProcsFrom      = D.getProcsFrom();
   Teuchos::ArrayView<const size_t> LengthsFrom = D.getLengthsFrom();
 
   // Resize the outgoing data structure
@@ -153,7 +153,7 @@ getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
 
   // Get the distributor's data
   size_t NumReceives                           = D.getNumReceives();
-  Teuchos::ArrayView<const int> ProcsFrom      = D.getImagesFrom();
+  Teuchos::ArrayView<const int> ProcsFrom      = D.getProcsFrom();
   Teuchos::ArrayView<const size_t> LengthsFrom = D.getLengthsFrom();
 
   // Resize the outgoing data structure
@@ -189,7 +189,7 @@ getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
 
   // Get the distributor's data
   size_t NumReceives                           = D.getNumReceives();
-  Teuchos::ArrayView<const int> ProcsFrom      = D.getImagesFrom();
+  Teuchos::ArrayView<const int> ProcsFrom      = D.getProcsFrom();
   Teuchos::ArrayView<const size_t> LengthsFrom = D.getLengthsFrom();
 
   // Resize the outgoing data structure

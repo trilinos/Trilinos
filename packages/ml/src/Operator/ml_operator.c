@@ -104,6 +104,11 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
                                    /*  1: vertical      */
                                    /*  2: horizontal    */
    mat->coarsencoord = 'z';
+   mat->sortColumnsAfterRAP = 0; /* only set to 1 inside      */
+                                /* ML_Gen_AmatrixRAP() if    */
+                                /* user has specified        */
+                                /* set("RAP: sort columns",0)*/
+ 
 
 
    ML_Aux_Data_Create(&(mat->aux_data));
@@ -366,6 +371,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->spectral_radius_scheme = original->spectral_radius_scheme;
    mat->spectral_radius_max_iters = original->spectral_radius_max_iters;
    mat->NumZDir             = original->NumZDir;
+   mat->sortColumnsAfterRAP = original->sortColumnsAfterRAP;
    mat->Zorientation        = original->Zorientation;
                                    /* -1: not specified */
                                    /*  1: vertical      */
@@ -2300,17 +2306,6 @@ void ML_Aux_Data_Destroy(ML_Aux_Data** ptr)
 {
   (*ptr)->threshold = 0.0;
   ML_free(*ptr);
-}
-
-/* Copy timing and apply statistics from one operator to another.
-   Useful when you want to preserves stats across repartitioning or permuting, for example. */
-void ML_Operator_Copy_Statistics(ML_Operator *source, ML_Operator *target)
-{
-   target->build_time = source->build_time;
-   target->apply_time = source->apply_time;
-   target->apply_without_comm_time = source->apply_without_comm_time;
-   target->ntimes = source->ntimes;
-   target->nflop = source->nflop;
 }
 
 

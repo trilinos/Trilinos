@@ -115,11 +115,14 @@ void testNodalFieldOnFile(const std::string &outputFileName, const int stepNumbe
 TEST(GlobalVariablesTest, OneGlobalDouble)
 {
     const std::string outputFileName = "OneGlobalDouble.exo";
-    const std::string globalVarName = "testGlobal";
+    //                                 0        1         2         3         4         5
+    //                                 12345678901234567890123456789012345678901234567890
+    const std::string globalVarName = "a_global_variable_with_a_longer_name_than_the_default";
     const double globalVarValue = 13.0;
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
+	stkIo.property_add(Ioss::Property("MAXIMUM_NAME_LENGTH", 64));
 	const std::string exodusFileName = "generated:1x1x8";
 	stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
 	stkIo.create_input_mesh();
@@ -301,9 +304,7 @@ template <typename DataType>
 void testTwoGlobals(const std::string &outputFileName, const std::vector<std::string> &globalVarNames)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
-    std::vector<DataType> globalVarValues;
-    globalVarValues.push_back(13);
-    globalVarValues.push_back(14);
+    std::vector<DataType> globalVarValues = {13, 14};
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
 	const std::string exodusFileName = "generated:1x1x8";
@@ -334,25 +335,19 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
 
 TEST(GlobalVariablesTest, TwoGlobalIntegers)
 {
-    std::vector<std::string> globalVarNames;
-    globalVarNames.push_back("testGlobal");
-    globalVarNames.push_back("testGlobal2");
+    std::vector<std::string> globalVarNames = {"testGlobal", "testGlobal2"};
     testTwoGlobals<int>("TwoGlobalIntegers.exo", globalVarNames);
 }
 
 TEST(GlobalVariablesTest, TwoGlobalDoubles)
 {
-    std::vector<std::string> globalVarNames;
-    globalVarNames.push_back("testGlobal");
-    globalVarNames.push_back("testGlobal2");
+    std::vector<std::string> globalVarNames = {"testGlobal", "testGlobal2"};
     testTwoGlobals<double>("TwoGlobalDoubles.exo", globalVarNames);
 }
 
 TEST(GlobalVariablesTest, TwoGlobalDoublesSameName)
 {
-    std::vector<std::string> globalVarNames;
-    globalVarNames.push_back("testGlobal");
-    globalVarNames.push_back("testGlobal");
+    std::vector<std::string> globalVarNames = {"testGlobal", "testGlobal"};
     EXPECT_ANY_THROW(testTwoGlobals<double>("TwoGlobalDoublesSameName.exo", globalVarNames));
     unlink("TwoGlobalDoublesSameName.exo");
 }

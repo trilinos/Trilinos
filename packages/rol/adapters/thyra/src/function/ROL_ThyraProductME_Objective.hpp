@@ -62,8 +62,15 @@ template <class Real>
 class ThyraProductME_Objective : public Objective<Real> {
 public:
 
-  ThyraProductME_Objective(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_) :
-    thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_){};
+  ThyraProductME_Objective(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null) :
+    thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_) {
+    valueUpdated = gradientUpdated = false;
+    value_ = 0;
+    x_ptr == Teuchos::null;
+    grad_ptr = Teuchos::null;
+    if(params != Teuchos::null)
+      params->set<int>("Optimizer Iteration Number", -1);
+  };
 
   /** \brief Compute value.
 
@@ -72,6 +79,10 @@ public:
       @param[in]          tol is a tolerance for inexact objective function computation.
   */
   Real value( const Vector<Real> &rol_x, Real &tol ) {
+
+    if(!x_hasChanged(rol_x))
+       return value_;
+
     const ThyraVector<Real>  & thyra_p = Teuchos::dyn_cast<const ThyraVector<Real> >(rol_x);
     Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
     Teuchos::RCP<const Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
@@ -81,12 +92,16 @@ public:
 
 
     outArgs.set_g(g_index, g);
-    for(int i=0; i<p_indices.size(); ++i)
+    for(std::size_t i=0; i<p_indices.size(); ++i)
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
 
     thyra_model.evalModel(inArgs, outArgs);
 
-    return ::Thyra::get_ele(*g,0);
+    value_ = ::Thyra::get_ele(*g,0);
+
+    valueUpdated = true;
+
+    return value_;
   };
 
   /** \brief Compute gradient.
@@ -97,6 +112,15 @@ public:
       @param[in]          tol is a tolerance for inexact objective function computation.
   */
   void gradient( Vector<Real> &rol_g, const Vector<Real> &rol_x, Real &tol ) {
+
+    if( !x_hasChanged(rol_x) && gradientUpdated)
+      return rol_g.set(*grad_ptr);
+
+    if(params != Teuchos::null) {
+      params->set<bool>("Update Functional", !valueUpdated);
+      params->set<bool>("Update Functional Gradient", !gradientUpdated);
+    }
+
     const ThyraVector<Real>  & thyra_p = Teuchos::dyn_cast<const ThyraVector<Real> >(rol_x);
     Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
     ThyraVector<Real>  & thyra_dgdp = Teuchos::dyn_cast<ThyraVector<Real> >(rol_g);
@@ -106,11 +130,11 @@ public:
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
 
-    for(int i=0; i<p_indices.size(); ++i)
+    for(std::size_t i=0; i<p_indices.size(); ++i)
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
 
-    for(int i=0; i<p_indices.size(); ++i) {
-      Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+    for(std::size_t i=0; i<p_indices.size(); ++i) {
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
             outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index, p_indices[i]);
       Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient;
@@ -124,15 +148,52 @@ public:
       }
 
       outArgs.set_DgDp(g_index,p_indices[i], Thyra::ModelEvaluatorBase::DerivativeMultiVector<Real>(prodvec_dgdp_p->getNonconstMultiVectorBlock(i), dgdp_orient));
-      thyra_model.evalModel(inArgs, outArgs);
     }
+    thyra_model.evalModel(inArgs, outArgs);
 
+    if (grad_ptr == Teuchos::null)
+      grad_ptr = rol_g.clone();
+    grad_ptr->set(rol_g);
+    
+    gradientUpdated = valueUpdated = true;
   };
+
+  void update( const Vector<Real> & /*x*/, bool flag, int iter) {
+     if(params != Teuchos::null)
+       params->set<int>("Optimizer Iteration Number", iter);
+  }
+
+  bool x_hasChanged(const Vector<Real> &rol_x) {
+    if (x_ptr == Teuchos::null) {
+      x_ptr = rol_x.clone();
+      x_ptr->set(rol_x);
+      gradientUpdated = false;
+      valueUpdated = false;
+      return true;
+    }
+    else {
+      x_ptr->axpy( -1.0, rol_x );
+      Real norm = x_ptr->norm();
+      x_ptr->set(rol_x);
+      if (norm == 0) return false;
+      else {
+        gradientUpdated = false;
+        valueUpdated = false;
+        return true;
+      }
+    }
+  }
+
+public:
+  bool gradientUpdated, valueUpdated;
 
 private:
   Thyra::ModelEvaluatorDefaultBase<Real>& thyra_model;
   const int g_index;
   const std::vector<int> p_indices;
+  Real value_;
+  Teuchos::RCP<Vector<Real> > x_ptr, grad_ptr;
+  Teuchos::RCP<Teuchos::ParameterList> params;
 
 }; // class Objective
 

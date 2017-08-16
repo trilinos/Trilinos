@@ -52,7 +52,7 @@
 
 #include <set>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 namespace periodic_helpers {
 
 template <typename Matcher>
@@ -85,7 +85,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   // on the left hand side: requires All-2-All!
   /////////////////////////////////////////////////////////////////////////
   std::pair<RCP<std::vector<std::size_t> >,
-            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(mesh,left,type_);
+            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk::periodic_helpers::getSideIdsAndCoords(mesh,left,type_);
   std::vector<std::size_t> & sideIds = *idsAndCoords.first;
   std::vector<Tuple<double,3> > & sideCoords = *idsAndCoords.second;
 
@@ -224,7 +224,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   // on the left hand side: requires All-2-All!
   /////////////////////////////////////////////////////////////////////////
   std::pair<RCP<std::vector<std::size_t> >,
-            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(mesh,left,type_);
+            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk::periodic_helpers::getSideIdsAndCoords(mesh,left,type_);
   std::vector<std::size_t> & sideIds = *idsAndCoords.first;
   std::vector<Tuple<double,3> > & sideCoords = *idsAndCoords.second;
 
@@ -267,7 +267,7 @@ template <typename Matcher>
 Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
 getLocallyMatchedSideIds(const std::vector<std::size_t> & side_ids,
                          const std::vector<Teuchos::Tuple<double,3> > & side_coords,
-                         const panzer_stk_classic::STK_Interface & mesh,
+                         const panzer_stk::STK_Interface & mesh,
                          const std::string & sideName,const Matcher & matcher, std::string type_)
 {
    using Teuchos::RCP;

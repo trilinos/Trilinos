@@ -101,14 +101,21 @@ and classes:
 #include <sstream>
 
 // PyTrilinos includes
+#include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
+#endif
+#include "PyTrilinos_Teuchos_Util.hpp"
+
+// Epetra includes
+#ifdef HAVE_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // LOCA includes
@@ -121,6 +128,13 @@ and classes:
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
+%}
+
+%pythoncode
+%{
+# Fix ___init__ ambiguity
+del ___init__
+from . import ___init__
 %}
 
 // Ignore/renames
@@ -214,7 +228,6 @@ from . import Hopf
 from . import Pitchfork
 from . import Homotopy
 from . import PhaseTransition
-from . import Abstract
 from . import Parameter
 from . import BorderedSolver
 from . import BorderedSystem
@@ -253,6 +266,17 @@ from . import AnasaziOperator
 %teuchos_rcp(LOCA::Abstract::Iterator)
 %import(module="Abstract") "LOCA_Abstract_Iterator.H"
 
+// At this point, 'Abstract' might be 'NOX.Abstract' (depending on the
+// Python version and related import rules), but we need it to be
+// 'LOCA.Abstract'
+%pythoncode
+%{
+import os.path
+if 'NOX' in Abstract.__file__.split(os.path.sep):
+  del Abstract
+  from . import Abstract
+%}
+
 // LOCA Stepper class
 %teuchos_rcp(LOCA::Stepper)
 %feature("director") LOCA::Stepper;
@@ -274,9 +298,5 @@ from . import AnasaziOperator
 # Epetra namespace
 __all__.append("Epetra")
 from . import Epetra
-
-# Fix ___init__ ambiguity
-del ___init__
-from . import ___init__
 %}
 #endif

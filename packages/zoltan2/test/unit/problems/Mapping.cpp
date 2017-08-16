@@ -250,7 +250,6 @@ bool validMappingSolution(
 {
   typedef typename Adapter::part_t part_t;
 
-  int me = comm.getRank();
   int np = comm.getSize();
 
   bool aok = true;
@@ -284,7 +283,7 @@ bool validMappingSolution(
 
   part_t *parts;
   part_t nParts;
-  msoln.getPartsForRankView(me, nParts, parts);
+  msoln.getMyPartsView(nParts, parts);
 
   for (part_t i = 0; i < nParts; i++) {
 
@@ -333,20 +332,6 @@ bool validMappingSolution(
               << sillyPart << " returned " << ret << std::endl;
   }
 
-  errorThrownCorrectly = false;
-  try {
-    msoln.getPartsForRankView(np+1, nParts, parts);
-  }
-  catch (std::exception &e) {
-    errorThrownCorrectly = true;
-  }
-  if (errorThrownCorrectly == false) {
-    aok = false;
-    std::cout << __FILE__ << ":" << __LINE__ << " "
-              << "Mapping Solution accepted a silly rank" << np+1
-              << std::endl;
-  }
-  
   return aok;
 }
 
@@ -368,7 +353,7 @@ bool runTest(
   bool allgood = true;
 
   Teuchos::ParameterList params;
-  params.set("mapping_algorithm", "geometric");
+  params.set("mapping_algorithm", "block");
 
   // Test mapping using default machine
   if (me == 0)
@@ -385,15 +370,17 @@ bool runTest(
       std::cout << hi << " FAILED: invalid mapping solution" << std::endl;
   }
 
+
   // Test mapping explicitly using default machine
-  Zoltan2::MachineRepresentation<scalar_t, part_t> defMachine(*comm);
+  typedef Zoltan2::MachineRepresentation<scalar_t, part_t> machine_t;
+  machine_t defMachine(*comm);
 
 #ifdef KDD
   if (me == 0)
     std::cout << "Testing Mapping using explicit machine" << std::endl;
 
-  Zoltan2::MappingProblem<Adapter> mprob2(&ia, &params, comm,
-                                                  NULL, &defMachine);
+  Zoltan2::MappingProblem<Adapter, machine_t> mprob2(&ia, &params, comm,
+                                                     NULL, &defMachine);
   mprob2.solve();
 
   Zoltan2::MappingSolution<Adapter> *msoln2 = mprob2.getSolution();
@@ -410,21 +397,33 @@ bool runTest(
   if (me == 0)
     std::cout << "Testing Mapping using a partitioning solution" << std::endl;
 
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
-  Zoltan2::PartitioningSolution<Adapter> psolution(env, comm, 0);
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
+  Zoltan2::PartitioningSolution<Adapter> psoln(env, comm, 0);
+
   ArrayRCP<part_t> partList(ia.getLocalNumIDs());
   for (size_t i = 0; i < ia.getLocalNumIDs(); i++)
-    partList[i] = (me + 1) % np;  // TODO: geometric mapper requires tasks in 
-                                  // range 0 to nTasks-1.
-  psolution.setParts(partList);
+    partList[i] = (me + 1) % np;  
 
-  Zoltan2::MappingProblem<Adapter> mprob3(&ia, &params, comm,
-                                               NULL, &defMachine);
+  psoln.setParts(partList);
+
+#ifdef HAVE_ZOLTAN2_MPI
+  // Use an MPI_Comm, just to exercise that bit of code
+  // In real life, no one should extract the MPI_Comm from the Teuchos::Comm;
+  // he should use the Teuchos::Comm.  But for testing,
+  // we need to exercise the MPI_Comm interface.
+  MPI_Comm mpicomm =  Teuchos::getRawMpiComm(*comm);
+  Zoltan2::MappingProblem<Adapter, machine_t> mprob3(&ia, &params, mpicomm,
+                                                     NULL, &defMachine);
+#else
+  Zoltan2::MappingProblem<Adapter, machine_t> mprob3(&ia, &params, comm,
+                                                     NULL, &defMachine);
+#endif
+
   mprob3.solve();
 
   Zoltan2::MappingSolution<Adapter> *msoln3 = mprob3.getSolution();
  
-  if (!validMappingSolution(*msoln3, ia, psolution, *comm)) {
+  if (!validMappingSolution(*msoln3, ia, psoln, *comm)) {
     allgood = false;
     if (me == 0) 
       std::cout << hi << " FAILED: invalid mapping solution "
@@ -443,8 +442,8 @@ int main(int argc, char *argv[])
   bool allgood = true;
 
   typedef VerySimpleVectorAdapter<zzuser_t> vecAdapter_t;
-  typedef vecAdapter_t::part_t part_t;
-  typedef vecAdapter_t::scalar_t scalar_t;
+  //typedef vecAdapter_t::part_t part_t;
+  //typedef vecAdapter_t::scalar_t scalar_t;
 
   // TEST 1
   {

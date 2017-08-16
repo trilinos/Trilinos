@@ -74,6 +74,10 @@ in addition to the following factory function:
 	docstring    = %nox_solver_docstring) Solver
 
 %{
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_LinearProblem.hpp"
+
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -102,16 +106,13 @@ in addition to the following factory function:
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-
-// Namespace flattening
-using Teuchos::RCP;
 %}
 
 // Configuration and optional includes
 %include "PyTrilinos_config.h"
 #ifdef HAVE_NOX_EPETRA
 %{
-#include "NOX_Epetra_Group.H"
+#include "PyTrilinos_Epetra_Headers.hpp"
 %}
 #endif
 
@@ -130,9 +131,9 @@ using Teuchos::RCP;
 %rename(StatusTest_None   ) NOX::StatusTest::None;
 
 // Trilinos imports
-%import "Teuchos.i"
-%import "NOX.Abstract.i"
-%import "NOX.StatusTest.i"
+%import  "Teuchos.i"
+%import  "NOX.Abstract.i"
+%import  "NOX.StatusTest.i"
 
 // General exception handling
 %feature("director:except")
@@ -175,41 +176,15 @@ using Teuchos::RCP;
   }
 }
 
-// Downcast NOX::Abstract::Group return arguments to NOX::Epetra::Group,
-// if possible
-#ifdef HAVE_NOX_EPETRA
-%typemap(out) const NOX::Abstract::Group & (NOX::Epetra::Group* negResult = NULL)
-{
-  negResult = dynamic_cast< NOX::Epetra::Group* >(const_cast< NOX::Abstract::Group* >($1));
-  if (negResult)
-  {
-    Teuchos::RCP< NOX::Epetra::Group > *smartresult = new
-      Teuchos::RCP< NOX::Epetra::Group >(negResult, bool($owner));
-    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-				   $descriptor(Teuchos::RCP< NOX::Epetra::Group > *),
-				   SWIG_POINTER_OWN));
-  }
-  else
-  {
-    // If we cannot downcast, then return the NOX::Abstract::Group
-    Teuchos::RCP< NOX::Abstract::Group > *smartresult =
-      new Teuchos::RCP< NOX::Abstract::Group >($1, bool($owner));
-    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-				   $descriptor(Teuchos::RCP< NOX::Abstract::Group > * ),
-				   SWIG_POINTER_OWN));
-  }
-}
-#endif
-
 //////////////////////////////////
 // NOX::Solver::Generic support //
 //////////////////////////////////
 %ignore *::getSolutionGroup;
 %ignore *::getPreviousSolutionGroup;
 %ignore *::getList;
-%rename(getSolutionGroup        ) *::getSolutionGroupPtr;
-%rename(getPreviousSolutionGroup) *::getPreviousSolutionGroupPtr;
-%rename(getList                 ) *::getListPtr;
+%rename(getSolutionGroup           ) *::getSolutionGroupPtr;
+%rename(getPreviousSolutionGroupPtr) *::getPreviousSolutionGroupPtr;
+%rename(getList                    ) *::getListPtr;
 %teuchos_rcp(NOX::Solver::Generic)
 %include "NOX_Solver_Generic.H"
 

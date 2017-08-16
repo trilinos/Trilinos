@@ -32,7 +32,7 @@
 // 
 
 
-#include <stk_mesh/fixtures/GridFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/GridFixture.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>

@@ -17,19 +17,24 @@ doxygen_objdb_*.tmp
 # Trilinos extra repos
 /TriBITS/
 /preCopyrightTrilinos/
-/DrekarBase
-/DrekarResearch
+/DrekarBase/
+/DrekarResearch/
+/DrekarSystemTests/
 /LIMEExt/
 /TerminalApplication/
 /DataTransferKit/
 /TeuchosWrappersExt
+/tempus/
 /packages/CTrilinos/
 /packages/ForTrilinos/
 /packages/Sundance/
 /packages/mesquite/
 /packages/moocho/
 /packages/optika/
+/packages/xSDKTrilinos/
 
+# Ignore local gitdist config file (.gitdis.default is in git repo)
+/.gitdist
 
 # Allow github Kokkos to be cloned under Trilinos
 /kokkos/
@@ -136,3 +141,7 @@ rsync.*
 
 # Ignore Panassas temp files
 .panfs.*
+
+# Ignore files generated from INSTALL.rst
+/INSTALL.html
+/INSTALL.pdf

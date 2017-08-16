@@ -418,20 +418,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
     Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
 
-  // Get the actual communicator dimensions
-  Teuchos::Array< int > actualCommDims =
-    Domi::regularizeCommDims(comm->getSize(), numDims, commDims);
-
-  // Construct dimensions
-  dim_type localDim = 10;
-  Array< dim_type > dims(numDims);
-  for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * actualCommDims[axis];
+  // Construct dummy dimensions
+  Array< dim_type > dims(numDims, comm->getSize());
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
   plist.set("comm dimensions", commDims);
   plist.set("dimensions"     , dims    );
+
+  // Get the actual communicator dimensions
+  Teuchos::Array< int > actualCommDims =
+    Domi::regularizeCommDims(comm->getSize(), plist);
+
+  // Compute actual dimensions
+  dim_type localDim = 10;
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * actualCommDims[axis];
+  plist.set("dimensions", dims);
 
   // Construct an MDVector
   MDVector< Sca > mdVector(comm, plist);

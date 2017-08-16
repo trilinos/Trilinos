@@ -61,6 +61,7 @@ extern "C" {
 #include "parmetis_interface_params.h"
 
 /*********** COMPATIBILITY CHECKING AT COMPILE TIME ************/
+#ifdef ZOLTAN_PARMETIS
 #if (PARMETIS_MAJOR_VERSION < 3)
 #error "Specified version of ParMETIS is not compatible with Zoltan; upgrade to ParMETIS v3.1 or later, or build Zoltan without ParMETIS."
 #endif
@@ -76,6 +77,8 @@ extern "C" {
 
 #if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 1) && (PARMETIS_SUBMINOR_VERSION == 0)
 #define  PARMETIS31_ALWAYS_FREES_VSIZE
+#endif
+
 #endif
 
 static int pmv3method(char *alg);
@@ -504,7 +507,7 @@ static int Zoltan_Parmetis_Parse(
     }
 
     /* If ordering, use ordering method instead of load-balancing method */
-    if (ord && ord->order_opt && ord->order_opt->method){
+    if (ord && ord->order_opt){
       strcpy(alg, ord->order_opt->method);
     }
 

@@ -46,13 +46,15 @@
 #ifndef MUELU_TEST_HELPERS_COMMON_HPP
 #define MUELU_TEST_HELPERS_COMMON_HPP
 
+#if 1
 #define MUELU_DEBUGGER_MACRO \
-  GO tmpIndex; out << "debug: scalar = " << typeid(tmpIndex).name() << std::endl; \
-  NO tmpNode;  out << "debug: node   = " << typeid(tmpNode).name() << std::endl; \
+  out << "debug: scalar = " << typeid(GO).name() << std::endl; \
+  out << "debug: node   = " << typeid(NO).name() << std::endl; \
   if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) out << "debug: linAlgebra = Epetra" << std::endl; \
   else                                                        out << "debug: linAlgebra = Tpetra" << std::endl;
-
-//#define MUELU_DEBUGGER_MACRO
+#else
+#define MUELU_DEBUGGER_MACRO
+#endif
 
 #define TYPE_EQUAL(TYPE1, TYPE2) \
   (typeid(TYPE1).name() == typeid(TYPE2).name())

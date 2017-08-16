@@ -65,6 +65,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <ROL_Vector.hpp>
+#include <ROL_config.h>
 
 /** \def    ROL_NUM_CHECKDERIV_STEPS
     \brief  Number of steps for derivative checks.
@@ -121,8 +122,14 @@ std::string NumberToString( T Number )
     Teuchos::RCP<Vector<Real> > gradientVec;
     Teuchos::RCP<Vector<Real> > descentVec;
     Teuchos::RCP<Vector<Real> > constraintVec;
+    int nfval;
+    int ngrad;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
-    StepState(void) : gradientVec(Teuchos::null), descentVec(Teuchos::null), constraintVec(Teuchos::null),
+    StepState(void) : gradientVec(Teuchos::null),
+                      descentVec(Teuchos::null),
+                      constraintVec(Teuchos::null),
+                      nfval(0),
+                      ngrad(0),
                       searchSize(0) {}
   };  
       
@@ -171,6 +178,15 @@ std::string NumberToString( T Number )
     return output;
   }
 
+  // Types of optimization problem
+  enum EProblem {
+    TYPE_U = 0,
+    TYPE_B,
+    TYPE_E,
+    TYPE_EB,
+    TYPE_LAST
+  };
+
   /** \enum   ROL::EStep
       \brief  Enumeration of step types.
 
@@ -210,7 +226,52 @@ std::string NumberToString( T Number )
     }
     return retString;
   }
+
+  inline int isCompatibleStep( EProblem p, EStep s ) {
+    int comp;
+    switch(p) {
+
+      case TYPE_U:    comp = ( (s == STEP_LINESEARCH) ||
+                               (s == STEP_TRUSTREGION) ||
+                               (s == STEP_BUNDLE) );
+        break;
+
+      case TYPE_B:    comp = ( (s == STEP_LINESEARCH)  ||
+                               (s == STEP_TRUSTREGION) || 
+                               (s == STEP_MOREAUYOSIDAPENALTY) ||
+                               (s == STEP_PRIMALDUALACTIVESET) ||
+                               (s == STEP_INTERIORPOINT) );
+        break;
+
+      case TYPE_E:    comp = ( (s == STEP_COMPOSITESTEP) || 
+                               (s == STEP_AUGMENTEDLAGRANGIAN) );  
+        break;
+
+      case TYPE_EB:   comp = ( (s == STEP_AUGMENTEDLAGRANGIAN) || 
+                               (s == STEP_MOREAUYOSIDAPENALTY) ||
+                               (s == STEP_INTERIORPOINT) );
+        break;
+
+      case TYPE_LAST: comp = 0; break;
+      default:        comp = 0;      
+    }
+    return comp;
+  }
+
+  inline std::string EProblemToString( EProblem p ) {
+    std::string retString;
+    switch(p) {
+      case TYPE_U:     retString = "Type-U";             break;
+      case TYPE_E:     retString = "Type-E";             break;
+      case TYPE_B:     retString = "Type-B";             break;
+      case TYPE_EB:    retString = "Type-EB";            break;
+      case TYPE_LAST:  retString = "Type-Last (Dummy)";  break;
+      default:         retString = "Invalid EProblem";
+    }
+    return retString;
+  }
   
+ 
   /** \brief  Verifies validity of a TrustRegion enum.
     
       \param  tr  [in]  - enum of the TrustRegion
@@ -255,74 +316,6 @@ std::string NumberToString( T Number )
       }
     }
     return STEP_TRUSTREGION;
-  }
-
-  /** \enum   ROL::EBoundAlgorithm
-      \brief  Enumeration of algorithms to handle bound constraints.
-
-      \arg    PROJECTED             describe
-      \arg    PRIMALDUALACTIVESET   describe
-      \arg    INTERIORPOINTS        describe
-   */
-  enum EBoundAlgorithm{
-    BOUNDALGORITHM_PROJECTED = 0,
-    BOUNDALGORITHM_PRIMALDUALACTIVESET,
-    BOUNDALGORITHM_INTERIORPOINTS,
-    BOUNDALGORITHM_LAST
-  };
-
-  inline std::string EBoundAlgorithmToString(EBoundAlgorithm tr) {
-    std::string retString;
-    switch(tr) {
-      case BOUNDALGORITHM_PROJECTED:           retString = "Projected";              break;
-      case BOUNDALGORITHM_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
-      case BOUNDALGORITHM_INTERIORPOINTS:      retString = "Interior Points";        break;
-      case BOUNDALGORITHM_LAST:                retString = "Last Type (Dummy)";      break;
-      default:                                 retString = "INVALID EBoundAlgorithm";
-    }
-    return retString;
-  }
-
-  /** \brief  Verifies validity of a Bound Algorithm enum.
-    
-      \param  tr  [in]  - enum of the Bound Algorithm
-      \return 1 if the argument is a valid Bound Algorithm; 0 otherwise.
-    */
-  inline int isValidBoundAlgorithm(EBoundAlgorithm d){
-    return( (d == BOUNDALGORITHM_PROJECTED)           ||
-            (d == BOUNDALGORITHM_PRIMALDUALACTIVESET) || 
-            (d == BOUNDALGORITHM_INTERIORPOINTS)  
-          );
-  }
-
-  inline EBoundAlgorithm & operator++(EBoundAlgorithm &type) {
-    return type = static_cast<EBoundAlgorithm>(type+1);
-  }
-
-  inline EBoundAlgorithm operator++(EBoundAlgorithm &type, int) {
-    EBoundAlgorithm oldval = type;
-    ++type;
-    return oldval;
-  }
-
-  inline EBoundAlgorithm & operator--(EBoundAlgorithm &type) {
-    return type = static_cast<EBoundAlgorithm>(type-1);
-  }
-
-  inline EBoundAlgorithm operator--(EBoundAlgorithm &type, int) {
-    EBoundAlgorithm oldval = type;
-    --type;
-    return oldval;
-  }
-
-  inline EBoundAlgorithm StringToEBoundAlgorithm(std::string s) {
-    s = removeStringFormat(s);
-    for ( EBoundAlgorithm des = BOUNDALGORITHM_PROJECTED; des < BOUNDALGORITHM_LAST; des++ ) {
-      if ( !s.compare(removeStringFormat(EBoundAlgorithmToString(des))) ) {
-        return des;
-      }
-    }
-    return BOUNDALGORITHM_PROJECTED;
   }
 
   /** \enum   ROL::EDescent
@@ -804,85 +797,6 @@ std::string NumberToString( T Number )
     return CURVATURECONDITION_WOLFE;
   }
 
-  /** \enum   ROL::ETrustRegion
-      \brief  Enumeration of trust-region solver types.
-
-      \arg    CAUCHYPOINT     describe
-      \arg    TRUNCATEDCG     describe
-      \arg    DOGLEG          describe
-      \arg    DOUBLEDOGLEG    describe
-   */
-  enum ETrustRegion{
-    TRUSTREGION_CAUCHYPOINT = 0,
-    TRUSTREGION_TRUNCATEDCG,
-    TRUSTREGION_DOGLEG,
-    TRUSTREGION_DOUBLEDOGLEG,
-    TRUSTREGION_LAST
-  };
-
-  inline std::string ETrustRegionToString(ETrustRegion tr) {
-    std::string retString;
-    switch(tr) {
-      case TRUSTREGION_CAUCHYPOINT:   retString = "Cauchy Point";        break;
-      case TRUSTREGION_TRUNCATEDCG:   retString = "Truncated CG";        break;
-      case TRUSTREGION_DOGLEG:        retString = "Dogleg";              break;
-      case TRUSTREGION_DOUBLEDOGLEG:  retString = "Double Dogleg";       break;
-      case TRUSTREGION_LAST:          retString = "Last Type (Dummy)";   break;
-      default:                        retString = "INVALID ETrustRegion";
-    }
-    return retString;
-  }
-  
-  /** \enum  ROL::ETrustRegionFlag 
-      \brief Enumation of flags used by trust-region solvers.
-
-      \arg TRUSTREGION_FLAG_SUCCESS        Actual and predicted reductions are positive 
-      \arg TRUSTREGION_FLAG_POSPREDNEG     Reduction is positive, predicted negative (impossible)
-      \arg TRUSTREGION_FLAG_NPOSPREDPOS    Reduction is nonpositive, predicted positive
-      \arg TRUSTREGION_FLAG_NPOSPREDNEG    Reduction is nonpositive, predicted negative (impossible)
-      \arg TRUSTREGION_FLAG_QMINSUFDEC     Insufficient decrease of the quadratic model (bound constraint only)
-      \arg TRUSTREGION_FLAG_NAN            Actual and/or predicted reduction is NaN
-
-  */
-  enum ETrustRegionFlag {
-    TRUSTREGION_FLAG_SUCCESS = 0,
-    TRUSTREGION_FLAG_POSPREDNEG,
-    TRUSTREGION_FLAG_NPOSPREDPOS,
-    TRUSTREGION_FLAG_NPOSPREDNEG,
-    TRUSTREGION_FLAG_QMINSUFDEC,
-    TRUSTREGION_FLAG_NAN,
-    TRUSTREGION_FLAG_UNDEFINED 
-  };
- 
-
-  inline std::string ETrustRegionFlagToString(ETrustRegionFlag trf) {
-    std::string retString;
-    switch(trf) {
-      case TRUSTREGION_FLAG_SUCCESS:  
-        retString = "Both actual and predicted reductions are positive (success)";
-        break;
-      case TRUSTREGION_FLAG_POSPREDNEG: 
-        retString = "Actual reduction is positive and predicted reduction is negative (impossible)";
-        break;
-      case TRUSTREGION_FLAG_NPOSPREDPOS: 
-        retString = "Actual reduction is nonpositive and predicted reduction is positive";
-        break;
-      case TRUSTREGION_FLAG_NPOSPREDNEG:
-        retString = "Actual reduction is nonpositive and predicted reduction is negative (impossible)";
-        break;
-      case TRUSTREGION_FLAG_QMINSUFDEC:
-        retString = "Sufficient decrease of the quadratic model not met (bound constraints only)";
-        break;
-      case TRUSTREGION_FLAG_NAN:
-        retString = "Actual and/or predicted reduction is a NaN";
-        break;
-      default:
-        retString = "INVALID ETrustRegionFlag";       
-    }
-    return retString;
-  }
-
-
   /** \enum  ROL::ECGFlag 
       \brief Enumation of flags used by conjugate gradient methods.
 
@@ -890,6 +804,7 @@ std::string NumberToString( T Number )
     \arg CG_FLAG_ITEREXCEED  Iteration Limit Exceeded
     \arg CG_FLAG_NEGCURVE    Negative Curvature Detected
     \arh CG_FLAG_TRRADEX     Trust-Region Radius Exceeded
+    \arh CG_FLAG_ZERORHS     Initiali Right Hand Side is Zero
 
   */
   enum ECGFlag {
@@ -897,6 +812,7 @@ std::string NumberToString( T Number )
     CG_FLAG_ITEREXCEED,
     CG_FLAG_NEGCURVE,
     CG_FLAG_TRRADEX,
+    CG_FLAG_ZERORHS,
     CG_FLAG_UNDEFINED 
   };
 
@@ -916,60 +832,14 @@ std::string NumberToString( T Number )
       case CG_FLAG_TRRADEX:   
         retString = "Trust-Region radius exceeded";
         break;
+      case CG_FLAG_ZERORHS:
+        retString = "Initial right hand side is zero";
+        break;
       default:
         retString = "INVALID ECGFlag";  
     }
     return retString;
   }
-  
-
-
-
-
-  /** \brief  Verifies validity of a TrustRegion enum.
-    
-      \param  tr  [in]  - enum of the TrustRegion
-      \return 1 if the argument is a valid TrustRegion; 0 otherwise.
-    */
-  inline int isValidTrustRegion(ETrustRegion ls){
-    return( (ls == TRUSTREGION_CAUCHYPOINT)  ||
-            (ls == TRUSTREGION_TRUNCATEDCG)  ||
-            (ls == TRUSTREGION_DOGLEG)       ||
-            (ls == TRUSTREGION_DOUBLEDOGLEG)
-          );
-  }
-
-  inline ETrustRegion & operator++(ETrustRegion &type) {
-    return type = static_cast<ETrustRegion>(type+1);
-  }
-
-  inline ETrustRegion operator++(ETrustRegion &type, int) {
-    ETrustRegion oldval = type;
-    ++type;
-    return oldval;
-  }
-
-  inline ETrustRegion & operator--(ETrustRegion &type) {
-    return type = static_cast<ETrustRegion>(type-1);
-  }
-
-  inline ETrustRegion operator--(ETrustRegion &type, int) {
-    ETrustRegion oldval = type;
-    --type;
-    return oldval;
-  }
-
-  inline ETrustRegion StringToETrustRegion(std::string s) {
-    s = removeStringFormat(s);
-    for ( ETrustRegion tr = TRUSTREGION_CAUCHYPOINT; tr < TRUSTREGION_LAST; tr++ ) {
-      if ( !s.compare(removeStringFormat(ETrustRegionToString(tr))) ) {
-        return tr;
-      }
-    }
-    return TRUSTREGION_CAUCHYPOINT;
-  }
-
-
 
 
   /** \enum   ROL::ETestObjectives
@@ -1148,69 +1018,6 @@ std::string NumberToString( T Number )
     return TESTOPTPROBLEM_HS1;
   }
 
-
-  /** \enum   ROL::EConstraint
-      \brief  Enumeration of constraint types.
-
-      \arg    EQUALITY        describe
-      \arg    INEQUALITY      describe
-   */
-  enum EConstraint{
-    CONSTRAINT_EQUALITY = 0,
-    CONSTRAINT_INEQUALITY,
-    CONSTRAINT_LAST
-  };
-
-  inline std::string EConstraintToString(EConstraint c) {
-    std::string retString;
-    switch(c) {
-      case CONSTRAINT_EQUALITY:     retString = "Equality";                           break;
-      case CONSTRAINT_INEQUALITY:   retString = "Inequality";                         break;
-      case CONSTRAINT_LAST:         retString = "Last Type (Dummy)";                  break;
-      default:                      retString = "INVALID EConstraint";
-    }
-    return retString;
-  }
-
-  /** \brief  Verifies validity of a Secant enum.
-    
-      \param  c  [in]  - enum of the Secant
-      \return 1 if the argument is a valid Secant; 0 otherwise.
-    */
-  inline int isValidConstraint(EConstraint c){
-    return( (c == CONSTRAINT_EQUALITY)      ||
-            (c == CONSTRAINT_INEQUALITY) );
-  }
-
-  inline EConstraint & operator++(EConstraint &type) {
-    return type = static_cast<EConstraint>(type+1);
-  }
-
-  inline EConstraint operator++(EConstraint &type, int) {
-    EConstraint oldval = type;
-    ++type;
-    return oldval;
-  }
-
-  inline EConstraint & operator--(EConstraint &type) {
-    return type = static_cast<EConstraint>(type-1);
-  }
-
-  inline EConstraint operator--(EConstraint &type, int) {
-    EConstraint oldval = type;
-    --type;
-    return oldval;
-  }
-
-  inline EConstraint StringToEConstraint(std::string s) {
-    s = removeStringFormat(s);
-    for ( EConstraint ctype = CONSTRAINT_EQUALITY; ctype < CONSTRAINT_LAST; ctype++ ) {
-      if ( !s.compare(removeStringFormat(EConstraintToString(ctype))) ) {
-        return ctype;
-      }
-    }
-    return CONSTRAINT_EQUALITY;
-  }
 
   // For use in gradient and Hessian checks
   namespace Finite_Difference_Arrays {
@@ -1464,6 +1271,11 @@ public:
  *  @ingroup extensions_group
  *  \brief ROL's stochastic optimization capability.
  */
+
+/** @defgroup risk_group Risk Measures
+ *  @ingroup stochastic_group
+ * \brief ROL's risk measure implementations.
+*/ 
 
 /** @defgroup examples_group Examples
  *  \brief ROL's examples

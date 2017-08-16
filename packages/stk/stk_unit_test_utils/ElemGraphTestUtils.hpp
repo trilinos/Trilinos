@@ -87,19 +87,19 @@ inline stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& 
     {
         int side = get_side_between_elements(bulkData, graph, elem1, elem2Id);
         EXPECT_TRUE(side != -1);
-        face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem1, side);
+        face_between_elem1_and_elem2 = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, elem1, side);
     }
     else if(isElem1LocallyOwnedAndValid)
     {
         int side = get_side_between_elements(bulkData, graph, elem1, elem2Id);
         EXPECT_TRUE(side != -1);
-        face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem1, side);
+        face_between_elem1_and_elem2 = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, elem1, side);
     }
     else if(isElem2LocallyOwnedAndValid)
     {
         int side = get_side_between_elements(bulkData, graph, elem2, elem1Id);
         EXPECT_TRUE(side != -1);
-        face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem2, side);
+        face_between_elem1_and_elem2 = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, elem2, side);
     }
     return face_between_elem1_and_elem2;
 }

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -44,12 +44,10 @@
 #ifndef KOKKOS_PHYSICAL_LAYOUT_HPP
 #define KOKKOS_PHYSICAL_LAYOUT_HPP
 
-
 #include <Kokkos_View.hpp>
+
 namespace Kokkos {
 namespace Impl {
-
-
 
 struct PhysicalLayout {
   enum LayoutType {Left,Right,Scalar,Error};
@@ -58,7 +56,7 @@ struct PhysicalLayout {
   long long int stride[8]; //distance between two neighboring elements in a given dimension
 
   template< class T , class L , class D , class M >
-  PhysicalLayout( const View<T,L,D,M,ViewDefault> & view )
+  PhysicalLayout( const View<T,L,D,M> & view )
     : layout_type( is_same< typename View<T,L,D,M>::array_layout , LayoutLeft  >::value ? Left : (
                    is_same< typename View<T,L,D,M>::array_layout , LayoutRight >::value ? Right : Error ))
     , rank( view.Rank )
@@ -66,19 +64,9 @@ struct PhysicalLayout {
       for(int i=0;i<8;i++) stride[i] = 0;
       view.stride( stride );
     }
-  #ifdef KOKKOS_HAVE_CUDA
-  template< class T , class L , class D , class M >
-  PhysicalLayout( const View<T,L,D,M,ViewCudaTexture> & view )
-    : layout_type( is_same< typename View<T,L,D,M>::array_layout , LayoutLeft  >::value ? Left : (
-                   is_same< typename View<T,L,D,M>::array_layout , LayoutRight >::value ? Right : Error ))
-    , rank( view.Rank )
-    {
-      for(int i=0;i<8;i++) stride[i] = 0;
-      view.stride( stride );
-    }
-  #endif
 };
 
 }
 }
 #endif
+

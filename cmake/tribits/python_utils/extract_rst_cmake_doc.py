@@ -42,7 +42,6 @@
 import sys
 import os
 import subprocess
-import commands
 import re
 import pprint
 import glob
@@ -239,7 +238,7 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
 
   line_i = 0
   for line in rawText.splitlines():
-    #print "\nline = '"+line+"'"
+    #print("\nline = '" + line + "'")
 
     line_i += 1
 
@@ -259,21 +258,21 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
       for blockType in rstBlockTypes:
         blockBeginning = "# @"+blockType
         lineBlockBeginning = line[0:len(blockBeginning)]
-        #print "blockBeginning = '"+blockBeginning+"'"
-        #print "lineBlockBeginning = '"+lineBlockBeginning+"'"
+        #print("blockBeginning = '" + blockBeginning + "'")
+        #print("lineBlockBeginning = '" + lineBlockBeginning + "'")
         if lineBlockBeginning == blockBeginning:
-          #print "Matches block beginning "+blockType+"!"
+          #print("Matches block beginning " + blockType + "!")
           currentRstDocBlockType = blockType
           splitOnColon = line.split(":")
           if len(splitOnColon) != 2:
             raise Exception(fileNameAndLinePrefix+ \
               "error: '"+line+"' is missing the colon ':' separator!")
           inRstDocBlock = splitOnColon[1].strip()
-          #print "inRstDocBlock = '"+inRstDocBlock+"'"
-          #print "currentRstDocBlockType = '"+currentRstDocBlockType+"'"
+          #print("inRstDocBlock = '" + inRstDocBlock + "'")
+          #print("currentRstDocBlockType = '" + currentRstDocBlockType + "'")
           if traceExtraction:
-            print "Extracting '"+blockType+"' block '"+inRstDocBlock+"'"+\
-              " from "+getFileNameLineNumPrefix(fileName, line_i)
+            print("Extracting '" + blockType + "' block '" + inRstDocBlock + "'"
+                  + " from " + getFileNameLineNumPrefix(fileName, line_i))
           currentRstBlockBody = ""
           justFoundBlockBeginning = True
           break
@@ -290,9 +289,9 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
           "error: Comment blocks must have at least one space after '#'"+\
           " in line = '"+line+"'")
       rstBlockBodyLine = line[2:]
-      #print "rstBlockBodyLine = '"+rstBlockBodyLine+"'"
+      #print("rstBlockBodyLine = '" + rstBlockBodyLine + "'")
       currentRstBlockBody += (rstBlockBodyLine + "\n")
-      #print "currentRstBlockBody = {\n"+currentRstBlockBody+"}"
+      #print("currentRstBlockBody = {\n" + currentRstBlockBody + "}")
 
     if not inCommentBlock and inRstDocBlock:
       # This is the end of the RST block
@@ -320,7 +319,7 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
       # Finally, rest to look for the next RST block
       inRstDocBlock = ""
       currentRstDocBlockType = ""
-      #print "rstDocBlocks:\n", rstDocBlocks
+      #print("rstDocBlocks:\n" + str(rstDocBlocks))
       
       # ToDo: Check that this line starts with currentRstDocBlockType or
       # throw exception!
@@ -374,40 +373,40 @@ def replaceWithRstDocBlocksInText(textToReplace, rstBlockTypes, rstDocBlocks, fi
 
     line_i += 1
 
-    #print "\nline_i = "+str(line_i)
-    #print "line = '"+line+"'"
+    #print("\nline_i = " + str(line_i))
+    #print("line = '" + line + "'")
 
     # Look for block of text to replace 
     replacedRstBlock = False
     for blockType in rstBlockTypes:
       blockBeginning = "@"+blockType
       lineBlockBeginning = line[0:len(blockBeginning)]
-      #print "blockBeginning = '"+blockBeginning+"'"
-      #print "lineBlockBeginning = '"+lineBlockBeginning+"'"
+      #print("blockBeginning = '" + blockBeginning + "'")
+      #print("lineBlockBeginning = '" + lineBlockBeginning + "'")
       if lineBlockBeginning == blockBeginning:
-        #print "Matches block beginning "+blockType+"!"
+        #print("Matches block beginning " + blockType + "!")
         lineSplitArray = line.split(":")
         fileNameAndLinePrefix = fileName+":"+str(line_i)+": "
-        #print "lineSplitArray = "+str(lineSplitArray)
+        #print("lineSplitArray = " + str(lineSplitArray))
         if len(lineSplitArray)==1:
           # Missing the colon so no replacement!
           break
         rstBlockNameAndSecCharArray = removeEmtpyElements(
           lineSplitArray[1].strip().split(" "))
-        #print "rstBlockNameAndSecCharArray = "+str(rstBlockNameAndSecCharArray)
+        #print("rstBlockNameAndSecCharArray = " + str(rstBlockNameAndSecCharArray))
         if len(rstBlockNameAndSecCharArray) != 2:
           raise Exception(fileNameAndLinePrefix+"Error, line does not match format"+\
             " '@"+blockType+": <blockName> <sepChar>' for line = '"+line+"'")
         rstBlockName = rstBlockNameAndSecCharArray[0].strip()
         rstBlockSecChar = rstBlockNameAndSecCharArray[1].strip()
-        #print "rstBlockName = '"+rstBlockName+"'"
-        #print "rstBlockSecChar = '"+rstBlockSecChar+"'"
+        #print("rstBlockName = '" + rstBlockName + "'")
+        #print("rstBlockSecChar = '" + rstBlockSecChar + "'")
         if len(rstBlockSecChar) != 1:
           raise Exception(fileNameAndLinePrefix+\
             "Error, separation char must be on char in line = '"+line+"'")
         if traceReplacements:
-            print "Replacing '"+blockType+"' block '"+rstBlockName+"'"+\
-              " in "+getFileNameLineNumPrefix(fileName, line_i)
+            print("Replacing '" + blockType + "' block '" + rstBlockName + "'" +
+                  " in " + getFileNameLineNumPrefix(fileName, line_i))
         rstDocBlock = getRstDocBlock(rstDocBlocks, rstBlockName,
           fileNameAndLinePrefix, line)
         if rstDocBlock.get("type") != blockType:
@@ -424,7 +423,7 @@ def replaceWithRstDocBlocksInText(textToReplace, rstBlockTypes, rstDocBlocks, fi
     if not replacedRstBlock and not (line_i == numTextToReplaceLines and line==""):
       replacedText += (line+"\n")
 
-    #print "replacedText = {\n"+replacedText+"}"
+    #print("replacedText = {\n" + replacedText + "}")
 
   # end for line
 
@@ -480,14 +479,14 @@ def replaceWithRstDocBlocksInTemplateFileList(rstFilesList, rstBlockTypes,
 # Run a command and syncronize the output
 def runCmnd(options, cmnd):
   if options.debug:
-    print "*** Running command:", cmnd
+    print("*** Running command: " + cmnd)
   if options.noOpt:
-    print cmnd
+    print(cmnd)
   else:
     child = subprocess.Popen(cmnd, stdout=subprocess.PIPE).stdout
     output = child.read()
     sys.stdout.flush()
-    print output
+    print(output)
     sys.stdout.flush()
 
 
@@ -556,29 +555,29 @@ if __name__ == '__main__':
   # Echo the command-line
 
   if options.doTrace:
-    print ""
-    print "**************************************************************************"
-    print "Script: extract_rst_cmake_doc.py \\"
-    print "  --extract-from='" + options.extractFrom+"' \\"
-    print "  --file-extensions='" + options.fileExtensions+"' \\"
-    print "  --rst-file-pairs='" + options.rstFilePairs+"' \\"
+    print("")
+    print("**************************************************************************")
+    print("Script: extract_rst_cmake_doc.py \\")
+    print("  --extract-from='" + options.extractFrom + "' \\")
+    print("  --file-extensions='" + options.fileExtensions + "' \\")
+    print("  --rst-file-pairs='" + options.rstFilePairs + "' \\")
     if options.dumpRstBlocks:
-      print "  --dump-rst-blocks \\"
+      print("  --dump-rst-blocks \\")
     else:
-      print "  --no-dump-rst-blocks \\"
+      print("  --no-dump-rst-blocks \\")
     if options.doTrace:
-      print "  --do-trace \\"
+      print("  --do-trace \\")
     else:
-      print "  --no-do-trace \\"
+      print("  --no-do-trace \\")
 
   # Assert the commandline
 
   if not options.extractFrom:
-    print "\nError, --extract-from must be specified (see --help)!"
+    print("\nError, --extract-from must be specified (see --help)!")
     sys.exit(1)
 
   if options.doTrace and not options.rstFilePairs:
-    print "\nWarning: --rst-file-pairs is empty and no RST comment blocks will be set!"
+    print("\nWarning: --rst-file-pairs is empty and no RST comment blocks will be set!")
 
   #
   # B) Read in all of the RST documenation blocks
@@ -587,13 +586,13 @@ if __name__ == '__main__':
   rstBlockTypes = ["MACRO", "FUNCTION"]
 
   if options.doTrace:
-    print "\nExtracting RST documentation blocks in --extract-from:"
+    print("\nExtracting RST documentation blocks in --extract-from:")
   extractFromFilesList = getExtractFilesList(options)
   rstDocBlocks = extractRstDocBlocksFromFileList(
     extractFromFilesList, rstBlockTypes, options.doTrace)
 
   if options.dumpRstBlocks:
-    print "Read in RST blocks:\n"
+    print("Read in RST blocks:\n")
     pp.pprint(rstDocBlocks)
   
   #
@@ -601,7 +600,7 @@ if __name__ == '__main__':
   #
 
   if options.doTrace:
-    print "\nReplacing RST documentation blocks in RST files in --rst-file-pairs:"
+    print("\nReplacing RST documentation blocks in RST files in --rst-file-pairs:")
   rstFilesList = getRstFilesList(options)
   replaceWithRstDocBlocksInTemplateFileList(rstFilesList, rstBlockTypes,
     rstDocBlocks, options.doTrace)

@@ -1,0 +1,65 @@
+#ifndef KOKKOSKERNELS_CONFIG_H
+#define KOKKOSKERNELS_CONFIG_H
+
+/* Define if building in debug mode */
+#cmakedefine HAVE_KOKKOSKERNELS_DEBUG
+
+/* Define this macro if the quadmath TPL is enabled */
+#cmakedefine HAVE_KOKKOSKERNELS_QUADMATH
+
+/* Define this macro if the MKL TPL is enabled.  This is different
+   than just linking against the MKL to get the BLAS and LAPACK; it
+   requires (a) header file(s) as well, and may use functions other
+   than just BLAS and LAPACK functions.  */
+#cmakedefine HAVE_KOKKOSKERNELS_MKL
+
+/* Define this macro if experimental features of Kokkoskernels are enabled */
+#cmakedefine HAVE_KOKKOSKERNELS_EXPERIMENTAL
+
+/* Define this macro to disallow instantiations of kernels which are not covered by ETI */
+#cmakedefine KOKKOSKERNELS_ETI_ONLY
+
+/* Whether to build kernels for execution space Kokkos::Cuda */
+#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_CUDA
+#cmakedefine KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE
+#cmakedefine KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE
+/* Whether to build kernels for execution space Kokkos::OpenMP */
+#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMP
+/* Whether to build kernels for execution space Kokkos::Threads */
+#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_PTHREAD
+/* Whether to build kernels for execution space Kokkos::Serial */
+#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_SERIAL
+
+/* Whether to build kernels for memory space Kokkos::HostSpace */
+#cmakedefine KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
+
+
+/* Whether to build kernels for scalar type double */
+#cmakedefine KOKKOSKERNELS_INST_DOUBLE
+/* Whether to build kernels for scalar type float */
+#cmakedefine KOKKOSKERNELS_INST_FLOAT
+/* Whether to build kernels for scalar type complex<double> */
+#cmakedefine KOKKOSKERNELS_INST_COMPLEX_DOUBLE
+/* Whether to build kernels for scalar type complex<float> */
+#cmakedefine KOKKOSKERNELS_INST_COMPLEX_FLOAT
+#if defined KOKKOSKERNELS_INST_COMPLEX_DOUBLE
+#define KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_
+#endif
+#if defined KOKKOSKERNELS_INST_COMPLEX_FLOAT
+#define KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_
+#endif
+
+/* Whether to build kernels for multivectors of LayoutLeft */
+#cmakedefine KOKKOSKERNELS_INST_LAYOUTLEFT
+/* Whether to build kernels for multivectors of LayoutRight */
+#cmakedefine KOKKOSKERNELS_INST_LAYOUTRIGHT
+/*
+ * "Optimization level" for computational kernels in this subpackage.
+ * The higher the level, the more code variants get generated, and
+ * thus the longer the compile times.  However, more code variants
+ * mean both better performance overall, and more uniform performance
+ * for corner cases.
+ */
+#define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level@
+
+#endif // KOKKOSKERNELS_CONFIG_H

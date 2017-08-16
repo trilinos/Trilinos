@@ -76,7 +76,7 @@ void createNodalVectorFields(stk::mesh::MetaData& meshMetaData)
 
 void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh::FieldDataManager *fieldDataManager)
 {
-    std::string exodusFileName = unitTestUtils::getOption("-i", "NO_FILE_SPECIFIED");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "NO_FILE_SPECIFIED");
     ASSERT_NE(exodusFileName, "NO_FILE_SPECIFIED");
 
     exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
@@ -87,7 +87,7 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh
     stk::mesh::MetaData &stkMeshMetaData = exodusFileReader.meta_data();
     createNodalVectorFields(stkMeshMetaData);
 
-    Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, false, NULL, fieldDataManager));
+    auto arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, false, NULL, fieldDataManager));
     exodusFileReader.set_bulk_data(arg_bulk_data);
     stk::mesh::BulkData& stkMeshBulkData = *arg_bulk_data;
 
@@ -98,7 +98,7 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh
     std::cerr << "Finished Reading Mesh: " << exodusFileName << std::endl;
 
     stk::mesh::Selector allEntities = stkMeshMetaData.universal_part();
-    std::vector<unsigned> entityCounts;
+    std::vector<size_t> entityCounts;
     stk::mesh::count_entities(allEntities, stkMeshBulkData, entityCounts);
     size_t numElements = entityCounts[stk::topology::ELEMENT_RANK];
     size_t numNodes = entityCounts[stk::topology::NODE_RANK];
@@ -189,8 +189,7 @@ void test1ToNSumOfNodalFields(stk::mesh::ContiguousFieldDataManager *fieldDataMa
     double beta = 0.3333333;
     double gamma = 3.14159;
 
-    std::string numIterationsString = unitTestUtils::getOption("-numIter", "1");
-    const int numIterations = std::atoi(numIterationsString.c_str());
+    const int numIterations = stk::unit_test_util::get_command_line_option("-numIter", 1);
 
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "disp");
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &vel_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "vel");

@@ -55,10 +55,12 @@
 #ifdef HAVE_XPETRA_EPETRA
 #  include "Xpetra_EpetraMap.hpp"
 #endif
+#include "Xpetra_BlockedMap.hpp"
 
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
+
   /// \class MapFactory
   /// \brief Create an Xpetra::Map instance.
   ///
@@ -146,11 +148,19 @@ namespace Xpetra {
     }
 
     //! Map constructor transforming degrees of freedom
+    //! for numDofPerNode this acts like a deep copy
     static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
     Build (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
            LocalOrdinal numDofPerNode)
     {
       XPETRA_MONITOR("MapFactory::Build");
+
+      RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        TEUCHOS_TEST_FOR_EXCEPTION(numDofPerNode!=1, Xpetra::Exceptions::RuntimeError,
+          "Xpetra::MapFactory::Build: When provided a BlockedMap numDofPerNode must set to be one. It is set to " << numDofPerNode << ".");
+        return rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(*bmap));
+      }
 
 #ifdef HAVE_XPETRA_TPETRA
       LocalOrdinal N = map->getNodeNumElements();
@@ -177,7 +187,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm)));
+        return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
@@ -355,8 +365,16 @@ namespace Xpetra {
     }
 
     //! Map constructor transforming degrees of freedom
+    //! for numDofPerNode this acts like a deep copy
     static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map, LocalOrdinal numDofPerNode) {
       XPETRA_MONITOR("MapFactory::Build");
+
+      RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        TEUCHOS_TEST_FOR_EXCEPTION(numDofPerNode!=1, Xpetra::Exceptions::RuntimeError,
+          "Xpetra::MapFactory::Build: When provided a BlockedMap numDofPerNode must set to be one. It is set to " << numDofPerNode << ".");
+        return rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(*bmap));
+      }
 
       LocalOrdinal N = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getNodeElementList();
@@ -620,8 +638,16 @@ namespace Xpetra {
     }
 
     //! Map constructor transforming degrees of freedom
+    //! for numDofPerNode this acts like a deep copy
     static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map, LocalOrdinal numDofPerNode) {
       XPETRA_MONITOR("MapFactory::Build");
+
+      RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        TEUCHOS_TEST_FOR_EXCEPTION(numDofPerNode!=1, Xpetra::Exceptions::RuntimeError,
+          "Xpetra::MapFactory::Build: When provided a BlockedMap numDofPerNode must set to be one. It is set to " << numDofPerNode << ".");
+        return rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(*bmap));
+      }
 
       LocalOrdinal N = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getNodeElementList();

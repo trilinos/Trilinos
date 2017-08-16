@@ -53,13 +53,22 @@
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
+#include <Zoltan2_TPLTraits.hpp>
 
 
 #ifdef HAVE_ZOLTAN2_AMD
 #include "amd.h"
+#ifdef SUITESPARSE_MAIN_VERSION
+#if SUITESPARSE_MAIN_VERSION < 4
+typedef UF_long SuiteSparse_long;
+#endif
+#endif
 #endif
 
+
+
 namespace Zoltan2{
+
 
 #ifdef HAVE_ZOLTAN2_AMD
 template <typename Ordinal>
@@ -82,15 +91,17 @@ class AMDTraits<int>
 };
 
 template <>
-class AMDTraits<long>
+class AMDTraits<SuiteSparse_long>
 {
     public:
-    long order(long n, const long *Ap, const long *Ai, long *perm,
+    long order(SuiteSparse_long n, const SuiteSparse_long *Ap,
+                const SuiteSparse_long *Ai, SuiteSparse_long *perm,
                 double *control, double *info)
     {
         return (amd_l_order(n, Ap, Ai, perm, control, info));
     }
 };
+
 #endif
 
 }
@@ -116,8 +127,13 @@ class AlgAMD : public Algorithm<Adapter>
     ) : model(model__), pl(pl__), comm(comm__)
     { }
 
-    int order(const RCP<OrderingSolution<typename Adapter::lno_t,
-                                         typename Adapter::gno_t> > &solution)
+    int globalOrder(
+      const RCP<GlobalOrderingSolution<typename Adapter::gno_t> > &solution) {
+        throw std::logic_error("AlgAMD does not yet support global ordering.");
+    }
+
+    int localOrder(
+      const RCP<LocalOrderingSolution<typename Adapter::lno_t> > &solution)
     {
 #ifndef HAVE_ZOLTAN2_AMD
   throw std::runtime_error(
@@ -126,6 +142,7 @@ class AlgAMD : public Algorithm<Adapter>
 #else
       typedef typename Adapter::gno_t gno_t;
       typedef typename Adapter::lno_t lno_t;
+      typedef typename Adapter::offset_t offset_t;
       typedef typename Adapter::scalar_t scalar_t;
 
       int ierr= 0;
@@ -134,27 +151,54 @@ class AlgAMD : public Algorithm<Adapter>
 
       //cout << "Local num vertices" << nVtx << endl;
       ArrayView<const gno_t> edgeIds;
-      ArrayView<const lno_t> offsets;
+      ArrayView<const offset_t> offsets;
       ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
       // wgts are ignored in AMD
       model->getEdgeList(edgeIds, offsets, wgts);
 
-      AMDTraits<lno_t> AMDobj;
+      // We will always call AMD with SuiteSparse_long
+      AMDTraits<SuiteSparse_long> AMDobj;
       double Control[AMD_CONTROL];
       double Info[AMD_INFO];
 
       amd_defaults(Control);
       amd_control(Control);
 
+      // We will use the lno_t for local ordering
       lno_t *perm;
       perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
 
-      lno_t result = AMDobj.order(nVtx, offsets.getRawPtr(),
-                             edgeIds.getRawPtr(), perm, Control, Info);
+      SuiteSparse_long *amd_offsets, *amd_edgeIds;
+      TPL_Traits<SuiteSparse_long, const offset_t>::ASSIGN_ARRAY(&amd_offsets,
+             offsets);
+      // This might throw depending on how SuiteSparse was compiled
+      // with long or long long and the size of both of them
+      TPL_Traits<SuiteSparse_long, const gno_t>::ASSIGN_ARRAY(&amd_edgeIds,
+             edgeIds);
+
+      SuiteSparse_long amd_nVtx=0;
+      TPL_Traits<SuiteSparse_long, size_t>::ASSIGN(amd_nVtx, nVtx);
+
+      // Allocate a SuiteSparse_long perm
+      SuiteSparse_long *amd_perm = new SuiteSparse_long[amd_nVtx];
+
+      lno_t result = AMDobj.order(amd_nVtx, amd_offsets,
+                             amd_edgeIds, amd_perm, Control, Info);
 
       if (result != AMD_OK && result != AMD_OK_BUT_JUMBLED)
           ierr = -1;
+
+      // SR: This conversion might throw as we are going from SuiteSparse_long
+      // to lno_t. Another option is to change local ordering solution
+      // to use gno_t everywhere
+      for (size_t i = 0; i < nVtx; i++)
+          TPL_Traits<lno_t, SuiteSparse_long>::ASSIGN(perm[i], amd_perm[i]);
+
+      // Delete copies
+      TPL_Traits<SuiteSparse_long, const lno_t>::DELETE_ARRAY(&amd_offsets);
+      TPL_Traits<SuiteSparse_long, const gno_t>::DELETE_ARRAY(&amd_edgeIds);
+      delete [] amd_perm;
 
       solution->setHavePerm(true);
       return ierr;

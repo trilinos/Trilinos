@@ -21,6 +21,10 @@ IF (TPL_ENABLE_MPI)
   SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} z)
 ENDIF()
 
+IF (TPL_ENABLE_Netcdf)
+  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} hdf5_hl)
+ENDIF()
+
 #
 # Second, search for HDF5 components (if allowed) using the standard
 # FIND_PACKAGE(HDF5 ...).

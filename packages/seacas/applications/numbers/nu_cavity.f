@@ -31,37 +31,6 @@ C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C    
 
-C $Id: cavity.f,v 1.7 2007/03/21 20:12:37 gdsjaar Exp $
-C $Log: cavity.f,v $
-C Revision 1.7  2007/03/21 20:12:37  gdsjaar
-C Several commands which can work on the deformed geometry were only
-C checking whether the file was an exodus file (had timesteps) when
-C requesting deformed coordinates.  Changed to also check whether the
-C file had valid displacments also.
-C
-C Revision 1.6  1999/02/16 21:37:58  gdsjaar
-C Converted to read exodusII database format.  Somewhat tested, not
-C ready for production yet.
-C
-C Revision 1.5  1993/04/08 20:07:28  gdsjaar
-C Changed cavity volume output to have correct sign
-C
-c Revision 1.4  1992/12/11  22:34:12  gdsjaar
-c Fixed problem with incorrect determination of cavity center in 2d
-c
-c Revision 1.3  1992/07/20  22:38:09  gdsjaar
-c Multiple cavity volume was using VOLUME (last cavity volume) instead
-c of TVOL (total cavity volume).
-c
-c Revision 1.2  1992/07/20  22:22:23  gdsjaar
-c Initialize variable DELLAS - unset before
-c
-c Revision 1.1.1.1  1991/02/21  15:42:22  gdsjaar
-c NUMBERS: Greg Sjaardema, initial Unix release
-c
-c Revision 1.1  1991/02/21  15:42:21  gdsjaar
-c Initial revision
-c
       SUBROUTINE CAVITY (A, CRD, IDESS, NEESS, NNESS, IPEESS, IPNESS,
      *   LTEESS, LTNESS, FACESS, DISP, NUMNP, NDIM, NUMESS,
      *   TIME, ITMSEL, TITLE, CENT, CENTER)
@@ -119,9 +88,12 @@ C
             WRITE (IO, 80)
    70    CONTINUE
    80    FORMAT (/,
-     *      4X,'           Cavity      Total      Timestep    Rate of',/
-     *      4X,'Time       Volume      Change      Change      Change',/
-     *      4X,'----       ------      ------     --------    -------')
+     *      4X,'                 Cavity           Total',
+     *     '            Timestep         Rate of',/
+     *      4X,'Time             Volume           Change',
+     *     '           Change           Change',/
+     *      4X,'----             ------           ------',
+     *     '           --------         -------')
 C
          DELLAS = 0.0
    90    CONTINUE

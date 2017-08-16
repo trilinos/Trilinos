@@ -114,11 +114,11 @@
 }
 %pythonappend Epetra_IntSerialDenseMatrix::Shape
 {
-    if self.__dict__.has_key("array"): del self.__dict__["array"]
+    if "array" in self.__dict__: del self.__dict__["array"]
 }
 %pythonappend Epetra_IntSerialDenseMatrix::Reshape
 {
-    if self.__dict__.has_key("array"): del self.__dict__["array"]
+    if "array" in self.__dict__: del self.__dict__["array"]
 }
 %ignore Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix(Epetra_DataAccess,
                                                                  int*,int,int,int);
@@ -193,11 +193,11 @@
 }
 %pythonappend Epetra_IntSerialDenseVector::Size
 {
-    if self.__dict__.has_key("array"): del self.__dict__["array"]
+    if "array" in self.__dict__: del self.__dict__["array"]
 }
 %pythonappend Epetra_IntSerialDenseVector::Resize
 {
-    if self.__dict__.has_key("array"): del self.__dict__["array"]
+    if "array" in self.__dict__: del self.__dict__["array"]
 }
 %ignore Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(Epetra_DataAccess,
                                                                  int*,int);
@@ -286,11 +286,11 @@
 }
 %pythonappend Epetra_SerialDenseMatrix::Shape
 {
-    if self.__dict__.has_key("array"): del self.__dict__["array"]
+    if "array" in self.__dict__: del self.__dict__["array"]
 }
 %pythonappend Epetra_SerialDenseMatrix::Reshape
 {
-    if self.__dict__.has_key("array"): del self.__dict__["array"]
+    if "array" in self.__dict__: del self.__dict__["array"]
 }
 %ignore Epetra_SerialDenseMatrix::operator()(int,int);
 %ignore Epetra_SerialDenseMatrix::A() const;
@@ -369,11 +369,11 @@
 }
 %pythonappend Epetra_SerialDenseVector::Size
 {
-    if self.__dict__.has_key("array"): del self.__dict__["array"]
+    if "array" in self.__dict__: del self.__dict__["array"]
 }
 %pythonappend Epetra_SerialDenseVector::Resize
 {
-    if self.__dict__.has_key("array"): del self.__dict__["array"]
+    if "array" in self.__dict__: del self.__dict__["array"]
 }
 %ignore Epetra_SerialDenseVector::Epetra_SerialDenseVector(Epetra_DataAccess,
                                                            double*,int);

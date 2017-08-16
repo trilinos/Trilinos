@@ -74,6 +74,13 @@
 #include "Xpetra_VectorFactory.hpp"
 #include <Tpetra_DefaultPlatform.hpp>
 
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+#include "Kokkos_DynRankView.hpp"
+#else
+#include "Intrepid2_FieldContainer.hpp"
+#endif
+
+
 namespace MueLu
 {
 
@@ -99,6 +106,9 @@ enum MuemexType
   AGGREGATES,
   AMALGAMATION_INFO,
   GRAPH
+#ifdef HAVE_MUELU_INTREPID2
+, FIELDCONTAINER_ORDINAL
+#endif
 };
 
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
@@ -121,6 +131,14 @@ typedef MueLu::Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierar
 typedef MueLu::Aggregates<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAggregates;
 typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo;
 typedef MueLu::GraphBase<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
+
+#ifdef HAVE_MUELU_INTREPID2
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+  typedef Kokkos::DynRankView<mm_LocalOrd,typename mm_node_t::device_type> FieldContainer_ordinal;
+#else
+  typedef Intrepid2::FieldContainer<mm_LocalOrd> FieldContainer_ordinal;
+#endif
+#endif
 
 class MuemexArg
 {
@@ -160,7 +178,7 @@ mxArray* saveDataToMatlab(T& data);
 
 //Add data to level. Set the keep flag on the data to "user-provided" so it's not deleted.
 template<typename T>
-void addLevelVariable(const T& data, std::string& name, Level& lvl, Factory *fact = NoFactory::get());
+void addLevelVariable(const T& data, std::string& name, Level& lvl, const FactoryBase *fact = NoFactory::get());
 
 template<typename T>
 const T& getLevelVariable(std::string& name, Level& lvl);

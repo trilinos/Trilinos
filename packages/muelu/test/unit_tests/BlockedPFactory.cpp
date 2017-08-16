@@ -184,14 +184,10 @@ namespace MueLuTests {
     // build blocked operator
     Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(mapExtractor,mapExtractor,10));
 
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat11 = Op11->getCrsMatrix();
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat12 = Op12->getCrsMatrix();
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat21 = Op21->getCrsMatrix();
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat22 = Op22->getCrsMatrix();
-    bOp->setMatrix(0,0,crsMat11);
-    bOp->setMatrix(0,1,crsMat12);
-    bOp->setMatrix(1,0,crsMat21);
-    bOp->setMatrix(1,1,crsMat22);
+    bOp->setMatrix(0,0,Op11);
+    bOp->setMatrix(0,1,Op12);
+    bOp->setMatrix(1,0,Op21);
+    bOp->setMatrix(1,1,Op22);
     bOp->fillComplete();
     TEST_EQUALITY(bOp!=Teuchos::null, true);
 

@@ -1,4 +1,4 @@
-IF (Tpetra_INST_INT_INT)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_ProblematicLookup
   SOURCES
@@ -8,9 +8,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
-ENDIF()
 
-IF (Tpetra_INST_INT_LONG)
+# tjf 20 Oct 2016 modified to use default LO, GO types
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_Bug5378
   SOURCES
@@ -20,7 +19,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
-ENDIF()
 
 IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -78,17 +76,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 # mfh 26 Sep 2015: Not sure if this one needs GO = int.
 # It might be OK just to use the default GO type.
-IF (TPETRA_INST_INT_INT)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Map_OneToOne
-    SOURCES
+# tjf 20 Oct 2016 modified to use default LO, GO, NT types
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_OneToOne
+  SOURCES
     Map_OneToOne
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 2
-    )
-ENDIF()
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 2
+  )
 
 IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG)
   # Tpetra bug 5822, first test.
@@ -114,27 +111,14 @@ IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG)
     )
 ENDIF()
 
-IF (Tpetra_INST_INT_INT)
-  # Tpetra bug 5882
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Map_ExportTest_Bug5882
-    SOURCES
-    Map_ExportTest_Bug5882
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "passed!"
-    NUM_MPI_PROCS 2
-    )
-ENDIF()
-
-IF (Tpetra_INST_INT_LONG)
+# Tpetra bug 5882
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Map_removeEmptyProcesses
+  Map_ExportTest_Bug5882
   SOURCES
-    Map_removeEmptyProcesses
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM mpi
-  NUM_MPI_PROCS 1-10
-  STANDARD_PASS_OUTPUT
+  Map_ExportTest_Bug5882
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "passed!"
+  NUM_MPI_PROCS 2
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -146,9 +130,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-10
   STANDARD_PASS_OUTPUT
   )
-ENDIF()
 
-IF (Tpetra_INST_INT_INT)
+# tjf 20 Oct 2016 modified to use default LO, GO, NT types
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_removeEmptyProcesses
+  SOURCES
+    Map_removeEmptyProcesses
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 1-10
+  STANDARD_PASS_OUTPUT
+)
+
+# tjf 20 Oct 2016 modified to use default LO, GO types
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_isOneToOne
   SOURCES
@@ -158,7 +152,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-10
   STANDARD_PASS_OUTPUT
   )
-ENDIF()
 
 # FIXME (mfh 20 Oct 2015) My recent commit
 # 0abee4e8fffdc0975f329bde3b3671db916388bb reverts the fix for Bug
@@ -175,3 +168,24 @@ ENDIF()
 #   NUM_MPI_PROCS 2-10
 #   STANDARD_PASS_OUTPUT
 #   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_getMyGlobalIndices
+  SOURCES
+    Map_getMyGlobalIndices
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 1-10
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test needs to run on at least 2 MPI processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_isLocallyFitted
+  SOURCES
+    Map_isLocallyFitted.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2-10
+  STANDARD_PASS_OUTPUT
+  )

@@ -1,0 +1,170 @@
+#!/bin/bash -el
+
+# This script is intended to compare two states of a repository (checked out into different directories)
+# and succefully return if the encountered errors are the same in both states. 
+# This can be used to update a non-clean state (as is most often the case for Trilinos).
+
+# Input parameters are: REPO1_PATH REPO2_PATH CONFIGURE_SCRIPT JOBNAME QUEUE
+
+# REPO1_PATH is the directory to the updated state (i.e. what later is supposed to get checked in).
+# REPO2_PATH is the gold standart directory
+# CONFIGURE_SCRIPT is the script to configure Trilinos. It takes TRILINOS_PATH as the source directory.
+# JOBNAME The root-name for the jobs to be submitted the job scheduler
+# QUEUE The job queue to be used for job submission
+
+# The script will first configure, build and run based on REPO1_PATH. If no errors occur it will exit.
+# If errors occur it will configure, build and run based on REPO2_PATH and compare the output.
+# If the output is the same (actually only the errors are checked) then it exists successfully. 
+# If the output differs the script will exit with return code 1.
+
+TRILINOS_UPDATED_PATH=$1
+TRILINOS_PRISTINE_PATH=$2
+CONFIG_SCRIPT=$3
+JOBNAME=$4
+QUEUE=$5
+
+export OMP_NUM_THREADS=4 
+
+rm -rf build_updated
+mkdir build_updated
+cd build_updated
+export TRILINOS_PATH=${TRILINOS_UPDATED_PATH}
+
+echo "ulimit -c 0; ctest" &> test_submitted_command
+chmod a+x test_submitted_command
+
+echo "${CONFIG_SCRIPT} &> config.output" &> config_command
+echo "make -j 8 -k  &> build.output" &> build_command
+echo "./test_submitted_command &> test.output" &> test_command
+
+chmod a+x *_command
+echo ""
+echo ""
+echo "Going to run these commands on updated Trilinos:"
+cat config_command
+cat build_command
+cat test_command
+echo ""
+echo ""
+
+./config_command
+echo ""
+echo ""
+echo "Config output:"
+cat config.output
+
+echo ""
+echo ""
+
+./build_command || true
+echo ""
+echo ""
+echo "Build output:"
+cat build.output
+
+./test_command || true
+echo ""
+echo ""
+echo "Test output:"
+cat test.output
+
+BUILD_ERRORS_UPDATED=`grep "error:" build.output | wc -l`
+TEST_FAILED_UPDATED=`grep "(Failed)" test.output | wc -l`
+TEST_NOTRUN_UPDATED=`grep "(Not Run)" test.output | wc -l`
+TOTAL_PROBLEMS_UPDATED=$((${BUILD_ERRORS_UPDATED} + ${TEST_FAILED_UPDATED} + ${TEST_NOTRUN_UPDATED}))
+echo ""
+echo ""
+echo "Updated Testing: BuildErrors: " ${BUILD_ERRORS_UPDATED} " Failed Tests: " ${TEST_FAILED_UPDATED} " NotRun Tests: " ${TEST_NOTRUN_UPDATED}
+cd ../
+
+if [ "${TOTAL_PROBLEMS_UPDATED}" -gt "0" ]; then
+rm -rf build_pristine
+mkdir build_pristine
+cd build_pristine
+
+export TRILINOS_PATH=${TRILINOS_PRISTINE_PATH}
+
+echo "ulimit -c 0; ctest" &> test_submitted_command
+chmod a+x test_submitted_command
+
+echo "${CONFIG_SCRIPT} &> config.output" &> config_command
+echo "make -j 8 -k  &> build.output" &> build_command
+echo "./test_submitted_command &> test.output" &> test_command
+
+chmod a+x *_command
+echo ""
+echo ""
+echo "Going to run these commands on pristine Trilinos:"
+cat config_command
+cat build_command
+cat test_command
+echo ""
+echo ""
+
+./config_command
+echo ""
+echo ""
+echo "Config output:"
+cat config.output
+
+echo ""
+echo ""
+
+./build_command || true
+echo ""
+echo ""
+echo "Build output:"
+cat build.output
+
+./test_command || true
+echo ""
+echo ""
+echo "Test output:"
+cat test.output
+
+BUILD_ERRORS_PRISTINE=`grep "error:" build.output | wc -l`
+TEST_FAILED_PRISTINE=`grep "(Failed)" test.output | wc -l`
+TEST_NOTRUN_PRISTINE=`grep "(Not Run)" test.output | wc -l`
+TOTAL_PROBLEMS_PRISTINE=$((${BUILD_ERRORS_PRISTINE} + ${TEST_FAILED_PRISTINE} + ${TEST_NOTRUN_PRISTINE}))
+
+sed -i 's|${TRILINOS_PRISTINE_PATH}|${TRILINOS_UPDATED_PATH}|g' build.output
+
+cd ..
+
+rm pristine_build.error updated_build.error pristine_test.failed updated_test.failed pristine_test.notrun updated_test.notrun || true
+touch pristine_build.error updated_build.error pristine_test.failed updated_test.failed pristine_test.notrun updated_test.notrun
+echo "Grepping for Errors:"
+grep "error:" build_pristine/build.output | awk '{$1 = ""; print $0;}' &> pristine_build.error || true
+grep "error:" build_updated/build.output | awk '{$1 = ""; print $0;}' &> updated_build.error || true
+grep "(Failed)" build_pristine/test.output | cut -d " " -f 3- | sort -u &> pristine_test.failed || true
+grep "(Failed)" build_updated/test.output | cut -d " " -f 3- | sort -u &> updated_test.failed || true
+grep "(Not Run)" build_pristine/test.output | cut -d " " -f 3- | sort -u &> pristine_test.notrun || true
+grep "(Not Run)" build_updated/test.output | cut -d " " -f 3- | sort -u &> updated_test.notrun || true
+
+DIFF_ERRORS=`diff pristine_build.error updated_build.error | wc -l`
+DIFF_FAILED=`diff pristine_test.failed updated_test.failed | wc -l`
+DIFF_NOTRUN=`diff pristine_test.notrun updated_test.notrun | wc -l`
+TOTAL_PROBLEMS=$((${DIFF_ERRORS} + ${DIFF_FAILED} + ${DIFF_NOTRUN}))
+
+echo "Total Problems: " ${TOTAL_PROBLEMS}
+if [ "${TOTAL_PROBLEMS}" -gt "0" ]; then
+echo ""
+echo ""
+echo "FAILED COMPARISON TEST"
+echo ""
+echo ""
+echo "Diff Build Errors:"
+diff pristine_build.error updated_build.error || true
+
+echo ""
+echo ""
+echo "Diff Failed Tests"
+diff pristine_test.failed updated_test.failed || true
+
+echo ""
+echo ""
+echo "Diff NotRun Tests"
+diff pristine_test.notrun updated_test.notrun || true
+exit 1
+fi
+fi

@@ -48,7 +48,9 @@
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "PanzerCore_config.hpp"
 
@@ -65,7 +67,7 @@ using Teuchos::rcpFromRef;
 namespace panzer {
 namespace unit_test {
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
@@ -306,7 +308,6 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
 TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
 {
   typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef CCM::Triplet<Ordinal64> TripletGO;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -316,7 +317,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
   #endif
 
   int np = comm.getSize(); // number of processors
-  int rank = comm.getRank();
+  // int rank = comm.getRank();
 
   // mesh description
   Ordinal64 nx = 10, ny = 7;
@@ -394,6 +395,264 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
 
         // cells
         TEST_EQUALITY(conn[8], totalNodes + totalEdges + global.x + nx*bx*global.y);
+      }
+    }
+  }
+}
+
+// This test checks functions used to generate the topology are correct
+TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
+{
+  typedef CartesianConnManager<int,Ordinal64> CCM;
+  typedef CCM::Triplet<Ordinal64> TripletGO;
+
+  // build global (or serial communicator)
+  #ifdef HAVE_MPI
+    Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
+  #else
+    THIS_REALLY_DOES_NOT_WORK
+  #endif
+
+  int np = comm.getSize(); // number of processors
+  int rank = comm.getRank();
+
+  // field pattern for basis required
+  RCP<const panzer::FieldPattern> fp
+        = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer> >();
+
+  // mesh description
+  Ordinal64 nx = 10, ny = 7, nz = 4;
+  int px = np, py = 1, pz = 1;
+  int bx =  1, by = 2, bz = 1;
+
+  RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+  connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
+
+  // test element blocks are computed properly and sized appropriately
+  {
+    TEST_EQUALITY(Teuchos::as<int>(connManager->numElementBlocks()),bx*by*bz);
+
+    std::vector<std::string> eBlocks;
+    connManager->getElementBlockIds(eBlocks);
+    TEST_EQUALITY(eBlocks.size(),connManager->numElementBlocks());
+    for(std::size_t i=1;i<eBlocks.size();i++) {
+      out << "compare \"" << eBlocks[i-1] << "\" < \"" << eBlocks[i] << "\"" << std::endl;
+      TEST_ASSERT(eBlocks[i-1]<eBlocks[i]);
+    }
+  }
+
+  // test that owned and offset elements are correct
+  { 
+    auto myElements = connManager->getMyElementsTriplet();
+    auto myOffset = connManager->getMyOffsetTriplet();
+
+    Ordinal64 n = nx / px;
+    Ordinal64 r = nx - n * px;
+
+    TEST_EQUALITY(myElements.x,n + (r>rank ? 1 : 0));
+    TEST_EQUALITY(myOffset.x,n*rank+std::min(Teuchos::as<int>(r),rank));
+
+    TEST_EQUALITY(myElements.y,by*ny);
+    TEST_EQUALITY(myOffset.y,0);
+
+    TEST_EQUALITY(myElements.z,bz*nz);
+    TEST_EQUALITY(myOffset.z,0);
+  }
+
+  // test that the elements are in the right blocks
+  {
+    Ordinal64 blk0[4],blk1[4];
+    blk0[0] = connManager->computeLocalElementIndex(TripletGO(2,2,3));
+    blk0[1] = connManager->computeLocalElementIndex(TripletGO(5,2,3));
+    blk0[2] = connManager->computeLocalElementIndex(TripletGO(7,2,3));
+    blk0[3] = connManager->computeLocalElementIndex(TripletGO(9,2,3));
+
+    blk1[0] = connManager->computeLocalElementIndex(TripletGO(2,12,1));
+    blk1[1] = connManager->computeLocalElementIndex(TripletGO(5,12,1));
+    blk1[2] = connManager->computeLocalElementIndex(TripletGO(7,12,1));
+    blk1[3] = connManager->computeLocalElementIndex(TripletGO(9,12,1));
+
+    bool found = false;
+    for(int i=0;i<4;i++) {
+      if(blk0[i]!=-1) {
+        TEST_EQUALITY("eblock-0_0_0",connManager->getBlockId(blk0[i]));
+        found = true;
+      }
+    }
+    TEST_ASSERT(found); // every processor must find at least one
+
+    found = false;
+    for(int i=0;i<4;i++) {
+      if(blk1[i]!=-1) {
+        TEST_EQUALITY("eblock-0_1_0",connManager->getBlockId(blk1[i]));
+        found = true;
+      }
+    }
+    TEST_ASSERT(found); // every processor must find at least one
+  }
+
+  {
+    // check that all elements are in the right block
+    const std::vector<int> & elmts0 = connManager->getElementBlock("eblock-0_0_0");
+    for(std::size_t i=0;i<elmts0.size();i++) {
+      TEST_EQUALITY(connManager->getBlockId(elmts0[i]),"eblock-0_0_0");
+    }
+
+    // check that all elements are accounted for
+    int totalCount = 0;
+    int count = Teuchos::as<int>(elmts0.size());
+    Teuchos::reduceAll(comm,Teuchos::REDUCE_SUM,1,&count,&totalCount);
+    TEST_EQUALITY(totalCount,nx*ny*nz);
+
+    // check that all elements are in the right block
+    const std::vector<int> & elmts1 = connManager->getElementBlock("eblock-0_1_0");
+    for(std::size_t i=0;i<elmts1.size();i++) {
+      TEST_EQUALITY(connManager->getBlockId(elmts1[i]),"eblock-0_1_0");
+    }
+
+    // check that all elements are accounted for
+    totalCount = 0;
+    count = Teuchos::as<int>(elmts1.size());
+    Teuchos::reduceAll(comm,Teuchos::REDUCE_SUM,1,&count,&totalCount);
+    TEST_EQUALITY(totalCount,nx*ny*nz);
+  }
+}
+
+TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
+{
+  typedef CartesianConnManager<int,Ordinal64> CCM;
+
+  // build global (or serial communicator)
+  #ifdef HAVE_MPI
+    Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
+  #else
+    THIS_REALLY_DOES_NOT_WORK
+  #endif
+
+  int np = comm.getSize(); // number of processors
+  // int rank = comm.getRank();
+
+  // mesh description
+  Ordinal64 nx = 10, ny = 7, nz = 4;
+  int px = np, py = 1, pz = 1;
+  int bx =  1, by = 2, bz = 1;
+/*
+  Ordinal64 nx = 4, ny = 1, nz = 2;
+  int px = np, py = 1, pz = 1;
+  int bx =  1, by = 1, bz = 1;
+*/
+
+  // test 3D nodal discretization
+  {
+    // field pattern for basis required
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+
+    // build the topology
+    RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+    connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
+    connManager->buildConnectivity(*fp);
+
+    // test all the elements and functions
+    std::string blocks[] = {"eblock-0_0_0","eblock-0_1_0"};
+    for(int b=0;b<2;b++) {
+      const std::vector<int> & elmts0 = connManager->getElementBlock(blocks[b]);
+  
+      for(std::size_t i=0;i<elmts0.size();i++) {
+        TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),8);
+  
+        auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
+                                                                      connManager->getMyOffsetTriplet());
+        auto * conn = connManager->getConnectivity(elmts0[i]);
+        TEST_ASSERT(conn!=0);
+  
+        auto basePoint = global.x + (nx*bx+1)*global.y + (nx*bx+1)*(ny*by+1)*global.z;
+        TEST_EQUALITY(conn[0], basePoint + 0 + (   0   ) + (   0   )*(   0   ));
+        TEST_EQUALITY(conn[1], basePoint + 1 + (   0   ) + (   0   )*(   0   ));
+        TEST_EQUALITY(conn[2], basePoint + 1 + (nx*bx+1) + (   0   )*(   0   ));
+        TEST_EQUALITY(conn[3], basePoint + 0 + (nx*bx+1) + (   0   )*(   0   ));
+        TEST_EQUALITY(conn[4], basePoint + 0 + (   0   ) + (nx*bx+1)*(ny*by+1));
+        TEST_EQUALITY(conn[5], basePoint + 1 + (   0   ) + (nx*bx+1)*(ny*by+1));
+        TEST_EQUALITY(conn[6], basePoint + 1 + (nx*bx+1) + (nx*bx+1)*(ny*by+1));
+        TEST_EQUALITY(conn[7], basePoint + 0 + (nx*bx+1) + (nx*bx+1)*(ny*by+1));
+      }
+    }
+  }
+
+  // test 3D Q2 discretization
+  {
+    panzer::Ordinal64 totalNodes = (bx*nx+1)*(by*ny+1)*(bz*nz+1);
+    panzer::Ordinal64 totalEdges = (bx*nx+1)*(by*ny)*(bz*nz+1)+(bx*nx)*(by*ny+1)*(bz*nz+1)+(bx*nx+1)*(by*ny+1)*(bz*nz);
+    panzer::Ordinal64 totalFaces = (bx*nx+1)*(by*ny)*(bz*nz)+(bx*nx)*(by*ny+1)*(bz*nz)+(bx*nx)*(by*ny)*(bz*nz+1);
+
+    // field pattern for basis required
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer> >();
+
+    // build the topology
+    RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+    connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
+    connManager->buildConnectivity(*fp);
+
+    // test all the elements and functions
+    std::string blocks[] = {"eblock-0_0_0","eblock-0_1_0"};
+    for(int b=0;b<2;b++) {
+      const std::vector<int> & elmts0 = connManager->getElementBlock(blocks[b]);
+  
+      for(std::size_t i=0;i<elmts0.size();i++) {
+        TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),27);
+  
+        auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
+                                                                      connManager->getMyOffsetTriplet());
+        out << "Element Triplet: " << global.x << ", " << global.y << ", " << global.z << std::endl;
+        auto * conn = connManager->getConnectivity(elmts0[i]);
+        TEST_ASSERT(conn!=0);
+  
+        // nodes
+        auto nodeBasePoint = global.x + (nx*bx+1)*global.y + (nx*bx+1)*(ny*by+1)*global.z;
+        TEST_EQUALITY(conn[0], nodeBasePoint + 0 + (   0   ) + (   0   )*(   0   ));
+        TEST_EQUALITY(conn[1], nodeBasePoint + 1 + (   0   ) + (   0   )*(   0   ));
+        TEST_EQUALITY(conn[2], nodeBasePoint + 1 + (nx*bx+1) + (   0   )*(   0   ));
+        TEST_EQUALITY(conn[3], nodeBasePoint + 0 + (nx*bx+1) + (   0   )*(   0   ));
+        TEST_EQUALITY(conn[4], nodeBasePoint + 0 + (   0   ) + (nx*bx+1)*(ny*by+1));
+        TEST_EQUALITY(conn[5], nodeBasePoint + 1 + (   0   ) + (nx*bx+1)*(ny*by+1));
+        TEST_EQUALITY(conn[6], nodeBasePoint + 1 + (nx*bx+1) + (nx*bx+1)*(ny*by+1));
+        TEST_EQUALITY(conn[7], nodeBasePoint + 0 + (nx*bx+1) + (nx*bx+1)*(ny*by+1));
+
+        // edges
+        auto e_ks = (bx*nx+1)*by*ny + bx*nx*(by*ny+1) + (nx*bx+1)*(ny*by+1);
+        auto e_kp = (bx*nx+1)*by*ny + bx*nx*(by*ny+1);
+        auto edgeBasePoint = totalNodes + global.x + global.y *(2*bx*nx+1) + global.z*e_ks;
+
+        // horizontal edges: bottom 
+        TEST_EQUALITY(conn[ 8], edgeBasePoint +           0);
+        TEST_EQUALITY(conn[ 9], edgeBasePoint +   bx*nx + 1);
+        TEST_EQUALITY(conn[10], edgeBasePoint + 2*bx*nx + 1);
+        TEST_EQUALITY(conn[11], edgeBasePoint +   bx*nx + 0);
+
+        // horizontal edges: top
+        TEST_EQUALITY(conn[12], edgeBasePoint + e_ks +           0);
+        TEST_EQUALITY(conn[13], edgeBasePoint + e_ks +   bx*nx + 1);
+        TEST_EQUALITY(conn[14], edgeBasePoint + e_ks + 2*bx*nx + 1);
+        TEST_EQUALITY(conn[15], edgeBasePoint + e_ks +   bx*nx + 0);
+
+        // vertical edges
+        TEST_EQUALITY(conn[16], edgeBasePoint + e_kp - global.y*bx*nx);
+        TEST_EQUALITY(conn[17], edgeBasePoint + e_kp - global.y*bx*nx     + 1);
+        TEST_EQUALITY(conn[18], edgeBasePoint + e_kp - (global.y-1)*bx*nx + 2);
+        TEST_EQUALITY(conn[19], edgeBasePoint + e_kp - (global.y-1)*bx*nx + 1);
+
+        // cells
+        TEST_EQUALITY(conn[26], totalNodes + totalEdges + totalFaces + global.x + nx*bx*global.y + nx*bx*ny*by*global.z);
+
+        // faces
+        auto f_ks = nx*bx*ny*by + (nx*bx+1)*ny*by + nx*bx*(ny*by+1);
+        auto f_kp = nx*bx*ny*by;
+        auto faceBasePoint = totalNodes + totalEdges + global.x + global.y*nx*bx + global.z*f_ks;
+        TEST_EQUALITY(conn[20], faceBasePoint + f_kp + (global.y+1)*(nx*bx+1) - nx*bx -1);
+        TEST_EQUALITY(conn[21], faceBasePoint + f_kp + (global.y+1)*(nx*bx+1));
+        TEST_EQUALITY(conn[22], faceBasePoint + f_kp + (global.y+1)*(nx*bx+1) + nx*bx);
+        TEST_EQUALITY(conn[23], faceBasePoint + f_kp + (global.y+1)*(nx*bx+1) - 1);
+        TEST_EQUALITY(conn[24], faceBasePoint);
+        TEST_EQUALITY(conn[25], faceBasePoint + f_ks);
       }
     }
   }

@@ -39,7 +39,7 @@
 
 
 INCLUDE(TribitsAddTestHelpers)
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 
 
 #
@@ -66,6 +66,11 @@ INCLUDE(ParseVariableArguments)
 # This sets up all of the custom CMake commands and targets to ensure that the
 # files in the destination directory are always up to date just by building
 # the ``ALL`` target.
+#
+# **NOTE:** The target name ``<targetName>`` must be unique from all other
+# targets in the same TriBITS SE Package.  Otherwise, one will get a configure
+# failure complaining that a target name has already been defined.  Therefore,
+# be sure to pick long and unique target names!
 #
 # This function has a few valid calling modes:
 #
@@ -167,16 +172,17 @@ FUNCTION(TRIBITS_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
   #
   # A) Parse input arguments
   #
-
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
     #prefix
     PARSE
-    #lists
-    "SOURCE_DIR;SOURCE_FILES;SOURCE_PREFIX;DEST_DIR;DEST_FILES;EXEDEPS;TARGETDEPS;CATEGORIES"
     #options
     "NOEXEPREFIX"
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    "SOURCE_DIR;SOURCE_FILES;SOURCE_PREFIX;DEST_DIR;DEST_FILES;EXEDEPS;TARGETDEPS;CATEGORIES"
     ${ARGN}
-    )
+  )
 
   SET(ADD_THE_TEST FALSE)
   TRIBITS_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)

@@ -66,6 +66,13 @@ public:
   Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 ) 
     : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
 
+  Krylov( Teuchos::ParameterList &parlist ) {
+    Teuchos::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
+    absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
+    relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
+    maxit_  = krylovList.get("Iteration Limit", 100);
+  }
+
   // Run Krylov Method
   virtual void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
                     int &iter, int &flag ) = 0;

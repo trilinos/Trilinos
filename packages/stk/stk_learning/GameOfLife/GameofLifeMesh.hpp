@@ -84,6 +84,12 @@ private:
     ScalarIntField* m_lifeField;
     ScalarIntField* m_activeNeighborField;
 
+    stk::mesh::Part* m_nodeset1;
+    stk::mesh::Part* m_nodeset2;
+    stk::mesh::Part* m_nodeset3;
+    stk::mesh::Part* m_nodeset4;
+    stk::mesh::Field<double>* m_distFactors;
+
     //members
     stk::topology m_elemType;
     stk::mesh::EntityIdVector m_elemIds;

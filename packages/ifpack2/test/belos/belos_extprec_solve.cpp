@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -108,7 +108,7 @@ int main(int argc, char*argv[])
   //Note that build_problem calls build_precond and sets a preconditioner on the
   //linear-problem, if a preconditioner is specified.
 
-  Teuchos::RCP<BLinProb> problem = build_problem<Scalar,LO,GO,Node>(test_params, comm, platform.getNode());
+  Teuchos::RCP<BLinProb> problem = build_problem<Scalar,LO,GO,Node>(test_params, comm);
 
   //The build_solver function is located in build_solver.hpp:
 

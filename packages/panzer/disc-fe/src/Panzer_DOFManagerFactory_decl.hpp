@@ -52,7 +52,7 @@ namespace panzer {
 template <typename LO,typename GO>
 class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO,LO,GO> {
 public:
-   DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false), enableGhosting_(false) {}
+   DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false), useNeighbors_(false) {}
 
    virtual ~DOFManagerFactory() {}
 
@@ -80,30 +80,12 @@ public:
 
    void setUseDOFManagerFEI(bool flag)
    { 
-     #ifdef PANZER_HAVE_FEI
      useDOFManagerFEI_ = flag; 
-     #else
-     useDOFManagerFEI_ = flag; 
-
-     Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-     out.setShowProcRank(false);
-     out.setOutputToRootOnly(0);
-     out << "*********************************************************************" << std::endl;
-     out << "*                                                                   *" << std::endl;
-     out << "*  PANZER WARNING: Panzer was not configured with FEI enabled,      *" << std::endl;
-     out << "*                  therefore the internal DOFManager will be used.  *" << std::endl;
-     out << "*                                                                   *" << std::endl;
-     out << "*********************************************************************" << std::endl;
-     #endif
    }
 
    bool getUseDOFManagerFEI() const
    { 
-     #ifdef PANZER_HAVE_FEI
-     return useDOFManagerFEI_; 
-     #else
      return false;
-     #endif
    }
 
    void setUseTieBreak(bool flag) 
@@ -112,11 +94,11 @@ public:
    bool getUseTieBreak() const
    { return useTieBreak_; }
 
-   void setEnableGhosting(bool flag)
-   { enableGhosting_ = flag; }
+   void setUseNeighbors(bool flag)
+   { useNeighbors_ = flag; }
 
-   bool getEnableGhosting() const
-   { return enableGhosting_; }
+   bool getUseNeighbors() const
+   { return useNeighbors_; }
 
    static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
 protected:
@@ -129,7 +111,7 @@ protected:
 
    bool useDOFManagerFEI_;
    bool useTieBreak_;
-   bool enableGhosting_;
+   bool useNeighbors_;
 };
 
 }

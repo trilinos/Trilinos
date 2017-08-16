@@ -1,28 +1,28 @@
 # @HEADER
 # ************************************************************************
-# 
+#
 #                     New_Package Example Package
 #                 Copyright (2004) Sandia Corporation
-# 
+#
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
-# 
+#
 # This library is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
 # published by the Free Software Foundation; either version 2.1 of the
 # License, or (at your option) any later version.
-#  
+#
 # This library is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#  
+#
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+#
 # ************************************************************************
 # @HEADER
 
@@ -42,10 +42,10 @@ all-local:
 # ------------------------------------------------------------------------
 
 #
-#np# There is, at present, no distinction between most of the categories, 
+#np# There is, at present, no distinction between most of the categories,
 #np# other than those which start with EXTRA_.  All categories which do not
 #np# start with EXTRA_ are included in all builds.  Categories which start
-#np# with EXTRA_ are included in some builds (typically controlled by 
+#np# with EXTRA_ are included in some builds (typically controlled by
 #np# --with-xyz or --without-xyz)
 #
 #np# Make sure to list all source files in one of the following categories.
@@ -88,32 +88,32 @@ CORE = \
 
 CORE_H =
 
-UTIL_H = 
+UTIL_H =
 
-UTIL = 
+UTIL =
 
-ENUM_H = 
+ENUM_H =
 
-UNIPROC_H = 
+UNIPROC_H =
 
-UNIPROC = 
+UNIPROC =
 
-SERIAL_H = 
+SERIAL_H =
 
-SERIAL = 
+SERIAL =
 
 #
 #np#  Files which are included in select builds are typically have
 #np#  names that start with EXTRA
 #
 #np#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
-#np#  set up by TAC_ARC_CONFIG_MPI 
+#np#  set up by TAC_ARC_CONFIG_MPI
 #
 EXTRA_MPI_H =
 
-EXTRA_MPI = 
+EXTRA_MPI =
 
-if HAVE_MPI 
+if HAVE_MPI
 MPI_H = \
 	$(EXTRA_MPI_H)
 MPI = \
@@ -127,28 +127,28 @@ MPI =
 endif
 
 
-USERBASE_H = 
+USERBASE_H =
 
 
-LANG_WRAPS_H = 
+LANG_WRAPS_H =
 
-LANG_WRAPS = 
+LANG_WRAPS =
 
-DIST_H = 
+DIST_H =
 
-DIST = 
+DIST =
 
 COMP_H =
 
-COMP = 
+COMP =
 
 
-#np# List locations of include files within Trilinos but outside of this 
+#np# List locations of include files within Trilinos but outside of this
 #np# package
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
-#  
-AM_CPPFLAGS = 
+#
+AM_CPPFLAGS =
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
 #np# The following section can be duplicated for building multiple libraries -
@@ -232,7 +232,7 @@ lib_LIBRARIES = $(PAMGEN_LIB)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-include_HEADERS = $(PAMGEN_H) 
+include_HEADERS = $(PAMGEN_H)
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -253,7 +253,7 @@ nodist_execinclude_HEADERS = Pamgen_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 
-MAINTAINERCLEANFILES = Makefile.in 
+MAINTAINERCLEANFILES = Makefile.in
 
 
 

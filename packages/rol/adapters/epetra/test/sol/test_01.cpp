@@ -56,16 +56,16 @@
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
 
-#include "ROL_ParametrizedObjective.hpp"
+#include "ROL_Objective.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdEpetraBatchManager.hpp"
 
-#include "ROL_StochasticProblem.hpp"
+#include "ROL_OptimizationProblem.hpp"
 
 typedef double RealT;
 
 template<class Real> 
-class ParametrizedObjectiveEx3 : public ROL::ParametrizedObjective<Real> {
+class ParametrizedObjectiveEx3 : public ROL::Objective<Real> {
 public:
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > ex = 
@@ -108,13 +108,14 @@ public:
 };
 
 void setUpAndSolve(Teuchos::ParameterList &list,
-                   Teuchos::RCP<ROL::ParametrizedObjective<RealT> > &pObj,
+                   Teuchos::RCP<ROL::Objective<RealT> > &pObj,
                    Teuchos::RCP<ROL::SampleGenerator<RealT> > &sampler,
                    Teuchos::RCP<ROL::Vector<RealT> > &x,
                    Teuchos::RCP<ROL::Vector<RealT> > &d,
                    Teuchos::RCP<ROL::BoundConstraint<RealT> > &bnd,
                    std::ostream & outStream) {
-  ROL::StochasticProblem<RealT> opt(list,pObj,sampler,x,bnd);
+  ROL::OptimizationProblem<RealT> opt(pObj,x,bnd);
+  opt.setStochasticObjective(list,sampler);
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
   opt.checkObjectiveGradient(*d,true,outStream);
   opt.checkObjectiveHessVec(*d,true,outStream);
@@ -203,7 +204,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
       Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,bounds,bman,false,false,100));
     // Build risk-averse objective function
-    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > pObj =
+    Teuchos::RCP<ROL::Objective<RealT> > pObj =
       Teuchos::rcp(new ParametrizedObjectiveEx3<RealT>);
     // Build bound constraints
     std::vector<RealT> l(dim,0.0);

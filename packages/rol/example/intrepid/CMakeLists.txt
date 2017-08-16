@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PROJECT_NAME}_ENABLE_IntrepidCore AND 
    ${PROJECT_NAME}_ENABLE_Shards AND

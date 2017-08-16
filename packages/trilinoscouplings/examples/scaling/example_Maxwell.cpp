@@ -146,6 +146,10 @@
 #include "pamgen_extras.h"
 
 
+#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#endif
+
 
 #define ABS(x) ((x)>0?(x):-(x))
 
@@ -202,6 +206,35 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
                                            double & TotalErrorResidual,
                                            double & TotalErrorExactSol);
 
+
+
+
+/** \brief  ML Preconditioner
+
+    \param  ProblemType        [in]    problem type
+    \param  MLList             [in]    ML parameter list
+    \param  CurlCurl           [in]    H(curl) stiffness matrix 
+    \param  D0clean            [in]    Edge to node stiffness matrix
+    \param  M0inv              [in]    H(grad) mass matrix inverse
+    \param  M1                 [in]    H(curl) mass matrix
+    \param  xh                 [out]   solution vector
+    \param  b                  [in]    right-hand-side vector
+    \param  TotalErrorResidual [out]   error residual
+    \param  TotalErrorExactSol [out]   error in xh
+
+ */
+#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
+                                           Teuchos::ParameterList   & MLList,
+                                           Epetra_CrsMatrix   & CurlCurl,
+                                           Epetra_CrsMatrix   & D0clean,
+                                           Epetra_CrsMatrix   & M0inv,
+                                           Epetra_CrsMatrix   & M1,
+                                           Epetra_MultiVector & xh,
+                                           Epetra_MultiVector & b,
+                                           double & TotalErrorResidual,
+                                           double & TotalErrorExactSol);
+#endif
 
 /**********************************************************************************/
 /******** FUNCTION DECLARATIONS FOR EXACT SOLUTION AND SOURCE TERMS ***************/
@@ -1746,10 +1779,19 @@ int main(int argc, char *argv[]) {
    // Form the Stiffness+Mass Matrix
    StiffMatrixC.SetLabel("CurlCurl+Mass");
 
+
    TestMultiLevelPreconditioner_Maxwell(probType,MLList,StiffMatrixC,
                                           DGrad,MassMatrixGinv,MassMatrixC,
                                           xh,rhsVector,
                                           TotalErrorResidual, TotalErrorExactSol);
+
+   // Nothing like solving twice!
+#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+   TestMultiLevelPreconditioner_Stratimikos(probType,MLList,StiffMatrixC,
+                                          DGrad,MassMatrixGinv,MassMatrixC,
+                                          xh,rhsVector,
+                                          TotalErrorResidual, TotalErrorExactSol);
+#endif
 
 /**********************************************************************************/
 /**************************** CALCULATE ERROR *************************************/
@@ -2113,17 +2155,86 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 10);
   solver.Iterate(500, 1e-10);
-
-  Epetra_MultiVector xexact(xh);
-  xexact.PutScalar(0.0);
   
   // accuracy check
+  Epetra_MultiVector xexact(xh);
+  xexact.PutScalar(0.0);
+
   string msg = ProblemType;
   solution_test(msg,CurlCurl,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
 
   xh = *lhs;
 
 }
+
+
+/*************************************************************************************/
+/*************************** ML PRECONDITIONER****************************************/
+/*************************************************************************************/
+#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
+                                           Teuchos::ParameterList   & MLList,
+                                           Epetra_CrsMatrix   & CurlCurl,
+                                           Epetra_CrsMatrix   & D0clean,
+                                           Epetra_CrsMatrix   & M0inv,
+                                           Epetra_CrsMatrix   & M1,
+                                           Epetra_MultiVector & xh,
+                                           Epetra_MultiVector & b,
+                                           double & TotalErrorResidual,
+                                           double & TotalErrorExactSol){
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  
+  /* Add matrices to parameterlist */
+  MLList.set("D0",rcp((const Epetra_CrsMatrix*) &D0clean,false));
+  MLList.set("M0inv",rcp((const Epetra_CrsMatrix*) &M0inv,false));
+  MLList.set("M1",rcp((const Epetra_CrsMatrix*) &M1,false));  
+  
+  // Double up with Ms = M1
+  MLList.set("Ms",rcp((const Epetra_CrsMatrix*) &M1,false));  
+  
+  
+  /* Build the rest of the Stratimikos list */
+  Teuchos::ParameterList SList;
+  SList.set("Linear Solver Type","AztecOO");
+  SList.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Aztec Solver","CG");
+  SList.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",10);
+  SList.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").set("Max Iterations",500);
+  SList.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").set("Tolerance",1e-10);
+  SList.sublist("Linear Solver Types").sublist("AztecOO").set("Output Every RHS",true);
+  SList.set("Preconditioner Type","ML");
+  SList.sublist("Preconditioner Types").sublist("ML").set("Base Method Defaults","refmaxwell");
+  SList.sublist("Preconditioner Types").sublist("ML").set("ML Settings",MLList);
+  
+  Epetra_Time Time(CurlCurl.Comm());
+  
+  /* Thyra Wrappers */
+  Epetra_MultiVector x(xh);
+  x.PutScalar(0.0);
+  
+  RCP<const Thyra::LinearOpBase<double> > At = Thyra::epetraLinearOp( rcp(&CurlCurl,false) );
+  RCP<Thyra::MultiVectorBase<double> > xt         = Thyra::create_MultiVector( rcp(&x,false), At->domain() );
+  RCP<const Thyra::MultiVectorBase<double> > bt   = Thyra::create_MultiVector( rcp(&b,false), At->range() );
+
+  /* Stratimikos setup */
+  Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+  linearSolverBuilder.setParameterList(rcp(&SList,false));
+  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
+  RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve<double>(*lowsFactory,At);
+
+  /* Solve */
+  Thyra::SolveStatus<double> status = Thyra::solve<double>(*lows, Thyra::NOTRANS, *bt, xt.ptr());
+    
+  // accuracy check
+  Epetra_MultiVector xexact(xh);
+  xexact.PutScalar(0.0);
+  string msg = ProblemType;
+  solution_test(msg,CurlCurl,x,b,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
+
+  xh = x;
+
+}
+#endif
 
 /**********************************************************************************/
 /************ USER DEFINED FUNCTIONS FOR EXACT SOLUTION ***************************/

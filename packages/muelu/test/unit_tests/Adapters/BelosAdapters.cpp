@@ -194,8 +194,8 @@ namespace MueLuTests {
     RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(p->GetH()));
 
     // X, B
-    RCP<MV> X = Utilities::MV2NonConstEpetraMV(p->GetNewX0());
-    RCP<MV> B = Utilities::MV2NonConstEpetraMV(p->GetRHS());
+    RCP<MV> X = MueLu::Utilities<SC,LO,GO,NO>::MV2NonConstEpetraMV(p->GetNewX0());
+    RCP<MV> B = MueLu::Utilities<SC,LO,GO,NO>::MV2NonConstEpetraMV(p->GetRHS());
 
     // Run Belos
     int numIters = MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, B, out, success);
@@ -322,8 +322,8 @@ typedef Xpetra::EpetraNode EpetraNode;
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_EpetraMV, double, int, int, EpetraNode)
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long int LongLong;
-TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_EpetraMV, double, int, LongLong, EpetraNode)
+//typedef long long int LongLong;
+//TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_EpetraMV, double, int, LongLong, EpetraNode)
 #endif
 #endif
 

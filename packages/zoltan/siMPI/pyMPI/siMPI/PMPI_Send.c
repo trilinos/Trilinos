@@ -42,7 +42,7 @@ int PMPI_Send (void* message, int count, MPI_Datatype datatype, int dest, int ta
     case _MPI_CONTIG:
       {
         sendType = _MPI_FindType(datatype);
-        size = _MPI_TYPE_LIST[sendType].size;
+        size = _MPI_TYPE_LIST[sendType].extent;
         p = (char *)_MPI_safeMalloc(size, "Error with malloc for send buffer."); 
         p = memcpy(p, message, size);
         retval =_MPI_Buff_Insert(p, count, datatype, tag, comm);
@@ -51,7 +51,7 @@ int PMPI_Send (void* message, int count, MPI_Datatype datatype, int dest, int ta
     case _MPI_INDEXED:
       {
         sendType = _MPI_FindType(datatype);
-        size = _MPI_TYPE_LIST[sendType].size;
+        size = _MPI_TYPE_LIST[sendType].extent;
         p = (char *)_MPI_safeMalloc(size, "Error with malloc for send buffer."); 
 
         /* ================================================== */
@@ -71,7 +71,7 @@ int PMPI_Send (void* message, int count, MPI_Datatype datatype, int dest, int ta
     case _MPI_VECTOR:
       {
         sendType = _MPI_FindType(datatype);
-        size = _MPI_TYPE_LIST[sendType].size;
+        size = _MPI_TYPE_LIST[sendType].extent;
         p = (char *)_MPI_safeMalloc(size, "Error with malloc for send buffer."); 
         /* =================================== */
         /* Figure out the correct ones to pass */
@@ -81,7 +81,7 @@ int PMPI_Send (void* message, int count, MPI_Datatype datatype, int dest, int ta
     case _MPI_STRUCT:
       {
         sendType = _MPI_FindType(datatype);
-        size = _MPI_TYPE_LIST[sendType].size;
+        size = _MPI_TYPE_LIST[sendType].extent;
         p = (char *)_MPI_safeMalloc(size, "Error with malloc for send buffer."); 
         /* =================================== */
         /* Figure out the correct ones to pass */

@@ -248,5 +248,10 @@ private:
 
 }
 
+// optionally include hessian support
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_ScatterResidual_Tpetra_Hessian.hpp"
+#endif
+
 // **************************************************************
 #endif

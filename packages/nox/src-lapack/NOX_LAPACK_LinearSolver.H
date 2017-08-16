@@ -54,6 +54,7 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 #include "NOX_LAPACK_Matrix.H"
 
@@ -119,6 +120,8 @@ namespace NOX {
 
     protected:
 
+      typedef typename Teuchos::ScalarTraits<T>::magnitudeType MT;
+
       //! Matrix
       Matrix<T> mat;
 
@@ -136,6 +139,17 @@ namespace NOX {
 
       //! LAPACK wrappers
       Teuchos::LAPACK<int,T> lapack;
+      
+      //! Work array size for GELSS if linear solve fails
+      int lwork;
+      //! Rank param for GELSS if linear solve fails
+      int rank;
+      //! Singular values for GELSS if linear solve fails
+      Teuchos::ArrayRCP<MT> sv;
+      //! Work array for GELSS if linear solve fails
+      Teuchos::ArrayRCP<T> work;
+      //! Magnitude work array for complex-valued GELSS
+      Teuchos::ArrayRCP<MT> rwork;
 
     };
 
@@ -150,7 +164,10 @@ NOX::LAPACK::LinearSolver<T>::LinearSolver(int n) :
   pivots(n),
   isValidLU(false),
   blas(),
-  lapack()
+  lapack(),
+  lwork(10*mat.numRows()+1),
+  sv(mat.numRows()),
+  work(lwork)
 {
 }
 
@@ -161,14 +178,16 @@ NOX::LAPACK::LinearSolver<T>::LinearSolver(const NOX::LAPACK::LinearSolver<T>& s
   pivots(s.pivots),
   isValidLU(s.isValidLU),
   blas(),
-  lapack()
+  lapack(),
+  lwork(10*mat.numRows()+1),
+  sv(mat.numRows()),
+  work(lwork)
 {
 }
 
 template <typename T>
 NOX::LAPACK::LinearSolver<T>::~LinearSolver()
-{
-}
+{}
 
 template <typename T>
 NOX::LAPACK::LinearSolver<T>&
@@ -179,6 +198,9 @@ NOX::LAPACK::LinearSolver<T>::operator=(const NOX::LAPACK::LinearSolver<T>& s)
     lu = s.lu;
     pivots = s.pivots;
     isValidLU = s.isValidLU;
+    lwork = s.lwork;
+    sv.resize(s.sv.size());
+    work.resize(lwork);
   }
 
   return *this;
@@ -229,13 +251,20 @@ NOX::LAPACK::LinearSolver<T>::solve(bool trans, int ncols, T* output)
 {
   int info;
   int n = mat.numRows();
+  int rcond = -1.0;
 
   // Compute LU factorization if necessary
   if (!isValidLU) {
     lu = mat;
     lapack.GETRF(n, n, &lu(0,0), n, &pivots[0], &info);
-    if (info != 0)
+    if (info != 0){//try solving a least squares problem instead (in case the linear system has infinitely many solutions)
+      lu=mat;
+      if (Teuchos::ScalarTraits<T>::isComplex) {
+        rwork.resize( 5*n );
+      }
+      lapack.GELSS(n,n,ncols,&lu(0,0), n, output, n, sv.get(), rcond, &rank, work.get(), lwork, rwork.get(), &info);
       return false;
+    }
     isValidLU = true;
   }
 

@@ -47,6 +47,8 @@
 
 #include "Piro_ObserverToLOCASaveDataStrategyAdapter.hpp"
 
+#include "Piro_MatrixFreeDecorator.hpp"
+
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 
@@ -92,7 +94,8 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
   solMgr_(solMgr),
   locaStatusTests_(),
   noxStatusTests_(),
-  stepper_()
+  stepper_(),
+  model_(model)
 {
   const int l = 0; // TODO: Allow user to select parameter index
   const Detail::ModelEvaluatorParamName paramName(this->getModel().get_p_names(l));
@@ -100,8 +103,17 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
   for (Teuchos_Ordinal k = 0; k < p_entry_count; ++k) {
     (void) paramVector_.addParameter(paramName(k));
   }
+  
+  std::string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  if (jacobianSource == "Matrix-Free") {
+    if (piroParams->isParameter("Matrix-Free Perturbation")) {
+      model_ = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model,
+                           piroParams->get<double>("Matrix-Free Perturbation")));
+    }
+    else model_ = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model));
+  }
 
-  solMgr_->initialize(Teuchos::rcp(new Thyra::LOCAAdaptiveState(model, saveDataStrategy_, globalData_, 
+  solMgr_->initialize(Teuchos::rcp(new Thyra::LOCAAdaptiveState(model_, saveDataStrategy_, globalData_, 
             Teuchos::rcpFromRef(paramVector_), l)));
 
   // TODO: Create non-trivial stopping criterion for the stepper
@@ -204,7 +216,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
 
   }
 
-  if(Teuchos::is_null(x_outargs) || (x_args_dim < f_sol_dim)){ // g is not large enough to store the solution
+  if(Teuchos::is_null(x_outargs) || (x_args_dim != f_sol_dim)){ // g is not the right size
 
       x_final = Thyra::createMember(this->get_g_space(this->num_g()));
 
@@ -225,7 +237,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
   }
 
   // If the arrays need resizing
-  if(x_args_dim < f_sol_dim){
+  if(x_args_dim != f_sol_dim){
 
     const int parameterCount = this->Np();
 

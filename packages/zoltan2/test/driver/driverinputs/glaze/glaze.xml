@@ -19,16 +19,19 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="rcb"/>
-      <Parameter name="num_global_parts" type="string" value="2"/>
-      <Parameter name="compute_metrics" type="string" value="1"/>
+      <Parameter name="num_global_parts" type="int" value="2"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="object count">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.9"/>
       </ParameterList>
-      <ParameterList name="weight 0">
+      <ParameterList name="metriccheck2">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.01"/>
       </ParameterList>

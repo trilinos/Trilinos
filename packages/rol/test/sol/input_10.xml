@@ -1,0 +1,85 @@
+<ParameterList name="Inputs">
+  <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="General">
+    <!-- ===========  BOUND CONSTRAINED CRITICALITY MEASURE  =========== -->
+    <Parameter name="Projected Gradient Criticality Measure" type="bool" value="false" />
+  </ParameterList>
+
+  <!-- ===========  STEP SUBLIST  =========== -->
+  <ParameterList name="Step">
+    <Parameter name="Type" type="string" value="Moreau-Yosida Penalty" />
+
+    <!-- ===========  COMPOSITE STEP  =========== -->
+    <ParameterList name="Composite Step">
+      <Parameter name="Output Level" type="int" value="0" />
+      <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
+      <ParameterList name="Optimality System Solver">
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-10"  />
+        <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
+      </ParameterList>
+      <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
+      <ParameterList name="Tangential Subproblem Solver">
+        <Parameter name="Iteration Limit"    type="int"    value="20"   />
+        <Parameter name="Relative Tolerance" type="double" value="1e-2" />
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
+    <ParameterList name="Moreau-Yosida Penalty">
+      <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Initial Penalty Parameter"       type="double" value="1e5"   />
+      <Parameter name="Penalty Parameter Growth Factor" type="double" value="1.0"   />
+
+      <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+      <ParameterList name="Subproblem">
+        <Parameter name="Optimality Tolerance"          type="double" value="1e-12" />
+        <Parameter name="Feasibility Tolerance"         type="double" value="1e-12" />
+        <Parameter name="Print History"                 type="bool"   value="false" />
+        <Parameter name="Iteration Limit"               type="int"    value="20"    />
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
+    <ParameterList name="Augmented Lagrangian">
+      <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Initial Penalty Parameter"               type="double" value="1.e0"         />
+      <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
+      <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />
+      <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->
+      <Parameter name="Initial Optimality Tolerance"            type="double" value="1.0"          />
+      <Parameter name="Optimality Tolerance Update Exponent"    type="double" value="1.0"          />
+      <Parameter name="Optimality Tolerance Decrease Exponent"  type="double" value="1.0"          />
+      <!-- ===========  FEASIBILITY TOLERANCE UPDATE  =========== -->
+      <Parameter name="Initial Feasibility Tolerance"           type="double" value="1.0"          />
+      <Parameter name="Feasibility Tolerance Update Exponent"   type="double" value="0.1"          />
+      <Parameter name="Feasibility Tolerance Decrease Exponent" type="double" value="0.9"          />
+      <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+      <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
+      <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
+      <Parameter name="Subproblem Iteration Limit"              type="int"    value="100"          />
+    </ParameterList>
+
+    <!-- ===========  TRUST REGION  =========== -->
+    <ParameterList name="Trust Region">
+      <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
+      <Parameter name="Subproblem Model"                     type="string" value="Kelley-Sachs" />
+      <Parameter name="Initial Radius"                       type="double" value="1.0"          />
+      <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
+      <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
+      <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
+      <Parameter name="Radius Growing Threshold"             type="double" value="0.9"          />
+      <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
+      <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
+      <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
+      <Parameter name="Safeguard Size"                       type="double" value="1.e1"         />
+    </ParameterList>
+  </ParameterList>
+
+  <!-- ===========  STATUS TEST SUBLIST  =========== -->
+  <ParameterList name="Status Test">
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
+    <Parameter name="Step Tolerance"       type="double" value="1.e-12" />
+    <Parameter name="Iteration Limit"      type="int"    value="200"    />
+  </ParameterList>
+</ParameterList>

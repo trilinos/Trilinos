@@ -242,11 +242,11 @@ void cgsolve( const ImportType & import
 
   double old_rdot = Kokkos::Example::all_reduce( dot( count_owned , r , r ) , import.comm );
 
-  norm_res  = sqrt( old_rdot );
+  norm_res  = std::sqrt( old_rdot );
   iteration = 0 ;
 
-  Kokkos::Impl::Timer wall_clock ;
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer wall_clock ;
+  Kokkos::Timer timer;
 
   while ( tolerance < norm_res && iteration < maximum_iteration ) {
 
@@ -269,7 +269,7 @@ void cgsolve( const ImportType & import
 
     /* p = r + beta * p ; */ waxpby( count_owned , p , 1.0 , r , beta , p );
 
-    norm_res = sqrt( old_rdot = r_dot );
+    norm_res = std::sqrt( old_rdot = r_dot );
 
     ++iteration ;
   }

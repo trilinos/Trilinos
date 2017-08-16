@@ -141,9 +141,7 @@ buildBDGOperator(int scenario,const Teuchos::RCP<const Thyra::LinearOpBase<doubl
       break;
    default:
       TEUCHOS_ASSERT(false);
-      break;
    }
-
 
    out << "\nM = " << *M;
 
@@ -182,9 +180,7 @@ buildBGOperator(int scenario,const Teuchos::RCP<const Thyra::LinearOpBase<double
       break;
    default:
       TEUCHOS_ASSERT(false);
-      break;
    }
-
 
    out << "\nM = " << *M;
 

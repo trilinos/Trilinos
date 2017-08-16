@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,41 +34,40 @@
 #include <Ioss_VariableType.h>
 #include <cmath>
 #include <cstddef>
-#include <transform/Iotr_VectorMagnitude.h>
 #include <string>
+#include <transform/Iotr_VectorMagnitude.h>
 
 #include "Ioss_Transform.h"
 
 namespace Iotr {
 
-  const VM_Factory* VM_Factory::factory()
+  const VM_Factory *VM_Factory::factory()
   {
     static VM_Factory registerThis;
     return &registerThis;
   }
 
-  VM_Factory::VM_Factory()
-    : Factory("vector magnitude")
+  VM_Factory::VM_Factory() : Factory("vector magnitude")
   {
     Factory::alias("vector magnitude", "length");
   }
 
-  Ioss::Transform* VM_Factory::make(const std::string& /*unused*/) const
-  { return new VectorMagnitude(); }
+  Ioss::Transform *VM_Factory::make(const std::string & /*unused*/) const
+  {
+    return new VectorMagnitude();
+  }
 
   VectorMagnitude::VectorMagnitude() {}
 
-  const Ioss::VariableType
-  *VectorMagnitude::output_storage(const Ioss::VariableType *in) const
+  const Ioss::VariableType *VectorMagnitude::output_storage(const Ioss::VariableType *in) const
   {
     static const Ioss::VariableType *v2d = Ioss::VariableType::factory("vector_2d");
     static const Ioss::VariableType *v3d = Ioss::VariableType::factory("vector_3d");
     static const Ioss::VariableType *sca = Ioss::VariableType::factory("scalar");
     if (in == v2d || in == v3d) {
       return sca;
-    } 
-      return nullptr;
-    
+    }
+    return nullptr;
   }
 
   int VectorMagnitude::output_count(int in) const
@@ -77,26 +76,26 @@ namespace Iotr {
     return in;
   }
 
-  bool VectorMagnitude::internal_execute(const Ioss::Field &field,
-					 void *data)
+  bool VectorMagnitude::internal_execute(const Ioss::Field &field, void *data)
   {
-    double *rdata = static_cast<double*>(data);
+    double *rdata = static_cast<double *>(data);
 
     size_t count = field.transformed_count();
     if (field.transformed_storage()->component_count() == 3) {
       int j = 0;
       for (size_t i = 0; i < count; i++) {
-	rdata[i] = std::sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1] +
-			     rdata[j+2]*rdata[j+2]);
-	j+=3;
+        rdata[i] = std::sqrt(rdata[j] * rdata[j] + rdata[j + 1] * rdata[j + 1] +
+                             rdata[j + 2] * rdata[j + 2]);
+        j += 3;
       }
-    } else {
+    }
+    else {
       int j = 0;
       for (size_t i = 0; i < count; i++) {
-	rdata[i] = std::sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1]);
-	j+=2;
+        rdata[i] = std::sqrt(rdata[j] * rdata[j] + rdata[j + 1] * rdata[j + 1]);
+        j += 2;
       }
     }
     return true;
   }
-}
+} // namespace Iotr

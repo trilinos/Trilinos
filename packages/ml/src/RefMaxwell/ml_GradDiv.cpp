@@ -165,7 +165,7 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 
   /* Generate the K1 Matrix */
   Epetra_CrsMatrix *K1;
-  ML_Epetra_PtAP(*K2_Matrix_,*D1_Matrix_,K1);
+  Epetra_PtAP(*K2_Matrix_,*D1_Matrix_,K1);
   K1_Matrix_=rcp(K1);
 
 #ifdef ML_TIMING

@@ -81,7 +81,7 @@ protected:
 
     std::string get_mesh_spec()
     {
-        return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
     }
 };
 
@@ -97,7 +97,7 @@ protected:
 
     std::string get_mesh_spec()
     {
-        return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
     }
 };
 
@@ -105,6 +105,14 @@ protected:
 TEST_F(CreateFacesClassicPerformanceTest, read_mesh)
 {
     setup_mesh(get_mesh_spec(), stk::mesh::BulkData::AUTO_AURA);
+
+    run_create_faces_perf_test();
+}
+
+TEST_F(CreateFacesPerformanceTest, read_mesh_with_auto_decomp)
+{
+    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
+    stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
     run_create_faces_perf_test();
 }

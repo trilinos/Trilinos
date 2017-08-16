@@ -81,9 +81,9 @@ int main(int argc, char *argv[]) {
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
-    parlist->sublist("General").sublist("Secant").set("Inexact Hessian-Times-A-Vector",true);
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",true);
 #if USE_HESSVEC
-    parlist->sublist("General").sublist("Secant").set("Inexact Hessian-Times-A-Vector",false);
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
 
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {

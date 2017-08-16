@@ -107,10 +107,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   class TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
   public:
-    typedef LocalOrdinal                                        local_ordinal_type;
-    typedef GlobalOrdinal                                       global_ordinal_type;
-    typedef typename DeviceType::execution_space                execution_space;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef LocalOrdinal                                             local_ordinal_type;
+    typedef GlobalOrdinal                                            global_ordinal_type;
+    typedef typename DeviceType::execution_space                     execution_space;
+    typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
 
   private:
     // For compatibility
@@ -154,7 +155,7 @@ namespace MueLu {
     // Therefore, we expose BuildPuncoupled for now. An alternative solution
     // could be writing an out of class implementation, and then calling it in
     // a member function.
-    void BuildPuncoupled(RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
+    void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
 
   private:

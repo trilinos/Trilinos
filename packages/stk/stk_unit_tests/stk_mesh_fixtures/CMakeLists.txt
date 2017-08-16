@@ -31,7 +31,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -72,4 +71,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_mesh/fixtures/)
+    ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_tests/stk_mesh_fixtures)

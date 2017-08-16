@@ -3,11 +3,8 @@
 
 #include "basker_types.hpp"
 
-#ifdef HAVE_AMESOS
-#include "amesos_btf_decl.h"
-#include "amesos_amd.h"
-#endif
-
+#include "trilinos_btf_decl.h"
+#include "trilinos_amd.h"
 
 namespace BaskerNS
 {
@@ -62,8 +59,6 @@ namespace BaskerNS
     {
       return -1;
     }
-
-
    
   }; //end BaskerSSWrapper template <Int>
 
@@ -84,7 +79,7 @@ namespace BaskerNS
      int           *perm,
      int           *perm_in,
      int           *CC
-     )
+    )
     {
       typedef int l_Int;
       
@@ -94,51 +89,41 @@ namespace BaskerNS
       
       l_Int *work = new l_Int[n*4];
       
-      //printf("before amesos call \n");
       /*
-        nblks = amesos_btf_strongcomp(M.ncol,&(M.col_ptr[0]),
+        nblks = trilinos_btf_strongcomp(M.ncol,&(M.col_ptr[0]),
         &(M.row_idx[0]), 
         &(perm_in[0]), p, r, work);
       */
-      nblks = amesos_btf_strongcomp(n, col_ptr,
+      nblks = trilinos_btf_strongcomp(n, col_ptr,
 				    row_idx, 
 				    perm_in, p, r, work);
-      //printf("after amesos call \n");
       
-      
-      
-#ifdef BASKER_DEBUG_ORDER_BTF
-      
+      #ifdef BASKER_DEBUG_ORDER_BTF
       printf("\nBTF perm: \n");
-      //for(Int i=0; i <M.nrow; i++)
       for(Int i=0; i < n; i++)
-        {
-          printf("%d, ", p[i]);
-        }
-      
+      {
+        printf("%d, ", p[i]);
+      }
+
       printf("\n\nBTF tabs: <right> \n");
       for(Int i=0; i < nblks+1; i++)
-        {
-          printf("%d, ", r[i]);
-        }
+      {
+        printf("%d, ", r[i]);
+      }
       printf("\n");
-#endif
+      #endif
       
-      //BASKER_ASSERT(M.nrow > 0, "M.nrow btf");
       BASKER_ASSERT(n > 0, "M.nrow btf");
-      //MALLOC_INT_1DARRAY(perm,M.nrow);
-      // MALLOC_INT_1DARRAY(perm, n);
       for(l_Int i = 0; i < n; i++)
-        {
-          perm[p[i]] = i;
-        }
+      {
+        perm[p[i]] = i;
+      }
+
       BASKER_ASSERT((nblks+1) > 0, "nblks+1 btf");
-      //MALLOC_INT_1DARRAY(CC, nblks+1);
       for(l_Int i = 0; i < nblks+1; i++)
-        {
-          CC[i] = r[i];
-        }
-      
+      {
+        CC[i] = r[i];
+      }
 
       delete [] p;
       delete [] r;
@@ -157,32 +142,26 @@ namespace BaskerNS
      int *col_ptr,
      int *row_idx,
      int *p
-     )
+    )
     {
-      double Info[AMD_INFO];
+      double Info[TRILINOS_AMD_INFO];
       
-      for(int i = 0; i < AMD_INFO; ++i)
-	{Info[i] = 0;}
-	
+      for(int i = 0; i < TRILINOS_AMD_INFO; ++i)
+      {Info[i] = 0;}
 
-      //printf("n: %d \n", n);
-      int ret = amesos_amd_order(n, col_ptr, row_idx, p, NULL, Info); 
+      int ret = trilinos_amd_order(n, col_ptr, row_idx, p, NULL, Info); 
 
-      //if(ret == AMD_OK)
-      //printf("OK\n");
-      if(ret == AMD_OUT_OF_MEMORY)
-	printf("Memory \n");
-      if(ret == AMD_INVALID)
-	printf("Invalid\n");
-      if(ret == AMD_OK_BUT_JUMBLED)
-	printf("Jumbled\n");
-
+      if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
+        printf("Memory \n");
+      if(ret == TRILINOS_AMD_INVALID)
+        printf("Invalid\n");
+      if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
+        printf("Jumbled\n");
 
       return 0;
     }
 
-
-        static
+    static
     inline
     int amd_order
     (
@@ -192,36 +171,32 @@ namespace BaskerNS
      int *p, 
      double &l_nnz,
      double &lu_work
-     )
+    )
     {
-      double Info[AMD_INFO];
+      double Info[TRILINOS_AMD_INFO];
       
-      for(int i = 0; i < AMD_INFO; ++i)
-	{Info[i] = 0;}
-	
+      for(int i = 0; i < TRILINOS_AMD_INFO; ++i)
+      {Info[i] = 0;}
 
-      //printf("n: %d \n", n);
-      int ret = amesos_amd_order(n, col_ptr, row_idx, p, NULL, Info); 
+      int ret = trilinos_amd_order(n, col_ptr, row_idx, p, NULL, Info); 
 
-      //if(ret == AMD_OK)
-      //printf("OK\n");
-      if(ret == AMD_OUT_OF_MEMORY)
-	printf("Memory \n");
-      if(ret == AMD_INVALID)
-	printf("Invalid\n");
-      if(ret == AMD_OK_BUT_JUMBLED)
-	printf("Jumbled\n");
+      if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
+        printf("Memory \n");
+      if(ret == TRILINOS_AMD_INVALID)
+        printf("Invalid\n");
+      if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
+        printf("Jumbled\n");
 
       //These are round bounds but help in deciding work
-      l_nnz   = Info[AMD_LNZ];
-      lu_work = Info[AMD_NMULTSUBS_LU];
+      l_nnz   = Info[TRILINOS_AMD_LNZ];
+      lu_work = Info[TRILINOS_AMD_NMULTSUBS_LU];
 
       return 0;
     }
 
 
-
   }; //end BaskerSSWraper template <int>
+
 
   template <>
   class BaskerSSWrapper <long>
@@ -238,7 +213,7 @@ namespace BaskerNS
      long           *perm,
      long           *perm_in,
      long          *CC
-        )
+    )
     {
       typedef long  l_Int;
       
@@ -251,48 +226,43 @@ namespace BaskerNS
       //l_Int work[n*4];
       l_Int *work = new l_Int[n*4];
       
-      //printf("before amesos call \n");
       /*
-        nblks = amesos_btf_l_strongcomp(M.ncol,&(M.col_ptr[0]),
+        nblks = trilinos_btf_l_strongcomp(M.ncol,&(M.col_ptr[0]),
         &(M.row_idx[0]), 
         &(perm_in[0]), p, r, work);
       */
-      nblks = amesos_btf_l_strongcomp(n,
+      nblks = trilinos_btf_l_strongcomp(n,
                                       col_ptr,
                                       row_idx, 
                                       perm_in, p, r, work);
-      //printf("after amesos call \n");
-      
 
       
-#ifdef BASKER_DEBUG_ORDER_BTF
-      
+      #ifdef BASKER_DEBUG_ORDER_BTF
       printf("\nBTF perm: \n");
-    for(Int i=0; i <n; i++)
+      for(Int i=0; i <n; i++)
       {
-	printf("%d, ", p[i]);
+        printf("%d, ", p[i]);
       }
-    
-    printf("\n\nBTF tabs: <right> \n");
-    for(l_Int i=0; i < nblks+1; i++)
+
+      printf("\n\nBTF tabs: <right> \n");
+      for(l_Int i=0; i < nblks+1; i++)
       {
-	printf("%d, ", r[i]);
+        printf("%d, ", r[i]);
       }
-    printf("\n");
-#endif
+      printf("\n");
+      #endif
 
     BASKER_ASSERT(n > 0, "M.nrow btf");
-    //MALLOC_INT_1DARRAY(perm,M.nrow);
     for(l_Int i = 0; i < n; i++)
-      {
-	perm[p[i]] = i;
-      }
+    {
+      perm[p[i]] = i;
+    }
+
     BASKER_ASSERT((nblks+1) > 0, "nblks+1 btf");
-    //MALLOC_INT_1DARRAY(CC, nblks+1);
     for(l_Int i = 0; i < nblks+1; i++)
-      {
-	CC[i] = r[i];
-      }
+    {
+      CC[i] = r[i];
+    }
 
     delete [] p;
     delete [] r;
@@ -310,21 +280,20 @@ namespace BaskerNS
      long *col_ptr,
      long *row_idx,
      long *p
-     )
+    )
     {
-      double Info[AMD_INFO];
-      for(long i = 0; i < AMD_INFO; ++i)
-	{Info[i] = 0;}
-      //printf("n: %d\n", n);
-      long ret = amesos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
-      //if(ret == AMD_OK)
-      //	printf("OK\n");
-      if(ret == AMD_OUT_OF_MEMORY)
-	printf("AMD Memory \n");
-      if(ret == AMD_INVALID)
-	printf("AMD Invalid\n");
-      if(ret == AMD_OK_BUT_JUMBLED)
-	printf("AMD Jumbled\n");
+      double Info[TRILINOS_AMD_INFO];
+      for(long i = 0; i < TRILINOS_AMD_INFO; ++i)
+      {Info[i] = 0;}
+
+      long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
+
+      if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
+        printf("AMD Memory \n");
+      if(ret == TRILINOS_AMD_INVALID)
+        printf("AMD Invalid\n");
+      if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
+        printf("AMD Jumbled\n");
       
       return 0;
     }//amd_order
@@ -340,29 +309,26 @@ namespace BaskerNS
      long *p,
      double &l_nnz,
      double &lu_work
-     )
+    )
     {
-      double Info[AMD_INFO];
-      for(long i = 0; i < AMD_INFO; ++i)
-	{Info[i] = 0;}
-      //printf("n: %d\n", n);
-      long ret = amesos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
-      //if(ret == AMD_OK)
-      //	printf("OK\n");
-      if(ret == AMD_OUT_OF_MEMORY)
-	printf("AMD Memory \n");
-      if(ret == AMD_INVALID)
-	printf("AMD Invalid\n");
-      if(ret == AMD_OK_BUT_JUMBLED)
-	printf("AMD Jumbled\n");
+      double Info[TRILINOS_AMD_INFO];
+      for(long i = 0; i < TRILINOS_AMD_INFO; ++i)
+      {Info[i] = 0;}
+
+      long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
+
+      if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
+        printf("AMD Memory \n");
+      if(ret == TRILINOS_AMD_INVALID)
+        printf("AMD Invalid\n");
+      if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
+        printf("AMD Jumbled\n");
       
-      l_nnz   = Info[AMD_LNZ];
-      lu_work = Info[AMD_NMULTSUBS_LU];
+      l_nnz   = Info[TRILINOS_AMD_LNZ];
+      lu_work = Info[TRILINOS_AMD_NMULTSUBS_LU];
 
       return 0;
     }
-
-
 
   }; //end BaskerSSWrapper <long>
 

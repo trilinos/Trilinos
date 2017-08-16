@@ -54,21 +54,25 @@ private:
 
   Real beta_;
 
+  void checkInputs(void) const {
+    Real zero(0);
+    TEUCHOS_TEST_FOR_EXCEPTION((beta_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::TruncatedMeanQuadrangle): Threshold must be positive!");
+  }
+
 public:
 
   TruncatedMeanQuadrangle(Real beta)
-    : ExpectationQuad<Real>() {
-
+    : ExpectationQuad<Real>(), beta_(beta) {
+    checkInputs();
   }
 
   TruncatedMeanQuadrangle(Teuchos::ParameterList &parlist)
     : ExpectationQuad<Real>() {
-    Real zero(0), one(1);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Truncated Mean Quadrangle");
-    // Check inputs
-    Real beta = list.get("Threshold",one);
-    beta_ = ((beta > zero) ? beta : one);
+    beta_ = list.get<Real>("Threshold");
+    checkInputs();
   }
 
   Real error(Real x, int deriv = 0) {

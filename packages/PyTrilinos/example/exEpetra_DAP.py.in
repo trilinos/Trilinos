@@ -48,7 +48,8 @@
 
 #
 # System imports
-from optparse import *
+from   __future__ import print_function
+from   optparse   import *
 import sys
 
 #
@@ -105,12 +106,13 @@ def main():
         x1  = numpy.zeros((size,), dtype='d')
         b1  = numpy.ones((size,), dtype='d')
         lp1 = Epetra.LinearProblem(matrix, x1, b1)
-        print "P%d: Successfully built 1D Epetra.LinearProblem with NumPy arrays" % rank
+        print("P%d: Successfully built 1D Epetra.LinearProblem with NumPy "
+              "arrays" % rank)
         if not (lp1.GetLHS() == 0.0).all():
-            print "P%d: Error with 1D serial NumPy LHS vector" % rank
+            print("P%d: Error with 1D serial NumPy LHS vector" % rank)
             errors += 1
         if not (lp1.GetRHS() == 1.0).all():
-            print "P%d: Error with 1D serial NumPy RHS vector" % rank
+            print("P%d: Error with 1D serial NumPy RHS vector" % rank)
             errors += 1
 
     # Now we will construct two Domi.MDVectors and provide them as arguments to
@@ -120,12 +122,13 @@ def main():
     b2 = Domi.MDVector(mdMap1, dtype='d')
     b2.getData()[:] = 1.0
     lp2 = Epetra.LinearProblem(matrix, x2, b2)
-    print "P%d: Successfully built 1D Epetra.LinearProblem with Domi MDVectors" % rank
+    print("P%d: Successfully built 1D Epetra.LinearProblem with Domi MDVectors"
+          % rank)
     if not (lp2.GetLHS() == 0.0).all():
-        print "P%d: Error with 1D Domi.MDVector LHS vector" % rank
+        print("P%d: Error with 1D Domi.MDVector LHS vector" % rank)
         errors += 1
     if not (lp2.GetRHS() == 1.0).all():
-        print "P%d: Error with 1D Domi.MDVector RHS vector" % rank
+        print("P%d: Error with 1D Domi.MDVector RHS vector" % rank)
         errors += 1
 
     # Now we will construct two Tpetra.Vectors and provide them as arguments to
@@ -136,12 +139,13 @@ def main():
     b3 = Tpetra.Vector(tMap1, dtype='d')
     b3.getData()[:] = 1.0
     lp3 = Epetra.LinearProblem(matrix, x3, b3)
-    print "P%d: Successfully built 1D Epetra.LinearProblem with Tpetra Vectors" % rank
+    print("P%d: Successfully built 1D Epetra.LinearProblem with Tpetra Vectors"
+          % rank)
     if not (lp3.GetLHS() == 0.0).all():
-        print "P%d: Error with 1D Tpetra.Vector LHS vector" % rank
+        print("P%d: Error with 1D Tpetra.Vector LHS vector" % rank)
         errors += 1
     if not (lp3.GetRHS() == 1.0).all():
-        print "P%d: Error with 1D Tpetra.Vector RHS vector" % rank
+        print("P%d: Error with 1D Tpetra.Vector RHS vector" % rank)
         errors += 1
 
     ########################################################################
@@ -155,17 +159,17 @@ def main():
     eMap2  = mdMap2.getEpetraMap()
     tMap2  = mdMap2.getTpetraMap()
     if (eMap2.MyGlobalElements() != tMap2.getNodeElementList()).any():
-        print "P%d: Epetra/Tpetra global elements not equal" % rank
-        print "     Epetra elements =", eMap2.MyGlobalElements()
-        print "     Tpetra elements =", tMap2.getNodeElementList()
+        print("P%d: Epetra/Tpetra global elements not equal" % rank)
+        print("     Epetra elements =", eMap2.MyGlobalElements())
+        print("     Tpetra elements =", tMap2.getNodeElementList())
         errors += 1
 
     # Compute tMap2 a different way and check, just to be sure
     tMap2a = Tpetra.Map(size*size, eMap2.MyGlobalElements(), 0, tComm)
     if not tMap2a.isSameAs(tMap2):
-        print "P%d: Tpetra.Map constructor returned different map" % rank
-        print "     Epetra elements =", eMap2.MyGlobalElements()
-        print "     Tpetra elements =", tMap2.getNodeElementList()
+        print("P%d: Tpetra.Map constructor returned different map" % rank)
+        print("     Epetra elements =", eMap2.MyGlobalElements())
+        print("     Tpetra elements =", tMap2.getNodeElementList())
         errors += 1
 
     # Construct a 2D Epetra LHS, Tpetra RHS and Epetra matrix
@@ -181,12 +185,12 @@ def main():
     #     of 1D map objects (possibly Tpetra::Map?) that can be unstructured
     #
     # lp4 = Epetra.LinearProblem(m4, x4, b4)
-    # print "P%d: Successfully built 2D Epetra.LinearProblem with Domi MDVector and Tpetra Vector" % rank
+    # print("P%d: Successfully built 2D Epetra.LinearProblem with Domi MDVector and Tpetra Vector" % rank)
     # if not (lp4.GetLHS() == 2.71).all():
-    #     print "P%d: Error with 2D Domi.MDVector LHS vector" % rank
+    #     print("P%d: Error with 2D Domi.MDVector LHS vector" % rank)
     #     errors += 1
     # if not (lp4.GetRHS() == 3.14).all():
-    #     print "P%d: Error with 2D Tpetra.Vector RHS vector" % rank
+    #     print("P%d: Error with 2D Tpetra.Vector RHS vector" % rank)
     #     errors += 1
 
     # Return the number of errors
@@ -202,28 +206,28 @@ if __name__ == "__main__":
     rank    = comm.getRank()
 
     if iAmRoot:
-        print "*********************"
-        print "** exEpetra_DAP.py **"
-        print "*********************"
-        print
+        print("*********************")
+        print("** exEpetra_DAP.py **")
+        print("*********************")
+        print()
 
     # Run the test and catch any errors
     errors = 0
     try:
         errors = main()
-    except Exception, e:
+    except Exception as e:
         msg = "P%d: : Exception raised\n  Exception text = '%s'" % \
               (rank, str(e))
-        print msg
+        print(msg)
         errors = 1
 
     # Sum the errors, report the status and exit
-    print "P%d: errors = %d" % (rank, errors)
+    print("P%d: errors = %d" % (rank, errors))
     totalErrors = comm.reduceAll(Teuchos.REDUCE_SUM, errors)
-    if iAmRoot: print "Total Errors =", totalErrors
+    if iAmRoot: print("Total Errors =", totalErrors)
     if iAmRoot:
         if totalErrors == 0:
-            print "End Result: TEST PASSED"
+            print("End Result: TEST PASSED")
         else:
-            print "End Result: TEST FAILED"
+            print("End Result: TEST FAILED")
     sys.exit(totalErrors)

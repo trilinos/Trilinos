@@ -1,6 +1,0 @@
-../configure \
-    --enable-referencey12m \
-    --enable-nox \
-    FLIBS="-framework veclib -lSystem -lg2c" \
-    CXX=g++3 CC=gcc3 F77=g77 \
-    RANLIB="ranlib -s"

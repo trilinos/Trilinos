@@ -231,6 +231,10 @@ namespace Xpetra {
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const { XPETRA_MONITOR("TpetraCrsGraph::getLocalRowView"); graph_->getLocalRowView(LocalRow, indices); }
 
+
+    //! Force the computation of global constants if we don't have them
+    void computeGlobalConstants() {graph_->computeGlobalConstants();}
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -372,22 +376,22 @@ namespace Xpetra {
 
     //! Constructor specifying fixed number of entries for each row.
     TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying (possibly different) number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -516,6 +520,9 @@ namespace Xpetra {
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
 
+    //! Dummy implementation for computeGlobalConstants
+    void computeGlobalConstants() { }
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -565,7 +572,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraCrsGraph constructor to wrap a Tpetra::CrsGraph object
-    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  { }
+    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra graph
     RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsGraph() const { return Teuchos::null; }
@@ -597,22 +606,22 @@ namespace Xpetra {
 
     //! Constructor specifying fixed number of entries for each row.
     TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying (possibly different) number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -741,6 +750,9 @@ namespace Xpetra {
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
 
+    //! Dummy implementation for computeGlobalConstants
+    void computeGlobalConstants() { }
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -790,7 +802,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraCrsGraph constructor to wrap a Tpetra::CrsGraph object
-    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  { }
+    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra graph
     RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsGraph() const { return Teuchos::null; }

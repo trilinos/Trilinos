@@ -62,11 +62,16 @@
 // Risk Quadrangle Risk Measure Implementations
 #include "ROL_LogExponentialQuadrangle.hpp"
 #include "ROL_LogQuantileQuadrangle.hpp"
+#include "ROL_MeanVarianceQuadrangle.hpp"
 #include "ROL_MixedQuantileQuadrangle.hpp"
+#include "ROL_SuperQuantileQuadrangle.hpp"
+#include "ROL_ChebyshevKusuoka.hpp"
+#include "ROL_SpectralRisk.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
 #include "ROL_QuantileRadiusQuadrangle.hpp"
 #include "ROL_SmoothedWorstCaseQuadrangle.hpp"
 #include "ROL_TruncatedMeanQuadrangle.hpp"
+#include "ROL_GenMoreauYosidaCVaR.hpp"
 
 // F-Divergence Distributionally Robust Risk Measure Implementations
 #include "ROL_Chi2Divergence.hpp"
@@ -84,12 +89,17 @@ namespace ROL {
     RISKMEASURE_MEANVARIANCEFROMTARGET,
     RISKMEASURE_MEANVARIANCE,
     RISKMEASURE_MOREAUYOSIDACVAR,
+    RISKMEASURE_GENMOREAUYOSIDACVAR,
     RISKMEASURE_LOGEXPONENTIALQUADRANGLE,
     RISKMEASURE_LOGQUANTILEQUADRANGLE,
+    RISKMEASURE_MEANVARIANCEQUADRANGLE,
     RISKMEASURE_MIXEDQUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILERADIUSQUADRANGLE,
     RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE,
+    RISKMEASURE_SUPERQUANTILEQUADRANGLE,
+    RISKMEASURE_CHEBYSHEVKUSUOKA,
+    RISKMEASURE_SPECTRALRISK,
     RISKMEASURE_TRUNCATEDMEANQUADRANGLE,
     RISKMEASURE_CHI2DIVERGENCE,
     RISKMEASURE_KLDIVERGENCE,
@@ -117,12 +127,22 @@ namespace ROL {
              retString = "Mean Plus Variance";                      break;
       case RISKMEASURE_MOREAUYOSIDACVAR:
              retString = "Moreau-Yosida CVaR";                      break;
+      case RISKMEASURE_GENMOREAUYOSIDACVAR:
+             retString = "Generalized Moreau-Yosida CVaR";          break;
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
              retString = "Log-Exponential Quadrangle";              break;
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
              retString = "Log-Quantile Quadrangle";                 break;
+      case RISKMEASURE_MEANVARIANCEQUADRANGLE:
+             retString = "Mean-Variance Quadrangle";                break;
       case RISKMEASURE_MIXEDQUANTILEQUADRANGLE:
              retString = "Mixed-Quantile Quadrangle";               break;
+      case RISKMEASURE_SUPERQUANTILEQUADRANGLE:
+             retString = "Super Quantile Quadrangle";               break;
+      case RISKMEASURE_CHEBYSHEVKUSUOKA:
+             retString = "Chebyshev-Kusuoka";                       break;
+      case RISKMEASURE_SPECTRALRISK:
+             retString = "Spectral Risk";                           break;
       case RISKMEASURE_QUANTILEQUADRANGLE:
              retString = "Quantile-Based Quadrangle";               break;
       case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
@@ -153,9 +173,14 @@ namespace ROL {
             (ed == RISKMEASURE_MEANVARIANCEFROMTARGET) ||
             (ed == RISKMEASURE_MEANVARIANCE) ||
             (ed == RISKMEASURE_MOREAUYOSIDACVAR) ||
+            (ed == RISKMEASURE_GENMOREAUYOSIDACVAR) ||
             (ed == RISKMEASURE_LOGEXPONENTIALQUADRANGLE) ||
             (ed == RISKMEASURE_LOGQUANTILEQUADRANGLE) ||
+            (ed == RISKMEASURE_MEANVARIANCEQUADRANGLE) ||
             (ed == RISKMEASURE_MIXEDQUANTILEQUADRANGLE) ||
+            (ed == RISKMEASURE_SUPERQUANTILEQUADRANGLE) ||
+            (ed == RISKMEASURE_CHEBYSHEVKUSUOKA) ||
+            (ed == RISKMEASURE_SPECTRALRISK) ||
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILERADIUSQUADRANGLE) ||
             (ed == RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE) ||
@@ -196,8 +221,8 @@ namespace ROL {
 
   template<class Real>
   inline Teuchos::RCP<RiskMeasure<Real> > RiskMeasureFactory(Teuchos::ParameterList &parlist) {
-    std::string dist = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
-    ERiskMeasure ed = StringToERiskMeasure(dist);
+    std::string risk = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
+    ERiskMeasure ed = StringToERiskMeasure(risk);
     switch(ed) {
       case RISKMEASURE_CVAR:
              return Teuchos::rcp(new CVaR<Real>(parlist));
@@ -217,12 +242,22 @@ namespace ROL {
              return Teuchos::rcp(new MeanVariance<Real>(parlist));
       case RISKMEASURE_MOREAUYOSIDACVAR:
              return Teuchos::rcp(new MoreauYosidaCVaR<Real>(parlist));
+      case RISKMEASURE_GENMOREAUYOSIDACVAR:
+             return Teuchos::rcp(new GenMoreauYosidaCVaR<Real>(parlist));
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
              return Teuchos::rcp(new LogExponentialQuadrangle<Real>(parlist));
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
              return Teuchos::rcp(new LogQuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_MEANVARIANCEQUADRANGLE:
+             return Teuchos::rcp(new MeanVarianceQuadrangle<Real>(parlist));
       case RISKMEASURE_MIXEDQUANTILEQUADRANGLE:
              return Teuchos::rcp(new MixedQuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_SUPERQUANTILEQUADRANGLE:
+             return Teuchos::rcp(new SuperQuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_CHEBYSHEVKUSUOKA:
+             return Teuchos::rcp(new ChebyshevKusuoka<Real>(parlist));
+      case RISKMEASURE_SPECTRALRISK:
+             return Teuchos::rcp(new SpectralRisk<Real>(parlist));
       case RISKMEASURE_QUANTILEQUADRANGLE:
              return Teuchos::rcp(new QuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
@@ -236,8 +271,8 @@ namespace ROL {
       case RISKMEASURE_KLDIVERGENCE:
              return Teuchos::rcp(new KLDivergence<Real>(parlist));
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                                   "Invalid risk measure type" << dist);
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                   "Invalid risk measure type " << risk << "!");
     }
   }
 }

@@ -5,7 +5,7 @@ INCLUDE(TribitsLibraryMacros)
 # A) Package-specific configuration options
 #
 
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -26,6 +26,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # All headers
 #
 
+APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+)
+
 #
 # vector headers
 #
@@ -39,8 +43,23 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 #
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/function)
-INCLUDE_DIRECTORIES(${DIR})
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/boundconstraint
+                    ${DIR}/constraint
+                    ${DIR}/nlls
+                    ${DIR}/objective
+                    ${DIR}/operator
+                    ${DIR}/simopt
+                    ${DIR}/std)
+
+APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/boundconstraint/*.hpp
+                    ${DIR}/constraint/*.hpp
+                    ${DIR}/nlls/*.hpp
+                    ${DIR}/objective/*.hpp
+                    ${DIR}/operator/*.hpp
+                    ${DIR}/simopt/*.hpp
+                    ${DIR}/std/*.hpp)
 
 #
 # step headers
@@ -63,6 +82,8 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/secant/*.hpp
                     ${DIR}/krylov/*.hpp
                     ${DIR}/bundle/*.hpp
+                    ${DIR}/augmentedlagrangian/*.hpp
+                    ${DIR}/moreauyosidapenalty/*.hpp
                     ${DIR}/interiorpoint/*.hpp
                     ${DIR}/nonlinearcg/*.hpp
                    )

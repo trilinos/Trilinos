@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 int count_digits(int value)
 {
@@ -24,12 +24,12 @@ int main(int argc, char **argv)
   if (argc == 3) {
     start = strtol(argv[2], NULL, 10);
   }
-  
+
   {
-    int i;
+    int  i;
     char format[] = "%.0Xd\n";
     char digits[2];
-    int limit = strtol(argv[1], NULL, 10);
+    int  limit = strtol(argv[1], NULL, 10);
 
     /* Count number of digits needed to represent 'limit' */
     int width = count_digits(limit);
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 
     /* Create an output format that will zero-pad to that width */
     format[3] = digits[0];
-    for (i=start; i < limit; i++) {
+    for (i = start; i < limit; i++) {
       printf(format, i);
     }
   }

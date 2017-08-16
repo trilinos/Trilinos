@@ -105,7 +105,7 @@ public:
 } // namespace DirectionalFiniteDiffCalculatorTypes
 
 
-/** \brief Utility calss for computing directional finite differences of a
+/** \brief Utility class for computing directional finite differences of a
  * model.
  *
  * This class computes finite difference approximations to the variations:

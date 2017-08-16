@@ -44,7 +44,7 @@
 // @HEADER
 
 /* \file test_driver.cpp
- * \brief Test driver for Zoltan2. Facillitates generation of test problem via
+ * \brief Test driver for Zoltan2. Facilitates generation of test problem via
  * a simple .xml input interface
  */
 
@@ -57,7 +57,8 @@
 #include <Zoltan2_MetricAnalyzer.hpp>
 
 #include <Zoltan2_ProblemFactory.hpp>
-#include <Zoltan2_EvaluatePartitionFactory.hpp>
+#include <Zoltan2_EvaluateFactory.hpp>
+
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
@@ -74,8 +75,6 @@
 #include <map>
 #include <iostream>
 #include <queue>
-
-//#include <BDD_PamgenUtils.hpp>
 
 using Teuchos::ParameterList;
 using Teuchos::Comm;
@@ -98,10 +97,8 @@ using std::queue;
 #define EXC_ERRMSG(msg, e) \
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
-// temporary methods for debugging and leanring
-//typedef Zoltan2::MetricValues<zscalar_t> metric_t; // typedef metric_type
-
-void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & plist)
+void xmlToModelPList(const Teuchos::XMLObject &xml,
+  Teuchos::ParameterList & plist)
 {
   // This method composes a plist for the problem
   Teuchos::XMLParameterListReader reader;
@@ -121,10 +118,9 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
     ParameterList &sub = plist.sublist("Zoltan2Parameters");
     zoltan2Parameters.setParameters(sub);
   }
-  
 }
 
-void getParameterLists(const string &inputFileName,
+bool getParameterLists(const string &inputFileName,
                        queue<ParameterList> &problems,
                        queue<ParameterList> &comparisons,
                        const RCP<const Teuchos::Comm<int> > & comm)
@@ -133,32 +129,104 @@ void getParameterLists(const string &inputFileName,
   // return a parameter list of problem definitions
   // and a parameter list for solution comparisons
   Teuchos::FileInputSource inputSource(inputFileName);
-  if(rank == 0) cout << "input file source: " << inputFileName << endl;
+  if(rank == 0) {
+    cout << "Input file source: " << inputFileName << endl;
+  }
   XMLObject xmlInput;
   
   // Try to get xmlObject from inputfile
-  try{
+  try
+  {
     xmlInput = inputSource.getObject();
   }
   catch(exception &e)
   {
     EXC_ERRMSG("Test Driver error: reading", e); // error reading input
+    return false;
   }
-  
+
   // get the parameter lists for each model
   for(int i = 0; i < xmlInput.numChildren(); i++)
   {
     ParameterList plist;
     xmlToModelPList(xmlInput.getChild(i), plist);
-    if(plist.name() == "Comparison") comparisons.emplace(plist);
-    else problems.emplace(plist);
+
+    if(plist.name() == "Comparison") {
+      comparisons.emplace(plist);
+    }
+    else {
+      problems.emplace(plist);
+    }
+  }
+
+  return true;
+}
+
+// Utility function for safe type conversion of adapter
+bool analyzeMetrics(RCP<EvaluateFactory> evaluateFactory,
+                    std::ostringstream & msg,
+                    const ParameterList &problem_parameters) {
+  #define ANALYZE_METRICS(adapterClass, metricAnalyzerClass)               \
+    RCP<EvaluateBaseClass<adapterClass>> pCast =                           \
+      rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(                   \
+         evaluateFactory->getEvaluateClass());                             \
+    if(pCast == Teuchos::null) throw std::logic_error(                     \
+      "Bad evaluate class cast in analyzeMetrics!"  );                     \
+    metricAnalyzerClass analyzer(pCast);                                   \
+    return analyzer.analyzeMetrics(                                        \
+      problem_parameters.sublist("Metrics"), msg);
+
+  #define ANALYZE_METRICS_PARTITIONING(adapterClass)                       \
+    ANALYZE_METRICS(adapterClass,                                          \
+      MetricAnalyzerEvaluatePartition<adapterClass>)
+
+  #define ANALYZE_METRICS_ORDERING(adapterClass)                           \
+    ANALYZE_METRICS(adapterClass,                                          \
+      MetricAnalyzerEvaluateOrdering<adapterClass>)
+
+  if(evaluateFactory->getProblemName() == "partitioning") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), ANALYZE_METRICS_PARTITIONING)
+  }
+  else if(evaluateFactory->getProblemName() == "ordering") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), ANALYZE_METRICS_ORDERING)
+  }
+  else {
+    throw std::logic_error(
+      "analyzeMetrics not implemented for this problem type!"  );
   }
 }
 
-void run(const UserInputForTests &uinput,
-         const ParameterList &problem_parameters,
-         RCP<ComparisonHelper> & comparison_helper,
-         const RCP<const Teuchos::Comm<int> > & comm)
+// Utility function for safe type conversion of adapter
+LocalOrderingSolution<zlno_t> * getLocalOrderingSolution(
+  RCP<ProblemFactory> problemFactory) {
+  #define GET_LOCAL_ORDERING(adapterClass)                                 \
+      return (rcp_dynamic_cast<OrderingProblem<adapterClass>>(             \
+        problemFactory->getProblem()))->getLocalOrderingSolution();
+  Z2_TEST_UPCAST(problemFactory->getAdapterType(), GET_LOCAL_ORDERING)
+}
+
+// Utility function for safe type conversion of adapter
+const zpart_t * getPartListView(RCP<ProblemFactory> problemFactory) {
+  #define GET_PROBLEM_PARTS(adapterClass)                                  \
+      return (rcp_dynamic_cast<PartitioningProblem<adapterClass>>(         \
+        problemFactory->getProblem()))->getSolution().getPartListView();
+  Z2_TEST_UPCAST(problemFactory->getAdapterType(), GET_PROBLEM_PARTS)
+}
+
+// Utility function for safe type conversion of adapter
+void getIDsView(RCP<AdapterFactory> adapterFactory, const zgno_t *&Ids) {
+    #define GET_IDS_VIEW(adapterClass)                                       \
+        return dynamic_cast<adapterClass*>(                                  \
+          adapterFactory->getMainAdapter())->getIDsView(Ids);
+    Z2_TEST_UPCAST(adapterFactory->getMainAdapterType(), GET_IDS_VIEW);
+    throw std::logic_error( "getIDsView() failed to match adapter name" );
+}
+
+bool run(const UserInputForTests &uinput,
+        const ParameterList &problem_parameters,
+        bool bHasComparisons,
+        RCP<ComparisonHelper> & comparison_helper,
+        const RCP<const Teuchos::Comm<int> > & comm)
 {
   // Major steps in running a problem in zoltan 2
   // 1. get an input adapter
@@ -168,113 +236,138 @@ void run(const UserInputForTests &uinput,
   // 5. clean up
 
   int rank = comm->getRank();
-  
   if(!problem_parameters.isParameter("kind"))
   {
-    if(rank == 0) std::cerr << "Problem kind not provided" << std::endl;
-    return;
+    if(rank == 0) {
+      std::cout << "Problem kind not provided" << std::endl;
+    }
+    return false;
   }
   if(!problem_parameters.isParameter("InputAdapterParameters"))
   {
-    if(rank == 0) std::cerr << "Input adapter parameters not provided" << std::endl;
-    return;
+    if(rank == 0) {
+      std::cout << "Input adapter parameters not provided" << std::endl;
+    }
+    return false;
   }
   if(!problem_parameters.isParameter("Zoltan2Parameters"))
   {
-    if(rank == 0) std::cerr << "Zoltan2 problem parameters not provided" << std::endl;
-    return;
+    if(rank == 0) {
+      std::cout << "Zoltan2 problem parameters not provided" << std::endl;
+    }
+    return false;
   }
-  if(rank == 0)
+
+  if(rank == 0) {
     cout << "\n\nRunning test: " << problem_parameters.name() << endl;
-  
+  }
+
   ////////////////////////////////////////////////////////////
   // 0. add comparison source
   ////////////////////////////////////////////////////////////
-  ComparisonSource * comparison_source = new ComparisonSource;
+  RCP<ComparisonSource> comparison_source = rcp(new ComparisonSource);
+
   comparison_helper->AddSource(problem_parameters.name(), comparison_source);
   comparison_source->addTimer("adapter construction time");
   comparison_source->addTimer("problem construction time");
   comparison_source->addTimer("solve time");
+
   ////////////////////////////////////////////////////////////
   // 1. get basic input adapter
   ////////////////////////////////////////////////////////////
-  
-  const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
+  const ParameterList &adapterPlist =
+                      problem_parameters.sublist("InputAdapterParameters");
   comparison_source->timers["adapter construction time"]->start();
-  base_adapter_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
+
+  // a pointer to a basic type
+  RCP<AdapterFactory> adapterFactory = rcp(new AdapterFactory(
+    const_cast<UserInputForTests*>(&uinput), adapterPlist, comm));
+
   comparison_source->timers["adapter construction time"]->stop();
-  
-//  if(rank == 0) cout << "Got input adapter... " << endl;
-  if(ia == nullptr)
-  {
-    if(rank == 0)
-      cout << "Get adapter for input failed" << endl;
-    return;
-  }
-  
+
+  comparison_source->adapterFactory = adapterFactory; // saves until done
+
   ////////////////////////////////////////////////////////////
   // 2. construct a Zoltan2 problem
   ////////////////////////////////////////////////////////////
-  string adapter_name = adapterPlist.get<string>("input adapter"); // If we are here we have an input adapter, no need to check for one.
-  // get Zoltan2 partion parameters
-  ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
-  
-  //if(rank == 0){
-  //  cout << "\nZoltan 2 parameters:" << endl;
-  //  zoltan2_parameters.print(std::cout);
-  //  cout << endl;
-  //}
+  // If we are here we have an input adapter, no need to check for one.
+  string adapter_name = adapterPlist.get<string>("input adapter"); 
+  // get Zoltan2 Parameters
+  ParameterList zoltan2_parameters = 
+   const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
+  if(rank == 0) {
+    cout << endl;
+  }
 
   comparison_source->timers["problem construction time"]->start();
   std::string problem_kind = problem_parameters.get<std::string>("kind"); 
-  if (rank == 0) std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
-#ifdef HAVE_ZOLTAN2_MPI
-  base_problem_t * problem = 
-    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters, MPI_COMM_WORLD);
-#else
-  base_problem_t * problem = 
-    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters);
-#endif
-
-  if (problem == nullptr) {
-    if (rank == 0)
-      std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
-    return;
+  if (rank == 0) {
+    std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
   }
+
+  RCP<ProblemFactory> problemFactory = rcp(new ProblemFactory(
+                                      problem_kind,
+                                      adapterFactory,
+                                      &zoltan2_parameters
+                                    #ifdef HAVE_ZOLTAN2_MPI
+                                      ,MPI_COMM_WORLD
+                                    #endif
+                                      ));
+
+  if(rank == 0) {
+    std::cout << "Using input adapter type: " + adapter_name << std::endl;
+  }
+
+  comparison_source->problemFactory = problemFactory; // saves until done
 
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
   ////////////////////////////////////////////////////////////
-  
   comparison_source->timers["solve time"]->start();
-  RCP<EvaluatePartition<basic_id_t> >metricObject;
-  if (problem_kind == "partitioning") {
-    reinterpret_cast<partitioning_problem_t *>(problem)->solve();
-    metricObject =
-      rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
-	  newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>
-			       (problem), adapter_name, ia,
-			       &zoltan2_parameters));
-  } else if (problem_kind == "ordering") {
-    reinterpret_cast<ordering_problem_t *>(problem)->solve();
-  } else if (problem_kind == "coloring") {
-    reinterpret_cast<coloring_problem_t *>(problem)->solve();
-  }
+
+  problemFactory->getProblem()->solve();
+
   comparison_source->timers["solve time"]->stop();
-  if (rank == 0)
-    cout << problem_kind + "Problem solved." << endl;
-  
-//#define KDDKDD
+  if (rank == 0) {
+    cout << problem_kind + " problem solved." << endl;
+  }
+ 
+#undef KDDKDD
 #ifdef KDDKDD
-  {
-  const base_adapter_t::gno_t *kddIDs = NULL;
-  ia->getIDsView(kddIDs);
-    for (size_t i = 0; i < ia->getLocalNumIDs(); i++) {
+  if(problem_kind == "partitioning") {
+    const base_adapter_t::gno_t *kddIDs = NULL;
+    getIDsView(adapterFactory, kddIDs);
+    for (size_t i = 0;
+      i < adapterFactory->getMainAdapter()->getLocalNumIDs(); i++) {
       std::cout << rank << " LID " << i
                 << " GID " << kddIDs[i]
                 << " PART " 
-                << reinterpret_cast<partitioning_problem_t *>(problem)->getSolution().getPartListView()[i]
+                << getPartListView(problemFactory)[i]
                 << std::endl;
+    }
+  }
+  if (adapter_name == "XpetraCrsGraph") {
+    typedef xCG_xCG_t::lno_t lno_t;
+    typedef xCG_xCG_t::gno_t gno_t;
+    typedef xCG_xCG_t::scalar_t scalar_t;
+    const xCG_xCG_t * xscrsGraphAdapter =
+      dynamic_cast<const xCG_xCG_t *>(adapterFactory->getMainAdapter());
+
+    int ewgtDim = xscrsGraphAdapter->getNumWeightsPerEdge();
+    lno_t localNumObj = xscrsGraphAdapter->getLocalNumVertices();
+    const gno_t *vertexIds;
+    xscrsGraphAdapter->getVertexIDsView(vertexIds);
+    const offset_t *offsets;
+    const gno_t *adjIds;
+    xscrsGraphAdapter->getEdgesView(offsets, adjIds);
+    for (int edim = 0; edim < ewgtDim; edim++) {
+      const scalar_t *weights;
+      int stride=0;
+      xscrsGraphAdapter->getEdgeWeightsView(weights, stride, edim);
+      for (lno_t i=0; i < localNumObj; i++)
+        for (offset_t j=offsets[i]; j < offsets[i+1]; j++)
+          std::cout << edim << " " << vertexIds[i] << " " 
+                    << adjIds[j] << " " << weights[stride*j] << std::endl;
     }
   }
 #endif
@@ -282,125 +375,99 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 4. Print problem metrics
   ////////////////////////////////////////////////////////////
-  // An environment.  This is usually created by the problem.
-  // BDD unused, only applicable to partitioning problems
-  // RCP<const Zoltan2::Environment> env =
-  //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
+  bool bSuccess = true;
+  if(problem_parameters.isSublist("Metrics") || bHasComparisons) { 
+    RCP<EvaluateFactory> evaluateFactory = rcp(new EvaluateFactory(
+                                        problem_kind,
+                                        adapterFactory,
+                                        &zoltan2_parameters,
+                                        problemFactory));
 
-  if( problem_parameters.isParameter("Metrics")) {
-    // calculate pass fail based on imbalance
-    if(rank == 0) cout << "Analyzing metrics..." << endl;
-    if(rank == 0 && problem_kind == "partitioning") {
-      std::cout << "Print the " << problem_kind << "problem's metrics:" << std::endl; 
-      metricObject->printMetrics(cout);
+    if(rank == 0) {
+      std::cout << "Create evaluate class for: " + problem_kind << std::endl;
     }
 
-    std::ostringstream msg;
-    auto metricsPlist = problem_parameters.sublist("Metrics");
-    bool all_tests_pass = false;
-    
-    if (problem_kind == "partitioning") {
-      all_tests_pass
-      = MetricAnalyzer<partitioning_problem_t>::analyzeMetrics( metricsPlist,
-                                                                reinterpret_cast<const partitioning_problem_t *>(const_cast<base_problem_t *>(problem)),
-								metricObject,
-                                                                comm,
-                                                                msg); 
-    } else if (problem_kind == "ordering") {
-      all_tests_pass
-      = MetricAnalyzer<ordering_problem_t>::analyzeMetrics( metricsPlist,
-                                                            reinterpret_cast<const ordering_problem_t *>(const_cast<base_problem_t *>(problem)),
-                                                            comm,
-                                                            msg); 
-    } else if (problem_kind == "coloring") {
-      all_tests_pass
-      = MetricAnalyzer<coloring_problem_t>::analyzeMetrics( metricsPlist,
-                                                            reinterpret_cast<const coloring_problem_t *>(const_cast<base_problem_t *>(problem)),
-                                                            comm,
-                                                            msg); 
-    }
-    std::cout << msg.str() << std::endl;
-    if(rank == 0 && all_tests_pass) cout << "All tests PASSED." << endl;
-    else if(rank == 0) cout << "Testing FAILED." << endl;
-    
-  }else if(rank == 0 && problem_kind == "partitioning") {
-    // BDD for debugging
-    cout << "No test metrics requested. Problem Metrics are: " << endl;
-    metricObject->printMetrics(cout);
-    cout << "PASSED." << endl;
-  }
+    // must add for proper deletion
+    comparison_source->evaluateFactory = evaluateFactory; // saves until done
 
-#define BDD
+    std::ostringstream msgSummary;
+
+    evaluateFactory->getEvaluateClass()->printMetrics(msgSummary);
+    if(rank == 0) {
+      cout << msgSummary.str();
+    }
+
+    std::ostringstream msgResults;
+    if (!analyzeMetrics(evaluateFactory, msgResults, problem_parameters)) {
+      bSuccess = false;
+      std::cout << "MetricAnalyzer::analyzeMetrics() "
+                << "returned false and the test is FAILED." << std::endl;
+    }
+    if(rank == 0) {
+      cout << msgResults.str();
+    }
+
+//#define BDD
 #ifdef BDD 
-  if (problem_kind == "ordering") {
-    std::cout << "\nLet's examine the solution..." << std::endl;
-    auto solution = reinterpret_cast<ordering_problem_t *>(problem)->getSolution();
-    if (solution->haveSeparators() ) {
-      
-      std::ostringstream sol;
-      sol << "Number of column blocks: " << solution->getNumSeparatorBlocks() << std::endl;
-      if (solution->getPermutationSize() < 100) {
-        if (solution->havePerm()) {
-          sol << "permutation: {";
-          for (auto &x : solution->getPermutationRCPConst(false)) sol << " " << x;
-          sol << "}" << std::endl;
-        }
+    if (problem_kind == "ordering") {
+      std::cout << "\nLet's examine the solution..." << std::endl;
+      LocalOrderingSolution<zlno_t> * localOrderingSolution =
+         getLocalOrderingSolution(problemFactory);
+      if (localOrderingSolution->haveSeparators() ) {
+        std::cout << "Number of column blocks: "
+          << localOrderingSolution->getNumSeparatorBlocks() << std::endl;
+        {
+          if (localOrderingSolution->havePerm()) {
+            std::cout << "permutation: {";
+            for (auto &x : localOrderingSolution->getPermutationRCPConst(false))
+              std::cout << " " << x;
+            std::cout << "}" << std::endl;
+          }
        
-       if (solution->haveInverse()) { 
-          sol << "inverse permutation: {";
-          for (auto &x : solution->getPermutationRCPConst(true)) sol << " " << x;
-          sol << "}" << std::endl;
-       }
+          if (localOrderingSolution->haveInverse()) {
+            std::cout << "inverse permutation: {";
+            for (auto &x : localOrderingSolution->getPermutationRCPConst(true))
+              std::cout << " " << x;
+            std::cout << "}" << std::endl;
+          }
         
-       if (solution->haveSeparatorRange()) {
-          sol << "separator range: {";
-          for (auto &x : solution->getSeparatorRangeRCPConst()) sol << " " << x;
-          sol << "}" << std::endl;
-       }
-       
-        if (solution->haveSeparatorTree()) { 
-          sol << "separator tree: {";
-          for (auto &x : solution->getSeparatorTreeRCPConst()) sol << " " << x;
-          sol << "}" << std::endl;
+          if (localOrderingSolution->haveSeparatorRange()) {
+            std::cout << "separator range: {";
+            for (auto &x : localOrderingSolution->getSeparatorRangeRCPConst())
+              std::cout << " " << x;
+            std::cout << "}" << std::endl;
+          }
+         
+          if (localOrderingSolution->haveSeparatorTree()) {
+            std::cout << "separator tree: {";
+            for (auto &x : localOrderingSolution->getSeparatorTreeRCPConst())
+              std::cout << " " << x;
+            std::cout << "}" << std::endl;
+          }
         }
       }
-
-      std::cout << sol.str() << std::endl;
     }
-  }
 #endif
-  // 4b. timers
-//  if(zoltan2_parameters.isParameter("timer_output_stream"))
-//    reinterpret_cast<partitioning_problem_t *>(problem)->printTimers();
 
-  ////////////////////////////////////////////////////////////
-  // 5. Add solution to map for possible comparison testing
-  ////////////////////////////////////////////////////////////
-  comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
-  comparison_source->problem = RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
-  comparison_source->metricObject = metricObject;
-  comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
-  comparison_source->adapter_kind = adapter_name;
-  
-  // write mesh solution
-//  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
-//  MyUtils::writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
+    comparison_source->printTimers();
 
-  ////////////////////////////////////////////////////////////
-  // 6. Clean up
-  ////////////////////////////////////////////////////////////
+    // write mesh solution
+    // if(problem_kind == "partitioning") {
+    //  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
+    //  MyUtils::writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
+    // }
+  }
+
+  return bSuccess;
 }
 
-int main(int argc, char *argv[])
+bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm) 
 {
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
   ////////////////////////////////////////////////////////////
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  
   int rank = comm->getRank(); // get rank
-  
+
   ////////////////////////////////////////////////////////////
   // (1) Get and read the input file
   // the input file defines tests to be run
@@ -416,35 +483,37 @@ int main(int argc, char *argv[])
       msg << "mpiexec -n <procs> ./Zoltan2_test_driver.exe <input_file.xml>\n";
       std::cout << msg.str() << std::endl;
     }
-    
-    return 1;
+    return false;
   }
 
   ////////////////////////////////////////////////////////////
   // (2) Get All Input Parameter Lists
   ////////////////////////////////////////////////////////////
   queue<ParameterList> problems, comparisons;
-  getParameterLists(inputFileName,problems, comparisons, comm);
+  if( !getParameterLists(inputFileName, problems, comparisons, comm) ) {
+    return false;
+  }
   
   ////////////////////////////////////////////////////////////
   // (3) Get Input Data Parameters
   ////////////////////////////////////////////////////////////
-  
-  // assumes that first block will always be
-  // the input block
+
+  // assumes that first block will always be the input block
   const ParameterList inputParameters = problems.front();
   if(inputParameters.name() != "InputParameters")
   {
     if(rank == 0)
       cout << "InputParameters not defined. Testing FAILED." << endl;
-    return 1;
+    return false;
   }
   
   // get the user input for all tests
   UserInputForTests uinput(inputParameters,comm);
+
   problems.pop();
   comm->barrier();
-  
+
+  bool bPass = true;
   if(uinput.hasInput())
   {
     ////////////////////////////////////////////////////////////
@@ -454,28 +523,92 @@ int main(int argc, char *argv[])
 //    MyUtils::writeMesh(uinput,comm);
 //    MyUtils::getConnectivityGraph(uinput, comm);
         
-    RCP<ComparisonHelper> comparison_manager
-      = rcp(new ComparisonHelper);
+    RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
     while (!problems.empty()) {
-      run(uinput, problems.front(), comparison_manager, comm);
+      if (!run(uinput, problems.front(), !comparisons.empty(),
+               comparison_manager, comm)) {
+        std::cout << "Problem run returned false" << std::endl;
+        bPass = false;
+      }
       problems.pop();
     }
-    
+
     ////////////////////////////////////////////////////////////
     // (5) Compare solutions
     ////////////////////////////////////////////////////////////
+
     while (!comparisons.empty()) {
-      comparison_manager->Compare(comparisons.front(),comm);
+      if (!comparison_manager->Compare(comparisons.front(),comm)) {
+        if (rank == 0) {
+          std::cout << "Comparison manager returned false so the "
+                    << "test should fail." << std::endl;
+        }
+        bPass = false;
+      }
       comparisons.pop();
     }
-    
-  }else{
-    if(rank == 0){
-      cout << "\nFAILED to load input data source.";
-      cout << "\nSkipping all tests." << endl;
+  }
+  else {
+    if(rank == 0) {
+      cout << "\nFAILED to load input data source. Skipping "
+        "all tests." << endl;
+      return false;
     }
   }
-  
-  return 0;
+
+  return bPass;
 }
 
+int main(int argc, char *argv[])
+{
+  Teuchos::GlobalMPISession session(&argc, &argv); 
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+  int result = 0;
+  int rank = comm->getRank();
+  try {
+    result = mainExecute(argc, argv, comm) ? 0 : 1; // code 0 is ok,
+                                                    // 1 is a failed test
+  }
+  catch(std::logic_error &e) { 
+    // logic_error exceptions can be thrown by EvaluatePartition or 
+    // MetricAnalyzer if any problem is detected in the formatting of the 
+    // input xml
+    if (rank == 0) {
+      std::cout << "Test driver for rank " << rank 
+                << " caught the following exception: " << e.what() << std::endl;
+    }
+    result = 1; // fail for any exception
+  }
+  catch(std::runtime_error &e) { 
+    std::cout << "Test driver for rank " << rank 
+              << " caught the following exception: " << e.what() << std::endl;
+    result = 1; // fail for any exception
+  }
+  catch(std::exception &e) { 
+    std::cout << "Test driver for rank " << rank 
+              << " caught the following exception: " << e.what() << std::endl;
+    result = 1; // fail for any exception
+  }
+
+  // clean up - reduce the result codes
+  comm->barrier();
+  int resultReduced;
+
+  // for a passed test all of these values should return 0 - 
+  // if any result is 1 this will reduce to 1 and the test will fail
+  reduceAll<int,int>(*comm, Teuchos::EReductionType::REDUCE_MAX, 1, 
+                     &result, &resultReduced); 
+
+  // provide a final message which guarantees that the test will fail 
+  // if any of the processes failed
+  if (rank == 0) {
+    std::cout << "Test Driver with " << comm->getSize() 
+              << " processes has reduced result code " << resultReduced
+              << " and is exiting in the " 
+              << ((resultReduced == 0 ) ? "PASSED" : "FAILED") << " state." 
+              << std::endl;
+  }
+
+  return result;
+}

@@ -51,7 +51,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
@@ -65,7 +65,7 @@
 #include <ctime>
 
 template<class Real>
-class EqualityConstraint_BurgersControl : public ROL::EqualityConstraint_SimOpt<Real> {
+class Constraint_BurgersControl : public ROL::Constraint_SimOpt<Real> {
 private:
   unsigned nx_;
   unsigned nt_;
@@ -102,7 +102,7 @@ private:
     return ip;
   }
 
-  using ROL::EqualityConstraint_SimOpt<Real>::update;
+  using ROL::Constraint_SimOpt<Real>::update;
 
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
     for (unsigned i = 0; i < u.size(); i++) {
@@ -428,7 +428,7 @@ private:
 
 public:
 
-  EqualityConstraint_BurgersControl(int nx = 128, int nt = 100, Real T = 1, 
+  Constraint_BurgersControl(int nx = 128, int nt = 100, Real T = 1, 
                                     Real nu = 1.e-2, Real u0 = 0.0, Real u1 = 0.0, Real f = 0.0) 
     : nx_((unsigned)nx), nt_((unsigned)nt), T_(T), nu_(nu), u0_(u0), u1_(u1), f_(f) {
     dx_ = 1.0/((Real)nx+1.0);

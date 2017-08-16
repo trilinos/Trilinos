@@ -144,7 +144,7 @@ template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_ExtremeValue<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  for(std::size_t i=0;i<d.num_cells;i++) {
+  for(index_t i=0;i<d.num_cells;i++) {
     if(useMax_)
       responseObj_->value = (responseObj_->value < cellExtremeValue_(i)) ? cellExtremeValue_(i) : responseObj_->value;
     else

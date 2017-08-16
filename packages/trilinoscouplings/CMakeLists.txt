@@ -15,7 +15,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Newp_swahili
   "Enable Swahili support."
   OFF )
 
-IF(Trilinos_ENABLE_ML AND Trilinos_ENABLE_NOX)
+IF(${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_ENABLE_NOX)
   SET(TrilinosCouplings_HAVE_ML_NOX_DEFAULT ON)
 ELSE()
   SET(TrilinosCouplings_HAVE_ML_NOX_DEFAULT OFF)
@@ -25,6 +25,16 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_Nox
   HAVE_ML_NOX
   "Enable ML with NOX support."
   ${TrilinosCouplings_HAVE_ML_NOX_DEFAULT} )
+
+
+# Intrepid2 Refactor support
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Intrepid2_Refactor
+  HAVE_${PACKAGE_NAME_UC}_INTREPID2_REFACTOR
+  "Enable Intrepid2 Refactor."
+  "${Intrepid2_ENABLE_KokkosDynRankView}")
+
+
 
 #
 # C) Add the libraries, tests, and examples

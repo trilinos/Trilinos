@@ -47,7 +47,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -57,9 +57,9 @@ PANZER_EVALUATOR_CLASS(Integrator_TransientBasisTimesScalar)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
     
-  PHX::MDField<ScalarT,Cell,IP> scalar;
+  PHX::MDField<const ScalarT,Cell,IP> scalar;
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
   std::size_t num_nodes;
 
@@ -70,7 +70,7 @@ PANZER_EVALUATOR_CLASS(Integrator_TransientBasisTimesScalar)
   std::string basis_name;
   std::size_t basis_index;
 
-  Intrepid2::FieldContainer<ScalarT> tmp;
+  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
 
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;

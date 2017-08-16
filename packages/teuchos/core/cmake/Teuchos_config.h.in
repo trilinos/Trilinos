@@ -79,6 +79,8 @@
 
 #cmakedefine HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
+#cmakedefine HAVE_TEUCHOS_THREAD_SAFE
+
 #cmakedefine HAVE_TEUCHOS_LAPACKLARND
 
 /* Deprecated */

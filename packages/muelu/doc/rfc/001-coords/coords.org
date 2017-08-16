@@ -1,0 +1,422 @@
+#+TITLE: Coordinates GIDs in MueLu and related issues
+#+AUTHOR: Andrey Prokopenko
+#+EMAIL: aprokop@sandia.gov
+#+DATE: 27 Nov 2013
+#+LATEX_HEADER: \usepackage{listings}
+#+LATEX_HEADER: \usepackage{color}
+#+LATEX_HEADER: \usepackage{enumerate}
+#+LaTeX_HEADER: \usepackage[margin=0.75in]{geometry}
+#+LATEX_HEADER: \setlength{\parindent}{0}
+
+* Motivation
+
+Previously, we were experiencing severe regressions in Drekar/MueLu
+compared to Drekar/ML. We saw that aggregation after repartitioning
+became wacky. We tracked this problem to a fact that Drekar uses
+different GIDs for coordinates than for rows. ML does not have this
+problem as it always assumes that only local ids are the same, meaning
+that local id k in coordinates vector corresponds to local id k in
+rows.
+
+We need to resolve this situation. We would like user not to care
+about matching coordinate GIDs to GIDs in row maps, or even worse,
+matching coordinate GIDs to block IDs in row map, with block sizes
+being variable.
+
+* Scope
+
+This touches several MueLu and Xpetra components:
+
+- =StridedMap=
+
+  This class encapsulates block sizes in addition to some
+  physics-specific information
+
+- =MapExtractor=
+
+- =Matrix=, =CrsMatrixWrap=, =MatrixView=
+
+  These classes are responsible for switching between point and block views
+
+- =AmalgamationFactory= and =AmalgamationInfo=
+
+  These classes have some translation routines for matching nodes to
+  degrees of freedom
+
+- Multiple =MueLu= classes using coordinates
+
+  * =BrickAggregationFactory=, =CoalesceDropFactory=, \\
+    =CoordinatesTransferFactory=, =RebalanceTransferFactory=
+
+    Construct and use overlapped coordinates multivector
+
+  * =ParameterListInterpreter=
+
+    Assumes that it gets an array of pointers, and then constructs a
+    =MultiVector= out of those
+
+  * =ZoltanInterface=, =Zoltan2Interface=
+
+    Need only local coordinates vector
+
+  * =UserPFactory=
+
+    Reads coordinates from file
+
+* Goals
+
+We want to be able to:
+
+1. Use user provided arrays with no global IDs.
+
+   _Assumption_: user is responsible for making sure that index $i$ of
+   the local coordinates array corresponds to a local block index $i$
+   in the local row map.
+
+2. Deal with variable block sizes.
+
+3. Have translation routines (node -> DOFs, DOF -> node) in a single
+   place in MueLu/Xpetra.
+
+4. Construct imports only once per level if the use the same source
+   and target maps.
+
+   For instance, we construct overlapped coordinates in several
+   places, despite the fact that the target map is often the
+   amalgamated column map.
+
+* Current situation
+
+** Xpetra::StridedMap
+
+- =stridingInfo_=
+
+  Vector containing sizes of strided blocks. For instance, for 2D
+  Navier-Stokes it is {2,1}: 2 velocities and 1 pressure
+
+- =stridedBlockID_=
+
+  Denotes which dofs are stored in the map: -1 means the full map is
+  stored (with all strided block dofs), > -1 means the only dofs of
+  strided block with index =stridedBlockId_= are stored. In the latter
+  case, StridedMap behaves exactly like a regular map, and typically
+  have gaps in GIDs corresponding to missing variables.
+
+- =offset=
+
+  Offsets the minimum GID for a map. This could be done through
+  indexBase for a single map, but would lead to errors as you cannot
+  perform operations on objects with different indexBase. Therefore,
+  the design was for maps to have the same indexBase, and use offsets
+  and GIDs from 0 to something.
+
+  *Tobias*:
+  The main intention of the offset was to be able to quickly generate
+  some maps with some offset (e.g. GIDs starting from 500 instead of
+  zero or one).  Why not using the indexBase flag? In context of
+  blocked operators you have to generate block maps and map extractors
+  which are basically std::vectors with a set of non-overlapping
+  maps. For example, you wanna generate a 2x2 blocked operator from a
+  map extractor consisting of two maps. The first maps with GIDs
+  0...499, the second with GIDs from 500...999.
+
+  Then you have to generate above maps, the first with GIDs 0...499
+  and the second with GIDs from 500...999, both with the same
+  indexBase (e.g. 0). The offset flag was just meant to make it easy
+  to generate new maps with some offset.  You cannot use/mix up the
+  index base, since then operations (matrix-vector, matrix-matrix) on
+  the blocked operator get very complicated. E/Tpetra will complain
+  about incompatible maps (indexBase)....
+
+  *Mark*:
+  FYI, Tpetra::Map doesn't currently let you have an index base that
+  differs from the global minimum GID.  This has been a source of
+  confusion for a while
+
+  *Tobias*:
+  In fact, after rethinking (and gettings some sleep) i'm not so sure
+  if we really need the offset flag. I'm living more in the Epetra
+  world, so i was not aware of the fact, that Tpetra doesn't even
+  allow indexBase to be different to the minimal global GID.  The only
+  place where i use it is in the BlockedCoarseMapFactory, but i don't
+  see why we could not use indexBase instead. In fact, some time ago i
+  myself added a unit test (BlockedCrsMatrix,
+  EpetraMatrixMatrixMult2x1) which uses indexBase instead of offset
+  (Epetra only) and all works fine!
+
+  *Tobias*:
+  I think i've found the reason why i introduced the offset flag
+  again.  If we have more than one DOF per node we can have different
+  scenarios:
+
+  1. Strided maps: Let's assume we have a node(!) map with GIDs 0,1,2
+     with 2 DOFs per node. Then the (strided) DOF map would have the
+     GIDs 0..5 with the following node<->DOF mapping
+
+     node 0 -> 0,1 DOF GIDs
+
+     node 1 -> 2,3 DOF GIDs
+
+     node 2 -> 4,5 DOF GIDs
+
+  2. Offset: Let's assume we have a node(!) map with GIDs 0,1,2 with 2
+     DOFs per node and the following node<->DOF mapping (just as an
+     example)
+
+     node 0 -> 0,500 DOF GIDs
+
+     node 1 -> 1,501 DOF GIDs
+
+     node 2 -> 2,502 DOF GIDs
+
+  In Munich we have applications for both scenarios (scenario 1 for
+  Navier-Stokes with strided maps for velocity and pressure DOFs,
+  scenario 2 for optimization problems with displacement DOFs and
+  Lagrange multiplier DOFs with some offset).
+
+  If we have indexBase = 1 i would expect the following GIDs for
+  node and DOF maps:
+
+  1. Strided maps: Let's assume we have a node(!) map with GIDs 1,2,3
+     with 2 DOFs per node. Then the (strided) DOF map would have the
+     GIDs 1..6 with the following node<->DOF mapping
+
+     node 1 -> 1,2 DOF GIDs
+
+     node 2 -> 3,4 DOF GIDs
+
+     node 3 -> 5,6 DOF GIDs
+
+  2. Offset: Let's assume we have a node(!) map with GIDs 1,2,3 with 2
+     DOFs per node and the following node<->DOF mapping (just as an
+     example)
+
+     node 1 -> 1,501 DOF GIDs
+
+     node 2 -> 2,502 DOF GIDs
+
+     node 3 -> 3,503 DOF GIDs
+
+
+- =indexBase_=
+
+  Standard meaning from Epetra and Tpetra
+
+This class serves dual purpose making it hard to understand. First, it
+incorporates block maps. Second, it incorporates physics information.
+
+*QUESTION 1*: None of the =StridedMap= constructors actually construct a
+map, they simply fill in internal variables.
+
+*QUESTION 2*: Constructor based on elementList uses element GIDs *only* to
+find out the minimum index.
+
+*QUESTION 3*: We have =StridedTpetraMap= and =StridedEpetraMap=. Why? If
+=StridedMap= is based on =Map= anyway, it already abstracts Tpetra and
+Epetra. Could we refactory the =StridedMap= so we don't need those two?
+It should reduce the amount of code.
+  + *ANSWER*: This is unnecessary, and leads to code duplication.
+  + *DONE*: Merge =StridedTpetraMap= and =StridedEpetraMap=
+
+*QUESTION 4*: Why do we have public constructors in =Map= and =StridedMap=? We
+should always use =MapFactory= and =StridedMapFactory= to to construct
+those objects.
+
+** Xpetra::Matrix
+
+- =viewTable_=
+
+  Contains a mapping 'view name' -> =MatrixView=
+  =MatrixView= is a simple container class containing row and column
+  maps, and eigenvalue estimate.
+
+*QUESTION 1*: Why does view contain eigenvalue estimate? Should it not be
+contained in the Matrix itself? Are we talking about different
+meanings of $D^{-1}A$ for point and block matrices?
+
+*QUESTION 2*: Why does not =MatrixView= contain domain and range maps?
+  + *ANSWER*: =MatrixView= has two purely virtual functions
+    =getRangeMap= and =getDomainMap=. The =CrsMatrixWrap= inherits
+    =Matrix=, and defines these functions as wrappers to the underlying
+    =CrsMatrix=. This means that range and domain maps are *always* point-wise.
+
+*QUESTION 3*: =Matrix::CreateView(label, A, transposeA, B,
+transposeB)= tries to do a lot of things and is prone to bugs:
+  1 If you call =CreateView(label, null, false, B, false)=, your
+    row map is null, and not that of =B=;
+  2 If you call it in a point-wise manner, it uses actual point wise
+    domain and range maps of matrix to construct a view. However, if
+    you call it with 'StridedMap' label, it uses strided row and
+    column maps to construct a view. This is very inconsistent.
+  + *ANSWER*: The only place in =MueLu= I see it being called with
+    both A and B is in =Utils::Multiply= ML-version. All other places
+    call it with a single matrix or with two maps. Sometimes, these
+    maps are passed as =<matrix>.getRowMap("StridedMap")=.
+  + *TODO*: remove a two matrix version, leaving one matrix version intact
+
+*QUESTION 4*: We have two versions of =getRowMap=: one with no args,
+and the second with a label. These should be unified to one with a
+default argument. Same with =getColMap=
+
+*QUESTION 5*: =SetFixedBlockSize= always creates two new strided maps
+without checking whether we already have a proper block size.
+
+** Xpetra::CrsMatrixWrap
+
+=CrsMatrixWrap= inherits from =Matrix=. The default view is called 'point'.
+
+- =matrixData_=
+
+  Contains a reference to underlying =Xpetra::CrsMatrix= object.
+
+- =finalDefaultView_=
+
+  Status of the default view. Is set to true when underlying matrix
+  is fill completed.
+
+*QUESTION 1*: Why do we have a default view here instead of the
+=Matrix= class?
+
+*QUESTION 2*: Same as =Matrix=, has two versions of =getRowMap= and =getColMap=.
+
+*QUESTION 3*: =removeEmptyProcessesInPlace= updates view maps for a
+single label, but it *must* update all labels. This becomes tricky as
+we need to construct new strided maps.
+** Xpetra::MapExtractor
+
+-
+
+** AmalgamationInfo
+
+This is a simple container class.
+
+- =nodegid2dofgids_=
+
+  Translation of node GID into a set of DOF GIDs.
+
+- =gNodeIds_=
+
+  Set of global GID indices for nodes.
+
+- =cntNodes_=
+
+  Number of nodes on the current processor
+
+*QUESTION 1*: Why do we have =cntNodes_=? I _assume_ it is equal to
+=gnodeIds->size()=. If not, what is the difference, and is it related
+to overlap in any way?
+  + *ANSWER*: They are the same. The following code in
+    =AmalgamationFactory= is the only place where we modify any of them:
+    #+BEGIN_SRC C++
+        if (rowMap->isNodeGlobalElement(gDofId)) {
+          gNodeIds->push_back(gNodeId);
+          cnt_amalRows++;
+        }
+    #+END_SRC
+  + *DONE*: remove =cntNodes_= and fix =GetNumberOfNodes=.
+
+
+*QUESTION 2*: =nodegid2dofgids_= uses *very* ineffective $map$
+container. This is particularly bad during construction.
+
+*QUESTION 3*: Why we have =Set= type function and all variables
+mutable in this class?
+  + *ANSWER*: There is no reason. This class is constructed once as a
+    result of =AmalgamationFactory=.
+  + *DONE*: Remove all =Set= methods and replace them by a non-default
+    constructor. This way we can also remove all mutable keywords from
+    it.
+
+** AmalgamationFactory
+
+- =nodegid2dofgids_=
+
+  See =AmalgamationInfo=
+
+- =DOFGid2NodeId()=
+
+  Main translation function. Currently contains:
+  #+BEGIN_SRC C++
+  return (GID - offset - indexBase) / blockSize + indexBase;
+  #+END_SRC
+
+- =UnamalgamateAggregates=
+
+  Transforms a set of nodes in local aggregates into an array with dof
+  GIDs corresponding to these nodes.
+
+- =ComputeUnamalgamatedImportDofMap=
+
+  Transforms a set of nodes of =Aggregates= into an array of dofs GIDs
+  and constructs a map with those.
+
+*QUESTION 1*: Do we need =nodegid2dofgids_= in this Factory?
+  + *ANSWER*: We don't. Looking at the code, we only need a local
+    variable in the =Build= method.
+  + *DONE*: Remove =nodegid2dofgids_=.
+
+*QUESTION 2*: =Build= construct =nodegid2dofgids_= based on column
+map, and not on row map. Why? What happens when a matrix is so sparse
+that column map is a subset of row map?
+
+*QUESTION 3*: =nodegid2dofgids_= contains all node GIDs from column
+map. However, =gNodes_= contains only row block GIDs. That means that
+~nodegid2dofgids_->size() != gNodes_->size()~. Is that a problem?
+
+*QUESTION 4*: Does =UnamalgamateAggregates= really belong to this
+class? A better place would probably be =UnamalgamationInfo=. Same
+question for =ComputeUnamalgamatedImportDofMap=.
+  + *ANSWER*: No, they do not belong here.
+  + *DONE*: Move these functions to =AmalgamationInfo=.
+
+*QUESTION 5*: The way we construct =nodegid2dofgids_= is
+strange. Instead of going through all DOFs of a map, transforming
+those into node ids and pushing into appropriate vector, we go
+through DOFs of a map, get node id, and fill in the whole block
+associated with this node id (which requires calculation of
+=nStridedOffset= and =stridedblocksize=). This necessiates to write
+=StridedMap= specific code. Can we refactor the code so that it would
+be =StridedMap=-independent?
+  + *ANSWER*: We could, if
+    #+ATTR_LATEX: :options [(a)]
+    a. We somehow get an element list with all valid dofs for this
+       map. For strided maps not containing full maps, this is trivial
+       as they already have the proper map. For strided maps containing
+       full maps, it we would need to create a new array, or use some
+       kind of lambda expression/iterator.
+    b. Run =DOFGid2NodeId()= and simply push it in its proper place.
+
+  + *TODO* Implement.
+    1. Add a  function in =StridedMap= to return node id of the GID,
+       and return -1 if a we have a full map in =StridedMap=, use only
+       a part of it and GID is in the missing
+       part.
+    2. Remove =DOFGid2NodeId()= from =AmalgamationInfo=.
+    3. Rewrite =Build= method. The code would be something like this:
+       #+BEGIN_SRC C++
+       for (LO i = 0; i < numDOFs; i++) {
+         GO GID    = map->getGlobalElement(i);
+         GO nodeID = map->getNodeId(GID);
+         if (nodeID != -1) {
+           nodegid2dofgids_[nodeID].push_back(GID);
+           gNodeIds.push_back(GID);
+         }
+       }
+       #+END_SRC
+
+*QUESTION 6*: Both =UnamalgamateAggregates= and
+=ComputeUnamalgamatedImportDofMap= construct an array of dof GIDs
+belonging to local aggregates. What is the difference between
+functions?
+  - *ANSWER*: =UnamalgamateAggregates= uses only nodes belonging to
+    local aggregates, =ComputeUnamalgamatedImportDofMap= uses all nodes.
+
+** CoalesceDropFactory
+
+- =AmalgamateMap=
+
+  Uses =AmalgamationFactory::DOFGid2NodeId= to construct a new map.
+
+- =MergeRows=
+
+* Proposal

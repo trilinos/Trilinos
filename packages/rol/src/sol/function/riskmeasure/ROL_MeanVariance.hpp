@@ -52,6 +52,27 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
+/** @ingroup risk_group
+    \class ROL::MeanVariance
+    \brief Provides an interface for the mean plus a sum of arbitrary order
+    variances.
+
+    The mean plus variances risk measure is
+    \f[
+       \mathcal{R}(X) = \mathbb{E}[X]
+        + \sum_{k=1}^n c_k \mathbb{E}[\wp(X-\mathbb{E}[X])^{p_k}]
+    \f]
+    where \f$\wp:\mathbb{R}\to[0,\infty)\f$ is either the absolute value
+    or \f$(x)_+ = \max\{0,x\}\f$, \f$c_k > 0\f$ and \f$p_k\in\mathbb{N}\f$.
+    \f$\mathcal{R}\f$ is law-invariant, but not coherent since it
+    violates positive homogeneity.  When \f$\wp(x) = |x|\f$, \f$\mathcal{R}\f$
+    also violates monotonicity.
+
+    When using derivative-based optimization, the user can
+    provide a smooth approximation of \f$(\cdot)_+\f$ using the
+    ROL::PositiveFunction class.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -78,58 +99,101 @@ private:
 
   bool firstReset_;
 
-public:
+  void checkInputs(void) const {
+    int oSize = order_.size(), cSize = coeff_.size();
+    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
+      ">>> ERROR (ROL::MeanVariance): Order and coefficient arrays have different sizes!");
+    Real zero(0), two(2);
+    for (int i = 0; i < oSize; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
+        ">>> ERROR (ROL::MeanVariance): Element of order array out of range!");
+      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
+        ">>> ERROR (ROL::MeanVariance): Element of coefficient array out of range!");
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::MeanVariance): PositiveFunction pointer is null!");
+  }
 
-  MeanVariance( Real order, Real coeff,
-                Teuchos::RCP<PositiveFunction<Real> > &pf )
+public:
+  /** \brief Constructor.
+
+      @param[in]     order   is the variance order
+      @param[in]     coeff   is the weight for variance term
+      @param[in]     pf      is the plus function or an approximation
+
+      This constructor produces a mean plus variance risk measure
+      with a single variance.
+  */
+  MeanVariance( const Real order, const Real coeff,
+                const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
-    Real zero(0), one(1), two(2);
-    order_.clear(); coeff_.clear();
-    order_.push_back((order < two) ? two : order);
-    coeff_.push_back((coeff < zero) ? one : coeff);
+    order_.clear(); order_.push_back(order);
+    coeff_.clear(); coeff_.push_back(coeff);
+    checkInputs();
     NumMoments_ = order_.size();
   }
-  MeanVariance( std::vector<Real> &order, std::vector<Real> &coeff, 
-                Teuchos::RCP<PositiveFunction<Real> > &pf )
+
+  /** \brief Constructor.
+
+      @param[in]     order   is a vector of variance orders
+      @param[in]     coeff   is a vector of weights for the variance terms
+      @param[in]     pf      is the plus function or an approximation
+
+      This constructor produces a mean plus variance risk measure
+      with an arbitrary number of variances.
+  */
+  MeanVariance( const std::vector<Real> &order,
+                const std::vector<Real> &coeff, 
+                const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
-    Real zero(0), one(1), two(2);
     order_.clear(); coeff_.clear();
-    NumMoments_ = order.size();
-    if ( NumMoments_ != coeff.size() ) {
-      coeff.resize(NumMoments_,one);
+    for ( uint i = 0; i < order.size(); i++ ) {
+      order_.push_back(order[i]);
     }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < two) ? two : order[i]);
-      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
+    for ( uint i = 0; i < coeff.size(); i++ ) {
+      coeff_.push_back(coeff[i]);
     }
+    checkInputs();
+    NumMoments_ = order_.size();
   }
+
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"Mean Plus Variance" and
+      within the "Mean Plus Variance" sublist should have the following parameters
+      \li "Orders" (array of unsigned integers)
+      \li "Coefficients" (array of positive scalars)
+      \li "Deviation Type" (eighter "Upper" or "Absolute")
+      \li A sublist for positive function information.
+  */
   MeanVariance( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>(), firstReset_(true) {
-    Real zero(0), one(1), two(2);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance");
     // Get data from parameter list
     Teuchos::Array<Real> order
       = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
+    order_ = order.toVector();
     Teuchos::Array<Real> coeff
       = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
-    // Check inputs
-    order_.clear(); coeff_.clear();
-    NumMoments_ = order.size();
-    if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
-      coeff.resize(NumMoments_,one);
-    }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < two) ? two : order[i]);
-      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
-    }
+    coeff_ = coeff.toVector();
     // Build (approximate) positive function
-    if ( list.get("Deviation Type","Upper") == "Upper" ) {
+    std::string type = list.get<std::string>("Deviation Type");
+    if ( type == "Upper" ) {
       positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
     }
-    else {
+    else if ( type == "Absolute" ) {
       positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
     }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> (ROL::MeanDeviation): Deviation type is not recoginized!");
+    }
+    // Check inputs
+    checkInputs();
+    NumMoments_ = order.size();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {

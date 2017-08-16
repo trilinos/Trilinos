@@ -68,11 +68,11 @@ PHX_POST_REGISTRATION_SETUP(CoordinatesEvaluator,worksets,fm)
 PHX_EVALUATE_FIELDS(CoordinatesEvaluator,d)
 { 
   PHX::MDField<double,Cell,NODE,Dim> coords = this->wda(d).cell_vertex_coordinates;
-  // const Intrepid2::FieldContainer<double> & coords = this->wda(d).cell_vertex_coordinates;
+  // const Kokkos::DynRankView<double,PHX::Device> & coords = this->wda(d).cell_vertex_coordinates;
 
   // copy coordinates directly into the field
-  for(std::size_t i=0;i<d.num_cells;i++)
-    for(int j=0;j<coords.dimension(1);j++)
+  for(index_t i=0;i<d.num_cells;i++)
+    for(int j=0;j<coords.extent_int(1);j++)
       coordinate(i,j) = coords(i,j,dimension);       
 }
 

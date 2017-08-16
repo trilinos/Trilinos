@@ -62,6 +62,14 @@
     </parameter>
 
     <parameter>
+      <name>coarse grid correction scaling factor</name>
+      <type>double</type>
+      <default>1.0</default>
+      <description>Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>problem: symmetric</name>
       <type>bool</type>
       <default>true</default>
@@ -414,6 +422,27 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: error on nodes with no on-rank neighbors</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Causes phase 3 aggregation to throw an error for
+      non-Dirichlet nodes that have no on-rank neighbors.  This only
+      works for Uncoupled Aggregation.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
+    <parameter>
+      <name>aggregation: allow empty prolongator columns</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Fix diagonal of coarse level operator A resulting from empty columns (rows) in the prolongation (restriction) operators caused by singleton aggregates and number of null space vectors larger than number of DOFs per node. This option might be helpful for elasticity problems with singleton aggregates.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: preserve Dirichlet points</name>
       <type>bool</type>
       <default>false</default>
@@ -522,7 +551,15 @@
     <parameter>
       <name>export data</name>
       <type>\parameterlist</type>
-      <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.</description>
+      <description>Exporting a subset of the hierarchy data in a
+      file. Currently, the list can contain any of the following parameter
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
+      and value ``\{levels separated by commas\}''. A
+      matrix/multivector with a name ``X'' is saved in two or three
+      three MatrixMarket files: a) data is saved in
+      \textit{X\_level.mm}; b) its row map is saved in
+      \textit{rowmap\_X\_level.mm}; c) its column map (for matrices) is saved in
+      \textit{colmap\_X\_level.mm}.</description> 
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
@@ -678,6 +715,45 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>pcoarsen: element</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Element class for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+
+
+    <parameter>
+      <name>pcoarsen: schedule</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Coarsening schedule for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+    <parameter>
+      <name>pcoarsen: hi basis</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Higher order basis for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>pcoarsen: lo basis</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Lower order basis for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>smoother: neighborhood type</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Valid options: node, edge, face, cell</description>
+      <visible>false</visible>
+    </parameter>
 
     <parameter>
       <name>filtered matrix: use lumping</name>
@@ -708,7 +784,7 @@
       <name>emin: iterative method</name>
       <type>string</type>
       <default>"cg"</default>
-      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "sd" (steepest descent).</description>
+      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "gmres" (generalized minimum residual), "sd" (steepest descent).</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
@@ -742,6 +818,14 @@
       <default>1</default>
       <description>Matrix order for the "AkPtent" pattern.</description>
       <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>tentative: calculate qr</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>If false, skip local QR decomposition phase of smoothed aggregation.</description>
+      <visible>false</visible>
     </parameter>
 
   </multigrid>
@@ -853,6 +937,29 @@
     </parameter>
 
   </rebalancing>
+
+  <rap>
+
+    <parameter>
+      <name>rap: fix zero diagonals</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Set zero diagonals on coarse grids to one.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+  </rap>
+
+  <matrixmatrix>
+    <parameter>
+      <name>matrixmatrix: kernel params</name>
+      <type>parameterlist</type>
+      <description>Controls the kernel algorithms for matrix-matrix operations</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+  </matrixmatrix>
 
   <reuse>
 

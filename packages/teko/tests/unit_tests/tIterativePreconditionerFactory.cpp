@@ -48,8 +48,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 
-#include "Kokkos_Core.hpp"
-
 #include <string>
 #include <iostream>
 
@@ -219,8 +217,6 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, parameter_list_init)
 
 TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, parameter_list_init_tpetra)
 {
-   Kokkos::initialize();
-
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -284,8 +280,6 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, parameter_list_init_tpetra)
          out << "Passed preconditioner type" << std::endl;
       }
    }
-
-   Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test)
@@ -325,8 +319,6 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test)
 
 TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test_tpetra)
 {
-   Kokkos::initialize();
-
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -354,8 +346,6 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test_tpetra)
       else
          out << "Apply 0: SUCCESS" << std::endl;
    }
-
-   Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test)
@@ -413,8 +403,6 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test)
 
 TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test_tpetra)
 {
-   Kokkos::initialize();
-
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -460,6 +448,4 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test_tpetra)
       else
          out << "Apply 2: SUCCESS" << std::endl;
    }
-
-   Kokkos::finalize();
 }

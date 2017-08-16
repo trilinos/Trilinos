@@ -53,7 +53,8 @@
 #############################################################################
 
 # System imports
-from optparse import *
+from __future__ import print_function
+from optparse   import *
 
 #
 # Parse the command-line arguments
@@ -87,6 +88,7 @@ class MyProblem(NOX.Epetra.Interface.Required,
         self.__comm = Epetra.SerialComm()
         self.__map  = Epetra.Map(2, 0, self.__comm)
         self.__jac  = Epetra.CrsMatrix(Epetra.Copy, self.__map, 2)
+        self.__soln = Epetra.Vector(self.__map)
 
     def getJacobian(self):
         return self.__jac
@@ -95,9 +97,9 @@ class MyProblem(NOX.Epetra.Interface.Required,
         try:
             F[0] = x[0]*x[0] + x[1]*x[1] - 1
             F[1] = x[1]      - x[0]*x[0]
-        except Exception, e:
-            print "Exception in MyProblem.computeF method"
-            print e
+        except Exception as e:
+            print("Exception in MyProblem.computeF method")
+            print(e)
             return False
         return True
 
@@ -106,35 +108,42 @@ class MyProblem(NOX.Epetra.Interface.Required,
             Jac.InsertGlobalValues(0, [ 2*x[0], 2*x[1]], [0,1])
             Jac.InsertGlobalValues(1, [-2*x[0], 1     ], [0,1])
             Jac.FillComplete()
-        except Exception, e:
-            print "Exception in MyProblem.computeJacobian method"
-            print e
+        except Exception as e:
+            print("Exception in MyProblem.computeJacobian method")
+            print(e)
             return False
         return True
+
+    def getSolution(self):
+        return self.__soln
 
 #
 # Main function.  Create a solver based on the MyProblem class and solve it.
 def main():
 
     # Initialize
-    initGuess = Epetra.Vector([.5,.5])
-    problem   = MyProblem()
-    jacobian  = problem.getJacobian()
-    solver    = NOX.Epetra.defaultSolver(initGuess, problem, problem, jacobian,
-                                         maxIters=40)
-    print solver.statusTest
+    problem      = MyProblem()
+    initGuess    = problem.getSolution()
+    initGuess[:] = [.5,.5]
+    jacobian     = problem.getJacobian()
+    solver       = NOX.Epetra.defaultSolver(initGuess,
+                                            problem,
+                                            problem,
+                                            jacobian,
+                                            maxIters=40)
+    print(solver.statusTest)
 
     # Solve
     solveStatus = solver.solve()
-    print
+    print()
     if solveStatus != NOX.StatusTest.Converged:
-        print "Nonlinear solver failed to converge"
-        print "End Result: TEST FAILED"
+        print("Nonlinear solver failed to converge")
+        print("End Result: TEST FAILED")
     else:
         group = solver.getSolutionGroup()
         soln  = group.getX()
-        print "Solution =", soln
-        print "End Result: TEST PASSED"
+        print("Solution =", soln)
+        print("End Result: TEST PASSED")
 
 #
 # Main script: call the main() function.

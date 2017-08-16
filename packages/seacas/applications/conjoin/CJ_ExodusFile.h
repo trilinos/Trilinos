@@ -1,15 +1,15 @@
 // Copyright(C) 2009-2010 Sandia Corporation.
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -40,36 +40,35 @@ namespace Excn {
 
   class SystemInterface;
   class ExodusFile
-    {
-    public:
-      explicit ExodusFile(size_t which);
-      ~ExodusFile();
-  
-      static bool initialize(const SystemInterface& si);
-      static bool create_output(const SystemInterface& si);
-      static void close_all();
-      
-      static int  output();
-      static int  io_word_size() {return ioWordSize_;}
-      operator int () const;
-      static int  max_name_length() {return maximumNameLength_;}
-  
-    private:
-      size_t myLocation_;
-      static std::vector<std::string> filenames_;
-      static std::vector<int> fileids_;
-      static int outputId_;
-      static int ioWordSize_;
-      static int cpuWordSize_;
-      static std::string outputFilename_;
-      static bool keepOpen_;
-      static int maximumNameLength_;
-      static int exodusMode_;
-      
-      // Disable copying and assignment...
-      ExodusFile(const ExodusFile&);
-      ExodusFile operator=(const ExodusFile&);
-    };
+  {
+  public:
+    explicit ExodusFile(size_t which);
+    ~ExodusFile();
+
+    static bool initialize(const SystemInterface &si);
+    static bool create_output(const SystemInterface &si);
+    static void close_all();
+
+    static int output();
+    static int io_word_size() { return ioWordSize_; }
+    operator int() const;
+    static int max_name_length() { return maximumNameLength_; }
+
+  private:
+    size_t                          myLocation_;
+    static std::vector<std::string> filenames_;
+    static std::vector<int>         fileids_;
+    static int                      outputId_;
+    static int                      ioWordSize_;
+    static int                      cpuWordSize_;
+    static std::string              outputFilename_;
+    static bool                     keepOpen_;
+    static int                      maximumNameLength_;
+    static int                      exodusMode_;
+
+    // Disable copying and assignment...
+    ExodusFile(const ExodusFile &);
+    ExodusFile operator=(const ExodusFile &);
+  };
 }
 #endif /* SEACAS_ExodusFil_H */
-

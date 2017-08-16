@@ -73,12 +73,6 @@
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
-
-typedef double Scalar;
-typedef int    LocalOrdinal;
-typedef int    GlobalOrdinal;
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
 #include <unistd.h>
 /**********************************************************************************/
 
@@ -91,12 +85,13 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
 #endif
 
-int main(int argc, char *argv[]) {
-#include "MueLu_UseShortNames.hpp"
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP;
 
   Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
   bool success = false;
   try {
@@ -107,12 +102,6 @@ int main(int argc, char *argv[]) {
 #ifndef HAVE_XPETRA_INT_LONG_LONG
     *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
-
-    /**********************************************************************************/
-    /* SET TEST PARAMETERS                                                            */
-    /**********************************************************************************/
-    // Note: use --help to list available options.
-    Teuchos::CommandLineProcessor clp(false);
 
     // Default is Laplace1D with nx = 8748.
     // It's a nice size for 1D and perfect aggregation. (6561=3^8)
@@ -190,3 +179,14 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
+
+
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
+}
+

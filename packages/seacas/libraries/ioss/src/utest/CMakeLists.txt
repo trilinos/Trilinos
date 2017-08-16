@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE(
  Utst_ioel
@@ -8,6 +7,17 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_TEST(
 	Utst_ioel
 	NAME Utst_ioel
+	NUM_MPI_PROCS 1
+)
+
+TRIBITS_ADD_EXECUTABLE(
+ Utst_sort
+ SOURCES Utst_sort.C
+)
+
+TRIBITS_ADD_TEST(
+	Utst_sort
+	NAME Utst_sort
 	NUM_MPI_PROCS 1
 )
 

@@ -1,8 +1,50 @@
+//@HEADER
+// ************************************************************************
+// 
+//               ShyLU: Hybrid preconditioner package
+//                 Copyright 2012 Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact A.M. Bradley (ambradl@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
 #ifndef INCLUDE_SHYLU_HTS_IMPL_HPP
 #define INCLUDE_SHYLU_HTS_IMPL_HPP
 
-#include <string.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
+#include <limits>
 #include "shylu_hts.hpp"
 
 #ifdef HAVE_SHYLUHTS_MKL
@@ -62,8 +104,8 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   struct Box {
     Int r0, c0, nr, nc;
     Box () : r0(0), c0(0), nr(0), nc(0) {}
-    Box (const Int r0, const Int c0, const Int nr, const Int nc)
-      : r0(r0), c0(c0), nr(nr), nc(nc) {}
+    Box (const Int ir0, const Int ic0, const Int inr, const Int inc)
+      : r0(ir0), c0(ic0), nr(inr), nc(inc) {}
   };
 
   struct ConstCrsMatrix {
@@ -72,15 +114,20 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     const Size* const ir; // row pointer
     const Int* const jc;  // col
     const Sclr* const d;
-    Direction::Enum dir;
-    bool conj;
+    const Direction::Enum dir;
+    const bool conj;
     mutable typename HTS<Int, Size, Sclr>::Deallocator* deallocator;
+    // Either inferred by determine_shape from the user's matrix, or these data
+    // are propagated.
+    mutable bool unitdiag, is_lo;
 
-    ConstCrsMatrix (const Int nrow, const Int ncol, const Size* ir,
-                    const Int* jc, const Sclr* d, Direction::Enum dir,
-                    const bool conj, bool deallocate)
-      : m(nrow), n(ncol), ir(ir), jc(jc), d(d), dir(dir), conj(conj),
-        deallocator(0), deallocate_(deallocate)
+    ConstCrsMatrix (const Int inrow, const Int incol, const Size* iir,
+                    const Int* ijc, const Sclr* id, Direction::Enum idir,
+                    const bool iconj, bool ideallocate,
+                    const bool unit_diag, const bool is_lower)
+      : m(inrow), n(incol), ir(iir), jc(ijc), d(id), dir(idir), conj(iconj),
+        deallocator(0), unitdiag(unit_diag), is_lo(is_lower),
+        deallocate_(ideallocate)
     {}
     ~ConstCrsMatrix();
 
@@ -96,8 +143,8 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     Int* const jc; // col
     Sclr* d;
 
-    CrsMatrix (const Int nrow, const Int ncol, Size* ir, Int* jc, Sclr* d)
-      : m(nrow), n(ncol), ir(ir), jc(jc), d(d)
+    CrsMatrix (const Int nrow, const Int ncol, Size* iir, Int* ijc, Sclr* id)
+      : m(nrow), n(ncol), ir(iir), jc(ijc), d(id)
     {}
     ~CrsMatrix();
   };
@@ -118,10 +165,18 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
 
     Partition () : cm(0), A_idxs(0) {}
     ~Partition () { clear(); }
-    void alloc_d();
-    void alloc_A_idxs(const Size nnz);
     void clear();
+
+    void alloc_d();
     void clear_d();
+
+    void alloc_A_idxs(const Size nnz);
+    // Handle implicit unit diag. A_idxs[i] can't point to anything if the i'th
+    // element is a diagonal entry and the matrix has an implicit unit diag.
+    void A_invalidate (const Size& i)
+    { if (A_idxs) A_idxs[i] = std::numeric_limits<Size>::max(); }
+    bool A_valid (const Size& i) const
+    { return A_idxs[i] != std::numeric_limits<Size>::max(); }
   };
 
   // Finds level sets.
@@ -149,7 +204,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   public:
     virtual ~Segmenter () {}
     Size nnz (const Int idx) const { return nnz_[idx]; }
-    const Array<Int>& p () const { return p_; }
+    const Array<Int>& get_p () const { return p_; }
   };
 
   // Segment a CRS matrix into blocks for threaded MVP.
@@ -222,9 +277,9 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     ~SerialBlock () { clear(); }
     void clear();
     // Cropped r0.
-    Int r0 () const { return r0_; }
+    Int get_r0 () const { return r0_; }
     // Cropped nr.
-    Int nr () const { return nr_; }
+    Int get_nr () const { return nr_; }
     void init(const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
               const InitInfo& in);
     void init_metadata(const CrsMatrix& T, Int r0, Int c0, Int nr, Int nc,
@@ -235,13 +290,13 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     bool inited () const { return d_; }
     void n1Axpy(const Sclr* x, const Int ldx, const Int nrhs,
                 Sclr* y, const Int ldy) const;
-    Size nnz () const { return nnz_; }
+    Size get_nnz () const { return nnz_; }
     bool is_sparse () const { return ir_; }
 
     // For analysis; not algorithms.
     // Cropped c0 and nc.
-    Int c0 () const { return c0_; }
-    Int nc () const { return nc_; }
+    Int get_c0 () const { return c0_; }
+    Int get_nc () const { return nc_; }
   };
 
   // Threaded block matrix.
@@ -260,7 +315,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     ~TMatrix () { clear(); }
     bool empty () const { return is_empty_; }
     bool parallel () const { return is_parallel_; }
-    Int nr () const { return nr_; }
+    Int get_nr () const { return nr_; }
     void init(const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
               const InitInfo& in, const Int block_0_nnz_os = 0,
               const int tid_offset = 0);
@@ -299,8 +354,8 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   public:
     Tri () : n_(0), r0_(0) {}
     virtual ~Tri () {}
-    Int n () const { return n_; }
-    Int r0 () const { return r0_; }
+    Int get_n () const { return n_; }
+    Int get_r0 () const { return r0_; }
   protected:
     Int n_, r0_;
     static const bool is_lo_ = true;
@@ -339,7 +394,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     void reinit_numeric(const CrsMatrix& T, const bool invert = false);
     void solve(const Sclr* b, const Int ldb, Sclr* x, const Int ldx,
                const Int nrhs) const;
-    Size nnz () const { return nnz_; }
+    Size get_nnz () const { return nnz_; }
     bool inited () const { return d_ || m_; }
 
   private: // For inverse of on-diag triangle.
@@ -499,7 +554,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   // Top-level solver.
   class TriSolver {
     Int n_;
-    bool is_lo_;
+    bool is_lo_, unitdiag_; // Properties to be discovered of the user's T.
     Int nthreads_;
     Partition p_[2];
 
@@ -518,6 +573,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     void reinit_numeric(const ConstCrsMatrix* T, const Real* r);
     void reset_max_nrhs(const Int max_nrhs);
     bool is_lower_tri () const { return is_lo_; }
+    bool has_implicit_unit_diag () const { return unitdiag_; }
     // x and b can be the same pointers.
     void solve(const Sclr* b, const Int nrhs, Sclr* x, const Sclr alpha,
                const Sclr beta, const Int ldb, const Int ldx) const;
@@ -544,10 +600,11 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   struct Shape {
     const bool is_lower, is_triangular;
     const bool has_full_diag; // Valid only if is_triangular.
-    Shape (const bool is_lower, const bool is_triangular,
-           const bool has_full_diag)
-      : is_lower(is_lower), is_triangular(is_triangular),
-        has_full_diag(has_full_diag) {}
+    const bool has_no_diag;   // Ditto.
+    Shape (const bool iis_lower, const bool iis_triangular,
+           const bool ihas_full_diag, const bool ihas_no_diag)
+      : is_lower(iis_lower), is_triangular(iis_triangular),
+        has_full_diag(ihas_full_diag), has_no_diag(ihas_no_diag) {}
   };
 
   class PermVec {
@@ -576,7 +633,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
       Sclr* d;
       Int idx, n;
       Tri () : d(0), idx(0), n(0) {}
-      Tri (const Int idx, Sclr* const d, const Int n) : d(d), idx(idx), n(n) {}
+      Tri (const Int iidx, Sclr* const id, const Int in) : d(id), idx(iidx), n(in) {}
     };
     DenseTrisInverter(Array<Tri>& tris);
     void compute();
@@ -626,6 +683,9 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   static void get_idxs(const Int n, const LevelSetter& lstr,
                        Array<Int>& lsis, Array<Int>& dpis);
   static Shape determine_shape(const ConstCrsMatrix& A);
+  static void get_matrix_common_with_covers_all(
+    const ConstCrsMatrix& A, const PermVec& pv, const PermVec& qv, Partition& p,
+    const bool get_A_idxs, const bool pp);
   static void get_matrix_pp_with_covers_all(
     const ConstCrsMatrix& A, const PermVec& pv, Partition& p,
     const bool get_A_idxs);
@@ -666,9 +726,12 @@ struct HTS<Int, Size, Sclr>::CrsMatrix
   : public htsimpl::Impl<Int, Size, Sclr>::ConstCrsMatrix
 {
   typedef typename htsimpl::Impl<Int, Size, Sclr>::ConstCrsMatrix CCM;
-  CrsMatrix (const Int nrow, const Size* ir, const Int* jc, const Sclr* d,
-             const typename htsimpl::Direction::Enum dir, const bool conj)
-    : CCM(nrow, nrow, ir, jc, d, dir, conj, false)
+  CrsMatrix (const Int inrow, const Size* iir, const Int* ijc, const Sclr* id,
+             const typename htsimpl::Direction::Enum idir, const bool iconj)
+    : CCM(inrow, inrow, iir, ijc, id, idir, iconj,
+          false /* don't dealloc */,
+          false /* unknown whether implicit unit diag */,
+          false /* unknown whether lower tri*/)
   {}
 };
 

@@ -122,7 +122,7 @@ void setup8Quad4ProcMesh2D(stk::mesh::BulkData& bulk)
 
   bulk.modification_end();
 
-  std::vector<unsigned> counts(meta.entity_rank_count());
+  std::vector<size_t> counts(meta.entity_rank_count());
   stk::mesh::Selector owned_or_shared = meta.locally_owned_part() | meta.globally_shared_part();
   stk::mesh::count_entities(owned_or_shared, bulk, counts);
 

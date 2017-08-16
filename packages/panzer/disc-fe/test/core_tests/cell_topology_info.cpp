@@ -69,8 +69,8 @@ namespace panzer {
     
     const int num_edges = cellTopoInfo.getNumEdges();
     
-    TEST_ASSERT(cellTopoInfo.edge_scalar->size() == num_cells*num_edges);
-    TEST_ASSERT(cellTopoInfo.edge_vector->size() == num_cells*num_edges*num_dims);
+    TEST_ASSERT(static_cast<int>(cellTopoInfo.edge_scalar->size()) == num_cells*num_edges);
+    TEST_ASSERT(static_cast<int>(cellTopoInfo.edge_vector->size()) == num_cells*num_edges*num_dims);
   }
   
   TEUCHOS_UNIT_TEST(cell_topology_info, tri_test)
@@ -93,8 +93,8 @@ namespace panzer {
     
     const int num_edges = cellTopoInfo.getNumEdges();
 
-    TEST_ASSERT(cellTopoInfo.edge_scalar->size() == num_cells*num_edges);
-    TEST_ASSERT(cellTopoInfo.edge_vector->size() == num_cells*num_edges*num_dims);
+    TEST_ASSERT(static_cast<int>(cellTopoInfo.edge_scalar->size()) == num_cells*num_edges);
+    TEST_ASSERT(static_cast<int>(cellTopoInfo.edge_vector->size()) == num_cells*num_edges*num_dims);
   }
   
   TEUCHOS_UNIT_TEST(cell_topology_info, tet_test)
@@ -117,8 +117,8 @@ namespace panzer {
     
     const int num_edges = cellTopoInfo.getNumEdges();
 
-    TEST_ASSERT(cellTopoInfo.edge_scalar->size() == num_cells*num_edges);
-    TEST_ASSERT(cellTopoInfo.edge_vector->size() == num_cells*num_edges*num_dims);
+    TEST_ASSERT(static_cast<int>(cellTopoInfo.edge_scalar->size()) == num_cells*num_edges);
+    TEST_ASSERT(static_cast<int>(cellTopoInfo.edge_vector->size()) == num_cells*num_edges*num_dims);
   }
 
   TEUCHOS_UNIT_TEST(cell_topology_info, hex_test)
@@ -141,8 +141,8 @@ namespace panzer {
     
     const int num_edges = cellTopoInfo.getNumEdges();
 
-    TEST_ASSERT(cellTopoInfo.edge_scalar->size() == num_cells*num_edges);
-    TEST_ASSERT(cellTopoInfo.edge_vector->size() == num_cells*num_edges*num_dims);
+    TEST_ASSERT(static_cast<int>(cellTopoInfo.edge_scalar->size()) == num_cells*num_edges);
+    TEST_ASSERT(static_cast<int>(cellTopoInfo.edge_vector->size()) == num_cells*num_edges*num_dims);
   }
 
 }

@@ -3,7 +3,6 @@
 #define SIDESETENTRY_HPP_
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
 namespace stk
@@ -18,64 +17,29 @@ struct SideSetEntry
     : element(in_element),
       side(in_side)
   {  }
+  SideSetEntry(stk::mesh::Entity in_element, int in_side)
+    : SideSetEntry(in_element, static_cast<stk::mesh::ConnectivityOrdinal>(in_side))
+  {  }
+
+  bool operator==(const SideSetEntry &rhs) const
+  {
+      return ((element == rhs.element) && (side == rhs.side));
+  }
+
+  bool operator<(const SideSetEntry &rhs) const
+  {
+      if(element < rhs.element)
+          return true;
+      else if (element == rhs.element && side < rhs.side)
+          return true;
+      else return false;
+  }
 
   stk::mesh::Entity element;
   stk::mesh::ConnectivityOrdinal side;
 };
 
-
-class SideSetEntryLess
-{
-public:
-    SideSetEntryLess(const BulkData& mesh);
-    bool operator()(const SideSetEntry& lhs, const SideSetEntry& rhs) const;
-private:
-  const BulkData& m_mesh;
-};
-
-class SideSetEntryEquals
-{
-public:
-    SideSetEntryEquals(const BulkData& mesh);
-    bool operator()(const SideSetEntry& lhs, const SideSetEntry& rhs) const;
-private:
-  const BulkData& m_mesh;
-};
-
-//////////////
-
-inline
-SideSetEntryLess::SideSetEntryLess(const BulkData& mesh) : m_mesh(mesh){}
-
-inline
-bool SideSetEntryLess::operator()(const SideSetEntry& lhs, const SideSetEntry& rhs) const
-{
-    if(m_mesh.identifier(lhs.element) < m_mesh.identifier(rhs.element))
-        return true;
-    else if(m_mesh.identifier(lhs.element) > m_mesh.identifier(rhs.element))
-        return false;
-    else
-    {
-        if(lhs.side<rhs.side)
-            return true;
-        else
-            return false;
-    }
-    return false;
-}
-
-//////////////
-inline
-SideSetEntryEquals::SideSetEntryEquals(const BulkData& mesh) : m_mesh(mesh){}
-
-inline
-bool SideSetEntryEquals::operator()(const SideSetEntry& lhs, const SideSetEntry& rhs) const
-{
-    if(m_mesh.identifier(lhs.element) == m_mesh.identifier(rhs.element) &&
-            lhs.side == rhs.side)
-        return true;
-    return false;
-}
+typedef std::vector<SideSetEntry> SideSet;
 
 }
 }

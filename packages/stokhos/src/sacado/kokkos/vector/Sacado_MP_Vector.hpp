@@ -62,17 +62,6 @@
 
 #include "Kokkos_View_Utils.hpp"
 
-// ivdep is necessary to get the intel compiler to vectorize through
-// expresion template assignent operators
-#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
-#define STOKHOS_HAVE_PRAGMA_IVDEP
-#endif
-
-// unrolling appears to slow everything down
-#if 0 && ( defined(__INTEL_COMPILER) || defined(__CUDA_ARCH__) )
-#define STOKHOS_HAVE_PRAGMA_UNROLL
-#endif
-
 namespace Sacado {
 
   //! Namespace for multipoint classes
@@ -209,7 +198,7 @@ namespace Sacado {
        * Sets size to 1 and first coefficient to x (represents a constant).
        */
       KOKKOS_INLINE_FUNCTION
-      Vector(const value_type& x) : s(1) { s.init(x); }
+      Vector(const value_type& x) : s(1,x) {}
 
       //! View constructor
       /*!
@@ -254,6 +243,9 @@ namespace Sacado {
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -548,6 +540,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -579,6 +574,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -602,6 +600,15 @@ namespace Sacado {
       {
         const typename Expr<S>::derived_type & x = xx.derived();
 
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for ( ordinal_type i = 0 ; i < s.size() ; ++i ) { s[i] = x.coeff(i); }
 
         return *this ;
@@ -618,6 +625,15 @@ namespace Sacado {
       {
         const typename Expr<S>::derived_type & x = xx.derived();
 
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for ( ordinal_type i = 0 ; i < s.size() ; ++i ) { s[i] = x.coeff(i); }
 
         return *this ;
@@ -745,6 +761,26 @@ namespace Sacado {
       reference fastAccessCoeff(ordinal_type i) {
         return s[i];}
 
+       //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const_volatile_reference operator[](ordinal_type i) const volatile {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const_reference operator[](ordinal_type i) const {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      volatile_reference operator[](ordinal_type i) volatile {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      reference operator[](ordinal_type i) {
+        return s[i];}
+
       template <int i>
       KOKKOS_INLINE_FUNCTION
       value_type getCoeff() const volatile {
@@ -823,6 +859,15 @@ namespace Sacado {
       //! Addition-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator += (const value_type& x) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] += x;
         return *this;
@@ -831,6 +876,15 @@ namespace Sacado {
       //! Addition-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator += (const volatile value_type& x) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] += x;
         return *this;
@@ -839,6 +893,15 @@ namespace Sacado {
       //! Addition-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator += (const value_type& x) volatile {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] += x;
         return const_cast<Vector&>(*this);
@@ -847,6 +910,15 @@ namespace Sacado {
       //! Addition-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator += (const volatile value_type& x) volatile {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] += x;
         return const_cast<Vector&>(*this);
@@ -855,6 +927,15 @@ namespace Sacado {
       //! Subtraction-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator -= (const value_type& x) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] -= x;
         return *this;
@@ -863,6 +944,15 @@ namespace Sacado {
       //! Subtraction-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator -= (const volatile value_type& x) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] -= x;
         return *this;
@@ -871,6 +961,15 @@ namespace Sacado {
       //! Subtraction-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator -= (const value_type& x) volatile {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] -= x;
         return const_cast<Vector&>(*this);
@@ -879,6 +978,15 @@ namespace Sacado {
       //! Subtraction-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator -= (const volatile value_type& x) volatile {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] -= x;
         return const_cast<Vector&>(*this);
@@ -887,6 +995,15 @@ namespace Sacado {
       //! Multiplication-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator *= (const value_type& x) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] *= x;
         return *this;
@@ -895,6 +1012,15 @@ namespace Sacado {
       //! Multiplication-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator *= (const volatile value_type& x) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] *= x;
         return *this;
@@ -903,6 +1029,15 @@ namespace Sacado {
       //! Multiplication-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator *= (const value_type& x) volatile {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] *= x;
         return const_cast<Vector&>(*this);
@@ -911,6 +1046,15 @@ namespace Sacado {
       //! Multiplication-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator *= (const volatile value_type& x) volatile {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] *= x;
         return const_cast<Vector&>(*this);
@@ -919,6 +1063,15 @@ namespace Sacado {
       //! Division-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator /= (const value_type& x) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] /= x;
         return *this;
@@ -927,6 +1080,15 @@ namespace Sacado {
       //! Division-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator /= (const volatile value_type& x) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] /= x;
         return *this;
@@ -935,6 +1097,15 @@ namespace Sacado {
       //! Division-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator /= (const value_type& x) volatile {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] /= x;
         return const_cast<Vector&>(*this);
@@ -943,6 +1114,15 @@ namespace Sacado {
       //! Division-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator /= (const volatile value_type& x) volatile {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] /= x;
         return const_cast<Vector&>(*this);
@@ -967,6 +1147,9 @@ namespace Sacado {
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -1001,6 +1184,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -1033,6 +1219,9 @@ namespace Sacado {
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -1067,6 +1256,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -1099,6 +1291,9 @@ namespace Sacado {
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -1133,6 +1328,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -1165,6 +1363,9 @@ namespace Sacado {
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -1199,6 +1400,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -1231,6 +1435,9 @@ namespace Sacado {
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -1265,6 +1472,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -1297,6 +1507,9 @@ namespace Sacado {
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -1331,6 +1544,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -1363,6 +1579,9 @@ namespace Sacado {
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -1397,6 +1616,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -1430,6 +1652,9 @@ namespace Sacado {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -1462,6 +1687,9 @@ namespace Sacado {
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
 #ifdef STOKHOS_HAVE_PRAGMA_UNROLL
 #pragma unroll

@@ -1,0 +1,189 @@
+#!/bin/bash
+
+rm -f CMakeCache.txt;
+rm -rf CMakeFiles
+echo ""
+echo "WARNING: In order to get modules correctly loaded source this files, don't just execute it."
+echo ""
+EXTRA_ARGS=$@
+
+# Trilinos Path:
+#TRILINOS_PATH=${HOME}/Trilinos
+
+# Top Level Configuration Options
+TESTS=${JENKINS_DO_TESTS}
+EXAMPLES=${JENKINS_DO_EXAMPLES}
+
+CUDA=${JENKINS_DO_CUDA}
+OPENMP=${JENKINS_DO_OPENMP}
+PTHREAD=${JENKINS_DO_PTHREAD}
+SERIAL=${JENKINS_DO_SERIAL}
+
+COMPLEX=${JENKINS_DO_COMPLEX}
+
+
+#--------------------------------------------------
+#--------------------------------------------------
+
+
+# CMAKE Command structured
+#
+# Basic Options for backends (Enable OpenMP etc.)
+# \
+# Build control (flags, debug, ETI)
+# \
+# Generic CMake options 
+# \
+# TPL Setup
+# \
+# Packages (on/off, tests, examples)
+
+cmake \
+-D Trilinos_ENABLE_OpenMP=${OPENMP} \
+-D Kokkos_ENABLE_Pthread=${PTHREAD} \
+-D TPL_ENABLE_CUDA=${CUDA} \
+  -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
+-D Teuchos_ENABLE_COMPLEX=${COMPLEX} \
+\
+-D CMAKE_CXX_FLAGS="${JENKINS_ARCH_CXX_FLAG} -g" \
+-D CMAKE_C_FLAGS="${JENKINS_ARCH_C_FLAG} -g" \
+-D CMAKE_Fortran_FLAGS="${JENKINS_ARCH_C_FLAG} -g" \
+-D CMAKE_EXE_LINKER_FLAGS="${JENKINS_ARCH_C_FLAG}" \
+-D CMAKE_Fortran_COMPILER="mpif77" \
+-D HAVE_CXX_PRAGMA_WEAK:BOOL=OFF \
+-D CMAKE_AR:FILEPATH=/usr/bin/ar \
+-D CMAKE_STRIP:FILEPATH=/usr/bin/strip \
+-D CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Trilinos_ENABLE_DEBUG:BOOL=ON \
+\
+-D CMAKE_INSTALL_PREFIX:PATH="$PWD/../install/" \
+-D Trilinos_ENABLE_INSTALL_CMAKE_CONFIG_FILES:BOOL=ON \
+-D CMAKE_BUILD_TYPE:STRING=RELEASE \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
+-D CMAKE_SKIP_RULE_DEPENDENCY=ON \
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+-D BUILD_SHARED_LIBS:BOOL=ON \
+-D DART_TESTING_TIMEOUT:STRING=200 \
+-D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+-D Trilinos_ENABLE_CXX11=ON \
+  -D Trilinos_CXX11_FLAGS:STRING="--std=c++11" \
+\
+-D TPL_ENABLE_MPI=ON \
+  -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="-bind-to;socket;-map-by;socket" \
+-D TPL_ENABLE_BinUtils=OFF \
+-D TPL_ENABLE_SuperLU=OFF \
+  -D TPL_SuperLU_LIBRARIES:STRING="${SEMS_SUPERLU_ROOT}/lib/libsuperlu.a" \
+  -D TPL_SuperLU_INCLUDE_DIRS:STRING="${SEMS_SUPERLU_ROOT}/include" \
+-D TPL_ENABLE_BLAS=ON \
+  -D TPL_BLAS_LIBRARIES:PATH="${BLAS_LIBRARIES}" \
+-D TPL_ENABLE_LAPACK=ON \
+  -D TPL_LAPACK_LIBRARIES:PATH="${LAPACK_LIBRARIES}" \
+-D TPL_ENABLE_Boost=ON \
+   -D Boost_INCLUDE_DIRS:PATH="${SEMS_BOOST_ROOT}/include" \
+   -D Boost_LIBRARY_DIRS:PATH="${SEMS_BOOST_ROOT}/lib" \
+-D TPL_ENABLE_BoostLib=ON \
+   -D BoostLib_INCLUDE_DIRS:PATH="${SEMS_BOOST_ROOT}/include" \
+   -D BoostLib_LIBRARY_DIRS:PATH="${SEMS_BOOST_ROOT}/lib" \
+-D TPL_ENABLE_Netcdf=ON \
+  -D Netcdf_INCLUDE_DIRS:PATH="${SEMS_NETCDF_ROOT}/include" \
+  -D Netcdf_LIBRARY_DIRS:PATH="${SEMS_NETCDF_ROOT}/lib" \
+  -D TPL_Netcdf_LIBRARIES:PATH="${SEMS_NETCDF_ROOT}/lib/libnetcdf.a;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;${SEMS_ZLIB_ROOT}/lib/libz.a" \
+  -D TPL_Netcdf_PARALLEL:BOOL=OFF \
+-D TPL_ENABLE_HDF5=ON \
+  -D HDF5_INCLUDE_DIRS:PATH="${SEMS_HDF5_ROOT}/include" \
+  -D TPL_HDF5_LIBRARIES:PATH="${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;${SEMS_ZLIB_ROOT}/lib/libz.a" \
+-D TPL_ENABLE_Zlib=ON \
+  -D Zlib_INCLUDE_DIRS:PATH="${SEMS_ZLIB_ROOT}/include" \
+  -D TPL_Zlib_LIBRARIES:PATH="${SEMS_ZLIB_ROOT}/lib/libz.a" \
+-D TPL_ENABLE_DLlib=ON \
+\
+\
+-D Trilinos_ENABLE_Amesos=ON \
+-D Trilinos_ENABLE_Amesos2=ON \
+  -D Amesos2_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Amesos2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_Anasazi=ON \
+  -D Anasazi_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_AztecOO=ON \
+-D Trilinos_ENABLE_Belos=ON \
+  -D Belos_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Belos_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_Epetra=ON \
+-D Trilinos_ENABLE_EpetraExt=ON \
+-D Trilinos_ENABLE_Ifpack=ON \
+  -D Ifpack_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Ifpack2=ON \
+  -D Ifpack2_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Ifpack2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_Intrepid=ON \
+  -D Intrepid_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+  -D Intrepid_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Intrepid2=ON \
+  -D Intrepid2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+  -D Intrepid2_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Isorropia=ON \
+  -D Isorropia_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Kokkos=ON \
+  -D Kokkos_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_ML=ON \
+  -D ML_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_MueLu=ON \
+  -D MueLu_INST_DOUBLE_INT_LONGINT:BOOL=ON \
+  -D MueLu_ENABLE_TESTS:BOOL=${TESTS} \
+  -D MueLu_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_NOX=ON \
+  -D NOX_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Panzer=ON \
+  -D Panzer_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_ROL=ON \
+  -D ROL_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Sacado=ON \
+  -D Sacado_ENABLE_UNINIT:BOOL=ON \
+  -D Sacado_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Sacado_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_Stokhos=ON \
+  -D Stokhos_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Stokhos_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_Stratimikos=ON \
+  -D Stratimikos_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Thyra=ON \
+  -D Thyra_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Tpetra=ON \
+  -D Tpetra_INST_SERIAL:BOOL=${SERIAL} \
+  -D Tpetra_INST_OPENMP:BOOL=${OPENMP} \
+  -D Tpetra_INST_PTHREAD:BOOL=${PTHREAD} \
+  -D Tpetra_INST_CUDA:BOOL=${CUDA} \
+  -D Tpetra_INST_COMPLEX_DOUBLE:BOOL=${COMPLEX} \
+  -D Tpetra_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Tpetra_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_TrilinosCouplings=ON \
+  -D TrilinosCouplings_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_Triutils=ON \
+-D Trilinos_ENABLE_Xpetra=ON \
+  -D Xpetra_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Xpetra_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_Zoltan=ON \
+-D Trilinos_ENABLE_Zoltan2=ON \
+  -D Zoltan2_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Zoltan2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+\
+  -D Trilinos_ENABLE_STKMesh:BOOL=ON \
+  -D Trilinos_ENABLE_STKIO:BOOL=ON \
+  -D Trilinos_ENABLE_STKTransfer:BOOL=ON \
+  -D Trilinos_ENABLE_STKSearch:BOOL=ON \
+  -D Trilinos_ENABLE_STKUtil:BOOL=ON \
+  -D Trilinos_ENABLE_STKTopology:BOOL=ON \
+  -D Trilinos_ENABLE_STKClassic:BOOL=OFF \
+  -D Trilinos_ENABLE_SEACASExodus:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASEpu:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASExodiff:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASNemspread:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASNemslice:BOOL=ON \
+\
+\
+$EXTRA_ARGS \
+${TRILINOS_PATH}
+

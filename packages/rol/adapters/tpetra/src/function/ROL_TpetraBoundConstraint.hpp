@@ -345,7 +345,7 @@ namespace ROL {
             ViewType u_;           // Kokkos view of Upper bounds
             Real min_diff_;
             Real scale_;
-            Teuchos::RCP<const Tpetra::Comm<int> > comm_; 
+            Teuchos::RCP<const Teuchos::Comm<int> > comm_; 
 
         public:
 
@@ -510,20 +510,6 @@ namespace ROL {
                 KokkosStructs::GradPruneActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,u_,epsn);
 
                 Kokkos::parallel_for(lclDim_,prune);                
-            }
-
-            void setVectorToUpperBound(Vector<Real> &u) {
-                Teuchos::RCP<MV> up =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(u)).getVector());
-
-                up->assign(*up_);
-            }
-
-            void setVectorToLowerBound(Vector<Real> &l) {
-                Teuchos::RCP<MV> lp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(l)).getVector());
-
-                lp->assign(*lp_);
             }
       }; // End class TpetraBoundConstraint 
 

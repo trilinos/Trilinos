@@ -43,7 +43,7 @@
 #ifndef __Panzer_STK_ParameterListCallback_hpp__
 #define __Panzer_STK_ParameterListCallback_hpp__
 
-#ifdef HAVE_TEKO
+#ifdef PANZER_HAVE_TEKO
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -56,7 +56,7 @@
 #include <vector>
 #include <map>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 template <typename GO> class STKConnManager;
 
@@ -69,7 +69,7 @@ class ParameterListCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos:
 public:
   ParameterListCallback(const std::string & coordFieldName,
                         const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fp,
-                        const Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > & connManager, 
+                        const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
    Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
@@ -103,13 +103,17 @@ public:
    void buildCoordinates();
    void buildArrayToVector();
 
+   //! Store a vector solely for the purpose of making it persist with this object
+   void storeExtraVector(const Teuchos::RCP<const std::vector<double> > & extra)
+   { extraVecs_.push_back(extra); }
+
 private:
 
    void setFieldByKey(const std::string & key,Teuchos::ParameterList & pl) const;
 
    std::string coordFieldName_;
    std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns_;
-   Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > connManager_;
+   Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > connManager_;
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_;
    bool coordinatesBuilt_;
  
@@ -118,12 +122,13 @@ private:
    std::vector<double> zcoords_;
 
    mutable Teuchos::RCP<const panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node> > arrayToVector_;
+   std::vector<Teuchos::RCP<const std::vector<double> > > extraVecs_;
 };
 
 }
 
 #include "Panzer_STK_ParameterListCallback_impl.hpp"
 
-#endif // HAVE_TEKO
+#endif // PANZER_HAVE_TEKO
 
 #endif

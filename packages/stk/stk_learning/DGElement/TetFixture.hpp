@@ -77,7 +77,7 @@ private:
         stk::mesh::EntityVector nodes(num_nodes);
         get_bulk().modification_begin();
         for(unsigned int i=0;i<num_nodes;++i)
-            nodes[i] = get_bulk().declare_entity(stk::topology::NODE_RANK, i+1, *nodePart);
+            nodes[i] = get_bulk().declare_node(i+1, {nodePart});
         get_bulk().modification_end();
         return nodes;
     }

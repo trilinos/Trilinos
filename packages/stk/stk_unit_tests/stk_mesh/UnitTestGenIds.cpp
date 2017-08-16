@@ -114,7 +114,7 @@ TEST(GeneratedIds, StkMeshApproach1)
 {
     MpiInfo mpiInfo(MPI_COMM_WORLD);
 
-    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:10x10x10");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:10x10x10");
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, mpiInfo.getMpiComm());
@@ -139,7 +139,7 @@ TEST(GeneratedIds, StkMeshApproach1)
 
     stk::mesh::Selector select_owned( stkMeshMetaData.locally_owned_part() );
 
-    std::vector<unsigned> count;
+    std::vector<size_t> count;
     stk::mesh::count_entities( select_owned , stkMeshBulkData , count );
     size_t numIdsThisProc = count[stk::topology::NODE_RANK];
 
@@ -200,7 +200,7 @@ TEST(GeneratedIds, StkMeshApproach2)
 {
     MpiInfo mpiInfo(MPI_COMM_WORLD);
 
-    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:10x10x10");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:10x10x10");
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, mpiInfo.getMpiComm());

@@ -163,7 +163,7 @@ extern "C" {
 #define MAX_CPU_WGTS	10 /* max number of cpu weights */
 
 enum LISTS {  /* NULL lists to pass to Zoltan_Migrate */
-  NONE = 0,
+  NO_NULL_LISTS = 0,
   IMPORT_LISTS,
   EXPORT_LISTS
 };
@@ -171,7 +171,7 @@ enum LISTS {  /* NULL lists to pass to Zoltan_Migrate */
 enum DATA_TYPE {
   MESH = 0,
   ZOLTAN_GRAPH,
-  HYPERGRAPH
+  ZOLTAN_HYPERGRAPH
 };
 
 enum PARTITIONING_TYPE {

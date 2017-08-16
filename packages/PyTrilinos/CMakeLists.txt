@@ -52,7 +52,7 @@ IF(NOT BUILD_SHARED_LIBS)
 ENDIF()
 
 # Set the package version number
-SET(PyTrilinos_VERSION 12.3 (Dev))
+SET(PyTrilinos_VERSION 12.8)
 
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
@@ -187,9 +187,8 @@ IF(NOX_ENABLE_LOCA)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(NOX_ENABLE_LOCA)
 
-# Python interpreter, library, and header files are required.
+# Python interpreter and header files are required
 FIND_PACKAGE(PythonInterp 2.5 REQUIRED)
-#FIND_PACKAGE(PythonLibs 2.5 REQUIRED)
 FIND_PACKAGE(PythonInclude REQUIRED)
 
 # Python module numpy is required
@@ -231,7 +230,7 @@ MESSAGE(STATUS "    ${PyTrilinos_PACKAGES}")
 # Determine the PyTrilinos default installation directory prefix.  If
 # CMAKE_INSTALL_PREFIX is set by the user, then use it.  Else the
 # prefix is set to the value of python's sys.prefix.
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print sys.prefix"
+EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print(sys.prefix)"
   OUTPUT_VARIABLE PYTHON_PREFIX
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
@@ -249,7 +248,17 @@ SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
 # based on whether the user has doxygen installed.
 FIND_PACKAGE(Doxygen)
 IF(DOXYGEN_FOUND)
-  SET(PyTrilinos_DOCSTRINGS_DEFAULT ON)
+  IF(${DOXYGEN_VERSION} VERSION_EQUAL 1.8.13 AND PyTrilinos_DOCSTRINGS)
+    MESSAGE(FATAL_ERROR 
+      "Doxygen version ${DOXYGEN_VERSION} has a bug that makes it incompatible with "
+      "PyTrilinos. To work around this, you may disable PyTrilinos docstrings by setting "
+      "PyTrilinos_DOCSTRINGS=OFF. "
+      "Alternatively, you may choose to use a different version of doxygen. If you "
+      "choose this route, be sure that the new version of doxygen is found first in "
+      "your environment path.")
+  ELSE(${DOXYGEN_VERSION} VERSION_EQUAL 1.8.13 AND PyTrilinos_DOCSTRINGS)
+    SET(PyTrilinos_DOCSTRINGS_DEFAULT ON)
+  ENDIF(${DOXYGEN_VERSION} VERSION_EQUAL 1.8.13 AND PyTrilinos_DOCSTRINGS)
 ELSE(DOXYGEN_FOUND)
   SET(PyTrilinos_DOCSTRINGS_DEFAULT OFF)
   MESSAGE(STATUS "doxygen not found!")
@@ -282,18 +291,7 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 #
 # Exclude files for source package.
 #
-
 TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
-TRIBITS_EXCLUDE_FILES(
-  doc/PyTrilinos-SciProg/CoupledSolver.png
-  doc/PyTrilinos-SciProg/CoupledSolver.pptx
-  doc/PyTrilinos-SciProg/PyTrilinos.bib
-  doc/PyTrilinos-SciProg/PyTrilinos.tex
-  doc/PyTrilinos-SciProg/Response.pdf
-  doc/PyTrilinos-SciProg/Response.tex
-  doc/PyTrilinos-SciProg/cage12rcb8.png
-  )
 
 # Execute the package postprocessing
 TRIBITS_PACKAGE_POSTPROCESS()

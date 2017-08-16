@@ -61,7 +61,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 
 template<class Real>
 class Objective_ParabolicControl : public ROL::Objective<Real> {
@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
     RCP<ROL::Vector<RealT> > lo = rcp( new ROL::StdVector<RealT>(l_rcp) );
     RCP<ROL::Vector<RealT> > up = rcp( new ROL::StdVector<RealT>(u_rcp) );
 
-    ROL::BoundConstraint<RealT> icon(lo,up);
+    ROL::Bounds<RealT> icon(lo,up);
 //    BoundConstraint_ParabolicControl<RealT> icon(nt);
 
     // Primal dual active set.

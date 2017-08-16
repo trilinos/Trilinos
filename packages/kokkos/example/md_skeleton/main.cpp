@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
   int iter = 100;
 
   /* Default value for system size (4*nx*ny*nz atoms)
-   * nx, ny and nz are set to system_size if not specififed on commandline */
+   * nx, ny and nz are set to system_size if not specified on commandline */
 
   int system_size = 20;
   int nx = -1;
@@ -154,13 +154,13 @@ int main(int argc, char** argv) {
 
   printf("-> Init Device\n");
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   Kokkos::HostSpace::execution_space::initialize(teams*num_threads);
   Kokkos::Cuda::SelectDevice select_device(device);
   Kokkos::Cuda::initialize(select_device);
-#elif defined( KOKKOS_HAVE_OPENMP )
+#elif defined( KOKKOS_ENABLE_OPENMP )
   Kokkos::OpenMP::initialize(teams*num_threads);
-#elif defined( KOKKOS_HAVE_PTHREAD )
+#elif defined( KOKKOS_ENABLE_THREADS )
   Kokkos::Threads::initialize(teams*num_threads);
 #endif
 
@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
 
   printf("-> Running %i force calculations\n",iter);
 
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
 
   for(int i=0;i<iter;i++) {
     force(system,0);

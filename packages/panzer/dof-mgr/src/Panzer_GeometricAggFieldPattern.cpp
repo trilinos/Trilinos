@@ -103,8 +103,10 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<Teuchos::RCP<const
          std::vector<int> & current = patternData_[d][s];
          for(std::size_t p=0;p<patterns.size();p++) {
             RCP<const FieldPattern> field = patterns[p];
-            std::size_t num = field->getSubcellIndices(d,s).size();
- 
+
+            // if dofs exist, we have a geometric entity 
+            const std::size_t num = ( (field->getSubcellIndices(d,s).size() > 0) ? 1 : 0 );
+
             if(current.size()<num) { 
                for(int i=num-current.size();i>0;i--,counter++) 
                   current.push_back(counter);

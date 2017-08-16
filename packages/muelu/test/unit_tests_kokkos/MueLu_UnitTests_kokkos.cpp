@@ -43,7 +43,18 @@
 // ***********************************************************************
 //
 // @HEADER
+
+
+#include <Teuchos_UnitTestRepository.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
+#ifdef HAVE_MUELU_KOKKOSCORE
+#include <Kokkos_Core.hpp>
+#endif
+
+#include "MueLu_TestHelpers_kokkos.hpp"
+
+/*#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_UnitTestRepository.hpp>
 #include <Teuchos_VerboseObject.hpp>
@@ -52,7 +63,7 @@
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 
-#include "MueLu_VerboseObject.hpp"
+#include "MueLu_VerboseObject.hpp"*/
 
 int main(int argc, char* argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -102,6 +113,6 @@ int main(int argc, char* argv[]) {
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
+  Kokkos::finalize();
   return (success ? ierr : EXIT_FAILURE);
 }

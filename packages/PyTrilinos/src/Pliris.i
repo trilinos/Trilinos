@@ -63,11 +63,6 @@ python version of the Pliris package supports the following class:
 	docstring = %pliris_docstring) Pliris
 
 %{
-// System includes
-// #include <iostream>
-// #include <sstream>
-// #include <vector>
-
 // Configuration includes
 #include "PyTrilinos_config.h"
 
@@ -75,23 +70,14 @@ python version of the Pliris package supports the following class:
 #ifdef HAVE_EPETRA
 #undef HAVE_INTTYPES_H
 #undef HAVE_STDINT_H
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-// #include "Epetra_MultiVector.h"
-// #include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
 // Pliris includes
-// #include "Pliris_config.h"
+#include "PlirisVersion.h"
 #include "Pliris.h"
 
 #endif
@@ -100,6 +86,14 @@ python version of the Pliris package supports the following class:
 
 // Auto-documentation feature
 %feature("autodoc", "1");
+
+// C++ STL support.  If the wrapped class uses standard template
+// library containers, the following %include wraps the containers
+// and makes certain conversions seamless, such as between std::string
+// and python strings.
+%include "std_except.i"
+%include "std_string.i"
+using std::string;
 
 // Include Pliris documentation
 // %include "Pliris_dox.i"
@@ -114,9 +108,15 @@ python version of the Pliris package supports the following class:
 // Pliris configuration support //
 ///////////////////////////////////
 %include "Pliris_config.h"
+
+////////////////////////////
+// Pliris Version support //
+////////////////////////////
+%rename(Version) Pliris_Version;
+%include "PlirisVersion.h"
 %pythoncode
 {
-__version__ = PACKAGE_VERSION
+  __version__ = Version()
 }
 
 ////////////////////

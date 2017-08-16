@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -79,7 +79,7 @@ namespace Ifpack2 {
   Ifpack2::Preconditioner.  The default is perfectly fine.  This
   template parameter only exists for backwards compatibility.
 
-section Ifpack2_AdditiveSchwarz_Summary Summary
+\section Ifpack2_AdditiveSchwarz_Summary Summary
 
 This class implements Additive Schwarz domain decomposition, with
 optional overlap.  It operates on a given Tpetra::RowMatrix.  Each
@@ -495,6 +495,8 @@ public:
   ///   - "schwarz: filter singletons" (\c bool): If true, exclude
   ///     rows with just a single entry on the calling process.
   ///     Default is false.
+  ///   - "schwarz: num iterations" (\c int): Numter of iterations to
+  ///     perform. Default is 1.
   ///
   /// \section Ifpack2_AS_setParams_subd Subdomain solver parameters
   ///

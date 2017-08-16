@@ -1,4 +1,5 @@
 INCLUDE(TribitsCreateClientTemplateHeaders)
+INCLUDE(CMakeParseArguments)
 
 #
 # Function that creates a set of template code client headers that either
@@ -28,13 +29,15 @@ INCLUDE(TribitsCreateClientTemplateHeaders)
 
 FUNCTION(TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS  BASE_DIR)
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
     #prefix
     PARSE
-    #lists
-    ""
     #options
     "NOSIERRABJAM"
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    ""
     ${ARGN}
     )
 

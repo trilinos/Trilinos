@@ -34,6 +34,8 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_HPP
 #define STKTOPOLOGY_TOPOLOGY_HPP
 
+#include <stk_util/stk_config.h>
+
 #include <string>
 
 #include <utility>
@@ -75,7 +77,7 @@ struct topology
     , QUAD_8, QUADRILATERAL_8 = QUAD_8
     , QUAD_9, QUADRILATERAL_9 = QUAD_9
     //ELEMENT_RANK
-    , PARTICLE
+    , PARTICLE, BEGIN_ELEMENT_RANK = PARTICLE
     , LINE_2_1D
     , LINE_3_1D
     , BEAM_2
@@ -109,7 +111,11 @@ struct topology
     , HEX_27, HEXAHEDRON_27 = HEX_27
     , END_TOPOLOGY
     , NUM_TOPOLOGIES = END_TOPOLOGY - BEGIN_TOPOLOGY
-    , SUPERELEMENT_START = END_TOPOLOGY+1
+    , SUPEREDGE_START = END_TOPOLOGY+1
+    , SUPEREDGE_END = SUPEREDGE_START + 1000
+    , SUPERFACE_START = SUPEREDGE_END+1
+    , SUPERFACE_END = SUPERFACE_START + 1000
+    , SUPERELEMENT_START = SUPERFACE_END+1
     , FORCE_TOPOLOGY_TO_UNSIGNED = ~0U // max unsigned int
   };
 
@@ -139,6 +145,7 @@ struct topology
   unsigned dimension() const;
 
   /// how many nodes define this topology
+  STK_FUNCTION
   unsigned num_nodes() const;
 
   /// how many nodes are vertices
@@ -170,7 +177,7 @@ struct topology
   topology edge_topology() const;
 
   /// what is the topology of the given face
-  topology face_topology(unsigned face_ordinal = 0) const;
+  topology face_topology(unsigned face_ordinal) const;
 
   /// fill the output ordinals with the ordinals that make up the given edge
   template <typename OrdinalOutputIterator>
@@ -202,7 +209,7 @@ struct topology
   /// do the two arrays define equivalent entities (same nodes, but maybe a different permutation)
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
   template <typename NodeArrayA, typename NodeArrayB>
-  std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & b) const;
+  std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & possible_permutation_of_a) const;
 
   /// return the permutation index which gives the lowest lexicographical ordering of the nodes
   /// input 'nodes' is expected to be of length num_nodes.
@@ -313,6 +320,23 @@ struct topology
     return m_value > SUPERELEMENT_START;
   }
 
+  STK_FUNCTION
+  bool is_superface() const
+  {
+    return m_value > SUPERFACE_START && m_value < SUPERFACE_END;
+  }
+
+  STK_FUNCTION
+  bool is_superedge() const
+  {
+    return m_value > SUPEREDGE_START && m_value < SUPEREDGE_END;
+  }
+
+  bool is_super_topology() const
+  {
+    return is_superelement() || is_superface() || is_superedge();
+  }
+
   //***************************************************************************
   //cast to integer type
   //***************************************************************************
@@ -333,11 +357,13 @@ struct topology
   //constructors
   //***************************************************************************
   /// default construct to invalid
+  STK_FUNCTION
   topology()
     : m_value(INVALID_TOPOLOGY)
   {}
 
   /// implicit construct from a topology_t
+  STK_FUNCTION
   topology(topology_t topo)
     : m_value(topo)
   {}
@@ -482,6 +508,34 @@ topology operator--(topology &t,int)
 //***************************************************************************
 //create superelement
 //***************************************************************************
+inline
+topology create_superedge_topology(unsigned num_nodes)
+{
+  if ( num_nodes < 1u ) return topology::INVALID_TOPOLOGY;
+  return static_cast<topology::topology_t>(num_nodes + topology::SUPEREDGE_START);
+}
+
+inline
+topology create_superedge_topology(int num_nodes)
+{
+  if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
+  return static_cast<topology::topology_t>(num_nodes + topology::SUPEREDGE_START);
+}
+
+inline
+topology create_superface_topology(unsigned num_nodes)
+{
+  if ( num_nodes < 1u ) return topology::INVALID_TOPOLOGY;
+  return static_cast<topology::topology_t>(num_nodes + topology::SUPERFACE_START);
+}
+
+inline
+topology create_superface_topology(int num_nodes)
+{
+  if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
+  return static_cast<topology::topology_t>(num_nodes + topology::SUPERFACE_START);
+}
+
 inline
 topology create_superelement_topology(unsigned num_nodes)
 {

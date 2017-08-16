@@ -1,3 +1,44 @@
+//@HEADER
+// ************************************************************************
+// 
+//               ShyLU: Hybrid preconditioner package
+//                 Copyright 2012 Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact A.M. Bradley (ambradl@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
 // Unit test for HTS based on randomly generated matrices and no external data.
 
 #include <cassert>
@@ -10,8 +51,6 @@
 #include <limits>
 
 #include <complex>
-
-#include <omp.h>
 
 #include "hts_test_util.hpp"
 
@@ -87,13 +126,16 @@ template<typename Int, typename Size, typename Sclr> class Tester {
       // True x.
       ut::gen_rand_vector(xt.size(), xt);
       // Generate the rhs b.
+      std::vector<Sclr> y(d.m);
       for (Int irhs = 0; irhs < max_nrhs; ++irhs) {
         const Sclr* const xtp = xt.data() + irhs*d.m;
         Sclr* const bp = b.data() + irhs*ldb;
-        std::vector<Sclr> y(d.m);
         for (Int i = 0; i < d.m; ++i)
           x[i] = xtp[d.q[i]];
         ut::mvp(d, to.transpose, to.conjugate, x.data(), y.data());
+        if (to.has_unit_diag())
+          for (Int i = 0; i < d.m; ++i)
+            y[i] += x[i];
         for (Int i = 0; i < d.m; ++i)
           bp[d.p[i]] = y[i];
         for (Int i = 0; i < d.m; ++i)
@@ -127,9 +169,20 @@ template<typename Int, typename Size, typename Sclr> class Tester {
     {
       typename ihts::Impl* impl;
       try {
+        std::vector<Sclr> Td;
+        if (to.reprocess) {
+          // Save the true values.
+          Td = d.v;
+          // Zero the matrix values to simulate reprocessing.
+          d.v.assign(d.v.size(), 1);
+        }
         impl = ihts::preprocess(T, max_nrhs - 1 /* For testing; see below. */,
                                 to.nthreads, to.reprocess, d.p.data(), d.q.data(),
                                 d.r.data(), &opts);
+        if (to.reprocess) {
+          // Restore the values.
+          d.v = Td;
+        }
       } catch (...) {
         if ( ! exception_expected) {
           std::cerr << "Unexpected exception on ";
@@ -143,10 +196,8 @@ template<typename Int, typename Size, typename Sclr> class Tester {
       if (print_options)
         ihts::print_options(impl, std::cout);
       if (to.reprocess) {
-        // This isn't necessary since we aren't changing the numbers, but
-        // pretend we are to test the numerical phase. Do it 3 times to test
-        // idempotency.
-        for (int rep = 0; rep < 3; ++rep)
+        // Run 2 times to test idempotency.
+        for (int rep = 0; rep < 2; ++rep)
           ihts::reprocess_numeric(impl, T, d.r.data());
       }
       // Exercise reset_max_nrhs.
@@ -155,7 +206,7 @@ template<typename Int, typename Size, typename Sclr> class Tester {
           ((to.upper && ! to.transpose) || ( ! to.upper && to.transpose)) &&
           d.m > 1 && nnz > static_cast<Size>(d.m) /* not diag */)
         ++nerr;
-      for (int slv = 0; slv < 2; ++slv) {
+      for (int slv = 0; slv <= 2; ++slv) {
         // Check each solve interface.
         switch (slv) {
         case 0:
@@ -194,8 +245,8 @@ template<typename Int, typename Size, typename Sclr> class Tester {
         for (Int i = 0; i < d.m; ++i)
           xbp[i] = bp[i];
       }
-      ihts::solve_serial(T, ! to.upper, xb.data(), to.nrhs, d.p.data(),
-                         d.q.data(), d.r.data(), w.data());
+      ihts::solve_serial(T, ! to.upper, to.has_unit_diag(), xb.data(), to.nrhs,
+                         d.p.data(), d.q.data(), d.r.data(), w.data());
       const double rd = ut::reldif(xt.data(), xb.data(), d.m*to.nrhs);
       if (rd >= tol) {
         ++nerr;
@@ -222,16 +273,16 @@ template<typename Int, typename Size, typename Sclr> class Tester {
     bool correct_exception_thrown = false;
     try {
       test(to, false, true);
-    } catch (const hts::NotFullDiagonal&) {
-      correct_exception_thrown = to.matrix_type == TestOptions::missing_diag;
+    } catch (const hts::NotFullDiagonalException&) {
+      correct_exception_thrown = to.matrix_type == TestOptions::missing_some_diag;
     } catch (const hts::NotTriangularException&) {
-      correct_exception_thrown = to.matrix_type == TestOptions::not_tri;
+      correct_exception_thrown = ut::is_not_tri(to.matrix_type);
     }
     const int nerr = correct_exception_thrown ? 0 : 1;
     if (nerr && to.verbose) {
       std::cout << "test_for_exception failed for ";
       to.print(std::cout);
-      std::cout << "\n";      
+      std::cout << "\n";
     }
     return nerr;
   }
@@ -255,7 +306,7 @@ public:
     // Test our own transpose to make sure it's OK for subsequent use.
     nerr += test_transpose(verbose, 277);
 
-    const int ns[] = {1, 2, 11, 300};
+    const int ns[] = {1, 2, 3, 21, 300};
     const int max_nthreads = omp_get_max_threads();
     const int nthreads_step = max_nthreads > 40 ? 11 : 3;
 
@@ -286,12 +337,18 @@ public:
                   to.matrix_type = TestOptions::diag;
                   nerr += test(to, print_options);
                   print_options = false;
-                  to.matrix_type = TestOptions::dense;  nerr += test(to);
+                  to.matrix_type = TestOptions::dense; nerr += test(to);
                   to.matrix_type = TestOptions::sparse; nerr += test(to);
                   to.matrix_type = TestOptions::block_sparse; nerr += test(to);
+                  to.matrix_type = TestOptions::implicit_unit_diag; nerr += test(to);
+                  to.matrix_type = TestOptions::block_sparse_implicit_unit_diag; nerr += test(to);
                   if (to.n > 2) {
-                    to.matrix_type = TestOptions::not_tri; nerr += test_for_exception(to);
-                    to.matrix_type = TestOptions::missing_diag; nerr += test_for_exception(to);
+                    to.matrix_type = TestOptions::not_tri;
+                    nerr += test_for_exception(to);
+                    to.matrix_type = TestOptions::missing_some_diag;
+                    nerr += test_for_exception(to);
+                    to.matrix_type = TestOptions::not_tri_almost_diag;
+                    nerr += test_for_exception(to);
                   }
                 }
               }

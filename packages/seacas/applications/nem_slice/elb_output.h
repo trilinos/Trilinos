@@ -35,7 +35,7 @@
 
 #ifndef _ELB_OUTPUT_CONST_H_
 #define _ELB_OUTPUT_CONST_H_
-#include <string>                       // for string
+#include <string> // for string
 struct Machine_Description;
 struct Problem_Description;
 struct Sphere_Info;
@@ -43,21 +43,12 @@ template <typename INT> struct LB_Description;
 template <typename INT> struct Mesh_Description;
 
 template <typename INT>
-int write_nemesis(std::string &filename,
-                  Machine_Description* machine,
-                  Problem_Description* problem,
-                  Mesh_Description<INT>* mesh,
-                  LB_Description<INT>* lb,
-                  Sphere_Info* sphere
-);
+int write_nemesis(std::string &filename, Machine_Description *machine, Problem_Description *problem,
+                  Mesh_Description<INT> *mesh, LB_Description<INT> *lb, Sphere_Info *sphere);
 
 template <typename INT>
-int write_vis(std::string &vis_filename,
-              std::string &exo_inp_filename,
-              Machine_Description* machine,
-              Problem_Description* problem,
-              Mesh_Description<INT>* mesh,
-              LB_Description<INT>* lb
-);
+int write_vis(std::string &vis_filename, std::string &exo_inp_filename,
+              Machine_Description *machine, Problem_Description *problem,
+              Mesh_Description<INT> *mesh, LB_Description<INT> *lb);
 
 #endif /* _ELB_OUTPUT_CONST_H_ */

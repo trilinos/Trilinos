@@ -46,13 +46,18 @@
 #ifndef MUELU_REFMAXWELL_DEF_HPP
 #define MUELU_REFMAXWELL_DEF_HPP
 
+// TODO move this file to xpetra subfolder
+
 #include "MueLu_ConfigDefs.hpp"
 
+#include "Xpetra_Map.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-
 #include "MueLu_RefMaxwell_decl.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SaPFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MLParameterListInterpreter.hpp"
@@ -62,17 +67,13 @@
 namespace MueLu {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
-
-  return Xpetra::toTpetraNonZero(SM_Matrix_->getDomainMap());
-
+Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
+  return SM_Matrix_->getDomainMap();
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const {
-
-  return Xpetra::toTpetraNonZero(SM_Matrix_->getRangeMap());
-
+Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const {
+  return SM_Matrix_->getRangeMap();
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -121,7 +122,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   //D0_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
   // Form TMT_Matrix
-  Teuchos::RCP<XMat> C1 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+  Teuchos::RCP<Matrix> C1 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
   TMT_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
@@ -151,7 +152,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   formCoarseMatrix();
 
   // build fine grid operator for (2,2)-block, D0* M1 D0
-  Teuchos::RCP<XMat> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
+  Teuchos::RCP<Matrix> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
   A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
@@ -225,24 +226,24 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
 
   // pull out tentative P
   Teuchos::RCP<Level> Level1 = auxHierarchy -> GetLevel(1);
-  Teuchos::RCP<XMat> P = Level1 -> Get< Teuchos::RCP<XMat> >("P",Pfact.get());
+  Teuchos::RCP<Matrix> P = Level1 -> Get< Teuchos::RCP<Matrix> >("P",Pfact.get());
 
   // make weighting matrix
-  Teuchos::RCP<XMat> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
+  Teuchos::RCP<Matrix> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
   D0_Matrix_Abs -> resumeFill();
   D0_Matrix_Abs -> setAllToScalar((Scalar)0.5);
   Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
   Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
   D0_Matrix_Abs -> fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
-  Teuchos::RCP<XMat> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),0);
+  Teuchos::RCP<Matrix> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
 
   // put in entries to P11
   size_t dim = Nullspace_->getNumVectors();
   size_t numLocalRows = SM_Matrix_->getNodeNumRows();
-  Teuchos::RCP<XMap> BlockColMap
+  Teuchos::RCP<Map> BlockColMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getColMap(),dim);
-  P11_ = Teuchos::rcp(new XCrsWrap(Ptent->getRowMap(),BlockColMap,0,Xpetra::StaticProfile));
+  P11_ = Teuchos::rcp(new CrsMatrixWrap(Ptent->getRowMap(),BlockColMap,0,Xpetra::StaticProfile));
 
   std::vector< Teuchos::ArrayRCP<const Scalar> > nullspace(dim);
   for(size_t i=0; i<dim; i++) {
@@ -274,7 +275,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   ArrayRCP<LocalOrdinal> rcpColumns;
   ArrayRCP<Scalar>       rcpValues;
 
-  RCP<XCRS> TP11 = rcp_dynamic_cast<XCrsWrap>(P11_)->getCrsMatrix();
+  RCP<CrsMatrix> TP11 = rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix();
   TP11->allocateAllValues(nnz, rcpRowPtr, rcpColumns, rcpValues);
 
   ArrayView<size_t>       rows    = rcpRowPtr();
@@ -285,7 +286,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   for (size_t ii = 0; ii < blockCols.size(); ii++) columns[ii] = blockCols[ii];
   for (size_t ii = 0; ii < blockVals.size(); ii++) values[ii]  = blockVals[ii];
   TP11->setAllValues(rcpRowPtr, rcpColumns, rcpValues);
-  Teuchos::RCP<XMap> blockCoarseMap
+  Teuchos::RCP<Map> blockCoarseMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getDomainMap(),dim);
   TP11->expertStaticFillComplete(blockCoarseMap,SM_Matrix_->getDomainMap());
 
@@ -295,8 +296,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
 
   // coarse matrix for P11* (M1 + D1* M2 D1) P11
-  Teuchos::RCP<XMat> C = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
-  Teuchos::RCP<XMat> Matrix1 = MatrixFactory::Build(P11_->getDomainMap(),0);
+  Teuchos::RCP<Matrix> C = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+  Teuchos::RCP<Matrix> Matrix1 = MatrixFactory::Build(P11_->getDomainMap(),0);
 
   // construct (M1 + D1* M2 D1) P11
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*P11_,false,*C,true,true);
@@ -315,9 +316,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
                                "lumped mass matrix required for add-on (i.e. M0inv_Matrix is null)");
 
     // coarse matrix for add-on, i.e P11* (M1 D0 M0inv D0* M1) P11
-    Teuchos::RCP<XMat> Zaux = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
-    Teuchos::RCP<XMat> Z = MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-    Teuchos::RCP<XMat> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
+    Teuchos::RCP<Matrix> Zaux = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
+    Teuchos::RCP<Matrix> Z = MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
+    Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
     // construct M1 P11
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*P11_,false,*Zaux,true,true);
     // construct Z = D0* M1 P11
@@ -325,7 +326,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
     // construct M0inv Z
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M0inv_Matrix_,false,*Z,false,*C2,true,true);
     // construct Z* M0inv Z
-    Teuchos::RCP<XMat> Matrix2 = MatrixFactory::Build(Z->getDomainMap(),0);
+    Teuchos::RCP<Matrix> Matrix2 = MatrixFactory::Build(Z->getDomainMap(),0);
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Z,true,*C2,false,*Matrix2,true,true);
     // add matrices together
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -340,23 +341,19 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new) {
-
-  // convert Tpetra matrices to Xpetra
-  Teuchos::RCP<XCRS> SM_tmp = Teuchos::rcp( new XTCRS(SM_Matrix_new) );
-  SM_Matrix_ = Teuchos::rcp( new XCrsWrap(SM_tmp) );
-
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::resetMatrix(Teuchos::RCP<Matrix> SM_Matrix_new) {
+  SM_Matrix_ = SM_Matrix_new;
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(const XTMV& RHS, XTMV& X) const {
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const {
 
   // compute residuals
-  RCP<XMV> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
-  RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
+  RCP<MultiVector> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
 
@@ -372,15 +369,15 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(co
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const XTMV& RHS, XTMV& X) const {
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const MultiVector& RHS, MultiVector& X) const {
 
-  RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
 
   // precondition (1,1)-block
-  RCP<XMV> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
+  RCP<MultiVector> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
@@ -403,15 +400,15 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const X
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const XTMV& RHS, XTMV& X) const {
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const MultiVector& RHS, MultiVector& X) const {
 
-  RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+  RCP<MultiVector> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
 
   // precondition (2,2)-block
-  RCP<XMV> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
+  RCP<MultiVector> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
@@ -433,33 +430,41 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const X
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+
+/*void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                                                            Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                                                                           Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
+                                                                           Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {*/
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply (const MultiVector& X, MultiVector& Y,
+            Teuchos::ETransp mode,
+            Scalar alpha,
+            Scalar beta) const {
   try {
 
-    TMV& temp_x = const_cast<TMV &>(X);
+    /*TMV& temp_x = const_cast<TMV &>(X);
     const XTMV tX(rcpFromRef(temp_x));
     XTMV       tY(rcpFromRef(Y));
-    tY.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    tY.putScalar(Teuchos::ScalarTraits<Scalar>::zero());*/
+
+    Y.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
 
     // apply pre-smoothing
-    HierarchySmoother_->Iterate(tX,tY,1);
+    HierarchySmoother_->Iterate(X,Y,1);
 
     // do solve for the 2x2 block system
+
     if(mode_=="additive")
-      applyInverseAdditive(tX,tY);
+      applyInverseAdditive(X,Y);
     else if(mode_=="121")
-      applyInverse121(tX,tY);
+      applyInverse121(X,Y);
     else if(mode_=="212")
-      applyInverse212(tX,tY);
+      applyInverse212(X,Y);
     else
-      applyInverseAdditive(tX,tY);
+      applyInverseAdditive(X,Y);
 
     // apply post-smoothing
-    HierarchySmoother_->Iterate(tX,tY,1);
+    HierarchySmoother_->Iterate(X,Y,1);
 
   } catch (std::exception& e) {
 
@@ -477,11 +482,11 @@ bool RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() con
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-initialize(const Teuchos::RCP<TCRS> & D0_Matrix,
-           const Teuchos::RCP<TCRS> & M0inv_Matrix,
-           const Teuchos::RCP<TCRS> & M1_Matrix,
-           const Teuchos::RCP<TMV>  & Nullspace,
-           const Teuchos::RCP<TMV>  & Coords,
+initialize(const Teuchos::RCP<Matrix> & D0_Matrix,
+           const Teuchos::RCP<Matrix> & M0inv_Matrix,
+           const Teuchos::RCP<Matrix> & M1_Matrix,
+           const Teuchos::RCP<MultiVector>  & Nullspace,
+           const Teuchos::RCP<MultiVector>  & Coords,
            Teuchos::ParameterList& List)
 {
   // some pre-conditions
@@ -498,27 +503,14 @@ initialize(const Teuchos::RCP<TCRS> & D0_Matrix,
   // set parameters
   setParameters(List);
 
-  // convert Tpetra matrices to Xpetra
-  Teuchos::RCP<XCRS> D0_tmp = Teuchos::rcp( new XTCRS(D0_Matrix) );
-  D0_Matrix_ = Teuchos::rcp( new XCrsWrap(D0_tmp) );
-
-  if(M0inv_Matrix != Teuchos::null) {
-    Teuchos::RCP<XCRS> M0inv_tmp = Teuchos::rcp( new XTCRS(M0inv_Matrix) );
-    M0inv_Matrix_ = Teuchos::rcp( new XCrsWrap(M0inv_tmp) );
-  }
-
-  Teuchos::RCP<XCRS> M1_tmp = Teuchos::rcp( new XTCRS(M1_Matrix) );
-  M1_Matrix_ = Teuchos::rcp( new XCrsWrap(M1_tmp) );
-
-  // convert Tpetra MultiVector to Xpetra
-  if(Coords != Teuchos::null)
-    Coords_ = Xpetra::toXpetra(Coords);
-  if(Nullspace != Teuchos::null)
-    Nullspace_ = Xpetra::toXpetra(Nullspace);
+  D0_Matrix_ = D0_Matrix;
+  M0inv_Matrix_ = M0inv_Matrix;
+  M1_Matrix_ = M1_Matrix;
+  Coords_ = Coords;
+  Nullspace_ = Nullspace;
 }
 
 } // namespace
-#endif //ifdef HAVE_MUELU_TPETRA
 
 #define MUELU_REFMAXWELL_SHORT
 #endif //ifdef MUELU_REFMAXWELL_DEF_HPP

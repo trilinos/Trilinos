@@ -79,7 +79,7 @@ public:
 	  MPI_Comm       communicator ,       /* All processors */
     const int            root_processor ,     /* All processors */
     const std::ios_base::openmode file_mode , /* All processors */
-    const char * const   file_name = NULL );  /* Root processor */
+    const char * const   file_name = nullptr );  /* Root processor */
 
   //: GLOBAL: Close the file.
   // If output mode then flush the output.
@@ -108,6 +108,8 @@ public:
   //: Query wall-clock time spent communicating.
   double wtime() const ;
 
+  //: Return number of aprepro parse errors detected
+  int aprepro_parse_error_count() const {return aprepro_parsing_error_count;}
 protected:
 
   //: Called to refill the input buffer
@@ -139,12 +141,13 @@ private:
   char *  aprepro_buffer;     // Buffer holding results of aprepro processing input file (root only)
   size_t  aprepro_buffer_len; // Length of aprepro buffer.
   size_t  aprepro_buffer_ptr; // Pointer to current location of data returned from aprepro_buffer.
+  int     aprepro_parsing_error_count; // Number of errors during parsing.
   const std::string aprepro_defines;
 };
 
 /*--------------------------------------------------------------------*/
 
-inline int  mpi_filebuf::is_open() const { return NULL != comm_buffer ; }
+inline int  mpi_filebuf::is_open() const { return nullptr != comm_buffer ; }
 
 /* The SUN has the 'streambuf::pptr()' as a non-const method,
    which violates the ISO/ANSI standard specification.

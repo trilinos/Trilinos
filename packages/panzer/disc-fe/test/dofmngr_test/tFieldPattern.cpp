@@ -48,8 +48,6 @@
 #include <string>
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
@@ -75,67 +73,66 @@ std::string note = "***   NOTE: UNIT TEST BASED ON SEPT 2010   ***\n"
                    "***   INTREPID AND SHARDS Trilinos-dev     ***\n"
                    "***   DOXYGEN WEBSITE                      ***\n";
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 /////////////////////////////////////////////
 // 2D tests
 /////////////////////////////////////////////
 
-bool intrepid_equals(const RCP<Intrepid2::Basis<double,FieldContainer> > & basisA,
-                     const RCP<Intrepid2::Basis<double,FieldContainer> > & basisB,
+bool intrepid_equals(const RCP<Intrepid2::Basis<PHX::exec_space,double,double> > & basisA,
+                     const RCP<Intrepid2::Basis<PHX::exec_space,double,double> > & basisB,
                      const std::string & file,int lineNo);
-bool intrepid_same_geom(const RCP<Intrepid2::Basis<double,FieldContainer> > & basisA,
-                       const RCP<Intrepid2::Basis<double,FieldContainer> > & basisB,
+bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::exec_space,double,double> > & basisA,
+                       const RCP<Intrepid2::Basis<PHX::exec_space,double,double> > & basisB,
                        const std::string & file,int lineNo);
 
 // triangle tests
 TEUCHOS_UNIT_TEST(tFieldPattern, test_equals)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
-   RCP<Intrepid2::Basis<double,FieldContainer> > basisA;
-   RCP<Intrepid2::Basis<double,FieldContainer> > basisB;
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA;
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB;
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
+   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
+   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(not intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
+   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
    TEST_ASSERT(not intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(not intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
+   basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>);
+   basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(not intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>);
+   basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>);
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 }
 
-bool intrepid_equals(const RCP<Intrepid2::Basis<double,FieldContainer> > & basisA,
-                     const RCP<Intrepid2::Basis<double,FieldContainer> > & basisB,
+bool intrepid_equals(const RCP<Intrepid2::Basis<PHX::exec_space,double,double> > & basisA,
+                     const RCP<Intrepid2::Basis<PHX::exec_space,double,double> > & basisB,
                      const std::string & file,int lineNo)
 {
    // notice if Intrepid2FieldPattern implements "equals" then this functionality
@@ -157,8 +154,8 @@ bool intrepid_equals(const RCP<Intrepid2::Basis<double,FieldContainer> > & basis
    return forward; // they are equal so that it shouldn't matter at this point 
 }
 
-bool intrepid_same_geom(const RCP<Intrepid2::Basis<double,FieldContainer> > & basisA,
-                       const RCP<Intrepid2::Basis<double,FieldContainer> > & basisB,
+bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::exec_space,double,double> > & basisA,
+                       const RCP<Intrepid2::Basis<PHX::exec_space,double,double> > & basisB,
                        const std::string & file,int lineNo)
 {
    // notice if Intrepid2FieldPattern implements "sameGeometry" then this functionality

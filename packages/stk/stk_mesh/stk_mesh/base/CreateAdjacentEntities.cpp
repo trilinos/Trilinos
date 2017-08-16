@@ -34,8 +34,9 @@
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Types.hpp>      // for EntityVector, EntityRank, etc
-#include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 
 namespace stk {
@@ -45,8 +46,11 @@ void create_adjacent_entities( BulkData & mesh, PartVector & /*arg_add_parts*/)
 {
   ThrowErrorMsgIf( mesh.in_modifiable_state(), "Mesh is not SYNCHRONIZED");
 
-  create_faces(mesh);
-  create_edges(mesh);
+  create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), {}, false);
+  if (mesh.mesh_meta_data().spatial_dimension() == 3)
+  {
+      create_edges(mesh);
+  }
 }
 
 }

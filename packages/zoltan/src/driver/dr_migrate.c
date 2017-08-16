@@ -235,7 +235,7 @@ char *yo = "migrate_elements";
   }
 
 
-  if (Test.Null_Lists == NONE) {
+  if (Test.Null_Lists == NO_NULL_LISTS) {
     if (Zoltan_Migrate(zz, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
                            num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
       == ZOLTAN_FATAL) {
@@ -750,11 +750,11 @@ ZOLTAN_ID_TYPE adj_elem;
     Gen_Error(0, "Fatal: error rebuilding elem comm maps");
   }
 
-  if (mesh->data_type == HYPERGRAPH && !update_elem_dd(mesh)) {
+  if (mesh->data_type == ZOLTAN_HYPERGRAPH && !update_elem_dd(mesh)) {
     Gen_Error(0, "Fatal: error updating element dd");
   }
 
-  if (mesh->data_type == HYPERGRAPH && mesh->hvertex_proc &&
+  if (mesh->data_type == ZOLTAN_HYPERGRAPH && mesh->hvertex_proc &&
       !update_hvertex_proc(mesh)) {
     Gen_Error(0, "Fatal: error updating hyperedges");
   }

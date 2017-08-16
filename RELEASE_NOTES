@@ -1,5 +1,294 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 12.10 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 12.10 general release contains 58 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL, RTOp, Rythmos, Sacado,
+SEACAS, Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos,
+ThreadPool, Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra,
+Zoltan, Zoltan2.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+Ifpack2
+
+  - Experimental multithreaded Gauss-Seidel
+
+    This uses a new thread-parallel graph coloring algorithm implemented
+    in KokkosKernels.  Ifpack2's support for this lives in
+    Ifpack2::Relaxation.  Currently, building it is disabled by default
+    (see #288).  Enabling it requires enabling the following CMake options
+    that are currently OFF by default:
+
+      - TpetraKernels_ENABLE_Experimental
+      - Ifpack2_ENABLE_Experimental
+      - Ifpack2_ENABLE_Experimental_KokkosKernels_Features
+
+  - Ifpack2::Krylov is really SUPER deprecated now
+
+    It's been deprecated for a LONG time, complete with deprecated
+    warnings.  This didn't suffice for warning some users, so I moved the
+    class to the new Ifpack2::DeprecatedAndMayDisappearAtAnyTime
+    namespace.
+
+  - Encapsulate local sparse triangular solves in a new class,
+    LocalSparseTriangularSolver
+
+  - Fix various issues
+
+    Issues fix include (but are not limited to) #672, #570, #567, #558,
+    #551, #544, #409, #234, and #64.
+
+Tpetra
+
+  - Build time and size improvements (fix #700)
+
+    KokkosKernels now only pre-builds the sparse matrix-vector multiply
+    kernels that Tpetra needs.  Also, for integer Scalar types,
+    KokkosKernels no longer optimizes sparse matrix-vector multiply for
+    multiple right-hand sides.  It does so only for non-integer (e.g.,
+    floating-point) Scalar types.  This reduces build time and size.  (See
+    Github Issue #700.)  Furthermore, KokkosKernels now only pre-builds
+    sparse matrix-vector multiply for the default offset type.
+
+  - Removed "using Teuchos::*" declarations from Tpetra_ConfigDefs.hpp
+
+    Tpetra no longer imports Teuchos classes like Comm and RCP (among
+    others) into the Tpetra namespace.  This will help us eventually
+    remove all the Teuchos_*.hpp header file includes from
+    Tpetra_ConfigDefs.hpp, thus improving build time.
+
+  - MultiVector: Add new two-argument randomize(min,max)
+
+  - MultiVector: Get rid of old-interface DistObject methods
+
+    Tpetra::MultiVector implements the new DistObject interface.  Thus, it
+    no longer needs to provide implementations for the following three
+    old-interface DistObject methods:
+
+      - createViews
+      - createViewsNonConst
+      - releaseViews
+
+  - Optimize Map::replaceCommWithSubset for MPI_COMM_SELF (#673)
+
+  - Fixed many other issues
+
+    Issues fixed include (but are not limited to) #699, #680, #638, #617,
+    #607, #603, #601, #597, #561, and #46.
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 12.8 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 12.8 general release contains 58 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL, RTOp, Rythmos, Sacado,
+SEACAS, Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos,
+ThreadPool, Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra,
+Zoltan, Zoltan2.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+Domi
+
+  - Added replicated boundaries
+    - A replicated boundary exists only on a periodic domain, and is
+      simply a convention that the end points are the same points. For
+      example, a left end coordinate that represents 0 degrees and a
+      right end coordinate that represents 360 degrees. Domi now
+      supports either convention, and it affects communication.
+    - Added additional tests for periodic domains
+
+  - Enhancements
+    - New MDVector constructor that takes a parent MDVector and an array
+      of Slices
+    - MDMap support for axis maps
+    - MDMap getMDComm() method
+
+PyTrilinos
+
+  - General
+    - Improved formatting in example scripts
+
+  - Domi
+    - Update MDMap constructor for replicated boundaries
+    - Fixed ETI bugs
+
+  - NOX/LOCA
+    - Fixed memory leak by updating NOX typemaps
+
+  - Tpetra
+    - Fix difficult-to-wrap Map class by using %inline
+
+Tpetra
+
+  - Stop creating Node instances explicitly!
+
+    Hi users!  Please don't create Node instances explicitly any more.
+    Tpetra::Map creates one for you, if you really need one.  You really
+    don't need Node instances: Map's constructors and nonmember
+    "constructors" don't need them any more, nor do Tpetra's Matrix Market
+    readers.
+
+    Creating Node instances explicitly causes issues with Kokkos
+    initialization.  Node will go away eventually, in favor of Kokkos
+    execution spaces and memory spaces.
+
+  - Lots of bug fixes, especially for CUDA
+
+  - Computing offsets in CrsGraph and CrsMatrix is now thread parallel
+
+    CrsGraph's and CrsMatrix's fillComplete method computes row offsets,
+    if they have not yet been computed.  This is now thread parallel.  It
+    uses Kokkos::parallel_scan.
+
+  - More BlockCrsMatrix kernels are thread parallel
+
+  - Interface changes to KokkosSparse::CrsMatrix (the "local" matrix)
+
+    - The replaceValues and sumIntoValues methods now take "is_sorted" and
+      "force_atomic" arguments.  These methods now use binary search
+      (falling back to linear search for short rows) for the sorted case.
+
+    - Row views in KokkosSparse::CrsMatrix are no longer templated.  They
+      now use the ordinal type, rather than the offset type, for indexing.
+      This suffices as long as there are not enough duplicate entries in a
+      row to exceed ordinal_type.  This has the beneficial side effect of
+      reducing the number of local sparse matrix-vector multiply kernel
+      instantiations.
+
+  - Got rid of LittleBlock and LittleVector (for Block* classes)
+
+    Instead, use the little_block_type, const_little_block_type,
+    little_vec_type, and const_little_vec_type typedefs in BlockCrsMatrix
+    and other related classes.  Underlying data layout has NOT changed
+    (yet), but constructors HAVE changed.  This is technically a
+    non-backwards-compatible interface change, but all these classes are
+    in an Experimental namespace anyway.
+
+  - Got rid of KokkosClassic::DefaultArithmetic
+
+    Stokhos was using this, so we had left it in place in previous
+    releases for backwards compatibility.  Now that no other packages
+    depend on it, we have gotten rid of it for good.  Its functionality
+    has been replaced by various functions in TpetraKernels.
+
+    The original idea behind DefaultArithmetic, as suggested in the name,
+    was that users could swap out this "default" implementation of
+    multivector operations with their own implementations.  This is
+    generally less useful than swapping out the implementation of sparse
+    matrix kernels (like sparse matrix-vector multiply or sparse
+    triangular solve).  As a result, Tpetra never had an implementation
+    (since at least January 2010) of multivector operations other than
+    DefaultArithmetic.
+
+ROL
+
+  - NEW FEATURES
+    - Methods   
+      - New phi-divergence capabilities for distributionally-robust
+        optimization.
+      - NonlinearLeastSquaresObjective functionality enables the solution of
+        nonlinear equations through the EqualityConstraint object.
+
+    - Infrastructure
+      - Composite bound constraint (ROL_BoundConstraint_Partitioned).
+      - Composite equality constraint (ROL_EqualityConstraint_Partitioned)
+      - Merit function for interior point methods.
+      - Adapter for Teuchos::SerialDenseVector.
+      - L1, Lp, Linf norms for interior point methods.
+      - Allow user-defined bracketing objects.
+      - Line searches can take user-defined scalar minimizers.
+      - Ability to supply ScalarMinimizationLineSearch with custom
+        ScalarFunction.
+      - New application development and interface tools for PDE-constrained
+        optimization in PDE-OPT.
+      - New PDE-OPT examples: stochastic Stefan-Boltzmann, stochastic
+        advection-diffusion, etc.
+      - Adaptive sparse grid capabilities with TriKota.
+
+Zoltan
+
+  - Improved robustness of RCB partitioner for problems where many objects have
+    weight = 0 (e.g., PIC codes).  Convergence is faster and the stopping 
+    criteria are more robust.
+
+  - Fixed bug that occurred when RETURN_LIST=PARTS and (Num_GID > 1 or
+    Num_LID > 1); GIDs and LIDs are now copied correctly into return lists.
+
+  - Fixed a bug related to struct padding in the siMPI serial MPI interface.
+
+
+Zoltan2 
+
+  - Graph/Matrix ordering
+    - Scotch now can be used for graph/matrix ordering.
+    - The ordering interface Zoltan2::OrderingSolution has been updated
+      to allow users to access separator info, if it is available.
+    - Zoltan2::OrderingSolution method getPermutation() is now 
+      getPermutationView().
+
+  - Partitioning Metrics
+    - Partitioning metrics have been moved out of the PartitioningProblem.
+      They are now accessed through a separate class:  
+      Zoltan2::EvaluatePartition.  
+    - EvaluatePartition accepts as input a
+      Zoltan2::Adapter and, optionally, a Zoltan2::PartitioningSolution.
+      Thus, it can be used before or after partitioning, and before or
+      after migration.
+    - Imbalance and graph metrics are available.
+
+  - Task placement
+    - A new PartitionMapping class maps parts to processors.  
+    - The MachineRepresentation has been updated, and specializations using
+      Cray RCA and IBM TopoMgr are provided.
+    - Geometric task placement using Multijagged partitioning better handles
+      cases where the machine's network dimension is greater than the 
+      dimension of the coordinates.
+
+  - Multijagged partitioning
+    - Zoltan2's Multijagged partitioner can now partition wrt the longest
+      coordinate dimension, or in specified x-y-z order.
+
+  - TPLs
+    - Conversions between the index types in TPLs (ParMETIS, Scotch, Zoltan)
+      are handled more robustly through the TPL_Traits class.
+    - Interfaces to ParMETIS' AdaptiveRepart and RefineKway algorithms were
+      added.
+    - Bugs in the Zoltan interface are fixed.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 12.6 Release Notes                                         #
 #                                                                             #
 ###############################################################################

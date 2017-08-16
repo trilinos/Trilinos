@@ -35,7 +35,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
 #include <vector>                       // for vector, etc
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -99,7 +99,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
                          meta.globally_shared_part();
   Selector select_all(  meta.universal_part() );
 
-  std::vector<unsigned> local_count;
+  std::vector<size_t> local_count;
   stk::mesh::count_entities( select_used , bulk , local_count );
   ASSERT_EQ( local_count[NODE_RANK]     , nLocalNode );
   ASSERT_EQ( local_count[element_rank] , nLocalElement );
@@ -199,7 +199,7 @@ void test_shift_ring( RingFixture& ring )
   Selector select_used = meta.locally_owned_part() |
                          meta.globally_shared_part();
 
-  std::vector<unsigned> local_count ;
+  std::vector<size_t> local_count ;
   std::vector<EntityProc> change ;
 
   Entity send_element_1 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send ] );

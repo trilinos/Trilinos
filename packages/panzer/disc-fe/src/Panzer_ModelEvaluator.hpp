@@ -385,7 +385,111 @@ public:
     return parameters_[index]->initial_value;
   }
 
-private:
+  /** Compute second (x) derivative of the response in the direction <code>delta_x</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_x Direction to take the derivative with respect to.
+    * \param[out] D2gDx2 Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2gDx2(int rIndex,
+                        const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                        const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDx2) const;
+
+  /** Compute second (p) derivative of the response in the direction <code>delta_p</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_p Direction to take the derivative with respect to.
+    * \param[out] D2gDp2 Result vector allocated by <code>get_p_space(pIndex)</code>.
+    */
+  void evalModel_D2gDp2(int rIndex,
+                        int pIndex,
+                        const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                        const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDp2) const;
+
+  /** Compute second (p) derivative of the response in the direction <code>delta_x</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_x Direction to take the derivative with respect to.
+    * \param[out] D2gDpDx Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2gDpDx(int rIndex,
+                         int pIndex,
+                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                         const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDpDx) const;
+
+  /** Compute second (p) derivative of the response in the direction <code>delta_x</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_p Direction to take the derivative with respect to.
+    * \param[out] D2gDxDp Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2gDxDp(int rIndex,
+                         int pIndex,
+                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_p,
+                         const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDxDp) const;
+
+  /** Compute second (x) derivative of the residual in the direction <code>delta_x</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_x Direction to take the derivative with respect to.
+    * \param[out] D2fDx2 Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                        const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDx2) const;
+
+  /** Compute second (p) derivative of the residual in the direction <code>delta_p</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_p Direction to take the derivative with respect to.
+    * \param[out] D2fDp2 Result vector allocated by <code>get_p_space(pIndex)</code>.
+    */
+  void evalModel_D2fDp2(int pIndex,
+                        const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                        const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDp2) const;
+
+  /** Compute second (p) derivative of the residual in the direction <code>delta_x</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_x Direction to take the derivative with respect to.
+    * \param[out] D2fDpDx Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2fDpDx(int pIndex,
+                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                         const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDpDx) const;
+
+  /** Compute second (p) derivative of the residual in the direction <code>delta_p</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_p Direction to take the derivative with respect to.
+    * \param[out] D2fDxDp Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2fDxDp(int pIndex,
+                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_p,
+                         const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDxDp) const;
+
+protected:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
@@ -394,17 +498,17 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
   /** \brief . */
-  void evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 
   //! Evaluate a simple model, meaning a residual and a jacobian, no fancy stochastic galerkin or multipoint
-  void evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                            const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Construct a simple response dicatated by this set of out args
-  void evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                              const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of responses dgdx
@@ -412,7 +516,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dgdx(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                 const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of responses dgdp (scalar) defined as dg/dx * dx/dp + dg/dp
@@ -420,7 +524,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dgdp_scalar(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of responses dgdp (distributed)
@@ -428,7 +532,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dgdx_distro(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of dfdp (tangent) defined as df/dx * dx/dp + df/dp
@@ -436,7 +540,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp_scalar(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
    /** handles evaluation of dfdp (tangent) defined as df/dx * dx/dp + df/dp using finite-differences
@@ -444,7 +548,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp_scalar(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                           const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of dfdp
@@ -452,7 +556,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp_distro(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Does this set of out args require a simple response?
@@ -635,8 +739,28 @@ addResponse(const std::string & responseName,
 
       // setup the vector (register response as epetra)
       if(resp->supportsDerivative())
-         resp->setDerivative(resp->buildEpetraDerivative());
+         resp->setDerivative(resp->buildDerivative());
    }
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+   // handle panzer::Traits::Hessian (do a quick safety check, response is null or appropriate for jacobian)
+   Teuchos::RCP<panzer::ResponseBase> respHesBase = responseLibrary_->getResponse<panzer::Traits::Hessian>(responseName);
+   if(respHesBase!=Teuchos::null) {
+      typedef panzer::Traits::Hessian RespEvalT;
+
+      // check that the response supports interactions with the model evaluator
+      Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp =
+          Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respHesBase);
+      TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
+                                 "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName <<
+                                 "\" resulted in bad cast to panzer::ResponseMESupportBase<Hessian>, the type "
+                                 "of the response is incompatible!");
+
+      // setup the vector (register response as epetra)
+      if(resp->supportsDerivative())
+         resp->setDerivative(resp->buildDerivative());
+   }
+#endif
 
    respObject->name = responseName;
    respObject->wkst_desc = wkst_desc;

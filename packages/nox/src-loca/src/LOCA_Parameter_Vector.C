@@ -205,7 +205,13 @@ LOCA::ParameterVector::getValue(std::string label) const
              std::invalid_argument,
              "Error:  LOCA::ParameterVector::getValue():  " <<
              " Label " << label << " is not valid!");
+#ifdef __NVCC__
+#pragma diag_suppress code_is_unreachable
+#endif
   return 0.0;
+#ifdef __NVCC__
+#pragma diag_warning code_is_unreachable
+#endif
 }
 
 int
@@ -220,7 +226,13 @@ LOCA::ParameterVector::getIndex(std::string label) const
              std::invalid_argument,
              "Error:  LOCA::ParameterVector::getIndex():  " <<
              " Label " << label << " is not valid!");
+#ifdef __NVCC__
+#pragma diag_suppress code_is_unreachable
+#endif
   return -1;
+#ifdef __NVCC__
+#pragma diag_warning code_is_unreachable
+#endif
 }
 
 double*

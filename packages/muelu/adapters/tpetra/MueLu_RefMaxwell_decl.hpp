@@ -46,35 +46,31 @@
 #ifndef MUELU_REFMAXWELL_DECL_HPP
 #define MUELU_REFMAXWELL_DECL_HPP
 
-#include "MueLu.hpp"
+// TODO move this file to xpetra subfolder
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_SaPFactory_fwd.hpp"
+#include "MueLu_UncoupledAggregationFactory_fwd.hpp"
+#include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_Hierarchy.hpp"
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-
-#include "Tpetra_Operator.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MultiVector_decl.hpp"
-#include "MatrixMarket_Tpetra.hpp"
-#include "Xpetra_Matrix.hpp"
-#include "Xpetra_MatrixFactory.hpp"
-#include "Xpetra_CrsMatrixWrap.hpp"
-#include "Xpetra_BlockedCrsMatrix.hpp"
-#include "Xpetra_TpetraMultiVector.hpp"
-#include "Xpetra_ExportFactory.hpp"
+#include "Xpetra_Map_fwd.hpp"
+#include "Xpetra_Matrix_fwd.hpp"
+#include "Xpetra_MatrixFactory_fwd.hpp"
+#include "Xpetra_MultiVectorFactory_fwd.hpp"
+#include "Xpetra_CrsMatrixWrap_fwd.hpp"
+#include "Xpetra_BlockedCrsMatrix_fwd.hpp"
+#include "Xpetra_ExportFactory_fwd.hpp"
 
 namespace MueLu {
 
   /*!
     @brief Preconditioner (wrapped as a Tpetra::Operator) for Maxwell's equations in curl-curl form.
-    
+
     This uses a 2x2 block reformulation.
 
     Reference:
@@ -84,32 +80,16 @@ namespace MueLu {
 
     @ingroup MueLuAdapters
   */
-  template <class Scalar =
-              Tpetra::Operator<>::scalar_type,
-            class LocalOrdinal =
-              typename Tpetra::Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class RefMaxwell : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
+  class RefMaxwell : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
 #undef MUELU_REFMAXWELL_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
-
-    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                                        TMap;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>                           TCRS;
-    typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>                           TROW;
-    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>                         TMV;
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                                        XMap;
-    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>                         XMV;
-    typedef Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>                   XTMV;
-    typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>                           XCRS;
-    typedef Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>                     XTCRS;
-    typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>                              XMat;
-    typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>                       XCrsWrap;
 
     //! Constructor
     RefMaxwell() :
@@ -140,12 +120,12 @@ namespace MueLu {
       * \param[in] precList Parameter list
       * \param[in] ComputePrec If true, compute the preconditioner immediately
       */
-    RefMaxwell(const Teuchos::RCP<TCRS> & SM_Matrix,
-               const Teuchos::RCP<TCRS> & D0_Matrix,
-               const Teuchos::RCP<TCRS> & M0inv_Matrix,
-               const Teuchos::RCP<TCRS> & M1_Matrix,
-               const Teuchos::RCP<TMV> & Nullspace,
-               const Teuchos::RCP<TMV> & Coords,
+    RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
+               const Teuchos::RCP<Matrix> & D0_Matrix,
+               const Teuchos::RCP<Matrix> & M0inv_Matrix,
+               const Teuchos::RCP<Matrix> & M1_Matrix,
+               const Teuchos::RCP<MultiVector> & Nullspace,
+               const Teuchos::RCP<MultiVector> & Coords,
                Teuchos::ParameterList& List,
                bool ComputePrec = true)
     {
@@ -167,12 +147,12 @@ namespace MueLu {
       * \param[in] coords Nodal coordinates
       * \param[in] precList Parameter list
       */
-    RefMaxwell(const Teuchos::RCP<TCRS> & D0_Matrix,
-               const Teuchos::RCP<TCRS> & M0inv_Matrix,
-               const Teuchos::RCP<TCRS> & M1_Matrix,
-               const Teuchos::RCP<TMV> & Nullspace,
-               const Teuchos::RCP<TMV> & Coords,
-               Teuchos::ParameterList& List)
+    RefMaxwell(const Teuchos::RCP<Matrix> & D0_Matrix,
+               const Teuchos::RCP<Matrix> & M0inv_Matrix,
+               const Teuchos::RCP<Matrix> & M1_Matrix,
+               const Teuchos::RCP<MultiVector> & Nullspace,
+               const Teuchos::RCP<MultiVector> & Coords,
+               Teuchos::ParameterList& List) : SM_Matrix_(Teuchos::null)
     {
       initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
     }
@@ -187,11 +167,11 @@ namespace MueLu {
       * \param[in] precList Parameter list
       * \param[in] ComputePrec If true, compute the preconditioner immediately
       */
-    RefMaxwell(const Teuchos::RCP<TCRS> & SM_Matrix,
-               const Teuchos::RCP<TCRS> & D0_Matrix,
-               const Teuchos::RCP<TCRS> & M1_Matrix,
-               const Teuchos::RCP<TMV>  & Nullspace,
-               const Teuchos::RCP<TMV>  & Coords,
+    RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
+               const Teuchos::RCP<Matrix> & D0_Matrix,
+               const Teuchos::RCP<Matrix> & M1_Matrix,
+               const Teuchos::RCP<MultiVector>  & Nullspace,
+               const Teuchos::RCP<MultiVector>  & Coords,
                Teuchos::ParameterList& List,
                bool ComputePrec = true)
     {
@@ -212,11 +192,11 @@ namespace MueLu {
       * \param[in] coords Nodal coordinates
       * \param[in] precList Parameter list
       */
-    RefMaxwell(const Teuchos::RCP<TCRS> & D0_Matrix,
-               const Teuchos::RCP<TCRS> & M1_Matrix,
-               const Teuchos::RCP<TMV>  & Nullspace,
-               const Teuchos::RCP<TMV>  & Coords,
-               Teuchos::ParameterList& List)
+    RefMaxwell(const Teuchos::RCP<Matrix> & D0_Matrix,
+               const Teuchos::RCP<Matrix> & M1_Matrix,
+               const Teuchos::RCP<MultiVector>  & Nullspace,
+               const Teuchos::RCP<MultiVector>  & Coords,
+               Teuchos::ParameterList& List) : SM_Matrix_(Teuchos::null)
     {
       initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
     }
@@ -224,11 +204,11 @@ namespace MueLu {
     //! Destructor.
     virtual ~RefMaxwell() {}
 
-    //! Returns the Tpetra::Map object associated with the domain of this operator.
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+    //! Returns the Xpetra::Map object associated with the domain of this operator.
+    Teuchos::RCP<const Map> getDomainMap() const;
 
-    //! Returns the Tpetra::Map object associated with the range of this operator.
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+    //! Returns the Xpetra::Map object associated with the range of this operator.
+    Teuchos::RCP<const Map> getRangeMap() const;
 
     //! Set parameters
     void setParameters(Teuchos::ParameterList& list);
@@ -243,25 +223,24 @@ namespace MueLu {
     void formCoarseMatrix();
 
     //! Reset system matrix
-    void resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new);
+    void resetMatrix(Teuchos::RCP<Matrix> SM_Matrix_new);
 
     //! apply additive algorithm for 2x2 solve
-    void applyInverseAdditive(const XTMV& RHS, XTMV& X) const;
+    void applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const;
 
     //! apply 1-2-1 algorithm for 2x2 solve
-    void applyInverse121(const XTMV& RHS, XTMV& X) const;
+    void applyInverse121(const MultiVector& RHS, MultiVector& X) const;
 
     //! apply 2-1-2 algorithm for 2x2 solve
-    void applyInverse212(const XTMV& RHS, XTMV& X) const;
+    void applyInverse212(const MultiVector& RHS, MultiVector& X) const;
 
-    //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
-    //! \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    //! \param[out] Y - Tpetra::MultiVector of dimension NumVectors containing result.
-    void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-               Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-               Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const;
+    //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
+    //! \param[in]  X - MultiVector of dimension NumVectors to multiply with matrix.
+    //! \param[out] Y - MultiVector of dimension NumVectors containing result.
+    void apply (const MultiVector& X, MultiVector& Y,
+              Teuchos::ETransp mode = Teuchos::NO_TRANS,
+              Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+              Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
@@ -276,7 +255,7 @@ namespace MueLu {
 
   private:
 
-    void findDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+    void findDirichletRows(Teuchos::RCP<Matrix> A,
                                   std::vector<LocalOrdinal>& dirichletRows) {
       dirichletRows.resize(0);
       for(size_t i=0; i<A->getNodeNumRows(); i++) {
@@ -300,15 +279,14 @@ namespace MueLu {
       }
     }
 
-    void findDirichletCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+    void findDirichletCols(Teuchos::RCP<Matrix> A,
                                   std::vector<LocalOrdinal>& dirichletRows,
                                   std::vector<LocalOrdinal>& dirichletCols) {
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A->getDomainMap();
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A->getColMap();
-      Teuchos::RCP< Xpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter
-        = Xpetra::ExportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(colMap,domMap);
-      Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ::Build(colMap,1);
-      Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ::Build(domMap,1);
+      Teuchos::RCP<const Map> domMap = A->getDomainMap();
+      Teuchos::RCP<const Map> colMap = A->getColMap();
+      Teuchos::RCP<Export> exporter = ExportFactory::Build(colMap,domMap);
+      Teuchos::RCP<MultiVector> myColsToZero = MultiVectorFactory::Build(colMap,1);
+      Teuchos::RCP<MultiVector> globalColsToZero = MultiVectorFactory::Build(domMap,1);
       myColsToZero->putScalar((Scalar)0.0);
       globalColsToZero->putScalar((Scalar)0.0);
       for(size_t i=0; i<dirichletRows.size(); i++) {
@@ -330,7 +308,7 @@ namespace MueLu {
       }
     }
 
-    void Apply_BCsToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+    void Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
                                       std::vector<LocalOrdinal>& dirichletRows) {
       for(size_t i=0; i<dirichletRows.size(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -345,7 +323,7 @@ namespace MueLu {
       }
     }
 
-    void Apply_BCsToMatrixCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+    void Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
                                       std::vector<LocalOrdinal>& dirichletCols) {
       for(size_t i=0; i<A->getNodeNumRows(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -364,10 +342,10 @@ namespace MueLu {
       }
     }
 
-    void Remove_Zeroed_Rows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, double tol=1.0e-14) {
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A->getRowMap();
-      RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > DiagMatrix = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,1);
-      RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > NewMatrix  = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,1);
+    void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, double tol=1.0e-14) {
+      Teuchos::RCP<const Map> rowMap = A->getRowMap();
+      RCP<Matrix> DiagMatrix = MatrixFactory::Build(rowMap,1);
+      RCP<Matrix> NewMatrix  = MatrixFactory::Build(rowMap,1);
       for(size_t i=0; i<A->getNodeNumRows(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
         Teuchos::ArrayView<const Scalar> values;
@@ -411,11 +389,11 @@ namespace MueLu {
       * \param[in] coords Nodal coordinates
       * \param[in] precList Parameter list
       */
-    void initialize(const Teuchos::RCP<TCRS> & D0_Matrix,
-                    const Teuchos::RCP<TCRS> & M0inv_Matrix,
-                    const Teuchos::RCP<TCRS> & M1_Matrix,
-                    const Teuchos::RCP<TMV> & Nullspace,
-                    const Teuchos::RCP<TMV> & Coords,
+    void initialize(const Teuchos::RCP<Matrix> & D0_Matrix,
+                    const Teuchos::RCP<Matrix> & M0inv_Matrix,
+                    const Teuchos::RCP<Matrix> & M1_Matrix,
+                    const Teuchos::RCP<MultiVector> & Nullspace,
+                    const Teuchos::RCP<MultiVector> & Coords,
                     Teuchos::ParameterList& List);
 
     //! Two hierarchies: one for the (1,1)-block, another for the (2,2)-block
@@ -423,12 +401,12 @@ namespace MueLu {
     //! Top Level
     Teuchos::RCP<Level> TopLevel_;
     //! Various matrices
-    Teuchos::RCP<XMat> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
-    Teuchos::RCP<XMat> TMT_Matrix_, TMT_Agg_Matrix_, P11_, A11_, A22_;
+    Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
+    Teuchos::RCP<Matrix> TMT_Matrix_, TMT_Agg_Matrix_, P11_, A11_, A22_;
     //! Vectors for BCs
     std::vector<LocalOrdinal> BCrows_, BCcols_;
     //! Nullspace
-    Teuchos::RCP<XMV>  Nullspace_, Coords_;
+    Teuchos::RCP<MultiVector>  Nullspace_, Coords_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     //! Some options
@@ -438,8 +416,6 @@ namespace MueLu {
   };
 
 } // namespace
-
-#endif //ifdef HAVE_MUELU_TPETRA
 
 #define MUELU_REFMAXWELL_SHORT
 #endif // MUELU_REFMAXWELL_DECL_HPP

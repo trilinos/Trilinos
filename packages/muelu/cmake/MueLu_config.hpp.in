@@ -19,6 +19,8 @@
 
 #cmakedefine HAVE_MUELU_EXPERIMENTAL
 
+#cmakedefine HAVE_MUELU_ADDITIVE_VARIANT
+
 #cmakedefine HAVE_MUELU_BOOST_FOR_REAL
 
 #cmakedefine HAVE_MUELU_KOKKOS_REFACTOR
@@ -43,6 +45,10 @@
 
 #cmakedefine HAVE_MUELU_IFPACK2
 
+#cmakedefine HAVE_MUELU_INTREPID2
+
+#cmakedefine HAVE_MUELU_INTREPID2_REFACTOR
+
 #cmakedefine HAVE_MUELU_ISORROPIA
 
 #cmakedefine HAVE_MUELU_KOKKOSCLASSIC
@@ -52,6 +58,8 @@
 #cmakedefine HAVE_MUELU_KOKKOSCORE
 
 #cmakedefine HAVE_MUELU_ML
+
+#cmakedefine HAVE_MUELU_PAMGEN
 
 #cmakedefine HAVE_MUELU_TEKO
 

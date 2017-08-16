@@ -1,6 +1,3 @@
-INCLUDE(TribitsPackageMacros)
-
-ADD_SUBDIRECTORY(util)
 
 IF( ${PACKAGE_NAME}_ENABLE_SEACASIoss)
   ADD_SUBDIRECTORY(app)

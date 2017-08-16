@@ -48,7 +48,7 @@
 
 #include "Phalanx_DataLayout.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_Basis.hpp"
 
 #include "Panzer_Dimension.hpp"

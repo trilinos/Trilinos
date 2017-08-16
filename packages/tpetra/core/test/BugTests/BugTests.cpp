@@ -52,16 +52,6 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#include "Tpetra_Map_def.hpp"
-#include "Tpetra_Directory_def.hpp"
-#include "Tpetra_CrsGraph_def.hpp"
-#include "Tpetra_CrsMatrix_def.hpp"
-#include "Tpetra_MatrixIO_def.hpp"
-#include "Tpetra_MultiVector_def.hpp"
-#include "Tpetra_Vector_def.hpp"
-#endif
-
 namespace {
 
   using Teuchos::RCP;
@@ -102,11 +92,6 @@ namespace {
     return rcp(new Teuchos::SerialComm<int>());
   }
 
-  RCP<DefaultPlatform::DefaultPlatformType::NodeType> getDefaultNode()
-  {
-    return DefaultPlatform::getDefaultPlatform().getNode();
-  }
-
   //
   // UNIT TESTS
   //
@@ -117,25 +102,32 @@ namespace {
     // failure reading 1x4 matrix under MPI
     // typedef int                       LO;
     // typedef int                       GO;
-    typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+    typedef Tpetra::Map<> map_type;
+    typedef map_type::local_ordinal_type LO;
+    typedef map_type::global_ordinal_type GO;
+    typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
+
     // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
-    RCP<Node>             node = getDefaultNode();
-    RCP<const CrsMatrix<double,int> > readMatrix, testMatrix;
+    RCP<const crs_matrix_type> readMatrix, testMatrix;
+
+    // readHBMatrix wants a Node instance, so we need to save it.
+    RCP<map_type::node_type> node;
     {
       // this is what the file looks like: 1 3 4 9
-      RCP<const Map<int> > rng = Tpetra::createUniformContigMap<int,int>(1,comm);
-      RCP<const Map<int> > dom = Tpetra::createUniformContigMap<int,int>(4,comm);
-      RCP<CrsMatrix<double,int> > A = Tpetra::createCrsMatrix<double>(rng);
+      RCP<const map_type> rng = Tpetra::createUniformContigMap<LO, GO>(1,comm);
+      node = rng->getNode (); // save the Node instance for readHBMatrix
+      RCP<const map_type> dom = Tpetra::createUniformContigMap<LO, GO>(4,comm);
+      RCP<crs_matrix_type> A = Tpetra::createCrsMatrix<double, LO, GO>(rng);
       if (myImageID == 0) {
-        A->insertGlobalValues( 0, Teuchos::tuple<int>(0,1,2,3), Teuchos::tuple<double>(1.0,3.0,4.0,9.0) );
+        A->insertGlobalValues( 0, Teuchos::tuple<GO>(0,1,2,3), Teuchos::tuple<double>(1.0,3.0,4.0,9.0) );
       }
       A->fillComplete(dom,rng);
       testMatrix = A;
     }
     {
-      RCP<CrsMatrix<double,int> > A;
+      RCP<crs_matrix_type> A;
       Tpetra::Utils::readHBMatrix("addA2.hb", comm, node, A);
       readMatrix = A;
     }
@@ -144,9 +136,11 @@ namespace {
     TEST_EQUALITY( testMatrix->getNodeNumCols(), readMatrix->getNodeNumCols() );
     TEST_EQUALITY( testMatrix->getNodeNumEntries(), readMatrix->getNodeNumEntries() );
     if (success) {
-      Teuchos::ArrayView<const int>    rowinds1, rowinds2;
+      Teuchos::ArrayView<const LO>    rowinds1, rowinds2;
       Teuchos::ArrayView<const double> rowvals1, rowvals2;
-      for (int r=0; r < (int)testMatrix->getNodeNumRows(); ++r ) {
+
+      const LO lclNumRows = testMatrix->getNodeNumRows ();
+      for (LO r = 0; r < lclNumRows; ++r) {
         testMatrix->getLocalRowView(r, rowinds1, rowvals1);
         readMatrix->getLocalRowView(r, rowinds2, rowvals2);
         TEST_COMPARE_ARRAYS( rowinds1, rowinds2 );
@@ -179,13 +173,23 @@ namespace {
   //   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   // }
 
-  ////
   TEUCHOS_UNIT_TEST( DistObject, Bug5129_OverlyStrictMapComparison )
   {
     // test bug where map test checks that maps are the same object, instead of checking that maps are equivalent
+
+    // mfh 06 Aug 2017: There was no obvious reason why this test
+    // required LO=int and GO=int, nor did the original Bug 5129 bug
+    // report depend on specific LO or GO types, so I relaxed this
+    // requirement.  The test now uses the default LO and GO types.
+#if 1
+    typedef Tpetra::Map<>::local_ordinal_type LO;
+    typedef Tpetra::Map<>::global_ordinal_type GO;
+#else
     typedef int LO;
     // this still has to be bigger than LO
     typedef int GO;
+#endif // 1
+
     // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const global_size_t numGlobal = comm->getSize()*10;
@@ -209,7 +213,6 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-
 }
 
 

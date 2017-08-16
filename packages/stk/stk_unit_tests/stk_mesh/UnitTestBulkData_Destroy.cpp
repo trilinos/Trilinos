@@ -35,14 +35,12 @@
 #include <stddef.h>                     // for size_t
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityCommListInfo.hpp"
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
@@ -101,7 +99,7 @@ void testDestroy_nodes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 
   ASSERT_TRUE( bulk.modification_begin() );
   for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-    bulk.declare_entity( stk::topology::NODE_RANK , ids[i] , no_parts );
+    bulk.declare_node(ids[i] , no_parts );
   }
   ASSERT_TRUE( bulk.modification_end() );
 
@@ -187,7 +185,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
 
     bulk.modification_begin();
     mesh.generate_mesh( );
-    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
+    ASSERT_TRUE(bulk.modification_end());
 
     mesh.fixup_node_ownership();
 
@@ -226,7 +224,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
       ASSERT_TRUE( bulk.destroy_entity( node1 ) );
       node1 = Entity();
     }
-    ASSERT_TRUE( stk::unit_test::modification_end_wrapper(bulk) );
+    ASSERT_TRUE( bulk.modification_end() );
 
     if ( bulk.is_valid(node0) ) {
       ASSERT_EQ( node0_elements - 1 , bulk.count_relations(node0) );
@@ -274,8 +272,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
-      --irank;
-      if (bulk.connectivity_map().valid(stk::topology::NODE_RANK, irank)) {
+        --irank;
         stk::mesh::Entity const *to_b = bulk.begin(node, irank);
         stk::mesh::Entity const *to_e = bulk.end(node, irank);
         for (; to_b != to_e;
@@ -283,7 +280,6 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
         {
           ASSERT_TRUE( bulk.destroy_entity(*(to_e -1)) );
         }
-      }
     }
     ASSERT_TRUE( bulk.destroy_entity( node ) );
 

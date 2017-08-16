@@ -83,7 +83,7 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 %{
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
@@ -93,9 +93,14 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
 
+// Epetra includes
+#ifdef HAVE_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
+#endif
+
 // NOX-Epetra includes
 #ifdef HAVE_NOX_EPETRA
-#include "Epetra_Vector.h"
+//#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #endif
@@ -134,6 +139,9 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 
 // Trilinos module imports
 %import "Teuchos.i"
+
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
 
 // Teuchos::RCP support
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)

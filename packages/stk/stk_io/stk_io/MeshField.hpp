@@ -131,10 +131,16 @@ namespace stk {
 
       bool is_active() const {return m_isActive;}
       
-      void restore_field_data(stk::mesh::BulkData &bulk,
-			      const DBStepTimeInterval &sti,
-			      bool ignore_missing_fields = false);
+      // Returns the time at which the field data was restored.
+      // Either the closest time on the database, or the interopolated
+      // time.
+      double restore_field_data(stk::mesh::BulkData &bulk,
+				const DBStepTimeInterval &sti,
+				bool ignore_missing_fields = false);
       
+      double restore_field_data_at_step(Ioss::Region *region, stk::mesh::BulkData &bulk,
+                                        int step, bool ignore_missing_fields = false);
+
       const std::string &db_name() const {return m_dbName;}
       stk::mesh::FieldBase *field() const {return m_field;}
 	

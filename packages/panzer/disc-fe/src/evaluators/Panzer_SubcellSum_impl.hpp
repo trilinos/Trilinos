@@ -65,14 +65,14 @@ PHX_EVALUATOR_CTOR(SubcellSum,p)
   if(p.isType<bool>("Evaluate On Closure"))
     evaluateOnClosure_ = p.get<bool>("Evaluate On Closure");
 
-  inField = PHX::MDField<ScalarT,Cell,BASIS>( inName, basis->functional);
+  inField = PHX::MDField<const ScalarT,Cell,BASIS>( inName, basis->functional);
   outField = PHX::MDField<ScalarT,Cell>( outName, basis->cell_data);
 
   this->addDependentField(inField);
   this->addEvaluatedField(outField);
 
   // build a field pattern object so that looking up closure indices is easy
-  fieldPattern_ = Teuchos::rcp(new Intrepid2FieldPattern(basis->getIntrepid2Basis()));
+  fieldPattern_ = Teuchos::rcp(new Intrepid2FieldPattern(basis->getIntrepid2Basis<PHX::exec_space,double,double>()));
     
   std::string n = "SubcellSum: " + outField.fieldTag().name();
   this->setName(n);
@@ -98,7 +98,7 @@ PHX_EVALUATE_FIELDS(SubcellSum,workset)
   else
     indices = fieldPattern_->getSubcellIndices(workset.subcell_dim,this->wda(workset).subcell_index);
 
-  for(std::size_t c=0;c<workset.num_cells;c++) {
+  for(index_t c=0;c<workset.num_cells;c++) {
     outField(c) = 0.0; // initialize field 
 
     // sum over all relevant indices for this subcell

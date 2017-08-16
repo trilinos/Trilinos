@@ -54,9 +54,8 @@
 
 namespace user_app {
   
-  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Constant", 
-					     user_app::BCStrategy_Dirichlet_Constant,
-					     BCStrategy_Dirichlet_Constant)
+  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(
+    user_app::BCStrategy_Dirichlet_Constant, BCStrategy_Dirichlet_Constant)
 
   struct BCFactory : public panzer::BCStrategyFactory {
 
@@ -69,9 +68,8 @@ namespace user_app {
       
       bool found = false;
 
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant", 
-				      user_app::BCStrategy_Dirichlet_Constant,
-				      BCStrategy_Dirichlet_Constant)
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant",
+        BCStrategy_Dirichlet_Constant)
 
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
 			 "Error - the BC Strategy called \"" << bc.strategy() <<

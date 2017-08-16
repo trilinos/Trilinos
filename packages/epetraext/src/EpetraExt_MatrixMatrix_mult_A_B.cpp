@@ -387,7 +387,8 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
                         std::vector<int> & Bcol2Ccol,
                         std::vector<int> & Bimportcol2Ccol,
                         std::vector<int>& Cremotepids,
-                        Epetra_CrsMatrix& C
+                        Epetra_CrsMatrix& C,
+			bool keep_all_hard_zeros
 ){
 #ifdef ENABLE_MMM_TIMINGS
   using Teuchos::TimeMonitor;
@@ -457,7 +458,7 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
     for(k=Arowptr[i]; k<Arowptr[i+1]; k++){
       int Ak      = Acolind[k];
       double Aval = Avals[k];
-      if(Aval==0) continue;
+      if(!keep_all_hard_zeros && Aval==0) continue;
 
       if(Bview.targetMapToOrigRow[Ak] != -1){
         // Local matrix
@@ -568,7 +569,8 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
                    CrsMatrixStruct& Bview,
                    std::vector<int> & Bcol2Ccol,
                    std::vector<int> & Bimportcol2Ccol,
-                   Epetra_CrsMatrix& C){
+                   Epetra_CrsMatrix& C,
+		   bool keep_all_hard_zeros){
 
 #ifdef ENABLE_MMM_TIMINGS
   using Teuchos::TimeMonitor;
@@ -623,7 +625,7 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
     for(k=Arowptr[i]; k<Arowptr[i+1]; k++){
       int Ak=Acolind[k];
       double Aval = Avals[k];
-      if(Aval==0) continue;
+      if(!keep_all_hard_zeros && Aval==0) continue;
 
       if(Bview.targetMapToOrigRow[Ak] != -1){
         // Local matrix
@@ -687,7 +689,8 @@ template<typename int_type>
                        const Epetra_CrsMatrix & B,
                        CrsMatrixStruct& Bview,
                        Epetra_CrsMatrix& C,
-                       bool call_FillComplete_on_result)
+                       bool call_FillComplete_on_result,
+		       bool keep_all_hard_zeros)
 {
   int C_firstCol = Bview.colMap->MinLID();
   int C_lastCol = Bview.colMap->MaxLID();
@@ -789,7 +792,7 @@ template<typename int_type>
       int Ak      = Acolind[k];
       double Aval = Avals[k];
       // We're skipping remote entries on this pass.
-      if(Bview.remote[Ak] || Aval==0) continue;
+      if(Bview.remote[Ak] || (!keep_all_hard_zeros && Aval==0)) continue;
 
       int* Bcol_inds = Bview.indices[Ak];
       double* Bvals_k = Bview.values[Ak];
@@ -913,7 +916,8 @@ int MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix & A,
                            const Epetra_CrsMatrix & B,
                            CrsMatrixStruct& Bview,
                            Epetra_CrsMatrix& C,
-                           bool call_FillComplete_on_result){
+			   bool call_FillComplete_on_result,
+			   bool keep_all_hard_zeros){
 
   int i,rv;
   Epetra_Map* mapunion = 0;
@@ -935,7 +939,7 @@ int MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix & A,
 #ifdef ENABLE_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM General Multiply")));
 #endif
-    rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,false);
+    rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,false,keep_all_hard_zeros);
     return rv;
   }
 
@@ -953,7 +957,7 @@ int MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix & A,
 #ifdef ENABLE_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM General Multiply")));
 #endif
-    rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,call_FillComplete_on_result);
+    rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,call_FillComplete_on_result,keep_all_hard_zeros);
     return rv;
   }
 
@@ -1018,11 +1022,11 @@ int MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix & A,
 
   // Call the appropriate core routine
   if(NewFlag) {
-    EPETRA_CHK_ERR(mult_A_B_newmatrix<int_type>(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,Cremotepids,C));
+    EPETRA_CHK_ERR(mult_A_B_newmatrix<int_type>(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,Cremotepids,C,keep_all_hard_zeros));
   }
   else {
     // This always has a real map
-    EPETRA_CHK_ERR(mult_A_B_reuse<int_type>(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C));
+    EPETRA_CHK_ERR(mult_A_B_reuse<int_type>(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C,keep_all_hard_zeros));
   }
 
   // Cleanup
@@ -1039,17 +1043,18 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
                            const Epetra_CrsMatrix & B,
                            CrsMatrixStruct& Bview,
                            Epetra_CrsMatrix& C,
-                           bool call_FillComplete_on_result){
+                           bool call_FillComplete_on_result,\
+			   bool keep_all_hard_zeros){
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(A.RowMap().GlobalIndicesInt() && B.RowMap().GlobalIndicesInt()) {
-        return Tmult_A_B<int>(A, Aview, B, Bview, C, call_FillComplete_on_result);
+    return Tmult_A_B<int>(A, Aview, B, Bview, C, call_FillComplete_on_result, keep_all_hard_zeros);
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(A.RowMap().GlobalIndicesLongLong() && B.RowMap().GlobalIndicesLongLong()) {
-        return Tmult_A_B<long long>(A, Aview, B, Bview, C, call_FillComplete_on_result);
+    return Tmult_A_B<long long>(A, Aview, B, Bview, C, call_FillComplete_on_result, keep_all_hard_zeros);
   }
   else
 #endif
@@ -1551,7 +1556,7 @@ int MatrixMatrix::jacobi_A_B(double omega,
 /*****************************************************************************/
 /*****************************************************************************/
 template<typename int_type>
-int MatrixMatrix::Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const CrsMatrixStruct & Bview, Epetra_CrsMatrix & C) {
+int MatrixMatrix::Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const CrsMatrixStruct & Bview, Epetra_CrsMatrix & C,bool keep_all_hard_zeros) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -1588,7 +1593,7 @@ int MatrixMatrix::Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const
 
   EPETRA_CHK_ERR(mult_A_B_newmatrix<int_type>(*Atransview.origMatrix,*Bview.origMatrix,Bview,
                                               Bcol2Ccol,Bimportcol2Ccol,Cremotepids,
-                                              *Ctemp));
+                                              *Ctemp,keep_all_hard_zeros));
 
   /*************************************************************/
   /* 4) ExportAndFillComplete matrix (if needed)               */
@@ -1608,17 +1613,17 @@ int MatrixMatrix::Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int MatrixMatrix::mult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const CrsMatrixStruct & Bview, Epetra_CrsMatrix & C) {
+int MatrixMatrix::mult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const CrsMatrixStruct & Bview, Epetra_CrsMatrix & C, bool keep_all_hard_zeros) {
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(Atransview.origMatrix->RowMap().GlobalIndicesInt() && Bview.origMatrix->RowMap().GlobalIndicesInt()) {
-    return Tmult_AT_B_newmatrix<int>(Atransview,Bview,C);
+    return Tmult_AT_B_newmatrix<int>(Atransview,Bview,C,keep_all_hard_zeros);
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(Atransview.origMatrix->RowMap().GlobalIndicesLongLong() && Bview.origMatrix->RowMap().GlobalIndicesLongLong()) {
-    return Tmult_AT_B_newmatrix<long long>(Atransview,Bview,C);
+    return Tmult_AT_B_newmatrix<long long>(Atransview,Bview,C,keep_all_hard_zeros);
   }
   else
 #endif

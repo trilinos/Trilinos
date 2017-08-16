@@ -1,9 +1,0 @@
-../configure \
---prefix=/users/maherou/Trilinos5.0_CVS/ECC_SERIAL \
---with-blas=/users/maherou/lib/libblas.a \
---with-lapack=/users/maherou/lib/liblapack.a \
---cache-file=config.cache \
-CC=icc \
-CXX=icpc \
-F77=ifort
-

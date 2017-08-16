@@ -48,7 +48,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Teuchos_Comm.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
@@ -65,7 +65,7 @@ PANZER_EVALUATOR_CLASS_PP(GlobalStatistics)
 
   PHX::MDField<ScalarT,Cell,IP> ones;
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_values;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_values;
 
   ScalarT total_volume;
   std::vector<ScalarT> averages;

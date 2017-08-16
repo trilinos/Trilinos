@@ -47,7 +47,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -70,9 +70,9 @@ PANZER_EVALUATOR_CLASS(Integrator_Scalar)
   
   PHX::MDField<ScalarT> integral;  // result
     
-  PHX::MDField<ScalarT,Cell,IP> scalar; // function to be integrated
+  PHX::MDField<const ScalarT,Cell,IP> scalar; // function to be integrated
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
   std::size_t num_qp;
   std::size_t quad_index;
@@ -80,7 +80,7 @@ PANZER_EVALUATOR_CLASS(Integrator_Scalar)
 
   double multiplier;
 
-  Intrepid2::FieldContainer<ScalarT> tmp;
+  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
 
 public:
   // for testing purposes

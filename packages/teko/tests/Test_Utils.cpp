@@ -412,6 +412,13 @@ void UnitTest::SetComm_tpetra(const Teuchos::RCP<const Teuchos::Comm<int> > & c)
    comm_tpetra = c;
 }
 
+void UnitTest::ClearTests()
+{
+  testList.clear();
+  comm = Teuchos::null;
+  comm_tpetra = Teuchos::null;
+}
+
 bool UnitTest::CheckParallelBools(bool myBool,int & failPID)
 {
    int myInt = myBool ? 1 : 0;

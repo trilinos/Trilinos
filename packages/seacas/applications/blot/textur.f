@@ -46,7 +46,7 @@ C ... Saturation is used to pass in the minimum hue for some maps.
       end if
 
       ratio = (1.0 / huemin) ** (1.0 / (ncolors-1))
-      do 10 x = 0, ncolors-1
+      do x = 0, ncolors-1
         hue  = float(x) / float(ncolors)
         ihue = int(ncolors*hue)
 C ... Linear hue map
@@ -64,6 +64,8 @@ C ... Logarithmic hue map
         if (map .eq. RAINBW) THEN
           huetmp = 1.0 - hue
           call rainbow(huetmp, sat, 1., red, green, blue)
+        else if (map .eq. VIRDIS) THEN
+          call viridis(x, ncolors, red, green, blue)
         else if (map .eq. TERRAIN) THEN
           h = 3*hue
           if(h .LT. 0.25) THEN
@@ -112,7 +114,7 @@ C ... Logarithmic hue map
         green = max(0.0, min(green, 1.0))
         blue  = max(0.0, min(blue,  1.0))
         CALL PLTCOL (8+x, red, green, blue)
- 10   continue
+      end do
       return
       end
       

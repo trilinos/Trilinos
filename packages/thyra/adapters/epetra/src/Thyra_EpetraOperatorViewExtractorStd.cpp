@@ -58,9 +58,11 @@ bool EpetraOperatorViewExtractorStd::isCompatible( const LinearOpBase<double> &f
   EOpTransp wrappedTransp = NOTRANS;
   const LinearOpBase<double> *wrappedFwdOp = NULL;
   ::Thyra::unwrap(fwdOp, &wrappedScalar, &wrappedTransp, &wrappedFwdOp);
-  const EpetraLinearOpBase *eFwdOp = NULL;
-  if( !(eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(wrappedFwdOp)) )
+  const EpetraLinearOpBase *eFwdOp =
+    dynamic_cast<const EpetraLinearOpBase*>(wrappedFwdOp);
+  if (!eFwdOp) {
     return false;
+  }
   return true;
 }
 

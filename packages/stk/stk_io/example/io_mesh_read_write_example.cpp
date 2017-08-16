@@ -126,8 +126,7 @@ namespace {
       std::cout << "Adding " << global_fields.size() << " global fields:\n";
     }
 
-    Teuchos::RCP<Ioss::Region> io_region = mesh_data.get_input_io_region();
-    STKIORequire(!Teuchos::is_null(io_region));
+    auto io_region = mesh_data.get_input_io_region();
       
     for (size_t i=0; i < global_fields.size(); i++) {
       const Ioss::Field &input_field = io_region->get_fieldref(global_fields[i]);
@@ -212,6 +211,11 @@ namespace {
 	if (hb_type != stk::io::NONE && !global_fields.empty()) {
 	  mesh_data.process_heartbeat_output(heart, step, time);
 	}
+
+	// Flush the data.  This is not necessary in a normal
+	// application, Just being done here to verify that the
+	// function exists and does not core dump.  
+	mesh_data.flush_output();
       }
     }
   }
@@ -224,11 +228,14 @@ namespace {
 	      bool compose_output,
 	      int  compression_level,
 	      bool compression_shuffle,
+	      bool lower_case_variable_names,
 	      int  integer_size,
 	      stk::io::HeartbeatType hb_type,
 	      int interpolation_intervals)
   {
     stk::io::StkMeshIoBroker mesh_data(MPI_COMM_WORLD);
+
+    mesh_data.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", lower_case_variable_names));
 
     bool use_netcdf4 = false;
     if (!decomp_method.empty()) {
@@ -276,6 +283,7 @@ int main(int argc, char** argv)
   bool compression_shuffle = false;
   int integer_size = 4;
   bool compose_output = false;
+  bool lc_names = true;
   std::string parallel_io = "";
   std::string heartbeat_format = "none";
   //----------------------------------
@@ -292,6 +300,7 @@ int main(int argc, char** argv)
      "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'" )
     ("compression_level", bopt::value<int>(&compression_level), "compression level [1..9] to use" )
     ("shuffle", bopt::value<bool>(&compression_shuffle), "use shuffle filter prior to compressing data: true|false" )
+    ("lower_case_variable_names", bopt::value<bool>(&lc_names), "convert variable names to lowercase and replace spaces in names with underscore (default is true): true|false" )
     ("compose_output", bopt::value<bool>(&compose_output), "create a single output file: true|false" )
     ("parallel_io_method", bopt::value<std::string>(&parallel_io),
      "Method to use for parallel io. One of mpiio, mpiposix, or pnetcdf")
@@ -318,9 +327,17 @@ int main(int argc, char** argv)
     mesh = mesh.substr(4, mesh.size());
     type = "generated";
   }
-  if (strncasecmp("dof:", mesh.c_str(), 4) == 0) {
+  else if (strncasecmp("dof:", mesh.c_str(), 4) == 0) {
     mesh = mesh.substr(4, mesh.size());
     type = "dof";
+  }
+  else if (strncasecmp("cgns:", mesh.c_str(), 5) == 0) {
+    mesh = mesh.substr(5, mesh.size());
+    type = "cgns";
+  }
+  else if (strncasecmp("pamgen:", mesh.c_str(), 7) == 0) {
+    mesh = mesh.substr(7, mesh.size());
+    type = "pamgen";
   }
 
   stk::io::HeartbeatType hb_type = stk::io::NONE; // Default is no heartbeat output
@@ -341,7 +358,7 @@ int main(int argc, char** argv)
 
   driver(parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 
-	 compression_level, compression_shuffle, integer_size, hb_type,
+	 compression_level, compression_shuffle, lc_names, integer_size, hb_type,
 	 interpolation_intervals);
 
   stk::parallel_machine_finalize();

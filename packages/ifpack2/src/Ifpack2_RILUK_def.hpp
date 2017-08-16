@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -45,10 +45,7 @@
 
 #include "Ifpack2_LocalFilter.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-
-#ifdef IFPACK2_ILUK_EXPERIMENTAL
-#include <shylubasker_def.hpp>
-#endif
+#include "Ifpack2_LocalSparseTriangularSolver.hpp"
 
 namespace Ifpack2 {
 
@@ -59,7 +56,6 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     isAllocated_ (false),
     isInitialized_ (false),
     isComputed_ (false),
-    isExperimental_ (false),
     numInitialize_ (0),
     numCompute_ (0),
     numApply_ (0),
@@ -69,7 +65,9 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
-{}
+{
+  allocateSolvers();
+}
 
 
 template<class MatrixType>
@@ -79,7 +77,6 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     isAllocated_ (false),
     isInitialized_ (false),
     isComputed_ (false),
-    isExperimental_ (false), 
     numInitialize_ (0),
     numCompute_ (0),
     numApply_ (0),
@@ -89,12 +86,20 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
-{}
+{
+  allocateSolvers();
+}
 
 
 template<class MatrixType>
 RILUK<MatrixType>::~RILUK() {}
 
+template<class MatrixType>
+void RILUK<MatrixType>::allocateSolvers ()
+{
+  L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+}
 
 template<class MatrixType>
 void
@@ -108,8 +113,21 @@ RILUK<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     isAllocated_ = false;
     isInitialized_ = false;
     isComputed_ = false;
-    A_local_crs_ = Teuchos::null;
+    A_local_ = Teuchos::null;
     Graph_ = Teuchos::null;
+
+    // The sparse triangular solvers get a triangular factor as their
+    // input matrix.  The triangular factors L_ and U_ are getting
+    // reset, so we reset the solvers' matrices to null.  Do that
+    // before setting L_ and U_ to null, so that latter step actually
+    // frees the factors.
+    if (! L_solver_.is_null ()) {
+      L_solver_->setMatrix (Teuchos::null);
+    }
+    if (! U_solver_.is_null ()) {
+      U_solver_->setMatrix (Teuchos::null);
+    }
+
     L_ = Teuchos::null;
     U_ = Teuchos::null;
     D_ = Teuchos::null;
@@ -359,43 +377,10 @@ setParameters (const Teuchos::ParameterList& params)
     // Accept the default value.
   }
 
-  //Experimental 
-  //Note: just following RILUK original style. 
-  //Do not think catch is the method for this. JDB
-#ifdef IFPACK2_ILUK_EXPERIMENTAL
-  try {
-    isExperimental_ = params.get<bool> ("fact: iluk experimental basker");
-  }
-  catch (InvalidParameterType&) {
-    //Use default
-  }
-  catch (InvalidParameterName&) {
-    //Use default
-  }
- 
-  try {
-    basker_threads = params.get<int> ("fact: iluk experimental basker threads");
-  }
-  catch (InvalidParameterType&) {
-    basker_threads = 1;
-  }
-  catch (InvalidParameterName&) {
-    basker_threads = 1;
-  }
+  // Forward to trisolvers.
+  L_solver_->setParameters(params);
+  U_solver_->setParameters(params);
 
-  try {
-    basker_user_fill = (scalar_type) params.get<double>("fact: iluk experimental basker user_fill");
-  }
-  catch (InvalidParameterType&) {
-    basker_user_fill = (scalar_type) 0;
-  }
-  catch (InvalidParameterName&) {
-    basker_user_fill = (scalar_type) 0;
-  }
-
-
-#endif 
-  
   // "Commit" the values only after validating all of them.  This
   // ensures that there are no side effects if this routine throws an
   // exception.
@@ -506,9 +491,9 @@ void RILUK<MatrixType>::initialize ()
     isComputed_ = false;
     Graph_ = Teuchos::null;
 
-    RCP<const row_matrix_type> A_local = makeLocalFilter (A_);
+    A_local_ = makeLocalFilter (A_);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      A_local.is_null (), std::logic_error, "Ifpack2::RILUK::initialize: "
+      A_local_.is_null (), std::logic_error, "Ifpack2::RILUK::initialize: "
       "makeLocalFilter returned null; it failed to compute A_local.  "
       "Please report this bug to the Ifpack2 developers.");
 
@@ -519,15 +504,15 @@ void RILUK<MatrixType>::initialize ()
     // we just copy the input matrix if it's not a CrsMatrix.
     {
       RCP<const crs_matrix_type> A_local_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A_local);
+        rcp_dynamic_cast<const crs_matrix_type> (A_local_);
       if (A_local_crs.is_null ()) {
         // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
         // number of elements in each row of A_local, so that we can
         // create A_local_crs_nc using static profile.  The code below is
         // correct but potentially slow.
         RCP<crs_matrix_type> A_local_crs_nc =
-          rcp (new crs_matrix_type (A_local->getRowMap (),
-                                    A_local->getColMap (), 0));
+          rcp (new crs_matrix_type (A_local_->getRowMap (),
+                                    A_local_->getColMap (), 0));
         // FIXME (mfh 24 Jan 2014) This Import approach will only work
         // if A_ has a one-to-one row Map.  This is generally the case
         // with matrices given to Ifpack2.
@@ -536,84 +521,26 @@ void RILUK<MatrixType>::initialize ()
         // That way, the Import just implements a copy.
         typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
           node_type> import_type;
-        import_type import (A_local->getRowMap (), A_local->getRowMap ());
-        A_local_crs_nc->doImport (*A_local, import, Tpetra::REPLACE);
-        A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
+        import_type import (A_local_->getRowMap (), A_local_->getRowMap ());
+        A_local_crs_nc->doImport (*A_local_, import, Tpetra::REPLACE);
+        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
-      A_local_crs_ = A_local_crs;
       Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_local_crs->getCrsGraph (),
                                                             LevelOfFill_, 0));
     }
 
-    if(!isExperimental_)
-      {
-	Graph_->initialize ();
-	allocate_L_and_U ();
-	initAllValues (*A_local_crs_);
-      }
-    else
-      {
-#ifdef IFPACK2_ILUK_EXPERIMENTAL
-	typedef typename node_type::device_type    kokkos_device;
-	typedef typename kokkos_device::execution_space kokkos_exe;
-	static_assert( std::is_same< kokkos_exe, 
-		       Kokkos::OpenMP>::value, 
-		       "Kokkos node type not supported by experimental thread basker RILUK");
+    Graph_->initialize ();
+    allocate_L_and_U ();
+    checkOrderingConsistency (*A_local_);
+    L_solver_->setMatrix (L_);
+    L_solver_->initialize ();
+    U_solver_->setMatrix (U_);
+    U_solver_->initialize ();
+    // Do not call initAllValues. compute() always calls initAllValues to
+    // fill L and U with possibly new numbers. initialize() is concerned
+    // only with the nonzero pattern.
 
-
-	myBasker = rcp( new BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP>);
-	myBasker->Options.no_pivot     = true;
-	myBasker->Options.transpose    = true; //CRS not CCS
-	myBasker->Options.symmetric    = false;
-	myBasker->Options.realloc      = true;
-	myBasker->Options.btf          = false;
-	myBasker->Options.incomplete   = true;
-	myBasker->Options.inc_lvl      = LevelOfFill_;
-	myBasker->Options.user_fill    = basker_user_fill;
-	myBasker->Options.same_pattern = false;
-	myBasker->SetThreads(basker_threads);
-	basker_reuse = false;
-	
-	Teuchos::ArrayRCP<const size_t> r_ptr;
-	Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
-	Teuchos::ArrayRCP<const scalar_type>         val;
-	A_local_crs_->getAllValues(r_ptr, c_idx, val);
-	Teuchos::ArrayRCP<local_ordinal_type> rl_ptr(r_ptr.size()+1);
-        
-	for(int btemp = 0; btemp < r_ptr.size(); btemp++)
-	  rl_ptr[btemp] = (local_ordinal_type) r_ptr[btemp];
-
-	int basker_error = 
-	myBasker->Symbolic(
-	 ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
-	 ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
-	 ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
-	  (rl_ptr.getRawPtr()),
-	  (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
-	  (const_cast<scalar_type *>(val.getRawPtr()))
-			   );
-
-
-	/*
-	std::cout << "TEST SYM NNZ: " 
-		  << A_local_crs_->getNodeNumEntries()
-		  << std::endl;
-	*/
-
-	TEUCHOS_TEST_FOR_EXCEPTION(
-        basker_error != 0, std::logic_error, "Ifpack2::RILUK::initialize:"
-	 "Error in basker Symbolic");
-
-
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(
-      0==0, std::logic_error, "Ifpack2::RILUK::initialize: "
-      "Using experimental ILUK without compiling experimental "
-      "Try again with -DIFPACK2_ILUK_EXPERIMENAL.");
-#endif
-      }
-    
   } // Stop timing
 
   isInitialized_ = true;
@@ -621,25 +548,11 @@ void RILUK<MatrixType>::initialize ()
   initializeTime_ += timer.totalElapsedTime ();
 }
 
-
 template<class MatrixType>
 void
 RILUK<MatrixType>::
-initAllValues (const row_matrix_type& A)
+checkOrderingConsistency (const row_matrix_type& A)
 {
-  using Teuchos::ArrayRCP;
-  using Teuchos::Comm;
-  using Teuchos::ptr;
-  using Teuchos::RCP;
-  using Teuchos::REDUCE_SUM;
-  using Teuchos::reduceAll;
-  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
-
-  size_t NumIn = 0, NumL = 0, NumU = 0;
-  bool DiagFound = false;
-  size_t NumNonzeroDiags = 0;
-  size_t MaxNumEntries = A.getGlobalMaxNumRowEntries();
-
   // First check that the local row map ordering is the same as the local portion of the column map.
   // The extraction of the strictly lower/upper parts of A, as well as the factorization,
   // implicitly assume that this is the case.
@@ -658,7 +571,26 @@ initAllValues (const row_matrix_type& A)
                              "The ordering of the local GIDs in the row and column maps is not the same"
                              << std::endl << "at index " << indexOfInconsistentGID
                              << ".  Consistency is required, as all calculations are done with"
-                             << std::endl << "local indexing.");
+                             << std::endl << "local indexing.");  
+}
+
+template<class MatrixType>
+void
+RILUK<MatrixType>::
+initAllValues (const row_matrix_type& A)
+{
+  using Teuchos::ArrayRCP;
+  using Teuchos::Comm;
+  using Teuchos::ptr;
+  using Teuchos::RCP;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
+  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
+
+  size_t NumIn = 0, NumL = 0, NumU = 0;
+  bool DiagFound = false;
+  size_t NumNonzeroDiags = 0;
+  size_t MaxNumEntries = A.getGlobalMaxNumRowEntries();
 
   // Allocate temporary space for extracting the strictly
   // lower and upper parts of the matrix A.
@@ -764,14 +696,6 @@ initAllValues (const row_matrix_type& A)
     }
   }
 
-  // The domain of L and the range of U are exactly their own row maps
-  // (there is no communication).  The domain of U and the range of L
-  // must be the same as those of the original matrix, However if the
-  // original matrix is a VbrMatrix, these two latter maps are
-  // translation from a block map to a point map.
-  L_->fillComplete (L_->getColMap (), A_local_crs_->getRangeMap ());
-  U_->fillComplete (A_local_crs_->getDomainMap (), U_->getRowMap ());
-
   // At this point L and U have the values of A in the structure of L
   // and U, and diagonal vector D
 
@@ -782,6 +706,7 @@ initAllValues (const row_matrix_type& A)
 template<class MatrixType>
 void RILUK<MatrixType>::compute ()
 {
+  using Teuchos::rcp;
   const char prefix[] = "Ifpack2::RILUK::compute: ";
 
   // initialize() checks this too, but it's easier for users if the
@@ -802,43 +727,46 @@ void RILUK<MatrixType>::compute ()
   }
 
   Teuchos::Time timer ("RILUK::compute");
-  { //Start timing
-    if(! isExperimental_) {
-    isComputed_ = false;
 
-    L_->resumeFill ();
-    U_->resumeFill ();
+  // Start timing
+  Teuchos::TimeMonitor timeMon (timer);
 
-    // MinMachNum should be officially defined, for now pick something a little
-    // bigger than IEEE underflow value
+  isComputed_ = false;
 
-    const scalar_type MinDiagonalValue = STS::rmin ();
-    const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
+  // Fill L and U with numbers. This supports nonzero pattern reuse by calling
+  // initialize() once and then compute() multiple times.
+  initAllValues (*A_local_);
 
-    size_t NumIn, NumL, NumU;
+  // MinMachNum should be officially defined, for now pick something a little
+  // bigger than IEEE underflow value
 
-    // Get Maximum Row length
-    const size_t MaxNumEntries =
-      L_->getNodeMaxNumRowEntries () + U_->getNodeMaxNumRowEntries () + 1;
+  const scalar_type MinDiagonalValue = STS::rmin ();
+  const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
 
-    Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
-    Teuchos::Array<scalar_type> InV(MaxNumEntries);
-    size_t num_cols = U_->getColMap()->getNodeNumElements();
-    Teuchos::Array<int> colflag(num_cols);
+  size_t NumIn, NumL, NumU;
 
-    Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
+  // Get Maximum Row length
+  const size_t MaxNumEntries =
+          L_->getNodeMaxNumRowEntries () + U_->getNodeMaxNumRowEntries () + 1;
 
-    // Now start the factorization.
+  Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
+  Teuchos::Array<scalar_type> InV(MaxNumEntries);
+  size_t num_cols = U_->getColMap()->getNodeNumElements();
+  Teuchos::Array<int> colflag(num_cols);
 
-    // Need some integer workspace and pointers
-    size_t NumUU;
-    Teuchos::ArrayView<const local_ordinal_type> UUI;
-    Teuchos::ArrayView<const scalar_type> UUV;
-    for (size_t j = 0; j < num_cols; ++j) {
+  Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
+
+  // Now start the factorization.
+
+  // Need some integer workspace and pointers
+  size_t NumUU;
+  Teuchos::ArrayView<const local_ordinal_type> UUI;
+  Teuchos::ArrayView<const scalar_type> UUV;
+  for (size_t j = 0; j < num_cols; ++j) {
       colflag[j] = -1;
-    }
+  }
 
-    for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
+  for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
       local_ordinal_type local_row = i;
 
       // Fill InV, InI with current row of L, D and U combined
@@ -855,161 +783,111 @@ void RILUK<MatrixType>::compute ()
 
       // Set column flags
       for (size_t j = 0; j < NumIn; ++j) {
-        colflag[InI[j]] = j;
+          colflag[InI[j]] = j;
       }
 
       scalar_type diagmod = STS::zero (); // Off-diagonal accumulator
 
       for (size_t jj = 0; jj < NumL; ++jj) {
-        local_ordinal_type j = InI[jj];
-        scalar_type multiplier = InV[jj]; // current_mults++;
+          local_ordinal_type j = InI[jj];
+          scalar_type multiplier = InV[jj]; // current_mults++;
 
-        InV[jj] *= DV[j];
+          InV[jj] *= DV[j];
 
-        U_->getLocalRowView(j, UUI, UUV); // View of row above
-        NumUU = UUI.size();
+          U_->getLocalRowView(j, UUI, UUV); // View of row above
+          NumUU = UUI.size();
 
-        if (RelaxValue_ == STM::zero ()) {
-          for (size_t k = 0; k < NumUU; ++k) {
-            const int kk = colflag[UUI[k]];
-            // FIXME (mfh 23 Dec 2013) Wait a second, we just set
-            // colflag above using size_t (which is generally unsigned),
-            // but now we're querying it using int (which is signed).
-            if (kk > -1) {
-              InV[kk] -= multiplier * UUV[k];
-            }
+          if (RelaxValue_ == STM::zero ()) {
+              for (size_t k = 0; k < NumUU; ++k) {
+                  const int kk = colflag[UUI[k]];
+                  // FIXME (mfh 23 Dec 2013) Wait a second, we just set
+                  // colflag above using size_t (which is generally unsigned),
+                  // but now we're querying it using int (which is signed).
+                  if (kk > -1) {
+                      InV[kk] -= multiplier * UUV[k];
+                  }
+              }
           }
-        }
-        else {
-          for (size_t k = 0; k < NumUU; ++k) {
-            // FIXME (mfh 23 Dec 2013) Wait a second, we just set
-            // colflag above using size_t (which is generally unsigned),
-            // but now we're querying it using int (which is signed).
-            const int kk = colflag[UUI[k]];
-            if (kk > -1) {
-              InV[kk] -= multiplier*UUV[k];
-            }
-            else {
-              diagmod -= multiplier*UUV[k];
-            }
+          else {
+              for (size_t k = 0; k < NumUU; ++k) {
+                  // FIXME (mfh 23 Dec 2013) Wait a second, we just set
+                  // colflag above using size_t (which is generally unsigned),
+                  // but now we're querying it using int (which is signed).
+                  const int kk = colflag[UUI[k]];
+                  if (kk > -1) {
+                      InV[kk] -= multiplier*UUV[k];
+                  }
+                  else {
+                      diagmod -= multiplier*UUV[k];
+                  }
+              }
           }
-        }
       }
       if (NumL) {
-        // Replace current row of L
-        L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
+          // Replace current row of L
+          L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
       }
 
       DV[i] = InV[NumL]; // Extract Diagonal value
 
       if (RelaxValue_ != STM::zero ()) {
-        DV[i] += RelaxValue_*diagmod; // Add off diagonal modifications
+          DV[i] += RelaxValue_*diagmod; // Add off diagonal modifications
       }
 
       if (STS::magnitude (DV[i]) > STS::magnitude (MaxDiagonalValue)) {
-        if (STS::real (DV[i]) < STM::zero ()) {
-          DV[i] = -MinDiagonalValue;
-        }
-        else {
-          DV[i] = MinDiagonalValue;
-        }
+          if (STS::real (DV[i]) < STM::zero ()) {
+              DV[i] = -MinDiagonalValue;
+          }
+          else {
+              DV[i] = MinDiagonalValue;
+          }
       }
       else {
-        DV[i] = STS::one () / DV[i]; // Invert diagonal value
+          DV[i] = STS::one () / DV[i]; // Invert diagonal value
       }
 
       for (size_t j = 0; j < NumU; ++j) {
-        InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
+          InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
       }
 
       if (NumU) {
-        // Replace current row of L and U
-        U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
+          // Replace current row of L and U
+          U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
       }
 
       // Reset column flags
       for (size_t j = 0; j < NumIn; ++j) {
-        colflag[InI[j]] = -1;
+          colflag[InI[j]] = -1;
       }
-    }
+  }
 
-    // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
-    // always one-to-one?
-    L_->fillComplete (L_->getColMap (), A_local_crs_->getRangeMap ());
-    U_->fillComplete (A_local_crs_->getDomainMap (), U_->getRowMap ());
+  // The domain of L and the range of U are exactly their own row maps
+  // (there is no communication).  The domain of U and the range of L
+  // must be the same as those of the original matrix, However if the
+  // original matrix is a VbrMatrix, these two latter maps are
+  // translation from a block map to a point map.
+  // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
+  // always one-to-one?
+  L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
+  U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
 
-    // Validate that the L and U factors are actually lower and upper triangular
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! L_->isLowerTriangular (), std::runtime_error,
-      "Ifpack2::RILUK::compute: L isn't lower triangular.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! U_->isUpperTriangular (), std::runtime_error,
-      "Ifpack2::RILUK::compute: U isn't lower triangular.");
-  } 
-  else{
-#ifdef IFPACK2_ILUK_EXPERIMENTAL
-    Teuchos::Time timerbasker ("RILUK::basercompute");
-    {
-      //
-      if(basker_reuse == false)
-	{
-	  //We don't have to reimport Matrix because same
-	  {
-	    //Teuchos::TimeMonitor timeMon(timerbasker);
-	    myBasker->Factor_Inc(0);
-	    basker_reuse = true;
-	  }
-	}
-      else
-	{
-	  //Do we need to import Matrix with file again?
-	  myBasker->Options.same_pattern = true;
-	  Teuchos::ArrayRCP<const size_t> r_ptr;
-	  Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
-	  Teuchos::ArrayRCP<const scalar_type>         val;
-	  A_local_crs_->getAllValues(r_ptr, c_idx, val);
-	  Teuchos::ArrayRCP<local_ordinal_type> 
-	    rl_ptr(r_ptr.size()+1);
-        
-	  for(int btemp = 0; btemp < r_ptr.size(); btemp++)
-	    rl_ptr[btemp] = (local_ordinal_type) r_ptr[btemp];
+  // Validate that the L and U factors are actually lower and upper triangular
 
-	  {
-	    //Teuchos::TimeMonitor timeMon(timerbasker);
-	  int basker_error = 
-	    myBasker->Factor(
-	 ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
-	 ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
-	 ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
-	 (rl_ptr.getRawPtr()),
-	 (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
-	 (const_cast<scalar_type *>(val.getRawPtr()))
-			   );
+  //18-Aug-2016 The following two Teuchos tests-for-exceptions were changed by Massimiliano Lupo Pasini
+  TEUCHOS_TEST_FOR_EXCEPTION(
+                             0 < L_->getNodeNumRows() &&
+                             ! L_->isLowerTriangular (), std::runtime_error,
+                             "Ifpack2::RILUK::compute: L isn't lower triangular.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+                             0 < U_->getNodeNumRows() &&
+                             ! U_->isUpperTriangular (), std::runtime_error,
+                             "Ifpack2::RILUK::compute: U isn't lower triangular.");
 
-	  /*
-	  std::cout << "numeric nnz: "
-		    << A_local_crs_->getNodeNumEntries()
-	  	    << std::endl;
-	  */
-
-	TEUCHOS_TEST_FOR_EXCEPTION(
-        basker_error != 0, std::logic_error, "Ifpack2::RILUK::initialize:"
-	 "Error in basker compute");
-	  }
-
-	}
-    }
-    //std::cout << "Basker compute time " 
-    //	      << timerbasker.totalElapsedTime ()
-    //	      << std::endl;
-    //myBasker->DEBUG_PRINT();
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-       0==1, std::runtime_error,
-       "Ifpack2::RILUK::compute: experimental not enabled");
-#endif
-  }//end -- if experimental
-  }//end timing
+  // If L_solver_ or U_solver store modified factors internally, we need to reset those
+  L_solver_->setMatrix (L_);
+  L_solver_->compute ();
+  U_solver_->setMatrix (U_);
+  U_solver_->compute ();
 
   isComputed_ = true;
   ++numCompute_;
@@ -1069,51 +947,38 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
   Teuchos::Time timer ("RILUK::apply");
   { // Start timing
-    if(!isExperimental_){
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
-        // Start by solving L C = X for C.  C must have the same Map
-        // as D.  We have to use a temp multivector, since
-        // localSolve() does not allow its input and output to alias
-        // one another.
-        //
-        // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
-        MV C (D_->getMap (), X.getNumVectors ());
-        L_->localSolve (X, C, mode);
+        // Start by solving L Y = X for Y.
+        L_solver_->apply (X, Y, mode);
 
-        // Solve D Y_tmp = C.  Y_tmp must have the same Map as C, and
-        // the operation lets us do this in place in C, so we can
-        // write "solve D C = C for C."
-        C.elementWiseMultiply (one, *D_, C, zero);
+        // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
+        // write "solve D Y = Y for Y."
+        Y.elementWiseMultiply (one, *D_, Y, zero);
 
-        U_->localSolve (C, Y, mode); // Solve U Y = C.
+        U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
       }
-      else { // Solve U^P (D^P (U^P Y)) = X for Y (where P is * or T).
+      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
 
-        // Start by solving U^P C = X for C.  C must have the same Map
-        // as D.  We have to use a temp multivector, since
-        // localSolve() does not allow its input and output to alias
-        // one another.
-        //
-        // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
-        MV C (D_->getMap (), X.getNumVectors ());
-        U_->localSolve (X, C, mode);
+        // Start by solving U^P Y = X for Y.
+        U_solver_->apply (X, Y, mode);
 
-        // Solve D^P Y_tmp = C.  Y_tmp must have the same Map as C,
-        // and the operation lets us do this in place in C, so we can
-        // write "solve D^P C = C for C."
+        // Solve D^P Y = Y.
         //
         // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
         // need to do an elementwise multiply with the conjugate of
         // D_, not just with D_ itself.
-        C.elementWiseMultiply (one, *D_, C, zero);
+        Y.elementWiseMultiply (one, *D_, Y, zero);
 
-        L_->localSolve (C, Y, mode); // Solve L^P Y = C.
+        L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
       }
     }
     else { // alpha != 1 or beta != 0
       if (alpha == zero) {
+        // The special case for beta == 0 ensures that if Y contains Inf
+        // or NaN values, we replace them with 0 (following BLAS
+        // convention), rather than multiplying them by 0 to get NaN.
         if (beta == zero) {
           Y.putScalar (zero);
         } else {
@@ -1125,24 +990,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Y.update (alpha, Y_tmp, beta);
       }
     }
-  } 
-  else
-    {
-#ifdef IFPACK2_ILUK_EXPERIMENTAL
-      Teuchos::ArrayRCP<const scalar_type> XX;
-      Teuchos::ArrayRCP<const scalar_type> YY;
-      XX = X.get1dView();
-      YY = Y.get1dView();
-      
-      myBasker->Solve(((local_ordinal_type)X.getNumVectors()), 
-		      (const_cast<scalar_type *>(XX.getRawPtr())),
-		      (const_cast<scalar_type *>(YY.getRawPtr())));
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(
-      0==1, std::runtime_error, 
-      "Ifpack2::RILUK::apply: Experimental no enabled");
-#endif
-    }//end isExperimental
   }//end timing
 
 #ifdef HAVE_IFPACK2_DEBUG
@@ -1221,10 +1068,12 @@ std::string RILUK<MatrixType>::description () const
        << ", Global nnz: " << A_->getGlobalNumEntries();
   }
 
+  if (! L_solver_.is_null ()) os << ", " << L_solver_->description ();
+  if (! U_solver_.is_null ()) os << ", " << U_solver_->description ();
+
   os << "}";
   return os.str ();
 }
-
 
 } // namespace Ifpack2
 

@@ -268,7 +268,7 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
   // work, so it is time to throw an exception.
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_IntVector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   throw PythonException();
 }
 
@@ -419,7 +419,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
   // work, so it is time to set a Python error
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_MultiVector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   return NULL;
 }
 
@@ -557,7 +557,7 @@ convertPythonToEpetraVector(PyObject * pyobj,
   // work, so it is time to throw an exception.
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_Vector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   throw PythonException();
 }
 
@@ -1026,12 +1026,19 @@ convertToDimData(const Epetra_BlockMap & ebm,
     if (PyDict_SetItemString(dim_dict,
                              "dist_type",
                              PyString_FromString("b")) == -1) goto fail;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    long long minMyGID = (long long) ebm.MinMyGID();
+    long long maxMyGID = (long long) ebm.MaxMyGID();
+#else
+    long long minMyGID = ebm.MinMyGID64();
+    long long maxMyGID = ebm.MaxMyGID64();
+#endif
     if (PyDict_SetItemString(dim_dict,
                              "start",
-                             PyInt_FromLong(ebm.MinMyGID64())) == -1) goto fail;
+                             PyInt_FromLong(minMyGID)) == -1) goto fail;
     if (PyDict_SetItemString(dim_dict,
                              "stop",
-                             PyInt_FromLong(ebm.MaxMyGID64()+1)) == -1) goto fail;
+                             PyInt_FromLong(maxMyGID+1)) == -1) goto fail;
   }
   else
   {
@@ -1041,10 +1048,17 @@ convertToDimData(const Epetra_BlockMap & ebm,
                              "dist_type",
                              PyString_FromString("u")) == -1) goto fail;
     dims    = ebm.NumMyElements();
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     indices = PyArray_SimpleNewFromData(1,
                                         &dims,
                                         NPY_LONG,
                                         (void*)ebm.MyGlobalElements64());
+#else
+    indices = PyArray_SimpleNewFromData(1,
+                                        &dims,
+                                        NPY_INT,
+                                        (void*)ebm.MyGlobalElements());
+#endif
     if (!indices) goto fail;
     if (PyDict_SetItemString(dim_dict,
                              "indices",

@@ -40,9 +40,7 @@ void get_buckets( const SELECTOR & selector ,
                         std::vector< Bucket * > & output )
 {
   output.clear();
-  for ( std::vector< Bucket * >::const_iterator
-        i = input.begin() ; i != input.end() ; ++i ) {
-    Bucket * const b = *i ;
+  for(const auto& b : input ) {
     if ( selector( *b ) ) { output.push_back( b ); }
   }
 }

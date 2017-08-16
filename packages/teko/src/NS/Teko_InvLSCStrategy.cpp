@@ -65,9 +65,9 @@
 // Teko includes
 #include "Teko_Utilities.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
-#include "Epetra/Teko_EpetraHelpers.hpp"
-#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
-#include "Tpetra/Teko_TpetraHelpers.hpp"
+#include "Teko_EpetraHelpers.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_TpetraHelpers.hpp"
 
 #include "Thyra_TpetraLinearOp.hpp"
 

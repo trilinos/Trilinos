@@ -88,10 +88,10 @@ namespace Tpetra {
   /// implementations of RowMatrix, which do useful things like
   /// wrapping an existing matrix to view only certain desired
   /// entries.
-  template <class Scalar = Details::DefaultTypes::scalar_type,
-            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-            class Node = Details::DefaultTypes::node_type>
+  template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+            class Node = ::Tpetra::Details::DefaultTypes::node_type>
   class RowMatrix :
     virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     virtual public SrcDistObject,
@@ -320,8 +320,8 @@ namespace Tpetra {
     /// is set to \c null.
     virtual void
     getGlobalRowView (GlobalOrdinal GlobalRow,
-                      ArrayView<const GlobalOrdinal> &indices,
-                      ArrayView<const Scalar> &values) const = 0;
+                      Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                      Teuchos::ArrayView<const Scalar> &values) const = 0;
 
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix.
@@ -349,8 +349,40 @@ namespace Tpetra {
     /// is set to \c null.
     virtual void
     getLocalRowView (LocalOrdinal LocalRow,
-                     ArrayView<const LocalOrdinal> &indices,
-                     ArrayView<const Scalar> &values) const = 0;
+                     Teuchos::ArrayView<const LocalOrdinal>& indices,
+                     Teuchos::ArrayView<const Scalar>& values) const = 0;
+
+    /// \brief Get a constant, nonpersisting, locally indexed view of
+    ///   the given row of the matrix, using "raw" pointers instead of
+    ///   Teuchos::ArrayView.
+    ///
+    /// The returned views of the column indices and values are not
+    /// guaranteed to persist beyond the lifetime of <tt>this</tt>.
+    /// Furthermore, some RowMatrix implementations allow changing the
+    /// values, or the indices and values.  Any such changes
+    /// invalidate the returned views.
+    ///
+    /// This method only gets the entries in the given row that are
+    /// stored on the calling process.  Note that if the matrix has an
+    /// overlapping row Map, it is possible that the calling process
+    /// does not store all the entries in that row.
+    ///
+    /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
+    /// \post <tt>numEnt == getNumEntriesInGlobalRow (LocalRow)</tt>
+    ///
+    /// \param lclRow [in] Local index of the row.
+    /// \param numEnt [out] Number of entries in the row that are
+    ///   stored on the calling process.
+    /// \param lclColInds [out] Local indices of the columns
+    ///   corresponding to values.
+    /// \param vals [out] Matrix values.
+    ///
+    /// \return Error code; zero on no error.
+    virtual LocalOrdinal
+    getLocalRowViewRaw (const LocalOrdinal lclRow,
+                        LocalOrdinal& numEnt,
+                        const LocalOrdinal*& lclColInds,
+                        const Scalar*& vals) const;
 
     /// \brief Get a copy of the diagonal entries, distributed by the row Map.
     ///

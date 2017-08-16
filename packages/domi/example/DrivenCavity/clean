@@ -1,0 +1,4 @@
+#! /bin/bash
+
+/bin/rm -f params.py
+/bin/rm -f *.bin

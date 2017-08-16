@@ -41,14 +41,14 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_03.cpp
+/*! \file  example_07.cpp
     \brief Shows how to solve a steady Burgers' optimal control problem using
            full-space methods.
 */
 
 #include "ROL_Algorithm.hpp"
 
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_BPOEObjective.hpp"
 #include "ROL_RiskBoundConstraint.hpp"
 #include "ROL_RiskVector.hpp"
@@ -119,14 +119,14 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* INITIALIZE SIMOPT OBJECTIVE FUNCTION **********************/
     /*************************************************************************/
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > pobj
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj
       = Teuchos::rcp(new Objective_BurgersControl<RealT>(fem,x));
     /*************************************************************************/
     /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
     /*************************************************************************/
     bool hess = true;
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > pcon
-      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(fem,hess));
+    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pcon
+      = Teuchos::rcp(new Constraint_BurgersControl<RealT>(fem,hess));
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
     /*************************************************************************/
@@ -186,9 +186,9 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE RISK-AVERSE OBJECTIVE FUNCTION *****************/
     /*************************************************************************/
     bool storage = true, fdhess = false;
-    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(
-          pobj,pcon,up,lp,gup,cp,storage,fdhess));
+    Teuchos::RCP<ROL::Objective<RealT> > robj
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(
+          pobj,pcon,up,zp,lp,gup,gzp,cp,storage,fdhess));
     RealT order = 2.0, threshold = -0.85*(1.0-x);
     Teuchos::RCP<ROL::Objective<RealT> > obj
       = Teuchos::rcp(new ROL::BPOEObjective<RealT>(
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
       }
       ofs.close();
     }
-    *outStream0 << "Scalar Parameter: " << z.getStatistic() << "\n\n";
+    *outStream0 << "Scalar Parameter: " << z.getStatistic(0) << "\n\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

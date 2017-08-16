@@ -261,7 +261,7 @@ int Epetra_MultiVector::AllocateForCopy(void)
   Vectors_ = 0;
 
   int randval = rand(); // Use POSIX standard random function
-  if (DistributedGlobal_)
+  if (DistributedGlobal())
     Util_.SetSeed(2*Comm_->MyPID() + randval);
   else {
     int locrandval = randval;
@@ -315,7 +315,7 @@ int Epetra_MultiVector::AllocateForView(void)
   Vectors_ = 0;
 
   int randval = rand(); // Use POSIX standard random function
-  if (DistributedGlobal_)
+  if (DistributedGlobal())
     Util_.SetSeed(2*Comm_->MyPID() + randval);
   else {
     int locrandval = randval;
@@ -1986,7 +1986,7 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
 
     bool A_is_local = (!A.DistributedGlobal());
     bool B_is_local = (!B.DistributedGlobal());
-    bool C_is_local = (!DistributedGlobal_);
+    bool C_is_local = (!DistributedGlobal());
     bool Case1 = ( A_is_local &&  B_is_local &&  C_is_local);  // Case 1 above
     bool Case2 = (!A_is_local && !B_is_local &&  C_is_local && TransA=='T' );// Case 2
     bool Case3 = (!A_is_local &&  B_is_local && !C_is_local && TransA=='N');// Case 3

@@ -1,15 +1,15 @@
 // Copyright(C) 2009-2010 Sandia Corporation.
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,12 +33,12 @@
 #define SEACAS_ExodusEntity_H
 
 #define NO_NETCDF_2
-#include <exodusII.h>
+#include "CJ_ObjectType.h"
 #include <cstring>
+#include <exodusII.h>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
-#include "CJ_ObjectType.h"
 
 namespace Excn {
   typedef std::vector<int>  IntVector;
@@ -46,35 +46,29 @@ namespace Excn {
 
   template <typename INT> struct Mesh
   {
-    Mesh() :   dimensionality(0), nodeCount(0), elementCount(0),
-	       blockCount(0), nodesetCount(0), sidesetCount(0),
-	       timestepCount(0), isActive(true) {}
-    
+    Mesh()
+        : dimensionality(0), nodeCount(0), elementCount(0), blockCount(0), nodesetCount(0),
+          sidesetCount(0), timestepCount(0), isActive(true)
+    {
+    }
+
     size_t count(ObjectType type) const
     {
-      switch(type) {
-      case EBLK:
-	return blockCount;
-      case NSET:
-	return nodesetCount;
-      case SSET:
-	return sidesetCount;
-      case NODE:
-	return nodeCount;
-      case ELEM:
-	return elementCount;
-      case TIME:
-	return timestepCount;
-      case DIM:
-	return dimensionality;
-      default:
-	return 0;
+      switch (type) {
+      case EBLK: return blockCount;
+      case NSET: return nodesetCount;
+      case SSET: return sidesetCount;
+      case NODE: return nodeCount;
+      case ELEM: return elementCount;
+      case TIME: return timestepCount;
+      case DIM: return dimensionality;
+      default: return 0;
       }
     }
-    
+
     std::vector<INT> localNodeToGlobal;
     std::vector<INT> localElementToGlobal;
-    
+
     std::string title;
 
     size_t dimensionality;
@@ -87,130 +81,138 @@ namespace Excn {
 
     bool isActive;
   };
-  
+
   struct Block
   {
-    Block() : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0),
-	      offset_(0), position_(0)
+    Block()
+        : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0), offset_(0),
+          position_(0)
     {
       std::strcpy(elType, "");
     }
-    
-    Block(const Block &other) : name_(other.name_), id(other.id), elementCount(other.elementCount),
-				nodesPerElement(other.nodesPerElement),
-				attributeCount(other.attributeCount), offset_(other.offset_),
-				position_(other.position_)
+
+    Block(const Block &other)
+        : name_(other.name_), id(other.id), elementCount(other.elementCount),
+          nodesPerElement(other.nodesPerElement), attributeCount(other.attributeCount),
+          offset_(other.offset_), position_(other.position_)
     {
       std::strcpy(elType, other.elType);
     }
-    
-    ~Block() = default;
-    
-    size_t entity_count() const {return elementCount;}
-    
-    IntVector truthTable;
-    std::vector<std::string> attributeNames;
-    std::string name_;
-    int64_t id;
-    size_t elementCount;
-    size_t nodesPerElement;
-    size_t attributeCount;
-    size_t offset_;
-    size_t position_;
-    char elType[MAX_STR_LENGTH+1];
 
-    Block& operator=(const Block& other) {
-      id = other.id;
-      elementCount = other.elementCount;
+    ~Block() = default;
+
+    size_t entity_count() const { return elementCount; }
+
+    IntVector                truthTable;
+    std::vector<std::string> attributeNames;
+    std::string              name_;
+    int64_t                  id;
+    size_t                   elementCount;
+    size_t                   nodesPerElement;
+    size_t                   attributeCount;
+    size_t                   offset_;
+    size_t                   position_;
+    char                     elType[MAX_STR_LENGTH + 1];
+
+    Block &operator=(const Block &other)
+    {
+      id              = other.id;
+      elementCount    = other.elementCount;
       nodesPerElement = other.nodesPerElement;
       attributeCount  = other.attributeCount;
       attributeNames  = other.attributeNames;
-      offset_ = other.offset_;
-      position_ = other.position_;
+      offset_         = other.offset_;
+      position_       = other.position_;
       std::strcpy(elType, other.elType);
       name_ = other.name_;
       return *this;
     }
   };
-  
+
   template <typename INT> struct NodeSet
   {
     NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(0), name_("") {}
-    
-    IntVector truthTable;
-    int64_t id;
-    size_t nodeCount;
-    size_t dfCount;
-    size_t offset_;
-    size_t position_;
+
+    IntVector   truthTable;
+    int64_t     id;
+    size_t      nodeCount;
+    size_t      dfCount;
+    size_t      offset_;
+    size_t      position_;
     std::string name_;
-    
+
     std::vector<INT> nodeSetNodes;
     std::vector<INT> nodeOrderMap;
-    DistVector distFactors;
-    
-    size_t entity_count() const {return nodeCount;}
+    DistVector       distFactors;
 
-    void dump() const {
+    size_t entity_count() const { return nodeCount; }
+
+    void dump() const
+    {
       std::cerr << "NodeSet " << id << ", Name: " << name_ << ", " << nodeCount << " nodes, "
-		<< dfCount << " df,\torder = " << position_ << "\n";
+                << dfCount << " df,\torder = " << position_ << "\n";
     }
 
-    void dump_order() const {
+    void dump_order() const
+    {
       dump();
-      for (size_t i=0; i < nodeCount; i++) {
-	std::cerr << nodeOrderMap[i] << ", ";
+      for (size_t i = 0; i < nodeCount; i++) {
+        std::cerr << nodeOrderMap[i] << ", ";
       }
       std::cerr << "\n";
     }
   };
-  
-  typedef std::pair<int,int> Side;
+
+  typedef std::pair<int, int> Side;
   template <typename INT> struct SideSet
   {
     SideSet() : id(0), sideCount(0), dfCount(0), offset_(0), position_(0), name_("") {}
-    
-    IntVector truthTable;
-    int64_t id;
-    size_t sideCount;
-    size_t dfCount;
-    size_t offset_;
-    size_t position_;
+
+    IntVector   truthTable;
+    int64_t     id;
+    size_t      sideCount;
+    size_t      dfCount;
+    size_t      offset_;
+    size_t      position_;
     std::string name_;
-    
-    std::vector<INT>  elems;
-    std::vector<INT>  sides;
+
+    std::vector<INT> elems;
+    std::vector<INT> sides;
 
     // For conjoin only. Maps the location (of elems, sides, vars) within this sideset into
     // the location in the corresponding global sideset
-    std::vector<INT>  elemOrderMap; 
-    DistVector distFactors;
-    
-    size_t entity_count() const {return sideCount;}
+    std::vector<INT> elemOrderMap;
+    DistVector       distFactors;
 
-    void dump() const {
+    size_t entity_count() const { return sideCount; }
+
+    void dump() const
+    {
       std::cerr << "SideSet " << id << ", Name: " << name_ << ", " << sideCount << " sides, "
-		<< dfCount << " df\toffset = " << offset_ << ", order = " << position_ << "\n";
+                << dfCount << " df\toffset = " << offset_ << ", order = " << position_ << "\n";
     }
   };
-  
+
   struct CommunicationMap
   {
     CommunicationMap() : id(0), entityCount(0), type('U') {}
-    CommunicationMap(size_t the_id, size_t count, char the_type) :
-      id(the_id), entityCount(count), type(the_type) {}
+    CommunicationMap(size_t the_id, size_t count, char the_type)
+        : id(the_id), entityCount(count), type(the_type)
+    {
+    }
     int64_t id;
-    size_t entityCount;
-    char type; // 'n' for node, 'e' for element
+    size_t  entityCount;
+    char    type; // 'n' for node, 'e' for element
   };
 
   struct CommunicationMetaData
   {
-    CommunicationMetaData() : processorId(0), processorCount(0),
-	 globalNodes(0), globalElements(0),
-	 nodesInternal(0), nodesBorder(0), nodesExternal(0),
-	 elementsInternal(0), elementsBorder(0) {}
-    
+    CommunicationMetaData()
+        : processorId(0), processorCount(0), globalNodes(0), globalElements(0), nodesInternal(0),
+          nodesBorder(0), nodesExternal(0), elementsInternal(0), elementsBorder(0)
+    {
+    }
+
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
 
@@ -223,11 +225,9 @@ namespace Excn {
     size_t nodesExternal;
     size_t elementsInternal;
     size_t elementsBorder;
-    
-    private:
+
+  private:
     CommunicationMetaData(const CommunicationMetaData &);
   };
-  
 }
 #endif /* SEACAS_ExodusEntity_H */
-

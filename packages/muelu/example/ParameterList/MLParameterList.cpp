@@ -227,7 +227,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_PTHREAD)
       if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
 
         // AMG as a preconditioner
@@ -242,9 +242,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         //
         RCP<Epetra_CrsMatrix> eA; //duplicate code
         { // TODO: simplify this
-          RCP<CrsMatrixWrap>     xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
-          RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
-          RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
+          RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xCrsOp  = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(A, true);
+          RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xCrsMtx = xCrsOp->getCrsMatrix();
+          RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > eCrsMtx = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(xCrsMtx, true);
           eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
         }
 
@@ -285,7 +285,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // Construct a multigrid preconditioner
       //
 
-      RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(*params, "SA"));
+      RCP<Teuchos::ParameterList> mueluParams = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(*params, "SA"));
       std::cout << MueLu::ML2MueLuParameterTranslator::translate(*params, "SA") << std::endl;
 
       // Multigrid Hierarchy
@@ -337,7 +337,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_PTHREAD)
+      // TODO TAW: 4/8/2016
+      // temporarely deactivate this due to runtime error on perseus:
+      // Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed
+      // if SERIAL=OFF, OPENMP=OFF, PTHREAD=ON, CUDA=OFF
+      // probably a fix necessary in EpetraOperator (which only supports
+      // SERIAL or OPENMP, but not PTHREAD of course).
+
       if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
 
         // AMG as a preconditioner
@@ -388,7 +395,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 #endif // HAVE_MUELU_AZTECOO
     } // if (translatedmuelu)
 
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_PTHREAD)
     if (ml) {
 
       std::cout << std::endl << std::endl << std::endl << std::endl << "**** ML ml ML ml ML" << std::endl << std::endl << std::endl << std::endl;
@@ -412,8 +419,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       }
 
       RCP<ML_Epetra::MultiLevelPreconditioner> mlPrec = rcp(new ML_Epetra::MultiLevelPreconditioner(*eA, *params));
-
-#ifdef HAVE_MUELU_AZTECOO
 
       //
       // Solve Ax = b
@@ -444,19 +449,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
           std::cout << "||Residual|| = " << residualNorms << std::endl;
       }
 
-      // TODO: AMG as a preconditioner (AZ_cg)
-#else
-      std::cout << "Enable AztecOO to see solution" << std::endl;
-#endif // HAVE_MUELU_AZTECOO
-
       std::cout << "Parameter list after ML run" << std::endl;
       const Teuchos::ParameterList & paramsAfterML = mlPrec->GetList();
       std::cout << paramsAfterML << std::endl;
 
     } // if (ml)
 
-
 #endif // HAVE_MUELU_ML && HAVE_MUELU_EPETRA
+
 
     success = true;
   }

@@ -70,8 +70,8 @@ PHX_EVALUATOR_CTOR(InterfaceResidual,p)
 
   residual = PHX::MDField<ScalarT>(residual_name, basis->functional);
   normal_dot_flux = PHX::MDField<ScalarT>(normal_dot_flux_name, ir->dl_scalar);
-  flux = PHX::MDField<ScalarT>(flux_name, ir->dl_vector);
-  normal = PHX::MDField<ScalarT>(normal_name, ir->dl_vector);
+  flux = PHX::MDField<const ScalarT>(flux_name, ir->dl_vector);
+  normal = PHX::MDField<const ScalarT>(normal_name, ir->dl_vector);
 
   this->addEvaluatedField(residual);
   this->addEvaluatedField(normal_dot_flux);
@@ -106,7 +106,7 @@ PHX_EVALUATE_FIELDS(InterfaceResidual,workset)
 { 
   residual.deep_copy(ScalarT(0.0));
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t ip = 0; ip < num_ip; ++ip) {
       normal_dot_flux(cell,ip) = ScalarT(0.0);
       for (std::size_t dim = 0; dim < num_dim; ++dim) {
@@ -115,9 +115,9 @@ PHX_EVALUATE_FIELDS(InterfaceResidual,workset)
     }
   }
 
-  // const Intrepid2::FieldContainer<double> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
+  // const Kokkos::DynRankView<double,PHX::Device> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basis_index];
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t basis = 0; basis < residual.dimension(1); ++basis) {
       for (std::size_t qp = 0; qp < num_ip; ++qp) {
         residual(cell,basis) += normal_dot_flux(cell,qp)*bv->weighted_basis_scalar(cell,basis,qp);
@@ -126,10 +126,10 @@ PHX_EVALUATE_FIELDS(InterfaceResidual,workset)
   }
 
   if(workset.num_cells>0)
-    Intrepid2::FunctionSpaceTools::
-      integrate<ScalarT>(residual, normal_dot_flux, 
-			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			 Intrepid2::COMP_BLAS);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      integrate(residual.get_view(),
+                normal_dot_flux.get_view(), 
+                (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
 }
 
 //**********************************************************************

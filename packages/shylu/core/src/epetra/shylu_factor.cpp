@@ -837,6 +837,7 @@ int shylu_symbolic_factor
 #endif
 
     // FIXME (mfh 25 May 2015) Uh, shouldn't this function return an int???
+    return 0; // note this test does not currently return any failed error codes
 }
 
 int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,

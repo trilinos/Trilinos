@@ -419,7 +419,7 @@ int read_hypergraph_file(
   }
 
   /* Initialize mesh structure for Hypergraph. */
-  mesh->data_type = HYPERGRAPH;
+  mesh->data_type = ZOLTAN_HYPERGRAPH;
   mesh->num_elems = nvtxs;
   mesh->vwgt_dim = vwgt_dim;
   mesh->ewgt_dim = ch_ewgt_dim;
@@ -708,7 +708,7 @@ int read_mtxplus_file(
   safe_free((void **)(void *)&myPinJ);
 
   /* Initialize mesh structure for Hypergraph. */
-  mesh->data_type = HYPERGRAPH;
+  mesh->data_type = ZOLTAN_HYPERGRAPH;
   mesh->num_elems = nMyVtx;
   mesh->vwgt_dim = vtxWDim;
   mesh->ewgt_dim = 0;

@@ -483,7 +483,7 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
    LinearOp invMass = Teko::Test::DiagMatrix_tpetra(sz,vec);
 
    Thyra::LinearOpTester<ST> tester;
-   tester.set_all_error_tol(5e-4);
+   tester.set_all_error_tol(1.2e-2);
    tester.show_all_tests(true);
    std::stringstream ss;
    Teuchos::FancyOStream fos(Teuchos::rcpFromRef(ss),"      |||");

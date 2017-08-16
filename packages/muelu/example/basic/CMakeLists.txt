@@ -4,34 +4,17 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # Executables
 #
 
-#
-#Simple-LongInt
-#
-IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-  IF(Xpetra_INT_LONG_LONG)
-      TRIBITS_ADD_EXECUTABLE_AND_TEST(
-        Simple-LongInt
-        SOURCES Simple-LongInt.cpp
-        NUM_MPI_PROCS 4
-        COMM serial mpi
-        )
-  ENDIF()
-ENDIF()
-
-#
-#Simple-Complex
-#
-IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-
-  IF(HAVE_MUELU_COMPLEX)
+IF(HAVE_MUELU_INST_DOUBLE_INT_INT)
+  IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Simple-Complex
-      SOURCES Simple-Complex.cpp
-      NUM_MPI_PROCS 1
+      Simple
+      SOURCES Simple.cpp
+      NUM_MPI_PROCS 4
       COMM serial mpi
       )
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(Simple_cp
+      SOURCE_FILES amg.xml
+     )
   ENDIF()
-
 ENDIF()
-
-#TODO: NUM_MPI_PROCS->4

@@ -47,6 +47,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 namespace panzer {
 
@@ -82,12 +83,12 @@ PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
     for (std::vector<std::string>::const_iterator name = 
 	   field_multiplier_names.begin(); 
 	 name != field_multiplier_names.end(); ++name) {
-      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+      PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
     }
   }
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->addDependentField(*field);
 
@@ -101,7 +102,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
   
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
@@ -110,7 +111,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Intrepid2::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
 }
 
 //**********************************************************************
@@ -121,22 +122,22 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
    // for (int i=0; i < residual.size(); ++i)
    //   residual[i] = 0.0;
     
-   Kokkos::deep_copy (residual.get_kokkos_view(), ScalarT(0.0));
+   Kokkos::deep_copy (residual.get_static_view(), ScalarT(0.0));
 
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
 	tmp(cell,qp) = multiplier * scalar(cell,qp);
-	for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+	for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
 	     field != field_multipliers.end(); ++field)
 	  tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
       }
     }
 
     if(workset.num_cells>0)
-      Intrepid2::FunctionSpaceTools::
-        integrate<ScalarT>(residual, tmp, 
-			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			   Intrepid2::COMP_BLAS);
+      Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+        integrate<ScalarT>(residual.get_view(),
+                           tmp, 
+			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
   }
 }
 

@@ -42,7 +42,6 @@
 #include <map>                          // for map, multimap
 #include <memory>                       //
 #include <set>                          // for multiset, set
-#include <stk_util/diag/Mapv.hpp>       // for Mapv, MapvNode, etc
 #include <stk_util/diag/String.hpp>     // for String, Identifier
 #include <stk_util/diag/StringUtil.hpp>  // for demangle
 #include <stk_util/util/Array.hpp>      // for Array, ArrayContainer
@@ -55,13 +54,6 @@
 #include <vector>                       // for vector
 #include "stk_util/util/FArray.hpp"     // for FArrayContainer, FArray
 #include <stk_util/parallel/MPI.hpp>
-#if defined ( STK_HAS_MPI )
-namespace sierra { namespace MPI { struct TempLoc; } }
-#endif
-
-
-
-
 
 namespace stk {
 namespace diag {
@@ -98,9 +90,7 @@ Writer &operator<<(Writer &dout, const std::type_info &t);
  */
 template <class T, class U>
 Writer &operator<<(Writer & dout, const std::pair<T, U> &pair) {
-//  dout << typeid(pair) << "(" << pair.first << ":" << pair.second << ")";
   dout << "(" << pair.first << ":" << pair.second << ")";
-
   return dout;
 }
 
@@ -463,65 +453,6 @@ dump(
   return dout;
 }
 
-// /**
-//  * @brief Template <b>dump</b> prints the object contained within a
-//  * hash_map to the diagnostic writer.
-//  *
-//  * @param dout    a <b>Writer</b> reference to the diagnostic writer to
-//  *      write the hash_map to.
-//  *
-//  * @param t    a <b>hash_map</b> of objects.
-//  *
-//  * @return    a <b>Writer</b> reference to this object
-//  */
-// template <class Key, class T>
-// Writer &
-// dump(
-//   Writer &      dout,
-//   const hash_map<Key, T> &  t)
-// {
-//   if (dout.shouldPrint()) {
-//     dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-//     for (typename hash_map<Key, T>::const_iterator it = t.begin(); it != t.end(); ++it)
-//       dout <<  "[" << (*it).first << "] " << (*it).second << dendl;
-
-//     dout << pop;
-//   }
-
-//   return dout;
-// }
-
-// /**
-//  * @brief Template <b>dump</b> prints the object pointed to that are
-//  * contained within a hash_map to the diagnostic writer.
-//  *
-//  * @param dout    a <b>Writer</b> reference to the diagnostic writer to
-//  *      write the hash_map to.
-//  *
-//  * @param t    a <b>hash_map</b> of objects.
-//  *
-//  * @return    a <b>Writer</b> reference to this object
-//  */
-// template <class Key, class T>
-// Writer &
-// dump(
-//   Writer &      dout,
-
-//   const hash_map<Key, T *> &  t)
-// {
-//   if (dout.shouldPrint()) {
-//     dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-//     for (typename hash_map<Key, T *>::const_iterator it = t.begin(); it != t.end(); ++it)
-//       dout << "[" << (*it).first << "] " << (*it)->second << dendl;
-
-//     dout << pop;
-//   }
-
-//   return dout;
-// }
-
 
 template <size_t n>
 Writer &operator<<(Writer &dout, const std::bitset<n> &t) {
@@ -695,18 +626,6 @@ Writer &operator<<(Writer &dout, const sierra::MPI::Loc<double> &loc);
  */
 Writer &operator<<(Writer &dout, const sierra::MPI::Loc<float> &loc);
 
-/**
- * @brief Function <b>operator<<</b> writes the TempLoc type to the output stream.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to write the
- *			c style string to.
- *
- * @param loc		a <b>sierra::MPI::Loc<int></b> const reference to the
- *			sierra::MPI::MaxLoc/sierra::MPI::MinLoc operator object.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-Writer &operator<<(Writer &dout, const sierra::MPI::TempLoc &loc);
 #endif
 
 /**
@@ -741,7 +660,7 @@ operator<<(Writer &dout, const sierra::Array<ElementType, Tag0, Tag1, Tag2, Tag3
   if (dout.shouldPrint()) {
     std::string type = sierra::demangle(typeid(X).name());
     dout << type.substr(0, type.find(", sierra::TypeListEnd")) << ">" << push << dendl;
-    dout.getStream() << array; // ArrayVerbosePrint<X::NumDim>::dump(dout, array.dimension(), array.ptr(), array.stride());
+    dout.getStream() << array;
     dout << pop << dendl;
   }
   return dout;
@@ -765,7 +684,7 @@ operator<<(Writer &dout, const sierra::ArrayContainer<ElementType, Tag0, Tag1, T
   if (dout.shouldPrint()) {
     std::string type = sierra::demangle(typeid(X).name());
     dout << type.substr(0, type.find(", sierra::TypeListEnd")) << ">" << push << dendl;
-    dout.getStream() << array; // ArrayVerbosePrint<X::NumDim>::dump(dout, array.dimension(), array.ptr(), array.stride());
+    dout.getStream() << array;
     dout << pop << dendl;
   }
   return dout;
@@ -780,7 +699,7 @@ operator<<(Writer &dout, const sierra::FArray<ElementType, Dimension> &array)
 
   if (dout.shouldPrint()) {
     dout << sierra::demangle(typeid(X).name()) << push << dendl;
-    dout.getStream() << array; // ArrayVerbosePrint<X::NumDim>::dump(dout, array.dimension(), array.ptr(), array.stride());
+    dout.getStream() << array;
     dout << pop << dendl;
   }
   return dout;
@@ -794,39 +713,9 @@ operator<<(Writer &dout, const sierra::FArrayContainer<ElementType, Dimension> &
 
   if (dout.shouldPrint()) {
     dout << sierra::demangle(typeid(X).name()) << push << dendl;
-    dout.getStream() << array; // ArrayVerbosePrint<X::NumDim>::dump(dout, array.dimension(), array.ptr(), array.stride());
+    dout.getStream() << array;
     dout << pop << dendl;
   }
-  return dout;
-}
-
-/**
- * @brief Template function <b>dump</b> writes a Mapv_no_delete object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the Mapv_no_delete to.
- *
- * @param t		a <b>sierra::String</b> const reference to the Mapv_no_delete to write.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T>
-Writer &
-dump(
-  Writer &			dout,
-  const sierra::Mapv_no_delete<T> &	t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-    for (typename sierra::Mapv_no_delete<T>::const_iterator it = t.begin(); it != t.end(); ++it) {
-      dout << "[" << (*it).mapv_key() << "] " << (*it) << dendl;
-    }
-
-    dout << pop;
-  }
-
   return dout;
 }
 
@@ -978,58 +867,6 @@ dump(
 }
 
 /**
- * @brief Template <b>dump</b> writes a MapvNode object to the diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to write the
- *			Mapvnod to.
- *
- * @param t		a <b>MapvNode</b> const reference to the MapvNode to write.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T, class U>
-Writer &
-dump(
-  Writer &			dout,
-  const sierra::MapvNode<T, U> &	t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", " << t.mapv_key();
-  }
-
-  return dout;
-}
-
-/**
- * @brief Template function <b>dump</b> writes a Mapv object to the diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to write the
- *			Mapv to.
- *
- * @param t		a <b>std::vector</b> const reference to the Mapv to write.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T, class U>
-Writer &
-dump(
-  Writer &		dout,
-  const sierra::Mapv<T, U> &	t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-    for (typename sierra::Mapv<T, U>::const_iterator it = t.begin(); it != t.end(); ++it) {
-      dout << "[" << (*it).mapv_key() << "] " << (*it) << dendl;
-    }
-
-    dout << pop;
-  }
-
-  return dout;
-}
-
-/**
  * @brief Member function <b>operator<<</b> writer a vecset object the
  * diagnostic writer.
  *
@@ -1090,54 +927,6 @@ Writer &operator<<(Writer &dout, const sierra::vecset<T *, U> &t) {
  */
 template <class Key, class T, class U>
 Writer &operator<<(Writer &dout, const sierra::vecmap<Key *, T *, U> &t) {
-  return dump(dout, t);
-}
-
-/**
- * @brief Template function <b>operator<<</b> writes a Mpav_no_delete object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the Mapv_no_delete to.
- *
- * @param t		a <b>vecmap</b> const reference to the Mapv_no_delete.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T>
-Writer &operator<<(Writer &dout, const sierra::Mapv_no_delete<T> &t) {
-  return dump(dout, t);
-}
-
-/**
- * @brief Member function <b>operator<<</b> writes a Mapv object to the diagnostic
- * writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the Mapv to.
- *
- * @param t		a <b>vecmap</b> const reference to the Mapv.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T, class U>
-Writer &operator<<(Writer &dout, const sierra::Mapv<T, U> &t) {
-  return dump(dout, t);
-}
-
-/**
- * @brief Template function <b>operator<<</b> writes a MapvNode object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the MapvNode to.
- *
- * @param t		a <b>MapvNode</b> const reference to the MapvNode.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T, class U>
-Writer &operator<<(Writer &dout, const sierra::MapvNode<T, U> &t) {
   return dump(dout, t);
 }
 

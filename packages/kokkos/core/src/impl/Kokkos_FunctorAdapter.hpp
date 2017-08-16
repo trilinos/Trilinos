@@ -55,6 +55,46 @@
 namespace Kokkos {
 namespace Impl {
 
+template< class FunctorType, class Enable = void>
+struct ReduceFunctorHasInit {
+  enum {value = false};
+};
+
+template< class FunctorType>
+struct ReduceFunctorHasInit<FunctorType, typename Impl::enable_if< 0 < sizeof( & FunctorType::init ) >::type > {
+  enum {value = true};
+};
+
+template< class FunctorType, class Enable = void>
+struct ReduceFunctorHasJoin {
+  enum {value = false};
+};
+
+template< class FunctorType>
+struct ReduceFunctorHasJoin<FunctorType, typename Impl::enable_if< 0 < sizeof( & FunctorType::join ) >::type > {
+  enum {value = true};
+};
+
+template< class FunctorType, class Enable = void>
+struct ReduceFunctorHasFinal {
+  enum {value = false};
+};
+
+template< class FunctorType>
+struct ReduceFunctorHasFinal<FunctorType, typename Impl::enable_if< 0 < sizeof( & FunctorType::final ) >::type > {
+  enum {value = true};
+};
+
+template< class FunctorType, class Enable = void>
+  struct ReduceFunctorHasShmemSize {
+  enum {value = false};
+};
+
+template< class FunctorType>
+struct ReduceFunctorHasShmemSize<FunctorType, typename Impl::enable_if< 0 < sizeof( & FunctorType::team_shmem_size ) >::type > {
+  enum {value = true};
+};
+
 template< class FunctorType , class ArgTag , class Enable = void >
 struct FunctorDeclaresValueType : public Impl::false_type {};
 
@@ -63,6 +103,21 @@ struct FunctorDeclaresValueType< FunctorType , ArgTag
                                , typename Impl::enable_if_type< typename FunctorType::value_type >::type >
   : public Impl::true_type {};
 
+template< class FunctorType, bool Enable =
+      ( FunctorDeclaresValueType<FunctorType,void>::value) ||
+      ( ReduceFunctorHasInit<FunctorType>::value  ) ||
+      ( ReduceFunctorHasJoin<FunctorType>::value  ) ||
+      ( ReduceFunctorHasFinal<FunctorType>::value ) ||
+      ( ReduceFunctorHasShmemSize<FunctorType>::value )
+      >
+struct IsNonTrivialReduceFunctor {
+  enum {value = false};
+};
+
+template< class FunctorType>
+struct IsNonTrivialReduceFunctor<FunctorType, true> {
+  enum {value = true};
+};
 
 /** \brief  Query Functor and execution policy argument tag for value type.
  *
@@ -75,6 +130,7 @@ struct FunctorValueTraits
   typedef void value_type ;
   typedef void pointer_type ;
   typedef void reference_type ;
+  typedef void functor_type ;
 
   enum { StaticValueSize = 0 };
 
@@ -88,7 +144,10 @@ struct FunctorValueTraits
 template<class ArgTag>
 struct FunctorValueTraits<void, ArgTag,false>
 {
-  typedef void reference_type;
+  typedef void value_type ;
+  typedef void pointer_type ;
+  typedef void reference_type ;
+  typedef void functor_type ;
 };
 
 /** \brief  FunctorType::value_type is explicitly declared so use it.
@@ -106,29 +165,36 @@ template< class FunctorType , class ArgTag >
 struct FunctorValueTraits< FunctorType , ArgTag , true /* == exists FunctorType::value_type */ >
 {
   typedef typename Impl::remove_extent< typename FunctorType::value_type >::type  value_type ;
+  typedef FunctorType functor_type;
+
+  static_assert( 0 == ( sizeof(value_type) % sizeof(int) ) ,
+    "Reduction functor's declared value_type requires: 0 == sizeof(value_type) % sizeof(int)" );
+
+  /* this cast to bool is needed for correctness by NVCC */
+  enum : bool { IsArray = static_cast<bool>(Impl::is_array< typename FunctorType::value_type >::value) };
 
   // If not an array then what is the sizeof(value_type)
-  enum { StaticValueSize = Impl::is_array< typename FunctorType::value_type >::value ? 0 : sizeof(value_type) };
+  enum { StaticValueSize = IsArray ? 0 : sizeof(value_type) };
 
   typedef value_type                 * pointer_type ;
 
   // The reference_type for an array is 'value_type *'
   // The reference_type for a single value is 'value_type &'
 
-  typedef typename Impl::if_c< ! StaticValueSize , value_type *
-                                                 , value_type & >::type  reference_type ;
+  typedef typename Impl::if_c< IsArray , value_type *
+                                       , value_type & >::type  reference_type ;
 
   // Number of values if single value
   template< class F >
   KOKKOS_FORCEINLINE_FUNCTION static
-  typename Impl::enable_if< Impl::is_same<F,FunctorType>::value && StaticValueSize , unsigned >::type
+  typename Impl::enable_if< std::is_same<F,FunctorType>::value && ! IsArray , unsigned >::type
     value_count( const F & ) { return 1 ; }
 
   // Number of values if an array, protect via templating because 'f.value_count'
   // will only exist when the functor declares the value_type to be an array.
   template< class F >
   KOKKOS_FORCEINLINE_FUNCTION static
-  typename Impl::enable_if< Impl::is_same<F,FunctorType>::value && ! StaticValueSize , unsigned >::type
+  typename Impl::enable_if< std::is_same<F,FunctorType>::value && IsArray , unsigned >::type
     value_count( const F & f ) { return f.value_count ; }
 
   // Total size of the value
@@ -149,7 +215,7 @@ private:
   struct REJECTTAG {}; // Reject tagged operator() when using non-tagged execution policy.
 
   typedef typename
-    Impl::if_c< Impl::is_same< ArgTag , void >::value , VOIDTAG , ArgTag >::type tag_type ;
+    Impl::if_c< std::is_same< ArgTag , void >::value , VOIDTAG , ArgTag >::type tag_type ;
 
   //----------------------------------------
   // parallel_for operator without a tag:
@@ -331,14 +397,18 @@ private:
 
   typedef decltype( deduce_reduce_type( tag_type() , & FunctorType::operator() ) ) ValueType ;
 
-  enum { IS_VOID   = Impl::is_same<VOIDTAG  ,ValueType>::value };
-  enum { IS_REJECT = Impl::is_same<REJECTTAG,ValueType>::value };
+  enum { IS_VOID   = std::is_same<VOIDTAG  ,ValueType>::value };
+  enum { IS_REJECT = std::is_same<REJECTTAG,ValueType>::value };
 
 public:
 
   typedef typename Impl::if_c< IS_VOID || IS_REJECT , void , ValueType   >::type  value_type ;
   typedef typename Impl::if_c< IS_VOID || IS_REJECT , void , ValueType * >::type  pointer_type ;
   typedef typename Impl::if_c< IS_VOID || IS_REJECT , void , ValueType & >::type  reference_type ;
+  typedef FunctorType functor_type;
+
+  static_assert( IS_VOID || IS_REJECT || 0 == ( sizeof(ValueType) % sizeof(int) ) ,
+    "Reduction functor's value_type deduced from functor::operator() requires: 0 == sizeof(value_type) % sizeof(int)" );
 
   enum { StaticValueSize = IS_VOID || IS_REJECT ? 0 : sizeof(ValueType) };
 
@@ -562,10 +632,23 @@ struct FunctorValueJoin ;
 template< class FunctorType , class ArgTag , class T , class Enable >
 struct FunctorValueJoin< FunctorType , ArgTag , T & , Enable >
 {
+  KOKKOS_FORCEINLINE_FUNCTION
+  FunctorValueJoin(const FunctorType& ){}
+
   KOKKOS_FORCEINLINE_FUNCTION static
   void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
     {
       *((volatile T*)lhs) += *((const volatile T*)rhs);
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()( volatile T& lhs , const volatile T& rhs ) const
+    {
+      lhs += rhs;
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator() ( T& lhs , const T& rhs ) const
+    {
+      lhs += rhs;
     }
 };
 
@@ -573,12 +656,31 @@ struct FunctorValueJoin< FunctorType , ArgTag , T & , Enable >
 template< class FunctorType , class ArgTag , class T , class Enable >
 struct FunctorValueJoin< FunctorType , ArgTag , T * , Enable >
 {
+  const FunctorType& f;
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  FunctorValueJoin(const FunctorType& f_):f(f_){}
+
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f_ , volatile void * const lhs , const volatile void * const rhs )
+    {
+      const int n = FunctorValueTraits<FunctorType,ArgTag>::value_count(f_);
+
+      for ( int i = 0 ; i < n ; ++i ) { ((volatile T*)lhs)[i] += ((const volatile T*)rhs)[i]; }
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()( volatile T* const lhs , const volatile T* const rhs ) const
     {
       const int n = FunctorValueTraits<FunctorType,ArgTag>::value_count(f);
 
-      for ( int i = 0 ; i < n ; ++i ) { ((volatile T*)lhs)[i] += ((const volatile T*)rhs)[i]; }
+      for ( int i = 0 ; i < n ; ++i ) { lhs[i] += rhs[i]; }
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator() ( T* lhs , const T* rhs ) const
+    {
+      const int n = FunctorValueTraits<FunctorType,ArgTag>::value_count(f);
+
+      for ( int i = 0 ; i < n ; ++i ) { lhs[i] += rhs[i]; }
     }
 };
 
@@ -593,10 +695,25 @@ struct FunctorValueJoin
   , decltype( FunctorValueJoinFunction< FunctorType , ArgTag >::enable_if( & FunctorType::join ) )
   >
 {
+  const FunctorType& f;
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  FunctorValueJoin(const FunctorType& f_):f(f_){}
+
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f_ , volatile void * const lhs , const volatile void * const rhs )
     {
-      f.join( ArgTag() , *((volatile T *)lhs) , *((const volatile T *)rhs) );
+      f_.join( ArgTag() , *((volatile T *)lhs) , *((const volatile T *)rhs) );
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()( volatile T& lhs , const volatile T& rhs ) const
+    {
+      f.join( ArgTag() , lhs , rhs );
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator() ( T& lhs , const T& rhs ) const
+    {
+      f.join( ArgTag(), lhs , rhs );
     }
 };
 
@@ -611,10 +728,25 @@ struct FunctorValueJoin
   , decltype( FunctorValueJoinFunction< FunctorType , void >::enable_if( & FunctorType::join ) )
   >
 {
+  const FunctorType& f;
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  FunctorValueJoin(const FunctorType& f_):f(f_){}
+
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f_ , volatile void * const lhs , const volatile void * const rhs )
     {
-      f.join( *((volatile T *)lhs) , *((const volatile T *)rhs) );
+      f_.join( *((volatile T *)lhs) , *((const volatile T *)rhs) );
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()( volatile T& lhs , const volatile T& rhs ) const
+    {
+      f.join( lhs , rhs );
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator() ( T& lhs , const T& rhs ) const
+    {
+      f.join( lhs , rhs );
     }
 };
 
@@ -629,10 +761,25 @@ struct FunctorValueJoin
   , decltype( FunctorValueJoinFunction< FunctorType , ArgTag >::enable_if( & FunctorType::join ) )
   >
 {
+  const FunctorType& f;
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  FunctorValueJoin(const FunctorType& f_):f(f_){}
+
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f_ , volatile void * const lhs , const volatile void * const rhs )
     {
-      f.join( ArgTag() , (volatile T *)lhs , (const volatile T *)rhs );
+      f_.join( ArgTag() , (volatile T *)lhs , (const volatile T *)rhs );
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()( volatile T* const lhs , const volatile T* const rhs ) const
+    {
+      f.join( ArgTag() , lhs , rhs );
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator() ( T* lhs , const T* rhs ) const
+    {
+      f.join( ArgTag(), lhs , rhs );
     }
 };
 
@@ -647,10 +794,25 @@ struct FunctorValueJoin
   , decltype( FunctorValueJoinFunction< FunctorType , void >::enable_if( & FunctorType::join ) )
   >
 {
+  const FunctorType& f;
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  FunctorValueJoin(const FunctorType& f_):f(f_){}
+
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f_ , volatile void * const lhs , const volatile void * const rhs )
     {
-      f.join( (volatile T *)lhs , (const volatile T *)rhs );
+      f_.join( (volatile T *)lhs , (const volatile T *)rhs );
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator() ( volatile T* const lhs , const volatile T* const rhs ) const
+    {
+      f.join( lhs , rhs );
+    }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator() ( T* lhs , const T* rhs ) const
+    {
+      f.join( lhs , rhs );
     }
 };
 

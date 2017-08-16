@@ -75,7 +75,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_CompositeStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
@@ -234,7 +234,7 @@ private:
 
 
 template<class Real>
-class Normalization_Constraint : public EqualityConstraint<Real> {
+class Normalization_Constraint : public Constraint<Real> {
 
   typedef std::vector<Real>  vector;
   typedef Vector<Real>       V;

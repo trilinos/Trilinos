@@ -48,10 +48,9 @@
 #include <string>
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 // for testing gather/scatter construction
 #include "Panzer_PureBasis.hpp"
@@ -61,7 +60,7 @@
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_PauseToAttach.hpp"
 
-#include "UnitTest_UniqueGlobalIndexer.hpp"
+#include "UnitTest_ConnManager.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -133,9 +132,43 @@ void putScalar(ScalarT s,CrsMatrixType & A)
   fillComplete(A);
 }
 
+template <typename Intrepid2Type>
+Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  // build a geometric pattern from a single basis
+  RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
+  RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
+  return pattern;
+}
+
+Teuchos::RCP<const panzer::BlockedDOFManager<int,Ordinal64> > buildBlockedIndexer64(int myRank,int numProc,int numBlocks)
+{
+  std::string names[] = {"U","V","W","X"};
+
+  Teuchos::RCP<const FieldPattern> patternC1
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
+  Teuchos::RCP<ConnManager<int,Ordinal64> > connManager = rcp(new unit_test::ConnManager<Ordinal64>(myRank,numProc));
+  Teuchos::RCP<panzer::BlockedDOFManager<int,Ordinal64> > indexer = rcp(new panzer::BlockedDOFManager<int,Ordinal64>());
+
+  indexer->setConnManager(connManager,MPI_COMM_WORLD);
+
+  std::vector<std::vector<std::string> > fieldOrder(numBlocks);
+  for(int i=0;i<numBlocks;i++) {
+    indexer->addField(names[i],patternC1);
+
+    fieldOrder[i].push_back(names[i]);
+  }
+  indexer->setFieldOrder(fieldOrder);
+  indexer->buildGlobalUnknowns();
+
+  return indexer;
+}
+
 TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, intializeContainer_tpetra)
 {
-   PHX::KokkosDeviceSession session;
 
    panzer::BlockedTpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> container;
 
@@ -144,7 +177,6 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, intializeContainer_tpetra)
 
 TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, tpetra_factory_tests)
 {
-   PHX::KokkosDeviceSession session;
 
    #ifdef HAVE_MPI
       Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
@@ -164,20 +196,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, tpetra_factory_tests)
    int myRank = comm->getRank();
    int numProc = comm->getSize();
 
-   RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,panzer::Ordinal64>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,panzer::Ordinal64>(numBlocks,myRank,numProc));
-
-   std::vector<panzer::Ordinal64> ownedIndices, ownedAndSharedIndices;
-   indexer->getOwnedIndices(ownedIndices);
-   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
-
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 3x3 square blocks
-
-   BLOFact factory(comm,blkIndexer,indexers);
+   RCP<const panzer::BlockedDOFManager<int,Ordinal64> > blkIndexer = buildBlockedIndexer64(myRank,numProc,numBlocks);
+   BLOFact factory(comm,blkIndexer);
 
    RCP<LinearObjContainer> container = factory.buildLinearObjContainer();
    RCP<LinearObjContainer> ghosted = factory.buildGhostedLinearObjContainer();
@@ -294,7 +314,6 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, tpetra_factory_tests)
 
 TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, ghostToGlobal)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -314,18 +333,10 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, ghostToGlobal)
    int numBlocks = 2;
    int myRank = comm->getRank();
    int numProc = comm->getSize();
- 
-   RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,panzer::Ordinal64>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,panzer::Ordinal64>(numBlocks,myRank,numProc));
 
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 2x2 square blocks
-
+   RCP<const panzer::BlockedDOFManager<int,Ordinal64> > blkIndexer = buildBlockedIndexer64(myRank,numProc,numBlocks);
    Teuchos::RCP<BLOFact> la_factory
-         = Teuchos::rcp(new BLOFact(comm,blkIndexer,indexers));
+         = Teuchos::rcp(new BLOFact(comm,blkIndexer));
 
    Teuchos::RCP<LinearObjContainer> global  = la_factory->buildLinearObjContainer();
    Teuchos::RCP<LinearObjContainer> ghosted = la_factory->buildGhostedLinearObjContainer();
@@ -366,7 +377,6 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, ghostToGlobal)
 
 TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, graph_constr)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -386,18 +396,10 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, graph_constr)
    int numBlocks = 2;
    int myRank = comm->getRank();
    int numProc = comm->getSize();
- 
-   RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,panzer::Ordinal64>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,panzer::Ordinal64>(numBlocks,myRank,numProc));
 
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 2x2 square blocks
-
+   RCP<const panzer::BlockedDOFManager<int,Ordinal64> > blkIndexer = buildBlockedIndexer64(myRank,numProc,numBlocks);
    Teuchos::RCP<BLOFact> la_factory
-         = Teuchos::rcp(new BLOFact(comm,blkIndexer,indexers));
+         = Teuchos::rcp(new BLOFact(comm,blkIndexer));
 
    Teuchos::RCP<CrsMatrixType> A_00 = la_factory->getGhostedTpetraMatrix(0,0); putScalar(1.0,*A_00);
    Teuchos::RCP<CrsMatrixType> A_01 = la_factory->getGhostedTpetraMatrix(0,1); putScalar(1.0,*A_01);
@@ -420,7 +422,6 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, graph_constr)
 
 TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -441,21 +442,9 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
    int myRank = comm->getRank();
    int numProc = comm->getSize();
  
-   RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,panzer::Ordinal64>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,panzer::Ordinal64>(numBlocks,myRank,numProc));
-
-   std::vector<panzer::Ordinal64> ownedIndices, ownedAndSharedIndices;
-   indexer->getOwnedIndices(ownedIndices);
-   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
-
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 3x3 square blocks
-
+   RCP<const panzer::BlockedDOFManager<int,Ordinal64> > blkIndexer = buildBlockedIndexer64(myRank,numProc,numBlocks);
    Teuchos::RCP<BLOFact> la_factory
-         = Teuchos::rcp(new BLOFact(comm,blkIndexer,indexers));
+         = Teuchos::rcp(new BLOFact(comm,blkIndexer));
 
    RCP<LinearObjContainer> ghosted_0   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
@@ -611,7 +600,6 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
 
 TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -632,18 +620,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
    int myRank = comm->getRank();
    int numProc = comm->getSize();
  
-   RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > indexer_node
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,panzer::Ordinal64>(myRank,numProc));
-   RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > indexer_cell
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer_Element<int,panzer::Ordinal64>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,panzer::Ordinal64>(numBlocks,myRank,numProc));
-
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > > indexers;
-   indexers.push_back(indexer_node);
-   indexers.push_back(indexer_cell);
-
-   Teuchos::RCP<BLOFact> la_factory = Teuchos::rcp(new BLOFact(comm,blkIndexer,indexers));
+   RCP<const panzer::BlockedDOFManager<int,Ordinal64> > blkIndexer = buildBlockedIndexer64(myRank,numProc,numBlocks);
+   Teuchos::RCP<BLOFact> la_factory = Teuchos::rcp(new BLOFact(comm,blkIndexer));
 
    RCP<LinearObjContainer> ghosted_0   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
@@ -833,7 +811,6 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
 
 TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, exclusion)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -852,20 +829,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, exclusion)
    int myRank = comm->getRank();
    int numProc = comm->getSize();
 
-   RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,panzer::Ordinal64>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,panzer::Ordinal64>(numBlocks,myRank,numProc));
-
-   std::vector<panzer::Ordinal64> ownedIndices, ownedAndSharedIndices;
-   indexer->getOwnedIndices(ownedIndices);
-   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
-
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 3x3 square blocks
-
-   BLOFact factory(comm,blkIndexer,indexers);
+   RCP<const panzer::BlockedDOFManager<int,Ordinal64> > blkIndexer = buildBlockedIndexer64(myRank,numProc,numBlocks);
+   BLOFact factory(comm,blkIndexer);
  
    // exclude some pairs
    std::vector<std::pair<int,int> > exPairs;

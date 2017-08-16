@@ -78,7 +78,7 @@
 
 
 #include "Teko_Utilities.hpp"
-#include "Tpetra/Teko_TpetraHelpers.hpp"
+#include "Teko_TpetraHelpers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 

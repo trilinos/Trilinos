@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -48,8 +48,14 @@
 namespace Ifpack2 {
 
 /// \class LinearPartitioner
-/// \brief A class to define linear partitions
-/// \tparam GraphType Specialization of Tpetra::RowGraph or Tpetra::CrsGraph.
+/*! \brief A class to define linear partitions
+    \tparam GraphType Specialization of Tpetra::RowGraph or Tpetra::CrsGraph.
+
+    This class places the rows of the local graph into nonintersecting groups.  The number of groups is
+    given by \c NumLocalParts_, a member of the base class OverlappingPartitioner.  Local row i is placed
+    in the group floor(i/NumLocalParts_), with the exception that any leftover rows are placed in the largest
+    group NumLocalParts_-1.
+*/
 template<class GraphType>
 class LinearPartitioner : public OverlappingPartitioner<GraphType> {
 public:

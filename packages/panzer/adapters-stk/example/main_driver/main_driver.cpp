@@ -55,8 +55,6 @@
 
 #include "Panzer_NodeType.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
@@ -82,7 +80,7 @@
 
 int main(int argc, char *argv[])
 {
-  PHX::InitializeKokkosDevice();
+  Kokkos::initialize(argc,argv);
 
   int status = 0;
 
@@ -177,7 +175,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     std::map<int,std::string> responseIndexToName;
     {
-      panzer_stk_classic::ModelEvaluatorFactory<double> me_factory;
+      panzer_stk::ModelEvaluatorFactory<double> me_factory;
 
       me_factory.setParameterList(input_params);
       me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory);
@@ -229,7 +227,7 @@ int main(int argc, char *argv[])
         }
 
 	// Rythmos
-        Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory> rof;
+        Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof;
 	{
           rof = Teuchos::rcp(new user_app::RythmosObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer(),useCoordinateUpdate));
 	  // me_factory.setRythmosObserverFactory(rof);
@@ -425,8 +423,6 @@ int main(int argc, char *argv[])
 
   if (status == 0)
     *out << "panzer::MainDriver run completed." << std::endl;
-
-  PHX::FinalizeKokkosDevice();
 
   return status;
 }

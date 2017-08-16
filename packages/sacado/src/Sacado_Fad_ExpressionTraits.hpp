@@ -30,6 +30,14 @@
 #ifndef SACADO_FAD_EXPRESSIONTRAITS_HPP
 #define SACADO_FAD_EXPRESSIONTRAITS_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#include "Sacado_Fad_Exp_ExpressionTraits.hpp"
+
+#else
+
 #include "Sacado_Traits.hpp"
 
 #include "Sacado_Fad_ExpressionFwd.hpp"
@@ -83,5 +91,7 @@ namespace Sacado {
   };
 
 } // namespace Sacado
+
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_EXPRESSIONTRAITS_HPP

@@ -162,7 +162,7 @@ TEST(GeneratedIds, findUniqueIdAcrossProcs)
     MpiInfo mpiInfo(MPI_COMM_WORLD);
 
     uint64_t totalIdsInUse = 362880;
-    uint64_t numIdsThisProc = totalIdsInUse/mpiInfo.getNumProcs();;
+    uint64_t numIdsThisProc = totalIdsInUse/mpiInfo.getNumProcs();
 
     std::vector<uint64_t> myIds(numIdsThisProc,0);
     distributeIds(myIds, mpiInfo);
@@ -309,7 +309,7 @@ TEST(GeneratedIds, numIdsInUseConstantNumIdsNeededConstant)
     if ( mpiInfo.getNumProcs() <= 10 )
     {
         uint64_t totalIdsInUse = 362880;
-        uint64_t numIdsThisProc = totalIdsInUse/mpiInfo.getNumProcs();;
+        uint64_t numIdsThisProc = totalIdsInUse/mpiInfo.getNumProcs();
 
         std::vector<uint64_t> myIds(numIdsThisProc,0);
         distributeIds(myIds, mpiInfo);
@@ -351,7 +351,7 @@ TEST(GeneratedIds, numIdsInUseConstantNumIdsNeededVariesWithNumberProcessors)
     if ( mpiInfo.getNumProcs() <= 10 )
     {
         uint64_t totalIdsInUse = 362880;
-        uint64_t numIdsThisProc = totalIdsInUse/mpiInfo.getNumProcs();;
+        uint64_t numIdsThisProc = totalIdsInUse/mpiInfo.getNumProcs();
 
         std::vector<uint64_t> myIds(numIdsThisProc,0);
         distributeIds(myIds, mpiInfo);

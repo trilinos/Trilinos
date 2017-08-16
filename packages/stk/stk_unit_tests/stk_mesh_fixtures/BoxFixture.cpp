@@ -31,11 +31,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/BoxFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector, etc
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
-#include "stk_mesh/fixtures/FixtureNodeSharing.hpp"
+#include "stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class Part; } }
 
@@ -57,20 +57,6 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
     m_elem_part( m_fem_meta.declare_part_with_topology("elem_part", stk::topology::HEX_8) ),
     m_elem_topology( stk::topology::HEX_8 )
 {}
-
-Entity BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
-{
-  if (rank == spatial_dimension)
-  {
-    PartVector elem_part;
-    elem_part.push_back(&m_elem_part);
-    return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1 , elem_part);
-  }
-  else
-  {
-    return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1);
-  }
-}
 
 void BoxFixture::generate_boxes( const BOX   root_box,
                                        BOX   local_box )
@@ -120,11 +106,11 @@ void BoxFixture::generate_boxes( const BOX   root_box,
     node_ids[7]= 1 + (i+0) + (j+1) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
 
     const EntityId elem_id =  1 + i + j * ngx + k * ngx * ngy;
-    Entity elem  = m_bulk_data.declare_entity( stk::topology::ELEMENT_RANK , elem_id , elem_parts );
+    Entity elem  = m_bulk_data.declare_element(elem_id , elem_parts);
 
     Entity nodes[8];
     for (int en_i = 0; en_i < 8; ++en_i) {
-      nodes[en_i] = m_bulk_data.declare_entity( stk::topology::NODE_RANK , node_ids[en_i] , no_parts );
+      nodes[en_i] = m_bulk_data.declare_node(node_ids[en_i] , no_parts);
       m_bulk_data.declare_relation(elem, nodes[en_i], en_i);
       DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_ids[en_i], nodes[en_i]);
     }

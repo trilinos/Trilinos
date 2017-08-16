@@ -11,12 +11,55 @@ TRIBITS_PACKAGE(Sacado)
 #
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  FALSE)
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_COMPLEX
   HAVE_SACADO_COMPLEX
   "Enable Sacado features for complex data type."
-  ${ST_FOR_DEV_PT_FOR_RELEASE}
+  ${${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT}
   )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_NEW_FAD_DESIGN_IS_DEFAULT
+  SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+  "Make the new Fad design the default, replacing the old one."
+  FALSE
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_HIERARCHICAL
+  SACADO_VIEW_CUDA_HIERARCHICAL
+  "Enable hierarchical parallelism (currently only for CUDA)."
+  FALSE
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_HIERARCHICAL_DFAD
+  SACADO_VIEW_CUDA_HIERARCHICAL_DFAD
+  "Enable hierarchical parallelism using an approach specific to DFad (currently only for CUDA)."
+  FALSE
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_MEMORY_POOL
+  SACADO_KOKKOS_USE_MEMORY_POOL
+  "Enable use of memory pool for DFad in Kokkos kernels (currently only useful for hierarchical parallelism)."
+  FALSE
+  )
+
+IF(${PACKAGE_NAME}_ENABLE_HIERARCHICAL AND
+    ${PACKAGE_NAME}_ENABLE_HIERARCHICAL_DFAD)
+message(FATAL_ERROR "Cannot simultaneously enable ${PACKAGE_NAME}_ENABLE_HIERARCHICAL and ${PACKAGE_NAME}_ENABLE_HIERARCHICAL_DFAD")
+ENDIF()
+
+# ToDo: Above, split ${PACKAGE_NAME}_ENABLE_COMPLEX into
+# ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT and
+# ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
 
 OPTION(${PACKAGE_NAME}_ENABLE_PARAMLIB
   "Enable parameter library support"
@@ -84,8 +127,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Sacado_ENABLE_CXX11
   HAVE_SACADO_CXX11
   "Enable C++11 support in Sacado."
-  "${Trilinos_ENABLE_CXX11}"
+  "${${PROJECT_NAME}_ENABLE_CXX11}"
   )
+
+IF(Sacado_NEW_FAD_DESIGN_IS_DEFAULT AND NOT Sacado_ENABLE_CXX11)
+  message(FATAL_ERROR "New Fad design requires C++11 enabled.  Please reconfigure with ${PROJECT_NAME}_ENABLE_CXX11=ON.")
+ENDIF()
 
 #
 # C) Add the libraries, tests, and examples

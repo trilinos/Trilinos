@@ -20,13 +20,13 @@ OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../src ../adapters/stk/src ./Panzer_DoxygenDocumentation.hpp ../adapters/stk/example/main_driver
+INPUT                  = ../disc-fe/src ../adapters-stk/src ../core/src ../dof-mgr/src ./Panzer_DoxygenDocumentation.hpp
 #FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATTERNS       =
-EXAMPLE_PATH           = ../example ../adapters/stk/example
+EXAMPLE_PATH           = ../example ../adapters-stk/example
 IMAGE_PATH             = 
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES

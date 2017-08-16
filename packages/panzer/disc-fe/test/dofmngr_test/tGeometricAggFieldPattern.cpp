@@ -48,8 +48,6 @@
 #include <string>
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 
@@ -76,7 +74,7 @@ std::string note = "***   NOTE: UNIT TEST BASED ON SEPT 2010   ***\n"
                    "***   INTREPID AND SHARDS Trilinos-dev     ***\n"
                    "***   DOXYGEN WEBSITE                      ***\n";
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 /////////////////////////////////////////////
 // 2D tests
@@ -85,14 +83,13 @@ typedef Intrepid2::FieldContainer<double> FieldContainer;
 // triangle tests
 TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
    // basis to build patterns from
-   RCP<Intrepid2::Basis<double,FieldContainer> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
-   RCP<Intrepid2::Basis<double,FieldContainer> > basisB = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<double,FieldContainer>);
-   RCP<Intrepid2::Basis<double,FieldContainer> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -143,7 +140,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
    }
 
    {
-      RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2::Basis_HDIV_TRI_I1_FEM<double,FieldContainer>);
+      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HDIV_TRI_I1_FEM<PHX::exec_space,double,double>);
       patternB = rcp(new Intrepid2FieldPattern(basis));
 
       patterns.clear();
@@ -178,14 +175,13 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
 // HEX tests
 TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
    // basis to build patterns from
-   RCP<Intrepid2::Basis<double,FieldContainer> > basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
-   RCP<Intrepid2::Basis<double,FieldContainer> > basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
-   RCP<Intrepid2::Basis<double,FieldContainer> > basisC = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -231,7 +227,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
    }
 
    {
-      RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer>);
+      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double>);
       patternB = rcp(new Intrepid2FieldPattern(basis));
 
       patterns.clear();

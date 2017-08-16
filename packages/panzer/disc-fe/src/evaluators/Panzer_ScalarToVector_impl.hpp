@@ -62,7 +62,7 @@ PHX_EVALUATOR_CTOR(ScalarToVector,p)
   scalar_fields.resize(scalar_names.size());
   for (std::size_t i=0; i < scalar_names.size(); ++i)
     scalar_fields[i] = 
-      PHX::MDField<ScalarT,Cell,Point>(scalar_names[i], scalar_dl);
+      PHX::MDField<const ScalarT,Cell,Point>(scalar_names[i], scalar_dl);
 
   vector_field = 
     PHX::MDField<ScalarT,Cell,Point,Dim>(p.get<std::string>
@@ -80,32 +80,37 @@ PHX_EVALUATOR_CTOR(ScalarToVector,p)
 //**********************************************************************
 PHX_POST_REGISTRATION_SETUP(ScalarToVector,worksets,fm)
 {
-  for (std::size_t i=0; i < scalar_fields.size(); ++i)
+  internal_scalar_fields = Kokkos::View<KokkosScalarFields_t*>("ScalarToVector::internal_scalar_fields", scalar_fields.size());
+  for (std::size_t i=0; i < scalar_fields.size(); ++i) {
     this->utils.setFieldData(scalar_fields[i],fm);
+    internal_scalar_fields(i) = scalar_fields[i].get_static_view();
+  }
 
   this->utils.setFieldData(vector_field,fm);
 }
 
 //**********************************************************************
+
+template<typename EvalT, typename TRAITS>
+KOKKOS_INLINE_FUNCTION
+void ScalarToVector<EvalT, TRAITS>::operator()(const size_t &cell) const {
+  typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
+  // Loop over points
+  for (size_type pt = 0; pt < vector_field.dimension(1); ++pt) {
+    // Loop over scalars
+    for (std::size_t sc = 0; sc < internal_scalar_fields.dimension(0); ++sc) {
+      vector_field(cell,pt,sc) = internal_scalar_fields(sc)(cell,pt);
+
+    }
+  }
+
+}
+//**********************************************************************
 PHX_EVALUATE_FIELDS(ScalarToVector,workset)
 { 
 
-  typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
-
   // Loop over cells
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
-
-    // Loop over points
-    for (size_type pt = 0; pt < vector_field.dimension(1); ++pt) {
-      
-      // Loop over scalars
-      for (std::size_t sc = 0; sc < scalar_fields.size(); ++sc) {
-      
-	vector_field(cell,pt,sc) = scalar_fields[sc](cell,pt);
-
-      }
-    }
-  }
+  Kokkos::parallel_for (workset.num_cells, (*this));
 }
 
 //**********************************************************************

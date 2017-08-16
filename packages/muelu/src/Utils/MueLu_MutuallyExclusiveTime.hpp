@@ -143,7 +143,9 @@ namespace MueLu {
     //! The previous MutuallyExclusiveTime that has been paused when this timer was started will be resumed.
     //! This method can be called on an already stopped timer or on the currently running timer.
     double stop() {
-      TEUCHOS_TEST_FOR_EXCEPTION(isPaused(), Exceptions::RuntimeError, "MueLu::MutuallyExclusiveTime::start(): timer is paused. Use resume().");
+      if(isPaused())
+        GetOStream(Errors) << "MueLu::MutuallyExclusiveTime::stop(): timer is paused. Use resume()" << std::endl;
+
       if (!isRunning()) { return timer_->stop(); } // stop() can be called on stopped timer
 
       // Here, timer is running, so it is the head of the stack

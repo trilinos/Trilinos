@@ -64,8 +64,6 @@ using Teuchos::rcp;
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_GlobalData.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -86,9 +84,8 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
-    panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 20;
@@ -97,7 +94,7 @@ namespace panzer {
 
     // setup mesh
     /////////////////////////////////////////////
-    RCP<panzer_stk_classic::STK_Interface> mesh;
+    RCP<panzer_stk::STK_Interface> mesh;
     {
        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
        pl->set("X Blocks",2);
@@ -141,15 +138,19 @@ namespace panzer {
 
     // setup worksets
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physics_blocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physics_blocks.size();i++) 
+      wkstContainer->setNeeds(physics_blocks[i]->elementBlockID(),physics_blocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
  
     // setup DOF manager
     /////////////////////////////////////////////
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
@@ -157,8 +158,8 @@ namespace panzer {
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm.getConst(),dofManager);
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(tComm.getConst(),dofManager);
 
     // setup field manager builder
     /////////////////////////////////////////////
@@ -180,7 +181,10 @@ namespace panzer {
 
     // run tests
     /////////////////////////////////
-    fmb.writeVolumeGraphvizDependencyFiles("FMB_Test_", physics_blocks);
+    fmb.writeVolumeGraphvizDependencyFiles("FMB_Test", physics_blocks);
+    fmb.writeBCGraphvizDependencyFiles("FMB_Test");
+    fmb.writeVolumeTextDependencyFiles("FMB_Test", physics_blocks);
+    fmb.writeBCTextDependencyFiles("FMB_Test");
 
     const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
       fmb.getVolumeFieldManagers();
@@ -189,10 +193,12 @@ namespace panzer {
     
     Teuchos::RCP<std::vector<panzer::Workset> > fmb_vol_worksets;
 
-    fmb_vol_worksets = wkstContainer->getVolumeWorksets("eblock-0_0");
+    panzer::WorksetDescriptor wd = blockDescriptor("eblock-0_0");
+    fmb_vol_worksets = wkstContainer->getWorksets(wd);
     TEST_ASSERT(fmb_vol_worksets!=Teuchos::null);
 
-    fmb_vol_worksets = wkstContainer->getVolumeWorksets("eblock-1_0");
+    wd = blockDescriptor("eblock-1_0");
+    fmb_vol_worksets = wkstContainer->getWorksets(wd);
     TEST_ASSERT(fmb_vol_worksets!=Teuchos::null);
     
 

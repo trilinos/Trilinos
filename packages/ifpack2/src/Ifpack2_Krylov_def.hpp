@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -43,6 +43,8 @@
 #ifndef IFPACK2_KRYLOV_DEF_HPP
 #define IFPACK2_KRYLOV_DEF_HPP
 
+#ifdef HAVE_IFPACK2_DEPRECATED_CODE
+
 #include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_ILUT.hpp"
@@ -62,6 +64,7 @@
 
 
 namespace Ifpack2 {
+namespace DeprecatedAndMayDisappearAtAnyTime {
 
 template <class MatrixType>
 Krylov<MatrixType>::
@@ -555,6 +558,7 @@ describe (Teuchos::FancyOStream &out,
   }
 }
 
+} // namespace DeprecatedAndMayDisappearAtAnyTime
 } // namespace Ifpack2
 
 // There's no need to instantiate for CrsMatrix too.  All Ifpack2
@@ -567,6 +571,7 @@ describe (Teuchos::FancyOStream &out,
 // (which would necessitate reinitializing the Krylov solver).
 
 #define IFPACK2_KRYLOV_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::Krylov< Tpetra::RowMatrix<S, LO, GO, N> >;
+  template class Ifpack2::DeprecatedAndMayDisappearAtAnyTime::Krylov< Tpetra::RowMatrix<S, LO, GO, N> >;
 
+#endif // HAVE_IFPACK2_DEPRECATED_CODE
 #endif /* IFPACK2_KRYLOV_DEF_HPP */

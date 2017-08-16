@@ -45,10 +45,8 @@
 
 #include <string>
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
+#include "Phalanx_MDField.hpp"
 #include "Panzer_PointValues2.hpp"
-
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
@@ -57,9 +55,9 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
 
   // is anything other than ScalarT really needed here?
-  PointValues2<ScalarT,PHX::MDField> pointValues;
+  PointValues2<ScalarT> pointValues;
  
-  Intrepid2::FieldContainer<double> refPointArray;
+  PHX::MDField<double,NODE,Dim> refPointArray;
 
   bool useBasisValuesRefArray; // if true then basis is non-null
   Teuchos::RCP<const panzer::PureBasis> basis;
@@ -69,12 +67,12 @@ PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
   template <typename ArrayT>
   void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
                   const Teuchos::Ptr<const ArrayT> & userArray,
-                  // const Teuchos::Ptr<const Intrepid2::FieldContainer<double> > & userArray,
+                  // const Teuchos::Ptr<const Kokkos::DynRankView<double,PHX::Device> > & userArray,
                   const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
 
 public:
   PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const Intrepid2::FieldContainer<double> & userArray);
+                        const Kokkos::DynRankView<double,PHX::Device> & userArray);
 
   PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
                         const PHX::MDField<double, panzer::IP, panzer::Dim> & userArray);

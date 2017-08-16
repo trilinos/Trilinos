@@ -61,10 +61,11 @@ namespace ROL {
 template<class Real>
 class ScalarMinimizationLineSearch : public LineSearch<Real> {
 private:
-  Teuchos::RCP<Vector<Real> > xnew_; 
-  Teuchos::RCP<Vector<Real> > g_;
+  Teuchos::RCP<Vector<Real> >             xnew_; 
+  Teuchos::RCP<Vector<Real> >             g_;
   Teuchos::RCP<ScalarMinimization<Real> > sm_;
-  Teuchos::RCP<Bracketing<Real> > br_;
+  Teuchos::RCP<Bracketing<Real> >         br_;
+  Teuchos::RCP<ScalarFunction<Real> >     sf_;
 
   ECurvatureCondition econd_;
   Real c1_;
@@ -171,13 +172,21 @@ private:
 
 public:
   // Constructor
-  ScalarMinimizationLineSearch( Teuchos::ParameterList &parlist )
+  ScalarMinimizationLineSearch( Teuchos::ParameterList &parlist, 
+    const Teuchos::RCP<ScalarMinimization<Real> > &sm = Teuchos::null,
+    const Teuchos::RCP<Bracketing<Real> > &br = Teuchos::null,
+    const Teuchos::RCP<ScalarFunction<Real> > &sf  = Teuchos::null )
     : LineSearch<Real>(parlist) {
     Real zero(0), p4(0.4), p6(0.6), p9(0.9), oem4(1.e-4), oem10(1.e-10), one(1);
     Teuchos::ParameterList &list0 = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList &list  = list0.sublist("Line-Search Method");
     // Get Bracketing Method
-    br_ = Teuchos::rcp(new Bracketing<Real>());
+    if( br == Teuchos::null ) {
+      br_ = Teuchos::rcp(new Bracketing<Real>());
+    }
+    else {
+      br_ = br;
+    }
     // Get ScalarMinimization Method
     std::string type = list.get("Type","Brent's");
     Real tol         = list.sublist(type).get("Tolerance",oem10);
@@ -186,19 +195,30 @@ public:
     plist.sublist("Scalar Minimization").set("Type",type);
     plist.sublist("Scalar Minimization").sublist(type).set("Tolerance",tol);
     plist.sublist("Scalar Minimization").sublist(type).set("Iteration Limit",niter);
-    if ( type == "Brent's" ) {
-      sm_ = Teuchos::rcp(new BrentsScalarMinimization<Real>(plist));
-    }
-    else if ( type == "Bisection" ) {
-      sm_ = Teuchos::rcp(new BisectionScalarMinimization<Real>(plist));
-    }
-    else if ( type == "Golden Section" ) {
-      sm_ = Teuchos::rcp(new GoldenSectionScalarMinimization<Real>(plist));
+
+    if( sm == Teuchos::null ) { // No user-provided ScalarMinimization object
+
+      if ( type == "Brent's" ) {
+        sm_ = Teuchos::rcp(new BrentsScalarMinimization<Real>(plist));
+      }
+      else if ( type == "Bisection" ) {
+        sm_ = Teuchos::rcp(new BisectionScalarMinimization<Real>(plist));
+      }
+      else if ( type == "Golden Section" ) {
+        sm_ = Teuchos::rcp(new GoldenSectionScalarMinimization<Real>(plist));
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+          ">>> (ROL::ScalarMinimizationLineSearch): Undefined ScalarMinimization type!");
+      }
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> (ROL::ScalarMinimizationLineSearch): Undefined ScalarMinimization type!");
+      sm_ = sm;
     }
+
+    sf_ = sf;
+
+
     // Status test for line search
     econd_ = StringToECurvatureCondition(list0.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions"));
     max_nfval_ = list0.get("Function Evaluation Limit",20);
@@ -241,8 +261,17 @@ public:
     Teuchos::RCP<const Vector<Real> > s_ptr = Teuchos::rcpFromRef(s);
     Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcpFromRef(obj);
     Teuchos::RCP<BoundConstraint<Real> > bnd_ptr = Teuchos::rcpFromRef(con);
-    Teuchos::RCP<ScalarFunction<Real> > phi
-      = Teuchos::rcp(new Phi(xnew_,g_,x_ptr,s_ptr,obj_ptr,bnd_ptr));
+
+
+    Teuchos::RCP<ScalarFunction<Real> > phi;
+
+    if( sf_ == Teuchos::null ) {
+      phi = Teuchos::rcp(new Phi(xnew_,g_,x_ptr,s_ptr,obj_ptr,bnd_ptr));
+    }
+    else {
+      phi = sf_;
+    }
+
     Teuchos::RCP<ScalarMinimizationStatusTest<Real> > test
       = Teuchos::rcp(new LineSearchStatusTest(fval,gs,c1_,c2_,c3_,max_nfval_,econd_,phi));
 
@@ -258,6 +287,8 @@ public:
     nfval = 0, ngrad = 0;
     sm_->run(fval, alpha, nfval, ngrad, *phi, A, B, *test);
     ls_neval += nfval; ls_ngrad += ngrad;
+
+    LineSearch<Real>::setNextInitialAlpha(alpha); 
   }
 };
 

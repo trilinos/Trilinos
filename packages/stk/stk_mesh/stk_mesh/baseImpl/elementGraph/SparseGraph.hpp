@@ -26,7 +26,10 @@ public:
     void add_edge(const GraphEdge &graphEdge);
     void delete_edge(const GraphEdge &graphEdge);
     void delete_all_edges(impl::LocalId elem);
-    void clear();
+    void clear()
+    {
+        m_graphEdges.clear();
+    }
 
     ElemToCoincidentEdgesMap::const_iterator begin() const { return m_graphEdges.begin(); }
     ElemToCoincidentEdgesMap::const_iterator end() const { return m_graphEdges.end(); }

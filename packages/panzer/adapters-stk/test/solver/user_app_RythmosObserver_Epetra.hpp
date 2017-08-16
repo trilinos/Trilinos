@@ -64,7 +64,7 @@ namespace user_app {
 
   public:
     
-    RythmosObserver_Epetra(const Teuchos::RCP<panzer_stk_classic::STK_Interface>& mesh,
+    RythmosObserver_Epetra(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 			   const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
 			   const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) :
       m_mesh(mesh),
@@ -91,20 +91,20 @@ namespace user_app {
       Teuchos::RCP<const Thyra::VectorBase<double> > solution = stepper.getStepStatus().solution;
       
       // Next few lines are inefficient, but we can revisit later
-      Teuchos::RCP<const Epetra_Vector> ep_solution = Thyra::get_Epetra_Vector(*(m_lof->getMap()), solution);
-      Epetra_Vector ghosted_solution(*(m_lof->getGhostedMap()));
-      Teuchos::RCP<Epetra_Import> importer = m_lof->getGhostedImport();
+      Teuchos::RCP<const Epetra_Vector> ep_solution = Thyra::get_Epetra_Vector(*(m_lof->getMap(0)), solution);
+      Epetra_Vector ghosted_solution(*(m_lof->getGhostedMap(0)));
+      Teuchos::RCP<Epetra_Import> importer = m_lof->getGhostedImport(0);
       ghosted_solution.PutScalar(0.0);
       ghosted_solution.Import(*ep_solution,*importer,Insert);
 
-      panzer_stk_classic::write_solution_data(*m_dof_manager,*m_mesh,ghosted_solution);
+      panzer_stk::write_solution_data(*m_dof_manager,*m_mesh,ghosted_solution);
       
       m_mesh->writeToExodus(stepper.getStepStatus().time);
     }
     
   protected:
 
-    Teuchos::RCP<panzer_stk_classic::STK_Interface> m_mesh;
+    Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > m_dof_manager;
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > m_lof;
 

@@ -191,13 +191,6 @@ MACRO(TRIBITS_PROJECT_IMPL)
       " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
   ENDIF()
 
-
-  #
-  # F2) The compilers are set, the environment is known to CMake.
-  #     Set installation options.
-  #
-  TRIBITS_SETUP_INSTALLATION_PATHS()
-
   #
   # G) Go get the information for all enabled TPLS
   #
@@ -257,7 +250,33 @@ MACRO(TRIBITS_PROJECT_IMPL)
   TRIBITS_CONFIGURE_ENABLED_PACKAGES()
 
   #
-  # K) Setup for packaging and distribution
+  # K) Write dummy makefiles for Ninja
+  #
+
+  IF (CMAKE_GENERATOR STREQUAL "Ninja" AND ${PROJECT_NAME}_WRITE_NINJA_MAKEFILES)
+
+    MESSAGE("")
+    MESSAGE("Generating dummy makefiles in each directory to call Ninja ...")
+    MESSAGE("")
+
+    IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+      TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_START_SECONDS)
+    ENDIF()
+
+    INCLUDE(GenerateNinjaMakefiles)
+    GENERATE_NINJA_MAKEFILES(${CMAKE_SOURCE_DIR})
+
+    IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+      TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_END_SECONDS)
+      TIMER_PRINT_REL_TIME(${NINJA_MAKEFILES_TIME_START_SECONDS}
+       ${NINJA_MAKEFILES_TIME_END_SECONDS}
+         "Total time generate Ninja makefiles ${PROJECT_NAME}")
+    ENDIF()
+
+  ENDIF()
+
+  #
+  # L) Setup for packaging and distribution
   #
 
   IF (${PROJECT_NAME}_ENABLE_CPACK_PACKAGING)
@@ -278,7 +297,7 @@ MACRO(TRIBITS_PROJECT_IMPL)
   ENDIF()
 
   #
-  # L) Set up for installation
+  # M) Set up for installation
   #
 
   IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
@@ -286,7 +305,7 @@ MACRO(TRIBITS_PROJECT_IMPL)
   ENDIF()
 
   #
-  # M) Show final timing and end
+  # N) Show final timing and end
   #
 
   MESSAGE("")

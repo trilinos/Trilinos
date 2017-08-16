@@ -47,4 +47,19 @@ namespace panzer {
 
 }
 
+namespace std
+{
+template <typename T1, typename T2>
+struct hash<std::pair<T1,T2> >
+{
+  std::size_t operator()(const std::pair<T1,T2>& v) const
+  {
+    std::size_t seed = 0;
+    panzer::hash_combine(seed, v.first);
+    panzer::hash_combine(seed, v.second);
+    return seed;
+  }
+};
+}
+
 #endif

@@ -59,6 +59,9 @@ namespace Basker{
     U = new basker_matrix<Int,Entry>;
     U->nnz = 0;
 
+    actual_lnnz = Int(0);
+    actual_unnz = Int(0);
+
     been_fact = false;
     perm_flag = false;
   }
@@ -77,6 +80,9 @@ namespace Basker{
     U = new basker_matrix<Int, Entry>;
     U->nnz = nnzU;
 
+    actual_lnnz = Int(0);
+    actual_unnz = Int(0);
+
     been_fact = false;
     perm_flag = false;
   }
@@ -89,7 +95,8 @@ namespace Basker{
     if(been_fact)
       {
         free_factor();
-        FREE(pinv);
+        //FREE(pinv);
+        delete pinv;
       }
     if(perm_flag)
       {
@@ -101,8 +108,6 @@ namespace Basker{
     delete L;
     //FREE(U);
     delete U;
-
-
   }
 
 
@@ -597,9 +602,32 @@ namespace Basker{
 
     //FREE(X);
     //FREE(tptr);
+
+    actual_lnnz = lnnz;
+    actual_unnz = unnz;
+
     been_fact = true;
     return 0;
   }//end factor
+
+
+  template <class Int, class Entry>
+  Int Basker<Int, Entry>::get_NnzL()
+  {
+    return actual_lnnz;
+  }
+
+  template <class Int, class Entry>
+  Int Basker<Int, Entry>::get_NnzU()
+  {
+    return actual_unnz;
+  }
+
+  template <class Int, class Entry>
+  Int Basker<Int, Entry>::get_NnzLU()
+  {
+    return (actual_lnnz + actual_unnz);
+  }
 
   template <class Int, class Entry>
   int Basker<Int, Entry>::returnL(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val)
@@ -627,7 +655,7 @@ namespace Basker{
         (*col_ptr)[i] = L->col_ptr[i];
       }
 
-    for(i = 0; i < L->nnz; i++)
+    for(i = 0; i < actual_lnnz; i++)
       {
         (*row_idx)[i] = pinv[L->row_idx[i]];
         (*val)[i]     = L->val[i];
@@ -659,7 +687,7 @@ namespace Basker{
       {
         (*col_ptr)[i] = U->col_ptr[i];
       }
-    for(i = 0; i < U->nnz; i++)
+    for(i = 0; i < actual_unnz; i++)
       {
         (*row_idx)[i] = U->row_idx[i];
         (*val)[i]     = U->val[i];

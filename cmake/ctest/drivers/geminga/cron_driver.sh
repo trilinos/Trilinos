@@ -84,10 +84,24 @@ module unload gcc
 module unload openmpi
 # ===========================================================================
 export CTEST_CONFIGURATION="nvcc_wrapper"
-module load openmpi/1.10.0
-module load gcc/4.9.2
-module load cuda/7.5-gcc
-module load nvcc-wrapper/gcc
+#module load openmpi/1.10.0
+#module load gcc/4.9.2
+#module load cuda/7.5-gcc
+#module load nvcc-wrapper/gcc
+
+module load sems-env
+module load kokkos-env
+module load sems-cmake/3.5.2
+module load sems-gcc/5.3.0
+module load sems-boost/1.58.0/base
+module load sems-python/2.7.9
+module load sems-zlib/1.2.8/base
+module load kokkos-cuda/8.0.44
+module load kokkos-nvcc_wrapper/1
+module load kokkos-openmpi/1.8.7/cuda
+module load sems-superlu/4.3
+module load sems-hdf5/1.8.12/parallel
+module load sems-netcdf/4.3.2/base
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
@@ -106,10 +120,24 @@ export CUDA_LAUNCH_BLOCKING=1
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
 
-module unload nvcc-wrapper
-module unload cuda
-module unload gcc
-module unload openmpi
+#module unload nvcc-wrapper
+#module unload cuda
+#module unload gcc
+#module unload openmpi
+
+module unload sems-netcdf/4.3.2/base
+module unload sems-hdf5/1.8.12/parallel
+module load sems-superlu/4.3
+module unload kokkos-openmpi/1.8.7/cuda
+module unload kokkos-nvcc_wrapper/1
+module unload kokkos-cuda/8.0.44
+module unload sems-zlib/1.2.8/base
+module unload sems-python/2.7.9
+module unload sems-boost/1.58.0/base
+module unload sems-gcc/5.3.0
+module unload sems-cmake/3.5.2
+module unload kokkos-env
+module unload sems-env
 # ===========================================================================
 
 echo

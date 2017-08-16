@@ -118,9 +118,9 @@ namespace Tpetra {
   ///   the Import (i.e., when calling DistObject's doImport()
   ///   (forward mode) or doExport() (reverse mode)).
   ///
-  template<class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-           class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-           class Node = Details::DefaultTypes::node_type>
+  template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+           class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+           class Node = ::Tpetra::Details::DefaultTypes::node_type>
   class Import:
     public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>
   {
@@ -156,7 +156,7 @@ namespace Tpetra {
     /// \param out [in/out] Output stream for debugging output.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            const RCP<Teuchos::FancyOStream>& out);
+            const Teuchos::RCP<Teuchos::FancyOStream>& out);
 
     /// \brief Constructor (with list of parameters)
     ///
@@ -191,7 +191,7 @@ namespace Tpetra {
     ///   two-argument constructor, listed above.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            const RCP<Teuchos::FancyOStream>& out,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out,
             const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Construct an Import from the source and target Maps.
@@ -223,6 +223,21 @@ namespace Tpetra {
     /// transpose of a sparse matrix.
     Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter);
 
+    /// \bief Full Expert constructor
+    /// Requirements: source and target maps are fully correct
+    ///
+
+    Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
+            const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
+            Teuchos::Array<int> & userRemotePIDs,
+            Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+            const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
+            const Teuchos::ArrayView<const int> & userExportPIDs,
+            const bool useRemotePIDs,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
+
+
     //! Destructor.
     virtual ~Import ();
 
@@ -251,28 +266,28 @@ namespace Tpetra {
     size_t getNumPermuteIDs() const;
 
     //! List of local IDs in the source Map that are permuted.
-    ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
+    Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
 
     //! List of local IDs in the target Map that are permuted.
-    ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
+    Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
 
     //! Number of entries not on the calling process.
     size_t getNumRemoteIDs() const;
 
     //! List of entries in the target Map to receive from other processes.
-    ArrayView<const LocalOrdinal> getRemoteLIDs() const;
+    Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const;
 
     //! Number of entries that must be sent by the calling process to other processes.
     size_t getNumExportIDs() const;
 
     //! List of entries in the source Map that will be sent to other processes.
-    ArrayView<const LocalOrdinal> getExportLIDs() const;
+    Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const;
 
     /// \brief List of processes to which entries will be sent.
     ///
     /// The entry with Local ID <tt>getExportLIDs()[i]</tt> will be
     /// sent to process <tt>getExportPIDs()[i]</tt>.
-    ArrayView<const int> getExportPIDs() const;
+    Teuchos::ArrayView<const int> getExportPIDs() const;
 
     //! The Source Map used to construct this Import object.
     Teuchos::RCP<const map_type> getSourceMap () const;
@@ -282,6 +297,18 @@ namespace Tpetra {
 
     //! The Distributor that this Import object uses to move data.
     Distributor & getDistributor() const;
+
+    /// \brief Do all target Map indices on the calling process exist
+    ///   on at least one process (not necessarily this one) in the
+    ///   source Map?
+    ///
+    /// It's not necessarily an error for an Import not to be locally
+    /// complete on one or more processes.  For example, this may
+    /// happen in the common use case of "restriction" -- that is,
+    /// taking a subset of a large object.  Nevertheless, you may find
+    /// this predicate useful for figuring out whether you set up your
+    /// Maps in the way that you expect.
+    bool isLocallyComplete () const;
 
     //! Assignment operator.
     Import<LocalOrdinal,GlobalOrdinal,Node>&
@@ -355,6 +382,33 @@ namespace Tpetra {
     //! @name I/O Methods
     //@{
 
+    /// \brief Describe this object in a human-readable way to the
+    ///   given output stream.
+    ///
+    /// You must call this method as a collective over all processes
+    /// in the communicator of the source and target Map of this
+    /// object.
+    ///
+    /// \param out [out] Output stream to which to write.  Only
+    ///   Process 0 in this object's communicator may write to the
+    ///   output stream.
+    ///
+    /// \param verbLevel [in] Verbosity level.  This also controls
+    ///   whether this method does any communication.  At verbosity
+    ///   levels higher (greater) than Teuchos::VERB_LOW, this method
+    ///   behaves as a collective over the object's communicator.
+    ///
+    /// Teuchos::FancyOStream wraps std::ostream.  It adds features
+    /// like tab levels.  If you just want to wrap std::cout, try
+    /// this:
+    /// \code
+    /// auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::out));
+    /// \endcode
+    virtual void
+    describe (Teuchos::FancyOStream& out,
+              const Teuchos::EVerbosityLevel verbLevel =
+                Teuchos::Describable::verbLevel_default) const;
+
     /// \brief Print the Import's data to the given output stream.
     ///
     /// This method assumes that the given output stream can be
@@ -373,12 +427,11 @@ namespace Tpetra {
     virtual void print (std::ostream& os) const;
 
     //@}
-
   private:
     //! All the data needed for executing the Import communication plan.
-    RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
+    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
     //! Output stream for debug output.
-    RCP<Teuchos::FancyOStream> out_;
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
     //! Whether to print copious debug output on each process.
     bool debug_;
 
@@ -473,7 +526,6 @@ namespace Tpetra {
     setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, bool useRemotePIDs, Teuchos::Array<int> & remotePIDs);
     //@}
 
-
     /// \brief "Expert" constructor that includes all the Import's data.
     ///
     /// This is useful for implementing setUnion() efficiently.
@@ -483,7 +535,7 @@ namespace Tpetra {
     /// so that it doesn't have to copy them.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            const size_t numSameIDs,
+            const size_t numSameID,
             Teuchos::Array<LocalOrdinal>& permuteToLIDs,
             Teuchos::Array<LocalOrdinal>& permuteFromLIDs,
             Teuchos::Array<LocalOrdinal>& remoteLIDs,
@@ -516,7 +568,7 @@ namespace Tpetra {
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      src == null || tgt == null, std::runtime_error,
+      src == Teuchos::null || tgt == Teuchos::null, std::runtime_error,
       "Tpetra::createImport(): neither source nor target map may be null:"
       << std::endl << "source: " << src << std::endl << "target: " << tgt
       << std::endl);
@@ -547,7 +599,7 @@ namespace Tpetra {
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      src == null || tgt == null, std::runtime_error,
+      src == Teuchos::null || tgt == Teuchos::null, std::runtime_error,
       "Tpetra::createImport(): neither source nor target map may be null:"
       << std::endl << "source: " << src << std::endl << "target: " << tgt
       << std::endl);

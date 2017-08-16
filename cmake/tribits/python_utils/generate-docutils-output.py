@@ -25,12 +25,12 @@ from optparse import OptionParser
 thisFilePath = __file__
 thisFileRealAbsBasePath = \
   os.path.dirname(os.path.abspath(os.path.realpath(thisFilePath)))
-#print "thisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
+#print("thisFileRealAbsBasePath = '" + thisFileRealAbsBasePath + "'")
 
 tribitsBaseDir = os.path.abspath(os.path.join(thisFileRealAbsBasePath, '..'))
 
 sys.path.append(os.path.join(tribitsBaseDir, 'python'))
-#print "sys.path =", sys.path
+#print("sys.path = " + str(sys.path))
 
 
 from GenerateDocUtilsOutput import *
@@ -46,7 +46,7 @@ addCmndLineOptions(clp)
 (options, args) = clp.parse_args(sys.argv)
 
 if not options.fileBase:
-  print "Error, --file-base=<fileBase> must be specified!"
+  print("Error, --file-base=<fileBase> must be specified!")
   sys.exit(1)
   
 #

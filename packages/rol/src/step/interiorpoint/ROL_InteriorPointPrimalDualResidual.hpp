@@ -46,7 +46,7 @@
 #define ROL_INTERIORPOINT_PRIMALDUAL_RESIDUAL_H
 
 #include "ROL_Elementwise_Function.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_LinearOperator.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_PartitionedVector.hpp"
@@ -74,19 +74,19 @@ template<class Real> class PrimalDualSymmetrizer;
 
 
 template<class Real>
-class PrimalDualResidual : public EqualityConstraint<Real> {
+class PrimalDualResidual : public Constraint<Real> {
 
 private:
   typedef Vector<Real>             V;
   typedef PartitionedVector<Real>  PV;
   typedef Objective<Real>          OBJ;
-  typedef EqualityConstraint<Real> CON;
+  typedef Constraint<Real> CON;
 
 
   typedef typename PV::size_type   size_type;
 
   Teuchos::RCP<OBJ> obj_;    // Objective function
-  Teuchos::RCP<CON> eqcon_;  // Equality Constraint
+  Teuchos::RCP<CON> eqcon_;  //  Constraint
   Teuchos::RCP<CON> incon_;  // Inequality Constraint
 
   Teuchos::RCP<V> qo_;       // Storage for optimization variables
@@ -166,7 +166,7 @@ public:
 
     cs->plus(*qs_);               // Sz-e
 
-    // Equality component
+    //  component
     eqcon_->value(*ce, *xo, tol); // c_e(x)
 
     // Inequality component
@@ -238,7 +238,7 @@ public:
     
     jvs->plus(*qs_);
 
-    // Equality component
+    //  component
     eqcon_->applyJacobian(*jve,*vo,*xo,tol);
     
     // Inequality components

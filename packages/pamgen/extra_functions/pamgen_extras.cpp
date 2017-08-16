@@ -68,7 +68,7 @@ void  Conform_Boundary_IDS(long long ** comm_entities,
   }
   delete [] send_buffer;
   delete [] receive_buffer;
-  delete req;
+  delete [] req;
 #endif
 }
 
@@ -145,7 +145,7 @@ void  Conform_Boundary_IDS_topo_entity(std::vector < std:: vector < topo_entity 
   }
   delete [] send_buffer;
   delete [] receive_buffer;
-  delete req;
+  delete [] req;
 #endif
 }
 

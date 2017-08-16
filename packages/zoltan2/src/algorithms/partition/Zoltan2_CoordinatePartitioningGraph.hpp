@@ -388,16 +388,6 @@ public:
             }
         }
 
-        template <typename tt>
-        std::string toString(tt obj){
-            std::stringstream ss (std::stringstream::in |std::stringstream::out);
-            ss << obj;
-            std::string tmp = "";
-            ss >> tmp;
-            return tmp;
-        }
-
-
         /*! \brief  function for visualization.
         */
         void writeGnuPlot(std::ofstream &file,std::ofstream &mm){
@@ -480,14 +470,19 @@ public:
 
                     std::string arrowline = "set arrow from ";
                     for (int i = 0; i < dim - 1; ++i){
-                        arrowline += toString<scalar_t>(corner1[i]) + ",";
+                        arrowline += 
+                             Teuchos::toString<scalar_t>(corner1[i]) + ",";
                     }
-                    arrowline += toString<scalar_t>(corner1[dim -1]) + " to ";
+                    arrowline += 
+                         Teuchos::toString<scalar_t>(corner1[dim -1]) + " to ";
 
                     for (int i = 0; i < dim - 1; ++i){
-                        arrowline += toString<scalar_t>(corner2[i]) + ",";
+                        arrowline += 
+                             Teuchos::toString<scalar_t>(corner2[i]) + ",";
                     }
-                    arrowline += toString<scalar_t>(corner2[dim -1]) + " nohead\n";
+                    arrowline += 
+                         Teuchos::toString<scalar_t>(corner2[dim -1]) + 
+                                                     " nohead\n";
 
                     file << arrowline;
                 }

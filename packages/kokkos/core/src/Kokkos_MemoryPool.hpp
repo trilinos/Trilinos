@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
+// 
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-//
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -44,543 +44,751 @@
 #ifndef KOKKOS_MEMORYPOOL_HPP
 #define KOKKOS_MEMORYPOOL_HPP
 
-#include <vector>
-
 #include <Kokkos_Core_fwd.hpp>
-#include <impl/Kokkos_Error.hpp>
-#include <impl/KokkosExp_SharedAlloc.hpp>
-#include <Kokkos_ExecPolicy.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_Atomic.hpp>
-
-// How should errors be handled?  In general, production code should return a
-// value indicating failure so the user can decide how the error is handled.
-// While experimental, code can abort instead.  If KOKKOS_MEMPOOL_PRINTERR is
-// defined, the code will abort with an error message.  Otherwise, the code will
-// return with a value indicating failure when possible, or do nothing instead.
-//#define KOKKOS_MEMPOOL_PRINTERR
-
-//#define KOKKOS_MEMPOOL_PRINT_INFO
-
-//----------------------------------------------------------------------------
+#include <impl/Kokkos_ConcurrentBitset.hpp>
+#include <impl/Kokkos_Error.hpp>
+#include <impl/Kokkos_SharedAlloc.hpp>
 
 namespace Kokkos {
-namespace Experimental {
 
-template < typename Space , typename ExecSpace = typename Space::execution_space >
-class MemoryPool;
-
-namespace Impl {
-
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-template < typename MemPool >
-struct print_mempool {
-  size_t      m_num_chunk_sizes;
-  size_t *    m_chunk_size;
-  uint64_t *  m_freelist;
-  char *      m_data;
-
-  print_mempool( size_t ncs, size_t * cs, uint64_t * f, char * d )
-    : m_num_chunk_sizes(ncs), m_chunk_size(cs), m_freelist(f), m_data(d)
-  {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_t i ) const
-  {
-    if ( i == 0 ) {
-      printf( "*** ON DEVICE ***\n");
-      printf( "m_chunk_size: 0x%llx\n", reinterpret_cast<uint64_t>( m_chunk_size ) );
-      printf( "  m_freelist: 0x%llx\n", reinterpret_cast<uint64_t>( m_freelist ) );
-      printf( "      m_data: 0x%llx\n", reinterpret_cast<uint64_t>( m_data ) );
-      for ( size_t l = 0; l < m_num_chunk_sizes; ++l ) {
-        printf( "%2lu    freelist: %10llu    chunk_size: %6lu\n",
-               l, get_head_offset( m_freelist[l] ), m_chunk_size[l] );
-      }
-      printf( "                              chunk_size: %6lu\n\n",
-              m_chunk_size[m_num_chunk_sizes] );
-    }
-  }
-
-  // This is only redefined here to avoid having to pass a MemPoolList object
-  // to the class.
-  KOKKOS_INLINE_FUNCTION
-  uint64_t get_head_offset(uint64_t head) const
-  { return ( head >> MemPool::TAGBITS ) << MemPool::LG_MIN_CHUNKSIZE; }
-};
-#endif
-
-template < typename MemPool >
-struct initialize_mempool {
-  char *  m_data;
-  size_t  m_chunk_size;
-  size_t  m_last_chunk;
-  size_t  m_base_offset;
-
-  initialize_mempool( char * d, size_t cs, size_t lc, size_t bo )
-    : m_data(d), m_chunk_size(cs), m_last_chunk(lc), m_base_offset(bo)
-  {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_t i ) const
-  {
-    uint64_t * lp =
-      reinterpret_cast<uint64_t *>( m_data + m_base_offset + i * m_chunk_size );
-
-    // All entries in the list point to the next entry except the last which
-    // uses a reserved value to indicate the end of the list.  The offset from
-    // the base pointer is stored in increments of the minimum chunk size.
-    *lp = i < m_last_chunk ?
-          m_base_offset + (i + 1) * m_chunk_size :
-          MemPool::FREELIST_END;
-  }
-};
-
-class MemPoolList {
-private:
-
-  typedef Impl::SharedAllocationTracker  Tracker;
-
-  template < typename , typename > friend class Kokkos::Experimental::MemoryPool;
-  template < typename > friend struct initialize_mempool;
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-  template < typename > friend struct print_mempool;
-#endif
-
-  // Define some constants.
-  enum {
-    // The head of a freelist is a 64 bit unsigned interger.  We divide it
-    // into 2 pieces.  The upper (64-TAGBITS) bits is the offset from the base
-    // data pointer of the allocator in increments of the minimum chunk size.
-    // The lower TAGBITS bits is the tag used to prevent ABA problems.  The
-    // largest two values that fit in the offset portion are reserved to
-    // represent the end of the freelist and that the freelist is locked.
-    //
-    // Using 32 bits for both the tag and offset and with a minimum chunk size
-    // of 128 bytes, the offset can address 549755813632 bytes (app. 512 GB)
-    // of memory.  This should be more than enough to address the whole address
-    // space of a GPU or MIC for the foreseeable future.
-    TAGBITS            = 32,
-    MIN_CHUNKSIZE      = 128,
-
-    TAGBITS_MASK       = ( uint64_t( 1 ) << TAGBITS ) - 1,
-    LG_MIN_CHUNKSIZE   = Kokkos::Impl::integral_power_of_two(MIN_CHUNKSIZE),
-
-    // The largest two values of the offset are reserved to indicate the end of a
-    // freelist (2^TAGBITS - 2) and that the freelist is locked (2^TAGBITS - 1).
-    // They are shifted so they can be compared directly to the result of
-    // get_head_offset().
-    FREELIST_END       = uint64_t( TAGBITS_MASK - 1 ) << LG_MIN_CHUNKSIZE,
-    FREELIST_LOCK      = uint64_t( TAGBITS_MASK ) << LG_MIN_CHUNKSIZE,
-
-    // This is the head value for a locked freelist.  It uses the lock value for
-    // the offset and 0 for the tagbits.
-    FREELIST_LOCK_HEAD = uint64_t( TAGBITS_MASK ) << TAGBITS
-  };
-
-  Tracker   m_track;
-
-  // These three variables are pointers into device memory.
-  size_t *    m_chunk_size; // Array of chunk sizes of freelists.
-  uint64_t *  m_freelist;   // Array of freelist heads.
-  char *      m_data;       // Beginning memory location used for chunks.
-
-  size_t      m_data_size;
-  size_t      m_chunk_spacing;
-
-#if defined(KOKKOS_MEMPOOL_PRINT_INFO) && defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  static long m_count;
-#endif
-
-  ~MemPoolList() = default;
-  MemPoolList() = default;
-  MemPoolList( MemPoolList && ) = default;
-  MemPoolList( const MemPoolList & ) = default;
-  MemPoolList & operator = ( MemPoolList && ) = default;
-  MemPoolList & operator = ( const MemPoolList & ) = default;
-
-  template < typename MemorySpace, typename ExecutionSpace >
-  inline
-  MemPoolList( const MemorySpace & memspace, const ExecutionSpace &,
-               size_t arg_base_chunk_size, size_t arg_total_size,
-               size_t num_chunk_sizes, size_t chunk_spacing )
-    : m_track(), m_chunk_size(0), m_freelist(0), m_data(0), m_data_size(0),
-      m_chunk_spacing(chunk_spacing)
-  {
-    static_assert( sizeof(size_t) <= sizeof(void*), "" );
-
-    typedef Impl::SharedAllocationRecord< MemorySpace, void >  SharedRecord;
-    typedef Kokkos::RangePolicy< ExecutionSpace >              Range;
-
-    size_t base_chunk_size = arg_base_chunk_size;
-
-    // The base chunk size must be at least MIN_CHUNKSIZE bytes as this is the
-    // cache-line size for NVIDA GPUs.
-    if ( base_chunk_size < MIN_CHUNKSIZE ) {
-
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-      printf( "** Chunk size must be at least %u bytes.  Setting to %u. **\n",
-              MIN_CHUNKSIZE, MIN_CHUNKSIZE);
-      fflush( stdout );
-#endif
-
-      base_chunk_size = MIN_CHUNKSIZE;
-    }
-
-    // The base chunk size must also be a multiple of MIN_CHUNKSIZE bytes for
-    // correct memory alignment of the chunks.  If it isn't a multiple of
-    // MIN_CHUNKSIZE, set it to the smallest multiple of MIN_CHUNKSIZE
-    // greater than the given chunk size.
-    if ( base_chunk_size % MIN_CHUNKSIZE != 0 ) {
-      size_t old_chunk_size = base_chunk_size;
-      base_chunk_size = ( ( old_chunk_size + MIN_CHUNKSIZE - 1 ) / MIN_CHUNKSIZE ) *
-                        MIN_CHUNKSIZE;
-
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-      printf( "** Chunk size must be a multiple of %u bytes.  Given: %lu  Using: %lu. **\n",
-              MIN_CHUNKSIZE, old_chunk_size, base_chunk_size);
-      fflush( stdout );
-#endif
-
-    }
-
-    // Force total_size to be a multiple of base_chunk_size.
-    // Preserve the number of chunks originally requested.
-    size_t total_size = base_chunk_size *
-      ( ( arg_total_size + arg_base_chunk_size - 1 ) / arg_base_chunk_size );
-
-    m_data_size = total_size;
-
-    // Get the chunk size for the largest possible chunk.
-    //   max_chunk_size =
-    //     base_chunk_size * (m_chunk_spacing ^ (num_chunk_sizes - 1))
-    size_t max_chunk_size = base_chunk_size;
-    for (size_t i = 1; i < num_chunk_sizes; ++i) {
-      max_chunk_size *= m_chunk_spacing;
-    }
-
-    // We want each chunk size to use total_size / num_chunk_sizes memory.  If
-    // the total size of the pool is not enough to accomodate this, keep making
-    // the next lower chunk size the max_chunk_size until it is.
-    while ( max_chunk_size > total_size / num_chunk_sizes ) {
-      max_chunk_size /= m_chunk_spacing;
-      --num_chunk_sizes;
-    }
-
-    // We put a header at the beginnig of the device memory and use extra
-    // chunks to store the header.  The header contains:
-    //   size_t     chunk_size[num_chunk_sizes+1]
-    //   uint64_t  freelist[num_chunk_sizes]
-
-    // Calculate the size of the header where the size is rounded up to the
-    // smallest multiple of base_chunk_size >= the needed size.  The size of the
-    // chunk size array is calculated using sizeof(void*) to guarantee alignment
-    // for the freelist array.  This assumes sizeof(size_t) <= sizeof(void*).
-    size_t header_bytes = ( 2 * num_chunk_sizes + 1 ) * sizeof(void*);
-    size_t header_size =
-      ( header_bytes + base_chunk_size - 1 ) / base_chunk_size * base_chunk_size;
-
-    // Allocate the memory including the header.
-    size_t alloc_size = total_size + header_size;
-
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-      printf( "** Allocating total %ld bytes\n", long(alloc_size));
-      fflush( stdout );
-#endif
-
-    SharedRecord * rec =
-      SharedRecord::allocate( memspace, "mempool", alloc_size );
-
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-      printf( "** Allocated total %ld bytes at 0x%lx\n",
-              long(alloc_size), long(rec->data()) );
-      fflush( stdout );
-#endif
-
-    m_track.assign_allocated_record_to_uninitialized( rec );
-
-    {
-      // Get the pointers into the allocated memory.
-      char * mem = reinterpret_cast<char *>( rec->data() );
-      m_chunk_size = reinterpret_cast<size_t *>( mem );
-      m_freelist = reinterpret_cast<uint64_t *>(
-                   mem + ( num_chunk_sizes + 1 ) * sizeof(void*) );
-      m_data = mem + header_size;
-
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-      printf( "** Partitioning allocation 0x%lx : m_chunk_size[0x%lx] m_freelist[0x%lx] m_data[0x%lx]\n",
-              (unsigned long) mem, (unsigned long) m_chunk_size,
-              (unsigned long) m_freelist, (unsigned long) m_data );
-      fflush( stdout );
-#endif
-    }
-
-    // Initialize the chunk sizes array.  Create num_chunk_sizes different
-    // chunk sizes where each successive chunk size is
-    // m_chunk_spacing * previous chunk size.  The last entry in the array is
-    // 0 and is used for a stopping condition.
-    m_chunk_size[0] = base_chunk_size;
-    for ( size_t i = 1; i < num_chunk_sizes; ++i ) {
-      m_chunk_size[i] = m_chunk_size[i - 1] * m_chunk_spacing;
-    }
-    m_chunk_size[num_chunk_sizes] = 0;
-
-    std::vector<size_t> num_chunks(num_chunk_sizes);
-
-    // Set the starting point in memory and get the number of chunks for each
-    // freelist.  Start with the largest chunk size to ensure usage of all the
-    // memory.  If there is leftover memory for a chunk size, it will be used
-    // by a smaller chunk size.
-    size_t used_memory = 0;
-    for ( size_t i = num_chunk_sizes; i > 0; --i ) {
-      // Set the starting position in the memory for the current chunk sizes's
-      // freelist and initialize the tag to 0.
-      m_freelist[i - 1] = create_head( used_memory, 0UL );
-
-      size_t mem_avail =
-        total_size - (i - 1) * ( total_size / num_chunk_sizes ) - used_memory;
-
-      // Set the number of chunks for the current chunk sizes's freelist.
-      num_chunks[i - 1] = mem_avail / m_chunk_size[i - 1];
-
-      used_memory += num_chunks[i - 1] * m_chunk_size[i - 1];
-    }
-
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-    printf( "\n" );
-    printf( "*** ON HOST ***\n");
-    printf( "m_chunk_size: 0x%llx\n", reinterpret_cast<uint64_t>( m_chunk_size ) );
-    printf( "  m_freelist: 0x%llx\n", reinterpret_cast<uint64_t>( m_freelist ) );
-    printf( "      m_data: 0x%llx\n", reinterpret_cast<uint64_t>( m_data ) );
-    for ( size_t i = 0; i < num_chunk_sizes; ++i ) {
-      printf( "%2lu    freelist: %10llu    chunk_size: %6lu    num_chunks: %8lu\n",
-              i, get_head_offset( m_freelist[i] ), m_chunk_size[i], num_chunks[i] );
-    }
-    printf( "                              chunk_size: %6lu\n\n",
-            m_chunk_size[num_chunk_sizes] );
-    fflush( stdout );
-#endif
-
-#ifdef KOKKOS_MEMPOOL_PRINTERR
-    if ( used_memory != total_size ) {
-      printf( "\n** MemoryPool::MemoryPool() USED_MEMORY(%lu) != TOTAL_SIZE(%lu) **\n",
-              used_memory, total_size );
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-      fflush( stdout );
-#endif
-      Kokkos::abort( "" );
-    }
-#endif
-
-    // Create the chunks for each freelist.
-    for ( size_t i = 0; i < num_chunk_sizes; ++i ) {
-      // Initialize the next pointers to point to the next chunk for all but the
-      // last chunk which uses a reserved value to indicate the end of the list.
-      initialize_mempool<MemPoolList> im( m_data, m_chunk_size[i], num_chunks[i] - 1,
-                                          get_head_offset( m_freelist[i] ) );
-
-      Kokkos::Impl::ParallelFor< initialize_mempool<MemPoolList>, Range >
-        closure( im, Range( 0, num_chunks[i] ) );
-
-      closure.execute();
-
-      ExecutionSpace::fence();
-    }
-
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-    print_mempool<MemPoolList> pm( num_chunk_sizes, m_chunk_size, m_freelist, m_data );
-
-    Kokkos::Impl::ParallelFor< print_mempool<MemPoolList>, Range >
-      closure( pm, Range( 0, 10 ) );
-
-    closure.execute();
-
-    ExecutionSpace::fence();
-#endif
-  }
-
-  /// \brief Releases a lock on a freelist.
-  KOKKOS_FUNCTION
-  uint64_t acquire_lock( volatile uint64_t * freelist ) const;
-
-  /// \brief Releases a lock on a freelist.
-  KOKKOS_FUNCTION
-  void release_lock( volatile uint64_t * freelist, uint64_t new_head ) const;
-
-  /// \brief Tries to refill a freelist using a chunk from another freelist.
-  KOKKOS_FUNCTION
-  void * refill_freelist( size_t l_exp ) const;
-
-  /// \brief Claim chunks of untracked memory from the pool.
-  KOKKOS_FUNCTION
-  void * allocate( size_t alloc_size ) const;
-
-  /// \brief Release claimed memory back into the pool.
-  KOKKOS_FUNCTION
-  void deallocate( void * alloc_ptr, size_t alloc_size ) const;
-
-  // \brief Pulls the offset from a freelist head.
-  KOKKOS_INLINE_FUNCTION
-  uint64_t get_head_offset(uint64_t head) const
-  { return ( head >> TAGBITS ) << LG_MIN_CHUNKSIZE; }
-
-  // \brief Pulls the tag from a freelist head.
-  KOKKOS_INLINE_FUNCTION
-  uint64_t get_head_tag(uint64_t head) const { return head & TAGBITS_MASK; }
-  // \brief Creates a freelist head from a offset and tag.
-  KOKKOS_INLINE_FUNCTION
-  uint64_t create_head(uint64_t offset, uint64_t tag) const
-  { return ( ( offset >> LG_MIN_CHUNKSIZE ) << TAGBITS ) | tag; }
-
-  // \brief Increments a tag.
-  KOKKOS_INLINE_FUNCTION
-  uint64_t increment_tag(uint64_t tag) const { return ( tag + 1 ) & TAGBITS_MASK; }
-
-  /// \brief Tests if the memory pool is empty.
-  KOKKOS_INLINE_FUNCTION
-  bool is_empty() const
-  {
-    size_t l = 0;
-    while ( m_chunk_size[l] > 0 &&
-            get_head_offset( m_freelist[l] ) == FREELIST_END )
-    {
-      ++l;
-    }
-
-    return m_chunk_size[l] == 0;
-  }
-
-  // The following functions are used for debugging.
-  void print_status() const
-  {
-    for ( size_t l = 0; m_chunk_size[l] > 0; ++l ) {
-      size_t count = 0;
-      uint64_t chunk = get_head_offset( m_freelist[l] );
-
-      while ( chunk != FREELIST_END ) {
-        ++count;
-        chunk = *reinterpret_cast<uint64_t *>( m_data + chunk );
-      }
-
-      printf( "chunk_size: %6lu    num_chunks: %8lu\n", m_chunk_size[l], count );
-      fflush(stdout);
-    }
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  size_t get_min_chunk_size() const { return m_chunk_size[0]; }
-
-  size_t get_mem_size() const { return m_data_size; }
-};
-
-} // namespace Impl
-} // namespace Experimental
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-/*  Prefer to implement these functions in a separate
- *  compilation unit.  For CUDA this requires nvcc command
- *  --relocatable-device-code=true
- *  When this command is set then the macro
- *  KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE
- *  is also set.
- */
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA ) && \
-    ! defined( KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE )
-
-#include <impl/Kokkos_MemoryPool_Inline.hpp>
-
-#endif
-
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Experimental {
-
-/// \class MemoryPool
-/// \brief Memory management for pool of same-sized chunks of memory.
-///
-/// MemoryPool is a memory space that can be on host or device.  It provides a
-/// pool memory allocator for fast allocation of same-sized chunks of memory.
-/// The memory is only accessible on the host / device this allocator is
-/// associated with.
-template < typename Space , typename ExecSpace >
+template< typename DeviceType >
 class MemoryPool {
 private:
 
-  Impl::MemPoolList  m_memory;
+  typedef typename Kokkos::Impl::concurrent_bitset CB ;
 
-  typedef ExecSpace                     execution_space;
-  typedef typename Space::memory_space  backend_memory_space;
+  enum : uint32_t { bits_per_int_lg2  = CB::bits_per_int_lg2 };
+  enum : uint32_t { state_shift       = CB::state_shift };
+  enum : uint32_t { state_used_mask   = CB::state_used_mask };
+  enum : uint32_t { state_header_mask = CB::state_header_mask };
+  enum : uint32_t { max_bit_count_lg2 = CB::max_bit_count_lg2 };
+  enum : uint32_t { max_bit_count     = CB::max_bit_count };
 
-#if defined( KOKKOS_HAVE_CUDA )
+  enum : uint32_t { HINT_PER_BLOCK_SIZE = 2 };
 
-  // Current implementation requires CudaUVM memory space
-  // for Cuda memory pool.
+  /*  Each superblock has a concurrent bitset state
+   *  which is an array of uint32_t integers.
+   *    [ { block_count_lg2  : state_shift bits
+   *      , used_block_count : ( 32 - state_shift ) bits
+   *      }
+   *    , { block allocation bit set }* ]
+   *
+   *  As superblocks are assigned (allocated) to a block size
+   *  and released (deallocated) back to empty the superblock state
+   *  is concurrently updated.
+   */
 
-  static_assert(
-    ! std::is_same< typename Space::memory_space , Kokkos::CudaSpace >::value ,
-    "Kokkos::MemoryPool currently cannot use Kokkos::CudaSpace, you must use Kokkos::CudaUVMSpace" );
+  /*  Mapping between block_size <-> block_state
+   *
+   *  block_state = ( m_sb_size_lg2 - block_size_lg2 ) << state_shift
+   *  block_size  = m_sb_size_lg2 - ( block_state >> state_shift )
+   *
+   *  Thus A_block_size < B_block_size  <=>  A_block_state > B_block_state
+   */
 
-#endif
+  typedef typename DeviceType::memory_space base_memory_space ;
+
+  enum { accessible =
+           Kokkos::Impl::MemorySpaceAccess< Kokkos::HostSpace 
+                                          , base_memory_space >::accessible };
+
+  typedef Kokkos::Impl::SharedAllocationTracker Tracker ;
+  typedef Kokkos::Impl::SharedAllocationRecord
+    < base_memory_space >  Record ;
+
+  Tracker    m_tracker ;
+  uint32_t * m_sb_state_array ;
+  uint32_t   m_sb_state_size ;
+  uint32_t   m_sb_size_lg2 ;
+  uint32_t   m_max_block_size_lg2 ;
+  uint32_t   m_min_block_size_lg2 ;
+  int32_t    m_sb_count ;
+  int32_t    m_hint_offset ;   // Offset to K * #block_size array of hints
+  int32_t    m_data_offset ;   // Offset to 0th superblock data
+  int32_t    m_unused_padding ;
 
 public:
 
-  //! Tag this class as a kokkos memory space
-  typedef MemoryPool  memory_space;
+  //--------------------------------------------------------------------------
 
-  //------------------------------------
-
-  MemoryPool() = default;
-  MemoryPool( MemoryPool && rhs ) = default;
-  MemoryPool( const MemoryPool & rhs ) = default;
-  MemoryPool & operator = ( MemoryPool && ) = default;
-  MemoryPool & operator = ( const MemoryPool & ) = default;
-  ~MemoryPool() = default;
-
-  /// \brief Allocate memory pool
-  /// \param memspace         From where to allocate the pool.
-  /// \param base_chunk_size  Hand out memory in chunks of this size.
-  /// \param total_size       Total size of the pool.
-  MemoryPool( const backend_memory_space & memspace,
-              size_t base_chunk_size, size_t total_size,
-              size_t num_chunk_sizes = 4, size_t chunk_spacing = 4 )
-    : m_memory( memspace, execution_space(), base_chunk_size, total_size,
-                num_chunk_sizes, chunk_spacing )
-  {}
-
-  /// \brief Claim chunks of untracked memory from the pool.
-  /// Can only be called from device.
   KOKKOS_INLINE_FUNCTION
-  void * allocate( const size_t alloc_size ) const
-  { return m_memory.allocate( alloc_size ); }
+  size_t capacity() const noexcept
+    { return size_t(m_sb_count) << m_sb_size_lg2 ; }
 
-  /// \brief Release claimed memory back into the pool
-  /// Can only be called from device.
   KOKKOS_INLINE_FUNCTION
-  void deallocate( void * const alloc_ptr, const size_t alloc_size ) const
-  { m_memory.deallocate( alloc_ptr, alloc_size ); }
+  size_t min_block_size() const noexcept
+    { return ( 1LU << m_min_block_size_lg2 ); }
 
-  /// \brief Is out of memory at this instant
   KOKKOS_INLINE_FUNCTION
-  bool is_empty() const { return m_memory.is_empty(); }
+  size_t max_block_size() const noexcept
+    { return ( 1LU << m_max_block_size_lg2 ); }
 
-  /// \brief Minimum chunk size allocatable.
+  struct usage_statistics {
+    size_t capacity_bytes ;       ///<  Capacity in bytes
+    size_t superblock_bytes ;     ///<  Superblock size in bytes
+    size_t max_block_bytes ;      ///<  Maximum block size in bytes
+    size_t min_block_bytes ;      ///<  Minimum block size in bytes
+    size_t capacity_superblocks ; ///<  Number of superblocks
+    size_t consumed_superblocks ; ///<  Superblocks assigned to allocations
+    size_t consumed_blocks ;  ///<  Number of allocations
+    size_t consumed_bytes ;   ///<  Bytes allocated
+    size_t reserved_blocks ;  ///<  Unallocated blocks in assigned superblocks
+    size_t reserved_bytes ;   ///<  Unallocated bytes in assigned superblocks
+  };
+
+  void get_usage_statistics( usage_statistics & stats ) const
+    {
+      Kokkos::HostSpace host ;
+
+      const size_t alloc_size = m_hint_offset * sizeof(uint32_t);
+
+      uint32_t * const sb_state_array = 
+        accessible ? m_sb_state_array : (uint32_t *) host.allocate(alloc_size);
+
+      if ( ! accessible ) {
+        Kokkos::Impl::DeepCopy< Kokkos::HostSpace , base_memory_space >
+          ( sb_state_array , m_sb_state_array , alloc_size );
+      }
+
+      stats.superblock_bytes = ( 1LU << m_sb_size_lg2 );
+      stats.max_block_bytes  = ( 1LU << m_max_block_size_lg2 );
+      stats.min_block_bytes  = ( 1LU << m_min_block_size_lg2 );
+      stats.capacity_bytes   = stats.superblock_bytes * m_sb_count ;
+      stats.capacity_superblocks = m_sb_count ;
+      stats.consumed_superblocks = 0 ;
+      stats.consumed_blocks = 0 ;
+      stats.consumed_bytes  = 0 ;
+      stats.reserved_blocks = 0 ;
+      stats.reserved_bytes  = 0 ;
+
+      const uint32_t * sb_state_ptr = sb_state_array ;
+
+      for ( int32_t i = 0 ; i < m_sb_count
+          ; ++i , sb_state_ptr += m_sb_state_size ) {
+
+        const uint32_t block_count_lg2 = (*sb_state_ptr) >> state_shift ;
+
+        if ( block_count_lg2 ) {
+          const uint32_t block_count    = 1u << block_count_lg2 ;
+          const uint32_t block_size_lg2 = m_sb_size_lg2 - block_count_lg2 ;
+          const uint32_t block_size     = 1u << block_size_lg2 ;
+          const uint32_t block_used     = (*sb_state_ptr) & state_used_mask ;
+
+          stats.consumed_superblocks++ ;
+          stats.consumed_blocks += block_used ;
+          stats.consumed_bytes  += block_used * block_size ;
+          stats.reserved_blocks += block_count - block_used ;
+          stats.reserved_bytes  += (block_count - block_used ) * block_size ;
+        }
+      }
+
+      if ( ! accessible ) {
+        host.deallocate( sb_state_array, alloc_size );
+      }
+    }
+
+  void print_state( std::ostream & s ) const
+    {
+      Kokkos::HostSpace host ;
+
+      const size_t alloc_size = m_hint_offset * sizeof(uint32_t);
+
+      uint32_t * const sb_state_array = 
+        accessible ? m_sb_state_array : (uint32_t *) host.allocate(alloc_size);
+
+      if ( ! accessible ) {
+        Kokkos::Impl::DeepCopy< Kokkos::HostSpace , base_memory_space >
+          ( sb_state_array , m_sb_state_array , alloc_size );
+      }
+
+      const uint32_t * sb_state_ptr = sb_state_array ;
+
+      s << "pool_size(" << ( size_t(m_sb_count) << m_sb_size_lg2 ) << ")"
+        << " superblock_size(" << ( 1 << m_sb_size_lg2 ) << ")" << std::endl ;
+
+      for ( int32_t i = 0 ; i < m_sb_count
+          ; ++i , sb_state_ptr += m_sb_state_size ) {
+
+        if ( *sb_state_ptr ) {
+
+          const uint32_t block_count_lg2 = (*sb_state_ptr) >> state_shift ;
+          const uint32_t block_size_lg2  = m_sb_size_lg2 - block_count_lg2 ;
+          const uint32_t block_count     = 1 << block_count_lg2 ;
+          const uint32_t block_used      = (*sb_state_ptr) & state_used_mask ;
+
+          s << "Superblock[ " << i << " / " << m_sb_count << " ] {"
+            << " block_size(" << ( 1 << block_size_lg2 ) << ")"
+            << " block_count( " << block_used
+            << " / " << block_count  << " )"
+            << std::endl ;
+        }
+      }
+
+      if ( ! accessible ) {
+        host.deallocate( sb_state_array, alloc_size );
+      }
+    }
+
+  //--------------------------------------------------------------------------
+
+  MemoryPool() = default ;
+  MemoryPool( MemoryPool && ) = default ;
+  MemoryPool( const MemoryPool & ) = default ;
+  MemoryPool & operator = ( MemoryPool && ) = default ;
+  MemoryPool & operator = ( const MemoryPool & ) = default ;
+
+  /**\brief  Allocate a memory pool from 'memspace'.
+   *
+   *  The memory pool will have at least 'min_total_alloc_size' bytes
+   *  of memory to allocate divided among superblocks of at least
+   *  'min_superblock_size' bytes.  A single allocation must fit
+   *  within a single superblock, so 'min_superblock_size' must be
+   *  at least as large as the maximum single allocation.
+   *  Both 'min_total_alloc_size' and 'min_superblock_size'
+   *  are rounded up to the smallest power-of-two value that
+   *  contains the corresponding sizes.
+   *  Individual allocations will always consume a block of memory that
+   *  is also a power-of-two.  These roundings are made to enable
+   *  significant runtime performance improvements.
+   */
+  MemoryPool( const base_memory_space & memspace
+            , const size_t min_total_alloc_size
+            , size_t min_block_alloc_size = 0
+            , size_t max_block_alloc_size = 0
+            , size_t min_superblock_size  = 0
+            )
+    : m_tracker()
+    , m_sb_state_array(0)
+    , m_sb_state_size(0)
+    , m_sb_size_lg2(0)
+    , m_max_block_size_lg2(0)
+    , m_min_block_size_lg2(0)
+    , m_sb_count(0)
+    , m_hint_offset(0)
+    , m_data_offset(0)
+    , m_unused_padding(0)
+    {
+      const uint32_t int_align_lg2   = 3 ; /* align as int[8] */
+      const uint32_t int_align_mask  = ( 1u << int_align_lg2 ) - 1 ;
+
+      // Constraints and defaults:
+      //   min_block_alloc_size <= max_block_alloc_size
+      //   max_block_alloc_size <= min_superblock_size 
+      //   min_superblock_size  <= min_total_alloc_size
+
+      const uint32_t MIN_BLOCK_SIZE  = 1u << 6   /*   64 bytes */ ;
+      const uint32_t MAX_BLOCK_SIZE  = 1u << 12  /*   4k bytes */ ;
+
+      if ( 0 == min_block_alloc_size ) min_block_alloc_size = MIN_BLOCK_SIZE ;
+
+      if ( 0 == max_block_alloc_size ) {
+
+        max_block_alloc_size = MAX_BLOCK_SIZE ;
+
+        // Upper bound of total allocation size
+        max_block_alloc_size = std::min( size_t(max_block_alloc_size)
+                                       , min_total_alloc_size );
+
+        // Lower bound of minimum block size
+        max_block_alloc_size = std::max( max_block_alloc_size
+                                       , min_block_alloc_size );
+      }
+
+      if ( 0 == min_superblock_size ) {
+        min_superblock_size = max_block_alloc_size ;
+
+        // Upper bound of total allocation size
+        min_superblock_size = std::min( size_t(min_superblock_size)
+                                      , min_total_alloc_size );
+
+        // Lower bound of maximum block size
+        min_superblock_size = std::max( min_superblock_size
+                                      , max_block_alloc_size );
+      }
+
+      // Block and superblock size is power of two:
+
+      m_min_block_size_lg2 =
+        Kokkos::Impl::integral_power_of_two_that_contains(min_block_alloc_size);
+
+      m_max_block_size_lg2 =
+        Kokkos::Impl::integral_power_of_two_that_contains(max_block_alloc_size);
+  
+      m_sb_size_lg2 =
+        Kokkos::Impl::integral_power_of_two_that_contains(min_superblock_size);
+
+      // Constraints:
+      // m_min_block_size_lg2 <= m_max_block_size_lg2 <= m_sb_size_lg2
+      // m_sb_size_lg2 <= m_min_block_size + max_bit_count_lg2
+
+      if ( m_min_block_size_lg2 + max_bit_count_lg2 < m_sb_size_lg2 ) {
+        m_min_block_size_lg2 = m_sb_size_lg2 - max_bit_count_lg2 ;
+      }
+      if ( m_min_block_size_lg2 + max_bit_count_lg2 < m_max_block_size_lg2 ) {
+        m_min_block_size_lg2 = m_max_block_size_lg2 - max_bit_count_lg2 ;
+      }
+      if ( m_max_block_size_lg2 < m_min_block_size_lg2 ) {
+        m_max_block_size_lg2 = m_min_block_size_lg2 ;
+      }
+      if ( m_sb_size_lg2 < m_max_block_size_lg2 ) {
+        m_sb_size_lg2 = m_max_block_size_lg2 ;
+      }
+
+      // At least 32 minimum size blocks in a superblock
+
+      if ( m_sb_size_lg2 < m_min_block_size_lg2 + 5 ) {
+        m_sb_size_lg2 = m_min_block_size_lg2 + 5 ;
+      }
+
+      // number of superblocks is multiple of superblock size that
+      // can hold min_total_alloc_size.
+
+      const uint32_t sb_size_mask = ( 1u << m_sb_size_lg2 ) - 1 ;
+
+      m_sb_count = ( min_total_alloc_size + sb_size_mask ) >> m_sb_size_lg2 ;
+
+      // Any superblock can be assigned to the smallest size block
+      // Size the block bitset to maximum number of blocks
+
+      const uint32_t max_block_count_lg2 =
+        m_sb_size_lg2 - m_min_block_size_lg2 ;
+
+      m_sb_state_size =
+        ( CB::buffer_bound_lg2( max_block_count_lg2 ) + int_align_mask ) & ~int_align_mask ;
+
+      // Array of all superblock states
+
+      const size_t all_sb_state_size =
+        ( m_sb_count * m_sb_state_size + int_align_mask ) & ~int_align_mask ;
+
+      // Number of block sizes
+
+      const int32_t number_block_sizes =
+         1 + m_max_block_size_lg2 - m_min_block_size_lg2 ;
+
+      // Array length for possible block sizes
+      // Hint array is one uint32_t per block size
+
+      const int32_t block_size_array_size =
+        ( number_block_sizes + int_align_mask ) & ~int_align_mask ;
+
+      m_hint_offset = all_sb_state_size ;
+      m_data_offset = m_hint_offset +
+                      block_size_array_size * HINT_PER_BLOCK_SIZE ;
+
+      // Allocation:
+
+      const size_t header_size = m_data_offset * sizeof(uint32_t);
+      const size_t alloc_size  = header_size +
+                                 ( size_t(m_sb_count) << m_sb_size_lg2 );
+
+      Record * rec = Record::allocate( memspace , "MemoryPool" , alloc_size );
+
+      m_tracker.assign_allocated_record_to_uninitialized( rec );
+
+      m_sb_state_array = (uint32_t *) rec->data();
+
+      Kokkos::HostSpace host ;
+
+      uint32_t * const sb_state_array = 
+        accessible ? m_sb_state_array
+                   : (uint32_t *) host.allocate(header_size);
+
+      for ( int32_t i = 0 ; i < m_data_offset ; ++i ) sb_state_array[i] = 0 ;
+
+      // Initial assignment of empty superblocks to block sizes:
+
+      for ( int32_t i = 0 ; i < number_block_sizes ; ++i ) {
+        const uint32_t block_size_lg2  = i + m_min_block_size_lg2 ;
+        const uint32_t block_count_lg2 = m_sb_size_lg2 - block_size_lg2 ;
+        const uint32_t block_state     = block_count_lg2 << state_shift ;
+        const uint32_t hint_begin = m_hint_offset + i * HINT_PER_BLOCK_SIZE ;
+
+        // for block size index 'i':
+        //   sb_id_hint  = sb_state_array[ hint_begin ];
+        //   sb_id_begin = sb_state_array[ hint_begin + 1 ];
+
+        const int32_t jbeg = ( i * m_sb_count ) / number_block_sizes ;
+        const int32_t jend = ( ( i + 1 ) * m_sb_count ) / number_block_sizes ;
+
+        sb_state_array[ hint_begin ] = uint32_t(jbeg);
+        sb_state_array[ hint_begin + 1 ] = uint32_t(jbeg);
+
+        for ( int32_t j = jbeg ; j < jend ; ++j ) {
+          sb_state_array[ j * m_sb_state_size ] = block_state ;
+        }
+      }
+
+      // Write out initialized state:
+
+      if ( ! accessible ) {
+        Kokkos::Impl::DeepCopy< base_memory_space , Kokkos::HostSpace >
+          ( m_sb_state_array , sb_state_array , header_size );
+
+        host.deallocate( sb_state_array, header_size );
+      }
+      else {
+        Kokkos::memory_fence();
+      }
+    }
+
+  //--------------------------------------------------------------------------
+
+private:
+
+  /* Given a size 'n' get the block size in which it can be allocated.
+   * Restrict lower bound to minimum block size.
+   */
+  KOKKOS_FORCEINLINE_FUNCTION
+  unsigned get_block_size_lg2( unsigned n ) const noexcept
+    {
+      const unsigned i = Kokkos::Impl::integral_power_of_two_that_contains( n );
+
+      return i < m_min_block_size_lg2 ? m_min_block_size_lg2 : i ;
+    }
+
+public:
+
   KOKKOS_INLINE_FUNCTION
-  size_t get_min_chunk_size() const { return m_memory.get_min_chunk_size(); }
+  uint32_t allocate_block_size( uint32_t alloc_size ) const noexcept
+    {
+      return alloc_size <= (1UL << m_max_block_size_lg2)
+           ? ( 1u << get_block_size_lg2( alloc_size ) )
+           : 0 ;
+    }
 
-  // The following functions are used for debugging.
-  void print_status() const { m_memory.print_status(); }
-  size_t get_mem_size() const { return m_memory.get_mem_size(); }
+  //--------------------------------------------------------------------------
+  /**\brief  Allocate a block of memory that is at least 'alloc_size'
+   *
+   *  The block of memory is aligned to the minimum block size,
+   *  currently is 64 bytes, will never be less than 32 bytes.
+   *
+   *  If concurrent allocations and deallocations are taking place
+   *  then a single allocation attempt may fail due to lack of available space.
+   *  The allocation attempt will try up to 'attempt_limit' times.
+   */
+  KOKKOS_FUNCTION
+  void * allocate( size_t alloc_size
+                 , int32_t attempt_limit = 1 ) const noexcept
+    {
+      if ( 0 == alloc_size ) return (void*) 0 ;
+
+      void * p = 0 ;
+
+      const uint32_t block_size_lg2 = get_block_size_lg2( alloc_size );
+
+      if ( block_size_lg2 <= m_max_block_size_lg2 ) {
+
+        // Allocation will fit within a superblock
+        // that has block sizes ( 1 << block_size_lg2 )
+
+        const uint32_t block_count_lg2 = m_sb_size_lg2 - block_size_lg2 ;
+        const uint32_t block_state     = block_count_lg2 << state_shift ;
+        const uint32_t block_count     = 1u << block_count_lg2 ;
+
+        // Superblock hints for this block size:
+        //   hint_sb_id_ptr[0] is the dynamically changing hint
+        //   hint_sb_id_ptr[1] is the static start point
+
+        volatile uint32_t * const hint_sb_id_ptr
+          = m_sb_state_array     /* memory pool state array */
+          + m_hint_offset        /* offset to hint portion of array */
+          + HINT_PER_BLOCK_SIZE  /* number of hints per block size */
+            * ( block_size_lg2 - m_min_block_size_lg2 ); /* block size id */
+
+        const int32_t sb_id_begin = int32_t( hint_sb_id_ptr[1] );
+
+        // Fast query clock register 'tic' to pseudo-randomize
+        // the guess for which block within a superblock should
+        // be claimed.  If not available then a search occurs.
+
+        const uint32_t block_id_hint =
+          (uint32_t)( Kokkos::Impl::clock_tic()
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA )
+          // Spread out potentially concurrent access
+          // by threads within a warp or thread block.
+          + ( threadIdx.x + blockDim.x * threadIdx.y )
+#endif
+          );
+
+        // expected state of superblock for allocation
+        uint32_t sb_state = block_state ;
+
+        int32_t sb_id = -1 ;
+
+        volatile uint32_t * sb_state_array = 0 ;
+
+        while ( attempt_limit ) {
+
+          int32_t hint_sb_id = -1 ;
+
+          if ( sb_id < 0 ) {
+
+            // No superblock specified, try the hint for this block size
+
+            sb_id = hint_sb_id = int32_t( *hint_sb_id_ptr );
+
+            sb_state_array = m_sb_state_array + ( sb_id * m_sb_state_size );
+          }
+
+          // Require:
+          //   0 <= sb_id
+          //   sb_state_array == m_sb_state_array + m_sb_state_size * sb_id
+
+          if ( sb_state == ( state_header_mask & *sb_state_array ) ) {
+
+            // This superblock state is as expected, for the moment.
+            // Attempt to claim a bit.  The attempt updates the state
+            // so have already made sure the state header is as expected.
+
+            const uint32_t count_lg2 = sb_state >> state_shift ;
+            const uint32_t mask      = ( 1u << count_lg2 ) - 1 ;
+
+            const Kokkos::pair<int,int> result =
+              CB::acquire_bounded_lg2( sb_state_array
+                                     , count_lg2
+                                     , block_id_hint & mask
+                                     , sb_state
+                                     );
+
+            // If result.first < 0 then failed to acquire
+            // due to either full or buffer was wrong state.
+            // Could be wrong state if a deallocation raced the
+            // superblock to empty before the acquire could succeed.
+
+            if ( 0 <= result.first ) { // acquired a bit
+
+              const uint32_t size_lg2 = m_sb_size_lg2 - count_lg2 ;
+
+              // Set the allocated block pointer
+
+              p = ((char*)( m_sb_state_array + m_data_offset ))
+                + ( uint32_t(sb_id) << m_sb_size_lg2 ) // superblock memory
+                + ( result.first    << size_lg2 );     // block memory
+
+              break ; // Success
+            }
+
+// printf("  acquire count_lg2(%d) sb_state(0x%x) sb_id(%d) result(%d,%d)\n" , count_lg2 , sb_state , sb_id , result.first , result.second );
+
+          }
+          //------------------------------------------------------------------
+          //  Arrive here if failed to acquire a block.
+          //  Must find a new superblock.
+
+          //  Start searching at designated index for this block size.
+          //  Look for superblock that, in preferential order,
+          //  1) part-full superblock of this block size
+          //  2) empty superblock to claim for this block size
+          //  3) part-full superblock of the next larger block size
+
+          sb_state = block_state ; // Expect to find the desired state
+          sb_id = -1 ;
+
+          bool update_hint = false ;
+          int32_t sb_id_empty = -1 ;
+          int32_t sb_id_large = -1 ;
+          uint32_t sb_state_large = 0 ;
+
+          sb_state_array = m_sb_state_array + sb_id_begin * m_sb_state_size ;
+
+          for ( int32_t i = 0 , id = sb_id_begin ; i < m_sb_count ; ++i ) {
+
+            //  Query state of the candidate superblock.
+            //  Note that the state may change at any moment
+            //  as concurrent allocations and deallocations occur.
+            
+            const uint32_t full_state = *sb_state_array ;
+            const uint32_t used       = full_state & state_used_mask ;
+            const uint32_t state      = full_state & state_header_mask ;
+
+            if ( state == block_state ) {
+
+              //  Superblock is assigned to this block size
+
+              if ( used < block_count ) {
+
+                // There is room to allocate one block
+
+                sb_id = id ;
+
+                // Is there room to allocate more than one block?
+
+                update_hint = used + 1 < block_count ;
+
+                break ;
+              }
+            }
+            else if ( 0 == used ) {
+
+              // Superblock is empty
+
+              if ( -1 == sb_id_empty ) {
+
+                // Superblock is not assigned to this block size
+                // and is the first empty superblock encountered.
+                // Save this id to use if a partfull superblock is not found.
+
+                sb_id_empty = id ;
+              }
+            }
+            else if ( ( -1 == sb_id_empty /* have not found an empty */ ) &&
+                      ( -1 == sb_id_large /* have not found a larger */ ) &&
+                      ( state < block_state /* a larger block */ ) &&
+                      // is not full:
+                      ( used < ( 1u << ( state >> state_shift ) ) ) ) {
+              //  First superblock encountered that is
+              //  larger than this block size and
+              //  has room for an allocation.
+              //  Save this id to use of partfull or empty superblock not found
+              sb_id_large    = id ;
+              sb_state_large = state ;
+            }
+
+            // Iterate around the superblock array:
+
+            if ( ++id < m_sb_count ) {
+              sb_state_array += m_sb_state_size ;
+            }
+            else {
+              id = 0 ;
+              sb_state_array = m_sb_state_array ;
+            }
+          }
+
+// printf("  search m_sb_count(%d) sb_id(%d) sb_id_empty(%d) sb_id_large(%d)\n" , m_sb_count , sb_id , sb_id_empty , sb_id_large);
+
+          if ( sb_id < 0 ) {
+
+            //  Did not find a partfull superblock for this block size.
+
+            if ( 0 <= sb_id_empty ) {
+
+              //  Found first empty superblock following designated superblock
+              //  Attempt to claim it for this block size.
+              //  If the claim fails assume that another thread claimed it
+              //  for this block size and try to use it anyway,
+              //  but do not update hint.
+
+              sb_id = sb_id_empty ;
+
+              sb_state_array = m_sb_state_array + ( sb_id * m_sb_state_size );
+
+              //  If successfully changed assignment of empty superblock 'sb_id'
+              //  to this block_size then update the hint.
+
+              const uint32_t state_empty = state_header_mask & *sb_state_array ;
+
+              // If this thread claims the empty block then update the hint
+              update_hint =
+                state_empty ==
+                  Kokkos::atomic_compare_exchange
+                    (sb_state_array,state_empty,block_state);
+            }
+            else if ( 0 <= sb_id_large ) {
+
+              // Found a larger superblock with space available
+
+              sb_id    = sb_id_large ;
+              sb_state = sb_state_large ;
+
+              sb_state_array = m_sb_state_array + ( sb_id * m_sb_state_size );
+            }
+            else {
+              // Did not find a potentially usable superblock
+              --attempt_limit ;
+            }
+          }
+
+          if ( update_hint ) {
+            Kokkos::atomic_compare_exchange
+              ( hint_sb_id_ptr , uint32_t(hint_sb_id) , uint32_t(sb_id) );
+          }
+        } // end allocation attempt loop
+
+        //--------------------------------------------------------------------
+      }
+      else {
+        Kokkos::abort("Kokkos MemoryPool allocation request exceeded specified maximum allocation size");
+      }
+
+      return p ;
+    }
+  // end allocate
+  //--------------------------------------------------------------------------
+
+  /**\brief  Return an allocated block of memory to the pool.
+   *
+   *  Requires: p is return value from allocate( alloc_size );
+   *
+   *  For now the alloc_size is ignored.
+   */
+  KOKKOS_INLINE_FUNCTION
+  void deallocate( void * p , size_t /* alloc_size */ ) const noexcept
+    {
+      if ( 0 == p ) return ;
+
+      // Determine which superblock and block
+      const ptrdiff_t d =
+        ((char*)p) - ((char*)( m_sb_state_array + m_data_offset ));
+
+      // Verify contained within the memory pool's superblocks:
+      const int ok_contains =
+        ( 0 <= d ) && ( size_t(d) < ( size_t(m_sb_count) << m_sb_size_lg2 ) );
+
+      int ok_block_aligned = 0 ;
+      int ok_dealloc_once  = 0 ;
+
+      if ( ok_contains ) {
+
+        const int sb_id = d >> m_sb_size_lg2 ;
+
+        // State array for the superblock.
+        volatile uint32_t * const sb_state_array =
+          m_sb_state_array + ( sb_id * m_sb_state_size );
+
+        const uint32_t block_state    = (*sb_state_array) & state_header_mask ;
+        const uint32_t block_size_lg2 =
+          m_sb_size_lg2 - ( block_state >> state_shift );
+
+        ok_block_aligned = 0 == ( d & ( ( 1 << block_size_lg2 ) - 1 ) );
+
+        if ( ok_block_aligned ) {
+
+          // Map address to block's bit
+          // mask into superblock and then shift down for block index
+
+          const uint32_t bit =
+            ( d & ( ptrdiff_t( 1 << m_sb_size_lg2 ) - 1 ) ) >> block_size_lg2 ;
+
+          const int result =
+            CB::release( sb_state_array , bit , block_state );
+
+          ok_dealloc_once = 0 <= result ;
+
+// printf("  deallocate from sb_id(%d) result(%d) bit(%d) state(0x%x)\n"
+//       , sb_id
+//       , result
+//       , uint32_t(d >> block_size_lg2)
+//       , *sb_state_array );
+
+        }
+      }
+
+      if ( ! ok_contains || ! ok_block_aligned || ! ok_dealloc_once ) {
+#if 0
+        printf("Kokkos MemoryPool deallocate(0x%lx) contains(%d) block_aligned(%d) dealloc_once(%d)\n",(uintptr_t)p,ok_contains,ok_block_aligned,ok_dealloc_once);
+#endif
+        Kokkos::abort("Kokkos MemoryPool::deallocate given erroneous pointer");
+      }
+    }
+  // end deallocate
+  //--------------------------------------------------------------------------
 };
 
-} // namespace Experimental
-} // namespace Kokkos
+} // namespace Kokkos 
 
-#ifdef KOKKOS_MEMPOOL_PRINTERR
-#undef KOKKOS_MEMPOOL_PRINTERR
-#endif
+#endif /* #ifndef KOKKOS_MEMORYPOOL_HPP */
 
-#ifdef KOKKOS_MEMPOOL_PRINT_INFO
-#undef KOKKOS_MEMPOOL_PRINT_INFO
-#endif
-
-#endif /* #define KOKKOS_MEMORYPOOL_HPP */

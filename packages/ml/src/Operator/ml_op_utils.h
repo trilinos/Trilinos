@@ -141,6 +141,8 @@ extern int ML_Blkrap(ML_Operator *Rmat, ML_Operator *Amat, ML_Operator *Pmat,
 
 extern ML_Operator *ProjectMe(ML *mlptr, int BlockLocation, int FromLevel, ML_Operator *Matrix, int matrix_type);
 
+extern void ML_Operator_Copy_Statistics(ML_Operator *source, ML_Operator *target);
+
 #ifndef ML_CPP
 #ifdef __cplusplus
   }

@@ -351,17 +351,16 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, create) {
   // 6. ???
 }
 
-#if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8)
+#if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8) &&  !(__GNUC__ == 4 && __GNUC_MINOR__ == 9) && !(__GNUC__ == 5 && __GNUC_MINOR__ == 3) && !(__GNUC__ == 6 && __GNUC_MINOR__ == 2)
 
 // There are many places that the parameter list is validated to ensure that we
 // catch invalid parameter lists before we use them.  This is particularly
 // important because we're storing a pointer to the parameter list and the user
 // can change it without ObjectBuilder knowing about it.
-// The parameter list is validated in four places:
+// The parameter list is validated in three places:
 // 1. setParameterList
 // 2. unsetParameterList (only in debug mode)
 // 3. create (only in debug mode)
-// 4. destructor (only in debug mode)
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
     RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
     ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
@@ -374,7 +373,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
 #ifdef TEUCHOS_DEBUG
     TEST_THROW( ob->unsetParameterList(), std::logic_error ); // 2.
     TEST_THROW( ob->create(), std::logic_error ); // 3.
-    TEST_THROW( ob = null, std::logic_error ); // 4.
 #else // TEUCHOS_DEBUG
     TEST_NOTHROW( ob->unsetParameterList() );
     RCP<Foo> foo;
@@ -385,12 +383,13 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
 #endif // TEUCHOS_DEBUG
 }
 
-#endif // GCC 4.8
-// For Some reason, with GCC 4.8.3, the catch() satement refuses to catch the
-// exception being thrown inside of the destructor.  This use case is a very
-// unusal use case and likley will not happen in real programs.  This test
-// passes with ever other compiler (including GCC 4.9.x) so I am pretty sure
-// this is a defect in GCC 4.8.x.
+#endif // GCC 4.8, 4.9, 5.3, 6.2
+// For Some reason, with GCC 4.8.3, 4.9.3, 5.3.0, 6.2 the catch() statement
+// refuses to catch the exception being thrown inside of the destructor.  This
+// use case is a very unusal use case and likley will not happen in real
+// programs.  This test passes with other compilers so it is not clear if this
+// is a code defect or a compiler defect.  In any case, exceptions should not
+// be thrown from destrucrtors (see Trilinos GitHub #1303).
 
 
 // Here we test
@@ -426,7 +425,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getNonconstParameterList) {
   }
 }
 
-#if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8)
+#if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8) && !(__GNUC__ == 4 && __GNUC_MINOR__ == 9) && !(__GNUC__ == 5 && __GNUC_MINOR__ == 3) && !(__GNUC__ == 6 && __GNUC_MINOR__ == 2)
 
 // Here we're checking:
 // 1.  That we can set a parameter list on it and it uses it and then we can
@@ -453,7 +452,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
 #ifdef TEUCHOS_DEBUG
   TEST_THROW( newPL = ob->unsetParameterList(), std::logic_error ); // 2.
   TEST_EQUALITY_CONST( is_null(newPL), true );
-  TEST_THROW( ob = null, std::logic_error );
 #else // TEUCHOS_DEBUG
   TEST_NOTHROW( newPL = ob->unsetParameterList() );
   TEST_EQUALITY_CONST( pl.get(), newPL.get() ); // 1a.
@@ -461,7 +459,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
 #endif // TEUCHOS_DEBUG
 }
 
-#endif // GCC 4.8
+#endif // GCC 4.8, 4.9, 5.3, 6.2
 
 // This function does several things.
 // 1.  It creates the validParameterList whenever it is deleted [already tested in setObjectFactory]
@@ -649,6 +647,3 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setDefaultObject_withoutPL ) {
 }
 
 } // namespace Teuchos
-
-
-

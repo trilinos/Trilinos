@@ -147,6 +147,7 @@ int Zoltan_LocalHSFC_Order(
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Get_Obj_List returned error.");
       return(ZOLTAN_FATAL);
   }
+  ZOLTAN_FREE(&parts);
   /******************************************************************/
 
   /******************************************************************/
@@ -248,6 +249,7 @@ int Zoltan_LocalHSFC_Order(
     hsfcKey[objNum] = fhsfc(zz, &(geomArray[objNum * numGeomDims]) );
     coordIndx[objNum] = objNum;
   }
+  ZOLTAN_FREE(&geomArray);
   /******************************************************************/
 
   /******************************************************************/

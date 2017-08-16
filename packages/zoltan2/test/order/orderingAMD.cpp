@@ -205,6 +205,7 @@ int main(int narg, char** arg)
   SparseMatrixAdapter adapter(origMatrix);
 
   params.set("order_method", "minimum_degree");
+  params.set("order_method_type", "local");
   params.set("order_package", "amd");
 
   ////// Create and solve ordering problem
@@ -213,7 +214,8 @@ int main(int narg, char** arg)
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
   problem.solve();
 
-  Zoltan2::OrderingSolution<z2TestLO, z2TestGO> *soln = problem.getSolution();
+  Zoltan2::LocalOrderingSolution<z2TestLO> *soln =
+    problem.getLocalOrderingSolution();
 
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();

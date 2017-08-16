@@ -313,7 +313,7 @@ namespace Xpetra {
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
       throw std::runtime_error("Epetra does not support device views!");
       typename dual_view_type::t_dev_um ret;
-      return ret; // make compiler happy
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
 #endif
@@ -525,7 +525,7 @@ namespace Xpetra {
     std::string description() const {
       XPETRA_MONITOR("EpetraMultiVectorT::description");
       TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
-      return "TODO";
+      TEUCHOS_UNREACHABLE_RETURN("TODO");
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
@@ -602,6 +602,7 @@ namespace Xpetra {
 
     //! Replace the underlying Map in place.
     void replaceMap(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+      XPETRA_MONITOR("EpetraMultiVectorT::replaceMap");
       int err = 0;
       if (!map.is_null()) {
         err = this->getEpetra_MultiVector()->ReplaceMap(toEpetra<GlobalOrdinal,Node>(map));
@@ -1005,6 +1006,7 @@ namespace Xpetra {
 
     //! Replace the underlying Map in place.
     void replaceMap(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+      XPETRA_MONITOR("EpetraMultiVectorT::replaceMap");
       int err = 0;
       if (!map.is_null()) {
         err = this->getEpetra_MultiVector()->ReplaceMap(toEpetra<GlobalOrdinal,Node>(map));

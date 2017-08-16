@@ -131,6 +131,7 @@ IF(PyTrilinos_ENABLE_Anasazi)
 ENDIF(PyTrilinos_ENABLE_Anasazi)
 
 IF(PyTrilinos_ENABLE_Pliris)
+  PyTrilinos_MAKE_TEST(testPliris)
 ENDIF(PyTrilinos_ENABLE_Pliris)
 
 IF(PyTrilinos_ENABLE_ML)

@@ -16,7 +16,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
     ${PACKAGE_NAME}_ENABLE_Ifpack AND
     ${PACKAGE_NAME}_ENABLE_Amesos)
 
-  IF(Trilinos_ENABLE_AztecOO)
+  IF(${PACKAGE_NAME}_ENABLE_AztecOO)
     # build only if AztecOO available, too
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2D_Epetra
@@ -146,6 +146,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
         COMM mpi
         )
 
+      # TODO: fix CloneRepartitionInterface
       TRIBITS_ADD_TEST(
         Navier2DBlocked_rebalancing2
         NAME "Navier2DBlockedReuseAggs"
@@ -153,13 +154,13 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
         NUM_MPI_PROCS 4
         COMM mpi
         )
-      TRIBITS_ADD_TEST(
-        Navier2DBlocked_rebalancing2
-        NAME "Navier2DBlockedReuseAggsReb"
-        ARGS "--rebalanceBlocks=1"
-        NUM_MPI_PROCS 4
-        COMM mpi
-        )
+      #TRIBITS_ADD_TEST(
+      #  Navier2DBlocked_rebalancing2
+      #  NAME "Navier2DBlockedReuseAggsReb"
+      #  ARGS "--rebalanceBlocks=1"
+      #  NUM_MPI_PROCS 4
+      #  COMM mpi
+      #  )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         Navier2DBlocked_Simple

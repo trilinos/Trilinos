@@ -55,7 +55,7 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_Utilities.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
   class NOXObserverFactory {
 
@@ -64,7 +64,7 @@ namespace panzer_stk_classic {
     virtual ~NOXObserverFactory() {}
 
     virtual Teuchos::RCP<NOX::Abstract::PrePostOperator>
-    buildNOXObserver(const Teuchos::RCP<panzer_stk_classic::STK_Interface>& mesh,
+    buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 		     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase>& dof_manager,
 		     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const = 0;
   };

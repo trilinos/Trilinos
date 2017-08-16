@@ -45,11 +45,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TabularOutputter.hpp"
 
-#ifdef HAVE_TEUCHOS_BOOST
-#  include "boost/shared_ptr.hpp"
-#endif
-
-
 namespace {
 
 
@@ -96,7 +91,7 @@ TEUCHOS_STATIC_SETUP()
   clp.setOption(
     "max-rcp-sp-adjust-ref-count-ratio", &maxRcpSpAdjustRefCountRatio,
     "The ratio of the final CPU time ratio for adjusting the reference"
-    "count of RCP objects versus boost::shared_ptr objects."
+    "count of RCP objects versus std::shared_ptr objects."
     );
   clp.setOption(
     "max-rcp-raw-obj-access-ratio", &maxRcpRawObjAccessRatio,
@@ -126,15 +121,6 @@ TEUCHOS_UNIT_TEST( RCP, _sizeofObjects )
     sizeof(Teuchos::RCPNodeTmpl<std::vector<double>,
       Teuchos::DeallocDelete<std::vector<double> > >),
     0);
-#ifdef HAVE_TEUCHOS_BOOST
-  TEST_INEQUALITY_CONST(sizeof(boost::detail::shared_count), 0);
-  TEST_INEQUALITY_CONST(sizeof(boost::shared_ptr<std::vector<double> >), 0);
-  TEST_INEQUALITY_CONST(sizeof(boost::detail::sp_counted_impl_p<std::vector<double> >), 0);
-  TEST_INEQUALITY_CONST(
-    sizeof(boost::detail::sp_counted_impl_pd<std::vector<double>,
-      DeleteDeleter<std::vector<double> > >),
-    0);
-#endif
 }
 
 
@@ -162,13 +148,9 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
   outputter.pushFieldSpec("obj size", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
   outputter.pushFieldSpec("raw", TO::DOUBLE);
-#ifdef HAVE_TEUCHOS_BOOST
   outputter.pushFieldSpec("shared_ptr", TO::DOUBLE);
-#endif
   outputter.pushFieldSpec("RCP", TO::DOUBLE);
-#ifdef HAVE_TEUCHOS_BOOST
   outputter.pushFieldSpec("shared_ptr/raw", TO::DOUBLE);
-#endif
   outputter.pushFieldSpec("RCP/raw", TO::DOUBLE);
 
   outputter.outputHeader();
@@ -209,10 +191,9 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
 
-#ifdef HAVE_TEUCHOS_BOOST
     // shared_ptr
     {
-      typedef boost::shared_ptr<std::vector<char> > shared_ptr_t;
+      typedef std::shared_ptr<std::vector<char> > shared_ptr_t;
       std::vector<shared_ptr_t > sp_vec(numActualLoops);
       int i = 0;
       TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
@@ -223,7 +204,6 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
       }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
-#endif
 
     // RCP
     {
@@ -237,11 +217,9 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rcpTime);
 
-#ifdef HAVE_TEUCHOS_BOOST
     // shared_ptr/rawPtr
     const double spRatio = spTime / rawPtrTime;
     outputter.outputField(spRatio);
-#endif
 
     // RCP/rawPtr
     const double rcpRatio = rcpTime / rawPtrTime;
@@ -272,7 +250,7 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
 
   out << "\n"
       << "Messuring the overhead of incrementing and deincrementing the reference count\n"
-      << "comparing RCP to raw pointer and boost::shared_ptr.\n"
+      << "comparing RCP to raw pointer and std::shared_ptr.\n"
       << "\n";
 
   TabularOutputter outputter(out);
@@ -314,45 +292,54 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
         );
     outputter.outputField(numActualLoops);
 
+    // Note on std::shared_ptr and modification to the test
+    // Originally this test copied a single ptr
+    // Added 1 and 2 types ('n' and 'o') so that each copy would be unique
+    // std::shared_ptr for gcc (but not clang) will handle the case of setting
+    // a = b with b already equal to a in an optimized way and the original
+    // test format spent most of it's time in this case.
+
     // raw
     {
-      char dummy_char = 'n';
+      char dummy_char1 = 'n';
+      char dummy_char2 = 'o'; // See above note for std::shared_ptr
       std::vector<char*> p_raw_vec(arraySize);
       TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
       {
         for (int i=0; i < arraySize; ++i) {
-          p_raw_vec[i] = &dummy_char;
+          p_raw_vec[i] = &dummy_char1;
+          p_raw_vec[i] = &dummy_char2; // See above note for std::shared_ptr
         }
       }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
 
-#ifdef HAVE_TEUCHOS_BOOST
     // shared_ptr
     {
-      typedef boost::shared_ptr<char> shared_ptr_t;
-      shared_ptr_t sp(new char('n'));
+      typedef std::shared_ptr<char> shared_ptr_t;
+      shared_ptr_t sp1(new char('n'));
+      shared_ptr_t sp2(new char('o')); // See above note for std::shared_ptr
       std::vector<shared_ptr_t> sp_vec(arraySize);
       TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
       {
         for (int i=0; i < arraySize; ++i) {
-          sp_vec[i] = sp;
+          sp_vec[i] = sp1;
+          sp_vec[i] = sp2; // See above note for std::shared_ptr
         }
       }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
-#else
-    outputter.outputField("-");
-#endif
 
     // RCP
     {
-      RCP<char> p(new char('n'));
+      RCP<char> p1(new char('n'));
+      RCP<char> p2(new char('o')); // See above note for std::shared_ptr
       std::vector<RCP<char> > p_vec(arraySize);
       TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
       {
         for (int i=0; i < arraySize; ++i) {
-          p_vec[i] = p;
+          p_vec[i] = p1;
+          p_vec[i] = p2; // See above note for std::shared_ptr
           // NOTE: This assignment operation tests the copy constructor and
           // the swap function.  This calls both bind() and unbind()
           // underneath.
@@ -366,14 +353,10 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
     finalRcpRawRatio = TEUCHOS_MIN(rcpRawRatio, finalRcpRawRatio);
     outputter.outputField(rcpRawRatio);
 
-#ifdef HAVE_TEUCHOS_BOOST
     // RCP/shared_ptr
     const double rcpSpRatio = rcpTime / spTime;
     finalRcpSpRatio = TEUCHOS_MIN(rcpSpRatio, finalRcpSpRatio);
     outputter.outputField(rcpSpRatio);
-#else
-    outputter.outputField("-");
-#endif
 
     outputter.nextRow();
 
@@ -383,13 +366,9 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
 
   out << "\n";
   TEST_COMPARE( finalRcpRawRatio, <=, maxRcpRawAdjustRefCountRatio );
-#ifdef HAVE_TEUCHOS_BOOST
   out << "\n";
   TEST_COMPARE( finalRcpSpRatio, <=, maxRcpSpAdjustRefCountRatio );
   out << "\n";
-#else
-  (void)finalRcpSpRatio;
-#endif
 
 }
 
@@ -469,9 +448,8 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
     overall_dummy_int_out += dummy_int_out;
 
     // shared_ptr
-#ifdef HAVE_TEUCHOS_BOOST
     {
-      typedef boost::shared_ptr<int> shared_ptr_t;
+      typedef std::shared_ptr<int> shared_ptr_t;
       shared_ptr_t sp(new int(dummy_int_val));
       std::vector<shared_ptr_t> sp_vec(arraySize);
       for (int i=0; i < arraySize; ++i) {
@@ -487,9 +465,6 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
     overall_dummy_int_out += dummy_int_out;
-#else
-    outputter.outputField("-");
-#endif
 
     // RCP
     {
@@ -514,13 +489,9 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
     finalRcpRawRatio = TEUCHOS_MIN(rcpRawRatio, finalRcpRawRatio);
     outputter.outputField(rcpRawRatio);
 
-#ifdef HAVE_TEUCHOS_BOOST
     // RCP/shared_ptr
     const double rcpSpRatio = rcpTime / spTime;
     outputter.outputField(rcpSpRatio);
-#else
-    outputter.outputField("-");
-#endif
 
     outputter.nextRow();
 
@@ -620,9 +591,8 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
     overall_dummy_int_out += dummy_int_out;
 
     // shared_ptr
-#ifdef HAVE_TEUCHOS_BOOST
     {
-      typedef boost::shared_ptr<SomeStruct> shared_ptr_t;
+      typedef std::shared_ptr<SomeStruct> shared_ptr_t;
       shared_ptr_t sp(new SomeStruct(dummy_int_val));
       std::vector<shared_ptr_t> sp_vec(arraySize);
       for (int i=0; i < arraySize; ++i) {
@@ -638,9 +608,6 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
     overall_dummy_int_out += dummy_int_out;
-#else
-    outputter.outputField("-");
-#endif
 
     // RCP
     {
@@ -665,13 +632,9 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
     finalRcpRawRatio = TEUCHOS_MIN(rcpRawRatio, finalRcpRawRatio);
     outputter.outputField(rcpRawRatio);
 
-#ifdef HAVE_TEUCHOS_BOOST
     // RCP/shared_ptr
     const double rcpSpRatio = rcpTime / spTime;
     outputter.outputField(rcpSpRatio);
-#else
-    outputter.outputField("-");
-#endif
 
     outputter.nextRow();
 

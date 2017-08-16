@@ -80,7 +80,7 @@ public:
     ls_ngrad = 0;
     // Get line search parameter
     algo_iter_++;
-    alpha = LineSearch<Real>::getInitialAlpha(ls_neval,ls_ngrad,fval,gs,x,s,obj,con)/algo_iter_;
+    alpha = LineSearch<Real>::getInitialAlpha(ls_neval,ls_ngrad,fval,gs,x,s,obj,con)/static_cast<Real>(algo_iter_);
     // Update iterate
     LineSearch<Real>::updateIterate(*xnew_,x,s,alpha,con);
     // Compute objective function value

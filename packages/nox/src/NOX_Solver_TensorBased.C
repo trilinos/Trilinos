@@ -71,8 +71,6 @@ NOX::Solver::TensorBased::
 TensorBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
         const Teuchos::RCP<NOX::StatusTest::Generic>& t,
         const Teuchos::RCP<Teuchos::ParameterList>& p) :
-  globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
-  utilsPtr(globalDataPtr->getUtils()),
   solnPtr(xGrp),
   oldSolnPtr(xGrp->clone(DeepCopy)), // create via clone
   newtonVecPtr(xGrp->getX().clone(ShapeCopy)), // create via clone
@@ -82,10 +80,7 @@ TensorBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   tmpVecPtr(xGrp->getX().clone(ShapeCopy)), // create via clone
   residualVecPtr(xGrp->getX().clone(ShapeCopy)), // create via clone
   testPtr(t),
-  paramsPtr(p),
-  print(utilsPtr),
-  slopeObj(globalDataPtr),
-  prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
+  paramsPtr(p)
 {
   reset(xGrp, t, p);
 }
@@ -124,9 +119,10 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   testPtr = t;
   paramsPtr = p;
 
+  NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
-  utilsPtr->reset(paramsPtr->sublist("Printing"));
-  print.reset(utilsPtr);
+  utilsPtr = globalDataPtr->getUtils();
+  print = Teuchos::rcp(new NOX::LineSearch::Utils::Printing(utilsPtr));
   slopeObj.reset(globalDataPtr);
   prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
 
@@ -879,7 +875,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
                         const NOX::Abstract::Vector& lsDir,
                         const NOX::Solver::Generic& s)
 {
-  if (print.isPrintType(NOX::Utils::InnerIteration))
+  if (print->isPrintType(NOX::Utils::InnerIteration))
   {
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
     utilsPtr->out() << "-- Tensor Line Search (";
@@ -916,7 +912,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
   // Stop here if only using the full step
   if (lsType == FullStep)
   {
-      print.printStep(lsIterations, in_stepSize, fOld, fNew, message);
+      print->printStep(lsIterations, in_stepSize, fOld, fNew, message);
       return (!isFailed);
   }
 
@@ -950,7 +946,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
       break;
     }
 
-    print.printStep(lsIterations, in_stepSize, fOld, fNew);
+    print->printStep(lsIterations, in_stepSize, fOld, fNew);
 
     // Is the full tensor step a descent direction?  If not, switch to Newton
     if (isFirstPass &&
@@ -1041,7 +1037,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
       message = "(USING LAST STEP!)";
   }
 
-  print.printStep(lsIterations, in_stepSize, fOld, fNew, message);
+  print->printStep(lsIterations, in_stepSize, fOld, fNew, message);
   counter.setValues(paramsPtr->sublist("Line Search"));
 
   return (!isFailed);

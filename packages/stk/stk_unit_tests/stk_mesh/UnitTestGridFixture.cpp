@@ -37,7 +37,7 @@
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityRank, PartVector, etc
-#include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
+#include <stk_unit_tests/stk_mesh_fixtures/GridFixture.hpp>  // for GridFixture
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD
@@ -72,8 +72,6 @@ TEST( UnitTestGridFixture, test_gridfixture )
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
-  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
-  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
 
   int rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
   int size = stk::parallel_machine_size( MPI_COMM_WORLD );
@@ -106,12 +104,10 @@ TEST( UnitTestGridFixture, test_gridfixture )
   for (id_base = 1; id_base <= num_shell_faces; ++id_base) {
 
     int new_id = rank * num_shell_faces + id_base;
-    stk::mesh::Entity new_shell = bulk_data.declare_entity(elem_rank,
-                                                            id_offset + new_id,
-                                                            shell_parts);
+    stk::mesh::Entity new_shell = bulk_data.declare_element(id_offset + new_id, shell_parts);
     for(unsigned node_ord = 0 ; node_ord < 2; ++node_ord)
     {
-      stk::mesh::Entity new_node = bulk_data.declare_entity(node_rank, (node_ord+10)*(id_offset + new_id));
+      stk::mesh::Entity new_node = bulk_data.declare_node((node_ord+10)*(id_offset + new_id));
       bulk_data.declare_relation( new_shell , new_node , node_ord);
     }
     shell_faces.push_back(new_shell);

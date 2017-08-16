@@ -25,7 +25,6 @@ namespace BaskerNS
     //An Exit
     BASKER_BOOL * volatile exit_token;
 
-
     BASKER_BOOL init_flg;
     
     inline
@@ -37,9 +36,7 @@ namespace BaskerNS
     inline
     void init(Int _nthreads, Int _tasks, Int _lvls)
     {
-      
       //printf("THREADS BARRIER INIT, %d  \n", _nthreads);
-
 
       init_flg = BASKER_TRUE;
 
@@ -50,20 +47,20 @@ namespace BaskerNS
 
       token = new Int*[_nthreads];
       for(Int i = 0; i < _nthreads;i++)
-	{
-	  token[i] = new Int[msize];
-	  for(Int j = 0; j < msize; j++)
-	    {
-	      token[i][j] = BASKER_MAX_IDX;
-	    }
-	}
+      {
+        token[i] = new Int[msize];
+        for(Int j = 0; j < msize; j++)
+        {
+          token[i][j] = BASKER_MAX_IDX;
+        }
+      }
 
       //init exit
       exit_token = new BASKER_BOOL[_nthreads];
       for(Int i = 0; i < _nthreads; i++)
-	{
-	  exit_token[i] = BASKER_FALSE;
-	}
+      {
+        exit_token[i] = BASKER_FALSE;
+      }
 
     }//end BaskerPointBarrier
 
@@ -76,50 +73,52 @@ namespace BaskerNS
     inline
     void Finalize()
     {
-      
       //std::cout << "flag: " << init_flg << std::endl;
       if(init_flg == BASKER_TRUE)
-	{
-	  for(Int i = 0; i < nthreads; ++i)
-	    {
-	      
-	      delete [] token[i];
-	    }
+      {
+        for(Int i = 0; i < nthreads; ++i)
+        {
+          delete [] token[i];
+        }
 
-	  delete [] token;
-	  delete [] exit_token;
-	}
-      init_flg == BASKER_FALSE;
+        delete [] token;
+        delete [] exit_token;
+      }
+
+      init_flg = BASKER_FALSE;
     }//end Finalize()
     
     inline
-    void BarrierLeader(Int my_leader, Int my_id, Int task, 
-			Int k)
+    void BarrierLeader(Int my_leader, Int my_id, Int task, Int k)
     {
       printf("Entering barrier. leader: %d id: %d task: %d k: %d token: %d \n", 
-	     my_leader, my_id, task, token[my_leader][task]);
+          my_leader, my_id, task, token[my_leader][task]);
       //jdb: change from my_lead == my_id
       if(my_leader == my_id)
-	{
-	  token[my_leader][task] = k;
-	}
+      {
+        token[my_leader][task] = k;
+      }
       else
-	{
-	  while(token[my_leader][task] != k);
-	}
+      {
+        while(token[my_leader][task] != k);
+      }
 
       printf("Leaving barrier. leader: %d id: %d task: %d k: %d token: %d \n",
-	     my_leader, my_id, task, token);
+          my_leader, my_id, task, token);
 
     }//end Barrier_Leader()
 
     inline
-    void BarrierDomain(Int my_leader, Int my_id, Int task, 
-		       Int lsize, Int k, Int l)
+    void BarrierDomain
+    (
+     Int my_leader, 
+     Int my_id, 
+     Int task, 
+     Int lsize, 
+     Int k, 
+     Int l
+    )
     {
-
-
-     
       //   printf("Enter Domain Barrier. leader: %d my_id: %d task: %d size: %d k: %d l: %d \n",
       //   my_leader, my_id, task, lsize, k, l);
 	
@@ -128,17 +127,16 @@ namespace BaskerNS
       //   my_id, ltask, token[my_id][ltask]);
       token[my_id][ltask] = k;
       for(Int dp = (my_leader+lsize)-1; dp >= my_leader; dp--)
-	{
-	  //printf("kid: %d checking location : %d ltask: %d\n",
-	  //my_id, dp, ltask);
-	  ///volatile Int ldp = token[dp][task];
-	   while(token[dp][ltask] != k);
-	     //{
-	    // printf("kid: %d location: %d \n", my_id, token[dp][ltask]);
-	      
-	     //}
-	    
-	}
+      {
+        //printf("kid: %d checking location : %d ltask: %d\n",
+        //my_id, dp, ltask);
+        ///volatile Int ldp = token[dp][task];
+        while(token[dp][ltask] != k);
+        //{
+        // printf("kid: %d location: %d \n", my_id, token[dp][ltask]);
+        //}
+
+      }
       // printf("Leave Domain Barrier. leader: %d my_id: %d task: %d size: %d k: %d l: %d l\n",
       //   my_leader, my_id, task, lsize, k, l);
 
@@ -172,11 +170,13 @@ namespace BaskerNS
 
     BaskerBarrier()
     {}
+
     //Kokkos thread
     BaskerBarrier(TeamMember &thread)
     {
       kokkos_barrier(thread);
     }
+
     //Atomic
     BaskerBarrier(volatile Int &value_in, volatile Int &value_out,
 		  const Int l_size )
@@ -190,25 +190,35 @@ namespace BaskerNS
     {
       kokkos_barrier(thread);
     }
+
     BASKER_INLINE
-    void Barrier(volatile Int &value_in, volatile Int &value_out,
-		 const Int l_size)
+    void Barrier
+    (
+     volatile Int &value_in, 
+     volatile Int &value_out,
+     const Int l_size
+    )
     {
       atomic_barrier(value_in, value_out, l_size);
     }
+
     BASKER_INLINE
-    void Barrier(TeamMember &thread,
-		 volatile Int &value_in, volatile Int &value_out, 
-		 const Int l_size)
+    void Barrier
+    (
+     TeamMember &thread,
+     volatile Int &value_in, 
+     volatile Int &value_out, 
+     const Int l_size
+    )
     {
       if(l_size <= thread.team_size())
-	{
-	  kokkos_barrier(thread);
-	}
+      {
+        kokkos_barrier(thread);
+      }
       else
-	{
-	  atomic_barrier(value_in, value_out,  l_size);
-	}
+      {
+        atomic_barrier(value_in, value_out,  l_size);
+      }
     }//end Barrier()
   
 
@@ -218,26 +228,17 @@ namespace BaskerNS
     {
       thread.team_barrier();
     }
+
     BASKER_INLINE
-    void atomic_barrier(volatile Int &value_in, volatile Int &value_out,
-			const Int l_size)
+    void atomic_barrier
+    (
+     volatile Int &value_in, 
+     volatile Int &value_out,
+     const Int l_size
+    )
     {    
-      /*
-      if(value_out == 0)
-	{
-	  printf("seting value_out\n");
-	  value_out = 0;
-	}
-      */
       atomic_barrier_fanin(value_in, l_size);
       //atomic_barrier_fanout(value_out, l_size);
-      /*
-      if(value_out == l_size)
-	{
-	  printf("Reseting value_in\n");
-	  value_in = 0;
-	}
-      */
     }
 
     BASKER_INLINE
@@ -248,51 +249,34 @@ namespace BaskerNS
       Kokkos::atomic_fetch_add(&(value), 1);
       printf("fanin value: %d \n", value);
       while(value < l_size-1)
-	{
-	  BASKER_NO_OP;
-	}
+      {
+        BASKER_NO_OP;
+      }
       printf("done with fanin\n");
       */
-
-      // printf("fanin %d lsize: %d \n", value, 
-      //   l_size);
 
       volatile BASKER_BOOL spin = BASKER_TRUE;
 
       if(Kokkos::atomic_fetch_add(&(value),1) == (l_size-1))
-      //if(BASKER_FALSE)
-	{
-
-	  //printf("one: %d \n", value);
-	  //value = 0;
-	  value = 0;
-	  //Kokkos::atomic_fetch_add(&(value), -1*l_size);
-	  //spin = BASKER_FALSE;
-	  //printf("setting leave \n");
-
-	}
+      {
+        value = 0;
+        //Kokkos::atomic_fetch_add(&(value), -1*l_size);
+        //spin = BASKER_FALSE;
+      }
       else
-	{
-	  //printf("two: %d \n", value);
-	  while(value != 0);
-	   
-	  //printf("left \n");
-	}
-
-      //printf("leaving fanin \n");
-
+      {
+        while(value != 0);
+      }
     }
 
     BASKER_INLINE
     void atomic_barrier_fanout(volatile Int &value, const Int l_size)
     {
       Kokkos::atomic_fetch_add(&(value), 1);
-      printf("fanout value: %d \n", value);
       while(value < l_size)
-	{
-	  BASKER_NO_OP;
-	}
-      printf("done with fanout\n");
+      {
+        BASKER_NO_OP;
+      }
     }
 			       
   }; //end BaskerBarrier
@@ -304,10 +288,10 @@ namespace BaskerNS
   {
   public:
 
-    #ifdef BASKER_KOKKOS
+#ifdef BASKER_KOKKOS
     typedef  Kokkos::TeampPolicy<Exe_Space>   TeamPolicy;
     typedef typename TeamPolicy::member_type TeamMember;
-    #endif
+#endif
 
     BaskerBarrier()
     {}
@@ -322,55 +306,55 @@ namespace BaskerNS
       atomic_barrier(value,l_size);
     }
     BaskerBarrier(TeamMember &thread, 
-		  volatile Int &value, const Int l_size)
+        volatile Int &value, const Int l_size)
     {
-      
+
 
     }
     BASKER_INLINE
-    void Barrier(TeamMember &thread)
-    {
-      kokkos_barrier(thread);
-    }
+      void Barrier(TeamMember &thread)
+      {
+        kokkos_barrier(thread);
+      }
     BASKER_INLINE
-    void Barrier(volatile Int &value, const Int l_size)
-    {
-      atomic_barrier(value, l_size);
-    }
+      void Barrier(volatile Int &value, const Int l_size)
+      {
+        atomic_barrier(value, l_size);
+      }
     BASKER_INLINE
-    void Barrier(TeamMember &thread,
-		 volatile Int &value, const Int l_size)
-    {
-      if(l_size <= thread.team_size())
-	{
-	  kokkos_barrier(thread);
-	}
-      else
-	{
-	  atomic_barrier(value, l_size);
-	}
-    }//end Barrier()
-  
+      void Barrier(TeamMember &thread,
+          volatile Int &value, const Int l_size)
+      {
+        if(l_size <= thread.team_size())
+        {
+          kokkos_barrier(thread);
+        }
+        else
+        {
+          atomic_barrier(value, l_size);
+        }
+      }//end Barrier()
+
 
   private:
     BASKER_INLINE
-    void kokkos_barrier(TeamMember &thread)
-    {
-      thread.team_barrier();
-    }
+      void kokkos_barrier(TeamMember &thread)
+      {
+        thread.team_barrier();
+      }
     BASKER_INLINE
-    void 
+      void 
 
-    BASKER_INLINE
-    void atomic_barrier(volatile Int &value, const Int l_size)
-    {
-      //Note: need to comeback and makesure this is the best way
-      Kokkos::atomic_fetch_add(&(value), 1);
-      while(value < l_size)
-	{
-	  BASKER_NO_OP;
-	}
-    }
+      BASKER_INLINE
+      void atomic_barrier(volatile Int &value, const Int l_size)
+      {
+        //Note: need to comeback and makesure this is the best way
+        Kokkos::atomic_fetch_add(&(value), 1);
+        while(value < l_size)
+        {
+          BASKER_NO_OP;
+        }
+      }
   }; //end BaskerBarrier
   */
 

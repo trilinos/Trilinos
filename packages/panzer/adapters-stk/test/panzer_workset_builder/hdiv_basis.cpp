@@ -1,0 +1,208 @@
+// @HEADER
+// ***********************************************************************
+//
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
+// @HEADER
+
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+
+using Teuchos::RCP;
+using Teuchos::rcp;
+
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+
+#include "Panzer_STK_Version.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
+
+#include "Panzer_WorksetContainer.hpp"
+#include "Panzer_IntrepidBasisFactory.hpp"
+#include "Panzer_DOFManager.hpp"
+
+#include "Panzer_STK_Interface.hpp"
+#include "Panzer_STK_CubeHexMeshFactory.hpp"
+#include "Panzer_STKConnManager.hpp"
+#include "Panzer_STK_WorksetFactory.hpp"
+
+namespace panzer {
+
+  TEUCHOS_UNIT_TEST(hdiv_basis, check_dirac)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    typedef Intrepid2::Basis<PHX::Device::execution_space,double,double> IntrepidBasis;
+
+    std::string element_block = "eblock-0_0_0";
+    int basis_order = 4; 
+    int workset_size = 10;
+
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Elements",2);
+    pl->set("Y Elements",2);
+    pl->set("Z Elements",2);
+
+    panzer_stk::CubeHexMeshFactory factory;
+    factory.setParameterList(pl);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
+    // build DOF Manager (with a single HDiv basis)
+    /////////////////////////////////////////////////////////////
+ 
+    // build the connection manager 
+    const RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
+      conn_manager = rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
+
+    RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
+        = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));
+
+    // build an intrepid basis and a related field pattern for seeding the DOFManager
+    RCP<IntrepidBasis> hdiv_intrepid_basis, hcurl_intrepid_basis;
+    {
+       hdiv_intrepid_basis
+           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HDiv",basis_order,
+                                                                                      *mesh->getCellTopology(element_block));
+       hcurl_intrepid_basis
+           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HCurl",basis_order,
+                                                                                      *mesh->getCellTopology(element_block));
+      RCP<panzer::Intrepid2FieldPattern> hdiv_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hdiv_intrepid_basis));
+      RCP<panzer::Intrepid2FieldPattern> hcurl_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hcurl_intrepid_basis));
+
+      dof_manager->addField(element_block, "B", hdiv_field_pattern);
+      dof_manager->addField(element_block, "E", hcurl_field_pattern);
+    }
+    dof_manager->buildGlobalUnknowns();
+
+    // build WorksetContainer
+    //////////////////////////////////////////////////////////////
+    BasisDescriptor hdiv_basis_desc(basis_order,"HDiv");
+    BasisDescriptor hcurl_basis_desc(basis_order,"HCurl");
+   
+    out << "workset container setup [start]" << std::endl;
+    
+    RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    { 
+      WorksetNeeds needs;
+      needs.addBasis(hdiv_basis_desc);
+      needs.addBasis(hcurl_basis_desc);
+      needs.addPoint(hdiv_basis_desc.getPointDescriptor());
+      wkstContainer->setNeeds(element_block,needs);
+    }
+    wkstContainer->setGlobalIndexer(dof_manager);
+    wkstContainer->setWorksetSize(workset_size);
+
+    out << "workset container setup [complete]" << std::endl;
+
+    // Get worksets
+    ///////////////////////////////////////////////////////////////////////
+    out << "getting worksets [start]" << std::endl;
+
+    //  this must use this descriptor!
+    panzer::WorksetDescriptor workset_descriptor(element_block, panzer::WorksetDescriptor::FULL, true,true);
+    std::vector<Workset> & worksets = *wkstContainer->getWorksets(workset_descriptor);
+
+    out << "getting worksets [complete]" << std::endl;
+
+    // get BasisValues2
+    ///////////////////////////////////////////////////////////////////////
+    
+    const PointValues2<double> & point_values = worksets[0].getPointValues(hdiv_basis_desc.getPointDescriptor());   
+    const BasisValues2<double> & hdiv_basis_values = worksets[0].getBasisValues(hdiv_basis_desc,hdiv_basis_desc.getPointDescriptor());   
+    const BasisValues2<double> & hcurl_basis_values = worksets[0].getBasisValues(hcurl_basis_desc,hdiv_basis_desc.getPointDescriptor());   
+
+    auto hdiv_basis_vector = hdiv_basis_values.basis_vector; 
+    auto hcurl_curl_basis = hcurl_basis_values.curl_basis_vector; 
+
+    // check some sizing stuff
+    ///////////////////////////////////////////////////////////////////////
+    
+    TEST_EQUALITY(Teuchos::as<int>(hdiv_basis_vector.dimension_1()),hdiv_intrepid_basis->getCardinality());
+    TEST_EQUALITY(hdiv_basis_vector.dimension_1(),hdiv_basis_vector.dimension_2());
+
+    TEST_EQUALITY(Teuchos::as<int>(hcurl_curl_basis.dimension_1()),hcurl_intrepid_basis->getCardinality());
+    TEST_EQUALITY(hcurl_curl_basis.dimension_2(),hdiv_basis_vector.dimension_2());
+
+    TEST_EQUALITY(Teuchos::as<int>(point_values.coords_ref.dimension_0()),hdiv_intrepid_basis->getCardinality());
+    TEST_EQUALITY(point_values.coords_ref.dimension_1(),3u);
+
+    TEST_EQUALITY(Teuchos::as<int>(point_values.point_coords.dimension_1()),hdiv_intrepid_basis->getCardinality());
+    TEST_EQUALITY(point_values.point_coords.dimension_2(),3u);
+
+    // print out basis values
+    ///////////////////////////////////////////////////////////////////////
+
+    // print out phi_i(x_j).phi_j(x_j)
+    for(size_t c=0;c<hdiv_basis_vector.dimension_0();c++) {
+      out << "cell " << c << std::endl;
+      for(size_t i=0;i<hdiv_basis_vector.dimension_1();i++) {
+        // compute diagonal magnitude
+        double diagonal = 0.0;
+        for(size_t d=0;d<hdiv_basis_vector.dimension_3();d++)
+          diagonal += hdiv_basis_vector(c,i,i,d)* hdiv_basis_vector(c,i,i,d);
+
+        out << "   ";
+        for(size_t j=0;j<hdiv_basis_vector.dimension_2();j++) {
+          double entry = 0.0;
+
+          // loop over dimension
+          for(size_t d=0;d<hdiv_basis_vector.dimension_3();d++)
+            entry += hdiv_basis_vector(c,i,j,d)* hdiv_basis_vector(c,j,j,d);
+
+          out << std::fixed << std::setprecision(2) << std::setw(8) << entry / diagonal;
+
+          if(i==j) {
+            TEST_ASSERT(std::fabs(entry/diagonal)-1.0 <= 1.0e-15);
+          }
+          else {
+            TEST_ASSERT(std::fabs(entry/diagonal) <= 1.0e-15);
+          }
+        } // end j
+        out << std::endl;
+      } // end i
+    } // end c
+  }
+}

@@ -65,7 +65,6 @@
 
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
 #ifdef HAVE_MUELU_BELOS
@@ -77,17 +76,13 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
 
-int main(int argc, char *argv[]) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
-
-  // =========================================================================
-  // MPI initialization using Teuchos
-  // =========================================================================
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   bool success = false;
   bool verbose = true;
@@ -108,8 +103,6 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     // Parameters initialization
     // =========================================================================
-    Teuchos::CommandLineProcessor clp(false);
-
     GO nx = 100, ny = 100, nz = 100;
     Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
     Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
@@ -145,7 +138,7 @@ int main(int argc, char *argv[]) {
     comm->barrier();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
-    RCP<Matrix> A = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm);
+    RCP<Matrix> A = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileName), lib, comm);
     RCP<const Map>   map = A->getRowMap();
     RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(),nPDE);
     //RCP<MultiVector> fakeCoordinates = MultiVectorFactory::Build(A->getDomainMap(),1);
@@ -217,7 +210,7 @@ int main(int argc, char *argv[]) {
       X->randomize(useSameRandomGen);
       A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
       B->norm2(norms);
       //B->scale(1.0/norms[0]);
     }
@@ -232,7 +225,7 @@ int main(int argc, char *argv[]) {
       tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
       H->IsPreconditioner(false);
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
       norms = Utilities::ResidualNorm(*A,*X,*B);
       std::cout << "                iter:    0           residual = " << norms[0] << std::endl;
       for (int i=0; i< maxIts; ++i) {
@@ -320,3 +313,15 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } //main
+
+
+
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
+}
+

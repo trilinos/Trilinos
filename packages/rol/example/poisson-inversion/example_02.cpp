@@ -48,7 +48,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_PrimalDualActiveSetStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
@@ -507,7 +507,7 @@ int main(int argc, char *argv[]) {
     RCP<V> lo = rcp( new SV(l_rcp) );
     RCP<V> up = rcp( new SV(u_rcp) );
 
-    ROL::BoundConstraint<RealT> icon(lo,up);
+    ROL::Bounds<RealT> icon(lo,up);
 
     Teuchos::ParameterList parlist;
 
@@ -545,6 +545,8 @@ int main(int argc, char *argv[]) {
     // Define step.
     parlist.sublist("General").sublist("Secant").set("Use as Hessian",false);
     parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver", "Truncated CG");
+    parlist.sublist("Step").sublist("Trust Region").set("Initial Radius", 1e3);
+    parlist.sublist("Step").sublist("Trust Region").set("Maximum Radius", 1e8);
     ROL::Algorithm<RealT> algo_tr("Trust Region",parlist);
     // Run Algorithm
     y.zero();

@@ -6,6 +6,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/base/SideSetEntryCompare.hpp>
 
 namespace stk
 {

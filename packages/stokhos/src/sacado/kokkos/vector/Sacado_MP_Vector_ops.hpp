@@ -791,6 +791,33 @@ namespace Sacado {                                                      \
       return expr1.derived().val() OP expr2.derived().val();            \
     }                                                                   \
                                                                         \
+    template <typename T1, typename T2>                                 \
+    KOKKOS_INLINE_FUNCTION                                              \
+    bool                                                                \
+    operator OP (const volatile Expr<T1>& expr1,                        \
+                 const volatile Expr<T2>& expr2)                        \
+    {                                                                   \
+      return expr1.derived().val() OP expr2.derived().val();            \
+    }                                                                   \
+                                                                        \
+    template <typename T1, typename T2>                                 \
+    KOKKOS_INLINE_FUNCTION                                              \
+    bool                                                                \
+    operator OP (const volatile Expr<T1>& expr1,                        \
+                 const Expr<T2>& expr2)                                 \
+    {                                                                   \
+      return expr1.derived().val() OP expr2.derived().val();            \
+    }                                                                   \
+                                                                        \
+    template <typename T1, typename T2>                                 \
+    KOKKOS_INLINE_FUNCTION                                              \
+    bool                                                                \
+    operator OP (const Expr<T1>& expr1,                                 \
+                 const volatile Expr<T2>& expr2)                        \
+    {                                                                   \
+      return expr1.derived().val() OP expr2.derived().val();            \
+    }                                                                   \
+                                                                        \
     template <typename T2>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
     bool                                                                \
@@ -800,10 +827,28 @@ namespace Sacado {                                                      \
       return a OP expr2.derived().val();                                \
     }                                                                   \
                                                                         \
+    template <typename T2>                                              \
+    KOKKOS_INLINE_FUNCTION                                              \
+    bool                                                                \
+    operator OP (const typename T2::value_type& a,                      \
+                 const volatile Expr<T2>& expr2)                        \
+    {                                                                   \
+      return a OP expr2.derived().val();                                \
+    }                                                                   \
+                                                                        \
     template <typename T1>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
     bool                                                                \
     operator OP (const Expr<T1>& expr1,                                 \
+                 const typename T1::value_type& b)                      \
+    {                                                                   \
+      return expr1.derived().val() OP b;                                \
+    }                                                                   \
+                                                                        \
+    template <typename T1>                                              \
+    KOKKOS_INLINE_FUNCTION                                              \
+    bool                                                                \
+    operator OP (const volatile Expr<T1>& expr1,                        \
                  const typename T1::value_type& b)                      \
     {                                                                   \
       return expr1.derived().val() OP b;                                \

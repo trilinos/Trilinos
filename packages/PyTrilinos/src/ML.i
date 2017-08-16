@@ -114,35 +114,7 @@ example subdirectory of the PyTrilinos package:
 
 // Epetra includes
 #ifdef HAVE_EPETRA
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "PyTrilinos_Epetra_Util.hpp"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
@@ -195,10 +167,10 @@ example subdirectory of the PyTrilinos package:
 %include "Epetra_RowMatrix_Utils.i"
 %ignore Epetra_Version;
 %import  "Epetra.i"
-#if SWIG_VERSION >= 0x030000
+#if PY_VERSION_HEX >= 0x030000
 %pythoncode
 %{
-import Epetra
+Epetra = PyTrilinos.Epetra
 %}
 #endif
 
@@ -298,23 +270,12 @@ BaseObject::__str__;
     }
     else
     {
-      if (!PyFile_Check(ostream))
-      {
-	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
-	goto fail;
-      }
-      else
-      {
-	std::FILE * f = PyFile_AsFile(ostream);
-	PyTrilinos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->Print(os, verbose);
-	os.flush();
-      }
+      std::ostringstream s;
+      self->Print(s, verbose);
+      if (PyFile_WriteString(s.str().c_str(), ostream))
+        throw PyTrilinos::PythonException();
     }
     return Py_BuildValue("");
-  fail:
-    return NULL;
   }
   // Define the __str__() method, used by the python str() operator
   // on any object given to the python print command.

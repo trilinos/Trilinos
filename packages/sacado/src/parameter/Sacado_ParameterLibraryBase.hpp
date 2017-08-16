@@ -1,31 +1,29 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -44,8 +42,8 @@ namespace Sacado {
 
   using std::string;
 
-  /*! 
-   * \brief Class to provide a centralized library for setting/retrieving 
+  /*!
+   * \brief Class to provide a centralized library for setting/retrieving
    * numerical parameter values.
    */
   template <typename FamilyType, typename EntryType>
@@ -63,7 +61,7 @@ namespace Sacado {
 
     //! Const iterator typename
     typedef typename FamilyMap::const_iterator const_iterator;
-  
+
     //! Default constructor
     ParameterLibraryBase();
 
@@ -79,21 +77,23 @@ namespace Sacado {
 
     //! Create a new parameter family
     /*!
-     * Returns true if successful in adding family to library, false 
+     * Returns true if successful in adding family to library, false
      * otherwise.
      */
-    bool addParameterFamily(const std::string& name, bool supports_ad, 
+    bool addParameterFamily(const std::string& name, bool supports_ad,
                             bool supports_analytic);
-    
+
 
     //! Add a new parameter using custom entry
     /*!
-     * Returns true if successful in adding entry to library, false 
-     * otherwise.
+     * Returns true if successful in adding entry to library, false
+     * otherwise.  If \c allow_overwrite is true, any existing entry will
+     * be overwritten by the supplied entry.
      */
     template <typename EvalType>
-    bool addEntry(const std::string& name, 
-                  const Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type >& entry);
+    bool addEntry(const std::string& name,
+                  const Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type >& entry,
+                  const bool allow_overwrite = false);
 
     //! Return parameter entry
     template <typename EvalType>
@@ -149,8 +149,8 @@ namespace Sacado {
   };
 
   template <typename FamilyType, typename EntryType>
-  std::ostream& 
-  operator << (std::ostream& os, 
+  std::ostream&
+  operator << (std::ostream& os,
                const ParameterLibraryBase<FamilyType, EntryType>& pl)
   {
     pl.print(os);

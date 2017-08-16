@@ -1,0 +1,67 @@
+(2016/11/22)
+
+This is the simplest CI server you can possibily imagine.  I looked at setting
+this up with the TriBITS Dashboard Driver (TDD) system but that is such an
+ugly system that I just could not go through with it.  Therefore, I have
+decided that I am going to abandon that old system and create a new TriBITS
+Dashboard Driver Plus system that is the most simple and minimal possible to
+use CMake/CTest/CDash to drive and monitor the ctest -S script invocations.
+But until I can do that, I went with a simple appraoch described below.
+
+To get this set up on a new machine, just do:
+
+  mkdir <ci_base_dir>
+  cd <ci_base_dir>/
+  git clone git@github.com:trilinos/Trilinos.git
+  cd Trilinos/
+  git checkout --track origin/develop
+  git branch -d master
+
+Then create a cronjob (or Jenkins job) that does:
+
+  cd <ci_base_dir>/ && ./Trilinos/cmake/ctest/drivers/sems_ci/trilinos_ci_sever.sh \
+    &> trilinos_ci_sever.out
+
+That is it!
+
+To set up this simple system, I started with a basic ctest -S driver script:
+
+  ctest_linux_mpi_debug_shared_pt_ci.sems.cmake
+
+using TribitsCTestDriverCore.cmake (just like any other automated Trilinos
+build).  Then I call that in a simple shell script:
+
+  single_ci_iter.sh
+
+which just sources the standard SEMS env script and calls the ctest -S driver
+script.
+
+The last part to this simple CI server is the script:
+
+  trilinos_ci_sever.sh
+
+which uses the simple Python script generic-looping-demon.py to do the CI
+loops.
+
+That is it!
+
+There are a few major weaknesses to this approach:
+
+1) If a change is made to the build systems for Trilinos (i.e. in Trilinos or
+TriBITS), then the you may get an error since the version of
+ctest_linux_mpi_debug_shared_pt_ci.sems.cmake and TribitsCTestDriverCore.cmake
+that runs may not be consistent with the updated version of Trilinos and
+TriBITS that is pulled by TribitsCTestDriverCore.cmake.  If that happens, one
+just needs to kill trilinos_ci_server.sh (using kill-pstree.py) and just run
+it again with nohup.
+
+2) If something goes wrong in the early stages of the CTest -S drivers script,
+then the CI build is just not uploaded to the Trilinos CDash site and we can't
+see if there are any failures.
+
+3) If things go well, the only way to see what the ctest -S script is doing is
+to look at the local trilinos_ci_server.out log file (since it never gets
+posted to a CDash site).
+
+Therefore, this is a temporary solution until we can get something better in
+place using a combination of CMake/CTest/CDash and/or Jenkins.

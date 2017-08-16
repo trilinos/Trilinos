@@ -51,8 +51,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -77,8 +75,6 @@ using Teuchos::rcp;
 
 #include "TestEvaluators.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include <vector>
 #include <map>
 #include <string>
@@ -98,19 +94,16 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(response_library_stk2, test)
   {
-    typedef Traits::Residual EvalT;
-
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
   #ifdef HAVE_MPI
-     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+     Teuchos::RCP<const Teuchos::MpiComm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
   #else
-     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::SerialComm<int>);
+     Teuchos::RCP<Teuchos::Comm<int> > tcomm = FAIL
   #endif
 
-    panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 1;
@@ -119,7 +112,7 @@ namespace panzer {
 
     // setup mesh
     /////////////////////////////////////////////
-    RCP<panzer_stk_classic::STK_Interface> mesh;
+    RCP<panzer_stk::STK_Interface> mesh;
     {
        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
        pl->set("X Blocks",2);
@@ -172,15 +165,19 @@ namespace panzer {
      mesh->getElementBlockNames(validEBlocks);
 
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physics_blocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physics_blocks.size();i++) 
+      wkstContainer->setNeeds(physics_blocks[i]->elementBlockID(),physics_blocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
  
     // setup DOF manager
     /////////////////////////////////////////////
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
@@ -188,9 +185,8 @@ namespace panzer {
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > elof 
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tcomm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 
@@ -265,10 +261,10 @@ namespace panzer {
       out2->setOutputToRootOnly(-1);
       *out2 << "\nPrinting IP coordinates for block: eblock-0_0" << std::endl;
       for (std::vector<panzer::Traits::Residual::ScalarT>::const_iterator i = (coords["eblock-0_0"])->begin(); i != (coords["eblock-0_0"])->end(); ++i)
-	*out2 << "pid = " << comm->MyPID() << ", val = " << *i << std::endl;
+	*out2 << "pid = " << tcomm->getRank() << ", val = " << *i << std::endl;
       *out2 << "\nPrinting IP coordinates for block: eblock-1_0" << std::endl;
       for (std::vector<panzer::Traits::Residual::ScalarT>::const_iterator i = (coords["eblock-1_0"])->begin(); i != (coords["eblock-1_0"])->end(); ++i)
-	*out2 << "pid = " << comm->MyPID() << ", val = " << *i << std::endl;
+	*out2 << "pid = " << tcomm->getSize() << ", val = " << *i << std::endl;
     }
    
     
@@ -305,7 +301,7 @@ namespace panzer {
     }
     else if (tcomm->getSize() == 2) {
 
-      if (comm->MyPID() == 0) {
+      if (tcomm->getRank() == 0) {
 	// eblock 1
 	{
 	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]); 
@@ -323,7 +319,7 @@ namespace panzer {
 	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
 	}
       }
-      else if (comm->MyPID() == 1) {
+      else if (tcomm->getRank() == 1) {
 	// eblock 1
 	{
 	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]); 

@@ -57,9 +57,11 @@ C     get num of sides & df
       if (ierr .gt. 0) goto 170 
          
 C     get side set nodes
-         call exgssn(ndb,ia(kidss+i),ia(kltnnn+isoff),
-     &        ia(kltnss+nodcnt),ierr) 
-      if (ierr .gt. 0) goto 170
+      if (nsess .gt. 0) then
+        call exgssn(ndb,ia(kidss+i),ia(kltnnn+isoff),
+     &    ia(kltnss+nodcnt),ierr) 
+        if (ierr .gt. 0) goto 170
+      end if
       nness = 0
 C     sum node counts to calculate next index
          do ii=0,nsess-1 

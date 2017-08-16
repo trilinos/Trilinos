@@ -78,6 +78,8 @@ Ifpack_SORa::Ifpack_SORa(Epetra_RowMatrix* A):
   UseInterprocDamping_(false),
   UseGlobalDamping_(false),
   LambdaMax_(-1.0),
+  LambdaMaxBoost_(1.0),
+  PowerMethodIters_(10),
   Time_(A->Comm())
 {
   Epetra_CrsMatrix *Acrs=dynamic_cast<Epetra_CrsMatrix*>(A);
@@ -93,12 +95,15 @@ void Ifpack_SORa::Destroy(){
 
 
 int Ifpack_SORa::Initialize(){
-  Alpha_            = List_.get("sora: alpha", Alpha_);
-  Gamma_            = List_.get("sora: gamma",Gamma_);
-  NumSweeps_        = List_.get("sora: sweeps",NumSweeps_);
-  HaveOAZBoundaries_= List_.get("sora: oaz boundaries", HaveOAZBoundaries_);
-  UseInterprocDamping_ = List_.get("sora: use interproc damping",UseInterprocDamping_);
-  UseGlobalDamping_ = List_.get("sora: use global damping",UseGlobalDamping_);
+  Alpha_              = List_.get("sora: alpha", Alpha_);
+  Gamma_              = List_.get("sora: gamma",Gamma_);
+  NumSweeps_          = List_.get("sora: sweeps",NumSweeps_);
+  HaveOAZBoundaries_  = List_.get("sora: oaz boundaries", HaveOAZBoundaries_);
+  UseInterprocDamping_= List_.get("sora: use interproc damping",UseInterprocDamping_);
+  UseGlobalDamping_   = List_.get("sora: use global damping",UseGlobalDamping_);
+  LambdaMax_          = List_.get("sora: max eigenvalue",LambdaMax_);
+  LambdaMaxBoost_     = List_.get("sora: eigen-analysis: boost",LambdaMaxBoost_);
+  PowerMethodIters_   = List_.get("sora: eigen-analysis: max iters",PowerMethodIters_);
 
   if (A_->Comm().NumProc() != 1) IsParallel_ = true;
   else {
@@ -266,8 +271,17 @@ int Ifpack_SORa::TCompute(){
   IsComputed_=true;
 
   // Global damping, if wanted
-  if(UseGlobalDamping_) {
-    PowerMethod(10,LambdaMax_);
+  if(UseGlobalDamping_ && LambdaMax_ == -1) {
+    if(List_.isParameter("sora: eigen-analysis: random seed")) {
+      unsigned int seed=0;
+      seed = List_.get("sora: eigen-analysis: random seed",seed);
+      PowerMethod(PowerMethodIters_,LambdaMax_,&seed);
+    }
+    else {
+      PowerMethod(PowerMethodIters_,LambdaMax_);
+    }
+
+    LambdaMax_*=LambdaMaxBoost_;
     if(!A_->Comm().MyPID()) printf("SORa: Global damping parameter = %6.4e (lmax=%6.4e)\n",GetOmega(),LambdaMax_);
   }
 
@@ -494,7 +508,7 @@ inline void Apply_BCsToMatrixRowsAndColumns(const int *dirichletRows, int numBCR
 
 
 int Ifpack_SORa::
-PowerMethod(const int MaximumIterations,  double& lambda_max)
+PowerMethod(const int MaximumIterations,  double& lambda_max, const unsigned int * RngSeed)
 {
   // this is a simple power method
   lambda_max = 0.0;
@@ -502,6 +516,8 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
   Epetra_Vector x(A_->OperatorDomainMap());
   Epetra_Vector y(A_->OperatorRangeMap());
   Epetra_Vector z(A_->OperatorRangeMap());
+
+  if(RngSeed) x.SetSeed(*RngSeed);
   x.Random();
   x.Norm2(&norm);
   if (norm == 0.0) IFPACK_CHK_ERR(-1);
@@ -539,5 +555,6 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
 
   return(0);
 }
+
 
 #endif

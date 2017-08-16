@@ -51,8 +51,8 @@ def typed_list(elementType):
     def check(self, *args):
         for it in args:
             if not isinstance(it, self.elementType):
-                raise TypeError, 'elements must be of type "%s", but received %s' \
-                      % (self.elementType.__name__, str(type(it)))
+                raise TypeError('elements must be of type "%s", but received %s'
+                                % (self.elementType.__name__, str(type(it))))
     def init(self, *args):
         self.check(*args)
     def add(self, y):

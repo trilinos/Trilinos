@@ -49,6 +49,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace {
@@ -180,7 +181,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
                                           stk::mesh::EntityVector   & new_nodes)
 {
 
-  stk::CommAll comm(mesh.parallel());
+  stk::CommSparse comm(mesh.parallel());
 
   for (size_t i = 0; i < nodes.size(); ++i) {
     stk::mesh::Entity node = nodes[i];
@@ -197,7 +198,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     }
   }
 
-  comm.allocate_buffers( mesh.parallel_size()/4 );
+  comm.allocate_buffers();
 
   for (size_t i = 0; i < nodes.size(); ++i) {
     stk::mesh::Entity node = nodes[i];
@@ -228,7 +229,8 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
                                .unpack<stk::mesh::EntityKey>(new_key);
 
       stk::mesh::Entity old_entity = mesh.get_entity(old_key);
-      stk::mesh::Entity new_entity = mesh.declare_entity(new_key.rank(), new_key.id(), no_parts);
+      ThrowRequireMsg(stk::topology::NODE_RANK == new_key.rank(), "New key rank must be NODE_RANK");
+      stk::mesh::Entity new_entity = mesh.declare_node(new_key.id(), no_parts);
 
       nodes.push_back(old_entity);
       new_nodes.push_back(new_entity);
@@ -241,7 +243,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 
 void get_nodes_that_are_kept_from_other_proc(stk::mesh::BulkData &mesh, stk::mesh::EntityVector &new_nodes, stk::mesh::EntityVector& sharedNodes)
 {
-    stk::CommAll commAll(mesh.parallel());
+    stk::CommSparse comm(mesh.parallel());
 
     int otherProc = 1 - mesh.parallel_rank();
 
@@ -251,24 +253,24 @@ void get_nodes_that_are_kept_from_other_proc(stk::mesh::BulkData &mesh, stk::mes
         {
             if(mesh.state(new_nodes[i]) != stk::mesh::Deleted && mesh.is_valid(new_nodes[i]))
             {
-                commAll.send_buffer(otherProc).pack<stk::mesh::EntityKey>(mesh.entity_key(new_nodes[i]));
+                comm.send_buffer(otherProc).pack<stk::mesh::EntityKey>(mesh.entity_key(new_nodes[i]));
             }
         }
 
         if(phase == 0)
         {
-            commAll.allocate_buffers(mesh.parallel_size() / 4);
+            comm.allocate_buffers();
         }
         else
         {
-            commAll.communicate();
+            comm.communicate();
         }
     }
 
-    while(commAll.recv_buffer(otherProc).remaining())
+    while(comm.recv_buffer(otherProc).remaining())
     {
         stk::mesh::EntityKey key;
-        commAll.recv_buffer(otherProc).unpack<stk::mesh::EntityKey>(key);
+        comm.recv_buffer(otherProc).unpack<stk::mesh::EntityKey>(key);
 
         stk::mesh::Entity node = mesh.get_entity(key);
         if(mesh.is_valid(node) && mesh.state(node) != stk::mesh::Deleted)
@@ -280,7 +282,7 @@ void get_nodes_that_are_kept_from_other_proc(stk::mesh::BulkData &mesh, stk::mes
 
 void add_sharing_info_for_kept_nodes(stk::mesh::BulkData &mesh, stk::mesh::EntityVector &sharedNodes)
 {
-    stk::CommAll commSecondStage(mesh.parallel());
+    stk::CommSparse commSecondStage(mesh.parallel());
     int otherProc = 1 - mesh.parallel_rank();
 
     for(int phase = 0; phase < 2; ++phase)
@@ -293,7 +295,7 @@ void add_sharing_info_for_kept_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entit
 
         if(phase == 0)
         {
-            commSecondStage.allocate_buffers(mesh.parallel_size() / 4);
+            commSecondStage.allocate_buffers();
         }
         else
         {

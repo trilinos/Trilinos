@@ -309,6 +309,13 @@ protected:
      */
    void addResidualResponsesToInArgs(Overloader<typename TraitsT::Tangent>,panzer::AssemblyEngineInArgs & input_args) const;
 
+  /** Add in the residual responses to the input arguments. Note only residual and Jacobian
+     * calls currently work!
+     */
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+   void addResidualResponsesToInArgs(Overloader<typename TraitsT::Hessian>,panzer::AssemblyEngineInArgs & input_args) const;
+#endif
+
    /** Add in a response (for internal use only) using a template manager.
      */
    void addResponse(const std::string & responseName,

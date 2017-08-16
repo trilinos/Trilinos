@@ -45,8 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_Shards_Utilities.hpp"
 
 using std::cout;
@@ -56,7 +54,6 @@ using panzer::getLocalSideIndexFromGlobalNodeList;
 namespace panzer {
   TEUCHOS_UNIT_TEST(shards_utilities, quad_test)
   {    
-    PHX::KokkosDeviceSession session;
     
     const shards::CellTopology 
       quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
@@ -135,7 +132,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(shards_utilities, hex_test)
   {
-    PHX::KokkosDeviceSession session;
     
     const shards::CellTopology 
       hex(shards::getCellTopologyData<shards::Hexahedron<8> >());

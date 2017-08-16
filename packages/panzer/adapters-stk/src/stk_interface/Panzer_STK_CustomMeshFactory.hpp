@@ -47,7 +47,7 @@
 #include <Panzer_STK_MeshFactory.hpp>
 #include <Panzer_STK_Interface.hpp>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
   class STK_Interface;
 
@@ -63,10 +63,10 @@ namespace panzer_stk_classic {
     virtual ~CustomMeshFactory();
 
     //! Build the mesh object
-    Teuchos::RCP<STK_Interface> buildMesh(stk_classic::ParallelMachine parallelMach) const;
+    Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
 
-    virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const;
-    virtual void completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const;
+    virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
+    virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;
 
     //! From ParameterListAcceptor
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);

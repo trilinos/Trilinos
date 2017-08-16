@@ -363,8 +363,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(2*myImageID,2*myImageID+1),0,comm,node) );
     RCP<Map<LO,GO,Node> > rngmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(myImageID,numImages+myImageID),0,comm,node) );
     RCP<RowMatrix<Scalar,LO,GO,Node> > tri;
+    RCP<MAT> tri_crs;
     {
-      RCP<MAT> tri_crs = rcp(new MAT(rowmap,3) );
+      tri_crs = rcp(new MAT(rowmap,3) );
       Array<Scalar>  vals(3,ST::one());
       if (myImageID == 0) {
         Array<GO> cols( tuple<GO>(2*myImageID,2*myImageID+1,2*myImageID+2) );
@@ -424,6 +425,28 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     tri->apply(mvin,mvout);
     mvout.update(-ST::one(),mvexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
+    mvout.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
+
+    // test the constructors based on 4 maps + local matri_crsx
+    RCP<MAT> tri_crs_2 = rcp(new MAT(tri_crs->getRowMap(), tri_crs->getColMap(), tri_crs->getDomainMap(),
+            tri_crs->getRangeMap(), tri_crs->getLocalMatrix()) );
+    TEST_EQUALITY(tri_crs_2->isFillComplete(), true);
+    auto exporter = tri_crs_2->getGraph()->getExporter();
+    auto importer = tri_crs_2->getGraph()->getImporter();
+    TEST_EQUALITY(importer.is_null() || tri_crs->getDomainMap()->isSameAs(*(importer->getSourceMap())), true);
+    TEST_EQUALITY(importer.is_null() || tri_crs->getColMap()   ->isSameAs(*(importer->getTargetMap())), true);
+    TEST_EQUALITY(exporter.is_null() || tri_crs->getRowMap()   ->isSameAs(*(exporter->getSourceMap())), true);
+    TEST_EQUALITY(exporter.is_null() || tri_crs->getRangeMap() ->isSameAs(*(exporter->getTargetMap())), true);
+
+    // test the action
+    mvout.randomize();
+    tri_crs_2->apply(mvin,mvout);
+    mvout.update(-ST::one(),mvexp,ST::one());
     mvout.norm1(norms());
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(norms,zeros);

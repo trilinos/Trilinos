@@ -102,6 +102,8 @@ ModelEvaluatorBase::InArgs<Scalar>::InArgs()
   t_     = SMT::zero();
   alpha_ = ST::zero();
   beta_  = ST::zero();
+  step_size_ = ST::zero();
+  stage_number_ = ST::one();
 }
 
 
@@ -126,6 +128,17 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgs_p_mp arg, int l) const
   assert_l(l);
   return supports_p_mp_[l];
 }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot_dot(
+  const RCP<const VectorBase<Scalar> > &x_dot_dot
+  )
+{ assert_supports(IN_ARG_x_dot_dot); x_dot_dot_ = x_dot_dot; }
+
+template<class Scalar>
+RCP<const VectorBase<Scalar> >
+ModelEvaluatorBase::InArgs<Scalar>::get_x_dot_dot() const
+{ assert_supports(IN_ARG_x_dot_dot); return x_dot_dot_; }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot(
@@ -264,6 +277,32 @@ template<class Scalar>
 Scalar ModelEvaluatorBase::InArgs<Scalar>::get_beta() const
 { assert_supports(IN_ARG_beta); return beta_; }
 
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_W_x_dot_dot_coeff( Scalar W_x_dot_dot_coeff )
+{ assert_supports(IN_ARG_W_x_dot_dot_coeff); W_x_dot_dot_coeff_ = W_x_dot_dot_coeff; }
+
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_W_x_dot_dot_coeff() const
+{ assert_supports(IN_ARG_W_x_dot_dot_coeff); return W_x_dot_dot_coeff_; }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_step_size( Scalar step_size)
+{ assert_supports(IN_ARG_step_size); step_size_ = step_size; }
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_step_size() const
+{ assert_supports(IN_ARG_step_size); return step_size_; }
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_stage_number() const
+{ assert_supports(IN_ARG_stage_number); return stage_number_; }
+
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_stage_number( Scalar stage_number)
+{ assert_supports(IN_ARG_stage_number); stage_number_ = stage_number; }
+
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
@@ -272,6 +311,10 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
 {
   using ModelEvaluatorHelperPack::condCloneVec;
   using ModelEvaluatorHelperPack::condCloneVec_mp;
+  if( inArgs.supports(IN_ARG_x_dot_dot) && nonnull(inArgs.get_x_dot_dot()) ) {
+    if(supports(IN_ARG_x_dot_dot) || !ignoreUnsupported)
+      set_x_dot_dot(condCloneVec(inArgs.get_x_dot_dot(),cloneObjects));
+  }
   if( inArgs.supports(IN_ARG_x_dot) && nonnull(inArgs.get_x_dot()) ) {
     if(supports(IN_ARG_x_dot) || !ignoreUnsupported)
       set_x_dot(condCloneVec(inArgs.get_x_dot(),cloneObjects));
@@ -327,6 +370,24 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
     if(supports(IN_ARG_beta) || !ignoreUnsupported)
       set_beta(inArgs.get_beta());
   }
+  if (inArgs.supports(IN_ARG_W_x_dot_dot_coeff)) {
+    if(supports(IN_ARG_W_x_dot_dot_coeff) || !ignoreUnsupported)
+      set_W_x_dot_dot_coeff(inArgs.get_W_x_dot_dot_coeff());
+  }
+  if (inArgs.supports(IN_ARG_step_size)) {
+    if(supports(IN_ARG_step_size) || !ignoreUnsupported)
+      set_step_size(inArgs.get_step_size());
+  }
+  if (inArgs.supports(IN_ARG_stage_number)) {
+    if(supports(IN_ARG_stage_number) || !ignoreUnsupported)
+      set_stage_number(inArgs.get_stage_number());
+  }
+  // Extended inArgs
+  if (extended_inargs_.size() > 0)
+    TEUCHOS_TEST_FOR_EXCEPTION(cloneObjects,
+                               std::runtime_error,
+                               "Extended InArgs does not support cloning!");
+  this->extended_inargs_ = inArgs.extended_inargs_;
 }
 
 
@@ -408,6 +469,13 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
   *out <<"model = " << modelEvalDescription_ << "\n";
   *out <<"Np = " << Np() << "\n";
 
+  CV_ptr x_dot_dot;
+  if ( this->supports(IN_ARG_x_dot_dot) && !is_null(x_dot_dot=get_x_dot_dot()) ) {
+    *out << "x_dot_dot = " << Teuchos::describe(*x_dot_dot,x_verbLevel);
+    if (print_x_nrm)
+      *out << "||x_dot_dot|| = " << norm(*x_dot_dot) << endl;
+  }
+
   CV_ptr x_dot;
   if ( this->supports(IN_ARG_x_dot) && !is_null(x_dot=get_x_dot()) ) {
     *out << "x_dot = " << Teuchos::describe(*x_dot,x_verbLevel);
@@ -442,6 +510,15 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
     }
     if (this->supports(IN_ARG_beta)) {
       *out << "beta = " << beta_ << endl;
+    }
+    if (this->supports(IN_ARG_W_x_dot_dot_coeff)) {
+      *out << "W_x_dot_dot_coeff = " << W_x_dot_dot_coeff_ << endl;
+    }
+    if (this->supports(IN_ARG_step_size)) {
+      *out << "step_size = " << step_size_ << endl;
+    }
+    if (this->supports(IN_ARG_stage_number)) {
+      *out << "stage_number = " << stage_number_ << endl;
     }
   }
   
@@ -507,10 +584,14 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated(
 {
   switch(arg) {
     case IN_ARG_x: {
+      this->_setSupports(IN_ARG_x_dot_dot,false);
       this->_setSupports(IN_ARG_x_dot,false);
       this->_setSupports(IN_ARG_x_dot_poly,false);
       this->_setSupports(IN_ARG_alpha,false);
       this->_setSupports(IN_ARG_beta,false);
+      this->_setSupports(IN_ARG_W_x_dot_dot_coeff,false);
+      this->_setSupports(IN_ARG_step_size,false);
+      this->_setSupports(IN_ARG_stage_number,false);
       break;
     }
     default:
@@ -518,7 +599,6 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated(
         true ,std::logic_error,
         "Error, can not handle args other than IN_ARG_x yet!"
         );
-      break;
   }
   this->_setSupports(arg,false);
 }
@@ -1344,6 +1424,9 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
       }
     }
   }
+  // Extended outArgs
+  this->extended_outargs_ = inputOutArgs.extended_outargs_;
+
   // ToDo: Add more args as needed!
 }
 
@@ -1915,6 +1998,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
     this->_set_W_properties(inputOutArgs.get_W_properties());
   if(this->supports(OUT_ARG_W_mp))
     this->_set_W_properties(inputOutArgs.get_W_properties());  //JF should this be W_mp_properties?
+
+  extended_outargs_ = inputOutArgs.extended_outargs_;
 }
 
 
@@ -1945,7 +2030,6 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
         true ,std::logic_error,
         "Error, can not handle args other than IN_ARG_x yet!"
         );
-      break;
   }
 }
 
@@ -1979,7 +2063,6 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
         true ,std::logic_error,
         "Error, can not handle args other than OUT_ARG_f yet!"
         );
-      break;
   }
   this->_setSupports(arg,false);
 }

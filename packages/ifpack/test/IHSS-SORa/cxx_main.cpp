@@ -141,11 +141,13 @@ int main(int argc, char *argv[]) {
   Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec2 = Teuchos::rcp( Factory.Create("SORa", &*A,0) );
   Teuchos::ParameterList List2;
   List2.set("sora: sweeps",1);
+  List2.set("sora: use global damping",true);
+  List2.set("sora: eigen-analysis: random seed",(unsigned int)24601);
   // Could set sublist values here to better control the ILU, but this isn't needed for this example.
   IFPACK_CHK_ERR(Prec2->SetParameters(List2));
   IFPACK_CHK_ERR(Prec2->Compute());
 
-  // ============================= //
+ // ============================= //
   // Create solver Object          //
   // ============================= //
   AztecOO solver2;
@@ -158,6 +160,24 @@ int main(int argc, char *argv[]) {
   solver2.SetAztecOption(AZ_output, 1); 
   solver2.Iterate(Niters, 1e-8);
 
+  // ============================= //
+  // Construct a second SORa preconditioner to check seeds //
+  // ============================= //
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec3 = Teuchos::rcp( Factory.Create("SORa", &*A,0) );
+  Teuchos::ParameterList List3;
+  List3.set("sora: sweeps",1);
+  List3.set("sora: use global damping",true);
+  List3.set("sora: eigen-analysis: random seed",(unsigned int)24601);
+  // Could set sublist values here to better control the ILU, but this isn't needed for this example.
+  IFPACK_CHK_ERR(Prec3->SetParameters(List2));
+  IFPACK_CHK_ERR(Prec3->Compute());
+
+  Teuchos::RCP<Ifpack_SORa> Prec2_SORa = Teuchos::rcp_dynamic_cast<Ifpack_SORa>(Prec2);
+  Teuchos::RCP<Ifpack_SORa> Prec3_SORa = Teuchos::rcp_dynamic_cast<Ifpack_SORa>(Prec3);
+  double diff = Prec2_SORa->GetLambdaMax()-Prec3_SORa->GetLambdaMax();
+  if(diff > 1e-12) return EXIT_FAILURE;
+
+ 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif

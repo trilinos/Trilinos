@@ -51,7 +51,6 @@
 #include "Panzer_GlobalEvaluationData.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ResponseMESupportBase.hpp"
-#include "Panzer_ResponseMESupportBuilderBase.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_AbstractFactory.hpp"

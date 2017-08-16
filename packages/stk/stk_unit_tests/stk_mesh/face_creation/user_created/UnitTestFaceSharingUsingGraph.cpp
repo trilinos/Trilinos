@@ -5,7 +5,6 @@
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "../FaceCreatorFixture.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
-#include <stk_unit_test_utils/SideSharingUsingGraph.hpp>
 
 namespace
 {
@@ -15,7 +14,7 @@ class UnitTestFaceSharingUsingGraph : public FaceCreatorFixture
 protected:
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        set_bulk(new stk::unit_test_util::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), auraOption));
+        set_bulk(new stk::mesh::BulkData(get_meta(), get_comm(), auraOption));
     }
 
     virtual void test_that_one_face_exists_on_both_procs_after_only_one_proc_makes_face()
@@ -54,15 +53,16 @@ protected:
         setup_mesh("generated:1x1x2", auraOption);
         test_that_one_face_exists_on_both_procs_after_only_one_proc_makes_face();
 
+        stk::mesh::EntityVector sides;
+        stk::mesh::get_selected_entities(get_meta().globally_shared_part(), get_bulk().buckets(get_meta().side_rank()), sides);
         EXPECT_EQ(4u, stk::mesh::count_selected_entities(get_meta().globally_shared_part(), get_bulk().buckets(stk::topology::NODE_RANK)));
-        EXPECT_EQ(1u, stk::mesh::count_selected_entities(get_meta().globally_shared_part(), get_bulk().buckets(get_meta().side_rank())));
-        stk::mesh::Entity userCreatedFace = get_bulk().get_entity(get_meta().side_rank(), 1);
-        ASSERT_EQ(4u, get_bulk().num_nodes(userCreatedFace));
-        const stk::mesh::Entity *nodes = get_bulk().begin_nodes(userCreatedFace);
-        EXPECT_EQ(8u, get_bulk().identifier(nodes[0]));
-        EXPECT_EQ(7u, get_bulk().identifier(nodes[1]));
-        EXPECT_EQ(5u, get_bulk().identifier(nodes[2]));
-        EXPECT_EQ(6u, get_bulk().identifier(nodes[3]));
+        ASSERT_EQ(1u, sides.size());
+        ASSERT_EQ(4u, get_bulk().num_nodes(sides[0]));
+        const stk::mesh::Entity *nodes = get_bulk().begin_nodes(sides[0]);
+        EXPECT_EQ(5u, get_bulk().identifier(nodes[0]));
+        EXPECT_EQ(6u, get_bulk().identifier(nodes[1]));
+        EXPECT_EQ(8u, get_bulk().identifier(nodes[2]));
+        EXPECT_EQ(7u, get_bulk().identifier(nodes[3]));
     }
 };
 

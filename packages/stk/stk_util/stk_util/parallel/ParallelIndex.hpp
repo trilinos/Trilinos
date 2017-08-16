@@ -41,6 +41,7 @@
 #include <stdint.h>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/util/PairIter.hpp>
 
 namespace stk {
@@ -101,19 +102,17 @@ public:
       m_key_proc(), 
       m_decomp()
   {
-    const unsigned p_size = parallel_machine_size( comm );
+    CommSparse sparse( comm );
 
-    CommAll all( comm );
+    pack_map( sparse, local );
 
-    pack_map( all, local );
-
-    all.allocate_buffers( p_size / 4, false );
+    sparse.allocate_buffers();
   
-    pack_map( all, local );
+    pack_map( sparse, local );
 
-    all.communicate();
+    sparse.communicate();
 
-    unpack_map( all, m_key_proc );
+    unpack_map( sparse, m_key_proc );
 
     sort_unique( m_key_proc );
   }
@@ -127,19 +126,17 @@ public:
    */
   void query(std::vector<KeyProc> & global ) const
   {
-    const unsigned p_size = parallel_machine_size( m_comm );
+    CommSparse sparse( m_comm );
 
-    CommAll all( m_comm );
+    pack_query( sparse, m_key_proc );
 
-    pack_query( all, m_key_proc );
+    sparse.allocate_buffers();
 
-    all.allocate_buffers( p_size / 4, false );
+    pack_query( sparse, m_key_proc );
 
-    pack_query( all, m_key_proc );
+    sparse.communicate();
 
-    all.communicate();
-
-    unpack_query( all, global );
+    unpack_query( sparse, global );
 
     sort_unique( global );
   }
@@ -152,38 +149,36 @@ public:
   void query(const std::vector<Key> & local, 
              std::vector<KeyProc> & global ) const
   {
-    const unsigned p_size = parallel_machine_size( m_comm );
-
     std::vector<KeyProc> tmp ;
 
     {
-      CommAll all( m_comm );
+      CommSparse sparse( m_comm );
 
-      pack_map( all, local );
+      pack_map( sparse, local );
 
-      all.allocate_buffers( p_size / 4, false );
+      sparse.allocate_buffers();
 
-      pack_map( all, local );
+      pack_map( sparse, local );
 
-      all.communicate();
+      sparse.communicate();
 
-      unpack_map( all, tmp ); // { ( key, querying_processor ) }
+      unpack_map( sparse, tmp ); // { ( key, querying_processor ) }
 
       sort_unique( tmp );
     }
 
     {
-      CommAll all( m_comm );
+      CommSparse sparse( m_comm );
 
-      pack_query( all, m_key_proc, tmp );
+      pack_query( sparse, m_key_proc, tmp );
 
-      all.allocate_buffers( p_size / 4, false );
+      sparse.allocate_buffers();
 
-      pack_query( all, m_key_proc, tmp );
+      pack_query( sparse, m_key_proc, tmp );
 
-      all.communicate();
+      sparse.communicate();
 
-      unpack_query( all, global );
+      unpack_query( sparse, global );
 
       sort_unique( global );
     }
@@ -200,27 +195,27 @@ private:
     key_proc.erase( i, j );
   }
 
-  void pack_map( CommAll & all, const std::vector<Key> & local ) const
+  void pack_map( CommSparse & sparse, const std::vector<Key> & local ) const
   {
-    const unsigned p_size = all.parallel_size();
+    const unsigned p_size = sparse.parallel_size();
 
     typename std::vector<Key>::const_iterator i ;
 
     for ( i = local.begin() ; i != local.end() ; ++i ) {
       const Key value = *i ;
       const unsigned proc = m_decomp( p_size, value );
-      CommBuffer & buf = all.send_buffer(proc);
+      CommBuffer & buf = sparse.send_buffer(proc);
       buf.pack<Key>( value );
     }
   }
 
-  void unpack_map( CommAll & all, std::vector< KeyProc > & key_proc ) const
+  void unpack_map( CommSparse & sparse, std::vector< KeyProc > & key_proc ) const
   {
-    const unsigned p_size = all.parallel_size();
+    const unsigned p_size = sparse.parallel_size();
 
     unsigned count = 0 ;
     for ( unsigned p = 0 ; p < p_size ; ++p ) {
-      count += all.recv_buffer( p ).capacity() / sizeof(Key);
+      count += sparse.recv_buffer( p ).capacity() / sizeof(Key);
     }
 
     key_proc.clear();
@@ -229,7 +224,7 @@ private:
     KeyProc value ;
 
     for ( unsigned p = 0 ; p < p_size ; ++p ) {
-      CommBuffer & buf = all.recv_buffer( p );
+      CommBuffer & buf = sparse.recv_buffer( p );
       value.second = p ;
       while ( buf.remaining() ) {
         buf.unpack<Key>( value.first );
@@ -238,7 +233,7 @@ private:
     }
   }
 
-  void pack_query( CommAll & all, const std::vector< KeyProc > & key_proc ) const
+  void pack_query( CommSparse & sparse, const std::vector< KeyProc > & key_proc ) const
   {
     KeyProc value ;
 
@@ -255,7 +250,7 @@ private:
       const typename std::vector< KeyProc >::const_iterator i_end = i ;
     
       for ( i = i_beg ; i != i_end ; ++i ) {
-        CommBuffer & buf = all.send_buffer( i->second );
+        CommBuffer & buf = sparse.send_buffer( i->second );
 
         typename std::vector< KeyProc >::const_iterator j ;
 
@@ -269,7 +264,7 @@ private:
     }
   }
 
-  void pack_query( CommAll & all, 
+  void pack_query( CommSparse & sparse, 
                    const std::vector< KeyProc > & key_proc_map, 
                    const std::vector< KeyProc > & query_in ) const
   {
@@ -285,7 +280,7 @@ private:
         ++key_end;
 
       for ( ; i != query_in.end() && value.first == i->first ; ++i ) {
-        CommBuffer & buf = all.send_buffer( i->second );
+        CommBuffer & buf = sparse.send_buffer( i->second );
 
         for ( typename std::vector< KeyProc >::const_iterator j = key_begin ; j != key_end ; ++j ) {
           value.second = j->second ;
@@ -295,14 +290,14 @@ private:
     }
   }
 
-  void unpack_query( CommAll & all, std::vector< KeyProc > & key_proc ) const
+  void unpack_query( CommSparse & sparse, std::vector< KeyProc > & key_proc ) const
   {
-    const unsigned p_size = all.parallel_size();
+    const unsigned p_size = sparse.parallel_size();
 
     KeyProc entry ;
 
     for ( unsigned p = 0 ; p < p_size ; ++p ) {
-      CommBuffer & buf = all.recv_buffer( p );
+      CommBuffer & buf = sparse.recv_buffer( p );
       while ( buf.remaining() ) {
         buf.unpack<KeyProc>( entry );
         key_proc.push_back( entry );

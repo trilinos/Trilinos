@@ -9,7 +9,7 @@ Level 0
   chebyshev: min eigenvalue = 1
   chebyshev: zero starting solution = 1
   chebyshev: eigenvalue max iterations = 10
-  chebyshev: boost factor = 1.1   [default]
+  chebyshev: boost factor = 1.1   [unused]
   chebyshev: min diagonal value = 2.22045e-16   [default]
   chebyshev: assume matrix does not change = 0   [default]
  
@@ -44,6 +44,7 @@ Level 1
       aggregation: enable phase 3 = 1   [default]
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
+      aggregation: error on nodes with no on-rank neighbors = 0   [default]
       OnePt aggregate map name =    [default]
       OnePt aggregate map factory =    [default]
       
@@ -55,26 +56,41 @@ Level 1
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
-     [empty list]
+     tentative: calculate qr = 1   [default]
+     matrixmatrix: kernel params -> 
+      [empty list]
      
     sa: damping factor = 1.33   [default]
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
    
    transpose: use implicit = 0   [default]
+   rap: fix zero diagonals = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
+   matrixmatrix: kernel params -> 
+    [empty list]
    
-  repartition: start level = 1
-  repartition: min rows per proc = 2000
-  repartition: max imbalance = 1.327
+   Build (MueLu::RepartitionHeuristicFactory)
+   repartition: start level = 1
+   repartition: min rows per proc = 2000
+   repartition: max imbalance = 1.327
+   
+   Build (MueLu::Zoltan2Interface)
+   rowWeight = 0   [default]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x4e66ff8,node=0x4d3e870,strong_count=2,weak_count=0}   [unused]
+   
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]
@@ -103,6 +119,8 @@ Level 1
 --------------------------------------------------------------------------------
 Number of levels    = 4
 Operator complexity = 1.48
+Smoother complexity = 1.93
+Cycle type          = V
 
 level  rows    nnz  nnz/row  c ratio  procs
   0    9999  29995     3.00               4
@@ -116,6 +134,6 @@ Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: tr
 
 Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.95184, alpha: 20, lambdaMin: 0.0975919, boost factor: 1.1}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 
-Smoother (level 3) pre  : Basker solver interface
+Smoother (level 3) pre  : KLU2 solver interface
 Smoother (level 3) post : no smoother
 

@@ -160,6 +160,10 @@ namespace MueLu {
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const;
+
+
     //@}
 
   private:
@@ -194,7 +198,7 @@ namespace MueLu {
   GetAmesosSmoother (const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList ()) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                "AmesosSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
-    return Teuchos::null;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
   // specialization for Epetra

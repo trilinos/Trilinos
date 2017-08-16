@@ -67,7 +67,7 @@ extern "C" {
 #define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on
                                  either side of cut */
 #define ALMOST_ONE 0.99       /* For scaling, should be slightly < 1.0 */
-#define MAX_BISECT_ITER 40    /* Max. no. of iterations in main bisection
+#define MAX_BISECT_ITER 100    /* Max. no. of iterations in main bisection
                                  loop. Avoids potential infinite loops. */
 
 /* Data structure for parallel find bisector routine */
@@ -187,7 +187,7 @@ int Zoltan_RB_find_bisector(
   int     indexlo=0, indexhi=0;      /* indices of dots closest to bisector */
   int     breakflag=0;               /* for breaking out of bisector iteration */
   int     markactive;                /* which side of cut is active = 0/1 */
-  int     iteration;                 /* bisection iteration no. */
+  int     iteration = 0;             /* bisection iteration no. */
   int     i, j, k, numlist;
   int     tfs_early_exit = 0;        /* Flag used only with Tflops_Special,
                                         indicating early exit when all weight
@@ -1090,7 +1090,7 @@ int Zoltan_RB_find_bisector(
 #endif
       ierr = ZOLTAN_WARN;
       ZOLTAN_PRINT_WARN(proc, yo,
-                        "MAX_BISECT_ITER reached. Possible bug in Zoltan/RCB.");
+                        "MAX_BISECT_ITER reached in Zoltan/RCB.");
     }
   }
   else { /* if one processor set all dots to 0 (Tflops_Special) */

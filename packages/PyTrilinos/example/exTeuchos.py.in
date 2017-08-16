@@ -52,8 +52,9 @@
 
 #
 # System imports
+from   __future__ import print_function
 import sys
-from   types  import *
+import types
 
 #
 # Parse the command-line arguments
@@ -83,14 +84,14 @@ def main(iAmRoot):
     pList.set("tol", 1.0e-6)
     pList.set("precond", "ILUT")
     if iAmRoot:
-        print
-        print pList
+        print()
+        print(pList)
 
     # The isType() method is disabled.  In its place is a type() method that
     # returns a python type object:
-    assert(pList.type("maxiters") is IntType   )
-    assert(pList.type("tol"     ) is FloatType )
-    assert(pList.type("precond" ) is StringType)
+    assert(pList.type("maxiters") is int  )
+    assert(pList.type("tol"     ) is float)
+    assert(pList.type("precond" ) is str  )
 
     # The python ParameterList has been augmented to support python dictionary
     # methods:
@@ -105,10 +106,10 @@ def main(iAmRoot):
     assert("precond"  in pList)
 
     # These additional methods include special methods that enable iteration:
-    if iAmRoot: print
+    if iAmRoot: print()
     for name in pList:
         if iAmRoot:
-            print name, ":", pList[name]
+            print(name, ":", pList[name])
 
     # PyTrilinos as a whole has been designed to accept python dictionaries
     # where ParameterLists are expected.  For example, there is an overloaded
@@ -130,8 +131,8 @@ def main(iAmRoot):
     del d["maxiters"]    # Deletion is not supported by ParameterList
     pList2 = Teuchos.ParameterList(d)  # New constructor that accepts a dictionary
     if iAmRoot:
-        print
-        print pList2
+        print()
+        print(pList2)
 
     # The len() operator returns the number of top-level parameters:
     assert(len(pList) == len(pList2)+1)
@@ -151,8 +152,8 @@ def main(iAmRoot):
     assert(isinstance(xmlObj1, Teuchos.XMLObject))
     assert(isinstance(xmlObj2, Teuchos.XMLObject))
     if iAmRoot:
-        print
-        print xmlObj2
+        print()
+        print(xmlObj2)
 
     # Write the XMLObject to disk, read it back and check it:
     if iAmRoot:
@@ -172,26 +173,26 @@ if __name__ == "__main__":
     iAmRoot = comm.getRank() == 0
 
     if iAmRoot:
-        print "******************"
-        print "** exTeuchos.py **"
-        print "******************"
+        print("******************")
+        print("** exTeuchos.py **")
+        print("******************")
 
     # Run the test and catch any errors
     errors = 0
     try:
         main(iAmRoot)
-    except Exception, e:
-        print "Processor", comm.getRank(), ": Exception raised"
-        print "  Exception text = '%s'" % str(e)
+    except Exception as e:
+        print("Processor", comm.getRank(), ": Exception raised")
+        print("  Exception text = '%s'" % str(e))
         errors = 1
 
     # Sum the errors, report the status and exit
-    print "Processor", comm.getRank(), ": errors =", errors
+    print("Processor", comm.getRank(), ": errors =", errors)
     totalErrors = comm.reduceAll(Teuchos.REDUCE_SUM, errors)
-    print "Processor", comm.getRank(), ": totalErrors =", totalErrors
+    print("Processor", comm.getRank(), ": totalErrors =", totalErrors)
     if iAmRoot:
         if totalErrors == 0:
-            print "End Result: TEST PASSED"
+            print("End Result: TEST PASSED")
         else:
-            print "End Result: TEST FAILED"
+            print("End Result: TEST FAILED")
     sys.exit(totalErrors)

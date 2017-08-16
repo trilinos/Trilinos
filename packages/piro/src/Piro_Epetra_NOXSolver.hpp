@@ -129,6 +129,8 @@ class NOXSolver
 
   //@}
 
+  void resetCounters();
+
   private:
 
    //These are set in the constructor and used in evalModel
@@ -147,8 +149,16 @@ class NOXSolver
    Teuchos::RCP<NOX::Epetra::Group> grp;
    Teuchos::RCP<LOCA::GlobalData> globalData;
    Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy;
+   bool writeOnlyConvergedSol;
+
+   //Store current iteration of Analysis solver 
+   mutable int current_iteration;
 
    enum DerivativeLayout { OP, COL, ROW };
+
+  mutable int totalNewtonIters;
+  mutable int totalKrylovIters;
+  mutable int stepNum;
 };
 
 }

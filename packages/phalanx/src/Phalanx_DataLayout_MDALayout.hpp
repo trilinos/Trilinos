@@ -137,29 +137,44 @@ namespace PHX {
     MDALayout(const std::string& prefix,
 	      size_type size1);
 
-    ~MDALayout() {}
+    virtual ~MDALayout() {}
 
-    virtual bool operator==(const DataLayout& right) const;
+    virtual bool operator==(const DataLayout& right) const override;
 
-    virtual PHX::Device::size_type rank() const; 
+    virtual PHX::Device::size_type rank() const override; 
 
-    virtual PHX::Device::size_type dimension(size_type ordinal) const;
+    virtual PHX::Device::size_type dimension(size_type ordinal) const override;
 
-    virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const; 
+    virtual PHX::Device::size_type extent(size_type ordinal) const override;
 
-    virtual std::string name(size_type ordinal) const;
+    virtual int extent_int(size_type ordinal) const override;
 
-    virtual void names(std::vector<std::string>& names) const; 
+    virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const override; 
 
-    virtual PHX::Device::size_type size() const;
+    virtual std::string name(size_type ordinal) const override;
 
-    virtual std::string identifier() const;
+    virtual void names(std::vector<std::string>& names) const override; 
 
-    virtual void print(std::ostream& os, int offset) const;
+    virtual PHX::Device::size_type size() const override;
+
+    virtual std::string identifier() const override;
+
+    virtual void print(std::ostream& os, int offset) const override;
 
   private:
     
     std::string createIdentifier(const std::string& prefix = "");
+
+    template<typename IndexType>
+    typename std::enable_if<std::is_signed<IndexType>::value>::type
+    checkForValidRank(const IndexType& ordinal) const;
+
+    /** \brief Specialization to remove compiler warnings about
+	pointless comparison of unsigned integer with zero.
+     */
+    template<typename IndexType>
+    typename std::enable_if<std::is_unsigned<IndexType>::value>::type
+    checkForValidRank(const IndexType& ordinal) const;
 
   private:
 

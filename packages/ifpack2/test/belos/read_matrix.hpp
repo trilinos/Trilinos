@@ -2,7 +2,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -84,9 +84,7 @@ read_matrix_hb (const std::string& hb_file,
   RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A;
   {
     Teuchos::TimeMonitor timeMon (*timer);
-    Teuchos::RCP<Node> theNode =
-      node.is_null () ? Teuchos::rcp (new Node ()) : node;
-    Tpetra::Utils::readHBMatrix (hb_file, comm, theNode, A);
+    Tpetra::Utils::readHBMatrix (hb_file, comm, node, A); // OK if node is null
   }
   if (comm->getRank () == 0) {
     cout << "Proc 0: Time in seconds to read the Harwell-Boeing - format "

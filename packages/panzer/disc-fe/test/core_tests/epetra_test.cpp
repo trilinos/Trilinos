@@ -57,7 +57,6 @@ namespace panzer {
   
   TEUCHOS_UNIT_TEST(epetra_test, maptest)
   {
-    PHX::KokkosDeviceSession session;
     
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 

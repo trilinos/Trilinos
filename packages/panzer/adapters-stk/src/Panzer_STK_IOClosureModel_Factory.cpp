@@ -50,7 +50,7 @@
 
 template< >
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
-panzer_stk_classic::IOClosureModelFactory<panzer::Traits::Residual>::
+panzer_stk::IOClosureModelFactory<panzer::Traits::Residual>::
 buildClosureModels(const std::string& model_id,
 		   const Teuchos::ParameterList& models,
 		   const panzer::FieldLayoutLibrary& fl,
@@ -93,7 +93,7 @@ buildClosureModels(const std::string& model_id,
         pl.set("Field Names",fieldNames);
         pl.set("Scatter Name", block_id+"_Cell_Avg_Fields");
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-            = Teuchos::rcp(new panzer_stk_classic::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
+            = Teuchos::rcp(new panzer_stk::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
    
@@ -114,7 +114,7 @@ buildClosureModels(const std::string& model_id,
         pl.set("Field Names",fieldNames);
         pl.set("Scatter Name", block_id+"_Cell_Avg_Vectors");
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-            = Teuchos::rcp(new panzer_stk_classic::ScatterCellAvgVector<panzer::Traits::Residual,panzer::Traits>(pl));
+            = Teuchos::rcp(new panzer_stk::ScatterCellAvgVector<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
    
@@ -135,7 +135,7 @@ buildClosureModels(const std::string& model_id,
         pl.set("Field Names",fieldNames);
         pl.set("Scatter Name", block_id+"_Cell_Fields");
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-            = Teuchos::rcp(new panzer_stk_classic::ScatterCellQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
+            = Teuchos::rcp(new panzer_stk::ScatterCellQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
    
@@ -153,7 +153,7 @@ buildClosureModels(const std::string& model_id,
    
         // setup scatter nodal fields
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-            = Teuchos::rcp(new panzer_stk_classic::ScatterFields<panzer::Traits::Residual,panzer::Traits>(block_id+"Nodal_Fields",mesh_,basis,*fieldNames));
+            = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(block_id+"Nodal_Fields",mesh_,basis,*fieldNames));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
    
@@ -175,6 +175,6 @@ buildClosureModels(const std::string& model_id,
 #include "Panzer_STK_IOClosureModel_Factory_decl.hpp"
 #include "Panzer_STK_IOClosureModel_Factory_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer_stk_classic::IOClosureModelFactory)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer_stk::IOClosureModelFactory)
 
 #endif

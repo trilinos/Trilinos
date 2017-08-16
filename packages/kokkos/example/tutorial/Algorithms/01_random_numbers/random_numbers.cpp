@@ -71,11 +71,13 @@ typedef Kokkos::HostSpace::execution_space DefaultHostType;
 template<class GeneratorPool>
 struct generate_random {
 
-  // The GeneratorPool
-  GeneratorPool rand_pool;
 
   // Output View for the random numbers
   Kokkos::View<uint64_t*> vals;
+  
+  // The GeneratorPool
+  GeneratorPool rand_pool;
+  
   int samples;
 
   // Initialize all members
@@ -122,7 +124,7 @@ int main(int argc, char* args[]) {
   Kokkos::DualView<uint64_t*> vals("Vals",size*samples);
 
   // Run some performance comparisons
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   Kokkos::parallel_for(size,generate_random<Kokkos::Random_XorShift64_Pool<> >(vals.d_view,rand_pool64,samples));
   Kokkos::fence();
 
@@ -139,8 +141,8 @@ int main(int argc, char* args[]) {
   Kokkos::fence();
   double time_1024 = timer.seconds();
 
-  printf("#Time XorShift64*:   %lf %lf\n",time_64,1.0e-9*samples*size/time_64 );
-  printf("#Time XorShift1024*: %lf %lf\n",time_1024,1.0e-9*samples*size/time_1024 );
+  printf("#Time XorShift64*:   %e %e\n",time_64,1.0e-9*samples*size/time_64 );
+  printf("#Time XorShift1024*: %e %e\n",time_1024,1.0e-9*samples*size/time_1024 );
 
   Kokkos::deep_copy(vals.h_view,vals.d_view);
 

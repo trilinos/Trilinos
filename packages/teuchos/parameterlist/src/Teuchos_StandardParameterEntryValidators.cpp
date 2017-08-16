@@ -125,6 +125,133 @@ namespace Teuchos {
 
 
 //
+// BoolParameterEntryValidator
+//
+
+
+// Constructors
+
+
+BoolParameterEntryValidator::BoolParameterEntryValidator()
+{
+  finishInitialization();
+}
+
+
+//  Local non-virtual validated lookup functions
+
+
+bool BoolParameterEntryValidator::getBool(
+  const ParameterEntry &entry, const std::string &paramName,
+  const std::string &sublistName, const bool activeQuery
+  ) const
+{
+  const any &anyValue = entry.getAny(activeQuery);
+  if( anyValue.type() == typeid(bool) )
+    return any_cast<bool>(anyValue);
+  if( anyValue.type() == typeid(std::string) ) {
+    std::string str = any_cast<std::string>(anyValue);
+
+    // to fix - do we want to make this customizable?
+    if( str == "false" ) {
+      return false;
+    }
+    else if( str == "true" ) {
+      return true;
+    }
+
+  }
+  throwTypeError(entry,paramName,sublistName);
+  return 0; // Will never get here!
+}
+
+bool BoolParameterEntryValidator::getBool(
+  ParameterList &paramList, const std::string &paramName,
+  const int defaultValue
+  ) const
+{
+  const ParameterEntry *entry = paramList.getEntryPtr(paramName);
+  if(entry) return getBool(*entry,paramName,paramList.name(),true);
+  return paramList.get(paramName,defaultValue);
+}
+
+// Overridden from ParameterEntryValidator
+
+const std::string BoolParameterEntryValidator::getXMLTypeName() const
+{
+  return "boolValidator";
+}
+
+void BoolParameterEntryValidator::printDoc(
+  std::string  const & docString,
+  std::ostream & out
+  ) const
+{
+  StrUtils::printLines(out,"# ",docString);
+  out << "#  Accepted types: " << acceptedTypesString_ << ".\n";
+}
+
+
+ParameterEntryValidator::ValidStringsList
+BoolParameterEntryValidator::validStringValues() const
+{
+  return null;
+}
+
+
+void BoolParameterEntryValidator::validate(
+  ParameterEntry const& entry,
+  std::string const& paramName,
+  std::string const& sublistName
+  ) const
+{
+  // Validate that the parameter exists and can be converted to a bool.
+  getBool(entry, paramName, sublistName, false);
+}
+
+
+void BoolParameterEntryValidator::validateAndModify(
+  std::string const& paramName,
+  std::string const& sublistName,
+  ParameterEntry * entry
+  ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPT(0==entry);
+  entry->setValue(getBool(*entry,paramName,sublistName,false), false);
+}
+
+
+// private
+
+
+void BoolParameterEntryValidator::finishInitialization()
+{
+  std::ostringstream oss;
+  oss << "\"bool\"";
+  acceptedTypesString_ = oss.str();
+  oss << "\"string\"";
+  acceptedTypesString_ = oss.str();
+}
+
+
+void BoolParameterEntryValidator::throwTypeError(
+  ParameterEntry const& entry,
+  std::string const& paramName,
+  std::string const& sublistName
+  ) const
+{
+  const std::string &entryName = entry.getAny(false).typeName();
+  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+    true, Exceptions::InvalidParameterType
+    ,"Error, the parameter {paramName=\""<<paramName<<"\""
+    ",type=\""<<entryName<<"\"}"
+    << "\nin the sublist \"" << sublistName << "\""
+    << "\nhas the wrong type."
+    << "\n\nThe accepted types are: " << acceptedTypesString_ << "!";
+    );
+}
+
+//
 // AnyNumberParameterEntryValidator
 //
 
@@ -162,11 +289,10 @@ int AnyNumberParameterEntryValidator::getInt(
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return as<int>(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
-    return std::atoi(any_cast<std::string>(anyValue).c_str());
+    return convertStringToInt(any_cast<std::string>(anyValue));
   throwTypeError(entry,paramName,sublistName);
   return 0; // Will never get here!
 }
-
 
 double AnyNumberParameterEntryValidator::getDouble(
   const ParameterEntry &entry, const std::string &paramName,
@@ -179,7 +305,7 @@ double AnyNumberParameterEntryValidator::getDouble(
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return any_cast<double>(anyValue);
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
-    return std::atof(any_cast<std::string>(anyValue).c_str());
+    return convertStringToDouble(any_cast<std::string>(anyValue));
   throwTypeError(entry,paramName,sublistName);
   return 0.0; // Will never get here!
 }
@@ -560,6 +686,11 @@ RCP<StringValidator> DummyObjectGetter<StringValidator>::getDummyObject(){
 
 // Nonmmeber helper functions
 
+Teuchos::RCP<Teuchos::BoolParameterEntryValidator>
+Teuchos::boolParameterEntryValidator()
+{
+  return rcp(new BoolParameterEntryValidator());
+}
 
 Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
 Teuchos::anyNumberParameterEntryValidator()

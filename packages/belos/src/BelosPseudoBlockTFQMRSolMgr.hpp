@@ -656,7 +656,6 @@ PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "The type of scaling used in the explicit residual convergence test.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
-    //  pl->set("Restart Timers", restartTimers_);
     validPL = pl;
   }
   return validPL;

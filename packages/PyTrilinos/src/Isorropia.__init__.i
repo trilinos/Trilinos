@@ -42,20 +42,8 @@
 // ***********************************************************************
 // @HEADER
 
-%define %isorropia_docstring
-"
-PyTrilinos.Isorropia is the python interface to the Trilinos
-partitioning and load balancing package Isorropia:
-
-    http://trilinos.sandia.gov/packages/isorropia
-
-The purpose of Isorropia is to ....
-"
-%enddef
-
 %module(package   = "PyTrilinos.Isorropia",
-	autodoc   = "1",
-	docstring = %isorropia_docstring) __init__
+	autodoc   = "1") __init__
 
 %{
 // PyTrilinos configuration
@@ -89,6 +77,26 @@ The purpose of Isorropia is to ....
 %ignore operator<<;
 %ignore *::operator=;
 %ignore *::operator[];
+
+// Ensure that python modules can be found from the current
+// directory. Use of %pythonbegin requires us to put the module
+// docstring here.
+%pythonbegin
+{
+"""
+PyTrilinos.Isorropia is the python interface to the Trilinos
+partitioning and load balancing package Isorropia:
+
+    http://trilinos.sandia.gov/packages/isorropia
+
+The purpose of Isorropia is to ....
+
+"""
+
+import os
+import sys
+sys.path.insert(0, os.path.split(__file__)[0])
+}
 
 // Auto-documentation feature
 %feature("autodoc", "1");
@@ -172,8 +180,15 @@ __version__ = Isorropia_Version().split()[3]
 %include "Isorropia_LevelScheduler.hpp"
 
 // Isorropia namespace imports
+
+// Allow import from the current directory
 %pythoncode
 %{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
+del sys, op
+
 # Epetra namespace
 __all__ = ['Epetra']
 import IsorropiaEpetra as Epetra

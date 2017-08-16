@@ -57,8 +57,9 @@ namespace SEAMS {
     Numnums++;
     Mean = TMean + (n - TMean) / Numnums;
 
-    if (Numnums > 1)
+    if (Numnums > 1) {
       StdDev += (n - TMean) * (n - Mean);
+}
   }
 
   double Stats::mean () const
@@ -71,9 +72,9 @@ namespace SEAMS {
     return (Numnums > 1) ? StdDev/(Numnums-1) : 0.0;
   }
 
-  double Stats::deviation (void) const
+  double Stats::deviation () const
   {
     return std::sqrt(variance());
   }
-}
+}  // namespace SEAMS
 

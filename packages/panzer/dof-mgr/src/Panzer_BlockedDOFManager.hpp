@@ -46,7 +46,7 @@
 #include <map>
 
 #ifdef HAVE_MPI
-   #include "mpi.h"
+   #include <mpi.h>
 #endif
 
 #include "PanzerDofMgr_config.hpp"
@@ -54,7 +54,6 @@
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_NodeType.hpp"
 #include "Panzer_HashUtils.hpp"
@@ -178,14 +177,59 @@ public:
    virtual const std::pair<std::vector<int>,std::vector<int> > & 
    getGIDFieldOffsets_closure(const std::string & blockId,int fieldNum,int subcellDim,int subcellId) const; // ?
 
-   /** Get set of indices owned by this processor
-     */
-   virtual void getOwnedIndices(std::vector<GlobalOrdinal> & indices) const; // ?
+   /**
+    *  \brief Get the set of indices owned by this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *              owned by this processor.
+    */
+   virtual void
+   getOwnedIndices(
+     std::vector<GlobalOrdinal>& indices) const;
 
-   /** Get set of indices owned and shared by this processor.
-     * This can be thought of as the ``ghosted'' indices.
-     */
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinal> & indices) const; // ?
+   /**
+    *  \brief Get the set of indices ghosted for this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *              ghosted for this processor.
+    */
+   virtual void
+   getGhostedIndices(
+     std::vector<GlobalOrdinal>& indices) const;
+
+   /**
+    *  \brief Get the set of owned and ghosted indices for this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the owned and
+    *              ghosted indices for this processor.
+    */
+   virtual void
+   getOwnedAndGhostedIndices(
+     std::vector<GlobalOrdinal>& indices) const;
+
+   /**
+    *  \brief Get the number of indices owned by this processor.
+    *
+    *  \returns The number of indices owned by this processor.
+    */
+   virtual int
+   getNumOwned() const;
+
+   /**
+    *  \brief Get the number of indices ghosted for this processor.
+    *
+    *  \returns The number of indices ghosted for this processor.
+    */
+   virtual int
+   getNumGhosted() const;
+
+   /**
+    *  \brief Get the number of owned and ghosted indices for this processor.
+    *
+    *  \returns The number of owned and ghosted indices for this processor.
+    */
+   virtual int
+   getNumOwnedAndGhosted() const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
@@ -204,11 +248,7 @@ public:
      */ 
    bool getUseDOFManagerFEI() const
    { 
-     #ifdef PANZER_HAVE_FEI
-     return useDOFManagerFEI_; 
-     #else
      return false;
-     #endif
    }
 
    /** \brief Set the connection manager and MPI_Comm objects.
@@ -425,6 +465,20 @@ public:
    void enableTieBreak(bool useTieBreak) 
    { useTieBreak_ = useTieBreak; }
 
+   /** \brief How any GIDs are associate with a particular element block
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::string & blockId) const;
+
+   /** \brief How any GIDs are associate with a particular element block.
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const;
+
 protected:
    
    /** Build a new indexer. The concrete type is specified internally by this object (FEI version standard)
@@ -448,20 +502,6 @@ protected:
      */
    int getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const std::size_t & blockIndex) const;
 
-   /** \brief How any GIDs are associate with a particular element block
-     *
-     * This is a per-element count. If you have a quad element with two
-     * piecewise bi-linear fields this method returns 8.
-     */
-   virtual int getElementBlockGIDCount(const std::string & blockId) const;
-
-   /** \brief How any GIDs are associate with a particular element block.
-     *
-     * This is a per-element count. If you have a quad element with two
-     * piecewise bi-linear fields this method returns 8.
-     */
-   virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const;
-
    /** Do appropriate casting below and call printFieldInformation for a particular indexer. (handles FEI versus standard DOFManager)
      */
    void printFieldInformation(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,std::ostream & os) const;
@@ -474,16 +514,6 @@ protected:
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                                      UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
   
-   #ifdef PANZER_HAVE_FEI
-   /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
-     * the fields it is supposed to control, and then calls registerFields.
-     *
-     * This method assumes that the activeFields are a legitimate ordering for the local field block.
-     */
-   void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
-                                     DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
-   #endif
-
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
      *

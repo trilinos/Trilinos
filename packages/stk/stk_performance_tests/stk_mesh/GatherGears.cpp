@@ -35,8 +35,8 @@
 #include <gtest/gtest.h>
 #include <stk_util/environment/perf_util.hpp>
 
-#include <stk_mesh/fixtures/Gear.hpp>
-#include <stk_mesh/fixtures/GearsFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/Gear.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>
 
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -61,7 +61,7 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
   using namespace stk::mesh;
   typedef Field<double,Cartesian> VectorField;
 
-  MetaData& meta = MetaData::get(bulk);
+  const MetaData& meta = bulk.mesh_meta_data();
   const unsigned spatial_dim = meta.spatial_dimension();
   for(unsigned d=0; d<spatial_dim; ++d) sum_centroid[d] = 0;
 

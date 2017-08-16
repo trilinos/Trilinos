@@ -47,6 +47,8 @@
 #define MUELU_COUPLEDAGGREGATIONCOMMHELPER_DEF_HPP
 
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_BlockedVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>

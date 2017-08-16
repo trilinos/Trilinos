@@ -57,7 +57,6 @@
 #include "stk_topology/topology.tcc"    // for topology::num_nodes
 #include "stk_topology/topology_type.tcc"  // for topology::topology_type
 
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 #include <stk_mesh/base/CreateEdges.hpp>
 
@@ -79,9 +78,9 @@ struct shared_face_type
   EntityKey                 global_key;
 
   shared_face_type(stk::topology my_topology) :
-    topology(my_topology.value())
+    topology(my_topology.value()),
+    nodes(my_topology.num_nodes())
   {
-    nodes.resize(my_topology.num_nodes());
   }
 
   shared_face_type(const shared_face_type & a) :
@@ -91,16 +90,14 @@ struct shared_face_type
     global_key(a.global_key)
   {}
 
-  shared_face_type & operator = (const shared_face_type & a)
-  {
-    nodes = a.nodes;
-    topology = a.topology;
-    local_key = a.local_key;
-    global_key = a.global_key;
-
-    return *this;
-
-  }
+  //shared_face_type & operator = (const shared_face_type & a)
+  //{
+  //  nodes = a.nodes;
+  //  topology = a.topology;
+  //  local_key = a.local_key;
+  //  global_key = a.global_key;
+  //  return *this;
+  //}
 };
 
 typedef std::unordered_map<EntityVector, Entity, stk::mesh::impl::HashValueForEntityVector> face_map_type;
@@ -137,7 +134,7 @@ struct create_face_impl
     for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
       Entity const *elem_nodes = m_bucket.begin_nodes(ielem);
       ThrowRequire(m_bucket.num_nodes(ielem) == Topology::num_nodes);
-      for (size_t n=0; n<Topology::num_nodes; ++n) {
+      for (unsigned n=0; n != Topology::num_nodes; ++n) {
         elem_node_ids[n] = mesh.identifier(elem_nodes[n]);
       }
 
@@ -153,7 +150,7 @@ struct create_face_impl
         }
       }
 
-      for (unsigned side_ordinal=0; side_ordinal < Topology::num_faces; ++side_ordinal) {
+      for (unsigned side_ordinal=0; side_ordinal != Topology::num_faces; ++side_ordinal) {
 
           if (!face_exists[side_ordinal]) {
               if (m_face_creation_behavior == FaceCreationBehavior::CREATE_FACES_FACE_CREATION_CLASSIC) {
@@ -172,7 +169,7 @@ struct create_face_impl
                       PartVector add_parts;
                       add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( faceTopology)));
 
-                      face = mesh.declare_entity( stk::topology::FACE_RANK, face_id, add_parts);
+                      face = mesh.declare_solo_side(face_id, add_parts);
                       m_face_map[permuted_face_nodes] = face;
 
                       const int num_face_nodes = faceTopology.num_nodes();
@@ -225,9 +222,15 @@ void create_faces( BulkData & mesh )
     stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), stk::mesh::PartVector(), false);
 }
 
-void create_faces( BulkData & mesh, const Selector & element_selector)
+void create_faces( BulkData & mesh, const Selector & element_selector )
 {
     stk::mesh::create_all_sides(mesh, element_selector, stk::mesh::PartVector(), false);
+}
+
+void create_faces( BulkData & mesh, const Selector & element_selector, Part *part_to_insert_new_faces)
+{
+    stk::mesh::PartVector parts = {part_to_insert_new_faces};
+    stk::mesh::create_all_sides(mesh, element_selector, parts, false);
 }
 
 void create_faces( BulkData & mesh, bool connect_faces_to_edges)
@@ -269,7 +272,7 @@ void internal_create_faces( BulkData & mesh, const Selector & element_selector, 
 {
   std::vector<stk::mesh::EntityId> ids_requested;
 
-  std::vector<unsigned> localEntityCounts;
+  std::vector<size_t> localEntityCounts;
   stk::mesh::count_entities(element_selector, mesh, localEntityCounts);
   unsigned guessMultiplier = 6;
   unsigned numRequested = localEntityCounts[stk::topology::ELEMENT_RANK] * guessMultiplier;

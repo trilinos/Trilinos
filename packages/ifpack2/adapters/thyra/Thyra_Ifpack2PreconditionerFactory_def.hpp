@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -160,7 +160,10 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 
   // Process parameter list
 
-  const Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
+  Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
+  if (constParamList.is_null ()) {
+    constParamList = getValidParameters ();
+  }
   const std::string preconditionerType = Teuchos::getParameter<std::string>(*constParamList, "Prec Type");
   const Teuchos::RCP<const Teuchos::ParameterList> packageParamList = Teuchos::sublist(constParamList, "Ifpack2 Settings");
 

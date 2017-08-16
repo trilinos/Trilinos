@@ -516,17 +516,6 @@ public:
       : (m_traceDepth == 1 || (m_traceDepth > 1 && (m_printMask & stk::LOG_TRACE_SUB_CALLS)));
   }
 
-  /**
-   * @brief Member function <b>isTraceable</b> returns true if currently tracing or
-   * tracing is enabled.
-   *
-   * @return      a <b>bool</b> of true if tracing is enabled and
-   *        active, or if tracing is disabled.
-   */
-  bool isTraceable() {
-    return isTracing() || (m_printMask & stk::LOG_TRACE) != 0; // Currently in a trace or tracing bit set
-  }
-
 private:
   Flags        m_flags;    ///< Describes the output and line prefix information to be printed.
   PrintMask      m_printMask;    ///< Print mask that the line mask must the match to print

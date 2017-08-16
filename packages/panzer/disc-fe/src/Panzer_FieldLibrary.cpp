@@ -48,6 +48,13 @@ Teuchos::RCP<const panzer::PureBasis> FieldLayoutLibrary::lookupBasis(const std:
 {
    Teuchos::RCP<panzer::BasisIRLayout> layout = lookupLayout(fieldName);
 
+   if(layout==Teuchos::null) {
+     std::stringstream ss;
+     print(ss);
+     TEUCHOS_TEST_FOR_EXCEPTION(layout==Teuchos::null,std::logic_error,
+                                "panzer::FieldLayoutLibrary::lookupBasis: cannot find field with name \"" + fieldName + "\"!\n"+ss.str());
+   }
+
    return layout->getBasis();
 }
 

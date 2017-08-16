@@ -42,13 +42,13 @@
 
 #include "PanzerDiscFE_config.hpp"
 
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
-
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
 #include "Panzer_ScatterResidual_BlockedEpetra_decl.hpp"
 #include "Panzer_ScatterResidual_BlockedEpetra_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterResidual_BlockedEpetra,int,int)
-
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_ScatterResidual_BlockedEpetra_Hessian_impl.hpp"
 #endif
+
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterResidual_BlockedEpetra,int,int)

@@ -1,7 +1,69 @@
+//@HEADER
+// ************************************************************************
+// 
+//               ShyLU: Hybrid preconditioner package
+//                 Copyright 2012 Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact A.M. Bradley (ambradl@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
 #ifndef INCLUDE_SHYLU_HTS_IMPL_DEF_HPP
 #define INCLUDE_SHYLU_HTS_IMPL_DEF_HPP
 
-#include <omp.h>
+#ifdef _OPENMP
+# include <omp.h>
+#else
+namespace Experimental {
+namespace htsimpl {
+// Protect against a header that has #define'd replacements for OpenMP
+// functions.
+#ifndef omp_get_max_threads
+inline int omp_get_max_threads () { return 1; }
+#endif
+#ifndef omp_set_num_threads
+inline void omp_set_num_threads (const int&) {}
+#endif
+#ifndef omp_get_num_threads
+inline int omp_get_num_threads () { return 1; }
+#endif
+#ifndef omp_get_thread_num
+inline int omp_get_thread_num () { return 0; }
+#endif
+}
+}
+#endif
 
 #include <cstdio>
 #include <cmath>
@@ -17,8 +79,12 @@
 #endif
 #ifdef HAVE_SHYLUHTS_MKL
 # ifdef HAVE_SHYLUHTS_COMPLEX
-#  define MKL_Complex8 std::complex<float>
-#  define MKL_Complex16 std::complex<double>
+#  ifndef MKL_Complex8
+#   define MKL_Complex8 std::complex<float>
+#  endif
+#  ifndef MKL_Complex16
+#   define MKL_Complex16 std::complex<double>
+#  endif
 # endif
 # include <mkl.h>
 #endif
@@ -46,6 +112,7 @@ extern "C" {
   void F77_BLAS_MANGLE(dgemm,DGEMM)(
     char*, char*, blas_int*, blas_int*, blas_int*, double*, double*, blas_int*,
     double*, blas_int*, double*, double*, blas_int*);
+#ifdef HAVE_SHYLUHTS_COMPLEX
   void F77_BLAS_MANGLE(cgemm,CGEMM)(
     char*, char*, blas_int*, blas_int*, blas_int*, std::complex<float>*,
     std::complex<float>*, blas_int*, std::complex<float>*, blas_int*,
@@ -54,6 +121,7 @@ extern "C" {
     char*, char*, blas_int*, blas_int*, blas_int*, std::complex<double>*,
     std::complex<double>*, blas_int*, std::complex<double>*, blas_int*,
     std::complex<double>*, std::complex<double>*, blas_int*);
+#endif
 }
 
 template<> inline void gemm<float> (
@@ -257,9 +325,9 @@ inline Array<T>::Array (std::size_t n)
 { optclear_and_resize(n); }
 
 template<typename T>
-inline Array<T>::Array (std::size_t n, const T& init)
+inline Array<T>::Array (std::size_t n, const T& val)
   : p_(0), n_(0), cap_(0)
-{ optclear_and_resize(n, init); }
+{ optclear_and_resize(n, val); }
 
 template<typename T>
 inline void Array<T>::clear () {
@@ -306,10 +374,10 @@ inline void Array<T>::optclear_and_resize_ft (std::size_t n) {
 }
 
 template<typename T>
-inline void Array<T>::optclear_and_resize (std::size_t n, const T& init) {
+inline void Array<T>::optclear_and_resize (std::size_t n, const T& val) {
   optclear_and_resize(n);
   for (std::size_t i = 0; i < n_; ++i)
-    memcpy(p_ + i, &init, sizeof(init));
+    memcpy(p_ + i, &val, sizeof(val));
 }
 
 template<typename T>
@@ -399,9 +467,9 @@ inline void Impl<Int, Size, Sclr>::Partition::alloc_d () {
 }
 
 template<typename Int, typename Size, typename Sclr>
-inline void Impl<Int, Size, Sclr>::Partition::alloc_A_idxs (const Size nnz) {
+inline void Impl<Int, Size, Sclr>::Partition::alloc_A_idxs (const Size innz) {
   assert( ! A_idxs);
-  this->nnz = nnz;
+  this->nnz = innz;
   A_idxs = Allocnator<Size>(nnz, "Partition::alloc_A_idxs").release();
 }
 
@@ -710,13 +778,13 @@ locrsrow_schedule_sns1 (const ConstCrsMatrix& L, Array<Int>& w,
         Int level = -1;
         const Size jlim = ir[r+1];
         for (Size j = ir[r]; j < jlim; ++j) {
-          const Int c = jc[j];
-          if (c >= tlim) {
+          const Int col = jc[j];
+          if (col >= tlim) {
             frontier[r - tlim] = j;
             w[r] = level;
             break;
           }
-          level = std::max(level, w[c]);
+          level = std::max(level, w[col]);
         }
       }
       // Implied barrier from parfor.
@@ -785,8 +853,8 @@ locrsrow_schedule (const ConstCrsMatrix& L, const Int sns, Array<Int>& w,
               frontier[r - tlim] = j;
               break;
             }
-            const Int sc = c / sns;
-            level = std::max(level, w[sc]);
+            const Int scol = c / sns;
+            level = std::max(level, w[scol]);
           }
         }
         w[sr] = level;
@@ -835,7 +903,7 @@ upcrscol_schedule_serial (const ConstCrsMatrix& U, const Int sns,
       ++w[r];
       const Int level = w[r];
       max_level = std::max(level, max_level);
-      for (Size j = U.ir[r] + 1; j < U.ir[r+1]; ++j) {
+      for (Size j = U.ir[r]; j < U.ir[r+1]; ++j) {
         const Int c = U.jc[j];
         w[c] = std::max(w[c], level);
       }
@@ -848,7 +916,7 @@ upcrscol_schedule_serial (const ConstCrsMatrix& U, const Int sns,
       const Int level = w[sr];
       max_level = std::max(level, max_level);
       for (Int i = 0; i < sns; ++i, ++r)
-        for (Size j = U.ir[r] + 1; j < U.ir[r+1]; ++j) {
+        for (Size j = U.ir[r]; j < U.ir[r+1]; ++j) {
           const Int sc = U.jc[j] / sns;
           w[sc] = std::max(w[sc], level);
         }
@@ -968,7 +1036,8 @@ permute_to_other_tri (const ConstCrsMatrix& U) {
   }
   ConstCrsMatrix* ccm = 0;
   try {
-    ccm = new ConstCrsMatrix(n, n, sd.ir, sd.jc, sd.d, U.dir, U.conj, true);
+    ccm = new ConstCrsMatrix(n, n, sd.ir, sd.jc, sd.d, U.dir, U.conj,
+                             true, U.unitdiag, ! U.is_lo);
   } catch (...) { throw hts::Exception("permute_to_other_tri"); }
   sd.release();
   return ccm;
@@ -1005,12 +1074,14 @@ get_idxs (const Int n, const LevelSetter& lstr, Array<Int>& lsis,
 template<typename Int, typename Size, typename Sclr>
 typename Impl<Int, Size, Sclr>::Shape Impl<Int, Size, Sclr>::
 determine_shape (const ConstCrsMatrix& A) {
-  int red_is_lower = 0, red_is_tri = 0, red_has_full_diag = 0, red_nthreads = 0;
+  int red_is_lower = 0, red_is_upper = 0, red_has_full_diag = 0,
+    red_has_no_diag = 0, red_nthreads = 0;
 # pragma omp parallel \
-         reduction(+: red_is_lower, red_is_tri, red_has_full_diag, red_nthreads)
+         reduction(+: red_is_lower, red_is_upper, red_has_full_diag, \
+                      red_has_no_diag, red_nthreads)
   {
-    bool tid_used = false, has_full_diag = true, is_lower = false,
-      is_upper = false;
+    bool tid_used = false, has_full_diag = true, has_no_diag = true,
+      is_lower = false, is_upper = false;
 #   pragma omp for schedule(static, parfor_static_size)
     for (Int r = 0; r < A.m; ++r) {
       tid_used = true;
@@ -1025,27 +1096,29 @@ determine_shape (const ConstCrsMatrix& A) {
       }
       if ( ! diag_fnd)
         has_full_diag = false;
+      else
+        has_no_diag = false;
     }
     if (tid_used) {
       ++red_nthreads;
       if (has_full_diag) ++red_has_full_diag;
-      if ( ! (is_lower && is_upper)) ++red_is_tri;
-      if ( ! is_upper) ++red_is_lower;
+      if (has_no_diag) ++red_has_no_diag;
+      if (is_upper) ++red_is_upper;
+      if (is_lower) ++red_is_lower;
     }
   }
   const bool
-    is_tri = ((// Each thread saw a triangle.
-                red_is_tri == red_nthreads)
-              &&
-              (// Each thread saw the same orientation.
-                red_is_lower == 0 || red_is_lower == red_nthreads)),
+    // Each thread saw a triangle having the same orientation.
+    is_tri = ! (red_is_lower > 0 && red_is_upper > 0),
     // Every thread saw a full diagonal.
     has_full_diag = red_has_full_diag == red_nthreads,
+    // No thread saw any diagonal.
+    has_no_diag = red_has_no_diag == red_nthreads,
     // Valid only if is_tri.
-    is_lower = red_is_lower;
+    is_lower = red_is_upper == 0;
   // If ! tri_determined, then T must be a diag matrix. Can treat as lower,
   // which is is_lower's default value.
-  return Shape(is_lower, is_tri, has_full_diag);
+  return Shape(is_lower, is_tri, has_full_diag, has_no_diag);
 }
 
 template<typename Int, typename Size>
@@ -1093,23 +1166,26 @@ template <> inline float& conjugate (float& v) { return v; }
  * because it increases data locality when accessing x.
  */
 
-// Extract A(p,p) given that A(p,~p) is empty.
 template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
-get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
-                               Partition& p, const bool get_A_idxs) {
+get_matrix_common_with_covers_all (
+  const ConstCrsMatrix& A, const PermVec& pv, const PermVec& qv, Partition& p,
+  const bool get_A_idxs, const bool pp)
+{
   // Count nnz.
   Size nnz = 0;
 # pragma omp parallel for reduction(+:nnz)
   for (size_t i = 0; i < pv.size(); ++i) {
-    const Int k = pv.get(i);
-    nnz += A.ir[k+1] - A.ir[k];
+    const Int r = pv.get(i);
+    nnz += A.ir[r+1] - A.ir[r];
   }
+  if (A.unitdiag) nnz += pv.size();
 
   SparseData sd(pv.size(), nnz, "get_matrix_pp_with_covers_all");
+  Int extra = A.unitdiag ? 1 : 0;
   for (size_t ipv = 0; ipv < pv.size(); ++ipv) {
     const Int i = pv.get(ipv);
-    const Size nc = A.ir[i+1] - A.ir[i];
+    const Size nc = A.ir[i+1] - A.ir[i] + extra;
     sd.ir[ipv+1] = sd.ir[ipv] + nc;
   }
   assert(sd.ir[pv.size()] == nnz);
@@ -1124,21 +1200,38 @@ get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
     if (tid >= nseg) break;
     for (Int ipv = start[tid], ipvlim = start[tid+1]; ipv < ipvlim; ++ipv) {
       const Int i = pv.get(ipv);
-      const Size
-        nc = A.ir[i+1] - A.ir[i],
-        Aj0 = A.ir[i],
-        Bj0 = sd.ir[ipv];
-      for (Size j = 0; j < nc; ++j) {
-        const Size Aj = Aj0 + j, Bj = Bj0 + j;
-        sd.jc[Bj] = pv.to_block(A.jc[Aj]);
-        sd.d[Bj] = A.d[Aj];
-        if (A.conj) conjugate(sd.d[Bj]);
-        if (get_A_idxs) p.A_idxs[Bj] = Aj;
+      Size Anc = A.ir[i+1] - A.ir[i], Aj0 = A.ir[i];
+      Size Bj0 = sd.ir[ipv];
+      if (pp) {
+        for (Size j = 0; j < Anc; ++j) {
+          const Size Aj = Aj0 + j, Bj = Bj0 + j;
+          sd.jc[Bj] = pv.to_block(A.jc[Aj]);
+          sd.d[Bj] = A.d[Aj];
+          if (A.conj) conjugate(sd.d[Bj]);
+          if (get_A_idxs) p.A_idxs[Bj] = Aj;
+        }
+      } else {
+        for (Size j = 0; j < Anc; ++j) {
+          const Size
+            Aj = Aj0 + j, Bj = Bj0 + j,
+            Ac = A.jc[Aj];
+          sd.jc[Bj] = qv.has(Ac) ? qv.to_block(Ac) : qv.size() + pv.to_block(Ac);
+          sd.d[Bj] = A.d[Aj];
+          if (A.conj) conjugate(sd.d[Bj]);
+          if (get_A_idxs) p.A_idxs[Bj] = Aj;
+        }
+      }
+      assert(A.is_lo);
+      if (A.unitdiag) {
+        const Size Bj = Bj0 + Anc;
+        sd.jc[Bj] = ipv + (pp ? 0 : qv.size());
+        sd.d[Bj] = static_cast<Sclr>(1);
+        p.A_invalidate(Bj);
       }
     }
   } while (0);
 
-  try { p.cm = new CrsMatrix(pv.size(), pv.size(), sd.ir, sd.jc, sd.d); }
+  try { p.cm = new CrsMatrix(pv.size(), A.n, sd.ir, sd.jc, sd.d); }
   catch (...)
   { throw hts::Exception("get_matrix_pp_with_covers_all failed to alloc."); }
   sd.release();
@@ -1146,60 +1239,21 @@ get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
   sort(p, start);
 }
 
+// Extract A(p,p) given that A(p,~p) is empty.
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv, Partition& p,
+                               const bool get_A_idxs) {
+  get_matrix_common_with_covers_all(A, pv, pv, p, get_A_idxs, true);
+}
+
 // Extract B = A(p,s), s = [q p], given that A(p,~s) is empty.
 template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
-get_matrix_p_qp_with_covers_all (
-  const ConstCrsMatrix& A, const PermVec& pv, const PermVec& qv, Partition& p,
-  const bool get_A_idxs)
-{
-  Size nnz = 0;
-# pragma omp parallel for reduction(+:nnz)
-  for (size_t i = 0; i < pv.size(); ++i) {
-    const Int r = pv.get(i);
-    nnz += A.ir[r+1] - A.ir[r];
-  }
-
-  SparseData sd(pv.size(), nnz, "get_matrix_p_qp_with_covers_all");
-  for (size_t ipv = 0, lim = pv.size(); ipv < lim; ++ipv) {
-    const Int r = pv.get(ipv);
-    const Size nc = A.ir[r+1] - A.ir[r];
-    sd.ir[ipv+1] = sd.ir[ipv] + nc;
-  }
-  assert(sd.ir[pv.size()] == nnz);
-  if (get_A_idxs) p.alloc_A_idxs(nnz);
-
-  const int nthreads = omp_get_max_threads();
-  Array<Int> start;
-  const Int nseg = partition_ir<Int, Size>(pv.size(), sd.ir, nthreads, start);
-# pragma omp parallel
-  do {
-    const int tid = omp_get_thread_num();
-    if (tid >= nseg) break;
-    for (Int ipv = start[tid], ipvlim = start[tid+1]; ipv < ipvlim; ++ipv) {
-      const Int i = pv.get(ipv);
-      const Size
-        nc = A.ir[i+1] - A.ir[i],
-        Aj0 = A.ir[i],
-        Bj0 = sd.ir[ipv];
-      for (Size j = 0; j < nc; ++j) {
-        const Size
-          Aj = Aj0 + j, Bj = Bj0 + j,
-          Ac = A.jc[Aj];
-        sd.jc[Bj] = qv.has(Ac) ? qv.to_block(Ac) : qv.size() + pv.to_block(Ac);
-        sd.d[Bj] = A.d[Aj];
-        if (A.conj) conjugate(sd.d[Bj]);
-        if (get_A_idxs) p.A_idxs[Bj] = Aj;
-      }
-    }
-  } while (0);
-
-  try { p.cm = new CrsMatrix(pv.size(), A.n, sd.ir, sd.jc, sd.d); }
-  catch (...)
-  { throw hts::Exception("get_matrix_p_qp_with_covers_all failed to alloc."); }
-  sd.release();
-
-  sort(p, start);
+get_matrix_p_qp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
+                                 const PermVec& qv, Partition& p,
+                                 const bool get_A_idxs) {
+  get_matrix_common_with_covers_all(A, pv, qv, p, get_A_idxs, false);
 }
 
 template<typename Int, typename Size, typename T> struct SortEntry {
@@ -1260,23 +1314,42 @@ inline void Impl<Int, Size, Sclr>::
 reverse_A_idxs (const Size nnz, Partition& p) {
 # pragma omp for schedule(static)
   for (Size i = 0; i < p.nnz; ++i)
-    p.A_idxs[i] = nnz - p.A_idxs[i] - 1;
+    if (p.A_valid(i))
+      p.A_idxs[i] = nnz - p.A_idxs[i] - 1;
 }
 
 template<typename Int, typename Size, typename Sclr>
 inline void Impl<Int, Size, Sclr>::
 copy_partition (const ConstCrsMatrix& A, Partition& p) {
   const Size ilim = p.nnz;
-  if (A.conj) {
-#   pragma omp parallel for
-    for (Size i = 0; i < ilim; ++i) {
-      p.cm->d[i] = A.d[p.A_idxs[i]];
-      conjugate(p.cm->d[i]);
+  if (A.unitdiag) {
+    if (A.conj) {
+#     pragma omp parallel for
+      for (Size i = 0; i < ilim; ++i) {
+        if (p.A_valid(i)) {
+          p.cm->d[i] = A.d[p.A_idxs[i]];
+          conjugate(p.cm->d[i]);
+        } else {
+          p.cm->d[i] = static_cast<Sclr>(1);
+        }
+      }
+    } else {
+#     pragma omp parallel for
+      for (Size i = 0; i < ilim; ++i)
+        p.cm->d[i] = p.A_valid(i) ? A.d[p.A_idxs[i]] : static_cast<Sclr>(1);
     }
   } else {
-#   pragma omp parallel for
-    for (Size i = 0; i < ilim; ++i)
-      p.cm->d[i] = A.d[p.A_idxs[i]];
+    if (A.conj) {
+#     pragma omp parallel for
+      for (Size i = 0; i < ilim; ++i) {
+        p.cm->d[i] = A.d[p.A_idxs[i]];
+        conjugate(p.cm->d[i]);
+      }
+    } else {
+#     pragma omp parallel for
+      for (Size i = 0; i < ilim; ++i)
+        p.cm->d[i] = A.d[p.A_idxs[i]];
+    }
   }
 }
 
@@ -1528,7 +1601,7 @@ init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                         const Int roff, const InitInfo& in,
                         const CrsSegmenter& seg) {
   // Serial if block is too small.
-  const Int nseg = seg.p().size() - 1;
+  const Int nseg = seg.get_p().size() - 1;
   is_parallel_ = nseg > 1 || tid_os_ > 0;
   if (nseg == 1) {
     bs_.optclear_and_reserve(1);
@@ -1536,7 +1609,7 @@ init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
     bs_.back().init_metadata(A, r0, c0, nr, nc, in);
     ros_.optclear_and_resize(1, roff);
   } else {
-    const Array<Int>& p = seg.p();
+    const Array<Int>& p = seg.get_p();
     const Int n = static_cast<Int>(p.size()) - 1;
     ros_.optclear_and_resize(n, 0);
     bs_.optclear_and_resize(n, SerialBlock());
@@ -1549,7 +1622,7 @@ init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
 
   is_empty_ = true;
   for (size_t i = 0; i < bs_.size(); ++i)
-    if (bs_[i].nnz() != 0) {
+    if (bs_[i].get_nnz() != 0) {
       is_empty_ = false;
       break;
     }
@@ -1587,7 +1660,7 @@ inline Int Impl<Int, Size, Sclr>::
 TMatrix::block_r0 (const int tid) const {
   const int id = tid - tid_os_;
   if (id < 0) return 0;
-  return bs_[id].r0();
+  return bs_[id].get_r0();
 }
 
 template<typename Int, typename Size, typename Sclr>
@@ -1595,7 +1668,7 @@ inline Int Impl<Int, Size, Sclr>::
 TMatrix::block_nr (const int tid) const {
   const int id = tid - tid_os_;
   if (id < 0) return 0;
-  return bs_[id].nr();
+  return bs_[id].get_nr();
 }
 
 template<typename Int, typename Size, typename Sclr>
@@ -2278,7 +2351,7 @@ RecursiveTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
     max_diag_tri_ = 0;
     Int max_nthreads = 0;
     for (size_t i = 0; i < nd_.t.size(); ++i) {
-      max_diag_tri_ = std::max(max_diag_tri_, nd_.t[i].n());
+      max_diag_tri_ = std::max(max_diag_tri_, nd_.t[i].get_n());
       max_nthreads = std::max(max_nthreads, nd_.t[i].nthreads());
     }
     wrk_.optclear_and_resize(max_diag_tri_ * in.max_nrhs);
@@ -2367,7 +2440,7 @@ RecursiveTri::invert_ondiag_tris () {
       DtiTri& dti = dtris[k++];
       dti.idx = i;
       dti.d = t.dense_tri();
-      dti.n = t.n();
+      dti.n = t.get_n();
     }
   }
   DenseTrisInverter dti(dtris);
@@ -2409,7 +2482,7 @@ RecursiveTri::reinit_numeric (const CrsMatrix& T) {
 #   pragma omp for
     for (Size i = 0; i < ilim; ++i) {
       const Int si = i / nthreads_;
-      if ( ! nd_.s[si].empty()) continue;
+      if (nd_.s[si].empty()) continue;
       const Int tid = i % nthreads_;
       nd_.s[si].reinit_numeric(T, tid);
     }
@@ -2450,7 +2523,7 @@ RecursiveTri::p2p_init () {
     // Consider each tri or MVP block in solution order.
     if (ti > 0) { // Tri block. First tri has no dependencies.
       const Tri& t = nd_.t[ti];
-      const Int r0 = t.r0(), nr = t.n();
+      const Int r0 = t.get_r0(), nr = t.get_n();
       Int k = nd_.t_idx[ti-1];
       for (Int r = r0, rlim = r0 + nr; r < rlim; ++r) {
         assert(r < this->n_);
@@ -2550,12 +2623,12 @@ LevelSetTri::init_lsets (const LevelSetter& lstr,
 
 template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
-LevelSetTri::init (const CrsMatrix& T, const Int r0, const Int c0,
-                   const Int n, const InitInfo& in) {
-  n_ = n;
-  t_.optclear_and_resize(in.nthreads, Thread());
+LevelSetTri::init (const CrsMatrix& T, const Int, const Int,
+                   const Int in, const InitInfo& info) {
+  n_ = in;
+  t_.optclear_and_resize(info.nthreads, Thread());
 
-  ps_.optclear_and_resize(in.nthreads);
+  ps_.optclear_and_resize(info.nthreads);
   bool ok = true;
 # pragma omp parallel
   do {
@@ -2582,12 +2655,12 @@ LevelSetTri::init (const CrsMatrix& T, const Int r0, const Int c0,
         nr = lsp_[ils+1] - r0,
         nc = lsp_[ils+1] + mvp_block_nc_;
 
-      CrsSegmenter seg(T, r0, c0, nr, nc, in.nthreads, ls_blk_sz_);
-      const Array<Int>& p = seg.p();
+      CrsSegmenter seg(T, r0, c0, nr, nc, info.nthreads, ls_blk_sz_);
+      const Array<Int>& p = seg.get_p();
       assert(p[1] >= p[0]);
       const Int nseg = static_cast<Int>(p.size()) - 1;
 
-      for (int tid1 = 0; tid1 < in.nthreads; ++tid1) {
+      for (int tid1 = 0; tid1 < info.nthreads; ++tid1) {
         Thread& t1 = t_[tid1];
         if (tid1 < nseg) {
           t1.p[ils] = p[tid1];
@@ -2799,7 +2872,7 @@ fill_graph (const p2p_Pair* const pairs, Size* const g, Size* const gp,
 //pre b is sorted.
 //pre len(mark) == an.
 //pre mark can == a.
-// O(max(an, bn)).
+// O(an log bn)
 template<typename Int, typename Size> inline Int
 mark_intersection (const Size* a, const Int an, const Size* b, Int bn,
                    Size* mark /* len(mark) == an */, const Size marker) {
@@ -2822,8 +2895,7 @@ template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::LevelSetTri::
 prune_graph (const Size* const gc, const Size* const gp, Size* const g,
              Int* const gsz, Size* const wrk, const Int max_gelen) {
-  // Time complexity is a little complicated. See Park et al 2014. Space is
-  // O(#threads max |g(e)|).
+  // Space is O(#threads max |g(e)|).
   const int tid = omp_get_thread_num();
   const Size n = nlvls_*t_.size();
   const Size& me = n; // marker
@@ -3213,7 +3285,7 @@ void transpose (
         stop = tid + 1 == static_cast<int>(start.size()) ? m : start[tid+1];
       for (Int r = 0; r < m; ++r) {
         const Size irr = ir[r], jlim = ir[r+1];
-        if (stop <= jc[irr] || start_tid > jc[jlim-1]) continue;
+        if (irr == jlim || stop <= jc[irr] || start_tid > jc[jlim-1]) continue;
         for (Size j = irr + find_first<Int>(jc + irr, jlim - irr, start_tid);
              j < jlim; ++j) {
           const Int c = jc[j];
@@ -3243,7 +3315,8 @@ transpose (const ConstCrsMatrix& T, Array<Size>* transpose_perm) {
   ConstCrsMatrix* ccm = 0;
   try {
     ccm = new ConstCrsMatrix(n, n, sd.ir, sd.jc, sd.d,
-                             Direction::opposite(T.dir), T.conj, true);
+                             Direction::opposite(T.dir), T.conj, true,
+                             T.unitdiag, ! T.is_lo);
   } catch (...) { throw hts::Exception("transpose failed to alloc."); }
   sd.release();
   return ccm;
@@ -3258,8 +3331,11 @@ compose_transpose (const Array<Size>& transpose_perm, Partition& p) {
   for (Size i = 0; i < p.nnz; ++i)
     A_idxs_copy[i] = p.A_idxs[i];
 # pragma omp for schedule(static)
-  for (Size i = 0; i < p.nnz; ++i)
-    p.A_idxs[i] = transpose_perm[A_idxs_copy[i]];
+  for (Size i = 0; i < p.nnz; ++i) {
+    if (p.A_valid(i))
+      p.A_idxs[i] = transpose_perm[A_idxs_copy[i]];
+    // Otherwise, A_idxs[i] is already invalidated.
+  }
 }
 
 template<typename Int, typename Size, typename Sclr>
@@ -3295,9 +3371,17 @@ TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
 
     // Determine shape.
     Shape shape = determine_shape(*T);
-    if ( ! shape.is_triangular) throw hts::NotTriangularException();
-    if ( ! shape.has_full_diag) throw hts::NotFullDiagonal();
-    is_lo_ = shape.is_lower;
+    if ( ! shape.is_triangular)
+      throw hts::NotTriangularException();
+    unitdiag_ = T->unitdiag = false;
+    if (shape.has_no_diag) {
+      // We don't make the user provide this information; inject it now that it
+      // is known.
+      unitdiag_ = T->unitdiag = true;
+    } else if ( ! shape.has_full_diag) {
+      throw hts::NotFullDiagonalException();
+    }
+    is_lo_ = T->is_lo = shape.is_lower;
 
     // Find level sets.
     LevelSetter lstr;
@@ -3397,6 +3481,8 @@ TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
 template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
 TriSolver::reinit_numeric (const ConstCrsMatrix* T, const Real* r) {
+  T->is_lo = is_lo_;
+  T->unitdiag = unitdiag_;
   NumThreads nthreads_state;
   set_num_threads(nthreads_, nthreads_state);
   for (Int i = 0; i < 2; ++i) if (p_[i].cm) p_[i].alloc_d();
@@ -3756,7 +3842,7 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
     *t_barrier = step;
   } else {
     // Solve T wrk_ = x.
-    t.solve(x, ldx, wrk_.data(), t.n(), nrhs);
+    t.solve(x, ldx, wrk_.data(), t.get_n(), nrhs);
     { // Wait for the block row MVPs to finish.
       const Int done = (step << 1);
       inv_tri_done[tid] = done;
@@ -3768,7 +3854,7 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
     const Int row_start = t.block_row_start(tid), nr = t.block_nr(tid);
     for (Int irhs = 0; irhs < nrhs; ++irhs)
       memcpy(x + irhs*ldx + row_start,
-             wrk_.data() + irhs*t.n() + row_start,
+             wrk_.data() + irhs*t.get_n() + row_start,
              nr*sizeof(Sclr));
     { // Wait for the memcpy's to finish.
       const Int done = (step << 1) + 1;
@@ -3808,7 +3894,7 @@ RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
     if (tid < t.nthreads())
       ondiag_solve(t, x, ldx, nrhs, tid, 0, t_barrier, inv_tri_done); }
   if ( ! nd_.os.empty()) {
-    os += nd_.t[0].n();
+    os += nd_.t[0].get_n();
     x_osi = x + nd_.os[0];
     x_os = x + os;
   } else {
@@ -3830,7 +3916,7 @@ RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
       ondiag_solve(t, x_os, ldx, nrhs, tid, i+1, t_barrier, inv_tri_done);
 #     pragma omp flush
     }
-    os += t.n();
+    os += t.get_n();
     x_osi = x + nd_.os[i+1];
     x_os = x + os;
   }
@@ -3856,11 +3942,11 @@ TriSolver::solve (const Sclr* b, const Int nrhs, Sclr* x, const Sclr alpha,
 #     pragma omp barrier
       lst_.solve(px, px, n_, nrhs);
       // No barrier needed here because lst_.solve does it.
-      if (t_.n()) t_.solve(px, px, n_, nrhs);
+      if (t_.get_n()) t_.solve(px, px, n_, nrhs);
 #     pragma omp barrier
       perm_.to_outside(x, nrhs, alpha, beta, ldx);
     } else {
-      if (t_.n()) {
+      if (t_.get_n()) {
 #       pragma omp barrier
         t_.solve(px, px, n_, nrhs);
       }
@@ -3880,11 +3966,12 @@ TriSolver::solve (const Sclr* b, const Int nrhs, Sclr* x, const Sclr alpha,
 template<typename Int, typename Size, typename Sclr>
 void trisolve_serial (
   const typename HTS<Int, Size, Sclr>::CrsMatrix& T, Sclr* ix, const Int nrhs,
-  bool is_lo, const Int* p, const Int* q,
+  const bool is_lo, const bool unit_diag, const Int* p, const Int* q,
   const typename hts::ScalarTraits<Sclr>::Real* scale, Sclr* w)
 {
   assert(( ! p && ! q) || w);
 
+  const int os = unit_diag ? 0 : 1;
   for (int irhs = 0; irhs < nrhs; ++irhs) {
     // x = x./scale optionally.
     if (scale)
@@ -3904,42 +3991,48 @@ void trisolve_serial (
         if (is_lo) {
           for (Int r = 0; r < T.m; ++r) {
             const Size rp_rp1 = T.ir[r+1];
-            for (Size j = T.ir[r]; j < rp_rp1 - 1; ++j) {
+            for (Size j = T.ir[r]; j < rp_rp1 - os; ++j) {
               Sclr dj(T.d[j]);
               conjugate(dj);
               x[r] -= x[T.jc[j]] * dj;
             }
-            Sclr diag(T.d[rp_rp1 - 1]);
-            conjugate(diag);
-            x[r] /= diag;
+            if ( ! unit_diag) {
+              Sclr diag(T.d[rp_rp1 - 1]);
+              conjugate(diag);
+              x[r] /= diag;
+            }
           }
         } else {
           for (Int r = T.m - 1; r >= 0; --r) {
             const Size rp_r = T.ir[r];
-            for (Size j = rp_r + 1; j < T.ir[r+1]; ++j) {
+            for (Size j = rp_r + os; j < T.ir[r+1]; ++j) {
               Sclr dj(T.d[j]);
               conjugate(dj);
               x[r] -= x[T.jc[j]] * dj;
             }
-            Sclr diag(T.d[rp_r]);
-            conjugate(diag);
-            x[r] /= diag;
+            if ( ! unit_diag) {
+              Sclr diag(T.d[rp_r]);
+              conjugate(diag);
+              x[r] /= diag;
+            }
           }
         }
       } else {
         if (is_lo) {
           for (Int r = 0; r < T.m; ++r) {
             const Size rp_rp1 = T.ir[r+1];
-            for (Size j = T.ir[r]; j < rp_rp1 - 1; ++j)
+            for (Size j = T.ir[r]; j < rp_rp1 - os; ++j)
               x[r] -= x[T.jc[j]] * T.d[j];
-            x[r] /= T.d[rp_rp1 - 1];
+            if ( ! unit_diag)
+              x[r] /= T.d[rp_rp1 - 1];
           }
         } else {
           for (Int r = T.m - 1; r >= 0; --r) {
             const Size rp_r = T.ir[r];
-            for (Size j = rp_r + 1; j < T.ir[r+1]; ++j)
+            for (Size j = rp_r + os; j < T.ir[r+1]; ++j)
               x[r] -= x[T.jc[j]] * T.d[j];
-            x[r] /= T.d[rp_r];
+            if ( ! unit_diag)
+              x[r] /= T.d[rp_r];
           }
         }
       }
@@ -3948,11 +4041,13 @@ void trisolve_serial (
         if (is_lo) {
           for (Int c = T.m - 1; c >= 0; --c) {
             const Size js = T.ir[c], je = T.ir[c+1];
-            Sclr diag(T.d[je - 1]);
-            conjugate(diag);
-            x[c] /= diag;
+            if ( ! unit_diag) {
+              Sclr diag(T.d[je - 1]);
+              conjugate(diag);
+              x[c] /= diag;
+            }
             const Sclr& xc = x[c];
-            for (Size j = js; j < je - 1; ++j) {
+            for (Size j = js; j < je - os; ++j) {
               const Int r = T.jc[j];
               Sclr dj(T.d[j]);
               conjugate(dj);
@@ -3962,11 +4057,13 @@ void trisolve_serial (
         } else {
           for (Int c = 0; c < T.n; ++c) {
             const Size js = T.ir[c], je = T.ir[c+1];
-            Sclr diag(T.d[js]);
-            conjugate(diag);
-            x[c] /= diag;
+            if ( ! unit_diag) {
+              Sclr diag(T.d[js]);
+              conjugate(diag);
+              x[c] /= diag;
+            }
             const Sclr& xc = x[c];
-            for (Size j = js + 1; j < je; ++j) {
+            for (Size j = js + os; j < je; ++j) {
               const Int r = T.jc[j];
               Sclr dj(T.d[j]);
               conjugate(dj);
@@ -3978,9 +4075,9 @@ void trisolve_serial (
         if (is_lo) {
           for (Int c = T.m - 1; c >= 0; --c) {
             const Size js = T.ir[c], je = T.ir[c+1];
-            x[c] /= T.d[je - 1];
+            if ( ! unit_diag) x[c] /= T.d[je - 1];
             const Sclr& xc = x[c];
-            for (Size j = js; j < je - 1; ++j) {
+            for (Size j = js; j < je - os; ++j) {
               const Int r = T.jc[j];
               x[r] -= T.d[j]*xc;
             }
@@ -3988,9 +4085,9 @@ void trisolve_serial (
         } else {
           for (Int c = 0; c < T.n; ++c) {
             const Size js = T.ir[c], je = T.ir[c+1];
-            x[c] /= T.d[js];
+            if ( ! unit_diag) x[c] /= T.d[js];
             const Sclr& xc = x[c];
-            for (Size j = js + 1; j < je; ++j) {
+            for (Size j = js + os; j < je; ++j) {
               const Int r = T.jc[j];
               x[r] -= T.d[j]*xc;
             }
@@ -4021,7 +4118,6 @@ make_CrsMatrix (const Int nrow, const Size* rowptr, const Int* col,
   if ( ! Int_is_signed)
     throw hts::Exception(
       "HTS<Int, Size, Scalar> cannot be used if Int is unsigned.");
-  typedef typename htsimpl::Impl<Int, Size, Sclr>::ConstCrsMatrix CCM;
   CrsMatrix* m;
   const htsimpl::Direction::Enum dir = (make_transpose ?
                                         htsimpl::Direction::transpose :
@@ -4108,6 +4204,11 @@ bool HTS<Int, Size, Sclr>::
 is_lower_tri (const Impl* impl) { return impl->ts.is_lower_tri(); }
 
 template<typename Int, typename Size, typename Sclr>
+bool HTS<Int, Size, Sclr>::
+has_implicit_unit_diag (const Impl* impl)
+{ return impl->ts.has_implicit_unit_diag(); }
+
+template<typename Int, typename Size, typename Sclr>
 void HTS<Int, Size, Sclr>::
 delete_Impl (Impl* impl) {
   htsimpl::del(impl);
@@ -4121,10 +4222,11 @@ reset_max_nrhs (Impl* impl, const Int max_nrhs) {
 
 template<typename Int, typename Size, typename Sclr>
 void HTS<Int, Size, Sclr>::
-solve_serial (const CrsMatrix* T, const bool is_lo, Sclr* xb, const Int nrhs,
-              const Int* p, const Int* q,
+solve_serial (const CrsMatrix* T, const bool is_lo, const bool unit_diag,
+              Sclr* xb, const Int nrhs, const Int* p, const Int* q,
               const typename hts::ScalarTraits<Sclr>::Real* r, Sclr* w) {
-  htsimpl::trisolve_serial<Int, Size, Sclr>(*T, xb, nrhs, is_lo, p, q, r, w);
+  htsimpl::trisolve_serial<Int, Size, Sclr>(*T, xb, nrhs, is_lo, unit_diag,
+                                            p, q, r, w);
 }
 
 template<typename Int, typename Size, typename Sclr>

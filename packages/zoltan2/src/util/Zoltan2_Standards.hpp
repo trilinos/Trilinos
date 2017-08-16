@@ -85,6 +85,8 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_toString.hpp>
+#include <Tpetra_ConfigDefs.hpp>
 
 namespace Zoltan2{
 
@@ -114,7 +116,7 @@ using Teuchos::ParameterEntry;
 using Teuchos::reduceAll;
 using Teuchos::gatherAll;
 
-typedef size_t global_size_t;
+typedef Tpetra::global_size_t global_size_t;
 
 }
 

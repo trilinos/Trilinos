@@ -53,7 +53,7 @@
 //**********************************************************************
 template<typename DataT>
 PHX::Tag<DataT>::Tag(const std::string& name,
-		     const Teuchos::RCP<PHX::DataLayout>& dl) :
+		     const Teuchos::RCP<const PHX::DataLayout>& dl) :
   m_name(name),
   m_data_layout(dl)
 { }
@@ -74,7 +74,7 @@ Teuchos::RCP<PHX::FieldTag> PHX::Tag<DataT>::clone() const
 
 //**********************************************************************
 template<typename DataT>
-void PHX::Tag<DataT>::operator=(const PHX::Tag<DataT>& t)
+void PHX::Tag<DataT>::operator=(const PHX::Tag<const DataT>& t)
 {
   m_name = t.m_name;
   m_data_layout = t.m_data_layout;

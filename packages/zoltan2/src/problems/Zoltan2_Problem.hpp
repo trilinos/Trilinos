@@ -56,64 +56,56 @@
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_TimerManager.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
+#include <Teuchos_Tuple.hpp>
+#include <Zoltan2_IntegerRangeList.hpp>
 
 namespace Zoltan2{
+
+////////////////////////////////////////////////////////////////////////
+//! \brief ProblemRoot allows ptr storage and safe dynamic_cast of all
+// problem types.
+
+class ProblemRoot {
+  public:
+    virtual ~ProblemRoot() {} // required virtual declaration
+
+    // could consider storing comm_ here...
+    // this accessor means we can get comm without template upcast first
+    virtual RCP<const Comm<int> > getComm() = 0;
+
+   /*! \brief Method that creates a solution.
+    */
+    virtual void solve(bool updateInputData = true) = 0;
+};
 
 ////////////////////////////////////////////////////////////////////////
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
      
 template<typename Adapter>
-class Problem {
+class Problem : public ProblemRoot {
 public:
-  
-  /*! \brief Constructor where communicator is Teuchos default.
-   */
-  Problem(const Adapter *input, ParameterList *params):
-        inputAdapter_(rcp(input,false)), 
-        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
-                              false)),
-        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
-  {
-    RCP<const Comm<int> > tmp = DefaultComm<int>::getComm();
-    comm_ = tmp->duplicate();
-    setupProblemEnvironment(params);
-  }
-
 
   /*! \brief Constructor where Teuchos communicator is specified
    */
   Problem(const Adapter *input, ParameterList *params, 
-        const RCP<const Comm<int> > &comm):
-        inputAdapter_(rcp(input,false)),
-        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
-                              false)),
-        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
+          const RCP<const Comm<int> > &comm):
+    inputAdapter_(rcp(input,false)),
+    baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input), false)),
+    graphModel_(),
+    identifierModel_(),
+    baseModel_(),
+    algorithm_(),
+    params_(),
+    comm_(),
+    env_(rcp(new Environment(*params, comm))),
+    envConst_(rcp_const_cast<const Environment>(env_)), 
+    timer_()
   {
     comm_ = comm->duplicate();
     setupProblemEnvironment(params);
   }
-
-#ifdef HAVE_ZOLTAN2_MPI
-  /*! \brief Constructor for MPI builds
-   */
-  Problem(const Adapter *input, ParameterList *params, MPI_Comm comm):
-        inputAdapter_(rcp(input,false)),
-        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
-                              false)),
-        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
-  {
-    RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
-                                           Teuchos::opaqueWrapper(comm);
-    RCP<const Comm<int> > tmp = 
-                  rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
-    comm_ = tmp->duplicate();
-    setupProblemEnvironment(params);
-  }
-#endif
 
   /*! \brief Destructor
    */
@@ -126,10 +118,6 @@ public:
   /*! \brief Reset the list of parameters
    */
   void resetParameters(ParameterList *params);
-
-  /*! \brief Method that creates a solution.
-   */
-  virtual void solve(bool updateInputData) = 0;
 
   /*! \brief Return the communicator passed to the problem
    */
@@ -157,6 +145,45 @@ public:
   }
 #endif
 
+  // Set up validators which are general to all probloems
+  static void getValidParameters(ParameterList & pl)
+  {
+    // bool parameter
+    pl.set("compute_metrics", false, "Compute metrics after computing solution",
+      Environment::getBoolValidator());
+
+    RCP<Teuchos::StringValidator> hypergraph_model_type_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "traditional", "ghosting" )));
+    pl.set("hypergraph_model_type", "traditional", "construction type when "
+      "creating a hypergraph model", hypergraph_model_type_Validator);
+
+    // bool parameter
+    pl.set("subset_graph", false, "If \"true\", the graph input is to be "
+      "subsetted.  If a vertex neighbor is not a valid vertex, it will be "
+      "omitted from the pList.  Otherwise, an invalid neighbor identifier "
+      "is considered an error.", Environment::getBoolValidator());
+
+    RCP<Teuchos::StringValidator> symmetrize_input_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "no", "transpose", "bipartite" )));
+    pl.set("symmetrize_input", "no", "Symmetrize input prior to pList.  "
+      "If \"transpose\", symmetrize A by computing A plus ATranspose.  "
+      "If \"bipartite\", A becomes [[0 A][ATranspose 0]].",
+      symmetrize_input_Validator);
+
+    // these sublists are used for parameters which do not get validated
+    pl.sublist("zoltan_parameters");
+    pl.sublist("parma_parameters");
+  }
+
+  /*! \brief Get the current Environment.
+   *   Useful for testing.
+   */
+  const RCP<const Environment> & getEnvironment() const
+  {
+    return this->envConst_;
+  }
 
 protected:
 
@@ -210,13 +237,6 @@ private:
 template <typename Adapter>
   void Problem<Adapter>::setupProblemEnvironment(ParameterList *params)
 {
-  try{
-    env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
-  }
-  Z2_FORWARD_EXCEPTIONS
-
-  envConst_ = rcp_const_cast<const Environment>(env_);
-
   ParameterList &processedParameters = env_->getParametersNonConst();
   params_ = rcp<ParameterList>(&processedParameters, false);
 
@@ -285,11 +305,8 @@ template <typename Adapter>
 template <typename Adapter>
   void Problem<Adapter>::resetParameters(ParameterList *params)
 {
-  env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
-  envConst_ = rcp_const_cast<const Environment>(env_);
-
-  ParameterList &processedParameters = env_->getParametersNonConst();
-  params_ = rcp<ParameterList>(&processedParameters, false);
+  env_->resetParameters(*params);
+  setupProblemEnvironment(params);
 
   // We assume the timing output parameters have not changed,
   // and carry on with the same timer.

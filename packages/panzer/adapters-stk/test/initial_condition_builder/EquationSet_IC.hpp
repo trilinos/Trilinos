@@ -68,7 +68,7 @@ EquationSet_IC(const Teuchos::RCP<Teuchos::ParameterList>& params,
   this->setupDOFs();
 }
 
-PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("IC", EquationSet_IC, EquationSet_IC)
+PANZER_DECLARE_EQSET_TEMPLATE_BUILDER(EquationSet_IC, EquationSet_IC)
 
 // A user written factory that creates each equation set.  The key member here
 // is buildEquationSet
@@ -88,7 +88,7 @@ public:
       bool found = false; // this is used by PANZER_BUILD_EQSET_OBJECTS
          
       // macro checks if(ies.name=="Poisson") then an EquationSet_Energy object is constructed
-      PANZER_BUILD_EQSET_OBJECTS("IC", EquationSet_IC, EquationSet_IC)
+      PANZER_BUILD_EQSET_OBJECTS("IC", EquationSet_IC)
          
       // make sure your equation set has been found
       if(!found) {

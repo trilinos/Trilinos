@@ -56,8 +56,10 @@
 #include "Xpetra_Vector.hpp"
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <Kokkos_CrsMatrix.hpp>
+#endif
 #endif
 
 namespace Xpetra {
@@ -222,7 +224,16 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const = 0;
 
+    //! Left scale matrix using the given vector entries
+    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
+
+    //! Right scale matrix using the given vector entries
+    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
+
     virtual void removeEmptyProcessesInPlace(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) = 0;
+
+    //! Returns true if globalConstants have been computed; false otherwise
+    virtual bool haveGlobalConstants() const = 0;
 
     //@}
 
@@ -254,6 +265,7 @@ namespace Xpetra {
     //! @name Xpetra-specific routines
     //@{
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
     typedef typename node_type::execution_space execution_space;
 
@@ -269,6 +281,11 @@ namespace Xpetra {
 
     /// \brief Access the underlying local Kokkos::CrsMatrix object
     virtual local_matrix_type getLocalMatrix () const = 0;
+#else
+#ifdef __GNUC__
+#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
+#endif
+#endif
 #endif
 
     //@}

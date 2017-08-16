@@ -87,25 +87,25 @@ unsigned OctTreeKey::index( const unsigned Depth ) const
 
   const unsigned which = ( Depth - 1 ) / IndexPerWord ;
   const unsigned shift = BitsPerWord -
-                         BitsPerIndex * ( Depth % IndexPerWord ) ;
+                         BitsPerIndex * ( (Depth - 1) % IndexPerWord + 1 ) ;
 
   return ( m_value[ which ] >> shift ) & MaskIndex ;
 }
 
-OctTreeKey & OctTreeKey::clear_index( const unsigned Depth )
-{
-  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth, MaxDepth ); }
-
-  const value_type m = MaskIndex ;
-  const unsigned which = ( Depth - 1 ) / IndexPerWord ;
-  const unsigned shift = BitsPerWord -
-                         BitsPerIndex * ( Depth % IndexPerWord ) ;
-  const unsigned mask = ~( m << shift );
-
-  m_value[ which ] &= mask ;
-
-  return *this ;
-}
+//OctTreeKey & OctTreeKey::clear_index( const unsigned Depth )
+//{
+//  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth, MaxDepth ); }
+//
+//  const value_type m = MaskIndex ;
+//  const unsigned which = ( Depth - 1 ) / IndexPerWord ;
+//  const unsigned shift = BitsPerWord -
+//                         BitsPerIndex * ( (Depth - 1) % IndexPerWord + 1 ) ;
+//  const unsigned mask = ~( m << shift );
+//
+//  m_value[ which ] &= mask ;
+//
+//  return *this ;
+//}
 
 OctTreeKey &
 OctTreeKey::set_index( const unsigned Depth , const unsigned Index )
@@ -116,7 +116,7 @@ OctTreeKey::set_index( const unsigned Depth , const unsigned Index )
   const value_type m = MaskIndex ;
   const unsigned which = ( Depth - 1 ) / IndexPerWord ;
   const unsigned shift = BitsPerWord -
-                         BitsPerIndex * ( Depth % IndexPerWord ) ;
+                         BitsPerIndex * ( (Depth - 1) % IndexPerWord + 1 ) ;
 
   ( m_value[which] &= ~( m << shift ) ) |= Index << shift ;
 
@@ -126,16 +126,9 @@ OctTreeKey::set_index( const unsigned Depth , const unsigned Index )
 OctTreeKey &
 OctTreeKey::set_value( const unsigned * val )
 {
-  Copy<NWord>( m_value , 0u );
-
-  for ( unsigned d = 1 ; d <= MaxDepth ; ++d ) {
-    const unsigned which = ( d - 1 ) / IndexPerWord ;
-    const unsigned shift = BitsPerWord - BitsPerIndex * ( d % IndexPerWord ) ;
-    const unsigned index = ( val[ which ] >> shift ) & MaskIndex ;
-
-    if ( 8 < index ) { throw_index( d , index ); }
-
-    m_value[ which ] |= index << shift ;
+  const unsigned numWords = MaxDepth / IndexPerWord;
+  for (unsigned i = 0; i < numWords; ++i) {
+      m_value[i] = val[i];
   }
   return *this ;
 }

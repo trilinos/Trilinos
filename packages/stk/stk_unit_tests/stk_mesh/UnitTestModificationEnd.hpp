@@ -555,7 +555,7 @@ void create_edges(stk::unit_test_util::BulkDataTester& stkMeshBulkData, std::vec
 
     for (size_t edge_index=0;edge_index<edgeIds.size();edge_index++)
     {
-        stk::mesh::Entity edge = stkMeshBulkData.declare_entity( stk::topology::EDGE_RANK, edgeIds[edge_index], add_parts);
+        stk::mesh::Entity edge = stkMeshBulkData.declare_edge(edgeIds[edge_index], add_parts);
         edgeEntities[edge_index] = edge;
 
         std::vector<stk::mesh::Entity> ghostedElements(10);
@@ -888,7 +888,7 @@ void checkEntityRelations(int procId, stk::unit_test_util::BulkDataTester& stkMe
             stk::mesh::Entity entity = stkMeshBulkData.get_entity(entity_key);
             stk::mesh::Entity const * edges_begin = stkMeshBulkData.begin_edges(entity);
             ASSERT_TRUE(edges_begin!=0) << "for proc " << procId << " against element " << entity_key;
-            EXPECT_EQ( *edges_begin, edge) << "for proc " << procId << " against element " << entity_key;;
+            EXPECT_EQ( *edges_begin, edge) << "for proc " << procId << " against element " << entity_key;
         }
     }
 
@@ -1288,7 +1288,7 @@ void checkEntityRelationsGhosted(int procId, stk::mesh::BulkData& stkMeshBulkDat
             stk::mesh::Entity entity = stkMeshBulkData.get_entity(entity_key);
             stk::mesh::Entity const * edges_begin = stkMeshBulkData.begin_edges(entity);
             ASSERT_TRUE(edges_begin!=0) << "for proc " << procId << " against element " << entity_key;
-            EXPECT_EQ( *edges_begin, element2edge[i].second ) << "for proc " << procId << " against element " << entity_key;;
+            EXPECT_EQ( *edges_begin, element2edge[i].second ) << "for proc " << procId << " against element " << entity_key;
         }
     }
 

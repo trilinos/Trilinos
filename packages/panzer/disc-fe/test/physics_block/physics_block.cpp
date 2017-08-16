@@ -45,8 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Phalanx_FieldManager.hpp"
 
 #include "Panzer_Traits.hpp"
@@ -60,8 +58,6 @@
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_ClosureModel_Factory.hpp"
 #include "UnitTest_UniqueGlobalIndexer.hpp"
-
-#include "Epetra_MpiComm.h"
 
 namespace panzer_test_utils {
 
@@ -136,7 +132,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(physics_block, getDOFNames)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
@@ -150,7 +145,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(physics_block, getProvidedDOFs)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
@@ -169,7 +163,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(physics_block, getBases)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
@@ -186,7 +179,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(physics_block, getBaseCellTopology)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
@@ -196,7 +188,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(physics_block, physicsBlockID)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
@@ -206,7 +197,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(physics_block, getCellData)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
@@ -217,11 +207,10 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(physics_block, nontemplate_evaluator_builders)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
           = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
@@ -246,7 +235,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(physics_block, elementBlockID)
   {
-    PHX::KokkosDeviceSession session;
 
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
@@ -258,11 +246,10 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(physics_block, templated_evaluator_builders)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
           = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 

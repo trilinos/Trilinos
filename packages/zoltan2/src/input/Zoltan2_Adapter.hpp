@@ -78,13 +78,34 @@ enum BaseAdapterType {
 
  */
 
+class BaseAdapterRoot {
+public:
+  virtual ~BaseAdapterRoot() {}; // required virtual declaration
+
+  /*! \brief Returns the number of objects on this process
+   *
+   *  Objects may be coordinates, graph vertices, matrix rows, etc.
+   *  They are the objects to be partitioned, ordered, or colored.
+   */
+  virtual size_t getLocalNumIDs() const = 0;
+
+  /*! \brief Returns the number of weights per object.
+   *   Number of weights per object should be zero or greater.  If
+   *   zero, then it is assumed that all objects are equally weighted.
+   *   Default is zero weights per ID.
+   */
+  virtual int getNumWeightsPerID() const { return 0; };
+};
+
 template <typename User>
-  class BaseAdapter {
+  class BaseAdapter : public BaseAdapterRoot {
 
 public:
+  typedef typename InputTraits<User>::lno_t lno_t;
   typedef typename InputTraits<User>::gno_t gno_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::part_t part_t;  
+  typedef typename InputTraits<User>::offset_t offset_t;
 
   /*! \brief Returns the type of adapter.
    */
@@ -94,26 +115,12 @@ public:
    */
   virtual ~BaseAdapter() {};
 
-  /*! \brief Returns the number of objects on this process
-   *
-   *  Objects may be coordinates, graph vertices, matrix rows, etc.
-   *  They are the objects to be partitioned, ordered, or colored.
-   */
-  virtual size_t getLocalNumIDs() const = 0;
-
   /*! \brief Provide a pointer to this process' identifiers.
 
       \param Ids will on return point to the list of the global Ids for 
         this process.
    */
   virtual void getIDsView(const gno_t *&Ids) const = 0;
-
-  /*! \brief Returns the number of weights per object.
-   *   Number of weights per object should be zero or greater.  If
-   *   zero, then it is assumed that all objects are equally weighted.
-   *   Default is zero weights per ID.
-   */ 
-  virtual int getNumWeightsPerID() const { return 0;};
 
   /*! \brief Provide pointer to a weight array with stride.
    *    \param wgt on return a pointer to the weights for this idx

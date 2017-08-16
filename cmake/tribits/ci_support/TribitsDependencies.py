@@ -142,7 +142,7 @@ def isLibDep(dep):
 #
 def updatePackageDep(dep1, dep2):
 
-  #print "\n    updatePackageDep("+dep1+", "+dep2+") ..."
+  #print("\n    updatePackageDep("+dep1+", "+dep2+") ...")
 
   dep1_required = isRequiredDep(dep1)
   dep1_direct = isDirectDep(dep1)
@@ -187,7 +187,7 @@ def updatePackageDep(dep1, dep2):
 
   assert(selectedDep)
 
-  #print "\n      newDep =", newDep
+  #print("\n      newDep =", newDep)
 
   return newDep
 
@@ -207,6 +207,7 @@ class TribitsDependencies:
 
   def __init__(self):
     self.__projectName = None
+    self.__projectBaseDirName = None
     self.__packagesList = []
     self.__packagesNameToID = {}
     self.__packagesDirToID = {}
@@ -218,6 +219,14 @@ class TribitsDependencies:
 
   def getProjectName(self):
     return self.__projectName
+
+
+  def setProjectBaseDirName(self, projectBaseDirName):
+    self.__projectBaseDirName = projectBaseDirName
+
+
+  def getProjectBaseDirName(self):
+    return self.__projectBaseDirName
 
 
   def addPackageDependencies(self, packageDeps):
@@ -247,7 +256,7 @@ class TribitsDependencies:
 
   def getPackageByDir(self, packageDir):
     packageID = self.__packagesDirToID.get(packageDir, -1)
-    #print "\ngetPackageByDir: packageDir="+packageDir+", packageID="+str(packageID)
+    #print("\ngetPackageByDir: packageDir="+packageDir+", packageID="+str(packageID))
     if packageID >= 0:
       return self.__packagesList[packageID]
     return None
@@ -256,30 +265,46 @@ class TribitsDependencies:
   def getPackageNameFromPath(self, fullPath):
     for packageDep in self.__packagesList:
       regexFilePath = packageDep.packageDir+"/"
-      #print "\nregexFilePath="+regexFilePath
-      #print "fullPath="+fullPath
+      #print("\nregexFilePath="+regexFilePath)
+      #print("fullPath="+fullPath)
       if re.match(regexFilePath, fullPath):
-        #print "MATCH!"
+        #print("MATCH!")
         return packageDep.packageName
     return u""
     # NOTE: The above loop with match subpackages before it matches
     # packages because subpackages are listed before packages!
 
 
+  def getPackageNameFromTestName(self, testName):
+    for packageDep in self.__packagesList:
+      startTestName = packageDep.packageName+"_"
+      #print("\nstartTestName="+startTestName)
+      testNameStartIdx = testName.find(startTestName, 0)
+      if testNameStartIdx == 0:
+        #print("MATCH!")
+        if packageDep.parentPackage:
+          #print("Subpackage match!")
+          return self.getPackageByName(packageDep.parentPackage).packageName
+        # Else, is not a subpackage
+        return packageDep.packageName
+    return u""
+
+
   def filterPackageNameList(self, inputPackagesList, keepTypesList, verbose=False):
     i = 0
     outputPackagesList = []
     for packageName in inputPackagesList:
-      #print "packageName = " + packageName
+      #print("packageName = " + packageName)
       packageDep = self.getPackageByName(packageName)
       packageType = packageDep.packageType
-      #print "packageType = " + packageType
+      #print("packageType = " + packageType)
       if findInSequence(keepTypesList, packageType) >= 0:
         outputPackagesList.append(packageName)
       else:
         if verbose:
-          print packageName + " of type " + packageType + " is being excluded because" \
-            " it is not in the valid list of package types [" + ','.join(keepTypesList) + "]"
+          print(packageName + " of type " + packageType +
+                " is being excluded because it is not in the valid list of " +
+                "package types [" + ','.join(keepTypesList) + "]")
     return outputPackagesList
 
   def __str__(self):
@@ -309,7 +334,7 @@ class TribitsDependencies:
       newDepName = newDepName[0:-1]+"O"
 
     if currentDepName:
-      #print "\n    updateDepCell: depStats.isDirect="+str(depStats.isDirect)+", depStats.isRequired="+str(depStats.isRequired)+", depCategoryName="+depCategoryName
+      #print("\n    updateDepCell: depStats.isDirect="+str(depStats.isDirect)+", depStats.isRequired="+str(depStats.isRequired)+", depCategoryName="+depCategoryName)
       newDepName = updatePackageDep(currentDepName, newDepName)
 
     packageRow[packageID+1] = newDepName
@@ -320,15 +345,15 @@ class TribitsDependencies:
     ):
 
     packageRow = projectDepsTable[packageRowID+1]
-    #print "\npackageRow =", packageRow
+    #print("\npackageRow =", packageRow)
 
     depList = getattr(self.__packagesList[packageID], depCategory)
-    #print "\ndepList =", depList
+    #print("\ndepList =", depList)
 
     for dep in depList:
 
       depPackage = self.getPackageByName(dep)
-      #print "\n  depPackageName =", depPackage.packageName
+      #print("\n  depPackageName =", depPackage.packageName)
 
       dep_i = depPackage.packageID
 
@@ -373,7 +398,7 @@ class TribitsDependencies:
   def createRawTable(self, libsOnly):
 
     numPackages = self.numPackages()
-    #print "\nnumPackages =", numPackages
+    #print("\nnumPackages =", numPackages)
 
     projectDepsTable = []
 
@@ -388,7 +413,7 @@ class TribitsDependencies:
       projectDepsTable.append(row)
 
     for packageDeps in self.__packagesList:
-      #print "\npackageName =", packageDeps.packageName
+      #print("\npackageName =", packageDeps.packageName)
       i = packageDeps.packageID
       projectDepsTable[i+1][i+1] = "X"
       self.updatePackageDeps(libsOnly, i, i, DepStats(True, True, False), projectDepsTable)
@@ -542,6 +567,8 @@ class TribitsDependencies:
 
     xmlText += "<Project name=\""+self.getProjectName()+"\">\n"
 
+    projectBaseDirName = self.getProjectBaseDirName()
+
     numPackages = self.numPackages()
 
     for package_i in range(numPackages):
@@ -549,10 +576,13 @@ class TribitsDependencies:
       packageDeps = self.__packagesList[package_i]
 
       packageName = packageDeps.packageName
+      packagePath = packageDeps.packageDir
 
       if packageDeps.parentPackage == "":
         
         xmlText += ("  <SubProject name=\""+packageName+"\">\n")
+        
+        xmlText += ("    <Path>"+packagePath+"</Path>\n")
   
         xmlText += \
           "    <EmailAddresses>\n"+\
@@ -615,16 +645,19 @@ def getParentPackage(packageEle):
 
 def getProjectDependenciesFromXmlFile(xmlFile):
   packageDepXmlDom = xml.dom.minidom.parse(xmlFile)
-  #print "\npackageDepXmlDom =", dir(packageDepXmlDom)
-  #print "\npackageDepXmlDom.documentElement =", dir(packageDepXmlDom.documentElement)
+  #print("\npackageDepXmlDom =", dir(packageDepXmlDom))
+  #print("\npackageDepXmlDom.documentElement =", dir(packageDepXmlDom.documentElement))
   projectDependencies = TribitsDependencies()
-  projectDependencies.setProjectName(packageDepXmlDom.documentElement.getAttribute('project'))
+  projectDependencies.setProjectName(
+    packageDepXmlDom.documentElement.getAttribute('project'))
+  projectDependencies.setProjectBaseDirName(
+    packageDepXmlDom.documentElement.getAttribute('baseDirName'))
   for ele in packageDepXmlDom.childNodes[0].childNodes:
     if ele.nodeType == ele.ELEMENT_NODE:
       packageName = ele.getAttribute('name')
       packageDir = ele.getAttribute('dir')
       packageType = ele.getAttribute('type')
-      #print "\npackageName =", packageName
+      #print("\npackageName =", packageName)
       packageDeps = PackageDependencies(packageName, packageDir, packageType,
         getDependenciesByType(ele, "LIB_REQUIRED_DEP_PACKAGES"),
         getDependenciesByType(ele, "LIB_OPTIONAL_DEP_PACKAGES"),
@@ -633,6 +666,6 @@ def getProjectDependenciesFromXmlFile(xmlFile):
         getPackageEmailAddresses(ele),
         getParentPackage(ele)
         )
-      #print "\npackageDeps =", str(packageDeps)
+      #print("\npackageDeps =", str(packageDeps))
       projectDependencies.addPackageDependencies(packageDeps)
   return projectDependencies

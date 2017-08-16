@@ -253,14 +253,28 @@ int Amesos_Umfpack::PerformSymbolicFactorization()
   // MS // no overhead time in this method
   ResetTimer(0);  
   
+  int symbolic_ok = 0;
+
   double *Control = (double *) NULL, *Info = (double *) NULL;
   
   if (Symbolic) 
     umfpack_di_free_symbolic (&Symbolic) ;
   if (MyPID_== 0) {
-    (void) umfpack_di_symbolic (NumGlobalElements_, NumGlobalElements_, &Ap[0], 
+    int status = umfpack_di_symbolic (NumGlobalElements_, NumGlobalElements_, &Ap[0],
 				&Ai[0], &Aval[0], 
 				&Symbolic, Control, Info) ;
+    symbolic_ok = (status == UMFPACK_OK);
+  }
+
+  // Communicate the state of the numeric factorization with everyone.
+  Comm().Broadcast(&symbolic_ok, 1, 0);
+
+  if (!symbolic_ok) {
+    if (MyPID_ == 0) {
+      AMESOS_CHK_ERR (StructurallySingularMatrixError);
+    } else {
+      return (StructurallySingularMatrixError);
+    }
   }
 
   SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_, 0);
@@ -271,6 +285,8 @@ int Amesos_Umfpack::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Umfpack::PerformNumericFactorization( ) 
 {
+  int numeric_ok = 0;
+
   // MS // no overhead time in this method
   ResetTimer(0);
 
@@ -329,7 +345,18 @@ int Amesos_Umfpack::PerformNumericFactorization( )
 
 #endif
 
-    assert( status == 0 ) ; 
+    numeric_ok = (status == UMFPACK_OK);
+  }
+
+  // Communicate the state of the numeric factorization with everyone.
+  Comm().Broadcast(&numeric_ok, 1, 0);
+
+  if (!numeric_ok) {
+    if (MyPID_ == 0) {
+      AMESOS_CHK_ERR (NumericallySingularMatrixError);
+    } else {
+      return (NumericallySingularMatrixError);
+    }
   }
   
   NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_, 0);

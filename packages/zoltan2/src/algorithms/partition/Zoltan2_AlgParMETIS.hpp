@@ -116,6 +116,7 @@ public:
   typedef GraphModel<typename Adapter::base_adapter_t> graphModel_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
 
@@ -181,7 +182,7 @@ void AlgParMETIS<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> adjgnos;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
   int nEwgt = model->getNumWeightsPerEdge();
   size_t nEdge = model->getEdgeList(adjgnos, offsets, ewgts);
@@ -194,7 +195,7 @@ void AlgParMETIS<Adapter>::partition(
 
   // Convert index types for edges, if needed
   pm_idx_t *pm_offsets;  
-  TPL_Traits<pm_idx_t,const lno_t>::ASSIGN_ARRAY(&pm_offsets, offsets);
+  TPL_Traits<pm_idx_t,const offset_t>::ASSIGN_ARRAY(&pm_offsets, offsets);
   pm_idx_t *pm_adjs;  
   pm_idx_t pm_dummy_adj;
   if (nEdge)
@@ -214,8 +215,8 @@ void AlgParMETIS<Adapter>::partition(
   RCP<Comm<int> > subcomm;
   MPI_Comm mpicomm;  // Note:  mpicomm is valid only while subcomm is in scope
 
+  int nKeep = 0;
   if (np > 1) {
-    int nKeep = 0;
     Array<int> keepRanks(np);
     for (int i = 0; i < np; i++) {
       if ((pm_vtxdist[i+1] - pm_vtxdist[i]) > 0) {
@@ -243,6 +244,8 @@ void AlgParMETIS<Adapter>::partition(
   // Create array for ParMETIS to return results in.
   pm_idx_t *pm_partList = NULL;
   if (nVtx) pm_partList = new pm_idx_t[nVtx];
+  for (size_t i = 0; i < nVtx; i++) pm_partList[i] = 0;
+  int pm_return = METIS_OK;
 
   if (mpicomm != MPI_COMM_NULL) {
     // If in ParMETIS' communicator (i.e., have vertices), call ParMETIS
@@ -285,9 +288,16 @@ void AlgParMETIS<Adapter>::partition(
     if (pe){
       std::string approach;
       approach = pe->getValue<std::string>(&approach);
-      if ((approach == "repartition") || (approach == "maximize_overlap"))
-        parmetis_method = "REFINE_KWAY";
-      // TODO:  AdaptiveRepart
+      if ((approach == "repartition") || (approach == "maximize_overlap")) {
+        if (nKeep > 1) 
+          // ParMETIS_V3_AdaptiveRepart requires two or more processors
+          parmetis_method = "ADAPTIVE_REPART";
+        else
+          // Probably best to do PartKway if nKeep == 1; 
+          // I think REFINE_KWAY won't give a good answer in most use cases
+          // parmetis_method = "REFINE_KWAY";
+          parmetis_method = "PARTKWAY";
+      }
     }
 
     // Other ParMETIS parameters?
@@ -304,29 +314,40 @@ void AlgParMETIS<Adapter>::partition(
     TPL_Traits<pm_idx_t,size_t>::ASSIGN(pm_nPart, numGlobalParts);
 
     if (parmetis_method == "PARTKWAY") {
-      ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
-                           &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
-                           pm_partsizes, pm_imbTols, pm_options,
-                           &pm_edgecut, pm_partList, &mpicomm);
+      pm_return = ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, 
+                                       pm_vwgts, pm_ewgts, &pm_wgtflag,
+                                       &pm_numflag, &pm_nCon, &pm_nPart,
+                                       pm_partsizes, pm_imbTols, pm_options,
+                                       &pm_edgecut, pm_partList, &mpicomm);
     }
     else if (parmetis_method == "ADAPTIVE_REPART") {
       // Get object sizes:  pm_vsize
-      std::cout << "NOT READY FOR ADAPTIVE_REPART YET; NEED VSIZE" << std::endl;
-      exit(-1);
-      //pm_real_t itr = 100.;  // Same default as in Zoltan
-      //ParMETIS_V3_AdaptiveRepart(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
-      //                           pm_vsize, pm_ewgts, &pm_wgtflag,
-      //                           &pm_numflag, &pm_nCon, &pm_nPart,
-      //                           pm_partsizes, pm_imbTols,
-      //                           &itr, pm_options,
-      //                           &pm_edgecut, pm_partList, &mpicomm);
+      // TODO:  get pm_vsize info from input adapter or graph model
+      // TODO:  This is just a placeholder
+      pm_idx_t *pm_vsize = new pm_idx_t[nVtx];
+      for (size_t i = 0; i < nVtx; i++) pm_vsize[i] = 1;
+
+      pm_real_t itr = 100.;  // Same default as in Zoltan
+      pm_return = ParMETIS_V3_AdaptiveRepart(pm_vtxdist, pm_offsets, pm_adjs,
+                                             pm_vwgts,
+                                             pm_vsize, pm_ewgts, &pm_wgtflag,
+                                             &pm_numflag, &pm_nCon, &pm_nPart,
+                                             pm_partsizes, pm_imbTols,
+                                             &itr, pm_options, &pm_edgecut,
+                                             pm_partList, &mpicomm);
+      delete [] pm_vsize;
     }
-    else if (parmetis_method == "REFINE_KWAY") {
-      ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
-                             pm_ewgts,
-                             &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
-                             pm_partsizes, pm_imbTols,
-                             pm_options, &pm_edgecut, pm_partList, &mpicomm);
+    // else if (parmetis_method == "REFINE_KWAY") {
+    //   We do not currently have an execution path that calls REFINE_KWAY.
+    //   pm_return = ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, 
+    //                                      pm_vwgts, pm_ewgts, &pm_wgtflag,
+    //                                     &pm_numflag, &pm_nCon, &pm_nPart,
+    //                                    pm_partsizes, pm_imbTols, pm_options,
+    //                                      &pm_edgecut, pm_partList, &mpicomm);
+    // }
+    else {
+      // We should not reach this condition.
+      throw std::logic_error("\nInvalid ParMETIS method requested.\n");
     }
 
     // Clean up 
@@ -353,6 +374,12 @@ void AlgParMETIS<Adapter>::partition(
 
   if (nVwgt) delete [] pm_vwgts;
   if (nEwgt) delete [] pm_ewgts;
+
+  if (pm_return != METIS_OK) {
+    throw std::runtime_error(
+          "\nParMETIS returned an error; no valid partition generated.\n"
+          "Look for 'PARMETIS ERROR' in your output for more details.\n");
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

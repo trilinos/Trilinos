@@ -51,7 +51,7 @@ namespace stk {
      * processors at the same time
      *
      */
-    void create_edges(  BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges = 0 );
+    void create_edges(  BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges = nullptr );
 
     void create_edges( BulkData & mesh );
 

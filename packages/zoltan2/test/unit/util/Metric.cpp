@@ -102,7 +102,6 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
   typedef Zoltan2::EvaluatePartition<idInput_t> quality_t;
   typedef idInput_t::part_t part_t;
-  typedef idInput_t::base_adapter_t base_adapter_t;
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -139,7 +138,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   // An environment.  This is usually created by the problem.
 
   Teuchos::ParameterList pl("test list");
-  pl.set("num_local_parts", double(numLocalParts));
+  pl.set("num_local_parts", numLocalParts);
   
   RCP<const Zoltan2::Environment> env = 
     rcp(new Zoltan2::Environment(pl, comm));
@@ -198,7 +197,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   for (int i=0; i < nWeights; i++, wgts+=numLocalObj)
     weights.push_back(wgts);
 
-  const idInput_t *ia;
+  idInput_t *ia = NULL;
 
   try{
     ia = new idInput_t(numLocalObj, myGids, weights, strides);
@@ -252,9 +251,9 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
 
   if (rank==0){
-    zscalar_t imb;
+    ;
     try{
-      metricObject->getObjectCountImbalance(imb); 
+      zscalar_t imb = metricObject->getObjectCountImbalance();
       cout << "Object imbalance: " << imb << endl;
     }
     catch (std::exception &e){
@@ -265,10 +264,9 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getObjectCountImbalance", 1);
 
   if (rank==0 && nWeights > 0){
-    zscalar_t imb;
     try{
       for (int i=0; i < nWeights; i++){
-        metricObject->getWeightImbalance(imb, i);
+    	zscalar_t imb = metricObject->getWeightImbalance(i);
         cout << "Weight " << i << " imbalance: " << imb << endl;
       }
     }
@@ -277,7 +275,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     }
     if (!fail && nWeights > 1){
       try{
-        metricObject->getNormedImbalance(imb);
+    	zscalar_t imb = metricObject->getNormedImbalance();
         cout << "Normed weight imbalance: " << imb << endl;
       }
       catch (std::exception &e){

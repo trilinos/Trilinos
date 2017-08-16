@@ -235,7 +235,6 @@ namespace Teuchos {
     */
     int equilibrateRHS();
 
-
     //! Apply Iterative Refinement.
     /*!
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
@@ -590,24 +589,20 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::solve() {
   int ierr = 0;
   if (equilibrate_) {
     ierr = equilibrateRHS();
-    equilibratedB_ = true;
   }
   if (ierr != 0) return(ierr);  // Can't equilibrate B, so return.
 
-  TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
-                     std::logic_error, "SerialSpdDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
   TEUCHOS_TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument,
                      "SerialSpdDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
   TEUCHOS_TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument,
                      "SerialSpdDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
 
-  if (shouldEquilibrate() && !equilibratedA_)
-    std::cout << "WARNING!  SerialSpdDenseSolver<T>::solve: System should be equilibrated!" << std::endl;
-
   if (inverted()) {
 
     TEUCHOS_TEST_FOR_EXCEPTION( RHS_->values() == LHS_->values(), std::invalid_argument,
                         "SerialSpdDenseSolver<T>::solve: X and B must be different vectors if matrix is inverted.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
+                        std::logic_error, "SerialSpdDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
 
     INFO_ = 0;
     this->GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, numRowCols_, RHS_->numCols(),
@@ -619,6 +614,9 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::solve() {
   else {
 
     if (!factored()) factor(); // Matrix must be factored
+
+    TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
+                        std::logic_error, "SerialSpdDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
 
     if (RHS_->values()!=LHS_->values()) {
        (*LHS_) = (*RHS_); // Copy B to X if needed
@@ -642,6 +640,11 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::solve() {
     solved_ = true;
 
   }
+
+  // Warn users that the system should be equilibrated, but it wasn't.
+  if (shouldEquilibrate() && !equilibratedA_)
+    std::cout << "WARNING!  SerialSpdDenseSolver<T>::solve: System should be equilibrated!" << std::endl;
+
   int ierr1=0;
   if (refineSolution_ && !inverted()) ierr1 = applyRefinement();
   if (ierr1!=0)

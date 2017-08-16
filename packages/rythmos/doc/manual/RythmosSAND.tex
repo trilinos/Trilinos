@@ -57,14 +57,11 @@
 \title{ Rythmos: Solution and Analysis Package for Differential-Algebraic and Ordinary-Differential Equations }
 
 \author{
-Curtis C. Ober \\ Numerical Analysis and Applications \\ \\
-Roscoe A. Bartlett \\ Oak Ridge National Laboratories \\ \\
+Curtis C. Ober \\ Multiphysics Applications \\ \\
+Roscoe A. Bartlett \\ Multiphysics Applications \\ \\
 Todd S. Coffey \\ Simulation Modeling Sciences \\ \\
-Roger P. Pawlowski \\ Multiphysics Simulation Technology \\ \\
-Sandia National Laboratories\footnote{
-Sandia is a multiprogram laboratory operated by Sandia Corporation, a
-Lockheed-Martin Company, for the United States Department of Energy
-under Contract DE-AC04-94AL85000.}, Albuquerque NM 87185 USA, \\
+Roger P. Pawlowski \\ Multiphysics Applications \\ \\
+Sandia National Laboratories, Albuquerque NM 87185 USA, \\
 }
 
 % There is a "Printed" date on the title page of a SAND report, so
@@ -75,13 +72,13 @@ under Contract DE-AC04-94AL85000.}, Albuquerque NM 87185 USA, \\
 % ---------------------------------------------------------------------------- %
 % Set some things we need for SAND reports. These are mandatory
 %
-\SANDnum{SAND2013-xxxx}
-\SANDprintDate{October 2013}
+\SANDnum{SAND2017-1417}
+\SANDprintDate{February 2017}
 \SANDauthor{
-Curtis C. Ober \\ Numerical Analysis and Applications \\ \\
-Roscoe A. Bartlett \\ Oak Ridge National Laboratories \\ \\
+Curtis C. Ober \\ Multiphysics Applications \\ \\
+Roscoe A. Bartlett \\ Multiphysics Applications \\ \\
 Todd S. Coffey \\ Simulation Modeling Sciences \\ \\
-Roger P. Pawlowski \\ Multiphysics Simulation Technology \\ \\
+Roger P. Pawlowski \\ Multiphysics Applications \\ \\
 }
 
 % ---------------------------------------------------------------------------- %
@@ -92,8 +89,8 @@ Roger P. Pawlowski \\ Multiphysics Simulation Technology \\ \\
 % \include{MarkUR} % Not needed for unlimited release reports
 
 % The values shown are the default ones provided by SANDreport.cls
-%\SANDreleaseType{Unlimited Release}
-\SANDreleaseType{Not approved for release outside Sandia}
+\SANDreleaseType{Unlimited Release}
+%\SANDreleaseType{Not approved for release outside Sandia}
 
 % ---------------------------------------------------------------------------- %
 % The following definition does not have a default value and will not
@@ -130,7 +127,7 @@ Roger P. Pawlowski \\ Multiphysics Simulation Technology \\ \\
 % Comment out \listoffigures and \listoftables if there are no
 % figures or tables. Make sure this starts on an odd numbered page
 %
-\clearpage
+\cleardoublepage
 \tableofcontents
 %\listoffigures
 %\listoftables
@@ -175,35 +172,39 @@ Roger P. Pawlowski \\ Multiphysics Simulation Technology \\ \\
 \setcounter{secnumdepth}{3}
 \SANDmain % Start the main part of the report
 
-\newpage
+\cleardoublepage
 \part{Theory Manual}
 
+\cleardoublepage
 \include{RythmosTheoryIntroduction}
 \include{RythmosExplicitStepperFormulation}
 \include{RythmosImplicitStepperFormulation}
 \include{RythmosTheoryBDF}
 \include{RythmosTheoryIRK}
 
-\newpage
+\cleardoublepage
 \part{User's Manual}
 
+\cleardoublepage
 \include{RythmosUsersManualParameterList}
 \include{RythmosConvergenceTestExamples}
 
-\newpage
+\cleardoublepage
 \part{Developer's Guide}
 
+\cleardoublepage
 \include{RythmosDevelopersGuide}
 
-\newpage
+\cleardoublepage
 \part{Back Matter}
 
+\cleardoublepage
 \include{RythmosExtraCitations}
 
 % ---------------------------------------------------------------------- %
 % References
 %
-\clearpage
+\cleardoublepage
 % If hyperref is included, then \phantomsection is already defined.
 % If not, we need to define it.
 % \providecommand*{\phantomsection}{}
@@ -224,7 +225,7 @@ Roger P. Pawlowski \\ Multiphysics Simulation Technology \\ \\
 %\input{Appendix}
 
 
-\clearpage
+\cleardoublepage
 \addcontentsline{toc}{section}{Index}
 \printindex{}
 

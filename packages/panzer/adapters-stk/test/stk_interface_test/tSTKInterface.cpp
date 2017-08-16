@@ -58,7 +58,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 typedef shards::Quadrilateral<4> QuadTopo;
 
@@ -79,7 +79,7 @@ Teuchos::RCP<STK_Interface> build2DMesh()
    mesh.initialize(MPI_COMM_WORLD);
    mesh.beginModification();
       std::vector<double> coord(2);
-      stk_classic::mesh::Part * block = mesh.getElementBlockPart("quad_elements");
+      stk::mesh::Part * block = mesh.getElementBlockPart("quad_elements");
       { 
          // Add four coordinates
          //
@@ -102,7 +102,7 @@ Teuchos::RCP<STK_Interface> build2DMesh()
          mesh.addNode(4,coord); 
 
          // add an element
-         std::vector<stk_classic::mesh::EntityId> nodes;
+         std::vector<stk::mesh::EntityId> nodes;
          for(std::size_t i=1;i<5;i++)
             nodes.push_back(i);
 
@@ -126,7 +126,7 @@ Teuchos::RCP<STK_Interface> build2DMesh()
          mesh.addNode(6,coord); 
 
          // add an element
-         std::vector<stk_classic::mesh::EntityId> nodes(4);
+         std::vector<stk::mesh::EntityId> nodes(4);
          nodes[0] = 5;
          nodes[1] = 6;
          nodes[2] = 3;
@@ -152,7 +152,7 @@ Teuchos::RCP<STK_Interface> build2DMesh()
          mesh.addNode(8,coord); 
 
          // add an element
-         std::vector<stk_classic::mesh::EntityId> nodes(4);
+         std::vector<stk::mesh::EntityId> nodes(4);
          nodes[0] = 4;
          nodes[1] = 3;
          nodes[2] = 7;
@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
       TEST_ASSERT(mesh.isModifiable());
 
       std::vector<double> coord(2);
-      stk_classic::mesh::Part * block = mesh.getElementBlockPart("0");
+      stk::mesh::Part * block = mesh.getElementBlockPart("0");
       { 
          // Add four coordinates
          //
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
          mesh.addNode(4,coord); 
 
          // add an element
-         std::vector<stk_classic::mesh::EntityId> nodes;
+         std::vector<stk::mesh::EntityId> nodes;
          for(std::size_t i=1;i<5;i++)
             nodes.push_back(i);
 
@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
          mesh.addNode(6,coord); 
 
          // add an element
-         std::vector<stk_classic::mesh::EntityId> nodes(4);
+         std::vector<stk::mesh::EntityId> nodes(4);
          nodes[0] = 5;
          nodes[1] = 6;
          nodes[2] = 3;
@@ -268,15 +268,15 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
    mesh.endModification();
    TEST_ASSERT(not mesh.isModifiable());
 
-   stk_classic::mesh::EntityRank nodeRank = mesh.getNodeRank();
-   stk_classic::mesh::EntityRank sideRank = mesh.getSideRank();
-   stk_classic::mesh::EntityRank elmtRank = mesh.getElementRank();
+   stk::mesh::EntityRank nodeRank = mesh.getNodeRank();
+   stk::mesh::EntityRank sideRank = mesh.getSideRank();
+   stk::mesh::EntityRank elmtRank = mesh.getElementRank();
 
    TEST_EQUALITY(mesh.getEntityCounts(nodeRank),6);
    TEST_EQUALITY(mesh.getEntityCounts(sideRank),0);
    TEST_EQUALITY(mesh.getEntityCounts(elmtRank),2);
 
-   #ifdef HAVE_IOSS
+   #ifdef PANZER_HAVE_IOSS
       TEST_ASSERT(mesh.isWritable());
       TEST_NOTHROW(mesh.writeToExodus("simplemesh.exo"));
    #else
@@ -304,11 +304,13 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
 
 class CompareID {
 public:
-   CompareID(stk_classic::mesh::EntityId id) : id_(id) {}
+   CompareID(Teuchos::RCP<STK_Interface> mesh, stk::mesh::EntityId id) : mesh_(mesh), id_(id) {}
 
-   bool operator()(stk_classic::mesh::Entity * e)
-   { return e->identifier()==id_; }
-   stk_classic::mesh::EntityId id_;
+   bool operator()(stk::mesh::Entity e)
+   { return mesh_->elementGlobalId(e)==id_; }
+
+   Teuchos::RCP<STK_Interface> mesh_;
+   stk::mesh::EntityId id_;
 };
 
 TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
@@ -323,52 +325,52 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
       mesh->writeToExodus("simplemesh.exo");
  
    {
-      std::vector<stk_classic::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh->getElementsSharingNode(2,elements);
  
       TEST_EQUALITY(elements.size(),2); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(1))!=elements.end()); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(2))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 1))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 2))!=elements.end()); 
    }
  
    {
-      std::vector<stk_classic::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh->getElementsSharingNode(4,elements);
  
       TEST_EQUALITY(elements.size(),2); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(1))!=elements.end()); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(3))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 1))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 3))!=elements.end()); 
    }
  
    {
-      std::vector<stk_classic::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh->getElementsSharingNode(3,elements);
  
       TEST_EQUALITY(elements.size(),3); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(1))!=elements.end()); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(2))!=elements.end()); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(3))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 1))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 2))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 3))!=elements.end()); 
    }
 
    {
-     std::vector<stk_classic::mesh::EntityId> nodes;
+     std::vector<stk::mesh::EntityId> nodes;
      nodes.push_back(3);
      nodes.push_back(4);
 
-     std::vector<stk_classic::mesh::Entity*> elements;
+     std::vector<stk::mesh::Entity> elements;
      mesh->getElementsSharingNodes(nodes,elements);
 
      TEST_EQUALITY(elements.size(),2); 
-     TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(1))!=elements.end()); 
-     TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(3))!=elements.end()); 
+     TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 1))!=elements.end()); 
+     TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 3))!=elements.end()); 
    }
     
    {
-      std::vector<stk_classic::mesh::EntityId> nodes;
+      std::vector<stk::mesh::EntityId> nodes;
       nodes.push_back(1);
       nodes.push_back(5);
 
-      std::vector<stk_classic::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh->getElementsSharingNodes(nodes,elements);
 
       TEST_EQUALITY(elements.size(),0); 
@@ -382,12 +384,12 @@ TEUCHOS_UNIT_TEST(tSTKInterface, subcellIndices)
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
 
-   stk_classic::mesh::EntityRank nodeRank = mesh->getNodeRank();
-   stk_classic::mesh::EntityRank sideRank = mesh->getSideRank();
+   stk::mesh::EntityRank nodeRank = mesh->getNodeRank();
+   stk::mesh::EntityRank sideRank = mesh->getSideRank();
 
    mesh->buildSubcells();
 
-   std::vector<stk_classic::mesh::EntityId> subcells;
+   std::vector<stk::mesh::EntityId> subcells;
 
    TEST_THROW(mesh->getSubcellIndices(nodeRank,9,subcells),std::logic_error);
 
@@ -412,34 +414,24 @@ TEUCHOS_UNIT_TEST(tSTKInterface, local_ids)
 {
    using Teuchos::RCP;
 
-   std::vector<stk_classic::mesh::Entity*> elements;
+   std::vector<stk::mesh::Entity> elements;
 
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
-
-   stk_classic::mesh::EntityRank nodeRank = mesh->getNodeRank();
 
    mesh->getMyElements(elements);
 
    // loop over all elements of mesh
    for(std::size_t elmI=0;elmI<elements.size();++elmI) {
-      stk_classic::mesh::Entity * elem = elements[elmI];
+      stk::mesh::Entity elem = elements[elmI];
       std::size_t localId = mesh->elementLocalId(elem);
 
-      stk_classic::mesh::PairIterRelation relations = elem->relations(nodeRank);
-      stk_classic::mesh::PairIterRelation::iterator itr;
-      stk_classic::mesh::Entity * node = 0;
-      for(itr=relations.begin();itr!=relations.end();++itr) {
-         if(itr->identifier()==0) {
-            node = itr->entity();
-            break;
-         }
-      }
+      stk::mesh::Entity node = mesh->findConnectivityById(elem, stk::topology::NODE_RANK, 0);
 
-      TEST_ASSERT(node!=0);
+      TEST_ASSERT(mesh->isValid(node));
 
       // based on first node check local id of element
-      switch(node->identifier()) {
+      switch(mesh->elementGlobalId(node)) {
       case 1:
          TEST_EQUALITY(localId,0);
          break;
@@ -462,9 +454,9 @@ TEUCHOS_UNIT_TEST(tSTKInterface, edgeAddTest)
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
 
-   stk_classic::mesh::EntityRank nodeRank = mesh->getNodeRank();
-   stk_classic::mesh::EntityRank sideRank = mesh->getSideRank();
-   stk_classic::mesh::EntityRank elmtRank = mesh->getElementRank();
+   stk::mesh::EntityRank nodeRank = mesh->getNodeRank();
+   stk::mesh::EntityRank sideRank = mesh->getSideRank();
+   stk::mesh::EntityRank elmtRank = mesh->getElementRank();
 
    mesh->buildSubcells();
 
@@ -475,5 +467,95 @@ TEUCHOS_UNIT_TEST(tSTKInterface, edgeAddTest)
    TEST_EQUALITY(mesh->getEntityCounts(sideRank),10);
    TEST_EQUALITY(mesh->getEntityCounts(elmtRank),3);
 }
+
+/**
+ *  \brief Test the ability to add global variables to an Exodus output file.
+ *
+ *  Test whether or not we can add global variables (that is, data not
+ *  associated with nodes, elements, etc.) to an output Exodus file.
+ */
+TEUCHOS_UNIT_TEST(tSTKInterface, globalVariables)
+{
+  using std::string;
+  using std::vector;
+  using Teuchos::Array;
+  using Teuchos::RCP;
+
+  // Create the mesh database and ensure that it's writable.
+  RCP<STK_Interface> mesh = build2DMesh();
+  TEST_ASSERT(mesh->isWritable())
+
+  // Add global variables to be output.
+  int answer(42);
+  double perfection(1.61803398875);
+  vector<int> spiralEncoding{0, 1, 1, 2, 3, 5, 8, 13, 21};
+  vector<double> physicsFavorites{299792458, 6.67408e-11, 6.626070040e-34,
+    8.854187817e-12, 1.6021766208e-19};
+  mesh->addGlobalToExodus("Answer", answer);
+  mesh->addGlobalToExodus("Perfection", perfection);
+  mesh->addGlobalToExodus("Spiral Encoding", spiralEncoding);
+  mesh->addGlobalToExodus("Physics Favorites", physicsFavorites);
+
+  // Write out the mesh database to an Exodus file.
+  const string filename("globalVariables.exo");
+  mesh->writeToExodus(filename);
+
+  // Open the output file for reading.
+  stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+  stkIo.add_mesh_database(filename, stk::io::READ_RESTART);
+  stkIo.create_input_mesh();
+  stkIo.populate_bulk_data();
+  stkIo.read_defined_input_fields(0.0);
+
+  // Get the names of the global variables.
+  vector<string> globalNames;
+  stkIo.get_global_variable_names(globalNames);
+
+  // Ensure that we have the right global variable names.  Note that
+  // get_global_variable_names() transforms the strings such that they're
+  // lowercased and spaces are replaced with underscores.
+  TEST_EQUALITY(globalNames.size(), 4)
+  int found(0);
+  for (const auto& name : globalNames)
+  {
+    if (name == "answer")
+      found |= 1;
+    else if (name == "perfection")
+      found |= 2;
+    else if (name == "spiral_encoding")
+      found |= 4;
+    else if (name == "physics_favorites")
+      found |= 8;
+  } // end loop over globalNames
+  TEST_EQUALITY(found, 1 | 2 | 4 | 8)
+
+  // Get the global variables themselves from the file.
+  int answerFromFile(0);
+  double perfectionFromFile(0);
+  vector<int> spiralEncodingFromFile;
+  vector<double> physicsFavoritesFromFile;
+  for (const auto& name : globalNames)
+  {
+    if (name == "answer")
+      stkIo.get_global(name, answerFromFile);
+    else if (name == "perfection")
+      stkIo.get_global(name, perfectionFromFile);
+    else if (name == "spiral_encoding")
+      stkIo.get_global(name, spiralEncodingFromFile);
+    else if (name == "physics_favorites")
+      stkIo.get_global(name, physicsFavoritesFromFile);
+  } // end loop over globalNames
+
+  // Ensure that the global variables from the file match those we wrote
+  // earlier.
+  TEST_EQUALITY(answer, answerFromFile)
+  TEST_EQUALITY(perfection, perfectionFromFile)
+  Array<int> spiralEncodingA(spiralEncoding),
+    spiralEncodingFromFileA(spiralEncodingFromFile);
+  TEST_EQUALITY(spiralEncodingA, spiralEncodingFromFileA)
+  Array<double> physicsFavoritesA(physicsFavorites),
+    physicsFavoritesFromFileA(physicsFavoritesFromFile);
+  TEST_EQUALITY(physicsFavoritesA, physicsFavoritesFromFileA)
+} // end of tSTKInterface_globalVariables_UnitTest
 
 }

@@ -4,7 +4,7 @@ IF(${PROJECT_NAME}_ENABLE_Epetra AND ${PROJECT_NAME}_ENABLE_EpetraExt AND
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RefMaxwell
     SOURCES cxx_main.cpp
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 1-4
     )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(RefMaxwell_copy
   SOURCE_FILES coord_node.dat

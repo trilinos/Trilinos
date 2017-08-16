@@ -312,11 +312,13 @@ namespace Xpetra {
     }
 
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
+      XPETRA_MONITOR("TpetraMultiVector::replaceMap");
       this->getTpetra_MultiVector()->replaceMap(toTpetra(map));
     }
 
     template<class Node2>
     RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const {
+      XPETRA_MONITOR("TpetraMultiVector::clone");
       return RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(vec_->clone(node2)));
         //toXpetra(vec_->clone(node2));
     }
@@ -363,12 +365,12 @@ namespace Xpetra {
     }
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      return subview(vec_->getDualView().template view<typename dual_view_type::host_mirror_space> (),
+      return subview(vec_->template getLocalView<typename dual_view_type::host_mirror_space> (),
           Kokkos::ALL(), Kokkos::ALL());
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      return subview(vec_->getDualView().template view<typename dual_view_type::t_dev_um::execution_space> (),
+      return subview(vec_->template getLocalView<typename dual_view_type::t_dev_um::execution_space> (),
           Kokkos::ALL(), Kokkos::ALL());
     }
 
@@ -476,27 +478,27 @@ namespace Xpetra {
 
     //! Default constructor
     TpetraMultiVector () {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Basic constuctor.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Copy constructor (performs a deep copy).
     TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Create multivector by copying two-dimensional array of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Scalar > &A, size_t LDA, size_t NumVectors) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Create multivector by copying array of views of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
 
@@ -662,7 +664,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) { }
+    TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra multivector
     RCP< Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { return Teuchos::null; }
@@ -704,13 +708,13 @@ namespace Xpetra {
     }
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::host_mirror_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::host_mirror_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_host_um();
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::t_dev_um::execution_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::t_dev_um::execution_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_dev_um();
     }
@@ -750,22 +754,22 @@ namespace Xpetra {
 
     //! Basic constuctor.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Copy constructor (performs a deep copy).
     TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Create multivector by copying two-dimensional array of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Scalar > &A, size_t LDA, size_t NumVectors) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Create multivector by copying array of views of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
 
@@ -931,7 +935,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) { }
+    TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra multivector
     RCP< Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { return Teuchos::null; }
@@ -973,13 +979,13 @@ namespace Xpetra {
     }
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::host_mirror_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::host_mirror_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_host_um();
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::t_dev_um::execution_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::t_dev_um::execution_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_dev_um();
     }

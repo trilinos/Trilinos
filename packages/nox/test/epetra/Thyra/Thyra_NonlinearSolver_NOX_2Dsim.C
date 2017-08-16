@@ -45,6 +45,10 @@
 // ************************************************************************
 //@HEADER
 
+// Unit test objects
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Thyra.H"
@@ -76,100 +80,79 @@
 
 using namespace std;
 
-int main(int argc, char *argv[])
+TEUCHOS_UNIT_TEST(Thyra_NonlinearSolver, WithResetModel)
 {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  bool success = false;
-  bool verbose = false;
-  try {
-    // Parse the command line
-    using Teuchos::CommandLineProcessor;
-    CommandLineProcessor  clp;
-    clp.throwExceptions(false);
-    clp.addOutputSetupOptions(true);
-    clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
-
-    CommandLineProcessor::EParseCommandLineReturn
-      parse_return = clp.parse(argc,argv,&std::cerr);
-
-    if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
-      return parse_return;
-
-    if (verbose)
-      std::cout << "Verbosity Activated" << std::endl;
-    else
-      std::cout << "Verbosity Disabled" << std::endl;
-
-    // Create a communicator for Epetra objects
+  // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-    Epetra_MpiComm Comm( MPI_COMM_WORLD );
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
-    Epetra_SerialComm Comm;
+  Epetra_SerialComm Comm;
 #endif
 
-    // Check we have only one processor since this problem doesn't work
-    // for more than one proc
-    if (Comm.NumProc() > 1) {
-      std::cerr << "Error!  Problem can only be run with at most 1 processor!"
-            << std::endl;
-      return -1;
-    }
+  // Problem size only supports 1 mpi process
+  TEST_EQUALITY(Comm.NumProc(), 1);
+  
+  // Create the model evaluator object
+  double d = 10.0;
+  double p0 = 2.0;
+  double p1 = 0.0;
+  double x00 = 0.0;
+  double x01 = 1.0;
+  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel =
+    Teuchos::rcp(new ModelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),
+						 d,p0,p1,x00,x01));
+  
+  ::Stratimikos::DefaultLinearSolverBuilder builder;
 
-    // Create the model evaluator object
-    double d = 10.0;
-    double p0 = 2.0;
-    double p1 = 0.0;
-    double x00 = 0.0;
-    double x01 = 1.0;
-    Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel =
-      Teuchos::rcp(new ModelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),
-                           d,p0,p1,x00,x01));
+  Teuchos::RCP<Teuchos::ParameterList> p = 
+    Teuchos::rcp(new Teuchos::ParameterList);
+  p->set("Linear Solver Type", "AztecOO");
+  p->set("Preconditioner Type", "Ifpack");
+  builder.setParameterList(p);
 
-    ::Stratimikos::DefaultLinearSolverBuilder builder;
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
+    lowsFactory = builder.createLinearSolveStrategy("");
 
-    Teuchos::RCP<Teuchos::ParameterList> p =
-      Teuchos::rcp(new Teuchos::ParameterList);
-    p->set("Linear Solver Type", "AztecOO");
-    p->set("Preconditioner Type", "Ifpack");
-    builder.setParameterList(p);
+  thyraModel->set_W_factory(lowsFactory);
+  
+  // Create nox parameter list
+  Teuchos::RCP<Teuchos::ParameterList> nl_params =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  nl_params->set("Nonlinear Solver", "Line Search Based");
+  
+  // Create a Thyra nonlinear solver
+  Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver =
+    Teuchos::rcp(new ::Thyra::NOXNonlinearSolver);
 
-    Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
-      lowsFactory = builder.createLinearSolveStrategy("");
+  solver->setParameterList(nl_params);
+  solver->setModel(thyraModel);
 
-    thyraModel->set_W_factory(lowsFactory);
+  Teuchos::RCP< ::Thyra::VectorBase<double> >
+    initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
+  
+  ::Thyra::SolveCriteria<double> solve_criteria;
+  ::Thyra::SolveStatus<double> solve_status;
+  
+  solve_status = solver->solve(initial_guess.get(), &solve_criteria);
+  
+  TEST_ASSERT(solve_status.extraParameters->isType<int>("Number of Iterations"));
+  TEST_EQUALITY(solve_status.extraParameters->get<int>("Number of Iterations"), 7);  
+  TEST_EQUALITY(solve_status.solveStatus, ::Thyra::SOLVE_STATUS_CONVERGED);
 
-    // Create nox parameter list
-    Teuchos::RCP<Teuchos::ParameterList> nl_params =
-      Teuchos::rcp(new Teuchos::ParameterList);
-    nl_params->set("Nonlinear Solver", "Line Search Based");
+  // Test the reset capability for using a new model evalautor with a
+  // different set of parameters
+  p1 = 2.0;
+  thyraModel =
+    Teuchos::rcp(new ModelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),
+						 d,p0,p1,x00,x01));
+  thyraModel->set_W_factory(lowsFactory);
+  
+  solver->setModel(thyraModel);
+  initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
+  solve_status = solver->solve(initial_guess.get(), &solve_criteria);
+  TEST_ASSERT(solve_status.extraParameters->isType<int>("Number of Iterations"));
+  TEST_EQUALITY(solve_status.extraParameters->get<int>("Number of Iterations"), 9);  
+  TEST_EQUALITY(solve_status.solveStatus, ::Thyra::SOLVE_STATUS_CONVERGED);
 
-    // Create a Thyra nonlinear solver
-    Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver =
-      Teuchos::rcp(new ::Thyra::NOXNonlinearSolver);
-
-    solver->setParameterList(nl_params);
-    solver->setModel(thyraModel);
-
-    Teuchos::RCP< ::Thyra::VectorBase<double> >
-      initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
-
-    ::Thyra::SolveCriteria<double> solve_criteria;
-    ::Thyra::SolveStatus<double> solve_status;
-
-    solve_status = solver->solve(initial_guess.get(), &solve_criteria);
-
-    TEUCHOS_ASSERT(solve_status.extraParameters->isType<int>("Number of Iterations"));
-
-    TEUCHOS_ASSERT(solve_status.extraParameters->get<int>("Number of Iterations") == 7);
-
-    success = (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED);
-    if (success)
-      std::cout << "Test passed!" << std::endl;
-
-    Teuchos::TimeMonitor::summarize();
-  }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  Teuchos::TimeMonitor::summarize();
 }

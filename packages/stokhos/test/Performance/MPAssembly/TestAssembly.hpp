@@ -64,6 +64,14 @@
 #include <VectorImport.hpp>
 #include <fenl_functors.hpp>
 
+inline
+double maximum( const Teuchos::Comm<int>& comm , double local )
+{
+  double global = 0 ;
+  Teuchos::reduceAll( comm , Teuchos::REDUCE_MAX , 1 , & local , & global );
+  return global ;
+}
+
 struct Perf {
   size_t global_elem_count ;
   size_t global_node_count ;
@@ -82,19 +90,23 @@ struct Perf {
     fill_time        += p.fill_time;
   }
 
+  void min(const Perf& p) {
+    global_elem_count = p.global_elem_count;
+    global_node_count = p.global_node_count;
+    import_time       = std::min( import_time , p.import_time );
+    fill_time         = std::min( fill_time , p.fill_time );
+  }
+
   void scale(double s) {
     import_time *= s;
     fill_time   *= s;
   }
-};
 
-inline
-double maximum( const Teuchos::RCP<const Teuchos::Comm<int> >& comm , double local )
-{
-  double global = 0 ;
-  Teuchos::reduceAll( *comm , Teuchos::REDUCE_MAX , 1 , & local , & global );
-  return global ;
-}
+  void reduceMax(const Teuchos::Comm<int>& comm) {
+    import_time = maximum( comm , import_time );
+    fill_time = maximum( comm , fill_time );
+  }
+};
 
 template <typename Scalar, typename Device>
 Perf fenl_assembly(
@@ -154,7 +166,7 @@ Perf fenl_assembly(
                              use_nodes[0] , use_nodes[1] , use_nodes[2] ,
                              bubble_x , bubble_y , bubble_z );
 
-  if ( maximum(comm, ( fixture.ok() ? 0 : 1 ) ) ) {
+  if ( maximum(*comm, ( fixture.ok() ? 0 : 1 ) ) ) {
     throw std::runtime_error(std::string("Problem fixture setup failed"));
   }
 
@@ -246,16 +258,18 @@ Perf fenl_assembly(
 
     //--------------------------------
 
+    Device::fence();
     wall_clock.reset();
 
     comm_nodal_import( nodal_solution );
 
     Device::fence();
-    perf.import_time = maximum( comm , wall_clock.seconds() );
+    perf.import_time = wall_clock.seconds();
 
     //--------------------------------
     // Element contributions to residual and jacobian
 
+    Device::fence();
     wall_clock.reset();
 
     Kokkos::deep_copy( nodal_residual , Scalar(0) );
@@ -269,11 +283,15 @@ Perf fenl_assembly(
     dirichlet.apply();
 
     Device::fence();
-    perf.fill_time = maximum( comm , wall_clock.seconds() );
+    perf.fill_time = wall_clock.seconds();
 
     //--------------------------------
 
-    perf_stats.increment(perf);
+    perf.reduceMax(*comm);
+    if (itrial == 0)
+      perf_stats = perf;
+    else
+      perf_stats.min(perf);
 
   }
 
@@ -356,7 +374,7 @@ struct PerformanceDriverOp {
     Kokkos::Example::FENL::DeviceConfig scalar_dev_config(0, 1, 1);
     Perf perf_scalar =
       fenl_assembly<Scalar,Device>(
-        comm, use_print, use_trials*ensemble, use_nodes,
+        comm, use_print, use_trials, use_nodes,
         scalar_dev_config, scalar_residual );
 
     ensemble_vector_type ensemble_residual;
@@ -379,10 +397,8 @@ struct PerformanceDriverOp {
     if (check)
       check_residuals( scalar_residual, ensemble_residual );
 
-    double s =
-      1000.0 / ( use_trials * ensemble * perf_scalar.global_node_count );
-    perf_scalar.scale(s);
-    perf_ensemble.scale(s);
+    perf_scalar.scale( 1000.0 / ( perf_scalar.global_node_count ) );
+    perf_ensemble.scale( 1000.0 / ( ensemble * perf_scalar.global_node_count ) );
 
     if (comm->getRank() == 0) {
       std::cout.precision(3);
@@ -418,11 +434,11 @@ void performance_test_driver( const Teuchos::RCP<const Teuchos::Comm<int> >& com
               << "\"Grid Size\" , "
               << "\"FEM Size\" , "
               << "\"Ensemble Size\" , "
-              << "\"Scalar Import Time\" , "
-              << "\"Ensemble Import Time\" , "
+              << "\"Scalar Import Time (ms)\" , "
+              << "\"Ensemble Import Time (ms)\" , "
               << "\"Ensemble Import Speedup\" , "
-              << "\"Scalar Fill Time\" , "
-              << "\"Ensemble Fill Time\" , "
+              << "\"Scalar Fill Time (ms)\" , "
+              << "\"Ensemble Fill Time (ms)\" , "
               << "\"Ensemble Fill Speedup\" , "
               << std::endl;
   }

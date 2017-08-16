@@ -33,16 +33,31 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsGraph_findRelOffset
-  SOURCES
-    CrsGraph_findRelOffset
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
-
 # TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCrsGraphCopyFiles
 #   SOURCE_FILES west0067.rua mhd1280b.cua
 #   EXEDEPS CrsGraph_UnitTests
 #   )
+
+# This test needs at least 3 MPI processes to be meaningful.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue601
+  SOURCES
+    CrsGraph_Issue601.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 3-8
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test needs exactly 2 MPI processes to work.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsGraph_insertGlobalIndicesFiltered
+  SOURCES
+    CrsGraph_insertGlobalIndicesFiltered.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )

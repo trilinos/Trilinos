@@ -47,7 +47,7 @@
 #include "Phalanx_DataLayout.hpp"
 
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_CommonArrayFactories.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -73,17 +73,16 @@ GatherNormals(
 
   // setup the orientation field
   std::string orientationFieldName = basis->name() + " Orientation";
-  dof_orientation = PHX::MDField<ScalarT,Cell,NODE>(orientationFieldName,basis_layout);
-
-  // setup all basis fields that are required
-  MDFieldArrayFactory af_pv(pointRule->getName()+"_");
+  dof_orientation = PHX::MDField<const ScalarT,Cell,NODE>(orientationFieldName,basis_layout);
 
   // setup all fields to be evaluated and constructed
-  pointValues.setupArrays(pointRule,af_pv);
+  pointValues = panzer::PointValues2<ScalarT> (pointRule->getName()+"_",false);
+  pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
   this->addDependentField(dof_orientation);
-  this->addDependentField(pointValues.jac);
+  constJac_ = pointValues.jac;
+  this->addDependentField(constJac_);
 
   gatherFieldNormals = PHX::MDField<ScalarT,Cell,NODE,Dim>(dof_name+"_Normals",vector_layout_vector);
   this->addEvaluatedField(gatherFieldNormals);
@@ -102,7 +101,11 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(dof_orientation,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  faceNormal = Intrepid2::FieldContainer<ScalarT>(gatherFieldNormals.dimension(0),gatherFieldNormals.dimension(1),gatherFieldNormals.dimension(2));
+  faceNormal = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),
+					 "faceNormal",
+					 gatherFieldNormals.dimension(0),
+					 gatherFieldNormals.dimension(1),
+					 gatherFieldNormals.dimension(2));
 }
 
 // **********************************************************************
@@ -121,12 +124,12 @@ evaluateFields(typename Traits::EvalData workset)
   // Collect the tangents for the element faces in reference space.
   // These are scaled such that U x V returns a unit normal,
   // **contrary to the Intrepid documentation**.
-  Intrepid2::FieldContainer<ScalarT> refFaceTanU(numFaces,cellDim);
-  Intrepid2::FieldContainer<ScalarT> refFaceTanV(numFaces,cellDim);
+  Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanU = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"refFaceTanU",numFaces,cellDim);
+  Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanV = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"refFaceTanV",numFaces,cellDim);
   for(int i=0;i<numFaces;i++) {
-    Intrepid2::FieldContainer<double> refTanU(cellDim);
-    Intrepid2::FieldContainer<double> refTanV(cellDim);
-    Intrepid2::CellTools<double>::getReferenceFaceTangents(refTanU, refTanV, i, parentCell);
+    Kokkos::DynRankView<double,PHX::Device> refTanU = Kokkos::DynRankView<double,PHX::Device>("refTanU",cellDim);
+    Kokkos::DynRankView<double,PHX::Device> refTanV = Kokkos::DynRankView<double,PHX::Device>("refTanV",cellDim);
+    Intrepid2::CellTools<PHX::exec_space>::getReferenceFaceTangents(refTanU, refTanV, i, parentCell);
     for(int d=0;d<cellDim;d++) {
       refFaceTanU(i,d) = refTanU(d);
       refFaceTanV(i,d) = refTanV(d);
@@ -138,7 +141,7 @@ evaluateFields(typename Traits::EvalData workset)
   // This code duplicates Intrepid2::getPhysicalFaceNormals to avoid converting local
   // data structures to and from Intrepid data structures.
   // Note that the magnitude of the normal is related to the area of the physical face.
-  for(std::size_t c=0;c<workset.num_cells;c++) {
+  for(index_t c=0;c<workset.num_cells;c++) {
     for(int f = 0; f < numFaces; f++) {
 
       std::vector<double> faceTanU(3);

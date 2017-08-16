@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -34,7 +33,7 @@ IF (ROL_ENABLE_Sacado)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
   APPEND_SET(HEADERS
     function/ROL_Sacado_Objective.hpp
-    function/ROL_Sacado_EqualityConstraint.hpp
+    function/ROL_Sacado_Constraint.hpp
   )
 ENDIF()
 

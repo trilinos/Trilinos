@@ -2,7 +2,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -173,9 +173,7 @@ build_problem (Teuchos::ParameterList& test_params,
       if (comm->getRank() == 0) {
         std::cout << "Matrix Market file for right-hand-side(s) B: " << rhs_mm_file << std::endl;
       }
-      b = reader_type::readDenseFile (rhs_mm_file, comm,
-                                      A->getRowMap ()->getNode (),
-                                      rangeMap);
+      b = reader_type::readDenseFile (rhs_mm_file, comm, rangeMap);
     }
 
     if (nullMvec_mm_file != "not specified") {
@@ -185,9 +183,7 @@ build_problem (Teuchos::ParameterList& test_params,
       // mfh 31 Jan 2013: I'm not sure what a "null multivector" means
       // in this context, so I'm only guessing that it's a domain Map
       // multivector.
-      nullVec = reader_type::readDenseFile (nullMvec_mm_file, comm,
-                                            A->getRowMap ()->getNode (),
-                                            domainMap);
+      nullVec = reader_type::readDenseFile (nullMvec_mm_file, comm, domainMap);
     }
 
   }
@@ -195,7 +191,7 @@ build_problem (Teuchos::ParameterList& test_params,
     if (comm->getRank() == 0) {
       std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
     }
-    A = read_matrix_hb<Scalar,LO,GO,Node> (hb_file, comm, node);
+    A = read_matrix_hb<Scalar,LO,GO,Node> (hb_file, comm);
   }
   else {
     throw std::runtime_error("No matrix file specified.");

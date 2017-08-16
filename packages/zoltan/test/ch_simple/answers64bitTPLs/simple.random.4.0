@@ -1,0 +1,11 @@
+Decomposition Method 	= random
+Zoltan Parameters	= 
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+5	0	-1	-1
+11	0	-1	-1
+17	0	-1	-1
+23	0	-1	-1

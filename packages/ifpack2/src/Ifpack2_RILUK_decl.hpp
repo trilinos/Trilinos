@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -49,18 +49,11 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
-
 #include "Ifpack2_ScalingType.hpp"
 #include "Ifpack2_IlukGraph.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
 
 #include <type_traits>
-
-//Experimental Threaded ILUK with Basker
-#ifdef IFPACK2_ILUK_EXPERIMENTAL
-#include <Kokkos_Core.hpp>
-#include <shylubasker_decl.hpp>
-#endif
-
 
 namespace Teuchos {
   class ParameterList; // forward declaration
@@ -544,7 +537,9 @@ private:
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
-  void allocate_L_and_U();
+  void allocateSolvers ();
+  void allocate_L_and_U ();
+  static void checkOrderingConsistency (const row_matrix_type& A);
   void initAllValues (const row_matrix_type& A);
 
   /// \brief Return A, wrapped in a LocalFilter, if necessary.
@@ -565,46 +560,27 @@ protected:
   Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
                                                    global_ordinal_type,
                                                    node_type> > > Graph_;
-  /// \brief The matrix used to to compute ILU(k).
-  ///
-  /// If A_local (the local filter of the original input matrix) is a
-  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
-  /// class reserves the right for A_local_crs_ to be a copy of
-  /// A_local.  This is because the current implementation of ILU(k)
-  /// only knows how to factor a Tpetra::CrsMatrix.  That may change
-  /// in the future.
-  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
+  /// \brief The matrix whos numbers are used to to compute ILU(k). The graph
+  /// may be computed using a crs_matrix_type that initialize() constructs
+  /// temporarily.
+  Teuchos::RCP<const row_matrix_type> A_local_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
+  //! Sparse triangular solver for L
+  Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > L_solver_;
   //! The U (upper triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> U_;
+  //! Sparse triangular solver for U
+  Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > U_solver_;
   //! The diagonal entries of the ILU(k) factorization.
   Teuchos::RCP<vec_type> D_;
-
-
-#ifdef IFPACK2_ILUK_EXPERIMENTAL
-  typedef typename node_type::device_type  kokkos_device;
-  typedef typename kokkos_device::execution_space kokkos_exe;
-  
-  static_assert( std::is_same< kokkos_exe,
-		 Kokkos::OpenMP>::value,
-		 "Kokkos node type not supported by exepertimentalthread basker RILUK decl");
-
-  Teuchos::RCP< BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP> >
-  myBasker;
-  local_ordinal_type basker_threads;
-  scalar_type        basker_user_fill;
-  bool               basker_reuse;
-#endif
-
 
   int LevelOfFill_;
 
   bool isAllocated_;
   bool isInitialized_;
   bool isComputed_;
-  bool isExperimental_;
 
   int numInitialize_;
   int numCompute_;

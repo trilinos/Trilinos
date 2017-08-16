@@ -1,3 +1,25 @@
+Release Notes for Domi for Trilinos 12.8
+========================================
+
+Added replicated boundaries
+---------------------------
+  * A replicated boundary exists only on a periodic domain, and is
+    simply a convention that the end points are the same points. For
+    example, a left end coordinate that represents 0 degrees and a
+    right end coordinate that represents 360 degrees. Domi now
+    supports either convention, and it affects communication.
+
+  * Added additional tests for periodic domains
+
+Enhancements
+------------
+  * New MDVector constructor that takes a parent MDVector and an array
+    of Slices
+
+  * MDMap support for axis maps
+
+  * MDMap getMDComm() method
+
 Release Notes for Domi for Trilinos 12.4
 ========================================
 

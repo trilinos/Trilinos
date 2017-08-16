@@ -80,9 +80,6 @@ void get_entities_through_relations(
   const std::vector<Entity>::const_iterator i_end ,
   std::vector<Entity> & entities_related )
 {
-  EntityVector temp_entities;
-  Entity const* irels_j = NULL;
-  int num_conn = 0;
   for (Entity const *rels_left = rels_begin ; rels_left != rels_end ; ++rels_left )
   {
     // Do all input entities have a relation to this entity ?
@@ -93,15 +90,8 @@ void get_entities_through_relations(
     std::vector<Entity>::const_iterator i = i_beg ;
     for ( ; i != i_end ; ++i )
     {
-      if (mesh.connectivity_map().valid(mesh.entity_rank(*i), erank)) {
-        num_conn = mesh.num_connectivity(*i, erank);
-        irels_j  = mesh.begin(*i, erank);
-      }
-      else {
-        num_conn = get_connectivity(mesh, *i, erank, temp_entities);
-        irels_j  = &*temp_entities.begin();
-      }
-
+      int num_conn = mesh.num_connectivity(*i, erank);
+      const Entity* irels_j  = mesh.begin(*i, erank);
       Entity const *irels_end = irels_j + num_conn;
 
       while ( irels_j != irels_end && e != *irels_j) {
@@ -137,19 +127,10 @@ void get_entities_through_relations(
     const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
     std::vector<Entity>::const_iterator next_i = i + 1;
-    EntityVector temp_entities;
-    Entity const* rels_begin = NULL;
-    int num_conn = 0;
     for (EntityRank rank = stk::topology::BEGIN_RANK; rank < end_rank; ++rank)
     {
-      if (mesh.connectivity_map().valid(ibucket.entity_rank(), rank)) {
-        num_conn   = mesh.num_connectivity(ibucket[ibordinal], rank);
-        rels_begin = mesh.begin(ibucket[ibordinal], rank);
-      }
-      else {
-        num_conn   = get_connectivity(mesh, ibucket[ibordinal], rank, temp_entities);
-        rels_begin = &*temp_entities.begin();
-      }
+      int num_conn   = mesh.num_connectivity(ibucket[ibordinal], rank);
+      const Entity* rels_begin = mesh.begin(ibucket[ibordinal], rank);
 
       get_entities_through_relations(mesh, rels_begin, rels_begin + num_conn, next_i, j,
                                      entities_related);
@@ -170,17 +151,8 @@ void get_entities_through_relations(
           std::vector<Entity>::const_iterator i = entities.begin();
     const std::vector<Entity>::const_iterator j = entities.end();
 
-    EntityVector temp_entities;
-    Entity const* rel_entities = NULL;
-    int num_rels = 0;
-    if (mesh.connectivity_map().valid(mesh.entity_rank(*i), entities_related_rank)) {
-      num_rels     = mesh.num_connectivity(*i, entities_related_rank);
-      rel_entities = mesh.begin(*i, entities_related_rank);
-    }
-    else {
-      num_rels    = get_connectivity(mesh, *i, entities_related_rank, temp_entities);
-      rel_entities = &*temp_entities.begin();
-    }
+    int num_rels = mesh.num_connectivity(*i, entities_related_rank);
+    Entity const* rel_entities = mesh.begin(*i, entities_related_rank);
 
     ++i;
     get_entities_through_relations(mesh, rel_entities, rel_entities + num_rels, i, j, entities_related);
@@ -204,7 +176,6 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData 
 
 void induced_part_membership(const BulkData& mesh,
                              const Entity entity ,
-                             const OrdinalVector & omit ,
                                    OrdinalVector & induced_parts)
 {
   ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity" << entity.local_offset());
@@ -212,28 +183,31 @@ void induced_part_membership(const BulkData& mesh,
   const EntityRank e_rank = mesh.entity_rank(entity);
   const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
-  EntityVector temp_entities;
-  Entity const* rels = NULL;
-  int num_rels = 0;
   for (EntityRank irank = static_cast<EntityRank>(e_rank + 1); irank < end_rank; ++irank)
   {
-    if (mesh.connectivity_map().valid(e_rank, irank)) {
-      num_rels = mesh.num_connectivity(entity, irank);
-      rels     = mesh.begin(entity, irank);
-    }
-    else {
-      num_rels = get_connectivity(mesh, entity, irank, temp_entities);
-      rels     = &*temp_entities.begin();
-    }
+    int num_rels = mesh.num_connectivity(entity, irank);
+    Entity const* rels     = mesh.begin(entity, irank);
 
     for (int j = 0; j < num_rels; ++j)
     {
-      impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(mesh, rels[j], omit, e_rank, induced_parts);
+      impl::get_part_ordinals_to_induce_on_lower_ranks(mesh, rels[j], e_rank, induced_parts);
     }
   }
 }
 
 //----------------------------------------------------------------------
+
+stk::mesh::Entity find_by_ordinal(stk::mesh::Entity mesh_obj, stk::mesh::EntityRank rank, size_t ordinal, const stk::mesh::BulkData& mesh)
+{
+  stk::mesh::ConnectivityOrdinal const* ordinals = mesh.begin_ordinals(mesh_obj, rank);
+  stk::mesh::Entity const* conn = mesh.begin(mesh_obj, rank);
+  for (int i = 0, ie = mesh.num_connectivity(mesh_obj, rank); i < ie; ++i) {
+    if (ordinals[i] == ordinal) {
+      return conn[i];
+    }
+  }
+  return stk::mesh::Entity();
+}
 
 } // namespace mesh
 } // namespace stk

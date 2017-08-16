@@ -106,6 +106,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef typename InputTraits<User>::offset_t offset_t;
   typedef User user_t;
   typedef User userCoord_t;
   typedef VectorAdapter<User> base_adapter_t;

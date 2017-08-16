@@ -64,4 +64,6 @@
 #define STK_PACKAGE stk
 #define STK_HAS_SNL_EXODUSII
 
+#include <stk_util/stk_kokkos_macros.h>
+
 #endif /* stk_util_config_h */

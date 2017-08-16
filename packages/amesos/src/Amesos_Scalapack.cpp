@@ -877,7 +877,7 @@ int Amesos_Scalapack::Solve() {
   const int zero = 0 ; 
   const int one = 1 ; 
   if ( iam_ < nprow_ * npcol_ ) {
-    assert( ScalapackX->ExtractView( &ScalapackXvalues, &ScalapackXlda ) == 0 ) ; 
+    EPETRA_CHK_ERR( ScalapackX->ExtractView( &ScalapackXvalues, &ScalapackXlda ) ) ;
     
     if ( false ) std::cout << "Amesos_Scalapack.cpp: " << __LINE__ << " ScalapackXlda = "  <<  ScalapackXlda 
 		      << " lda_ = "  << lda_ 
@@ -960,8 +960,8 @@ int Amesos_Scalapack::Solve() {
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
     double NormLHS, NormRHS;
     for( int i=0 ; i<nrhs ; ++i ) {
-      assert((*vecX)(i)->Norm2(&NormLHS)==0);
-      assert((*vecB)(i)->Norm2(&NormRHS)==0);
+      EPETRA_CHK_ERR((*vecX)(i)->Norm2(&NormLHS));
+      EPETRA_CHK_ERR((*vecB)(i)->Norm2(&NormRHS));
       if( verbose_ && Comm().MyPID() == 0 ) {
 	std::cout << "Amesos_Scalapack : vector " << i << ", ||x|| = " << NormLHS
 	     << ", ||b|| = " << NormRHS << std::endl;

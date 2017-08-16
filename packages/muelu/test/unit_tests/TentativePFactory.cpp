@@ -55,6 +55,8 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
+#include <Galeri_XpetraMaps.hpp>
+
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
@@ -65,6 +67,7 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 
 namespace MueLuTests {
 
@@ -308,7 +311,104 @@ namespace MueLuTests {
       TEST_EQUALITY(norms[i]<1e-12, true);
     }
 
-  } //MakeTentative
+  } //MakeTentativeUsingDefaultNullSpace
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, NoQROption, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef Teuchos::ScalarTraits<Scalar> TST;
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Test option that skips local QR factorizations" << std::endl;
+
+    GlobalOrdinal nx = 20, ny = 20;
+
+    // Describes the initial layout of matrix rows across processors.
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
+
+    map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
+
+    galeriList.set("right boundary" , "Neumann");
+    galeriList.set("bottom boundary", "Neumann");
+    galeriList.set("top boundary"   , "Neumann");
+    galeriList.set("front boundary" , "Neumann");
+    galeriList.set("back boundary"  , "Neumann");
+    galeriList.set("keepBCs",             false);
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+    A->SetFixedBlockSize(2);
+
+    Level fineLevel, coarseLevel;
+    test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+    coarseLevel.SetFactoryManager(Teuchos::null);
+
+    fineLevel.Request("A");
+    fineLevel.Set("A",A);
+
+    LocalOrdinal NSdim = 3;
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    nullSpace->randomize();
+    fineLevel.Set("Nullspace",nullSpace);
+    fineLevel.Set("DofsPerNode",2);
+
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    RCP<UncoupledAggregationFactory> UnCoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UnCoupledAggFact->SetFactory("Graph", dropFact);
+
+    RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+    coarseMapFact->SetFactory("Aggregates", UnCoupledAggFact);
+    RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+    TentativePFact->SetFactory("Aggregates", UnCoupledAggFact);
+    TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    TentativePFact->SetFactory("CoarseMap", coarseMapFact);
+
+    coarseLevel.Request("P",TentativePFact.get());  // request Ptent
+    coarseLevel.Request("Nullspace",TentativePFact.get());
+    coarseLevel.Request(*TentativePFact);
+    Teuchos::ParameterList paramList;
+    paramList.set("tentative: calculate qr",       false);
+    TentativePFact->SetParameterList(paramList);
+    TentativePFact->Build(fineLevel,coarseLevel);
+
+    RCP<Matrix> Ptent;
+    coarseLevel.Get("P",Ptent,TentativePFact.get());
+
+    RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",TentativePFact.get());
+
+    //check interpolation
+    RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
+    Ptent->apply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
+
+    RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    diff->putScalar(0.0);
+
+    coarseLevel.Release("P",TentativePFact.get()); // release Ptent
+    coarseLevel.Release("Nullspace",TentativePFact.get());
+
+    //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
+    diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
+
+    Teuchos::Array<typename TST::magnitudeType> norms(NSdim);
+    diff->norm2(norms);
+    for (LocalOrdinal i=0; i<NSdim; ++i) {
+      out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
+      TEST_EQUALITY(norms[i]<1e-12, true);
+    }
+
+  } //NoQR
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, NonStandardMaps, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -649,6 +749,7 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentative_LapackQR,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentative,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentativeUsingDefaultNullSpace,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,NoQROption,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, NonStandardMaps,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,EpetraVsTpetra,Scalar,LO,GO,Node)
 

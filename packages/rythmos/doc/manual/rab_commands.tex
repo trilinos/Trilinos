@@ -1,0 +1,79 @@
+%
+% Command to print 1/2 in math mode real nice
+%
+\newcommand{\myonehalf}{{}^1 \!\!  /  \! {}_2}
+
+%
+% Command to print over/under left aligned in math mode
+%
+\newcommand{\myoverunderleft}[2]{ \begin{array}{l} #1 \\ \scriptstyle #2 \end{array} }
+
+%
+% Command to number equations 1.a, 1.b etc.
+%
+\newcounter{saveeqn}
+\newcommand{\alpheqn}{\setcounter{saveeqn}{\value{equation}}
+\stepcounter{saveeqn}\setcounter{equation}{0}
+\renewcommand{\theequation}
+	{\mbox{\arabic{saveeqn}.\alph{equation}}}}
+\newcommand{\reseteqn}{\setcounter{equation}{\value{saveeqn}}
+\renewcommand{\theequation}{\arabic{equation}}}
+
+%
+% Shorthand macros for setting up a matrix or vector
+%
+\newcommand{\bmat}[1]{\left[ \begin{array}{#1}}
+\newcommand{\emat}{\end{array} \right]}
+
+%
+% Command for a good looking \Re in math enviornment
+%
+\newcommand{\RE}{\mbox{\textbf{I}}\hspace{-0.6ex}\mbox{\textbf{R}}}
+\newcommand{\CPLX}{\mbox{\textbf{C}}\hspace{-1.1ex}\mbox{l}\hspace{0.4ex}}
+
+%
+% Commands for Jacobians
+%
+\newcommand{\Jac}[2]{\displaystyle{\frac{\partial #1}{\partial #2}}}
+\newcommand{\jac}[2]{\partial #1 / \partial #2}
+
+%
+% Commands for Hessians
+%
+\newcommand{\Hess}[2]{\displaystyle{\frac{\partial^2 #1}{\partial #2^2}}}
+\newcommand{\hess}[2]{\partial^2 #1 / \partial #2^2}
+\newcommand{\HessTwo}[3]{\displaystyle{\frac{\partial^2 #1}{\partial #2 \partial #3}}}
+\newcommand{\hessTwo}[3]{\partial^2 #1 / (\partial #2 \partial #3)}
+
+
+
+%\newcommand{\Hess2}[3]{\displaystyle{\frac{\partial^2 #1}{\partial #2 \partial #3}}}
+%\newcommand{\myHess2}{\frac{a}{b}}
+%\newcommand{\hess2}[3]{\partial^2 #1 / (\partial #2 \partial #3)}
+
+%
+% Shorthand macros for setting up a single tab indent
+%
+\newcommand{\bifthen}{\begin{tabbing} xxxx\=xxxx\=xxxx\=xxxx\=xxxx\=xxxx\= \kill}
+\newcommand{\eifthen}{\end{tabbing}}
+
+%
+% Shorthand for inserting four spaces
+%
+\newcommand{\tb}{\hspace{4ex}}
+
+%
+% Commands for beginning and ending single spacing
+%
+\newcommand{\bsinglespace}{\renewcommand{\baselinestretch}{1.2}\small\normalsize}
+\newcommand{\esinglespace}{}
+
+%
+% Command for text font
+%
+
+\newcommand{\ttt}[1]{\texttt{#1}}
+
+\newcommand{\tit}[1]{\textit{#1}}
+
+\newcommand{\titbf}[1]{\textit{\textbf{#1}}}

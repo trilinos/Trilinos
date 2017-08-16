@@ -17,7 +17,7 @@ bool Operator::ISINIT = false;
 map<string, Operator*> Operator::OPERATORS;
 
 /*****************************************************************************/
-Operator::Operator(const string& name, bool is_Unary, 
+Operator::Operator(const string& name, bool is_Unary,
                    int precedence, bool isLeftAssoc) : Object(OperatorOT)
 /*****************************************************************************/
 {

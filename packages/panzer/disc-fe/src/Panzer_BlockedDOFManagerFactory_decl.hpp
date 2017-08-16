@@ -50,7 +50,7 @@ namespace panzer {
 template <typename LO,typename GO>
 class BlockedDOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,std::pair<int,GO>,LO,GO> {
 public:
-   BlockedDOFManagerFactory() : useDOFManagerFEI_(true), useTieBreak_(false) {}
+   BlockedDOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false) {}
    virtual ~BlockedDOFManagerFactory() {}
 
    /** Does a fieldOrder string require blocking? 

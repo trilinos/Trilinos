@@ -57,6 +57,8 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "Kokkos_Core.hpp"
+
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
    #include "mpi.h"
@@ -103,77 +105,87 @@ void gdbIn()
 
 int main(int argc,char * argv[])
 {
-   // calls MPI_Init and MPI_Finalize
-   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+   bool status = false;
+   Kokkos::initialize(argc,argv);
 
-   // build MPI/Serial communicator
-   #ifdef HAVE_MPI
-      Epetra_MpiComm Comm(MPI_COMM_WORLD);
-   #else
-      Epetra_SerialComm Comm;
-   #endif
+   {
+     // calls MPI_Init and MPI_Finalize
+     Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-   Teko::Test::UnitTest::SetComm(Teuchos::rcpFromRef(Comm));
+     // build MPI/Serial communicator
+     #ifdef HAVE_MPI
+        Epetra_MpiComm Comm(MPI_COMM_WORLD);
+     #else
+        Epetra_SerialComm Comm;
+     #endif
 
-   Teuchos::CommandLineProcessor clp;
+     Teko::Test::UnitTest::SetComm(Teuchos::rcpFromRef(Comm));
 
-   int verbosity = 1;
-   std::string faillog = "failure.log";
-   bool isfast = false;
+     Teuchos::CommandLineProcessor clp;
 
-   clp.setOption("verb",&verbosity,"How verbose is the output? 1 is normal 10 is a lot.");
-   clp.setOption("log",&faillog,"File for failure information to go to (also high verbosity text)");
-   clp.setOption("fast","notfast",&isfast,"Run only fast tests");
-   clp.parse(argc,argv);
+     int verbosity = 1;
+     std::string faillog = "failure.log";
+     bool isfast = false;
 
-   Teuchos::RCP<Teuchos::FancyOStream> termout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-   Teuchos::RCP<Teuchos::FancyOStream> failout;
-   std::ofstream failure;
+     clp.setOption("verb",&verbosity,"How verbose is the output? 1 is normal 10 is a lot.");
+     clp.setOption("log",&faillog,"File for failure information to go to (also high verbosity text)");
+     clp.setOption("fast","notfast",&isfast,"Run only fast tests");
+     clp.parse(argc,argv);
 
-   if(faillog=="stdout") {
-      failout = termout;
-   }
-   else {
-      failure.open(faillog.c_str());
-      failout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(failure));
-   }
+     Teuchos::RCP<Teuchos::FancyOStream> termout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+     Teuchos::RCP<Teuchos::FancyOStream> failout;
+     std::ofstream failure;
 
-   termout->setOutputToRootOnly(0);
-   failout->setOutputToRootOnly(0);
+     if(faillog=="stdout") {
+        failout = termout;
+     }
+     else {
+        failure.open(faillog.c_str());
+        failout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(failure));
+     }
 
-   // gdbIn();
+     termout->setOutputToRootOnly(0);
+     failout->setOutputToRootOnly(0);
 
-   Teko_ADD_UNIT_TEST(Teko::Test::tSIMPLEPreconditionerFactory,SIMPLEPreconditionerFactory);
-   Teko_ADD_UNIT_TEST(Teko::Test::tDiagonalPreconditionerFactory,DiagonalPreconditionerFactory);
-   Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
-   Teko_ADD_UNIT_TEST(Teko::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
-   Teko_ADD_UNIT_TEST(Teko::Test::tLSCStabilized,LSCStabilized);
-   Teko_ADD_UNIT_TEST(Teko::Test::tJacobi2x2PreconditionerFactory,Jacobi2x2PreconditionerFactory);
-   Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
-   Teko_ADD_UNIT_TEST(Teko::Test::tBlockUpperTriInverseOp,BlockUpperTriInverseOp);
-   Teko_ADD_UNIT_TEST(Teko::Test::tBlockLowerTriInverseOp,BlockLowerTriInverseOp);
-   Teko_ADD_UNIT_TEST(Teko::Test::tEpetraOperatorWrapper,EpetraOperatorWrapper);
-   Teko_ADD_UNIT_TEST(Teko::Test::tInterlacedEpetra,InterlacedEpetra);
-   Teko_ADD_UNIT_TEST(Teko::Test::tBlockingEpetra,BlockingEpetra);
-   Teko_ADD_UNIT_TEST(Teko::Test::tEpetraThyraConverter,EpetraThyraConverter);
-   Teko_ADD_UNIT_TEST(Teko::Test::tGraphLaplacian,tGraphLaplacian);
-   Teko_ADD_UNIT_TEST(Teko::Test::tParallelInverse,tParallelInverse);
-   Teko_ADD_UNIT_TEST(Teko::Test::tExplicitOps,tExplicitOps);
-   Teko_ADD_UNIT_TEST(Teko::Test::tLSCHIntegrationTest,LSCHIntegrationTest);
-   Teko_ADD_UNIT_TEST(Teko::Test::tLumping,Lumping);
-   Teko_ADD_UNIT_TEST(Teko::Test::tAbsRowSum,AbsRowSum);
-   Teko_ADD_UNIT_TEST(Teko::Test::tNeumannSeries,NeumannSeries);
-   Teko_ADD_UNIT_TEST(Teko::Test::tPCDStrategy,PCDStrategy);
-   if(not isfast) {
-      Teko_ADD_UNIT_TEST(Teko::Test::tLSCIntegrationTest,LSCIntegrationTest);
-      Teko_ADD_UNIT_TEST(Teko::Test::tStridedEpetraOperator,tStridedEpetraOperator);
-      Teko_ADD_UNIT_TEST(Teko::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
-   }
+     // gdbIn();
+     Teko_ADD_UNIT_TEST(Teko::Test::tSIMPLEPreconditionerFactory,SIMPLEPreconditionerFactory);
+     Teko_ADD_UNIT_TEST(Teko::Test::tDiagonalPreconditionerFactory,DiagonalPreconditionerFactory);
+     Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
+     Teko_ADD_UNIT_TEST(Teko::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
+     Teko_ADD_UNIT_TEST(Teko::Test::tLSCStabilized,LSCStabilized);
+     Teko_ADD_UNIT_TEST(Teko::Test::tJacobi2x2PreconditionerFactory,Jacobi2x2PreconditionerFactory);
+     Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
+     Teko_ADD_UNIT_TEST(Teko::Test::tBlockUpperTriInverseOp,BlockUpperTriInverseOp);
+     Teko_ADD_UNIT_TEST(Teko::Test::tBlockLowerTriInverseOp,BlockLowerTriInverseOp);
+     Teko_ADD_UNIT_TEST(Teko::Test::tEpetraOperatorWrapper,EpetraOperatorWrapper);
+     Teko_ADD_UNIT_TEST(Teko::Test::tInterlacedEpetra,InterlacedEpetra);
+     Teko_ADD_UNIT_TEST(Teko::Test::tBlockingEpetra,BlockingEpetra);
+     Teko_ADD_UNIT_TEST(Teko::Test::tEpetraThyraConverter,EpetraThyraConverter);
+     Teko_ADD_UNIT_TEST(Teko::Test::tGraphLaplacian,tGraphLaplacian);
+     Teko_ADD_UNIT_TEST(Teko::Test::tParallelInverse,tParallelInverse);
+     Teko_ADD_UNIT_TEST(Teko::Test::tExplicitOps,tExplicitOps);
+     Teko_ADD_UNIT_TEST(Teko::Test::tLSCHIntegrationTest,LSCHIntegrationTest);
+     Teko_ADD_UNIT_TEST(Teko::Test::tLumping,Lumping);
+     Teko_ADD_UNIT_TEST(Teko::Test::tAbsRowSum,AbsRowSum);
+     Teko_ADD_UNIT_TEST(Teko::Test::tNeumannSeries,NeumannSeries);
+     Teko_ADD_UNIT_TEST(Teko::Test::tPCDStrategy,PCDStrategy);
+     if(not isfast) {
+        Teko_ADD_UNIT_TEST(Teko::Test::tLSCIntegrationTest,LSCIntegrationTest);
+        Teko_ADD_UNIT_TEST(Teko::Test::tStridedEpetraOperator,tStridedEpetraOperator);
+        Teko_ADD_UNIT_TEST(Teko::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
+     }
 
-   bool status = Teko::Test::UnitTest::RunTests(verbosity,*termout,*failout);
+     status = Teko::Test::UnitTest::RunTests(verbosity,*termout,*failout);
 
 
-   if(not status)
-      *termout << "Teko tests failed" << std::endl; 
+     if(not status)
+        *termout << "Teko tests failed" << std::endl; 
+
+     // release any stored Kokkos memory
+     Teko::Test::UnitTest::ClearTests();
+   } 
+
+   Kokkos::finalize();
+
    return status ? 0 : -1;
 }

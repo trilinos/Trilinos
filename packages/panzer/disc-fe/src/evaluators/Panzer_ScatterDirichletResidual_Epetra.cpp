@@ -42,13 +42,13 @@
 
 #include "PanzerDiscFE_config.hpp"
 
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
-
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
 #include "Panzer_ScatterDirichletResidual_Epetra_decl.hpp"
 #include "Panzer_ScatterDirichletResidual_Epetra_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Epetra,int,int)
-
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_ScatterDirichletResidual_Epetra_Hessian_impl.hpp"
 #endif
+
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Epetra,int,int)

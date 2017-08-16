@@ -65,7 +65,7 @@ PHX_EVALUATOR_CTOR(TensorToStdVector, p)
       PHX::MDField<ScalarT,Cell,Point,Dim>(vector_names[i], vector_dl);
 
   tensor_field =
-    PHX::MDField<ScalarT,Cell,Point,Dim,Dim>(p.get<std::string>
+    PHX::MDField<const ScalarT,Cell,Point,Dim,Dim>(p.get<std::string>
 					 ("Tensor Name"), tensor_dl);
 
   this->addDependentField(tensor_field);
@@ -93,7 +93,7 @@ PHX_EVALUATE_FIELDS(TensorToStdVector, workset)
   typedef typename PHX::MDField<ScalarT,Cell,Point,Dim>::size_type size_type;
 
   // Loop over cells
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
     // Loop over points
     for (size_type pt = 0; pt < tensor_field.dimension(1); ++pt) {

@@ -2,23 +2,23 @@
  * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,19 +30,19 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
-/* cgidef.h   CGI enumerated type definitions for C programs 
+/* cgidef.h   CGI enumerated type definitions for C programs
  * 8 Sep 1989, last date modified
  * Pat McGee, jpm@lanl.gov
  */
 
 /* escape enumerations */
-#define XEMFNM  -28372   /* metafile name */
-#define XEAGMD  -23671   /* alpha/graphics mode */
-#define XESVDI  -1001    /* svdi escape  */
-#define XEPGSZ  -1002    /* page size */
-#define XEBELL  -1003    /* ring the bell */
+#define XEMFNM -28372 /* metafile name */
+#define XEAGMD -23671 /* alpha/graphics mode */
+#define XESVDI -1001  /* svdi escape  */
+#define XEPGSZ -1002  /* page size */
+#define XEBELL -1003  /* ring the bell */
 
 /* used in many places */
 #define CNO 0
@@ -62,7 +62,7 @@
 #define CVPORT 2
 
 /* error handling flag (arg of CERHCT) */
-#define CEHON  0
+#define CEHON 0
 #define CEHROF 1
 #define CEHDOF 2
 
@@ -115,14 +115,14 @@
 /* text path */
 #define CTPRIT 0
 #define CTPLFT 1
-#define CTPUP  2
+#define CTPUP 2
 #define CTPDWN 3
 
 /* text horizonal alignment */
 #define CTALFT 0
 #define CTACTR 1
 #define CTARIT 2
-#define CTANH  3
+#define CTANH 3
 #define CTACOH 4
 
 /* text vertical alignment */
@@ -131,7 +131,7 @@
 #define CTAHAF 2
 #define CTABAS 3
 #define CTABOT 4
-#define CTANV  5
+#define CTANV 5
 #define CTACOV 6
 
 /* interior style */
@@ -189,10 +189,10 @@
 /* #define CSTROK 1 */
 #define CVALUA 2
 #define CCHOIC 3
-#define CPICK  4
+#define CPICK 4
 /* #define CSTRNG 5 */
 #define CRASTR 6
-#define CGEN   7
+#define CGEN 7
 
 /* request status */
 #define CTRIGR 0
@@ -215,7 +215,7 @@
 
 /* action required flag */
 #define CNOACT 0
-#define CACT  1
+#define CACT 1
 
 /* pixel validity flag (arg of CGPXA) */
 #define CVNONE 0

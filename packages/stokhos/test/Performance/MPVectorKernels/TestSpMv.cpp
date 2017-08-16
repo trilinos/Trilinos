@@ -55,9 +55,9 @@
 #endif
 
 template <typename Storage>
-void mainHost(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
+void mainHost(int nGrid, int nIter, KokkosSparse::DeviceConfig dev_config);
 template <typename Storage>
-void mainCuda(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
+void mainCuda(int nGrid, int nIter, KokkosSparse::DeviceConfig dev_config);
 
 int main(int argc, char *argv[])
 {
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
                 << "Threads performance with " << num_cores*num_hyper_threads
                 << " threads:" << std::endl;
 
-      Kokkos::DeviceConfig dev_config(num_cores,
+      KokkosSparse::DeviceConfig dev_config(num_cores,
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
                 << "OpenMP performance with " << num_cores*num_hyper_threads
                 << " threads:" << std::endl;
 
-      Kokkos::DeviceConfig dev_config(num_cores,
+      KokkosSparse::DeviceConfig dev_config(num_cores,
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
                 << deviceProp.name << "):"
                 << std::endl;
 
-      Kokkos::DeviceConfig dev_config(
+      KokkosSparse::DeviceConfig dev_config(
         num_cuda_blocks,
         cuda_threads_per_vector,
         cuda_threads_per_vector == 0 ? 0 : cuda_block_size / cuda_threads_per_vector);

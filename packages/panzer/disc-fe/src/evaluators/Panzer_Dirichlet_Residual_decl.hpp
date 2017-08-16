@@ -54,8 +54,8 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(DirichletResidual)
   
   PHX::MDField<ScalarT> residual;
-  PHX::MDField<ScalarT> dof;
-  PHX::MDField<ScalarT> value;
+  PHX::MDField<const ScalarT> dof;
+  PHX::MDField<const ScalarT> value;
 
   std::size_t cell_data_size;
 

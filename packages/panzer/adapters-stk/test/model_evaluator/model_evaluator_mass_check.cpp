@@ -75,8 +75,6 @@ using Teuchos::rcp;
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -114,7 +112,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
     bool parameter_on = false;
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
@@ -126,13 +123,11 @@ namespace panzer {
 
     // Test a transient me
     {
-      typedef Thyra::ModelEvaluatorBase MEB;
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
       typedef Thyra::VectorBase<double> VectorType;
       typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
-      typedef panzer::ExplicitModelEvaluator<double> ExpPME;
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
@@ -256,9 +251,9 @@ namespace panzer {
     pl->set("Y0",0.0);
     pl->set("Yf",1.0);
     
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
 
@@ -299,17 +294,21 @@ namespace panzer {
     // build worksets
     //////////////////////////////////////////////////////////////
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 

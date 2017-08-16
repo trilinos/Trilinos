@@ -61,28 +61,30 @@ private:
   class ScalarFunctionTest01 : public ScalarFunction<Real> {
   public:
     Real value(const Real x) {
-      Real val = 0.0, I = 0.0;
+      Real zero(0), two(2), five(5);
+      Real val = zero, I = zero;
       for (int i = 0; i < 20; i++) {
         I = (Real)(i+1);
-        val += std::pow((2.0*I - 5.0)/(x-(I*I)),2.0);
+        val += std::pow((two*I - five)/(x-(I*I)),two);
       }
       return val;
     }
     Real deriv(const Real x) {
-      Real val = 0.0, I = 0.0;
+      Real zero(0), two(2), three(3), five(5);
+      Real val = zero, I = zero;
       for (int i = 0; i < 20; i++) {
         I = (Real)(i+1);
-        val += std::pow((2.0*I - 5.0),2.0)/std::pow((x-(I*I)),3.0);
+        val += std::pow((two*I - five),two)/std::pow((x-(I*I)),three);
       }
-      return -2.0*val;
+      return -two*val;
     }
   };
 
 public:
   ScalarMinimizationTest01(Teuchos::ParameterList &parlist)
     : ScalarMinimizationTest<Real>(parlist) {
-    fvector_.clear(); fvector_.resize(19,0.0);
-    xvector_.clear(); xvector_.resize(19,0.0);
+    fvector_.clear(); fvector_.resize(19,0);
+    xvector_.clear(); xvector_.resize(19,0);
 
     fvector_[0]  = 3.6766990169; xvector_[0]  =   3.0229153;
     fvector_[1]  = 1.1118500100; xvector_[1]  =   6.6837536;
@@ -106,7 +108,7 @@ public:
   }
 
   bool test(std::ostream &stream = std::cout) {
-    Real fx = 0.0, x = 0.0, A = 0.0, B = 0.0;
+    Real fx = 0, x = 0, A = 0, B = 0;
     int nfval = 0, ngrad = 0;
     bool flag = true;
     Teuchos::RCP<ScalarFunction<Real> > f

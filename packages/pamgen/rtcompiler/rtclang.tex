@@ -4,7 +4,7 @@
 \subsection{The RTC language}
 
 The RTC language can be thought of as a small subset of the
-C language with a couple minor modifications. 
+C language with a couple minor modifications.
 
 \subsubsection{Operators}
 
@@ -50,8 +50,8 @@ The RTC language has the following control flow statements:
 \end{itemize}
 
 \noindent These control flow statements work exactly as they do in C
-except that the code blocks following a control flow statement 
-\textbf{MUST} be enclosed within braces even if the block only consists of 
+except that the code blocks following a control flow statement
+\textbf{MUST} be enclosed within braces even if the block only consists of
 one line.
 
 \subsubsection{Line Structure}
@@ -61,7 +61,7 @@ end with a semicolon unless they are inside a control flow statement.
 
 \subsubsection{Variables}
 
-Declaring scalar variables in RTC is done exactly as it is done in C except 
+Declaring scalar variables in RTC is done exactly as it is done in C except
 that we are limited to the following types:
 
 \begin{itemize}
@@ -71,7 +71,7 @@ that we are limited to the following types:
   \item char
 \end{itemize}
 
-\noindent For scalars, variables can be declared and assigned all at once. Both of the 
+\noindent For scalars, variables can be declared and assigned all at once. Both of the
 following approaches will work:
 
 {\ttfamily \begin{verbatim}
@@ -85,8 +85,8 @@ myVar = 9;
 }
 
 \noindent Arrays work a little differently in RTC than they do in C. There are
-no \emph{new} or \emph{malloc} operators, so I have allowed the user to 
-declare dynamically sized arrays in the same manner as statically sized 
+no \emph{new} or \emph{malloc} operators, so I have allowed the user to
+declare dynamically sized arrays in the same manner as statically sized
 arrays. Also, in C you can initialize all the values of an array at once by
 putting the values within braces. In the RTC language, this is not supported.
 Users will have to loop through the array and assign the values one by one.
@@ -105,8 +105,8 @@ NOT LEGAL:
 \noindent Indexing arrays can be done using the index operator:
 array[expr] = ...;
 
-\noindent Bounds checking is done at run time. If you go past the end of an 
-array, it will dump an error to stdout. 
+\noindent Bounds checking is done at run time. If you go past the end of an
+array, it will dump an error to stdout.
 
 \subsubsection{Math}
 
@@ -121,7 +121,7 @@ The following math.h functions are available in RTC:
   \item cos(arg)   : returns the cosine of arg
   \item tan(arg)   : returns the tangent of arg
   \item sqrt(arg)  : returns the square root of arg
-  \item exp(arg)   : returns the natural logarithm base e raised to the arg 
+  \item exp(arg)   : returns the natural logarithm base e raised to the arg
                      power
   \item sinh(arg)  : returns the hyperbolic sine of arg
   \item cosh(arg)  : returns the hyperbolic cosine of arg
@@ -130,20 +130,20 @@ The following math.h functions are available in RTC:
   \item log10(arg) : returns the base 10 logarithm for arg
   \item rand(arg)  : returns a system-generated random integer between 0 and RAND\_MAX using seed arg
   \item fabs(arg)  : returns the absolute value of arg
-  \item pow(b, e)  : returns b to the e power 
+  \item pow(b, e)  : returns b to the e power
                      (Note: you can use the Exponentiation operator instead)
   \item j0(arg)    : Bessel function of order zero
   \item j1(arg)    : Bessel function of order one
   \item i0(arg)    : Modified Bessel function of order zero
   \item i1(arg)    : Modified Bessel function of order one
-  \item erf(arg)   : Error function 
+  \item erf(arg)   : Error function
   \item erfc(arg)  : Complementary error function  (1.0 - erf(x))
   \item gamma(arg)  : returns $\Gamma(arg)$
 \end{itemize}
 
 \subsubsection{Strings}
 
-The user will now have the ability to pass quoted strings as arguments to 
+The user will now have the ability to pass quoted strings as arguments to
 functions. Note: you might have to escape-out the double quotes so that they
 do not confuse the input-file parser. See printf section below for an example.
 
@@ -151,7 +151,7 @@ do not confuse the input-file parser. See printf section below for an example.
 
 RTC now has much better output capability in its new printf method. The
 new printf method is called just like its C counterpart. This first argument
-is a quoted character string. This string will can contain the \% symbol 
+is a quoted character string. This string will can contain the \% symbol
 which will tell RTC to output the corresponding argument. The only difference
 between RTC's printf and C's printf is that in RTC's version, you do not have
 to provide a type character after the \%. For example, inside your RTC method
@@ -172,7 +172,7 @@ functions. Use /* to begin a comment and */ to end the comment.
 \subsubsection{Unsupported Features}
 
 Implementing the entire C-language was well beyond the intend of RTC. We took
-the liberty of cutting corners or leaving out features if we felt they were 
+the liberty of cutting corners or leaving out features if we felt they were
 either too difficult or did not add enough value. The following is a list
 of common C features that are unsupported in RTC:
 \begin{itemize}
@@ -187,23 +187,23 @@ of common C features that are unsupported in RTC:
   \item stdio
   \item Keywords: break, continue, const, enum, register, return, sizeof,
     typedef, union, volatile, static.
-\end{itemize} 
+\end{itemize}
 
 \subsubsection{Examples}
 
 I am going to use the following series of examples to try to illustrate the
-use of the RTC language within the context of some simple user defined initial 
+use of the RTC language within the context of some simple user defined initial
 conditions.
 
 \noindent For all user defined initial conditions, you can assume that you have
-the following variables: 
+the following variables:
 
 \begin{itemize}
-  \item coord - An array of coordinates. Use an index of zero to get the x 
+  \item coord - An array of coordinates. Use an index of zero to get the x
                 coordinate, an index of one to get the y coordinate, and an
                 index of two to get the z coordinate (Available in 3D only).
   \item field - This is the means by which you can return the results of your
-                function. The variable (ex: density, velocity) you specified 
+                function. The variable (ex: density, velocity) you specified
                 above the function is set according to the values of the field
                 array. If you are setting a scalar variable, like density, you
                 will only want to set field[0].
@@ -339,7 +339,7 @@ For instance, we could write,
 {\ttfamily \begin{verbatim}
 ${VERBATIM(ON)}
 user defined initial condition, density, block 5
-" 
+"
   field[0] = 100.0;
   if(coord[0] > 0.0){
     double distance = sqrt ((coord[0]^2) + (coord[1]^2) + (coord[2]^2));
@@ -355,7 +355,7 @@ or it could be written as,
 %
 {\ttfamily \begin{verbatim}
 user defined initial condition, density, block 5
-" 
+"
   field[0] = 100.0;
   if(coord[0] > 0.0) {"{"}
     double distance = sqrt ((coord[0]^2) + (coord[1]^2) + (coord[2]^2));
@@ -370,7 +370,7 @@ or it could be written as,
 %
 {\ttfamily \begin{verbatim}
 user defined initial condition, density, block 5
-" 
+"
   field[0] = 100.0;
   if(coord[0] > 0.0) \{
     double distance = sqrt ((coord[0]^2) + (coord[1]^2) + (coord[2]^2));

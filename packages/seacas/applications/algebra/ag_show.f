@@ -118,7 +118,7 @@ C   --   Uses ISZOOM, ZMLIM of /ZOOM/
   100    CONTINUE
          IF (N .GT. 0) THEN
             WRITE (*, 10030) 'SAVEd variables:'
-            WRITE (*, 10000) (NAMVAR(INAM(I)), I=1,N)
+            WRITE (*, 10000) (NAMVAR(INAM(I))(:namlen), I=1,N)
 10000        FORMAT ((12X, 2(A, :, 1X)))
          ELSE IF (IFDEF) THEN
             WRITE (*, 10030) 'There are no SAVEd variables'
@@ -133,8 +133,13 @@ C   --   Uses ISZOOM, ZMLIM of /ZOOM/
             END IF
   110    CONTINUE
          IF (N .GT. 0) THEN
+            maxn = 0
+            do i=1, n
+              k = lenstr(namvar(inam(i)))
+              if (k .gt. maxn) maxn = k
+            end do
             WRITE (*, 10030) 'Temporary variables:'
-            WRITE (*, 10000) (NAMVAR(INAM(I)), I=1,N)
+            WRITE (*, 10000) (NAMVAR(INAM(I))(:maxn), I=1,N)
          ELSE IF (IFDEF) THEN
             WRITE (*, 10030) 'There are no temporary variables'
          END IF

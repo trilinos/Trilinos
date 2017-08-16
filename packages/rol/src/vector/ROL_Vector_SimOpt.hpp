@@ -68,7 +68,7 @@ public:
     dual_vec1_ = (vec1_->dual()).clone();
     dual_vec2_ = (vec2_->dual()).clone();
   }
-  
+
   void plus( const Vector<Real> &x ) {
     const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const Vector<Real> >(x));
@@ -163,12 +163,27 @@ public:
     return vec2_; 
   }
 
+  Teuchos::RCP<Vector<Real> > get_1() { 
+    return vec1_; 
+  }
+
+  Teuchos::RCP<Vector<Real> > get_2() { 
+    return vec2_; 
+  }
+
   void set_1(const Vector<Real>& vec) { 
     vec1_->set(vec);
   }
   
   void set_2(const Vector<Real>& vec) { 
     vec2_->set(vec); 
+  }
+
+  void print( std::ostream &outStream ) const {
+    outStream << "Sim: ";
+    vec1_->print(outStream);
+    outStream << "Opt: ";
+    vec2_->print(outStream);
   }
 };
 

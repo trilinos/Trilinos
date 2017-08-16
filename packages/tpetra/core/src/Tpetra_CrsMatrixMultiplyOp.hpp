@@ -122,9 +122,9 @@ namespace Tpetra {
   ///   Operator.
   template <class Scalar,
             class MatScalar = Scalar,
-            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-            class Node = Details::DefaultTypes::node_type>
+            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+            class Node = ::Tpetra::Details::DefaultTypes::node_type>
   class CrsMatrixMultiplyOp :
     public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {

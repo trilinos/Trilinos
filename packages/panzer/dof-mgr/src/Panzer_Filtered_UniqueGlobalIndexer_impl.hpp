@@ -59,42 +59,57 @@ Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
 Filtered_UniqueGlobalIndexer()
 { }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
+///////////////////////////////////////////////////////////////////////////////
+//
+//  initialize()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
 void
-Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-initialize(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi,
-           const std::vector<GlobalOrdinalT> & filtered)
-{ 
-  typedef std::unordered_set<GlobalOrdinalT> HashTable;
-
+Filtered_UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+initialize(
+  const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>>&
+    ugi,
+  const std::vector<GlobalOrdinalT>& filtered)
+{
+  using std::size_t;
+  using std::vector;
+  using HashTable = std::unordered_set<GlobalOrdinalT>;
+  owned_.clear();
+  ghosted_.clear();
   base_ = ugi;
 
-  // ensure the localIDs match with the users 
-  // this is essential for a class to be a decorator
-  this->shareLocalIDs(*base_);
-
-  // from base global indexer build the filtered owned indices
-  std::vector<GlobalOrdinalT> baseOwned;
+  // From the base global indexer, build the filtered owned indices.
+  vector<GlobalOrdinalT> baseOwned, baseGhosted;
   base_->getOwnedIndices(baseOwned);
+  base_->getGhostedIndices(baseGhosted);
 
-  // build a hash table for fast searching
+  // Build a hash table for fast searching.
   HashTable filteredHash;
-  for(std::size_t i=0;i<filtered.size();i++)
+  for (size_t i(0); i < filtered.size(); ++i)
     filteredHash.insert(filtered[i]);
 
-  // search for indices in filtered array, add to owned_ if not found
-  for(std::size_t i=0;i<baseOwned.size();i++) {
-    typename HashTable::const_iterator itr = filteredHash.find(baseOwned[i]);    
-
-    if(itr==filteredHash.end())
+  // Search for indices in the filtered array; add to owned_ if not found, and
+  // add to ghosted_ otherwise.
+  for (size_t i(0); i < baseOwned.size(); ++i)
+  {
+    auto itr = filteredHash.find(baseOwned[i]);
+    if (itr == filteredHash.end())
       owned_.push_back(baseOwned[i]);
+    else
+      ghosted_.push_back(baseOwned[i]);
   }
-}
+  ghosted_.insert(ghosted_.end(), baseGhosted.begin(), baseGhosted.end());
+
+  // Now that we've change the owned_ and ghosted_ vectors, we need to rebuild
+  // the local IDs.
+  this->buildLocalIds();
+} // end of initialize()
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void 
 Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-getOwnedAndSharedNotFilteredIndicator(std::vector<int> & indicator) const
+getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
 {
   using Teuchos::RCP;
 
@@ -105,22 +120,22 @@ getOwnedAndSharedNotFilteredIndicator(std::vector<int> & indicator) const
   typedef Tpetra::Vector<GO,LO,GO,Node> Vector;
   typedef Tpetra::Import<LO,GO,Node> Import;
 
-  std::vector<GlobalOrdinalT> uniqueIndices;
+  std::vector<GlobalOrdinalT> ownedIndices;
   std::vector<GlobalOrdinalT> ghostedIndices;
 
-  // build unique and ghosted maps
-  getOwnedIndices(uniqueIndices);
-  getOwnedAndSharedIndices(ghostedIndices);
+  // build owned and ghosted maps
+  getOwnedIndices(ownedIndices);
+  getOwnedAndGhostedIndices(ghostedIndices);
 
-  RCP<const Map> uniqueMap 
-      = Tpetra::createNonContigMap<LO,GO>(uniqueIndices,getComm());
+  RCP<const Map> ownedMap 
+      = Tpetra::createNonContigMap<LO,GO>(ownedIndices,getComm());
   RCP<const Map> ghostedMap 
       = Tpetra::createNonContigMap<LO,GO>(ghostedIndices,getComm());
 
-  // allocate the unique vector, mark those GIDs as unfiltered
+  // allocate the owned vector, mark those GIDs as unfiltered
   // (they are by definition)
-  Vector uniqueActive(uniqueMap);
-  uniqueActive.putScalar(1);
+  Vector ownedActive(ownedMap);
+  ownedActive.putScalar(1);
 
   // Initialize all indices to zero
   Vector ghostedActive(ghostedMap);
@@ -128,8 +143,8 @@ getOwnedAndSharedNotFilteredIndicator(std::vector<int> & indicator) const
 
   // do communication, marking unfiltered indices as 1 (filtered
   // indices locally are marked as zero)
-  Import importer(uniqueMap,ghostedMap);
-  ghostedActive.doImport(uniqueActive,importer,Tpetra::INSERT);
+  Import importer(ownedMap,ghostedMap);
+  ghostedActive.doImport(ownedActive,importer,Tpetra::INSERT);
 
   Teuchos::ArrayRCP<const GO> data = ghostedActive.getData();
 
@@ -141,33 +156,22 @@ getOwnedAndSharedNotFilteredIndicator(std::vector<int> & indicator) const
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void 
 Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-getFilteredOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+getFilteredOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
   using Teuchos::RCP;
 
   // get filtered/unfiltered indicator vector
   std::vector<int> indicators;
-  getOwnedAndSharedNotFilteredIndicator(indicators);
+  getOwnedAndGhostedNotFilteredIndicator(indicators);
 
   // build ghosted maps
   std::vector<GlobalOrdinalT> ghostedIndices;
-  getOwnedAndSharedIndices(ghostedIndices);
+  getOwnedAndGhostedIndices(ghostedIndices);
 
   // filtered out filtered indices (isn't that a useful comment)
   for(std::size_t i=0;i<indicators.size();i++) {
     if(indicators[i]==1)
       indices.push_back(ghostedIndices[i]);
-  }
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void 
-Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
-{
-  indices.resize(owned_.size());
-  for (size_t i = 0; i < owned_.size(); ++i) {
-    indices[i]=owned_[i];
   }
 }
 

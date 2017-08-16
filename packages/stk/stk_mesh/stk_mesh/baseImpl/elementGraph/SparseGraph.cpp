@@ -32,12 +32,12 @@ void SparseGraph::remove_coincident_edge(const GraphEdge& graphEdge, std::vector
 {
     graphEdgesForElem.erase(graphEdgesForElem.begin() + edgeIndex);
     if(graphEdgesForElem.empty())
-        m_graphEdges.erase(graphEdge.elem1);
+        m_graphEdges.erase(graphEdge.elem1());
 }
 
 void SparseGraph::delete_edge(const GraphEdge &graphEdge)
 {
-    std::vector<GraphEdge> &graphEdgesForElem = m_graphEdges[graphEdge.elem1];
+    std::vector<GraphEdge> &graphEdgesForElem = m_graphEdges[graphEdge.elem1()];
     for(size_t edgeIndex=0; edgeIndex<graphEdgesForElem.size(); ++edgeIndex)
     {
         if(graphEdgesForElem[edgeIndex] == graphEdge)
@@ -50,7 +50,7 @@ void SparseGraph::delete_edge(const GraphEdge &graphEdge)
 
 void SparseGraph::add_edge(const GraphEdge &graphEdge)
 {
-    m_graphEdges[graphEdge.elem1].push_back(graphEdge);
+    m_graphEdges[graphEdge.elem1()].push_back(graphEdge);
 }
 
 void SparseGraph::delete_all_edges(LocalId elemId)

@@ -1,3 +1,4 @@
+\cleardoublepage{}
 
 \section{Formulation for Implicit Time Steppers for ODEs and DAEs}
 
@@ -31,7 +32,7 @@ by the user.
 Even though the time step equation can be solved by a variety of means,
 a large class of DAEs can also potentially provide support for a general
 Newton-type method for solving these equations and can therefore leverage
-general software for solving such problems (e.g.\ NOX). The foundation
+general software for solving such problems (e.g., NOX). The foundation
 of Newton-like methods is the ability to solve linear systems similar
 to the Newton system 
 \begin{equation}
@@ -42,11 +43,11 @@ equations (which also defines the point where $\jac{r}{z}$ is evaluated)
 and $\Delta z=r_{l+1}-r_{l}$ is the update direction. Line-search
 Newton methods then define an update to the solution along the direction
 $\Delta z$. The essential functionality needed to perform a Newton-like
-method are the the abilities to evaluate the nonlinear residual $z{}\rightarrow r$
+method are the abilities to evaluate the nonlinear residual $z{}\rightarrow r$
 and to (approximately) solve linear systems involving the Jacobian
 matrix $\jac{r}{z}$. For each type of implicit time integration method,
 we will show, if possible, how to perform solves with $\jac{r}{z}$
-by performing solves with the matrix 
+by performing solves with the iteration matrix 
 \begin{equation}
 W=\alpha\Jac{f}{\dot{x}}+\beta\Jac{f}{x},\label{rythmos:eq:W}
 \end{equation}
@@ -65,9 +66,7 @@ W\equiv\frac{df}{dx_{n}}=\frac{\partial\dot{x}}{\partial x_{n}}\Jac{f}{\dot{x}}+
 where $\alpha=\partial\dot{x}/\partial x_{n}$ and $\beta=\partial x/\partial x_{n}$,
 and recalling $f\left(\dot{x}(x_{n}),x(x_{n})\right)=0$.
 
-
 \subsection{Backward Euler}
-
 
 \subsubsection{Constant Step Size}
 
@@ -78,7 +77,6 @@ accuracy is shown for Backward Euler for the SinCos problem.
 \centering{}\includegraphics[scale=1.5]{figures/BackwardEuler}\caption{Order of accuracy for the SinCos Problem (Section~\ref{rythmos:sec:SinCos-Problem})
 using Backward Euler.\label{rythmos:fig:BackwardEuler-Constant-dt}}
 \end{figure}
-
 
 
 \subsubsection{Variable Step Size}
@@ -103,7 +101,6 @@ a) $\epsilon_{r}=$ a) $10^{-2}$, b) $10^{-3}$, c) $10^{-4}$, and
 d) $10^{-5}$.\label{rythmos:fig:BackwardEuler-Variable-dt}}
 \end{figure}
 
-
 In Table~\ref{rythmos:tab:BackwardEuler-Variable-dt-Log-Time}, the
 errors for this problem are shown. For each magnitude reduction in
 the relative-error specification, the number of steps increases by
@@ -111,7 +108,6 @@ a factor of 2-3 and a similar reduction in the error norms and global
 errors.
 
 \begin{table}
-
 
 \begin{centering}
 \caption{Log-Time Errors for Backward Euler with Variable Step Size for the
@@ -131,9 +127,7 @@ $10^{-5}$ & 4168 & 0.00153523 & 0.00154173\tabularnewline
 \hline 
 \end{tabular}
 \par\end{centering}
-
 \end{table}
-
 
 The exponential growth in the time step size, $\Delta t$, over $10^{-8}<t<1$
 is approximately 8\% ($\Delta t_{n}\approx1.08\Delta t_{n-1}$), which

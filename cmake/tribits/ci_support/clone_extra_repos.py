@@ -42,6 +42,7 @@
 from CheckinTestConstants import *
 from FindGeneralScriptSupport import *
 from GeneralScriptSupport import *
+from gitdist import addOptionParserChoiceOption
 import gitdist
 
 
@@ -67,14 +68,14 @@ g_verbosityLevelDefaultIdx = findInSequence(g_verbosityLevels, g_verbosityLevelD
 # This part can be reused in other scripts that are project-specific
 genericUsageHelp = \
 r"""
-By default, that will clone all the 'Nightly' extra repos that are listed in the
-file:
+By default, this will clone all the 'Nightly' extra repos that are listed in
+the file:
 
   <projectDir>/"""+g_extraRerposFileDefault+r"""
 
-(other repo types can be selected usng --extra-repos-type).
+(other repo types can be selected using --extra-repos-type).
 
-The list of which repos to clone can "white-list" selected with the option
+The list of which repos to clone can be "white-list" selected with the option
 --extra-repos (see options below for details).  Extra repos can in addition be
 "back-listed" using the option --not-extra-repos.
 
@@ -93,29 +94,30 @@ That will print out a table like:
 
 If the git repo server is using gitolite, one can set
 --gitolite-root=<gitolite-root> and that will result in git repos being
-selected only if the selcted repos are listed in 'ssh <gitolite-root> info'.
+selected only if the selected repos are listed in 'ssh <gitolite-root> info'.
 This allows one to automatically exclude repos from being cloned that the user
-has no permissions to clone.  NOTE: See warning about --gitolite-root below!
+has no permissions to clone.  NOTE: See warning about the --gitolite-root option below!
 
-TIP: After cloning the set of repos, a nice too to use on the repos is
-'gitdist'.  If your project does not have a version controlled
+TIP: After cloning the set of repos, a nice way to interact with the repos is
+to use the tool 'gitdist'.  If your project does not have a version controlled
 .gitdist.default file, you can generate one using the
 --create-gitdist-file=<gitdist-file> argument, for example with:
 
   --create-gitdist-file=.gitdist
+
+This will restrict the list of repos processed by gitdist to just the repos cloned.
 """
 
 
 usageHelp = r"""clone_extra_repos.py [options]
 
-This script clones one more extra repos from a TriBITS
+This script clones one more extra repos listed in a TriBITS
 ExtraRepositoriesList.cmake file.  The standard usage is:
 
   $ cd base <projectDir>
   $ ./cmake/tribits/ci_support/clone-extra-repos.py
 
 where <projectDir> is the base TriBITS project dir and base git repo.
-
 """ + \
 genericUsageHelp
 
@@ -152,7 +154,7 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
     "--extra-repos-type", "extraReposType",
     g_extraReposTypes , g_extraReposTypesDefaulIdx,
     "Type of extra repositories <extra-repos-type> to select from " \
-      "<extra-repos-file>.  When --extra-repos is set, then this arugment" \
+      "<extra-repos-file>.  When --extra-repos is set, then this argument" \
       " is ignored.",
     clp )
   
@@ -162,7 +164,7 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
       "  If specified, then any git repos with the <gitolite-root> listed as their" \
       " root will only be selected if they are listed with 'R' permissions returned" \
       " from 'ssh <gitolite-root> info'.  WARNING: Make sure that you have your" \
-      " gitoliote SSH registred correctly before using this option by typing" \
+      " gitoliote SSH registered correctly before using this option by typing" \
       " the command 'ssh <gitlite-root> info' and make sure that it does *not*"
       " ask for a password! (Default = '"+gitoliteRootDefault+"')" )
 
@@ -249,19 +251,20 @@ def fwdCmndLineOptions(inOptions, terminator=""):
 
 
 def echoCmndLineOptions(inOptions):
-  print fwdCmndLineOptions(inOptions, " \\\n")
+  print(fwdCmndLineOptions(inOptions, " \\\n"))
 
 
 def echoCmndLine(inOptions):
 
-  print ""
-  print "**************************************************************************"
-  print "Script: clone_extra_repos.py \\"
+  print("")
+  print("**************************************************************************")
+  print("Script: clone_extra_repos.py \\")
 
   echoCmndLineOptions(inOptions)
 
 
 def getHeaderOutputAndExtraReposDictList(rawOutputFromCmakefile):
+  rawOutputFromCmakefile = s(rawOutputFromCmakefile)
   headerOuput = ""
   pythonDictListStr = ""
   processingPythonDict = False
@@ -273,8 +276,8 @@ def getHeaderOutputAndExtraReposDictList(rawOutputFromCmakefile):
       pythonDictListStr += (line + "\n")
     else:
       headerOuput += (line + "\n")
-  #print "\nheaderOuput:\n\n", headerOuput
-  #print "\npythonDictListStr = '"+pythonDictListStr+"'"
+  #print("\nheaderOuput:\n\n", headerOuput)
+  #print("\npythonDictListStr = '"+pythonDictListStr+"'")
   pythonDictList = eval(pythonDictListStr)
   return (headerOuput, pythonDictList)
 
@@ -296,7 +299,7 @@ def getExtraReposDictListFromCmakefile(projectDir, extraReposFile, withCmake,
   rawOutput = getCmndOutput(cmnd, throwOnError=True, getStdErr=True)
   (headerOutput, extraReposPytonDictList) = getHeaderOutputAndExtraReposDictList(rawOutput)
   if verbose:
-    print "\n", headerOutput
+    print("\n" + headerOutput)
   return extraReposPytonDictList
 
 
@@ -308,12 +311,12 @@ def parseRawSshGitoliteRootInfoOutput(rawSshGitoliteRootInfoOutput, verbose=Fals
 
   gitoliteSshHeader = rawSshGitoliteRootInfoOutputList[0]
   if verbose:
-    print gitoliteSshHeader
+    print(gitoliteSshHeader)
 
   gitolioteReposList = []
   parsingRepos = False
   for line in rawSshGitoliteRootInfoOutputList:
-    #print "line = '"+line+"'"
+    #print("line = '"+line+"'")
     # Look for the first blank line and then the next line will be the first
     # listed repo.
     if line == "":
@@ -324,7 +327,7 @@ def parseRawSshGitoliteRootInfoOutput(rawSshGitoliteRootInfoOutput, verbose=Fals
       # The permisions and the repo name are split by a tab such as:
       #  R W	ExtraRepo1
       repoSplit = line.split("\t")
-      #print "repoSplit =", repoSplit
+      #print("repoSplit =", repoSplit)
       if len(repoSplit) == 2:
         gitolioteReposList.append(repoSplit[1])
   return gitolioteReposList
@@ -337,7 +340,7 @@ def getGitoliteReposList(inOptions, trace=False, dumpGitoliteOutput=False):
     "Running: "+cmnd
   rawSshGitoliteRootInfoOutput = getCmndOutput(cmnd)
   if dumpGitoliteOutput:
-    print rawSshGitoliteRootInfoOutput
+    print(rawSshGitoliteRootInfoOutput)
   if (trace and not dumpGitoliteOutput): verbose=True
   else: verbose=False
   return parseRawSshGitoliteRootInfoOutput(rawSshGitoliteRootInfoOutput, verbose=verbose)
@@ -350,7 +353,7 @@ def filterOutNotExtraRepos(extraRepoDictList_in, notExtraRepos, verbose=False):
     extraRepoName = extraReposDict["NAME"]
     if extraRepoName in notExtraReposSet:
       if verbose:
-        print "Excluding extra repo '"+extraRepoName+"'!"
+        print("Excluding extra repo '"+extraRepoName+"'!")
     else:
       extraRepoDictList.append(extraReposDict)
   return extraRepoDictList
@@ -364,7 +367,8 @@ def filterOutMissingGitoliteRepos(extraRepoDictList_in,
     extraRepoName = extraReposDict["NAME"]
     if not extraRepoName in gitoliteReposSet:
       if verbose:
-        print "Excluding extra repo '"+extraRepoName+"' not listed by gitolite!"
+        print("Excluding extra repo '" + extraRepoName +
+              "' not listed by gitolite!")
     else:
       extraRepoDictList.append(extraReposDict)
   return extraRepoDictList
@@ -398,7 +402,7 @@ def getExtraReposTable(extraRepoDictList):
     { "label":"Repo URL", "align":"L", "fields":repoUrlList },
     { "label":"Category", "align":"L", "fields":repoCategoryList },
     ]
-  #print "extraReposTableDictList =", extraReposTableDictList
+  #print("extraReposTableDictList =", extraReposTableDictList)
   
   extraReposTable = gitdist.createAsciiTable(extraReposTableDictList)
 
@@ -411,7 +415,7 @@ def createGitDistFile(extraRepoDictList, gitdistFile, verbose=False):
   for extraRepoDict in extraRepoDictList:
     gitdistFileStr += extraRepoDict["DIR"]+"\n"
   if verbose:
-    print "Writing the file '"+gitdistFile+"' ..."
+    print("Writing the file '" + gitdistFile + "' ...")
   open(gitdistFile, 'w').write(gitdistFileStr)
 
 
@@ -422,19 +426,20 @@ def cloneExtraRepo(inOptions, extraRepoDict):
   repoVcType = extraRepoDict["REPOTYPE"]
   verbLevelIsMinimum = isVerbosityLevel(inOptions, "minimal")
   if verbLevelIsMinimum:
-    print "\nCloning repo "+repoName+" ..."
+    print("\nCloning repo " + repoName + " ...")
   if os.path.exists(repoDir):
     if verbLevelIsMinimum:
-      print "\n  ==> Repo dir = '"+repoDir+"' already exists.  Skipping clone!"
+      print("\n  ==> Repo dir = '" + repoDir +
+            "' already exists.  Skipping clone!")
     return
   if repoVcType != "GIT":
-    print "\n  ==> ERROR: Repo type '"+repoVcType+"' not supported!"
+    print("\n  ==> ERROR: Repo type '"+repoVcType+"' not supported!")
     sys.exit(1)
   cmnd = "git clone "+repoUrl+" "+repoDir
   if inOptions.doOp:
     echoRunSysCmnd(cmnd, timeCmnd=True, verbose=verbLevelIsMinimum)
   elif verbLevelIsMinimum:
-    print "\nRunning: "+cmnd
+    print("\nRunning: " + cmnd)
 
 
 def cloneExtraRepos(inOptions):
@@ -453,7 +458,7 @@ def cloneExtraRepos(inOptions):
     withCmake=inOptions.withCmake,
     verbose=isVerbosityLevel(inOptions, "most")
     )
-  #print "extraRepoDictList =", extraRepoDictList
+  #print("extraRepoDictList =" + str(extraRepoDictList))
 
   #
   # B) Get the list of gitolite repos
@@ -461,15 +466,15 @@ def cloneExtraRepos(inOptions):
   
   if inOptions.gitoliteRoot:
     if verbLevelIsMinimal:
-      print "\n***"
-      print "*** Get the list of repos that can be cloned from gitolite server:"
-      print "***\n"
+      print("\n***")
+      print("*** Get the list of repos that can be cloned from gitolite server:")
+      print("***\n")
     gitoliteRepos = getGitoliteReposList(inOptions,
       trace=verbLevelIsMinimal,
       dumpGitoliteOutput=isVerbosityLevel(inOptions, "most"))
   else:
     gitoliteRepos = []
-  #print "gitoliteRepos =", gitoliteRepos
+  #print("gitoliteRepos =", gitoliteRepos)
 
   #
   # C) Filter the list of extra repos
@@ -477,17 +482,17 @@ def cloneExtraRepos(inOptions):
 
   if gitoliteRepos:
     if verbLevelIsMinimal:
-      print "\n***"
-      print "*** Filtering the set of extra repos based on gitolite repos:"
-      print "***\n"
+      print("\n***")
+      print("*** Filtering the set of extra repos based on gitolite repos:")
+      print("***\n")
     extraRepoDictList = filterOutMissingGitoliteRepos(
       extraRepoDictList, gitoliteRepos, verbose=verbLevelIsMinimal)
 
   if inOptions.notExtraRepos:
     if verbLevelIsMinimal:
-      print "\n***"
-      print "*** Filtering the set of extra repos based on --not-extra-repos:"
-      print "***\n"
+      print("\n***")
+      print("*** Filtering the set of extra repos based on --not-extra-repos:")
+      print("***\n")
     extraRepoDictList = filterOutNotExtraRepos(
       extraRepoDictList,
       inOptions.notExtraRepos.split(","),
@@ -499,12 +504,12 @@ def cloneExtraRepos(inOptions):
 
   if isVerbosityLevel(inOptions, "more"):
 
-    print "\n***"
-    print "*** List of selected extra repos to clone:"
-    print "***\n"
+    print("\n***")
+    print("*** List of selected extra repos to clone:")
+    print("***\n")
   
     extraReposTable = getExtraReposTable(extraRepoDictList)
-    print extraReposTable
+    print(extraReposTable)
 
   #
   # E) Clone the repos
@@ -513,9 +518,9 @@ def cloneExtraRepos(inOptions):
   if inOptions.doClone:
 
     if verbLevelIsMinimal:
-      print "\n***"
-      print "*** Clone the selected extra repos:"
-      print "***\n"
+      print("\n***")
+      print("*** Clone the selected extra repos:")
+      print("***\n")
 
     for extraRepoDict in extraRepoDictList:
       cloneExtraRepo(inOptions, extraRepoDict)
@@ -527,9 +532,9 @@ def cloneExtraRepos(inOptions):
   if inOptions.createGitdistFile:
 
     if verbLevelIsMinimal:
-      print "\n***"
-      print "*** Create the gitdist file:"
-      print "***\n"
+      print("\n***")
+      print("*** Create the gitdist file:")
+      print("***\n")
 
     createGitDistFile(extraRepoDictList, inOptions.createGitdistFile,
       verbose=verbLevelIsMinimal)

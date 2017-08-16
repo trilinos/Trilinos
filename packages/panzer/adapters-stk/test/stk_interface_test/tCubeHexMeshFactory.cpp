@@ -60,7 +60,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, defaults)
 {
@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
 
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    int xe = 4, ye = 5, ze = 2;
    int bx = 4, by = 2, bz = 3;
@@ -192,18 +192,18 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    mesh->getNodesetNames(nodesets);
    TEST_EQUALITY(nodesets.size(),1);
 
-   std::vector<stk_classic::mesh::Entity *> nodes;
+   std::vector<stk::mesh::Entity> nodes;
    mesh->getMyNodes("origin","eblock-0_0_0",nodes); 
    if(rank==0) {
       std::vector<std::size_t> localNodeIds;
-      std::vector<stk_classic::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
 
       TEST_EQUALITY(nodes.size(),1);
       workset_utils::getNodeElements(*mesh,"eblock-0_0_0",nodes,localNodeIds,elements);
 
       TEST_EQUALITY(localNodeIds.size(),1);
       TEST_EQUALITY(elements.size(),1);
-      TEST_EQUALITY(elements[0]->identifier(),1);
+      TEST_EQUALITY(mesh->elementGlobalId(elements[0]),1);
       TEST_EQUALITY(localNodeIds[0],0);
    }
    else {

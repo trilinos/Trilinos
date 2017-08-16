@@ -18,7 +18,7 @@ ModificationSummary::~ModificationSummary()
 {
 }
 
-void ModificationSummary::track_induced_parts(stk::mesh::Entity e_from, stk::mesh::Entity e_to, const stk::mesh::PartVector& add_parts, const stk::mesh::PartVector& emptyParts)
+void ModificationSummary::track_induced_parts(stk::mesh::Entity e_from, stk::mesh::Entity e_to, const stk::mesh::OrdinalVector& add_parts, const stk::mesh::OrdinalVector& emptyParts)
 {
     if ( isValid(e_from) && isValid(e_to) )
     {
@@ -87,7 +87,12 @@ void ModificationSummary::track_declare_entity(stk::mesh::EntityRank rank, stk::
     std::ostringstream os;
     stk::mesh::EntityKey key(rank, newId);
     os << "Declaring new entity with entity key " << key << " on parts: ";
-    writeParts(os, "adding parts:", addParts);
+    stk::mesh::OrdinalVector partOrdinals;
+    partOrdinals.reserve(addParts.size());
+    for(const stk::mesh::Part* part : addParts) {
+        partOrdinals.push_back(part->mesh_meta_data_ordinal());
+    }
+    writeParts(os, "adding parts:", partOrdinals);
     os << std::endl;
     addEntityKeyAndStringToTracker(key, os.str());
 }
@@ -147,7 +152,7 @@ void ModificationSummary::track_destroy_entity(stk::mesh::Entity entity)
     }
 }
 
-void ModificationSummary::track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::PartVector& addParts, const stk::mesh::PartVector& rmParts)
+void ModificationSummary::track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& addParts, const stk::mesh::OrdinalVector& rmParts)
 {
     if(isValid(entity))
     {
@@ -333,14 +338,15 @@ int ModificationSummary::my_proc_id() const
     return m_procId;
 }
 
-void ModificationSummary::writeParts(std::ostringstream& os, const std::string &label, const stk::mesh::PartVector& parts)
+void ModificationSummary::writeParts(std::ostringstream& os, const std::string &label, const stk::mesh::OrdinalVector& parts)
 {
+    const stk::mesh::PartVector& allParts = m_bulkData.mesh_meta_data().get_parts();
     if(!parts.empty())
     {
         std::vector<std::string> names(parts.size());
         for(size_t i = 0; i < parts.size(); ++i)
         {
-            names[i] = parts[i]->name();
+            names[i] = allParts[parts[i]]->name();
         }
         std::sort(names.begin(), names.end());
 

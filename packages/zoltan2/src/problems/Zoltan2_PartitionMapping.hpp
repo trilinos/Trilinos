@@ -54,6 +54,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Zoltan2_Environment.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
+#include "Zoltan2_Algorithm.hpp"
 
 namespace Zoltan2 {
 
@@ -61,7 +62,7 @@ namespace Zoltan2 {
 */
 
 template <typename Adapter>
-  class PartitionMapping
+  class PartitionMapping :public Algorithm<Adapter>
 {
 public:
 

@@ -489,7 +489,6 @@ BelosLinearOpWithSolve<Scalar>::solveSupportsNewImpl(EOpTransp transp,
   return false; // ToDo: Support adjoint solves!
   // Otherwise, Thyra/Belos now supports every solve criteria type that exists
   // because of the class Thyra::GeneralSolveCriteriaBelosStatusTest!
-  return true;
 /*
   if (real_trans(M_trans)==NOTRANS) {
     return (

@@ -52,6 +52,14 @@
 #include "Thyra_AssertOp.hpp"
 #include "Thyra_DefaultColumnwiseMultiVector.hpp"
 #include "RTOpPack_TOpAssignScalar.hpp"
+#include "RTOpPack_ROpDotProd.hpp"
+#include "RTOpPack_ROpNorm1.hpp"
+#include "RTOpPack_ROpNorm2.hpp"
+#include "RTOpPack_ROpNormInf.hpp"
+#include "RTOpPack_TOpAssignVectors.hpp"
+#include "RTOpPack_TOpAXPY.hpp"
+#include "RTOpPack_TOpLinearCombination.hpp"
+#include "RTOpPack_TOpScaleVector.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
@@ -90,6 +98,171 @@ void MultiVectorDefaultBase<Scalar>::assignImpl(Scalar alpha)
   Thyra::applyOp<Scalar>(assign_scalar_op,
     ArrayView<Ptr<const MultiVectorBase<Scalar> > >(null),
     tuple<Ptr<MultiVectorBase<Scalar> > >(ptr(this)), null);
+}
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::assignMultiVecImpl(const MultiVectorBase<Scalar>& mv)
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
+  Thyra::applyOp<Scalar>(assign_vectors_op, tuple(ptrInArg(mv)),
+    tuple<Ptr<MultiVectorBase<Scalar> > >(ptr(this)), null);
+}
+
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::scaleImpl(Scalar alpha)
+{
+  using Teuchos::tuple; using Teuchos::null;
+  typedef ScalarTraits<Scalar> ST;
+  if (alpha==ST::zero()) {
+    this->assign(ST::zero());
+    //assign(tuple<Ptr<MultiVectorBase<Scalar> > >(ptr(this)), ST::zero());
+    return;
+  }
+  if (alpha==ST::one()) {
+    return;
+  }
+  RTOpPack::TOpScaleVector<Scalar> scale_vector_op(alpha);
+  Thyra::applyOp<Scalar>(scale_vector_op,
+    ArrayView<Ptr<const MultiVectorBase<Scalar> > >(null),
+    tuple<Ptr<MultiVectorBase<Scalar> > >(ptr(this)), null );
+}
+
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::updateImpl(
+  Scalar alpha,
+  const MultiVectorBase<Scalar>& mv
+  )
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
+  Thyra::applyOp<Scalar>( axpy_op, tuple(ptrInArg(mv)),
+    tuple<Ptr<MultiVectorBase<Scalar> > >(ptr(this)), null );
+}
+
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::linearCombinationImpl(
+  const ArrayView<const Scalar>& alpha,
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+  const Scalar& beta
+  )
+{
+  using Teuchos::tuple; using Teuchos::null;
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(alpha.size(), mv.size());
+#endif
+  const int m = alpha.size();
+  if ( beta == ScalarTraits<Scalar>::one() && m == 1 ) {
+    this->update(alpha[0], *mv[0]);
+    return;
+  }
+  else if (m == 0) {
+    this->scale(beta);
+    return;
+  }
+  RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(alpha, beta);
+  Thyra::applyOp<Scalar>(lin_comb_op, mv,
+    tuple<Ptr<MultiVectorBase<Scalar> > >(ptr(this)), null );
+}
+
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::norms1Impl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  const int m = this->domain()->dim();
+  RTOpPack::ROpNorm1<Scalar> norm_op;
+  Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
+  for(int kc = 0; kc < m; ++kc) {
+    rcp_op_targs[kc] = norm_op.reduct_obj_create();
+    op_targs[kc] = rcp_op_targs[kc].ptr();
+  }
+  Thyra::applyOp<Scalar>(norm_op,
+    tuple<Ptr<const MultiVectorBase<Scalar> > >(ptrInArg(*this)),
+    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+    op_targs);
+  for(int kc = 0; kc < m; ++kc) {
+    norms[kc] = norm_op(*op_targs[kc]);
+  }
+}
+
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::norms2Impl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  const int m = this->domain()->dim();
+  RTOpPack::ROpNorm2<Scalar> norm_op;
+  Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
+  for(int kc = 0; kc < m; ++kc) {
+    rcp_op_targs[kc] = norm_op.reduct_obj_create();
+    op_targs[kc] = rcp_op_targs[kc].ptr();
+  }
+  Thyra::applyOp<Scalar>(norm_op,
+    tuple<Ptr<const MultiVectorBase<Scalar> > >(ptrInArg(*this)),
+    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+    op_targs);
+  for(int kc = 0; kc < m; ++kc) {
+    norms[kc] = norm_op(*op_targs[kc]);
+  }
+}
+
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::dotsImpl(
+  const MultiVectorBase<Scalar>& mv,
+  const ArrayView<Scalar>& prods
+  ) const
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  const int m = this->domain()->dim();
+  RTOpPack::ROpDotProd<Scalar> dot_op;
+  Array<RCP<RTOpPack::ReductTarget> > rcp_dot_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > dot_targs(m);
+  for( int kc = 0; kc < m; ++kc ) {
+    rcp_dot_targs[kc] = dot_op.reduct_obj_create();
+    dot_targs[kc] = rcp_dot_targs[kc].ptr();
+  }
+  Thyra::applyOp<Scalar>( dot_op,
+    tuple<Ptr<const MultiVectorBase<Scalar> > >(ptrInArg(mv), ptrInArg(*this)),
+    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+    dot_targs );
+  for( int kc = 0; kc < m; ++kc ) {
+    prods[kc] = dot_op(*dot_targs[kc]);
+  }
+}
+
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::normsInfImpl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  const int m = this->domain()->dim();
+  RTOpPack::ROpNormInf<Scalar> norm_op;
+  Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
+  for(int kc = 0; kc < m; ++kc) {
+    rcp_op_targs[kc] = norm_op.reduct_obj_create();
+    op_targs[kc] = rcp_op_targs[kc].ptr();
+  }
+  Thyra::applyOp<Scalar>(norm_op,
+    tuple<Ptr<const MultiVectorBase<Scalar> > >(ptrInArg(*this)),
+    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+    op_targs);
+  for(int kc = 0; kc < m; ++kc) {
+    norms[kc] = norm_op(*op_targs[kc]);
+  }
 }
 
 

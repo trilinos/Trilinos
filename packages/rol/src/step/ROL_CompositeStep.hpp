@@ -94,6 +94,7 @@ private:
   Real Delta_;
   Real penalty_;
   Real eta_;
+  bool useConHess_;
 
   Real ared_;
   Real pred_;
@@ -160,6 +161,8 @@ public:
  
     maxiterCG_   = steplist.sublist("Tangential Subproblem Solver").get("Iteration Limit", 20);
     tolCG_       = steplist.sublist("Tangential Subproblem Solver").get("Relative Tolerance", 1e-2);
+    Delta_       = steplist.get("Initial Radius", 1e2);
+    useConHess_  = steplist.get("Use Constraint Hessian", true);
 
     int outLvl   = steplist.get("Output Level", 0);
 
@@ -171,7 +174,6 @@ public:
     tntmax_  = 2.0;
 
     zeta_    = 0.8;
-    Delta_   = 1e2;
     penalty_ = 1.0;
     eta_     = 1e-8;
 
@@ -205,7 +207,7 @@ public:
   /** \brief Initialize step.
   */
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
-                   Objective<Real> &obj, EqualityConstraint<Real> &con,
+                   Objective<Real> &obj, Constraint<Real> &con,
                    AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
@@ -248,7 +250,7 @@ public:
   /** \brief Compute step.
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                Objective<Real> &obj, EqualityConstraint<Real> &con,
+                Objective<Real> &obj, Constraint<Real> &con,
                 AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     Real zerotol = std::sqrt(ROL_EPSILON<Real>());
@@ -296,7 +298,7 @@ public:
   /** \brief Update step, if successful.
   */
   void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-               Objective<Real> &obj, EqualityConstraint<Real> &con,
+               Objective<Real> &obj, Constraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
 
@@ -463,7 +465,7 @@ public:
 
              On return ... fill the blanks.
   */
-  void computeLagrangeMultiplier(Vector<Real> &l, const Vector<Real> &x, const Vector<Real> &gf, EqualityConstraint<Real> &con) {
+  void computeLagrangeMultiplier(Vector<Real> &l, const Vector<Real> &x, const Vector<Real> &gf, Constraint<Real> &con) {
 
     Real one(1);
     Real zerotol = std::sqrt(ROL_EPSILON<Real>());
@@ -530,7 +532,7 @@ public:
              @param[in]       con   is the equality constraint object
 
   */
-  void computeQuasinormalStep(Vector<Real> &n, const Vector<Real> &c, const Vector<Real> &x, Real delta, EqualityConstraint<Real> &con) {
+  void computeQuasinormalStep(Vector<Real> &n, const Vector<Real> &c, const Vector<Real> &x, Real delta, Constraint<Real> &con) {
 
     if (infoQN_) {
       std::stringstream hist;
@@ -642,7 +644,7 @@ public:
   */
   void solveTangentialSubproblem(Vector<Real> &t, Vector<Real> &tCP, Vector<Real> &Wg,
                                  const Vector<Real> &x, const Vector<Real> &g, const Vector<Real> &n, const Vector<Real> &l,
-                                 Real delta, Objective<Real> &obj, EqualityConstraint<Real> &con) {
+                                 Real delta, Objective<Real> &obj, Constraint<Real> &con) {
 
     /* Initialization of the CG step. */
     bool orthocheck = true;  // set to true if want to check orthogonality
@@ -673,8 +675,10 @@ public:
     r->set(g);
     obj.hessVec(*gtemp, n, x, zerotol);
     r->plus(*gtemp);
-    con.applyAdjointHessian(*gtemp, l, n, x, zerotol);
-    r->plus(*gtemp);
+    if (useConHess_) {
+      con.applyAdjointHessian(*gtemp, l, n, x, zerotol);
+      r->plus(*gtemp);
+    }
     Real normg  = r->norm();
     Real normWg = zero;
     Real pHp    = zero;
@@ -847,9 +851,11 @@ public:
       Hps.push_back(xvec_->clone());
       // change obj.hessVec(*(Hps[iterCG_-1]), *(p[iterCG_-1]), x, zerotol);
       obj.hessVec(*Hp, *(p[iterCG_-1]), x, zerotol);
-      con.applyAdjointHessian(*gtemp, l, *(p[iterCG_-1]), x, zerotol);
-      // change (Hps[iterCG_-1])->plus(*gtemp);
-      Hp->plus(*gtemp);
+      if (useConHess_) {
+        con.applyAdjointHessian(*gtemp, l, *(p[iterCG_-1]), x, zerotol);
+        // change (Hps[iterCG_-1])->plus(*gtemp);
+        Hp->plus(*gtemp);
+      }
       // "Preconditioning" step.
       (Hps[iterCG_-1])->set(Hp->dual());
 
@@ -967,7 +973,7 @@ public:
               Vector<Real> &gf_new, Vector<Real> &l_new, Vector<Real> &g_new,
               const Vector<Real> &x, const Vector<Real> &l, Real f, const Vector<Real> &gf, const Vector<Real> &c,
               const Vector<Real> &g, Vector<Real> &tCP, Vector<Real> &Wg,
-              Objective<Real> &obj, EqualityConstraint<Real> &con, AlgorithmState<Real> &algo_state) {
+              Objective<Real> &obj, Constraint<Real> &con, AlgorithmState<Real> &algo_state) {
 
     Real beta         = 1e-8;              // predicted reduction parameter
     Real tol_red_tang = 1e-3;              // internal reduction factor for tangtol
@@ -1087,11 +1093,15 @@ public:
 
         // Compute some quantities before updating the objective and the constraint.
         obj.hessVec(*Hn, n, x, zerotol);
-        con.applyAdjointHessian(*cxxvec, l, n, x, zerotol);
-        Hn->plus(*cxxvec);
+        if (useConHess_) {
+          con.applyAdjointHessian(*cxxvec, l, n, x, zerotol);
+          Hn->plus(*cxxvec);
+        }
         obj.hessVec(*Hto, *t_orig, x, zerotol);
-        con.applyAdjointHessian(*cxxvec, l, *t_orig, x, zerotol);
-        Hto->plus(*cxxvec);
+        if (useConHess_) {
+          con.applyAdjointHessian(*cxxvec, l, *t_orig, x, zerotol);
+          Hto->plus(*cxxvec);
+        }
 
         // Compute objective, constraint, etc. values at the trial point.
         xtrial->set(x);

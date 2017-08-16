@@ -132,7 +132,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, noRKBT ) {
   //double step_taken = 0.0;
   TEST_THROW( stepper->takeStep(dt, STEP_TYPE_FIXED), std::logic_error ); // no RKBT defined
 }
-
+/*
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidTakeStep ) {
   RCP<SinCosModel> model = sinCosModel(false);
   Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidTakeStep ) {
   double dt = stepper->takeStep(0.1,STEP_TYPE_VARIABLE);
   TEST_EQUALITY_CONST( dt, -1.0 );
 #endif // HAVE_RYTHMOS_DEBUG
-}
+}*/
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, basePoint ) {
   RCP<SinCosModel> model = sinCosModel(false);

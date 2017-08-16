@@ -238,27 +238,72 @@ public:
      */
    virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint="") const = 0;
 
-   /** Get set of indices owned by this processor
-     */
-   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const = 0;
+   /**
+    *  \brief Get the set of indices owned by this processor.
+    *
+    *  \param[out] A `vector` that will be filled with the indices owned by
+    *              this processor.
+    */
+   virtual void
+   getOwnedIndices(
+     std::vector<GlobalOrdinalT>& indices) const = 0;
 
-   /** Get set of indices owned and shared by this processor.
-     * This can be thought of as the ``ghosted'' indices.
-     */
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const = 0;
+   /**
+    *  \brief Get the set of indices ghosted for this processor.
+    *
+    *  \param[out] A `vector` that will be filled with the indices ghosted for
+    *              this processor.
+    */
+   virtual void
+   getGhostedIndices(
+     std::vector<GlobalOrdinalT>& indices) const = 0;
+
+   /**
+    *  \brief Get the set of owned and ghosted indices for this processor.
+    *
+    *  \param[out] A `vector` that will be filled with the owned and ghosted
+    *              indices for this processor.
+    */
+   virtual void
+   getOwnedAndGhostedIndices(
+     std::vector<GlobalOrdinalT>& indices) const = 0;
+
+   /**
+    *  \brief Get the number of indices owned by this processor.
+    *
+    *  \returns The number of indices owned by this processor.
+    */
+   virtual int
+   getNumOwned() const = 0;
+
+   /**
+    *  \brief Get the number of indices ghosted for this processor.
+    *
+    *  \returns The number of indices ghosted for this processor.
+    */
+   virtual int
+   getNumGhosted() const = 0;
+
+   /**
+    *  \brief Get the number of owned and ghosted indices for this processor.
+    *
+    *  \returns The number of owned and ghosted indices for this processor.
+    */
+   virtual int
+   getNumOwnedAndGhosted() const = 0;
 
    /** Get a yes/no on ownership for each index in a vector
      */
    virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const = 0;
 
    /** Access the local IDs for an element. The local ordering is according to
-     * the <code>getOwnedAndSharedIndices</code> method.
+     * the <code>getOwnedAndGhostedIndices</code> method.
      */
    const std::vector<LocalOrdinalT> & getElementLIDs(LocalOrdinalT localElmtId) const
    { return localIDs_[localElmtId]; }
 
    /** Access the local IDs for an element. The local ordering is according to
-     * the <code>getOwnedAndSharedIndices</code> method. Note
+     * the <code>getOwnedAndGhostedIndices</code> method. Note
      */
    void getElementLIDs(Kokkos::View<const int*,PHX::Device> cellIds,
                        Kokkos::View<LocalOrdinalT**,PHX::Device> lids) const
@@ -309,7 +354,7 @@ public:
 protected:
 
    /** This method is used by derived classes to the construct the local IDs from 
-     * the <code>getOwnedAndSharedIndices</code> method.
+     * the <code>getOwnedAndGhostedIndices</code> method.
      */
    void buildLocalIds()
    { 
@@ -324,7 +369,7 @@ protected:
    }
 
    /** This method is used by derived classes to the construct the local IDs from 
-     * the <code>getOwnedAndSharedIndices</code> method.
+     * the <code>getOwnedAndGhostedIndices</code> method.
      */
    void buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localIDs) const ; 
 
@@ -379,13 +424,13 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
 buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localIDs) const
 {
-  std::vector<GlobalOrdinalT> ownedAndShared;
-  this->getOwnedAndSharedIndices(ownedAndShared);
+  std::vector<GlobalOrdinalT> ownedAndGhosted;
+  this->getOwnedAndGhostedIndices(ownedAndGhosted);
    
   // build global to local hash map (temporary and used only once)
   std::unordered_map<GlobalOrdinalT,LocalOrdinalT> hashMap;
-  for(std::size_t i=0;i<ownedAndShared.size();i++)
-    hashMap[ownedAndShared[i]] = i;
+  for(std::size_t i=0;i<ownedAndGhosted.size();i++)
+    hashMap[ownedAndGhosted[i]] = i;
 
   std::vector<std::string> elementBlocks;
   this->getElementBlockIds(elementBlocks);

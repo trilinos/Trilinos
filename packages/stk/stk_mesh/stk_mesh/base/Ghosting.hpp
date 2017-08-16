@@ -84,12 +84,13 @@ public:
    */
   std::ostream& operator<<(std::ostream& out) const;
 
+  const BulkData & mesh() const { return m_mesh ; }
+        BulkData & mesh()       { return m_mesh ; }
 private:
   /** \brief  A Ghosting object is owned by a BulkData object,
    *          and as such can only be modified by its owner.
    */
 
-  BulkData & bulk_data() const { return m_mesh ; }
   friend class BulkData ;
 
   BulkData                & m_mesh ; ///< Owner

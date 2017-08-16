@@ -47,6 +47,7 @@
 
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdVector.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_ObjectiveFromBoundConstraint.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -142,7 +143,7 @@ int main(int argc, char *argv[]) {
     }    
 
     // Create bound constraint
-    ROL::BoundConstraint<RealT>  bc(lo,up);
+    ROL::Bounds<RealT>  bc(lo,up);
 
     Teuchos::ParameterList logList;
     Teuchos::ParameterList quadList;

@@ -79,34 +79,7 @@ the following classes:
 #include "PyTrilinos_Epetra_Util.hpp"
 
 // Epetra includes
-#include "Epetra_DLLExportMacro.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // NOX includes
 #include "NOX.H"
@@ -131,6 +104,14 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 %}
 
+// ___init__ was pointing to Pitchfork/___init__.so (?!?), so I fix
+// that.
+%pythoncode
+%{
+del ___init__
+from . import ___init__
+%}
+
 %ignore *::operator=;
 
 // SWIG library includes
@@ -149,6 +130,9 @@ using Teuchos::rcp;
 %import "Teuchos.i"
 %include "Epetra_Base.i"    // For PyExc_EpetraError
 %import "Epetra.i"
+
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
 
 // Teuchos RCP support
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
@@ -182,14 +166,16 @@ using Teuchos::rcp;
 %import "NOX.Epetra.__init__.i"
 %import "NOX.Epetra.Interface.i"
 
-// Allow import from the parent directory
+// Allow import from this and parent directory. Force Interface to be
+// LOCA.Interface
 %pythoncode
 %{
 import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+thisDir   = op.dirname(op.abspath(__file__))
+parentDir = op.normpath(op.join(thisDir,".."))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-from .. import Abstract
 %}
 
 // LOCA base classes
@@ -224,13 +210,14 @@ from .. import Abstract
 // The above %import(module="Abstract") ... directives can cause an
 // "import Abstract" to appear in the .py file, causing Abstract to
 // point to NOX.Abstract.  Force it back to LOCA.Abstract.  Also,
-// ___init__ was pointing to Pitchfork/___init__.so (?!?), so I fix
-// that, too.
+// Interface was pointing to NOX/Epetra/Interface, so I fix that, too.
 %pythoncode
 %{
-del ___init__
+del Abstract
 from .. import Abstract
-from .  import ___init__
+if 'NOX' in Interface.__file__:
+  del Interface
+  from . import Interface
 %}
 
 // Director exception handling

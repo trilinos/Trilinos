@@ -14,8 +14,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+// For memory proviling
+#include <sys/time.h>
+#include <sys/resource.h>
+
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -29,15 +34,17 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   Teuchos::ParameterList params;
   Teuchos::CommandLineProcessor clp(false);
 
-  const int num_grouping_types = 3;
+  const int num_grouping_types = 4;
   const GroupingType grouping_values[] = {
-    GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z };
-  const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z" };
+    GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z,
+    GROUPING_TASMANIAN_SURROGATE };
+  const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z", "tasmanian-surrogate" };
 
-  const int num_sampling_types = 3;
+  const int num_sampling_types = 5;
   const SamplingType sampling_values[] = {
-    SAMPLING_STOKHOS, SAMPLING_TASMANIAN, SAMPLING_FILE };
-  const char *sampling_names[] = { "stokhos", "tasmanian", "file" };
+    SAMPLING_STOKHOS, SAMPLING_DAKOTA, SAMPLING_TASMANIAN, SAMPLING_FILE,
+    SAMPLING_VPS };
+  const char *sampling_names[] = { "stokhos", "dakota", "tasmanian", "file", "vps" };
 
   clp.setOption("serial", "no-serial",     &cmdline.USE_SERIAL, "use the serial device");
   clp.setOption("threads",                 &cmdline.USE_THREADS, "number of pthreads threads");
@@ -69,6 +76,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("uq-order",                 &cmdline.USE_UQ_ORDER,  "UQ order");
   clp.setOption("uq-init-level",            &cmdline.USE_UQ_INIT_LEVEL,  "Initial adaptive sparse grid level");
   clp.setOption("uq-max-level",             &cmdline.USE_UQ_MAX_LEVEL,  "Max adaptive sparse grid level");
+  clp.setOption("uq-max-samples",           &cmdline.USE_UQ_MAX_SAMPLES,  "Max number of samples to run");
   clp.setOption("uq-tol",                   &cmdline.USE_UQ_TOL,  "Adaptive sparse grid tolerance");
   clp.setOption("diff-coeff-linear",        &cmdline.USE_DIFF_COEFF_LINEAR,  "Linear term in diffusion coefficient");
   clp.setOption("diff-coeff-constant",      &cmdline.USE_DIFF_COEFF_CONSTANT,  "Constant term in diffusion coefficient");
@@ -78,12 +86,14 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("exponential", "no-exponential", &cmdline.USE_EXPONENTIAL,  "take exponential of KL diffusion coefficient");
   clp.setOption("exp-shift",                &cmdline.USE_EXP_SHIFT,  "Linear shift of exponential of KL diffusion coefficient");
   clp.setOption("exp-scale",                &cmdline.USE_EXP_SCALE,  "Multiplicative scale of exponential of KL diffusion coefficient");
+  clp.setOption("discontinuous-exp-scale", "continuous-exp-scale", &cmdline.USE_DISC_EXP_SCALE,  "use discontinuous scale factor on exponential");
   clp.setOption("isotropic", "anisotropic", &cmdline.USE_ISOTROPIC,  "use isotropic or anisotropic diffusion coefficient");
   clp.setOption("coeff-src",                &cmdline.USE_COEFF_SRC,  "Coefficient for source term");
   clp.setOption("coeff-adv",                &cmdline.USE_COEFF_ADV,  "Coefficient for advection term");
   clp.setOption("sparse", "tensor",         &cmdline.USE_SPARSE ,  "use sparse or tensor grid");
   clp.setOption("ensemble",                 &cmdline.USE_UQ_ENSEMBLE,  "UQ ensemble size.  This needs to be a valid choice based on available instantiations.");
   clp.setOption("grouping", &cmdline.USE_GROUPING, num_grouping_types, grouping_values, grouping_names, "Sample grouping method for ensemble propagation");
+  clp.setOption("surrogate-grouping-level", &cmdline.TAS_GROUPING_INITIAL_LEVEL,  "Starting level for surrogate-based grouping");
 
   clp.setOption("vtune", "no-vtune",       &cmdline.VTUNE ,  "connect to vtune");
   clp.setOption("verbose", "no-verbose",   &cmdline.VERBOSE, "print verbose intialization info");
@@ -448,4 +458,41 @@ void connect_vtune(const int p_rank) {
     std::cout << cmd.str() << std::endl;
   system(cmd.str().c_str());
   system("sleep 10");
+}
+
+// Get memory usage in MB
+MemUsage get_memory_usage(const Teuchos::Comm<int>& comm) {
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+  size_t mem = usage.ru_maxrss;
+#if defined(__APPLE__)
+  mem /= 1024; // Apple returns bytes instead of kilobytes
+#endif
+
+  size_t max_mem = 0;
+  size_t min_mem = 0;
+  size_t tot_mem = 0;
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, 1, &mem, &max_mem);
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_MIN, 1, &mem, &min_mem);
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &mem, &tot_mem);
+
+  MemUsage mem_usage;
+  mem_usage.max_mem = static_cast<double>(max_mem) / 1024.0;
+  mem_usage.min_mem = static_cast<double>(min_mem) / 1024.0;
+  mem_usage.tot_mem = static_cast<double>(tot_mem) / 1024.0;
+
+  return mem_usage;
+}
+
+// Print memory usage to stream
+void print_memory_usage(std::ostream& s, const Teuchos::Comm<int>& comm) {
+  MemUsage mem =  get_memory_usage(comm);
+  if ( 0 == comm.getRank() ) {
+    s << std::fixed;
+    s.precision(3);
+    s << "Memory usage across all processors (MB):" << std::endl
+      << "\t Max:  " << mem.max_mem << std::endl
+      << "\t Min:  " << mem.min_mem << std::endl
+      << "\t Tot:  " << mem.tot_mem << std::endl;
+  }
 }

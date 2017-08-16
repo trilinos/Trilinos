@@ -30,6 +30,21 @@
 #ifndef SACADO_FAD_DVFAD_HPP
 #define SACADO_FAD_DVFAD_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#include "Sacado_Fad_Exp_DVFad.hpp"
+
+namespace Sacado {
+  namespace Fad {
+    template <typename T>
+    using DVFad = Exp::GeneralFad< Exp::VectorDynamicStorage<T> >;
+  }
+}
+
+#else
+
 #include "Sacado_Fad_GeneralFadExpr.hpp"
 #include "Sacado_Fad_DVFadTraits.hpp"
 #include "Sacado_Fad_VectorDynamicStorage.hpp"
@@ -293,5 +308,7 @@ namespace Sacado {
   };
 
 } // namespace Sacado
+
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_DFAD_HPP

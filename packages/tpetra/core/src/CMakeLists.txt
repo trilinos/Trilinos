@@ -269,6 +269,7 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.h)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
@@ -328,6 +329,12 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   "Experimental_BlockCrsMatrix_Helpers" "EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${BLOCKCRSMATRIX_HELPER_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::Details::getDiagCopyWithoutOffsets.
+  # Do so for the same set of Scalar types as CrsMatrix (see above),
+  # because this function is an implementation detail of CrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(GETDIAGCOPYWITHOUTOFFSETS_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Details_getDiagCopyWithoutOffsets" "DETAILS_GETDIAGCOPYWITHOUTOFFSETS" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${GETDIAGCOPYWITHOUTOFFSETS_OUTPUT_FILES})
+
   # DistObject requires the same Scalar type instantiations as
   # MultiVector, plus Scalar = char (for CrsMatrix).
   SET (DistObject_ETI_SCALARS ${MultiVector_ETI_SCALARS})
@@ -361,5 +368,6 @@ SET_PROPERTY(
 # Make a trivial change to this comment if you add / remove a file
 # either to / from this directory, or to / from the 'impl'
 # subdirectory.  That ensures that running "make" will also rerun
-# CMake in order to regenerate Makefiles.
+# CMake in order to regenerate Makefiles.  Here is another such
+# change.
 #

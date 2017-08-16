@@ -45,7 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_IntegrationValues2.hpp"
@@ -58,14 +57,12 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 using panzer::IntegrationRule;
-using Intrepid2::FieldContainer;
 
 namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values, const_basis)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -127,6 +124,7 @@ namespace panzer {
     const std::string basis_type = "Const";
   
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), false);
 
     panzer::BasisValues2<double> basis_values("",true,true);
 
@@ -168,7 +166,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, grad_quad)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -231,6 +228,7 @@ namespace panzer {
     const std::string basis_type = "Q1";
   
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), false);
 
     panzer::BasisValues2<double> basis_values("",true,true);
     basis_values.setupArrays(basis);
@@ -273,7 +271,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, hcurl_basis)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -345,6 +342,7 @@ namespace panzer {
   
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
 
     panzer::BasisValues2<double> basis_values("",true,true);
 
@@ -405,7 +403,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, hdiv_basis)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()));
@@ -466,6 +463,7 @@ namespace panzer {
   
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
 
     panzer::BasisValues2<double> basis_values("",true,true);
 
@@ -479,7 +477,7 @@ namespace panzer {
 
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(0),4);
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(1),num_qp);
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(2),base_cell_dimension);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent_int(2),base_cell_dimension);
 
     TEST_EQUALITY(basis_values.grad_basis_ref.size(),0);
 
@@ -586,7 +584,6 @@ namespace panzer {
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
 
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
@@ -682,6 +679,7 @@ namespace panzer {
   
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
 
     panzer::BasisValues2<double> basis_values("prefix_",true,true);
 
@@ -694,7 +692,7 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(0),12);
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(1),num_qp);
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(2),3);
-    TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis_vector.extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(1),12);
     TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(3),3);
@@ -708,11 +706,11 @@ namespace panzer {
     TEST_EQUALITY(basis_values.curl_basis_ref_vector.dimension(0),12);
     TEST_EQUALITY(basis_values.curl_basis_ref_vector.dimension(1),num_qp);
     TEST_EQUALITY(basis_values.curl_basis_ref_vector.dimension(2),3);
-    TEST_EQUALITY(basis_values.curl_basis_vector.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.curl_basis_vector.extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.curl_basis_vector.dimension(1),12);
     TEST_EQUALITY(basis_values.curl_basis_vector.dimension(2),num_qp);
     TEST_EQUALITY(basis_values.curl_basis_vector.dimension(3),3);
-    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(1),12);
     TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(3),3);
@@ -721,7 +719,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values, md_field_setup)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -753,13 +750,13 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().name(),"prefix_basis_ref");
 
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().name(),"prefix_basis");
 
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().name(),"prefix_weighted_basis");
@@ -772,14 +769,14 @@ namespace panzer {
     TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().name(),"prefix_grad_basis_ref");
 
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(3),2);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().name(),"prefix_grad_basis");
 
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(3),2);
@@ -792,7 +789,7 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().name(),"prefix_basis_coordinates_ref");
 
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(2),2);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().name(),"prefix_basis_coordinates");
@@ -800,7 +797,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values, md_field_setup_fad)
   {
-    PHX::KokkosDeviceSession session;
 
     typedef panzer::Traits::FadType ScalarType;
 
@@ -834,13 +830,13 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().name(),"prefix_basis_ref");
 
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().name(),"prefix_basis");
 
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().name(),"prefix_weighted_basis");
@@ -853,14 +849,14 @@ namespace panzer {
     TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().name(),"prefix_grad_basis_ref");
 
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(3),2);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().name(),"prefix_grad_basis");
 
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(3),2);
@@ -873,7 +869,7 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().name(),"prefix_basis_coordinates_ref");
 
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(2),2);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().name(),"prefix_basis_coordinates");
@@ -882,7 +878,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, control_vol_hgrad)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -953,7 +948,7 @@ namespace panzer {
                                   int_values_vol.jac_det,
                                   int_values_vol.jac_inv);
 
-    TEST_EQUALITY(basis_values.basis_scalar.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_scalar.extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_scalar.dimension(1),4);
     TEST_EQUALITY(basis_values.basis_scalar.dimension(2),num_qp);
 

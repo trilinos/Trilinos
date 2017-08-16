@@ -96,7 +96,10 @@ struct find_2_tuples {
       }
     dev.team_barrier();
   }
-  size_t team_shmem_size( int team_size ) const { return sizeof(int)*(chunk_size+2 + team_size * team_size ); }
+  size_t team_shmem_size( int team_size ) const { 
+    return Kokkos::View<int**,Kokkos::MemoryUnmanaged>::shmem_size(TEAM_SIZE,TEAM_SIZE) +
+           Kokkos::View<int*,Kokkos::MemoryUnmanaged>::shmem_size(chunk_size+1);
+  }
 };
 
 int main(int narg, char* args[]) {
@@ -117,7 +120,7 @@ int main(int narg, char* args[]) {
   Kokkos::DualView<int**> histogram("histogram",TEAM_SIZE,TEAM_SIZE);
 
 
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   // threads/team is automatically limited to maximum supported by the device.
   Kokkos::parallel_for( team_policy( nchunks , TEAM_SIZE )
                       , find_2_tuples(chunk_size,data,histogram) );

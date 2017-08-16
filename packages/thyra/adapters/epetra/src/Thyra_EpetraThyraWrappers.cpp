@@ -471,7 +471,7 @@ Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
   const int globalDim = vs_in.dim();
 
   return Teuchos::rcp(
-    new Epetra_Map(globalDim, myLocalElements, &(myGIDs[0]), 0, *comm));
+    new Epetra_Map(globalDim, myLocalElements, myGIDs.getRawPtr(), 0, *comm));
 
 }
 

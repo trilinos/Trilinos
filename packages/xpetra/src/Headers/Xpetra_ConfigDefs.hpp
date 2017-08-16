@@ -128,6 +128,17 @@ namespace Xpetra {
 #define XPETRA_MONITOR(funcName)
 #endif
 
+// Special macro for exception testing
+// XPETRA_TEST_FOR_EXCEPTION is only active if Xpetra is configured with Xpetra_ENABLE_DEBUG:BOOL=ON
+// If you want an exception test both in the release and debug version of Xpetra you still can use directly
+// TEUCHOS_TEST_FOR_EXCEPTION
+#ifdef HAVE_XPETRA_DEBUG
+#define XPETRA_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
+  TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg);
+#else
+#define XPETRA_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg)
+#endif
+
 #include <functional>
 
 // mem management
@@ -258,5 +269,8 @@ namespace XpetraExamples {
 }
 
 #define XPETRA_ERR_CHECK(arg) { int r = arg; if (r < 0) { std::cout << "r = " << r << std::endl; assert(r>=0); }; }; // TODO: throw exceptions
+
+// This include file defines macros to avoid warnings under CUDA.  See github issue #1133.
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 #endif // XPETRA_CONFIGDEFS_HPP

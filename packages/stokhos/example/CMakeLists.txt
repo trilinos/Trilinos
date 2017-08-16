@@ -424,7 +424,7 @@ IF(Stokhos_ENABLE_PCE_Scalar_Type)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     sacado_example
     SOURCES sacado/sacado_example.cpp
-    ARGS -v
+    ARGS
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -449,7 +449,7 @@ IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     sacado_ensemble_example
     SOURCES sacado/sacado_ensemble_example.cpp
-    ARGS -v
+    ARGS
     COMM serial mpi
     NUM_MPI_PROCS 1
     )

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Mark Hoemmen <mhoemme AT sandia DOT gov>
-# Time-stamp: <2012-08-08 18:21:14 mhoemme>
+# Time-stamp: <2016-09-21 14:46:49 mhoemme>
 #
 # Example CMake configure script for Trilinos, that uses Intel's Math
 # Kernel Library (MKL) both for the BLAS and LAPACK implementation,
@@ -118,7 +118,6 @@ cmake \
   -D Tpetra_ENABLE_TESTS:BOOL=ON \
   -D Tpetra_ENABLE_BUGTESTS:BOOL=OFF \
   -D Tpetra_ENABLE_EXAMPLES:BOOL=ON \
-  -D Tpetra_ENABLE_RTI:BOOL=OFF \
   -D Tpetra_PRINT_Efficiency_Warnings:BOOL=ON \
   $EXTRA_ARGS \
   ..

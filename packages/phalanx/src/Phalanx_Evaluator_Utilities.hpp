@@ -47,23 +47,24 @@
 
 #include <vector>
 
-#include "Phalanx_Field.hpp"
-#include "Phalanx_MDField.hpp"
 #include "Phalanx_FieldManager.hpp"
 
 namespace PHX {
+
+  // Forward declaration
+  template<typename DataT, int Rank> class Field;
+
+  // Forward declaration
+  template <typename DataT,
+            typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+            typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+  class MDField;
 
   /*! @brief Utilities to hide templating in concrete Evaluators.
    
   */
   template<typename EvalT, typename Traits> 
   struct EvaluatorUtilities {
-    
-    // template <typename DataT>
-    // void setFieldData(PHX::Field<DataT>& f, PHX::FieldManager<Traits>& fm) 
-    // {
-    //   fm.template getFieldData<DataT,EvalT>(f);
-    // }
 
     template <typename DataT,
 	      typename Tag0, typename Tag1, typename Tag2, typename Tag3,
@@ -72,6 +73,21 @@ namespace PHX {
 		      Tag6,Tag7>& f, PHX::FieldManager<Traits>& fm) 
     {
       fm.template getFieldData<DataT,EvalT>(f);
+    }
+
+    template <typename DataT,int Rank>
+              void setFieldData(PHX::Field<DataT,Rank>& f,
+                                PHX::FieldManager<Traits>& fm) 
+    {
+      fm.template getFieldData<EvalT,DataT>(f);
+    }
+
+    template<typename DataT,typename... Props>
+    void setFieldData(const PHX::FieldTag& ft,
+                      Kokkos::View<DataT,Props...>& f,
+                      PHX::FieldManager<Traits>& fm)
+    {
+
     }
 
   };

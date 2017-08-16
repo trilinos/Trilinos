@@ -48,6 +48,7 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_TpetraVector.hpp"
 #include "Thyra_TpetraMultiVector.hpp"
+#include "Thyra_TpetraEuclideanScalarProd.hpp"
 
 
 namespace Thyra {
@@ -72,6 +73,7 @@ void TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize(
   tpetraMap_ = tpetraMap;
   this->updateState(tpetraMap->getGlobalNumElements(),
     !tpetraMap->isDistributed());
+  this->setScalarProd(tpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
 }
 
 
@@ -134,19 +136,6 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone() const
   return tpetraVectorSpace<Scalar>(tpetraMap_);
 }
 
-// Overridden from ScalarProdVectorSpaceBase, via SpmdVectorSpaceDefaultBase
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scalarProdsImpl(
-    const MultiVectorBase<Scalar> &X, const MultiVectorBase<Scalar> &Y,
-    const ArrayView<Scalar> &scalarProds_out) const
-{
-  typedef TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOVE;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraMV;
-  RCP<const TpetraMV> tX = TOVE::getConstTpetraMultiVector(Teuchos::rcpFromRef(X)),
-                      tY = TOVE::getConstTpetraMultiVector(Teuchos::rcpFromRef(Y));
-  tX->dot(*tY, scalarProds_out);
-}
 
 // Overridden from SpmdVectorSpaceDefaultBase
 

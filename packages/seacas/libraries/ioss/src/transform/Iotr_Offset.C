@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,41 +32,34 @@
 
 #include <Ioss_Field.h>
 #include <Ioss_VariableType.h>
-#include <stddef.h>
-#include <transform/Iotr_Offset.h>
+#include <cstddef>
 #include <string>
+#include <transform/Iotr_Offset.h>
 
 #include "Ioss_Transform.h"
 
 namespace Iotr {
 
-  const Offset_Factory* Offset_Factory::factory()
+  const Offset_Factory *Offset_Factory::factory()
   {
     static Offset_Factory registerThis;
     return &registerThis;
   }
 
-  Offset_Factory::Offset_Factory()
-    : Factory("offset")
+  Offset_Factory::Offset_Factory() : Factory("offset") { Factory::alias("offset", "add"); }
+
+  Ioss::Transform *Offset_Factory::make(const std::string & /*unused*/) const
   {
-    Factory::alias("offset", "add");
+    return new Offset();
   }
 
-  Ioss::Transform* Offset_Factory::make(const std::string& /*unused*/) const
-  { return new Offset(); }
+  Offset::Offset() : intOffset(0), realOffset(0.0) {}
 
-  Offset::Offset()
-    : intOffset(0), realOffset(0.0)
-  {}
+  void Offset::set_property(const std::string & /*name*/, int value) { intOffset = value; }
 
-  void Offset::set_property(const std::string& /*name*/, int value)
-  { intOffset = value; }
+  void Offset::set_property(const std::string & /*name*/, double value) { realOffset = value; }
 
-  void Offset::set_property(const std::string& /*name*/, double value)
-  { realOffset = value; }
-
-  const Ioss::VariableType
-  *Offset::output_storage(const Ioss::VariableType *in) const
+  const Ioss::VariableType *Offset::output_storage(const Ioss::VariableType *in) const
   {
     return in;
   }
@@ -79,23 +72,32 @@ namespace Iotr {
 
   bool Offset::internal_execute(const Ioss::Field &field, void *data)
   {
-    size_t count = field.transformed_count();
-    int components = field.transformed_storage()->component_count();
+    size_t count      = field.transformed_count();
+    int    components = field.transformed_storage()->component_count();
 
     if (field.get_type() == Ioss::Field::REAL) {
-      double *rdata = static_cast<double*>(data);
+      double *rdata = static_cast<double *>(data);
 
-      for (size_t i = 0; i < count*components; i++) {
-	rdata[i] = rdata[i] + realOffset;
+      for (size_t i = 0; i < count * components; i++) {
+        rdata[i] += realOffset;
       }
-    } else if (field.get_type() == Ioss::Field::INTEGER) {
-      int *idata = static_cast<int*>(data);
+    }
+    else if (field.get_type() == Ioss::Field::INTEGER) {
+      int *idata = static_cast<int *>(data);
 
-      for (size_t i = 0; i < count*components; i++) {
-	idata[i] = idata[i] + intOffset;
+      for (size_t i = 0; i < count * components; i++) {
+        idata[i] += intOffset;
       }
-    } else {
+    }
+    else if (field.get_type() == Ioss::Field::INT64) {
+      int64_t *idata = static_cast<int64_t *>(data);
+
+      for (size_t i = 0; i < count * components; i++) {
+        idata[i] += intOffset;
+      }
+    }
+    else {
     }
     return true;
   }
-}
+} // namespace Iotr

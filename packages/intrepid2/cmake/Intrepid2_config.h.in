@@ -16,6 +16,9 @@
 /* Define if want to build with epetraext support enabled */
 #cmakedefine HAVE_INTREPID2_EPETRAEXT
 
+/* Define if want to build with amesos enabled */
+#cmakedefine HAVE_INTREPID2_KOKKOS_DYNRANKVIEW
+
 /* Define if want to build with sacado enabled */
 #cmakedefine HAVE_INTREPID2_SACADO
 

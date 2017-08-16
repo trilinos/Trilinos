@@ -52,8 +52,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -78,8 +76,6 @@ using Teuchos::rcp;
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
-
-#include "Epetra_MpiComm.h"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -115,7 +111,7 @@ namespace panzer {
 
     template <typename T>
     Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
-    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,int,int>(comm,1,true,"",linearObjFactory,globalIndexer)); }
+    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,int,int>(comm,1,true,"",linearObjFactory)); }
   };
 
   // store steady-state me for testing parameters
@@ -133,7 +129,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
     // panzer::pauseToAttach();
 
@@ -253,7 +248,6 @@ namespace panzer {
     bool parameter_on = true;
     AssemblyPieces ap;
 
-    PHX::KokkosDeviceSession session;
   
     buildAssemblyPieces(parameter_on,ap);
 
@@ -308,7 +302,6 @@ namespace panzer {
     // ss_me is created!
     // RCP<panzer::ModelEvaluator_Epetra> me = ss_me; This appears to cause seg faults for some reason!!!!
 
-    PHX::KokkosDeviceSession session;
 
     RCP<panzer::ModelEvaluator_Epetra> me;
     {
@@ -413,7 +406,6 @@ namespace panzer {
   // Testing Ditributed Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
   {
-    PHX::KokkosDeviceSession session;
 
     RCP<panzer::ModelEvaluator_Epetra> me;
     int distributed_parameter_index = -1;
@@ -433,11 +425,11 @@ namespace panzer {
       me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,p_values,ap.gd,build_transient_support));
 
       // add a distributed parameter
-      ghosted_distributed_parameter = Teuchos::rcp(new Epetra_Vector(*ap.ep_lof->getGhostedMap()));
+      ghosted_distributed_parameter = Teuchos::rcp(new Epetra_Vector(*ap.ep_lof->getGhostedMap(0)));
 
       distributed_parameter_index = me->addDistributedParameter("Transient Predictor",
-								ap.ep_lof->getMap(),
-								ap.ep_lof->getGhostedImport(),
+								ap.ep_lof->getMap(0),
+								ap.ep_lof->getGhostedImport(0),
 								ghosted_distributed_parameter);
     }
 
@@ -595,10 +587,10 @@ namespace panzer {
     pl->set("X Elements",6);
     pl->set("Y Elements",4);
     
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
@@ -638,23 +630,27 @@ namespace panzer {
     // build worksets
     //////////////////////////////////////////////////////////////
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,ap.physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<ap.physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(ap.physicsBlocks[i]->elementBlockID(),ap.physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     ap.dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
-    ap.ep_lof = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),ap.dofManager));
+    ap.ep_lof = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),ap.dofManager));
     linObjFactory = ap.ep_lof;
 
     ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,linObjFactory)); 

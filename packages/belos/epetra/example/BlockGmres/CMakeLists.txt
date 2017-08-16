@@ -1,7 +1,8 @@
 
-
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
+
 IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     
   TRIBITS_ADD_EXECUTABLE(
@@ -55,3 +56,33 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
+
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BlockGmres_Galeri_Ex
+    SOURCES BlockGmresEpetraGaleriEx.cpp
+    COMM serial mpi
+    ARGS "--verbose --nx=10 --ortho=DGKS"
+         "--verbose --nx=10 --ortho=ICGS"
+         "--verbose --nx=10 --ortho=IMGS"
+    STANDARD_PASS_OUTPUT
+    )
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
+  IF(${PACKAGE_NAME}_ENABLE_Ifpack)
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      BlockPrecGmres_Galeri_Ex
+      SOURCES BlockPrecGmresEpetraGaleriEx.cpp
+      COMM serial mpi
+      ARGS "--verbose --nx=10 --ortho=DGKS"
+           "--verbose --nx=10 --ortho=ICGS"
+           "--verbose --nx=10 --ortho=IMGS"
+      STANDARD_PASS_OUTPUT
+      )
+
+  ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
+
+ENDIF (${PACKAGE_NAME}_ENABLE_Galeri)
+

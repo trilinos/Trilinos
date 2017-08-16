@@ -35,6 +35,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include <stk_topology/topology.hpp>
 
 namespace stk {
@@ -84,7 +85,7 @@ void fixup_ghosted_to_shared_nodes(stk::mesh::BulkData & bulk)
     stk::mesh::EntityVector ghosted_nodes_that_are_now_shared;
     find_ghosted_nodes_that_need_to_be_shared(bulk, ghosted_nodes_that_are_now_shared);
 
-    stk::CommAll comm(bulk.parallel());
+    stk::CommSparse comm(bulk.parallel());
 
     for (int phase=0;phase<2;++phase)
     {
@@ -96,7 +97,7 @@ void fixup_ghosted_to_shared_nodes(stk::mesh::BulkData & bulk)
         }
         if (phase == 0 )
         {
-            comm.allocate_buffers( bulk.parallel_size()/4 );
+            comm.allocate_buffers();
         }
         else
         {
@@ -122,7 +123,7 @@ void fixup_ghosted_to_shared_nodes(stk::mesh::BulkData & bulk)
     }
 /////////////////////////
 
-    stk::CommAll commSecondStage(bulk.parallel());
+    stk::CommSparse commSecondStage(bulk.parallel());
     for (int phase=0;phase<2;++phase)
     {
         for (size_t i=0;i<sharedNodes.size();++i)
@@ -144,7 +145,7 @@ void fixup_ghosted_to_shared_nodes(stk::mesh::BulkData & bulk)
         }
         if (phase == 0 )
         {
-            commSecondStage.allocate_buffers( bulk.parallel_size()/4 );
+            commSecondStage.allocate_buffers();
         }
         else
         {

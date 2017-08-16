@@ -38,9 +38,9 @@
 #include <stdexcept>                    // for logic_error, runtime_error
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for pack_entity_info, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture, etc
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture, etc
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <string>                       // for string
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector, etc
@@ -56,11 +56,12 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting, operator<<
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, PartVector, etc
-#include "stk_mesh/fixtures/FixtureNodeSharing.hpp"
+#include "stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
-#include "stk_util/parallel/ParallelComm.hpp"  // for CommAll, CommBuffer
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+#include "stk_util/parallel/CommSparse.hpp"
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 namespace stk { namespace mesh { class Part; } }
 
@@ -198,12 +199,10 @@ TEST ( UnitTestBulkData_new , verifyDetectsBadKey )
   EntityKey bad_key2 ( stk::topology::EDGE_RANK , 0 );   // Bad id
 
   ASSERT_THROW ( bulk.declare_entity(bad_key1.rank(),
-                                             bad_key1.id(),
-                                             empty_vector),
+                                     bad_key1.id(),
+                                     empty_vector),
                          std::logic_error );
-  ASSERT_THROW ( bulk.declare_entity(bad_key2.rank(),
-                                             bad_key2.id(),
-                                             empty_vector),
+  ASSERT_THROW ( bulk.declare_edge(bad_key2.id(), empty_vector),
                          std::logic_error );
 }
 
@@ -255,8 +254,8 @@ TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 
   bulk.modification_begin();
 
-  Entity new_cell = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , empty_vector );
-  Entity new_node = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 , empty_vector );
+  Entity new_cell = bulk.declare_element(fixture.comm_rank()+1 , empty_vector );
+  Entity new_node = bulk.declare_node(fixture.comm_rank()+1 , empty_vector );
 
   bulk.declare_relation ( new_cell , new_node , 1 );
 
@@ -275,11 +274,11 @@ TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
   BulkData            &bulk = fixture.bulk_data ();
 
   bulk.modification_begin();
-  Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+  Entity new_cell = bulk.declare_element(1, {&fixture.get_elem_part()});
   unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
   for (unsigned i = 0; i < cell_num_nodes; ++i)
   {
-    Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    Entity new_node = bulk.declare_node(i+1);
     bulk.declare_relation(new_cell, new_node, i);
   }
   bulk.modification_end();
@@ -301,11 +300,11 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
   add_parts.push_back ( &fixture.m_cell_part );
 
   bulk.modification_begin();
-  Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+  Entity new_cell = bulk.declare_element(1, {&fixture.get_elem_part()});
   unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
   for (unsigned i = 0; i < cell_num_nodes; ++i)
   {
-    Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    Entity new_node = bulk.declare_node(i+1);
     bulk.declare_relation(new_cell, new_node, i);
   }
   // Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
@@ -345,7 +344,7 @@ TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 {
   TestBoxFixture fixture;
   stk::unit_test_util::BulkDataTester &bulk = fixture.bulk_data ();
-  PartVector            add_part;
+  ConstPartVector            add_part;
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
   int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
@@ -363,7 +362,7 @@ TEST ( UnitTestBulkData_new , verifyParallelAddParts )
         i != bulk.my_internal_comm_list().end() ; ++i ) {
     if ( i->key.rank() == 0 ) {
       if ( i->owner == fixture.comm_rank() ) {
-        bulk.change_entity_parts ( i->entity, add_part, PartVector() );
+        bulk.change_entity_parts ( i->entity, add_part, ConstPartVector() );
       }
     }
   }
@@ -390,9 +389,9 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
 
   bulk.modification_begin();
 
-  Entity node0 = fixture.get_new_entity ( stk::topology::NODE_RANK , 2 );
-  Entity node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
-  Entity cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+  Entity node0 = bulk.declare_node(2);
+  Entity node = bulk.declare_node(1);
+  Entity cell = bulk.declare_element(1, {&fixture.get_elem_part()});
   bulk.change_entity_parts ( node , create_node_parts , PartVector () );
   bulk.change_entity_parts ( cell , create_cell_parts , PartVector () );
   // Add node to cell part
@@ -404,7 +403,7 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
   unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
   for (unsigned i = 2; i < cell_num_nodes; ++i)
   {
-    Entity another_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    Entity another_node = bulk.declare_node(i+1);
     bulk.declare_relation(cell, another_node, i);
   }
 
@@ -414,7 +413,7 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
 
   bulk.modification_begin();
   bulk.destroy_relation ( cell , node, cell_node_rel_id );
-  Entity another_node = fixture.get_new_entity ( stk::topology::NODE_RANK , cell_num_nodes );
+  Entity another_node = bulk.declare_node(cell_num_nodes);
   bulk.declare_relation(cell, another_node, cell_node_rel_id);
   bulk.modification_end();
 
@@ -430,20 +429,20 @@ TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
   add_parts.push_back ( &fixture.m_part_B_3 );
   add_parts.push_back ( &fixture.m_part_A_superset );
   add_elem_parts = add_parts;
-  Part &elem_part = fixture.get_elem_part();;
+  Part &elem_part = fixture.get_elem_part();
   add_elem_parts.push_back(&elem_part);
 
   remove_parts.push_back ( &fixture.m_part_A_superset );
 
   bulk.modification_begin();
 
-  Entity e = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , add_elem_parts );
-  Entity n = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 , add_parts );
+  Entity e = bulk.declare_element(fixture.comm_rank()+1, add_elem_parts);
+  Entity n = bulk.declare_node(fixture.comm_rank()+1, add_parts);
   bulk.declare_relation(e, n, 0);
   unsigned elem_num_nodes = fixture.get_elem_topology().num_nodes();
   for (unsigned i = 1; i < elem_num_nodes; ++i)
   {
-    Entity another_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    Entity another_node = bulk.declare_node(i+1);
     bulk.declare_relation(e, another_node, i);
   }
   bulk.modification_end();
@@ -683,14 +682,14 @@ TEST ( UnitTestBulkData_new , verifyPartsOnCreate )
 
    bulk.modification_begin();
 
-   Entity node = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 ,create_vector );
+   Entity node = bulk.declare_node(fixture.comm_rank()+1 ,create_vector );
    bulk.modification_end();
 
    ASSERT_TRUE ( bulk.bucket(node).member ( part_a ) );
 
    bulk.modification_begin();
    create_vector.push_back ( &part_b );
-   Entity node2 = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_size() + fixture.comm_rank() + 1 , create_vector );
+   Entity node2 = bulk.declare_node(fixture.comm_size() + fixture.comm_rank() + 1 , create_vector );
    bulk.modification_end();
 
    ASSERT_TRUE ( bulk.bucket(node2).member ( part_a ) );
@@ -717,7 +716,7 @@ TEST ( UnitTestBulkData_new , verifyBoxGhosting )
 
         ASSERT_TRUE( fixture.node_id(ix,iy,iz) == mesh.identifier(node) );
         fixtures::HexFixture::Scalar * const node_coord =
-            field_data( fixture.m_coord_field , node );
+            stk::mesh::field_data( fixture.m_coord_field , node );
         ASSERT_TRUE( node_coord != NULL );
       }
     }
@@ -747,7 +746,7 @@ TEST ( UnitTestBulkData_new , verifyBoxGhosting )
     // for ( size_t j = 0 ; j < num_elem_nodes ; ++j )
     // {
     //   fixtures::HexFixture::Scalar * const node_coord =
-    //     field_data( fixture.m_coord_field , eph_elem_nodes[j]);
+    //     stk::mesh::field_data( fixture.m_coord_field , eph_elem_nodes[j]);
     //   EXPECT_EQ( node_coord, elem_node_coord[ elem_node_ords[j] ] );
     // }
 
@@ -799,7 +798,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
   int rank_count2 = stk::parallel_machine_rank( MPI_COMM_WORLD );
   int new_id2 = size2 + rank_count2;
 
-  Entity elem2 = bulk.declare_entity ( stk::topology::ELEMENT_RANK , new_id2+1 ,create_vector );
+  Entity elem2 = bulk.declare_element(new_id2+1 ,create_vector);
   ASSERT_EQ( bulk.bucket(elem2).member ( part_a ), true );
 
   int size = stk::parallel_machine_size( MPI_COMM_WORLD );
@@ -809,7 +808,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
   for ( id_base = 0 ; id_base < 99 ; ++id_base )
   {
     int new_id = size * id_base + rank_count;
-    Entity new_node = bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , empty_vector );
+    Entity new_node = bulk.declare_node(new_id+1 , empty_vector);
     ASSERT_EQ( bulk.bucket(new_node).member ( part_a_0 ), false );
   }
 
@@ -902,10 +901,9 @@ TEST ( UnitTestBulkData_new , testEntityComm )
   // ranking entities may be owned by different processes,
   // as such unpacking must be performed in rank order.
 
-  //Start of CommAll section:
+  //Start of CommSparse section:
   {
-    bool propagate_local_error_flags = true;
-    stk::CommAll comm( MPI_COMM_WORLD, propagate_local_error_flags );
+    stk::CommSparse comm(MPI_COMM_WORLD);
 
     for ( std::set< EntityProc , EntityLess >::iterator
           j = new_send.begin(); j != new_send.end() ; ++j ) {
@@ -919,7 +917,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
       }
     }
 
-    comm.allocate_buffers( size / 4 );
+    comm.allocate_buffers();
 
     for ( std::set< EntityProc , EntityLess >::iterator
           j = new_send.begin(); j != new_send.end() ; ++j ) {
@@ -965,7 +963,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
       }
 
     }
-  }//end of CommAll section
+  }//end of CommSparse section
 
   //bulk.modification_end ();
 }
@@ -983,10 +981,7 @@ TEST ( UnitTestBulkData_new , testUninitializedMetaData )
 
   bulk.modification_begin();
 
-  ASSERT_THROW( bulk.declare_entity(stk::topology::NODE_RANK,
-                                            1, /*id*/
-                                            PartVector() ),
-                        std::logic_error);
+  ASSERT_THROW( bulk.declare_node(1, PartVector()), std::logic_error);
 }
 
 namespace {
@@ -1033,7 +1028,7 @@ void new_comm_sync_send_recv(
   const int parallel_rank = mesh.parallel_rank();
   const int parallel_size = mesh.parallel_size();
 
-  stk::CommAll all( mesh.parallel() );
+  stk::CommSparse all( mesh.parallel() );
 
   // Communication sizing:
 
@@ -1046,7 +1041,7 @@ void new_comm_sync_send_recv(
     }
   }
 
-  all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
+  all.allocate_buffers();
 
   // Communication packing (with message content comments):
   for ( std::set< EntityProc , EntityLess >::iterator
@@ -1118,7 +1113,7 @@ void new_comm_recv_to_send(
 {
   const int parallel_size = mesh.parallel_size();
 
-  stk::CommAll all( mesh.parallel() );
+  stk::CommSparse all( mesh.parallel() );
 
   for ( std::set< Entity , EntityLess >::const_iterator
         i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
@@ -1126,7 +1121,7 @@ void new_comm_recv_to_send(
     all.send_buffer( owner ).skip<EntityKey>(1);
   }
 
-  all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
+  all.allocate_buffers();
 
   for ( std::set< Entity , EntityLess >::const_iterator
         i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
@@ -1210,7 +1205,6 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
   //
   {
     // Create elements
-    const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
     Entity elem = Entity();
 
     mesh.modification_begin();
@@ -1218,12 +1212,12 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
     for (unsigned ielem=0; ielem < nelems; ielem++) {
       int owner = static_cast<int>(elems_0[ielem][3]);
       if (owner == p_rank) {
-        elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], elem_part);
+        elem = mesh.declare_element(elems_0[ielem][0], {&elem_part});
 
         EntityVector nodes;
         // Create node on all procs
-        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][2], node_part) );
-        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][1], node_part) );
+        nodes.push_back( mesh.declare_node(elems_0[ielem][2], {&node_part}) );
+        nodes.push_back( mesh.declare_node(elems_0[ielem][1], {&node_part}) );
 
         // Add relations to nodes
         mesh.declare_relation( elem, nodes[0], 0 );
@@ -1297,7 +1291,7 @@ TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
   bulk.modification_begin();
 
   EntityId nodeID = bulk.parallel_rank()+1;
-  Entity node = bulk.declare_entity ( stk::topology::NODE_RANK , nodeID, create_vector );
+  Entity node = bulk.declare_node(nodeID, create_vector);
   bulk.modification_end();
 
   EXPECT_EQ( bulk.bucket(node).capacity(), non_standard_bucket_capacity );

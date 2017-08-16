@@ -123,7 +123,7 @@ namespace Amesos2 {
      * See Superlu documentation for a further description of function
      * arguments.
      */
-    static void gstrf(SLUD::superlu_options_t* options, int m, int n, double anorm, 
+    static void gstrf(SLUD::amesos2_superlu_dist_options_t* options, int m, int n, double anorm, 
 		      type_map::LUstruct_t* LU, SLUD::gridinfo_t* grid, SLUD::SuperLUStat_t* stat, 
 		      int* info)
     {
@@ -361,7 +361,7 @@ namespace Amesos2 {
       return SLUD::D::pdlangs(norm, A, grid);
     }
 
-    static void SolveInit(SLUD::superlu_options_t* options, SLUD::SuperMatrix* A, 
+    static void SolveInit(SLUD::amesos2_superlu_dist_options_t* options, SLUD::SuperMatrix* A, 
 			  SLUD::int_t* perm_r, SLUD::int_t* perm_c, SLUD::int_t nrhs, 
 			  type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
 			  type_map::SOLVEstruct_t* solve_struct)
@@ -390,7 +390,7 @@ namespace Amesos2 {
       SLUD::D::LUstructFree(lu);
     }
 
-    static void SolveFinalize(SLUD::superlu_options_t* options,
+    static void SolveFinalize(SLUD::amesos2_superlu_dist_options_t* options,
 			      type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::D::dSolveFinalize(options, solve_struct);
@@ -407,7 +407,7 @@ namespace Amesos2 {
   {
     typedef TypeMap<Superludist,std::complex<double> > type_map;
 
-    static void gstrf(SLUD::superlu_options_t* options, int m, int n, double anorm, 
+    static void gstrf(SLUD::amesos2_superlu_dist_options_t* options, int m, int n, double anorm, 
 		      type_map::LUstruct_t* LU, SLUD::gridinfo_t* grid,
 		      SLUD::SuperLUStat_t* stat, int* info)
     {
@@ -531,7 +531,7 @@ namespace Amesos2 {
       return SLUD::Z::pzlangs(norm, A, grid);
     }
 
-    static void SolveInit(SLUD::superlu_options_t* options, SLUD::SuperMatrix* A,
+    static void SolveInit(SLUD::amesos2_superlu_dist_options_t* options, SLUD::SuperMatrix* A,
 			  SLUD::int_t* perm_r, SLUD::int_t* perm_c, SLUD::int_t nrhs,
 			  type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
 			  type_map::SOLVEstruct_t* solve_struct)
@@ -558,7 +558,7 @@ namespace Amesos2 {
       SLUD::Z::LUstructFree(lu);
     }
 
-    static void SolveFinalize(SLUD::superlu_options_t* options,
+    static void SolveFinalize(SLUD::amesos2_superlu_dist_options_t* options,
 			      type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::Z::zSolveFinalize(options, solve_struct);

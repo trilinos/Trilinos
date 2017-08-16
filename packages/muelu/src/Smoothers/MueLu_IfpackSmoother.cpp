@@ -253,7 +253,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == -1.0, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
     }
 
-    this->GetOStream(Statistics0) << description() << std::endl;
+    this->GetOStream(Statistics1) << description() << std::endl;
   }
 
   template <class Node>
@@ -342,6 +342,13 @@ namespace MueLu {
            << "RCP<prec_>: " << prec_ << std::endl;
     }
   }
+
+  template <class Node>
+  size_t IfpackSmoother<Node>::getNodeSmootherComplexity() const {
+    // FIXME: This is a placeholder
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+  
 
 } // namespace MueLu
 

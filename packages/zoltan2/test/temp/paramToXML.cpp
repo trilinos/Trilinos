@@ -639,18 +639,6 @@ void createAllParameters(Teuchos::ParameterList &pList)
   pList.set<string>(parameterName, "no", docString.str(),
     str2intValidatorP);
 
-  ////////// bisection_num_test_cuts
-  parameterName = string("bisection_num_test_cuts");
-
-  intValidatorP = rcp(new EnhancedNumberValidator<int>(1,250,1));
-
-  docString.str("");
-  intValidatorP->printDoc(
-   "Experimental: number of test cuts to do simultaneously (default is 1)\n",
-      docString);
-
-  pList.set<int>(parameterName, 1, docString.str(), intValidatorP);
-
   ////////// symmetrize_input
   parameterName = string("symmetrize_input");
 

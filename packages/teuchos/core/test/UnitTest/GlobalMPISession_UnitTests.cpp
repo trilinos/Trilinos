@@ -48,6 +48,13 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#  include <string>
+// NOTE (mfh 18 Apr 2016) KokkosCore requires C++11, so we may include
+// type_traits here.  Please do not include it unconditionally,
+// because TeuchosCore does NOT require C++11.
+#  include <type_traits>
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
 
 //
 // Unit tests for GlobalMPISession
@@ -128,6 +135,32 @@ TEUCHOS_UNIT_TEST( GlobalMPISession, allGather )
     TEST_EQUALITY(allInts, allInts_expected);
   }
 }
+
+
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+// Check whether GlobalMPISession's constructor (called in the unit
+// test harness, not in this file) correctly saved a copy of the
+// command-line arguments.  Command-line arguments _should_ be
+// propagated to all MPI processes.
+//
+//
+TEUCHOS_UNIT_TEST( GlobalMPISession, getArgv )
+{
+  auto argvCopy = GlobalMPISession::getArgv ();
+  const auto numArgs = argvCopy.size ();
+  static_assert (std::is_integral<std::decay<decltype (numArgs)>::type>::value,
+		 "The return type of getArgv has a size() method, "
+		 "but it does not return an integer.");
+  if (numArgs > 0) {
+    // This tests that argvCopy has an operator[](int) const.
+    const auto arg0 = argvCopy[0];
+    static_assert (std::is_convertible<std::decay<decltype (arg0)>::type,
+		     std::string>::value,
+		   "The return type of getArgv must have an operator[](int) "
+		   "that returns a type convertible to std::string.");
+  }
+}
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
 
 
 } // namespace Teuchos

@@ -56,7 +56,7 @@
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
 #ifdef HAVE_MPI
-#  include "mpi.h"
+#  include <mpi.h>
 #endif // HAVE_MPI
 // FIXME (mfh 16 Apr 2013) GIANT HACK ABOVE
 
@@ -299,6 +299,7 @@ namespace Tpetra {
     DistributedContiguousDirectory<LO, GO, NT>::
     DistributedContiguousDirectory (const map_type& map)
     {
+      using Teuchos::arcp;
       using Teuchos::gatherAll;
       using Teuchos::RCP;
 
@@ -524,7 +525,9 @@ namespace Tpetra {
     initialize (const map_type& map,
                 Teuchos::Ptr<const tie_break_type> tie_break)
     {
+      using Teuchos::arcp;
       using Teuchos::Array;
+      using Teuchos::ArrayRCP;
       using Teuchos::ArrayView;
       using Teuchos::as;
       using Teuchos::RCP;

@@ -117,6 +117,7 @@ public:
 
 private:
 
+  typedef typename panzer::Traits::Residual EvalT;
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
 
   // maps the local (field,element,basis) triplet to a global ID
@@ -126,7 +127,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
@@ -172,8 +173,9 @@ public:
 
 private:
 
+  typedef typename panzer::Traits::Tangent EvalT;
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
-  //typedef typename panzer::Traits::RealType RealT;
+  typedef typename panzer::Traits::RealType RealT;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -182,7 +184,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
@@ -190,7 +192,7 @@ private:
 
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
+  std::vector< std::vector< PHX::MDField<const RealT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_Tpetra();
 };
@@ -242,7 +244,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   bool disableSensitivities_;     // This disables sensitivities absolutely
   std::string sensitivitiesName_; // This sets which gather operations have sensitivities
@@ -275,6 +277,10 @@ private:
 };
 
 }
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_GatherSolution_Tpetra_Hessian.hpp"
+#endif
 
 // **************************************************************
 #endif

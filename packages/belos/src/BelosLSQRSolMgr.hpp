@@ -604,7 +604,6 @@ LSQRSolMgr<ScalarType,MV,OP,false>::getValidParameters() const
              "is written to the output stream (-1 means \"not at all\")");
     pl->set ("Timer Label", label, "String to use as a prefix for the timer "
              "labels");
-    //  pl->set("Restart Timers", restartTimers_);
     pl->set ("Block Size", 1, "Block size parameter (currently, LSQR requires "
              "this must always be 1)");
     validParams_ = pl;

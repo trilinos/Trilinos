@@ -45,12 +45,13 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 #include <unordered_map>
 #include <string>
 #include <vector>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
   class STK_Interface;
   
@@ -73,7 +74,7 @@ namespace panzer_stk_classic {
       \param[in] pout (Optional) The ostream used for parallel debug output by all processes.  If non-null this will print debug info.
   */
   void computeSidesetNodeNormals(std::unordered_map<unsigned,std::vector<double> >& normals,
-				 const Teuchos::RCP<const panzer_stk_classic::STK_Interface>& mesh,
+				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
 				 std::ostream* out = NULL,
@@ -89,15 +90,15 @@ namespace panzer_stk_classic {
       A simple future addition would be to allow for a list of
       sidesets to be provided to allow for the union computation.
 
-      \param[out] normals Map of the node normals (including ghosted nodes).  Key is the panzer_stk_classic::STK_Interface local element id and value is a multidimensional array of the size of the number of nodes times the parent element dimension containing the normal vector components.  Vector components will be resized on calling this method.
+      \param[out] normals Map of the node normals (including ghosted nodes).  Key is the panzer_stk::STK_Interface local element id and value is a multidimensional array of the size of the number of nodes times the parent element dimension containing the normal vector components.  Vector components will be resized on calling this method.
       \param[in] mesh (Required) Panzer stk mesh 
       \param[in] sidesetName (Required) Name of the sideset that the normals will be computed on
       \param[in] elementBlockName (Required) Name of the element block that the outward facing normals will be computed on
       \param[in] out (Optional) The ostream used for serial debug output on print process only.  If non-null this will print debug info.
       \param[in] pout (Optional) The ostream used for parallel debug output by all processes.  If non-null this will print debug info.
   */
-  void computeSidesetNodeNormals(std::unordered_map<std::size_t,Intrepid2::FieldContainer<double> >& elementToNormalMap,
-				 const Teuchos::RCP<const panzer_stk_classic::STK_Interface>& mesh,
+  void computeSidesetNodeNormals(std::unordered_map<std::size_t,Kokkos::DynRankView<double,PHX::Device> >& elementToNormalMap,
+				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
 				 std::ostream* out = NULL,

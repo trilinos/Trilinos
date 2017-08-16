@@ -57,9 +57,78 @@
 
 namespace panzer {
 
+/** Convert a nonconst to a constat vector. This works around an RCP issue where the compiler
+  * gets confused by const.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > 
+nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
+
+/** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
+  * search. This returns the first found index into the <code>ugis</code> that contains the 
+  * required field.
+  *
+  * \param[in] fieldName The field to look for.
+  * \param[in] ugis The global indexers to look in.
+  *
+  * \returns The index that this field is in. If this returns -1, no field was found.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int getFieldBlock(const std::string & fieldName,
+                  const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
+
+/** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
+  * search. This returns the first found index into the <code>ugis</code> that contains the 
+  * required field.
+  *
+  * \param[in] fieldName The field to look for.
+  * \param[in] ugis The global indexers to look in.
+  *
+  * \returns The index that this field is in. If this returns -1, no field was found.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int getFieldBlock(const std::string & fieldName,
+                  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
+
+/** Compute the offsets for the global indexer for a particular block id. This
+  * is useful for unknown numbering into a block format. The local element matrix
+  * will be logically ordered like the monolithic operator. These offsets are the
+  * local start and end of a particular block. For instance if you are intersted in
+  * block <code>i</code> then the start index would be at <code>blockOffsets[i]</code>
+  * and the end would be at <code>blockOffsets[i+1]</code> Note that this requires a
+  * sentinnel in the block offsets size. (Note that the use of element block and block
+  * are confusing but different in this context)
+  *
+  * \param[in] blockId Element block name that to do this for.
+  * \param[in] ugis Unique global indexers containing fields to be blocked
+  * \param[out] blockOffsets Result vector with length <code>ugis.size()+1</code>.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void computeBlockOffsets(const std::string & blockId,
+                         const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis,
+                         std::vector<int> & blockOffsets);
+
+/** Compute the offsets for the global indexer for a particular block id. This
+  * is useful for unknown numbering into a block format. The local element matrix
+  * will be logically ordered like the monolithic operator. These offsets are the
+  * local start and end of a particular block. For instance if you are intersted in
+  * block <code>i</code> then the start index would be at <code>blockOffsets[i]</code>
+  * and the end would be at <code>blockOffsets[i+1]</code> Note that this requires a
+  * sentinnel in the block offsets size. (Note that the use of element block and block
+  * are confusing but different in this context)
+  *
+  * \param[in] blockId Element block name that to do this for.
+  * \param[in] ugis Unique global indexers containing fields to be blocked
+  * \param[out] blockOffsets Result vector with length <code>ugis.size()+1</code>.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void computeBlockOffsets(const std::string & blockId,
+                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis,
+                         std::vector<int> & blockOffsets);
+
 /** Print out unique global indexer load balancing information. This includes
   * the minimum unknown, maximum unknown count, mean unknown and standard deviation of
-  * the unknowns for both owned and owned and shared.
+  * the unknowns for both owned and owned and ghosted.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
@@ -72,7 +141,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
 
 /** Construct a vector that contains a reduced set of field numbers.
-  * The ordering is based on the ordering from <code>ugi.getOwnedAndSharedIndices()</code>.
+  * The ordering is based on the ordering from <code>ugi.getOwnedAndGhostedIndices()</code>.
   * The term "reduced" means that this processor must be able to fully determine the
   * field number for each global number. There are some cases where processors are split
   * across element blocks with differing fields that this is nontrivial. 
@@ -92,7 +161,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
   * vector hence the required node type template parameter.
   *
   * This function returns a vector that serves as a map between Global indices ordered from
-  * <code>ugi.getOwnedAndSharedIndices()</code> and the corresponding field number.
+  * <code>ugi.getOwnedAndGhostedIndices()</code> and the corresponding field number.
   *
   * \param[in] ugi Unique global indexer object that defines the ordering, global ids and field numbers.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
@@ -115,12 +184,12 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
   * vector hence the required node type template parameter.
   *
   * This function returns a vector that serves as a map between Global indices ordered from
-  * <code>ugi.getOwnedAndSharedIndices()</code> and the corresponding field number.
+  * <code>ugi.getOwnedAndGhostedIndices()</code> and the corresponding field number.
   *
   * \param[in] ugi Unique global indexer object that defines the ordering, global ids and field numbers.
-  * \param[out] fieldNumbers Field numbers ordered to match up with a call to <code>ugi.getOwnedAndSharedIndices()</code>.
+  * \param[out] fieldNumbers Field numbers ordered to match up with a call to <code>ugi.getOwnedAndGhostedIndices()</code>.
   *                          Meaning that <code>fieldNumbers.size()</code> is the same length as the vector
-  *                          build by a call to <code>getOwnedAndSharedIndices()</code>.
+  *                          build by a call to <code>getOwnedAndGhostedIndices()</code>.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
@@ -201,7 +270,7 @@ template <typename GlobalOrdinalT>
 void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
                                  const FieldPattern & fieldPattern, 
-                                 std::vector<char> & orientation);
+                                 std::vector<signed char> & orientation);
 
 /** For a given field pattern compute the offsets that give 
   * the dimension-0-subcell indices for each face. Note that the assumption is
@@ -238,7 +307,7 @@ template <typename GlobalOrdinalT>
 void computeCellFaceOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
                                  const FieldPattern & fieldPattern, 
-                                 std::vector<char> & orientation);
+                                 std::vector<signed char> & orientation);
 
 } // end orientations_helpers
 
@@ -254,13 +323,13 @@ public:
    ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
    /** Get a Tpetra vector containing the data ordered according to 
-     * the ordering from <code>UGI::getOwnedAndSharedIndices</code>.
+     * the ordering from <code>UGI::getOwnedAndGhostedIndices</code>.
      *
      * \param[in] fieldName Name of field this data is from
      * \param[in] data Array of data
      *
      * \returns Returns a vector populated with the data. This vector
-     *          is related to the <code>UGI::getOwnedAndSharedIndices</code>.
+     *          is related to the <code>UGI::getOwnedAndGhostedIndices</code>.
      */
    template <typename ScalarT,typename ArrayT>
    Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >

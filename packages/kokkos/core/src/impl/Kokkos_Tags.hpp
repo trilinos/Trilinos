@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -46,162 +46,44 @@
 
 #include <impl/Kokkos_Traits.hpp>
 #include <Kokkos_Core_fwd.hpp>
+#include <type_traits>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-template< class C , class Enable = void >
-struct is_memory_space_enable
-{ typedef std::false_type type ; };
-
-template< class C >
-struct is_memory_space_enable< C ,
-  typename std::enable_if<
-    std::is_same< C , typename C::memory_space >::value
-  >::type >
-{ typedef std::true_type type ; };
-
-
-template< class C , class Enable = void >
-struct is_execution_space_enable
-{ typedef std::false_type type ; };
-
-template< class C >
-struct is_execution_space_enable< C ,
-  typename std::enable_if<
-    std::is_same< C , typename C::execution_space >::value
-  >::type >
-{ typedef std::true_type type ; };
-
-
-template< class C , class Enable = void >
-struct is_execution_policy_enable
-{ typedef std::false_type type ; };
-
-template< class C >
-struct is_execution_policy_enable< C ,
-  typename std::enable_if<
-    std::is_same< C , typename C::execution_policy >::value
-  >::type >
-{ typedef std::true_type type ; };
-
-
-template< class C , class Enable = void >
-struct is_array_layout_enable
-{ typedef std::false_type type ; };
-
-template< class C >
-struct is_array_layout_enable< C ,
-  typename std::enable_if<
-    std::is_same< C , typename C::array_layout >::value
-  >::type >
-{ typedef std::true_type type ; };
-
-
-template< class C , class Enable = void >
-struct is_memory_traits_enable
-{ typedef std::false_type type ; };
-
-template< class C >
-struct is_memory_traits_enable< C ,
-  typename std::enable_if<
-    std::is_same< C , typename C::memory_traits >::value
-  >::type >
-{ typedef std::true_type type ; };
-
-
-template< class C >
-using is_memory_space = typename is_memory_space_enable<C>::type ;
-
-template< class C >
-using is_execution_space = typename is_execution_space_enable<C>::type ;
-
-template< class C >
-using is_execution_policy = typename is_execution_policy_enable<C>::type ;
-
-template< class C >
-using is_array_layout = typename is_array_layout_enable<C>::type ;
-
-template< class C >
-using is_memory_traits = typename is_memory_traits_enable<C>::type ;
-
-}
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-
-template< class ExecutionSpace , class MemorySpace >
-struct Device {
-  static_assert( Impl::is_execution_space<ExecutionSpace>::value
-               , "Execution space is not valid" );
-  static_assert( Impl::is_memory_space<MemorySpace>::value
-               , "Memory space is not valid" );
-  typedef ExecutionSpace execution_space;
-  typedef MemorySpace memory_space;
-  typedef Device<execution_space,memory_space> device_type;
+/** KOKKOS_IMPL_HAS_TYPE( Type )
+ *
+ * defines a meta-function that check if a type expose an internal typedef or
+ * type alias which matches Type
+ *
+ * e.g.
+ *   KOKKOS_IMPL_HAS_TYPE( array_layout );
+ *   struct Foo { using array_layout = void; };
+ *   have_array_layout<Foo>::value == 1;
+ */
+#define KOKKOS_IMPL_HAS_TYPE( TYPE ) \
+template <typename T> struct have_ ## TYPE { \
+private: \
+  template <typename U, typename = void > struct X : std::false_type {}; \
+  template <typename U> struct X<U,typename std::conditional<true,void,typename X:: TYPE >::type > : std::true_type {}; \
+public: \
+  typedef typename X<T>::type type ; \
+  enum : bool { value = type::value }; \
 };
-}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace Kokkos {
-namespace Impl {
+namespace Kokkos { namespace Impl {
 
-template< class C , class Enable = void >
-struct is_space : public Impl::false_type {};
+template <typename T>
+using is_void = std::is_same<void,T>;
 
-template< class C >
-struct is_space< C
-                 , typename Impl::enable_if<(
-                     Impl::is_same< C , typename C::execution_space >::value ||
-                     Impl::is_same< C , typename C::memory_space    >::value ||
-                     Impl::is_same< C , Device<
-                                             typename C::execution_space,
-                                             typename C::memory_space> >::value
-                   )>::type
-                 >
-  : public Impl::true_type
-{
-  typedef typename C::execution_space  execution_space ;
-  typedef typename C::memory_space     memory_space ;
+}} // namespace Kokkos::Impl
 
-  // The host_memory_space defines a space with host-resident memory.
-  // If the execution space's memory space is host accessible then use that execution space.
-  // else use the HostSpace.
-  typedef
-      typename Impl::if_c< Impl::is_same< memory_space , HostSpace >::value
-#ifdef KOKKOS_HAVE_CUDA
-                        || Impl::is_same< memory_space , CudaUVMSpace>::value
-                        || Impl::is_same< memory_space , CudaHostPinnedSpace>::value
-#endif
-                          , memory_space , HostSpace >::type
-      host_memory_space ;
 
-  // The host_execution_space defines a space which has access to HostSpace.
-  // If the execution space can access HostSpace then use that execution space.
-  // else use the DefaultHostExecutionSpace.
-#ifdef KOKKOS_HAVE_CUDA
-  typedef
-      typename Impl::if_c< Impl::is_same< execution_space , Cuda >::value
-                          , DefaultHostExecutionSpace , execution_space >::type
-      host_execution_space ;
-#else
-  typedef execution_space host_execution_space;
-#endif
-
-  typedef Device<host_execution_space,host_memory_space> host_mirror_space;
-};
-}
-}
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #endif
+

@@ -59,8 +59,6 @@ using stk::mesh::MetaData;
 
 namespace {
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
 TEST(UnitTestFieldDataInitVal, test_scalar_field)
 {
   // Test that if an initial-value is set on a scalar field, that value is
@@ -94,7 +92,7 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_node(node_id, empty_parts);
 
   mesh.modification_end();
 
@@ -137,13 +135,13 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field_part_change)
     
       //declare a node that is not in newPart:
       EntityId node_id = p_rank+1;
-      Entity node = mesh.declare_entity(NODE_RANK, node_id, meta_data.universal_part());
+      Entity node = mesh.declare_node(node_id, {&meta_data.universal_part()});
 
       //declare two nodes that *are* in newPart:
       node_id = p_rank+2;
-      Entity node_tmp = mesh.declare_entity(NODE_RANK, node_id, newPart);
+      Entity node_tmp = mesh.declare_node(node_id, {&newPart});
       node_id = p_rank+3;
-      Entity node_tmp2 = mesh.declare_entity(NODE_RANK, node_id, newPart);
+      Entity node_tmp2 = mesh.declare_node(node_id, {&newPart});
     
       mesh.modification_end();
     
@@ -158,7 +156,7 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field_part_change)
       mesh.modification_begin();
       //delete one of the nodes in newPart, add the node that wasn't previously in newPart:
       mesh.destroy_entity(node_tmp);
-      mesh.change_entity_parts(node, {&newPart});
+      mesh.change_entity_parts(node, stk::mesh::ConstPartVector{&newPart});
       mesh.modification_end();
     
       //now expect that data for dfield on node matches initial value
@@ -202,7 +200,7 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_node(node_id, empty_parts);
 
   mesh.modification_end();
 
@@ -253,13 +251,13 @@ TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_node(node_id, empty_parts);
 
   // need to copy since bucket is going to be deleted during mesh modification
   const stk::mesh::PartVector old_parts = mesh.bucket(node).supersets();
 
   //Now move the node to the "node_part":
-  stk::mesh::PartVector node_part_vec;
+  stk::mesh::ConstPartVector node_part_vec;
   node_part_vec.push_back(&node_part);
   mesh.change_entity_parts(node, node_part_vec);
 
@@ -314,7 +312,7 @@ TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_node(node_id, empty_parts);
 
   mesh.modification_end();
 

@@ -43,6 +43,9 @@
 // @HEADER
 
 %{
+// Python 3 compatibility
+#include "Python3Compat.hpp"
+
 // Teuchos includes
 #include "Teuchos_any.hpp"
 #include "Teuchos_ParameterEntry.hpp"
@@ -526,7 +529,9 @@ Teuchos::ParameterList::values
   /******************************************************************/
   // Print method: change name from "print" to "_print" because
   // "print" is a python keyword
-  PyObject * _print(PyObject * pf=NULL, int indent=0, bool showTypes=false,
+  PyObject * _print(PyObject * pf=NULL,
+                    int indent=0,
+                    bool showTypes=false,
 		    bool showFlags=true)
   {
     PyObject * returnObject = pf;
@@ -539,19 +544,10 @@ Teuchos::ParameterList::values
     // Given non-file pf argument
     else
     {
-      if (!PyFile_Check(pf))
-      {
-	PyErr_SetString(PyExc_IOError, "_print() method expects a file object");
-	goto fail;
-      }
-      // Given file pf argument
-      else
-      {
-	std::FILE *f = PyFile_AsFile(pf);
-	Teuchos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->print(os,indent,showTypes,showFlags);
-      }
+      std::ostringstream os;
+      self->print(os, indent, showTypes, showFlags);
+      if (PyFile_WriteString(os.str().c_str(), pf))
+        throw PyTrilinos::PythonException();
     }
     Py_INCREF(returnObject);
     return returnObject;
@@ -571,19 +567,10 @@ Teuchos::ParameterList::values
     // Given non-file pf argument
     else
     {
-      if (!PyFile_Check(pf))
-      {
-	PyErr_SetString(PyExc_IOError, "unused() method expects a file object");
-	goto fail;
-      }
-      // Given file pf argument
-      else
-      {
-	std::FILE *f = PyFile_AsFile(pf);
-	Teuchos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->unused(os);
-      }
+      std::ostringstream os;
+      self->unused(os);
+      if (PyFile_WriteString(os.str().c_str(), pf))
+        throw PyTrilinos::PythonException();
     }
     return Py_BuildValue("");
   fail:
@@ -625,19 +612,6 @@ Teuchos::ParameterList::values
 
   /******************************************************************/
   // Comparison operators
-  int __cmp__(PyObject * obj) const
-  {
-    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
-    int result = 0;
-    if (dict == NULL) goto fail;
-    result = PyObject_Compare(dict,obj);
-    Py_DECREF(dict);
-    return result;
-  fail:
-    Py_XDECREF(dict);
-    return -2;
-  }
-
   int __cmp__(const ParameterList & plist) const
   {
     PyObject * dict1 = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
@@ -645,13 +619,26 @@ Teuchos::ParameterList::values
     int result = 0;
     if (dict1 == NULL) goto fail;
     if (dict2 == NULL) goto fail;
-    result = PyObject_Compare(dict1,dict2);
+    result = PyObject_RichCompareBool(dict1,dict2,Py_EQ) - 1;
     Py_DECREF(dict1);
     Py_DECREF(dict2);
     return result;
   fail:
     Py_XDECREF(dict1);
     Py_XDECREF(dict2);
+    return -2;
+  }
+
+  int __cmp__(PyObject * obj) const
+  {
+    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
+    int result = 0;
+    if (dict == NULL) goto fail;
+    result = PyObject_RichCompareBool(dict,obj,Py_EQ) - 1;
+    Py_DECREF(dict);
+    return result;
+  fail:
+    Py_XDECREF(dict);
     return -2;
   }
  
@@ -790,11 +777,16 @@ Teuchos::ParameterList::values
   PyObject * __repr__() const
   {
     std::string reprStr;
-    PyObject * dict    = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
+    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * dictStr = 0;
     PyObject * result = 0;
     if (dict == NULL) goto fail;
+%#if PY_VERSION_HEX >= 0x03000000
+    dictStr = PyUnicode_AsASCIIString(PyObject_Str(dict));
+%#else
     dictStr = PyObject_Str(dict);
+%#endif
+    if (dictStr == NULL) goto fail;
     reprStr = std::string("ParameterList(") + 
               std::string(PyString_AsString(dictStr)) +
               std::string(")");

@@ -66,6 +66,12 @@ namespace MueLu {
   RCP<const ParameterList> TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory of the matrix P");
+
+    // Make sure we don't recursively validate options for the matrixmatrix kernels
+    ParameterList norecurse;
+    norecurse.disableRecursiveValidation();
+    validParamList->set<ParameterList> ("matrixmatrix: kernel params", norecurse, "MatrixMatrix kernel parameters");
+
     return validParamList;
   }
 
@@ -80,8 +86,20 @@ namespace MueLu {
     std::string label = "MueLu::TransP-" + Teuchos::toString(coarseLevel.GetLevelID());
 
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
+    const Teuchos::ParameterList& pL = GetParameterList();
 
-    RCP<Matrix> R = Utilities::Transpose(*P, true,label);
+    // Reuse pattern if available (multiple solve)
+    RCP<ParameterList> Tparams;
+    if(pL.isSublist("matrixmatrix: kernel params"))
+        Tparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else
+        Tparams= rcp(new ParameterList);
+
+    // By default, we don't need global constants for transpose
+    Tparams->set("compute global constants: temporaries",Tparams->get("compute global constants: temporaries",false));
+    Tparams->set("compute global constants",Tparams->get("compute global constants",false));
+
+    RCP<Matrix> R = Utilities::Transpose(*P, true,label,Tparams);
 
     RCP<ParameterList> params = rcp(new ParameterList());;
     params->set("printLoadBalancingInfo", true);

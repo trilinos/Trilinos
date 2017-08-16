@@ -108,25 +108,6 @@ LogControl::LogControl(
     m_logStreambuf = parent->m_logStream.rdbuf();
 }
 
-
-// LogControl::LogControl(
-//   std::ostream &        log_ostream,
-//   const std::string &   rule_name)
-//   : m_parent(0),
-//     m_rule(get_rule_map().getLogControlRule(rule_name)->clone()),
-//     m_state(ON),
-//     m_logStream(log_ostream),
-//     m_logStreambuf(log_ostream.rdbuf()),
-//     m_cacheStream()
-// {
-//   OStreamLogControlMap &ostream_log_control_map = get_ostream_log_control_map();
-
-//   // Append this as tail of linked list of LogControl's sharing this ostream.
-//   m_parent = ostream_log_control_map[&m_logStream];
-//   ostream_log_control_map[&m_logStream] = this;
-// }
-
-
 LogControl::~LogControl()
 {
   OStreamLogControlMap &ostream_log_control_map = get_ostream_log_control_map();
@@ -176,8 +157,9 @@ LogControl::next()
     }
   }
   else {
-    if (m_logStream.rdbuf() != m_cacheStream.rdbuf())
+    if (m_logStream.rdbuf() != m_cacheStream.rdbuf()) {
       m_logStream.rdbuf(m_cacheStream.rdbuf());
+    }
   }
 }
 

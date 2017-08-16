@@ -69,7 +69,6 @@ using Teuchos::rcp;
 
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Comm.h"
@@ -82,7 +81,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-typedef Intrepid2::FieldContainer<double> FieldArray;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
 
 //**********************************************************************
 PHX_EVALUATOR_CLASS(DummyFieldEvaluator)
@@ -108,8 +107,8 @@ PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator,sd,fm)
 PHX_EVALUATE_FIELDS(DummyFieldEvaluator,workset)
 { 
   int i = 0;
-  for(int cell=0;cell<fieldValue.dimension_0();cell++) {
-    for(int pt=0;pt<fieldValue.dimension_1();pt++) {
+  for(int cell=0;cell<fieldValue.extent_int(0);cell++) {
+    for(int pt=0;pt<fieldValue.extent_int(1);pt++) {
       fieldValue(cell,pt) = 1.0+i;
       ++i;
     }
@@ -142,8 +141,8 @@ PHX_POST_REGISTRATION_SETUP(RefCoordEvaluator,sd,fm)
 { this->utils.setFieldData(fieldValue,fm); }
 PHX_EVALUATE_FIELDS(RefCoordEvaluator,workset)
 { 
-  for(int cell=0;cell<fieldValue.dimension_0();cell++)
-    for(int pt=0;pt<fieldValue.dimension_1();pt++)
+  for(int cell=0;cell<fieldValue.extent_int(0);cell++)
+    for(int pt=0;pt<fieldValue.extent_int(1);pt++)
       fieldValue(cell,pt) = quadValues->cub_points(cell,pt);
 }
 //**********************************************************************
@@ -152,7 +151,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 {
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> SV;
 
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -207,8 +205,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   basisValues->evaluateValues(quadValues->cub_points,quadValues->jac,quadValues->jac_det,quadValues->jac_inv,quadValues->weighted_measure,coords);
 
   {
-    Intrepid2::FieldContainer<double> coords;
-    coords.resize(numCells,numVerts,dim);
+    Kokkos::DynRankView<double,PHX::Device> coords("coords",numCells,numVerts,dim);
 
     coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
     coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
@@ -316,6 +313,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(8);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
+#endif
   fm->postRegistrationSetup(setupData);
   fm->writeGraphvizFile();
 
@@ -339,8 +339,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   TEST_EQUALITY(refField.size(),dofPointField1.size());
 
   // check the results
-  for(int cell=0;cell<refField.dimension_0();cell++) {
-    for(int pt=0;pt<refField.dimension_1();pt++) {
+  for(int cell=0;cell<refField.extent_int(0);cell++) {
+    for(int pt=0;pt<refField.extent_int(1);pt++) {
       TEST_FLOATING_EQUALITY(SV::eval(refField(cell,pt)),SV::eval(dofPointField0(cell,pt)),1e-15);
       TEST_FLOATING_EQUALITY(SV::eval(refField(cell,pt)),SV::eval(dofPointField1(cell,pt)),1e-15);
       // TEST_EQUALITY(refField(cell,pt),dofPointField0(cell,pt));
@@ -358,5 +358,10 @@ typedef Traits::Jacobian JacobianType;
 
 UNIT_TEST_GROUP(ResidualType)
 UNIT_TEST_GROUP(JacobianType)
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+typedef Traits::Hessian HessianType;
+UNIT_TEST_GROUP(HessianType)
+#endif
 
 }

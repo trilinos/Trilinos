@@ -84,7 +84,7 @@ LOCA.MultiContinuation supports the following classes:
 %{
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
@@ -92,10 +92,16 @@ LOCA.MultiContinuation supports the following classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
+#include "PyTrilinos_Teuchos_Util.hpp"
+
+// Epetra includes
+#ifdef HAVE_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
+#endif
 
 // NOX-Epetra includes
 #ifdef HAVE_NOX_EPETRA
-#include "Epetra_Vector.h"
+//#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #endif
@@ -132,6 +138,9 @@ LOCA.MultiContinuation supports the following classes:
 
 %import "Teuchos.i"
 
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
+
 // Teucho::RCP support
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
@@ -139,6 +148,15 @@ LOCA.MultiContinuation supports the following classes:
 %teuchos_rcp(LOCA::MultiContinuation::ConstraintInterface)
 %teuchos_rcp(LOCA::MultiContinuation::ConstraintInterfaceMVDX)
 %teuchos_rcp(LOCA::MultiContinuation::Factory)
+
+// Allow import from this directory
+%pythoncode
+%{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir in sys.path: sys.path.append(thisDir)
+del sys, op
+%}
 
 // Import base class declarations
 %import "NOX.Abstract.i"

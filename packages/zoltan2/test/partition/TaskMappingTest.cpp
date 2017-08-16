@@ -61,7 +61,7 @@ int main(int argc, char *argv[]){
     if (rank < taskLeftOver ) ++myTasks;
 
     zgno_t myTaskBegin = (numGlobalTasks / numProcs) * rank;
-    myTaskBegin += min (taskLeftOver, rank);
+    myTaskBegin += (taskLeftOver < rank ? taskLeftOver : rank);
     zgno_t myTaskEnd = myTaskBegin + myTasks;
 
     zscalar_t **partCenters = NULL;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]){
 
     zgno_t *task_gnos = new zgno_t [myTasks];
     zlno_t *task_communication_xadj_ = new zlno_t [myTasks+1];
-    zlno_t *task_communication_adj_ = new zlno_t [myTasks * 6];
+    zgno_t *task_communication_adj_ = new zgno_t [myTasks * 6];
 
     zlno_t prevNCount = 0;
     task_communication_xadj_[0] = 0;
@@ -164,14 +164,13 @@ int main(int argc, char *argv[]){
     //create partitioning problem
     typedef Zoltan2::PartitioningProblem<my_adapter_t> xcrsGraph_problem_t; // xpetra_graph problem type
     typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
-    typedef my_adapter_t::base_adapter_t base_adapter_t;
     ParameterList zoltan2_parameters;
-    zoltan2_parameters.set("compute_metrics", "true");
-    zoltan2_parameters.set("imbalance_tolerance", "1.0");
+    zoltan2_parameters.set("compute_metrics", true); // bool parameter
+    zoltan2_parameters.set("imbalance_tolerance", 1.0);
     zoltan2_parameters.set("num_global_parts", tcomm->getSize());
     zoltan2_parameters.set("algorithm", "multijagged");
-    zoltan2_parameters.set("mj_keep_part_boxes", "0");
-    zoltan2_parameters.set("mj_recursion_depth", "3");
+    zoltan2_parameters.set("mj_keep_part_boxes", false); // bool parameter
+    zoltan2_parameters.set("mj_recursion_depth", 3);
     RCP<xcrsGraph_problem_t> partition_problem;
     partition_problem  = RCP<xcrsGraph_problem_t> (new xcrsGraph_problem_t(ia.getRawPtr(),&zoltan2_parameters,tcomm));
 
@@ -221,7 +220,7 @@ int main(int argc, char *argv[]){
     {
 
       zlno_t prevNCount_tmp = 0;
-      zlno_t *task_communication_adj_tmp = new zlno_t [numGlobalTasks * 6];
+      zgno_t *task_communication_adj_tmp = new zgno_t [numGlobalTasks * 6];
       zlno_t *task_communication_xadj_tmp = new zlno_t [numGlobalTasks+1];
       task_communication_xadj_tmp[0] = 0;
       for (zlno_t i = 0; i < numGlobalTasks; ++i) {
@@ -266,7 +265,7 @@ int main(int argc, char *argv[]){
         copy[g] = parts[i];
       }
 
-      reduceAll<int, zgno_t>(
+      reduceAll<int, part_t>(
           *tcomm,
           Teuchos::REDUCE_SUM,
           numGlobalTasks,
@@ -291,10 +290,10 @@ int main(int argc, char *argv[]){
         part_t procId1 = ctm.getAssignedProcForTask(all_parts[i]);
 
         for (zlno_t j = b; j < e; ++j){
-          zlno_t n = task_communication_adj_tmp[j];
+          zgno_t n = task_communication_adj_tmp[j];
           part_t procId2 = ctm.getAssignedProcForTask(all_parts[n]);
 
-          double distance2 = 0;
+          zscalar_t distance2 = 0;
           mach.getHopCount(procId1, procId2, distance2);
           hops2 += distance2;
           for (int k = 0 ; k < mach_coord_dim ; ++k){
@@ -357,9 +356,6 @@ int main(int argc, char *argv[]){
   }
 
   catch(char * s){
-    cerr << s << endl;
-  }
-  catch(char const * s){
     cerr << s << endl;
   }
 }

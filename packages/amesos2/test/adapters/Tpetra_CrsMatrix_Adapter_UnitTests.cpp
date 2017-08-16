@@ -461,7 +461,7 @@ namespace {
     }
     const Map<LO,GO,Node> half_map(6, my_num_rows, 0, comm);
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::SORTED_INDICES);
+    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::SORTED_INDICES, Amesos2::DISTRIBUTED); // ROOTED = default distribution
 
     /*
      * Check that you got the entries you'd expect
@@ -470,16 +470,18 @@ namespace {
      * found in the top half of the rows, and the other half are found
      * in the bottom half of the rows.
      */
-    if ( rank == 0 ){
+    if(rank == 0) {
       TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(0,6));
       TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(0,6));
-      TEST_COMPARE_ARRAYS(rowptr.view(0,3), rowptr_test.view(0,3));
-      TEST_EQUALITY_CONST(rowptr[3], 6);
-    } else if ( rank == 1 ){
-      TEST_COMPARE_ARRAYS(nzvals.view(6,6), nzvals_test.view(6,6));
-      TEST_COMPARE_ARRAYS(colind.view(6,6), colind_test.view(6,6));
-      TEST_COMPARE_ARRAYS(rowptr.view(3,3), rowptr_test.view(3,3));
-      TEST_EQUALITY_CONST(rowptr[3], 6);
+      for(int i = 0; i < 4; i++) {
+        TEST_EQUALITY_CONST(rowptr[i], rowptr_test[i]);
+      }
+    } else if(rank == 1) {
+      TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(6,6));
+      TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(6,6));
+      for(int i = 0; i < 4; i++) {
+        TEST_EQUALITY_CONST(rowptr[i], rowptr_test[3 + i] - rowptr_test[3]);
+      }
     }
   }
 

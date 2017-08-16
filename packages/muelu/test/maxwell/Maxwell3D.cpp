@@ -48,46 +48,53 @@
 // Teuchos
 #include <Teuchos_StandardCatchMacros.hpp>
 
-// Tpetra
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <TpetraExt_MatrixMatrix.hpp>
+// Xpetra
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_CrsMatrixFactory.hpp>
+#include <Xpetra_Parameters.hpp>
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
-#include <MueLu_UseDefaultTypes.hpp>
+#include <MueLu_TpetraOperator.hpp>
+#include <MueLu_TestHelpers_Common.hpp>
 #include <MueLu_Exceptions.hpp>
 
 // Belos
+#ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
 #include <BelosTpetraAdapter.hpp>
+#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
+//#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+#endif
 
-int main(int argc, char *argv[]) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
+#if defined(HAVE_TPETRA_INST_INT_INT)
+
 #include <MueLu_UseShortNames.hpp>
 
-  typedef Tpetra::Map<LO,GO,NO>               TMap;
-  typedef Tpetra::MultiVector<SC,LO,GO,NO>    TMV;
-  typedef Tpetra::CrsMatrix<SC,LO,GO,NO>      TCRS;
-  typedef Tpetra::Operator<SC,LO,GO,NO>       OP;
-  typedef Belos::LinearProblem<SC,TMV,OP>     BelosProblem;
-  typedef Belos::SolverManager<SC,TMV,OP>     BelosManager;
-  typedef Belos::SolverFactory<SC,TMV,OP>     BelosFactory;
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+  using Teuchos::RCP; using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
 
   bool success = false;
   bool verbose = true;
   try {
     RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    int commrank = comm->getRank();
+
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setOutputToRootOnly(0);
+
+    if (!TYPE_EQUAL(SC, double)) { *out << "Skipping test for SC != double" << std::endl; return EXIT_SUCCESS; }
 
     // Read matrices in from files
     std::ifstream inputfile;
@@ -95,10 +102,10 @@ int main(int argc, char *argv[]) {
     int nedges=540, nnodes=216, row, col;
     double entry, x, y, z;
     // maps for nodal and edge matrices
-    RCP<TMap> edge_map = rcp( new TMap(nedges,0,comm) );
-    RCP<TMap> node_map = rcp( new TMap(nnodes,0,comm) );
+    RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
+    RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
     // edge stiffness matrix
-    RCP<TCRS> S_Matrix = rcp( new TCRS(edge_map,100) );
+    RCP<Matrix> S_Matrix = MatrixFactory::Build(edge_map,100);
     inputfile.open("S.txt");
     for(int i=0; i<nnz_edges; i++) {
       inputfile >> row >> col >> entry ;
@@ -112,8 +119,9 @@ int main(int argc, char *argv[]) {
     }
     S_Matrix->fillComplete();
     inputfile.close();
+
     // edge mass matrix
-    RCP<TCRS> M1_Matrix = rcp( new TCRS(edge_map,100) );
+    RCP<Matrix> M1_Matrix = MatrixFactory::Build(edge_map,100);
     inputfile.open("M1.txt");
     for(int i=0; i<nnz_edges; i++) {
       inputfile >> row >> col >> entry ;
@@ -127,8 +135,9 @@ int main(int argc, char *argv[]) {
     }
     M1_Matrix->fillComplete();
     inputfile.close();
+
     // nodal mass matrix
-    RCP<TCRS> M0_Matrix = rcp( new TCRS(node_map,100) );
+    RCP<Matrix> M0_Matrix = MatrixFactory::Build(node_map,100);
     inputfile.open("M0.txt");
     for(int i=0; i<nnz_nodes; i++) {
       inputfile >> row >> col >> entry ;
@@ -143,7 +152,7 @@ int main(int argc, char *argv[]) {
     M0_Matrix->fillComplete();
     inputfile.close();
     // gradient matrix
-    RCP<TCRS> D0_Matrix = rcp( new TCRS(edge_map,2) );
+    RCP<Matrix> D0_Matrix = MatrixFactory::Build(edge_map,2);
     inputfile.open("D0.txt");
     for(int i=0; i<nnz_grad; i++) {
       inputfile >> row >> col >> entry ;
@@ -157,8 +166,9 @@ int main(int argc, char *argv[]) {
     }
     D0_Matrix->fillComplete(node_map,edge_map);
     inputfile.close();
+
     // coordinates
-    RCP<TMV> coords = rcp( new TMV(node_map,3) );
+    RCP<MultiVector> coords = MultiVectorFactory::Build(node_map,3);
     inputfile.open("coords.txt");
     for(int i=0; i<nnodes; i++) {
       inputfile >> x >> y >> z ;
@@ -169,15 +179,16 @@ int main(int argc, char *argv[]) {
       }
     }
     inputfile.close();
+
     // build lumped mass matrix inverse (M0inv_Matrix)
-    RCP<TMV> ones = rcp( new TMV(node_map,1) );
-    RCP<TMV> diag = rcp( new TMV(node_map,1) );
-    RCP<TMV> invdiag = rcp( new TMV(node_map,1) );
+    RCP<MultiVector> ones = MultiVectorFactory::Build(node_map,1);
+    RCP<MultiVector> diag = MultiVectorFactory::Build(node_map,1);
+    RCP<MultiVector> invdiag = MultiVectorFactory::Build(node_map,1);
     ones->putScalar((SC)1.0);
     M0_Matrix->apply(*ones,*diag);
     invdiag->reciprocal(*diag);
     Teuchos::ArrayRCP<const SC> invdiags = invdiag->getData(0);
-    RCP<TCRS> M0inv_Matrix = rcp( new TCRS(node_map,1) );
+    RCP<Matrix> M0inv_Matrix = MatrixFactory::Build(node_map,1);
     for(int i=0; i<nnodes; i++) {
       row = i;
       col = i;
@@ -190,9 +201,10 @@ int main(int argc, char *argv[]) {
       }
     }
     M0inv_Matrix->fillComplete();
+
     // build stiffness plus mass matrix (SM_Matrix)
-    RCP<TCRS> SM_Matrix = rcp( new TCRS(edge_map,100) );
-    Tpetra::MatrixMatrix::Add(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,(SC)1.0,SM_Matrix);
+    RCP<Matrix> SM_Matrix = MatrixFactory::Build(edge_map,100);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,(SC)1.0,SM_Matrix,*out);
     SM_Matrix->fillComplete();
 
     // set parameters
@@ -211,24 +223,38 @@ int main(int argc, char *argv[]) {
             M1_Matrix,Teuchos::null,coords,params) );
 
     // setup LHS, RHS
-    RCP<TMV> vec = rcp( new TMV(edge_map,1) );
+    RCP<MultiVector> vec = MultiVectorFactory::Build(edge_map,1);
     vec -> putScalar((SC)1.0);
-    RCP<TMV> B = rcp( new TMV(edge_map,1) );
+    RCP<MultiVector> B = MultiVectorFactory::Build(edge_map,1);
     SM_Matrix->apply(*vec,*B);
-    RCP<TMV> X = rcp( new TMV(edge_map,1) );
+    RCP<MultiVector> X = MultiVectorFactory::Build(edge_map,1);
     X -> putScalar((SC)0.0);
     // Belos linear problem
-    RCP<BelosProblem> problem = rcp( new BelosProblem() );
-    problem -> setOperator( SM_Matrix );
-    problem -> setRightPrec( preconditioner );
+#ifdef HAVE_MUELU_BELOS
+    typedef MultiVector          MV;
+    typedef Belos::OperatorT<MV> OP;
+    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
+
+    RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
+    problem -> setOperator( belosOp );
+    Teuchos::RCP<OP> belosPrecOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(preconditioner)); // Turns a Xpetra::Matrix object into a Belos operator
+    problem -> setRightPrec( belosPrecOp );
+
     problem -> setProblem( X, B );
+
+    bool set = problem->setProblem();
+    if (set == false) {
+      *out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+      return EXIT_FAILURE;
+    }
+
     // Belos solver
-    RCP<BelosManager> solver;
-    RCP<BelosFactory> factory = rcp( new BelosFactory() );
+    RCP< Belos::SolverManager<SC, MV, OP> > solver;
+    RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
     RCP<Teuchos::ParameterList> belosParams
       = rcp( new Teuchos::ParameterList() );
     belosParams->set("Maximum Iterations", 100);
-    belosParams->set("Convergence Tolerance",1e-9);
+    belosParams->set("Convergence Tolerance",1e-4);
     belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     belosParams->set("Output Frequency",1);
     belosParams->set("Output Style",Belos::Brief);
@@ -237,16 +263,28 @@ int main(int argc, char *argv[]) {
     solver -> setProblem( problem );
     Belos::ReturnType status = solver -> solve();
     int iters = solver -> getNumIters();
-    success = (iters<20 && status == Belos::Converged);
-    if (commrank == 0) {
-      if (success)
-        std::cout << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
-      else
-        std::cout << "FAILURE! Belos did not converge fast enough." << std::endl;
-    }
+    success = (iters<50 && status == Belos::Converged);
+    if (success)
+      *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+    else
+      *out << "FAILURE! Belos did not converge fast enough." << std::endl;
+#endif // #ifdef HAVE_MUELU_BELOS
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#else
+  return EXIT_SUCCESS;
+#endif // HAVE_TPETRA_INST_INT_INT
 #endif
 } // main
+
+
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
+}

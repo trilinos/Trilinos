@@ -38,11 +38,11 @@ public:
 protected:
     void input_from_file(const std::string &meshSpec, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        initialize_mesh();
+        reset_mesh();
         setup_empty_mesh(auraOption);
 
 #if defined(VERBOSE_OUTPUT)
-        if(get_bulk().parallel_rank() == 0) std::cerr << "Reading " << meshSpec << std::endl;
+        if(get_bulk().parallel_rank() == 0) std::cout << "Reading " << meshSpec << std::endl;
 #endif
 
         stk::unit_test_util::read_from_serial_file_and_decompose(meshSpec, get_bulk(), "cyclic");

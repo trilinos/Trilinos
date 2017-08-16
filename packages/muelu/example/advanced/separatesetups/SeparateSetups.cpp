@@ -72,11 +72,9 @@
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
-// Define template parameters
-#include "MueLu_UseDefaultTypes.hpp"
-
-int main(int argc, char *argv[]) {
-#include "MueLu_UseShortNames.hpp"
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -86,7 +84,6 @@ int main(int argc, char *argv[]) {
   //
 
   Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
   bool success = false;
   bool verbose = true;
@@ -96,7 +93,6 @@ int main(int argc, char *argv[]) {
     //
     // Process command line arguments
     //
-    Teuchos::CommandLineProcessor  clp(false);
     Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 81); // manage parameters of the test case
     Xpetra::Parameters             xpetraParameters(clp);     // manage parameters of xpetra
 
@@ -113,9 +109,6 @@ int main(int argc, char *argv[]) {
     //
     // Setup test case (Ax = b)
     //
-
-    // Linear Algebra Library
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
     // Distribution
     RCP<const Map> map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
@@ -214,7 +207,7 @@ int main(int argc, char *argv[]) {
     // Print relative residual norm
     //
 
-    Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *X, *B)[0];
+    typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *X, *B)[0];
     if (comm->getRank() == 0) {
       std::ios::fmtflags f(std::cout.flags());
       std::cout << "||Residual|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorms << std::endl;
@@ -227,3 +220,14 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
+
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
+}
+
+

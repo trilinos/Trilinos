@@ -50,39 +50,39 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
-    : out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
-    , numSameIDs_ (0)
-    , source_ (source)
-    , target_ (target)
-    , comm_ (source->getComm())
-    , distributor_ (comm_, out_)
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target) :
+    source_ (source),
+    target_ (target),
+    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
+    numSameIDs_ (0),
+    distributor_ (source->getComm (), out_),
+    isLocallyComplete_ (true) // Import/Export constructor may change this
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-                    const Teuchos::RCP<Teuchos::FancyOStream>& out)
-    : out_ (out)
-    , numSameIDs_ (0)
-    , source_ (source)
-    , target_ (target)
-    , comm_ (source->getComm())
-    , distributor_ (comm_, out_)
+                    const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+    source_ (source),
+    target_ (target),
+    out_ (out),
+    numSameIDs_ (0),
+    distributor_ (source->getComm (), out_),
+    isLocallyComplete_ (true) // Import/Export constructor may change this
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-                    const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
-    , numSameIDs_ (0)
-    , source_ (source)
-    , target_ (target)
-    , comm_ (source->getComm())
-    , distributor_ (comm_, out_, plist)
+                    const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    source_ (source),
+    target_ (target),
+    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
+    numSameIDs_ (0),
+    distributor_ (source->getComm (), out_, plist),
+    isLocallyComplete_ (true) // Import/Export constructor may change this
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -90,24 +90,25 @@ namespace Tpetra {
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
                     const Teuchos::RCP<Teuchos::FancyOStream>& out,
-                    const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : out_ (out)
-    , numSameIDs_ (0)
-    , source_ (source)
-    , target_ (target)
-    , comm_ (source->getComm())
-    , distributor_ (comm_, out_, plist)
+                    const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    source_ (source),
+    target_ (target),
+    out_ (out),
+    numSameIDs_ (0),
+    distributor_ (source->getComm (), out_, plist),
+    isLocallyComplete_ (true) // Import/Export constructor may change this
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> >
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::reverseClone()
   {
+    using Teuchos::ArrayView;
+
     Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > tData =
-      rcp (new ImportExportData<LocalOrdinal,GlobalOrdinal,Node> (target_,source_));
+      Teuchos::rcp (new ImportExportData<LocalOrdinal,GlobalOrdinal,Node> (target_, source_));
 
     // Things that stay the same
-    tData->comm_             = comm_;
     tData->numSameIDs_       = numSameIDs_;
 
     // Things that reverse
@@ -122,16 +123,25 @@ namespace Tpetra {
 
     // Remotes / exports (hard part) - extract the exportPIDs from the remotes of my distributor
     size_t NumReceives                  = distributor_.getNumReceives();
-    ArrayView<const int> ProcsFrom      = distributor_.getImagesFrom();
+    ArrayView<const int> ProcsFrom      = distributor_.getProcsFrom();
     ArrayView<const size_t> LengthsFrom = distributor_.getLengthsFrom();
 
+    // isLocallyComplete is a local predicate.
+    // It could be true in one direction but false in another.
+
+    bool isLocallyComplete = true; // by default
     for (size_t i = 0, j = 0; i < NumReceives; ++i) {
       const int pid = ProcsFrom[i];
+      if (pid == -1) {
+        isLocallyComplete = false;
+      }
       for (size_t k = 0; k < LengthsFrom[i]; ++k) {
         tData->exportPIDs_[j] = pid;
         ++j;
       }
     }
+    tData->isLocallyComplete_ = isLocallyComplete;
+
     return tData;
   }
 

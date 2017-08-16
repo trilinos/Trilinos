@@ -148,6 +148,27 @@ namespace { // (anonymous)
         matrix.getLocalRowView (lclRow, lclIndsT, valsT);
         TEST_EQUALITY( lclIndsT[0], lclCol );
         TEST_EQUALITY( valsT[0], SIX );
+
+        LO rawNumEnt = 0;
+        const Scalar* rawValsT = NULL;
+        const LO* rawLclIndsT = NULL;
+        const LO err = matrix.getLocalRowView (lclRow, rawNumEnt, rawValsT, rawLclIndsT);
+        TEST_EQUALITY( err, static_cast<LO> (0) );
+        if (err == 0) {
+          TEST_EQUALITY( rawNumEnt, static_cast<LO> (lclIndsT.size ()) );
+          if (rawNumEnt == static_cast<LO> (lclIndsT.size ())) {
+            TEST_ASSERT( rawLclIndsT != NULL );
+            if (rawLclIndsT != NULL) {
+              TEST_EQUALITY( rawLclIndsT[0], lclIndsT[0] );
+            }
+          }
+          if (rawNumEnt == static_cast<LO> (valsT.size ())) {
+            TEST_ASSERT( rawValsT != NULL );
+            if (rawValsT != NULL) {
+              TEST_EQUALITY( rawValsT[0], valsT[0] );
+            }
+          }
+        }
       }
     }
 

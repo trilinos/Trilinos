@@ -47,7 +47,7 @@
 // ROL Includes
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective_SimOpt.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 
 // Teuchos Includes for Linear Algebra
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -188,7 +188,7 @@ class TrackingObjective : public Objective_SimOpt<Real> {
 // BVP Constraint class 
 
 template<class Real> 
-class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
+class BVPConstraint : public Constraint_SimOpt<Real> {
 
   template <typename T> using RCP  = Teuchos::RCP<T>;
   template <typename T> using FC   = Intrepid::FieldContainer<T>;            

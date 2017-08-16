@@ -59,8 +59,6 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
-#include "Panzer_Evaluator_WithBaseImpl.hpp"
-
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -107,8 +105,8 @@ public:
 private:
 
   // We always use RealType for gathering as we never compute derivatives for this evaluator
-  //typedef typename panzer::Traits::RealType ScalarT;
-  typedef typename EvalT::ScalarT ScalarT;
+  typedef typename panzer::Traits::RealType ScalarT;
+  //typedef typename EvalT::ScalarT ScalarT;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering

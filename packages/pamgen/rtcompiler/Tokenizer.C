@@ -17,7 +17,7 @@ Tokenizer::Tokenizer(vector<Token> tokens)
   _tokenizedLines.push_back(tokens);
 
   _currLine  = _tokenizedLines.begin();
-  _currToken = _currLine->begin();  
+  _currToken = _currLine->begin();
 }
 
 /*****************************************************************************/
@@ -43,8 +43,8 @@ Tokenizer::Tokenizer(const string& body, string& errors)
       ////////////////////////////////////////////////////////////////////////
       if      (isValidNumericChar(body[index])) {
         bool lastCharWasExp = false;
-        for ( ; index < body.size() && 
-                (isValidNumericChar(body[index]) || 
+        for ( ; index < body.size() &&
+                (isValidNumericChar(body[index]) ||
                  isExp(body[index]) ||
                  ((body[index]=='-' || body[index]=='+') && lastCharWasExp));
               ++index) {
@@ -53,13 +53,13 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         }
         //number format will be checked later
         if (index < body.size() && isLetter(body[index])) {
-          errors += "Error at line: " + intToString(line) + 
+          errors += "Error at line: " + intToString(line) +
                     " letters embedded in a number.";
           return;
         }
-        if (previous != OPERATOR && previous != OPENINDEX && 
+        if (previous != OPERATOR && previous != OPENINDEX &&
             previous != COMMA && previous != WHITE) {
-          errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+          errors += "Error at line: " + intToString(line) + " :" + lastStr +
             " cannot precede: " + currStr;
           return;
         }
@@ -75,10 +75,10 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         for (;index < body.size() && isValidVariableChar(body[index]); ++index)
           currStr += body[index];
 
-        if (currStr == "int" || currStr == "float" || currStr == "double" ||
-            currStr == "char") {
+        if (currStr == "int" || currStr == "long" || currStr == "float" ||
+            currStr == "double" || currStr == "char") {
           if (lastStr != "(" && previous != WHITE && previous != COMMA) {
-            errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+            errors += "Error at line: " + intToString(line) + " :" + lastStr +
               " cannot precede: " + currStr;
             return;
           }
@@ -89,7 +89,7 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         else if (currStr == "for" || currStr == "while" || currStr == "if" ||
                  currStr == "else") {
           if (previous != WHITE && !(currStr == "if" && lastStr == "else")) {
-            errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+            errors += "Error at line: " + intToString(line) + " :" + lastStr +
               " cannot precede: " + currStr;
             return;
           }
@@ -98,7 +98,7 @@ Tokenizer::Tokenizer(const string& body, string& errors)
             return;
           }
           tokens.push_back(Token(BLOCKOPENER, currStr, line));
-          if (currStr == "for") 
+          if (currStr == "for")
             insideForStatement = true;
 	  //Important: else if should be a single token
 	  if (currStr == "if" && lastStr == "else" && previous == BLOCKOPENER){
@@ -110,9 +110,9 @@ Tokenizer::Tokenizer(const string& body, string& errors)
           blockOpeningStatement = true;
         }
         else if (getNextRealChar(body, index) == '(') {
-          if (previous != OPERATOR && previous != WHITE && 
+          if (previous != OPERATOR && previous != WHITE &&
               previous != COMMA && previous != OPENINDEX) {
-            errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+            errors += "Error at line: " + intToString(line) + " :" + lastStr +
               " cannot precede: " + currStr;
             return;
           }
@@ -120,9 +120,9 @@ Tokenizer::Tokenizer(const string& body, string& errors)
           previous = FUNC;
         }
         else {
-          if (previous != DECL && previous != OPERATOR && previous != WHITE && 
+          if (previous != DECL && previous != OPERATOR && previous != WHITE &&
               previous != COMMA && previous != OPENINDEX) {
-            errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+            errors += "Error at line: " + intToString(line) + " :" + lastStr +
               " cannot precede: " + currStr;
             return;
           }
@@ -131,7 +131,7 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         }
         lastStr = currStr;
       }
-      
+
       ////////////////////////////////////////////////////////////////////////
       //process operator
       ////////////////////////////////////////////////////////////////////////
@@ -142,14 +142,14 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         else if (index < body.size() && ((currStr+body[index]) == "/*")) {
           //we have a comment;
           ++index;
-          while (index+1 < body.size() && 
+          while (index+1 < body.size() &&
                  (body[index] != '*' || body[index+1] != '/')) {
-            if (body[index] == '\n') 
+            if (body[index] == '\n')
               ++line;
             ++index; //skip over comment
           }
           if (index+1 == body.size()) {
-            errors += "Error at line: " + intToString(line) + 
+            errors += "Error at line: " + intToString(line) +
               ": Comment was never terminated.";
             return;
           }
@@ -163,18 +163,18 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         }
 
         if (previous == DECL) {
-          errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+          errors += "Error at line: " + intToString(line) + " :" + lastStr +
             " cannot precede: " + currStr;
           return;
         }
 
-        //Important: The difference between negation and minus is detected 
+        //Important: The difference between negation and minus is detected
         //here. I am assuming that if a minus symbol is preceded by an operator
         //other than a closing parentheses, nothing, an open index, or a comma,
         //then it means negation.
-        if ( currStr == "-" && 
-             ( (previous == OPERATOR && lastStr != ")") || 
-               (previous == OPENINDEX) || (previous == COMMA) || 
+        if ( currStr == "-" &&
+             ( (previous == OPERATOR && lastStr != ")") ||
+               (previous == OPENINDEX) || (previous == COMMA) ||
                (previous == WHITE)))
           currStr = "_"; //different symbol for negation
         //Important: for-loops violate many of the conventions followed in the
@@ -194,29 +194,29 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         previous = OPERATOR;
         lastStr = currStr;
       }
-      
+
       ////////////////////////////////////////////////////////////////////////
       //process whitespace -- skips it
       ////////////////////////////////////////////////////////////////////////
       else if (isWhitespace(body[index])) {
         for(; index < body.size() && isWhitespace(body[index]); ++index) {
-          if (body[index] == '\n') 
+          if (body[index] == '\n')
             ++line;
         }
       }
-      
+
       ////////////////////////////////////////////////////////////////////////
       //process the character opener
       ////////////////////////////////////////////////////////////////////////
       else if (body[index] == '\'') {
-        if (previous != OPERATOR && previous != OPENINDEX && 
+        if (previous != OPERATOR && previous != OPENINDEX &&
             previous != COMMA && previous != WHITE) {
-          errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+          errors += "Error at line: " + intToString(line) + " :" + lastStr +
             " cannot precede \'";
           return;
         }
         currStr = body.substr(index, 3); //safe, substr wont overrun array
-        if (isChar(currStr)) 
+        if (isChar(currStr))
           tokens.push_back(Token(CONSTANT, currStr, line));
         else {
           errors += "Error at line: " + intToString(line) +
@@ -233,7 +233,7 @@ Tokenizer::Tokenizer(const string& body, string& errors)
       ////////////////////////////////////////////////////////////////////////
       else if (body[index] == '\"') {
         if (lastStr != "(" && lastStr != ",") {
-          errors += "Error at line: " + intToString(line) + 
+          errors += "Error at line: " + intToString(line) +
             ": strings can only be used as function arguments.";
           return;
         }
@@ -243,17 +243,17 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         }
         currStr += body[index];
         if (index == body.size()) {
-          errors += "Error at line: " + intToString(line) + 
+          errors += "Error at line: " + intToString(line) +
             " string not terminated.";
           return;
         }
         tokens.push_back(Token(CONSTANT, currStr, line));
-        assert(body[index] == '\"');        
+        assert(body[index] == '\"');
         index++;
         previous = CONSTANT;
         lastStr = currStr;
       }
-      
+
       ////////////////////////////////////////////////////////////////////////
       //process the backslash - the prefix of an aprepro-safe brace
       ////////////////////////////////////////////////////////////////////////
@@ -267,7 +267,7 @@ Tokenizer::Tokenizer(const string& body, string& errors)
       ////////////////////////////////////////////////////////////////////////
       else if (body[index] == '{') {
         if (lastStr != ")" && lastStr != "else") {
-          errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+          errors += "Error at line: " + intToString(line) + " :" + lastStr +
             " cannot precede: {";
           return;
         }
@@ -283,13 +283,13 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         ++index;
         break; // { finishes the line
       }
-      
+
       ////////////////////////////////////////////////////////////////////////
       //process closing brace
       ////////////////////////////////////////////////////////////////////////
       else if (body[index] == '}') {
         if (previous != WHITE) {
-          errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+          errors += "Error at line: " + intToString(line) + " :" + lastStr +
             " cannot precede: }";
           return;
         }
@@ -302,13 +302,13 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         ++index;
         break; // } finishes the line
       }
-      
+
       ////////////////////////////////////////////////////////////////////////
       //process opening index
       ////////////////////////////////////////////////////////////////////////
       else if (body[index] == '[') {
         if (previous != VAR) {
-          errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+          errors += "Error at line: " + intToString(line) + " :" + lastStr +
             " cannot precede: [";
           return;
         }
@@ -318,13 +318,13 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         previous = OPENINDEX;
         lastStr = "[";
       }
-      
+
       ////////////////////////////////////////////////////////////////////////
       //process closing index
       ////////////////////////////////////////////////////////////////////////
       else if (body[index] == ']') {
         if (previous != CONSTANT && previous != VAR && previous != OPERATOR) {
-          errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+          errors += "Error at line: " + intToString(line) + " :" + lastStr +
             " cannot precede: ]";
           return;
         }
@@ -338,14 +338,14 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         previous = CLOSEINDEX;
         lastStr = "]";
       }
-      
+
       ////////////////////////////////////////////////////////////////////////
       //process comma
       ////////////////////////////////////////////////////////////////////////
       else if (body[index] == ',') {
         if (previous != CONSTANT && previous != VAR && previous != OPERATOR &&
             previous != CLOSEINDEX) {
-          errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+          errors += "Error at line: " + intToString(line) + " :" + lastStr +
             " cannot precede: ,";
           return;
         }
@@ -354,14 +354,14 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         previous = COMMA;
         lastStr = ",";
       }
-      
+
       ////////////////////////////////////////////////////////////////////////
       //process semicolon
       ////////////////////////////////////////////////////////////////////////
       else if (body[index] == ';') {
-        if (previous == OPENINDEX || previous == COMMA || 
+        if (previous == OPENINDEX || previous == COMMA ||
             previous == BLOCKOPENER) {
-          errors += "Error at line: " + intToString(line) + " :" + lastStr + 
+          errors += "Error at line: " + intToString(line) + " :" + lastStr +
             " cannot precede: ;";
           return;
         }
@@ -374,7 +374,7 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         ++index;
         break; // ; finishes the line
       }
-      
+
       else {
         errors += "Error at line: " + intToString(line) +
           " unknown symbol: " + body[index];
@@ -383,7 +383,7 @@ Tokenizer::Tokenizer(const string& body, string& errors)
 
       currStr = "";
     }
-    
+
     //check stack -- should only contain braces
     for(unsigned int i = 0; i < _stack.size(); ++i) {
       if (_stack[i] != "}" && _stack[i] != "{") {
@@ -392,11 +392,11 @@ Tokenizer::Tokenizer(const string& body, string& errors)
         return;
       }
     }
-    
+
     if (tokens.size() > 0)
       _tokenizedLines.push_back(tokens);
   }
-  
+
   if (!_stack.empty()) {
     errors += "Error mismatched {} in your function";
     return;
@@ -404,7 +404,7 @@ Tokenizer::Tokenizer(const string& body, string& errors)
 
   _currLine  = _tokenizedLines.begin();
   _currToken = _currLine->begin();
-}             
+}
 
 /*****************************************************************************/
 bool Tokenizer::checkStack(const string& op)
@@ -440,8 +440,8 @@ bool Tokenizer::checkStack(const string& op)
 
 /*****************************************************************************/
 bool Tokenizer::check(const string& testName, const string& errs,
-                      unsigned int expectedNumLines, 
-                      unsigned int* expectedNumTokens, 
+                      unsigned int expectedNumLines,
+                      unsigned int* expectedNumTokens,
                       Token** expectedTokens)
 /*****************************************************************************/
 {
@@ -451,13 +451,13 @@ bool Tokenizer::check(const string& testName, const string& errs,
     return false;
   }
   if (_tokenizedLines.size() != expectedNumLines) {
-    cerr << "Expected numLines = " << expectedNumLines << " actual = " 
+    cerr << "Expected numLines = " << expectedNumLines << " actual = "
          << _tokenizedLines.size() << endl;
     return false;
   }
   for (unsigned int i = 0; i < expectedNumLines; ++i) {
     if (_tokenizedLines[i].size() != expectedNumTokens[i]) {
-      cerr << "Expected numTokens for line" << i << ": = " 
+      cerr << "Expected numTokens for line" << i << ": = "
            << expectedNumTokens[i] << " actual = " << _tokenizedLines[i].size()
            << endl;
       return false;
@@ -465,7 +465,7 @@ bool Tokenizer::check(const string& testName, const string& errs,
     for (unsigned int j = 0; j < expectedNumTokens[i]; ++j) {
       if (_tokenizedLines[i][j] != expectedTokens[i][j]) {
         cerr << "Token mismatch at line: " << i << " and token: " << j << endl;
-        cerr << "Expected: " << expectedTokens[i][j].toString() 
+        cerr << "Expected: " << expectedTokens[i][j].toString()
              << " actual: " << _tokenizedLines[i][j].toString() << endl;
       }
     }
@@ -491,7 +491,7 @@ void Tokenizer::printCurrLine()
 /*****************************************************************************/
 {
   assert(_currLine != _tokenizedLines.end());
-  for (unsigned int i = 0; i < _currLine->size(); ++i) 
+  for (unsigned int i = 0; i < _currLine->size(); ++i)
     cout << (*_currLine)[i].toString() << " ";
   cout << endl;
 }
@@ -501,7 +501,7 @@ void Tokenizer::nextLine()
 /*****************************************************************************/
 {
   assert(_currLine != _tokenizedLines.end());
-  
+
   _currLine++;
   if (_currLine != _tokenizedLines.end())
     _currToken = _currLine->begin();
@@ -554,24 +554,24 @@ void Tokenizer::test()
   Tokenizer test1(body, errs);
   unsigned int expectedNumTokens = 6;
   lines = new Token*[1];
-  Token tokens1[6] = {Token(VAR, "i",0), Token(OPERATOR, "=",0), 
-                      Token(CONSTANT, "5.4",0), Token(OPERATOR, "*",0), 
+  Token tokens1[6] = {Token(VAR, "i",0), Token(OPERATOR, "=",0),
+                      Token(CONSTANT, "5.4",0), Token(OPERATOR, "*",0),
                       Token(VAR, "varname",0), Token(SEMICOLON, ";",0)};
-  lines[0] = tokens1; 
+  lines[0] = tokens1;
   if (!test1.check("test1", errs, 1, &expectedNumTokens, lines))
     return;
-  
+
 
   body = "var = 2341.12113e-123;";
   Tokenizer test2(body, errs);
   expectedNumTokens = 4;
-  Token tokens2[4] = {Token(VAR, "var",0), Token(OPERATOR, "=",0), 
+  Token tokens2[4] = {Token(VAR, "var",0), Token(OPERATOR, "=",0),
                       Token(CONSTANT, "2341.12113e-123",0),Token(SEMICOLON,";",0)};
   lines[0] = tokens2;
   if (!test2.check("test2", errs, 1, &expectedNumTokens, lines))
     return;
-  
-  
+
+
   body = "int i_3[5*6] = func(var/((err-2) * 7), phi);";
   Tokenizer test3(body, errs);
   expectedNumTokens = 25;
@@ -586,8 +586,8 @@ void Tokenizer::test()
   delete[] lines;
   lines = new Token*[4];
   unsigned int expectedTokens[4] = {6, 4, 6, 1};
-  Token tokens4[6] = {Token(BLOCKOPENER, "for",0), Token(DECL, "int",0), 
-                      Token(VAR, "i",0), Token(OPERATOR, "=",0), 
+  Token tokens4[6] = {Token(BLOCKOPENER, "for",0), Token(DECL, "int",0),
+                      Token(VAR, "i",0), Token(OPERATOR, "=",0),
                       Token(CONSTANT, "'e'",0), Token(SEMICOLON, ";",0)};
   Token tokens5[4] = {Token(VAR, "i",0), Token(OPERATOR, "<=",0),
                       Token(CONSTANT, "5",0), Token(SEMICOLON, ";",0)};
@@ -602,7 +602,7 @@ void Tokenizer::test()
   if (!test4.check("test4", errs, 4, expectedTokens, lines))
     return;
 
-  
+
   body = "-x = -func(-(e-y), -array[-r*-8]);";
   Tokenizer test5(body, errs);
   expectedNumTokens = 24;
@@ -610,13 +610,13 @@ void Tokenizer::test()
   lines[0] = tokens8;
   if (!test5.check("test5", errs, 1, &expectedNumTokens, lines))
     return;
-  
+
 
   body = "else if (condition) \\{ \\}";
   Tokenizer test6(body, errs);
   unsigned int expectedToks[2] = {5, 1};
   Token tokens9[5] = {Token(BLOCKOPENER, "else if",0), Token(OPERATOR, "(",0),
-		      Token(VAR, "condition",0), Token(OPERATOR, ")",0), 
+		      Token(VAR, "condition",0), Token(OPERATOR, ")",0),
 		      Token(OPENBRACE, "{",0)};
   Token tokens10[1] = {Token(CLOSEBRACE, "}",0)};
   lines[0] = tokens9;

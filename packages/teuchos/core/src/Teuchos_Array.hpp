@@ -54,9 +54,12 @@
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_Assert.hpp"
 
+#if defined(HAVE_TEUCHOSCORE_CXX11) && defined(HAVE_TEUCHOS_ARRAY_BOUNDSCHECK) && defined(HAVE_TEUCHOS_THREAD_SAFE) && !defined(REMOVE_THREAD_PROTECTION_FOR_ARRAY)
+#include <mutex>
+#define USE_MUTEX_LOCK_FOR_ARRAY
+#endif
 
 namespace Teuchos {
-
 
 /** \brief .
  *
@@ -495,6 +498,9 @@ private:
   RCP<std::vector<T> > vec_;
   mutable ArrayRCP<T> extern_arcp_;
   mutable ArrayRCP<const T> extern_carcp_;
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  mutable std::mutex mutex_lock; // this mutex provides thread safe debugging for the vec_, extern_arcp_, extern_carcp_
+#endif
 #else
   std::vector<T> vec_;
 #endif
@@ -847,6 +853,9 @@ Array<T>::Array(const Tuple<T,N>& t)
 template<typename T> inline
 Array<T>& Array<T>::operator=(const Array& a)
 {
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true) = a.vec();
   return *this;
 }
@@ -858,6 +867,9 @@ Array<T>& Array<T>::operator=(const Array& a)
 template<typename T> inline
 void Array<T>::assign(size_type n, const value_type& val)
 {
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true).assign(n,val);
 }
 
@@ -865,6 +877,9 @@ void Array<T>::assign(size_type n, const value_type& val)
 template<typename T> template<typename InputIterator> inline
 void Array<T>::assign(InputIterator first, InputIterator last)
 {
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true).assign(first,last);
 }
 
@@ -874,12 +889,18 @@ typename Array<T>::iterator
 Array<T>::begin()
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
+
   if (is_null(extern_arcp_)) {
     // Here we must use the same RCP to avoid creating two unrelated RCPNodes!
     extern_arcp_ = arcp(vec_); // Will be null if vec_ is sized!
   }
   // Returning a weak pointer will help to catch dangling references but still
   // keep the same behavior as optimized code.
+
   return extern_arcp_.create_weak();
 #else
   return vec().begin();
@@ -898,15 +919,30 @@ Array<T>::end()
 #endif
 }
 
-
 template<typename T> inline
 typename Array<T>::const_iterator
 Array<T>::begin() const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   if (is_null(extern_carcp_)) {
-    extern_carcp_ = const_cast<Array<T>*>(this)->begin();
+    // Note that this used to call the non-const begin() function above
+    // I've moved that code here to make the mutex locking more transparent and
+    // prevent the need to structure something awkward to avoid double locks
+    // The original line of code was this:
+    // extern_carcp_ = const_cast<Array<T>*>(this)->begin();
+    // Now replaced by the following code which mirrors the above begin() call
+    if (is_null(extern_arcp_)) {
+      extern_arcp_ = arcp(vec_);
+    }
+    // note that we call create_weak() twice, first on the non-const and then
+    // below on the const - this preserves the original design exactly
+    extern_carcp_ = extern_arcp_.create_weak();
   }
+
   // Returning a weak pointer will help to catch dangling references but still
   // keep the same behavior as optimized code.
   return extern_carcp_.create_weak();
@@ -996,6 +1032,9 @@ template<typename T> inline
 void
 Array<T>::resize(size_type new_size, const value_type& x)
 {
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true).resize(new_size,x);
 }
 
@@ -1018,6 +1057,9 @@ bool Array<T>::empty() const
 template<typename T> inline
 void Array<T>::reserve(size_type n)
 {
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true).reserve(n);
 }
 
@@ -1113,6 +1155,9 @@ Array<T>::back() const
 template<typename T> inline
 void Array<T>::push_back(const value_type& x)
 {
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true).push_back(x);
 }
 
@@ -1122,6 +1167,9 @@ void Array<T>::pop_back()
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertNotNull();
+#endif
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
 #endif
   vec(true).pop_back();
 }
@@ -1147,7 +1195,14 @@ Array<T>::insert(iterator position, const value_type& x)
   // Assert a valid iterator and get vector iterator
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
   const difference_type i = position - begin();
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  {
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true, true).insert(raw_poss, x);
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  } // must unlock mutex_lock before calling begin() which will lock again
+#endif
   return begin() + i;
 #else
   return vec_.insert(position, x);
@@ -1160,6 +1215,9 @@ void Array<T>::insert(iterator position, size_type n, const value_type& x)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true, true).insert(raw_poss, n, x);
 #else
   vec_.insert(position, n, x);
@@ -1172,6 +1230,9 @@ void Array<T>::insert(iterator position, InputIterator first, InputIterator last
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true, true).insert(raw_poss, first, last);
 #else
   vec_.insert(position, first, last);
@@ -1188,7 +1249,14 @@ Array<T>::erase(iterator position)
   // Assert a valid iterator and get vector iterator
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
   const difference_type i = position - begin();
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  {
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true, true).erase(raw_poss);
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  } // must unlock mutex_lock before call begin() or dead lock on second call
+#endif
   return begin() + i;
 #else
   return vec_.erase(position);
@@ -1211,7 +1279,14 @@ Array<T>::erase(iterator first, iterator last)
   const typename std::vector<T>::iterator raw_first = raw_position(first);
   const typename std::vector<T>::iterator raw_last = raw_position(last);
   const difference_type i = first - begin();
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  {
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true,true).erase(raw_first,raw_last);
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  }  // must unlock mutex_lock before call begin() or dead lock on second call
+#endif
   return begin() + i;
 #else
   return vec_.erase(first,last);
@@ -1222,6 +1297,9 @@ Array<T>::erase(iterator first, iterator last)
 template<typename T> inline
 void Array<T>::swap(Array& x)
 {
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true).swap(x.vec());
 }
 
@@ -1229,6 +1307,9 @@ void Array<T>::swap(Array& x)
 template<typename T> inline
 void Array<T>::clear()
 {
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true).clear();
 }
 
@@ -1320,6 +1401,9 @@ std::vector<T> Array<T>::toVector() const
 template<typename T> inline
 Array<T>& Array<T>::operator=( const std::vector<T> &v )
 {
+#ifdef USE_MUTEX_LOCK_FOR_ARRAY
+  std::lock_guard<std::mutex> lockGuard(mutex_lock);
+#endif
   vec(true) = v;
   return *this;
 }
@@ -1418,6 +1502,10 @@ Array<T>::vec( bool isStructureBeingModified, bool activeIter )
     // Give up my ArrayRCPs used for iterator access since the array we be
     // getting modifed!  Any clients that have views through weak pointers
     // better not touch them!
+
+    // Note that in debug mode these are mutex protected - the mutex should
+    // always be locked when this function is called with
+    // isStructureBeingModified true
     extern_arcp_ = null;
     extern_carcp_ = null;
   }

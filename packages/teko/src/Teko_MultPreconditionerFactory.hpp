@@ -101,6 +101,8 @@ public:
              const double alpha = 1.0, const double beta = 0.0) const;
 
 protected:
+   using Teko::BlockImplicitLinearOp::implicitApply;
+
    Teko::LinearOp A_, M1_, M2_;
 
 private:
@@ -130,6 +132,8 @@ public:
    virtual Teuchos::RCP<Teko::PreconditionerState> buildPreconditionerState() const;
 
 protected:
+   using Teko::BlockPreconditionerFactory::buildPreconditionerOperator;
+
    // class members
    Teuchos::RCP<const Teko::BlockPreconditionerFactory> FirstFactory_;
    Teuchos::RCP<const Teko::BlockPreconditionerFactory> SecondFactory_;

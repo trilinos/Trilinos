@@ -71,11 +71,20 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
         docstring = %loca_turningpoint_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_LinearProblem.hpp"
+
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
+// Epetra includes
+#ifdef HAVE_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // LOCA includes
@@ -107,6 +116,14 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
 %teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup)
+
+%pythoncode
+%{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir in sys.path: sys.path.append(thisDir)
+del sys, op
+%}
 
 // Base class support
 %import "NOX.Abstract.i"

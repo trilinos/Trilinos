@@ -44,21 +44,15 @@
 #ifndef ROL_SROMGENERATOR_HPP
 #define ROL_SROMGENERATOR_HPP
 
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_ScalarLinearConstraint.hpp"
 #include "ROL_SampleGenerator.hpp"
-
-#include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_ScalarLinearEqualityConstraint.hpp"
-
-#include "ROL_Algorithm.hpp"
-#include "ROL_BoundConstraint.hpp"
-
 #include "ROL_MomentObjective.hpp"
 #include "ROL_CDFObjective.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
 #include "ROL_SROMVector.hpp"
-
 #include "ROL_StdVector.hpp"
+#include "ROL_Bounds.hpp"
 
 namespace ROL {
 
@@ -176,9 +170,9 @@ public:
       initialize_objective(obj_vec,obj,dist,bman,optProb,optAtom,list);
       // Initialize constraints
       Teuchos::RCP<BoundConstraint<Real> > bnd
-        = Teuchos::rcp(new BoundConstraint<Real>(x_lo,x_hi));
-      Teuchos::RCP<EqualityConstraint<Real> > con
-        = Teuchos::rcp(new ScalarLinearEqualityConstraint<Real>(x_eq,1.0));
+        = Teuchos::rcp(new Bounds<Real>(x_lo,x_hi));
+      Teuchos::RCP<Constraint<Real> > con
+        = Teuchos::rcp(new ScalarLinearConstraint<Real>(x_eq,1.0));
       // Test objective and constraints
       if ( print_ ) { std::cout << "\nCheck derivatives of CDFObjective\n"; }
       check_objective(*x,obj_vec[0],bman,optProb,optAtom);
@@ -186,30 +180,15 @@ public:
       check_objective(*x,obj_vec[1],bman,optProb,optAtom);
       if ( print_ ) { std::cout << "\nCheck derivatives of LinearCombinationObjective\n"; }
       check_objective(*x,obj,bman,optProb,optAtom);
-      if ( print_ && optProb ) { std::cout << "\nCheck ScalarLinearEqualityConstraint\n"; }
+      if ( print_ && optProb ) { std::cout << "\nCheck ScalarLinearConstraint\n"; }
       check_constraint(*x,con,bman,optProb);
       // Solve optimization problems to sample
       Teuchos::RCP<Algorithm<Real> > algo;
       initialize_optimizer(algo,list,optProb);
       if ( optProb ) {
-        std::string type = list.sublist("Step").get("Type","Trust Region");
-        Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcpFromRef(list);
-        Teuchos::RCP<OptimizationProblem<Real> > optProblem;
-        if (type == "Augmented Lagrangian") {
-          Teuchos::RCP<Objective<Real> > augLag
-            = Teuchos::rcp(new AugmentedLagrangian<Real>(obj,con,*l,1.,*x,l->dual(),parlist));
-          optProblem = Teuchos::rcp(new OptimizationProblem<Real>(augLag,x,bnd,con,l,plist));
-        }
-        else if (type == "Moreau-Yosida Penalty") {
-          Teuchos::RCP<Objective<Real> > myPen
-            = Teuchos::rcp(new MoreauYosidaPenalty<Real>(obj,bnd,*x,10.0));
-          optProblem = Teuchos::rcp(new OptimizationProblem<Real>(myPen,x,bnd,con,l,plist));
-        }
-        else {
-          optProblem = Teuchos::rcp(new OptimizationProblem<Real>(obj,x,bnd,con,l,plist));
-        }
-        //ROL::OptimizationProblem<Real> optProblem(obj,x,bnd,con,l,plist);
-        algo->run(*optProblem,print_);
+        OptimizationProblem<Real> optProblem(obj,x,bnd,con,l);
+        OptimizationSolver<Real>  optSolver(optProblem, list);
+        optSolver.solve(std::cout);
       }
       else {
         algo->run(*x,*obj,*bnd,print_);
@@ -226,14 +205,15 @@ private:
   void get_scaling_vectors(std::vector<Real> &typw, std::vector<Real> &typx) const {
     typw.clear(); typx.clear();
     typw.resize(numMySamples_,(Real)(numSamples_*numSamples_));
-    typx.resize(numMySamples_*dimension_,0.);
-    Real mean = 1., var = 1.;
+    typx.resize(numMySamples_*dimension_,0);
+    Real mean = 1, var = 1, one(1);
     for (int j = 0; j < dimension_; j++) {
       mean = std::abs(dist_[j]->moment(1));
       var  = dist_[j]->moment(2) - mean*mean;
       mean = ((mean > ROL_EPSILON<Real>()) ? mean : std::sqrt(var));
+      mean = ((mean > ROL_EPSILON<Real>()) ? mean : one);
       for (int i = 0; i < numMySamples_; i++) {
-        typx[i*dimension_ + j] = 1./(mean*mean);
+        typx[i*dimension_ + j] = one/(mean*mean);
       }
     }
   }
@@ -266,43 +246,43 @@ private:
       hi = dist_[j]->upperBound();
       for (int i = 0; i < numMySamples_; i++) {
         pt[i*dimension_ + j] = dist_[j]->invertCDF((Real)rand()/(Real)RAND_MAX);
-        //pt[i*dimension_ + j] = dist_[j]->invertCDF(0);;
+        //pt[i*dimension_ + j] = dist_[j]->invertCDF(0);
         pt_lo[i*dimension_ + j] = lo;
         pt_hi[i*dimension_ + j] = hi;
       }
     }
     // Build probability, atom, and SROM vectors 
     prob = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-           Teuchos::rcp(new std::vector<Real>(wt)),
-           Teuchos::rcp(new std::vector<Real>(typw)),bman));
+           Teuchos::rcp(new std::vector<Real>(wt)),bman,
+           Teuchos::rcp(new std::vector<Real>(typw))));
     atom = Teuchos::rcp(new PrimalAtomVector<Real>(
-           Teuchos::rcp(new std::vector<Real>(pt)),numMySamples_,dimension_,
-           Teuchos::rcp(new std::vector<Real>(typx)),bman));
+           Teuchos::rcp(new std::vector<Real>(pt)),bman,numMySamples_,dimension_,
+           Teuchos::rcp(new std::vector<Real>(typx))));
     vec  = Teuchos::rcp(new SROMVector<Real>(prob,atom));
     // Lower and upper bounds on Probability Vector
     prob_lo = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(wt_lo)),
-              Teuchos::rcp(new std::vector<Real>(typw)),bman));
+              Teuchos::rcp(new std::vector<Real>(wt_lo)),bman,
+              Teuchos::rcp(new std::vector<Real>(typw))));
     prob_hi = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(wt_hi)),
-              Teuchos::rcp(new std::vector<Real>(typw)),bman));
+              Teuchos::rcp(new std::vector<Real>(wt_hi)),bman,
+              Teuchos::rcp(new std::vector<Real>(typw))));
     // Lower and upper bounds on Atom Vector
     atom_lo = Teuchos::rcp(new PrimalAtomVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(pt_lo)),numMySamples_,dimension_,
-              Teuchos::rcp(new std::vector<Real>(typx)),bman));
+              Teuchos::rcp(new std::vector<Real>(pt_lo)),bman,numMySamples_,dimension_,
+              Teuchos::rcp(new std::vector<Real>(typx))));
     atom_hi = Teuchos::rcp(new PrimalAtomVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(pt_hi)),numMySamples_,dimension_,
-              Teuchos::rcp(new std::vector<Real>(typx)),bman));
+              Teuchos::rcp(new std::vector<Real>(pt_hi)),bman,numMySamples_,dimension_,
+              Teuchos::rcp(new std::vector<Real>(typx))));
     // Lower and upper bounds on SROM Vector
     vec_lo = Teuchos::rcp(new SROMVector<Real>(prob_lo,atom_lo));
     vec_hi = Teuchos::rcp(new SROMVector<Real>(prob_hi,atom_hi));
-    // Equality constraint vectors
+    // Constraint vectors
     prob_eq = Teuchos::rcp(new DualProbabilityVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(wt_eq)),
-              Teuchos::rcp(new std::vector<Real>(typw)), bman));
+              Teuchos::rcp(new std::vector<Real>(wt_eq)),bman,
+              Teuchos::rcp(new std::vector<Real>(typw))));
     atom_eq = Teuchos::rcp(new DualAtomVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(pt_eq)),numMySamples_,dimension_,
-              Teuchos::rcp(new std::vector<Real>(typx)), bman));
+              Teuchos::rcp(new std::vector<Real>(pt_eq)),bman,numMySamples_,dimension_,
+              Teuchos::rcp(new std::vector<Real>(typx))));
     vec_eq  = Teuchos::rcp(new SROMVector<Real>(prob_eq,atom_eq));
   }
 
@@ -336,7 +316,7 @@ private:
                             const bool optProb) const {
     std::string type = parlist.sublist("Step").get("Type","Trust Region");
     if ( optProb ) {
-      if ( type == "Moreau Yosida" ) {
+      if ( type == "Moreau-Yosida Penalty" ) {
         algo = Teuchos::rcp(new Algorithm<Real>("Moreau-Yosida Penalty",parlist,false));
       }
       else if ( type == "Augmented Lagrangian" ) {
@@ -368,12 +348,12 @@ private:
     }
     Teuchos::RCP<ProbabilityVector<Real> > dprob
       = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-        Teuchos::rcp(new std::vector<Real>(wt)),
-        Teuchos::rcp(new std::vector<Real>(typw)),bman));
+        Teuchos::rcp(new std::vector<Real>(wt)),bman,
+        Teuchos::rcp(new std::vector<Real>(typw))));
     Teuchos::RCP<AtomVector<Real> > datom
       = Teuchos::rcp(new PrimalAtomVector<Real>(
-        Teuchos::rcp(new std::vector<Real>(pt)),numMySamples_,dimension_,
-        Teuchos::rcp(new std::vector<Real>(typx)),bman));
+        Teuchos::rcp(new std::vector<Real>(pt)),bman,numMySamples_,dimension_,
+        Teuchos::rcp(new std::vector<Real>(typx))));
     SROMVector<Real> d = SROMVector<Real>(dprob,datom);
     // Check derivatives
     obj->checkGradient(x,d,print_);
@@ -381,7 +361,7 @@ private:
   }
 
   void check_constraint(const Vector<Real>                            &x,
-                        const Teuchos::RCP<EqualityConstraint<Real> > &con,
+                        const Teuchos::RCP<Constraint<Real> >         &con,
                         const Teuchos::RCP<BatchManager<Real> >       &bman,
                         const bool optProb) {
     if ( optProb ) {
@@ -399,12 +379,12 @@ private:
       }
       Teuchos::RCP<ProbabilityVector<Real> > dprob
         = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-          Teuchos::rcp(new std::vector<Real>(wt)),
-          Teuchos::rcp(new std::vector<Real>(typw)),bman));
+          Teuchos::rcp(new std::vector<Real>(wt)),bman,
+          Teuchos::rcp(new std::vector<Real>(typw))));
       Teuchos::RCP<AtomVector<Real> > datom
         = Teuchos::rcp(new PrimalAtomVector<Real>(
-          Teuchos::rcp(new std::vector<Real>(pt)),numMySamples_,dimension_,
-          Teuchos::rcp(new std::vector<Real>(typx)),bman));
+          Teuchos::rcp(new std::vector<Real>(pt)),bman,numMySamples_,dimension_,
+          Teuchos::rcp(new std::vector<Real>(typx))));
       SROMVector<Real> d = SROMVector<Real>(dprob,datom);
       // Check derivatives
       con->checkApplyJacobian(x,d,c,print_);

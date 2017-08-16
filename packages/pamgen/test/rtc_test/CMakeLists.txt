@@ -1,0 +1,9 @@
+
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/rtcompiler)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  rtc_test
+  SOURCES rtcompiler-test.cc
+  COMM serial
+  NUM_MPI_PROCS 1
+  )

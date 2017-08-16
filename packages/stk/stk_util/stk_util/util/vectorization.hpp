@@ -43,11 +43,20 @@
 #endif
 
 #if defined(__INTEL_COMPILER)
-#define IVDEP_ALIAS _Pragma("ivdep")
+#define STK_PRAGMA_IVDEP _Pragma("ivdep")
 #elif defined(__GNUC__)
-#define IVDEP_ALIAS
+#define STK_PRAGMA_IVDEP
 #else
-#define IVDEP_ALIAS
+#define STK_PRAGMA_IVDEP
+#endif
+
+#if defined(__INTEL_COMPILER)
+#define STK_PRAGMA_VECTOR_ALWAYS_ASSERT_IVDEP _Pragma("vector always assert") \
+                                              _Pragma("ivdep")
+#elif defined(__GNUC__)
+#define STK_PRAGMA_VECTOR_ALWAYS_ASSERT_IVDEP
+#else
+#define STK_PRAGMA_VECTOR_ALWAYS_ASSERT_IVDEP
 #endif
 
 #endif

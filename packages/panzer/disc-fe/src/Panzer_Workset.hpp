@@ -51,57 +51,144 @@
 
 #include "Panzer_Dimension.hpp"
 #include "Panzer_BasisValues2.hpp"
+#include "Panzer_PointValues2.hpp"
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_Dimension.hpp"
+
+#include "Panzer_IntegrationDescriptor.hpp"
+#include "Panzer_BasisDescriptor.hpp"
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
 
   class LinearObjContainer;
+  class WorksetNeeds;
+
+  template<typename LO, typename GO>
+  class LocalMeshPartition;
+
+  class SubcellConnectivity;
 
   /** This is used within the workset to make edge based (DG like) assembly
-    * an easier task. This basically allows seperation of the workset abstraction
+    * an easier task. This basically allows separation of the workset abstraction
     * from how it is accessed.
     */
-  struct WorksetDetails {
+  class WorksetDetails {
+  public:
     typedef PHX::MDField<double,Cell,NODE,Dim> CellCoordArray;
 
+    typedef std::size_t GO;
+    typedef int LO;
+
+    //! Constructs the workset details from a given chunk of the mesh
+    void setup(const panzer::LocalMeshPartition<int,int> & partition, const panzer::WorksetNeeds & needs);
+
+    void setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_topology,
+                    const Kokkos::View<double***,PHX::Device> & cell_vertices,
+                    const panzer::WorksetNeeds & needs);
+
     Kokkos::View<const int*,PHX::Device> cell_local_ids_k;
-    std::vector<std::size_t> cell_local_ids;
+    std::vector<GO> cell_local_ids;
     CellCoordArray cell_vertex_coordinates;
     std::string block_id;
 
     int subcell_index; //! If workset corresponds to a sub cell, what is the index?
 
     //! Value correspondes to integration order.  Use the offest for indexing.
+    //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<int> > ir_degrees;
     
+    //TEUCHOS_DEPRECATED
     std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
     
     //! Value corresponds to basis type.  Use the offest for indexing.
+    //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<std::string> > basis_names;
 
     //! Static basis function data, key is basis name, value is index in the static_bases vector
+    //TEUCHOS_DEPRECATED
     std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
+
+    /// Grab the face connectivity for this workset
+    const panzer::SubcellConnectivity & getFaceConnectivity() const;
+
+    /// Grab the integration values for a given integration description (throws error if integration doesn't exist)
+    const panzer::IntegrationValues2<double> & getIntegrationValues(const panzer::IntegrationDescriptor & description) const;
+
+    /// Grab the integration rule (contains data layouts) for a given integration description (throws error if integration doesn't exist)
+    const panzer::IntegrationRule & getIntegrationRule(const panzer::IntegrationDescriptor & description) const;
+
+    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
+    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
+                                                        const panzer::IntegrationDescriptor & integration_description) const;
+
+    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
+    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
+                                                        const panzer::PointDescriptor & point_description) const;
+
+    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
+    const panzer::PointValues2<double> & getPointValues(const panzer::PointDescriptor & point_description) const;
+
+    /// Grab the pure basis (contains data layouts) for a given basis description (throws error if integration doesn't exist)
+    const panzer::PureBasis & getBasis(const panzer::BasisDescriptor & description) const;
+
+    /// Number of cells owned by this workset
+    int num_owned_cells() const {return _num_owned_cells;}
+
+    /// Number of cells owned by a different workset
+    int num_ghost_cells() const {return _num_ghost_cells;}
+
+    /// Number of cells not owned by any workset - these are used for boundary conditions
+    int num_virtual_cells() const {return _num_virtual_cells;}
+
+  protected:
+
+    int _num_owned_cells;
+    int _num_ghost_cells;
+    int _num_virtual_cells;
+
+    std::map<size_t,Teuchos::RCP<const panzer::IntegrationRule > > _integration_rule_map;
+    std::map<size_t,Teuchos::RCP<const panzer::IntegrationValues2<double> > > _integrator_map;
+
+    std::map<size_t,Teuchos::RCP<const panzer::PureBasis > > _pure_basis_map;
+    std::map<size_t,std::map<size_t,Teuchos::RCP<const panzer::BasisValues2<double> > > > _basis_map;
+
+    std::map<size_t,Teuchos::RCP<const panzer::PointRule > > _point_rule_map;
+    std::map<size_t,Teuchos::RCP<const panzer::PointValues2<double> > > _point_map;
+
+    Teuchos::RCP<panzer::SubcellConnectivity> _face_connectivity;
+
   };
 
   /** This is the main workset object. Not that it inherits from WorksetDetails, this
     * is to maintain backwards compatibility in the use of the workset object. The addition
     * of a details vector supports things like DG based assembly.
     */
-  struct Workset : public WorksetDetails {
-    Workset() : sensitivities_name("") {}
+  class Workset : public WorksetDetails {
+  public:
+    //! Default constructor, identifier is a useless 0 by default
+    Workset() : identifier_(0) {}
 
-    std::size_t num_cells;
+    //! Constructor that that requires a unique identifier
+    Workset(std::size_t identifier) : identifier_(identifier) {}
+
+    //! Set the unique identifier for this workset, this is not an index!
+    void setIdentifier(std::size_t identifier) { identifier_ = identifier; }
+
+    //! Get the unique identifier for this workset, this is not an index!
+    std::size_t getIdentifier() const { return identifier_; }
+
+    index_t num_cells;
     int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
     
     double alpha;
     double beta;
     double time;
+    double step_size;
+    double stage_number;
     std::vector<double> gather_seeds; // generic gather seeds
     bool evaluate_transient_terms;
-    std::string sensitivities_name;
 
     //! other contains details about the side-sharing elements on the other side
     //! of the interface. If Teuchos::nonnull(other), then Workset contains two
@@ -123,6 +210,9 @@ namespace panzer {
     const WorksetDetails& details(const int i) const { return operator()(i); }
     //! Return the number of WorksetDetails this Workset holds.
     size_t numDetails() const { return Teuchos::nonnull(other) ? 2 : 1; }
+
+  private:
+    std::size_t identifier_;    
   };
 
   std::ostream& operator<<(std::ostream& os, const panzer::Workset& w);
