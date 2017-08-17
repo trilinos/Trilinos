@@ -659,9 +659,13 @@ TEUCHOS_UNIT_TEST(dag, contrib_only_B)
     const auto& order_new = dag.getEvaluatorInternalOrdering();
     //const std::vector<PHX::DagNode<MyTraits>>& nodes = dag.getDagNodes();
     TEST_EQUALITY(order_new[0],2);
-    TEST_EQUALITY(order_new[1],1);
-    TEST_EQUALITY(order_new[2],3);
-    TEST_EQUALITY(order_new[3],4);
+    // Node 2 is first, nodes 1, 3, 4 can happen in any order, then node 0 last.
+    TEST_ASSERT( (order_new[1] == 1) || (order_new[1] == 3) || (order_new[1] == 4) );
+    TEST_ASSERT( (order_new[2] == 1) || (order_new[2] == 3) || (order_new[2] == 4) );
+    TEST_ASSERT( (order_new[3] == 1) || (order_new[3] == 3) || (order_new[3] == 4) );
+    TEST_INEQUALITY(order_new[1],order_new[3]);
+    TEST_INEQUALITY(order_new[1],order_new[4]);
+    TEST_INEQUALITY(order_new[3],order_new[4]);
     TEST_EQUALITY(order_new[4],0);
   }
 
