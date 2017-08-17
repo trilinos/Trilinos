@@ -191,6 +191,7 @@ cmake \
   -D Trilinos_ENABLE_SEACASExodiff:BOOL=ON \
   -D Trilinos_ENABLE_SEACASNemspread:BOOL=ON \
   -D Trilinos_ENABLE_SEACASNemslice:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASAprepro_lib:BOOL=ON \
 \
 \
 $EXTRA_ARGS \
