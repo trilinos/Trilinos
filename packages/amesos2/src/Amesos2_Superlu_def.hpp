@@ -325,13 +325,13 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
         function_map::gstrf(&(data_.options), &(data_.AC),
             data_.relax, data_.panel_size, data_.etree.getRawPtr(),
             NULL, 0, data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
-            &(data_.L), &(data_.U), &(data_.stat), &info);
+            &(data_.L), &(data_.U), &(data_.lu), &(data_.stat), &info);
       }
       else {
         function_map::gsitrf(&(data_.options), &(data_.AC),
             data_.relax, data_.panel_size, data_.etree.getRawPtr(),
             NULL, 0, data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
-            &(data_.L), &(data_.U), &(data_.stat), &info);
+            &(data_.L), &(data_.U), &(data_.lu), &(data_.stat), &info);
       }
 
     }
@@ -429,14 +429,14 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
           data_.etree.getRawPtr(), &(data_.equed), data_.R.getRawPtr(),
           data_.C.getRawPtr(), &(data_.L), &(data_.U), NULL, 0, &(data_.B),
           &(data_.X), &rpg, &rcond, data_.ferr.getRawPtr(),
-          data_.berr.getRawPtr(), &(data_.mem_usage), &(data_.stat), &ierr);
+          data_.berr.getRawPtr(), &(data_.lu), &(data_.mem_usage), &(data_.stat), &ierr);
     }
     else {
       function_map::gsisx(&(data_.options), &(data_.A),
           data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
           data_.etree.getRawPtr(), &(data_.equed), data_.R.getRawPtr(),
           data_.C.getRawPtr(), &(data_.L), &(data_.U), NULL, 0, &(data_.B),
-          &(data_.X), &rpg, &rcond, &(data_.mem_usage), &(data_.stat), &ierr);
+          &(data_.X), &rpg, &rcond, &(data_.lu), &(data_.mem_usage), &(data_.stat), &ierr);
     }
 
     }
