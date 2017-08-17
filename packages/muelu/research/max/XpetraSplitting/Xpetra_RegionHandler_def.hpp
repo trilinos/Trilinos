@@ -1,3 +1,54 @@
+// @HEADER
+// //
+// // ***********************************************************************
+// //
+// //        MueLu: A package for multigrid based preconditioning
+// //                  Copyright 2012 Sandia Corporation
+// //
+// // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// // the U.S. Government retains certain rights in this software.
+// //
+// // Redistribution and use in source and binary forms, with or without
+// // modification, are permitted provided that the following conditions are
+// // met:
+// //
+// // 1. Redistributions of source code must retain the above copyright
+// // notice, this list of conditions and the following disclaimer.
+// //
+// // 2. Redistributions in binary form must reproduce the above copyright
+// // notice, this list of conditions and the following disclaimer in the
+// // documentation and/or other materials provided with the distribution.
+// //
+// // 3. Neither the name of the Corporation nor the names of the
+// // contributors may be used to endorse or promote products derived from
+// // this software without specific prior written permission.
+// //
+// // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// // PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// //
+// // Questions? Contact
+// //                    Jonathan Hu       (jhu@sandia.gov)
+// //                    Andrey Prokopenko (aprokop@sandia.gov)
+// //                    Ray Tuminaro      (rstumin@sandia.gov)
+// //
+// // ***********************************************************************
+// //
+// // @HEADER
+/*
+ * Xpetra_RegionHandler_def.hpp
+ *
+ * Created on: August 17, 2017
+ * 	Author: Massimiliano Lupo Pasini (massimiliano.lupo.pasini@gmail.com)
+ */
 #ifndef XPETRA_REGIONHANDLER_DEF_HPP
 #define XPETRA_REGIONHANDLER_DEF_HPP
 
@@ -49,7 +100,7 @@ namespace Xpetra{
 	{
 		std::ifstream input_file_(file_name, std::ifstream::in);
 		std::string  line;
-		TEUCHOS_TEST_FOR_EXCEPTION( !input_file_.good(), Exceptions::RuntimeError, "Can not read \"" << file_name << "\"");
+		TEUCHOS_TEST_FOR_EXCEPTION( !input_file_.good(), Exceptions::RuntimeError, "Cannot read \"" << file_name << "\"");
 
 		GlobalOrdinal line_index = 0;
 	
@@ -92,10 +143,11 @@ namespace Xpetra{
 	}
 
 	//This routines computes the way regions are partitioned across processes
-	//The partitioning policies of course changes based on whether the number of processes
+	//The partitioning policies of course depends on whether the number of processes
 	//exceeds the number of regions or not.
 	//ASSUMPTION: A PROCESS CANNOT OWN CHUNKS OF MULTIPLE REGIONS. EITHER A PROCESS IS CONFINED INSIDE A SINGLE REGION
-	//OR IT MUST POSSESS ENTIRE MULTIPLE REGIONS.
+	//OR IT MUST POSSESS ENTIRE REGIONS.
+	//The distribution of regions (or portions of them) across processes is conductes so to guarantee load balancing
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeProcRegions()
 	{
@@ -105,6 +157,10 @@ namespace Xpetra{
 		regions_per_proc_.clear();
 		procs_per_region_.clear();	
 
+		//If the number of processes instantiate is smaller than the total number of regions,
+		//then each process owns entire regions. The number of regions per process is calculates so to guarantee
+		//load balancing. After an initial distribution of regions, leftover regions that have not been assigned to any process yet are
+		//distributed in a round-robin fashion
 		if( tot_num_proc < num_total_regions_ )
 		{
 			int min_nregions_proc = std::floor( static_cast<double>(num_total_regions_)/static_cast<double>(tot_num_proc) );
@@ -137,6 +193,8 @@ namespace Xpetra{
 			}
 			TEUCHOS_TEST_FOR_EXCEPTION( !( procs_per_region_.size()==num_total_regions_ ), Exceptions::RuntimeError, "PID: "<<comm_->getRank()<<" - Number of regions detected does not match with the initially declared one \n procs_per_region_ tracks "<<procs_per_region_.size()<<" regions whereas num_total_regions_ = "<<num_total_regions_<<"\n");
 		}
+		//This is easy: if the number of regions coincides with the total number of processes instantiated, then
+		//a one-to-one relation between processes and regions is created
 		else if( tot_num_proc == num_total_regions_ )
 		{
 			regions_per_proc_.push_back( myPID+1 );
@@ -151,6 +209,10 @@ namespace Xpetra{
 				procs_per_region_.push_back( tuple_aux );	
 			}
 		}
+		//If the number of processes exceeds the number of regions in the domain, 
+		//then each process is given a subset of a region. 
+		//N.B.: A SINGLE PROCESS IS NOT ALLOWED TO OWN CHUNCKS OF MULTIPLE REGIONS. 
+		//IN THIS CONFIGURATION EACH PROCESS IS CONFINED TO A SINGLE REGION
 		else if( tot_num_proc > num_total_regions_ )
 		{
 			int num_procs_region = std::ceil( static_cast<double>(tot_num_proc)/static_cast<double>(num_total_regions_) );	
@@ -212,11 +274,15 @@ namespace Xpetra{
 				GlobalOrdinal next_node = std::get<0>( *(next_node_iterator) );
 				if( current_node == next_node )
 				{
+					//As long as the information spanned regards the same node, 
+					//the algorithm keeps on increasing the list of regions the given mesh node belong to
 					regions.push_back( std::get<1>( *(next_node_iterator) ) );
 					next_node_iterator++;
 				}
 				else
 				{
+					//When the mesh node label changes, then the algorithm
+					//stops recording information about the previous node and it starts recording information for the new one
 					node_iterator = next_node_iterator;
 					break;
 				}
@@ -266,11 +332,18 @@ namespace Xpetra{
 				checkerNode<GlobalOrdinal> unaryPredicate(*iter_array);
 				typename Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >::iterator nodes_iterator1;
 				typename Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >::iterator nodes_iterator2;
+
+				//We position an iterator at the beginning of the information associated with the a region owned by the calling process
+				//and another iterator right at the end of the information
 				nodes_iterator1 = std::find_if<typename Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >::iterator, checkerNode<GlobalOrdinal> >(nodes_.begin(), nodes_.end(), unaryPredicate);
 				nodes_iterator2 = std::find_if_not<typename Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >::iterator, checkerNode<GlobalOrdinal> >(nodes_iterator1, nodes_.end(), unaryPredicate);
+
+				//Coun the number of mesh nodes inside a region 
 				int num_region_nodes = nodes_iterator2 - nodes_iterator1;
 
 				typename Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >::iterator nodes_iterator_aux;
+
+				//The policy assumes that in the input file the indexBase for the node label is 1
 				GlobalOrdinal region_node_label = 1;
 				for( nodes_iterator_aux=nodes_iterator1; nodes_iterator_aux!=nodes_iterator2; ++nodes_iterator_aux )
 				{
@@ -296,6 +369,7 @@ namespace Xpetra{
 					region_node_label++;
 				}
 
+				//C++ indexing starts from 0, so everything is shofted backward by one to make it consistent with programming language's policies
 				for( typename Array<GlobalOrdinal>::iterator iter = region_elements.begin(); iter!=region_elements.end(); ++iter )
 					*iter = *iter - 1;
 
@@ -306,6 +380,9 @@ namespace Xpetra{
 		}
 		else
 		{
+			// The code enters the scope of these curly brackets if the number of processes exceeds the number of regions in the domain.
+			// Therefore, each process owns only a subregion (or at most a single entire region).
+			// In this situation, the calling process must identify the region it is associated with
 			bool region_found = false;			
 			GlobalOrdinal myRegion = -1;
 			TEUCHOS_TEST_FOR_EXCEPTION( !( procs_per_region_.size() == num_total_regions_ ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of total regions does not match with regionHandler structures \n");
@@ -356,15 +433,22 @@ namespace Xpetra{
 					typename Array< std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > >::iterator nodes_to_region_iterator;
 					nodes_to_region_iterator = std::find_if<typename Array< std::tuple< GlobalOrdinal,Array<GlobalOrdinal> > >::iterator, checkerNodesToRegion<GlobalOrdinal> >(nodesToRegion_.begin(), nodesToRegion_.end(), unaryPredicateNode);	
 					Array<GlobalOrdinal> nodal_regions =  std::get<1>(*nodes_to_region_iterator);
+
+					//The follolwing if statement is necessary to guarantee uniqueness of the RowMap used for the composite matrix
 					if( myRegion == nodal_regions[0] )
 						elements.push_back( node );
 
+					//Although a process does not own a row in the composite matrix, it may still happen that it owns the row
+					//from a region matrix perspective
 					region_elements.push_back(region_node_label);
 				}
 
 				//If a process owns a region (or even a portion of it), we provide to it a map
 				//from region indices to composite indices for all the nodes inside that region, 
 				//even if a specific node is not owned by the calling process
+				//If a process owns something of a region, then the process has a global view of who owns what for that region
+				//Although this may seem more information than what actually needed, it is important for the computation of the collapsing.
+				//If the collapsing is not calculated, then this structure actually overestimates what a process needs to know.
 				for( proc_iterator=region_procs_reduced.begin(); proc_iterator!=region_procs_reduced.end(); ++proc_iterator )
 				{
 					GlobalOrdinal node = std::get<0>( *( nodes_iterator1+(proc_iterator-region_procs_reduced.begin()+1) ) );
@@ -487,12 +571,14 @@ namespace Xpetra{
 			}	
 			TEUCHOS_TEST_FOR_EXCEPTION( ( num_total_regions_!=regionToAll.size() ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - regionToAll size has been corrupted\n"<<"num_total_regions_ = "<<num_total_regions_<<" whereas regionToAll.size()= "<<regionToAll.size()<<"\n");
 
+			//C++ indexing starts from 0, so everything is shofted backward by one to make it consistent with programming language's policies
 			for( typename Array<GlobalOrdinal>::iterator iter = region_elements.begin(); iter!=region_elements.end(); ++iter )
 				*iter = *iter - 1;
 
 			elements_per_region[myRegion-1] = region_elements;
 		}
 
+		//C++ indexing starts from 0, so everything is shofted backward by one to make it consistent with programming language's policies
 		for( typename Array<GlobalOrdinal>::iterator iter = elements.begin(); iter!=elements.end(); ++iter )
 			*iter = *iter - 1;
 
@@ -502,7 +588,7 @@ namespace Xpetra{
 	}
 
 
-// Get methods to allow a user interface with private members of the RegionHandler class
+	// Get methods to allow a user to interface with private members of the RegionHandler class
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	Array<GlobalOrdinal> RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetRegionRowMap(GlobalOrdinal region_index)const
 	{
@@ -540,7 +626,7 @@ namespace Xpetra{
 		}
 	}
 
-//Print methods
+	//Print methods
 	template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printNodesToRegion()
 	{

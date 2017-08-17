@@ -1,3 +1,54 @@
+// @HEADER
+// //
+// // ***********************************************************************
+// //
+// //        MueLu: A package for multigrid based preconditioning
+// //                  Copyright 2012 Sandia Corporation
+// //
+// // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// // the U.S. Government retains certain rights in this software.
+// //
+// // Redistribution and use in source and binary forms, with or without
+// // modification, are permitted provided that the following conditions are
+// // met:
+// //
+// // 1. Redistributions of source code must retain the above copyright
+// // notice, this list of conditions and the following disclaimer.
+// //
+// // 2. Redistributions in binary form must reproduce the above copyright
+// // notice, this list of conditions and the following disclaimer in the
+// // documentation and/or other materials provided with the distribution.
+// //
+// // 3. Neither the name of the Corporation nor the names of the
+// // contributors may be used to endorse or promote products derived from
+// // this software without specific prior written permission.
+// //
+// // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// // PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// //
+// // Questions? Contact
+// //                    Jonathan Hu       (jhu@sandia.gov)
+// //                    Andrey Prokopenko (aprokop@sandia.gov)
+// //                    Ray Tuminaro      (rstumin@sandia.gov)
+// //
+// // ***********************************************************************
+// //
+// // @HEADER
+/*
+ * Xpetra_MatrixSplitting.hpp
+ *
+ * Created on: August 17, 2017
+ * 	Author: Massimiliano Lupo Pasini (massimiliano.lupo.pasini@gmail.com)
+ */
 #ifndef XPETRA_MATRIXSPLITTING_HPP
 #define XPETRA_MATRIXSPLITTING_HPP
 
@@ -107,7 +158,7 @@ class checkerInterfaceNodes {
 	    class GlobalOrdinal = typename Operator<LocalOrdinal>::global_ordinal_type,
 	    class Node          = typename Operator<LocalOrdinal, GlobalOrdinal>::node_type,
 	    UnderlyingLib lib		= Xpetra::UseEpetra, 
-			bool collapse 			= false>
+	    bool collapse 			= false>
 	class MatrixSplitting : public Matrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
 
 	typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
@@ -159,7 +210,7 @@ class checkerInterfaceNodes {
 
 			if(comm_->getRank()==0)
 				std::cout<<"Started reading composite matrix"<<std::endl;
-			//Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
+			//Import matrix from an .mm file into an Xpetra wrapper for an Epetra matrix
 			compositeMatrixData_ = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matrix_file_name, xpetraMap);
 			if(comm_->getRank()==0)
 				std::cout<<"Finished reading composite matrix"<<std::endl;
@@ -572,18 +623,23 @@ class checkerInterfaceNodes {
 		//! Returns the CrsGraph associated with this matrix.
 		RCP<const CrsGraph> getCrsGraph() const { return compositeMatrixData_->getCrsGraph(); }
 
+		//! Returns an Xpetra::CrsMatrix pointer to the the composite matrix
 		RCP<CrsMatrix> getCrsMatrix() const {  return compositeMatrixData_; }
 
+		//! Returns an Xpetra::Matrix pointer to the composite matrix
 		RCP<Matrix> getMatrix() const {  return compositeMatrixData_; }
 
+		//! Returns an Xpetra::Matrix pointer to the region matrix associated with a specific region index
 		RCP<Matrix> getRegionMatrix( GlobalOrdinal region_idx ) const 
 		{
+			//The region index is assumed to start from 0
 			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_<=0, Exceptions::RuntimeError, "Regions not initialized yet ( total number of regions is <=0 ) \n");
 			TEUCHOS_TEST_FOR_EXCEPTION( region_idx >= num_total_regions_, Exceptions::RuntimeError, "Region index not valid \n");
 			
 			return regionMatrixData_[ region_idx ];
 		}
 
+		//! Return a ppointer to the underlying regionHandler object used for the matrix splitting
 		RCP<RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getRegionHandler() const
 		{
 			return regionHandler_; 
@@ -638,8 +694,11 @@ class checkerInterfaceNodes {
 		  }
 		}
 
-		//! Support Functions
+		//! Private Methods 
 		//{@
+		
+		//! Creation of region matrices
+		//@{
 		void RegionMatrix(GlobalOrdinal region_idx)
 		{	
 			TEUCHOS_TEST_FOR_EXCEPTION( num_total_regions_!=regionMatrixData_.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of regionMatrixData_ structure \n");
@@ -649,8 +708,12 @@ class checkerInterfaceNodes {
 			Ifpack2::OverlappingRowMatrix<tpetra_row_matrix> enlargedMatrix(tpetraGlobalMatrix, 2);
 
 			region_matrix->resumeFill();
+
+			//Region matrices are initially built to be a chopped version of the composite matrix
 			InitializeRegionMatrices( region_idx, region_matrix, enlargedMatrix );
 
+			//If the template paramater is set to collapse by the user, then interface entries of the region matrix are modified to collapse
+			//information coming from adjacent regions. If the collapsing is not done, then the splitting is calculated 
 			if( collapse )
 				RegionCollapse( region_idx, region_matrix, enlargedMatrix );
 			else
@@ -665,6 +728,8 @@ class checkerInterfaceNodes {
 		//@{
 		void InitializeRegionMatrices(GlobalOrdinal region_idx, RCP<Matrix>& region_matrix, Ifpack2::OverlappingRowMatrix<tpetra_row_matrix>& enlargedMatrix)
 		{
+
+			//Region matrices are initially built to be a chopped version of the composite matrix
 			TEUCHOS_TEST_FOR_EXCEPTION( region_matrix_initialized_[region_idx], Exceptions::RuntimeError, "Surrogate region stiffness matrices are already initialized by chopping the composite stiffness matrix \n");
 
 			Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   regionToAll = regionHandler_->GetRegionToAll(region_idx);
@@ -837,7 +902,7 @@ class checkerInterfaceNodes {
 
 						std::sort( composite_inds_neighbor2_vector.begin(), composite_inds_neighbor2_vector.end() );
 
-						//IDENTIFICATION OF EXTERNAL NODES THROUGH GLOBAL INDICES STARTS HERE
+						//IDENTIFICATION OF EXTERNAL NODES THROUGH COMPOSITE INDICES STARTS HERE
 						std::vector<GlobalOrdinal> composite_node_idx_neighbor1_extra;	
 						std::vector<GlobalOrdinal> composite_node_idx_neighbor2_extra;
 						std::vector<GlobalOrdinal> composite_node_idx_extra(composite_inds_vector);
@@ -1390,9 +1455,9 @@ class checkerInterfaceNodes {
 
 		};
 		//@}
-
-		//@}
 		
+		//@}
+	
 		//! Private variables
 		//@{
 
