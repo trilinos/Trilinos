@@ -43,6 +43,7 @@
 #include <math.h>
 #include <assert.h>
 #include <iostream>
+#include <iomanip>
 #include <algorithm>
 #include <exception>
 
@@ -155,6 +156,14 @@ TolerancedTime Scheduler::get_toleranced_time_range(Time time) const
     // on the delta from this first time...
     delta.min = ((1.0 - tolerance_) * (time - firstTime_)) + firstTime_;
     delta.max = ((1.0 + tolerance_) * (time - firstTime_)) + firstTime_;
+    if (delta.min == delta.max) {
+      int i = 1;
+      while (delta.min == delta.max) {
+	delta.min = time - i*tolerance_;
+	delta.max = time + i*tolerance_;
+	i++;
+      }
+    }
   }
   else {
     delta.min = (1.0 - tolerance_) * time;
@@ -201,7 +210,9 @@ bool Scheduler::internal_is_it_time(Time time)
     // call prior to restart ocurring in which case restartTime_ will be > time.
     // In that case, return false and don't reset any "magic numbers"
     if (restartTime_ > time)
+    {
       return false;
+    }
 
     if (restartTime_ > -Real_MAX) {
       assert(restartTime_ <= time);
@@ -229,6 +240,9 @@ bool Scheduler::internal_is_it_time(Time time)
 
   if (dt > 0 && dt < tolerance_) {
     tolerance_ = dt / 100.0;
+    if (tolerance_ < DBL_EPSILON) {
+      tolerance_ = DBL_EPSILON;
+    }
   }
 
   TolerancedTime delta = get_toleranced_time_range(time);
@@ -283,9 +297,11 @@ bool Scheduler::internal_is_it_time(Time time)
 
   TimeContainer::const_iterator interval = get_time_interval(time, true);
   if (interval == timeIntervals_.end())
+  {
     return false;
+  }
 
-  Time start = (*interval).first;
+  Time start  = (*interval).first;
   Time tdelta = (*interval).second;
 
   // If the time delta is equal to zero, then assume that
@@ -309,7 +325,10 @@ bool Scheduler::internal_is_it_time(Time time)
   if (intervals == lastInterval_) {
     // See if the time delta from the last write was > tdelta (Can
     // happen if time is large and tdelta small...)
-    if (time - lastTime_ >= tdelta) {
+    
+    //std::cout << "time= " << std::setprecision(15) << time << ", lastTime_= " << std::setprecision(15) << lastTime_ << ", tdelta= " << std::setprecision(15) << tdelta << ", time - lastTime_= " << std::setprecision(15) << time - lastTime_ << "\n";
+
+    if ( time >= (lastTime_ + tdelta) ) {
       lastTime_ = time;
       lastInterval_ = intervals;
       if (firstTime_ == -Real_MAX) firstTime_ = time;
@@ -356,7 +375,9 @@ bool Scheduler::is_it_time(Time time, Step step)
 
   // If called multiple times, return same response...
   if (time == lastTime_)
+  {
     return true;
+  }
 
   // force_write always causes a write even if the time is outside
   // the bounds set by startTime and terminationTime...
@@ -371,7 +392,9 @@ bool Scheduler::is_it_time(Time time, Step step)
   // which doesn't force an output, but does enable the output
   // block...
   if (get_toleranced_time_range(time).max < startTime_)
+  {
     return false;
+  }
 
   // See if user specified an output time via time intervals
   // or explicit times.
@@ -610,7 +633,11 @@ bool Scheduler::add_interval(Time time, Time delta)
   // with widely varying interval sizes...
   if (1000.0 * tolerance_ > delta) {
     tolerance_ = delta / 1000.0;
+    if (tolerance_ < DBL_EPSILON) {
+      tolerance_ = DBL_EPSILON;
+    }
   }
+
   std::pair<TimeContainer::iterator,bool> result;
   result=timeIntervals_.insert(TimeContainer::value_type(time, delta));
   return result.second;

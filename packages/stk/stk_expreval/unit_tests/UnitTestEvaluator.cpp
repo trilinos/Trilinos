@@ -235,11 +235,7 @@ notUndefinedFunction(
     const char *	expr)
 {
   std::cout << "Not an undefined function " << expr << " ... ";
-  if (checkUndefinedFunction(expr)) {
-    return false;
-  } else {
-    return true;
-  }
+  return !checkUndefinedFunction(expr);
 }
 
 bool
@@ -247,11 +243,7 @@ undefinedFunction(
     const char *	expr)
 {
   std::cout << "Undefined function " << expr << " ... ";
-  if (checkUndefinedFunction(expr)) {
-    return true;
-  } else {
-    return false;
-  }
+  return checkUndefinedFunction(expr);
 }
 
 bool
@@ -296,8 +288,8 @@ test_one_value(const char *expression, double gold_value)
   stk::expreval::Eval expr_eval(generate_expression(expression));
   expr_eval.parse();
   double result = expr_eval.evaluate();
-  double absolute_error = fabs(result - gold_value);
-  if (absolute_error > fabs(1.0e-14*result)) 
+  double absolute_error = std::fabs(result - gold_value);
+  if (absolute_error > std::fabs(1.0e-14*result)) 
   {
     std::cout << expression << " = " << std::setprecision(20) << result << " should be " << gold_value << " error= " << absolute_error << std::endl;
     failed = true;
@@ -329,7 +321,7 @@ evaluate_range(
   std::ofstream expression_gnu; 
 
   std::string expression_csv_name = expr + std::string(".csv");
-  if(write_csv) {
+  if( write_csv ) {
     expression_csv.open(expression_csv_name);
     expression_csv << "### Evaluate " << expr << " from " << xmin << " to " << xmax<< " with " << numPoints << "\n";
   }
@@ -354,14 +346,12 @@ evaluate_range(
     y = expr_eval.evaluate();
     ymin = std::min(y, ymin);
     ymax = std::max(y, ymax);
-    if(write_csv) {
+    if( write_csv ) {
       expression_csv << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
-    } else {
-      //std::cout << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
     }
   }
 
-  if(write_csv) {
+  if( write_csv ) {
     // write a gnuplot input file corresponding to the csv file
     std::string expression_gnu_name = expr + std::string(".gnu");
     expression_gnu.open(expression_gnu_name);
@@ -411,8 +401,8 @@ test(
 		<< std::endl;
       failed = true;
     }
-    double absolute_error = fabs(result - y);
-    if (absolute_error > fabs(1.0e-14*result)) {
+    double absolute_error = std::fabs(result - y);
+    if (absolute_error > std::fabs(1.0e-14*result)) {
       std::cout << expr << " at " << std::setprecision(2) << x << " is " << std::setprecision(20) << result << " should be " << y << ", error= " << absolute_error
 		<< std::endl;
       failed = true;

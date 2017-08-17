@@ -39,12 +39,13 @@
 #include <iostream>
 #include <assert.h>
 
+#include <stk_util/stk_config.h>
+
 #if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
 #include <aprepro.h>
 #include <apr_tokenize.h>
 #endif
 
-#include <stk_util/stk_config.h>
 #include <stk_util/parallel/mpi_filebuf.hpp>
 #include <stk_util/environment/Env.hpp>
 
