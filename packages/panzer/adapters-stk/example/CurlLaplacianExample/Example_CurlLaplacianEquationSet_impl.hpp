@@ -151,7 +151,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     ParameterList p("Transient Residual");
     p.set("Residual Name", "RESIDUAL_EFIELD_TRANSIENT_OP"); // we are defining the name of this operator
     p.set("Value Name", "DXDT_EFIELD"); // this field is constructed by the panzer library
-    p.set("Test Field Name", "EFIELD"); 
+//    p.set("Test Field Name", "EFIELD"); 
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", 1.0);
@@ -185,7 +185,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     ParameterList p("Source Residual");
     p.set("Residual Name", "RESIDUAL_EFIELD_MASS_OP");
     p.set("Value Name", "EFIELD"); 
-    p.set("Test Field Name", "EFIELD"); 
+//    p.set("Test Field Name", "EFIELD"); 
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", -1.0);
@@ -202,7 +202,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Residual Name", "RESIDUAL_EFIELD_SOURCE_OP");
     p.set("Value Name", "SOURCE_EFIELD"); // this field must be provided by the closure model factory
                                                // and specified by the user
-    p.set("Test Field Name", "EFIELD"); 
+//    p.set("Test Field Name", "EFIELD"); 
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", 1.0);
