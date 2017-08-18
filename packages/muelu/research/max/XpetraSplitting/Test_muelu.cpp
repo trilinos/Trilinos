@@ -55,32 +55,32 @@ int main(int argc, char* argv[])
   typedef scalar_type         												Scalar;
   typedef local_ordinal_type  												LocalOrdinal;
   typedef global_ordinal_type 												GlobalOrdinal;
-	typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
-	typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> 											Matrix;
-	typedef Xpetra::MatrixSplitting<Scalar, LocalOrdinal, GlobalOrdinal, Node>							MatrixSplitting;
-	typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Xpetra::EpetraNode> EpCrsMatrix;
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> 											Matrix;
+  typedef Xpetra::MatrixSplitting<Scalar, LocalOrdinal, GlobalOrdinal, Node>							MatrixSplitting;
+  typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Xpetra::EpetraNode> EpCrsMatrix;
 
-  
-	TEUCHOS_TEST_FOR_EXCEPT_MSG(argc<2, "\nInvalid name for input matrix\n");
 
-	int numGlobalElements = 1;
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(argc<2, "\nInvalid name for input matrix\n");
 
-	Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  int numGlobalElements = 1;
 
-	//Create Xpetra map
-	Teuchos::RCP<const Xpetra::Map<int,GlobalOrdinal,Xpetra::EpetraNode> > xpetraMap;
-	xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Xpetra::EpetraNode>::Build(Xpetra::UseEpetra, numGlobalElements, 0, comm); 
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-	//Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
-	Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpetraMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[1], Xpetra::UseEpetra, comm);
-	//Export matrix from an Xpetra wrapper into an .mtx file
-	Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("A_write.mtx", *xpetraMatrix);
+  //Create Xpetra map
+  Teuchos::RCP<const Xpetra::Map<int,GlobalOrdinal,Xpetra::EpetraNode> > xpetraMap;
+  xpetraMap = Xpetra::MapFactory<int,GlobalOrdinal,Xpetra::EpetraNode>::Build(Xpetra::UseEpetra, numGlobalElements, 0, comm);
 
-	Teuchos::RCP<MatrixSplitting> xpetraMatrixSplitting;
-  
-	Teuchos::ParameterList xmlParams;
-	Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Hierarchy = MueLu::CreateXpetraPreconditioner( (Teuchos::RCP<Matrix>)xpetraMatrixSplitting, xmlParams );
+  //Import matrix from an .mtx file into an Xpetra wrapper for an Epetra matrix
+  Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpetraMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[1], Xpetra::UseEpetra, comm);
+  //Export matrix from an Xpetra wrapper into an .mtx file
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("A_write.mtx", *xpetraMatrix);
+
+  Teuchos::RCP<MatrixSplitting> xpetraMatrixSplitting;
+
+  Teuchos::ParameterList xmlParams;
+  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Hierarchy = MueLu::CreateXpetraPreconditioner( (Teuchos::RCP<Matrix>)xpetraMatrixSplitting, xmlParams );
 
 
 #ifdef HAVE_MPI
