@@ -426,14 +426,15 @@ void AlgPuLP<Adapter>::partition(
   int nVwgts = model->getNumWeightsPerVertex();
 
   int* vertex_weights = NULL;
-  long vertex_weights_sum = 0;
+  double * global_wgt_sum = new double[nVwgts+2];
 
   if (nVwgts)
   {
         //vertex_weights is a 1-D array of local vertex weights from vwgts which is a 2-D array
 		vertex_weights = new int[num_verts*nVwgts];
 
-		//Used for debug purposes. Outputs local vertex weights by their vertices and components.
+    //Used for debug purposes. Outputs local vertex weights by their vertices and components.
+    /*
 		std::cout << "Given input (not scaled/norm) weights within each process: " << std::endl;
 		for (int i = 0; i < nVwgts; ++i)
 		{
@@ -443,16 +444,12 @@ void AlgPuLP<Adapter>::partition(
 				std::cout << vwgts[i][j] << " ";
 			}
 			std::cout << std::endl;
-		}
-
-		// global_wgt_sum and local_wgt_sum are arrays that stores the sum of the weights by component.
-		// Both have an additional element as flag for any weights being non-integer which triggers scaling.
-		// This is done to reduce the number of reduceALL calls by one
-		double * global_wgt_sum = new double[nVwgts+1];
+		}*/
 
 		//If at least one weight is non-integer, then local_wgt_sum[scale_flag] = 1 and global_wgt_sum[scale_flag] >= 1
 		int scale_flag = nVwgts;
-		global_wgt_sum[scale_flag] = 0;
+    global_wgt_sum[scale_flag] = 0;
+    global_wgt_sum[scale_flag + 1] = 0;
 
 		//Using global_wgt_sum from each processor, computes global_wgt_sum
 		//If at least one component needs to be scaled, all components will be flagged as having to be scaled
@@ -464,12 +461,6 @@ void AlgPuLP<Adapter>::partition(
 		{
       scale_weights(num_verts, vwgts[wc], vertex_weights, nVwgts, scale_option, global_wgt_sum, wc);
 		}
-
-    //vertex_weights_sum is used by pulp_graph_t (non-parallel version)
-    if (nVwgts == 1) 
-    {
-      vertex_weights_sum = global_wgt_sum[0];
-    }
 	}
 
   // Get edge info
@@ -498,9 +489,10 @@ void AlgPuLP<Adapter>::partition(
   TPL_Traits<int, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
   TPL_Traits<long, const lno_t>::ASSIGN_ARRAY(&out_offsets, offsets);
 
+  //TODO: Verify the soundness of using global_wgt_sum[0] over vertex_weights_sum
   pulp_graph_t g = {num_verts, num_edges,
                     out_edges, out_offsets,
-                    vertex_weights, edge_weights, vertex_weights_sum};
+                    vertex_weights, edge_weights, global_wgt_sum[0]};
 
 #else
   // Create XtraPuLP's graph structure
@@ -528,7 +520,9 @@ void AlgPuLP<Adapter>::partition(
   create_xtrapulp_dist_graph(&g, num_verts_global, num_edges_global,
     (unsigned long)num_verts, (unsigned long)num_edges,
     out_edges, out_offsets, global_ids, verts_per_rank,
-    vertex_weights, edge_weights, nVwgts, norm_option, multiweight_option);
+    vertex_weights, edge_weights,  
+    global_wgt_sum, nVwgts,
+    norm_option, multiweight_option);
 
 #endif
 
@@ -563,7 +557,7 @@ void AlgPuLP<Adapter>::partition(
     !ierr, BASIC_ASSERTION, problemComm);
 #else
   //What does graph look like here?
-  ierr = xtrapulp_run(&g, &ppc, parts, num_parts);
+  ierr = xtrapulp_run(&g, &ppc, parts, num_parts, multiweight_option);
   env->globalInputAssertion(__FILE__, __LINE__, "xtrapulp_run",
     !ierr, BASIC_ASSERTION, problemComm);//If any of the weights are not integers, extremely small (< INT_EPSILON), or extremely large (> MAX_NUM), then scale ALL the weights
 
@@ -664,7 +658,7 @@ void AlgPuLP<Adapter>::scale_weights(
 
 }
 
-// scales multiple weights. 7JUL17: Currently only used by multiple and single vertex weights.
+//Scales multiple weights. 7JUL17: Currently only used by multiple and single vertex weights.
 template <typename Adapter>
 void AlgPuLP<Adapter>::scale_weights(
   size_t n,
@@ -674,12 +668,12 @@ void AlgPuLP<Adapter>::scale_weights(
 {
   const double MAX_NUM = 1e9;
 
-  int scale_flag = vertex_weights_sum[vertex_weights_num];
+  int scale_flag_int_max = vertex_weights_sum[vertex_weights_num];
+  int scale_flag_min = vertex_weights_sum[vertex_weights_num + 1];
   double scale = 1.0;
 
-	// Scaling needed if weights are not integers or weights' range is not sufficient
-	//If any of the weights are not integers, extremely small (< INT_EPSILON), or extremely large (> MAX_NUM), then scale ALL the weights
-  if(scale_flag > 0)
+  //scale_flag_int_max = 0: all weights are integers and their components sums are less than MAX_NUM. scale_flag_min = 0: 
+  if(scale_flag_int_max > 0 || scale_flag_min > 0)
   {
     std::cout << "Vertex weight sum for component " << wc << ": " << vertex_weights_sum[wc];
     if (scale_option == 0)
@@ -712,9 +706,12 @@ void AlgPuLP<Adapter>::aggregate_weights(
   const double MAX_NUM = 1e9;
 
   int scale_flag = nVwgts;
+  int min_flag = nVwgts + 1;
 
   for(int wc = 0; wc < nVwgts; ++wc)
   {
+    //min_flag_wc == 1: All vertex weights in component wc is less than INT_EPSILON
+    int min_flag_wc = 1;
     global_wgt_sum[wc] = 0;
 
     for(size_t vtx = 0; vtx < nVtx; ++vtx)
@@ -723,25 +720,25 @@ void AlgPuLP<Adapter>::aggregate_weights(
 
       if(global_wgt_sum[scale_flag] == 0)
       {
-        if(vwgts[wc][vtx] < INT_EPSILON)
+        if((min_flag_wc == 1) & (vwgts[wc][vtx] > INT_EPSILON))
+        { 
+          //min_flag_wc == 0: there is at least one vertex weight in component wc that is greater than INT_EPSILON
+          min_flag_wc = 0;
+        }
+        
+        double fw = double(vwgts[wc][vtx]);
+        int tmp = (int) floor(fw + .5);
+        if(fabs((double)tmp-fw) > INT_EPSILON)
         {
           global_wgt_sum[scale_flag] = 1;
         }
-        else
-        {
-          double fw = double(vwgts[wc][vtx]);
-          int tmp = (int) floor(fw + .5);
-          if(fabs((double)tmp-fw) > INT_EPSILON)
-          {
-            global_wgt_sum[scale_flag] = 1;
-          }
-        }
       }
+      global_wgt_sum[min_flag] += min_flag_wc;
     }
   }
 
   std::cout << "reduceAll called" << std::endl;
-  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, nVwgts + 1, global_wgt_sum, global_wgt_sum);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, nVwgts + 2, global_wgt_sum, global_wgt_sum);
 
   //checks if any of the sum of weights by components exceeds MAX_NUM. If so, set scale_flag to 1. 
   for(int wc = 0; wc < nVwgts; ++wc)
