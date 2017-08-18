@@ -391,6 +391,57 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Hierarchy> H;
     H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList, paramList /*coordinates*/);
 
+#ifdef HAVE_MUELU_BELOS
+    {
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Belos Solve")));
+      // Operator and Multivector type that will be used with Belos
+      typedef MultiVector          MV;
+      typedef Belos::OperatorT<MV> OP;
+      H->IsPreconditioner(true);
+
+      // Define Operator and Preconditioner
+      Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(DistributedMatrix)); // Turns a Xpetra::Matrix object into a Belos operator
+      Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
+      // Construct a Belos LinearProblem object
+      RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, LHS, RHS));
+      belosProblem->setRightPrec(belosPrec);
+      bool set = belosProblem->setProblem();
+      if (set == false) {
+        out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+        return EXIT_FAILURE;
+      }
+
+      // Belos parameter list
+      Teuchos::ParameterList belosList;
+      belosList.set("Maximum Iterations",    300); // Maximum number of iterations allowed
+      belosList.set("Convergence Tolerance", 1e-8);    // Relative convergence tolerance requested
+      belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+      belosList.set("Output Frequency",      1);
+      belosList.set("Output Style",          Belos::Brief);
+
+      // Create an iterative solver manager
+      RCP< Belos::SolverManager<SC, MV, OP> > solver;
+      solver = rcp(new Belos::PseudoBlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+
+      // Perform solve
+      Belos::ReturnType ret = Belos::Unconverged;
+      try {
+        ret = solver->solve();
+
+        // Get the number of iterations for this solve.
+        out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+
+      } catch(...) {
+        out << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+      }
+      // Check convergence
+      if (ret != Belos::Converged)
+        out << std::endl << "ERROR:  Belos did not converge or a warning occured! " << std::endl;
+      else
+        out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    }
+#endif
+
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

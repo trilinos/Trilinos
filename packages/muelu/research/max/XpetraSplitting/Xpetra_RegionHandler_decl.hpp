@@ -69,147 +69,147 @@ bool compareNodes(const std::tuple<GlobalOrdinal, GlobalOrdinal> &, const std::t
 //Given a tuple made of node index and a specific region it belongs to,
 //this predicate returns true if the node belongs to the region specified in input to the predicate.
 template<class GlobalOrdinal>
-class checkerNode { 
- 
-	public:  
+class checkerNode {
 
-		//Constructor
-		checkerNode( GlobalOrdinal region_index){region_index_ = region_index;};
+public:
 
-		//Unary Operator
-  		bool operator()(const std::tuple<GlobalOrdinal, GlobalOrdinal> &node)  
-  		{ return (std::get<1>(node) == region_index_); }  
+  //Constructor
+  checkerNode( GlobalOrdinal region_index){region_index_ = region_index;};
 
-	private:
+  //Unary Operator
+  bool operator()(const std::tuple<GlobalOrdinal, GlobalOrdinal> &node)
+  { return (std::get<1>(node) == region_index_); }
 
-		GlobalOrdinal region_index_;
+private:
+
+  GlobalOrdinal region_index_;
 
 };
 
- 
+
 //Definition of the predicate for the nodesToRegion_ sitructure
 //Given a tuple made of node index and a vector with labels of regions it belongs to,
 //this predicate returns true if the node coincides with the node specified in input to the predicate.
 template<class GlobalOrdinal>
-class checkerNodesToRegion { 
- 
-	public:  
+class checkerNodesToRegion {
 
-		//Constructor
-		checkerNodesToRegion( GlobalOrdinal node_index){node_index_ = node_index;};
+public:
 
-		//Unary Operator
-  		bool operator()(const std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > &node)  
-  		{ return (std::get<0>(node) == node_index_); }  
+  //Constructor
+  checkerNodesToRegion( GlobalOrdinal node_index){node_index_ = node_index;};
 
-	private:
+  //Unary Operator
+  bool operator()(const std::tuple<GlobalOrdinal, Array<GlobalOrdinal> > &node)
+  { return (std::get<0>(node) == node_index_); }
 
-		GlobalOrdinal node_index_;
+private:
 
-}; 
+  GlobalOrdinal node_index_;
+
+};
 
 
 //This is an auxiliary class to store row maps for the composite matrix, region matrices and
 //a regionToAll map to link region node indices with the composite ones
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-	class Splitting_MapsInfo{
-	public:
-		Array<Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > > regionToAll_;//used as a map for a RegionToAll node index
-		Array<GlobalOrdinal> composite_map_; //used as RowMap for composite matrices
-		Array<Array<GlobalOrdinal> > region_maps_; //used as RowMap for region matrices
-	};
+class Splitting_MapsInfo{
+public:
+  Array<Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > > regionToAll_;//used as a map for a RegionToAll node index
+  Array<GlobalOrdinal> composite_map_; //used as RowMap for composite matrices
+  Array<Array<GlobalOrdinal> > region_maps_; //used as RowMap for region matrices
+};
 
 
 // This is the actual class that defines the regionHandler
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  	class RegionHandler{
+class RegionHandler{
 
-	public:
+public:
 
-	//! @name Constructor/Destructor Methods
-	//@{
+  //! @name Constructor/Destructor Methods
+  //@{
 
-		//! Constructor specifying the file name containing region information.
-		RegionHandler (const std::string &, RCP< const Teuchos::Comm<int> >);
+  //! Constructor specifying the file name containing region information.
+  RegionHandler (const std::string &, RCP< const Teuchos::Comm<int> >);
 
-	//}
-	//! @Interface methods
-	//@{
-		GlobalOrdinal GetNumGlobalElements()const{return num_total_nodes_;};
-		GlobalOrdinal GetNumTotalRegions()const{return num_total_regions_;};
-		GlobalOrdinal GetNumRegionNodes(GlobalOrdinal region_idx)const{return num_region_nodes_[region_idx];};
-		Array<GlobalOrdinal> GetGlobalRowMap()const{return maps_.composite_map_;};
-		Array<GlobalOrdinal> GetRegionRowMap(GlobalOrdinal region_index)const;
-		Array<Array<GlobalOrdinal> > GetRegionRowMaps()const{return maps_.region_maps_;};
-		Array<Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > >  GetRegionToAll()const;//used as a map for a RegionToAll node index
-		Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   GetRegionToAll(GlobalOrdinal)const;//used as a map for a RegionToAll node index
-		Array<std::tuple<int, Array<GlobalOrdinal> > > GetInterfaceNodes()const{return interfaceNodes_;};
-	//}
-	//! @Printout methods
-		void printView();
-		void printNodesToRegion();
-		void printInactive();
-	//}
-		
-	private:
+  //}
+  //! @Interface methods
+  //@{
+  GlobalOrdinal GetNumGlobalElements()const{return num_total_nodes_;};
+  GlobalOrdinal GetNumTotalRegions()const{return num_total_regions_;};
+  GlobalOrdinal GetNumRegionNodes(GlobalOrdinal region_idx)const{return num_region_nodes_[region_idx];};
+  Array<GlobalOrdinal> GetGlobalRowMap()const{return maps_.composite_map_;};
+  Array<GlobalOrdinal> GetRegionRowMap(GlobalOrdinal region_index)const;
+  Array<Array<GlobalOrdinal> > GetRegionRowMaps()const{return maps_.region_maps_;};
+  Array<Array< std::tuple<GlobalOrdinal,GlobalOrdinal> > >  GetRegionToAll()const;//used as a map for a RegionToAll node index
+  Array< std::tuple<GlobalOrdinal,GlobalOrdinal> >   GetRegionToAll(GlobalOrdinal)const;//used as a map for a RegionToAll node index
+  Array<std::tuple<int, Array<GlobalOrdinal> > > GetInterfaceNodes()const{return interfaceNodes_;};
+  //}
+  //! @Printout methods
+  void printView();
+  void printNodesToRegion();
+  void printInactive();
+  //}
 
-		//! @Private variables
-		//@{
+private:
 
-		RCP< const Teuchos::Comm<int> > comm_;
-		bool nodes_sorted_by_regions_ = false;
-	
-		//Global information
-		GlobalOrdinal num_total_nodes_ = 0;
-		GlobalOrdinal num_total_regions_ = 0;	
-		Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > nodes_;//basic structure that imports the information from the input file
+  //! @Private variables
+  //@{
 
-		//the following two Array are used to handle the situation where either the number of processes exceeds the number of regions or viceversa
-		Array<GlobalOrdinal> regions_per_proc_;//if num_proc > num_regions, then it says how many regions are owned by a single process, empty otherwise
-		Array<std::tuple<int, Array<GlobalOrdinal> > > procs_per_region_; //lists of processes instantiated for each region
+  RCP< const Teuchos::Comm<int> > comm_;
+  bool nodes_sorted_by_regions_ = false;
 
-		Array<std::tuple<int, Array<GlobalOrdinal> > > nodesToRegion_; //for each node it lists the regions it belongs to
-		Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes_; //for each node on the interface it lists the regions it belongs to
-		//vector which contains the number of region nodes for each domain region
-		Array<GlobalOrdinal> num_region_nodes_;
+  //Global information
+  GlobalOrdinal num_total_nodes_ = 0;
+  GlobalOrdinal num_total_regions_ = 0;
+  Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > nodes_;//basic structure that imports the information from the input file
 
-		//Maps used for composite and region operators
-		Splitting_MapsInfo<Scalar, LocalOrdinal, GlobalOrdinal, Node> maps_;
-		//@}
+  //the following two Array are used to handle the situation where either the number of processes exceeds the number of regions or viceversa
+  Array<GlobalOrdinal> regions_per_proc_;//if num_proc > num_regions, then it says how many regions are owned by a single process, empty otherwise
+  Array<std::tuple<int, Array<GlobalOrdinal> > > procs_per_region_; //lists of processes instantiated for each region
 
-		//! @Private Methods
-		//@{
-		void ReadFileInfo(const std::string &);
-		void ComputeProcRegions();
-		void NodesToRegion();
-		void CreateRowMaps();
-		//@}
+  Array<std::tuple<int, Array<GlobalOrdinal> > > nodesToRegion_; //for each node it lists the regions it belongs to
+  Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes_; //for each node on the interface it lists the regions it belongs to
+  //vector which contains the number of region nodes for each domain region
+  Array<GlobalOrdinal> num_region_nodes_;
 
-  	}; //class RegionHandler
+  //Maps used for composite and region operators
+  Splitting_MapsInfo<Scalar, LocalOrdinal, GlobalOrdinal, Node> maps_;
+  //@}
 
-//This compare class is used to run the sorting algorithm on the list of nodes with associated regions they belong to. 
+  //! @Private Methods
+  //@{
+  void ReadFileInfo(const std::string &);
+  void ComputeProcRegions();
+  void NodesToRegion();
+  void CreateRowMaps();
+  //@}
+
+}; //class RegionHandler
+
+//This compare class is used to run the sorting algorithm on the list of nodes with associated regions they belong to.
 //First, nodes are sorted in ascending order for region labels. Then, the sorting shuffles the nodes in ascending node index for
 //each given region
 template<class GlobalOrdinal>
-	bool compareRegions(const std::tuple<GlobalOrdinal, GlobalOrdinal> &lhs, const std::tuple<GlobalOrdinal, GlobalOrdinal> &rhs)
-	{
-		//First we prioritize the sorting according to the region label
-		//If the region is the same, then the sorting looks at the composite node index
-		if( std::get<1>(lhs) < std::get<1>(rhs) )
-			return true;
-		else if( std::get<1>(lhs) == std::get<1>(rhs) )
-			return std::get<0>(lhs) < std::get<0>(rhs); 
-		else
-			return false;
-	}
+bool compareRegions(const std::tuple<GlobalOrdinal, GlobalOrdinal> &lhs, const std::tuple<GlobalOrdinal, GlobalOrdinal> &rhs)
+{
+  //First we prioritize the sorting according to the region label
+  //If the region is the same, then the sorting looks at the composite node index
+  if( std::get<1>(lhs) < std::get<1>(rhs) )
+    return true;
+  else if( std::get<1>(lhs) == std::get<1>(rhs) )
+    return std::get<0>(lhs) < std::get<0>(rhs);
+  else
+    return false;
+}
 
 //This compare is sed to run the sorting algorithm where the nodes are ordered in ascendin order for thei node indes, regardless of the
 //associated region index
 template<class GlobalOrdinal>
-	bool compareNodes(const std::tuple<GlobalOrdinal, GlobalOrdinal> &lhs, const std::tuple<GlobalOrdinal, GlobalOrdinal> &rhs)
-	{
-		return std::get<0>(lhs) < std::get<0>(rhs); 
-	}
+bool compareNodes(const std::tuple<GlobalOrdinal, GlobalOrdinal> &lhs, const std::tuple<GlobalOrdinal, GlobalOrdinal> &rhs)
+{
+  return std::get<0>(lhs) < std::get<0>(rhs);
+}
 
 } //namespace Xpetra
 
