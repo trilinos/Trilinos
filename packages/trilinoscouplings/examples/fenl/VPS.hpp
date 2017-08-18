@@ -61,14 +61,12 @@ public:
 
   int evaluate_surrogate(size_t cell_index, double* x, double* fs);
 
+  int suggest_new_sample(double* x, double &r, double &err_est);
+ 
+  int get_ensemble(size_t num_ensemble_points, double** ensemble_points,
+                   int proc_rank = 0);
 
-
-  int suggest_new_sample(double* x);
-
-  int suggest_new_sample(double* xmc, double* x, double &err_est);
-
-
-  int add_new_sample(double* x, double* f, double** g, double*** h);
+  int get_stats(size_t num_mc_points, size_t function_index, double& mean, double& var);
 
 private:
 
@@ -264,6 +262,13 @@ private:
   double evaluate_one_dimensional_basis_function(double x, double xo, double xmin, double xmax, size_t ibasis);
 
   int detect_discontinuities();
+
+  void plot_vps_frames(std::string file_name, size_t function_index, size_t nx, size_t ny, size_t num_contours, bool plot_graph);
+
+  void create_ps_file(std::string file_name, size_t nx, size_t ny, std::fstream &file, double &scale);
+
+  void plot_vps_surrogate_frame(std::fstream &file, double scale, size_t function_index, double* xsec, size_t dim_i, size_t dim_j,
+	                            size_t frame_i, size_t frame_j, size_t frame_ni, size_t frame_nj, bool plot_graph, std::vector<double> &contours);
 
 
   ////////////////////////////////////////////////////////////////////////////////
