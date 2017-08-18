@@ -28,7 +28,7 @@ EnsembleVPS::EnsembleVPS(const size_t dim,
   _ensemble_size = ensemble_size;     // Ensemble Size
   _surrogate_order = 2;
 
-  _MCratio = 10;
+  _MCratio = 10; // XXXETP make this bigger, e.g., 100
 
   _maxMisses = 100;
   _shrinkage_rho = 0.5;
@@ -249,6 +249,14 @@ int EnsembleVPS::pick_MD_points(size_t numIn, double** x, double* g, size_t numO
     }
     // clear memory
     delete[] gwindow;
+  }
+
+  // XXXETP print index[i_min:i_min+numOut-1] for indices of chosen points in the ensemble
+  if (_proc_rank == 0) {
+    std::cout << "Ensemble indices: ";
+    for (size_t i=0; i<numOut; ++i)
+      std::cout << index[i_min+i] << " ";
+    std::cout << std::endl;
   }
 
   //std::cout << "Min Variance = " << v_min << std::endl;

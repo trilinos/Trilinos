@@ -2590,7 +2590,7 @@ int VPS::construct_delaunay_graph()
 int VPS::update_delaunay_graph(size_t seed_index)
 {
 //#pragma region Update Delaunay Graph of a given Seed:
-  size_t max_num_misses(100);
+  size_t max_num_misses(5);
 
   if (_seed_neighbors[seed_index] != 0)
   {

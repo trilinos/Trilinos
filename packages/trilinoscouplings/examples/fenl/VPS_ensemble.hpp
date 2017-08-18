@@ -263,9 +263,17 @@ public:
       {
         // Evaluate surrogate of iterations at MC points
         g_surrogate.evaluate_surrogate(yMC[ic], gsMC);
-        g_estimMC[ic] = gsMC[0];
+        g_estimMC[ic] = gsMC[0]; // XXXETP:  print g_estimMC to get predicted iterations
         //g_estimMC[ic] = g_test(yMC[ic]);
         ic++;
+      }
+
+      // XXXETP
+      if (_proc_rank == 0) {
+        std::cout << "Predicted sample iterations: ";
+        for (size_t ic=0; ic<_numMC; ++ic)
+          std::cout << "(" << ic << "," << g_estimMC[ic] << ") ";
+        std::cout << std::endl;
       }
 
       double** yMD = new double*[_ensemble_size];    // MD points
