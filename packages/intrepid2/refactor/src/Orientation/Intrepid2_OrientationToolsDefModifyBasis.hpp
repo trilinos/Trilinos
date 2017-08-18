@@ -167,7 +167,7 @@ namespace Intrepid2 {
       
       const ordinal_type 
         numVerts = cellTopo.getVertexCount(), 
-        numEdges = cellTopo.getEdgeCount(),
+        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0),
         numFaces = cellTopo.getFaceCount();
       
       const ordinal_type intrDim = ( numEdges == 0 ? 1 : 
