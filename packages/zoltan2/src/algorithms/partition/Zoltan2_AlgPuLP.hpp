@@ -675,7 +675,6 @@ void AlgPuLP<Adapter>::scale_weights(
   //scale_flag_int_max = 0: all weights are integers and their components sums are less than MAX_NUM. scale_flag_min = 0: 
   if(scale_flag_int_max > 0 || scale_flag_min > 0)
   {
-    std::cout << "Vertex weight sum for component " << wc << ": " << vertex_weights_sum[wc];
     if (scale_option == 0)
     {
       if (vertex_weights_sum[wc] != 0.0) scale = MAX_NUM / vertex_weights_sum[wc];
@@ -684,16 +683,12 @@ void AlgPuLP<Adapter>::scale_weights(
     {
       //TODO: Write another scaling method
     }
-    std::cout << std::endl;
   }
   /* Convert weights to positive integers using the computed scale factor */
-  std::cout << "Scaled weight component " << wc << " with scale: " << scale << std::endl;
 	for (size_t i = 0; i < n; i++)
 	{
 		iwgts[i * vertex_weights_num + wc] = (int)ceil(double(fwgts[i])*scale);
-		std::cout << iwgts[i*vertex_weights_num + wc] << " ";
 	}
-	std::cout << std::endl;
 }
 
 template <typename Adapter>
@@ -737,7 +732,6 @@ void AlgPuLP<Adapter>::aggregate_weights(
     }
   }
 
-  std::cout << "reduceAll called" << std::endl;
   Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, nVwgts + 2, global_wgt_sum, global_wgt_sum);
 
   //checks if any of the sum of weights by components exceeds MAX_NUM. If so, set scale_flag to 1. 
