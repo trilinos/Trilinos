@@ -15,6 +15,8 @@ Level 0
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+  relaxation: symmetric matrix structure = 0   [default]
+  relaxation: ifpack2 dump matrix = 0   [default]
  
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -91,7 +93,7 @@ Level 1
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x12eee20,node=0x1384f20,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x249e1a0,node=0x2309c90,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -131,6 +133,8 @@ Level 1
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+  relaxation: symmetric matrix structure = 0   [default]
+  relaxation: ifpack2 dump matrix = 0   [default]
  
 Level 2
  Build (MueLu::RebalanceTransferFactory)
@@ -207,7 +211,7 @@ Level 2
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1453c60,node=0x14541a0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x242f290,node=0x23075c0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -231,7 +235,7 @@ Level 2
  Computing Ac (MueLu::RebalanceAcFactory)
  repartition: use subcommunicators = 1   [default]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -256,7 +260,7 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) pre  : SuperLU solver interface, direct solve
+Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother
 
 Level 0
@@ -276,6 +280,8 @@ Level 0
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+  relaxation: symmetric matrix structure = 0   [default]
+  relaxation: ifpack2 dump matrix = 0   [default]
  
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -351,6 +357,8 @@ Level 1
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+  relaxation: symmetric matrix structure = 0   [default]
+  relaxation: ifpack2 dump matrix = 0   [default]
  
 Level 2
  Build (MueLu::RebalanceTransferFactory)
@@ -427,7 +435,7 @@ Level 2
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1453c60,node=0x14541a0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x242f290,node=0x23075c0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -451,7 +459,7 @@ Level 2
  Computing Ac (MueLu::RebalanceAcFactory)
  repartition: use subcommunicators = 1   [default]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -476,6 +484,6 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) pre  : SuperLU solver interface, direct solve
+Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother
 
