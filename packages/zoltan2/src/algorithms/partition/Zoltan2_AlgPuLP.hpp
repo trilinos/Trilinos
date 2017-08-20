@@ -455,7 +455,7 @@ void AlgPuLP<Adapter>::partition(
     vertex_weights = new int[num_verts * vertex_weights_num];
 
     //Used for debug purposes. Outputs local vertex weights by their vertices and components.
-		std::cout << "Given input (not scaled/norm) weights within each process: " << std::endl;
+		/*std::cout << "Given input (not scaled/norm) weights within each process: " << std::endl;
 		for (int i = 0; i < vertex_weights_num; ++i)
 		{
 		    std::cout << "Weight Component "  << i << ": ";
@@ -464,7 +464,7 @@ void AlgPuLP<Adapter>::partition(
 				std::cout << vwgts[i][j] << " ";
 			}
 			std::cout << std::endl;
-		}
+		}*/
 
     //If at least one weight is non-integer, then local_wgt_sum[scale_flag] = 1 and global_wgt_sum[scale_flag] >= 1
     int scale_flag = vertex_weights_num;
@@ -578,11 +578,9 @@ void AlgPuLP<Adapter>::partition(
   env->globalInputAssertion(__FILE__, __LINE__, "pulp_run",
     !ierr, BASIC_ASSERTION, problemComm);
 #else
-  //What does graph look like here?
   ierr = xtrapulp_run(&g, &ppc, parts, num_parts, multiweight_option);
   env->globalInputAssertion(__FILE__, __LINE__, "xtrapulp_run",
-    !ierr, BASIC_ASSERTION, problemComm);//If any of the weights are not integers, extremely small (< INT_EPSILON), or extremely large (> MAX_NUM), then scale ALL the weights
-
+    !ierr, BASIC_ASSERTION, problemComm);
 
 #endif
 
