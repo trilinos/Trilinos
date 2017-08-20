@@ -243,7 +243,10 @@ public:
 
     pl.set("pulp_scaling", 0, "Set scale options where 0: MAX_NUM/(sum of weights by component); 1: To be determined", Environment::getAnyIntValidator());
     pl.set("pulp_norm", 2, "Norm options: 1: 1-norm, 2: 2-norm, otherwise: inf-norm. Default: 2-norm", Environment::getAnyIntValidator());
+
     pl.set("pulp_multiweight_strategy", 0, "Strategy: 0: normalize multiple weights to single weights. 1: Iterate through each weight component", Environment::getAnyIntValidator());
+
+    pl.set("pulp_vertex_weights_num", 0, "The number components of vertex weights to balance", Environment::getAnyIntValidator());
   }
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
@@ -340,6 +343,7 @@ void AlgPuLP<Adapter>::partition(
   int scale_option = 0;
   int norm_option = 2;
   int multiweight_option = 0;
+  int vertex_weights_num = -1;
 
   // Do label propagation initialization instead of bfs?
   pe = pl.getEntryPtr("pulp_lp_init");
@@ -404,6 +408,9 @@ void AlgPuLP<Adapter>::partition(
   pe = pl.getEntryPtr("pulp_multiweight_strategy");
   if (pe) multiweight_option = pe->getValue(&multiweight_option);
 
+  pe = pl.getEntryPtr("pulp_vertex_weights_num");
+  if (pe) vertex_weights_num = pe->getValue(&vertex_weights_num);
+
   // Create PuLP's partitioning data structure
   pulp_part_control_t ppc = {vert_imbalance, edge_imbalance,
     do_lp_init, do_bfs_init, do_repart,
@@ -425,18 +432,31 @@ void AlgPuLP<Adapter>::partition(
   size_t nVtx = model->getVertexList(vtxIDs, vwgts);
   int nVwgts = model->getNumWeightsPerVertex();
 
-  int* vertex_weights = NULL;
-  double * global_wgt_sum = new double[nVwgts+2];
-
-  if (nVwgts)
+  //if pulp_vertex_weights_num is not specific or greater than the total number of weight components given in the graph file, throw an error.
+  const double INT_EPSILON = 1e-5;
+  bool not_integer = false;
+  int tmp = (int)floor(vertex_weights_num + .5); 
+  if (fabs((double)tmp - vertex_weights_num) > INT_EPSILON)
   {
-        //vertex_weights is a 1-D array of local vertex weights from vwgts which is a 2-D array
-		vertex_weights = new int[num_verts*nVwgts];
+    not_integer = true;
+  }
+
+  if (not_integer || vertex_weights_num < 0 || vertex_weights_num > nVwgts)
+  {
+    throw std::runtime_error("Did not specify number of vertex weight components to balance (Option: \"pulp_vertex_weight_num\") or number exceeds given vertex weight components in graph file");
+  }
+
+  int * vertex_weights = NULL;
+  double *global_wgt_sum = new double[nVwgts + 2];
+
+  if (vertex_weights_num > 0)
+  {
+    //vertex_weights is a 1-D array of local vertex weights from vwgts which is a 2-D array
+    vertex_weights = new int[num_verts * vertex_weights_num];
 
     //Used for debug purposes. Outputs local vertex weights by their vertices and components.
-    /*
 		std::cout << "Given input (not scaled/norm) weights within each process: " << std::endl;
-		for (int i = 0; i < nVwgts; ++i)
+		for (int i = 0; i < vertex_weights_num; ++i)
 		{
 		    std::cout << "Weight Component "  << i << ": ";
 			for (size_t j = 0; j < nVtx; ++j)
@@ -444,40 +464,42 @@ void AlgPuLP<Adapter>::partition(
 				std::cout << vwgts[i][j] << " ";
 			}
 			std::cout << std::endl;
-		}*/
+		}
 
-		//If at least one weight is non-integer, then local_wgt_sum[scale_flag] = 1 and global_wgt_sum[scale_flag] >= 1
-		int scale_flag = nVwgts;
+    //If at least one weight is non-integer, then local_wgt_sum[scale_flag] = 1 and global_wgt_sum[scale_flag] >= 1
+    int scale_flag = vertex_weights_num;
     global_wgt_sum[scale_flag] = 0;
     global_wgt_sum[scale_flag + 1] = 0;
 
-		//Using global_wgt_sum from each processor, computes global_wgt_sum
-		//If at least one component needs to be scaled, all components will be flagged as having to be scaled
-		aggregate_weights(nVtx, vwgts, global_wgt_sum, nVwgts);
+      //Using global_wgt_sum from each processor, computes global_wgt_sum
+      //If at least one component needs to be scaled, all components will be flagged as having to be scaled
+    aggregate_weights(nVtx, vwgts, global_wgt_sum, vertex_weights_num);
 
-		//Iterating through each weight component, scales the local vertex weights if necessary
-		//Maps the vertex weights from 2-D array vwgts to 1-D array vertex_weights ordered by vertices and component.
-		for (int wc = 0; wc < nVwgts; ++wc)
-		{
-      scale_weights(num_verts, vwgts[wc], vertex_weights, nVwgts, scale_option, global_wgt_sum, wc);
-		}
-	}
+      //Iterating through each weight component, scales the local vertex weights if necessary
+      //Maps the vertex weights from 2-D array vwgts to 1-D array vertex_weights ordered by vertices and component.
+    for (int wc = 0; wc < vertex_weights_num; ++wc)
+    {
+      scale_weights(num_verts, vwgts[wc], vertex_weights, vertex_weights_num, scale_option, global_wgt_sum, wc);
+    }
+  }
 
   // Get edge info
   ArrayView<const gno_t> adjs;
   ArrayView<const lno_t> offsets;
-  ArrayView<StridedData<lno_t, scalar_t> > ewgts;
+  ArrayView<StridedData<lno_t, scalar_t>> ewgts;
   size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);
   int nEwgts = model->getNumWeightsPerEdge();
-  if (nEwgts > 1) {
+  if (nEwgts > 1)
+  {
     std::cerr << "Warning:  NumWeightsPerEdge is " << nEwgts
               << " but PuLP allows only one weight. "
               << " Zoltan2 will use only the first weight per edge."
               << std::endl;
   }
 
-  int* edge_weights = NULL;
-  if (nEwgts) {
+  int *edge_weights = NULL;
+  if (nEwgts)
+  {
     edge_weights = new int[nEdge];
     scale_weights(nEdge, ewgts[0], edge_weights);
   }
@@ -518,11 +540,11 @@ void AlgPuLP<Adapter>::partition(
   dist_graph_t g;
 
   create_xtrapulp_dist_graph(&g, num_verts_global, num_edges_global,
-    (unsigned long)num_verts, (unsigned long)num_edges,
-    out_edges, out_offsets, global_ids, verts_per_rank,
-    vertex_weights, edge_weights,  
-    global_wgt_sum, nVwgts,
-    norm_option, multiweight_option);
+                             (unsigned long)num_verts, (unsigned long)num_edges,
+                             out_edges, out_offsets, global_ids, verts_per_rank,
+                             vertex_weights, edge_weights,
+                             global_wgt_sum, vertex_weights_num,
+                             norm_option, multiweight_option);
 
 #endif
 
@@ -693,17 +715,16 @@ void AlgPuLP<Adapter>::scale_weights(
 
 template <typename Adapter>
 void AlgPuLP<Adapter>::aggregate_weights(
-  size_t nVtx,
-  ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> > &vwgts, double * global_wgt_sum, int nVwgts
-)
+    size_t nVtx,
+    ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, double *global_wgt_sum, int vertex_weights_num)
 {
   const double INT_EPSILON = 1e-5;
   const double MAX_NUM = 1e9;
 
-  int scale_flag = nVwgts;
-  int min_flag = nVwgts + 1;
+  int scale_flag = vertex_weights_num;
+  int min_flag = vertex_weights_num + 1;
 
-  for(int wc = 0; wc < nVwgts; ++wc)
+  for (int wc = 0; wc < vertex_weights_num; ++wc)
   {
     //min_flag_wc == 1: All vertex weights in component wc is less than INT_EPSILON
     int min_flag_wc = 1;
@@ -732,12 +753,13 @@ void AlgPuLP<Adapter>::aggregate_weights(
     }
   }
 
-  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, nVwgts + 2, global_wgt_sum, global_wgt_sum);
+  Teuchos::reduceAll<int, double>(*problemComm, Teuchos::REDUCE_SUM, vertex_weights_num + 2, global_wgt_sum, global_wgt_sum);
 
-  //checks if any of the sum of weights by components exceeds MAX_NUM. If so, set scale_flag to 1. 
-  for(int wc = 0; wc < nVwgts; ++wc)
+  //checks if any of the sum of weights by components exceeds MAX_NUM. If so, set scale_flag to 1.
+  for (int wc = 0; wc < vertex_weights_num; ++wc)
   {
-    if(global_wgt_sum[wc] > MAX_NUM) global_wgt_sum[nVwgts] = 1;
+    if(global_wgt_sum[wc] > MAX_NUM)
+      global_wgt_sum[vertex_weights_num] = 1;
   }
 }
 
