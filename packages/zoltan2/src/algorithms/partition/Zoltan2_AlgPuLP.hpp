@@ -447,7 +447,7 @@ void AlgPuLP<Adapter>::partition(
   }
 
   int * vertex_weights = NULL;
-  double *global_wgt_sum = new double[nVwgts + 2];
+  double *global_wgt_sum = new double[vertex_weights_num + 2];
 
   if (vertex_weights_num > 0)
   {
