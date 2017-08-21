@@ -59,6 +59,7 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
+#include "Tpetra_Details_packCrsMatrix.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
@@ -1856,7 +1857,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, PackAndPrepareWithOwningPIDs, LO
     Tpetra::Import_Util::getPids<LO, GO, Node>(*Importer,pids,false);
     constantNumPackets2=0;
     numPackets2.resize(Importer->getExportLIDs().size());
-    Tpetra::Import_Util::packAndPrepareWithOwningPIDs<double, LO, GO, Node>(*A,Importer->getExportLIDs(),exports2,numPackets2(),constantNumPackets2,Importer->getDistributor(),pids());
+    Tpetra::Details::packCrsMatrixWithOwningPIDs<double, LO, GO, Node>(
+        *A, exports2, InumPackets2(), Importer->getExportLIDs(), pids(),
+        constantNumPackets2, Importer->getExportLIDs());
 
     // This test reads exports2 on the host, so sync there.
     exports2.template sync<Kokkos::HostSpace> ();
@@ -1953,7 +1956,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     numExportPackets.resize(Importer->getExportLIDs().size());
     numImportPackets.resize(Importer->getRemoteLIDs().size());
 
-    Tpetra::Import_Util::packAndPrepareWithOwningPIDs<Scalar, LO, GO, Node>(*A,Importer->getExportLIDs(),exports,numExportPackets(),constantNumPackets,distor,SourcePids());
+    Tpetra::Details::packCrsMatrixWithOwningPIDs<Scalar, LO, GO, Node>(
+        *A, exports, numExportPackets(), Importer->getExportLIDs(),
+        SourcePids(), constantNumPackets, distor);
 
     // This test reads exports on the host, so sync there.
     exports.template sync<Kokkos::HostSpace> ();
