@@ -255,9 +255,11 @@ private:
 
   void buildModel(modelFlag_t &flags);
 
+  void aggregate_weights(size_t nVtx, ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, int64_t *global_wgt_sum, int nVwgts);
+
   void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts, int *iwgts);
-  void scale_weights(size_t n, StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> &fwgts,int *iwgts, int vertex_weights_num, int scale_option, double * vertex_weights_sum, int wc);
-  void aggregate_weights(size_t nVtx, ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> > &vwgts, double * global_wgt_sum, int nVwgts);
+
+  void scale_weights(size_t n, ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, int32_t* vertex_weights, int vertex_weights_num, int scale_option, int64_t *global_wgt_sum);
 
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
@@ -446,13 +448,14 @@ void AlgPuLP<Adapter>::partition(
     throw std::runtime_error("Did not specify number of vertex weight components to balance (Option: \"pulp_vertex_weight_num\") or number exceeds given vertex weight components in graph file");
   }
 
-  int * vertex_weights = NULL;
-  double *global_wgt_sum = new double[vertex_weights_num + 2];
+  //XtraPuLP uses int32_t and int64_t as vertex weights and vertex weights sum. Conversion from int to int32_t and double to int64_t creates conversion issues. Alternative is memcpy but that apparently takes too much time. 
+  int32_t* vertex_weights = NULL;
+  int64_t* global_wgt_sum = new int64_t[vertex_weights_num + 2];
 
   if (vertex_weights_num > 0)
   {
     //vertex_weights is a 1-D array of local vertex weights from vwgts which is a 2-D array
-    vertex_weights = new int[num_verts * vertex_weights_num];
+    vertex_weights = new int32_t[num_verts * vertex_weights_num];
 
     //Used for debug purposes. Outputs local vertex weights by their vertices and components.
 		/*std::cout << "Given input (not scaled/norm) weights within each process: " << std::endl;
@@ -471,16 +474,11 @@ void AlgPuLP<Adapter>::partition(
     global_wgt_sum[scale_flag] = 0;
     global_wgt_sum[scale_flag + 1] = 0;
 
-      //Using global_wgt_sum from each processor, computes global_wgt_sum
-      //If at least one component needs to be scaled, all components will be flagged as having to be scaled
+    //Using global_wgt_sum from each processor, computes global_wgt_sum; if at least one component needs to be scaled, all components will be flagged as having to be scaled
     aggregate_weights(nVtx, vwgts, global_wgt_sum, vertex_weights_num);
 
-      //Iterating through each weight component, scales the local vertex weights if necessary
-      //Maps the vertex weights from 2-D array vwgts to 1-D array vertex_weights ordered by vertices and component.
-    for (int wc = 0; wc < vertex_weights_num; ++wc)
-    {
-      scale_weights(num_verts, vwgts[wc], vertex_weights, vertex_weights_num, scale_option, global_wgt_sum, wc);
-    }
+    //scales the vertex weights and vertex weight sums if necessary; generates a 1-D array of vertex weights named "vertex_weights" from 2-D array vwgts
+    scale_weights(num_verts, vwgts, vertex_weights, vertex_weights_num, scale_option, global_wgt_sum);
   }
 
   // Get edge info
@@ -511,7 +509,6 @@ void AlgPuLP<Adapter>::partition(
   TPL_Traits<int, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
   TPL_Traits<long, const lno_t>::ASSIGN_ARRAY(&out_offsets, offsets);
 
-  //TODO: Verify the soundness of using global_wgt_sum[0] over vertex_weights_sum
   pulp_graph_t g = {num_verts, num_edges,
                     out_edges, out_offsets,
                     vertex_weights, edge_weights, global_wgt_sum[0]};
@@ -610,6 +607,56 @@ void AlgPuLP<Adapter>::partition(
 //#endif // DO NOT HAVE_MPI
 }
 
+template <typename Adapter>
+void AlgPuLP<Adapter>::aggregate_weights(
+    size_t nVtx,
+    ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, int64_t *global_wgt_sum, int vertex_weights_num)
+{
+  const double INT_EPSILON = 1e-5;
+  const double MAX_NUM = 1e9;
+
+  int scale_flag = vertex_weights_num;
+  int min_flag = vertex_weights_num + 1;
+
+  for (int wc = 0; wc < vertex_weights_num; ++wc)
+  {
+    //min_flag_wc == 1: All vertex weights in component wc is less than INT_EPSILON
+    int min_flag_wc = 1;
+    global_wgt_sum[wc] = 0;
+
+    for (size_t vtx = 0; vtx < nVtx; ++vtx)
+    {
+      global_wgt_sum[wc] += vwgts[wc][vtx];
+
+      if (global_wgt_sum[scale_flag] == 0)
+      {
+        if ((min_flag_wc == 1) & (vwgts[wc][vtx] > INT_EPSILON))
+        {
+          //min_flag_wc == 0: there is at least one vertex weight in component wc that is greater than INT_EPSILON
+          min_flag_wc = 0;
+        }
+
+        double fw = double(vwgts[wc][vtx]);
+        int tmp = (int)floor(fw + .5);
+        if (fabs((double)tmp - fw) > INT_EPSILON)
+        {
+          global_wgt_sum[scale_flag] = 1;
+        }
+      }
+      global_wgt_sum[min_flag] += min_flag_wc;
+    }
+  }
+
+  Teuchos::reduceAll<int, int64_t>(*problemComm, Teuchos::REDUCE_SUM, vertex_weights_num + 2, global_wgt_sum, global_wgt_sum);
+
+  //checks if any of the sum of weights by components exceeds MAX_NUM. If so, set scale_flag to 1.
+  for (int wc = 0; wc < vertex_weights_num; ++wc)
+  {
+    if (global_wgt_sum[wc] > MAX_NUM)
+      global_wgt_sum[vertex_weights_num] = 1;
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Scale and round scalar_t weights (typically float or double) to
 // PuLP int
@@ -668,9 +715,8 @@ void AlgPuLP<Adapter>::scale_weights(
 	// range is not sufficient
 	double scale = 1.0;
 	if (nonint || (max_wgt <= INT_EPSILON) || (sum_wgt > MAX_NUM)) {
-		/* Calculate scale factor */
-		if (sum_wgt != 0.0) scale = MAX_NUM / sum_wgt;
-	}
+    if (sum_wgt != 0.0) scale = MAX_NUM / sum_wgt;
+  }
 
 	/* Convert weights to positive integers using the computed scale factor */
 	for (size_t i = 0; i < n; i++)
@@ -681,85 +727,45 @@ void AlgPuLP<Adapter>::scale_weights(
 //Scales multiple weights. 7JUL17: Currently only used by multiple and single vertex weights.
 template <typename Adapter>
 void AlgPuLP<Adapter>::scale_weights(
-  size_t n,
-  StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> &fwgts,
-  int *iwgts, int vertex_weights_num, int scale_option, double * vertex_weights_sum, int wc
-)
+    size_t n,
+    ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, int32_t* vertex_weights, int vertex_weights_num, int scale_option, int64_t* global_wgt_sum)
 {
   const double MAX_NUM = 1e9;
 
-  int scale_flag_int_max = vertex_weights_sum[vertex_weights_num];
-  int scale_flag_min = vertex_weights_sum[vertex_weights_num + 1];
-  double scale = 1.0;
+  int scale_flag_int_max = global_wgt_sum[vertex_weights_num];
+  int scale_flag_min = global_wgt_sum[vertex_weights_num + 1];
 
   //scale_flag_int_max = 0: all weights are integers and their components sums are less than MAX_NUM. scale_flag_min = 0: 
-  if(scale_flag_int_max > 0 || scale_flag_min > 0)
+
+  for(int wc = 0; wc < vertex_weights_num; ++wc)
   {
-    if (scale_option == 0)
+    double scale = 1.0;
+
+    if (scale_flag_int_max > 0 || scale_flag_min > 0)
     {
-      if (vertex_weights_sum[wc] != 0.0) scale = MAX_NUM / vertex_weights_sum[wc];
-    }
-    else if (scale_option == 1)
-    {
-      //TODO: Write another scaling method
-    }
-  }
-  /* Convert weights to positive integers using the computed scale factor */
-	for (size_t i = 0; i < n; i++)
-	{
-		iwgts[i * vertex_weights_num + wc] = (int)ceil(double(fwgts[i])*scale);
-	}
-}
-
-template <typename Adapter>
-void AlgPuLP<Adapter>::aggregate_weights(
-    size_t nVtx,
-    ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, double *global_wgt_sum, int vertex_weights_num)
-{
-  const double INT_EPSILON = 1e-5;
-  const double MAX_NUM = 1e9;
-
-  int scale_flag = vertex_weights_num;
-  int min_flag = vertex_weights_num + 1;
-
-  for (int wc = 0; wc < vertex_weights_num; ++wc)
-  {
-    //min_flag_wc == 1: All vertex weights in component wc is less than INT_EPSILON
-    int min_flag_wc = 1;
-    global_wgt_sum[wc] = 0;
-
-    for(size_t vtx = 0; vtx < nVtx; ++vtx)
-    {
-      global_wgt_sum[wc] += vwgts[wc][vtx];
-
-      if(global_wgt_sum[scale_flag] == 0)
+      if (scale_option == 0)
       {
-        if((min_flag_wc == 1) & (vwgts[wc][vtx] > INT_EPSILON))
-        { 
-          //min_flag_wc == 0: there is at least one vertex weight in component wc that is greater than INT_EPSILON
-          min_flag_wc = 0;
-        }
-        
-        double fw = double(vwgts[wc][vtx]);
-        int tmp = (int) floor(fw + .5);
-        if(fabs((double)tmp-fw) > INT_EPSILON)
-        {
-          global_wgt_sum[scale_flag] = 1;
-        }
+        if (global_wgt_sum[wc] != 0.0)
+          scale = MAX_NUM / global_wgt_sum[wc];
       }
-      global_wgt_sum[min_flag] += min_flag_wc;
+      else if (scale_option == 1)
+      {
+        //TODO: Write another scaling method
+      }
     }
-  }
 
-  Teuchos::reduceAll<int, double>(*problemComm, Teuchos::REDUCE_SUM, vertex_weights_num + 2, global_wgt_sum, global_wgt_sum);
+    for (size_t i = 0; i < n; i++)
+    {
+      //Convert weights to positive integers using the computed scale factor
+      vertex_weights[i * vertex_weights_num + wc] = (int32_t)ceil(double(vwgts[wc][i]) * scale);
+    }
 
-  //checks if any of the sum of weights by components exceeds MAX_NUM. If so, set scale_flag to 1.
-  for (int wc = 0; wc < vertex_weights_num; ++wc)
-  {
-    if(global_wgt_sum[wc] > MAX_NUM)
-      global_wgt_sum[vertex_weights_num] = 1;
+    //resize vertex weight sums to reflect the scaling
+    global_wgt_sum[wc] *= scale;
   }
 }
+
+
 
 } // namespace Zoltan2
 
