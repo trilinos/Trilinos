@@ -492,7 +492,7 @@ void AlgPuLP<Adapter>::partition(
   // Get edge info
   ArrayView<const gno_t> adjs;
   ArrayView<const offset_t> offsets;
-  ArrayView<StridedData<lno_t, scalar_t>> ewgts;
+  ArrayView<StridedData<lno_t, scalar_t> > ewgts;
   size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);
   int nEwgts = model->getNumWeightsPerEdge();
   if (nEwgts > 1)
