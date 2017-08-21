@@ -345,7 +345,7 @@ void AlgPuLP<Adapter>::partition(
   int scale_option = 0;
   int norm_option = 2;
   int multiweight_option = 0;
-  int vertex_weights_num = -1;
+  int vertex_weights_num = 0;
 
   // Do label propagation initialization instead of bfs?
   pe = pl.getEntryPtr("pulp_lp_init");
@@ -443,7 +443,7 @@ void AlgPuLP<Adapter>::partition(
     not_integer = true;
   }
 
-  if (not_integer || vertex_weights_num < 0 || vertex_weights_num > nVwgts)
+  if (not_integer || vertex_weights_num > nVwgts)
   {
     throw std::runtime_error("Did not specify number of vertex weight components to balance (Option: \"pulp_vertex_weight_num\") or number exceeds given vertex weight components in graph file");
   }
