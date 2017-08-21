@@ -58,7 +58,8 @@
 ////////////////////////////////////////////////////////////////////////
 #ifndef HAVE_ZOLTAN2_PULP
 
-namespace Zoltan2 {
+namespace Zoltan2
+{
 // Error handling for when PuLP is requested
 // but Zoltan2 not built with PuLP.
 
@@ -68,23 +69,21 @@ class AlgPuLP : public Algorithm<Adapter>
 public:
   typedef typename Adapter::base_adapter_t base_adapter_t;
   AlgPuLP(const RCP<const Environment> &env,
-          const RCP<const Comm<int> > &problemComm,
-          const RCP<const base_adapter_t> &adapter
-  )
+          const RCP<const Comm<int>> &problemComm,
+          const RCP<const base_adapter_t> &adapter)
   {
     throw std::runtime_error(
-          "BUILD ERROR:  PuLP requested but not compiled into Zoltan2.\n"
-          "Please set CMake flag TPL_ENABLE_PuLP:BOOL=ON.");
+        "BUILD ERROR:  PuLP requested but not compiled into Zoltan2.\n"
+        "Please set CMake flag TPL_ENABLE_PuLP:BOOL=ON.");
   }
 
   /*! \brief Set up validators specific to this algorithm
   */
-  static void getValidParameters(ParameterList & pl)
+  static void getValidParameters(ParameterList &pl)
   {
     // No parameters needed in this error-handling version of AlgPuLP
   }
 };
-
 }
 #endif
 
@@ -93,7 +92,8 @@ public:
 
 #ifdef HAVE_ZOLTAN2_PULP
 
-namespace Zoltan2 {
+namespace Zoltan2
+{
 
 extern "C" {
 // TODO: XtraPuLP
@@ -111,6 +111,7 @@ public:
   typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
@@ -127,29 +128,26 @@ public:
    *    objects we wish to partition
    */
   AlgPuLP(const RCP<const Environment> &env__,
-          const RCP<const Comm<int> > &problemComm__,
-          const RCP<const IdentifierAdapter<user_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const Comm<int>> &problemComm__,
+          const RCP<const IdentifierAdapter<user_t>> &adapter__) : env(env__), problemComm(problemComm__), adapter(adapter__)
   {
     std::string errStr = "cannot build GraphModel from IdentifierAdapter, ";
-    errStr            += "PuLP requires Graph, Matrix, or Mesh Adapter";
+    errStr += "PuLP requires Graph, Matrix, or Mesh Adapter";
     throw std::runtime_error(errStr);
   }
 
   AlgPuLP(const RCP<const Environment> &env__,
-          const RCP<const Comm<int> > &problemComm__,
-          const RCP<const VectorAdapter<user_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const Comm<int>> &problemComm__,
+          const RCP<const VectorAdapter<user_t>> &adapter__) : env(env__), problemComm(problemComm__), adapter(adapter__)
   {
     std::string errStr = "cannot build GraphModel from VectorAdapter, ";
-    errStr            += "PuLP requires Graph, Matrix, or Mesh Adapter";
+    errStr += "PuLP requires Graph, Matrix, or Mesh Adapter";
     throw std::runtime_error(errStr);
   }
 
   AlgPuLP(const RCP<const Environment> &env__,
-          const RCP<const Comm<int> > &problemComm__,
-          const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const Comm<int>> &problemComm__,
+          const RCP<const GraphAdapter<user_t, userCoord_t>> &adapter__) : env(env__), problemComm(problemComm__), adapter(adapter__)
   {
     modelFlag_t flags;
     flags.reset();
@@ -158,9 +156,8 @@ public:
   }
 
   AlgPuLP(const RCP<const Environment> &env__,
-          const RCP<const Comm<int> > &problemComm__,
-          const RCP<const MatrixAdapter<user_t,userCoord_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const Comm<int>> &problemComm__,
+          const RCP<const MatrixAdapter<user_t, userCoord_t>> &adapter__) : env(env__), problemComm(problemComm__), adapter(adapter__)
   {
     modelFlag_t flags;
     flags.reset();
@@ -175,7 +172,7 @@ public:
       objectOfInterest = pe->getValue<std::string>(&objectOfInterest);
 
     if (objectOfInterest == defString ||
-        objectOfInterest == std::string("matrix_rows") )
+        objectOfInterest == std::string("matrix_rows"))
       flags.set(VERTICES_ARE_MATRIX_ROWS);
     else if (objectOfInterest == std::string("matrix_columns"))
       flags.set(VERTICES_ARE_MATRIX_COLUMNS);
@@ -186,9 +183,8 @@ public:
   }
 
   AlgPuLP(const RCP<const Environment> &env__,
-          const RCP<const Comm<int> > &problemComm__,
-          const RCP<const MeshAdapter<user_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const Comm<int>> &problemComm__,
+          const RCP<const MeshAdapter<user_t>> &adapter__) : env(env__), problemComm(problemComm__), adapter(adapter__)
   {
     modelFlag_t flags;
     flags.reset();
@@ -203,7 +199,7 @@ public:
       objectOfInterest = pe->getValue<std::string>(&objectOfInterest);
 
     if (objectOfInterest == defString ||
-        objectOfInterest == std::string("mesh_nodes") )
+        objectOfInterest == std::string("mesh_nodes"))
       flags.set(VERTICES_ARE_MESH_NODES);
     else if (objectOfInterest == std::string("mesh_elements"))
       flags.set(VERTICES_ARE_MESH_ELEMENTS);
@@ -213,31 +209,33 @@ public:
 
   /*! \brief Set up validators specific to this algorithm
   */
-  static void getValidParameters(ParameterList & pl)
+  static void getValidParameters(ParameterList &pl)
   {
     pl.set("pulp_vert_imbalance", 1.1, "vertex imbalance tolerance, ratio of "
-      "maximum load over average load",
-      Environment::getAnyDoubleValidator());
+                                       "maximum load over average load",
+           Environment::getAnyDoubleValidator());
 
     pl.set("pulp_edge_imbalance", 1.1, "edge imbalance tolerance, ratio of "
-      "maximum load over average load",
-      Environment::getAnyDoubleValidator());
+                                       "maximum load over average load",
+           Environment::getAnyDoubleValidator());
 
     // bool parameter
     pl.set("pulp_lp_init", false, "perform label propagation-based "
-      "initialization", Environment::getBoolValidator() );
+                                  "initialization",
+           Environment::getBoolValidator());
 
     // bool parameter
     pl.set("pulp_minimize_maxcut", false, "perform per-part max cut "
-      "minimization", Environment::getBoolValidator() );
+                                          "minimization",
+           Environment::getBoolValidator());
 
     // bool parameter
     pl.set("pulp_verbose", false, "verbose output",
-      Environment::getBoolValidator() );
+           Environment::getBoolValidator());
 
     // bool parameter
     pl.set("pulp_do_repart", false, "perform repartitioning",
-      Environment::getBoolValidator() );
+           Environment::getBoolValidator());
 
     pl.set("pulp_seed", 0, "set pulp seed", Environment::getAnyIntValidator());
 
@@ -249,24 +247,22 @@ public:
     pl.set("pulp_vertex_weights_num", 0, "The number components of vertex weights to balance", Environment::getAnyIntValidator());
   }
 
-  void partition(const RCP<PartitioningSolution<Adapter> > &solution);
+  void partition(const RCP<PartitioningSolution<Adapter>> &solution);
 
 private:
-
   void buildModel(modelFlag_t &flags);
 
   void aggregate_weights(size_t nVtx, ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, int64_t *global_wgt_sum, int nVwgts);
 
   void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts, int *iwgts);
 
-  void scale_weights(size_t n, ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, int32_t* vertex_weights, int vertex_weights_num, int scale_option, int64_t *global_wgt_sum);
+  void scale_weights(size_t n, ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, int32_t *vertex_weights, int vertex_weights_num, int scale_option, int64_t *global_wgt_sum);
 
   const RCP<const Environment> env;
-  const RCP<const Comm<int> > problemComm;
+  const RCP<const Comm<int>> problemComm;
   const RCP<const base_adapter_t> adapter;
-  RCP<const GraphModel<base_adapter_t> > model;
+  RCP<const GraphModel<base_adapter_t>> model;
 };
-
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
@@ -278,19 +274,21 @@ void AlgPuLP<Adapter>::buildModel(modelFlag_t &flags)
   std::string defString("default");
   std::string symParameter(defString);
   pe = pl.getEntryPtr("symmetrize_graph");
-  if (pe){
+  if (pe)
+  {
     symParameter = pe->getValue<std::string>(&symParameter);
     if (symParameter == std::string("transpose"))
       flags.set(SYMMETRIZE_INPUT_TRANSPOSE);
     else if (symParameter == std::string("bipartite"))
-      flags.set(SYMMETRIZE_INPUT_BIPARTITE);  }
+      flags.set(SYMMETRIZE_INPUT_BIPARTITE);
+  }
 
   bool sgParameter = false;
   pe = pl.getEntryPtr("subset_graph");
   if (pe)
     sgParameter = pe->getValue(&sgParameter);
   if (sgParameter)
-      flags.set(BUILD_SUBSET_GRAPH);
+    flags.set(BUILD_SUBSET_GRAPH);
 
   flags.set(REMOVE_SELF_EDGES);
   flags.set(GENERATE_CONSECUTIVE_IDS);
@@ -299,7 +297,7 @@ void AlgPuLP<Adapter>::buildModel(modelFlag_t &flags)
 #endif
   this->env->debug(DETAILED_STATUS, "    building graph model");
   this->model = rcp(new GraphModel<base_adapter_t>(this->adapter, this->env,
-                                            this->problemComm, flags));
+                                                   this->problemComm, flags));
   this->env->debug(DETAILED_STATUS, "    graph model built");
 }
 
@@ -309,8 +307,7 @@ NOTE:
 */
 template <typename Adapter>
 void AlgPuLP<Adapter>::partition(
-  const RCP<PartitioningSolution<Adapter> > &solution
-)
+    const RCP<PartitioningSolution<Adapter>> &solution)
 {
   HELLO;
 
@@ -325,7 +322,7 @@ void AlgPuLP<Adapter>::partition(
   int ierr = 0;
   int np = problemComm->getSize();
 
-    // Grab options from parameter list
+  // Grab options from parameter list
   const Teuchos::ParameterList &pl = env->getParameters();
   const Teuchos::ParameterEntry *pe;
 
@@ -349,20 +346,25 @@ void AlgPuLP<Adapter>::partition(
 
   // Do label propagation initialization instead of bfs?
   pe = pl.getEntryPtr("pulp_lp_init");
-  if (pe) do_lp_init = pe->getValue(&do_lp_init);
-  if (do_lp_init) do_bfs_init = false;
+  if (pe)
+    do_lp_init = pe->getValue(&do_lp_init);
+  if (do_lp_init)
+    do_bfs_init = false;
 
   // Now look at additional objective
   pe = pl.getEntryPtr("pulp_minimize_maxcut");
-  if (pe) {
+  if (pe)
+  {
     do_maxcut_min = pe->getValue(&do_maxcut_min);
     // If we're doing the secondary objective,
     //   set the additional constraint as well
-    if (do_maxcut_min) do_edge_bal = true;
+    if (do_maxcut_min)
+      do_edge_bal = true;
   }
 
   pe = pl.getEntryPtr("pulp_do_repart");
-  if (pe) {
+  if (pe)
+  {
     do_repart = pe->getValue(&do_repart);
     // Do repartitioning with input parts
     do_bfs_init = false;
@@ -377,9 +379,11 @@ void AlgPuLP<Adapter>::partition(
   double edge_imbalance = 1.1;
 
   pe = pl.getEntryPtr("pulp_vert_imbalance");
-  if (pe) vert_imbalance = pe->getValue<double>(&vert_imbalance);
+  if (pe)
+    vert_imbalance = pe->getValue<double>(&vert_imbalance);
   pe = pl.getEntryPtr("pulp_edge_imbalance");
-  if (pe) {
+  if (pe)
+  {
     edge_imbalance = pe->getValue<double>(&edge_imbalance);
     // if manually set edge imbalance, add do_edge_bal flag to true
     do_edge_bal = 1;
@@ -393,32 +397,36 @@ void AlgPuLP<Adapter>::partition(
   // verbose output?
   // TODO: fully implement verbose flag throughout PuLP
   pe = pl.getEntryPtr("pulp_verbose");
-  if (pe) verbose_output = pe->getValue(&verbose_output);
+  if (pe)
+    verbose_output = pe->getValue(&verbose_output);
 
   // using pulp seed?
   int pulp_seed = rand();
   pe = pl.getEntryPtr("pulp_seed");
-  if (pe) pulp_seed = pe->getValue(&pulp_seed);
+  if (pe)
+    pulp_seed = pe->getValue(&pulp_seed);
 
   pe = pl.getEntryPtr("pulp_scaling");
-  if (pe) scale_option = pe->getValue(&scale_option);
+  if (pe)
+    scale_option = pe->getValue(&scale_option);
 
   pe = pl.getEntryPtr("pulp_norm");
-  if (pe) norm_option = pe->getValue(&norm_option);
-
+  if (pe)
+    norm_option = pe->getValue(&norm_option);
 
   pe = pl.getEntryPtr("pulp_multiweight_strategy");
-  if (pe) multiweight_option = pe->getValue(&multiweight_option);
+  if (pe)
+    multiweight_option = pe->getValue(&multiweight_option);
 
   pe = pl.getEntryPtr("pulp_vertex_weights_num");
-  if (pe) vertex_weights_num = pe->getValue(&vertex_weights_num);
+  if (pe)
+    vertex_weights_num = pe->getValue(&vertex_weights_num);
 
   // Create PuLP's partitioning data structure
   pulp_part_control_t ppc = {vert_imbalance, edge_imbalance,
-    do_lp_init, do_bfs_init, do_repart,
-    do_edge_bal, do_maxcut_min,
-    verbose_output, pulp_seed};
-
+                             do_lp_init, do_bfs_init, do_repart,
+                             do_edge_bal, do_maxcut_min,
+                             verbose_output, pulp_seed};
 
   // Get number of vertices and edges
   const size_t modelVerts = model->getLocalNumVertices();
@@ -430,14 +438,14 @@ void AlgPuLP<Adapter>::partition(
 
   // Get vertex info
   ArrayView<const gno_t> vtxIDs;
-  ArrayView<StridedData<lno_t, scalar_t> > vwgts;
+  ArrayView<StridedData<lno_t, scalar_t>> vwgts;
   size_t nVtx = model->getVertexList(vtxIDs, vwgts);
   int nVwgts = model->getNumWeightsPerVertex();
 
   //if pulp_vertex_weights_num is not specific or greater than the total number of weight components given in the graph file, throw an error.
   const double INT_EPSILON = 1e-5;
   bool not_integer = false;
-  int tmp = (int)floor(vertex_weights_num + .5); 
+  int tmp = (int)floor(vertex_weights_num + .5);
   if (fabs((double)tmp - vertex_weights_num) > INT_EPSILON)
   {
     not_integer = true;
@@ -448,9 +456,9 @@ void AlgPuLP<Adapter>::partition(
     throw std::runtime_error("Did not specify number of vertex weight components to balance (Option: \"pulp_vertex_weight_num\") or number exceeds given vertex weight components in graph file");
   }
 
-  //XtraPuLP uses int32_t and int64_t as vertex weights and vertex weights sum. Conversion from int to int32_t and double to int64_t creates conversion issues. Alternative is memcpy but that apparently takes too much time. 
-  int32_t* vertex_weights = NULL;
-  int64_t* global_wgt_sum = new int64_t[vertex_weights_num + 2];
+  //XtraPuLP uses int32_t and int64_t as vertex weights and vertex weights sum. Conversion from int to int32_t and double to int64_t creates conversion issues. Alternative is memcpy but that apparently takes too much time.
+  int32_t *vertex_weights = NULL;
+  int64_t *global_wgt_sum = new int64_t[vertex_weights_num + 2];
 
   if (vertex_weights_num > 0)
   {
@@ -458,7 +466,7 @@ void AlgPuLP<Adapter>::partition(
     vertex_weights = new int32_t[num_verts * vertex_weights_num];
 
     //Used for debug purposes. Outputs local vertex weights by their vertices and components.
-		/*std::cout << "Given input (not scaled/norm) weights within each process: " << std::endl;
+    /*std::cout << "Given input (not scaled/norm) weights within each process: " << std::endl;
 		for (int i = 0; i < vertex_weights_num; ++i)
 		{
 		    std::cout << "Weight Component "  << i << ": ";
@@ -483,7 +491,7 @@ void AlgPuLP<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> adjs;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t>> ewgts;
   size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);
   int nEwgts = model->getNumWeightsPerEdge();
@@ -504,10 +512,10 @@ void AlgPuLP<Adapter>::partition(
 
 #ifndef HAVE_ZOLTAN2_MPI
   // Create PuLP's graph structure
-  int* out_edges = NULL;
-  long* out_offsets = NULL;
+  int *out_edges = NULL;
+  long *out_offsets = NULL;
   TPL_Traits<int, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
-  TPL_Traits<long, const lno_t>::ASSIGN_ARRAY(&out_offsets, offsets);
+  TPL_Traits<long, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
 
   pulp_graph_t g = {num_verts, num_edges,
                     out_edges, out_offsets,
@@ -515,23 +523,23 @@ void AlgPuLP<Adapter>::partition(
 
 #else
   // Create XtraPuLP's graph structure
-  unsigned long* out_edges = NULL;
-  unsigned long* out_offsets = NULL;
+  unsigned long *out_edges = NULL;
+  unsigned long *out_offsets = NULL;
   TPL_Traits<unsigned long, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
-  TPL_Traits<unsigned long, const lno_t>::ASSIGN_ARRAY(&out_offsets, offsets);
+  TPL_Traits<unsigned long, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
 
   const size_t modelVertsGlobal = model->getGlobalNumVertices();
   const size_t modelEdgesGlobal = model->getGlobalNumEdges();
   unsigned long num_verts_global = (unsigned long)modelVertsGlobal;
   unsigned long num_edges_global = (unsigned long)modelEdgesGlobal;
 
-  unsigned long* global_ids = NULL;
+  unsigned long *global_ids = NULL;
   TPL_Traits<unsigned long, const gno_t>::ASSIGN_ARRAY(&global_ids, vtxIDs);
 
   ArrayView<size_t> vtxDist;
   model->getVertexDist(vtxDist);
-  unsigned long* verts_per_rank = new unsigned long[np+1];
-  for (int i = 0; i < np+1; ++i)
+  unsigned long *verts_per_rank = new unsigned long[np + 1];
+  for (int i = 0; i < np + 1; ++i)
     verts_per_rank[i] = vtxDist[i];
 
   dist_graph_t g;
@@ -545,16 +553,17 @@ void AlgPuLP<Adapter>::partition(
 
 #endif
 
-
   // Create array for PuLP to return results in.
   // Or write directly into solution parts array
   ArrayRCP<part_t> partList(new part_t[num_verts], 0, num_verts, true);
-  int* parts = NULL;
-  if (num_verts && (sizeof(int) == sizeof(part_t))) {
+  int *parts = NULL;
+  if (num_verts && (sizeof(int) == sizeof(part_t)))
+  {
     // Can write directly into the solution's memory
-    parts = (int *) partList.getRawPtr();
+    parts = (int *)partList.getRawPtr();
   }
-  else {
+  else
+  {
     // Can't use solution memory directly; will have to copy later.
     parts = new int[num_verts];
   }
@@ -562,38 +571,39 @@ void AlgPuLP<Adapter>::partition(
   // TODO
   // Implement target part sizes
 
-  if (verbose_output) {
+  if (verbose_output)
+  {
     printf("procid: %d, n: %i, m: %li, vb: %f, eb: %f, p: %i\n",
-      problemComm->getRank(),
-      num_verts, num_edges, vert_imbalance, edge_imbalance, num_parts);
+           problemComm->getRank(),
+           num_verts, num_edges, vert_imbalance, edge_imbalance, num_parts);
   }
 
-  // Call partitioning; result returned in parts array
+// Call partitioning; result returned in parts array
 #ifndef HAVE_ZOLTAN2_MPI
   ierr = pulp_run(&g, &ppc, parts, num_parts);
 
   env->globalInputAssertion(__FILE__, __LINE__, "pulp_run",
-    !ierr, BASIC_ASSERTION, problemComm);
+                            !ierr, BASIC_ASSERTION, problemComm);
 #else
   ierr = xtrapulp_run(&g, &ppc, parts, num_parts, multiweight_option);
   env->globalInputAssertion(__FILE__, __LINE__, "xtrapulp_run",
-    !ierr, BASIC_ASSERTION, problemComm);
+                            !ierr, BASIC_ASSERTION, problemComm);
 
 #endif
 
-
-
   // Load answer into the solution if necessary
-  if ((sizeof(int) != sizeof(part_t)) || (num_verts == 0)) {
-    for (int i = 0; i < num_verts; i++) partList[i] = parts[i];
-    delete [] parts;
+  if ((sizeof(int) != sizeof(part_t)) || (num_verts == 0))
+  {
+    for (int i = 0; i < num_verts; i++)
+      partList[i] = parts[i];
+    delete[] parts;
   }
 
   solution->setParts(partList);
 
   env->memory("Zoltan2-(Xtra)PuLP: After creating solution");
 
-  // Clean up copies made due to differing data sizes.
+// Clean up copies made due to differing data sizes.
 #ifndef HAVE_ZOLTAN2_MPI
   TPL_Traits<int, const gno_t>::DELETE_ARRAY(&out_edges);
   TPL_Traits<long, const lno_t>::DELETE_ARRAY(&out_offsets);
@@ -603,8 +613,7 @@ void AlgPuLP<Adapter>::partition(
   TPL_Traits<unsigned long, const gno_t>::DELETE_ARRAY(&global_ids);
 #endif
 
-
-//#endif // DO NOT HAVE_MPI
+  //#endif // DO NOT HAVE_MPI
 }
 
 template <typename Adapter>
@@ -667,77 +676,80 @@ void AlgPuLP<Adapter>::aggregate_weights(
 // rounding to zero weights.
 // Based on Zoltan's scale_round_weights, mode 1
 
-
 //scales single weights given by edges (vertex weights uses scale_weights that accept multiple weights)
 template <typename Adapter>
 void AlgPuLP<Adapter>::scale_weights(
-	size_t n,
-	StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> &fwgts,
-	int *iwgts
-)
+    size_t n,
+    StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> &fwgts,
+    int *iwgts)
 {
-	const double INT_EPSILON = 1e-5;
-	const double MAX_NUM = 1e9;
+  const double INT_EPSILON = 1e-5;
+  const double MAX_NUM = 1e9;
 
-	int nonint = 0;
-	double sum_wgt = 0.0;
-	double max_wgt = 0.0;
+  int nonint = 0;
+  double sum_wgt = 0.0;
+  double max_wgt = 0.0;
 
-	// Compute local sums of the weights
-	// Check whether all weights are integers
-	for (size_t i = 0; i < n; i++) {
-		double fw = double(fwgts[i]);
-		if (!nonint) {
-			int tmp = (int)floor(fw + .5); /* Nearest int */
-			if (fabs((double)tmp - fw) > INT_EPSILON) {
-				nonint = 1;
-			}
-		}
-		sum_wgt += fw;
-		if (fw > max_wgt) max_wgt = fw;
-	}
-
-	// Get agreement across processors
-	double gmax_wgt;
-	double ltmp[2], gtmp[2];
-	ltmp[0] = nonint;
-	ltmp[1] = sum_wgt;
-	Teuchos::reduceAll<int, double>(*problemComm, Teuchos::REDUCE_SUM, 2,
-		ltmp, gtmp);
-	Teuchos::reduceAll<int, double>(*problemComm, Teuchos::REDUCE_MAX, 1,
-
-		&max_wgt, &gmax_wgt);
-	nonint = gtmp[0];
-	sum_wgt = gtmp[1];
-	max_wgt = gmax_wgt;
-
-	// Scaling needed if weights are not integers or weights'
-	// range is not sufficient
-	double scale = 1.0;
-	if (nonint || (max_wgt <= INT_EPSILON) || (sum_wgt > MAX_NUM)) {
-    if (sum_wgt != 0.0) scale = MAX_NUM / sum_wgt;
+  // Compute local sums of the weights
+  // Check whether all weights are integers
+  for (size_t i = 0; i < n; i++)
+  {
+    double fw = double(fwgts[i]);
+    if (!nonint)
+    {
+      int tmp = (int)floor(fw + .5); /* Nearest int */
+      if (fabs((double)tmp - fw) > INT_EPSILON)
+      {
+        nonint = 1;
+      }
+    }
+    sum_wgt += fw;
+    if (fw > max_wgt)
+      max_wgt = fw;
   }
 
-	/* Convert weights to positive integers using the computed scale factor */
-	for (size_t i = 0; i < n; i++)
-		iwgts[i] = (int)ceil(double(fwgts[i])*scale);
+  // Get agreement across processors
+  double gmax_wgt;
+  double ltmp[2], gtmp[2];
+  ltmp[0] = nonint;
+  ltmp[1] = sum_wgt;
+  Teuchos::reduceAll<int, double>(*problemComm, Teuchos::REDUCE_SUM, 2,
+                                  ltmp, gtmp);
+  Teuchos::reduceAll<int, double>(*problemComm, Teuchos::REDUCE_MAX, 1,
 
+                                  &max_wgt, &gmax_wgt);
+  nonint = gtmp[0];
+  sum_wgt = gtmp[1];
+  max_wgt = gmax_wgt;
+
+  // Scaling needed if weights are not integers or weights'
+  // range is not sufficient
+  double scale = 1.0;
+  if (nonint || (max_wgt <= INT_EPSILON) || (sum_wgt > MAX_NUM))
+  {
+    if (sum_wgt != 0.0)
+      scale = MAX_NUM / sum_wgt;
+  }
+
+  /* Convert weights to positive integers using the computed scale factor */
+  for (size_t i = 0; i < n; i++)
+    iwgts[i] = (int)ceil(double(fwgts[i]) * scale);
 }
 
 //Scales multiple weights. 7JUL17: Currently only used by multiple and single vertex weights.
 template <typename Adapter>
 void AlgPuLP<Adapter>::scale_weights(
     size_t n,
-    ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, int32_t* vertex_weights, int vertex_weights_num, int scale_option, int64_t* global_wgt_sum)
+    ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t>> &vwgts, int32_t *vertex_weights, int vertex_weights_num, int scale_option, int64_t *global_wgt_sum)
 {
   const double MAX_NUM = 1e9;
 
   int scale_flag_int_max = global_wgt_sum[vertex_weights_num];
   int scale_flag_min = global_wgt_sum[vertex_weights_num + 1];
 
-  //scale_flag_int_max = 0: all weights are integers and their components sums are less than MAX_NUM. scale_flag_min = 0: 
+  //scale_flag_int_max = 0: all weights are integers and their components sums are less than MAX_NUM. scale_flag_min = 0:
 
-  for(int wc = 0; wc < vertex_weights_num; ++wc)
+  for (int wc = 0; wc < vertex_weights_num; ++wc)
   {
     double scale = 1.0;
 
@@ -764,8 +776,6 @@ void AlgPuLP<Adapter>::scale_weights(
     global_wgt_sum[wc] *= scale;
   }
 }
-
-
 
 } // namespace Zoltan2
 
