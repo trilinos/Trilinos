@@ -1565,7 +1565,18 @@ namespace Tpetra {
     /// \post <tt>dots(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
     dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
-         const Kokkos::View<dot_type*, device_type>& dots) const;
+         const Kokkos::View<dot_type*, Kokkos::HostSpace>& norms) const;
+
+    template<class ViewType>
+    void
+    dot (typename std::enable_if<std::is_same<typename ViewType::value_type,dot_type>::value &&
+                                 std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value,
+                                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>>::type& A,
+         const ViewType& dots) const {
+      const Kokkos::View<dot_type*, Kokkos::HostSpace> h_dots("Tpetra::Dots",dots.extent(0));
+      this->dot (A, h_dots);
+      Kokkos::deep_copy(dots,h_dots);
+    }
 
     /// \brief Compute the dot product of each corresponding pair of
     ///   vectors (columns) in A and B, storing the result in a device
@@ -1594,6 +1605,7 @@ namespace Tpetra {
       // case.  It could also come up for Kokkos::complex ->
       // std::complex conversions, but those two implementations
       // should generally be bitwise compatible.
+      // CT: no this can't possible work .....
       Kokkos::deep_copy (dots, dts);
     }
 
@@ -1685,7 +1697,16 @@ namespace Tpetra {
     /// documentation in particular, for details.  This matters only
     /// for "interesting" Scalar types, such as one might find in the
     /// Stokhos package.
-    void norm1 (const Kokkos::View<mag_type*, device_type>& norms) const;
+    template<class ViewType>
+      typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
+                              std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
+    norm1 (const ViewType& norms) const {
+      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
+      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
+      this->normImpl (h_norms, NORM_ONE);
+      Kokkos::deep_copy(norms,h_norms);
+    }
+    void norm1 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1769,7 +1790,16 @@ namespace Tpetra {
     /// documentation in particular, for details.  This matters only
     /// for "interesting" Scalar types, such as one might find in the
     /// Stokhos package.
-    void norm2 (const Kokkos::View<mag_type*, device_type>& norms) const;
+    template<class ViewType>
+      typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
+                              std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
+    norm2 (const ViewType& norms) const {
+      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
+      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
+      this->normImpl (h_norms, NORM_TWO);
+      Kokkos::deep_copy(norms,h_norms);
+    }
+    void norm2 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1845,7 +1875,16 @@ namespace Tpetra {
     /// documentation in particular, for details.  This matters only
     /// for "interesting" Scalar types, such as one might find in the
     /// Stokhos package.
-    void normInf (const Kokkos::View<mag_type*, device_type>& norms) const;
+    template<class ViewType>
+      typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
+                              std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
+    normInf (const ViewType& norms) const {
+      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
+      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
+      this->normImpl (h_norms, NORM_INF);
+      Kokkos::deep_copy(norms,h_norms);
+    }
+    void normInf (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
@@ -2222,7 +2261,7 @@ namespace Tpetra {
     /// norms(j) is the norm (of the selected type) of column j of
     /// this MultiVector.
     void
-    normImpl (const Kokkos::View<mag_type*, device_type>& norms,
+    normImpl (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms,
               const EWhichNorm whichNorm) const;
 
     //@}
