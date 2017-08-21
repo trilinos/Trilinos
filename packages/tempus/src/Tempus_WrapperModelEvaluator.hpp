@@ -14,15 +14,13 @@
 
 namespace Tempus {
 
-/** \brief A ModelEvaluator for residual evaluations given a state.
- *  This ModelEvaluator takes a state, x, and determines its residual,
- *  \f$ g(x) \f$, which is suitable for a nonlinear solve.  This is
- *  accomplished by computing the time derivative of the state, x_dot,
- *  (through Lambda functions), supplying the current time, and calling
- *  the application ModelEvaluator, \f$ f(\dot{x},x,t) \f$.
+/** \brief A ModelEvaluator which wraps the application ModelEvaluator.
  *
- *  This class breaks the primary design principle for ModelEvaluators;
- *  it is not stateless!
+ *  The WrapperModelEvaluator takes a state, \f$x\f$, computes time
+ *  derivative(s), \f$\dot{x}\f$ and/or \f$\ddot{x}\f$, from the
+ *  implicit stepper (StepperImplicit) and calls the application
+ *  ModelEvaluator to determine its residual, \f$\mathcal{F}(x)\f$,
+ *  which is suitable for the nonlinear solve.
  */
 template <typename Scalar>
 class WrapperModelEvaluator : public Thyra::StateFuncModelEvaluatorBase<Scalar>
