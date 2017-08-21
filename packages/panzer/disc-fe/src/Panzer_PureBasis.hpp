@@ -168,6 +168,8 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> functional_D2;
     //! <Cell,Basis,Dim>
     Teuchos::RCP<PHX::DataLayout> coordinates;
+    //! <Cell,Basis,Basis>
+    Teuchos::RCP<PHX::DataLayout> local_mat_layout;
 
   private:
     

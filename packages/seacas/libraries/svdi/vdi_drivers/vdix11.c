@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -392,19 +392,11 @@
 
 #include <stdio.h>
 
-#ifdef VMS
-#include <decw$include/Xatom.h>
-#include <decw$include/Xlib.h>
-#include <decw$include/Xresource.h>
-#include <decw$include/Xutil.h>
-#include <decw$include/keysym.h>
-#else
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xresource.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
-#endif
 
 /* svdi state */
 /* attributes
@@ -724,15 +716,10 @@ int *justif;
     XSetFont(display, gc, font_id);
   }
   font_height = font_info->max_bounds.ascent + font_info->max_bounds.descent;
-  font_width  = font_info->max_bounds.rbearing -
-#if defined(VMS)
-               font_info->max_bounds.lbearing;
-#else
-               font_info->min_bounds.lbearing;
-/* this gives bounding box width, which seems like what
-   we want ... but for whatever reason, this computation
-   doesn't seem to give correct results on VMS */
-#endif
+  font_width  = font_info->max_bounds.rbearing - font_info->min_bounds.lbearing;
+  /* this gives bounding box width, which seems like what
+     we want ... but for whatever reason, this computation
+     doesn't seem to give correct results on VMS */
 
   /* setup input event stuff */
   /* specify what kinds of input events to accept */

@@ -1,6 +1,6 @@
 #ifndef STK_STK_UTIL_STK_UTIL_COMMAND_LINE_COMMANDLINEPARSERUTILS_HPP_
 #define STK_STK_UTIL_STK_UTIL_COMMAND_LINE_COMMANDLINEPARSERUTILS_HPP_
-#include <mpi.h>
+#include "mpi.h"
 #include <string>
 
 namespace stk {

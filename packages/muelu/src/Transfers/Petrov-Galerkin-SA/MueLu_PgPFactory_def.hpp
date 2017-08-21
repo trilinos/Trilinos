@@ -316,7 +316,6 @@ namespace MueLu {
         break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PgPFactory::Build: minimization mode not supported. error");
-        break;
       }
 
 

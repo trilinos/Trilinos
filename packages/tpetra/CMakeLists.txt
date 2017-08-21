@@ -24,6 +24,170 @@ IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
   MESSAGE(FATAL_ERROR "As of Trilinos 12.0, C++11 is REQUIRED when building Kokkos and its downstream packages, which include Tpetra.  You MUST enable C++11 when building these packages.  Trilinos should enable this by default, if your C++11 compiler supports C++11 (that is, if it's not too old).  If you set ${PROJECT_NAME}_ENABLE_CXX11=OFF, then you are disabling C++11.  DON'T DO THAT if you want to build Kokkos or its downstream packages, including Tpetra.  If you aren't happy about that, then you need to disable Kokkos explicitly, by setting ${PROJECT_NAME}_ENABLE_Kokkos=OFF.  This WILL disable Tpetra and its downstream packages.")
 ENDIF ()
 
+# As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
+ASSERT_DEFINED(TPL_ENABLE_CUDA)
+IF (TPL_ENABLE_CUDA AND DEFINED CUDA_VERSION)
+  # Don't check a variable's value unless we know it is defined.
+  IF (CUDA_VERSION VERSION_LESS "7.5")
+     MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra requires at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+  ENDIF ()
+ENDIF ()
+
+# Ask the MPI implementation if it is CUDA aware.  See #1571.
+#
+# If users have already set Tpetra_ASSUME_CUDA_AWARE_MPI, we just
+# accept their setting.  This helps with cross-compilation.
+# Otherwise, we try to figure it out for them.
+#
+# Currently, we only have logic to figure it out for them if using
+# OpenMPI >= 1.7.4.  In that case, then we may ask ompi_info:
+#
+# https://www.open-mpi.org/faq/?category=runcuda
+#
+# In order to do so, we need to find the correct ompi_info executable,
+# that is, the one that goes with the version of MPI that we are
+# actually using.  This is not necessarily the version whose
+# executables are in our PATH!  OpenMPI likes to install ompi_info in
+# the same directory as its compiler wrappers, so we can just use the
+# path of MPI_CXX_COMPILER.  If that isn't defined, we can try
+# ${MPI_BIN_DIR} or "${MPI_BASE_DIR}/bin".  Otherwise, we'll make the
+# safe, but possibly less performant assumption that MPI is not CUDA
+# aware.
+
+SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+
+ASSERT_DEFINED (TPL_ENABLE_CUDA)
+ASSERT_DEFINED (TPL_ENABLE_MPI)
+
+MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is CUDA aware:")
+
+IF (NOT TPL_ENABLE_CUDA)
+  MESSAGE (STATUS "  - TPL_ENABLE_CUDA is OFF, so we assume that MPI is not CUDA aware.")
+  SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+ELSEIF (NOT TPL_ENABLE_MPI)
+  # Even if CUDA is enabled but MPI is not, Teuchos::SerialComm may
+  # assume host access of input and output buffers (e.g.,
+  # Teuchos::reduceAll on a SerialComm may copy input into output on
+  # host).  Thus, it's safer to assume that "MPI" (rather,
+  # Teuchos::SerialComm, a kind of MPI stub) can't access CUDA memory.
+  MESSAGE (STATUS "  - TPL_ENABLE_CUDA is ON but TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not CUDA aware.")
+  SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
+  # The user set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
+  # Just use that value as the default.
+  #
+  # It may seem a little strange to set a default value for a
+  # variable that the user explicitly set.  However, it ensures 
+  # consistency over all cases and can help debugging.
+
+  IF (Tpetra_ASSUME_CUDA_AWARE_MPI)
+    SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
+    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI=ON.  This means that you assume that the MPI implementation you want to use with Trilinos is CUDA aware.  If this is NOT true, then solvers will segfault or otherwise fail.")
+  ELSE ()
+    SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI=OFF.  This means that you assume that the MPI implementation you want to use with Trilinos is NOT CUDA aware.  This is always the safe option, but it may reduce performance if it is not true.")
+  ENDIF ()
+ELSE ()
+  # The user did not set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
+
+  IF (DEFINED CMAKE_CROSSCOMPILING AND CMAKE_CROSSCOMPILING)
+    MESSAGE (STATUS "  - Since you are cross compiling, if you wish Tpetra to assume that MPI is CUDA aware, you must set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.  For now, Tpetra will assume that MPI is NOT CUDA aware; this is always the safe option, but it may reduce performance if it is not true.")
+  ELSE ()
+    # We are not cross compiling, so it is safe to try to auto-detect
+    # by searching for and running the "ompi_info" executable.
+    MESSAGE (STATUS "  - Attempt to detect whether MPI is CUDA aware, by searching for \"ompi_info\" executable.")
+
+    SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE OFF)
+
+    # First, try the directory where MPI_CXX_COMPILER lives.  This
+    # only makes sense if MPI_USE_COMPILER_WRAPPERS is ON.  We don't
+    # have to test Tpetra_FOUND_OMPI_INFO_EXECUTABLE here, but I find
+    # it helpful to leave in the redundant test, for consistency with
+    # the tests below, and to prevent a bug if we later decide to
+    # change the order of the tests.
+
+
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_USE_COMPILER_WRAPPERS) AND MPI_USE_COMPILER_WRAPPERS AND (DEFINED MPI_CXX_COMPILER))
+      # Paths are returned with (forward) slashes, and no trailing slash:
+      # 
+      # https://cmake.org/cmake/help/v2.8.12/cmake.html#command%3aget_filename_component
+      #
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_ABS_PATH "${MPI_CXX_COMPILER}" ABSOLUTE)
+      # In the command below, PATH is a "legacy alias" for DIRECTORY; it
+      # works with CMake <= 2.8.11.  DIRECTORY requires CMake >= 2.8.12.
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_PARENT_DIR "${Tpetra_MPI_CXX_COMPILER_ABS_PATH}" PATH)
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${Tpetra_MPI_CXX_COMPILER_PARENT_DIR} NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
+      ENDIF ()
+    ENDIF ()
+
+    # Next, try MPI_BIN_DIR.
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_BIN_DIR))
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${MPI_BIN_DIR} NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
+      ENDIF ()
+    ENDIF ()
+
+    # Finally, try "${MPI_BASE_DIR}/bin" (which may not exist).
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_BASE_DIR) AND (NOT (MPI_BASE_DIR STREQUAL "")) AND (IS_DIRECTORY "${MPI_BASE_DIR}/bin"))
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" "${MPI_BASE_DIR}/bin" NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
+      ENDIF ()
+    ENDIF ()
+
+    IF (Tpetra_FOUND_OMPI_INFO_EXECUTABLE)
+      MESSAGE (STATUS "  - Calling \"ompi_info\" (full path: ${Tpetra_OMPI_INFO_EXECUTABLE}) to find out whether MPI is CUDA aware.")
+
+      # ompi_info produces a LOT of output.  Making CMake capture and
+      # parse all of it could be slow.  Instead, we use "grep" to get
+      # only the line we want.
+      EXECUTE_PROCESS (COMMAND ${Tpetra_OMPI_INFO_EXECUTABLE} --parsable --all
+                       COMMAND "grep" "mpi_built_with_cuda_support:value"
+                       OUTPUT_VARIABLE Tpetra_OMPI_INFO_OUTPUT)
+      IF (DEFINED Tpetra_OMPI_INFO_OUTPUT)
+        # The output to stdout may have an endline, so we have to do a
+        # string search, not just a comparison.  It's possible that
+        # neither "true" nor "false" are found, so we test both.
+        STRING (FIND "${Tpetra_OMPI_INFO_OUTPUT}" "mca:mpi:base:param:mpi_built_with_cuda_support:value:true" Tpetra_OMPI_INFO_OUTPUT_FOUND_TRUE)
+        STRING (FIND "${Tpetra_OMPI_INFO_OUTPUT}" "mca:mpi:base:param:mpi_built_with_cuda_support:value:false" Tpetra_OMPI_INFO_OUTPUT_FOUND_FALSE)
+
+        # STRING FIND returns -1 if it didn't find the substring.
+        IF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_TRUE EQUAL -1))
+          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is CUDA aware.")
+          SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
+        ELSEIF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_FALSE EQUAL -1))
+          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is NOT CUDA aware.  You may want to use a different OpenMPI installation that is CUDA aware, or reconfigure and rebuild OpenMPI in order to make it CUDA aware.  For details, please refer to OpenMPI's website: https://www.open-mpi.org/faq/?category=runcuda")
+        ELSE ()
+          MESSAGE (STATUS "  - \"ompi_info\" claims to know nothing about whether your MPI implementation is CUDA aware.  Its output is \"${Tpetra_OMPI_INFO_OUTPUT}\".")
+        ENDIF ()
+      ELSE ()
+        MESSAGE (STATUS "  - While I found the \"ompi_info\" executable, it would not run.  Thus, I will make the sane assumption that your MPI implementation is NOT CUDA aware.")
+      ENDIF ()
+    ELSE ()
+      MESSAGE (STATUS "  - Tpetra did not find the \"ompi_info\" executable.  This may not be bad; for example, if your MPI implementation is not OpenMPI, then you won't have this executable.  Tpetra will conservatively assume that your MPI implementation is NOT CUDA aware.  If you would like to change this, please set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.")
+    ENDIF () # Tpetra_FOUND_OMPI_INFO_EXECUTABLE
+  ENDIF () # Whether we are cross compiling
+ENDIF () # Whether we have CUDA and MPI
+
+# Sanity checks for Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT.
+
+IF (NOT (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT))
+  MESSAGE (FATAL_ERROR "Failed to set Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT!")
+ENDIF ()
+
+IF (NOT TPL_ENABLE_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT)
+  MESSAGE (FATAL_ERROR "Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT is ON, but CUDA is not enabled!")
+ENDIF ()
+  
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ASSUME_CUDA_AWARE_MPI
+  TPETRA_ASSUME_CUDA_AWARE_MPI
+  "Assume that the MPI implementation that Tpetra uses is CUDA aware.  \"CUDA aware\" means that MPI can use CUDA device allocations (the result of cudaMalloc) as send and receive buffers.  If MPI is CUDA aware, then Tpetra can give CUDA device allocations directly to MPI sends and receives.  MPI implementations might not support all MPI communication operations.  For example, different versions of OpenMPI support different subsets of MPI operations (see https://www.open-mpi.org/faq/?category=runcuda ).  Tpetra developers may safely assume that MPI_*[Ss]end and MPI_*[Rr]ecv work.  Anything more than that should be considered specific to the MPI implementation."
+  ${Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT})
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_Refactor
   TPETRA_ENABLE_KOKKOS_REFACTOR

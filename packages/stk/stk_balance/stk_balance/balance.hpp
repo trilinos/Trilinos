@@ -7,7 +7,7 @@ namespace stk { namespace mesh { class BulkData; } }
 #include <stk_mesh/base/Selector.hpp>
 #include <vector>
 #include <string>
-#include <mpi.h>
+#include "mpi.h"
 
 namespace stk
 {

@@ -1,4 +1,4 @@
-IF (Tpetra_INST_INT_INT)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_ProblematicLookup
   SOURCES
@@ -8,7 +8,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
-ENDIF()
 
 # tjf 20 Oct 2016 modified to use default LO, GO types
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -112,18 +111,15 @@ IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG)
     )
 ENDIF()
 
-IF (Tpetra_INST_INT_INT)
-  # Tpetra bug 5882
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Map_ExportTest_Bug5882
-    SOURCES
-    Map_ExportTest_Bug5882
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "passed!"
-    NUM_MPI_PROCS 2
-    )
-ENDIF()
-
+# Tpetra bug 5882
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_ExportTest_Bug5882
+  SOURCES
+  Map_ExportTest_Bug5882
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "passed!"
+  NUM_MPI_PROCS 2
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_replaceCommWithSubset

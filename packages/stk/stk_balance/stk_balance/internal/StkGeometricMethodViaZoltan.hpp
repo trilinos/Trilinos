@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include <mpi.h>
+#include "mpi.h"
 
 namespace stk { namespace balance { namespace internal { class GeometricVertices; }}}
 

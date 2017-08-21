@@ -129,7 +129,11 @@ namespace {
     Teuchos::OSTab tab0 (out);
     out << "Test instance:" << endl;
     Teuchos::OSTab tab1 (out);
-    out << "execution_space: "
+    out << "entry_type: "
+        << typeid (entry_type).name () << endl
+        << "coeff_type: "
+        << typeid (coeff_type).name () << endl
+        << "execution_space: "
         << typeid (typename DeviceType::execution_space).name () << endl
         << "memory_space: "
         << typeid (typename DeviceType::memory_space).name () << endl
@@ -220,17 +224,19 @@ namespace {
     out << "A_norm: " << A_norm << endl
         << "x_norm: " << x_norm << endl
         << "y_norm: " << y_norm << endl;
-    // Add a little "fudge factor."
-    const mag_type nonTransFactor =
-      A_norm * x_norm > static_cast<mag_type> (2) ?
-      A_norm * x_norm :
+    // Add a little "fudge factor."  2 is enough for real, and 4 is
+    // enough for complex.
+    const mag_type fudgeFactor = Kokkos::ArithTraits<entry_type>::is_complex ?
+      static_cast<mag_type> (4) :
       static_cast<mag_type> (2);
+    const mag_type nonTransFactor = A_norm * x_norm > fudgeFactor ?
+      A_norm * x_norm :
+      fudgeFactor;
     const mag_type nonTransBound = nonTransFactor *
       static_cast<mag_type> (numCols) * eps;
-    const mag_type transFactor =
-      A_norm * y_norm > static_cast<mag_type> (2) ?
+    const mag_type transFactor = A_norm * y_norm > fudgeFactor ?
       A_norm * y_norm :
-      static_cast<mag_type> (2);
+      fudgeFactor;
     const mag_type transBound = transFactor *
       static_cast<mag_type> (numRows) * eps;
     out << "nonTransBound: " << nonTransBound << endl

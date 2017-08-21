@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2008 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *   disclaimer in the documentation and/or other materials provided
  *   with the distribution.
  *
- * * Neither the name of Sandia Corporation nor the names of its
+ * * Neither the name of NTESS nor the names of its
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -83,10 +83,9 @@ void exname_(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
 void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
 #endif
 {
-  char         string[3];
-  char         symbol[7];
-  int          ExtSymbol;
-  unsigned int DargLen;
+  char string[3];
+  char symbol[7];
+  int  ExtSymbol;
 
   char *darg;
 
@@ -106,11 +105,7 @@ void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
   }
 
   if ((darg = (char *)getenv(symbol)) != (char *)NULL) {
-    /* Then under UN*X, I've found an ENVIRONMENT variable which points
-     * to a file.  Under VMS it's a logical though I think in this
-     * latter case it's redundant.
-     */
-    DargLen = strlen(darg);
+    unsigned int DargLen = strlen(darg);
     /* We need this to give us the length of the ENVIRONMENT
      * variable while calling strlen() only once.
      */

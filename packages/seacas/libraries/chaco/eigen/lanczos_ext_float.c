@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -208,7 +208,7 @@ int lanczos_ext_float(struct vtx_data **A,       /* sparse matrix in row linked 
   bji_tol        = eigtol;
   Anorm          = 2 * maxdeg;                   /* Gershgorin estimate for ||A|| */
   goodtol        = Anorm * sqrt(DOUBLE_EPSILON); /* Parlett & Scott's bound, p.224 */
-  interval       = 2 + (int)min(LANCZOS_SO_INTERVAL - 2, n / (2 * LANCZOS_SO_INTERVAL));
+  interval       = 2 + min(LANCZOS_SO_INTERVAL - 2, n / (2 * LANCZOS_SO_INTERVAL));
   bis_safety     = BISECTION_SAFETY;
   numerical_zero = 1.0e-6;
 
@@ -406,8 +406,9 @@ int lanczos_ext_float(struct vtx_data **A,       /* sparse matrix in row linked 
       /* check convergence of Ritz pairs */
       time      = lanc_seconds();
       converged = TRUE;
-      if (j < d)
+      if (j < d) {
         converged = FALSE;
+      }
       else {
         curlnk = scanlist;
         while (curlnk != NULL) {
@@ -543,13 +544,16 @@ int lanczos_ext_float(struct vtx_data **A,       /* sparse matrix in row linked 
   frvec(v, 1);
   frvec(work1, 1);
   frvec(work2, 1);
-  if (vwsqrt != NULL)
+  if (vwsqrt != NULL) {
     frvec_float(vwsqrt_float, 1);
+  }
 
   init_time += lanc_seconds() - time;
 
-  if (maxj == 0)
+  if (maxj == 0) {
     return (1); /* see note on beta[0] and maxj above */
-  else
+  }
+  else {
     return (0);
+  }
 }

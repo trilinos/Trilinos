@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -132,8 +132,9 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
   if (!end_flag) {
     option = read_int(fin, &end_flag);
   }
-  while (!end_flag)
+  while (!end_flag) {
     (void)read_int(fin, &end_flag);
+  }
 
   using_ewgts = option - 10 * (option / 10);
   option /= 10;
@@ -143,20 +144,26 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
 
   /* Allocate space for rows and columns. */
   *start = smalloc((*nvtxs + 1) * sizeof(int));
-  if (narcs != 0)
+  if (narcs != 0) {
     *adjacency = smalloc((2 * narcs + 1) * sizeof(int));
-  else
+  }
+  else {
     *adjacency = NULL;
+  }
 
-  if (using_vwgts)
+  if (using_vwgts) {
     *vweights = smalloc((*nvtxs) * sizeof(int));
-  else
+  }
+  else {
     *vweights = NULL;
+  }
 
-  if (using_ewgts && narcs != 0)
+  if (using_ewgts && narcs != 0) {
     *eweights = smalloc((2 * narcs + 1) * sizeof(float));
-  else
+  }
+  else {
     *eweights = NULL;
+  }
 
   adjptr    = *adjacency;
   ewptr     = *eweights;
@@ -176,8 +183,9 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
     if (vtxnums) {
       j = read_int(fin, &end_flag);
       if (end_flag) {
-        if (vertex == *nvtxs)
+        if (vertex == *nvtxs) {
           break;
+        }
         printf("ERROR in graph file `%s':", inname);
         printf(" no vertex number in line %d.\n", line_num);
         if (Output_File != NULL) {
@@ -201,14 +209,17 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
         new_vertex = TRUE;
         vertex     = j;
       }
-      else
+      else {
         new_vertex = FALSE;
+      }
     }
-    else
+    else {
       vertex = ++vtx;
+    }
 
-    if (vertex > *nvtxs)
+    if (vertex > *nvtxs) {
       break;
+    }
 
     /* If vertices are weighted, read vertex weight. */
     if (using_vwgts && new_vertex) {
@@ -282,8 +293,9 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
       if (!skip_flag) {
         found_flag = FALSE;
         for (j = (*start)[vertex - 1]; !found_flag && j < sum_edges + nedge; j++) {
-          if ((*adjacency)[j] == neighbor)
+          if ((*adjacency)[j] == neighbor) {
             found_flag = TRUE;
+          }
         }
         if (found_flag) {
           printf("WARNING: Multiple occurences of edge (%d,%d) ignored\n", vertex, neighbor);
@@ -334,8 +346,9 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
       if (neighbor < vertex && !skip_flag) {
         found_flag = FALSE;
         for (j = (*start)[neighbor - 1]; !found_flag && j < (*start)[neighbor]; j++) {
-          if ((*adjacency)[j] == vertex)
+          if ((*adjacency)[j] == vertex) {
             found_flag = TRUE;
+          }
         }
         if (!found_flag) {
           printf("ERROR in graph file `%s':", inname);
@@ -378,8 +391,9 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
   flag = FALSE;
   while (!flag && end_flag != -1) {
     read_int(fin, &end_flag);
-    if (!end_flag)
+    if (!end_flag) {
       flag = TRUE;
+    }
   }
   if (flag && CHECK_INPUT) {
     printf("WARNING: Possible error in graph file `%s'\n", inname);
@@ -415,10 +429,12 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
   else {
     /* Graph was empty => must be using inertial method. */
     sfree(*start);
-    if (*adjacency != NULL)
+    if (*adjacency != NULL) {
       sfree(*adjacency);
-    if (*eweights != NULL)
+    }
+    if (*eweights != NULL) {
       sfree(*eweights);
+    }
     *start     = NULL;
     *adjacency = NULL;
   }

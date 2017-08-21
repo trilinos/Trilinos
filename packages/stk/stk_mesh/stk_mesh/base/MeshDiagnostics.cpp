@@ -2,7 +2,6 @@
 #include <stddef.h>                     // for size_t, nullptr
 #include <string>                       // for string
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-#include <stk_util/parallel/DebugTool.hpp>
 #include <map>
 #include <string>
 #include "BulkData.hpp"
@@ -497,7 +496,6 @@ std::vector<std::string> get_messages_for_solo_sides(const stk::mesh::BulkData& 
     {
       std::ofstream out("solo_faces." + std::to_string(bulkData.parallel_size()) + "." + std::to_string(bulkData.parallel_rank()),std::ios_base::app);
       for (const std::string& s : errorList) { out << s; }
-      out << getStackTrace() << "\n";
       out.close();
     }
     return errorList;

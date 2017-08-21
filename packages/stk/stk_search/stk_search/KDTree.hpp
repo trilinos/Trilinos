@@ -34,9 +34,7 @@ class ObjectBoundingBoxHierarchy_T {
    *  each leave of the tree will contain approximiatly half of the boxes.  The hierarchy continues down until the tree node contains only 
    *  a single box
    */
-  KOKKOS_FORCEINLINE_FUNCTION int  get_right_child_offset() const {return right_child_offset;}
   KOKKOS_FORCEINLINE_FUNCTION void set_right_child_offset(const int right_child_offset_) {right_child_offset = right_child_offset_;}
-
   KOKKOS_FORCEINLINE_FUNCTION const BoxType& GetBox() const {return m_box;}
   KOKKOS_FORCEINLINE_FUNCTION BoxType& GetBox() {return m_box;}
 

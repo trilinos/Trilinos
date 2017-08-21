@@ -31,9 +31,9 @@ namespace Tacho {
     typedef typename supernode_info_type::value_type_array value_type_array;
     typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-#if   defined(HAVE_SHYLUTACHO_METIS)
+#if   defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
-#elif defined(HAVE_SHYLUTACHO_SCOTCH)
+#elif defined(TACHO_HAVE_SCOTCH)
     typedef GraphTools_Scotch graph_tools_type;
 #else
     typedef GraphTools_CAMD graph_tools_type;
@@ -93,7 +93,10 @@ namespace Tacho {
     void setVerbose(const ordinal_type verbose = 1) {
       _verbose = verbose;
     }
-    void setSerialThresholdSize(const ordinal_type serial_thres_size = -1) {
+    void setSmallProblemThresholdsize(const ordinal_type small_problem_thres = 1024) {
+      _small_problem_thres = small_problem_thres;
+    }
+    void setSerialThresholdsize(const ordinal_type serial_thres_size = -1) {
       _serial_thres_size = serial_thres_size;
     }
     void setBlocksize(const ordinal_type mb = -1) {

@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -33,17 +33,17 @@
 
 #include "ED_SystemInterface.h" // for ERROR
 #include "exo_entity.h"
-#include "exodusII.h"       // for ex_get_var, EX_INVALID_ID, etc
-#include "smart_assert.h"   // for SMART_ASSERT
-#include "stringx.h"        // for to_lower
-#include "terminal_color.h" // for operator<<, normal, red
-#include "util.h"           // for TOPTR, free_name_array, etc
-#include <cstdint>          // for int64_t
-#include <cstdlib>          // for exit
-#include <cstring>          // for strlen
-#include <iostream>         // for operator<<, basic_ostream, etc
-#include <string>           // for string, char_traits, etc
-#include <vector>           // for vector
+#include "exodusII.h"     // for ex_get_var, EX_INVALID_ID, etc
+#include "smart_assert.h" // for SMART_ASSERT
+#include "stringx.h"      // for to_lower
+#include <cstdint>        // for int64_t
+#include <cstdlib>        // for exit
+#include <cstring>        // for strlen
+#include <iostream>       // for operator<<, basic_ostream, etc
+#include <string>
+#include <string> // for string, char_traits, etc
+#include <vector>
+#include <vector> // for vector
 
 namespace {
   size_t get_index(int file_id, EXOTYPE exo_type, size_t id, const char *label);
@@ -53,7 +53,7 @@ namespace {
 #ifndef NDEBUG
   size_t get_num_timesteps(int file_id);
 #endif
-}
+} // namespace
 
 Exo_Entity::Exo_Entity()
     : fileId(-1), id_(EX_INVALID_ID), index_(0), numEntity(0), truth_(nullptr), currentStep(0),
@@ -415,7 +415,7 @@ void Exo_Entity::internal_load_params()
         std::string name = "attribute_" + std::to_string(vg + 1);
         attributeNames.push_back(name);
       }
-      else if ((int)std::strlen(names[vg]) > name_size) {
+      else if (static_cast<int>(std::strlen(names[vg])) > name_size) {
         std::cerr << trmclr::red << "exodiff: ERROR: " << label()
                   << " attribute names appear corrupt\n"
                   << "                A length is 0 or greater than "
@@ -448,7 +448,7 @@ namespace {
       ex_get_ids(file_id, exo_type, TOPTR(ids));
 
       for (size_t i = 0; i < count; i++) {
-        if ((size_t)ids[i] == id) {
+        if (static_cast<size_t>(ids[i]) == id) {
           return i;
         }
       }
@@ -458,7 +458,7 @@ namespace {
       ex_get_ids(file_id, exo_type, TOPTR(ids));
 
       for (size_t i = 0; i < count; i++) {
-        if ((size_t)ids[i] == id) {
+        if (static_cast<size_t>(ids[i]) == id) {
           return i;
         }
       }
@@ -506,4 +506,4 @@ namespace {
 #ifndef NDEBUG
   size_t get_num_timesteps(int file_id) { return ex_inquire_int(file_id, EX_INQ_TIME); }
 #endif
-}
+} // namespace

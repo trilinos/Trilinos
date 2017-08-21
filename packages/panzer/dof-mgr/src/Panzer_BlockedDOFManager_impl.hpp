@@ -50,9 +50,9 @@
 
 #include "Teuchos_DefaultMpiComm.hpp"
 
-using Teuchos::RCP;
-
 namespace panzer {
+
+using Teuchos::RCP;
 
 // ************************************************************
 // class BlockedDOFManager

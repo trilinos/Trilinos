@@ -1,7 +1,7 @@
 
 after ex_open
          I/O word size 4
-This file can use at most 127-character names
+This file can use at most 255-character names
 The maximum name length used is 64-character names
 after ex_get_init, error =   0
 database parameters:

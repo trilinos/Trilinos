@@ -10,11 +10,11 @@
 #include "TachoExp_Graph.hpp"
 #include "TachoExp_SymbolicTools.hpp"
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(TACHO_HAVE_SCOTCH)
 #include "TachoExp_GraphTools_Scotch.hpp"
 #endif
 
-#if defined(HAVE_SHYLUTACHO_METIS)
+#if defined(TACHO_HAVE_METIS)
 #include "TachoExp_GraphTools_Metis.hpp"
 #endif
 
@@ -24,7 +24,7 @@
 
 #include "TachoExp_CommandLineParser.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef TACHO_HAVE_MKL
 #include "mkl_service.h"
 #endif
 
@@ -42,9 +42,9 @@ int main (int argc, char *argv[]) {
   int serial_thres_size = -1; // 32 is better
   int mb = 0;
 
-  opts.set_option<bool>("enable-serial", "Flag to use serial algorithm", &serial);
+  opts.set_option<bool>("serial", "Flag to use serial algorithm", &serial);
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
-  opts.set_option<bool>("enable-verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<int>("serial-thres", "Serialization threshold size", &serial_thres_size);
@@ -89,9 +89,9 @@ int main (int argc, char *argv[]) {
 
     std::cout << "CholSupernodes:: analyze matrix" << std::endl;
     timer.reset();
-#if   defined(HAVE_SHYLUTACHO_METIS)
+#if   defined(TACHO_HAVE_METIS)
     GraphTools_Metis T(G);
-#elif defined(HAVE_SHYLUTACHO_SCOTCH)
+#elif defined(TACHO_HAVE_SCOTCH)
     GraphTools_Scotch T(G);
 #else
     GraphTools_CAMD T(G);

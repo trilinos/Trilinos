@@ -761,6 +761,26 @@ namespace Sacado {
       reference fastAccessCoeff(ordinal_type i) {
         return s[i];}
 
+       //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const_volatile_reference operator[](ordinal_type i) const volatile {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const_reference operator[](ordinal_type i) const {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      volatile_reference operator[](ordinal_type i) volatile {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      reference operator[](ordinal_type i) {
+        return s[i];}
+
       template <int i>
       KOKKOS_INLINE_FUNCTION
       value_type getCoeff() const volatile {

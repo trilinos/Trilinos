@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -540,6 +540,9 @@ weightedApply (HostView& X,
       true, std::runtime_error, "Ifpack2::BandedContainer::"
       "weightedApply: This code is not tested and not used. Expect bugs.");
 
+  // mfh 09 Aug 2017: Comment out unreachable code to prevent compiler warning.
+#if 0
+
   // The local operator template parameter might have a different
   // Scalar type than MatrixType.  This means that we might have to
   // convert X and Y to the Tpetra::MultiVector specialization that
@@ -672,6 +675,8 @@ weightedApply (HostView& X,
   // Copy the permuted subset output vector Y_local into the original
   // output multivector Y.
   mvgs.scatterViewToView (Y, Y_local[blockIndex], localRows);
+
+#endif // 0
 }
 
 template<class MatrixType, class LocalScalarType>

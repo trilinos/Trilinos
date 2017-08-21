@@ -4,7 +4,7 @@
 /// \file TachoExp_GraphTools_Scotch.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(TACHO_HAVE_SCOTCH)
 #include "TachoExp_Util.hpp"
 #include "TachoExp_Graph.hpp"
 

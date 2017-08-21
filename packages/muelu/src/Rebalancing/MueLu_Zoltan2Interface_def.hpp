@@ -77,8 +77,6 @@ namespace MueLu {
  RCP<const ParameterList> Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< int >                      ("rowWeight",                 0, "Default weight to rows (total weight = nnz + rowWeight");
-
     validParamList->set< RCP<const FactoryBase> >   ("A",             Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >   ("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< RCP<const FactoryBase> >   ("Coordinates",   Teuchos::null, "Factory of the coordinates");
@@ -164,21 +162,12 @@ namespace MueLu {
     typedef Zoltan2::XpetraMultiVectorAdapter<dMultiVector>  InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType>   ProblemType;
 
-    int rowWeight = pL.get<int>("rowWeight");
-    GetOStream(Runtime0) << "Using weights formula: nnz + " << rowWeight << std::endl;
-
     Array<double> weightsPerRow(numElements);
     for (LO i = 0; i < numElements; i++) {
       weightsPerRow[i] = 0.0;
 
       for (LO j = 0; j < blkSize; j++) {
         weightsPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
-        // Zoltan2 pqJagged gets as good partitioning as Zoltan RCB in terms of nnz
-        // but Zoltan also gets a good partioning in rows, which sometimes does not
-        // happen for Zoltan2. So here is an attempt to get a better row partitioning
-        // without significantly screwing up nnz partitioning
-        // NOTE: no good heuristic here, the value was chosen almost randomly
-        weightsPerRow[i] += rowWeight;
       }
     }
 

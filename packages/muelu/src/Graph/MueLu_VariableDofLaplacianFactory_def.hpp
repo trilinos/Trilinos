@@ -563,9 +563,8 @@ namespace MueLu {
     // local node ids
 
     // loop over all (remaining) ghost dofs
-    size_t lagged = -1;
     for (size_t i = nLocalDofs+1; i < nLocalPlusGhostDofs; i++) {
-      lagged = nLocalPlusGhostNodes-1;
+      size_t lagged = nLocalPlusGhostNodes-1;
 
       // i is a new unique ghost node (not already accounted for)
       if ((tempId[i-nLocalDofs] != tempId[i-1-nLocalDofs]) ||

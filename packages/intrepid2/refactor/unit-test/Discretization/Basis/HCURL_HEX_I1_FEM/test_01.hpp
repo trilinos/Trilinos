@@ -515,43 +515,34 @@ namespace Intrepid2 {
         }
 
         // Check mathematical correctness
-        DynRankViewHost ConstructWithLabel(tangents, numFields,spaceDim); // tangents at each point basis$
-        tangents(0,0)  =  2.0; tangents(0,1)  =  0.0; tangents(0,2)  = 0.0;
-        tangents(1,0)  =  0.0; tangents(1,1)  =  2.0; tangents(1,2)  = 0.0;
-        tangents(2,0)  = -2.0; tangents(2,1)  =  0.0; tangents(2,2)  = 0.0;
-        tangents(3,0)  =  0.0; tangents(3,1)  = -2.0; tangents(3,2)  = 0.0;
-        tangents(4,0)  =  2.0; tangents(4,1)  =  0.0; tangents(4,2)  = 0.0;
-        tangents(5,0)  =  0.0; tangents(5,1)  =  2.0; tangents(5,2)  = 0.0;
-        tangents(6,0)  = -2.0; tangents(6,1)  =  0.0; tangents(6,2)  = 0.0;
-        tangents(7,0)  =  0.0; tangents(7,1)  = -2.0; tangents(7,2)  = 0.0;
-        tangents(8,0)  =  0.0; tangents(8,1)  =  0.0; tangents(8,2)  = 2.0;
-        tangents(9,0)  =  0.0; tangents(9,1)  =  0.0; tangents(9,2)  = 2.0;
-        tangents(10,0) =  0.0; tangents(10,1) =  0.0; tangents(10,2) = 2.0;
-        tangents(11,0) =  0.0; tangents(11,1) =  0.0; tangents(11,2) = 2.0;
         
         DynRankView ConstructWithLabel(cvals_dev, numFields, spaceDim);
+        DynRankView ConstructWithLabel(dofCoeffs_dev, numFields, spaceDim);
         DynRankView ConstructWithLabel(bvals_dev, numFields, numFields, spaceDim); // last dimension is spatial dim
 
         hexBasis.getDofCoords(cvals_dev);
+        hexBasis.getDofCoeffs(dofCoeffs_dev);
         hexBasis.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
 
         const auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev); 
         Kokkos::deep_copy(bvals, bvals_dev);
+        const auto dofCoeffs = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), dofCoeffs_dev);
+        Kokkos::deep_copy(dofCoeffs, dofCoeffs_dev);
         const auto cvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals_dev); 
         Kokkos::deep_copy(cvals, cvals_dev);
 
         for (ordinal_type i=0;i<numFields;++i)
           for (ordinal_type j=0;j<numFields;++j) {
             
-            ValueType tangent = 0.0;
+            ValueType dofValue = 0.0;
             for(ordinal_type d=0;d<spaceDim;++d)
-              tangent += bvals(i,j,d)*tangents(j,d);
+              dofValue += bvals(i,j,d)*dofCoeffs(j,d);
 
-            const ValueType expected_tangent = (i == j);
-            if (std::abs(tangent - expected_tangent) > tol) {
+            const ValueType expected_dofValue = (i == j);
+            if (std::abs(dofValue - expected_dofValue) > tol) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\nValue of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1)<< ", " << cvals(i,2) << ") is " << tangent << " but should be " << expected_tangent << "\n";
+              ss << "\nValue of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1)<< ", " << cvals(i,2) << ") is " << dofValue << " but should be " << expected_dofValue << "\n";
               *outStream << ss.str();
             }
           }

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -105,8 +105,9 @@ void divide(struct vtx_data **graph,         /* graph data structure */
     printf("<Entering divide, nvtxs = %d, nedges = %d>\n", nvtxs, nedges);
   }
 
-  if (nvtxs <= 0)
+  if (nvtxs <= 0) {
     return;
+  }
   if (nedges == 0 && global_method != 3) {
     global_method = 4;
     local_method  = 2;
@@ -142,12 +143,14 @@ void divide(struct vtx_data **graph,         /* graph data structure */
   if (using_vwgts) {
     vwgt_max = 0;
     for (i = 1; i <= nvtxs; i++) {
-      if (graph[i]->vwgt > vwgt_max)
+      if (graph[i]->vwgt > vwgt_max) {
         vwgt_max = graph[i]->vwgt;
+      }
     }
   }
-  else
+  else {
     vwgt_max = 1;
+  }
 
   /* Perform one of the global partitionings on this sub-graph. */
   if (global_method == 1) { /* Multilevel method. */
@@ -187,10 +190,12 @@ void divide(struct vtx_data **graph,         /* graph data structure */
         if (total_weight > max_dev) {
           max_dev = total_weight;
         }
-        if (goal[0] - weights[0] <= goal[1] - weights[1])
+        if (goal[0] - weights[0] <= goal[1] - weights[1]) {
           i = 0;
-        else
+        }
+        else {
           i = 1;
+        }
         find_side_bndy(graph, nvtxs, assignment, i, 2, &bndy_list);
         count_weights(graph, nvtxs, assignment, nsets + 1, weights, using_vwgts);
         if (DEBUG_KL > 0) {
@@ -232,8 +237,9 @@ void divide(struct vtx_data **graph,         /* graph data structure */
     assign(graph, yvecs, nvtxs, ndims, architecture, nsets, vwsqrt, assignment, active, mediantype,
            goal, vwgt_max);
 
-    for (i = 1; i <= ndims; i++)
+    for (i = 1; i <= ndims; i++) {
       sfree(yvecs[i]);
+    }
 
     if (mkconnected) {
       make_unconnected(graph, &nedges, &cdata, using_ewgts);
@@ -290,10 +296,12 @@ void divide(struct vtx_data **graph,         /* graph data structure */
       klspiff(graph, nvtxs, assignment, nsets, hop_mtx, goal, term_wgts, max_dev, maxdeg,
               using_ewgts, &null_ptr, weights);
       if (VERTEX_COVER) {
-        if (goal[0] - weights[0] <= goal[1] - weights[1])
+        if (goal[0] - weights[0] <= goal[1] - weights[1]) {
           i = 0;
-        else
+        }
+        else {
           i = 1;
+        }
         find_side_bndy(graph, nvtxs, assignment, i, 2, &bndy_list);
         count_weights(graph, nvtxs, assignment, nsets + 1, weights, (vwgt_max != 1));
         if (DEBUG_KL > 0) {

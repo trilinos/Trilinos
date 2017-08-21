@@ -13,11 +13,11 @@
 #include "TachoExp_Graph.hpp"
 #include "TachoExp_SymbolicTools.hpp"
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(TACHO_HAVE_SCOTCH)
 #include "TachoExp_GraphTools_Scotch.hpp"
 #endif
 
-#if defined(HAVE_SHYLUTACHO_METIS)
+#if defined(TACHO_HAVE_METIS)
 #include "TachoExp_GraphTools_Metis.hpp"
 #endif
 
@@ -70,9 +70,9 @@ TEST( Numeric, Cholesky_Serial ) {
 
   Graph G(A);
 
-#if   defined(HAVE_SHYLUTACHO_METIS)
+#if   defined(TACHO_HAVE_METIS)
   GraphTools_Metis T(G);
-#elif defined(HAVE_SHYLUTACHO_SCOTCH)
+#elif defined(TACHO_HAVE_SCOTCH)
   GraphTools_Scotch T(G);
 #else
   GraphTools_CAMD T(G);
@@ -116,9 +116,9 @@ TEST( Numeric, Cholesky_Serial ) {
 
 //   Graph G(A);
 
-// #if   defined(HAVE_SHYLUTACHO_METIS)
+// #if   defined(TACHO_HAVE_METIS)
 //   GraphTools_Metis T(G);
-// #elif defined(HAVE_SHYLUTACHO_SCOTCH)
+// #elif defined(TACHO_HAVE_SCOTCH)
 //   GraphTools_Scotch T(G);
 // #else
 //   GraphTools_CAMD T(G);

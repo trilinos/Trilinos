@@ -6,8 +6,6 @@
 #include <omp.h>
 #endif
 
-
-#include <stk_search/OctTreeOps.hpp>
 #include "stk_util/environment/WallTime.hpp"
 #include "stk_search/KDTree_BoundingBox.hpp"
 #include <stk_search/CommonSearchUtil.hpp>

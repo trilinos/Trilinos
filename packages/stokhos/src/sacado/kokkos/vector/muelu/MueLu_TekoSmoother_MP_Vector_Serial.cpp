@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
+#ifdef HAVE_MUELU_TEKO
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"

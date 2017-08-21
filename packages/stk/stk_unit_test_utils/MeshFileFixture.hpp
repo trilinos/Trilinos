@@ -1,7 +1,7 @@
 #ifndef UNITTEST_MESHFILEFIXTURE_HPP
 #define UNITTEST_MESHFILEFIXTURE_HPP
 
-#include <mpi.h>
+#include "mpi.h"
 
 #include <gtest/gtest.h>
 

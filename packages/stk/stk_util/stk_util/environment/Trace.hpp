@@ -439,16 +439,15 @@ public:
   Writer &verbose_print(Writer &dout) const;
 
 private:
-  Writer &      m_diagWriter;    ///< The diagnostic writer to write to.
-  double      m_startCpuTime;    ///< Cpu time at trace start
-  size_t      m_startMemAlloc;  ///< Memory allocated at trace start
-  PrintMask      m_lineMask;    ///< Line mask of trace
-  bool                          m_do_trace;             ///< Force trace off
-  int        m_flags;    ///< flags if trace enabled
+  Writer &   m_diagWriter;    ///< The diagnostic writer to write to.
+  double     m_startCpuTime;  ///< Cpu time at trace start
+  PrintMask  m_lineMask;      ///< Line mask of trace
+  bool       m_do_trace;      ///< Force trace off
+  int        m_flags;         ///< flags if trace enabled
 
-  static ExtraFuncPtr    s_extra;    ///< Extra output on trace
-  static TraceList    s_traceList;    ///< List of functions to trace
-  static bool                   s_traceListExists;      ///< Flag indicating that the tracelist has been constructed and not destructed
+  static ExtraFuncPtr    s_extra;   ///< Extra output on trace
+  static TraceList    s_traceList;  ///< List of functions to trace
+  static bool   s_traceListExists;  ///< Flag indicating that the tracelist has been constructed and not destructed
 };
 
 /**

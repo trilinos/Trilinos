@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2013 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -30,7 +30,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 #include "Ioss_CodeTypes.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
@@ -473,8 +472,8 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2013 Sandia Corporation.  Under the terms of Contract\n"
-              << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"
+              << "Copyright(C) 2013 NTESS.  Under the terms of Contract\n"
+              << "DE-AC04-94AL85000 with NTESS, the U.S. Government retains\n"
               << "certain rights in this software\n"
               << "\n"
               << "Redistribution and use in source and binary forms, with or without\n"
@@ -489,7 +488,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
               << "      disclaimer in the documentation and/or other materials provided\n"
               << "      with the distribution.\n"
               << "\n"
-              << "    * Neither the name of Sandia Corporation nor the names of its\n"
+              << "    * Neither the name of NTESS nor the names of its\n"
               << "      contributors may be used to endorse or promote products derived\n"
               << "      from this software without specific prior written permission.\n"
               << "\n"
@@ -510,7 +509,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   // Parse remaining options as directory paths.
   if (option_index < argc - 1) {
     while (option_index < argc - 1) {
-      inputFile.push_back(argv[option_index++]);
+      inputFile.emplace_back(argv[option_index++]);
     }
     outputFile = argv[option_index];
   }

@@ -221,6 +221,8 @@ private:
 
   mutable MUMPS_STRUC_C mumps_par;
 
+  bool is_contiguous_;
+
 };                              // End class MUMPS
 
 

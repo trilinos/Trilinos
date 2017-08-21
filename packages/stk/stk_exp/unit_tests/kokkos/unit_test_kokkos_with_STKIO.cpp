@@ -46,7 +46,7 @@ private:
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
 
-#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <vector>
@@ -243,41 +243,6 @@ void test1ToNSumOfNodalFields(stk::mesh::ContiguousFieldDataManager *fieldDataMa
 
     testGoldValues(stkMeshMetaData, stkMeshBulkData, alpha, beta, gamma);
 }
-
-//void testSumOfNodalFields(stk::mesh::FieldDataManager *fieldDataManager)
-//{
-//    MPI_Comm communicator = MPI_COMM_WORLD;
-//    stk::io::StkMeshIoBroker exodusFileReader(communicator);
-//
-//    createMetaAndBulkData(exodusFileReader, fieldDataManager);
-//
-//    stk::mesh::MetaData &stkMeshMetaData = exodusFileReader.meta_data();
-//    stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
-//
-//    const stk::mesh::BucketVector& buckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
-//    std::cerr << "Number of node buckets: " << buckets.size() << std::endl;
-//
-//    double alpha = -1.4;
-//    double beta = 0.3333333;
-//    double gamma = 3.14159;
-//
-//    timeFieldOperations(stkMeshMetaData, stkMeshBulkData, alpha, beta, gamma);
-//
-//    testGoldValues(stkMeshMetaData, stkMeshBulkData, alpha, beta, gamma);
-//}
-
-//TEST(NodalFieldPerformance, addNodalFieldsDefaultFieldManager)
-//{
-//    const int weKnowThereAreFiveRanks = 5;
-//    stk::mesh::DefaultFieldDataManager fieldDataManager(weKnowThereAreFiveRanks);
-//    testSumOfNodalFields(&fieldDataManager);
-//}
-//
-//TEST(NodalFieldPerformance, addNodalFieldsContiguousFieldManager)
-//{
-//    stk::mesh::ContiguousFieldDataManager fieldDataManager;
-//    testSumOfNodalFields(&fieldDataManager);
-//}
 
 TEST(NodalFieldPerformance, addNodalFields1ToNOrderingContiguousFieldManager)
 {

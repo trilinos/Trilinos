@@ -20,10 +20,7 @@ ELSE()
   MESSAGE(STATUS "Skipping ParameterListInterpreter.")
 ENDIF()
 
-# experimental data
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  TRIBITS_ADD_TEST_DIRECTORIES(blockedtransfer)
-ENDIF()
+TRIBITS_ADD_TEST_DIRECTORIES(blockedtransfer)
 
 IF(Xpetra_INT_LONG_LONG AND HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
   TRIBITS_ADD_TEST_DIRECTORIES(longlong)

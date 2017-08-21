@@ -15,7 +15,7 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 //#define VERBOSE_DEBUG_OUTPUT
-#define DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
 
 namespace Tempus {
 
@@ -230,7 +230,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 #endif
   using Teuchos::RCP;
 
-  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackardEuler::takeStep()");
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperNewmarkImplicitDForm::takeStep()");
   {
     RCP<SolutionState<Scalar>> workingState =
         solutionHistory->getWorkingState();

@@ -96,6 +96,12 @@ public:
         return ConnectedNodes(elem.bucket->begin_nodes(elem.bucketOrd), elem.bucket->num_nodes(elem.bucketOrd));
     }
 
+    ConnectedNodes get_nodes(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &elem) const
+    {
+        const stk::mesh::Bucket &bucket = get_bucket(rank, elem.bucket_id);
+        return ConnectedNodes(bucket.begin_nodes(elem.bucket_ord), bucket.num_nodes(elem.bucket_ord));
+    }
+
     stk::mesh::FastMeshIndex fast_mesh_index(stk::mesh::Entity entity) const
     {
         const stk::mesh::MeshIndex &meshIndex = bulk->mesh_index(entity);
@@ -221,6 +227,12 @@ public:
     ConnectedNodes get_nodes(const StaticMeshIndex &elem) const
     {
         return buckets[elem.bucket->entity_rank()](elem.bucket->bucket_id()).get_nodes(elem.bucketOrd);
+    }
+
+    STK_FUNCTION
+    ConnectedNodes get_nodes(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &elem) const
+    {
+        return buckets[rank](elem.bucket_id).get_nodes(elem.bucket_ord);
     }
 
     STK_FUNCTION

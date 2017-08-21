@@ -64,7 +64,7 @@
     */
 template<typename EvalT, typename Traits>
 class DuplicateFieldEvaluator : public PHX::EvaluatorWithBaseImpl<Traits>,
-                        public PHX::EvaluatorDerived<EvalT, Traits>  {
+                                public PHX::EvaluatorDerived<EvalT, Traits>  {
 
   using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<ScalarT,CELL,QP> a;
@@ -73,9 +73,9 @@ class DuplicateFieldEvaluator : public PHX::EvaluatorWithBaseImpl<Traits>,
   PHX::MDField<const ScalarT,CELL,QP,DIM> c;
   
 public:
-  DuplicateFieldEvaluator(const Teuchos::RCP<const PHX::DataLayout>& a_layout,
-                          const Teuchos::RCP<const PHX::DataLayout>& b_layout,
-                          const Teuchos::RCP<const PHX::DataLayout>& c_layout);
+  DuplicateFieldEvaluator(const Teuchos::RCP<PHX::DataLayout>& a_layout,
+                          const Teuchos::RCP<PHX::DataLayout>& b_layout,
+                          const Teuchos::RCP<PHX::DataLayout>& c_layout);
   void evaluateFields(typename Traits::EvalData workset) override;
   KOKKOS_INLINE_FUNCTION
   void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;

@@ -11,7 +11,7 @@
 
 #include "TachoExp_CommandLineParser.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef TACHO_HAVE_MKL
 #include "mkl_service.h"
 #include "Tacho_Pardiso.hpp"
 #endif
@@ -28,7 +28,7 @@ int main (int argc, char *argv[]) {
   int nrhs = 1;
 
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
-  opts.set_option<bool>("enable-verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file_input);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
 
@@ -41,7 +41,7 @@ int main (int argc, char *argv[]) {
   Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
 
   int r_val = 0;
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef TACHO_HAVE_MKL
   {
     typedef double value_type;
     typedef CrsMatrixBase<value_type> CrsMatrixBaseType;
@@ -204,7 +204,7 @@ int main (int argc, char *argv[]) {
   }
 #else
   r_val = -1;
-  cout << "MKL is NOT configured in Trilinos" << endl;
+  std::cout << "MKL is NOT configured in Trilinos" << endl;
 #endif
   
   Kokkos::finalize();

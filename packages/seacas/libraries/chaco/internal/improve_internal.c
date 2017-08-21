@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -90,10 +90,12 @@ int improve_internal(struct vtx_data **graph,       /* graph data structure */
       neighbor = graph[vtx]->edges[i];
       set2     = assign[neighbor];
       if (set2 != set1) {
-        if (locked[neighbor])
+        if (locked[neighbor]) {
           cost = min_cost_start;
-        else
+        }
+        else {
           cost += graph[neighbor]->vwgt;
+        }
       }
     }
     if (cost == 0) { /* Lock vertex and all it's neighbors. */
@@ -193,13 +195,16 @@ int improve_internal(struct vtx_data **graph,       /* graph data structure */
             cost = 0;
             for (j = 1; j < graph[vtx]->nedges; j++) {
               neighbor = graph[vtx]->edges[j];
-              if (using_ewgts)
+              if (using_ewgts) {
                 ewgt = graph[vtx]->ewgts[j];
-              set3   = assign[neighbor];
-              if (set3 == set1)
+              }
+              set3 = assign[neighbor];
+              if (set3 == set1) {
                 cost += ewgt;
-              else if (set3 == set2)
+              }
+              else if (set3 == set2) {
                 cost -= ewgt;
+              }
             }
             if (cost < min_cost) {
               min_cost = cost;
@@ -207,8 +212,9 @@ int improve_internal(struct vtx_data **graph,       /* graph data structure */
             }
           }
         }
-        if (min_cost >= min_cost_start)
+        if (min_cost >= min_cost_start) {
           flag = FALSE;
+        }
         else {
           /* Add move_vtx to list of guys to move to set2. */
           /* Don't move it yet in case I get stuck later. */
@@ -257,8 +263,9 @@ int improve_internal(struct vtx_data **graph,       /* graph data structure */
 
       /* Now add vertex back into its old vtx_list (now indicated by set2) */
       ptr->next = set_list[set2].next;
-      if (ptr->next != NULL)
-        ptr->next->prev   = ptr;
+      if (ptr->next != NULL) {
+        ptr->next->prev = ptr;
+      }
       ptr->prev           = &(set_list[set2]);
       set_list[set2].next = ptr;
 
@@ -267,90 +274,95 @@ int improve_internal(struct vtx_data **graph,       /* graph data structure */
     return (FALSE);
   }
 
-  else { /* Now perform actual moves. */
-    /* First, update assignment and place vertices into their new sets. */
-    changed_sets = NULL;
-    for (ptr = move_list; ptr != NULL;) {
-      ptr2 = ptr->next;
-      vtx  = ((int)(ptr - vtx_elems)) / size;
-      if (ptr->val >= 0)
-        set2 = set1;
-      else
-        set2 = -(ptr->val + 1);
-
-      ptr->next = set_list[set2].next;
-      if (ptr->next != NULL)
-        ptr->next->prev   = ptr;
-      ptr->prev           = &(set_list[set2]);
-      set_list[set2].next = ptr;
-
-      /* Pull int_list[set2] out of its list to be used later. */
-      if (ptr->val >= 0)
-        set2 = ptr->val;
-      if (int_list[set2].val >= 0) {
-        int_list[set2].val = -(int_list[set2].val + 1);
-        if (int_list[set2].next != NULL) {
-          int_list[set2].next->prev = int_list[set2].prev;
-        }
-        if (int_list[set2].prev != NULL) {
-          int_list[set2].prev->next = int_list[set2].next;
-        }
-
-        int_list[set2].next = changed_sets;
-        changed_sets        = &(int_list[set2]);
-      }
-      ptr = ptr2;
+  /* Now perform actual moves. */
+  /* First, update assignment and place vertices into their new sets. */
+  changed_sets = NULL;
+  for (ptr = move_list; ptr != NULL;) {
+    ptr2 = ptr->next;
+    vtx  = ((int)(ptr - vtx_elems)) / size;
+    if (ptr->val >= 0) {
+      set2 = set1;
     }
-    if (int_list[set1].val >= 0) {
-      if (int_list[set1].next != NULL) {
-        int_list[set1].next->prev = int_list[set1].prev;
-      }
-      if (int_list[set1].prev != NULL) {
-        int_list[set1].prev->next = int_list[set1].next;
-      }
-
-      int_list[set1].next = changed_sets;
-      changed_sets        = &(int_list[set1]);
+    else {
+      set2 = -(ptr->val + 1);
     }
 
-    /* Finally, update internal node calculations for all modified sets. */
-    while (changed_sets != NULL) {
-      set2         = ((int)(changed_sets - int_list)) / size;
-      changed_sets = changed_sets->next;
-
-      /* Next line uses fact that list has dummy header so prev isn't NULL. */
-      int_list[set2].next = int_list[set2].prev->next;
-      int_list[set2].val  = 0;
-      /* Recompute internal nodes for this set */
-      for (ptr = set_list[set2].next; ptr != NULL; ptr = ptr->next) {
-        vtx      = ((int)(ptr - vtx_elems)) / size;
-        internal = TRUE;
-        for (j = 1; j < graph[vtx]->nedges && internal; j++) {
-          set3     = assign[graph[vtx]->edges[j]];
-          internal = (set3 == set2);
-        }
-        if (internal) {
-          int_list[set2].val += graph[vtx]->vwgt;
-        }
-      }
-
-      /* Now move internal value in doubly linked list. */
-      /* Move higher in list? */
-      while (int_list[set2].next != NULL && int_list[set2].val >= int_list[set2].next->val) {
-        int_list[set2].prev = int_list[set2].next;
-        int_list[set2].next = int_list[set2].next->next;
-      }
-      /* Move lower in list? */
-      while (int_list[set2].prev != NULL && int_list[set2].val < int_list[set2].prev->val) {
-        int_list[set2].next = int_list[set2].prev;
-        int_list[set2].prev = int_list[set2].prev->prev;
-      }
-
-      if (int_list[set2].next != NULL)
-        int_list[set2].next->prev = &(int_list[set2]);
-      if (int_list[set2].prev != NULL)
-        int_list[set2].prev->next = &(int_list[set2]);
+    ptr->next = set_list[set2].next;
+    if (ptr->next != NULL) {
+      ptr->next->prev = ptr;
     }
-    return (TRUE);
+    ptr->prev           = &(set_list[set2]);
+    set_list[set2].next = ptr;
+
+    /* Pull int_list[set2] out of its list to be used later. */
+    if (ptr->val >= 0) {
+      set2 = ptr->val;
+    }
+    if (int_list[set2].val >= 0) {
+      int_list[set2].val = -(int_list[set2].val + 1);
+      if (int_list[set2].next != NULL) {
+        int_list[set2].next->prev = int_list[set2].prev;
+      }
+      if (int_list[set2].prev != NULL) {
+        int_list[set2].prev->next = int_list[set2].next;
+      }
+
+      int_list[set2].next = changed_sets;
+      changed_sets        = &(int_list[set2]);
+    }
+    ptr = ptr2;
   }
+  if (int_list[set1].val >= 0) {
+    if (int_list[set1].next != NULL) {
+      int_list[set1].next->prev = int_list[set1].prev;
+    }
+    if (int_list[set1].prev != NULL) {
+      int_list[set1].prev->next = int_list[set1].next;
+    }
+
+    int_list[set1].next = changed_sets;
+    changed_sets        = &(int_list[set1]);
+  }
+
+  /* Finally, update internal node calculations for all modified sets. */
+  while (changed_sets != NULL) {
+    set2         = ((int)(changed_sets - int_list)) / size;
+    changed_sets = changed_sets->next;
+
+    /* Next line uses fact that list has dummy header so prev isn't NULL. */
+    int_list[set2].next = int_list[set2].prev->next;
+    int_list[set2].val  = 0;
+    /* Recompute internal nodes for this set */
+    for (ptr = set_list[set2].next; ptr != NULL; ptr = ptr->next) {
+      vtx      = ((int)(ptr - vtx_elems)) / size;
+      internal = TRUE;
+      for (j = 1; j < graph[vtx]->nedges && internal; j++) {
+        set3     = assign[graph[vtx]->edges[j]];
+        internal = (set3 == set2);
+      }
+      if (internal) {
+        int_list[set2].val += graph[vtx]->vwgt;
+      }
+    }
+
+    /* Now move internal value in doubly linked list. */
+    /* Move higher in list? */
+    while (int_list[set2].next != NULL && int_list[set2].val >= int_list[set2].next->val) {
+      int_list[set2].prev = int_list[set2].next;
+      int_list[set2].next = int_list[set2].next->next;
+    }
+    /* Move lower in list? */
+    while (int_list[set2].prev != NULL && int_list[set2].val < int_list[set2].prev->val) {
+      int_list[set2].next = int_list[set2].prev;
+      int_list[set2].prev = int_list[set2].prev->prev;
+    }
+
+    if (int_list[set2].next != NULL) {
+      int_list[set2].next->prev = &(int_list[set2]);
+    }
+    if (int_list[set2].prev != NULL) {
+      int_list[set2].prev->next = &(int_list[set2]);
+    }
+  }
+  return (TRUE);
 }

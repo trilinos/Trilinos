@@ -87,6 +87,7 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::offset_t    offset_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
@@ -210,7 +211,7 @@ public:
 
   size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
 
-  void getEdgesView(const lno_t *&offsets, const gno_t *&adjIds) const
+  void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const
   {
     offsets = offs_.getRawPtr();
     adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
@@ -268,7 +269,7 @@ private:
   RCP<const xgraph_t > graph_;
   RCP<const Comm<int> > comm_;
 
-  ArrayRCP<const lno_t> offs_;
+  ArrayRCP<const offset_t> offs_;
   ArrayRCP<const gno_t> adjids_;
 
   int nWeightsPerVertex_;
@@ -311,7 +312,7 @@ template <typename User, typename UserCoord>
   // because edge Ids are not usually stored in vertex id order.
 
   size_t n = nvtx + 1;
-  lno_t *offs = new lno_t [n];
+  offset_t *offs = new offset_t [n];
 
   if (!offs)
   {
@@ -338,7 +339,7 @@ template <typename User, typename UserCoord>
     ArrayView<const lno_t> nbors;
     graph_->getLocalRowView(v, nbors);
     offs[v+1] = offs[v] + nbors.size();
-    for (lno_t e=offs[v], i=0; e < offs[v+1]; e++)
+    for (offset_t e=offs[v], i=0; e < offs[v+1]; e++)
       adjids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
   }
 

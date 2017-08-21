@@ -25,7 +25,7 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef TACHO_HAVE_MKL
 #include "mkl.h"
 #endif
 
@@ -86,8 +86,17 @@ namespace Tacho {
     ///
     /// default ordinal and size type
     ///
+
+#if defined( TACHO_USE_INT_INT )
+    typedef int    ordinal_type;
+    typedef int    size_type;
+#elif defined( TACHO_USE_INT_SIZE_T )
     typedef int    ordinal_type;
     typedef size_t size_type;
+#else
+    typedef int    ordinal_type;
+    typedef size_t size_type;
+#endif
 
     ///
     /// label size used to identify object name
@@ -446,14 +455,14 @@ namespace Tacho {
       struct Upper        { 
         enum : int { tag = 401 }; 
         static constexpr char param = 'U'; 
-#ifdef HAVE_SHYLUTACHO_MKL  
+#ifdef TACHO_HAVE_MKL  
         static constexpr CBLAS_UPLO mkl_param = CblasUpper;
 #endif
       };
       struct Lower        { 
         enum : int { tag = 402 }; 
         static constexpr char param = 'L'; 
-#ifdef HAVE_SHYLUTACHO_MKL  
+#ifdef TACHO_HAVE_MKL  
         static constexpr CBLAS_UPLO mkl_param = CblasLower;
 #endif
       };
@@ -474,14 +483,14 @@ namespace Tacho {
       struct Left         { 
         enum : int { tag = 501 }; 
         static constexpr char param = 'L'; 
-#ifdef HAVE_SHYLUTACHO_MKL  
+#ifdef TACHO_HAVE_MKL  
         static constexpr CBLAS_SIDE mkl_param = CblasLeft;
 #endif
       };
       struct Right        { 
         enum : int { tag = 502 }; 
         static constexpr char param = 'R'; 
-#ifdef HAVE_SHYLUTACHO_MKL  
+#ifdef TACHO_HAVE_MKL  
         static constexpr CBLAS_SIDE mkl_param = CblasRight;
 #endif
       };
@@ -501,14 +510,14 @@ namespace Tacho {
       struct Unit         { 
         enum : int { tag = 601 }; 
         static constexpr char param = 'U'; 
-#ifdef HAVE_SHYLUTACHO_MKL  
+#ifdef TACHO_HAVE_MKL  
         static constexpr CBLAS_DIAG mkl_param = CblasUnit;
 #endif
       };
       struct NonUnit      { 
         enum : int { tag = 602 }; 
         static constexpr char param = 'N'; 
-#ifdef HAVE_SHYLUTACHO_MKL  
+#ifdef TACHO_HAVE_MKL  
         static constexpr CBLAS_DIAG mkl_param = CblasNonUnit;
 #endif
       };
@@ -525,21 +534,21 @@ namespace Tacho {
       struct Transpose      { 
         enum : int { tag = 701 }; 
         static constexpr char param = 'T'; 
-#ifdef HAVE_SHYLUTACHO_MKL  
+#ifdef TACHO_HAVE_MKL  
         static constexpr CBLAS_TRANSPOSE mkl_param = CblasTrans;
 #endif
       };
       struct ConjTranspose  { 
         enum : int { tag = 702 }; 
         static constexpr char param = 'C'; 
-#ifdef HAVE_SHYLUTACHO_MKL  
+#ifdef TACHO_HAVE_MKL  
         static constexpr CBLAS_TRANSPOSE mkl_param = CblasConjTrans;
 #endif
       };
       struct NoTranspose    { 
         enum : int { tag = 703 }; 
         static constexpr char param = 'N'; 
-#ifdef HAVE_SHYLUTACHO_MKL  
+#ifdef TACHO_HAVE_MKL  
         static constexpr CBLAS_TRANSPOSE mkl_param = CblasNoTrans;
 #endif
       };

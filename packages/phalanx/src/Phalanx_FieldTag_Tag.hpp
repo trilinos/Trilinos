@@ -70,7 +70,7 @@ namespace PHX {
 
     typedef DataT value_type;
 
-    Tag(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& dl);
+    Tag(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl);
 
     // Use SFINAE to remove this ctor if the data types are not the
     // same (excluding const differences). This works but the error
@@ -91,21 +91,23 @@ namespace PHX {
 
     ~Tag();
 
-    Teuchos::RCP<FieldTag> clone() const;
+    Teuchos::RCP<FieldTag> clone() const override;
 
     void operator=(const PHX::Tag<const DataT>& t);
     
-    bool operator==(const FieldTag& t) const;
+    bool operator==(const FieldTag& t) const override;
     
-    const std::string& name() const;
+    const std::string& name() const override;
 
-    const PHX::DataLayout& dataLayout() const;
+    const PHX::DataLayout& dataLayout() const override;
 
-    const std::type_info& dataTypeInfo() const;
+    PHX::DataLayout& nonConstDataLayout() override;
 
-    const std::string identifier() const;
+    const std::type_info& dataTypeInfo() const override;
 
-    void print(std::ostream& os) const;
+    const std::string identifier() const override;
+
+    void print(std::ostream& os) const override;
 
     template<typename> friend class Tag;
 
@@ -113,7 +115,7 @@ namespace PHX {
 
     std::string m_name;
     
-    Teuchos::RCP<const PHX::DataLayout> m_data_layout;
+    Teuchos::RCP<PHX::DataLayout> m_data_layout;
 
   };
 

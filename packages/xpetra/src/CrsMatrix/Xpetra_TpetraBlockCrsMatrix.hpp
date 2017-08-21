@@ -340,7 +340,35 @@ namespace Xpetra {
     //! Get offsets of the diagonal entries in the matrix.
     void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
       XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalDiagOffsets");
-      mtx_->getLocalDiagOffsets(offsets);
+
+      const size_t lclNumRows = mtx_->getGraph()->getNodeNumRows();
+      if (static_cast<size_t>(offsets.size()) < lclNumRows) {
+        offsets.resize(lclNumRows);
+      }
+
+      // The input ArrayRCP must always be a host pointer.  Thus, if
+      // device_type::memory_space is Kokkos::HostSpace, it's OK for us
+      // to write to that allocation directly as a Kokkos::View.
+      typedef typename Node::device_type device_type;
+      typedef typename device_type::memory_space memory_space;
+      if (std::is_same<memory_space, Kokkos::HostSpace>::value) {
+        // It is always syntactically correct to assign a raw host
+        // pointer to a device View, so this code will compile correctly
+        // even if this branch never runs.
+        typedef Kokkos::View<size_t*, device_type,
+                             Kokkos::MemoryUnmanaged> output_type;
+        output_type offsetsOut (offsets.getRawPtr(), offsets.size());
+        mtx_->getLocalDiagOffsets(offsetsOut);
+      }
+      else {
+        Kokkos::View<size_t*, device_type> offsetsTmp ("diagOffsets", offsets.size());
+        mtx_->getLocalDiagOffsets(offsetsTmp);
+        typedef Kokkos::View<size_t*, Kokkos::HostSpace,
+                             Kokkos::MemoryUnmanaged> output_type;
+        output_type offsetsOut(offsets.getRawPtr(), offsets.size());
+        Kokkos::deep_copy(offsetsOut, offsetsTmp);
+      }
+
     }
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
@@ -415,7 +443,7 @@ namespace Xpetra {
     local_matrix_type getLocalMatrix () const {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support getLocalMatrix due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation");
       local_matrix_type ret;
-      return ret; // make compiler happy
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 #endif
 #endif
@@ -1116,7 +1144,7 @@ namespace Xpetra {
     local_matrix_type getLocalMatrix () const {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support getLocalMatrix due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation");
       local_matrix_type ret;
-      return ret; // make compiler happy
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 #endif
 #endif

@@ -1,4 +1,4 @@
-#include <mpi.h>
+#include "mpi.h"
 #include <stk_balance/balance.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 

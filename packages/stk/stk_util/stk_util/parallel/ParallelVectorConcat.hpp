@@ -59,7 +59,7 @@ namespace stk {
   //  Usage Guidelines:
   //    Generally type T must be a plain data type with no pointers or allocated memory.  
   //    Thus T could be standard types such as int or double or structs or classes that contain only ints
-  //    and double (such as gtk::Vec3d).
+  //    and double (such as mtk::Vec3<double>).
   //    T should NOT be a general structure that contains pointers, strings, or vectors as these structures cannot be
   //    properly transfered between processors.  
   //    A handful of specializations are available to handle certain more complex types

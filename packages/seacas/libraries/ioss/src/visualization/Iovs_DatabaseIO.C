@@ -1,5 +1,37 @@
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//
+//     * Neither the name of NTESS nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 /*--------------------------------------------------------------------*/
-/*    Copyright 2000-2010 Sandia Corporation.                         */
+/*    Copyright 2000-2010 NTESS.                         */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -32,7 +64,7 @@
 #include <dlfcn.h>
 #endif
 
-#include <assert.h>
+#include <cassert>
 
 #if defined(__APPLE__)
 const char *CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystIossAdapter.dylib";
@@ -49,7 +81,9 @@ namespace { // Internal helper functions
   enum class entity_type { NODAL, ELEM_BLOCK, NODE_SET, SIDE_SET };
   bool file_exists(const std::string &filepath)
   {
-    struct stat buffer;
+    struct stat buffer
+    {
+    };
     return (stat(filepath.c_str(), &buffer) == 0);
   }
 
@@ -65,9 +99,9 @@ namespace { // Internal helper functions
 } // End anonymous namespace
 
 namespace Iovs {
-  void *      globalCatalystIossDlHandle           = nullptr;
-  int         DatabaseIO::useCount                 = 0;
-  std::string DatabaseIO::paraview_script_filename = "";
+  void *      globalCatalystIossDlHandle = nullptr;
+  int         DatabaseIO::useCount       = 0;
+  std::string DatabaseIO::paraview_script_filename;
   int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
                     const std::string &inout);
 
@@ -274,8 +308,8 @@ namespace Iovs {
       std::string separator(1, this->get_field_separator());
 
       // See if we are in a restart by looking for '.e-s' in the output filename
-      std::string            restart_tag = "";
-      std::string::size_type pos         = this->DBFilename.rfind(".e-s");
+      std::string            restart_tag;
+      std::string::size_type pos = this->DBFilename.rfind(".e-s");
       if (pos != std::string::npos) {
         if (pos + 3 <= this->DBFilename.length()) {
           restart_tag = this->DBFilename.substr(pos + 3, 5);
@@ -399,7 +433,7 @@ namespace Iovs {
     Ioss::ElementBlockContainer element_blocks = this->get_region()->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator I;
     std::vector<std::string>                    component_names;
-    component_names.push_back("GlobalElementId");
+    component_names.emplace_back("GlobalElementId");
     for (I = element_blocks.begin(); I != element_blocks.end(); ++I) {
       int     bid       = get_id((*I), &ids_);
       int64_t eb_offset = (*I)->get_offset();
@@ -410,7 +444,7 @@ namespace Iovs {
     }
 
     component_names.clear();
-    component_names.push_back("GlobalNodeId");
+    component_names.emplace_back("GlobalNodeId");
     if (this->pvcsa != nullptr) {
       this->pvcsa->CreateNodalVariable(component_names, &this->nodeMap.map()[1],
                                        this->DBFilename.c_str());
@@ -1160,7 +1194,7 @@ namespace Iovs {
     }
     return num_to_get;
   }
-}
+} // namespace Iovs
 
 namespace {
 
@@ -1372,4 +1406,4 @@ namespace {
     plugin_python_path = sierra_ins_path + "/" + CATALYST_PLUGIN_PATH + "/" + sierra_system + "/" +
                          sierra_version + "/" + CATALYST_PLUGIN_PYTHON_MODULE;
   }
-}
+} // namespace

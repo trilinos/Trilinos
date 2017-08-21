@@ -2640,7 +2640,7 @@ public:
         const size_t actualNumBytes = PackTraits<LO, D>::unpackValue (numEntLO, inBuf);
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION(
-          theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
+          actualNumBytes > numBytes, std::logic_error, "unpackRowCount: "
           "actualNumBytes = " << actualNumBytes << " < numBytes = " << numBytes
           << ".");
 #else
@@ -2702,15 +2702,30 @@ public:
         subview (exports, pair_type (valsBeg, valsBeg + valsLen));
 
       size_t numBytesOut = 0;
+      int errorCode = 0;
       numBytesOut += PackTraits<LO, D>::packValue (numEntOut, numEntLO);
-      numBytesOut += PackTraits<GO, D>::packArray (gidsOut, gidsIn, numEnt);
-      numBytesOut += PackTraits<ST, D>::packArray (valsOut, valsIn, numScalarEnt);
+
+      {
+        Kokkos::pair<int, size_t> p;
+        p = PackTraits<GO, D>::packArray (gidsOut, gidsIn, numEnt);
+        errorCode += p.first;
+        numBytesOut += p.second;
+
+        p = PackTraits<ST, D>::packArray (valsOut, valsIn, numScalarEnt);
+        errorCode += p.first;
+        numBytesOut += p.second;
+      }
 
       const size_t expectedNumBytes = numEntLen + gidsLen + valsLen;
       TEUCHOS_TEST_FOR_EXCEPTION(
-        numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
+        numBytesOut != expectedNumBytes, std::logic_error, "packRow: "
         "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
         << expectedNumBytes << ".");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        errorCode != 0, std::runtime_error, "packRow: "
+        "PackTraits::packArray returned a nonzero error code");
+
       return numBytesOut;
     }
 
@@ -2770,6 +2785,7 @@ public:
         subview (imports, pair_type (valsBeg, valsBeg + valsLen));
 
       size_t numBytesOut = 0;
+      int errorCode = 0;
       LO numEntOut;
       numBytesOut += PackTraits<LO, D>::unpackValue (numEntOut, numEntIn);
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2777,17 +2793,31 @@ public:
         "unpackRow: Expected number of entries " << numEnt
         << " != actual number of entries " << numEntOut << ".");
 
-      numBytesOut += PackTraits<GO, D>::unpackArray (gidsOut, gidsIn, numEnt);
-      numBytesOut += PackTraits<ST, D>::unpackArray (valsOut, valsIn, numScalarEnt);
+      {
+        Kokkos::pair<int, size_t> p;
+        p = PackTraits<GO, D>::unpackArray (gidsOut, gidsIn, numEnt);
+        errorCode += p.first;
+        numBytesOut += p.second;
+
+        p = PackTraits<ST, D>::unpackArray (valsOut, valsIn, numScalarEnt);
+        errorCode += p.first;
+        numBytesOut += p.second;
+      }
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         numBytesOut != numBytes, std::logic_error, "unpackRow: numBytesOut = "
         << numBytesOut << " != numBytes = " << numBytes << ".");
+
       const size_t expectedNumBytes = numEntLen + gidsLen + valsLen;
       TEUCHOS_TEST_FOR_EXCEPTION(
         numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
         "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
         << expectedNumBytes << ".");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        errorCode != 0, std::runtime_error, "unpackRow: "
+        "PackTraits::unpackArray returned a nonzero error code");
+
       return numBytesOut;
     }
   } // namespace (anonymous)

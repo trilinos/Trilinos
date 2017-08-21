@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -252,7 +252,7 @@ namespace Ioss {
     if (!elementBlocks.empty() && !structuredBlocks.empty()) {
       return MeshType::HYBRID;
     }
-    else if (!structuredBlocks.empty()) {
+    if (!structuredBlocks.empty()) {
       return MeshType::STRUCTURED;
     }
     assert(!elementBlocks.empty());
@@ -326,7 +326,7 @@ namespace Ioss {
         for (auto block : blocks) {
           block->field_describe(Ioss::Field::TRANSIENT, &names);
         }
-	Ioss::Utils::uniquify(names);
+        Ioss::Utils::uniquify(names);
         strm << " Number of element variables      =" << std::setw(12) << names.size() << "\n";
       }
 
@@ -336,7 +336,7 @@ namespace Ioss {
         for (auto block : blocks) {
           block->field_describe(Ioss::Field::TRANSIENT, &names);
         }
-	Ioss::Utils::uniquify(names);
+        Ioss::Utils::uniquify(names);
         strm << " Number of structured block vars  =" << std::setw(12) << names.size() << "\n";
       }
 
@@ -346,7 +346,7 @@ namespace Ioss {
         for (auto block : blocks) {
           block->field_describe(Ioss::Field::TRANSIENT, &names);
         }
-	Ioss::Utils::uniquify(names);
+        Ioss::Utils::uniquify(names);
         strm << " Number of nodeset variables      =" << std::setw(12) << names.size() << "\n";
       }
 
@@ -360,7 +360,7 @@ namespace Ioss {
           }
         }
 
-	Ioss::Utils::uniquify(names);
+        Ioss::Utils::uniquify(names);
         strm << " Number of sideset variables      =" << std::setw(12) << names.size() << "\n";
       }
 
@@ -1319,7 +1319,7 @@ namespace Ioss {
     if (io_type == SIDESET) {
       return get_sideset(my_name);
     }
-    else if (io_type == NODESET) {
+    if (io_type == NODESET) {
       return get_nodeset(my_name);
     }
     else if (io_type == EDGESET) {
@@ -1716,7 +1716,7 @@ namespace Ioss {
       }
       return true;
     }
-    else if (((io_type & SIDESET) != 0u) && get_sideset(my_name) != nullptr) {
+    if (((io_type & SIDESET) != 0u) && get_sideset(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "SURFACE";
       }

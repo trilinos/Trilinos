@@ -32,7 +32,7 @@
 //
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <mpi.h>                        // for MPI_Bcast, MPI_Comm, etc
+#include "mpi.h"                        // for MPI_Bcast, MPI_Comm, etc
 #include <stddef.h>                     // for size_t
 #include <stk_unit_test_utils/getOption.h>  // for getOption
 #include <stk_util/stk_config.h>        // for STK_HAS_MPI

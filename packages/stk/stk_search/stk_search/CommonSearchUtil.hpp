@@ -9,13 +9,14 @@
 #include "stk_util/environment/WallTime.hpp"
 #include "stk_search/KDTree_BoundingBox.hpp"
 #include "stk_search/KDTree.hpp"
+#include "mpi.h"
 
 namespace stk {
   namespace search {
 
 
 
-    template <typename DomainBox>
+   template <typename DomainBox>
     inline void GlobalBoxCombine(DomainBox &box_array, MPI_Comm &communicator)
     {
       typedef typename DomainBox::value_type::coordinate_t coordinate_t;
@@ -64,6 +65,24 @@ namespace stk {
                                          all_box_max_global[ibox * 3 + 1],
                                          all_box_max_global[ibox * 3 + 2]);
       }
+    }
+
+
+    //
+    //  Exchange boxes so that current proc local box is sent to the global box on all processors.
+    //
+    template <typename DomainBox>
+    inline void AllGatherHelper(const DomainBox& localBox, std::vector<DomainBox> &global_box_array, MPI_Comm &comm)
+    {
+      int numProc;
+      MPI_Comm_size(comm, &numProc); 
+      global_box_array.clear();
+      global_box_array.resize(numProc);
+      const char* localDataConst = reinterpret_cast<const char*>(&localBox);
+      //  NKC, hack to support old MPI version used by Goodyear
+      char* localData = const_cast<char*>(localDataConst);
+
+      MPI_Allgather(localData, sizeof(DomainBox), MPI_CHAR, global_box_array.data(), sizeof(DomainBox), MPI_CHAR, comm);
     }
 
 
@@ -134,14 +153,12 @@ namespace stk {
       }
 #endif
 
-      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array(num_procs);
-      boxA_proc_box_array[current_proc] = boxA_proc;
-
+      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array;
       //
       //  Do a global communication to communicate all processor boxA bounding boxes
       //  to all processors in the group
       //
-      GlobalBoxCombine(boxA_proc_box_array, comm);
+      stk::search::AllGatherHelper(boxA_proc, boxA_proc_box_array, comm);
       for(int iproc = 0; iproc < num_procs; ++iproc) {
         boxA_proc_box_array[iproc].set_object_number(iproc);
       }

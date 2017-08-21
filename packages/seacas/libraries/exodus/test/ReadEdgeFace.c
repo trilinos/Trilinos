@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -84,7 +84,7 @@ int obj_sizeinq[] = {EX_INQ_EDGE,
 #define OBJECT_IS_BLOCK(i) ((i >= 0) && (i < 3))
 #define OBJECT_IS_SET(i) ((i > 2) && (i < 8))
 
-int cReadEdgeFace(int argc, char *argv[])
+int cReadEdgeFace(int argc, char **argv)
 {
   int            exoid;
   int            appWordSize  = 8;
@@ -158,8 +158,9 @@ int cReadEdgeFace(int argc, char *argv[])
 
     ids       = (int *)malloc(nids * sizeof(int));
     obj_names = (char **)malloc(nids * sizeof(char *));
-    for (obj         = 0; obj < nids; ++obj)
+    for (obj = 0; obj < nids; ++obj) {
       obj_names[obj] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
+    }
 
     EXCHECK(ex_get_ids(exoid, obj_types[i], ids), "Could not read object ids.\n");
     EXCHECK(ex_get_names(exoid, obj_types[i], obj_names), "Could not read object ids.\n");
@@ -184,8 +185,9 @@ int cReadEdgeFace(int argc, char *argv[])
         fprintf(stdout, "\n");
 
         var_names = (char **)malloc(num_vars * sizeof(char *));
-        for (j         = 0; j < num_vars; ++j)
+        for (j = 0; j < num_vars; ++j) {
           var_names[j] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
+        }
 
         EXCHECK(ex_get_variable_names(exoid, obj_types[i], num_vars, var_names),
                 "Could not read variable names.\n");
@@ -193,14 +195,17 @@ int cReadEdgeFace(int argc, char *argv[])
       }
     }
 
-    if (!have_var_names)
+    if (!have_var_names) {
       var_names = 0;
+    }
 
     for (obj = 0; obj < nids; ++obj) {
-      if (obj_names[obj])
+      if (obj_names[obj]) {
         fprintf(stdout, "%s %3d (%s): ", obj_typenames[i], ids[obj], obj_names[obj]);
-      else
+      }
+      else {
         fprintf(stdout, "%s %3d: ", obj_typenames[i], ids[obj]);
+      }
 
       if (OBJECT_IS_BLOCK(i)) {
         int *nconn;
@@ -258,8 +263,9 @@ int cReadEdgeFace(int argc, char *argv[])
           double *attr;
           attr       = (double *)malloc(num_entries * num_attrs * sizeof(double));
           attr_names = (char **)malloc(num_attrs * sizeof(char *));
-          for (j          = 0; j < num_attrs; ++j)
+          for (j = 0; j < num_attrs; ++j) {
             attr_names[j] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
+          }
 
           EXCHECK(ex_get_attr_names(exoid, obj_types[i], ids[obj], attr_names),
                   "Could not read attributes names.\n");
@@ -267,8 +273,9 @@ int cReadEdgeFace(int argc, char *argv[])
                   "Could not read attribute values.\n");
 
           fprintf(stdout, "\n      Attributes:\n      ID ");
-          for (j = 0; j < num_attrs; ++j)
+          for (j = 0; j < num_attrs; ++j) {
             fprintf(stdout, " %s", attr_names[j]);
+          }
           fprintf(stdout, "\n");
           for (j = 0; j < num_entries; ++j) {
             int k;
@@ -279,8 +286,9 @@ int cReadEdgeFace(int argc, char *argv[])
             fprintf(stdout, "\n");
           }
 
-          for (j = 0; j < num_attrs; ++j)
+          for (j = 0; j < num_attrs; ++j) {
             free(attr_names[j]);
+          }
           free(attr_names);
           free(attr);
         }
@@ -301,12 +309,14 @@ int cReadEdgeFace(int argc, char *argv[])
                 "Could not read set.\n");
         fprintf(stdout, "Entries: %3d Distribution factors: %3d\n", num_entries, num_df);
         if (set_extra) {
-          for (j = 0; j < num_entries; ++j)
+          for (j = 0; j < num_entries; ++j) {
             fprintf(stdout, "      %2d %2d\n", set_entry[j], set_extra[j]);
+          }
         }
         else {
-          for (j = 0; j < num_entries; ++j)
+          for (j = 0; j < num_entries; ++j) {
             fprintf(stdout, "      %2d\n", set_entry[j]);
+          }
         }
         free(set_entry);
         free(set_extra);
@@ -316,8 +326,9 @@ int cReadEdgeFace(int argc, char *argv[])
           EXCHECK(ex_get_set_dist_fact(exoid, obj_types[i], ids[obj], set_df),
                   "Could not read set distribution factors.\n");
           fprintf(stdout, "\n    Distribution factors:\n");
-          for (j = 0; j < num_df; ++j)
+          for (j = 0; j < num_df; ++j) {
             fprintf(stdout, "      %4.1f\n", set_df[j]);
+          }
           free(set_df);
         }
       }
@@ -350,8 +361,9 @@ int cReadEdgeFace(int argc, char *argv[])
         entry_vals = (double *)malloc(num_entries * sizeof(double));
         for (j = 0; j < num_vars; ++j) {
           int k;
-          if (!truth_tab[num_vars * obj + j])
+          if (!truth_tab[num_vars * obj + j]) {
             continue;
+          }
 
           fprintf(stdout, "      Variable: %s", var_names[j]);
           for (ti = 1; ti <= num_timesteps; ++ti) {
@@ -375,8 +387,9 @@ int cReadEdgeFace(int argc, char *argv[])
       entry_vals = (double *)malloc(num_timesteps * sizeof(double));
       EXCHECK(ex_inquire(exoid, obj_sizeinq[i], itmp, 0, 0), "Inquire failed.\n");
       itmp[1] = 11;
-      while (itmp[1] > itmp[0])
+      while (itmp[1] > itmp[0]) {
         itmp[1] /= 2;
+      }
       for (j = 0; j < num_vars; ++j) {
         /* FIXME: This works for the dataset created by CreateEdgeFace, but not for any dataset in
          * general since
@@ -385,23 +398,26 @@ int cReadEdgeFace(int argc, char *argv[])
         EXCHECK(ex_get_var_time(exoid, obj_types[i], j + 1, itmp[1], 1, num_timesteps, entry_vals),
                 "Could not read variable over time.\n");
         fprintf(stdout, "    Variable over time: %s  Entry: %3d ", var_names[j], itmp[1]);
-        for (ti = 1; ti <= num_timesteps; ++ti)
+        for (ti = 1; ti <= num_timesteps; ++ti) {
           fprintf(stdout, " @t%d: %4.1f", ti, entry_vals[ti - 1]);
+        }
         fprintf(stdout, "\n");
       }
       free(entry_vals);
     }
 
     if (var_names) {
-      for (j = 0; j < num_vars; ++j)
+      for (j = 0; j < num_vars; ++j) {
         free(var_names[j]);
+      }
       free(var_names);
     }
     free(truth_tab);
     free(ids);
 
-    for (obj = 0; obj < nids; ++obj)
+    for (obj = 0; obj < nids; ++obj) {
       free(obj_names[obj]);
+    }
     free(obj_names);
 
     fprintf(stdout, "\n");

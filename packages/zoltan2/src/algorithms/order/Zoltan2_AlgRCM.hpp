@@ -72,6 +72,7 @@ class AlgRCM : public Algorithm<Adapter>
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   AlgRCM(
@@ -95,7 +96,7 @@ class AlgRCM : public Algorithm<Adapter>
   
     // Get local graph.
     ArrayView<const gno_t> edgeIds;
-    ArrayView<const lno_t> offsets;
+    ArrayView<const offset_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts;
   
     const size_t nVtx = model->getLocalNumVertices();
@@ -138,7 +139,7 @@ class AlgRCM : public Algorithm<Adapter>
     std::queue<gno_t> Q;
     size_t count = 0; // CM label, reversed later
     size_t next = 0;  // next unmarked vertex
-    Teuchos::Array<std::pair<gno_t, size_t> >  children; // children and their degrees
+    Teuchos::Array<std::pair<gno_t, offset_t> >  children; // children and their degrees
   
     while (count < nVtx) {
   
@@ -173,11 +174,11 @@ class AlgRCM : public Algorithm<Adapter>
   
         // Add unmarked children to list of pairs, to be added to queue.
         children.resize(0);
-        for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
+        for (offset_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
           gno_t child = edgeIds[ptr];
           if (static_cast<Tpetra::global_size_t>(invPerm[child]) == INVALID){
             // Not visited yet; add child to list of pairs.
-            std::pair<gno_t,size_t> newchild;
+            std::pair<gno_t,offset_t> newchild;
             newchild.first = child;
             newchild.second = offsets[child+1] - offsets[child];
             children.push_back(newchild); 
@@ -185,10 +186,10 @@ class AlgRCM : public Algorithm<Adapter>
         }
         // Sort children by increasing degree
         // TODO: If edge weights, sort children by decreasing weight,
-        SortPairs<gno_t,size_t> zort;
+        SortPairs<gno_t,offset_t> zort;
         zort.sort(children);
 
-        typename Teuchos::Array<std::pair<gno_t,size_t> >::iterator it = children.begin ();
+        typename Teuchos::Array<std::pair<gno_t,offset_t> >::iterator it = children.begin ();
         for ( ; it != children.end(); ++it){
           // Push children on the queue in sorted order.
           gno_t child = it->first;
@@ -221,13 +222,13 @@ class AlgRCM : public Algorithm<Adapter>
     gno_t v,
     lno_t nVtx,
     ArrayView<const gno_t> edgeIds,
-    ArrayView<const lno_t> offsets)
+    ArrayView<const offset_t> offsets)
   {
     std::queue<gno_t> Q;
     Teuchos::Array<bool> mark(nVtx);
 
     // Do BFS and compute smallest degree as we go
-    lno_t smallestDegree = nVtx;
+    offset_t smallestDegree = nVtx;
     gno_t smallestVertex = 0;
 
     // Clear mark array - nothing marked yet
@@ -241,13 +242,13 @@ class AlgRCM : public Algorithm<Adapter>
       v = Q.front();
       Q.pop();
       // Check degree of v
-      lno_t deg = offsets[v+1] - offsets[v];
+      offset_t deg = offsets[v+1] - offsets[v];
       if (deg < smallestDegree){
         smallestDegree = deg;
         smallestVertex = v;
       }
       // Add unmarked children to queue
-      for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
+      for (offset_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
         gno_t child = edgeIds[ptr];
         if (!mark[child]){
           mark[child] = true; 
@@ -263,7 +264,7 @@ class AlgRCM : public Algorithm<Adapter>
     gno_t v,
     lno_t nVtx,
     ArrayView<const gno_t> edgeIds,
-    ArrayView<const lno_t> offsets)
+    ArrayView<const offset_t> offsets)
   {
     std::queue<gno_t> Q;
     Teuchos::Array<bool> mark(nVtx);
@@ -281,7 +282,7 @@ class AlgRCM : public Algorithm<Adapter>
         v = Q.front();
         Q.pop();
         // Add unmarked children to queue
-        for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
+        for (offset_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
           gno_t child = edgeIds[ptr];
           if (!mark[child]){
             mark[child] = true; 

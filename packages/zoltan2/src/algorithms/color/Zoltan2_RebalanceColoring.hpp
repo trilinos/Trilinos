@@ -58,7 +58,7 @@
    int rebalanceColoring(
      const lno_t nVtx,
      ArrayView<const lno_t> edgeIds,
-     ArrayView<const lno_t> offsets,
+     ArrayView<const offset_t> offsets,
      ArrayRCP<int> colors,
      const int balanceColors,
      const lno_t minSize
@@ -92,7 +92,7 @@
    for (lno_t i=0; i < nVtx; i++){
      if (colorSize[colors[i]] > targetSize){
        // Find first available color that is not full yet
-       for (lno_t j=offsets[i]; j<offsets[i+1]; j++){
+       for (offset_t j=offsets[i]; j<offsets[i+1]; j++){
          lno_t nbor = edgeIds[j];
          if (colors[nbor] > 0){
            // Neighbors' colors are forbidden

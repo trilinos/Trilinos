@@ -44,40 +44,14 @@
 // ***********************************************************************
 //
 // @HEADER
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <fstream>
-
-#include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_StridedMapFactory.hpp>
-#include <Xpetra_ImportFactory.hpp>
-#include <Xpetra_IO.hpp>
-#include <Xpetra_MatrixUtils.hpp>
 
 // Teuchos
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-// Galeri
-#include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraProblemFactory.hpp>
-#include <Galeri_XpetraUtils.hpp>
-#include <Galeri_XpetraMaps.hpp>
-//
-
 #include <MueLu.hpp>
-#include <MueLu_Level.hpp>
-#include <MueLu_BaseClass.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 #include <MueLu_VisualizationHelpers.hpp>
-#include <MueLu_FacadeClassFactory.hpp>
-
-#include <MueLu_Utilities.hpp>
-
-#include <MueLu_MutuallyExclusiveTime.hpp>
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
@@ -86,7 +60,6 @@
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
 #include <BelosPseudoBlockGmresSolMgr.hpp>
-#include <BelosXpetraStatusTestGenResSubNorm.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
@@ -229,26 +202,30 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     int maxDofPerNode = -1;
     Teuchos::ArrayRCP<LocalOrdinal> dofPresent;
     {
-      FILE* data_file;
       std::stringstream ss; ss << comm->getSize() << "dofPresent" << comm->getRank();
-      data_file = fopen(ss.str().c_str(),"r");
-      TEUCHOS_TEST_FOR_EXCEPTION(data_file == NULL, MueLu::Exceptions::RuntimeError,"Problem opening file " << ss.str());
-      // read in first line containing number of local nodes and maxDofPerNode
-      fscanf(data_file,"%d %d\n", &nNodes, &maxDofPerNode);
-      dofPresent = Teuchos::ArrayRCP<LocalOrdinal>(nNodes * maxDofPerNode,0);
-      // loop over all local nodes
-      for(LocalOrdinal i = 0; i < nNodes; i++) {
-        for(int j=0; j<maxDofPerNode; j++) {
-          int tmp = -1;
-          fscanf(data_file,"%d",&tmp);
-          if(tmp == 1) {
-            dofPresent[i*maxDofPerNode+j] = 1; nDofs++;
-          } else {
-            dofPresent[i*maxDofPerNode+j] = 0;
+
+      try{
+        std::ifstream data_file(ss.str());
+        // read in first line containing number of local nodes and maxDofPerNode
+        data_file >> nNodes >> maxDofPerNode;
+        dofPresent = Teuchos::ArrayRCP<LocalOrdinal>(nNodes * maxDofPerNode,0);
+        // loop over all local nodes
+        for(LocalOrdinal i = 0; i < nNodes; i++) {
+          for(int j=0; j<maxDofPerNode; j++) {
+            int tmp = -1;
+            data_file >> tmp;
+            if(tmp == 1) {
+              dofPresent[i*maxDofPerNode+j] = 1; nDofs++;
+            } else {
+              dofPresent[i*maxDofPerNode+j] = 0;
+            }
           }
         }
       }
-      fclose(data_file);
+      catch(const std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"Problem opening/reading file " << ss.str());
+      }
+
     }
 
     out << "PROC " << comm->getRank() << "/" << comm->getSize() << " " << nNodes << " " << maxDofPerNode << std::endl;
@@ -266,24 +243,27 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::Array<GlobalOrdinal> dofGlobals;
     Teuchos::Array<GlobalOrdinal> nodalGlobals;  // nodal GIDs for laplacian (with holes)
     {
-      FILE* data_file;
       std::stringstream ss; ss << comm->getSize() << "proc" << comm->getRank();
-      data_file = fopen(ss.str().c_str(),"r");
-      TEUCHOS_TEST_FOR_EXCEPTION(data_file == NULL, MueLu::Exceptions::RuntimeError,"Problem opening file " << ss.str());
-      // read in first line containing number of local nodes and maxDofPerNode
-      LocalOrdinal tmpDofs = 0;
-      fscanf(data_file,"%d\n", &tmpDofs);
-      TEUCHOS_TEST_FOR_EXCEPTION(tmpDofs != nDofs, MueLu::Exceptions::RuntimeError,"Number of gid entries in map file is " << tmpDofs << " but should be " << nDofs);
+      try{
+        std::ifstream data_file(ss.str());
 
-      dofGlobals = Teuchos::Array<GlobalOrdinal>(nDofs);
+        // read in first line containing number of local nodes and maxDofPerNode
+        LocalOrdinal tmpDofs = 0;
+        data_file >> tmpDofs;
+        TEUCHOS_TEST_FOR_EXCEPTION(tmpDofs != nDofs, MueLu::Exceptions::RuntimeError,"Number of gid entries in map file is " << tmpDofs << " but should be " << nDofs);
 
-      // loop over all local nodes
-      for(GlobalOrdinal i = 0; i < nDofs; i++) {
-        int data;
-        fscanf(data_file,"%d",&data);
-        dofGlobals[i] = Teuchos::as<GlobalOrdinal>(data);
+        dofGlobals = Teuchos::Array<GlobalOrdinal>(nDofs);
+
+        // loop over all local nodes
+        for(GlobalOrdinal i = 0; i < nDofs; i++) {
+          int data;
+          data_file >> data;
+          dofGlobals[i] = Teuchos::as<GlobalOrdinal>(data);
+        }
       }
-      fclose(data_file);
+      catch(const std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"Problem opening/reading file " << ss.str());
+      }
 
       nodalGlobals = Teuchos::Array<GlobalOrdinal>(nNodes);
 
@@ -303,17 +283,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     //
 
     {
-      FILE* data_file;
       std::stringstream ss; ss << comm->getSize() << "ProcLinear" << comm->getRank();
-      data_file = fopen(ss.str().c_str(),"r");
-      TEUCHOS_TEST_FOR_EXCEPTION(data_file == NULL, MueLu::Exceptions::RuntimeError,"Problem opening file " << ss.str());
-      // loop over all local nodes
-      for(GlobalOrdinal i = 0; i < nNodes; i++) {
-        int data;
-        fscanf(data_file,"%d",&data);
-        nodalGlobals[i] = Teuchos::as<GlobalOrdinal>(data);
+      try{
+        std::ifstream data_file(ss.str());
+
+        // loop over all local nodes
+        for(GlobalOrdinal i = 0; i < nNodes; i++) {
+          int data;
+          data_file >> data;
+          nodalGlobals[i] = Teuchos::as<GlobalOrdinal>(data);
+        }
       }
-      fclose(data_file);
+      catch(const std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"Problem opening/reading file " << ss.str());
+      }
       for(GlobalOrdinal i = 0; i < nNodes; i++) {
         nodalGlobals[i] = nodalGlobals[i] - 1;
       }
@@ -345,70 +328,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
 
     // read in matrix
-    GlobalOrdinal NumRows = 0; // number of rows in matrix
-    GlobalOrdinal NumElements = 0; // number of elements in matrix
-    GlobalOrdinal Offset = 0; // number of elements in matrix
-    Teuchos::RCP<Matrix> SerialMatrix = Teuchos::null;
-    {
-      std::ifstream data_file;
-      if (comm->getRank() == 0) {
-        // proc 0 reads the number of rows, columns and nonzero elements
-        data_file.open("theMatrix");
-        TEUCHOS_TEST_FOR_EXCEPTION(data_file.good() == false, MueLu::Exceptions::RuntimeError,"Problem opening file theMatrix");
-        data_file >> NumRows;
-        data_file >> NumElements;
-        data_file >> Offset;
+    Teuchos::RCP<const Map>    DistributedMap  = Teuchos::null;
+    Teuchos::RCP<Matrix>       DistributedMatrix = Teuchos::null;
 
-      }
+    // read in matrix to determine number of rows
+    Teuchos::RCP<Matrix> SerialMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("theMatrix.m",lib,comm);
+    GlobalOrdinal NumRows = SerialMatrix->getRowMap()->getGlobalNumElements();
 
-      // create a standard (serial) row map for the Matrix data (only elements on proc 0)
-      Teuchos::RCP<Map> SerialMap = MapFactory::Build(lib,NumRows,NumRows,0,comm);
-      SerialMatrix = MatrixFactory::Build(SerialMap, 33);
-      if (comm->getRank() == 0) {
-        for(decltype(NumElements) i = 0; i < NumElements; ++i) {
-          GlobalOrdinal row;
-          GlobalOrdinal col;
-          Scalar val;
-          data_file >> row;
-          data_file >> col;
-          data_file >> val;
-          row -= Offset;
-          col -= Offset;
-          SerialMatrix->insertGlobalValues(row,Teuchos::Array<GlobalOrdinal>(1,col)(),Teuchos::Array<Scalar>(1,val)());
-          if (i % 10000 == 0) {
-            double percent = i * 100 / NumElements;
-            out << "Read matrix: " << percent << "% complete" << std::endl;
-          }
-        }
-        SerialMatrix->fillComplete();
-
-        data_file.close();
-      }
-
-      //SerialMatrix->describe(out, Teuchos::VERB_EXTREME);
-
-    } // end read in file
-
-    // distribute map and matrix over processors
-    Teuchos::RCP<const Map>    DistributedMap    = Teuchos::null;
-    Teuchos::RCP<Matrix> DistributedMatrix = Teuchos::null;
-    {
-      if(comm->getSize() > 1) {
-        Teuchos::broadcast(*comm,0,1,&NumRows);
-
-        DistributedMap    = MapFactory::Build(lib,NumRows,dofGlobals(),0,comm);
-        DistributedMatrix = MatrixFactory::Build(DistributedMap,33);
-
-        Teuchos::RCP<Import> dofMatrixImporter = ImportFactory::Build(SerialMatrix->getRowMap(), DistributedMap);
-
-        DistributedMatrix->doImport(*SerialMatrix,*dofMatrixImporter,Xpetra::INSERT);
-        DistributedMatrix->fillComplete();
-      } else {
-        DistributedMap = SerialMatrix->getRowMap();
-        DistributedMatrix = SerialMatrix;
-      }
-
-    } // end distribute matrix
+    // re-read in matrix and distribute it using the user-given distribution over processors
+    DistributedMap    = MapFactory::Build(lib,NumRows,dofGlobals(),0,comm);
+    DistributedMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("theMatrix.m",
+              DistributedMap,
+              Teuchos::null,
+              DistributedMap,
+              DistributedMap,
+              true,   //           callFillComplete = true,
+              false,  //           binary           = false,
+              false,  //           tolerant         = false,
+              false); //           debug            = false)
 
     // read in global vectors (e.g. rhs)
     GlobalOrdinal nGlobalDof = 0;
@@ -418,13 +355,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     Teuchos::RCP<const Map> dofLinearMap = Teuchos::null;
     {
-      FILE* data_file;
       std::stringstream ss; ss << comm->getSize() << "ProcLinear" << comm->getRank();
-      data_file = fopen(ss.str().c_str(),"r");
-      TEUCHOS_TEST_FOR_EXCEPTION(data_file == NULL, MueLu::Exceptions::RuntimeError,"Problem opening file " << ss.str());
-      // loop over all local nodes
-      fscanf(data_file,"%d",&(dofGlobals[0]));
-      fclose(data_file);
+      try{
+        std::ifstream data_file(ss.str());
+        // loop over all local nodes
+        data_file >> dofGlobals[0];
+      }
+      catch(const std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"Problem opening/reading file " << ss.str());
+      }
       for(decltype(nDofs) i = 0; i < nDofs; i++) dofGlobals[i] = i + dofGlobals[0];
       for(decltype(nDofs) i = 0; i < nDofs; i++) dofGlobals[i] = dofGlobals[i] - 1;
       dofLinearMap = MapFactory::Build(lib,nGlobalDof,dofGlobals(),0,comm);
@@ -444,8 +383,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
-    std::cout << paramList << std::endl;
-
     const std::string userName = "user data";
     Teuchos::ParameterList& userParamList = paramList.sublist(userName);
     userParamList.set("multivector Coordinates",coordinates);
@@ -453,6 +390,57 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     RCP<Hierarchy> H;
     H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList, paramList /*coordinates*/);
+
+#ifdef HAVE_MUELU_BELOS
+    {
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Belos Solve")));
+      // Operator and Multivector type that will be used with Belos
+      typedef MultiVector          MV;
+      typedef Belos::OperatorT<MV> OP;
+      H->IsPreconditioner(true);
+
+      // Define Operator and Preconditioner
+      Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(DistributedMatrix)); // Turns a Xpetra::Matrix object into a Belos operator
+      Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
+      // Construct a Belos LinearProblem object
+      RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, LHS, RHS));
+      belosProblem->setRightPrec(belosPrec);
+      bool set = belosProblem->setProblem();
+      if (set == false) {
+        out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+        return EXIT_FAILURE;
+      }
+
+      // Belos parameter list
+      Teuchos::ParameterList belosList;
+      belosList.set("Maximum Iterations",    300); // Maximum number of iterations allowed
+      belosList.set("Convergence Tolerance", 1e-8);    // Relative convergence tolerance requested
+      belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+      belosList.set("Output Frequency",      1);
+      belosList.set("Output Style",          Belos::Brief);
+
+      // Create an iterative solver manager
+      RCP< Belos::SolverManager<SC, MV, OP> > solver;
+      solver = rcp(new Belos::PseudoBlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+
+      // Perform solve
+      Belos::ReturnType ret = Belos::Unconverged;
+      try {
+        ret = solver->solve();
+
+        // Get the number of iterations for this solve.
+        out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+
+      } catch(...) {
+        out << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+      }
+      // Check convergence
+      if (ret != Belos::Converged)
+        out << std::endl << "ERROR:  Belos did not converge or a warning occured! " << std::endl;
+      else
+        out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    }
+#endif
 
     success = true;
   }

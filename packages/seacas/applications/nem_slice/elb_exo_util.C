@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -123,8 +123,8 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
     /* Get the count of elements in each element block */
     for (int cnt = 0; cnt < neblks; cnt++) {
       INT dum1, dum2;
-      if (ex_get_block(exoid, EX_ELEM_BLOCK, eblk_ids[cnt], elem_type, &(eblk_ecnts[cnt]), &dum1, 0,
-                       0, &dum2) < 0) {
+      if (ex_get_block(exoid, EX_ELEM_BLOCK, eblk_ids[cnt], elem_type, &(eblk_ecnts[cnt]), &dum1,
+                       nullptr, nullptr, &dum2) < 0) {
         Gen_Error(0, "fatal: unable to get element block");
         ex_close(exoid);
         return 0;
@@ -192,7 +192,7 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
   }
 
   /* Get the init info */
-  ex_init_params exo;
+  ex_init_params exo{};
   if (ex_get_init_ext(exoid, &exo)) {
     Gen_Error(0, "fatal: unable to get init info from ExodusII file");
     ex_close(exoid);
@@ -210,8 +210,9 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
   if (mesh->num_node_sets > 0) {
     mesh->ns_list_len = ex_inquire_int(exoid, EX_INQ_NS_NODE_LEN);
   }
-  else
+  else {
     mesh->ns_list_len = 0;
+  }
 
   /* Allocate and initialize memory for the sphere adjustment */
   sphere->adjust = (int *)malloc(sizeof(int) * 3 * (mesh->num_el_blks));
@@ -220,14 +221,13 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     ex_close(exoid);
     return 0;
   }
-  else {
-    sphere->begin = sphere->adjust + mesh->num_el_blks;
-    sphere->end   = sphere->begin + mesh->num_el_blks;
-    for (size_t cnt = 0; cnt < mesh->num_el_blks; cnt++) {
-      sphere->adjust[cnt] = 0;
-      sphere->begin[cnt]  = 0;
-      sphere->end[cnt]    = 0;
-    }
+
+  sphere->begin = sphere->adjust + mesh->num_el_blks;
+  sphere->end   = sphere->begin + mesh->num_el_blks;
+  for (size_t cnt = 0; cnt < mesh->num_el_blks; cnt++) {
+    sphere->adjust[cnt] = 0;
+    sphere->begin[cnt]  = 0;
+    sphere->end[cnt]    = 0;
   }
 
   std::vector<INT> el_blk_ids(mesh->num_el_blks);
@@ -246,24 +246,27 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     INT nodes_in_elem;
 
     if (ex_get_block(exoid, EX_ELEM_BLOCK, el_blk_ids[cnt], elem_type, &num_elems, &nodes_in_elem,
-                     NULL, NULL, NULL) < 0) {
+                     nullptr, nullptr, nullptr) < 0) {
       Gen_Error(0, "fatal: unable to get element block");
       ex_close(exoid);
       return 0;
     }
 
-    if (num_elems == 0)
+    if (num_elems == 0) {
       continue;
+    }
 
-    if (cnt == 0)
+    if (cnt == 0) {
       sphere->end[0] = num_elems;
+    }
 
     if (get_elem_type(elem_type, nodes_in_elem, mesh->num_dims) == SPHERE && problem->no_sph != 1) {
       sphere->num += num_elems;
       sphere->adjust[cnt] = 0;
     }
-    else
+    else {
       sphere->adjust[cnt] = sphere->num;
+    }
 
     if (cnt != 0) {
       sphere->begin[cnt] = sphere->end[cnt - 1];
@@ -274,12 +277,14 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
   }
 
   /* Close the ExodusII file */
-  if (ex_close(exoid) < 0)
+  if (ex_close(exoid) < 0) {
     Gen_Error(1, "warning: unable to close ExodusII file");
+  }
 
   printf("ExodusII mesh information\n");
-  if (strlen(mesh->title) > 0)
+  if (strlen(mesh->title) > 0) {
     printf("\ttitle: %s\n", mesh->title);
+  }
   printf("\tgeometry dimension: " ST_ZU "\n", mesh->num_dims);
   printf("\tnumber of nodes: " ST_ZU "\tnumber of elements: " ST_ZU "\n", mesh->num_nodes,
          mesh->num_elems);
@@ -355,12 +360,13 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
   for (size_t cnt = 0; cnt < mesh->num_el_blks; cnt++) {
     INT nodes_per_elem;
     if (ex_get_block(exoid, EX_ELEM_BLOCK, el_blk_ids[cnt], elem_type, &(el_blk_cnts[cnt]),
-                     &nodes_per_elem, NULL, NULL, NULL) < 0) {
+                     &nodes_per_elem, nullptr, nullptr, nullptr) < 0) {
       Gen_Error(0, "fatal: unable to read element block");
       return 0;
     }
-    if (el_blk_cnts[cnt] == 0)
+    if (el_blk_cnts[cnt] == 0) {
       continue;
+    }
 
     blk_elem_type = get_elem_type(elem_type, nodes_per_elem, mesh->num_dims);
 
@@ -371,15 +377,16 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
     }
 
     /* Get the connectivity for this element block */
-    if (ex_get_conn(exoid, EX_ELEM_BLOCK, el_blk_ids[cnt], blk_connect, NULL, NULL) < 0) {
+    if (ex_get_conn(exoid, EX_ELEM_BLOCK, el_blk_ids[cnt], blk_connect, nullptr, nullptr) < 0) {
       Gen_Error(0, "fatal: failed to get element connectivity");
       return 0;
     }
 
     /* find out if this element block is weighted */
     int wgt = -1;
-    if (weight->type & EL_BLK)
+    if (weight->type & EL_BLK) {
       wgt = in_list(el_blk_ids[cnt], weight->elemblk);
+    }
 
     /* Fill the 2D global connectivity array */
     if (((problem->type == ELEMENTAL) && (weight->type & EL_BLK)) ||
@@ -395,16 +402,19 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
             /* check if there is a read value */
             if (weight->vertices[gelem_cnt] >= 1) {
               /* and if it should be overwritten */
-              if (weight->ow_read)
+              if (weight->ow_read) {
                 weight->vertices[gelem_cnt] = weight->elemblk_wgt[wgt];
+              }
             }
-            else
+            else {
               weight->vertices[gelem_cnt] = weight->elemblk_wgt[wgt];
+            }
           }
           else {
             /* now check if this weight has been initialized */
-            if (weight->vertices[gelem_cnt] < 1)
+            if (weight->vertices[gelem_cnt] < 1) {
               weight->vertices[gelem_cnt] = 1;
+            }
           }
         }
 
@@ -437,8 +447,9 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
             }
             else {
               /* now check if this weight has been initialized */
-              if (weight->vertices[node] < 1)
+              if (weight->vertices[node] < 1) {
                 weight->vertices[node] = 1;
+              }
             }
           }
         }
@@ -472,12 +483,14 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
       return 0;
     }
   }
-  else
+  else {
     problem->num_groups = 1; /* there is always one group */
+  }
 
   /* Close the ExodusII file */
-  if (ex_close(exoid) < 0)
+  if (ex_close(exoid) < 0) {
     Gen_Error(0, "warning: failed to close ExodusII mesh file");
+  }
 
   return 1;
 
@@ -499,10 +512,12 @@ template <typename INT>
 int init_weight_struct(Problem_Description *problem, Mesh_Description<INT> *mesh,
                        Weight_Description<INT> *weight)
 {
-  if (problem->type == NODAL)
+  if (problem->type == NODAL) {
     weight->nvals = mesh->num_nodes;
-  else
+  }
+  else {
     weight->nvals = mesh->num_elems;
+  }
 
   /* Allocate memory */
   weight->vertices.resize(weight->nvals);

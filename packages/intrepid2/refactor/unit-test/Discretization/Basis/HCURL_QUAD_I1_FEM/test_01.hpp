@@ -411,36 +411,34 @@ namespace Intrepid2 {
         }
       
         // Check mathematical correctness
-        DynRankViewHost ConstructWithLabel(tangents, numFields,spaceDim); // tangents at each point basis point
-        tangents(0,0) =  2.0; tangents(0,1) =  0.0;
-        tangents(1,0) =  0.0; tangents(1,1) =  2.0;
-        tangents(2,0) = -2.0; tangents(2,1) =  0.0;
-        tangents(3,0) =  0.0; tangents(3,1) = -2.0;
-        
         DynRankView ConstructWithLabel(cvals_dev, numFields,spaceDim);
         DynRankView ConstructWithLabel(bvals_dev, numFields, numFields, spaceDim); // last dimension is spatial dim
-
+        DynRankView ConstructWithLabel(dofCoeffs_dev, numFields, spaceDim);
+    
         quadBasis.getDofCoords(cvals_dev);
+        quadBasis.getDofCoeffs(dofCoeffs_dev);
         quadBasis.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
 
-        const auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
-        Kokkos::deep_copy(bvals, bvals_dev);
+        const auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
+        Kokkos::deep_copy(bvals_host, bvals_dev);
+        const auto dofCoeffs_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), dofCoeffs_dev);
+        Kokkos::deep_copy(dofCoeffs_host, dofCoeffs_dev);
         const auto cvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals_dev);
         Kokkos::deep_copy(cvals, cvals_dev);
 
-        ValueType expected_tangent;
+        ValueType expected_dofValue;
         for (ordinal_type i=0;i<numFields;++i) {
           for (ordinal_type j=0;j<numFields;++j) {
           
-            ValueType tangent = 0.0;
+            ValueType dofValue = 0.0;
             for (int d=0;d<spaceDim;++d) 
-              tangent += bvals(i,j,d)*tangents(j,d);
+              dofValue += bvals_host(i,j,d)*dofCoeffs_host(j,d);
           
-            expected_tangent = (i == j);
-            if (std::abs(tangent - expected_tangent) > tol) {
+            expected_dofValue = (i == j);
+            if (std::abs(dofValue - expected_dofValue) > tol) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\nValue of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1)<< ") is " << tangent << " but should be " << expected_tangent << "\n";
+              ss << "\nValue of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1)<< ") is " << dofValue << " but should be " << expected_dofValue << "\n";
               *outStream << ss.str();
             }
           }

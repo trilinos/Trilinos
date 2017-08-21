@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -34,7 +34,7 @@
  */
 
 #define __STDC_FORMAT_MACROS
-#include <inttypes.h>
+#include <cinttypes>
 #ifndef PRId64
 #error "PRId64 not defined"
 #endif
@@ -43,12 +43,12 @@
 #include <EP_Internals.h>    // for Internals, Redefine
 
 #include <algorithm>      // for sort
+#include <cstddef>        // for size_t
+#include <cstdint>        // for int64_t
+#include <cstdio>         // for sprintf
+#include <cstdlib>        // for exit, EXIT_FAILURE
 #include <cstring>        // for strncpy, strlen, memset
 #include <smart_assert.h> // for SMART_ASSERT
-#include <stddef.h>       // for size_t
-#include <stdint.h>       // for int64_t
-#include <stdio.h>        // for sprintf
-#include <stdlib.h>       // for exit, EXIT_FAILURE
 
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for string, basic_string
@@ -88,7 +88,7 @@ namespace Excn {
                                                     const std::vector<NodeSet<int64_t>> &nodesets,
                                                     const std::vector<SideSet<int64_t>> &sidesets,
                                                     const CommunicationMetaData &        comm);
-}
+} // namespace Excn
 
 namespace {
   bool lessOffset(const Excn::Block &b1, const Excn::Block &b2) { return b1.offset_ < b2.offset_; }
@@ -98,9 +98,8 @@ namespace {
     if ((ex_int64_status(exoid) & type) != 0u) {
       return NC_INT64;
     }
-    else {
-      return NC_INT;
-    }
+
+    return NC_INT;
   }
 
   int define_netcdf_vars(int exoid, const char *type, size_t count, const char *dim_num,
@@ -113,7 +112,7 @@ namespace {
 
   int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim, int dimension,
                              int dim_dim, int str_dim);
-}
+} // namespace
 
 bool Excn::is_path_absolute(const std::string &path)
 {
@@ -343,7 +342,7 @@ bool Excn::Internals<INT>::check_meta_data(const Mesh &mesh, const std::vector<B
                                            const std::vector<SideSet<INT>> & /*unused*/,
                                            const CommunicationMetaData & /*unused*/)
 {
-  ex_init_params init_data;
+  ex_init_params init_data{};
   ex_get_init_ext(exodusFilePtr, &init_data);
 
   bool matches = true;
@@ -714,7 +713,8 @@ template <typename INT> int Excn::Internals<INT>::put_metadata(const std::vector
 
     // store element type as attribute of connectivity variable
     status = nc_put_att_text(exodusFilePtr, connid, ATT_NAME_ELB,
-                             (int)std::strlen(blocks[iblk].elType) + 1, blocks[iblk].elType);
+                             static_cast<int>(std::strlen(blocks[iblk].elType)) + 1,
+                             blocks[iblk].elType);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg, "Error: failed to store element type name %s in file id %d",
@@ -1303,4 +1303,4 @@ namespace {
     }
     return EX_NOERR;
   }
-}
+} // namespace

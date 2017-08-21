@@ -2,7 +2,7 @@
 #include <stddef.h>                     // for size_t, nullptr
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <string>                       // for string
-#include <mpi.h>                        // for MPI_COMM_WORLD
+#include "mpi.h"                        // for MPI_COMM_WORLD
 #include <stk_io/DatabasePurpose.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>

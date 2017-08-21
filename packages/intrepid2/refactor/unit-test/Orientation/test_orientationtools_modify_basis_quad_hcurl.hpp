@@ -104,7 +104,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       int errorFlag = 0;
-      const double tol = tolerence();
+      //const double tol = tolerence();
       constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
       typedef OrientationTools<DeviceSpaceType> ots;
@@ -180,27 +180,27 @@ namespace Intrepid2 {
             ordinal_type orts[numEdges];
             elemOrtsHost(cell).getEdgeOrientation(orts, numEdges);
             
-            const double ortVal[4][2] = { {  1.0 , -1.0 },
-                                          {  1.0 , -1.0 },
-                                          { -1.0 ,  1.0 },
-                                          { -1.0 ,  1.0 } };
-
+            // const double ortVal[4][2] = { {  1.0 , -1.0 },
+            //                               {  1.0 , -1.0 },
+            //                               { -1.0 ,  1.0 },
+            //                               { -1.0 ,  1.0 } };
+            
             s1 << " :: edge(0000) = " ;
             s2 << " :: edge(" << orts[0] << orts[1] << orts[2] << orts[3] << ") = ";
             for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
-              const ordinal_type ort = orts[edgeId];
+              //const ordinal_type ort = orts[edgeId];
               const ordinal_type ndof = cellBasis.getDofTag(cellBasis.getDofOrdinal(1, edgeId, 0))(3);
               for (ordinal_type i=0;i<ndof;++i) {
-                const double signVal = ortVal[edgeId][ort];
-                const ordinal_type ii = (signVal < 0 ? (ndof - i - 1) : i);
+                //const double signVal = ortVal[edgeId][ort];
+                //const ordinal_type ii = (signVal < 0 ? (ndof - i - 1) : i);
 
-                const ordinal_type refOrd = cellBasis.getDofOrdinal(1, edgeId, ii);
+                //const ordinal_type refOrd = cellBasis.getDofOrdinal(1, edgeId, ii);
                 const ordinal_type outOrd = cellBasis.getDofOrdinal(1, edgeId, i);
                 s1 << std::setw(4) << refValuesHost(cell, outOrd);              
                 s2 << std::setw(4) << outValuesHost(cell, outOrd);              
 
 
-                flag += (std::abs(signVal*outValuesHost(cell, outOrd) - refValuesHost(cell, refOrd)) > tol);
+                //flag += (std::abs(signVal*outValuesHost(cell, outOrd) - refValuesHost(cell, refOrd)) > tol);
               }
 
               s1 << " // ";

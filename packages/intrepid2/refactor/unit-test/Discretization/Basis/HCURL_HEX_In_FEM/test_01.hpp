@@ -133,7 +133,188 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
   *outStream
   << "\n"
   << "===============================================================================\n"
-  << "| TEST 1: Testing OPERATOR_VALUE (Kronecker property)                         |\n"
+  << "| TEST 1: Exception testing                                                   |\n"
+  << "===============================================================================\n";
+
+  try {
+
+#ifdef HAVE_INTREPID2_DEBUG
+
+    ordinal_type nthrow = 0, ncatch = 0;
+
+    const ordinal_type order = 1;
+    HexBasisType hexBasis(order);
+
+    // Array of reference hex nodes - used for evaluation of basis
+    DynRankViewHost ConstructWithLabel(hexNodesHost, 8, 3);
+
+    hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;
+    hexNodesHost(1,0) =  1.0; hexNodesHost(1,1) = -1.0; hexNodesHost(1,2) = -1.0;
+    hexNodesHost(2,0) = -1.0; hexNodesHost(2,1) =  1.0; hexNodesHost(2,2) = -1.0;
+    hexNodesHost(3,0) =  1.0; hexNodesHost(3,1) =  1.0; hexNodesHost(3,2) = -1.0;
+    hexNodesHost(4,0) = -1.0; hexNodesHost(4,1) = -1.0; hexNodesHost(4,2) =  1.0;
+    hexNodesHost(5,0) =  1.0; hexNodesHost(5,1) = -1.0; hexNodesHost(5,2) =  1.0;
+    hexNodesHost(6,0) = -1.0; hexNodesHost(6,1) =  1.0; hexNodesHost(6,2) =  1.0;
+    hexNodesHost(7,0) =  1.0; hexNodesHost(7,1) =  1.0; hexNodesHost(7,2) =  1.0;
+
+    auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+    Kokkos::deep_copy(hexNodes, hexNodesHost);
+
+    // Array dimensions
+    const ordinal_type numFields = hexBasis.getCardinality();
+    const ordinal_type numPoints = hexNodes.dimension(0);
+    const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
+
+    {
+      DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+
+      // exception #1: GRAD cannot be applied to HCURL functions
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_GRAD) );
+
+      // exception #2: DIV cannot be applied to HCURL functions
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_DIV) );
+    }
+
+    {
+      // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
+      // getDofTag() to access invalid array elements thereby causing bounds check exception
+      //
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(3,0,0) );
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(1,1,1) );
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(0,4,1) );
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(12) );
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(-1) );
+    }
+
+    {
+      // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
+      DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+
+      {
+        // Exception #8: input points array must be of rank-2
+        DynRankView ConstructWithLabel(badPoints,4,5,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #9: dimension 1 in the input point array must equal space dimension of the cell
+        DynRankView ConstructWithLabel(badPoints,4,2);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #10: output values must be of rank-3 for OPERATOR_VALUE
+        DynRankView ConstructWithLabel(badVals,4,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #11: output values must be of rank-3 for OPERATOR_CURL
+        DynRankView ConstructWithLabel(badVals,4,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_CURL));
+      }
+
+      {
+        // Exception #12: incorrect 0th dimension of output array (must equal number of basis functions)
+        DynRankView ConstructWithLabel(badVals,numFields+1,numPoints,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #13: incorrect 1st dimension of output array (must equal number of points)
+        DynRankView ConstructWithLabel(badVals,numFields,numPoints+1,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #14: incorrect 2nd dimension of output array (must equal the space dimension)
+        DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
+        DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_CURL));
+      }
+    }
+
+    {
+      // Exception #16: D2 cannot be applied to HCURL functions
+      DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2));
+    }
+
+    if (nthrow != ncatch) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
+    }
+#endif
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+
+  *outStream
+  << "\n"
+  << "===============================================================================\n"
+  << "| TEST 2: Testing OPERATOR_VALUE (Kronecker property using dof coefficients)  |\n"
+  << "===============================================================================\n";
+
+  try {
+
+    const ordinal_type order = std::min(3, maxOrder);
+    HexBasisType hexBasis(order);
+
+    const ordinal_type numFields = hexBasis.getCardinality();
+    DynRankView ConstructWithLabel(dofCoords, numFields, dim);
+    hexBasis.getDofCoords(dofCoords);
+
+    DynRankView ConstructWithLabel(dofCoeffs, numFields, dim);
+    hexBasis.getDofCoeffs(dofCoeffs);
+
+    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, dim);
+    hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
+
+    auto h_dofCoords = Kokkos::create_mirror_view(dofCoords);
+    Kokkos::deep_copy(h_dofCoords, dofCoords);
+
+    auto h_dofCoeffs = Kokkos::create_mirror_view(dofCoeffs);
+    Kokkos::deep_copy(h_dofCoeffs, dofCoeffs);
+
+    auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
+    Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);          // test for Kronecker property
+    for (int i=0;i<numFields;i++) {
+      for (int j=0;j<numFields;j++) {
+
+        outputValueType dofValue = 0.0;
+        for(ordinal_type d=0;d<dim;++d)
+          dofValue += h_basisAtDofCoords(i,j,d)*h_dofCoeffs(j,d);
+
+        // check values
+        const outputValueType expected_dofValue = (i == j);
+        if (std::abs(dofValue - expected_dofValue) > tol) {
+          errorFlag++;
+          std::stringstream ss;
+          ss << "\nValue of basis function " << i << " at (" << h_dofCoords(i,0) << ", " << h_dofCoords(i,1) << ", "<< h_dofCoords(i,2) << ") is " << dofValue << " but should be " << expected_dofValue << "\n";
+          *outStream << ss.str();
+        }
+      }
+    }
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+
+  *outStream
+  << "\n"
+  << "===============================================================================\n"
+  << "| TEST 3: Testing OPERATOR_VALUE (Kronecker property)                         |\n"
   << "===============================================================================\n";
 
   try {
@@ -153,10 +334,10 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
 
     // These are tensor product basis functions where the local edge/basis orientation
-    // is assumed to be in the positive x, y, or z direction. 
+    // is assumed to be in the positive x, y, or z direction.
     // For simplicity we do not need to compute tangents, but can just access values
     // from the correct indices assuming that tangents are (1,0,0), (0,1,0), or (0,0,1)
-    
+
     // test for Kronecker property
     for (int i=0;i<numFields;i++) {
       for (int j=0;j<numFields;j++) {
@@ -194,184 +375,56 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
   *outStream
   << "\n"
   << "===============================================================================\n"
-  << "| TEST 2: Exception testing                                                   |\n"
-  << "===============================================================================\n";
-
-  try {
-
-#ifdef HAVE_INTREPID2_DEBUG
-
-     ordinal_type nthrow = 0, ncatch = 0;
-
-     const ordinal_type order = 1;
-     HexBasisType hexBasis(order);
-
-     // Array of reference hex nodes - used for evaluation of basis
-     DynRankViewHost ConstructWithLabel(hexNodesHost, 8, 3);
-    
-     hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;
-     hexNodesHost(1,0) =  1.0; hexNodesHost(1,1) = -1.0; hexNodesHost(1,2) = -1.0;
-     hexNodesHost(2,0) = -1.0; hexNodesHost(2,1) =  1.0; hexNodesHost(2,2) = -1.0;
-     hexNodesHost(3,0) =  1.0; hexNodesHost(3,1) =  1.0; hexNodesHost(3,2) = -1.0;
-     hexNodesHost(4,0) = -1.0; hexNodesHost(4,1) = -1.0; hexNodesHost(4,2) =  1.0;
-     hexNodesHost(5,0) =  1.0; hexNodesHost(5,1) = -1.0; hexNodesHost(5,2) =  1.0;
-     hexNodesHost(6,0) = -1.0; hexNodesHost(6,1) =  1.0; hexNodesHost(6,2) =  1.0;
-     hexNodesHost(7,0) =  1.0; hexNodesHost(7,1) =  1.0; hexNodesHost(7,2) =  1.0;
- 
-     auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
-     Kokkos::deep_copy(hexNodes, hexNodesHost);
- 
-    // Array dimensions
-     const ordinal_type numFields = hexBasis.getCardinality();
-     const ordinal_type numPoints = hexNodes.dimension(0);
-     const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
-
-       {
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-
-        // exception #1: GRAD cannot be applied to HCURL functions
-        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_GRAD) );
-
-        // exception #2: DIV cannot be applied to HCURL functions
-        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_DIV) );
-       }
-
-       {
-        // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
-        // getDofTag() to access invalid array elements thereby causing bounds check exception
-        //
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(3,0,0) );
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(1,1,1) );
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(0,4,1) );
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(12) );
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(-1) );
-       }
-
-       {
-        // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-        
-         {
-          // Exception #8: input points array must be of rank-2
-          DynRankView ConstructWithLabel(badPoints,4,5,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #9: dimension 1 in the input point array must equal space dimension of the cell
-          DynRankView ConstructWithLabel(badPoints,4,2);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #10: output values must be of rank-3 for OPERATOR_VALUE
-          DynRankView ConstructWithLabel(badVals,4,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #11: output values must be of rank-3 for OPERATOR_CURL
-          DynRankView ConstructWithLabel(badVals,4,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_CURL));
-         } 
-
-         {
-          // Exception #12: incorrect 0th dimension of output array (must equal number of basis functions)
-          DynRankView ConstructWithLabel(badVals,numFields+1,numPoints,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #13: incorrect 1st dimension of output array (must equal number of points)
-          DynRankView ConstructWithLabel(badVals,numFields,numPoints+1,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #14: incorrect 2nd dimension of output array (must equal the space dimension)
-          DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
-          DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_CURL));
-         } 
-       }
-
-       {
-        // Exception #16: D2 cannot be applied to HCURL functions
-        DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
-        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2));
-       } 
-   
-      if (nthrow != ncatch) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
-      }
-#endif
-  } catch (std::exception err) {
-    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-    *outStream << err.what() << '\n';
-    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-    errorFlag = -1000;
-  };
-
-  *outStream
-  << "\n"
-  << "===============================================================================\n"
-  << "| TEST 3: Test correctness of basis function values and curls                 |\n"
+  << "| TEST 4: Test correctness of basis function values and curls                 |\n"
   << "===============================================================================\n";
 
   // VALUE: Each row pair gives the 12x3 correct basis set values at an evaluation point: (P,F,D) layout
   const ValueType basisValues[] = {
-    1,0,0, 1,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
-    0,0,0, 0,0,0, 1,0,0, 1,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
-    0,0,0, 0,0,0, 0,0,0, 0,0,0, 1,0,0, 1,0,0, 0,0,0, 0,0,0,
-    0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 1,0,0, 1,0,0,
-    0,1,0, 0,0,0, 0,1,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
-    0,0,0, 0,1,0, 0,0,0, 0,1,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
-    0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,1,0, 0,0,0, 0,1,0, 0,0,0,
-    0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,1,0, 0,0,0, 0,1,0,
-    0,0,1, 0,0,0, 0,0,0, 0,0,0, 0,0,1, 0,0,0, 0,0,0, 0,0,0,
-    0,0,0, 0,0,1, 0,0,0, 0,0,0, 0,0,0, 0,0,1, 0,0,0, 0,0,0,
-    0,0,0, 0,0,0, 0,0,1, 0,0,0, 0,0,0, 0,0,0, 0,0,1, 0,0,0,
-    0,0,0, 0,0,0, 0,0,0, 0,0,1, 0,0,0, 0,0,0, 0,0,0, 0,0,1
+      1,0,0, 1,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
+      0,0,0, 0,0,0, 1,0,0, 1,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
+      0,0,0, 0,0,0, 0,0,0, 0,0,0, 1,0,0, 1,0,0, 0,0,0, 0,0,0,
+      0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 1,0,0, 1,0,0,
+      0,1,0, 0,0,0, 0,1,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
+      0,0,0, 0,1,0, 0,0,0, 0,1,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
+      0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,1,0, 0,0,0, 0,1,0, 0,0,0,
+      0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,1,0, 0,0,0, 0,1,0,
+      0,0,1, 0,0,0, 0,0,0, 0,0,0, 0,0,1, 0,0,0, 0,0,0, 0,0,0,
+      0,0,0, 0,0,1, 0,0,0, 0,0,0, 0,0,0, 0,0,1, 0,0,0, 0,0,0,
+      0,0,0, 0,0,0, 0,0,1, 0,0,0, 0,0,0, 0,0,0, 0,0,1, 0,0,0,
+      0,0,0, 0,0,0, 0,0,0, 0,0,1, 0,0,0, 0,0,0, 0,0,0, 0,0,1
   };
 
   // CURL
   const ValueType basisCurls[] = {   
-    0,-0.5,0.5, 0,-0.5,0.5, 0,0,0.5, 0,0,0.5, 0,-0.5,0, 0,-0.5,0, 0,0,0, 0,0,0,
-    0,0,-0.5, 0,0,-0.5, 0,-0.5,-0.5, 0,-0.5,-0.5, 0,0,0, 0,0,0, 0,-0.5,0, 0,-0.5,0,
-    0,0.5,0, 0,0.5,0, 0,0,0, 0,0,0, 0,0.5,0.5, 0,0.5,0.5, 0,0,0.5, 0,0,0.5,
-    0,0,0, 0,0,0, 0,0.5,0, 0,0.5,0, 0,0,-0.5, 0,0,-0.5, 0,0.5,-0.5, 0,0.5,-0.5,
-    // y-component basis functions
-    // first y-component bf is (0,1/4(1-x)(1-z),0)
-    // curl is (1/4(1-x),0,-1/4(1-z))
-    0.5,0,-0.5, 0,0,-0.5, 0.5,0,-0.5, 0,0,-0.5, 0.5,0,0, 0,0,0, 0.5,0,0, 0,0,0,
-    // second y-component bf is (0,1/4(1+x)(1-z),0)
-    // curl is (1/4(1+x),0,1/4(1-z))
-    0,0,0.5, 0.5,0,0.5, 0,0,0.5, 0.5,0,0.5, 0,0,0, 0.5,0,0, 0,0,0, 0.5,0,0,
-    // third y-component bf is (0,1/4(1-x)(1+z),0)
-    // curl is (-1/4(1-x),0,-1/4(1+z))
-    -0.5,0,0, 0,0,0, -0.5,0,0, 0,0,0, -0.5,0,-0.5, 0,0,-0.5, -0.5,0,-0.5, 0,0,-0.5,
-    // fourth y-component bf is (0,1/4(1+x)(1+z),0)
-    // curl is (-1/4(1+x),0,1/4(1+z))
-    0.0,0,0, -0.5,0,0, 0.0,0,0, -0.5,0,0, 0.0,0,0.5, -0.5,0,0.5, 0.0,0,0.5, -0.5,0,0.5,
-    // first z-component bf is (0,0,1/4(1-x)(1-y))
-    // curl is (-1/4(1-x),1/4(1-y),0)
-    -0.5,0.5,0, 0,0.5,0, -0.5,0,0, 0,0,0, -0.5,0.5,0, 0,0.5,0, -0.5,0,0, 0,0,0,
-    // second z-component bf is (0,0,1/4(1+x)(1-y))
-    // curl is (-1/4(1+x),1/4(1-y),0)
-    0.0,-0.5,0, -0.5,-0.5,0, 0,0,0, -0.5,0,0, 0,-0.5,0, -0.5,-0.5,0, 0,0,0, -0.5,0,0, 
-    // third z-component bf is (0,0,1/4(1-x)(1+y))
-    // curl is (1/4(1-x),1/4(1+y),0)
-    0.5,0,0, 0,0,0, 0.5,0.5,0, 0,0.5,0, 0.5,0,0, 0,0,0, 0.5,0.5,0, 0,0.5,0, 
-    // fourth z-component bf is (0,0,1/4(1+x)(1+y))
-    // curl is (1/4(1+x),-1/4(1+y),0)
-    0,0,0, 0.5,0,0, 0,-0.5,0, 0.5,-0.5,0, 0,0,0, 0.5,0,0, 0,-0.5,0, 0.5,-0.5,0 
+      0,-0.5,0.5, 0,-0.5,0.5, 0,0,0.5, 0,0,0.5, 0,-0.5,0, 0,-0.5,0, 0,0,0, 0,0,0,
+      0,0,-0.5, 0,0,-0.5, 0,-0.5,-0.5, 0,-0.5,-0.5, 0,0,0, 0,0,0, 0,-0.5,0, 0,-0.5,0,
+      0,0.5,0, 0,0.5,0, 0,0,0, 0,0,0, 0,0.5,0.5, 0,0.5,0.5, 0,0,0.5, 0,0,0.5,
+      0,0,0, 0,0,0, 0,0.5,0, 0,0.5,0, 0,0,-0.5, 0,0,-0.5, 0,0.5,-0.5, 0,0.5,-0.5,
+      // y-component basis functions
+      // first y-component bf is (0,1/4(1-x)(1-z),0)
+      // curl is (1/4(1-x),0,-1/4(1-z))
+      0.5,0,-0.5, 0,0,-0.5, 0.5,0,-0.5, 0,0,-0.5, 0.5,0,0, 0,0,0, 0.5,0,0, 0,0,0,
+      // second y-component bf is (0,1/4(1+x)(1-z),0)
+      // curl is (1/4(1+x),0,1/4(1-z))
+      0,0,0.5, 0.5,0,0.5, 0,0,0.5, 0.5,0,0.5, 0,0,0, 0.5,0,0, 0,0,0, 0.5,0,0,
+      // third y-component bf is (0,1/4(1-x)(1+z),0)
+      // curl is (-1/4(1-x),0,-1/4(1+z))
+      -0.5,0,0, 0,0,0, -0.5,0,0, 0,0,0, -0.5,0,-0.5, 0,0,-0.5, -0.5,0,-0.5, 0,0,-0.5,
+      // fourth y-component bf is (0,1/4(1+x)(1+z),0)
+      // curl is (-1/4(1+x),0,1/4(1+z))
+      0.0,0,0, -0.5,0,0, 0.0,0,0, -0.5,0,0, 0.0,0,0.5, -0.5,0,0.5, 0.0,0,0.5, -0.5,0,0.5,
+      // first z-component bf is (0,0,1/4(1-x)(1-y))
+      // curl is (-1/4(1-x),1/4(1-y),0)
+      -0.5,0.5,0, 0,0.5,0, -0.5,0,0, 0,0,0, -0.5,0.5,0, 0,0.5,0, -0.5,0,0, 0,0,0,
+      // second z-component bf is (0,0,1/4(1+x)(1-y))
+      // curl is (-1/4(1+x),1/4(1-y),0)
+      0.0,-0.5,0, -0.5,-0.5,0, 0,0,0, -0.5,0,0, 0,-0.5,0, -0.5,-0.5,0, 0,0,0, -0.5,0,0,
+      // third z-component bf is (0,0,1/4(1-x)(1+y))
+      // curl is (1/4(1-x),1/4(1+y),0)
+      0.5,0,0, 0,0,0, 0.5,0.5,0, 0,0.5,0, 0.5,0,0, 0,0,0, 0.5,0.5,0, 0,0.5,0,
+      // fourth z-component bf is (0,0,1/4(1+x)(1+y))
+      // curl is (1/4(1+x),-1/4(1+y),0)
+      0,0,0, 0.5,0,0, 0,-0.5,0, 0.5,-0.5,0, 0,0,0, 0.5,0,0, 0,-0.5,0, 0.5,-0.5,0
   };
 
 
@@ -380,9 +433,9 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     const ordinal_type order = 1;
     HexBasisType hexBasis(order);
 
-   // Array of reference hex nodes - used for evaluation of basis
+    // Array of reference hex nodes - used for evaluation of basis
     DynRankViewHost ConstructWithLabel(hexNodesHost, 8, 3);
-    
+
     hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;
     hexNodesHost(1,0) =  1.0; hexNodesHost(1,1) = -1.0; hexNodesHost(1,2) = -1.0;
     hexNodesHost(2,0) = -1.0; hexNodesHost(2,1) =  1.0; hexNodesHost(2,2) = -1.0;
@@ -395,14 +448,14 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
     Kokkos::deep_copy(hexNodes, hexNodesHost);
 
-   // Array dimensions
+    // Array dimensions
     const ordinal_type numFields = hexBasis.getCardinality();
     const ordinal_type numPoints = hexNodes.dimension(0);
     const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
     *outStream << " -- Testing OPERATOR_VALUE \n";
     {
-     // Check VALUE of basis functions
+      // Check VALUE of basis functions
       DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
       hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
       auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
@@ -410,47 +463,47 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
 
       for (ordinal_type i = 0; i < numFields; i++) {
         for (ordinal_type j = 0; j < numPoints; j++) {
-           for (ordinal_type k = 0; k < spaceDim; k++) {
- 
-              // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-              const ordinal_type l = k + i * spaceDim * numPoints + j * spaceDim;
-              if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
-                 errorFlag++;
-                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          for (ordinal_type k = 0; k < spaceDim; k++) {
 
-                 // Output the multi-index of the value where the error is:
-                 *outStream << " At multi-index { ";
-                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                 *outStream << "}  computed value: " << vals(i,j,k)
-                            << " but reference value: " << basisValues[l] << "\n";
-              }
-           }
-         }
+            // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
+            const ordinal_type l = k + i * spaceDim * numPoints + j * spaceDim;
+            if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+
+              // Output the multi-index of the value where the error is:
+              *outStream << " At multi-index { ";
+              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+              *outStream << "}  computed value: " << vals(i,j,k)
+                                    << " but reference value: " << basisValues[l] << "\n";
+            }
+          }
+        }
       }
     }
     *outStream << " -- Testing OPERATOR_CURL \n";
     {
-     // Check CURL of basis function:
-     DynRankView ConstructWithLabel(curls, numFields, numPoints, spaceDim);
-     hexBasis.getValues(curls, hexNodes, OPERATOR_CURL);
-     auto curls_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), curls);
-     Kokkos::deep_copy(curls_host, curls);
+      // Check CURL of basis function:
+      DynRankView ConstructWithLabel(curls, numFields, numPoints, spaceDim);
+      hexBasis.getValues(curls, hexNodes, OPERATOR_CURL);
+      auto curls_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), curls);
+      Kokkos::deep_copy(curls_host, curls);
 
-     for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type i = 0; i < numFields; ++i) {
         for (ordinal_type j = 0; j < numPoints; ++j) {
-           for (ordinal_type k = 0; k < spaceDim; k++) {
-              const ordinal_type l = k + i * spaceDim * numPoints + j * spaceDim;
-              if (std::abs(curls(i,j,k) - basisCurls[l]) > tol) {
-                 errorFlag++;
-                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          for (ordinal_type k = 0; k < spaceDim; k++) {
+            const ordinal_type l = k + i * spaceDim * numPoints + j * spaceDim;
+            if (std::abs(curls(i,j,k) - basisCurls[l]) > tol) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
-                 // Output the multi-index of the curl where the error is:
-                 *outStream << " At multi-index { ";
-                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                 *outStream << "}  computed curl component: " << curls(i,j,k)
-                            << " but reference curl component: " << basisCurls[l] << "\n";
-              }
-           }
+              // Output the multi-index of the curl where the error is:
+              *outStream << " At multi-index { ";
+              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+              *outStream << "}  computed curl component: " << curls(i,j,k)
+                                    << " but reference curl component: " << basisCurls[l] << "\n";
+            }
+          }
         }
       }
     }
@@ -470,6 +523,6 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
   std::cout.copyfmt(oldFormatState);
 
   return errorFlag;
-  }
- }
+}
+}
 }

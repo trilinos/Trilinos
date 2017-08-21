@@ -94,6 +94,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable Additive Variant."
   NO)
 
+# Enable matrix splitting
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_REGION_SPLITTING
+  HAVE_${PACKAGE_NAME_UC}_REGION_SPLITTING
+  "Enable Region Splitting."
+  NO)
+
 # cmake option to enable building of MueLu Tutorial
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Tutorial

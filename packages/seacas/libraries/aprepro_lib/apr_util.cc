@@ -1,6 +1,6 @@
-// Copyright (c) 2014, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright (c) 2014 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -33,13 +33,13 @@
 
 #include "aprepro.h"        // for symrec, Aprepro, etc
 #include "aprepro_parser.h" // for Parser, Parser::token, etc
+#include <cctype>           // for isalnum, isalpha, isupper, etc
+#include <cerrno>           // for errno, EDOM, ERANGE
 #include <cfenv>            // for fetestexcept, FE_DIVBYZERO, etc
 #include <cmath>            // for math_errhandling, etc
 #include <cstdio>           // for perror
 #include <cstdlib>          // for mkstemp
 #include <cstring>          // for strlen, strcpy, memcpy, etc
-#include <ctype.h>          // for isalnum, isalpha, isupper, etc
-#include <errno.h>          // for errno, EDOM, ERANGE
 #include <iostream>         // for operator<<, cerr, ostream
 #include <string>           // for allocator, operator+, etc
 #include <sys/stat.h>       // for stat, S_ISDIR
@@ -60,7 +60,7 @@
 
 namespace {
   std::vector<char *> allocations;
-}
+} // namespace
 
 namespace SEAMS {
   extern Aprepro *aprepro;
@@ -83,12 +83,15 @@ namespace SEAMS {
       var->type = type;
     }
     else {
-      if (type == Parser::token::VAR)
+      if (type == Parser::token::VAR) {
         var->type = Parser::token::IMMVAR;
-      else if (type == Parser::token::SVAR)
+      }
+      else if (type == Parser::token::SVAR) {
         var->type = Parser::token::IMMSVAR;
-      else
+      }
+      else {
         var->type = type;
+      }
     }
   }
 
@@ -128,8 +131,9 @@ namespace SEAMS {
     std::strcpy(tmp_name, _mktemp(tmp_name));
 #else
     fd = mkstemp(tmp_name);
-    if (fd >= 0)
+    if (fd >= 0) {
       close(fd);
+    }
 #endif
     return tmp_name;
   }
@@ -157,11 +161,12 @@ namespace SEAMS {
     if (var->name[0] != '_' && apr.ap_options.warning_msg) {
       // See if internal or user-defined variable...
       std::string type;
-      if (var->isInternal)
+      if (var->isInternal) {
         type = "Pre";
-      else
+      }
+      else {
         type = "User";
-
+      }
       apr.warning(type + "-defined Variable '" + var->name + "' redefined");
     }
   }
@@ -174,26 +179,29 @@ namespace SEAMS {
       if (errno != 0) {
         yyerror(apr, function);
       }
-      if (errno == EDOM)
+      if (errno == EDOM) {
         perror("	DOMAIN error");
-      else if (errno == ERANGE)
+      }
+      else if (errno == ERANGE) {
         perror("	RANGE error");
-      else if (errno != 0)
+      }
+      else if (errno != 0) {
         perror("	Unknown error");
+      }
       errno = 0;
     }
     else if (math_errhandling & MATH_ERREXCEPT) {
-      if (std::fetestexcept(FE_INVALID | FE_OVERFLOW | FE_DIVBYZERO)) {
+      if (std::fetestexcept(FE_INVALID | FE_OVERFLOW | FE_DIVBYZERO) != 0) {
         yyerror(apr, function);
       }
 
-      if (std::fetestexcept(FE_INVALID)) {
+      if (std::fetestexcept(FE_INVALID) != 0) {
         std::cerr << "	DOMAIN error\n";
       }
-      else if (std::fetestexcept(FE_OVERFLOW)) {
+      else if (std::fetestexcept(FE_OVERFLOW) != 0) {
         std::cerr << "  RANGE error -- overflow\n";
       }
-      else if (std::fetestexcept(FE_DIVBYZERO)) {
+      else if (std::fetestexcept(FE_DIVBYZERO) != 0) {
         std::cerr << "	RANGE error -- divide by zero\n";
       }
     }
@@ -206,10 +214,12 @@ namespace SEAMS {
   {
     char *p = string;
     while (*p != '\0') {
-      if (*p == ' ')
+      if (*p == ' ') {
         *p = '_';
-      else if (isupper((int)*p))
-        *p = tolower((int)*p);
+      }
+      else if (isupper(static_cast<int>(*p)) != 0) {
+        *p = tolower(static_cast<int>(*p));
+      }
       p++;
     }
   }
@@ -226,12 +236,16 @@ namespace SEAMS {
 
   bool is_directory(const std::string &filepath)
   {
-    struct stat s;
-    int         ok = stat(filepath.c_str(), &s);
-    if (ok == 0)
+    struct stat s
+    {
+    };
+    int ok = stat(filepath.c_str(), &s);
+    if (ok == 0) {
       return S_ISDIR(s.st_mode);
-    else
-      return 0;
+    }
+    else {
+      return false;
+    }
   }
 
   bool check_valid_var(const char *var)
@@ -243,18 +257,20 @@ namespace SEAMS {
      */
 
     int length = strlen(var);
-    if (length == 0)
+    if (length == 0) {
       return false;
+    }
 
-    if (!isalpha(var[0]) && var[0] != '_') {
+    if ((isalpha(var[0]) == 0) && var[0] != '_') {
       return false;
     }
 
     for (int i = 1; i < length; i++) {
       char c = var[i];
-      if (!isalnum(c) && c != ':' && c != '_')
+      if ((isalnum(c) == 0) && c != ':' && c != '_') {
         return false;
+      }
     }
     return true;
   }
-}
+} // namespace SEAMS

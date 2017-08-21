@@ -232,39 +232,6 @@ namespace stk_example_io {
     // Just an example of how application could control whether an
     // entity is subsetted or not...
 
-
-#if 0
-    // Example command line in current code corresponding to behavior below:
-    std::cout << "\nWhen processing file multi-block.g for use case 2, the blocks below will be omitted:\n";
-    std::cout << "\tOMIT BLOCK Cblock Eblock I1 I2\n\n";
-    Ioss::ElementBlock *eb = in_region.get_element_block("cblock");
-    if (eb != NULL)
-      eb->property_add(Ioss::Property(std::string("omitted"), 1));
-
-    eb = in_region.get_element_block("eblock");
-    if (eb != NULL)
-      eb->property_add(Ioss::Property(std::string("omitted"), 1));
-
-    eb = in_region.get_element_block("i1");
-    if (eb != NULL)
-      eb->property_add(Ioss::Property(std::string("omitted"), 1));
-
-    eb = in_region.get_element_block("i2");
-    if (eb != NULL)
-      eb->property_add(Ioss::Property(std::string("omitted"), 1));
-#endif
-
-#if 0
-    // Example for subsetting -- omit "odd" blocks
-    if (entity->type() == Ioss::ELEMENTBLOCK) {
-      int id = entity->get_property("id").get_int();
-      if (id % 2) {
-	entity->property_add(Ioss::Property(std::string("omitted"), 1));
-	std::cout << "Skipping " << entity->type_string() << ": "  << entity->name() << "\n";
-      }
-    }
-#endif
-
     //----------------------------------
     // Process Entity Types. Subsetting is possible.
 
@@ -303,23 +270,6 @@ namespace stk_example_io {
 		<< "' of type '" << dbtype << "'\n";
       std::exit(EXIT_FAILURE);
     }
-
-#if 0
-    {
-      // Code to test the remove_io_part_attribute functionality.
-      // Hook this up to a command line option at some point to test nightly...
-      const stk::mesh::PartVector & all_parts = fem_meta_data.get_parts();
-      for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-	stk::mesh::Part * const part = *ip;
-	const stk::mesh::EntityRank part_rank = part->primary_entity_rank();
-	
-	if (stk::io::is_part_io_part(*part) && part_rank == 2) {
-	  std::cout << "Removing part attribute from " << part->name() << "\n";
-	  stk::io::remove_io_part_attribute(*part);
-	}
-      }
-    }
-#endif
 
     // NOTE: 'out_region' owns 'dbo' pointer at this time...
     Ioss::Region out_region(dbo, "results_output");

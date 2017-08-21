@@ -37,7 +37,7 @@
 #include <stk_util/stk_config.h>
 #if defined ( STK_HAS_MPI )
 
-#include <mpi.h>                        // for MPI_Datatype, etc
+#include "mpi.h"                        // for MPI_Datatype, etc
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for min, max
 #include <complex>                      // for complex
@@ -152,14 +152,37 @@ MPI_Datatype double_double_int_type();
  * MAXLOC data types.
  *
  */
-
-
 template <typename T, typename IdType=int64_t>
 struct Loc
 {
+  Loc() = default;
+  Loc(const Loc &) = default;
+  Loc(Loc &&) = default;
+  Loc & operator=(const Loc &) = default;
+  Loc & operator=(Loc &&) = default;
+  // Required to use with Kokkos::atomic_compare_exchange()
+  Loc(const volatile Loc & loc) : m_value(loc.m_value), m_loc(loc.m_loc) {}
+  Loc & operator=(const volatile Loc &rhs)
+  {
+    m_value = rhs.m_value;
+    m_loc = rhs.m_loc;
+    return *this;
+  }
+  void operator=(const volatile Loc &rhs) volatile
+  {
+    m_value = rhs.m_value;
+    m_loc = rhs.m_loc;
+  }
+
   T m_value;
   IdType m_loc;
 };
+
+template <typename T, typename IdType>
+inline bool operator==(const Loc<T, IdType> & lhs, const Loc<T, IdType> & rhs)
+{
+  return (lhs.m_value == rhs.m_value) && (lhs.m_loc == rhs.m_loc);
+}
 
 template <typename T, typename IdType>
 inline std::ostream & operator<<(std::ostream & os, const Loc<T, IdType> & loc)

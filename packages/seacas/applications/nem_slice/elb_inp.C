@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -61,12 +61,12 @@ namespace {
   {
     // Strip off the extension
     size_t ind = filename.find_last_of('.', filename.size());
-    if (ind != std::string::npos)
+    if (ind != std::string::npos) {
       return filename.substr(0, ind);
-    else
-      return filename;
+    }
+    return filename;
   }
-}
+} // namespace
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -145,15 +145,18 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
     case 'x':
       /* Undocumented flag for setting the error level */
-      if (optarg == nullptr)
+      if (optarg == nullptr) {
         error_lev = 1;
+      }
       else {
         iret = sscanf(optarg, "%d", &error_lev);
-        if (iret != 1)
+        if (iret != 1) {
           error_lev = 1;
+        }
 
-        if (error_lev > 3)
+        if (error_lev > 3) {
           error_lev = 3;
+        }
       }
       break;
 
@@ -195,14 +198,17 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             return 0;
           }
 
-          if (weight->type < 0)
+          if (weight->type < 0) {
             weight->type = READ_EXO;
-          else if (!(weight->type & READ_EXO))
+          }
+          else if (!(weight->type & READ_EXO)) {
             weight->type += READ_EXO;
+          }
 
           /* check if the read is after an element block weight */
-          if (weight->type & EL_BLK)
+          if (weight->type & EL_BLK) {
             weight->ow_read = 0;
+          }
 
           weight->exo_filename = value;
 
@@ -293,22 +299,27 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           weight->elemblk.push_back(el_blk);
           weight->elemblk_wgt.push_back(wgt);
 
-          if (weight->type < 0)
+          if (weight->type < 0) {
             weight->type = EL_BLK;
-          else if (!(weight->type & EL_BLK))
+          }
+          else if (!(weight->type & EL_BLK)) {
             weight->type += EL_BLK;
+          }
 
           /* check if the element block weight needs to over write the read */
-          if (weight->type & READ_EXO)
+          if (weight->type & READ_EXO) {
             weight->ow_read = 1;
+          }
 
           break;
 
         case EDGE_WGT:
-          if (weight->type < 0)
+          if (weight->type < 0) {
             weight->type = EDGE_WGT;
-          else if (!(weight->type & EDGE_WGT))
+          }
+          else if (!(weight->type & EDGE_WGT)) {
             weight->type += EDGE_WGT;
+          }
           break;
 
         case NO_WEIGHT: weight->type = NO_WEIGHT; break;
@@ -326,14 +337,16 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
     case 'a':
       /* Only an ASCII input file name */
-      if (optarg != nullptr)
+      if (optarg != nullptr) {
         ascii_inp_file = optarg;
+      }
       break;
 
     case 'o':
       /* Output NemesisI file name */
-      if (optarg != nullptr)
+      if (optarg != nullptr) {
         nemI_out_file = optarg;
+      }
       break;
 
     case 'n':
@@ -357,8 +370,9 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     case 'm':
       /* Machine type */
       sub_opt = optarg;
-      if (sub_opt != nullptr)
+      if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
+      }
       while (sub_opt != nullptr && *sub_opt != '\0') {
 
         /* Switch over the machine description */
@@ -425,8 +439,9 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             return 0;
           }
           machine->num_dims = 0;
-          for (i            = 0; i < max_dim; i++)
+          for (i = 0; i < max_dim; i++) {
             machine->dim[i] = 1;
+          }
           while (cptr2) {
             iret = sscanf(cptr2, "%d", &(machine->dim[machine->num_dims]));
             if (iret <= 0 || machine->dim[machine->num_dims] <= 0) {
@@ -457,8 +472,9 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     case 'l':
       /* Load balance information */
       sub_opt = optarg;
-      if (sub_opt != nullptr)
+      if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
+      }
       while (sub_opt != nullptr && *sub_opt != '\0') {
         switch (md_getsubopt(&sub_opt, lb_subopts, &value)) {
         case MULTIKL: lb->type = MULTIKL; break;
@@ -548,8 +564,9 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     case 's':
       /* Eigen solver options */
       sub_opt = optarg;
-      if (sub_opt != nullptr)
+      if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
+      }
       while (sub_opt != nullptr && *sub_opt != '\0') {
         switch (md_getsubopt(&sub_opt, solve_subopts, &value)) {
         case TOLER:
@@ -567,10 +584,12 @@ value\n");
           break;
 
         case USE_RQI:
-          if (solver->rqi_flag == USE_RQI)
+          if (solver->rqi_flag == USE_RQI) {
             solver->rqi_flag = -1;
-          else
+          }
+          else {
             solver->rqi_flag = USE_RQI;
+          }
 
           break;
 
@@ -599,7 +618,7 @@ value\n");
       /* group designations */
       /* allocate string to hold designation */
       if (optarg != nullptr) {
-        prob->groups = (char *)malloc(strlen(optarg) + 1);
+        prob->groups = reinterpret_cast<char *>(malloc(strlen(optarg) + 1));
         strcpy(prob->groups, optarg);
       }
       break;
@@ -628,11 +647,12 @@ value\n");
   } /* End "while((opt_let=getopt(argc, argv, "i")) != EOF)" */
 
   /* Get the input file name, if specified on the command line */
-  if ((argc - optind) >= 1)
+  if ((argc - optind) >= 1) {
     exoII_inp_file = argv[optind];
-  else
+  }
+  else {
     exoII_inp_file = "";
-
+  }
   return 1;
 
 } /*-------End cmd_line_arg_parse()--------*/
@@ -690,8 +710,9 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
           /* Output a visualization file */
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          if (strcasecmp(cptr, "yes") == 0 || strcasecmp(cptr, "true") == 0)
+          if (strcasecmp(cptr, "yes") == 0 || strcasecmp(cptr, "true") == 0) {
             problem->vis_out = 1;
+          }
           else if (strcasecmp(cptr, "no") == 0 || strcasecmp(cptr, "false") == 0) {
             problem->vis_out = 0;
           }
@@ -702,8 +723,9 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               problem->vis_out = 0;
             }
             else {
-              if (problem->vis_out != 1 && problem->vis_out != 2)
+              if (problem->vis_out != 1 && problem->vis_out != 2) {
                 problem->vis_out = 0;
+              }
             }
           }
         }
@@ -729,48 +751,59 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             strip_string(cptr, " \t\n");
             string_to_lower(cptr, '\0');
             if (strcmp(cptr, "multikl") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = MULTIKL;
+              }
             }
             else if (strcmp(cptr, "spectral") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = SPECTRAL;
+              }
             }
             else if (strcmp(cptr, "scattered") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = SCATTERED;
+              }
             }
             else if (strcmp(cptr, "linear") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = LINEAR;
+              }
             }
             else if (strcmp(cptr, "inertial") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = INERTIAL;
+              }
             }
             else if (strcmp(cptr, "zpinch") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = ZPINCH;
+              }
             }
             else if (strcmp(cptr, "brick") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = BRICK;
+              }
             }
             else if (strcmp(cptr, "rcb") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = ZOLTAN_RCB;
+              }
             }
             else if (strcmp(cptr, "rib") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = ZOLTAN_RIB;
+              }
             }
             else if (strcmp(cptr, "hsfc") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = ZOLTAN_HSFC;
+              }
             }
             else if (strcmp(cptr, "random") == 0) {
-              if (lb->type < 0)
+              if (lb->type < 0) {
                 lb->type = RANDOM;
+              }
             }
             else if (strstr(cptr, "infile")) {
               if (lb->type < 0) {
@@ -791,12 +824,14 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               }
             }
             else if (strcmp(cptr, "kl") == 0) {
-              if (lb->refine < 0)
+              if (lb->refine < 0) {
                 lb->refine = KL_REFINE;
+              }
             }
             else if (strcmp(cptr, "none") == 0) {
-              if (lb->refine < 0)
+              if (lb->refine < 0) {
                 lb->refine = NONE;
+              }
             }
             else if (strcmp(cptr, "ignore_z") == 0) {
               lb->ignore_z = 1;
@@ -818,8 +853,9 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               }
             }
             else if (strcmp(cptr, "cnctd_dom") == 0) {
-              if (lb->cnctd_dom < 0)
+              if (lb->cnctd_dom < 0) {
                 lb->cnctd_dom = ELB_TRUE;
+              }
             }
             else if (strstr(cptr, "outfile")) {
               if (lb->outfile < 0) {
@@ -882,10 +918,12 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             }
           }
           else if (strcmp(cptr, "use_rqi") == 0) {
-            if (solver->rqi_flag == USE_RQI)
+            if (solver->rqi_flag == USE_RQI) {
               solver->rqi_flag = -1;
-            else
+            }
+            else {
               solver->rqi_flag = USE_RQI;
+            }
           }
           else if (strstr(cptr, "vmax")) {
             if (solver->vmax < 0) {
@@ -916,14 +954,18 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           string_to_lower(cptr, '\0');
-          if (strcmp(cptr, "nodal") == 0)
+          if (strcmp(cptr, "nodal") == 0) {
             problem->type = NODAL;
-          else if (strcmp(cptr, "node") == 0)
+          }
+          else if (strcmp(cptr, "node") == 0) {
             problem->type = NODAL;
-          else if (strcmp(cptr, "elemental") == 0)
+          }
+          else if (strcmp(cptr, "elemental") == 0) {
             problem->type = ELEMENTAL;
-          else if (strcmp(cptr, "element") == 0)
+          }
+          else if (strcmp(cptr, "element") == 0) {
             problem->type = ELEMENTAL;
+          }
           else {
             Gen_Error(0, "FATAL: unknown graph type specified");
             return 0;
@@ -1032,14 +1074,17 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 return 0;
               }
               weight->exo_filename = cptr2;
-              if (weight->type < 0)
+              if (weight->type < 0) {
                 weight->type = READ_EXO;
-              else if (!(weight->type & READ_EXO))
+              }
+              else if (!(weight->type & READ_EXO)) {
                 weight->type += READ_EXO;
+              }
 
               /* check if the read is after an element block weight */
-              if (weight->type & EL_BLK)
+              if (weight->type & EL_BLK) {
                 weight->ow_read = 0;
+              }
             }
             else if (strstr(cptr, "var_name")) {
               cptr2 = strchr(cptr, '=');
@@ -1110,23 +1155,28 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 return 0;
               }
 
-              if (weight->type < 0)
+              if (weight->type < 0) {
                 weight->type = EL_BLK;
-              else if (!(weight->type & EL_BLK))
+              }
+              else if (!(weight->type & EL_BLK)) {
                 weight->type += EL_BLK;
+              }
 
               weight->elemblk.push_back(el_blk);
               weight->elemblk_wgt.push_back(wgt);
 
               /* check if the elem block weight needs to overwrite the read */
-              if (weight->type & READ_EXO)
+              if (weight->type & READ_EXO) {
                 weight->ow_read = 1;
+              }
             }
             else if (strstr(cptr, "edges")) {
-              if (weight->type < 0)
+              if (weight->type < 0) {
                 weight->type = EDGE_WGT;
-              else if (!(weight->type & EDGE_WGT))
+              }
+              else if (!(weight->type & EDGE_WGT)) {
                 weight->type += EDGE_WGT;
+              }
             }
             else {
               sprintf(ctemp, "FATAL: unknown suboption \"%s\" specified", cptr);
@@ -1156,10 +1206,12 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
         if (cptr2 != nullptr) {
           ilen = strlen(cptr2);
           for (i = 0; i < ilen; i++) {
-            if (*cptr2 == '}')
+            if (*cptr2 == '}') {
               break;
-            if (*cptr2 == ',')
+            }
+            if (*cptr2 == ',') {
               *cptr2 = ' ';
+            }
             cptr2++;
           }
         }
@@ -1174,47 +1226,55 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
 
           /* Check to see if the side id error checks need to be skipped */
           if (strstr(cptr, "checks_off")) {
-            if (problem->skip_checks < 0)
+            if (problem->skip_checks < 0) {
               problem->skip_checks = 1;
+            }
           }
           /* Check to see if using face definition of adjacency */
           else if (strstr(cptr, "face_adj")) {
-            if (problem->face_adj < 0)
+            if (problem->face_adj < 0) {
               problem->face_adj = 1;
+            }
           }
           /* Check to see if looking for global mechanisms */
           else if (strstr(cptr, "global_mech")) {
-            if (problem->global_mech < 0)
+            if (problem->global_mech < 0) {
               problem->global_mech = 1;
+            }
           }
           /* Check to see if looking for introduced mechanisms */
           else if (strstr(cptr, "local_mech")) {
-            if (problem->local_mech < 0)
+            if (problem->local_mech < 0) {
               problem->local_mech = 1;
+            }
           }
           /* Check to see if looking for connected domains */
           else if (strstr(cptr, "find_cnt_domains")) {
-            if (problem->find_cnt_domains < 0)
+            if (problem->find_cnt_domains < 0) {
               problem->find_cnt_domains = 1;
+            }
           }
           /* Check to see if user wants to add processors to take care of
            * introduced mechanisms
            */
           else if (strstr(cptr, "mech_add_procs")) {
-            if (problem->mech_add_procs < 0)
+            if (problem->mech_add_procs < 0) {
               problem->mech_add_procs = 1;
+            }
           }
           /* Check to see if user wants to add processors to take care of
            * introduced mechanisms
            */
           else if (strstr(cptr, "dsd_add_procs")) {
-            if (problem->dsd_add_procs < 0)
+            if (problem->dsd_add_procs < 0) {
               problem->dsd_add_procs = 1;
+            }
           }
           /* Check for treating spheres as concentrated masses*/
           else if (strstr(cptr, "no_sph")) {
-            if (problem->no_sph < 0)
+            if (problem->no_sph < 0) {
               problem->no_sph = 1;
+            }
           }
           /* Check for group designation sub-option */
           else if (strstr(cptr, "groups")) {
@@ -1226,7 +1286,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             }
             cptr2++;
             /* allocate space to hold the group designator */
-            problem->groups = (char *)malloc(strlen(cptr2) + 1);
+            problem->groups = reinterpret_cast<char *>(malloc(strlen(cptr2) + 1));
             strcpy(problem->groups, cptr2);
             /* get rid of ending bracket */
             cptr2  = strchr(problem->groups, '}');
@@ -1321,16 +1381,19 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   }
 
   /* non-cluster machines have only one box */
-  if (machine->num_boxes < 0)
+  if (machine->num_boxes < 0) {
     machine->num_boxes = 1;
+  }
 
   /* Find out the number of processors */
-  if (machine->type == HCUBE)
+  if (machine->type == HCUBE) {
     machine->procs_per_box = 1 << machine->dim[0];
+  }
   else {
     machine->procs_per_box = machine->dim[0];
-    for (cnt = 1; cnt < machine->num_dims; cnt++)
+    for (cnt = 1; cnt < machine->num_dims; cnt++) {
       machine->procs_per_box *= machine->dim[cnt];
+    }
   }
 
   /* now calculate the total number of processors */
@@ -1353,11 +1416,13 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     return 0;
   }
 
-  if (prob->skip_checks < 0)
+  if (prob->skip_checks < 0) {
     prob->skip_checks = 0;
+  }
 
-  if (prob->face_adj < 0)
+  if (prob->face_adj < 0) {
     prob->face_adj = 0;
+  }
 
   /*
    * using face definition of adjacencies only makes sense
@@ -1388,17 +1453,21 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     lb->type = LINEAR;
   }
 
-  if (lb->type == MULTIKL)
+  if (lb->type == MULTIKL) {
     lb->refine = KL_REFINE;
+  }
 
-  if (lb->refine != KL_REFINE && lb->refine != NO_REFINE)
+  if (lb->refine != KL_REFINE && lb->refine != NO_REFINE) {
     lb->refine = NO_REFINE; /* Default if not specified */
+  }
 
-  if (lb->num_sects <= 0)
+  if (lb->num_sects <= 0) {
     lb->num_sects = 1; /* Default if not specified */
+  }
 
-  if (lb->cnctd_dom < 0)
+  if (lb->cnctd_dom < 0) {
     lb->cnctd_dom = 0;
+  }
   else if (!prob->face_adj) {
     Gen_Error(1, "WARNING: can only set connected domain");
     Gen_Error(1, "WARNING: when using face definition of adjacency");
@@ -1406,8 +1475,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     lb->cnctd_dom = 0;
   }
 
-  if (lb->outfile < 0)
+  if (lb->outfile < 0) {
     lb->outfile = ELB_FALSE;
+  }
 
   if (lb->type == INFILE) {
     if (lb->outfile) {
@@ -1431,8 +1501,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       solver->tolerance = 1.0e-3;
     }
 
-    if (solver->rqi_flag < 0)
+    if (solver->rqi_flag < 0) {
       solver->rqi_flag = 0;
+    }
 
     if (solver->vmax < 0) {
       Gen_Error(1, "WARNING: no value for vmax specified,"
@@ -1459,12 +1530,15 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     switch (lb->type) {
     case MULTIKL:
     case SPECTRAL:
-      if (lb->num_sects == 1)
+      if (lb->num_sects == 1) {
         strcat(ctemp2, "b");
-      else if (lb->num_sects == 2)
+      }
+      else if (lb->num_sects == 2) {
         strcat(ctemp2, "q");
-      else if (lb->num_sects == 3)
+      }
+      else if (lb->num_sects == 3) {
         strcat(ctemp2, "o");
+      }
 
       break;
 
@@ -1485,8 +1559,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     case LINEAR: strcat(ctemp2, "l"); break;
     }
 
-    if (lb->refine == KL_REFINE)
+    if (lb->refine == KL_REFINE) {
       strcat(ctemp2, "KL");
+    }
 
     /* Generate the complete file name */
 
@@ -1520,8 +1595,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     int ntimes = ex_inquire_int(exoid, EX_INQ_TIME);
 
     /* Check the time index */
-    if (weight->exo_tindx <= 0)
+    if (weight->exo_tindx <= 0) {
       weight->exo_tindx = 1; /* Defaults to 1 */
+    }
 
     if (weight->exo_tindx > ntimes) {
       sprintf(ctemp, "FATAL: requested time index %d not available in weighting file",
@@ -1530,10 +1606,12 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       return 0;
     }
 
-    if (prob->type == NODAL)
+    if (prob->type == NODAL) {
       type = EX_NODAL;
-    else
+    }
+    else {
       type = EX_ELEM_BLOCK;
+    }
 
     /*
      * First check that there are variables of the requested type in the
@@ -1550,7 +1628,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     }
 
     /* Read the variable names from the requested file */
-    var_names = (char **)malloc(nvars * sizeof(char *));
+    var_names = reinterpret_cast<char **>(malloc(nvars * sizeof(char *)));
     if (!var_names) {
       Gen_Error(0, "FATAL: insufficient memory");
       return 0;
@@ -1561,7 +1639,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       ex_set_max_name_length(exoid, max_name_length);
 
       for (cnt = 0; cnt < nvars; cnt++) {
-        var_names[cnt] = (char *)malloc((max_name_length + 1) * sizeof(char));
+        var_names[cnt] = reinterpret_cast<char *>(malloc((max_name_length + 1) * sizeof(char)));
         if (!var_names[cnt]) {
           Gen_Error(0, "FATAL: insufficient memory");
           return 0;
@@ -1588,8 +1666,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
         }
       }
 
-      if (weight->exo_vindx <= 0)
+      if (weight->exo_vindx <= 0) {
         weight->exo_vindx = tmp_vindx;
+      }
       else if (weight->exo_vindx != tmp_vindx) {
         Gen_Error(0, "FATAL: requested weight variable index doesn't match"
                      " the variable name in the ExodusII file");
@@ -1599,8 +1678,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
 
     /* Free up memory */
     if (nvars > 0) {
-      for (cnt = 0; cnt < nvars; cnt++)
+      for (cnt = 0; cnt < nvars; cnt++) {
         free(var_names[cnt]);
+      }
 
       free(var_names);
     }
@@ -1639,12 +1719,13 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       sort2(weight->elemblk.size(), TOPTR(weight->elemblk), TOPTR(weight->elemblk_wgt));
 
       /* now loop through, and make sure that we don't have multiple values */
-      for (cnt = 1; cnt < (int)weight->elemblk.size(); cnt++)
+      for (cnt = 1; cnt < (int)weight->elemblk.size(); cnt++) {
         if (weight->elemblk[cnt] == weight->elemblk[cnt - 1]) {
           sprintf(ctemp, "WARNING: multiple weight specified for block " ST_ZU "",
                   (size_t)weight->elemblk[cnt]);
           Gen_Error(1, ctemp);
         }
+      }
     }
   } /* if ((weight->type & EL_BLK) && (weight->ow_read)) */
 
@@ -1676,7 +1757,5 @@ namespace {
     printf("   \t\trequire only 3 matching quad face nodes\n");
     printf(" -h\t\tusage information\n");
     printf(" -a ascii file\tget info from ascii input file name\n");
-
-    return;
   }
-}
+} // namespace

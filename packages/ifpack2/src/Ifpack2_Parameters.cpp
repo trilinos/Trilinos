@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -95,6 +95,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   // Ifpack2_LocalSparseTriangularSolver.cpp
   params.set("trisolver: type", "Internal");
   params.set("trisolver: block size", (int)1);
+  params.set("trisolver: reverse U", false);
 
   // Overlapping partitioner
   params.set("partitioner: local parts", (int)1);

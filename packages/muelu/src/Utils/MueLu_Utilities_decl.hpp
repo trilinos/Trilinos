@@ -769,7 +769,7 @@ namespace MueLu {
           throw Exceptions::RuntimeError("Only Epetra and Tpetra matrices can be transposed.");
       }
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 
     /*! @brief Extract coordinates from parameter list and return them in a Xpetra::MultiVector

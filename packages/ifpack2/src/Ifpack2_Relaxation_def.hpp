@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -49,14 +49,13 @@
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
 #include "Ifpack2_Utilities.hpp"
 #include "Ifpack2_Relaxation_decl.hpp"
-
+#include "MatrixMarket_Tpetra.hpp"
+#include <cstdlib>
+#include <sstream>
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 #  include "KokkosKernels_GaussSeidel.hpp"
 #endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
-#ifdef HAVE_IFPACK2_DUMP_MTX_MATRIX
-#  include "MatrixMarket_Tpetra.hpp"
-#endif
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
@@ -188,6 +187,8 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   MinDiagonalValue_ (STS::zero ()),
   fixTinyDiagEntries_ (false),
   checkDiagEntries_ (false),
+  is_matrix_structurally_symmetric_ (false),
+  ifpack2_dump_matrix_(false),
   isInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -285,6 +286,12 @@ Relaxation<MatrixType>::getValidParameters () const
     Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = Teuchos::null;
     pl->set("relaxation: local smoothing indices", localSmoothingIndices);
 
+    const bool is_matrix_structurally_symmetric = false;
+    pl->set("relaxation: symmetric matrix structure", is_matrix_structurally_symmetric);
+
+    const bool ifpack2_dump_matrix = false;
+    pl->set("relaxation: ifpack2 dump matrix", ifpack2_dump_matrix);
+
     validParams_ = rcp_const_cast<const ParameterList> (pl);
   }
   return validParams_;
@@ -312,6 +319,9 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   const ST minDiagonalValue = pl.get<ST> ("relaxation: min diagonal value");
   const bool fixTinyDiagEntries = pl.get<bool> ("relaxation: fix tiny diagonal entries");
   const bool checkDiagEntries = pl.get<bool> ("relaxation: check diagonal entries");
+  const bool is_matrix_structurally_symmetric = pl.get<bool> ("relaxation: symmetric matrix structure");
+  const bool ifpack2_dump_matrix = pl.get<bool> ("relaxation: ifpack2 dump matrix");
+
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = pl.get<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices");
 
 
@@ -326,6 +336,8 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   MinDiagonalValue_      = minDiagonalValue;
   fixTinyDiagEntries_    = fixTinyDiagEntries;
   checkDiagEntries_      = checkDiagEntries;
+  is_matrix_structurally_symmetric_ = is_matrix_structurally_symmetric;
+  ifpack2_dump_matrix_ = ifpack2_dump_matrix;
   localSmoothingIndices_ = localSmoothingIndices;
 }
 
@@ -601,12 +613,16 @@ void Relaxation<MatrixType>::initialize ()
        "Multithreaded Gauss-Seidel methods currently only work when the input "
        "matrix is a Tpetra::CrsMatrix.");
 
-#ifdef HAVE_IFPACK2_DUMP_MTX_MATRIX
-    Tpetra::MatrixMarket::Writer<crs_matrix_type> crs_writer;
-    std::string file_name = "Ifpack2_MT_GS.mtx";
-    Teuchos::RCP<const crs_matrix_type> rcp_crs_mat = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-    crs_writer.writeSparseFile(file_name, rcp_crs_mat);
-#endif
+    if(this->ifpack2_dump_matrix_){
+      int random_integer = rand();
+      std::stringstream ss;
+      ss << random_integer;
+      std::string str = ss.str();
+      Tpetra::MatrixMarket::Writer<crs_matrix_type> crs_writer;
+      std::string file_name = str + "_Ifpack2_MT_GS.mtx";
+      Teuchos::RCP<const crs_matrix_type> rcp_crs_mat = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+      crs_writer.writeSparseFile(file_name, rcp_crs_mat);
+    }
 
     this->mtKernelHandle_ = Teuchos::rcp (new mt_kernel_handle_type ());
     if (mtKernelHandle_->get_gs_handle () == NULL) {
@@ -614,7 +630,10 @@ void Relaxation<MatrixType>::initialize ()
     }
     local_matrix_type kcsr = crsMat->getLocalMatrix ();
 
-    const bool is_symmetric = (PrecType_ == Ifpack2::Details::MTSGS);
+    bool is_symmetric = (PrecType_ == Ifpack2::Details::MTSGS);
+    is_symmetric = is_symmetric || is_matrix_structurally_symmetric_;
+
+    //if (is_symmetric) std::cout << "is symmetric" << std::endl;
     using KokkosKernels::Experimental::Graph::gauss_seidel_symbolic;
     gauss_seidel_symbolic<mt_kernel_handle_type,
       lno_row_view_t,

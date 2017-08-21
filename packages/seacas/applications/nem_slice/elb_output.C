@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -39,7 +39,6 @@
 #include "elb_err.h"  // for Gen_Error, error_lev
 #include "elb_output.h"
 #include "elb_util.h" // for gds_qsort, qsort2, in_list, etc
-#include "scopeguard.h"
 #include <cstddef>    // for size_t, nullptr
 #include <cstdio>     // for printf, sprintf, fprintf, etc
 #include <cstdlib>    // for free, malloc, realloc
@@ -48,18 +47,19 @@
 #include <exodusII.h> // for ex_close, ex_opts, etc
 #include <iostream>
 #include <vector> // for vector
+#include <vector> // for vector
 
 namespace {
   const std::string remove_extension(const std::string &filename)
   {
     // Strip off the extension
     size_t ind = filename.find_last_of('.', filename.size());
-    if (ind != std::string::npos)
+    if (ind != std::string::npos) {
       return filename.substr(0, ind);
-    else
-      return filename;
+    }
+    return filename;
   }
-}
+} // namespace
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -115,20 +115,24 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
   ON_BLOCK_EXIT(ex_close, exoid);
 
   /* Set the error reporting value */
-  if (error_lev > 1)
+  if (error_lev > 1) {
     ex_opts(EX_VERBOSE | EX_DEBUG);
-  else
+  }
+  else {
     ex_opts(EX_VERBOSE);
+  }
 
   /* Enable compression (if netcdf-4) */
   ex_set_option(exoid, EX_OPT_COMPRESSION_LEVEL, 1);
   ex_set_option(exoid, EX_OPT_COMPRESSION_SHUFFLE, 1);
 
   /* Create the title */
-  if (problem->type == NODAL)
+  if (problem->type == NODAL) {
     strcpy(method1, "nodal");
-  else
+  }
+  else {
     strcpy(method1, "elemental");
+  }
 
   sprintf(title, "nem_slice %s load balance file", method1);
 
@@ -152,10 +156,12 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
   case SCATTERED: strcat(method1, "Scattered decomposition"); break;
   }
 
-  if (lb->refine == KL_REFINE && lb->type != MULTIKL)
+  if (lb->refine == KL_REFINE && lb->type != MULTIKL) {
     strcat(method2, "with Kernighan-Lin refinement");
-  else if (lb->type != MULTIKL)
+  }
+  else if (lb->type != MULTIKL) {
     strcat(method2, "no refinement");
+  }
 
   switch (lb->num_sects) {
   case 1: strcat(method1, " via bisection"); break;
@@ -182,8 +188,9 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
   info[1] = method1;
   info[2] = method2;
 
-  if (ex_put_info(exoid, 3, info) < 0)
+  if (ex_put_info(exoid, 3, info) < 0) {
     Gen_Error(0, "warning: output of info records failed");
+  }
 
   /* Generate a QA record for the utility */
   time_t time_val = time(nullptr);
@@ -205,12 +212,13 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
   strcpy(qa_name, UTIL_NAME);
   strcpy(qa_vers, ELB_VERSION);
 
-  if (qa_date[strlen(qa_date) - 1] == '\n')
+  if (qa_date[strlen(qa_date) - 1] == '\n') {
     qa_date[strlen(qa_date) - 1] = '\0';
-
-  char **lqa_record = (char **)array_alloc(1, 4, sizeof(char *));
-  for (int i2      = 0; i2 < 4; i2++)
-    lqa_record[i2] = (char *)array_alloc(1, MAX_STR_LENGTH + 1, sizeof(char));
+  }
+  char **lqa_record = reinterpret_cast<char **>(array_alloc(1, 4, sizeof(char *)));
+  for (int i2 = 0; i2 < 4; i2++) {
+    lqa_record[i2] = reinterpret_cast<char *>(array_alloc(1, MAX_STR_LENGTH + 1, sizeof(char)));
+  }
 
   strcpy(lqa_record[0], qa_name);
   strcpy(lqa_record[1], qa_vers);
@@ -222,14 +230,15 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     printf("\t%s\n", lqa_record[i2]);
   }
 
-  if (ex_put_qa(exoid, 1, (char *(*)[4]) & lqa_record[0]) < 0) {
+  if (ex_put_qa(exoid, 1, reinterpret_cast<char *(*)[4]>(&lqa_record[0])) < 0) {
     Gen_Error(0, "fatal: unable to output QA records");
     return 0;
   }
 
   /* free up memory */
-  for (int i2 = 0; i2 < 4; i2++)
+  for (int i2 = 0; i2 < 4; i2++) {
     free(lqa_record[i2]);
+  }
 
   free(lqa_record);
 
@@ -246,20 +255,23 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
   if (problem->type == NODAL) {
     /* need to check and make sure that there really are comm maps */
     for (int cnt = 0; cnt < machine->num_procs; cnt++) {
-      if (!lb->bor_nodes[cnt].empty())
+      if (!lb->bor_nodes[cnt].empty()) {
         num_nmap_cnts[cnt] = 1;
+      }
     }
   }
   else { /* Elemental load balance */
     if (((problem->num_vertices) - (sphere->num)) > 0) {
       /* need to check and make sure that there really are comm maps */
       for (int cnt = 0; cnt < machine->num_procs; cnt++) {
-        if (!lb->bor_nodes[cnt].empty())
+        if (!lb->bor_nodes[cnt].empty()) {
           num_nmap_cnts[cnt] = 1;
+        }
       }
       for (int cnt = 0; cnt < machine->num_procs; cnt++) {
-        if (!lb->bor_elems[cnt].empty())
+        if (!lb->bor_elems[cnt].empty()) {
           num_emap_cnts[cnt] = 1;
+        }
       }
     }
   }
@@ -356,8 +368,9 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
       node_proc_ptr[proc + 1] = node_proc_ptr[proc] + 1;
 
       node_cmap_cnts_cc[proc] = 0;
-      for (size_t cnt = 0; cnt < lb->bor_nodes[proc].size(); cnt++)
+      for (size_t cnt = 0; cnt < lb->bor_nodes[proc].size(); cnt++) {
         node_cmap_cnts_cc[proc] += lb->born_procs[proc][cnt].size();
+      }
 
       node_cmap_ids_cc[proc] = 1;
     }
@@ -402,8 +415,9 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
        * and their associated processors and side IDs.
        */
       size_t nsize = 0;
-      for (size_t cnt = 0; cnt < lb->bor_nodes[proc].size(); cnt++)
+      for (size_t cnt = 0; cnt < lb->bor_nodes[proc].size(); cnt++) {
         nsize += lb->born_procs[proc][cnt].size();
+      }
 
       if (nsize > 0) {
         std::vector<INT> n_cmap_nodes(nsize);
@@ -484,10 +498,12 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
    * number of element blocks.
    */
   int vis_nelem_blks;
-  if (prob->type == ELEMENTAL)
+  if (prob->type == ELEMENTAL) {
     vis_nelem_blks = machine->num_procs;
-  else
+  }
+  else {
     vis_nelem_blks = machine->num_procs + 1;
+  }
 
   /* Create the ExodusII file */
   std::cout << "Outputting load balance visualization file " << vis_file_name.c_str() << "\n";
@@ -535,8 +551,9 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
   }
 
   int acc_vis = ELB_TRUE; // Output a different element block per processor
-  if (prob->vis_out == 2)
+  if (prob->vis_out == 2) {
     acc_vis = ELB_FALSE; // Output a nodal/element variable showing processor
+  }
 
   size_t nsize = 0;
 
@@ -547,7 +564,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
    */
   for (size_t ecnt = 0; ecnt < mesh->num_el_blks; ecnt++) {
     if (ex_get_block(exid_inp, EX_ELEM_BLOCK, el_blk_ids[ecnt], elem_type[ecnt], &el_cnt_blk[ecnt],
-                     &node_pel_blk[ecnt], NULL, NULL, &nattr_el_blk[ecnt]) < 0) {
+                     &node_pel_blk[ecnt], nullptr, nullptr, &nattr_el_blk[ecnt]) < 0) {
       Gen_Error(0, "fatal: unable to get element block parameters");
       return 0;
     }
@@ -555,11 +572,13 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
     nsize += el_cnt_blk[ecnt] * node_pel_blk[ecnt];
 
     if (strcmp(elem_type[0], elem_type[ecnt]) == 0) {
-      if (node_pel_blk[0] != node_pel_blk[ecnt])
+      if (node_pel_blk[0] != node_pel_blk[ecnt]) {
         acc_vis = ELB_FALSE;
+      }
     }
-    else
+    else {
       acc_vis = ELB_FALSE;
+    }
   }
 
   if (acc_vis == ELB_TRUE) {
@@ -598,8 +617,9 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
     std::vector<INT> tmp_connect(nsize);
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
       elem_map[ecnt] = ecnt + 1;
-      if (prob->type == ELEMENTAL)
+      if (prob->type == ELEMENTAL) {
         elem_block[ecnt] = lb->vertex2proc[ecnt];
+      }
       else {
         int proc         = lb->vertex2proc[mesh->connect[ecnt][0]];
         int nnodes       = get_elem_info(NNODES, mesh->elem_type[ecnt]);
@@ -628,8 +648,9 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
           ecnt       = mesh->num_elems - old_pos;
           el_ptr     = TOPTR(elem_block) + old_pos;
           int nnodes = get_elem_info(NNODES, mesh->elem_type[old_pos - 1]);
-          for (int ncnt         = 0; ncnt < nnodes; ncnt++)
+          for (int ncnt = 0; ncnt < nnodes; ncnt++) {
             tmp_connect[ccnt++] = mesh->connect[old_pos - 1][ncnt] + 1;
+          }
         }
       }
     }
@@ -655,8 +676,8 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
       }
 
       /* Output the connectivity */
-      if (ex_put_conn(exid_vis, EX_ELEM_BLOCK, bcnt + 1, &tmp_connect[vis_el_blk_ptr[bcnt]], NULL,
-                      NULL) < 0) {
+      if (ex_put_conn(exid_vis, EX_ELEM_BLOCK, bcnt + 1, &tmp_connect[vis_el_blk_ptr[bcnt]],
+                      nullptr, nullptr) < 0) {
         Gen_Error(0, "fatal: unable to output element connectivity");
         return 0;
       }
@@ -690,12 +711,14 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
       }
 
       /* Do some problem specific assignment */
-      for (size_t ncnt  = 0; ncnt < mesh->num_nodes; ncnt++)
+      for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
         proc_vals[ncnt] = lb->vertex2proc[ncnt];
+      }
 
       for (int pcnt = 0; pcnt < machine->num_procs; pcnt++) {
-        for (auto &elem : lb->bor_nodes[pcnt])
+        for (auto &elem : lb->bor_nodes[pcnt]) {
           proc_vals[elem] = machine->num_procs + 1;
+        }
       }
 
       /* Output the nodal variables */

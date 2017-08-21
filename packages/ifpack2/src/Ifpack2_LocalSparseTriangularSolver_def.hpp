@@ -278,6 +278,8 @@ void LocalSparseTriangularSolver<MatrixType>::initializeState ()
 {
   isInitialized_ = false;
   isComputed_ = false;
+  reverseStorage_ = false;
+  isInternallyChanged_ = false;
   numInitialize_ = 0;
   numCompute_ = 0;
   numApply_ = 0;
@@ -320,6 +322,9 @@ setParameters (const Teuchos::ParameterList& pl)
     htsImpl_ = Teuchos::rcp (new HtsImpl ());
     htsImpl_->setParameters (pl);
   }
+
+  if (pl.isParameter("trisolver: reverse U"))
+    reverseStorage_ = pl.get<bool>("trisolver: reverse U");
 }
 
 template<class MatrixType>
@@ -346,10 +351,10 @@ initialize ()
        "The input matrix A is not a Tpetra::CrsMatrix.");
     A_crs_ = A_crs;
   }
-  auto G = A_->getGraph ();
+  auto G = A_crs_->getGraph ();
   TEUCHOS_TEST_FOR_EXCEPTION
     (G.is_null (), std::logic_error, prefix << "A_ and A_crs_ are nonnull, "
-     "but A_'s RowGraph G is null.  "
+     "but A_crs_'s RowGraph G is null.  "
      "Please report this bug to the Ifpack2 developers.");
   // At this point, the graph MUST be fillComplete.  The "initialize"
   // (symbolic) part of setup only depends on the graph structure, so
@@ -358,8 +363,80 @@ initialize ()
     (! G->isFillComplete (), std::runtime_error, "If you call this method, "
      "the matrix's graph must be fill complete.  It is not.");
 
+  if (reverseStorage_ && A_crs_->isUpperTriangular() && htsImpl_.is_null()) {
+    // Reverse the storage for an upper triangular matrix
+    using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+
+    auto Alocal = A_crs_->getLocalMatrix();
+    auto ptr    = Alocal.graph.row_map;
+    auto ind    = Alocal.graph.entries;
+    auto val    = Alocal.values;
+
+    auto numRows = Alocal.numRows();
+    auto numCols = Alocal.numCols();
+    auto numNnz = Alocal.nnz();
+
+    typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.dimension_0 ());
+    typename decltype(ind)::non_const_type  newind ("ind", ind.dimension_0 ());
+    decltype(val)                           newval ("val", val.dimension_0 ());
+
+    // FIXME: The code below assumes UVM
+    crs_matrix_type::execution_space::fence();
+    newptr(0) = 0;
+    for (local_ordinal_type row = 0, rowStart = 0; row < numRows; ++row) {
+      auto A_r = Alocal.row(numRows-1 - row);
+
+      auto numEnt = A_r.length;
+      for (local_ordinal_type k = 0; k < numEnt; ++k) {
+        newind(rowStart + k) = numCols-1 - A_r.colidx(numEnt-1 - k);
+        newval(rowStart + k) = A_r.value (numEnt-1 - k);
+      }
+      rowStart += numEnt;
+      newptr(row+1) = rowStart;
+    }
+    crs_matrix_type::execution_space::fence();
+
+    // Reverse maps
+    using map_type = typename crs_matrix_type::map_type;
+    Teuchos::RCP<map_type> newRowMap, newColMap;
+    {
+      // Reverse row map
+      auto rowMap = A_->getRowMap();
+      auto numElems = rowMap->getNodeNumElements();
+      auto rowElems = rowMap->getNodeElementList();
+
+      Teuchos::Array<global_ordinal_type> newRowElems(rowElems.size());
+      for (size_t i = 0; i < numElems; i++)
+        newRowElems[i] = rowElems[numElems-1 - i];
+
+      newRowMap = Teuchos::rcp(new map_type(rowMap->getGlobalNumElements(), newRowElems, rowMap->getIndexBase(), rowMap->getComm()));
+    }
+    {
+      // Reverse column map
+      auto colMap = A_->getColMap();
+      auto numElems = colMap->getNodeNumElements();
+      auto colElems = colMap->getNodeElementList();
+
+      Teuchos::Array<global_ordinal_type> newColElems(colElems.size());
+      for (size_t i = 0; i < numElems; i++)
+        newColElems[i] = colElems[numElems-1 - i];
+
+      newColMap = Teuchos::rcp(new map_type(colMap->getGlobalNumElements(), newColElems, colMap->getIndexBase(), colMap->getComm()));
+    }
+
+    // Construct new matrix
+    local_matrix_type newLocalMatrix("Upermuted", numRows, numCols, numNnz, newval, newptr, newind);
+
+    A_crs_ = Teuchos::rcp(new crs_matrix_type(newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap(), newLocalMatrix));
+
+    isInternallyChanged_ = true;
+  }
+
   if (Teuchos::nonnull (htsImpl_))
+  {
     htsImpl_->initialize (*A_crs_);
+    isInternallyChanged_ = true;
+  }
 
   isInitialized_ = true;
   ++numInitialize_;
@@ -424,8 +501,10 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
       *out_ << "A_crs_ is null!" << std::endl;
     }
     else {
-      const std::string uplo = A_crs_->isUpperTriangular () ? "U" :
-        (A_crs_->isLowerTriangular () ? "L" : "N");
+      Teuchos::RCP<const crs_matrix_type> A_crs =
+          Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+      const std::string uplo = A_crs->isUpperTriangular () ? "U" :
+        (A_crs->isLowerTriangular () ? "L" : "N");
       const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
         (mode == Teuchos::TRANS ? "T" : "N");
       const std::string diag =
@@ -461,10 +540,10 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
      " apply().  You do NOT need to call setMatrix, as long as the matrix "
      "itself (that is, its address in memory) is the same.");
 
-  auto G = A_->getGraph ();
+  auto G = A_crs_->getGraph ();
   TEUCHOS_TEST_FOR_EXCEPTION
     (G.is_null (), std::logic_error, prefix << "A_ and A_crs_ are nonnull, "
-     "but A_'s RowGraph G is null.  "
+     "but A_crs_'s RowGraph G is null.  "
      "Please report this bug to the Ifpack2 developers.");
   auto importer = G->getImporter ();
   auto exporter = G->getExporter ();
@@ -697,7 +776,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   // because users are supposed to call this method with the same
   // object over all participating processes, and pointer identity
   // implies object identity.
-  if (A.getRawPtr () != A_.getRawPtr ()) {
+  if (A.getRawPtr () != A_.getRawPtr () || isInternallyChanged_) {
     // Check in serial or one-process mode if the matrix is square.
     TEUCHOS_TEST_FOR_EXCEPTION
       (! A.is_null () && A->getComm ()->getSize () == 1 &&

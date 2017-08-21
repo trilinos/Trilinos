@@ -73,7 +73,8 @@ namespace Intrepid2 {
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
-    
+
+    // test
     template<typename DeviceSpaceType>
     int OrientationToolsTriCoeffMatrix(const bool verbose) {
 
@@ -95,7 +96,7 @@ namespace Intrepid2 {
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
       *outStream << "\n";
 
-      
+
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
@@ -111,8 +112,8 @@ namespace Intrepid2 {
       try {
 
         const ordinal_type testOrderBegin = 1, testOrderEnd = std::min(4, maxOrder);
-        for (ordinal_type testOrder=testOrderBegin;testOrder<testOrderEnd;++testOrder) {
-          *outStream << "\n -- Testing order " << testOrder << "\n" 
+        for (ordinal_type testOrder=testOrderBegin;testOrder<=testOrderEnd;++testOrder) {
+          *outStream << "\n -- Testing order " << testOrder << "\n"
                      << "===============================================================================\n"
                      << "\n";
           {
@@ -124,66 +125,134 @@ namespace Intrepid2 {
             const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
             const ordinal_type order = testOrder;
 
-            if (testOrder > 1) {
+            {
               *outStream << "\n -- Testing Triangle HGRAD \n\n";
               Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType> cellBasis(order);
-              const auto matData = ots::createCoeffMatrix(&cellBasis);
+              if (cellBasis.requireOrientation()) {
+                const auto matData = ots::createCoeffMatrix(&cellBasis);
 
-              auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-              Kokkos::deep_copy(matDataHost, matData);
-            
-              const ordinal_type lineDim = 1, numEdge = 3, numOrt = 2;
-              for (auto edgeId=0;edgeId<numEdge;++edgeId) {
-                const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
-                const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
-              
-                const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);            
-                for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-                  *outStream << "\n edgeId = " << edgeId << " edgeOrt = " << edgeOrt << "\n";
-                  const auto mat = Kokkos::subview(matDataHost, edgeId, edgeOrt, range, range);
-                  for (auto i=0;i<ndofEdge;++i) {
-                    for (auto j=0;j<ndofEdge;++j)
-                      *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
-                    *outStream << "\n";
-                  
-                    switch (refCoeff[edgeId][edgeOrt]) {
-                    case 0: errorFlag += (std::abs(mat(i,i) - 1.0) > tol); break;
-                    case 1: errorFlag += (std::abs(mat(i,ndofEdge-i-1) - 1.0) > tol); break;
+                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                Kokkos::deep_copy(matDataHost, matData);
+
+                const ordinal_type lineDim = 1, numEdge = 3, numOrt = 2;
+                for (auto edgeId=0;edgeId<numEdge;++edgeId) {
+                  if (cellBasis.getDofCount(lineDim, edgeId)) {
+                    const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
+                    const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
+
+                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);
+                    for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
+                      *outStream << "\n edgeId = " << edgeId << " edgeOrt = " << edgeOrt << "\n";
+                      const auto mat = Kokkos::subview(matDataHost, edgeId, edgeOrt, range, range);
+                      for (auto i=0;i<ndofEdge;++i) {
+                        for (auto j=0;j<ndofEdge;++j)
+                          *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
+                        *outStream << "\n";
+
+                        switch (refCoeff[edgeId][edgeOrt]) {
+                        case 0: errorFlag += (std::abs(mat(i,i) - 1.0) > tol); break;
+                        case 1: errorFlag += (std::abs(mat(i,ndofEdge-i-1) - 1.0) > tol); break;
+                        }
+                      }
                     }
-                  
+                  } else {
+                    *outStream << "  " << cellBasis.getName() << "  edge " << edgeId <<" does not have DOFs\n";
                   }
-                } 
+                }
+              } else {
+                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";
               }
             }
             {
               *outStream << "\n -- Testing Triangle HCURL \n\n";
               Basis_HCURL_TRI_In_FEM<DeviceSpaceType> cellBasis(order);
-              const auto matData = ots::createCoeffMatrix(&cellBasis);
+              if (cellBasis.requireOrientation()) {
+                if (testOrder == 1) {
+                  const ordinal_type ndofBasis = cellBasis.getCardinality();
+                  Kokkos::DynRankView<double,HostSpaceType>
+                    outputValues("output", ndofBasis, 3, 2),
+                    inputPoints("input", 3, 2);
+                  
+                  inputPoints(0, 0) =  0.25; inputPoints(0, 1) = 0;
+                  inputPoints(1, 0) =  0.50; inputPoints(1, 1) = 0;
+                  inputPoints(2, 0) =  0.75; inputPoints(2, 1) = 0;
+                  
+                  cellBasis.getValues(outputValues, inputPoints);
 
-              auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-              Kokkos::deep_copy(matDataHost, matData);
-          
-              const ordinal_type lineDim = 1, numEdge = 3, numOrt = 2;
-              for (auto edgeId=0;edgeId<numEdge;++edgeId) {
-                const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
-                const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
-                
-                const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);            
-                for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-                  *outStream << "\n edgeId = " << edgeId << " edgeOrt = " << edgeOrt << "\n";
-                  const auto mat = Kokkos::subview(matDataHost, edgeId, edgeOrt, range, range);
-                  for (auto i=0;i<ndofEdge;++i) {
-                    for (auto j=0;j<ndofEdge;++j)
-                      *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
+                  *outStream << "1st edge 3 point eval (0.25, 0.50, 0.75)\n";
+                  for (int i=0;i<ndofBasis;++i) {                  
+                    *outStream << std::setw(3) << i;
+                    for (int j=0;j<3;++j) 
+                      *outStream << " :: " << outputValues(i,j,0) << " " << outputValues(i,j,1) << " , ";
                     *outStream << "\n";
-                    
-                    // this needs to compare with text file (coeff matrix is not just a permutation)
-                    // switch (refCoeff[edgeId][edgeOrt]) {
-                    // case 0: errorFlag += (std::abs(mat(i,i) - 1.0) > tol); break;
-                    // case 1: errorFlag += (std::abs(mat(i,ndofEdge-i-1) + 1.0) > tol); break;
-                    //}
                   }
-                } 
+                }
+                const auto matData = ots::createCoeffMatrix(&cellBasis);
+
+                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                Kokkos::deep_copy(matDataHost, matData);
+
+                const ordinal_type lineDim = 1, numEdge = 3, numOrt = 2;
+                for (auto edgeId=0;edgeId<numEdge;++edgeId) {
+                  if (cellBasis.getDofCount(lineDim, edgeId)) {
+                    const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
+                    const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
+
+                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);
+                    for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
+                      *outStream << "\n edgeId = " << edgeId << " edgeOrt = " << edgeOrt << "\n";
+                      const auto mat = Kokkos::subview(matDataHost, edgeId, edgeOrt, range, range);
+                      for (auto i=0;i<ndofEdge;++i) {
+                        for (auto j=0;j<ndofEdge;++j)
+                          *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
+                        *outStream << "\n";
+
+                        // this is not anymore simple permutation;
+                        // to verify orientation matrix, it needs to compare with ooutput file
+                      }
+                    }
+                  } else {
+                    *outStream << "  " << cellBasis.getName() << "  edge " << edgeId <<" does not have DOFs\n";
+                  }
+                }
+              } else {
+                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";
+              }
+            }
+            {
+              *outStream << "\n -- Testing Triangle HDIV \n\n";
+              Basis_HDIV_TRI_In_FEM<DeviceSpaceType> cellBasis(order);
+              if (cellBasis.requireOrientation()) {
+                const auto matData = ots::createCoeffMatrix(&cellBasis);
+
+                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                Kokkos::deep_copy(matDataHost, matData);
+
+                const ordinal_type lineDim = 1, numEdge = 3, numOrt = 2;
+                for (auto edgeId=0;edgeId<numEdge;++edgeId) {
+                  if (cellBasis.getDofCount(lineDim, edgeId)) {
+                    const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
+                    const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
+
+                    const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);
+                    for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
+                      *outStream << "\n edgeId = " << edgeId << " edgeOrt = " << edgeOrt << "\n";
+                      const auto mat = Kokkos::subview(matDataHost, edgeId, edgeOrt, range, range);
+                      for (auto i=0;i<ndofEdge;++i) {
+                        for (auto j=0;j<ndofEdge;++j)
+                          *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
+                        *outStream << "\n";
+
+                        // this is not anymore simple permutation;
+                        // to verify orientation matrix, it needs to compare with ooutput file
+                      }
+                    }
+                  } else {
+                    *outStream << "  " << cellBasis.getName() << "  edge " << edgeId <<" does not have DOFs\n";
+                  }
+                }
+              } else {
+                *outStream << "  " << cellBasis.getName() << " does not require orientations\n";
               }
             }
             ots::clearCoeffMatrix();
@@ -201,12 +270,12 @@ namespace Intrepid2 {
         std::cout << "End Result: TEST FAILED = " << errorFlag << "\n";
       else
         std::cout << "End Result: TEST PASSED\n";
-      
+
       // reset format state of std::cout
       std::cout.copyfmt(oldFormatState);
-      
+
       return errorFlag;
     }
   }
 }
-    
+

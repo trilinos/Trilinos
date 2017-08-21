@@ -56,10 +56,10 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
+namespace panzer_stk {
+
 using Teuchos::RCP;
 using Teuchos::rcp;
-
-namespace panzer_stk {
 
 // Object describing how to sort a vector of elements using
 // local ID as the key

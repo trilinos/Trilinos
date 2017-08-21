@@ -12,7 +12,7 @@ extern "C" {
   ///
   /// POTRF
   ///
-#if !defined( HAVE_SHYLUTACHO_MKL )
+#if !defined( TACHO_HAVE_MKL )
   void F77_BLAS_MANGLE(spotrf,SPOTRF)( const char*, 
                                        int*, 
                                        float*, int*,
@@ -29,6 +29,24 @@ extern "C" {
                                        int*, 
                                        Kokkos::complex<double>*, int*,
                                        int*);
+
+  void F77_BLAS_MANGLE(ssytrf,SSYTRF)( const char*, 
+                                       int*, 
+                                       float*, int*,
+                                       int* );
+  void F77_BLAS_MANGLE(dsytrf,DSYTRF)( const char*, 
+                                       int*,
+                                       double*, int*,
+                                       int*);
+  void F77_BLAS_MANGLE(csytrf,CSYTRF)( const char*, 
+                                       int*,
+                                       Kokkos::complex<float>*, int*,
+                                       int*);
+  void F77_BLAS_MANGLE(zsytrf,ZSYTRF)( const char*, 
+                                       int*, 
+                                       Kokkos::complex<double>*, int*,
+                                       int*);
+
 #endif
 }
 
@@ -40,6 +58,11 @@ namespace Tacho {
 #define F77_FUNC_DPOTRF F77_BLAS_MANGLE(dpotrf,DPOTRF)
 #define F77_FUNC_CPOTRF F77_BLAS_MANGLE(cpotrf,CPOTRF)
 #define F77_FUNC_ZPOTRF F77_BLAS_MANGLE(zpotrf,ZPOTRF)
+
+#define F77_FUNC_SSYTRF F77_BLAS_MANGLE(ssytrf,SSYTRF)
+#define F77_FUNC_DSYTRF F77_BLAS_MANGLE(dsytrf,DSYTRF)
+#define F77_FUNC_CSYTRF F77_BLAS_MANGLE(csytrf,CSYTRF)
+#define F77_FUNC_ZSYTRF F77_BLAS_MANGLE(zsytrf,ZSYTRF)
 
     template<typename T, typename dummy = T>
     struct Lapack;
@@ -56,6 +79,18 @@ namespace Tacho {
                         a, &lda,
                         info);
       }
+      static inline
+      void sytrf(const char uplo,
+                 int m,
+                 T *a, int lda,
+                 int *ipiv,
+                 int *info) {
+        F77_FUNC_SSYTRF(&uplo,
+                        &m,
+                        a, &lda,
+                        ipiv,
+                        info);
+      }
     };
 
     template<typename T>
@@ -70,6 +105,19 @@ namespace Tacho {
                         a, &lda,
                         info);
       }
+      static inline
+      void sytrf(const char uplo,
+                 int m,
+                 T *a, int lda,
+                 int *ipiv,
+                 int *info) {
+        F77_FUNC_DSYTRF(&uplo,
+                        &m,
+                        a, &lda,
+                        ipiv,
+                        info);
+      }
+
     };
 
     template<typename T>
@@ -80,7 +128,7 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *info) {
-#if defined( HAVE_SHYLUTACHO_MKL )
+#if defined( TACHO_HAVE_MKL )
         F77_FUNC_CPOTRF(&uplo,
                         &m,
                         (MKL_Complex8 *)a, &lda,
@@ -89,6 +137,26 @@ namespace Tacho {
         F77_FUNC_CPOTRF(&uplo,
                         &m,
                         a, &lda,
+                        info);
+#endif
+      }
+      static inline
+      void sytrf(const char uplo,
+                 int m,
+                 T *a, int lda,
+                 int *ipiv,
+                 int *info) {
+#if defined( TACHO_HAVE_MKL )
+        F77_FUNC_CSYTRF(&uplo,
+                        &m,
+                        (MKL_Complex8 *)a, &lda,
+                        ipiv,
+                        info);
+#else
+        F77_FUNC_CSYTRF(&uplo,
+                        &m,
+                        a, &lda,
+                        ipiv,
                         info);
 #endif
       }
@@ -102,7 +170,7 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *info) {
-#if defined( HAVE_SHYLUTACHO_MKL )
+#if defined( TACHO_HAVE_MKL )
         F77_FUNC_ZPOTRF(&uplo,
                         &m,
                         (MKL_Complex16 *)a, &lda,
@@ -111,6 +179,26 @@ namespace Tacho {
         F77_FUNC_ZPOTRF(&uplo,
                         &m,
                         a, &lda,
+                        info);
+#endif
+      }
+      static inline
+      void sytrf(const char uplo,
+                 int m,
+                 T *a, int lda,
+                 int *ipiv,
+                 int *info) {
+#if defined( TACHO_HAVE_MKL )
+        F77_FUNC_ZSYTRF(&uplo,
+                        &m,
+                        (MKL_Complex16 *)a, &lda,
+                        ipiv,
+                        info);
+#else
+        F77_FUNC_ZSYTRF(&uplo,
+                        &m,
+                        a, &lda,
+                        ipiv,
                         info);
 #endif
       }

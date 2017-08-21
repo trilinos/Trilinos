@@ -2,7 +2,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -122,10 +122,6 @@ static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalO
   GlobalOrdinal lof=1;
   params.set("fact: iluk level-of-fill", lof);
   params.set("fact: iluk level-of-overlap", 0);
-#ifdef IFPACK2_ILUK_EXPERIMENTAL
-  params.set("fact: iluk experimental", true);
-  params.set("fact: iluk experimental threads" , 2);
-#endif
 
   prec->setParameters(params);
   return prec;

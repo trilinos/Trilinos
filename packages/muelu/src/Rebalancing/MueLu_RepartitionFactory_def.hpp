@@ -475,19 +475,24 @@ namespace MueLu {
         numMatched++;
       }
     }
-    GetOStream(Statistics1) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
+    GetOStream(Statistics1) << "Number of unassigned partitions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
 
-    // Step 4: Assign unassigned partitions
-    // We do that through random matching for remaining partitions. Not all part numbers are valid, but valid parts are a subset of [0, numProcs).
-    // The reason it is done this way is that we don't need any extra communication, as we don't need to know which parts are valid.
-    for (int part = 0, matcher = 0; part < numProcs; part++)
-      if (match.count(part) == 0) {
-        // Find first non-matched rank
-        while (matchedRanks[matcher])
-          matcher++;
+    // Step 4: Assign unassigned partitions if necessary.
+    // We do that through random matching for remaining partitions. Not all part numbers are valid, but valid parts are a
+    // subset of [0, numProcs).  The reason it is done this way is that we don't need any extra communication, as we don't
+    // need to know which parts are valid.
+    // TODO The cost of this loop is numprocs*log(numprocs), as match is a std::set().  Can this cost be reduced?
+    if (numPartitions - numMatched > 0) {
+      for (int part = 0, matcher = 0; part < numProcs; part++) {
+        if (match.count(part) == 0) {
+          // Find first non-matched rank
+          while (matchedRanks[matcher])
+            matcher++;
 
-        match[part] = matcher++;
+          match[part] = matcher++;
+        }
       }
+    }
 
     // Step 5: Permute entries in the decomposition vector
     for (LO i = 0; i < decompEntries.size(); i++)

@@ -8,7 +8,7 @@
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
-#include <mpi.h>
+#include "mpi.h"
 
 #include "ioUtils.hpp"
 

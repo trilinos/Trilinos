@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -53,14 +53,16 @@ void evals2(double  H[2][2], /* symmetric matrix for eigenvalues */
   xmax = 0.0;
   for (i = 0; i < 2; i++) {
     for (j = i; j < 2; j++) {
-      if (fabs(H[i][j]) > xmax)
+      if (fabs(H[i][j]) > xmax) {
         xmax = fabs(H[i][j]);
+      }
     }
   }
   if (xmax != 0) {
     for (i = 0; i < 2; i++) {
-      for (j    = 0; j < 2; j++)
+      for (j = 0; j < 2; j++) {
         M[i][j] = H[i][j] / xmax;
+      }
     }
   }
 
@@ -102,8 +104,9 @@ void eigenvec2(double  A[2][2], /* matrix */
     evec[1] = 0;
     norm    = 1;
   }
-  for (i = 0; i < 2; i++)
+  for (i = 0; i < 2; i++) {
     evec[i] /= norm;
+  }
   res1 = (A[0][0] - eval) * evec[0] + A[1][0] * evec[1];
   res2 = A[1][0] * evec[0] + (A[1][1] - eval) * evec[1];
   *res = sqrt(res1 * res1 + res2 * res2);

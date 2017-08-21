@@ -231,13 +231,14 @@ static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
 {
   *ierr = ZOLTAN_OK;  
   typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::lno_t lno_t;  
+  // typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::user_t user_t;
   const MatrixAdapter<user_t>* madp = static_cast<MatrixAdapter<user_t>* >(data);
 
   const gno_t *Ids;
   const gno_t *pIds;
-  const lno_t *offsets;
+  const offset_t *offsets;
 
   // Get the pins and list IDs.
   if (madp->CRSViewAvailable()) {
@@ -339,8 +340,9 @@ static void zoltanHGCS_withMeshAdapter(
 {
   *ierr = ZOLTAN_OK;
   typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::lno_t lno_t;  
+  // typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::offset_t offset_t;
   const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);
 
   // Select listType and pinType based on format specified in ZOLTAN_HG_CS_SIZE_FN
@@ -371,7 +373,7 @@ static void zoltanHGCS_withMeshAdapter(
     }
 
     // get pins
-    const lno_t* offsets;
+    const offset_t* offsets;
     const gno_t* adjIds;
     try {
       madp->getAdjsView(listType, pinType, offsets, adjIds);
@@ -494,6 +496,7 @@ static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
                                   static_cast<HyperGraphModel<Adapter>* >(data);
   typedef typename Adapter::gno_t       gno_t;
   typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::offset_t    offset_t;
   typedef typename Adapter::scalar_t    scalar_t;
   typedef StridedData<lno_t, scalar_t>  input_t;
 
@@ -501,7 +504,7 @@ static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
   ArrayView<input_t> wgts;
   mdl->getEdgeList(Ids,wgts);
   ArrayView<const gno_t> pinIds_;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<input_t> pin_wgts;
   mdl->getPinList(pinIds_,offsets,pin_wgts);
   for (int i=0;i<nEdges;i++) {

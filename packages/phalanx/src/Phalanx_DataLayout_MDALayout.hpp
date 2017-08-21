@@ -137,29 +137,29 @@ namespace PHX {
     MDALayout(const std::string& prefix,
 	      size_type size1);
 
-    ~MDALayout() {}
+    virtual ~MDALayout() {}
 
-    virtual bool operator==(const DataLayout& right) const;
+    virtual bool operator==(const DataLayout& right) const override;
 
-    virtual PHX::Device::size_type rank() const; 
+    virtual PHX::Device::size_type rank() const override; 
 
-    virtual PHX::Device::size_type dimension(size_type ordinal) const;
+    virtual PHX::Device::size_type dimension(size_type ordinal) const override;
 
-    virtual PHX::Device::size_type extent(size_type ordinal) const;
+    virtual PHX::Device::size_type extent(size_type ordinal) const override;
 
-    virtual int extent_int(size_type ordinal) const;
+    virtual int extent_int(size_type ordinal) const override;
 
-    virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const; 
+    virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const override; 
 
-    virtual std::string name(size_type ordinal) const;
+    virtual std::string name(size_type ordinal) const override;
 
-    virtual void names(std::vector<std::string>& names) const; 
+    virtual void names(std::vector<std::string>& names) const override; 
 
-    virtual PHX::Device::size_type size() const;
+    virtual PHX::Device::size_type size() const override;
 
-    virtual std::string identifier() const;
+    virtual std::string identifier() const override;
 
-    virtual void print(std::ostream& os, int offset) const;
+    virtual void print(std::ostream& os, int offset) const override;
 
   private:
     
@@ -175,6 +175,11 @@ namespace PHX {
     template<typename IndexType>
     typename std::enable_if<std::is_unsigned<IndexType>::value>::type
     checkForValidRank(const IndexType& ordinal) const;
+
+  protected:
+
+    virtual void 
+    setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents) override;
 
   private:
 

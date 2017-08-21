@@ -73,7 +73,6 @@
 
 namespace panzer
 {
-  class BlockedEpetraLinearObjContainer;
   template<typename LocalOrdinalT, typename GlobalOrdinalT>
   class UniqueGlobalIndexer;
 }

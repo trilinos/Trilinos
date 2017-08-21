@@ -92,6 +92,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef typename InputTraits<User>::offset_t offset_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
@@ -178,13 +179,13 @@ public:
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gno_t *&colIds) const
+  void getCRSView(const offset_t *&offsets, const gno_t *&colIds) const
   {
     offsets = offset_.getRawPtr();
     colIds = columnIds_.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gno_t *&colIds,
+  void getCRSView(const offset_t *&offsets, const gno_t *&colIds,
                     const scalar_t *&values) const
   {
     offsets = offset_.getRawPtr();
@@ -226,9 +227,11 @@ private:
   RCP<const xmatrix_t> matrix_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
-  ArrayRCP<lno_t> offset_;
-  ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
-  ArrayRCP<scalar_t> values_;  // TODO:  the matrix here?  Would prefer views.
+  lno_t base_;
+  ArrayRCP< const offset_t > offset_;
+  ArrayRCP< const lno_t > localColumnIds_;
+  ArrayRCP< const scalar_t > values_;
+  ArrayRCP<gno_t> columnIds_;  // TODO:  Refactor adapter to localColumnIds_
 
   int nWeightsPerRow_;
   ArrayRCP<StridedData<lno_t, scalar_t> > rowWeights_;
@@ -261,27 +264,14 @@ template <typename User, typename UserCoord>
 
   size_t nrows = matrix_->getNodeNumRows();
   size_t nnz = matrix_->getNodeNumEntries();
- 
-  offset_.resize(nrows+1, 0);
-  columnIds_.resize(nnz);
-  values_.resize(nnz);
-  ArrayView<const lno_t> indices;
-  ArrayView<const scalar_t> nzs;
-  lno_t next = 0;
-//TODO WE ARE COPYING THE MATRIX HERE.  IS THERE A WAY TO USE VIEWS?
-//TODO THEY ARE AVAILABLE IN EPETRA; ARE THEY AVAIL IN TPETRA AND XPETRA?
-  for (size_t i=0; i < nrows; i++){
-    lno_t row = i;
-    nnz = matrix_->getNumEntriesInLocalRow(row);
-    matrix_->getLocalRowView(row, indices, nzs);
-    for (size_t j=0; j < nnz; j++){
-      values_[next] = nzs[j];
-      // TODO - this will be slow
-      //   Is it possible that global columns ids might be stored in order?
-      columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
-    }
-    offset_[i+1] = offset_[i] + nnz;
-  } 
+
+  // Get ArrayRCP pointers to the structures in the underlying matrix
+  matrix_->getAllValues(offset_,localColumnIds_,values_);
+  columnIds_.resize(nnz, 0);
+
+  for(offset_t i = 0; i < offset_[nrows]; i++) {
+    columnIds_[i] = colMap_->getGlobalElement(localColumnIds_[i]);
+  }
 
   if (nWeightsPerRow_ > 0){
     rowWeights_ = arcp(new input_t [nWeightsPerRow_], 0, nWeightsPerRow_, true);

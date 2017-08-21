@@ -73,7 +73,11 @@ namespace KokkosClassic {
 
   class DefaultNode {
     public:
+# ifdef EPETRA_HAVE_OMP
+    typedef Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
+# else
     typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
+# endif
 
     static Teuchos::RCP<DefaultNodeType> getDefaultNode() { return Teuchos::null; }
   };

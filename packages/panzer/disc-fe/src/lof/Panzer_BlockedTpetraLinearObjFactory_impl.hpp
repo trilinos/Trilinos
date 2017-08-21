@@ -58,9 +58,9 @@
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
 
-using Teuchos::RCP;
-
 namespace panzer {
+
+using Teuchos::RCP;
 
 // ************************************************************
 // class BlockedTpetraLinearObjFactory

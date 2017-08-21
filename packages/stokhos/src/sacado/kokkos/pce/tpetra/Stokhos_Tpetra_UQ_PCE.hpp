@@ -161,6 +161,7 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
   typedef typename SPT::input_array_type scalar_input_array_type;
   typedef typename SPT::output_array_type scalar_output_array_type;
 
+  KOKKOS_INLINE_FUNCTION
   static size_t numValuesPerScalar (const value_type& x) {
     return x.size ();
   }
@@ -174,20 +175,23 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
     return view_type (label, static_cast<size_type> (numEnt), numVals);
   }
 
-  static size_t
+  KOKKOS_INLINE_FUNCTION
+  static Kokkos::pair<int, size_t>
   packArray (const output_buffer_type& outBuf,
              const input_array_type& inBuf,
              const size_t numEnt)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (inBuf.dimension_0 ()) < numEnt,
-      std::invalid_argument, "PackTraits::packArray: inBuf.dimension_0() = "
-      << inBuf.dimension_0 () << " < numEnt = " << numEnt << ".");
-#endif // HAVE_TPETRA_DEBUG
+    typedef Kokkos::pair<int, size_t> return_type;
+    size_t numBytes = 0;
+    int errorCode = 0;
+    if (static_cast<size_t> (inBuf.dimension_0 ()) < numEnt) {
+      // inBuf.dimension_0 () must be >= numEnt!
+      errorCode = 1;
+      return return_type(errorCode, numBytes);
+    }
 
     if (numEnt == 0) {
-      return 0;
+      return return_type(errorCode, numBytes);
     }
     else {
       // Check whether input array is contiguously allocated based on the size
@@ -200,10 +204,12 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
       const scalar_value_type* last_coeff_expected =
         inBuf(0).coeff() + (in_dim-1)*scalar_size;
       const bool is_contiguous = (last_coeff == last_coeff_expected);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-         !is_contiguous, std::logic_error,
-         "Cannot pack non-contiguous PCE array since buffer size calculation" <<
-         " is likely wrong.");
+      if(!is_contiguous) {
+        // Cannot pack non-contiguous PCE array since buffer size calculation
+        // is likely wrong.
+        errorCode = 3;
+        return return_type(errorCode, numBytes);
+      }
 
       // Check we are packing length-1 PCE arrays (mean-based preconditioner).
       // We can technically pack length > 1, but the unpack assumes the
@@ -211,10 +217,12 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
       // in Tpetra::CrsMatrix::transferAndFillComplete() which allocates a
       // local Teuchos::Array for the CSR values, which will only be length-1
       // by default.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-         scalar_size != 1, std::logic_error,
-         "Cannot pack PCE array with pce_size > 1 since unpack array" <<
-         " may not be allocated correctly.");
+      if (scalar_size != 1) {
+        // Cannot pack PCE array with pce_size > 1 since unpack array
+        // may not be allocated correctly.
+        errorCode = 4;
+        return return_type(errorCode, numBytes);
+      }
 
       const size_t flat_numEnt = numEnt * scalar_size;
       scalar_input_array_type flat_inBuf(inBuf(0).coeff(), flat_numEnt);
@@ -222,21 +230,24 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
     }
   }
 
-  static size_t
+  KOKKOS_INLINE_FUNCTION
+  static Kokkos::pair<int, size_t>
   unpackArray (const output_array_type& outBuf,
                const input_buffer_type& inBuf,
                const size_t numEnt)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (outBuf.dimension_0 ()) < numEnt,
-      std::invalid_argument,
-      "PackTraits::unpackArray: outBuf.dimension_0 () = " <<
-      outBuf.dimension_0 () << " < numEnt = " << numEnt << ".");
-#endif // HAVE_TPETRA_DEBUG
+    typedef Kokkos::pair<int, size_t> return_type;
+    size_t numBytes = 0;
+    int errorCode = 0;
+
+    if (static_cast<size_t> (outBuf.dimension_0 ()) < numEnt) {
+      // outBuf.dimension_0 () must be >= numEnt
+      errorCode = 1;
+      return return_type(errorCode, numBytes);
+    }
 
     if (numEnt == 0) {
-      return static_cast<size_t> (0);
+      return return_type(errorCode, numBytes);
     }
     else {
       // Check whether output array is contiguously allocated based on the size
@@ -267,17 +278,19 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
           const size_t numBytes = unpackValue(outBuf(i), val_inBuf);
           numBytesTotal += numBytes;
         }
-        return numBytesTotal;
+        return return_type(errorCode, numBytesTotal);
       }
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
   static size_t
   packValueCount (const value_type& inVal)
   {
     return inVal.size () * SPT::packValueCount (inVal.val ());
   }
 
+  KOKKOS_INLINE_FUNCTION
   static size_t
   packValue (const output_buffer_type& outBuf,
              const value_type& inVal)
@@ -287,6 +300,19 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
     return numBytes;
   }
 
+  KOKKOS_INLINE_FUNCTION
+  static size_t
+  packValue (const output_buffer_type& outBuf,
+             const size_t outBufIndex,
+             const value_type& inVal)
+  {
+    const size_t numBytes = packValueCount (inVal);
+    const size_t offset = outBufIndex * numBytes;
+    memcpy (outBuf.ptr_on_device () + offset, inVal.coeff (), numBytes);
+    return numBytes;
+  }
+
+  KOKKOS_INLINE_FUNCTION
   static size_t
   unpackValue (value_type& outVal, const input_buffer_type& inBuf)
   {

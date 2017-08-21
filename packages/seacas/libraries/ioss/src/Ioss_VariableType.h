@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -69,23 +69,23 @@ namespace Ioss {
   {
     explicit Suffix(const char new_data[MAX_SUFFIX])
     {
-      std::strncpy(data, new_data, MAX_SUFFIX);
-      data[MAX_SUFFIX] = '\0';
+      std::strncpy(m_data, new_data, MAX_SUFFIX);
+      m_data[MAX_SUFFIX] = '\0';
     }
     explicit Suffix(const std::string &new_data)
     {
-      std::strncpy(data, new_data.c_str(), MAX_SUFFIX);
-      data[MAX_SUFFIX] = '\0';
+      std::strncpy(m_data, new_data.c_str(), MAX_SUFFIX);
+      m_data[MAX_SUFFIX] = '\0';
     }
     bool operator==(const std::string &str) const
     {
-      return std::strncmp(data, str.c_str(), MAX_SUFFIX) == 0;
+      return std::strncmp(m_data, str.c_str(), MAX_SUFFIX) == 0;
     }
     bool operator!=(const std::string &str) const
     {
-      return std::strncmp(data, str.c_str(), MAX_SUFFIX) != 0;
+      return std::strncmp(m_data, str.c_str(), MAX_SUFFIX) != 0;
     }
-    char data[MAX_SUFFIX + 1];
+    char m_data[MAX_SUFFIX + 1]{};
   };
 
   /** \brief A generic variable type
@@ -95,8 +95,8 @@ namespace Ioss {
   public:
     static void alias(const std::string &base, const std::string &syn);
     static int describe(NameList *names);
-    static bool create_named_suffix_field_type(const std::string &       type_name,
-                                               std::vector<std::string> &suffices);
+    static bool create_named_suffix_field_type(const std::string &             type_name,
+                                               const std::vector<std::string> &suffices);
     static bool get_field_type_mapping(const std::string &field, std::string *type);
     static bool add_field_type_mapping(const std::string &raw_field, const std::string &raw_type);
 

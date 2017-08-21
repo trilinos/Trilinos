@@ -4,4 +4,5 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     DofMgr        dof-mgr        PT  OPTIONAL
     DiscFE        disc-fe        PT  OPTIONAL
     AdaptersSTK   adapters-stk   PT  OPTIONAL
+    AdaptersIOSS  adapters-ioss  PT  OPTIONAL
   )

@@ -347,5 +347,21 @@ analyzeGraph(double& speedup, double& parallelizability) const
 }
 
 // *************************************************************************
+template <typename EvalT, typename Traits>
+void
+PHX::EvaluationContainer<EvalT, Traits>::buildDag()
+{
+  this->dag_manager_.sortAndOrderEvaluators();
+}
+
+// *************************************************************************
+template <typename EvalT, typename Traits>
+const std::vector<Teuchos::RCP<PHX::FieldTag>>&
+PHX::EvaluationContainer<EvalT, Traits>::getFieldTags()
+{
+  return this->dag_manager_.getFieldTags();
+}
+
+// *************************************************************************
 
 #endif 

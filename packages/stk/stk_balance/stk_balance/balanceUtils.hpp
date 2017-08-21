@@ -1,7 +1,7 @@
 #ifndef STK_BALANCE_UTILS
 #define STK_BALANCE_UTILS
 
-#include <mpi.h>
+#include "mpi.h"
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_topology/topology.hpp>

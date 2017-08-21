@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -54,8 +54,9 @@ find_edge_mesh(int                  vertex,    /* vertex in comm_graph */
     dir = -1;
     dim = -(dim + 1);
   }
-  else
+  else {
     dir = 1;
+  }
 
   my_node   = vtx2node[vertex];
   my_loc[0] = my_node % mesh_dims[0];
@@ -68,8 +69,9 @@ find_edge_mesh(int                  vertex,    /* vertex in comm_graph */
 
   else { /* Figure out where edge is in data structure. */
     /* Note: indexing must match with that in init_mesh_edata. */
-    if (dir < 0)
+    if (dir < 0) {
       --my_loc[dim];
+    }
 
     if (dim == 0) { /* Edge in x-direction. */
       index = (mesh_dims[0] - 1) * mesh_dims[1] * my_loc[2] + (mesh_dims[0] - 1) * my_loc[1] +

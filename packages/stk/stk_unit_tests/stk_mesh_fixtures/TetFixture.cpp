@@ -119,6 +119,41 @@ TetFixture::TetFixture(   MetaData& meta
     m_spatial_dimension);
 
 }
+  TetFixture::TetFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , size_t nz
+              , const std::string& coordsName
+              , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
+              , ConnectivityMap const* connectivity_map
+            )
+  : m_spatial_dimension(3),
+    m_nx(nx),
+    m_ny(ny),
+    m_nz(nz),
+    m_meta_p( new MetaData(m_spatial_dimension) ),
+    m_bulk_p(  new BulkData(*m_meta_p
+                , pm
+                , autoAuraOption
+#ifdef SIERRA_MIGRATION
+                , false
+#endif
+                , connectivity_map)
+               ),
+    m_meta(*m_meta_p),
+    m_bulk_data(*m_bulk_p),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("tet_part", stk::topology::TET_4) ),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, coordsName) )
+{
+
+  //put coord-field on all nodes:
+  put_field(
+    m_coord_field,
+    m_meta.universal_part(),
+    m_spatial_dimension);
+
+}
 
 TetFixture::~TetFixture()
 {

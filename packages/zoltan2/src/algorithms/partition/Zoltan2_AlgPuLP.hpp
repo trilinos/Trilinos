@@ -114,6 +114,7 @@ public:
   typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
@@ -349,7 +350,7 @@ void AlgPuLP<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> adjs;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
   size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);
   int nEwgts = model->getNumWeightsPerEdge();
@@ -371,7 +372,7 @@ void AlgPuLP<Adapter>::partition(
   int* out_edges = NULL;
   long* out_offsets = NULL;
   TPL_Traits<int, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
-  TPL_Traits<long, const lno_t>::ASSIGN_ARRAY(&out_offsets, offsets);
+  TPL_Traits<long, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
 
   pulp_graph_t g = {num_verts, num_edges, 
                     out_edges, out_offsets,
@@ -382,7 +383,7 @@ void AlgPuLP<Adapter>::partition(
   unsigned long* out_edges = NULL;
   unsigned long* out_offsets = NULL;
   TPL_Traits<unsigned long, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
-  TPL_Traits<unsigned long, const lno_t>::ASSIGN_ARRAY(&out_offsets, offsets);
+  TPL_Traits<unsigned long, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
 
   const size_t modelVertsGlobal = model->getGlobalNumVertices();
   const size_t modelEdgesGlobal = model->getGlobalNumEdges();

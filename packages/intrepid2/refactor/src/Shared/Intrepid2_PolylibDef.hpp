@@ -620,7 +620,7 @@ namespace Intrepid2 {
       const double apb = alpha + beta;
 
       typename zViewType::value_type
-        poly[MaxPolylibPoint], polyn1[MaxPolylibPoint], polyn2[MaxPolylibPoint];
+        poly[MaxPolylibPoint]={}, polyn1[MaxPolylibPoint]={}, polyn2[MaxPolylibPoint]={};
 
       if (polyi.data()) 
         for (ordinal_type i=0;i<np;++i)
