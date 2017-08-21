@@ -47,7 +47,8 @@
 #include "Tpetra_Details_Hash.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
-#include "Teuchos_Describable.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_FancyOStream.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace Tpetra {
@@ -81,7 +82,7 @@ namespace Details {
 template<class KeyType,
          class ValueType,
          class DeviceType>
-class FixedHashTable : public Teuchos::Describable {
+class FixedHashTable {
 private:
   typedef typename DeviceType::execution_space execution_space;
   typedef typename DeviceType::memory_space memory_space;
@@ -435,7 +436,11 @@ public:
   /// that occur on different MPI processes.
   bool hasDuplicateKeys ();
 
-  //! Implementation of Teuchos::Describable
+  /// \brief Implementation of Teuchos::Describable interface.
+  ///
+  /// FixedHashTable can't actually inherit from Teuchos::Describable,
+  /// because that would prevent instances of this class from living
+  /// in GPU __device__ code.  See GitHub issue #1623.
   //@{
   //! Return a simple one-line description of this object.
   std::string description () const;
@@ -448,6 +453,9 @@ public:
   //@}
 
 private:
+  //! This hash table's label.
+  std::string objectLabel_;
+
   /// \brief Array of keys; only valid if keepKeys = true on construction.
   ///
   /// If you want the reverse mapping from values to keys, you need

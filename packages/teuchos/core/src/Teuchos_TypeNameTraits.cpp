@@ -61,6 +61,13 @@ std::string Teuchos::demangleName( const std::string &mangledName )
     std::string nullstr ("NULL");
     const char* demangle_output = _demangledName ? _demangledName : nullstr.c_str ();
     using std::endl;
+#endif // TEUCHOS_DEBUG
+    if (_demangledName != NULL) {
+      // The C library standard requires that free() do the right
+      // thing with NULL input, but it doesn't hurt to check.
+      free (_demangledName);
+    }
+#ifdef TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       "Error, name demangling with g++ has been enabled but the function "
@@ -73,13 +80,9 @@ std::string Teuchos::demangleName( const std::string &mangledName )
       "Teuchos_ENABLE_GCC_DEMANGLE to OFF." << endl << "Add the following to "
       "your list of CMake options:" << endl << endl <<
       "  -D Teuchos_ENABLE_GCC_DEMANGLE:BOOL=OFF" << endl);
-#endif
-    if (_demangledName != NULL) {
-      // The C library standard requires that free() do the right
-      // thing with NULL input, but it doesn't hurt to check.
-      free (_demangledName);
-    }
+#else // NOT TEUCHOS_DEBUG
     return (mangledName + "<demangle-failed>");
+#endif // TEUCHOS_DEBUG
   }
   const std::string demangledName (_demangledName);
   free (_demangledName); // We have to free this before we return!
