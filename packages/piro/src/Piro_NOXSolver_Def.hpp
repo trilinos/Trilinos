@@ -76,7 +76,8 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
   observer(observer_),
   solver(new Thyra::NOXNonlinearSolver),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-  model(model_)
+  model(model_),
+  writeOnlyConvergedSol(appParams_->get("Write Only Converged Solution", true))
 {
   using Teuchos::RCP;
 
@@ -112,6 +113,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   }
 
   // Find the solution of the implicit underlying model
+  Thyra::SolveStatus<Scalar> solve_status;
   {
     solver->setBasePoint(modelInArgs);
 
@@ -121,21 +123,22 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
     const RCP<Thyra::VectorBase<Scalar> > initial_guess = modelNominalState->clone_v();
 
     const Thyra::SolveCriteria<Scalar> solve_criteria;
-    const Thyra::SolveStatus<Scalar> solve_status =
-      solver->solve(initial_guess.get(), &solve_criteria, /*delta =*/ NULL);
+    solve_status = solver->solve(initial_guess.get(), &solve_criteria, /*delta =*/ NULL);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        solve_status.solveStatus != ::Thyra::SOLVE_STATUS_CONVERGED,
-        std::runtime_error,
-        "Nonlinear solver failed to converge");
+//  MPerego: I think it is better not to throw an error when the solver does not converge. 
+//  One can look at the solver status to check whether the solution is converged.
+//    TEUCHOS_TEST_FOR_EXCEPTION(
+//        solve_status.solveStatus != ::Thyra::SOLVE_STATUS_CONVERGED,
+//        std::runtime_error,
+//       "Nonlinear solver failed to converge");
   }
 
   // Retrieve final solution to evaluate underlying model
-  const RCP<const Thyra::VectorBase<Scalar> > convergedSolution = solver->get_current_x();
-  modelInArgs.set_x(convergedSolution);
+  const RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();
+  modelInArgs.set_x(finalSolution);
 
-  if (Teuchos::nonnull(this->observer)) {
-    this->observer->observeSolution(*convergedSolution);
+  if (Teuchos::nonnull(this->observer) && (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED || !writeOnlyConvergedSol)) {
+    this->observer->observeSolution(*finalSolution);
   }
 
   this->evalConvergedModel(modelInArgs, outArgs);

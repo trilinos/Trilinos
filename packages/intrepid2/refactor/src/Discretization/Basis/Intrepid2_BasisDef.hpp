@@ -738,6 +738,124 @@ namespace Intrepid2 {
                                   ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
   }
   
+  template<typename outputValueViewType,
+           typename inputPointViewType>
+  void getValues_L2_Args( const outputValueViewType   outputValues,
+                             const inputPointViewType    inputPoints,
+                             const EOperator             operatorType,
+                             const shards::CellTopology  cellTopo,
+                             const ordinal_type          basisCard ) {
+    const auto spaceDim = cellTopo.getDimension();
+
+    // Verify inputPoints array
+    INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.rank() == 2), std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 2 required for inputPoints array");
+
+    INTREPID2_TEST_FOR_EXCEPTION(  (inputPoints.dimension(0) <= 0), std::invalid_argument,
+                                   ">>> ERROR (Intrepid2::getValues_HGRAD_Args): dim 0 (number of points) > 0 required for inputPoints array");
+
+    INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.dimension(1) == spaceDim), std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 1 (spatial dimension) of inputPoints array  does not match cell dimension");
+
+
+    // Verify that all inputPoints are in the reference cell
+    /*
+      INTREPID2_TEST_FOR_EXCEPTION( !CellTools<Scalar>::checkPointSetInclusion(inputPoints, cellTopo), std::invalid_argument,
+      ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) One or more points are outside the "
+      << cellTopo <<" reference cell");
+    */
+
+
+    // Verify that operatorType is admissible for HGRAD fields
+    INTREPID2_TEST_FOR_EXCEPTION( ( (spaceDim == 2) && (operatorType == OPERATOR_DIV) ), std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) DIV is invalid operator for rank-0 (scalar) fields in 2D.");
+
+    INTREPID2_TEST_FOR_EXCEPTION( ( (spaceDim == 3) && ( (operatorType == OPERATOR_DIV) ||
+                                                         (operatorType == OPERATOR_CURL) ) ), std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) DIV and CURL are invalid operators for rank-0 (scalar) fields in 3D.");
+
+
+    // Check rank of outputValues (all operators are admissible in 1D) and its dim 2 when operator is
+    // GRAD, CURL (only in 2D), or Dk.
+
+    if(spaceDim == 1) {
+      switch(operatorType){
+      case OPERATOR_VALUE:
+        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
+                                      ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 2 required for outputValues when operator = VALUE.");
+        break;
+      case OPERATOR_GRAD:
+      case OPERATOR_CURL:
+      case OPERATOR_DIV:
+      case OPERATOR_D1:
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10:
+        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+                                      ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 1D when operator = GRAD, CURL, DIV, or Dk.");
+
+        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == 1 ),
+                                      std::invalid_argument,
+                                      ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 2 of outputValues must equal 1 when operator = GRAD, CURL, DIV, or Dk.");
+        break;
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION( (true), std::invalid_argument, ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) Invalid operator");
+      }
+    }
+    else if(spaceDim > 1) {
+      switch(operatorType){
+      case OPERATOR_VALUE:
+        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
+                                      ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 2 required for outputValues when operator = VALUE.");
+        break;
+      case OPERATOR_GRAD:
+      case OPERATOR_CURL:
+      case OPERATOR_D1:
+        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+                                      ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
+
+        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
+                                      std::invalid_argument,
+                                      ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 2 of outputValues must equal cell dimension when operator = GRAD, CURL (in 2D), or D1.");
+        break;
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10:
+        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+                                      ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
+
+        INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<ordinal_type>(outputValues.dimension(2)) == getDkCardinality(operatorType, spaceDim)),
+                                      std::invalid_argument,
+                                      ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 2 of outputValues must equal cardinality of the Dk multiset.");
+        break;
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION( (true), std::invalid_argument, ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) Invalid operator");
+      }
+    }
+
+
+    // Verify dim 0 and dim 1 of outputValues
+    INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(1) == inputPoints.dimension(0) ),
+                                  std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
+
+    INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<ordinal_type>(outputValues.dimension(0)) == basisCard ),
+                                  std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
+  }
+
 }
 
 #endif

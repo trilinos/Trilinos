@@ -106,7 +106,8 @@ LOCA::Stepper::Stepper(
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
   calcEigenvalues(false),
-  return_failed_on_max_steps(true)
+  return_failed_on_max_steps(true),
+  printOnlyConvergedSol(p->get("Write Only Converged Solution", true))
 {
   reset(global_data, initialGuess, lt, nt, p );
 }
@@ -148,7 +149,8 @@ LOCA::Stepper::Stepper(
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
   calcEigenvalues(false),
-  return_failed_on_max_steps(true)
+  return_failed_on_max_steps(true),
+  printOnlyConvergedSol(p->get("Write Only Converged Solution", true))
 {
   reset(global_data, initialGuess, nt, p );
 }
@@ -614,8 +616,11 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   // Allow continuation group to postprocess the step
   curGroupPtr->postProcessContinuationStep(stepStatus);
 
-  if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful)
+  if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
+    if(!printOnlyConvergedSol)
+      curGroupPtr->printSolution();
     return stepStatus;
+  }
 
   *prevPredictorPtr = *curPredictorPtr;
 

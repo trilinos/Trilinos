@@ -617,7 +617,6 @@ namespace MueLu {
      */
 
     using xdMV = Xpetra::MultiVector<double,LO,GO,NO>;
-    using STS  = Teuchos::ScalarTraits<SC>;
 
     LO lNumFineNodes    = lFineNodesPerDir[0]*lFineNodesPerDir[1]*lFineNodesPerDir[2];
     LO lNumCoarseNodes  = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[1]*lCoarseNodesPerDir[2];

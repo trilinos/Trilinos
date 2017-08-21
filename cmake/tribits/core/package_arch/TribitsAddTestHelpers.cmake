@@ -193,6 +193,31 @@ ENDFUNCTION()
 
 
 #
+# Determine if to add the test based on if testing is enabled for the current
+# package or subpackage.
+#
+
+FUNCTION(TRIBITS_ADD_TEST_PROCESS_ENABLE_TESTS  ADD_THE_TEST_OUT)
+  IF(${PACKAGE_NAME}_ENABLE_TESTS OR ${PARENT_PACKAGE_NAME}_ENABLE_TESTS)
+   SET(ADD_THE_TEST TRUE)
+  ELSE()
+    IF (PARENT_PACKAGE_NAME STREQUAL PACKAGE_NAME)
+      SET(PARENT_EANBLE_TESTS_DISABLE_MSG)
+    ELSE()
+      SET(PARENT_EANBLE_TESTS_DISABLE_MSG
+	", ${PARENT_PACKAGE_NAME}_ENABLE_TESTS='${${PARENT_PACKAGE_NAME}_ENABLE_TESTS}'"
+	)
+    ENDIF()
+    MESSAGE_WRAPPER(
+      "-- ${TEST_NAME}: NOT added test because ${PACKAGE_NAME}_ENABLE_TESTS='${${PACKAGE_NAME}_ENABLE_TESTS}${PARENT_EANBLE_TESTS_DISABLE_MSG}'."
+     )
+   SET(ADD_THE_TEST FALSE)
+  ENDIF()
+  SET(${ADD_THE_TEST_OUT} ${ADD_THE_TEST} PARENT_SCOPE)
+ENDFUNCTION()
+
+
+#
 # Determine if to add the test or not based on [X]HOST and [X]HOSTTYPE arguments
 #
 # Warning: Arguments for [X]HOST and [X]HOSTTYPE arguments are passed in

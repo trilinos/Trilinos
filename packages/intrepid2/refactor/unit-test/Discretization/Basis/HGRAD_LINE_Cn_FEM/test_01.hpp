@@ -103,7 +103,7 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|               Unit Test (Basis_HGRAD_LINE_Cn_FEM_JACOBI)                    |\n"
+        << "|               Unit Test (Basis_HGRAD_LINE_Cn_FEM)                           |\n"
         << "|                                                                             |\n"
         << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
         << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n"
