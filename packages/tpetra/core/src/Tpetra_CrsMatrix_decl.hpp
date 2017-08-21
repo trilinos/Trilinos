@@ -3114,6 +3114,10 @@ namespace Tpetra {
       using Teuchos::CONJ_TRANS;
       using Teuchos::NO_TRANS;
       using Teuchos::TRANS;
+      typedef MultiVector<RangeScalar, LocalOrdinal,
+        GlobalOrdinal, Node, classic> RMV;
+      typedef Kokkos::HostSpace host_memory_space;
+      typedef typename device_type::memory_space dev_memory_space;
       const char tfecfFuncName[] = "localSolve: ";
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -3163,25 +3167,37 @@ namespace Tpetra {
         (getNodeNumDiags () < getNodeNumRows ()) ? "U" : "N";
 
       local_matrix_type A_lcl = this->getLocalMatrix ();
-      X.template modify<device_type> (); // we will write to X
+
+      // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+      // sequential, host-only code.  See
+      // https://github.com/kokkos/kokkos-kernels/issues/48.  This
+      // means that we need to sync to host, then sync back to device
+      // when done.
+      X.template sync<host_memory_space> ();
+      const_cast<RMV&> (Y).template sync<host_memory_space> ();
+      X.template modify<host_memory_space> (); // we will write to X
 
       if (X.isConstantStride () && Y.isConstantStride ()) {
-        auto X_lcl = X.template getLocalView<device_type> ();
-        auto Y_lcl = Y.template getLocalView<device_type> ();
+        auto X_lcl = X.template getLocalView<host_memory_space> ();
+        auto Y_lcl = Y.template getLocalView<host_memory_space> ();
         KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
                             A_lcl, Y_lcl, X_lcl);
       }
       else {
-        const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
+        const size_t numVecs =
+          std::min (X.getNumVectors (), Y.getNumVectors ());
         for (size_t j = 0; j < numVecs; ++j) {
           auto X_j = X.getVector (j);
           auto Y_j = X.getVector (j);
-          auto X_lcl = X_j->template getLocalView<device_type> ();
-          auto Y_lcl = Y_j->template getLocalView<device_type> ();
+          auto X_lcl = X_j->template getLocalView<host_memory_space> ();
+          auto Y_lcl = Y_j->template getLocalView<host_memory_space> ();
           KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
                               diag.c_str (), A_lcl, Y_lcl, X_lcl);
         }
       }
+
+      X.template sync<dev_memory_space> ();
+      const_cast<RMV&> (Y).template sync<dev_memory_space> ();
     }
 
     /// \brief Return another CrsMatrix with the same entries, but
