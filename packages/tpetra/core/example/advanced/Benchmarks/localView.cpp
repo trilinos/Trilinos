@@ -452,6 +452,34 @@ namespace { // (anonymous)
 
 } // namespace (anonymous)
 
+#if defined(CUDA_VERSION) && (CUDA_VERSION < 8000)
+// mfh 20 Aug 2017: I've had troubles in the past with Kokkos functors
+// in anonymous namespaces, so I've gotten in the habit of putting
+// them in named namespaces.
+
+namespace TpetraExample {
+  template<class KokkosCrsMatrixType,
+           class LocalOrdinalType>
+  class ParallelReduceLoopBody {
+  public:
+    ParallelReduceLoopBody (const KokkosCrsMatrixType& A_lcl) :
+      A_lcl_ (A_lcl)
+    {}
+
+    KOKKOS_FUNCTION void
+    operator () (const LocalOrdinalType& lclRow, size_t& count) const
+    {
+      auto rowView = A_lcl_.row (lclRow);
+      auto length  = rowView.length;
+      count += static_cast<size_t> (length);
+    }
+
+    KokkosCrsMatrixType A_lcl_;
+  };
+} // namespace TpetraExample
+
+#endif // defined(CUDA_VERSION) && (CUDA_VERSION < 8000)
+
 
 int
 main (int argc, char* argv[])
@@ -743,12 +771,20 @@ main (int argc, char* argv[])
         policy_type range (0, static_cast<LO> (opts.lclNumRows));
 
         size_t curTotalLclNumEnt = 0;
+#if ! defined(CUDA_VERSION) || (CUDA_VERSION >= 8000)
         parallel_reduce ("loop", range,
                          KOKKOS_LAMBDA (const LO& lclRow, size_t& count) {
             auto rowView = A_lcl.row (lclRow);
             auto length  = rowView.length;
             count += static_cast<size_t> (length);
           }, curTotalLclNumEnt);
+#else
+        using TpetraExample::ParallelReduceLoopBody;
+        typedef ParallelReduceLoopBody<decltype (A_lcl), LO> functor_type;
+        parallel_reduce ("loop", range,
+                         functor_type (A_lcl),
+                         curTotalLclNumEnt);
+#endif // ! defined(CUDA_VERSION) || (CUDA_VERSION >= 8000)
         totalLclNumEnt += curTotalLclNumEnt;
       }
     }
