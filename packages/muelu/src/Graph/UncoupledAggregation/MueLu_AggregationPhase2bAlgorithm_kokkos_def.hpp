@@ -96,7 +96,7 @@ namespace MueLu {
 
         typename LWGraph_kokkos::row_type neighOfINode = graph.getNeighborVertices(i);
 
-        for (int j = 0; j < neighOfINode.size(); j++) {
+        for (int j = 0; j < as<int>(neighOfINode.size()); j++) {
           LO neigh = neighOfINode(j);
 
           // We don't check (neigh != i), as it is covered by checking (aggStat[neigh] == AGGREGATED)
@@ -108,7 +108,7 @@ namespace MueLu {
         int bestAggId   = -1;
         int bestConnect = -1;
 
-        for (int j = 0; j < neighOfINode.size(); j++) {
+        for (int j = 0; j < as<int>(neighOfINode.size()); j++) {
           LO neigh = neighOfINode(j);
 
           if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED) {

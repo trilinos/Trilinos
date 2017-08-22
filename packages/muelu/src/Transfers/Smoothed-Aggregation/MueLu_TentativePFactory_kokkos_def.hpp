@@ -674,12 +674,12 @@ namespace MueLu {
 
     private:
       LO        invalid_;
-      rowType   rows_;
-      colType   cols_;
-      valType   vals_;
       rowType   rowsAux_;
       colType   colsAux_;
       valType   valsAux_;
+      rowType   rows_;
+      colType   cols_;
+      valType   vals_;
     };
   }
 

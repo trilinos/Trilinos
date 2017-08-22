@@ -272,8 +272,8 @@ namespace MueLu {
       typedef typename MatrixType::ordinal_type LO;
 
     private:
-      ColDofType coldofs;      //< view containing the local dof ids associated with columns for the blkSize rows (not sorted)
       ColDofNnzType coldofnnz; //< view containing start and stop indices for subviews
+      ColDofType coldofs;      //< view containing the local dof ids associated with columns for the blkSize rows (not sorted)
       Dof2NodeTranslationType dof2node; //< view containing the local node id associated with the local dof id
       ColDofNnzType colnodennz; //< view containing number of column nodes for each node row
       BdryNodeType  bdrynode;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
