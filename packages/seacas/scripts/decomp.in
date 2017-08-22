@@ -333,8 +333,22 @@ curdir=`pwd`
 use64=""
 
 ACCESS=@ACCESSDIR@
-NEM_SLICE=${ACCESS}/bin/nem_slice
-NEM_SPREAD=${ACCESS}/bin/nem_spread
+
+# See if the path to the script is in ${ACCESS}/bin/decomp.
+# If not, then assume we are running in the cmake build directory
+# and update the paths to nem_slice and nem_spread accordingly...
+pushd $(dirname "${0}") > /dev/null
+basedir=$(pwd -L)
+# Use "pwd -P" for the path without links. man bash for more info.
+popd > /dev/null
+
+if [ "${basedir}" == "${ACCESS}/bin" ] ; then
+  NEM_SLICE=${ACCESS}/bin/nem_slice
+  NEM_SPREAD=${ACCESS}/bin/nem_spread
+else
+  NEM_SLICE=${basedir}/../applications/nem_slice/nem_slice
+  NEM_SPREAD=${basedir}/../applications/nem_spread/nem_spread
+fi
 
 ########################################################################
 # Test that the getopt being used will handle the long options...
