@@ -1,3 +1,6 @@
+#ifndef STK_DATA_TRAITS_CLASS_H
+#define STK_DATA_TRAITS_CLASS_H
+
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -235,3 +238,4 @@ template<> const DataTraits & data_traits< C >()   \
 }
 }
 
+#endif

@@ -184,7 +184,7 @@ protected:
         stk::mesh::EntityVector nodes;
         stk::mesh::get_selected_entities(get_meta().locally_owned_part() | get_meta().globally_shared_part(), get_bulk().buckets(stk::topology::NODE_RANK), nodes);
 
-        double rotation = 15*3.14159/180;
+        double rotation = 15 * M_PI / 180.0;
         double dx = 3;
         double dy = 3;
         double dz = 3;
