@@ -48,8 +48,10 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Tacho_FunctionMap.hpp"
 
-namespace Amesos2 {
+#include "Tacho.hpp"
+#include "Tacho_Solver.hpp"
 
+namespace Amesos2 {
 
 /** \brief Amesos2 interface to the Tacho package.
  *
@@ -91,22 +93,13 @@ public:
 
   typedef FunctionMap<Amesos2::TachoSolver,tacho_type>         function_map;
 
-  // TODO - Not sure yet how to organize these elements for converting to
-  // Kokkos view spaces.
+  // TODO - Not sure yet best place for organizing these typedefs
   typedef Tacho::Experimental::ordinal_type                    ordinal_type;
   typedef Tacho::Experimental::size_type                          size_type;
   typedef Kokkos::DefaultHostExecutionSpace                   HostSpaceType;
   typedef Kokkos::View<size_type*,HostSpaceType>            size_type_array;
   typedef Kokkos::View<ordinal_type*,HostSpaceType>      ordinal_type_array;
   typedef Kokkos::View<tacho_type*, HostSpaceType>         value_type_array;
-
-  // TODO: Decide how to organize this
-  // Still need to implement thread options and parallel solve
-#ifdef KOKKOS_HAVE_OPENMP
-  typedef Kokkos::OpenMP                                    DeviceSpaceType;
-#else
-  typedef Kokkos::Serial                                    DeviceSpaceType;
-#endif
 
   /// \name Constructor/Destructor methods
   //@{
@@ -210,8 +203,11 @@ private:
 
   // struct holds all data necessary to make a tacho factorization or solve call
   mutable struct TACHOData {
-    Tacho::Experimental::SymbolicTools * Symbolic;
-    Tacho::Experimental::NumericTools<tacho_type,DeviceSpaceType> * Numeric;
+    typename Tacho::Solver<tacho_type,HostSpaceType> solver;
+
+    // TODO: Implement the paramter options - confirm which we want and which have been implemented
+    // int num_kokkos_threads;
+    // int max_num_superblocks;
   } data_;
 
   // The following Arrays are persisting storage arrays for A, X, and B
@@ -226,9 +222,6 @@ private:
   Teuchos::Array<tacho_type> xvals_;  int ldx_;
   /// Persisting 1D store for B
   Teuchos::Array<tacho_type> bvals_;  int ldb_;
-
-  /// TODO: Not sure exactly how we should handle this perm idx for Tacho
-  ordinal_type_array idx_;
 };                              // End class Tacho
 
 

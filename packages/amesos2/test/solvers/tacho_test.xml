@@ -7,48 +7,44 @@
 
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
-	<!-- A non-list entry for epetra denotes a default run, name, type, and value are arbitrary -->
-	<Parameter name="defaultrun" type="bool" value="true"/>
+        <!-- A non-list entry for epetra denotes a default run, name, type, and value are arbitrary -->
+        <Parameter name="defaultrun" type="bool" value="true"/>
       </ParameterList>
 
       <!-- Next test Tpetra objects -->
       <ParameterList name="tpetra">
-	<!-- these `run*' sublist names are arbitrary -->
-	<ParameterList name="run0">
-	  <Parameter name="Scalar" type="string" value="float"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	</ParameterList>
-	  <!-- The `Node' parameter is not yet supported -->
-	<ParameterList name="run1">
-	  <Parameter name="Scalar" type="string" value="float"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	</ParameterList>
-	<ParameterList name="run2">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	</ParameterList>
-	<ParameterList name="run3">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	</ParameterList>
-	<ParameterList name="run4 - transpose">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="amesos2_params">
-	    <Parameter name="Transpose" type="bool" value="true"/>
-	  </ParameterList>
-	</ParameterList>
+        <!-- these `run*' sublist names are arbitrary -->
+        <ParameterList name="run0">
+          <Parameter name="Scalar" type="string" value="float"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="int"/>
+        </ParameterList>
+          <!-- The `Node' parameter is not yet supported -->
+        <ParameterList name="run1">
+          <Parameter name="Scalar" type="string" value="float"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+        </ParameterList>
+        <ParameterList name="run2">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="int"/>
+        </ParameterList>
+        <ParameterList name="run3">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+        </ParameterList>
+        <ParameterList name="run4-test-threads-params">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="solver_params">
       </ParameterList>
-    </ParameterList> <!-- end Tacho -->
+  </ParameterList> <!-- end Tacho -->
     <ParameterList name="all_solver_params">
-      <Parameter name="Transpose" type="bool" value="false"/>
     </ParameterList>
   </ParameterList> <!-- end tacho_test.mtx -->
 
@@ -57,32 +53,32 @@
     <!-- <Parameter name="complex" type="bool" value="true"/> -->
     <ParameterList name="Tacho">
       <ParameterList name="tpetra">
-	<ParameterList name="run0">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <!-- "Magnitude" parameter only checked if the value of "Scalar" is "complex" -->
-	  <Parameter name="Magnitude" type="string" value="float"/>
-	</ParameterList>
-	<ParameterList name="run0-1">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <!-- "Magnitude" parameter only checked if the value of "Scalar" is "complex" -->
-	  <Parameter name="Magnitude" type="string" value="float"/>
-	</ParameterList>
-	<ParameterList name="run1">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <Parameter name="Magnitude" type="string" value="double"/>
-	</ParameterList>
-	<ParameterList name="run1-1">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <Parameter name="Magnitude" type="string" value="double"/>
-	</ParameterList>
+        <ParameterList name="run0">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="int"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <!-- "Magnitude" parameter only checked if the value of "Scalar" is "complex" -->
+          <Parameter name="Magnitude" type="string" value="float"/>
+        </ParameterList>
+        <ParameterList name="run0-1">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <!-- "Magnitude" parameter only checked if the value of "Scalar" is "complex" -->
+          <Parameter name="Magnitude" type="string" value="float"/>
+        </ParameterList>
+        <ParameterList name="run1">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="int"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run1-1">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList> <!-- end tacho_test_complex.mtx -->

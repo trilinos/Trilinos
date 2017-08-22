@@ -82,17 +82,18 @@ struct TypeMap<TachoSolver,double>
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
+
 template <>
 struct TypeMap<TachoSolver,std::complex<float> >
 {
-  typedef std::complex<float> type;
+  typedef Kokkos::complex<float> type;
   typedef float magnitude_type;
 };
 
 template <>
 struct TypeMap<TachoSolver,std::complex<double> >
 {
-  typedef std::complex<double> type;
+  typedef Kokkos::complex<double> type;
   typedef double magnitude_type;
 };
 

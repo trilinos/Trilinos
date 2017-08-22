@@ -89,12 +89,12 @@ IF (${PACKAGE_NAME}_ENABLE_Tacho)
     EXEDEPS Solver_Test
     )
 
-
   TRIBITS_ADD_TEST(
     Solver_Test
     NAME Tacho_Solver_Test
     ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1 # Need to determine if we want more MPI when not running OpenMP with threads
     COMM serial mpi
     )
 

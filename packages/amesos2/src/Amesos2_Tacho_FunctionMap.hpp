@@ -51,13 +51,6 @@
 #include "Amesos2_FunctionMap.hpp"
 #include "Amesos2_Tacho_TypeMap.hpp"
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_CrsMatrixBase.hpp"
-#include "TachoExp_MatrixMarket.hpp"
-#include "TachoExp_Graph.hpp"
-#include "TachoExp_SymbolicTools.hpp"
-#include "TachoExp_NumericTools.hpp"
-
 namespace Amesos2 {
 
   /* ==================== Specializations ====================

@@ -64,16 +64,12 @@ TachoSolver<Matrix,Vector>::TachoSolver(
   , colind_()
   , rowptr_()
 {
-  data_.Symbolic = NULL;
-  data_.Numeric = NULL;
 }
 
 
 template <class Matrix, class Vector>
 TachoSolver<Matrix,Vector>::~TachoSolver( )
 {
-  delete data_.Symbolic;
-  delete data_.Numeric;
 }
 
 template <class Matrix, class Vector>
@@ -97,12 +93,8 @@ int
 TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 {
   int status = 0;
-  if ( this->root_ ) {
-    if(data_.Symbolic) {
-      delete data_.Symbolic;
-      data_.Symbolic = NULL;
-    }
 
+  if ( this->root_ ) {
     size_type_array row_ptr;
     ordinal_type_array cols;
 
@@ -127,11 +119,19 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
         row_ptr(n) = static_cast<size_type>(sp_rowptr[n]);
       }
 
-      // TODO - For Tpetra, we could have a direct view like this...
-      // row_ptr = size_type_array(sp_rowptr, this->globalNumRows_ + 1);
+      // Now convert the cols - now on an earlier version I thought this was
+      // working as a straight conversion but then some things have changed
+      // and it seems we will need to convert. TODO: Assess this conversion.
+      // Can we do this more optimally and still work for all Epetra/Tpetra
+      // cases.
+      cols = ordinal_type_array("c", this->globalNumNonZeros_);
+      for(global_size_type n = 0; n < this->globalNumNonZeros_; ++n) {
+        cols(n) = static_cast<ordinal_type>(sp_colind[n]);
+      }
 
-      // cols type is ok for both Tpetra and Epetra already
-      cols = ordinal_type_array(sp_colind, this->globalNumNonZeros_);
+      // TODO - For Tpetra, we could have a direct view like this...
+      // Can we explot this here?
+      // row_ptr = size_type_array(sp_rowptr, this->globalNumRows_ + 1);
     }
     else
 #endif
@@ -141,9 +141,9 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
       cols = ordinal_type_array(this->colind_.getRawPtr(), this->globalNumNonZeros_);
     }
 
-    data_.Symbolic = new Tacho::Experimental::SymbolicTools(
-      this->globalNumCols_, row_ptr, cols, idx_, idx_);
-    data_.Symbolic->symbolicFactorize();
+    // TODO: Confirm param options
+    // data_.solver.setMaxNumberOfSuperblocks(data_.max_num_superblocks);
+    data_.solver.analyze(this->globalNumCols_, row_ptr, cols);
   }
 
   return status;
@@ -155,77 +155,27 @@ int
 TachoSolver<Matrix,Vector>::numericFactorization_impl()
 {
   int status = 0;
+
   if ( this->root_ ) {
-    if(!data_.Symbolic) {
-      symbolicFactorization_impl();
-    }
-    if(data_.Numeric) {
-      delete data_.Numeric;
-      data_.Numeric = NULL;
-    }
-    size_type_array row_ptr;
-    ordinal_type_array cols;
     value_type_array values;
 
 #ifndef HAVE_TEUCHOS_COMPLEX
     if(single_process_optim_check()) {
       // in the optimized case we read the values directly from the matrix
-      // without converting through the Teuchos::Array setup. Note that in
-      // this case nzvals_, colind_, and rowptr_ are never set in loadA_impl.
-      // For HAVE_TEUCHOS_COMPLEX is_optimized_case() return false because we
-      // need nzvals_.
-      auto sp_rowptr = this->matrixA_->returnRowPtr();
-        TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
-         std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null");
-      auto sp_colind = this->matrixA_->returnColInd();
-        TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
-          std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null");
+      // without converting through the Teuchos::Array setup.
       auto sp_values = this->matrixA_->returnValues();
         TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
           std::runtime_error, "Amesos2 Runtime Error: sp_values returned null");
-
-      // Tacho uses size_type size_t which matches Tpetra but not Epetra (int)
-      // So we need a converter
-      row_ptr = size_type_array("r", this->globalNumRows_ + 1);
-      for(global_size_type n = 0; n < this->globalNumRows_ + 1; ++n) {
-        row_ptr(n) = static_cast<size_type>(sp_rowptr[n]);
-      }
-
-      // TODO - For Tpetra, we could have a direct view like this...
-      // row_ptr = size_type_array(sp_rowptr, this->globalNumRows_ + 1);
-
-      // cols and values are ok for both Tpetra and Epetra already
-      cols = ordinal_type_array(sp_colind, this->globalNumNonZeros_);
       values = value_type_array(sp_values, this->globalNumNonZeros_);
     }
     else
 #endif
     {
       // Non optimized case used the arrays set up in loadA_impl
-      row_ptr = size_type_array(this->rowptr_.getRawPtr(), this->globalNumRows_ + 1);
-      cols = ordinal_type_array(this->colind_.getRawPtr(), this->globalNumNonZeros_);
       values = value_type_array(this->nzvals_.getRawPtr(), this->globalNumNonZeros_);
     }
 
-    data_.Numeric = new Tacho::Experimental::NumericTools<scalar_type,DeviceSpaceType>(
-      this->globalNumRows_,
-      row_ptr,
-      cols,
-      idx_,
-      idx_,
-      data_.Symbolic->NumSupernodes(),
-      data_.Symbolic->Supernodes(),
-      data_.Symbolic->gidSuperPanelPtr(),
-      data_.Symbolic->gidSuperPanelColIdx(),
-      data_.Symbolic->sidSuperPanelPtr(),
-      data_.Symbolic->sidSuperPanelColIdx(),
-      data_.Symbolic->blkSuperPanelColIdx(),
-      data_.Symbolic->SupernodesTreeParent(),
-      data_.Symbolic->SupernodesTreePtr(),
-      data_.Symbolic->SupernodesTreeChildren(),
-      data_.Symbolic->SupernodesTreeRoots());
-
-    data_.Numeric->factorizeCholesky_Serial(values);
+    data_.solver.factorize(values);
   }
 
   return status;
@@ -256,12 +206,6 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
                                                ROOTED, this->rowIndexBase_);
   }
 
-  // TODO: Decide if Transpose should be tested?
-  // Currently this is turned on in the test but does nothing - to fix or delete
-  // int TachoRequest = this->control_.useTranspose_ ?
-  //   Tacho::Experimental::Trans::Transpose :
-  //   Tacho::Experimental::Trans::NoTranspose;
-
   int ierr = 0; // returned error code
 
   if ( this->root_ ) {
@@ -269,29 +213,27 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
   #ifdef HAVE_AMESOS2_TIMER
       Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
   #endif
-      if (data_.Symbolic) {
-        delete data_.Symbolic;
-        data_.Symbolic = NULL;
-      }
-
       // validate
       int i_ld_rhs = as<int>(ld_rhs);
 
       for(size_t j = 0 ; j < nrhs; j++) {
-        typedef typename Tacho::Experimental::NumericTools
-          <tacho_type,DeviceSpaceType>::value_type_matrix_host solve_array_t;
+        // TODO: Decide how to organize this best for Amesos2
+        // Clarify behavior for Cuda - exception? configure error?
+#ifdef KOKKOS_HAVE_OPENMP
+        typedef Kokkos::OpenMP                                  DeviceSpaceType;
+#else
+        typedef Kokkos::Serial                                  DeviceSpaceType;
+#endif
+        typedef typename Tacho::Solver<tacho_type,DeviceSpaceType>::
+          value_type_matrix solve_array_t;
 
-        // TODO Decide how to handle t for Tacho and verify this setup is ok
         const int n = 1;
         solve_array_t x(&xValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
         solve_array_t b(&bValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
         solve_array_t t("t", this->globalNumRows_, n);
+        data_.solver.solve(x, b, t);
 
-        // Still need to implement parallel, decided about thread handling, etc.
-        data_.Numeric->solveCholesky_Serial(x, b, t);
-
-        int status = 0; // TODO - determine what error handling will be
-
+        int status = 0; // TODO: determine what error handling will be
         if(status != 0) {
           ierr = status;
           break;
@@ -335,11 +277,11 @@ template <class Matrix, class Vector>
 void
 TachoSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
 {
-  using Teuchos::RCP;
-  using Teuchos::getIntegralValue;
-  using Teuchos::ParameterEntryValidator;
-
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
+
+  // TODO: Confirm param options
+  // data_.num_kokkos_threads = parameterList->get<int>("kokkos-threads", 1);
+  // data_.max_num_superblocks = parameterList->get<int>("max-num-superblocks", 4);
 }
 
 
@@ -351,6 +293,10 @@ TachoSolver<Matrix,Vector>::getValidParameters_impl() const
 
   if( is_null(valid_params) ){
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+
+    // TODO: Confirm param options
+    // pl->set("kokkos-threads", 1, "Number of threads");
+    // pl->set("max-num-superblocks", 4, "Max number of superblocks");
 
     valid_params = pl;
   }
@@ -372,14 +318,6 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
   if(current_phase == SOLVE) {
     return(false);
-  }
-
-  // TODO: How should we handle generating/storing this perm index?
-  if( this->root_ ) {
-    idx_ = ordinal_type_array("idx", this->globalNumNonZeros_);
-    for (size_t i=0; i<this->idx_.size(); ++i) {
-      idx_(i) = i;
-    }
   }
 
 #ifndef HAVE_TEUCHOS_COMPLEX
