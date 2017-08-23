@@ -202,7 +202,7 @@ namespace MueLu {
     // could be gathered easily from the unamalgamated fine level operator A.
     std::vector<size_t> stridingInfo(1,maxDofPerNode);
 
-    GlobalOrdinal nCoarseDofs = amalgP->getDomainMap()->getGlobalNumElements() * maxDofPerNode;
+    GlobalOrdinal nCoarseDofs = amalgP->getDomainMap()->getNodeNumElements() * maxDofPerNode;
     GlobalOrdinal indexBase   = amalgP->getDomainMap()->getIndexBase();
     RCP<const Map> coarseDomainMap = StridedMapFactory::Build(amalgP->getDomainMap()->lib(),
         Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
