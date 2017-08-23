@@ -141,6 +141,9 @@ setParameters (const Teuchos::ParameterList& List)
     if (relaxType == "Jacobi") {
       PrecType_ = Ifpack2::Details::JACOBI;
     }
+    else if (relaxType == "MT Split Jacobi") {
+      PrecType_ = Ifpack2::Details::MTSPLITJACOBI;
+    }
     else if (relaxType == "Gauss-Seidel") {
       PrecType_ = Ifpack2::Details::GS;
     }
@@ -445,6 +448,9 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   case Ifpack2::Details::SGS:
     ApplyInverseSGS(*X_copy,Y);
     break;
+  case Ifpack2::Details::MTSPLITJACOBI:
+    Container_->applyInverseJacobi(*X_copy, Y, ZeroStartingSolution_, NumSweeps_);
+  break;
   default:
     TEUCHOS_TEST_FOR_EXCEPTION
       (true, std::logic_error, "Ifpack2::BlockRelaxation::apply: Invalid "
@@ -593,10 +599,6 @@ BlockRelaxation<MatrixType,ContainerType>::
 compute ()
 {
   using Teuchos::rcp;
-  typedef Tpetra::Vector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type> vector_type;
-  // typedef Tpetra::Import<local_ordinal_type,
-  //   global_ordinal_type, node_type> import_type; // unused
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::compute: "

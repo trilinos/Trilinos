@@ -328,6 +328,19 @@ public:
          scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const = 0;
 
+  /// \brief Compute <tt>Y := (1 - a) Y + a D^{-1} (X - R*Y)</tt>.
+  ///
+  // The underlying container implements the splitting <tt>A = D + R</tt>. Only
+  // it can have efficient access to D and R, as these are constructed in the
+  // symbolic and numeric phases.
+  //
+  // This is the first performance-portable implementation of a block
+  // relaxation, and it is supported currently only by BlockTriDiContainer.
+  virtual void applyInverseJacobi (const mv_type& X, mv_type& Y,
+                                   bool zeroStartingSolution = false,
+                                   int numSweeps = 1) const
+  { TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented."); }
+
   //! Wrapper for apply with MVs, used in unit tests (never called by BlockRelaxation)
   void applyMV (mv_type& X, mv_type& Y) const
   {
