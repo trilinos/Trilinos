@@ -75,6 +75,7 @@
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
@@ -171,14 +172,15 @@ int main(int argc,char * argv[])
    bool useTpetra = false;
    bool threeD = false;
    int x_elements=20,y_elements=20,z_elements=20;
+   std::string celltype = "Quad"; // or "Tri" (2d), Hex or Tet (3d)
    double x_size=1.,y_size=1.,z_size=1.;
    int basis_order = 1;
-   std::string celltype = "Hex"; // or "Tet"
 
    Teuchos::CommandLineProcessor clp;
    clp.throwExceptions(false);
    clp.setDocString("This example solves curl laplacian problem with Hex and Tet inline mesh with high order.\n");
 
+   clp.setOption("cell",&celltype);
    clp.setOption("use-tpetra","use-epetra",&useTpetra);
    clp.setOption("use-threed","use-twod",&threeD);
    clp.setOption("x-elements",&x_elements);
@@ -226,7 +228,10 @@ int main(int argc,char * argv[])
      eBlockName = "eblock-0_0_0";
    }
    else {
-     mesh_factory = rcp(new panzer_stk::SquareQuadMeshFactory);
+     if      (celltype == "Quad") mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
+     else if (celltype == "Tri")  mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
+     else
+       throw std::runtime_error("not supported celltype argument: try Quad or Tri");
 
      // set mesh factory parameters
      RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
