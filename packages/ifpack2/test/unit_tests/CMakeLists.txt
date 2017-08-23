@@ -129,6 +129,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BlockTriDiContainerUnitAndPerfTests
+    SOURCES 
+    Ifpack2_UnitTestBlockTriDiContainer.cpp
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()
+
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_ML)
 # mfh 01 Jan 2017: 
 # Fix for https://github.com/trilinos/Trilinos/issues/935
