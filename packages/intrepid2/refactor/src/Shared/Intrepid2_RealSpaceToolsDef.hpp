@@ -239,11 +239,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m) {
-#ifdef HAVE_INTREPID2_SACADO
                 _output(i,j,k,l,m) = Sacado::Value<typename inputViewType::value_type>::eval(_input(i,j,k,l,m));
-#else
-                _output(i,j,k,l,m) = _input(i,j,k,l,m);
-#endif
               }
       }
     };
