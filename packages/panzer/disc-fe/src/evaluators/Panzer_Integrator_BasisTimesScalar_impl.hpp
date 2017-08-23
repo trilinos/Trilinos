@@ -49,10 +49,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-//Sacado
-#include "Kokkos_ViewFactory.hpp"
-
-//Panzer
+// Panzer
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
@@ -80,6 +77,7 @@ namespace panzer
     multiplier_(multiplier),
     basisName_(basis.name())
   {
+    using Kokkos::View;
     using panzer::BASIS;
     using panzer::Cell;
     using panzer::EvaluatorStyle;
@@ -115,11 +113,16 @@ namespace panzer
       this->addEvaluatedField(field_);
 
     // Add the dependent field multipliers, if there are any.
+    int i(0);
+    fieldMults_.resize(fmNames.size());
+    kokkosFieldMults_ =
+      View<View<ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
+      fmNames.size());
     for (const auto& name : fmNames)
-      fieldMults_.push_back(MDField<const ScalarT, Cell, IP>(name,
-        ir.dl_scalar));
-    for (const auto& mult : fieldMults_)
-      this->addDependentField(mult);
+    {
+      fieldMults_[i++] = MDField<ScalarT, Cell, IP>(name, ir.dl_scalar);
+      this->addDependentField(fieldMults_[i - 1]);
+    } // end loop over the field multipliers
 
     // Set the name of this object.
     string n("Integrator_BasisTimesScalar (");
@@ -173,20 +176,87 @@ namespace panzer
     typename Traits::SetupData sd,
     PHX::FieldManager<Traits>& fm)
   {
-    using Kokkos::createDynRankView;
     using panzer::getBasisIndex;
+    using std::size_t;
+
+    // Get the Kokkos::Views of the field multipliers.
+    for (size_t i(0); i < fieldMults_.size(); ++i)
+      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
 
     // Determine the number of nodes and quadrature points.
-    numNodes_ = field_.extent(1);
-    numQP_    = scalar_.extent(1);
+    numQP_ = scalar_.extent(1);
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
-
-    // Create a temporary View that we'll use in computing the integral.
-    tmp_ = createDynRankView(scalar_.get_static_view(), "tmp",
-      scalar_.dimension(0), numQP_);
   } // end of postRegistrationSetup()
+
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  operator()()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  template<int NUM_FIELD_MULT>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Integrator_BasisTimesScalar<EvalT, Traits>::
+  operator()(
+    const FieldMultTag<NUM_FIELD_MULT>& tag,
+    const size_t&                       cell) const
+  {
+    using panzer::EvaluatorStyle;
+
+    // Initialize the evaluated field.
+    const int numBases(basis_.extent(1));
+    if (evalStyle_ == EvaluatorStyle::EVALUATES)
+      for (int basis(0); basis < numBases; ++basis)
+        field_(cell, basis) = 0.0;
+
+    // The following if-block is for the sake of optimization depending on the
+    // number of field multipliers.
+    ScalarT tmp;
+    if (NUM_FIELD_MULT == 0)
+    {
+      // Loop over the quadrature points, scale the integrand by the
+      // multiplier, and then perform the actual integration, looping over the
+      // bases.
+      for (int qp(0); qp < numQP_; ++qp)
+      {
+        tmp = multiplier_ * scalar_(cell, qp);
+        for (int basis(0); basis < numBases; ++basis)
+          field_(cell, basis) += basis_(cell, basis, qp) * tmp;
+      } // end loop over the quadrature points
+    }
+    else if (NUM_FIELD_MULT == 1)
+    {
+      // Loop over the quadrature points, scale the integrand by the multiplier
+      // and the single field multiplier, and then perform the actual
+      // integration, looping over the bases.
+      for (int qp(0); qp < numQP_; ++qp)
+      {
+        tmp = multiplier_ * scalar_(cell, qp) * kokkosFieldMults_(0)(cell, qp);
+        for (int basis(0); basis < numBases; ++basis)
+          field_(cell, basis) += basis_(cell, basis, qp) * tmp;
+      } // end loop over the quadrature points
+    }
+    else
+    {
+      // Loop over the quadrature points and pre-multiply all the field
+      // multipliers together, scale the integrand by the multiplier and
+      // the combination of the field multipliers, and then perform the actual
+      // integration, looping over the bases.
+      const int numFieldMults(kokkosFieldMults_.extent(0));
+      for (int qp(0); qp < numQP_; ++qp)
+      {
+        ScalarT fieldMultsTotal(1);
+        for (int fm(0); fm < numFieldMults; ++fm)
+          fieldMultsTotal *= kokkosFieldMults_(fm)(cell, qp);
+        tmp = multiplier_ * scalar_(cell, qp) * fieldMultsTotal;
+        for (int basis(0); basis < numBases; ++basis)
+          field_(cell, basis) += basis_(cell, basis, qp) * tmp;
+      } // end loop over the quadrature points
+    } // end if (NUM_FIELD_MULT == something)
+  } // end of operator()()
 
   /////////////////////////////////////////////////////////////////////////////
   //
@@ -199,35 +269,21 @@ namespace panzer
   evaluateFields(
     typename Traits::EvalData workset)
   {
-    using panzer::BasisValues2;
-    using panzer::EvaluatorStyle;
-    using panzer::index_t;
-    using PHX::MDField;
+    using Kokkos::parallel_for;
+    using Kokkos::RangePolicy;
 
-    // Initialize the evaluated field.
-    if (evalStyle_ == EvaluatorStyle::EVALUATES)
-      field_.deep_copy(ScalarT(0));
+    // Grab the basis information.
+    basis_ = this->wda(workset).bases[basisIndex_]->weighted_basis_scalar;
 
-    // Scale the integrand by the multiplier, and any field multipliers, out in
-    // front of the integral.
-    for (index_t cell(0); cell < workset.num_cells; ++cell)
-    {
-      for (int qp(0); qp < numQP_; ++qp)
-      {
-        tmp_(cell, qp) = multiplier_ * scalar_(cell, qp);
-        for (const auto& mult : fieldMults_)
-          tmp_(cell, qp) *= mult(cell, qp);
-      } // end loop over the quadrature points
-    } // end loop over the cells in the workset
-
-    // Do the actual integration, looping over the cells in the workset, the
-    // bases, and the quadrature points.
-    const BasisValues2<double>& bv = *this->wda(workset).bases[basisIndex_];
-    for (index_t cell(0); cell < workset.num_cells; ++cell)
-      for (int basis(0); basis < numNodes_; ++basis)
-        for (int qp(0); qp < numQP_; ++qp)
-          field_(cell, basis) += tmp_(cell, qp) *
-            bv.weighted_basis_scalar(cell, basis, qp);
+    // The following if-block is for the sake of optimization depending on the
+    // number of field multipliers.  The parallel_fors will loop over the cells
+    // in the Workset and execute operator()() above.
+    if (fieldMults_.size() == 0)
+      parallel_for(RangePolicy<FieldMultTag<0>>(0, workset.num_cells), *this);
+    else if (fieldMults_.size() == 1)
+      parallel_for(RangePolicy<FieldMultTag<1>>(0, workset.num_cells), *this);
+    else
+      parallel_for(RangePolicy<FieldMultTag<-1>>(0, workset.num_cells), *this);
   } // end of evaluateFields()
 
   /////////////////////////////////////////////////////////////////////////////
