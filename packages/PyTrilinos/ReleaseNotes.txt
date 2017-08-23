@@ -12,6 +12,9 @@ Teuchos
   * Fixed a memory leak in the definitions for certain directorin
     typemaps
 
+Epetra
+  * Add AsMap() method to Epetra.BlockMap class
+
 ML
   * Fixed a dangling reference error in an ML example script.
 
