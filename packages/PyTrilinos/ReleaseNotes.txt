@@ -4,7 +4,7 @@ Release Notes for PyTrilinos for Trilinos 12.12
 General
   * PyTrilinos now works with both Python versions 2 and 3
   * Internally, PyTrilinos now uses relative imports
-  * Protect against Doxygen version 1.8.
+  * Protect against Doxygen version 1.8.13
 
 Teuchos
   * Fix ParameterList __cmp__() operator
