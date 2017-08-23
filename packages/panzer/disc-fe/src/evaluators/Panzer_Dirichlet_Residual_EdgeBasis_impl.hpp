@@ -139,8 +139,6 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
 
     auto work = Kokkos::createDynRankView(residual.get_static_view(),"work", 4, cellDim);
 
-    printf("hello subcellDim = %d %d %d\n", subcellDim, cellDim, intrepid_basis->getCardinality());
-
     // compute residual
     switch (subcellDim) {
     case 1: {  // 2D element Tri and Quad
@@ -165,7 +163,6 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
             Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
             
             for(int d=0;d<cellDim;d++) {
-              std::cout <<" edge (c,b,d) "  << details.cell_local_ids[c] << "," << b << "," << d << " dof = " << dof(c,b,d) << " val = " << value(c,b,d) << "\n";
               residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyEdgeTan(d);
             }
           }
@@ -199,7 +196,6 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
               Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);
               
               for(int d=0;d<dof.extent_int(2);d++) {
-                std::cout <<" edge "  << c << "," << b << "," << d << "dof = " << dof(c,b,d) << " val = " << value(c,b,d) << "\n";
                 residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyEdgeTan(d);
               }
             }
@@ -228,7 +224,6 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
             Intrepid2::Kernels::Serial::matvec_product(phyFaceTanV, J, ortFaceTanV);
             
             for(int d=0;d<dof.extent_int(2);d++) {
-              std::cout <<" face "  << c << "," << b << "," << d << "dof = " << dof(c,b,d) << " val = " << value(c,b,d) << "\n";
               residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyFaceTanU(d);
               residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyFaceTanV(d);
             }

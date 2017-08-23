@@ -306,11 +306,11 @@ namespace Intrepid2 {
           OrthPolynomialTri<outputViewType,inputViewType,true,1>::generate( output, input, order );
           break;
         }
-      case OPERATOR_D2: {
-        OrthPolynomialTri<outputViewType,inputViewType,true,2>::generate( output, input, order );
-        break;
-      }
         /*
+          case OPERATOR_D2: {
+          OrthPolynomialTri<outputViewType,inputViewType,true,2>::generate( output, input, order );
+          break;
+          }
           case OPERATOR_D3: {
           OrthPolynomialTri<outputViewType,inputViewType,true,3>::generate( output, input, order );
           break;
