@@ -48,7 +48,7 @@
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include <Kokkos_Core.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 
 #include "Xpetra_Matrix.hpp"
 

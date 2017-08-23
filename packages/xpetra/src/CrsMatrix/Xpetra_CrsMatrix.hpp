@@ -58,7 +58,7 @@
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #endif
 #endif
 

@@ -59,7 +59,7 @@
 
 #include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 #include <EpetraExt_MatrixMatrix.h>
