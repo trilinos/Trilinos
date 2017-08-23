@@ -522,59 +522,55 @@ namespace panzer {
        }
     }
 
-    PHX::MDField<double,Cell,BASIS> orientations 
-        = af.buildStaticArray<double,Cell,BASIS>("orientations",num_cells, 4);
+    std::vector<Intrepid2::Orientation> orientations;
 
+    int faceOrts[4][4], cnt = 0;
     for(int cell=0;cell<num_cells;cell++) {
-      double o0 = double(cell % 2); 
-      double o1 = double(int(cell/2)); 
-      orientations(cell,0) = 1.0;
-      orientations(cell,1) = std::pow(-1.0,o0);
-      orientations(cell,2) = std::pow(-1.0,o1);
-      orientations(cell,3) = std::pow(-1.0,o0+o1);
+      faceOrts[cell][0] = cnt++ % 6;
+      faceOrts[cell][1] = cnt++ % 6;
+      faceOrts[cell][2] = cnt++ % 6;
+      faceOrts[cell][3] = cnt++ % 6;
+
+      Intrepid2::Orientation ort;
+      ort.setFaceOrientation(4, faceOrts[cell]);
+      orientations.push_back(ort);
     }
 
     for(int i=0;i<4;i++) {
-       out << "Orientations: Cell " << i << " = ";
-       out << orientations(i,0) << ", "
-           << orientations(i,1) << ", "
-           << orientations(i,2) << ", "
-           << orientations(i,3) << std::endl;
+      out << "Orientations: Cell " << i << " = ";
+      out << faceOrts[i][0] << ", "
+          << faceOrts[i][1] << ", "
+          << faceOrts[i][2] << ", "
+          << faceOrts[i][3] << std::endl;
     }
     out << std::endl;
 
     basis_values.applyOrientations(orientations);
 
     // check with orientations
+    const double ortVal[6] = {  1.0,  1.0,  1.0,
+                               -1.0, -1.0, -1.0 };
     for(unsigned int i=0;i<num_qp;i++) {
        double weight = int_values.cub_weights(i);
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {
-          double o0 = double(cell % 2); 
-          double o1 = double(int(cell/2)); 
+         TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
 
-          TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
-
-          double ort[4];
-          ort[0] = 1.0;
-          ort[1] = std::pow(-1.0,o0);
-          ort[2] = std::pow(-1.0,o1);
-          ort[3] = std::pow(-1.0,o0+o1);
-          for(int b=0;b<4;b++) {
-          // check out basis on transformed elemented
-            TEST_EQUALITY(ort[b]*0.5*basis_values.basis_ref_vector(b,i,0)/relCellVol,basis_values.basis_vector(cell,b,i,0));
-            TEST_EQUALITY(ort[b]*0.5*basis_values.basis_ref_vector(b,i,1)/relCellVol,basis_values.basis_vector(cell,b,i,1));
-            TEST_EQUALITY(ort[b]*(1.0/3.0)*basis_values.basis_ref_vector(b,i,2)/relCellVol,basis_values.basis_vector(cell,b,i,2));
-
-            TEST_EQUALITY(ort[b]*basis_values.div_basis_ref(b,i)/relCellVol,basis_values.div_basis(cell,b,i));
-
-            TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,0),relCellVol*weight*basis_values.basis_vector(cell,b,i,0));
-            TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,1),relCellVol*weight*basis_values.basis_vector(cell,b,i,1));
-            TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,2),relCellVol*weight*basis_values.basis_vector(cell,b,i,2));
-
-            TEST_EQUALITY(basis_values.weighted_div_basis(cell,b,i),relCellVol*weight*basis_values.div_basis(cell,b,i));
-          }
+         for(int b=0;b<4;b++) {
+           // check out basis on transformed elemented
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_values.basis_ref_vector(b,i,0)/relCellVol,  basis_values.basis_vector(cell,b,i,0));
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_values.basis_ref_vector(b,i,1)/relCellVol,  basis_values.basis_vector(cell,b,i,1));
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*(1.0/3.0)*basis_values.basis_ref_vector(b,i,2)/relCellVol,  basis_values.basis_vector(cell,b,i,2));
+           
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*basis_values.div_basis_ref(b,i)/relCellVol,basis_values.div_basis(cell,b,i));
+           
+           TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,0),relCellVol*weight*basis_values.basis_vector(cell,b,i,0));
+           TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,1),relCellVol*weight*basis_values.basis_vector(cell,b,i,1));
+           TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,2),relCellVol*weight*basis_values.basis_vector(cell,b,i,2));
+           
+           TEST_EQUALITY(basis_values.weighted_div_basis(cell,b,i),relCellVol*weight*basis_values.div_basis(cell,b,i));
+         }
        }
     }
   }
