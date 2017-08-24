@@ -298,7 +298,7 @@ int Ifpack_SILU::Compute()
   int relax      = sp_ienv(2);
   int info=0;
   dgsitrf(&options_,&SAc_,relax,panel_size,etree_,NULL,0,perm_c_,perm_r_,&SL_,&SU_,
-#ifdef HAVE_SUPERLU_GLOBALLU_T_ARG
+#ifdef HAVE_IFPACK_SUPERLU5_API
           &lu_,
 #endif
           &stat_,&info);
