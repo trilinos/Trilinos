@@ -18,6 +18,8 @@
 
 /* Define this macro to disallow instantiations of kernels which are not covered by ETI */
 #cmakedefine KOKKOSKERNELS_ETI_ONLY
+/* Define this macro to only test ETI types */
+#cmakedefine KOKKOSKERNELS_TEST_ETI_ONLY
 
 /* Whether to build kernels for execution space Kokkos::Cuda */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_CUDA
@@ -26,7 +28,7 @@
 /* Whether to build kernels for execution space Kokkos::OpenMP */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMP
 /* Whether to build kernels for execution space Kokkos::Threads */
-#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_PTHREAD
+#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_THREADS
 /* Whether to build kernels for execution space Kokkos::Serial */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_SERIAL
 
@@ -53,6 +55,18 @@
 #cmakedefine KOKKOSKERNELS_INST_LAYOUTLEFT
 /* Whether to build kernels for multivectors of LayoutRight */
 #cmakedefine KOKKOSKERNELS_INST_LAYOUTRIGHT
+
+/* Whether to build kernels for ordinal type int */
+#cmakedefine KOKKOSKERNELS_INST_ORDINAL_INT
+/* Whether to build kernels for ordinal type int64_t */
+#cmakedefine KOKKOSKERNELS_INST_ORDINAL_INT64_T
+
+/* Whether to build kernels for offset type int */
+#cmakedefine KOKKOSKERNELS_INST_OFFSET_INT
+/* Whether to build kernels for offset type size_t */
+#cmakedefine KOKKOSKERNELS_INST_OFFSET_SIZE_T
+
+
 /*
  * "Optimization level" for computational kernels in this subpackage.
  * The higher the level, the more code variants get generated, and
@@ -61,5 +75,10 @@
  * for corner cases.
  */
 #define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level@
+
+#ifndef KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY false
+#endif
+
 
 #endif // KOKKOSKERNELS_CONFIG_H

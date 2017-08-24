@@ -56,17 +56,17 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_PackTraits.hpp"
 
 // localMultiply is templated on DomainScalar and RangeScalar, so we
 // have to include this header file here, rather than in the _def
 // header file, so that we can get KokkosSparse::spmv.
-#include "Kokkos_Sparse.hpp"
+#include "KokkosSparse.hpp"
 // localGaussSeidel and reorderedLocalGaussSeidel are templated on
 // DomainScalar and RangeScalar, so we have to include this header
 // file here, rather than in the _def header file, so that we can get
 // the interfaces to the corresponding local computational kernels.
-#include "Kokkos_Sparse_impl_sor.hpp"
-
+#include "KokkosSparse_sor_sequential_impl.hpp"
 
 namespace Tpetra {
   /// \class CrsMatrix
@@ -3114,6 +3114,10 @@ namespace Tpetra {
       using Teuchos::CONJ_TRANS;
       using Teuchos::NO_TRANS;
       using Teuchos::TRANS;
+      typedef MultiVector<RangeScalar, LocalOrdinal,
+        GlobalOrdinal, Node, classic> RMV;
+      typedef Kokkos::HostSpace host_memory_space;
+      typedef typename device_type::memory_space dev_memory_space;
       const char tfecfFuncName[] = "localSolve: ";
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -3163,25 +3167,37 @@ namespace Tpetra {
         (getNodeNumDiags () < getNodeNumRows ()) ? "U" : "N";
 
       local_matrix_type A_lcl = this->getLocalMatrix ();
-      X.template modify<device_type> (); // we will write to X
+
+      // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+      // sequential, host-only code.  See
+      // https://github.com/kokkos/kokkos-kernels/issues/48.  This
+      // means that we need to sync to host, then sync back to device
+      // when done.
+      X.template sync<host_memory_space> ();
+      const_cast<RMV&> (Y).template sync<host_memory_space> ();
+      X.template modify<host_memory_space> (); // we will write to X
 
       if (X.isConstantStride () && Y.isConstantStride ()) {
-        auto X_lcl = X.template getLocalView<device_type> ();
-        auto Y_lcl = Y.template getLocalView<device_type> ();
+        auto X_lcl = X.template getLocalView<host_memory_space> ();
+        auto Y_lcl = Y.template getLocalView<host_memory_space> ();
         KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
                             A_lcl, Y_lcl, X_lcl);
       }
       else {
-        const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
+        const size_t numVecs =
+          std::min (X.getNumVectors (), Y.getNumVectors ());
         for (size_t j = 0; j < numVecs; ++j) {
           auto X_j = X.getVector (j);
           auto Y_j = X.getVector (j);
-          auto X_lcl = X_j->template getLocalView<device_type> ();
-          auto Y_lcl = Y_j->template getLocalView<device_type> ();
+          auto X_lcl = X_j->template getLocalView<host_memory_space> ();
+          auto Y_lcl = Y_j->template getLocalView<host_memory_space> ();
           KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
                               diag.c_str (), A_lcl, Y_lcl, X_lcl);
         }
       }
+
+      X.template sync<dev_memory_space> ();
+      const_cast<RMV&> (Y).template sync<dev_memory_space> ();
     }
 
     /// \brief Return another CrsMatrix with the same entries, but
@@ -3698,12 +3714,13 @@ namespace Tpetra {
     /// build).
     ///
     /// \return \c true if the method succeeded, else \c false.
-    bool
-    packRow (char* const numEntOut,
-             char* const valOut,
-             char* const indOut,
+    size_t
+    packRow (const typename Tpetra::Details::PackTraits<LocalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_buffer_type& exports,
+             const size_t offset,
              const size_t numEnt,
-             const LocalOrdinal lclRow) const;
+             const typename Tpetra::Details::PackTraits<GlobalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_array_type& gidsIn,
+             const typename Tpetra::Details::PackTraits<impl_scalar_type, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_array_type& valsIn,
+             const size_t numBytesPerValue) const;
 
     /// \brief Pack data for the current row to send, if the matrix's
     ///   graph is known to be static (and therefore fill complete,
@@ -3757,15 +3774,14 @@ namespace Tpetra {
     ///   the same row with the same column index).
     ///
     /// \return \c true if the method succeeded, else \c false.
-    bool
-    unpackRow (impl_scalar_type* const valInTmp,
-               GlobalOrdinal* const indInTmp,
-               const size_t tmpNumEnt,
-               const char* const valIn,
-               const char* const indIn,
+    size_t
+    unpackRow (const typename Tpetra::Details::PackTraits<GlobalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_array_type& gidsOut,
+               const typename Tpetra::Details::PackTraits<impl_scalar_type, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_array_type& valsOut,
+               const typename Tpetra::Details::PackTraits<int, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_buffer_type& imports,
+               const size_t offset,
+               const size_t numBytes,
                const size_t numEnt,
-               const LocalOrdinal lclRow,
-               const Tpetra::CombineMode combineMode);
+               const size_t numBytesPerValue);
 
     /// \brief Allocate space for pack() to pack entries to send.
     ///

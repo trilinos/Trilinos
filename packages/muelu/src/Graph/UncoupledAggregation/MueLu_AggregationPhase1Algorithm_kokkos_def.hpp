@@ -138,13 +138,13 @@ namespace MueLu {
       // may skip it, but only for "natural" and "random" (for "graph" we still
       // need to fetch the list of local neighbors to continue)
       if ((ordering == "natural" || ordering == "random") &&
-          neighOfINode.size() < minNodesPerAggregate) {
+          as<int>(neighOfINode.size()) < minNodesPerAggregate) {
         continue;
       }
 
       LO numAggregatedNeighbours = 0;
 
-      for (int j = 0; j < neighOfINode.size(); j++) {
+      for (int j = 0; j < as<int>(neighOfINode.size()); j++) {
         LO neigh = neighOfINode(j);
 
         if (neigh != rootCandidate && graph.isLocalNeighborVertex(neigh)) {
@@ -200,7 +200,7 @@ namespace MueLu {
         for (size_t k = 0; k < aggSize; k++) {
           typename LWGraph_kokkos::row_type neighOfJNode = graph.getNeighborVertices(aggList[k]);
 
-          for (int j = 0; j < neighOfJNode.size(); j++) {
+          for (int j = 0; j < as<int>(neighOfJNode.size()); j++) {
             LO neigh = neighOfJNode(j);
 
             if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY)

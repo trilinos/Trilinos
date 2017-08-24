@@ -2,7 +2,7 @@
 """analysis.py
 
 Usage:
-  analysis.py -i INPUT... [-o OUTPUT] [-a MODE] [-d DISPLAY] [-s STYLE] [-t TOP]
+  analysis.py -i INPUT... [-o OUTPUT] [-a MODE] [-d] [-s STYLE] [-t TOP]
   analysis.py (-h | --help)
 
 Options:
@@ -10,7 +10,7 @@ Options:
   -i FILE --input-files=FILE    Input file
   -o FILE --output-file=FILE    Output file
   -a MODE --analysis=MODE       Mode [default: setup_timers]
-  -d DISPLAY --display=DISPLAY  Display mode [default: print]
+  -d --display                  Display mode
   -s STYLE --style=STYLE        Plot style [default: stack]
   -t TOP --top=TOP              Number of timers [default: 10]
 """
@@ -47,7 +47,7 @@ def construct_dataframe(yaml_data):
     return pd.DataFrame(data, index=timers,
         columns=['minT', 'minC', 'meanT', 'meanC', 'maxT', 'maxC', 'meanCT', 'meanCC'])
 
-def setup_timers(input_files, mode, top, ax = None):
+def setup_timers(input_files, display, top, ax = None):
     """Show all setup level specific timers ordered by size"""
     ## Choose top timers from the first file
     with open(input_files[0]) as data_file:
@@ -62,7 +62,7 @@ def setup_timers(input_files, mode, top, ax = None):
 
     # Select subset of the timer data based on the provided timer labels
     dfs = timer_data.loc[timers_f]
-    dfs.sort(columns='maxT', ascending=True, inplace=True)
+    dfs.sort_values('maxT', ascending=True, inplace=True)
     timers_f = dfs.index
 
     # Top few
@@ -86,7 +86,7 @@ def setup_timers(input_files, mode, top, ax = None):
 
     height = 0.4
 
-    if mode == 'display':
+    if display:
         colors = tableau20()
 
         if diff_mode == False:
@@ -106,7 +106,7 @@ def setup_timers(input_files, mode, top, ax = None):
     else:
         print(dfs['maxT'])
 
-def muelu_strong_scaling(input_files, mode, ax, top, style):
+def muelu_strong_scaling(input_files, display, ax, top, style):
     """Show scalability of setup level specific timers ordered by size"""
 
     # Three style options:
@@ -114,7 +114,7 @@ def muelu_strong_scaling(input_files, mode, ax, top, style):
     #  - stack-percent: same as stack, but shows percentage values on sides
     #  - scaling      : scaling of individual timers
 
-    assert(mode == 'display')
+    assert(display)
 
     show_the_rest = 0
     if style == 'stack' or style == 'stack-percent':
@@ -133,7 +133,7 @@ def muelu_strong_scaling(input_files, mode, ax, top, style):
 
     # Select subset of the timer data based on the provided timer labels
     dfs = timer_data.loc[timers]
-    dfs.sort(columns='maxT', ascending=True, inplace=True)
+    dfs.sort_values('maxT', ascending=True, inplace=True)
     timers = dfs.index
 
     # Choose top few
@@ -171,7 +171,7 @@ def muelu_strong_scaling(input_files, mode, ax, top, style):
         k = k+1
 
     ## Plot the figure
-    if mode == 'display':
+    if display:
         colors = tableau20()
 
         ## x axis
@@ -251,7 +251,7 @@ def muelu_strong_scaling(input_files, mode, ax, top, style):
 
             ax.legend(timers, loc='upper left')
 
-def solve_per_level(yaml_data, mode, ax = None):
+def solve_per_level(yaml_data, display, ax = None):
     """Show solve timers per level"""
     timer_data = construct_dataframe(yaml_data)
 
@@ -278,7 +278,7 @@ def solve_per_level(yaml_data, mode, ax = None):
             levels = levels[:level]
             break
 
-        if mode != 'display':
+        if not display:
             print('Level ', level)
 
         height = 0.0
@@ -292,20 +292,20 @@ def solve_per_level(yaml_data, mode, ax = None):
                 # If one uses continue here, it messes up legend colors (due to skipping ax.bar call)
                 time = 0
 
-            if mode == 'display':
+            if display:
                 ax.bar(level-0.4, time, bottom=height, label=op, color=colors[op], edgecolor='black');
                 height = height + time
             else:
                 print('  %-20s : %.5f' % (op, time))
 
 
-    if mode == 'display':
+    if display:
         ax.legend(labels);
         ax.set_xticks(levels);
         ax.set_xlabel('Level')
         ax.set_ylabel('Time (s)')
 
-def nonlinear_history_iterations(yaml_data, mode, ax = None):
+def nonlinear_history_iterations(yaml_data, display, ax = None):
     """Show number of linear iterations per nonlinear step across the whole simulation"""
     ticks = []
 
@@ -324,7 +324,7 @@ def nonlinear_history_iterations(yaml_data, mode, ax = None):
             ticks.append(str(len(its)))
             its.append(c_step[nlstep]['its'])
 
-        if mode == 'display':
+        if display:
             ax.plot(range(offset, offset + len(its)), its, '-o', color=colors[i % 20])
 
             offset += len(its)
@@ -334,7 +334,7 @@ def nonlinear_history_iterations(yaml_data, mode, ax = None):
 
         i += 1
 
-    if mode == 'display':
+    if display:
         ax.set_xlim([-1, len(ticks)])
         ax.set_ylim([0, mx+1]);
         ax.set_xticks(range(len(ticks)))
@@ -342,7 +342,7 @@ def nonlinear_history_iterations(yaml_data, mode, ax = None):
         ax.set_xlabel('Nonlinear iterations index')
         ax.set_ylabel('Number of linear iterations')
 
-def nonlinear_history_residual(yaml_data, mode, ax = None):
+def nonlinear_history_residual(yaml_data, display, ax = None):
     """Show the residual histories for all nonliner steps across the whole simulation"""
 
     colors = tableau20()
@@ -352,14 +352,14 @@ def nonlinear_history_residual(yaml_data, mode, ax = None):
     for step in sorted(yaml_data['Steps']):
         c_step = yaml_data['Steps'][step]
 
-        if mode == 'print':
+        if not display:
             print(step)
         for nlstep in sorted(c_step):
             if nlstep == 'nl_its':
                 continue
             res_hist = c_step[nlstep]['res_hist']
 
-            if mode == 'display':
+            if display:
                 ax.plot(range(offset, offset+len(res_hist)), res_hist, '-v', markersize=2, color=colors[i % 20])
                 offset += len(res_hist)
             else:
@@ -367,13 +367,13 @@ def nonlinear_history_residual(yaml_data, mode, ax = None):
 
             i += 1
 
-    if mode == 'display':
+    if display:
         ax.set_xlim([0, offset+1])
         ax.set_yscale('log')
         ax.set_xlabel('Linear iterations index (cumulative)')
         ax.set_ylabel('Relative residual')
 
-def nonlinear_history_solve(yaml_data, mode, ax = None):
+def nonlinear_history_solve(yaml_data, display, ax = None):
     """Show solve time per nonlinear step across the whole simulation (setup time is ignored)"""
     ticks = []
 
@@ -395,7 +395,7 @@ def nonlinear_history_solve(yaml_data, mode, ax = None):
             ticks.append(str(len(solves)))
             solves.append(c_step[nlstep]['solve_time'])
 
-        if mode == 'display':
+        if display:
             ax.plot(range(offset, offset + len(solves)), solves, '-o', color=colors[i % 20])
 
             offset += len(solves)
@@ -405,7 +405,7 @@ def nonlinear_history_solve(yaml_data, mode, ax = None):
 
         i += 1
 
-    if mode == 'display':
+    if display:
         ax.set_xlim([-1, len(ticks)])
         ax.set_ylim([0, mx]);
         ax.set_xticks(range(len(ticks)))
@@ -444,14 +444,12 @@ if __name__ == '__main__':
         print("Analysis must be one of: ")
         print(valid_modes)
         raise
-    valid_displays = ['print', 'display']
-    if not display in valid_displays:
-        print("Display must be one of " % valid_displays)
-        raise
 
     valid_styles = ['stack', 'stack-percent', 'scaling']
     if not style in valid_styles:
-        print("Style must be one of " % valid_displays)
+        print("Style must be one of ")
+        print(valid_styles)
+        raise
 
     ## Setup default plotting
     plt.figure(figsize=(12, 12))
@@ -480,7 +478,7 @@ if __name__ == '__main__':
         # If there are two files, it compares the timers, using top timers from
         # the first file
         assert(len(input_files) <= 2)
-        setup_timers(input_files, mode=display, ax=ax, top=top)
+        setup_timers(input_files, display=display, ax=ax, top=top)
     else:
         # Most analysis studies work with a single file
         # Might as well open it here
@@ -489,16 +487,16 @@ if __name__ == '__main__':
             yaml_data = yaml.safe_load(data_file)
 
         if   analysis == 'solve_per_level':
-            solve_per_level(yaml_data, mode=display, ax=ax)
+            solve_per_level(yaml_data, display=display, ax=ax)
         elif analysis == 'nonlinear_history_iterations':
-            nonlinear_history_iterations(yaml_data, mode=display, ax=ax)
+            nonlinear_history_iterations(yaml_data, display=display, ax=ax)
         elif analysis == 'nonlinear_history_residual':
-            nonlinear_history_residual(yaml_data, mode=display, ax=ax)
+            nonlinear_history_residual(yaml_data, display=display, ax=ax)
         elif analysis == 'nonlinear_history_solve':
-            nonlinear_history_solve(yaml_data, mode=display, ax=ax)
+            nonlinear_history_solve(yaml_data, display=display, ax=ax)
 
     ## Save output
-    if display != 'print':
+    if display:
         if output_file != None:
             plt.savefig(output_file, bbox_inches='tight')
         else:

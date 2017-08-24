@@ -781,6 +781,13 @@ private:
   //! Whether to spend extra effort and all-reduces checking diagonal entries.
   bool checkDiagEntries_;
 
+  //!Wheter the provided matrix is structurally symmetric or not.
+  bool is_matrix_structurally_symmetric_;
+
+  //!Whether to write the given input file
+  bool ifpack2_dump_matrix_;
+
+
   //! If \c true, the preconditioner has been initialized successfully.
   bool isInitialized_;
   //! If \c true, the preconditioner has been computed successfully.

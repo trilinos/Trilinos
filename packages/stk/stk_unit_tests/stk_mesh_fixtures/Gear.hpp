@@ -34,20 +34,21 @@
 #ifndef STK_MESH_FIXTURES_GEAR_HPP
 #define STK_MESH_FIXTURES_GEAR_HPP
 
+#include <cmath>
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityVector
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState
+
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 
-
 namespace {
 
-const double PI     = 3.14159265358979;
+const double PI     = M_PI;
 const double TWO_PI = 2 * PI;
 
 } // namespace

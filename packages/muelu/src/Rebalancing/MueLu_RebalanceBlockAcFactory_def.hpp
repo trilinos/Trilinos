@@ -47,8 +47,6 @@
 #ifndef MUELU_REBALANCEBLOCKACFACTORY_DEF_HPP_
 #define MUELU_REBALANCEBLOCKACFACTORY_DEF_HPP_
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
@@ -419,5 +417,4 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_REBALANCEBLOCKACFACTORY_DEF_HPP_ */

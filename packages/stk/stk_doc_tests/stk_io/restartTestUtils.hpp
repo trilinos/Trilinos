@@ -1,3 +1,6 @@
+#ifndef STK_RESTART_TEST_UTILS_H
+#define STK_RESTART_TEST_UTILS_H
+
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -202,3 +205,5 @@ inline void testMultistateFieldWroteCorrectly(const std::string &resultsFilename
     testDataOnField(stkIo.bulk_data(), stateNValue,   FieldN);
     testDataOnField(stkIo.bulk_data(), stateNm1Value, FieldNm1);
 }
+
+#endif

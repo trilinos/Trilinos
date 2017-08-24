@@ -69,14 +69,13 @@
 
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_BlockedCoarseMapFactory.hpp"
 #include "MueLu_BlockedDirectSolver.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
+#include "MueLu_BlockedJacobiSmoother.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
 #include "MueLu_BraessSarazinSmoother.hpp"
-#endif
 #include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_CloneRepartitionInterface.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
@@ -92,9 +91,7 @@
 #include "MueLu_FineLevelInputDataFactory.hpp"
 #include "MueLu_GeneralGeometricPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
-#endif
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_RepartitionInterface.hpp"
@@ -105,11 +102,9 @@
 #include "MueLu_NullspacePresmoothFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_RebalanceBlockInterpolationFactory.hpp"
 #include "MueLu_RebalanceBlockRestrictionFactory.hpp"
 #include "MueLu_RebalanceBlockAcFactory.hpp"
-#endif
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RepartitionHeuristicFactory.hpp"
@@ -119,17 +114,13 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_SegregatedAFactory.hpp"
 #include "MueLu_SemiCoarsenPFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_SimpleSmoother.hpp"
-#endif
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_StructuredLineDetectionFactory.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
 #ifdef HAVE_MUELU_TEKO
 #include "MueLu_TekoSmoother.hpp"
-#endif
 #endif
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_ToggleCoordinatesTransferFactory.hpp"
@@ -140,9 +131,7 @@
 #include "MueLu_UnsmooshFactory.hpp"
 #include "MueLu_UserAggregationFactory.hpp"
 #include "MueLu_UserPFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_UzawaSmoother.hpp"
-#endif
 #include "MueLu_VariableDofLaplacianFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
@@ -210,10 +199,8 @@ namespace MueLu {
       // TODO: see how Teko handles this (=> register factories).
       if (factoryName == "AggregationExportFactory")        return Build2<AggregationExportFactory>      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AmalgamationFactory")             return Build2<AmalgamationFactory>           (paramList, factoryMapIn, factoryManagersIn);
-#ifdef HAVE_MUELU_EXPERIMENTAL
       if (factoryName == "BlockedCoarseMapFactory")            return Build2<BlockedCoarseMapFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedRAPFactory")                  return BuildRAPFactory<BlockedRAPFactory>         (paramList, factoryMapIn, factoryManagersIn);
-#endif
       if (factoryName == "BrickAggregationFactory")            return Build2<BrickAggregationFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CloneRepartitionInterface")          return Build2<CloneRepartitionInterface>          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseMapFactory")                   return Build2<CoarseMapFactory>                   (paramList, factoryMapIn, factoryManagersIn);
@@ -297,9 +284,9 @@ namespace MueLu {
 #endif // HAVE_MPI
       }
       // Blocked factories
-#ifdef HAVE_MUELU_EXPERIMENTAL
       if (factoryName == "BlockedDirectSolver")             return BuildBlockedDirectSolver(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedGaussSeidelSmoother")      return BuildBlockedSmoother<BlockedGaussSeidelSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedJacobiSmoother")           return BuildBlockedSmoother<BlockedJacobiSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedPFactory")                 return BuildBlockedFactory<BlockedPFactory>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BraessSarazinSmoother")           return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "IndefiniteBlockDiagonalSmoother") return BuildBlockedSmoother<IndefBlockedDiagonalSmoother>(paramList, factoryMapIn, factoryManagersIn);
@@ -312,7 +299,6 @@ namespace MueLu {
       if (factoryName == "TekoSmoother")                    return BuildTekoSmoother(paramList, factoryMapIn, factoryManagersIn);
 #endif
       if (factoryName == "UzawaSmoother")                   return BuildBlockedSmoother<UzawaSmoother>(paramList, factoryMapIn, factoryManagersIn);
-#endif
 
       // Matlab factories
 #ifdef HAVE_MUELU_MATLAB
@@ -685,7 +671,6 @@ namespace MueLu {
       return rcp(new SmootherFactory(rcp(new DirectSolver(type, params)), Teuchos::null));
     }
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
     template <class T> // T must implement the Factory interface
     RCP<FactoryBase> BuildBlockedSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       // read in sub lists
@@ -851,7 +836,6 @@ namespace MueLu {
 
       return pfac;
     }
-#endif /* #ifdef HAVE_MUELU_EXPERIMENTAL */
   }; // class
 } // namespace MueLu
 

@@ -45,7 +45,7 @@
 #include "Sacado_UQ_PCE.hpp"
 #include "Kokkos_View_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
-#include "Kokkos_Blas1_MV.hpp"
+#include "KokkosBlas.hpp"
 
 //----------------------------------------------------------------------------
 // Specializations of Kokkos Vector/MultiVector math functions

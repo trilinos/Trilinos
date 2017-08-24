@@ -50,7 +50,7 @@
 
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
@@ -390,7 +390,7 @@ public:
         Kokkos::subview(nodal_solution,std::pair<unsigned,unsigned>(0,fixture.node_count_owned()));
 
       // Get DeviceConfig structs used by some functors
-      Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
+      KokkosSparse::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
 
       CreateDeviceConfigs<Scalar>::eval( dev_config_elem,
                                          dev_config_gath,

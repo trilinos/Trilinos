@@ -336,7 +336,7 @@ evaluate_range(
   expr_eval.bindVariable("v", *v);
 
   double ymin = std::numeric_limits<double>::max();
-  double ymax = std::numeric_limits<double>::min();
+  double ymax = std::numeric_limits<double>::lowest();
 
   double start_x = xmin;
   double range = (xmax - xmin);

@@ -1,3 +1,6 @@
+#ifndef STK_COMMUNICATE_MESH_TYPES_H
+#define STK_COMMUNICATE_MESH_TYPES_H
+
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -112,3 +115,5 @@ CommBuffer & CommBuffer::unpack< std::pair<const stk::mesh::MetaData *, stk::mes
 }
 
 } // namespace stk
+
+#endif

@@ -49,7 +49,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #endif
 
 #include <Xpetra_ConfigDefs.hpp>
