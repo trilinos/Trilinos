@@ -159,8 +159,8 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
 #endif
 
   /* frequently used dynamic allocation computed sizes */
-  // for user_t int for Zoltan2_Directory_Single, user_val_t is just int
-  // for user_t std::vector<int> for Zoltan2_Directory_Vector, user_val_t is int
+  // for user_t int for Zoltan2_Directory_Single, size_of_value_type() is just int
+  // for user_t std::vector<int> for Zoltan2_Directory_Vector, size_of_value_type() is int
   size_t size = sizeof(gid_t) + (use_lid?sizeof(lid_t):0) + size_of_value_type();
 
 #ifdef CONVERT_DIRECTORY_RELIC
@@ -242,7 +242,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   const std::vector<user_t>& user, const std::vector<int>& partition,
   Update_Mode mode)
 {
-  Zoltan2_Directory_Clock clock("update", comm);
+  Zoltan2_Directory_Clock clock("update");
 
   const char * yo = "Zoltan2_Directory::update";
 
@@ -250,8 +250,11 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_TRACE_IN(comm->getRank(), yo, NULL);
   }
 
+  Zoltan2_Directory_Clock update_setup("update_setup", 1);
+
   // part of initializing the error checking process
   // for each linked list head, walk its list resetting errcheck
+
 #ifdef CONVERT_DIRECTORY_KOKKOS
   if(debug_level) {
     for(size_t n = 0; n < node_map.size(); ++n) {
@@ -271,6 +274,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     }
   }
 #endif
+  update_setup.complete();
 
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After reset errcheck");
@@ -278,15 +282,34 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 
   int err = 0;
 
+  Zoltan2_Directory_Clock guess_hash_size("update_hash_guess", 1);
+
 #ifdef CONVERT_DIRECTORY_KOKKOS
   // TODO decide how to best allocate initial size
+  // Ideally something just a little bit bigger than we actually need.
+  // This gets more complicated for things like aggregate mode where
+  // various procs may all be sending the same id and total count won't
+  // be as useful. When we update_local, the node map will check for a failed
+  // insert and increase this size, so the decision here is only an issue
+  // of performance.
   size_t globalCount = 0;
   Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM, gid.size(),
     Teuchos::outArg(globalCount));
   if(node_map.capacity() < globalCount) {
-    node_map.rehash(globalCount);
+    size_t estimate_local_count = globalCount / comm->getSize();
+    estimate_local_count += estimate_local_count / 10; // add 10% buffer
+    if(node_map.capacity() < estimate_local_count) {
+      // skipping this line would be ok... it would just rehash when it gets
+      // the update_local events though efficiency would be less. In a current
+      // test of 10 million total nodes, I saw about 2x increase in total time
+      // if this line was removed. Also this 'guess' is having a lot of impact
+      // on the overall performance, more than I originally realized.
+      node_map.rehash(estimate_local_count);
+    }
   }
 #endif
+
+  guess_hash_size.complete();
 
 #ifdef CONVERT_DIRECTORY_TPETRA
   // Compute global indexBase
@@ -300,7 +323,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   rcp_map_t idMap = Teuchos::rcp(new map_t(dummy, gid, indexBase, comm), true);
 
   // Create Vector using this map.
-  // This vector will store number of occurrences of each id across procs
   rcp_vector_t idVec = Teuchos::rcp(new vector_t(idMap, 0.));
 
   // Now set the tpetra data to match the input data
@@ -339,8 +361,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   }
 #else
 
-  Zoltan2_Directory_Clock buildUpdateMSGClock("build update", comm);
-
   // allocate memory for list of processors to contact
   std::vector<int> procs(gid.size());
 
@@ -354,6 +374,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   std::vector<char> sbuff(sum_msg_size);
 
   typedef Zoltan2_DD_Update_Msg<gid_t,lid_t> msg_t;
+
+  Zoltan2_Directory_Clock update_build_raw("update_build_raw", 1);
 
   int track_offset = 0;
   for (size_t i = 0; i < gid.size(); i++) {
@@ -402,13 +424,15 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     throw std::logic_error("Bad summing!");
   }
 
-  buildUpdateMSGClock.complete();
-
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After fill contact list");
   }
 
+  update_build_raw.complete();
+
   // now create efficient communication plan
+
+  Zoltan2_Directory_Clock update_build_plan("update_build_plan", 1);
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
   Zoltan2_Directory_Comm directoryComm(gid.size(), procs, comm,
@@ -429,7 +453,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Create");
   }
 
-  Zoltan2_Directory_Clock updateSendClock("update send", comm);
+  update_build_plan.complete();
+
+  Zoltan2_Directory_Clock update_resize("update_resize", 1);
 
   int sum_recv_sizes;
 #ifdef CONVERT_DIRECTORY_KOKKOS
@@ -442,6 +468,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   if (err) {
     throw std::logic_error("directoryComm.execute_resize error");
   }
+
+  update_resize.complete();
 
   // If dd has no nodes allocated (e.g., first call to DD_Update;
   // create the nodelist and freelist
@@ -457,6 +485,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   // send my update messages & receive updates directed to me
   const int nbytes = 1;
 
+  Zoltan2_Directory_Clock update_forward("update_forward", 1);
+
 #ifdef CONVERT_DIRECTORY_KOKKOS
   err = directoryComm.do_forward(ZOLTAN2_DD_UPDATE_MSG_TAG+1,
     sbuff, nbytes, rbuff);
@@ -464,6 +494,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   err = Zoltan_Comm_Do(plan, ZOLTAN2_DD_UPDATE_MSG_TAG+1, &(sbuff[0]),
     nbytes, &(rbuff[0]));
 #endif
+
+  update_forward.complete();
 
   if (err) {
     throw std::logic_error("Zoltan2_Directory::update() Comm_Do error");
@@ -473,9 +505,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Do");
   }
 
-  updateSendClock.complete();
-
-  Zoltan2_Directory_Clock updateLocalClock("update_local", comm);
+  Zoltan2_Directory_Clock update_locals("update_locals", 1);
 
   // for each message rec'd, update local directory information
   int errcount = 0;
@@ -500,6 +530,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     track_offset += get_update_msg_size(puser);
   }
 
+  update_locals.complete();
+
   if(track_offset != sum_recv_sizes) {
     throw std::logic_error("Did not sum!");
   }
@@ -513,8 +545,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   if (debug_level) {  // overwrite error return if extra checking is on
     err = (errcount) ? 1 : 0;
   }
-
-  updateLocalClock.complete();
 
 #ifdef CONVERT_DIRECTORY_RELIC
   Zoltan_Comm_Destroy (&plan);
@@ -689,11 +719,23 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
   node.next = table[index];
   table[index] = nodeidx;
 #else
+
   auto result = node_map.insert(*gid, node); // add to the map
   if(result.failed()) {
-     throw std::logic_error(
-       "Hash insert failed. Maybe size not setup right....");
+    // need more nodes... our initial guess didn't cut it
+    // TODO: Decide most efficient scheme. Here we bump to at least 10 or if
+    // we're already at the level, increase by 10% increments. I think this will
+    // less efficient for small scale problems, when we probably care less,
+    // but more efficient as we scale up.
+    size_t new_guess_size = (node_map.size() < 10) ? 10 :
+      ( node_map.size() + node_map.size()/10); // adds a minimum of 1
+    node_map.rehash(new_guess_size);
+    result = node_map.insert(*gid, node); // add to the map again
+    if(result.failed()) {
+      throw std::logic_error("Hash insert failed. Mem sufficient?....");
+    }
   }
+
 #endif
 
   if (debug_level > 6) {
@@ -717,7 +759,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
  std::vector<int>& owner,       /* Outgoing optional list of data owners      */
  bool throw_if_missing)         /* default true - throw if gid is not found.  */
 {
-  Zoltan2_Directory_Clock clock("find", comm);
+  Zoltan2_Directory_Clock clock("find");
 
   const char * yo = "Zoltan2_Directory::find";
 
@@ -807,9 +849,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   // allocate receive buffer
   std::vector<char> rbuff(nrec * find_msg_size);     // receive buffer
 
-  // send out find messages across entire system
-  Zoltan2_Directory_Clock sendClock("send", comm);
-
   const int nbytes = find_msg_size; // just getting length not full vector data
 
 #ifdef CONVERT_DIRECTORY_RELIC
@@ -819,7 +858,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   err = directoryComm.do_forward(ZOLTAN2_DD_FIND_MSG_TAG+1, sbuff,
     nbytes, rbuff);
 #endif
-  sendClock.complete();
 
   if (err) {
     throw std::logic_error("Zoltan2_Directory::find() error");
@@ -880,8 +918,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     throw std::logic_error("Bad sum!");
   }
 
-  Zoltan2_Directory_Clock reverseClock("reverse", comm);
-
   // This section is handled differently if it's variable sized array
   size_t size_scale = is_Zoltan2_Directory_Vector() ? 1 : find_msg_size;
 
@@ -909,8 +945,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
 #endif
   }
 
-  reverseClock.complete();
-
   if (err) {
     throw std::logic_error("Zoltan2_Directory::find() do reverse failed");
   }
@@ -920,7 +954,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   }
 
   // fill in user supplied lists with returned information
-  Zoltan2_Directory_Clock fillClock("fill", comm);
   track_offset_resized = 0;
 
   // it's not going to be in order... so don't use gid[i]
@@ -964,8 +997,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   if(track_offset_resized != sbuff_resized.size()) {
     throw std::logic_error("Bad buffer sum!");
   }
-
-  fillClock.complete();
 
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After fill return lists");
@@ -1246,6 +1277,8 @@ template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   const std::vector<gid_t>& gid)   /* Incoming list of GIDs to remove */
 {
+  Zoltan2_Directory_Clock clock("remove");
+
   const char * yo = "Zoltan2_Directory::remove";
 
   if (debug_level > 4) {
@@ -1261,19 +1294,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   // allocate memory for processor contact list
   std::vector<int> procs(gid.size());   // list of processors to contact
 
-#ifdef CONVERT_DIRECTORY_KOKKOS
-  std::vector<size_t> msg_offset(gid.size()+1); // +1 so last can get size
-  size_t sum_msg_size = 0;
-  for (size_t i = 0; i < msg_offset.size(); i++) {
-    size_t this_msg_size = remove_msg_size; // will be varying soon
-    msg_offset[i] = sum_msg_size;
-    sum_msg_size += this_msg_size;
-  }
-  // allocate memory for DD_Remove_Msg send buffer
-  std::vector<char> sbuff(sum_msg_size);   // send buffer
-#else
   std::vector<char> sbuff(gid.size()*remove_msg_size);   // send buffer
-#endif
 
   typedef Zoltan2_DD_Remove_Msg<gid_t,lid_t> msg_t;
 
@@ -1329,6 +1350,19 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
 
   /* for each message rec'd,  remove local directory info */
   int errcount = 0;
+
+  // Note calling begin_erase() and end_erase() without actually erasing
+  // something leads to confusing seg faults. Hence nrec>0 check.
+  // Pulling begin_erase and end_erase out of the loop is important for
+  // performance. Since the actual erase is fairly simple we may consider
+  // eliminating remove_local and just calling here but will keep for now to
+  // keep symmetry with other modes.
+  if(nrec > 0) {
+
+#ifdef CONVERT_DIRECTORY_KOKKOS
+  node_map.begin_erase();
+#endif
+
   for (int i = 0; i < nrec; i++)  {
     // TODO: Fix cast
     msg_t *ptr = reinterpret_cast<msg_t*>(&(rbuff[i*remove_msg_size]));
@@ -1337,6 +1371,12 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
       ++errcount;
     }
   }
+
+#ifdef CONVERT_DIRECTORY_KOKKOS
+  node_map.end_erase();
+#endif
+
+  } // if nrec > 0
 
   err = 0;
 
@@ -1370,12 +1410,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove_local(
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
   if(node_map.exists(*gid)) {
-    node_map.begin_erase();
     node_map.erase(*gid);
-    node_map.end_erase();
-    if(node_map.exists(*gid)) {
-      throw std::logic_error( "Failed to erase node!" );
-    }
+    return 0;
   }
 #else
   /* compute offset into hash table to find head of linked list */
@@ -1409,7 +1445,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove_local(
 
   return 1;
 }
-#endif
+#endif // CONVERT_DIRECTORY_TPETRA
 
 #ifdef CONVERT_DIRECTORY_RELIC
 /*

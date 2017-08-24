@@ -47,45 +47,105 @@
 #ifndef ZOLTAN2_DIRECTORY_CLOCK_H_
 #define ZOLTAN2_DIRECTORY_CLOCK_H_
 
-// a temporary class to get some timing information out - to be deleted
+#include <Teuchos_CommHelpers.hpp>
 #include <time.h>
+
+// a temporary class to get some timing information out - to be deleted
 class Zoltan2_Directory_Clock {
   public:
-  Zoltan2_Directory_Clock(std::string name_,
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_) : comm(comm_), name(name_),
-    bCompleted(false) {
-    comm->barrier();
-    startTime = getTime();
-  }
-  ~Zoltan2_Directory_Clock() {
-    complete();
-  }
-  void complete() {
-    /*
-    if(!bCompleted) {
-      for(int proc = 0; proc < comm->getSize(); ++proc) {
-        comm->barrier();
-        if(proc == comm->getRank()) {
-          if(proc == 0) {
-            std::cout << "CLOCK: " << name << " ";
+    struct time_data {
+      time_data() : count(0), sum(0.0) {}
+      int count;
+      double sum;
+      int sublevel;
+    };
+
+    Zoltan2_Directory_Clock(std::string name_, int sublevel_ = 0)
+      : name(name_), sublevel(sublevel_), bCompleted(false) {
+      startTime = getTime();
+    }
+
+    ~Zoltan2_Directory_Clock() {
+      if(!bCompleted) {
+        complete();
+      }
+    }
+
+    void complete() {
+      if(get_time_data().find(name) == get_time_data().end()) {
+        get_time_data()[name] = time_data(); // create with 0 sum and 0 count
+      }
+      get_time_data()[name].sublevel = sublevel;
+      get_time_data()[name].count += 1;
+      get_time_data()[name].sum += (getTime() - startTime);
+      bCompleted = true;
+    }
+
+    static void clearTimes() {
+      get_time_data().clear();
+    }
+
+    static void logAndClearTimes(const std::string& message,
+      Teuchos::RCP<const Teuchos::Comm<int> > comm) {
+
+      // convert maps to vectors
+      std::vector<std::string> map_names(get_time_data().size());
+      std::vector<double> localSums(get_time_data().size()); // for reduce
+      std::vector<time_data> map_info(get_time_data().size());
+
+      // each proc has a summed time for each clock name
+      // reduce to get the average across all procs
+      size_t index = 0;
+      for(auto itr = get_time_data().begin(); itr != get_time_data().end(); ++itr) {
+        map_names[index] = itr->first;
+        localSums[index] = itr->second.sum; // for reduce
+        map_info[index] = itr->second;
+        ++index;
+      }
+
+      std::vector<double> avSums(get_time_data().size(), 0.0);
+      Teuchos::reduceAll<int, double>(*comm, Teuchos::REDUCE_SUM,
+        get_time_data().size(), &localSums[0], &avSums[0]);
+      for(size_t n = 0; n < avSums.size(); ++n) {
+        avSums[n] /= static_cast<double>(comm->getSize());
+      }
+
+      // Now we can plot some messaging
+      // First plot the average fo all ranks, then plot the average just for
+      // rank 0 so we have some idea about fluctuations. We expect the values to
+      // be similar though for edges cases (very low total IDs) it's possible
+      // the ranks will be managing very different loads
+      if(comm->getRank() == 0) {
+        std::cout << message << std::endl;
+        for(size_t n = 0; n < map_names.size(); ++n) {
+          for(int indent = 0; indent < map_info[n].sublevel; ++indent) {
+            std::cout << "  ";
           }
-          double deltaTime = getTime() - startTime;
-          std::cout << " " << comm->getRank() << ": " << deltaTime;
-          if(proc == comm->getSize()-1) {
-            std::cout << std::endl;
-          }
+          std::cout << "  " << std::setw(20-map_info[n].sublevel*2)
+            << std::left << map_names[n] << " "
+            << "(" << map_info[n].count << ")  "
+            << std::fixed << std::setprecision(2)
+            << avSums[n] << " (" << localSums[n] << ")" << std::endl;
         }
       }
+
+      clearTimes();
       comm->barrier();
     }
-    */
-    bCompleted = true;
-  }
+
   private:
+    typedef std::map<std::string, time_data> time_data_t;
+
+    static time_data_t & get_time_data() {
+      static time_data_t static_time_data;
+      return static_time_data;
+    }
+
     double getTime() { return static_cast<double>(clock()) /
       static_cast<double>(CLOCKS_PER_SEC); }
-    Teuchos::RCP<const Teuchos::Comm<int> > comm;
+
     std::string name;
+    int sublevel;
     double startTime;
     bool bCompleted;
 };
