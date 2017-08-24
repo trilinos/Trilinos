@@ -1,4 +1,20 @@
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  directoryTest_Kokkos
+  SOURCES directoryTest_Kokkos.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  directoryTest_KokkosSimple
+  SOURCES directoryTest_KokkosSimple.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+)
+
+# Temporary tests for development and comparison
+# with above Kokkos tests. To be deleted.
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   directoryTest_Original
@@ -21,16 +37,39 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
 )
 
+
+# These test are labeled PERFORMANCE and being
+# used for development purposes.
+# Perhaps all to be deleted eventually
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  directoryTest_Kokkos
-  SOURCES directoryTest_Kokkos.cpp
+  directoryTest_PerformanceOriginal
+  CATEGORIES PERFORMANCE
+  SOURCES directoryTest_PerformanceOriginal.cpp
   NUM_MPI_PROCS 4
   COMM mpi
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  directoryTest_KokkosSimple
-  SOURCES directoryTest_KokkosSimple.cpp
+  directoryTest_PerformanceRelic
+  CATEGORIES PERFORMANCE
+  SOURCES directoryTest_PerformanceRelic.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  directoryTest_PerformanceTpetra
+  CATEGORIES PERFORMANCE
+  SOURCES directoryTest_PerformanceTpetra.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  directoryTest_PerformanceKokkos
+  CATEGORIES PERFORMANCE
+  SOURCES directoryTest_PerformanceKokkos.cpp
   NUM_MPI_PROCS 4
   COMM mpi
 )

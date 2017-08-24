@@ -155,7 +155,7 @@ class Zoltan2_Directory {
         , table_length(table_length_)
     #endif
     {
-      Zoltan2_Directory_Clock clock("construct", comm);
+      Zoltan2_Directory_Clock clock("construct");
       allocate();
     }
 
@@ -186,8 +186,8 @@ class Zoltan2_Directory {
     size_t remove_msg_size;  /* Total allocation for Zoltan2_DD_Remove_Msg    */
 
   #ifdef CONVERT_DIRECTORY_KOKKOS
-    typedef Kokkos::UnorderedMap<gid_t, Zoltan2_Directory_Node<gid_t,lid_t,user_t>>
-      node_map_t;
+    typedef Kokkos::UnorderedMap<gid_t,
+      Zoltan2_Directory_Node<gid_t,lid_t,user_t>> node_map_t;
     node_map_t node_map;
   #endif
 
