@@ -688,7 +688,7 @@ void TpetraSystem<Scalar>::normalSetup(const mxArray* matlabA, bool haveCoords, 
 {
   keepAll = false;
   A = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(matlabA);
-  RCP<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > opA(At);
+  RCP<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > opA(A);
   RCP<MueLu::TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
   if(haveCoords)
   {
