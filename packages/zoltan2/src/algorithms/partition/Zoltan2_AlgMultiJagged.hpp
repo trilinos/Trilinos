@@ -7022,6 +7022,20 @@ void Zoltan2_AlgMJ<Adapter>::partition(
 #endif // C++11 is enabled
 
       }
+
+      {
+        freeArray<mj_gno_t> (result_initial_mj_gnos);
+        for (int i = 0; i < this->coord_dim; ++i){
+          freeArray<mj_scalar_t> (result_mj_coordinates[i]);
+        }
+        freeArray<mj_scalar_t *> (result_mj_coordinates);
+
+        for (int i = 0; i < this->num_weights_per_coord; ++i){
+          freeArray<mj_scalar_t> (result_mj_weights[i]);
+        }
+        freeArray<mj_scalar_t *> (result_mj_weights);
+        freeArray<int> (result_actual_owner_rank);
+      }
       mj_env->timerStop(MACRO_TIMERS, "MultiJagged - PostMigration DistributorMigration");
 
     }
