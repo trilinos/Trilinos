@@ -78,7 +78,6 @@ public:
   static typename std::enable_if<!HasDual<V>::value, const V&>::type
   dual( const V& v ) { return v; }
 
-
   template<class V>
   using HasPrint = std::integral_constant<bool, PrintCheck<V>::value>;
 

@@ -94,12 +94,14 @@ public:
   ElementType reduce( const ReduceOp &r ) const { return cpdv_->reduce(r);   }
   void print( std::ostream &os )          const {        cpdv_->print(os);   }
 
+
   /****************************************/
   /* Implemented in using derived methods */
   /****************************************/
+
   void axpy( const Real alpha, const Vector &x ) {
-    Elementwise::Axpy<ElementType> f(alpha);
-    pdv_->applyFunction(axpy,x);
+    auto f_axpy = Elementwise::Make::axpy(alpha);
+    pdv_->applyFunction(f_axpy,x);
   }
 
   ElementType dot( const Vector &x ) const {
@@ -115,8 +117,8 @@ public:
   } 
 
   void scale( const Real alpha ) {
-    Elementwise::Scale<ElementType> f(alpha);
-    pdv_->applyFunction( f );
+    auto f_scale = Elementwise::Make::scale(alpha);
+    pdv_->applyFunction( f_scale );
   }
 
   void set( const Real &x ) {

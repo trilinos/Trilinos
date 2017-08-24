@@ -51,57 +51,8 @@ namespace Elementwise {
 
 /** \brief Implement stateless functions using Lambda expressions with 
            lower case names. Implement functions with persistent values
-           using templated functor classes with upper case names. */
-
-
-auto sum = [](auto... values) { 
-  using ReturnType = std::common_type_t<decltype(values)...>;
-  ReturnType ret{0}; 
-  ReturnType _[] = { (ret += values)... };
-  (void)_; // To silence possible warning
-  return ret;
-};
-
-template<class T>
-class Axpy {
-private:
-  T a_;
-public:
-  Axpy( T a ) : a_(a) {}
-  auto operator() ( auto y, auto x ) const {
-    return a_*x+y;
-  }
-};
-
-template<class T>
-class Scale {
-private:
-  T a_;
-public:
-  Scale( T a ) : a_(a) {}
-  auto operator() ( auto y ) const {
-    return a_*y;
-  }
-};
-
-auto set = [](auto x) {
-  return x;
-};
-
-auto zero = [](auto x) {
-  return static_cast<decltype(x)>(0);
-};
-
-template<class T>
-class Fill {
-private:
-  T a_;
-public:
-  Fill( T a ) : a_(a) {}
-  auto operator() ( auto x ) const {
-    return a_;
-  }
-};
+           using a Make::function_name factory which takes the values as
+           parameters */
 
 auto product = [](auto... values) { 
   using ReturnType = std::common_type_t<decltype(values)...>;
@@ -115,16 +66,77 @@ auto absval = [](auto x) {
   return std::abs(x);
 };
 
-template<class T>
-class Power {
-private:
-  T p_;
-public:
-  Power( T p ) : p_(p) {}
-  auto operator() ( auto x ) const {
-    return std::pow(x,p_);
-  }
+auto sum = [](auto... values) { 
+  using ReturnType = std::common_type_t<decltype(values)...>;
+  ReturnType ret{0}; 
+  ReturnType _[] = { (ret += values)... };
+  (void)_; 
+  return ret;
 };
+
+auto set = [](auto x) {
+  return x;
+};
+
+auto zero = [](auto x) {
+  return static_cast<decltype(x)>(0);
+};
+
+
+/** \brief Generic function factory 
+
+     Usage:
+
+     auto localfunction = Make::function(parameters);
+
+*/
+
+struct Make {
+
+  // \f$ f(x,y) = ax+y \f$
+  template<class T> 
+  static auto axpy( const T& a ) {
+    return [a]( auto x, auto y ) { return a*x+y; };
+  }
+
+  // \f$ f(x) = a \f$
+  template<class T> 
+  static T fill( const T& a ) {
+    return [a]( void ) { return a; };
+  }
+
+  // \f$ f(x) = ax \f$
+  template<class T> 
+  static auto scale( const T& a ) {
+    return [a]( auto x ) { return a*x; };
+  }
+
+  // \f$ f(x) = x^a \f$
+  template<class T>
+  static auto pow( const T& a ) {
+    return [a]( auto x ) { return std::pow(x,a);
+  }
+
+  // Create a Reduce function
+  auto Reducer = []( auto f, auto initialValue ) {
+  return [f,initialValue](auto... values) {
+    UniformTypeCheck(values...);
+    using ArgType = std::common_type_t<decltype(values)...>;
+    using InitialType = decltype(initialValue);
+    using ReturnType = std::common_type_t<ArgType,InitialType>;
+    ReturnType ret{initialValue};
+    ReturnType _[] = { ( ret = f(ret,static_cast<ReturnType>(values)) )... };
+    (void)_;
+    return ret;
+  };
+
+}; 
+
+
+
+}; // Make
+
+
 
 
 } // Elementwise
