@@ -491,6 +491,38 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_more_files_for_partition_tests
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+
+
+
+
+
+
+
+
+##########################################
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental_2D)
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Partitioning2D
+  SOURCES partition2DMatrix.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+ENDIF()
+
+ENDIF()
+
+##########################################
+
+
 ##########################################
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
