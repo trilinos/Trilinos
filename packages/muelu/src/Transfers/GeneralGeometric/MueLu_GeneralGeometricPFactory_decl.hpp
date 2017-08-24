@@ -157,10 +157,12 @@ namespace MueLu {
       std::string meshLayout = "Global Lexicographic";
       int numDimensions;
       LO lNumFineNodes = -1, lNumCoarseNodes = -1, lNumGhostNodes = -1, lNumFineNodes10 = -1;
+      LO myBlock = -1, numBlocks = -1;
       GO gNumFineNodes = -1, gNumCoarseNodes = -1, gNumFineNodes10 = -1, minGlobalIndex = -1;
       Array<int> coarseRate, endRate;
-      Array<LO> lFineNodesPerDir, lCoarseNodesPerDir, offsets;
-      Array<GO> startIndices, gFineNodesPerDir, gCoarseNodesPerDir, meshData;
+      Array<LO> lFineNodesPerDir, lCoarseNodesPerDir, offsets, ghostedCoarseNodesPerDir;
+      Array<GO> startIndices, gFineNodesPerDir, gCoarseNodesPerDir, startGhostedCoarseNode;
+      std::vector< std::vector<GO> > meshData; // These are sorted later so they are in std::vector
       bool ghostInterface[6] = {false, false, false, false, false, false};
 
       GeometricData() {
@@ -169,17 +171,22 @@ namespace MueLu {
         lFineNodesPerDir.resize(3);
         lCoarseNodesPerDir.resize(3);
         offsets.resize(6);
+        ghostedCoarseNodesPerDir.resize(3);
         startIndices.resize(6);
         gFineNodesPerDir.resize(3);
         gCoarseNodesPerDir.resize(3);
+        startGhostedCoarseNode.resize(3);
       }
     };
 
-    void DataInterface(GeometricData myGeometry) const;
+    void MeshLayoutInterface(RCP<GeometricData> myGeometry, const LO blkSize,
+                             const int interpolationOrder, Array<Array<GO> >& lGhostNodesIDs,
+                             const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords) const;
 
-    void GetCoarsePoints(GeometricData* myGeometry, Array<GO>& ghostsGIDs, const LO blkSize) const;
+    void GetCoarsePoints(RCP<GeometricData> myGeometry, Array<GO>& ghostsGIDs,
+                         const int interpolationOrder, const LO blkSize) const;
 
-    void MakeGeneralGeometricP(GeometricData myGeo,
+    void MakeGeneralGeometricP(RCP<GeometricData> myGeo,
                                const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords,
                                const LO nnzP, const LO dofsPerNode,
                                RCP<const Map>& stridedDomainMapP,
@@ -213,6 +220,14 @@ namespace MueLu {
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const;
+
+    void GetGIDLocalLexicographic(const GO i, const GO j, const GO k,
+                                  const Array<LO> coarseNodeFineIndices,
+                                  const RCP<GeometricData> myGeo, const LO myRankIndex, const LO pi,
+                                  const LO pj, const LO pk,
+                                  const typename std::vector<std::vector<GO> >::iterator blockStart,
+                                  const typename std::vector<std::vector<GO> >::iterator blockEnd,
+                                  GO& myGID, LO& myPID, LO& myLID) const;
 
   }; //class GeneralGeometricPFactory
 

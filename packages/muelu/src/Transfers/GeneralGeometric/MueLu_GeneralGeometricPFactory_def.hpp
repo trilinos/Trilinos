@@ -160,27 +160,27 @@ namespace MueLu {
     // collect general input data
     const LO blkSize      = A->GetFixedBlockSize();
     RCP<const Map> rowMap = A->getRowMap();
-    GeometricData myGeometry{};
+    RCP<GeometricData> myGeometry = rcp(new GeometricData{});
 
     TEUCHOS_TEST_FOR_EXCEPTION(fineCoords==Teuchos::null, Exceptions::RuntimeError,
                                "Coordinates cannot be accessed from fine level!");
-    myGeometry.numDimensions = fineCoords->getNumVectors();
-    myGeometry.lNumFineNodes = fineCoords->getLocalLength();
+    myGeometry->numDimensions = fineCoords->getNumVectors();
+    myGeometry->lNumFineNodes = fineCoords->getLocalLength();
 
     // Get the number of points in each direction
     if(fineLevel.GetLevelID() == 0) {
-      myGeometry.gFineNodesPerDir = fineLevel.Get<Array<GO> >("gNodesPerDim", NoFactory::get());
-      myGeometry.lFineNodesPerDir = fineLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
+      myGeometry->gFineNodesPerDir = fineLevel.Get<Array<GO> >("gNodesPerDim", NoFactory::get());
+      myGeometry->lFineNodesPerDir = fineLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
     } else {
       // Loading global number of nodes per diretions
-      myGeometry.gFineNodesPerDir = Get<Array<GO> >(fineLevel, "gNodesPerDim");
+      myGeometry->gFineNodesPerDir = Get<Array<GO> >(fineLevel, "gNodesPerDim");
 
       // Loading local number of nodes per diretions
-      myGeometry.lFineNodesPerDir = Get<Array<LO> >(fineLevel, "lNodesPerDim");
+      myGeometry->lFineNodesPerDir = Get<Array<LO> >(fineLevel, "lNodesPerDim");
     }
-    myGeometry.gNumFineNodes10 = myGeometry.gFineNodesPerDir[1]*myGeometry.gFineNodesPerDir[0];
-    myGeometry.gNumFineNodes   = myGeometry.gFineNodesPerDir[2]*myGeometry.gNumFineNodes10;
-    myGeometry.lNumFineNodes10 = myGeometry.lFineNodesPerDir[1]*myGeometry.lFineNodesPerDir[0];
+    myGeometry->gNumFineNodes10 = myGeometry->gFineNodesPerDir[1]*myGeometry->gFineNodesPerDir[0];
+    myGeometry->gNumFineNodes   = myGeometry->gFineNodesPerDir[2]*myGeometry->gNumFineNodes10;
+    myGeometry->lNumFineNodes10 = myGeometry->lFineNodesPerDir[1]*myGeometry->lFineNodesPerDir[0];
 
     // Get the coarsening rate
     std::string coarsenRate = pL.get<std::string>("Coarsen");
@@ -192,29 +192,39 @@ namespace MueLu {
                             << std::endl;
       throw e;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION((crates.size() > 1) && (crates.size() < myGeometry.numDimensions),
+    TEUCHOS_TEST_FOR_EXCEPTION((crates.size() > 1) && (crates.size() < myGeometry->numDimensions),
                                Exceptions::RuntimeError,
                                "Coarsen must have at least as many components as the number of"
                                " spatial dimensions in the problem.");
     for(LO i = 0; i < 3; ++i) {
-      if(i < myGeometry.numDimensions) {
+      if(i < myGeometry->numDimensions) {
         if(crates.size()==1) {
-          myGeometry.coarseRate[i] = crates[0];
-        } else if(crates.size() == myGeometry.numDimensions) {
-          myGeometry.coarseRate[i] = crates[i];
+          myGeometry->coarseRate[i] = crates[0];
+        } else if(crates.size() == myGeometry->numDimensions) {
+          myGeometry->coarseRate[i] = crates[i];
         }
       } else {
-        myGeometry.coarseRate[i] = 1;
+        myGeometry->coarseRate[i] = 1;
       }
     }
 
     // Load the mesh layout type and the associated mesh data
-    myGeometry.meshLayout = pL.get<std::string>("meshLayout");
-    if(fineLevel.GetLevelID() == 0) {
-      if(myGeometry.meshLayout != "Global Lexicographic") {
-        myGeometry.meshData = fineLevel.Get<Array<GO> >("meshData", NoFactory::get());
+    myGeometry->meshLayout = pL.get<std::string>("meshLayout");
+    {
+      Array<GO> tmp;
+      if(fineLevel.GetLevelID() == 0) {
+        if(myGeometry->meshLayout != "Global Lexicographic") {
+          tmp = fineLevel.Get<Array<GO> >("meshData", NoFactory::get());
+        }
       }
-    }
+      myGeometry->meshData.resize(rowMap->getComm()->getSize());
+      for(int i = 0; i < rowMap->getComm()->getSize(); ++i) {
+        myGeometry->meshData[i].resize(10);
+        for(int j = 0; j < 10; ++j) {
+          myGeometry->meshData[i][j] = tmp[10*i + j];
+        }
+      }
+    } // End of scope for tmp
 
     int interpolationOrder = pL.get<int>("order");
     TEUCHOS_TEST_FOR_EXCEPTION((interpolationOrder < 0) || (interpolationOrder > 1),
@@ -223,11 +233,11 @@ namespace MueLu {
 
     // Get the axis permutation from Global axis to Local axis
     Array<LO> mapDirG2L(3), mapDirL2G(3);
-    for(LO i = 0; i < myGeometry.numDimensions; ++i) {
+    for(LO i = 0; i < myGeometry->numDimensions; ++i) {
       mapDirG2L[i] = i;
     }
-    for(LO i = 0; i < myGeometry.numDimensions; ++i) {
-      TEUCHOS_TEST_FOR_EXCEPTION(mapDirG2L[i] > myGeometry.numDimensions,
+    for(LO i = 0; i < myGeometry->numDimensions; ++i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(mapDirG2L[i] > myGeometry->numDimensions,
                                  Exceptions::RuntimeError,
                                  "axis permutation values must all be less than"
                                  " the number of spatial dimensions.");
@@ -251,47 +261,61 @@ namespace MueLu {
     //     the offsets of * are 2 and 1
     GO maxGlobalIndex, rem;
     RCP<const Map> fineCoordsMap = fineCoords->getMap();
-    myGeometry.minGlobalIndex = fineCoordsMap->getMinGlobalIndex();
+    myGeometry->minGlobalIndex = fineCoordsMap->getMinGlobalIndex();
     maxGlobalIndex = fineCoordsMap->getMaxGlobalIndex();
-    if(myGeometry.numDimensions == 1) {
-      myGeometry.startIndices[0] = myGeometry.minGlobalIndex;
-      myGeometry.offsets[0]= Teuchos::as<LO>(myGeometry.startIndices[0]) % myGeometry.coarseRate[0];
+    if(myGeometry->numDimensions == 1) {
+      myGeometry->startIndices[0] = myGeometry->minGlobalIndex;
+      myGeometry->offsets[0]= Teuchos::as<LO>(myGeometry->startIndices[0])
+        % myGeometry->coarseRate[0];
 
-      myGeometry.startIndices[3] = maxGlobalIndex;
-      myGeometry.offsets[3]= Teuchos::as<LO>(myGeometry.startIndices[3]) % myGeometry.coarseRate[0];
-    } else if(myGeometry.numDimensions == 2) {
-      myGeometry.startIndices[1] = myGeometry.minGlobalIndex / myGeometry.gFineNodesPerDir[0];
-      myGeometry.offsets[1]= Teuchos::as<LO>(myGeometry.startIndices[1]) % myGeometry.coarseRate[1];
-      myGeometry.startIndices[0] = myGeometry.minGlobalIndex % myGeometry.gFineNodesPerDir[0];
-      myGeometry.offsets[0]= Teuchos::as<LO>(myGeometry.startIndices[0]) % myGeometry.coarseRate[0];
+      myGeometry->startIndices[3] = maxGlobalIndex;
+      myGeometry->offsets[3]= Teuchos::as<LO>(myGeometry->startIndices[3])
+        % myGeometry->coarseRate[0];
+    } else if(myGeometry->numDimensions == 2) {
+      myGeometry->startIndices[1] = myGeometry->minGlobalIndex / myGeometry->gFineNodesPerDir[0];
+      myGeometry->offsets[1]= Teuchos::as<LO>(myGeometry->startIndices[1])
+        % myGeometry->coarseRate[1];
+      myGeometry->startIndices[0] = myGeometry->minGlobalIndex % myGeometry->gFineNodesPerDir[0];
+      myGeometry->offsets[0]= Teuchos::as<LO>(myGeometry->startIndices[0])
+        % myGeometry->coarseRate[0];
 
-      myGeometry.startIndices[4] = maxGlobalIndex / myGeometry.gFineNodesPerDir[0];
-      myGeometry.offsets[4]= Teuchos::as<LO>(myGeometry.startIndices[4]) % myGeometry.coarseRate[1];
-      myGeometry.startIndices[3] = maxGlobalIndex % myGeometry.gFineNodesPerDir[0];
-      myGeometry.offsets[3]= Teuchos::as<LO>(myGeometry.startIndices[3]) % myGeometry.coarseRate[3];
-    } else if(myGeometry.numDimensions == 3) {
-      myGeometry.startIndices[2] = myGeometry.minGlobalIndex / myGeometry.gNumFineNodes10;
-      rem = myGeometry.minGlobalIndex % myGeometry.gNumFineNodes10;
-      myGeometry.offsets[2]= Teuchos::as<LO>(myGeometry.startIndices[2]) % myGeometry.coarseRate[2];
-      myGeometry.startIndices[1] = rem / myGeometry.gFineNodesPerDir[0];
-      myGeometry.offsets[1]= Teuchos::as<LO>(myGeometry.startIndices[1]) % myGeometry.coarseRate[1];
-      myGeometry.startIndices[0] = rem % myGeometry.gFineNodesPerDir[0];
-      myGeometry.offsets[0]= Teuchos::as<LO>(myGeometry.startIndices[0]) % myGeometry.coarseRate[0];
+      myGeometry->startIndices[4] = maxGlobalIndex / myGeometry->gFineNodesPerDir[0];
+      myGeometry->offsets[4]= Teuchos::as<LO>(myGeometry->startIndices[4])
+        % myGeometry->coarseRate[1];
+      myGeometry->startIndices[3] = maxGlobalIndex % myGeometry->gFineNodesPerDir[0];
+      myGeometry->offsets[3]= Teuchos::as<LO>(myGeometry->startIndices[3])
+        % myGeometry->coarseRate[3];
+    } else if(myGeometry->numDimensions == 3) {
+      myGeometry->startIndices[2] = myGeometry->minGlobalIndex / myGeometry->gNumFineNodes10;
+      rem = myGeometry->minGlobalIndex % myGeometry->gNumFineNodes10;
+      myGeometry->offsets[2]= Teuchos::as<LO>(myGeometry->startIndices[2])
+        % myGeometry->coarseRate[2];
+      myGeometry->startIndices[1] = rem / myGeometry->gFineNodesPerDir[0];
+      myGeometry->offsets[1]= Teuchos::as<LO>(myGeometry->startIndices[1])
+        % myGeometry->coarseRate[1];
+      myGeometry->startIndices[0] = rem % myGeometry->gFineNodesPerDir[0];
+      myGeometry->offsets[0]= Teuchos::as<LO>(myGeometry->startIndices[0])
+        % myGeometry->coarseRate[0];
 
-      myGeometry.startIndices[5] = maxGlobalIndex / myGeometry.gNumFineNodes10;
-      rem = maxGlobalIndex % myGeometry.gNumFineNodes10;
-      myGeometry.offsets[5]= Teuchos::as<LO>(myGeometry.startIndices[5]) % myGeometry.coarseRate[2];
-      myGeometry.startIndices[4] = rem / myGeometry.gFineNodesPerDir[0];
-      myGeometry.offsets[4]= Teuchos::as<LO>(myGeometry.startIndices[4]) % myGeometry.coarseRate[1];
-      myGeometry.startIndices[3] = rem % myGeometry.gFineNodesPerDir[0];
-      myGeometry.offsets[3]= Teuchos::as<LO>(myGeometry.startIndices[3]) % myGeometry.coarseRate[0];
+      myGeometry->startIndices[5] = maxGlobalIndex / myGeometry->gNumFineNodes10;
+      rem = maxGlobalIndex % myGeometry->gNumFineNodes10;
+      myGeometry->offsets[5]= Teuchos::as<LO>(myGeometry->startIndices[5])
+        % myGeometry->coarseRate[2];
+      myGeometry->startIndices[4] = rem / myGeometry->gFineNodesPerDir[0];
+      myGeometry->offsets[4]= Teuchos::as<LO>(myGeometry->startIndices[4])
+        % myGeometry->coarseRate[1];
+      myGeometry->startIndices[3] = rem % myGeometry->gFineNodesPerDir[0];
+      myGeometry->offsets[3]= Teuchos::as<LO>(myGeometry->startIndices[3])
+        % myGeometry->coarseRate[0];
     }
     /* At this point the local geometrical discovery is over */
 
-    DataInterface(myGeometry);
-
-    Array<GO> ghostsGIDs;
-    GetCoarsePoints(&myGeometry, ghostsGIDs, blkSize);
+    Array<Array<GO> > lGhostNodesIDs(3);
+    if((fineLevel.GetLevelID() == 0) && (myGeometry->meshLayout != "Global Lexicographic")) {
+      MeshLayoutInterface(myGeometry, blkSize, interpolationOrder, lGhostNodesIDs, fineCoords);
+    } else {
+      GetCoarsePoints(myGeometry, lGhostNodesIDs[2], interpolationOrder, blkSize);
+    }
 
     // All that is left to do is loop over NCpts and:
     //   - extract coarse points coordiate for coarseCoords
@@ -300,21 +324,21 @@ namespace MueLu {
     //   - compute row and column indices for stencil entries
     RCP<const Map> stridedDomainMapP;
     RCP<Matrix>    P;
-    GO nTerms = 8*(myGeometry.lNumFineNodes - myGeometry.lNumCoarseNodes)
-      + myGeometry.lNumCoarseNodes;
+    GO nTerms = Teuchos::as<LO>(std::pow(interpolationOrder + 1, myGeometry->numDimensions))
+      *(myGeometry->lNumFineNodes - myGeometry->lNumCoarseNodes) + myGeometry->lNumCoarseNodes;
 
-    GetOStream(Runtime1) << "P size = " << blkSize*myGeometry.gNumFineNodes
-                         << " x " << blkSize*myGeometry.gNumCoarseNodes << std::endl;
-    GetOStream(Runtime1) << "P Fine   grid : " << myGeometry.gFineNodesPerDir[0] << " -- "
-                         << myGeometry.gFineNodesPerDir[1] << " -- "
-                         << myGeometry.gFineNodesPerDir[2] << std::endl;
-    GetOStream(Runtime1) << "P Coarse grid : " << myGeometry.gCoarseNodesPerDir[0] << " -- "
-                         << myGeometry.gCoarseNodesPerDir[1] << " -- "
-                         << myGeometry.gCoarseNodesPerDir[2] << std::endl;
+    GetOStream(Runtime1) << "P size = " << blkSize*myGeometry->gNumFineNodes
+                         << " x " << blkSize*myGeometry->gNumCoarseNodes << std::endl;
+    GetOStream(Runtime1) << "P Fine   grid : " << myGeometry->gFineNodesPerDir[0] << " -- "
+                         << myGeometry->gFineNodesPerDir[1] << " -- "
+                         << myGeometry->gFineNodesPerDir[2] << std::endl;
+    GetOStream(Runtime1) << "P Coarse grid : " << myGeometry->gCoarseNodesPerDir[0] << " -- "
+                         << myGeometry->gCoarseNodesPerDir[1] << " -- "
+                         << myGeometry->gCoarseNodesPerDir[2] << std::endl;
     GetOStream(Runtime1) << "P nnz estimate: " << nTerms << std::endl;
 
     MakeGeneralGeometricP(myGeometry, fineCoords, nTerms, blkSize, stridedDomainMapP,
-                          A, P, coarseCoords, ghostsGIDs, interpolationOrder);
+                          A, P, coarseCoords, lGhostNodesIDs[2], interpolationOrder);
 
     // set StridingInformation of P
     if (A->IsView("stridedMaps") == true) {
@@ -326,8 +350,8 @@ namespace MueLu {
     // store the transfer operator and node coordinates on coarse level
     Set(coarseLevel, "P", P);
     Set(coarseLevel, "coarseCoordinates", coarseCoords);
-    Set<Array<GO> >(coarseLevel, "gCoarseNodesPerDim", myGeometry.gCoarseNodesPerDir);
-    Set<Array<LO> >(coarseLevel, "lCoarseNodesPerDim", myGeometry.lCoarseNodesPerDir);
+    Set<Array<GO> >(coarseLevel, "gCoarseNodesPerDim", myGeometry->gCoarseNodesPerDir);
+    Set<Array<LO> >(coarseLevel, "lCoarseNodesPerDim", myGeometry->lCoarseNodesPerDir);
 
     // rst: null space might get scaled here ... do we care. We could just inject at the cpoints,
     // but I don't feel that this is needed.
@@ -340,22 +364,299 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DataInterface(GeometricData myGeometry) const{
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  MeshLayoutInterface(RCP<GeometricData> myGeo, const LO blkSize, const int interpolationOrder,
+                      Array<Array<GO> >& lGhostNodesIDs,
+                      const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fineCoords) const{
     // The goal here is to produce maps that globally labels the mesh lexicographically.
     // These maps will replace the current maps of A, the coordinate vector and the nullspace.
     // Ideally if the user provides the necessary maps then nothing needs to be done, otherwise
     // it could be advantageous to allow the user to register a re-labeling function. Ultimately
     // for common ordering schemes, some re-labeling can be directly implemented here.
 
-    std::cout << "Mesh layout: " << myGeometry.meshLayout << std::endl;
-    std::cout << "Mesh data: " << myGeometry.meshData << std::endl;
+    const int myRank = fineCoords->getMap()->getComm()->getRank();
+    const int numRanks = fineCoords->getMap()->getComm()->getSize();
+    myGeo->myBlock = myGeo->meshData[myRank][2];
+    myGeo->startIndices[0] = myGeo->meshData[myRank][3];
+    myGeo->startIndices[1] = myGeo->meshData[myRank][5];
+    myGeo->startIndices[2] = myGeo->meshData[myRank][7];
+    myGeo->startIndices[3] = myGeo->meshData[myRank][4];
+    myGeo->startIndices[4] = myGeo->meshData[myRank][6];
+    myGeo->startIndices[5] = myGeo->meshData[myRank][8];
+    std::sort(myGeo->meshData.begin(), myGeo->meshData.end(),
+              [](const std::vector<GO>& a, const std::vector<GO>& b)->bool {
+                // The below function sorts ranks by blockID, kmin, jmin and imin
+                if(a[2] < b[2]) {
+                  return true;
+                } else if(a[2] == b[2]) {
+                  if(a[7] < b[7]) {
+                    return true;
+                  } else if(a[7] == b[7]) {
+                    if(a[5] < b[5]) {
+                      return true;
+                    } else if(a[5] == b[5]) {
+                      if(a[3] < b[3]) {return true;}
+                    }
+                  }
+                }
+                return false;
+              });
+
+    std::cout << "p=" << myRank << " | Sorted ranks: " << std::endl;
+    for(auto row : myGeo->meshData) {
+      for(auto word : row) {std::cout << word << " - ";}
+      std::cout << std::endl;
+    }
+
+    myGeo->numBlocks = myGeo->meshData[numRanks - 1][2] + 1;
+    // Find the range of the current block
+    auto myBlockStart = std::lower_bound(myGeo->meshData.begin(), myGeo->meshData.end(),
+                                         myGeo->myBlock - 1,
+                                         [](const std::vector<GO>& vec, const GO val)->bool{
+                                           return (vec[2] < val) ? true : false;
+                                         });
+    auto myBlockEnd = std::upper_bound(myGeo->meshData.begin(), myGeo->meshData.end(),
+                                       myGeo->myBlock,
+                                       [](const GO val, const std::vector<GO>& vec)->bool{
+                                         return (val < vec[2]) ? true : false;
+                                       });
+    // Assuming that i,j,k and ranges are split in pi, pj and pk processors
+    // we search for these numbers as they will allow us to find quickly the PID of processors
+    // owning ghost nodes.
+    auto myKEnd = std::upper_bound(myBlockStart, myBlockEnd, (*myBlockStart)[3],
+                                   [](const GO val, const std::vector<GO>& vec)->bool{
+                                     return (val < vec[7]) ? true : false;
+                                   });
+    auto myJEnd = std::upper_bound(myBlockStart, myKEnd, (*myBlockStart)[3],
+                                   [](const GO val, const std::vector<GO>& vec)->bool{
+                                     return (val < vec[5]) ? true : false;
+                                   });
+    LO pi = std::distance(myBlockStart, myJEnd);
+    LO pj = std::distance(myBlockStart, myKEnd) / pi;
+    LO pk = std::distance(myBlockStart, myBlockEnd) / (pj*pi);
+
+    // We also look for the index of the local rank in the current block.
+    LO myRankIndex = std::distance(myGeo->meshData.begin(),
+                                   std::find_if(myBlockStart, myBlockEnd,
+                                                [myRank](const std::vector<GO>& vec)->bool{
+                                                  return (vec[0] == myRank) ? true : false;
+                                                })
+                                   );
+
+    std::cout << "p=" << myRank << " | Mesh layout: " << myGeo->meshLayout << std::endl;
+    std::cout << "p=" << myRank << " | numBlocks: " << myGeo->numBlocks << std::endl;
+    std::cout << "p=" << myRank << " | myBlock is " << myGeo->myBlock
+              << " it starts at " << std::distance(myGeo->meshData.begin(), myBlockStart)
+              << " and ends at " << std::distance(myGeo->meshData.begin(), myBlockEnd) << std::endl;
+    std::cout << "p=" << myRank << " | Block " << myGeo->myBlock << " pk="
+              << pk << std::endl;
+    std::cout << "p=" << myRank << " | Block " << myGeo->myBlock << " pj="
+              << pj << std::endl;
+    std::cout << "p=" << myRank << " | Block " << myGeo->myBlock << " pi="
+              << pi << std::endl;
+    std::cout << "p=" << myRank << " | Block " << myGeo->myBlock << " myRankIndex="
+              << myRankIndex << std::endl;
+    std::cout << "p=" << myRank << " | my ranges: ";
+    for(int i = 0; i < 5; ++i) {
+      std::cout << myGeo->startIndices[i] << ", ";
+    }
+    std::cout << myGeo->startIndices[5] << std::endl;
+
+    GO rem = -1;
+    if(myGeo->numDimensions == 1) {
+      myGeo->offsets[0]= Teuchos::as<LO>(myGeo->startIndices[0]) % myGeo->coarseRate[0];
+
+      myGeo->offsets[3]= Teuchos::as<LO>(myGeo->startIndices[3]) % myGeo->coarseRate[0];
+    } else if(myGeo->numDimensions == 2) {
+      myGeo->offsets[1]= Teuchos::as<LO>(myGeo->startIndices[1]) % myGeo->coarseRate[1];
+      myGeo->offsets[0]= Teuchos::as<LO>(myGeo->startIndices[0]) % myGeo->coarseRate[0];
+
+      myGeo->offsets[4]= Teuchos::as<LO>(myGeo->startIndices[4]) % myGeo->coarseRate[1];
+      myGeo->offsets[3]= Teuchos::as<LO>(myGeo->startIndices[3]) % myGeo->coarseRate[3];
+    } else if(myGeo->numDimensions == 3) {
+      myGeo->offsets[2]= Teuchos::as<LO>(myGeo->startIndices[2]) % myGeo->coarseRate[2];
+      myGeo->offsets[1]= Teuchos::as<LO>(myGeo->startIndices[1]) % myGeo->coarseRate[1];
+      myGeo->offsets[0]= Teuchos::as<LO>(myGeo->startIndices[0]) % myGeo->coarseRate[0];
+
+      myGeo->offsets[5]= Teuchos::as<LO>(myGeo->startIndices[5]) % myGeo->coarseRate[2];
+      myGeo->offsets[4]= Teuchos::as<LO>(myGeo->startIndices[4]) % myGeo->coarseRate[1];
+      myGeo->offsets[3]= Teuchos::as<LO>(myGeo->startIndices[3]) % myGeo->coarseRate[0];
+    }
+
+    // Check if the partition contains nodes on a boundary, if so that boundary (face, line or
+    // point) will not require ghost nodes.
+    for(LO i=0; i < 3; ++i) {
+      if(i < myGeo->numDimensions &&  myGeo->startIndices[i] % myGeo->coarseRate[i] != 0) {
+        myGeo->ghostInterface[2*i] = true;
+        }
+      if(i < myGeo->numDimensions
+         && (myGeo->startIndices[i + 3] != myGeo->gFineNodesPerDir[i] - 1
+             && myGeo->startIndices[i + 3] % myGeo->coarseRate[i] != 0)) {
+        myGeo->ghostInterface[2*i+1] = true;
+      }
+    }
+
+    std::cout << "p=" << myRank << " | ghostInterface: {";
+    for(int i = 0; i < 5; ++i) {
+      std::cout << myGeo->ghostInterface[i] << ", ";
+    }
+    std::cout << myGeo->ghostInterface[5] << "}" << std::endl;
+
+    // Here one element can represent either the degenerate case of one node or the more general
+    // case of two nodes, i.e. x---x is a 1D element with two nodes and x is a 1D element with one
+    // node. This helps generating a 3D space from tensorial products...
+    // A good way to handle this would be to generalize the algorithm to take into account the
+    // discretization order used in each direction, at least in the FEM sense, since a 0 degree
+    // discretization will have a unique node per element. This way 1D discretization can be viewed
+    // as a 3D problem with one 0 degree element in the y direction and one 0 degre element in the z
+    // direction.
+    // !!! Operations below are aftecting both local and global values that have two different   !!!
+    // orientations. Orientations can be interchanged using mapDirG2L and mapDirL2G. coarseRate,
+    // endRate and offsets are in the global basis, as well as all the variables starting with a g,
+    // !!! while the variables starting with an l are in the local basis.                        !!!
+    for(int i = 0; i < 3; ++i) {
+      if(i < myGeo->numDimensions) {
+        // This array is passed to the RAPFactory and eventually becomes gFineNodePerDir on the next
+        // level.
+        myGeo->gCoarseNodesPerDir[i] = (myGeo->gFineNodesPerDir[i] - 1) / myGeo->coarseRate[i];
+        myGeo->endRate[i] = Teuchos::as<LO>((myGeo->gFineNodesPerDir[i] - 1) %myGeo->coarseRate[i]);
+        if(myGeo->endRate[i] == 0) {
+          myGeo->endRate[i] = myGeo->coarseRate[i];
+          ++myGeo->gCoarseNodesPerDir[i];
+        } else {
+          myGeo->gCoarseNodesPerDir[i] += 2;
+        }
+      } else {
+        myGeo->endRate[i] = 1;
+        myGeo->gCoarseNodesPerDir[i] = 1;
+      }
+    }
+
+    myGeo->gNumCoarseNodes = myGeo->gCoarseNodesPerDir[0]*myGeo->gCoarseNodesPerDir[1]
+      *myGeo->gCoarseNodesPerDir[2];
+
+    std::cout << "p=" << myRank << " | offsets: " << myGeo->offsets << std::endl;
+    std::cout << "p=" << myRank << " | startGID: " << myGeo->startIndices << std::endl;
+    std::cout << "p=" << myRank << " | coarseRate: " << myGeo->coarseRate << std::endl;
+    std::cout << "p=" << myRank << " | endRate: " << myGeo->endRate << std::endl;
+    std::cout << "p=" << myRank << " | gNumCoarsePoints: " << myGeo->gNumCoarseNodes <<std::endl;
+    std::cout << "p=" << myRank << " | gCoarseNodesPerDir: " <<myGeo->gCoarseNodesPerDir<<std::endl;
+
+    for(LO i = 0; i < 3; ++i) {
+      if(i < myGeo->numDimensions) {
+        // Check whether the partition includes the "end" of the mesh which means that endRate will
+        // apply. Also make sure that endRate is not 0 which means that the mesh does not require a
+        // particular treatment at the boundaries.
+        if( (myGeo->startIndices[i] + myGeo->lFineNodesPerDir[i]) == myGeo->gFineNodesPerDir[i] ) {
+          myGeo->lCoarseNodesPerDir[i] = (myGeo->lFineNodesPerDir[i] - myGeo->endRate[i]
+                                   + myGeo->offsets[i] - 1) / myGeo->coarseRate[i] + 1;
+          if(myGeo->offsets[i] == 0) {++myGeo->lCoarseNodesPerDir[i];}
+        } else {
+          myGeo->lCoarseNodesPerDir[i] = (myGeo->lFineNodesPerDir[i] + myGeo->offsets[i] - 1)
+            / myGeo->coarseRate[i];
+          if(myGeo->offsets[i] == 0) {++myGeo->lCoarseNodesPerDir[i];}
+        }
+      } else {
+        myGeo->lCoarseNodesPerDir[i] = 1;
+      }
+      // This would happen if the rank does not own any nodes but in that case a subcommunicator
+      // should be used so this should really not be a concern.
+      if(myGeo->lFineNodesPerDir[i] < 1) {myGeo->lCoarseNodesPerDir[i] = 0;}
+    }
+
+    // Assuming linear interpolation, each fine point has contribution from 8 coarse points
+    // and each coarse point value gets injected.
+    // For systems of PDEs we assume that all dofs have the same P operator.
+    myGeo->lNumCoarseNodes = myGeo->lCoarseNodesPerDir[0]*myGeo->lCoarseNodesPerDir[1]
+      *myGeo->lCoarseNodesPerDir[2];
+    // Fancy formula for the number of non-zero terms
+    // All coarse points are injected, other points are using polynomial interpolation
+    // and have contribution from (interpolationOrder + 1)^numDimensions
+    // Noticebly this leads to 1 when the order is zero, hence fancy MatMatMult can be used.
+    LO nTerms = Teuchos::as<LO>(std::pow((interpolationOrder + 1), myGeo->numDimensions))
+      *(myGeo->lNumFineNodes - myGeo->lNumCoarseNodes) + myGeo->lNumCoarseNodes;
+    nTerms=nTerms*blkSize;
+
+    std::cout << "p=" << myRank << " | lNumCoarsePoints: " << myGeo->lNumCoarseNodes << std::endl;
+    std::cout << "p=" << myRank << " | lCoarseNodesPerDir: "<< myGeo->lCoarseNodesPerDir<<std::endl;
+
+    // For each direction, determine how many points (including ghosts) are required.
+    LO numGhosts = 0, numGhosted = 0;
+    for(LO i = 0; i < 3; ++i) {
+      myGeo->startGhostedCoarseNode[i] = myGeo->startIndices[i] / myGeo->coarseRate[i];
+      myGeo->ghostedCoarseNodesPerDir[i] = myGeo->lCoarseNodesPerDir[i];
+      // Check whether face *low needs ghost nodes
+      if(myGeo->ghostInterface[2*i] && (myGeo->startIndices[i] % myGeo->coarseRate[i] != 0)
+         && (myGeo->startIndices[i] != myGeo->gFineNodesPerDir[i] - 1)) {
+        myGeo->ghostedCoarseNodesPerDir[i] += 1;
+      }
+      // Check whether face *hi needs ghost nodes
+      if(myGeo->ghostInterface[2*i+1] && (myGeo->startIndices[3 + i] % myGeo->coarseRate[i] != 0)
+         && (myGeo->startIndices[3 + i] != myGeo->gFineNodesPerDir[i] - 1)) {
+        myGeo->ghostedCoarseNodesPerDir[i] += 1;
+      }
+      numGhosted = myGeo->ghostedCoarseNodesPerDir[2]*myGeo->ghostedCoarseNodesPerDir[1]
+        *myGeo->ghostedCoarseNodesPerDir[0];
+      numGhosts= numGhosted - myGeo->lCoarseNodesPerDir[2]*myGeo->lCoarseNodesPerDir[1]
+        *myGeo->lCoarseNodesPerDir[0];
+    }
+    for(int i = 0; i < 3; ++i) {
+      lGhostNodesIDs[i].resize(numGhosted);
+    }
+
+    std::cout << "p=" << myRank << " | numGhosts: " << numGhosts << std::endl;
+    std::cout << "p=" << myRank << " | numGhosted: " << numGhosted << std::endl;
+    std::cout << "p=" << myRank << " | myGeo->ghostedCoarseNodesPerDir: " <<
+      myGeo->ghostedCoarseNodesPerDir << std::endl;
+    std::cout << "p=" << myRank << " | myGeo->startGhostedCoarseNode: "
+              << myGeo->startGhostedCoarseNode << std::endl;
+
+    // Now the tricky part starts, the coarse nodes / ghosted coarse nodes need to be imported.
+    // This requires finding what their GID on the fine mesh is. They need to be ordered
+    // lexicographically to allow for fast sweeps through the mesh.
+
+    // We loop over all ghosted coarse nodes by increasing global lexicographic order
+    Array< Array<LO> > ghostsOwners(26);
+    std::cout << "p=" << myRank << " | Ghost/Coarse nodes have the following indices: "
+              << std::endl;
+    Array<LO> coarseNodeFineIndices(3);
+    LO currentIndex = -1;
+    for(int k = 0; k < myGeo->ghostedCoarseNodesPerDir[2]; ++k) {
+      for(int j = 0; j < myGeo->ghostedCoarseNodesPerDir[1]; ++j) {
+        for(int i = 0; i < myGeo->ghostedCoarseNodesPerDir[0]; ++i) {
+          currentIndex = k*myGeo->ghostedCoarseNodesPerDir[1]*myGeo->ghostedCoarseNodesPerDir[0]
+            + j*myGeo->ghostedCoarseNodesPerDir[0] + i;
+          coarseNodeFineIndices[0] = (myGeo->startGhostedCoarseNode[0] + i)*myGeo->coarseRate[0];
+          if(coarseNodeFineIndices[0] > myGeo->gFineNodesPerDir[0] - 1) {
+            coarseNodeFineIndices[0] = myGeo->gFineNodesPerDir[0] - 1;
+          }
+          coarseNodeFineIndices[1] = (myGeo->startGhostedCoarseNode[1] + j)*myGeo->coarseRate[1];
+          if(coarseNodeFineIndices[1] > myGeo->gFineNodesPerDir[1] - 1) {
+            coarseNodeFineIndices[1] = myGeo->gFineNodesPerDir[1] - 1;
+          }
+          coarseNodeFineIndices[2] = (myGeo->startGhostedCoarseNode[2] + k)*myGeo->coarseRate[2];
+          if(coarseNodeFineIndices[2] > myGeo->gFineNodesPerDir[2] - 1) {
+            coarseNodeFineIndices[2] = myGeo->gFineNodesPerDir[2] - 1;
+          }
+          GO myGID = -1;
+          LO myLID = -1, myPID = -1;
+          GetGIDLocalLexicographic(i, j, k, coarseNodeFineIndices, myGeo, myRankIndex, pi, pj, pk,
+                                   myBlockStart, myBlockEnd, myGID, myPID, myLID);
+          lGhostNodesIDs[0][currentIndex] = myPID;
+          lGhostNodesIDs[1][currentIndex] = myLID;
+          lGhostNodesIDs[2][currentIndex] = myGID;
+          std::cout << "p=" << myRank << " | " << coarseNodeFineIndices
+                    << " PID=" << myPID << " LID=" << myLID << " GID=" << myGID << std::endl;
+        }
+      }
+    }
 
   } // DataInterface
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetCoarsePoints(
-                                GeometricData* myGeo, Array<GO>& ghostsGIDs,
-                                const LO blkSize) const{
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetCoarsePoints(RCP<GeometricData> myGeo, Array<GO>& ghostsGIDs, const int interpolationOrder,
+                  const LO blkSize) const{
     // Check if the partition contains nodes on a boundary, if so that boundary (face, line or
     // point) will not require ghost nodes.
     // Always include a layer if ghost nodes for inner interface since even for faces with coarse
@@ -363,11 +664,11 @@ namespace MueLu {
     // operator. Curvature could be check localy to avoid including extra ghost nodes...
     for(LO i=0; i < 3; ++i) {
       if(i < myGeo->numDimensions &&  myGeo->startIndices[i] != 0) {
-        myGeo->ghostInterface[2*i]=true;
+        myGeo->ghostInterface[2*i] = true;
         }
       if(i < myGeo->numDimensions
          && (myGeo->startIndices[i]+myGeo->lFineNodesPerDir[i]) != myGeo->gFineNodesPerDir[i]) {
-        myGeo->ghostInterface[2*i+1]=true;
+        myGeo->ghostInterface[2*i+1] = true;
       }
     }
 
@@ -429,7 +730,8 @@ namespace MueLu {
     // For systems of PDEs we assume that all dofs have the same P operator.
     myGeo->lNumCoarseNodes = myGeo->lCoarseNodesPerDir[0]*myGeo->lCoarseNodesPerDir[1]
       *myGeo->lCoarseNodesPerDir[2];
-    LO nTerms = 8*myGeo->lNumFineNodes - 7*myGeo->lNumCoarseNodes;
+    LO nTerms = Teuchos::as<LO>(std::pow((interpolationOrder + 1), myGeo->numDimensions))
+      *(myGeo->lNumFineNodes - myGeo->lNumCoarseNodes) + myGeo->lNumCoarseNodes;
     nTerms=nTerms*blkSize;
 
     // For each direction, determine how many ghost points are required.
@@ -529,7 +831,8 @@ namespace MueLu {
       for(LO j = 0; j < lengthOne; ++j) {
         if((j == lengthOne-1)
            && (startingIndices[1] + j*myGeo->coarseRate[1] + 1 > myGeo->gFineNodesPerDir[1])) {
-          ghostOffset[1] = ((j-1)*myGeo->coarseRate[1] + myGeo->endRate[1])*myGeo->gFineNodesPerDir[0];
+          ghostOffset[1] = ((j-1)*myGeo->coarseRate[1] + myGeo->endRate[1])
+            *myGeo->gFineNodesPerDir[0];
         } else {
           ghostOffset[1] = j*myGeo->coarseRate[1]*myGeo->gFineNodesPerDir[0];
         }
@@ -567,7 +870,7 @@ namespace MueLu {
           if( (j == 0) && myGeo->ghostInterface[2] ) {
             for(LO k = 0; k < lengthZero; ++k) {
               if((k == lengthZero-1)
-                 && (startingIndices[0] + k*myGeo->coarseRate[0] + 1 > myGeo->gFineNodesPerDir[0])) {
+                 && (startingIndices[0] + k*myGeo->coarseRate[0] + 1 > myGeo->gFineNodesPerDir[0])){
                 if(k == 0) {
                   ghostOffset[0] = myGeo->endRate[0];
                 } else {
@@ -592,7 +895,7 @@ namespace MueLu {
             }
             for(LO k = 0; k < lengthZero; ++k) {
               if((k == lengthZero-1)
-                 && (startingIndices[0] + k*myGeo->coarseRate[0] + 1 > myGeo->gFineNodesPerDir[0])) {
+                 && (startingIndices[0] + k*myGeo->coarseRate[0] + 1 > myGeo->gFineNodesPerDir[0])){
                 ghostOffset[0] = (k-1)*myGeo->coarseRate[0] + myGeo->endRate[0];
               } else {
                 ghostOffset[0] = k*myGeo->coarseRate[0];
@@ -664,13 +967,13 @@ namespace MueLu {
   } // GetCoarsePoint
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MakeGeneralGeometricP(
-                                GeometricData myGeo,
-                                const RCP<Xpetra::MultiVector<double,LO,GO,Node> >& fineCoords,
-                                const LO nnzP, const LO dofsPerNode,
-                                RCP<const Map>& stridedDomainMapP,RCP<Matrix> & Amat,RCP<Matrix>& P,
-                                RCP<Xpetra::MultiVector<double,LO,GO,Node> >& coarseCoords,
-                                Array<GO> ghostsGIDs, int interpolationOrder) const {
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  MakeGeneralGeometricP(RCP<GeometricData> myGeo,
+                        const RCP<Xpetra::MultiVector<double,LO,GO,Node> >& fineCoords,
+                        const LO nnzP, const LO dofsPerNode,
+                        RCP<const Map>& stridedDomainMapP,RCP<Matrix> & Amat, RCP<Matrix>& P,
+                        RCP<Xpetra::MultiVector<double,LO,GO,Node> >& coarseCoords,
+                        Array<GO> ghostsGIDs, int interpolationOrder) const {
 
     /* On termination, return the number of local prolongator columns owned by
      * this processor.
@@ -694,7 +997,7 @@ namespace MueLu {
     Xpetra::global_size_t OTI  = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
     LO lNumGhostNodes   = ghostsGIDs.size();
-    GO numGloCols       = dofsPerNode*myGeo.gNumCoarseNodes;
+    GO numGloCols       = dofsPerNode*myGeo->gNumCoarseNodes;
 
     // Build the required column map for the prolongator operator.
     // This requies to find the GIDs of the coarse nodes on the coarse mesh,
@@ -707,62 +1010,62 @@ namespace MueLu {
     // Compute the global indices of the first node on the partition.
     { // Scope for dummy
       gStartIndices[2] = fineCoordsMap->getMinGlobalIndex()
-        / (myGeo.gNumFineNodes10);
+        / (myGeo->gNumFineNodes10);
       GO dummy         = fineCoordsMap->getMinGlobalIndex()
-        % (myGeo.gNumFineNodes10);
-      gStartIndices[1] = dummy / myGeo.gFineNodesPerDir[0];
-      gStartIndices[0] = dummy % myGeo.gFineNodesPerDir[0];
+        % (myGeo->gNumFineNodes10);
+      gStartIndices[1] = dummy / myGeo->gFineNodesPerDir[0];
+      gStartIndices[0] = dummy % myGeo->gFineNodesPerDir[0];
     }
 
-    Array<GO> gCoarseNodesGIDs(myGeo.lNumCoarseNodes);
+    Array<GO> gCoarseNodesGIDs(myGeo->lNumCoarseNodes);
     LO currentNode, offset2, offset1, offset0;
     // Find the GIDs of the coarse nodes on the partition.
-    for(LO ind2 = 0; ind2 < myGeo.lCoarseNodesPerDir[2]; ++ind2) {
-      if(myGeo.offsets[2] == 0) {
+    for(LO ind2 = 0; ind2 < myGeo->lCoarseNodesPerDir[2]; ++ind2) {
+      if(myGeo->offsets[2] == 0) {
         offset2 = gStartIndices[2];
       } else {
-        if(gStartIndices[2] + myGeo.endRate[2] - myGeo.offsets[2] == myGeo.gFineNodesPerDir[2] - 1){
-          offset2 = gStartIndices[2] + myGeo.endRate[2] - myGeo.offsets[2];
+        if(gStartIndices[2] + myGeo->endRate[2] - myGeo->offsets[2] == myGeo->gFineNodesPerDir[2] - 1){
+          offset2 = gStartIndices[2] + myGeo->endRate[2] - myGeo->offsets[2];
         } else {
-          offset2 = gStartIndices[2] + myGeo.coarseRate[2] - myGeo.offsets[2];
+          offset2 = gStartIndices[2] + myGeo->coarseRate[2] - myGeo->offsets[2];
         }
       }
-      if(offset2 + ind2*myGeo.coarseRate[2] > myGeo.gFineNodesPerDir[2] - 1) {
-        offset2 += (ind2 - 1)*myGeo.coarseRate[2] + myGeo.endRate[2];
+      if(offset2 + ind2*myGeo->coarseRate[2] > myGeo->gFineNodesPerDir[2] - 1) {
+        offset2 += (ind2 - 1)*myGeo->coarseRate[2] + myGeo->endRate[2];
       } else {
-        offset2 += ind2*myGeo.coarseRate[2];
+        offset2 += ind2*myGeo->coarseRate[2];
       }
-      offset2 = offset2*myGeo.gNumFineNodes10;
+      offset2 = offset2*myGeo->gNumFineNodes10;
 
-      for(LO ind1 = 0; ind1 < myGeo.lCoarseNodesPerDir[1]; ++ind1) {
-        if(myGeo.offsets[1] == 0) {
+      for(LO ind1 = 0; ind1 < myGeo->lCoarseNodesPerDir[1]; ++ind1) {
+        if(myGeo->offsets[1] == 0) {
           offset1 = gStartIndices[1];
         } else {
-          if(gStartIndices[1] + myGeo.endRate[1] - myGeo.offsets[1] == myGeo.gFineNodesPerDir[1]-1){
-            offset1 = gStartIndices[1] + myGeo.endRate[1] - myGeo.offsets[1];
+          if(gStartIndices[1] + myGeo->endRate[1] - myGeo->offsets[1] == myGeo->gFineNodesPerDir[1]-1){
+            offset1 = gStartIndices[1] + myGeo->endRate[1] - myGeo->offsets[1];
           } else {
-            offset1 = gStartIndices[1] + myGeo.coarseRate[1] - myGeo.offsets[1];
+            offset1 = gStartIndices[1] + myGeo->coarseRate[1] - myGeo->offsets[1];
           }
         }
-        if(offset1 + ind1*myGeo.coarseRate[1] > myGeo.gFineNodesPerDir[1] - 1) {
-          offset1 += (ind1 - 1)*myGeo.coarseRate[1] + myGeo.endRate[1];
+        if(offset1 + ind1*myGeo->coarseRate[1] > myGeo->gFineNodesPerDir[1] - 1) {
+          offset1 += (ind1 - 1)*myGeo->coarseRate[1] + myGeo->endRate[1];
         } else {
-          offset1 += ind1*myGeo.coarseRate[1];
+          offset1 += ind1*myGeo->coarseRate[1];
         }
-        offset1 = offset1*myGeo.gFineNodesPerDir[0];
-        for(LO ind0 = 0; ind0 < myGeo.lCoarseNodesPerDir[0]; ++ind0) {
-          offset0 = gStartIndices[0] - myGeo.offsets[0];
-          if(myGeo.offsets[0] == 0) {
-            offset0 += ind0*myGeo.coarseRate[0];
+        offset1 = offset1*myGeo->gFineNodesPerDir[0];
+        for(LO ind0 = 0; ind0 < myGeo->lCoarseNodesPerDir[0]; ++ind0) {
+          offset0 = gStartIndices[0] - myGeo->offsets[0];
+          if(myGeo->offsets[0] == 0) {
+            offset0 += ind0*myGeo->coarseRate[0];
           } else {
-            offset0 += (ind0 + 1)*myGeo.coarseRate[0];
+            offset0 += (ind0 + 1)*myGeo->coarseRate[0];
           }
-          if(offset0 > myGeo.gFineNodesPerDir[0] - 1) {
-            offset0 += myGeo.endRate[0] - myGeo.coarseRate[0];
+          if(offset0 > myGeo->gFineNodesPerDir[0] - 1) {
+            offset0 += myGeo->endRate[0] - myGeo->coarseRate[0];
           }
 
-          currentNode = ind2*myGeo.lCoarseNodesPerDir[1]*myGeo.lCoarseNodesPerDir[0]
-                      + ind1*myGeo.lCoarseNodesPerDir[0]
+          currentNode = ind2*myGeo->lCoarseNodesPerDir[1]*myGeo->lCoarseNodesPerDir[0]
+                      + ind1*myGeo->lCoarseNodesPerDir[0]
                       + ind0;
           gCoarseNodesGIDs[currentNode] = offset2 + offset1 + offset0;
         }
@@ -771,13 +1074,13 @@ namespace MueLu {
 
     // Actual loop over all the coarse/ghost nodes to find their index on the coarse mesh
     // and the corresponding dofs that will need to be added to colMapP.
-    Array<GO> colGIDs(dofsPerNode*(myGeo.lNumCoarseNodes+lNumGhostNodes));
-    Array<GO> coarseNodesGIDs(myGeo.lNumCoarseNodes);
-    GO fineNodesPerCoarseSlab    = myGeo.coarseRate[2]*myGeo.gNumFineNodes10;
-    GO fineNodesEndCoarseSlab    = myGeo.endRate[2]*myGeo.gNumFineNodes10;
-    GO fineNodesPerCoarsePlane   = myGeo.coarseRate[1]*myGeo.gFineNodesPerDir[0];
-    GO fineNodesEndCoarsePlane   = myGeo.endRate[1]*myGeo.gFineNodesPerDir[0];
-    GO coarseNodesPerCoarseLayer = myGeo.gCoarseNodesPerDir[1]*myGeo.gCoarseNodesPerDir[0];
+    Array<GO> colGIDs(dofsPerNode*(myGeo->lNumCoarseNodes+lNumGhostNodes));
+    Array<GO> coarseNodesGIDs(myGeo->lNumCoarseNodes);
+    GO fineNodesPerCoarseSlab    = myGeo->coarseRate[2]*myGeo->gNumFineNodes10;
+    GO fineNodesEndCoarseSlab    = myGeo->endRate[2]*myGeo->gNumFineNodes10;
+    GO fineNodesPerCoarsePlane   = myGeo->coarseRate[1]*myGeo->gFineNodesPerDir[0];
+    GO fineNodesEndCoarsePlane   = myGeo->endRate[1]*myGeo->gFineNodesPerDir[0];
+    GO coarseNodesPerCoarseLayer = myGeo->gCoarseNodesPerDir[1]*myGeo->gCoarseNodesPerDir[0];
     GO gCoarseNodeOnCoarseGridGID;
     LO gInd[3], lCol;
     Array<int> ghostsPIDs  (lNumGhostNodes);
@@ -793,9 +1096,9 @@ namespace MueLu {
       // Loop over the coarse nodes of the partition and add them to colGIDs
       // that will be used to construct the column and domain maps of P as well
       // as to construct the coarse coordinates map.
-      for(LO col = 0; col < myGeo.lNumCoarseNodes; ++col) {
-        if((myGeo.endRate[2] != myGeo.coarseRate[2])
-           && (gCoarseNodesGIDs[col] > (myGeo.gCoarseNodesPerDir[2] - 2)
+      for(LO col = 0; col < myGeo->lNumCoarseNodes; ++col) {
+        if((myGeo->endRate[2] != myGeo->coarseRate[2])
+           && (gCoarseNodesGIDs[col] > (myGeo->gCoarseNodesPerDir[2] - 2)
                *fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)){
           tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab + 1;
           tmpVars[0] = gCoarseNodesGIDs[col] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab
@@ -804,8 +1107,8 @@ namespace MueLu {
           tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab;
           tmpVars[0] = gCoarseNodesGIDs[col] % fineNodesPerCoarseSlab;
         }
-        if((myGeo.endRate[1] != myGeo.coarseRate[1])
-           && (tmpVars[0] > (myGeo.gCoarseNodesPerDir[1] - 2)
+        if((myGeo->endRate[1] != myGeo->coarseRate[1])
+           && (tmpVars[0] > (myGeo->gCoarseNodesPerDir[1] - 2)
                *fineNodesPerCoarsePlane + fineNodesEndCoarsePlane-1)){
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
           tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane
@@ -814,19 +1117,19 @@ namespace MueLu {
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
           tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
         }
-        if(tmpVars[1] == myGeo.gFineNodesPerDir[0] - 1) {
-          tmpInds[0] = myGeo.gCoarseNodesPerDir[0] - 1;
+        if(tmpVars[1] == myGeo->gFineNodesPerDir[0] - 1) {
+          tmpInds[0] = myGeo->gCoarseNodesPerDir[0] - 1;
         } else {
-          tmpInds[0] = tmpVars[1] / myGeo.coarseRate[0];
+          tmpInds[0] = tmpVars[1] / myGeo->coarseRate[0];
         }
-        gInd[2] = col / (myGeo.lCoarseNodesPerDir[1]*myGeo.lCoarseNodesPerDir[0]);
-        tmp     = col % (myGeo.lCoarseNodesPerDir[1]*myGeo.lCoarseNodesPerDir[0]);
-        gInd[1] = tmp / myGeo.lCoarseNodesPerDir[0];
-        gInd[0] = tmp % myGeo.lCoarseNodesPerDir[0];
-        lCol = gInd[2]*(myGeo.lCoarseNodesPerDir[1]*myGeo.lCoarseNodesPerDir[0])
-          + gInd[1]*myGeo.lCoarseNodesPerDir[0] + gInd[0];
+        gInd[2] = col / (myGeo->lCoarseNodesPerDir[1]*myGeo->lCoarseNodesPerDir[0]);
+        tmp     = col % (myGeo->lCoarseNodesPerDir[1]*myGeo->lCoarseNodesPerDir[0]);
+        gInd[1] = tmp / myGeo->lCoarseNodesPerDir[0];
+        gInd[0] = tmp % myGeo->lCoarseNodesPerDir[0];
+        lCol = gInd[2]*(myGeo->lCoarseNodesPerDir[1]*myGeo->lCoarseNodesPerDir[0])
+          + gInd[1]*myGeo->lCoarseNodesPerDir[0] + gInd[0];
         gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer
-          + tmpInds[1]*myGeo.gCoarseNodesPerDir[0] + tmpInds[0];
+          + tmpInds[1]*myGeo->gCoarseNodesPerDir[0] + tmpInds[0];
         coarseNodesGIDs[lCol] = gCoarseNodeOnCoarseGridGID;
         for(LO dof = 0; dof < dofsPerNode; ++dof) {
           colGIDs[dofsPerNode*lCol + dof] = dofsPerNode*gCoarseNodeOnCoarseGridGID + dof;
@@ -834,23 +1137,23 @@ namespace MueLu {
       }
       // Now loop over the ghost nodes of the partition to add them to colGIDs
       // since they will need to be included in the column map of P
-      for(LO col = myGeo.lNumCoarseNodes; col < myGeo.lNumCoarseNodes + lNumGhostNodes; ++col) {
-        if((myGeo.endRate[2] != myGeo.coarseRate[2])
-           && (ghostsGIDs[ghostsPermut[col - myGeo.lNumCoarseNodes]] >
-               (myGeo.gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab
+      for(LO col = myGeo->lNumCoarseNodes; col < myGeo->lNumCoarseNodes + lNumGhostNodes; ++col) {
+        if((myGeo->endRate[2] != myGeo->coarseRate[2])
+           && (ghostsGIDs[ghostsPermut[col - myGeo->lNumCoarseNodes]] >
+               (myGeo->gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab
                + fineNodesEndCoarseSlab - 1)) {
-          tmpInds[2] = ghostsGIDs[ghostsPermut[col - myGeo.lNumCoarseNodes]]
+          tmpInds[2] = ghostsGIDs[ghostsPermut[col - myGeo->lNumCoarseNodes]]
             / fineNodesPerCoarseSlab + 1;
-          tmpVars[0] = ghostsGIDs[ghostsPermut[col - myGeo.lNumCoarseNodes]]
+          tmpVars[0] = ghostsGIDs[ghostsPermut[col - myGeo->lNumCoarseNodes]]
             - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
         } else {
-          tmpInds[2] = ghostsGIDs[ghostsPermut[col - myGeo.lNumCoarseNodes]]
+          tmpInds[2] = ghostsGIDs[ghostsPermut[col - myGeo->lNumCoarseNodes]]
             / fineNodesPerCoarseSlab;
-          tmpVars[0] = ghostsGIDs[ghostsPermut[col - myGeo.lNumCoarseNodes]]
+          tmpVars[0] = ghostsGIDs[ghostsPermut[col - myGeo->lNumCoarseNodes]]
             % fineNodesPerCoarseSlab;
         }
-        if((myGeo.endRate[1] != myGeo.coarseRate[1])
-           && (tmpVars[0] > (myGeo.gCoarseNodesPerDir[1] - 2)
+        if((myGeo->endRate[1] != myGeo->coarseRate[1])
+           && (tmpVars[0] > (myGeo->gCoarseNodesPerDir[1] - 2)
                *fineNodesPerCoarsePlane + fineNodesEndCoarsePlane-1)){
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
           tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane
@@ -859,13 +1162,13 @@ namespace MueLu {
           tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
           tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
         }
-        if(tmpVars[1] == myGeo.gFineNodesPerDir[0] - 1) {
-          tmpInds[0] = myGeo.gCoarseNodesPerDir[0] - 1;
+        if(tmpVars[1] == myGeo->gFineNodesPerDir[0] - 1) {
+          tmpInds[0] = myGeo->gCoarseNodesPerDir[0] - 1;
         } else {
-          tmpInds[0] = tmpVars[1] / myGeo.coarseRate[0];
+          tmpInds[0] = tmpVars[1] / myGeo->coarseRate[0];
         }
         gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer
-          + tmpInds[1]*myGeo.gCoarseNodesPerDir[0] + tmpInds[0];
+          + tmpInds[1]*myGeo->gCoarseNodesPerDir[0] + tmpInds[0];
         for(LO dof = 0; dof < dofsPerNode; ++dof) {
           colGIDs[dofsPerNode*col + dof] = dofsPerNode*gCoarseNodeOnCoarseGridGID + dof;
         }
@@ -879,7 +1182,7 @@ namespace MueLu {
     RCP<const Map> domainMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
                                                                     numGloCols,
                                                                     colGIDs.view(0, dofsPerNode
-                                                                                 *myGeo.lNumCoarseNodes),
+                                                                           *myGeo->lNumCoarseNodes),
                                                                     rowMapP->getIndexBase(),
                                                                     rowMapP->getComm());
 
@@ -894,19 +1197,20 @@ namespace MueLu {
 
     // Build the map for the coarse level coordinates
     RCP<const Map> coarseCoordsMap = MapFactory::Build (fineCoordsMap->lib(),
-                                                        myGeo.gNumCoarseNodes,
-                                                        coarseNodesGIDs.view(0, myGeo.lNumCoarseNodes),
+                                                        myGeo->gNumCoarseNodes,
+                                                        coarseNodesGIDs.view(0,
+                                                                            myGeo->lNumCoarseNodes),
                                                         fineCoordsMap->getIndexBase(),
                                                         rowMapP->getComm());
 
     // Do the actual import using the fineCoordsMap
     RCP<const Map> ghostMap = Xpetra::MapFactory<LO,GO,NO>::Build(fineCoordsMap->lib(), OTI,
-                                                                  ghostsGIDs.view(0, lNumGhostNodes),
+                                                                  ghostsGIDs.view(0,lNumGhostNodes),
                                                                   fineCoordsMap->getIndexBase(),
                                                                   rowMapP->getComm());
     RCP<const Import> importer = ImportFactory::Build(fineCoordsMap, ghostMap);
     RCP<xdMV> ghostCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(ghostMap,
-                                                                               myGeo.numDimensions);
+                                                                              myGeo->numDimensions);
     ghostCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
 
     P = rcp(new CrsMatrixWrap(rowMapP, colMapP, 0, Xpetra::StaticProfile));
@@ -942,10 +1246,10 @@ namespace MueLu {
 
     // Build the MultiVector holding the coarse grid points coordinates.
     coarseCoords = Xpetra::MultiVectorFactory<double,LO,GO,Node>::Build(coarseCoordsMap,
-                                              Teuchos::as<size_t>(myGeo.numDimensions));
+                                              Teuchos::as<size_t>(myGeo->numDimensions));
     ArrayRCP<double> xCoarseNodes; ArrayRCP<double> yCoarseNodes; ArrayRCP<double> zCoarseNodes;
 
-    if(myGeo.numDimensions==1) {
+    if(myGeo->numDimensions==1) {
       lFineCoords[0] = fineCoords->getDataNonConst(0);
       lFineCoords[1] = zeros->getDataNonConst(0);
       lFineCoords[2] = zeros->getDataNonConst(0);
@@ -954,7 +1258,7 @@ namespace MueLu {
       lGhostCoords[2] = ghostZeros->getDataNonConst(0);
 
       xCoarseNodes = coarseCoords->getDataNonConst(0);
-    } else if(myGeo.numDimensions==2) {
+    } else if(myGeo->numDimensions==2) {
       lFineCoords[0] = fineCoords->getDataNonConst(0);
       lFineCoords[1] = fineCoords->getDataNonConst(1);
       lFineCoords[2] = zeros->getDataNonConst(0);
@@ -964,7 +1268,7 @@ namespace MueLu {
 
       xCoarseNodes= coarseCoords->getDataNonConst(0);
       yCoarseNodes= coarseCoords->getDataNonConst(1);
-    } else if(myGeo.numDimensions==3) {
+    } else if(myGeo->numDimensions==3) {
       lFineCoords[0] = fineCoords->getDataNonConst(0);
       lFineCoords[1] = fineCoords->getDataNonConst(1);
       lFineCoords[2] = fineCoords->getDataNonConst(2);
@@ -985,51 +1289,51 @@ namespace MueLu {
     // Get the rank of the local process to order entries by PIDs in the
     // prolongator matrix rows
     GO currentCoarseNode = 0;
-    for(LO i = 0; i < myGeo.lNumFineNodes; ++i) {
+    for(LO i = 0; i < myGeo->lNumFineNodes; ++i) {
 
       // Get point indices on fine grid
       {
         std::div_t tmp;
-        tmp=std::div(i,myGeo.lFineNodesPerDir[0]*myGeo.lFineNodesPerDir[1]);
+        tmp=std::div(i,myGeo->lFineNodesPerDir[0]*myGeo->lFineNodesPerDir[1]);
         indices[0][2] = tmp.quot;
-        tmp=std::div(tmp.rem,myGeo.lFineNodesPerDir[0]);
+        tmp=std::div(tmp.rem,myGeo->lFineNodesPerDir[0]);
         indices[0][1] = tmp.quot;
         indices[0][0] = tmp.rem;
 
         // Get ref point indices on coarse grid
-        tmp=std::div(indices[0][0] - myGeo.offsets[0],myGeo.coarseRate[0]);
+        tmp=std::div(indices[0][0] - myGeo->offsets[0],myGeo->coarseRate[0]);
         indices[1][0] = tmp.quot;
-        tmp=std::div(indices[0][1] - myGeo.offsets[1],myGeo.coarseRate[1]);
+        tmp=std::div(indices[0][1] - myGeo->offsets[1],myGeo->coarseRate[1]);
         indices[1][1] = tmp.quot;
-        tmp=std::div(indices[0][2] - myGeo.offsets[2],myGeo.coarseRate[2]);
+        tmp=std::div(indices[0][2] - myGeo->offsets[2],myGeo->coarseRate[2]);
         indices[1][2] = tmp.quot;
       }
 
       // location "flags" indicate if the current node is on a coarse
       // face, edge or node.
-      indices[2][0] = (indices[0][0] + myGeo.offsets[0]) % myGeo.coarseRate[0];
-      indices[2][1] = (indices[0][1] + myGeo.offsets[1]) % myGeo.coarseRate[1];
-      indices[2][2] = (indices[0][2] + myGeo.offsets[2]) % myGeo.coarseRate[2];
+      indices[2][0] = (indices[0][0] + myGeo->offsets[0]) % myGeo->coarseRate[0];
+      indices[2][1] = (indices[0][1] + myGeo->offsets[1]) % myGeo->coarseRate[1];
+      indices[2][2] = (indices[0][2] + myGeo->offsets[2]) % myGeo->coarseRate[2];
 
       // Get indices of ref point on fine grid
-      indices[3][0] = indices[1][0]*myGeo.coarseRate[0];
-      indices[3][1] = indices[1][1]*myGeo.coarseRate[1];
-      indices[3][2] = indices[1][2]*myGeo.coarseRate[2];
+      indices[3][0] = indices[1][0]*myGeo->coarseRate[0];
+      indices[3][1] = indices[1][1]*myGeo->coarseRate[1];
+      indices[3][2] = indices[1][2]*myGeo->coarseRate[2];
 
-      if( (indices[0][0] == myGeo.lFineNodesPerDir[0]-1) && !myGeo.ghostInterface[1] ) {
-        indices[1][0] = myGeo.lCoarseNodesPerDir[0]-1;
+      if( (indices[0][0] == myGeo->lFineNodesPerDir[0]-1) && !myGeo->ghostInterface[1] ) {
+        indices[1][0] = myGeo->lCoarseNodesPerDir[0]-1;
         indices[2][0] = 0;
-        indices[3][0] = myGeo.lFineNodesPerDir[0]-1;
+        indices[3][0] = myGeo->lFineNodesPerDir[0]-1;
       }
-      if( (indices[0][1] == myGeo.lFineNodesPerDir[1]-1) && !myGeo.ghostInterface[3] ) {
-        indices[1][1] = myGeo.lCoarseNodesPerDir[1]-1;
+      if( (indices[0][1] == myGeo->lFineNodesPerDir[1]-1) && !myGeo->ghostInterface[3] ) {
+        indices[1][1] = myGeo->lCoarseNodesPerDir[1]-1;
         indices[2][1] = 0;
-        indices[3][1] = myGeo.lFineNodesPerDir[1]-1;
+        indices[3][1] = myGeo->lFineNodesPerDir[1]-1;
       }
-      if( (indices[0][2] == myGeo.lFineNodesPerDir[2]-1) && !myGeo.ghostInterface[5] ) {
-        indices[1][2] = myGeo.lCoarseNodesPerDir[2]-1;
+      if( (indices[0][2] == myGeo->lFineNodesPerDir[2]-1) && !myGeo->ghostInterface[5] ) {
+        indices[1][2] = myGeo->lCoarseNodesPerDir[2]-1;
         indices[2][2] = 0;
-        indices[3][2] = myGeo.lFineNodesPerDir[2]-1;
+        indices[3][2] = myGeo->lFineNodesPerDir[2]-1;
       }
 
       Array<GO> currentNodeIndices(3);
@@ -1046,56 +1350,56 @@ namespace MueLu {
       //      --> if so fix firstCoarseNodeIndex to make sure there is
       //          a node to the east, north and top of firstCoarseNodeIndex
       LO rate[3];
-      if(currentNodeIndices[0] >= myGeo.gFineNodesPerDir[0] - myGeo.endRate[0] - 1) {
-        rate[0] = myGeo.endRate[0];
+      if(currentNodeIndices[0] >= myGeo->gFineNodesPerDir[0] - myGeo->endRate[0] - 1) {
+        rate[0] = myGeo->endRate[0];
       } else {
-        rate[0] = myGeo.coarseRate[0];
+        rate[0] = myGeo->coarseRate[0];
       }
-      if(currentNodeIndices[1] >= myGeo.gFineNodesPerDir[1] - myGeo.endRate[1] - 1) {
-        rate[1] = myGeo.endRate[1];
+      if(currentNodeIndices[1] >= myGeo->gFineNodesPerDir[1] - myGeo->endRate[1] - 1) {
+        rate[1] = myGeo->endRate[1];
       } else {
-        rate[1] = myGeo.coarseRate[1];
+        rate[1] = myGeo->coarseRate[1];
       }
-      if(currentNodeIndices[2] >= myGeo.gFineNodesPerDir[2] - myGeo.endRate[2] - 1) {
-        rate[2] = myGeo.endRate[2];
+      if(currentNodeIndices[2] >= myGeo->gFineNodesPerDir[2] - myGeo->endRate[2] - 1) {
+        rate[2] = myGeo->endRate[2];
       } else {
-        rate[2] = myGeo.coarseRate[2];
+        rate[2] = myGeo->coarseRate[2];
       }
-      if(myGeo.numDimensions < 3) { rate[2] = 0;}
-      if(myGeo.numDimensions < 2) { rate[1] = 0;}
+      if(myGeo->numDimensions < 3) { rate[2] = 0;}
+      if(myGeo->numDimensions < 2) { rate[1] = 0;}
 
       // We need to check whether we are on the edge of the mesh in which case we need to adjust
       // the coarse nodes
       firstCoarseNodeIndex = 0;
       Array<GO> firstCoarseNodeIndices(3); // These are fine grid indices
-      if((currentNodeIndices[2] == myGeo.gFineNodesPerDir[2] -1)
-         && (myGeo.endRate[2] == myGeo.coarseRate[2])) {
+      if((currentNodeIndices[2] == myGeo->gFineNodesPerDir[2] -1)
+         && (myGeo->endRate[2] == myGeo->coarseRate[2])) {
         // If we are on the last node and have a endRate == coarseRate we need to take the coarse
         // node below the current node
-        firstCoarseNodeIndices[2] = ((currentNodeIndices[2] / myGeo.coarseRate[2]) - 1)
-          * myGeo.coarseRate[2];
+        firstCoarseNodeIndices[2] = ((currentNodeIndices[2] / myGeo->coarseRate[2]) - 1)
+          * myGeo->coarseRate[2];
       } else {
-        firstCoarseNodeIndices[2] = (currentNodeIndices[2] / myGeo.coarseRate[2])
-          * myGeo.coarseRate[2];
+        firstCoarseNodeIndices[2] = (currentNodeIndices[2] / myGeo->coarseRate[2])
+          * myGeo->coarseRate[2];
       }
-      if((currentNodeIndices[1] == myGeo.gFineNodesPerDir[1] -1)
-         && (myGeo.endRate[1] == myGeo.coarseRate[1])) {
-        firstCoarseNodeIndices[1] = ((currentNodeIndices[1] / myGeo.coarseRate[1]) - 1)
-          * myGeo.coarseRate[1];
+      if((currentNodeIndices[1] == myGeo->gFineNodesPerDir[1] -1)
+         && (myGeo->endRate[1] == myGeo->coarseRate[1])) {
+        firstCoarseNodeIndices[1] = ((currentNodeIndices[1] / myGeo->coarseRate[1]) - 1)
+          * myGeo->coarseRate[1];
       } else {
-        firstCoarseNodeIndices[1] = (currentNodeIndices[1] / myGeo.coarseRate[1])
-          * myGeo.coarseRate[1];
+        firstCoarseNodeIndices[1] = (currentNodeIndices[1] / myGeo->coarseRate[1])
+          * myGeo->coarseRate[1];
       }
-      if((currentNodeIndices[0] == myGeo.gFineNodesPerDir[0] -1)
-         && (myGeo.endRate[0] == myGeo.coarseRate[0])) {
-        firstCoarseNodeIndices[0] = ((currentNodeIndices[0] / myGeo.coarseRate[0]) - 1)
-          * myGeo.coarseRate[0];
+      if((currentNodeIndices[0] == myGeo->gFineNodesPerDir[0] -1)
+         && (myGeo->endRate[0] == myGeo->coarseRate[0])) {
+        firstCoarseNodeIndices[0] = ((currentNodeIndices[0] / myGeo->coarseRate[0]) - 1)
+          * myGeo->coarseRate[0];
       } else {
-        firstCoarseNodeIndices[0] = (currentNodeIndices[0] / myGeo.coarseRate[0])
-          * myGeo.coarseRate[0];
+        firstCoarseNodeIndices[0] = (currentNodeIndices[0] / myGeo->coarseRate[0])
+          * myGeo->coarseRate[0];
       }
-      firstCoarseNodeIndex += firstCoarseNodeIndices[2]*myGeo.gNumFineNodes10
-        + firstCoarseNodeIndices[1]*myGeo.gFineNodesPerDir[0] + firstCoarseNodeIndices[0];
+      firstCoarseNodeIndex += firstCoarseNodeIndices[2]*myGeo->gNumFineNodes10
+        + firstCoarseNodeIndices[1]*myGeo->gFineNodesPerDir[0] + firstCoarseNodeIndices[0];
 
       GO firstCoarseNodeOnCoarseGridIndex;
       {
@@ -1103,64 +1407,64 @@ namespace MueLu {
         tmpInds[2] = firstCoarseNodeIndex / fineNodesPerCoarseSlab;
         tmpInds[3] = firstCoarseNodeIndex % fineNodesPerCoarseSlab;
         tmpInds[1] = tmpInds[3] / fineNodesPerCoarsePlane;
-        tmpInds[0] = (tmpInds[3] % fineNodesPerCoarsePlane) / myGeo.coarseRate[0];
+        tmpInds[0] = (tmpInds[3] % fineNodesPerCoarsePlane) / myGeo->coarseRate[0];
         firstCoarseNodeOnCoarseGridIndex = tmpInds[2]*coarseNodesPerCoarseLayer
-          + tmpInds[1]*myGeo.gCoarseNodesPerDir[0] + tmpInds[0];
+          + tmpInds[1]*myGeo->gCoarseNodesPerDir[0] + tmpInds[0];
       }
 
       LO coarseGhosts[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-      if( myGeo.ghostInterface[0] ) {
-        if( ((indices[0][0] < rate[0] - myGeo.offsets[0]) && myGeo.offsets[0] != 0)
-            || (((currentNodeIndices[0] == myGeo.gFineNodesPerDir[0] -1)
-                 && (indices[0][0] < rate[0] - myGeo.offsets[0] + 1)) && myGeo.offsets[0] != 0)
-            || ((currentNodeIndices[0] == myGeo.gFineNodesPerDir[0] -1)
-                && myGeo.lFineNodesPerDir[0] == 1) ) {
+      if( myGeo->ghostInterface[0] ) {
+        if( ((indices[0][0] < rate[0] - myGeo->offsets[0]) && myGeo->offsets[0] != 0)
+            || (((currentNodeIndices[0] == myGeo->gFineNodesPerDir[0] -1)
+                 && (indices[0][0] < rate[0] - myGeo->offsets[0] + 1)) && myGeo->offsets[0] != 0)
+            || ((currentNodeIndices[0] == myGeo->gFineNodesPerDir[0] -1)
+                && myGeo->lFineNodesPerDir[0] == 1) ) {
           coarseGhosts[0] = 1;
           coarseGhosts[2] = 1;
           coarseGhosts[4] = 1;
           coarseGhosts[6] = 1;
         }
       }
-      if(myGeo.ghostInterface[1]
-         && (indices[0][0] > myGeo.lFineNodesPerDir[0] - myGeo.offsets[3] - 2)) {
+      if(myGeo->ghostInterface[1]
+         && (indices[0][0] > myGeo->lFineNodesPerDir[0] - myGeo->offsets[3] - 2)) {
         coarseGhosts[1] = 1;
         coarseGhosts[3] = 1;
         coarseGhosts[5] = 1;
         coarseGhosts[7] = 1;
       }
-      if( myGeo.ghostInterface[2] ) {
-        if( ((indices[0][1] < rate[1] - myGeo.offsets[1]) && myGeo.offsets[1] != 0)
-            || (((currentNodeIndices[1] == myGeo.gFineNodesPerDir[1] -1)
-                 && (indices[0][1] < rate[1] - myGeo.offsets[1] + 1)) && myGeo.offsets[1] != 0)
-            || ((currentNodeIndices[1] == myGeo.gFineNodesPerDir[1] -1)
-                && myGeo.lFineNodesPerDir[1] == 1) ) {
+      if( myGeo->ghostInterface[2] ) {
+        if( ((indices[0][1] < rate[1] - myGeo->offsets[1]) && myGeo->offsets[1] != 0)
+            || (((currentNodeIndices[1] == myGeo->gFineNodesPerDir[1] -1)
+                 && (indices[0][1] < rate[1] - myGeo->offsets[1] + 1)) && myGeo->offsets[1] != 0)
+            || ((currentNodeIndices[1] == myGeo->gFineNodesPerDir[1] -1)
+                && myGeo->lFineNodesPerDir[1] == 1) ) {
           coarseGhosts[0] = 1;
           coarseGhosts[1] = 1;
           coarseGhosts[4] = 1;
           coarseGhosts[5] = 1;
         }
       }
-      if( myGeo.ghostInterface[3] && (indices[0][1] > myGeo.lFineNodesPerDir[1]
-                                - myGeo.offsets[4] - 2) ) {
+      if( myGeo->ghostInterface[3] && (indices[0][1] > myGeo->lFineNodesPerDir[1]
+                                - myGeo->offsets[4] - 2) ) {
         coarseGhosts[2] = 1;
         coarseGhosts[3] = 1;
         coarseGhosts[6] = 1;
         coarseGhosts[7] = 1;
       }
-      if( myGeo.ghostInterface[4] ) {
-        if( ((indices[0][2] < rate[2] - myGeo.offsets[2]) && myGeo.offsets[2] != 0)
-            || (((currentNodeIndices[2] == myGeo.gFineNodesPerDir[2] -1)
-                 && (indices[0][2] < rate[2] - myGeo.offsets[2] + 1)) && myGeo.offsets[2] != 0)
-            || ((currentNodeIndices[2] == myGeo.gFineNodesPerDir[2] -1)
-                && myGeo.lFineNodesPerDir[2] == 1) ) {
+      if( myGeo->ghostInterface[4] ) {
+        if( ((indices[0][2] < rate[2] - myGeo->offsets[2]) && myGeo->offsets[2] != 0)
+            || (((currentNodeIndices[2] == myGeo->gFineNodesPerDir[2] -1)
+                 && (indices[0][2] < rate[2] - myGeo->offsets[2] + 1)) && myGeo->offsets[2] != 0)
+            || ((currentNodeIndices[2] == myGeo->gFineNodesPerDir[2] -1)
+                && myGeo->lFineNodesPerDir[2] == 1) ) {
           coarseGhosts[0] = 1;
           coarseGhosts[1] = 1;
           coarseGhosts[2] = 1;
           coarseGhosts[3] = 1;
         }
       }
-      if( myGeo.ghostInterface[5]
-          && (indices[0][2] > myGeo.lFineNodesPerDir[2] - myGeo.offsets[5] - 2) ) {
+      if( myGeo->ghostInterface[5]
+          && (indices[0][2] > myGeo->lFineNodesPerDir[2] - myGeo->offsets[5] - 2) ) {
         coarseGhosts[4] = 1;
         coarseGhosts[5] = 1;
         coarseGhosts[6] = 1;
@@ -1168,26 +1472,29 @@ namespace MueLu {
       }
 
       GO firstGhostNodeIndices[3], firstGhostNodeIndex;
-      if(currentNodeIndices[0] == myGeo.gFineNodesPerDir[0] - 1) {
+      if(currentNodeIndices[0] == myGeo->gFineNodesPerDir[0] - 1) {
         firstGhostNodeIndices[0] = (currentNodeIndices[0]-rate[0]) - (currentNodeIndices[0]-rate[0])
-          % myGeo.coarseRate[0];
+          % myGeo->coarseRate[0];
       } else {
-        firstGhostNodeIndices[0] = currentNodeIndices[0] -currentNodeIndices[0]%myGeo.coarseRate[0];
+        firstGhostNodeIndices[0] = currentNodeIndices[0]
+          - currentNodeIndices[0] % myGeo->coarseRate[0];
       }
-      if(currentNodeIndices[1] == myGeo.gFineNodesPerDir[1] - 1) {
+      if(currentNodeIndices[1] == myGeo->gFineNodesPerDir[1] - 1) {
         firstGhostNodeIndices[1] = (currentNodeIndices[1]-rate[1]) - (currentNodeIndices[1]-rate[1])
-          % myGeo.coarseRate[1];
+          % myGeo->coarseRate[1];
       } else {
-        firstGhostNodeIndices[1] = currentNodeIndices[1] -currentNodeIndices[1]%myGeo.coarseRate[1];
+        firstGhostNodeIndices[1] = currentNodeIndices[1]
+          - currentNodeIndices[1] % myGeo->coarseRate[1];
       }
-      if(currentNodeIndices[2] == myGeo.gFineNodesPerDir[2] - 1) {
+      if(currentNodeIndices[2] == myGeo->gFineNodesPerDir[2] - 1) {
         firstGhostNodeIndices[2] = (currentNodeIndices[2]-rate[2]) - (currentNodeIndices[2]-rate[2])
-          % myGeo.coarseRate[2];
+          % myGeo->coarseRate[2];
       } else {
-        firstGhostNodeIndices[2] = currentNodeIndices[2] -currentNodeIndices[2]%myGeo.coarseRate[2];
+        firstGhostNodeIndices[2] = currentNodeIndices[2]
+          - currentNodeIndices[2] % myGeo->coarseRate[2];
       }
-      firstGhostNodeIndex = firstGhostNodeIndices[2]*myGeo.gNumFineNodes10
-        + firstGhostNodeIndices[1]*myGeo.gFineNodesPerDir[0] + firstGhostNodeIndices[0];
+      firstGhostNodeIndex = firstGhostNodeIndices[2]*myGeo->gNumFineNodes10
+        + firstGhostNodeIndices[1]*myGeo->gFineNodesPerDir[0] + firstGhostNodeIndices[0];
 
       Array<GO> gCoarseNodesOnCoarseGridIndices(8);
       GO ghostNodeIndex, ghostNodeOnCoarseGridIndex;
@@ -1209,11 +1516,11 @@ namespace MueLu {
             if(coarseGhosts[ind] == 1) {
               // Get the global ghost node index and load its coordinates
               ghostNodeIndex = firstGhostNodeIndex
-                + Teuchos::as<GO>(ind2*rate[2]*myGeo.gNumFineNodes10
-                                  + ind1*rate[1]*myGeo.gFineNodesPerDir[0] + ind0*rate[0]);
+                + Teuchos::as<GO>(ind2*rate[2]*myGeo->gNumFineNodes10
+                                  + ind1*rate[1]*myGeo->gFineNodesPerDir[0] + ind0*rate[0]);
               ghostNodeOnCoarseGridIndex = firstCoarseNodeOnCoarseGridIndex
-                + Teuchos::as<GO>(ind2*myGeo.gCoarseNodesPerDir[1]*myGeo.gCoarseNodesPerDir[0]
-                                  + ind1*myGeo.gCoarseNodesPerDir[0] + ind0);
+                + Teuchos::as<GO>(ind2*myGeo->gCoarseNodesPerDir[1]*myGeo->gCoarseNodesPerDir[0]
+                                  + ind1*myGeo->gCoarseNodesPerDir[0] + ind0);
               currentGhostLID  = ghostMap->getLocalElement(ghostNodeIndex);
               connecPIDs[ind]  = ghostsPIDs[currentGhostLID];
               connecLGIDs[ind] = ghostNodeIndex;
@@ -1224,11 +1531,11 @@ namespace MueLu {
             } else {
               // Get the local coarse node index and load its coordinates
               coarseNodeIndex = firstCoarseNodeIndex
-                + Teuchos::as<GO>(ind2*rate[2]*myGeo.gNumFineNodes10
-                                  + ind1*rate[1]*myGeo.gFineNodesPerDir[0] + ind0*rate[0]);
+                + Teuchos::as<GO>(ind2*rate[2]*myGeo->gNumFineNodes10
+                                  + ind1*rate[1]*myGeo->gFineNodesPerDir[0] + ind0*rate[0]);
               coarseNodeOnCoarseGridIndex = firstCoarseNodeOnCoarseGridIndex
-                + Teuchos::as<GO>(ind2*myGeo.gCoarseNodesPerDir[1]*myGeo.gCoarseNodesPerDir[0]
-                                  + ind1*myGeo.gCoarseNodesPerDir[0] + ind0);
+                + Teuchos::as<GO>(ind2*myGeo->gCoarseNodesPerDir[1]*myGeo->gCoarseNodesPerDir[0]
+                                  + ind1*myGeo->gCoarseNodesPerDir[0] + ind0);
               for(LO dim = 0; dim < 3; ++dim) {
                 connec[ind + 1][dim] =
                   lFineCoords[dim][fineCoordsMap->getLocalElement(coarseNodeIndex)];
@@ -1243,38 +1550,38 @@ namespace MueLu {
 
       // Compute the actual geometric interpolation stencil
       SC stencil[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-      ComputeStencil(myGeo.numDimensions, currentNodeIndices, firstCoarseNodeIndices, rate, connec,
+      ComputeStencil(myGeo->numDimensions, currentNodeIndices, firstCoarseNodeIndices, rate, connec,
                      interpolationOrder, stencil);
 
       // Finally check whether the fine node is on a coarse: node, edge or face
       // and select accordingly the non-zero values from the stencil and the
       // corresponding column indices
       Array<LO> nzIndStencil(8);
-      if( ((currentNodeIndices[0] % myGeo.coarseRate[0] == 0)
-           || currentNodeIndices[0] == myGeo.gFineNodesPerDir[0] - 1)
-          && ((currentNodeIndices[1] % myGeo.coarseRate[1] == 0)
-              || currentNodeIndices[1] == myGeo.gFineNodesPerDir[1] - 1)
-          && ((currentNodeIndices[2] % myGeo.coarseRate[2] == 0)
-              || currentNodeIndices[2] == myGeo.gFineNodesPerDir[2] - 1) ) {
-        if(myGeo.numDimensions==1) {
+      if( ((currentNodeIndices[0] % myGeo->coarseRate[0] == 0)
+           || currentNodeIndices[0] == myGeo->gFineNodesPerDir[0] - 1)
+          && ((currentNodeIndices[1] % myGeo->coarseRate[1] == 0)
+              || currentNodeIndices[1] == myGeo->gFineNodesPerDir[1] - 1)
+          && ((currentNodeIndices[2] % myGeo->coarseRate[2] == 0)
+              || currentNodeIndices[2] == myGeo->gFineNodesPerDir[2] - 1) ) {
+        if(myGeo->numDimensions==1) {
           xCoarseNodes[currentCoarseNode] = lFineCoords[0][i];
-        } else if(myGeo.numDimensions==2) {
+        } else if(myGeo->numDimensions==2) {
           xCoarseNodes[currentCoarseNode] = lFineCoords[0][i];
           yCoarseNodes[currentCoarseNode] = lFineCoords[1][i];
-        } else if(myGeo.numDimensions==3) {
+        } else if(myGeo->numDimensions==3) {
           xCoarseNodes[currentCoarseNode] = lFineCoords[0][i];
           yCoarseNodes[currentCoarseNode] = lFineCoords[1][i];
           zCoarseNodes[currentCoarseNode] = lFineCoords[2][i];
         }
         ++currentCoarseNode;
 
-        if(currentNodeIndices[0] == myGeo.gFineNodesPerDir[0] - 1) {
+        if(currentNodeIndices[0] == myGeo->gFineNodesPerDir[0] - 1) {
           nzIndStencil[0] += 1;
         }
-        if((currentNodeIndices[1] == myGeo.gFineNodesPerDir[1] - 1) && (myGeo.numDimensions > 1)) {
+        if((currentNodeIndices[1] == myGeo->gFineNodesPerDir[1] - 1) && (myGeo->numDimensions > 1)){
           nzIndStencil[0] += 2;
         }
-        if((currentNodeIndices[2] == myGeo.gFineNodesPerDir[2] - 1) && (myGeo.numDimensions > 2)) {
+        if((currentNodeIndices[2] == myGeo->gFineNodesPerDir[2] - 1) && (myGeo->numDimensions > 2)){
           nzIndStencil[0] += 4;
         }
         nStencil = 1;
@@ -1542,7 +1849,7 @@ namespace MueLu {
           }
         m = m/2;
       }
-  }
+  } // End sh_sort_permute
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sh_sort2(
@@ -1570,7 +1877,75 @@ namespace MueLu {
           }
         m = m/2;
       }
-  }
+  } // End sh_sort2
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetGIDLocalLexicographic(const GO i, const GO j, const GO k,
+                           const Array<LO> coarseNodeFineIndices, const RCP<GeometricData> myGeo,
+                           const LO myRankIndex, const LO pi, const LO pj, const LO pk,
+                           const typename std::vector<std::vector<GO> >::iterator blockStart,
+                           const typename std::vector<std::vector<GO> >::iterator blockEnd,
+                           GO& myGID, LO& myPID, LO& myLID) const {
+
+    LO ni = -1, nj = -1, li = -1, lj = -1, lk = -1;
+    LO myRankGuess = myRankIndex;
+    // We try to make a logical guess as to which PID owns the current coarse node
+    if(i == 0 && myGeo->ghostInterface[0]) {
+      --myRankGuess;
+    } else if((i == myGeo->ghostedCoarseNodesPerDir[0] - 1) && myGeo->ghostInterface[1]) {
+      ++myRankGuess;
+    }
+    if(j == 0 && myGeo->ghostInterface[2]) {
+      myRankGuess -= pi;
+    } else if((j == myGeo->ghostedCoarseNodesPerDir[1] - 1) && myGeo->ghostInterface[3]) {
+      myRankGuess += pi;
+    }
+    if(k == 0 && myGeo->ghostInterface[4]) {
+      myRankGuess -= pj*pi;
+    } else if((k == myGeo->ghostedCoarseNodesPerDir[2] - 1) && myGeo->ghostInterface[5]) {
+      myRankGuess += pj*pi;
+    }
+    if(coarseNodeFineIndices[0] >= myGeo->meshData[myRankGuess][3]
+       && coarseNodeFineIndices[0] <= myGeo->meshData[myRankGuess][4]
+       && coarseNodeFineIndices[1] >= myGeo->meshData[myRankGuess][5]
+       && coarseNodeFineIndices[1] <= myGeo->meshData[myRankGuess][6]
+       && coarseNodeFineIndices[2] >= myGeo->meshData[myRankGuess][7]
+       && coarseNodeFineIndices[2] <= myGeo->meshData[myRankGuess][8]) {
+      myPID = myGeo->meshData[myRankGuess][0];
+      ni = myGeo->meshData[myRankGuess][4] - myGeo->meshData[myRankGuess][3] + 1;
+      nj = myGeo->meshData[myRankGuess][6] - myGeo->meshData[myRankGuess][5] + 1;
+      li = coarseNodeFineIndices[0] - myGeo->meshData[myRankGuess][3];
+      lj = coarseNodeFineIndices[1] - myGeo->meshData[myRankGuess][5];
+      lk = coarseNodeFineIndices[2] - myGeo->meshData[myRankGuess][7];
+      myLID = lk*nj*ni + lj*ni + li;
+      myGID = myGeo->meshData[myRankGuess][9] + myLID;
+    } else { // The guess failed, let us take the heavy artilery: std::find_if()
+      // It could be interesting to monitor how many time this branch of the code gets
+      // used as it is far more expensive than the above one...
+      auto nodeRank = std::find_if(blockStart, blockEnd,
+                                   [coarseNodeFineIndices](const std::vector<GO>& vec){
+                                     if(coarseNodeFineIndices[0] >= vec[3]
+                                        && coarseNodeFineIndices[0] <= vec[4]
+                                        && coarseNodeFineIndices[1] >= vec[5]
+                                        && coarseNodeFineIndices[1] <= vec[6]
+                                        && coarseNodeFineIndices[2] >= vec[7]
+                                        && coarseNodeFineIndices[2] <= vec[8]) {
+                                       return true;
+                                     } else {
+                                       return false;
+                                     }
+                                   });
+      myPID = (*nodeRank)[0];
+      ni = (*nodeRank)[4] - (*nodeRank)[3] + 1;
+      nj = (*nodeRank)[6] - (*nodeRank)[5] + 1;
+      li = coarseNodeFineIndices[0] - (*nodeRank)[3];
+      lj = coarseNodeFineIndices[1] - (*nodeRank)[5];
+      lk = coarseNodeFineIndices[2] - (*nodeRank)[7];
+      myLID = lk*nj*ni + lj*ni + li;
+      myGID = (*nodeRank)[9] + myLID;
+    }
+  } // End GetGIDLocalLexicographic
 
 } //namespace MueLu
 

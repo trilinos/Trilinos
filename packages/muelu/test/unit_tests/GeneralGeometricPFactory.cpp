@@ -589,6 +589,55 @@ namespace MueLuTests {
 
   } // PoissonOnCubeConstant
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, LocalLexicographic, Scalar,
+                                    LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    // used Xpetra lib (for maps and smoothers)
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+    // generate problem
+    LocalOrdinal maxLevels = 3;
+    // LocalOrdinal its=10;
+    GO nx = 9;
+    GO ny = 7;
+    GO nz = 4;
+    GO numPoints = nx*ny*nz;
+    Array<GO> gNodesPerDim(3);
+    gNodesPerDim[0] = nx;
+    gNodesPerDim[1] = ny;
+    gNodesPerDim[2] = nz;
+    Array<LO> lNodesPerDim(3);
+    if(comm->getSize() == 1) {
+      lNodesPerDim[0] = nx;
+      lNodesPerDim[1] = ny;
+      lNodesPerDim[2] = nz;
+    } else if(comm->getSize() == 4) {
+      if( (comm->getRank() == 0) || (comm->getRank() == 2)) {
+        lNodesPerDim[0] = 5;
+      } else {
+        lNodesPerDim[0] = 4;
+      }
+      if(comm->getRank() < 2) {
+        lNodesPerDim[1] = 4;
+      } else {
+        lNodesPerDim[1] = 3;
+      }
+      lNodesPerDim[2] = nz;
+    }
+
+  } // LocalLexicographic
+
+
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(GeneralGeometricPFactory,Constructor,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(GeneralGeometricPFactory,LinearInterpolation,Scalar,LO,GO,Node) \
