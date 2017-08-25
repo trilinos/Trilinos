@@ -1147,16 +1147,18 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           for (size_t l = 0; l < B.Rows(); ++l) { // loop for calculating entry C_{ij}
             RCP<Matrix> crmat1 = A.getMatrix(i,l);
             RCP<Matrix> crmat2 = B.getMatrix(l,j);
+            RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
+            RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
 
             if (crmat1.is_null() || crmat2.is_null())
               continue;
 
 	    
-	    // Forcibly compute the global constants if we don't have them
-	    if(!crmat1.is_null()) {
+	    // Forcibly compute the global constants if we don't have them (only works for real CrsMatrices, not nested blocks)
+	    if(!crmat1.is_null() && !crop1.is_null()) {
 	      Teuchos::rcp_const_cast<CrsGraph>(crmat1->getCrsGraph())->computeGlobalConstants();
 	    }
-	    if(!crmat2.is_null()) {
+	    if(!crmat2.is_null() && !crop2.is_null()) {
 	      Teuchos::rcp_const_cast<CrsGraph>(crmat2->getCrsGraph())->computeGlobalConstants();
 	    }
 
@@ -1164,8 +1166,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
             if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
               continue;
 
-            RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
-            RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
             TEUCHOS_TEST_FOR_EXCEPTION((crop1==Teuchos::null) != (crop2==Teuchos::null), Xpetra::Exceptions::RuntimeError, "A and B must be either both (compatible) BlockedCrsMatrix objects or both CrsMatrixWrap objects.");
 
             // temporary matrix containing result of local block multiplication
