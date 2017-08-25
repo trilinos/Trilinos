@@ -171,7 +171,10 @@ public:
 
              ---
   */
-  virtual Teuchos::RCP<Vector> basis( const int i ) const {return Teuchos::null;}
+  virtual Teuchos::RCP<Vector> basis( const int i ) const {
+    (void) i;
+    return Teuchos::null;
+  }
 
 
   /** \brief Return dimension of the vector space.
@@ -217,16 +220,20 @@ public:
   }
 
   virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+    (void) f;
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-      "The method applyUnary wass called, but not implemented" << std::endl); 
+      "The method applyUnary was called, but not implemented" << std::endl);
   }
 
   virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
+    (void) f;
+    (void) x;
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-      "The method applyBinary wass called, but not implemented" << std::endl); 
+      "The method applyBinary was called, but not implemented" << std::endl);
   }
 
   virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
+    (void) r;
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method reduce was called, but not implemented" << std::endl); 
   }
