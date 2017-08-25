@@ -221,10 +221,6 @@ namespace MueLuTests {
     levelOne->SetLevelID(-1);
     RCP<Level> levelTwo = rcp(new Level()); levelTwo->SetPreviousLevel(levelOne);
     levelTwo->SetLevelID(0);
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    levelOne->SetComm(comm);
-    levelTwo->SetComm(comm);
-#endif
     levelTwo->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
     // define repartition heuristics
@@ -471,10 +467,6 @@ namespace MueLuTests {
     levelOne->SetLevelID(-1);
     RCP<Level> levelTwo = rcp(new Level()); levelTwo->SetPreviousLevel(levelOne);
     levelTwo->SetLevelID(0);
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    levelOne->SetComm(comm);
-    levelTwo->SetComm(comm);
-#endif
     levelTwo->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
     // define repartition heuristics

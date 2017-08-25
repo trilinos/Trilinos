@@ -154,10 +154,6 @@ namespace MueLuTests {
     // build hierarchy
     RCP<Level> levelOne = rcp(new Level());
     levelOne->SetLevelID(0);
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    levelOne->SetComm(comm);
-#endif
-
 
     FineLevelInputDataFactory inputData;
 
@@ -230,9 +226,6 @@ namespace MueLuTests {
     // build hierarchy
     RCP<Level> levelOne = rcp(new Level());
     levelOne->SetLevelID(0);
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    levelOne->SetComm(comm);
-#endif
 
     FineLevelInputDataFactory inputData;
 
