@@ -251,7 +251,7 @@ namespace MueLu {
     useKokkos_ = useKokkos;
 
     // Check for timer synchronization
-    MUELU_SET_VAR_2LIST(constParamList, constParamList, "sync factory timers", bool, syncTimers);
+    MUELU_SET_VAR_2LIST(constParamList, constParamList, "synchronize factory timers", bool, syncTimers);
     if (syncTimers)
         Factory::EnableTimerSync();
 

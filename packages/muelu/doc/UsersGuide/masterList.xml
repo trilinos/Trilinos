@@ -602,11 +602,11 @@
     </parameter>
 
     <parameter>
-      <name>sync factory timers</name>
+      <name>synchronize factory timers</name>
       <type>bool</type>
       <default>false</default>
       <description>Add barriers before and after Factory Build() calls.</description>
-      <comment-ML>nost supported by ML</comment-ML>
+      <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>
 

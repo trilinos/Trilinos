@@ -204,7 +204,7 @@ namespace MueLu {
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"use kokkos refactor\" type=\"bool\" value=\"false\"/>"
-  "<Parameter name=\"sync factory timers\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"synchronize factory timers\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
   "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
@@ -471,7 +471,7 @@ namespace MueLu {
       
          ("use kokkos refactor","use kokkos refactor")
       
-         ("sync factory timers","sync factory timers")
+         ("synchronize factory timers","synchronize factory timers")
 
          ("energy minimization: enable","multigrid algorithm")
       

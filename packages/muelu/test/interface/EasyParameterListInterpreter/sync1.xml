@@ -1,3 +1,3 @@
 <ParameterList name="MueLu">
-  <Parameter name="sync factory timers" type="bool" value="true"/>
+  <Parameter name="synchronize factory timers" type="bool" value="true"/>
 </ParameterList>
