@@ -1150,6 +1150,17 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             if (crmat1.is_null() || crmat2.is_null())
               continue;
+
+	    
+	    // Forcibly compute the global constants if we don't have them
+	    if(!crmat1.is_null()) {
+	      Teuchos::rcp_const_cast<CrsGraph>(crmat1->getCrsGraph())->computeGlobalConstants();
+	    }
+	    if(!crmat2.is_null()) {
+	      Teuchos::rcp_const_cast<CrsGraph>(crmat2->getCrsGraph())->computeGlobalConstants();
+	    }
+
+
             if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
               continue;
 
