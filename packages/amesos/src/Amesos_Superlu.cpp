@@ -55,6 +55,7 @@ public:
 #endif
   SLU::superlu_options_t SLU_options;
   SLU::mem_usage_t mem_usage;
+  SLU::GlobalLU_t lu;	     // Use for gssvx and gsisx in SuperLU 5.0
   SLU::fact_t refactor_option ;         //  SamePattern or SamePattern_SameRowPerm
 
   SLUData() {
@@ -480,8 +481,11 @@ int Amesos_Superlu::NumericFactorization()
             &perm_c_[0], &perm_r_[0], &etree_[0], &equed_, &R_[0],
             &C_[0], &(data_->L), &(data_->U), NULL, 0,
             &(data_->B), &(data_->X), &rpg, &rcond, &ferr_[0],
-            &berr_[0], &(data_->mem_usage), &SLU_stat,
-            &Ierr[0] );
+            &berr_[0],
+#ifdef HAVE_SUPERLU_GLOBALLU_T_ARG
+            &(data_->lu),
+#endif
+            &(data_->mem_usage), &SLU_stat, &Ierr[0] );
     SLU::StatFree( &SLU_stat ) ;
   }
 
@@ -611,8 +615,11 @@ int Amesos_Superlu::Solve()
             &perm_c_[0], &perm_r_[0], &etree_[0], &equed_, &R_[0],
             &C_[0], &(data_->L), &(data_->U), NULL, 0,
             &(data_->B), &(data_->X), &rpg, &rcond, &ferr_[0],
-            &berr_[0], &(data_->mem_usage), &SLU_stat,
-            &Ierr);
+            &berr_[0],
+#ifdef HAVE_SUPERLU_GLOBALLU_T_ARG
+            &(data_->lu),
+#endif
+            &(data_->mem_usage), &SLU_stat, &Ierr);
     //    assert( equed_ == 'N' ) ;
     StatFree( &SLU_stat ) ;
   }
