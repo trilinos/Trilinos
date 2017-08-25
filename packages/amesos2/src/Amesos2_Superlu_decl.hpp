@@ -101,6 +101,10 @@ public:
 
   typedef FunctionMap<Amesos2::Superlu,slu_type>               function_map;
 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+  typedef typename function_map::GlobalLU_type                   GlobalLU_t;
+#endif
+
   /// \name Constructor/Destructor methods
   //@{
 
@@ -236,6 +240,9 @@ private:
 
     SLU::superlu_options_t options;
     SLU::mem_usage_t mem_usage;
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+    GlobalLU_t lu;      // Use for gssvx and gsisx in SuperLU 5.0
+#endif
     SLU::SuperLUStat_t stat;
 
     Teuchos::Array<magnitude_type> berr; ///< backward error bounds
