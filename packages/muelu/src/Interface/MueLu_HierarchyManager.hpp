@@ -332,8 +332,7 @@ namespace MueLu {
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
-
-          if (L->IsAvailable(name,&*levelManagers_[i]->GetFactory(name))) {
+          if (data[i] < levelManagers_.size() && L->IsAvailable(name,&*levelManagers_[i]->GetFactory(name))) {
 	    // Try generating factory
             RCP<T> M = L->template Get< RCP<T> >(name,&*levelManagers_[i]->GetFactory(name));
             if (!M.is_null()) {
