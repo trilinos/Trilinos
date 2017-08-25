@@ -482,7 +482,7 @@ int Amesos_Superlu::NumericFactorization()
             &C_[0], &(data_->L), &(data_->U), NULL, 0,
             &(data_->B), &(data_->X), &rpg, &rcond, &ferr_[0],
             &berr_[0],
-#ifdef HAVE_SUPERLU_GLOBALLU_T_ARG
+#ifdef HAVE_AMESOS_SUPERLU5_API
             &(data_->lu),
 #endif
             &(data_->mem_usage), &SLU_stat, &Ierr[0] );
@@ -616,7 +616,7 @@ int Amesos_Superlu::Solve()
             &C_[0], &(data_->L), &(data_->U), NULL, 0,
             &(data_->B), &(data_->X), &rpg, &rcond, &ferr_[0],
             &berr_[0],
-#ifdef HAVE_SUPERLU_GLOBALLU_T_ARG
+#ifdef HAVE_AMESOS_SUPERLU5_API
             &(data_->lu),
 #endif
             &(data_->mem_usage), &SLU_stat, &Ierr);
