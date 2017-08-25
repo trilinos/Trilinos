@@ -95,4 +95,4 @@
 #cmakedefine HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
 
 /* Define to 1 if SuperLU's *gssvx and *gsisx routines need a GlobalLU_t argument. */
-#cmakedefine HAVE_SUPERLU_GLOBALLU_T_ARG
+#cmakedefine HAVE_AMESOS_SUPERLU5_API

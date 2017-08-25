@@ -54,7 +54,7 @@
 #cmakedefine HAVE_IFPACK_DYNAMIC_FACTORY
 
 /* Define to 1 if SuperLU's dgsitrf routine needs a GlobalLU_t argument. */
-#cmakedefine HAVE_SUPERLU_GLOBALLU_T_ARG
+#cmakedefine HAVE_IFPACK_SUPERLU5_API
 
 /* Add macros for declaring functions deprecated */
 @IFPACK_DEPRECATED_DECLARATIONS@
