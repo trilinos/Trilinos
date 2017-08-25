@@ -62,17 +62,6 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
 ENDIF ()
 
-# Enable timer synchronization via barriers
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION
-  HAVE_${PACKAGE_NAME_UC}_TIMER_SYNCHRONIZATION
-  "Enable timer synchronization in MueLu via barriers."
-  NO)
-
-IF (${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION)
-  MESSAGE(STATUS "Enabling timer synchronization")
-ENDIF ()
-
 # Enable experimental code
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental

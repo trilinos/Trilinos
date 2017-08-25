@@ -247,8 +247,13 @@ namespace MueLu {
     }
 
     // Check for Kokkos
-    MUELU_SET_VAR_2LIST(constParamList,constParamList, "use kokkos refactor", bool, useKokkos);
+    MUELU_SET_VAR_2LIST(constParamList, constParamList, "use kokkos refactor", bool, useKokkos);
     useKokkos_ = useKokkos;
+
+    // Check for timer synchronization
+    MUELU_SET_VAR_2LIST(constParamList, constParamList, "synchronize factory timers", bool, syncTimers);
+    if (syncTimers)
+        Factory::EnableTimerSync();
 
     // Translate cycle type parameter
     if (paramList.isParameter("cycle type")) {

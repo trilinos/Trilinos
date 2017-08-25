@@ -601,6 +601,15 @@
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>synchronize factory timers</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Add barriers before and after Factory Build() calls.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
   </misc>
 
   <multigrid>
