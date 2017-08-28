@@ -5,19 +5,16 @@
 #tests being run to test a pull request. The current implementation is neither
 #maintainable or precise. It is a proof-of-concept at this point.
 
-#The file currently doesn't account for changes to Trilinos/ - level file or
-#files in cmake, but not in cmake/tribits. This gap needs to be fixed.
-
 #file with list of changed files - generated currently with 
-#git diff origin.. --numstat > ../gitchanges.txt
+#git diff origin/$TRILINOS_TARGET_BRANCH --numstat > ../gitchanges.txt
 #assumed to be in the directory where this script is executed from
 
 declare PackageEnables=""
 
-#This needs to be improved. There are too many cases where you actually
+#This could be improved. There are too many cases where you actually
 #don't need to build anything if something changes in the cmake directory
 
-if grep -q cmake/tribits/ gitchanges.txt; then
+if grep cmake gitchanges.txt |grep -qv packages; then
       PackageEnables+="-DTrilinos_ENABLE_ALL_PACKAGES=ON "
 else #If we aren't building everything, figure out which packages to bulid
 
