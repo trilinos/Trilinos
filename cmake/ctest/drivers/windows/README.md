@@ -6,11 +6,17 @@ and install the software wherever you want - just be sure to copy and update the
 with the correct locations.
 
 **[CMake][1]** - required to setup the build configuration. (Tested using version 3.8.1)
+
 **[Ninja][2]** - required to parallelize the build on Windows. (Tested using version 1.7.2)
+
 **[Visual Studio 2015][3]** - required to build packages.
+
 **[Microsoft MPI][4]** - required to create MPI builds of packages. (Tested using version 8.1.12438.1084)
+
 **Perl** - required by some packages for testing. (Tested using [Strawberry Perl][5] version 5.24.1.1)
+
 **[Git][6]** - required for the scripts to update source code.
+
 **CLAPACK** - required TPL dependency for some packages (Tested using version 3.2.1). Note that if a
 pre-built version is not available, you must [build it from source code][7].
 
@@ -106,12 +112,15 @@ Windows batch script that sets important environment variables before running
   the configure step will fail. If possible, try to keep Perl out of the PATH when using
   these scripts, or else modify the PATH before running the scripts to remove Perl.
 
-- As noted in Trilinos Pull Request #1197, the /bigobj compiler flag is necessary for
+- As noted in Trilinos Pull Request [#1197][i1], the /bigobj compiler flag is necessary for
   debug builds, and is included in the build scripts.
 
-- At the time of writing, the Zoltan tests fail on Windows as noted in Trilinos Issue #1440.
+- At the time of writing, the Zoltan tests fail on Windows as noted in Trilinos Issue [#1440][i2].
 
 - The packages are currently built as static libraries. If shared libraries are desired, an
   effort would need to be made to resolve certain build issues. Also, care would need to be
   taken to ensure PATHs are setup correctly for the libraries to find each other during the
   build and testing.
+
+[i1]: https://github.com/trilinos/Trilinos/pull/1197
+[i2]: https://github.com/trilinos/Trilinos/issues/1440
