@@ -44,101 +44,86 @@
 
 #pragma once
 
-#include <cmath>
+#include "XROL_VectorTraits.hpp"
+#include <algorithm>
+#include <limits>
+#include <tuple>
 
 namespace XROL {
-namespace Elementwise {
 
-/** \brief Implement stateless functions using Lambda expressions with 
-           lower case names. Implement functions with persistent values
-           using a Make::function_name factory which takes the values as
-           parameters */
-
-auto product = [](auto... values) { 
-  using ReturnType = std::common_type_t<decltype(values)...>;
-  ReturnType ret{1}; 
-  ReturnType _[] = { (ret += values)... };
-  (void)_; 
-  return ret;
-};
-
-auto absval = [](auto x) {
-  return std::abs(x);
-};
-
-auto sum = [](auto... values) { 
-  using ReturnType = std::common_type_t<decltype(values)...>;
-  ReturnType ret{0}; 
-  ReturnType _[] = { (ret += values)... };
-  (void)_; 
-  return ret;
-};
-
-auto set = [](auto x) {
-  return x;
-};
-
-auto zero = [](auto x) {
-  return static_cast<decltype(x)>(0);
-};
-
-
-/** \brief Generic function factory 
-
-     Usage:
-
-     auto localfunction = Make::function(parameters);
-
-*/
-
-struct Make {
-
-  // \f$ f(x,y) = ax+y \f$
-  template<class T> 
-  static auto axpy( const T& a ) {
-    return [a]( auto x, auto y ) { return a*x+y; };
-  }
-
-  // \f$ f(x) = a \f$
-  template<class T> 
-  static T fill( const T& a ) {
-    return [a]( void ) { return a; };
-  }
-
-  // \f$ f(x) = ax \f$
-  template<class T> 
-  static auto scale( const T& a ) {
-    return [a]( auto x ) { return a*x; };
-  }
-
-  // \f$ f(x) = x^a \f$
-  template<class T>
-  static auto pow( const T& a ) {
-    return [a]( auto x ) { return std::pow(x,a);
-  }
-
-  // Create a Reduce function
-  auto Reducer = []( auto f, auto initialValue ) {
-  return [f,initialValue](auto... values) {
-    UniformTypeCheck(values...);
-    using ArgType = std::common_type_t<decltype(values)...>;
-    using InitialType = decltype(initialValue);
-    using ReturnType = std::common_type_t<ArgType,InitialType>;
-    ReturnType ret{initialValue};
-    ReturnType _[] = { ( ret = f(ret,static_cast<ReturnType>(values)) )... };
-    (void)_;
-    return ret;
+namespace FunctionDetails {
+/**  \brief Converts tuple into variadic arguments for generic function calling
+   */
+  using std::size_t;
+  template <class F,class Tuple, bool Done, size_t Total, size_t... N>
+  struct call_impl {
+    static auto call(F f, Tuple && t) {
+        constexpr auto narg = sizeof...(N);
+        return call_impl<F, Tuple, Total == 1+narg, Total, N..., narg>::call(f, std::forward<Tuple>(t));
+    }
+  };
+  // Specialize terminating case
+  template <class F, class Tuple, size_t Total, size_t... N>
+  struct call_impl<F, Tuple, true, Total, N...> {
+    static auto call(const F& f, Tuple && t) {
+        return f(std::get<N>(std::forward<Tuple>(t))...);
+    }
   };
 
+
+}
+
+
+template<class V> 
+struct Elementwise { 
+
+  using ElementType   = typename ElementTraits<V>::ElementType;
+  using MagnitudeType = typename ElementTraits<V>::MagnitudeType;
+
+  template<class ...Es>
+  static ElementType product( Es... es ) {
+    UniformTypeCheck(es...);
+    ElementType ret{1.0};
+    ElementType _[] = { (ret *= es)... };
+    (void)_;
+    return ret;
+  }
+ 
+  template<class ...Es>
+  static ElementType sum( Es... es ) {
+    UniformTypeCheck(es...);
+    ElementType ret{0.0};
+    ElementType _[] = { (ret *= es)... };
+    (void)_;
+    return ret;
+  }
+ 
+  template<class ...Es>
+  static ElementType min( Es... es ) {
+    UniformTypeCheck(es...);
+    ElementType ret{std::numeric_limits<ElementType>::max()};
+    ElementType _[] = { (ret = std::min(ret,es))... };
+    (void)_;
+    return ret;
+  }
+ 
+  template<class ...Es>
+  static ElementType max( Es... es ) {
+    UniformTypeCheck(es...);
+    ElementType ret{std::numeric_limits<ElementType>::lowest()};
+    ElementType _[] = { (ret = std::max(ret,es))... };
+    (void)_;
+    return ret;
+  }
+
+  template <class F, class Tuple>
+  static ElementType call( const F& f, Tuple && t) {
+    // TODO: Type check the tuple
+    constexpr auto tsize = std::tuple_size<std::decay_t<Tuple>>::value;    
+    return detail::call_impl<F, Tuple, 0 == tsize, tsize>::call(f, std::forward<Tuple>(t));
+  }
 }; 
 
 
-
-}; // Make
-
-
-
-
-} // Elementwise
 } // namespace XROL
 
