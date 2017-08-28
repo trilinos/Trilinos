@@ -18,12 +18,9 @@ WrapperModelEvaluatorBasic<Scalar>::
 createInArgs() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-
-  MEB::InArgsSetup<Scalar> inArgs;
+  //MEB::InArgsSetup<Scalar> inArgs(appModel_->createInArgs());
+  MEB::InArgsSetup<Scalar> inArgs(appModel_->getNominalValues());
   inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(appModel_->Np());
-  inArgs.setSupports(MEB::IN_ARG_x);
-
   return inArgs;
 }
 
@@ -34,13 +31,8 @@ WrapperModelEvaluatorBasic<Scalar>::
 createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-
-  MEB::OutArgsSetup<Scalar> outArgs;
+  MEB::OutArgsSetup<Scalar> outArgs(appModel_->createOutArgs());
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(appModel_->Np(),0);
-  outArgs.setSupports(MEB::OUT_ARG_f);
-  outArgs.setSupports(MEB::OUT_ARG_W_op);
-
   return outArgs;
 }
 
@@ -48,34 +40,31 @@ createOutArgsImpl() const
 template <typename Scalar>
 void
 WrapperModelEvaluatorBasic<Scalar>::
-evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   using Teuchos::RCP;
 
-  // Setup the evaluation of the ImplicitODE_DAE
-  MEB::InArgs<Scalar> appInArgs = appModel_->createInArgs();
-  MEB::OutArgs<Scalar> appOutArgs = appModel_->createOutArgs();
-  RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
+  MEB::InArgs<Scalar>  appInArgs (wrapperInArgs_);
+  MEB::OutArgs<Scalar> appOutArgs(wrapperOutArgs_);
 
-  // setup the temporal input condition for application ME
+  // Setup input condition for application ME
+  RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
   appInArgs.set_x(x);
-  if (appInArgs.supports(MEB::IN_ARG_t)) appInArgs.set_t(t_);
   for (int i=0; i<appModel_->Np(); ++i) {
     if (inArgs.get_p(i) != Teuchos::null)
       appInArgs.set_p(i, inArgs.get_p(i));
   }
 
-  // setup output condition
-  appOutArgs.set_f(outArgs.get_f());
-
   RCP<Thyra::VectorBase<Scalar> > x_dot = Thyra::createMember(get_x_space());
-  computeXDot_(*x,*x_dot);
+  timeDer_->compute(x, x_dot);
   appInArgs.set_x_dot(x_dot);
-  appInArgs.set_alpha(alpha_);
-  appInArgs.set_beta(beta_);
+
+  // Setup output condition
+  appOutArgs.set_f(outArgs.get_f());
   appOutArgs.set_W_op(outArgs.get_W_op());
+
   appModel_->evalModel(appInArgs,appOutArgs);
 }
 

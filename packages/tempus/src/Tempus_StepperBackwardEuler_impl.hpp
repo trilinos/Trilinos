@@ -22,21 +22,6 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 
-template <typename Scalar>
-std::function<void (const Thyra::VectorBase<Scalar> &,
-                          Thyra::VectorBase<Scalar> &)>
-StepperBackwardEuler<Scalar>::xDotFunction(
-  Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old)
-{
-  return [=](const Thyra::VectorBase<Scalar> & x,
-                   Thyra::VectorBase<Scalar> & x_dot)
-    {
-      // this is the Euler x dot vector
-      Thyra::V_StVpStV(Teuchos::ptrFromRef(x_dot),1.0/dt,x,-1.0/dt,*x_old);
-    };
-}
-
-
 // StepperBackwardEuler definitions:
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
@@ -233,23 +218,30 @@ void StepperBackwardEuler<Scalar>::takeStep(
     if (workingState->getStepperState()->stepperStatus_ == Status::FAILED)
       return;
 
-    //typedef Thyra::ModelEvaluatorBase MEB;
     const Scalar time = workingState->getTime();
     const Scalar dt   = workingState->getTimeStep();
 
-    // constant variable capture of xOld pointer
-    auto computeXDot = xDotFunction(dt, xOld);
+    // Setup TimeDerivative
+    Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
+      Teuchos::rcp(new StepperBackwardEulerTimeDerivative<Scalar>(1.0/dt,xOld));
 
-    Scalar alpha = 1.0/dt;
-    Scalar beta = 1.0;
-    Scalar t = time+dt;
+    // Setup InArgs and OutArgs
+    typedef Thyra::ModelEvaluatorBase MEB;
+    MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
+    MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
+    inArgs.set_x(x);
+    if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
+    if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time+dt);
+    if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
+    if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (1.0/dt);
+    if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
 
-    wrapperModel_->initialize(computeXDot, t, alpha, beta);
+    wrapperModel_->initialize(timeDer, inArgs, outArgs);
 
     const Thyra::SolveStatus<double> sStatus =
       this->solveNonLinear(wrapperModel_, *solver_, x);
 
-    computeXDot(*x, *xDot);
+    timeDer->compute(x, xDot);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
