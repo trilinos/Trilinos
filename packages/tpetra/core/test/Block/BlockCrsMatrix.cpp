@@ -2151,8 +2151,15 @@ namespace {
     typedef typename STS::magnitudeType                            magnitude_type;
     ST zero = STS::zero(), one = STS::one();
 
+    constexpr bool printToCerr = true;
+
     Teuchos::OSTab tab0 (out);
-    out << "Test conversion from (point) CrsMatrix to BlockCrsMatrix" << endl;
+    if (printToCerr) {
+      std::cerr << "Test conversion from (point) CrsMatrix to BlockCrsMatrix" << endl;
+    }
+    else {
+      out << "Test conversion from (point) CrsMatrix to BlockCrsMatrix" << endl;
+    }
     Teuchos::OSTab tab1 (out);
 
     int lclSuccess = success ? 1 : 0;
@@ -2167,7 +2174,12 @@ namespace {
     else {
       matrixFile = "blockA.mm";
     }
-    out << "Read CrsMatrix from file \"" << matrixFile << "\"" << endl;
+    if (printToCerr) {
+      std::cerr << "Read CrsMatrix from file \"" << matrixFile << "\"" << endl;
+    }
+    else {
+      out << "Read CrsMatrix from file \"" << matrixFile << "\"" << endl;
+    }
     RCP<crs_matrix_type> pointMatrix;
     try {
       pointMatrix = reader_type::readSparseFile(matrixFile, comm);
@@ -2185,12 +2197,22 @@ namespace {
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
     if (gblSuccess != 1) {
-      gathervPrint (out, errStrm.str (), *comm);
+      if (printToCerr) {
+        gathervPrint (std::cerr, errStrm.str (), *comm);
+      }
+      else {
+        gathervPrint (out, errStrm.str (), *comm);
+      }
       success = false;
       return;
     }
 
-    out << "Migrate input CrsMatrix to final parallel distribution" << endl;
+    if (printToCerr) {
+      std::cerr << "Migrate input CrsMatrix to final parallel distribution" << endl;
+    }
+    else {
+      out << "Migrate input CrsMatrix to final parallel distribution" << endl;
+    }
 
     // Migrate pointMatrix to final parallel distribution.
     // Note that the input matrix has 12 point rows, with block size 3.  Point rows associated with a mesh node
@@ -2221,7 +2243,12 @@ namespace {
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
     if (gblSuccess != 1) {
-      gathervPrint (out, errStrm.str (), *comm);
+      if (printToCerr) {
+        gathervPrint (std::cerr, errStrm.str (), *comm);
+      }
+      else {
+        gathervPrint (out, errStrm.str (), *comm);
+      }
       success = false;
       return;
     }
@@ -2229,7 +2256,12 @@ namespace {
     parPointMatrix->fillComplete();
     pointMatrix.swap(parPointMatrix);
 
-    out << "Convert CrsMatrix to BlockCrsMatrix" << endl;
+    if (printToCerr) {
+      std::cerr << "Convert CrsMatrix to BlockCrsMatrix" << endl;
+    }
+    else {
+      out << "Convert CrsMatrix to BlockCrsMatrix" << endl;
+    }
 
     int blockSize = 3;
     RCP<block_matrix_type> blockMatrix;
@@ -2254,8 +2286,14 @@ namespace {
       return;
     }
 
-    out << "Test resulting BlockCrsMatrix by comparing mat-vec result against "
-      "CrsMatrix mat-vec result" << endl;
+    if (printToCerr) {
+      std::cerr << "Test resulting BlockCrsMatrix by comparing mat-vec result "
+        "against CrsMatrix mat-vec result" << endl;
+    }
+    else {
+      out << "Test resulting BlockCrsMatrix by comparing mat-vec result against "
+        "CrsMatrix mat-vec result" << endl;
+    }
 
     //normalized pseudo-random vector
     RCP<mv_type> randVec = rcp(new mv_type(pointMatrix->getDomainMap(),1));
@@ -2265,7 +2303,12 @@ namespace {
     randVec->scale(1.0/normVec1[0]);
 
     RCP<mv_type> resultVec1 = rcp(new mv_type(pointMatrix->getRangeMap(),1));
-    out << "CrsMatrix::apply" << endl;
+    if (printToCerr) {
+      std::cerr << "CrsMatrix::apply" << endl;
+    }
+    else {
+      out << "CrsMatrix::apply" << endl;
+    }
     try {
       pointMatrix->apply(*randVec, *resultVec1, Teuchos::NO_TRANS, one, zero);
     }
@@ -2282,15 +2325,30 @@ namespace {
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
     if (gblSuccess != 1) {
-      gathervPrint (out, errStrm.str (), *comm);
+      if (printToCerr) {
+        gathervPrint (std::cerr, errStrm.str (), *comm);
+      }
+      else {
+        gathervPrint (out, errStrm.str (), *comm);
+      }
       success = false;
       return;
     }
-    out << "Compute norm of result" << endl;
+    if (printToCerr) {
+      std::cerr << "Compute norm of result" << endl;
+    }
+    else {
+      out << "Compute norm of result" << endl;
+    }
     resultVec1->norm2(normVec1);
 
     RCP<mv_type> resultVec2 = rcp(new mv_type(blockMatrix->getRangeMap(),1));
-    out << "BlockCrsMatrix::apply" << endl;
+    if (printToCerr) {
+      std::cerr << "BlockCrsMatrix::apply" << endl;
+    }
+    else {
+      out << "BlockCrsMatrix::apply" << endl;
+    }
     try {
       blockMatrix->apply(*randVec, *resultVec2, Teuchos::NO_TRANS, one, zero);
     }
@@ -2307,7 +2365,12 @@ namespace {
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
     if (gblSuccess != 1) {
-      gathervPrint (out, errStrm.str (), *comm);
+      if (printToCerr) {
+        gathervPrint (std::cerr, errStrm.str (), *comm);
+      }
+      else {
+        gathervPrint (out, errStrm.str (), *comm);
+      }
       success = false;
       return;
     }
@@ -2322,7 +2385,12 @@ namespace {
 
     std::ostringstream normStr;
     normStr << "||CSR*xrand|| = " << normVec1[0] << ", ||CSR*xrand - BCSR*xrand|| / ||CSR*xrand|| = " << relativeError[0];
-    out << normStr.str() << std::endl;
+    if (printToCerr) {
+      std::cerr << normStr.str() << std::endl;
+    }
+    else {
+      out << normStr.str() << std::endl;
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(relativeError[0]>1e-8, std::runtime_error, "BlockCrsMatrix matvec does not produce same result as CrsMatrix matvec.");
   }
 
