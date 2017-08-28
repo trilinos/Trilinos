@@ -44,26 +44,50 @@ public:
   WrapperModelEvaluatorPairIMEX_Basic(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel)
-    : explicitModel_(explicitModel), implicitModel_(implicitModel)
-  {}
+    : explicitModel_(explicitModel), implicitModel_(implicitModel),
+      timeDer_(Teuchos::null)
+  {
+    wrapperImplicitInArgs_  = this->createInArgs();
+    wrapperImplicitOutArgs_ = this->createOutArgs();
+  }
 
 
   /// Destructor
   virtual ~WrapperModelEvaluatorPairIMEX_Basic(){}
 
-  /// \name Overridden from Tempus::WrapperModelEvaluator
+  /// \name Overridden from Tempus::WrapperModelEvaluatorPairIMEX
   //@{
     virtual void setAppModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getAppModel() const;
-    virtual void initialize(
-      std::function<void (const Thyra::VectorBase<Scalar> &,
-                                Thyra::VectorBase<Scalar> &)> computeXDot,
-      double t, double alpha, double beta)
-    { TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-       "Error - WrapperModelEvaluatorPairIMEX_Basic::initialize is not "
-       "implemented yet!\n"); }
+
+    /// Set InArgs the wrapper ModelEvalutor.
+    virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
+    { wrapperImplicitInArgs_.setArgs(inArgs); }
+
+    /// Get InArgs the wrapper ModelEvalutor.
+    virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs()
+    { return wrapperImplicitInArgs_; }
+
+    /// Set OutArgs the wrapper ModelEvalutor.
+    virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
+    { wrapperImplicitOutArgs_.setArgs(outArgs); }
+
+    /// Get OutArgs the wrapper ModelEvalutor.
+    virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
+    { return wrapperImplicitOutArgs_; }
+
+    /// Initialize WrapperModelEvalutor to evaluate application ModelEvaluator.
+    virtual void initialize(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
+      Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
+    {
+      timeDer_ = timeDer;
+      wrapperImplicitInArgs_.setArgs(inArgs);
+      wrapperImplicitOutArgs_.setArgs(outArgs);
+    }
+
   //@}
 
   /// \name Methods that apply to both explicit and implicit terms.
@@ -79,21 +103,6 @@ public:
     /// Get the p space
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
       get_p_space(int i) const;
-
-    /// Set values to compute x dot and evaluate application model.
-    virtual void initialize2(
-      std::function<void (const Thyra::VectorBase<Scalar> &,
-                                Thyra::VectorBase<Scalar> &)> computeXDot,
-                          Scalar ts, Scalar tHats,
-                          Scalar alpha, Scalar beta,
-                          Scalar stepSize, Scalar stageNumber)
-    {
-      computeXDot_ = computeXDot;
-      ts_ = ts; tHats_ = tHats;
-      alpha_ = alpha; beta_ = beta;
-      stepSize_ = stepSize;
-      stageNumber_ = stageNumber;
-    }
   //@}
 
   //@{ \name Accessors
@@ -129,17 +138,6 @@ public:
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & out) const;
   //@}
 
-  /// Evaluate the explicit model evaluator.
-  virtual void evalExplicitModel(
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X, Scalar time,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const;
-
-  /// Evaluate the implicit model evaluator.
-  virtual void evalImplicitModel(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
-
-
 private:
   /// Default constructor - not allowed
   WrapperModelEvaluatorPairIMEX_Basic(){}
@@ -149,15 +147,9 @@ protected:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > explicitModel_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > implicitModel_;
 
-  std::function<void (const Thyra::VectorBase<Scalar> &,
-                            Thyra::VectorBase<Scalar> &)> computeXDot_;
-  Scalar ts_;
-  Scalar tHats_;
-  Scalar alpha_;
-  Scalar beta_;
-
-  Scalar stepSize_;
-  Scalar stageNumber_;
+  Teuchos::RCP<TimeDerivative<Scalar> >              timeDer_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>          wrapperImplicitInArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         wrapperImplicitOutArgs_;
 };
 
 } // namespace Tempus

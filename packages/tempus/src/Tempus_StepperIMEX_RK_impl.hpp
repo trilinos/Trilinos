@@ -263,9 +263,6 @@ void StepperIMEX_RK<Scalar>::setModelPair(
   this->validExplicitODE    (modelPairIMEX->getExplicitModel());
   this->validImplicitODE_DAE(modelPairIMEX->getImplicitModel());
   wrapperModelPairIMEX_ = modelPairIMEX;
-
-  inArgs_  = wrapperModelPairIMEX_->getImplicitModel()->getNominalValues();
-  outArgs_ = wrapperModelPairIMEX_->getImplicitModel()->createOutArgs();
 }
 
 /** \brief Create WrapperModelPairIMEX from explicit/implicit ModelEvaluators.
@@ -378,23 +375,44 @@ void StepperIMEX_RK<Scalar>::initialize()
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 }
 
+
 template <typename Scalar>
-std::function<void (const Thyra::VectorBase<Scalar> &,
-                          Thyra::VectorBase<Scalar> &)>
-StepperIMEX_RK<Scalar>::xDotFunction(
-  Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde)
+void StepperIMEX_RK<Scalar>::evalExplicitModel(
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
+  Scalar time, Scalar stepSize, Scalar stageNumber,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const
 {
-  return [=](const Thyra::VectorBase<Scalar> & x,
-                   Thyra::VectorBase<Scalar> & xDotTilde)
-    {
-      // ith stage
-      // s = 1/(dt*a_ii)
-      // xOld = solution at beginning of time step
-      // xTilde = xOld + dt*(Sum_{j=1}^{i-1} a_ij x_dot_j)
-      // xDotTilde = - (s*x_i - s*xTilde)
-      Thyra::V_StVpStV(Teuchos::ptrFromRef(xDotTilde),s,x,-s,*xTilde);
-    };
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar> explicitInArgs =
+    wrapperModelPairIMEX_->getExplicitModel()->createInArgs();
+  // Required inArgs
+  explicitInArgs.set_x(X);
+  // Optional inArgs
+  if (explicitInArgs.supports(MEB::IN_ARG_t))
+    explicitInArgs.set_t(time);
+  if (explicitInArgs.supports(MEB::IN_ARG_step_size))
+    explicitInArgs.set_step_size(stepSize);
+  if (explicitInArgs.supports(MEB::IN_ARG_stage_number))
+    explicitInArgs.set_stage_number(stageNumber);
+
+  // For model evaluators whose state function f(x, x_dot, t) describes
+  // an implicit ODE, and which accept an optional x_dot input argument,
+  // make sure the latter is set to null in order to request the evaluation
+  // of a state function corresponding to the explicit ODE formulation
+  // x_dot = f(x, t)
+  if (explicitInArgs.supports(MEB::IN_ARG_x_dot))
+    explicitInArgs.set_x_dot(Teuchos::null);
+
+  MEB::OutArgs<Scalar> explicitOutArgs =
+    wrapperModelPairIMEX_->getExplicitModel()->createOutArgs();
+  // Required outArgs
+  explicitOutArgs.set_f(F);
+
+  wrapperModelPairIMEX_->getExplicitModel()->evalModel(explicitInArgs,
+                                                       explicitOutArgs);
 }
+
 
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::takeStep(
@@ -444,27 +462,41 @@ void StepperIMEX_RK<Scalar>::takeStep(
           assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           typedef Thyra::ModelEvaluatorBase MEB;
+          MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX_->getInArgs();
+          MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX_->getOutArgs();
           Thyra::assign(stageX_.ptr(), *xTilde_);
-          inArgs_.set_x(stageX_);
-          if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(ts);
-          if (inArgs_.supports(MEB::IN_ARG_x_dot))
-            inArgs_.set_x_dot(Teuchos::null);
-          outArgs_.set_f(stageG_[i]);
+          inArgs.set_x(stageX_);
+          if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(ts);
+          if (inArgs.supports(MEB::IN_ARG_x_dot))
+            inArgs.set_x_dot(Teuchos::null);
+          outArgs.set_f(stageG_[i]);
 
-          wrapperModelPairIMEX_->getImplicitModel()->evalModel(inArgs_,
-                                                                outArgs_);
+          wrapperModelPairIMEX_->getImplicitModel()->evalModel(inArgs,outArgs);
           Thyra::Vt_S(stageG_[i].ptr(), -1.0);
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
-        Scalar alpha = 1.0/dt/A(i,i);
-        Scalar beta  = 1.0;
+        Scalar alpha = 1.0/(dt*A(i,i));
 
-        // function used to compute time derivative
-        auto computeXDot = xDotFunction(alpha,xTilde_.getConst());
+        // Setup TimeDerivative
+        Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
+          Teuchos::rcp(new StepperDIRKTimeDerivative<Scalar>(
+            alpha, xTilde_.getConst()));
 
-        wrapperModelPairIMEX_->initialize2(computeXDot, ts, tHats,
-                                            alpha, beta, dt, i);
+        // Setup InArgs and OutArgs
+        typedef Thyra::ModelEvaluatorBase MEB;
+        MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX_->getInArgs();
+        MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX_->getOutArgs();
+        inArgs.set_x(stageX_);
+        if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(stageG_[i]);
+        if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (ts);
+        if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
+        if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
+        if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
+        if (inArgs.supports(MEB::IN_ARG_stage_number))
+          inArgs.set_stage_number(i);
+
+        wrapperModelPairIMEX_->initialize(timeDer, inArgs, outArgs);
 
         sStatus = this->solveNonLinear(wrapperModelPairIMEX_,*solver_,stageX_);
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
@@ -474,7 +506,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
       }
 
       // Evaluate the ExplicitODE
-      wrapperModelPairIMEX_->evalExplicitModel(stageX_, tHats, stageF_[i]);
+      evalExplicitModel(stageX_, tHats, dt, i, stageF_[i]);
       Thyra::Vt_S(stageF_[i].ptr(), -1.0);
     }
 
