@@ -586,7 +586,7 @@ public:
     return 1.0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION float min () {
-    return FLT_MIN;
+    return -FLT_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION float max () {
     return FLT_MAX;
@@ -855,7 +855,7 @@ public:
     return 1.0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
-    return DBL_MIN;
+    return -DBL_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return DBL_MAX;
@@ -990,7 +990,7 @@ public:
     return 1.0;
   }
   static val_type min () {
-    return LDBL_MIN;
+    return -LDBL_MAX;
   }
   static val_type max () {
     return LDBL_MAX;
@@ -1227,7 +1227,7 @@ public:
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return std::sqrt (::Kokkos::real (x) * ::Kokkos::real (x) +
-                 ::Kokkos::imag (x) * ::Kokkos::imag (x));
+                         ::Kokkos::imag (x) * ::Kokkos::imag (x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return val_type (ArithTraits<mag_type>::zero (), ArithTraits<mag_type>::zero ());
@@ -1253,9 +1253,9 @@ public:
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
   //   return ::pow (x, y);
   // }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-  //   return ::sqrt (x);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+    return ::Kokkos::sqrt (x);
+  }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
   //   return ::log (x);
   // }
@@ -1374,9 +1374,9 @@ public:
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
   //   return ::pow (x, y);
   // }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-  //   return ::sqrt (x);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+     return ::Kokkos::sqrt (x);
+  }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
   //   return ::log (x);
   // }

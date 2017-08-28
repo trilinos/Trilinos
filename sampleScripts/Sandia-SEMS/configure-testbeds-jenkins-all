@@ -141,6 +141,8 @@ cmake \
   -D MueLu_INST_DOUBLE_INT_LONGINT:BOOL=ON \
   -D MueLu_ENABLE_TESTS:BOOL=${TESTS} \
   -D MueLu_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+  -D MueLu_ENABLE_Experimental:BOOL=ON \
+  -D MueLu_ENABLE_Kokkos_Refactor:BOOL=ON \
 -D Trilinos_ENABLE_NOX=ON \
   -D NOX_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Panzer=ON \
@@ -174,6 +176,8 @@ cmake \
 -D Trilinos_ENABLE_Xpetra=ON \
   -D Xpetra_ENABLE_TESTS:BOOL=${TESTS} \
   -D Xpetra_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+  -D Xpetra_ENABLE_Experimental:BOOL=ON \
+  -D Xpetra_ENABLE_Kokkos_Refactor:BOOL=ON \
 -D Trilinos_ENABLE_Zoltan=ON \
 -D Trilinos_ENABLE_Zoltan2=ON \
   -D Zoltan2_ENABLE_TESTS:BOOL=${TESTS} \
@@ -191,6 +195,7 @@ cmake \
   -D Trilinos_ENABLE_SEACASExodiff:BOOL=ON \
   -D Trilinos_ENABLE_SEACASNemspread:BOOL=ON \
   -D Trilinos_ENABLE_SEACASNemslice:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASAprepro_lib:BOOL=ON \
 \
 \
 $EXTRA_ARGS \

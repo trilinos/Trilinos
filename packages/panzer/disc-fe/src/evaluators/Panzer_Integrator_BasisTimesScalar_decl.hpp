@@ -178,13 +178,11 @@ namespace panzer
        *  \brief Post-Registration Setup.
        *
        *  Sets the number of nodes and quadrature points, sets the basis index,
-       *  sets the contributed field data in the field manager (if applicable),
        *  and then creates the `tmp_` `Kokkos::View`.
        *
        *  \param[in] sd Essentially a list of `Workset`s, which are collections
        *                of cells (elements) that all live on a single process.
-       *  \param[in] fm The field manager, used in setting the field data for
-       *                the contributed field, if there is one.
+       *  \param[in] fm This is unused, though part of the interface.
        */
       void
       postRegistrationSetup(
@@ -222,16 +220,15 @@ namespace panzer
       /**
        *  \brief The scalar type.
        */
-      typedef typename EvalT::ScalarT ScalarT;
+      using ScalarT = typename EvalT::ScalarT;
 
       /**
        *  \brief An `enum` determining the behavior of this `Evaluator`.
        *
        *  This `Evaluator` will compute the result of its integration and then:
-       *  - CONTRIBUTES:                contribute it to a specified residual,
-       *                                not saving anything; or
-       *  - EVALUATES:                  save it under a specified name for
-       *                                future use.
+       *  - CONTRIBUTES:  contribute it to a specified residual, not saving
+       *                  anything; or
+       *  - EVALUATES:    save it under a specified name for future use.
        */
       const panzer::EvaluatorStyle evalStyle_;
 

@@ -60,7 +60,7 @@
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
 #include <SGPreconditioner.hpp>
@@ -270,12 +270,12 @@ struct ReplaceLocalScalarType<ScalarType,LocalScalarType,typename std::enable_if
 // Compute DeviceConfig struct's based on scalar type
 template <typename ScalarType>
 struct CreateDeviceConfigs {
-  static void eval( Kokkos::DeviceConfig& dev_config_elem,
-                    Kokkos::DeviceConfig& dev_config_gath,
-                    Kokkos::DeviceConfig& dev_config_bc ) {
-    dev_config_elem = Kokkos::DeviceConfig( 0 , 1 , 1 );
-    dev_config_gath = Kokkos::DeviceConfig( 0 , 1 , 1 );
-    dev_config_bc   = Kokkos::DeviceConfig( 0 , 1 , 1 );
+  static void eval( KokkosSparse::DeviceConfig& dev_config_elem,
+                    KokkosSparse::DeviceConfig& dev_config_gath,
+                    KokkosSparse::DeviceConfig& dev_config_bc ) {
+    dev_config_elem = KokkosSparse::DeviceConfig( 0 , 1 , 1 );
+    dev_config_gath = KokkosSparse::DeviceConfig( 0 , 1 , 1 );
+    dev_config_bc   = KokkosSparse::DeviceConfig( 0 , 1 , 1 );
   }
 };
 

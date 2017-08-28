@@ -33,9 +33,8 @@ We organize this directory as follows:
      - Kokkos_Sparse_CrsMatrix.hpp: Declaration and definition of
        KokkosSparse::CrsMatrix, the sparse matrix data structure used
        for the computational kernels below
-     - Kokkos_Sparse.hpp: Sparse matrix-vector multiply with a
-       single vector, stored in a 1-D View
-     - Kokkos_Sparse_MV.hpp: Sparse matrix-vector multiply with
+     - KokkosSparse_spmv.hpp: Sparse matrix-vector multiply with a
+       single vector, stored in a 1-D View + Sparse matrix-vector multiply with
        multiple vectors at a time (multivectors), stored in a 2-D View
 
   2. Implementations of computational kernels live in the src/impl/

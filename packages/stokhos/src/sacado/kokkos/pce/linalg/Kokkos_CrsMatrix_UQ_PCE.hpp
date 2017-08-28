@@ -45,7 +45,9 @@
 #include "Sacado_UQ_PCE.hpp"
 #include "Kokkos_View_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
-#include "Kokkos_Sparse.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv.hpp"
+
 #include "Kokkos_Blas1_UQ_PCE.hpp" // for some utilities
 
 #include "Stokhos_Multiply.hpp"

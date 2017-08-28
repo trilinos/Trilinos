@@ -1,0 +1,11 @@
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+IF(Kokkos_ENABLE_Serial)
+  ADD_SUBDIRECTORY(Serial)
+ENDIF()
+
+IF(Kokkos_ENABLE_OpenMP)
+  ADD_SUBDIRECTORY(OpenMP)
+ENDIF()
+
+# This test does not build/run with CUDA

@@ -134,9 +134,9 @@ namespace MueLu {
       nodeGlobalEltsType   nodeGlobalElts;  //< view containing global node ids of current proc
       isNodeGlobalEltsType isNodeGlobalElement; //< unordered map storing whether (global) node id is owned by current proc
 
-      int myPid;
       LO fullBlockSize, blockID, stridingOffset, stridedBlockSize;
       GO indexBase, globalOffset;
+      int myPid;
     public:
       CollectAggregateSizeFunctor(aggSizesType aggSizes_, vertex2AggIdType vertex2AggId_, procWinnerType procWinner_, nodeGlobalEltsType nodeGlobalElts_, isNodeGlobalEltsType isNodeGlobalElement_, LO fullBlockSize_, LOType blockID_, LOType stridingOffset_, LOType stridedBlockSize_, GOType indexBase_, GOType globalOffset_, int myPID_ ) :
         aggSizes(aggSizes_),
@@ -191,9 +191,9 @@ namespace MueLu {
       nodeGlobalEltsType   nodeGlobalElts;  //< view containing global node ids of current proc
       isNodeGlobalEltsType isNodeGlobalElement; //< unordered map storing whether (global) node id is owned by current proc
 
-      int myPid;
       LO fullBlockSize, blockID, stridingOffset, stridedBlockSize;
       GO indexBase, globalOffset;
+      int myPid;
     public:
       CreateAgg2RowMapLOFunctor(agg2RowMapType agg2RowMap_, aggSizesType aggSizes_, aggSizesType aggDofCount_, vertex2AggIdType vertex2AggId_, procWinnerType procWinner_, nodeGlobalEltsType nodeGlobalElts_, isNodeGlobalEltsType isNodeGlobalElement_, LO fullBlockSize_, LOType blockID_, LOType stridingOffset_, LOType stridedBlockSize_, GOType indexBase_, GOType globalOffset_, int myPID_ ) :
         agg2RowMap(agg2RowMap_),
@@ -674,12 +674,12 @@ namespace MueLu {
 
     private:
       LO        invalid_;
-      rowType   rows_;
-      colType   cols_;
-      valType   vals_;
       rowType   rowsAux_;
       colType   colsAux_;
       valType   valsAux_;
+      rowType   rows_;
+      colType   cols_;
+      valType   vals_;
     };
   }
 
@@ -809,7 +809,6 @@ namespace MueLu {
     // create a unordered map GID -> isGlobalElement in colMap of A (available from above)
     // This has to be done on the host
     for (decltype(vertex2AggId.dimension_0()) lnode = 0; lnode < vertex2AggId.dimension_0(); lnode++) {
-      auto myAgg = vertex2AggId(lnode,0);
       if(procWinner(lnode,0) == myPid) {
         GO gnodeid = nodeGlobalElts[lnode];
         for (LO k = 0; k< stridedBlockSize; k++) {

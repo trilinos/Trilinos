@@ -43,7 +43,8 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
-#include "Kokkos_Sparse.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 #include "Stokhos_LegendreBasis.hpp"

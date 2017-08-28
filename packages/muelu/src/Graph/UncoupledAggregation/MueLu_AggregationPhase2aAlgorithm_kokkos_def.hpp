@@ -97,7 +97,7 @@ namespace MueLu {
       typename LWGraph_kokkos::row_type neighOfINode = graph.getNeighborVertices(rootCandidate);
 
       LO numNeighbors = 0;
-      for (int j = 0; j < neighOfINode.size(); j++) {
+      for (int j = 0; j < as<int>(neighOfINode.size()); j++) {
         LO neigh = neighOfINode(j);
 
         if (neigh != rootCandidate) {

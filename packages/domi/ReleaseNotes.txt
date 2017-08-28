@@ -1,3 +1,22 @@
+Release Notes for Domi for Trilinos 12.12
+=========================================
+
+Enhancements
+------------
+  * Added more sophisticated processor decomposition algorithm. If the
+    decomposition of the processors along each axis is specified
+    incompletely for two or more axes, Domi now returns a much more
+    logical decomposition
+
+Bug fixes
+---------
+  * Fixed memory management error related to Tuple and ArrayView
+
+  * Update ParameterList documentation so that they display properly
+    in HTML documentation
+
+  * Fixed bug in MDMap::getAugmentedMDMap() method
+
 Release Notes for Domi for Trilinos 12.8
 ========================================
 

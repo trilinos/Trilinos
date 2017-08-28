@@ -670,7 +670,7 @@ template< typename ExecutionSpace ,
           class CoeffFunctionType>
 class ElementComputation<
   Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
-  Kokkos::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
+  KokkosSparse::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
   CoeffFunctionType >
 {
 public:
@@ -684,7 +684,7 @@ public:
   typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef KokkosSparse::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, execution_space > vector_type ;
@@ -699,7 +699,7 @@ public:
   typedef typename Sacado::mpl::apply<CoeffFunctionType, ensemble_scalar_type>::type scalar_coeff_function_type;
   typedef ElementComputation<
     Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
-    Kokkos::CrsMatrix< ensemble_scalar_type , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
+    KokkosSparse::CrsMatrix< ensemble_scalar_type , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
     scalar_coeff_function_type > scalar_element_computation_type;
   typedef typename scalar_element_computation_type::sparse_matrix_type scalar_sparse_matrix_type ;
   typedef typename scalar_sparse_matrix_type::values_type scalar_matrix_values_type ;
@@ -749,7 +749,7 @@ public:
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
                       const vector_type        & arg_residual ,
-                      const Kokkos::DeviceConfig arg_dev_config ,
+                      const KokkosSparse::DeviceConfig arg_dev_config ,
                       const QD& qd )
     : solution( arg_solution )
     , residual( arg_residual )

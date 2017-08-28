@@ -184,7 +184,7 @@ namespace panzer {
        Teuchos::ParameterList pl;
        pl.set("Residual Name","Residual");
        pl.set("Value Name","Integrand");
-       pl.set("Test Field Name",fieldName_qedge1);
+//       pl.set("Test Field Name",fieldName_qedge1);
        pl.set("Basis",layout_qedge1);
        pl.set("IR",ir);
        pl.set<double>("Multiplier", 1.0);

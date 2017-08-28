@@ -3041,6 +3041,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
             }
         }
 
+        //if (myRank == 0)
+        //std::cout << "iteration:" << iteration << " partition:" << num_partitioning_in_current_dim[current_work_part] << std::endl;
         // Needed only if keep_cuts; otherwise can simply swap array pointers
         // cutCoordinates and cutCoordinatesWork.
         // (at first iteration, cutCoordinates == cutCoorindates_tmp).
@@ -5923,6 +5925,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_partitioning_paramet
 }
 
 
+
+
 /*! \brief Multi Jagged  coordinate partitioning algorithm.
  *
  *  \param env   library configuration and problem parameters
@@ -5980,6 +5984,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
 )
 {
 
+
+
 #ifdef print_debug
     if(comm->getRank() == 0){
         std::cout << "size of gno:" << sizeof(mj_gno_t) << std::endl;
@@ -5987,10 +5993,29 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         std::cout << "size of mj_scalar_t:" << sizeof(mj_scalar_t) << std::endl;
     }
 #endif
-
     this->mj_env = env;
     this->mj_problemComm = problemComm;
     this->myActualRank = this->myRank = this->mj_problemComm->getRank();
+
+    /*
+    if (0)
+    { 
+      int a = rand();
+      this->mj_problemComm->broadcast(0, sizeof(int), (char *) (&a));
+      std::string istring = "output_" + Teuchos::toString<int>(a) + "_" + Teuchos::toString<int>(myRank) + ".mtx";
+
+      std::ofstream output(istring.c_str());
+      output << num_local_coords_ << " " << coord_dim_ << std::endl;
+      for (int j = 0; j < coord_dim_ ; ++j){
+        for (size_t i = 0; i < num_local_coords_; ++i){
+          output << mj_coordinates_[j][i] << std::endl;
+        }
+    
+      }
+      output.close();
+    }
+    */
+    
 
     this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Total");
     this->mj_env->debug(3, "In MultiJagged Jagged");
@@ -6523,6 +6548,7 @@ private:
     int num_threads;
 
     bool mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
+    int mj_premigration_option;
 
     ArrayRCP<mj_part_t> comXAdj_; //communication graph xadj
     ArrayRCP<mj_part_t> comAdj_; //communication graph adj.
@@ -6541,6 +6567,24 @@ private:
     void free_work_memory();
 
     RCP<mj_partBoxVector_t> getGlobalBoxBoundaries() const;
+    
+    bool mj_premigrate_to_subset(int migration_selection_option,
+        RCP<const Environment> mj_env_,
+        RCP<const Comm<int> > mj_problemComm_,
+        int coord_dim_,
+        mj_lno_t num_local_coords_,
+        mj_gno_t num_global_coords_,  size_t num_global_parts_,
+        const mj_gno_t *initial_mj_gnos_,
+        mj_scalar_t **mj_coordinates_,
+        int num_weights_per_coord_,
+        mj_scalar_t **mj_weights_,
+        //results
+        RCP<const Comm<int> > &result_problemComm_,
+        mj_lno_t & result_num_local_coords_,
+        mj_gno_t * &result_initial_mj_gnos_,
+        mj_scalar_t ** &result_mj_coordinates_,
+        mj_scalar_t ** &result_mj_weights_,
+        int * &result_actual_owner_rank_);
 
 public:
 
@@ -6563,7 +6607,7 @@ public:
                         max_concurrent_part_calculation(1),
                         check_migrate_avoid_migration_option(0), migration_type(0),
                         minimum_migration_imbalance(0.30),
-                        mj_keep_part_boxes(false), num_threads(1), mj_run_as_rcb(false),
+                        mj_keep_part_boxes(false), num_threads(1), mj_run_as_rcb(false),mj_premigration_option(0),
                         comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
     {}
     ~Zoltan2_AlgMJ(){
@@ -6597,7 +6641,9 @@ public:
         "depending on the imbalance, 1 for forcing migration, 2 for "
         "avoiding migration", mj_migration_option_validator);
 
-      
+            
+
+ 
       RCP<Teuchos::EnhancedNumberValidator<int>> mj_migration_type_validator =
         Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1) );
       pl.set("mj_migration_type", 0, "Migration type, 0 for migration to minimize the imbalance "
@@ -6615,6 +6661,12 @@ public:
       pl.set("mj_recursion_depth", -1, "Recursion depth for MJ: Must be "
         "greater than 0.", Environment::getAnyIntValidator());
 
+      RCP<Teuchos::EnhancedNumberValidator<int>> mj_premigration_option_validator =
+        Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1024) );
+
+      pl.set("mj_premigration_option", 0, "Whether to do premigration or not. 0 for no migration "
+        "x > 0 for migration to consecutive processors, the subset will be 0,x,2x,3x,...subset ranks."
+        , mj_premigration_option_validator);
 
     }
 
@@ -6647,6 +6699,119 @@ public:
 };
 
 
+
+
+template <typename Adapter>
+bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
+				 int migration_selection_option,
+				 RCP<const Environment> mj_env_,
+                                 RCP<const Comm<int> > mj_problemComm_,
+                                 int coord_dim_,
+                                 mj_lno_t num_local_coords_,
+                                 mj_gno_t num_global_coords_, size_t num_global_parts_,
+                                 const mj_gno_t *initial_mj_gnos_,
+                                 mj_scalar_t **mj_coordinates_,
+                                 int num_weights_per_coord_,
+                                 mj_scalar_t **mj_weights_,
+                                 //results
+                                 RCP<const Comm<int> > &result_problemComm_,
+                                 mj_lno_t &result_num_local_coords_,
+                                 mj_gno_t * &result_initial_mj_gnos_,
+                                 mj_scalar_t ** &result_mj_coordinates_,
+                                 mj_scalar_t ** &result_mj_weights_,
+                                 int * &result_actual_owner_rank_){
+
+  
+  int myRank = mj_problemComm_->getRank();
+  mj_part_t i_am_sending_to = (myRank % num_global_parts_) * migration_selection_option;
+
+  bool am_i_a_reciever = false;
+  {
+    std::vector<mj_part_t> result_processors(num_global_parts_);
+    for (size_t i = 0; i < num_global_parts_; ++i){
+      result_processors[i] = i * migration_selection_option;
+      if (myRank == result_processors[i]) am_i_a_reciever = true;
+    }
+    ArrayView<const mj_part_t> idView(&(result_processors[0]), num_global_parts_);
+
+    result_problemComm_ = mj_problemComm_->createSubcommunicator(idView);
+
+  }
+
+
+  mj_env_->timerStart(MACRO_TIMERS, "MultiJagged - PreMigration DistributorPlanCreating");
+  Tpetra::Distributor distributor(mj_problemComm_);
+
+  std::vector<mj_part_t> coordinate_destinations(num_local_coords_, i_am_sending_to);
+  ArrayView<const mj_part_t> destinations( &(coordinate_destinations[0]), num_local_coords_);
+  mj_lno_t num_incoming_gnos = distributor.createFromSends(destinations);
+  result_num_local_coords_ = num_incoming_gnos;
+  mj_env_->timerStop(MACRO_TIMERS, "MultiJagged - PreMigration DistributorPlanCreating");
+
+  mj_env_->timerStart(MACRO_TIMERS, "MultiJagged - PreMigration DistributorMigration");
+   
+  //migrate gnos.
+  {
+    ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
+
+    ArrayView<const mj_gno_t> sent_gnos(initial_mj_gnos_, num_local_coords_);
+    distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
+
+    result_initial_mj_gnos_ = allocMemory<mj_gno_t>(num_incoming_gnos);
+    memcpy(
+	  result_initial_mj_gnos_,
+	  received_gnos.getRawPtr(),
+	  num_incoming_gnos * sizeof(mj_gno_t));
+  }
+      
+  //migrate coordinates
+  result_mj_coordinates_ = allocMemory<mj_scalar_t *>(coord_dim_);
+  for (int i = 0; i < coord_dim_; ++i){
+    ArrayView<const mj_scalar_t> sent_coord(mj_coordinates_[i], num_local_coords_);
+    ArrayRCP<mj_scalar_t> received_coord(num_incoming_gnos);
+    distributor.doPostsAndWaits<mj_scalar_t>(sent_coord, 1, received_coord());
+    result_mj_coordinates_[i] = allocMemory<mj_scalar_t>(num_incoming_gnos);
+    memcpy(
+	  result_mj_coordinates_[i],
+	  received_coord.getRawPtr(),
+	  num_incoming_gnos * sizeof(mj_scalar_t));
+  }
+        
+  result_mj_weights_ = allocMemory<mj_scalar_t *>(num_weights_per_coord_);
+  //migrate weights.
+  for (int i = 0; i < num_weights_per_coord_; ++i){
+    ArrayView<const mj_scalar_t> sent_weight(mj_weights_[i], num_local_coords_);
+    ArrayRCP<mj_scalar_t> received_weight(num_incoming_gnos);
+    distributor.doPostsAndWaits<mj_scalar_t>(sent_weight, 1, received_weight());
+    result_mj_weights_[i] = allocMemory<mj_scalar_t>(num_incoming_gnos);
+    memcpy(
+	  result_mj_weights_[i],
+	  received_weight.getRawPtr(),
+	  num_incoming_gnos * sizeof(mj_scalar_t));
+  }
+                
+  //migrate the owners of the coordinates
+  { 
+    std::vector<int> owner_of_coordinate(num_local_coords_, myRank);
+    ArrayView<int> sent_owners(&(owner_of_coordinate[0]), num_local_coords_);
+    ArrayRCP<int> received_owners(num_incoming_gnos);
+    distributor.doPostsAndWaits<int>(sent_owners, 1, received_owners());
+    result_actual_owner_rank_ = allocMemory<int>(num_incoming_gnos);
+    memcpy(
+	  result_actual_owner_rank_,
+	  received_owners.getRawPtr(),
+	  num_incoming_gnos * sizeof(int));
+  }
+  mj_env_->timerStop(MACRO_TIMERS, "MultiJagged - PreMigration DistributorMigration");
+  return am_i_a_reciever;
+}
+
+
+
+
+
+
+
 /*! \brief Multi Jagged  coordinate partitioning algorithm.
  *
  *  \param env   library configuration and problem parameters
@@ -6672,58 +6837,126 @@ void Zoltan2_AlgMJ<Adapter>::partition(
                 this->check_migrate_avoid_migration_option,
                 this->minimum_migration_imbalance, this->migration_type);
 
-    mj_part_t *result_assigned_part_ids = NULL;
-    mj_gno_t *result_mj_gnos = NULL;
-    this->mj_partitioner.multi_jagged_part(
-                this->mj_env,
-                this->mj_problemComm,
 
-                this->imbalance_tolerance,
-                this->num_global_parts,
-                this->part_no_array,
-                this->recursion_depth,
+   RCP<const Comm<int> > result_problemComm = this->mj_problemComm;
+   mj_lno_t result_num_local_coords = this->num_local_coords;
+   mj_gno_t * result_initial_mj_gnos = NULL;
+   mj_scalar_t **result_mj_coordinates = this->mj_coordinates;
+   mj_scalar_t **result_mj_weights = this->mj_weights;
+   int *result_actual_owner_rank = NULL;
+   const mj_gno_t * result_initial_mj_gnos_ = this->initial_mj_gnos;
 
-                this->coord_dim,
-                this->num_local_coords,
-                this->num_global_coords,
-                this->initial_mj_gnos,
-                this->mj_coordinates,
+   //TODO: MD 08/2017: Further discussion is required.
+   //MueLu calls MJ when it has very few coordinates per processors, such as 10. 
+   //For example, it begins with 1K processor with 1K coordinate in each. 
+   //Then with coarsening this reduces to 10 coordinate per procesor.
+   //It calls MJ to repartition these to 10 coordinates.
+   //MJ runs with 1K processor, 10 coordinate in each, and partitions to 10 parts. 
+   //As expected strong scaling is problem here, because computation is almost 0, and
+   //communication cost of MJ linearly increases. 
+   //Premigration option gathers the coordinates to 10 parts before MJ starts
+   //therefore MJ will run with a smalller subset of the problem. 
+   //Below, I am migrating the coordinates if mj_premigration_option is set,
+   //and the result parts are less than the current part count, and the average number of 
+   //local coordinates is less than some threshold.
+   //For example, premigration may not help if 1000 processors are partitioning data to 10,
+   //but each of them already have 1M coordinate. In that case, we premigration would not help.
+   int current_world_size = this->mj_problemComm->getSize();
+   mj_lno_t threshold_num_local_coords = 10000;
+   bool is_pre_migrated = false;
+   bool am_i_in_subset = true;
+   if (mj_premigration_option > 0 &&
+       size_t (current_world_size) > this->num_global_parts &&
+       this->num_global_coords < mj_gno_t (current_world_size * threshold_num_local_coords)){
+     if (this->mj_keep_part_boxes){
 
-                this->num_weights_per_coord,
-                this->mj_uniform_weights,
-                this->mj_weights,
-                this->mj_uniform_parts,
-                this->mj_part_sizes,
+       throw std::logic_error("Multijagged: mj_keep_part_boxes and mj_premigration_option are not supported together yet.");
+     }
+     is_pre_migrated =true;
+     int migration_selection_option = mj_premigration_option;
+     if(migration_selection_option * this->num_global_parts > (size_t) (current_world_size)){
+       migration_selection_option = current_world_size / this->num_global_parts;
+     }
 
-                result_assigned_part_ids,
-                result_mj_gnos
-                );
+     am_i_in_subset = this->mj_premigrate_to_subset(
+         migration_selection_option,
+         this->mj_env,
+         this->mj_problemComm,
+         this->coord_dim,
+         this->num_local_coords,
+         this->num_global_coords,
+         this->num_global_parts,
+         this->initial_mj_gnos,
+         this->mj_coordinates,
+         this->num_weights_per_coord,
+         this->mj_weights,
+         //results
+         result_problemComm,
+         result_num_local_coords,
+         result_initial_mj_gnos,
+         result_mj_coordinates,
+         result_mj_weights,
+         result_actual_owner_rank);
+     result_initial_mj_gnos_ = result_initial_mj_gnos;
+   }
+   
+
+
+   mj_part_t *result_assigned_part_ids = NULL;
+   mj_gno_t *result_mj_gnos = NULL;
+
+    if (am_i_in_subset){
+      this->mj_partitioner.multi_jagged_part(
+          this->mj_env,
+          result_problemComm, //this->mj_problemComm,
+
+          this->imbalance_tolerance,
+          this->num_global_parts,
+          this->part_no_array,
+          this->recursion_depth,
+
+          this->coord_dim,
+          result_num_local_coords, //this->num_local_coords,
+          this->num_global_coords,
+          result_initial_mj_gnos_, //this->initial_mj_gnos,
+          result_mj_coordinates, //this->mj_coordinates,
+
+          this->num_weights_per_coord,
+          this->mj_uniform_weights,
+          result_mj_weights, //this->mj_weights,
+          this->mj_uniform_parts,
+          this->mj_part_sizes,
+
+          result_assigned_part_ids,
+          result_mj_gnos
+      );
+
+    }
 
     // Reorder results so that they match the order of the input
 #if defined(__cplusplus) && __cplusplus >= 201103L
     std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid;
-    localGidToLid.reserve(this->num_local_coords);
-    for (mj_lno_t i = 0; i < this->num_local_coords; i++)
-      localGidToLid[this->initial_mj_gnos[i]] = i;
+    localGidToLid.reserve(result_num_local_coords);
+    for (mj_lno_t i = 0; i < result_num_local_coords; i++)
+      localGidToLid[result_initial_mj_gnos_[i]] = i;
+    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[result_num_local_coords],
+        0, result_num_local_coords, true);
 
-    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[this->num_local_coords],
-                                      0, this->num_local_coords, true);
-
-    for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+    for (mj_lno_t i = 0; i < result_num_local_coords; i++) {
       mj_lno_t origLID = localGidToLid[result_mj_gnos[i]];
       partId[origLID] = result_assigned_part_ids[i];
     }
 
 #else
     Teuchos::Hashtable<mj_gno_t, mj_lno_t>
-                       localGidToLid(this->num_local_coords);
-    for (mj_lno_t i = 0; i < this->num_local_coords; i++)
-      localGidToLid.put(this->initial_mj_gnos[i], i);
+    localGidToLid(result_num_local_coords);
+    for (mj_lno_t i = 0; i < result_num_local_coords; i++)
+      localGidToLid.put(result_initial_mj_gnos_[i], i);
 
-    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[this->num_local_coords],
-                                      0, this->num_local_coords, true);
+    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[result_num_local_coords],
+        0, result_num_local_coords, true);
 
-    for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+    for (mj_lno_t i = 0; i < result_num_local_coords; i++) {
       mj_lno_t origLID = localGidToLid.get(result_mj_gnos[i]);
       partId[origLID] = result_assigned_part_ids[i];
     }
@@ -6732,6 +6965,80 @@ void Zoltan2_AlgMJ<Adapter>::partition(
 
     delete [] result_mj_gnos;
     delete [] result_assigned_part_ids;
+
+
+    //now the results are reordered. but if premigration occured,
+    //then we need to send these ids to actual owners again. 
+    if (is_pre_migrated){
+      this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - PostMigration DistributorPlanCreating");
+      Tpetra::Distributor distributor(this->mj_problemComm);
+
+      ArrayView<const mj_part_t> actual_owner_destinations( result_actual_owner_rank , result_num_local_coords);
+      mj_lno_t num_incoming_gnos = distributor.createFromSends(actual_owner_destinations);
+      if (num_incoming_gnos != this->num_local_coords){
+        throw std::logic_error("Zoltan2 - Multijagged Post Migration - num incoming is not equal to num local coords");
+      }
+      mj_env->timerStop(MACRO_TIMERS, "MultiJagged - PostMigration DistributorPlanCreating");
+      mj_env->timerStart(MACRO_TIMERS, "MultiJagged - PostMigration DistributorMigration");
+      ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
+      ArrayRCP<mj_part_t> received_partids(num_incoming_gnos);
+      {
+        ArrayView<const mj_gno_t> sent_gnos(result_initial_mj_gnos_, result_num_local_coords);
+        distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
+      }
+      {
+
+        ArrayView<mj_part_t> sent_partnos(partId.getRawPtr(), result_num_local_coords);
+        distributor.doPostsAndWaits<mj_part_t>(sent_partnos, 1, received_partids());
+      }
+      partId = arcp(new mj_part_t[this->num_local_coords],
+                      0, this->num_local_coords, true);
+
+      {
+#if defined(__cplusplus) && __cplusplus >= 201103L
+      std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid2;
+      localGidToLid2.reserve(this->num_local_coords);
+      for (mj_lno_t i = 0; i < this->num_local_coords; i++)
+        localGidToLid2[this->initial_mj_gnos[i]] = i;
+
+
+      for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+        mj_lno_t origLID = localGidToLid2[received_gnos[i]];
+        partId[origLID] = received_partids[i];
+      }
+
+#else
+      Teuchos::Hashtable<mj_gno_t, mj_lno_t>
+	      localGidToLid2(this->num_local_coords);
+      for (mj_lno_t i = 0; i < this->num_local_coords; i++)
+        localGidToLid2.put(this->initial_mj_gnos[i], i);
+
+
+      for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+        mj_lno_t origLID = localGidToLid2.get(received_gnos[i]);
+        partId[origLID] = received_partids[i];
+      }
+
+#endif // C++11 is enabled
+
+      }
+
+      {
+        freeArray<mj_gno_t> (result_initial_mj_gnos);
+        for (int i = 0; i < this->coord_dim; ++i){
+          freeArray<mj_scalar_t> (result_mj_coordinates[i]);
+        }
+        freeArray<mj_scalar_t *> (result_mj_coordinates);
+
+        for (int i = 0; i < this->num_weights_per_coord; ++i){
+          freeArray<mj_scalar_t> (result_mj_weights[i]);
+        }
+        freeArray<mj_scalar_t *> (result_mj_weights);
+        freeArray<int> (result_actual_owner_rank);
+      }
+      mj_env->timerStop(MACRO_TIMERS, "MultiJagged - PostMigration DistributorMigration");
+
+    }
 
     solution->setParts(partId);
     this->free_work_memory();
@@ -6863,6 +7170,7 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         this->max_concurrent_part_calculation = 1;
 
         this->mj_run_as_rcb = false;
+        this->mj_premigration_option = 0;
         int mj_user_recursion_depth = -1;
         this->mj_keep_part_boxes = false;
         this->check_migrate_avoid_migration_option = 0;
@@ -6934,6 +7242,13 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
                 this->mj_run_as_rcb = pe->getValue(&this->mj_run_as_rcb);
         }else {
                 this->mj_run_as_rcb = false; // Set to invalid value
+        }
+
+        pe = pl.getEntryPtr("mj_premigration_option");
+        if (pe){
+		mj_premigration_option = pe->getValue(&mj_premigration_option);
+        }else {
+		mj_premigration_option = 0;
         }
 
         pe = pl.getEntryPtr("mj_recursion_depth");

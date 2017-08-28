@@ -40,168 +40,316 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Integerator_BasisTimesVector_impl_hpp__
-#define __Panzer_Integerator_BasisTimesVector_impl_hpp__
+#ifndef   __Panzer_Integerator_BasisTimesVector_impl_hpp__
+#define   __Panzer_Integerator_BasisTimesVector_impl_hpp__
 
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Include Files
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Intrepid2
 #include "Intrepid2_FunctionSpaceTools.hpp"
-#include "Panzer_IntegrationRule.hpp"
+
+// Panzer
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Panzer_IntegrationRule.hpp"
+#include "Panzer_Workset_Utilities.hpp"
+
+// Phalanx
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
-namespace panzer {
-
-//**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_BasisTimesVector,p) :
-  residual( p.get<std::string>("Residual Name"), 
-            p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  vectorField( p.get<std::string>("Value Name"),
-                p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector),
-  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
+namespace panzer
 {
-  Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
-  p.validateParameters(*valid_params);
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  Main Constructor
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  Integrator_BasisTimesVector<EvalT, Traits>::
+  Integrator_BasisTimesVector(
+    const panzer::EvaluatorStyle&   evalStyle,
+    const std::string&              resName,
+    const std::string&              valName,
+    const panzer::BasisIRLayout&    basis,
+    const panzer::IntegrationRule&  ir,
+    const double&                   multiplier, /* = 1 */
+    const std::vector<std::string>& fmNames     /* =
+      std::vector<std::string>() */)
+    :
+    evalStyle_(evalStyle),
+    multiplier_(multiplier),
+    basisName_(basis.name())
+  {
+    using Kokkos::fence;                                                         // JMG:  Necessary?                              
+    using Kokkos::View;
+    using panzer::BASIS;
+    using panzer::Cell;
+    using panzer::EvaluatorStyle;
+    using panzer::IP;
+    using panzer::PureBasis;
+    using PHX::MDField;
+    using PHX::typeAsString;
+    using std::invalid_argument;
+    using std::logic_error;
+    using std::string;
+    using Teuchos::RCP;
 
-  Teuchos::RCP<const PureBasis> basis 
-     = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+    // Ensure the input makes sense.
+    TEUCHOS_TEST_FOR_EXCEPTION(resName == "", invalid_argument, "Error:  "    \
+      "Integrator_BasisTimesVector called with an empty residual name.")
+    TEUCHOS_TEST_FOR_EXCEPTION(valName == "", invalid_argument, "Error:  "    \
+      "Integrator_BasisTimesVector called with an empty value name.")
+    RCP<const PureBasis> tmpBasis = basis.getBasis();
+    TEUCHOS_TEST_FOR_EXCEPTION(not tmpBasis->isVectorBasis(), logic_error,
+      "Error:  Integrator_BasisTimesVector:  Basis of type \""
+      << tmpBasis->name() << "\" is not a vector basis.");
+    TEUCHOS_TEST_FOR_EXCEPTION(not tmpBasis->requiresOrientations(),
+      logic_error, "Integrator_BasisTimesVector:  Basis of type \""
+      << tmpBasis->name() << "\" does not require orientations.  This seems " \
+      "very strange, so I'm failing.");
 
-  // Verify that this basis supports the gradient operation
-  TEUCHOS_TEST_FOR_EXCEPTION(!basis->isVectorBasis(),std::logic_error,
-                             "Integrator_BasisTimesVector: Basis of type \"" << basis->name() << "\" is not "
-                             "a vector basis.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!basis->requiresOrientations(),std::logic_error,
-                             "Integrator_BasisTimesVector: Basis of type \"" << basis->name() << "\" does not "
-                             "require orientation. This seems very strange, so I'm failing.");
+    // Create the field for the vector-valued quantity we're integrating.
+    vector_ = MDField<const ScalarT, Cell, IP, Dim>(valName, ir.dl_vector);
+    this->addDependentField(vector_);
 
-  this->addEvaluatedField(residual);
-  this->addDependentField(vectorField);
-    
-  multiplier = p.get<double>("Multiplier");
+    // Create the field that we're either contributing to or evaluating
+    // (storing).
+    field_ = MDField<ScalarT, Cell, BASIS>(resName, basis.functional);
+    if (evalStyle == EvaluatorStyle::CONTRIBUTES)
+      this->addContributedField(field_);
+    else // if (evalStyle == EvaluatorStyle::EVALUATES)
+      this->addEvaluatedField(field_);
 
+    // Add the dependent field multipliers, if there are any.
+    int i(0);
+    fieldMults_.resize(fmNames.size());
+    kokkosFieldMults_ =
+      View<View<ScalarT**>*>("BasisTimesVector::KokkosFieldMultipliers",
+      fmNames.size());
+    for (const auto& name : fmNames)
+    {
+      fieldMults_[i++] = MDField<ScalarT, Cell, IP>(name, ir.dl_scalar);
+      this->addDependentField(fieldMults_[i - 1]);
+    } // end loop over the field multipliers
 
-  if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) {
-    const std::vector<std::string>& field_multiplier_names = 
-      *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
+    // Set the name of this object.
+    string n("Integrator_BasisTimesVector (");
+    if (evalStyle == EvaluatorStyle::CONTRIBUTES)
+      n += "Cont";
+    else // if (evalStyle == EvaluatorStyle::EVALUATES)
+      n += "Eval";
+    n += ", " + typeAsString<EvalT>() + "):  " + field_.fieldTag().name();
+    this->setName(n);
+  } // end of Main Constructor
 
-    int i=0;
-    field_multipliers.resize(field_multiplier_names.size());
-    kokkos_field_multipliers = Kokkos::View<Kokkos::View<ScalarT**>* >("BasisTimesVector::KokkosFieldMultipliers", field_multiplier_names.size());
-    Kokkos::fence();
-    for (std::vector<std::string>::const_iterator name = 
-           field_multiplier_names.begin(); 
-         name != field_multiplier_names.end(); ++name) {
-      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
-      Kokkos::fence();
-      field_multipliers[i++] = tmp_field;
-      this->addDependentField(field_multipliers[i-1]);
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  ParameterList Constructor
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  Integrator_BasisTimesVector<EvalT, Traits>::
+  Integrator_BasisTimesVector(
+    const Teuchos::ParameterList& p)
+    :
+    Integrator_BasisTimesVector(
+      panzer::EvaluatorStyle::EVALUATES,
+      p.get<std::string>("Residual Name"),
+      p.get<std::string>("Value Name"),
+      (*p.get<Teuchos::RCP<panzer::BasisIRLayout>>("Basis")),
+      (*p.get<Teuchos::RCP<panzer::IntegrationRule>>("IR")),
+      p.get<double>("Multiplier"),
+      p.isType<Teuchos::RCP<const std::vector<std::string>>>
+        ("Field Multipliers") ?
+        (*p.get<Teuchos::RCP<const std::vector<std::string>>>
+        ("Field Multipliers")) : std::vector<std::string>())
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+
+    // Ensure that the input ParameterList didn't contain any bogus entries.
+    RCP<ParameterList> validParams = this->getValidParameters();
+    p.validateParameters(*validParams);
+  } // end of ParameterList Constructor
+
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  postRegistrationSetup()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  void
+  Integrator_BasisTimesVector<EvalT, Traits>::
+  postRegistrationSetup(
+    typename Traits::SetupData sd,
+    PHX::FieldManager<Traits>& fm)
+  {
+    using panzer::getBasisIndex;
+    using panzer::MDFieldArrayFactory;
+    using std::size_t;
+
+    // Get the Kokkos::Views of the field multipliers.
+    for (size_t i(0); i < fieldMults_.size(); ++i)
+      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
+
+    // Determine the number of quadrature points and the dimensionality of the
+    // vector that we're integrating.
+    numQP_  = vector_.extent(1);
+    numDim_ = vector_.extent(2);
+
+    // Determine the index in the Workset bases for our particular basis name.
+    basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
+  } // end of postRegistrationSetup()
+
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  operator()()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  template<int NUM_FIELD_MULT>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Integrator_BasisTimesVector<EvalT, Traits>::
+  operator()(
+    const FieldMultTag<NUM_FIELD_MULT>& tag,
+    const size_t&                       cell) const
+  {
+    using panzer::EvaluatorStyle;
+
+    // Get the number of field multipliers and number of bases.
+    const int numFieldMults(kokkosFieldMults_.extent(0)),
+      numBases(weightedBasisVector_.extent(1));
+
+    // Initialize the evaluated field.
+    if (evalStyle_ == EvaluatorStyle::EVALUATES)
+      for (int basis(0); basis < numBases; ++basis)
+        field_(cell, basis) = 0.0;
+
+    // The following if-block is for the sake of optimization depending on the
+    // number of field multipliers.
+    ScalarT tmp;
+    if (NUM_FIELD_MULT == 0)
+    {
+      // Loop over the quadrature points and dimensions of our vector fields,
+      // scale the integrand by the multiplier, and perform the actual
+      // integration, looping over the bases.
+      for (int qp(0); qp < numQP_; ++qp)
+      {
+        for (int dim(0); dim < numDim_; ++dim)
+        {
+          tmp = multiplier_ * vector_(cell, qp, dim);
+          for (int basis(0); basis < numBases; ++basis)
+            field_(cell, basis) += weightedBasisVector_(cell, basis, qp, dim) *
+              tmp;
+        } // end loop over the vector dimensions
+      } // end loop over the quadrature points
     }
-  }
-
-  std::string n = "Integrator_BasisTimesVector: " + residual.fieldTag().name();
-  this->setName(n);
-}
-
-//**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesVector,sd,fm)
-{
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(vectorField,fm);
-  // this->utils.setFieldData(dof_orientation,fm);
-  
-  for (std::size_t i=0; i<field_multipliers.size(); ++i) {
-    this->utils.setFieldData(field_multipliers[i],fm);
-    kokkos_field_multipliers(i) = field_multipliers[i].get_static_view();
-  }
-
-  basis_card = residual.dimension(1); // basis cardinality
-  num_qp = vectorField.dimension(1); 
-  num_dim = vectorField.dimension(2); // dimension of a vector
-
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
-
-  // tmp = Intrepid2:FieldContainer<ScalarT>(vectorField.dimension(0), num_qp, num_dim);
-  MDFieldArrayFactory af("",fm.template getKokkosExtendedDataTypeDimensions<EvalT>(),true);
-}
-
-
-//**********************************************************************
-template<typename EvalT, typename TRAITS>
-template<int NUM_FIELD_MULT>
-KOKKOS_INLINE_FUNCTION
-void Integrator_BasisTimesVector<EvalT, TRAITS>::operator()(const FieldMultTag<NUM_FIELD_MULT> &, const size_t &cell) const {
-  const int nqp = vectorField.extent_int(1), ndim = vectorField.extent_int(2);
-  const int nfm = kokkos_field_multipliers.extent_int(0);
-  const int nbf = weighted_basis_vector.extent_int(1);
-
-  for (int lbf = 0; lbf < nbf; lbf++)
-    residual(cell,lbf) = 0.0;
-
-  ScalarT tmp, fmm=1;
-  if ( NUM_FIELD_MULT == 0 ){
-    for (int qp = 0; qp < nqp; ++qp) {
-      for (int d = 0; d < ndim; ++d) {
-        tmp = multiplier * vectorField(cell,qp,d);
-        for (int lbf = 0; lbf < nbf; lbf++)
-          residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;
-      }
+    else if (NUM_FIELD_MULT == 1)
+    {
+      // Loop over the quadrature points and dimensions of our vector fields,
+      // scale the integrand by the multiplier and the single field multiplier,
+      // and perform the actual integration, looping over the bases.
+      for (int qp(0); qp < numQP_; ++qp)
+      {
+        for (int dim(0); dim < numDim_; ++dim)
+        {
+          tmp = multiplier_ * vector_(cell, qp, dim) *
+            kokkosFieldMults_(0)(cell, qp);
+          for (int basis(0); basis < numBases; ++basis)
+            field_(cell, basis) += weightedBasisVector_(cell, basis, qp, dim) *
+              tmp;
+        } // end loop over the vector dimensions
+      } // end loop over the quadrature points
     }
-  } else if ( NUM_FIELD_MULT == 1 ){
-    for (int qp = 0; qp < nqp; ++qp) {
-      for (int d = 0; d < ndim; ++d) {
-        tmp = multiplier * vectorField(cell,qp,d)*kokkos_field_multipliers(0)(cell,qp);
-        for (int lbf = 0; lbf < nbf; lbf++)
-          residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;
-      }
-    }
-  } else {
-    for (int qp = 0; qp < nqp; ++qp) {
-      for (int i = 0; i < nfm; ++i)
-        fmm *= kokkos_field_multipliers(i)(cell,qp);
-      for (int d = 0; d < ndim; ++d) {
-        tmp = multiplier * vectorField(cell,qp,d)*fmm;
-        for (int lbf = 0; lbf < nbf; lbf++)
-          residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;
-      }
-    }
-  }
-}
+    else
+    {
+      // Loop over the quadrature points and pre-multiply all the field
+      // multipliers together.  Then loop over the dimensions of our vector
+      // fields, scale the integrand by the multiplier and the combination of
+      // field multipliers, and perform the actual integration, looping over
+      // the bases.
+      for (int qp(0); qp < numQP_; ++qp)
+      {
+        ScalarT fieldMultsTotal(1);
+        for (int fm(0); fm < numFieldMults; ++fm)
+          fieldMultsTotal *= kokkosFieldMults_(fm)(cell, qp);
+        for (int dim(0); dim < numDim_; ++dim)
+        {
+          tmp = multiplier_ * vector_(cell, qp, dim) * fieldMultsTotal;
+          for (int basis(0); basis < numBases; ++basis)
+            field_(cell, basis) += weightedBasisVector_(cell, basis, qp, dim) *
+              tmp;
+        } // end loop over the vector dimensions
+      } // end loop over the quadrature points
+    } // end if (NUM_FIELD_MULT == something)
+  } // end of operator()()
 
-//**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_BasisTimesVector,workset)
-{ 
-  // residual.deep_copy(ScalarT(0.0));
-  weighted_basis_vector = this->wda(workset).bases[basis_index]->weighted_basis_vector;
-  if ( field_multipliers.size() == 0)
-    Kokkos::parallel_for(Kokkos::RangePolicy<FieldMultTag<0> >(0, workset.num_cells),*this);
-  else if ( field_multipliers.size() == 1)
-    Kokkos::parallel_for(Kokkos::RangePolicy<FieldMultTag<1> >(0, workset.num_cells),*this);
-  else
-    Kokkos::parallel_for(Kokkos::RangePolicy<FieldMultTag<-1> >(0, workset.num_cells),*this);
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  evaluateFields()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  void
+  Integrator_BasisTimesVector<EvalT, Traits>::
+  evaluateFields(
+    typename Traits::EvalData workset)
+  {
+    using Kokkos::parallel_for;
+    using Kokkos::RangePolicy;
 
-//**********************************************************************
-template<typename EvalT, typename TRAITS>
-Teuchos::RCP<Teuchos::ParameterList> 
-Integrator_BasisTimesVector<EvalT, TRAITS>::getValidParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);
-  p->set<std::string>("Residual Name", "?");
-  p->set<std::string>("Value Name", "?");
-  p->set<std::string>("Test Field Name", "?");
-  Teuchos::RCP<panzer::BasisIRLayout> basis;
-  p->set("Basis", basis);
-  Teuchos::RCP<panzer::IntegrationRule> ir;
-  p->set("IR", ir);
-  p->set<double>("Multiplier", 1.0);
-  Teuchos::RCP<const std::vector<std::string> > fms;
-  p->set("Field Multipliers", fms);
-  return p;
-}
+    // Grab the basis information.
+    weightedBasisVector_ =
+      this->wda(workset).bases[basisIndex_]->weighted_basis_vector;
 
-//**********************************************************************
+    // The following if-block is for the sake of optimization depending on the
+    // number of field multipliers.  The parallel_fors will loop over the cells
+    // in the Workset and execute operator()() above.
+    if (fieldMults_.size() == 0)
+      parallel_for(RangePolicy<FieldMultTag<0>>(0, workset.num_cells), *this);
+    else if (fieldMults_.size() == 1)
+      parallel_for(RangePolicy<FieldMultTag<1>>(0, workset.num_cells), *this);
+    else
+      parallel_for(RangePolicy<FieldMultTag<-1>>(0, workset.num_cells), *this);
+  } // end of evaluateFields()
 
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  getValidParameters()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  Teuchos::RCP<Teuchos::ParameterList>
+  Integrator_BasisTimesVector<EvalT, Traits>::
+  getValidParameters() const
+  {
+    using panzer::BasisIRLayout;
+    using panzer::IntegrationRule;
+    using std::string;
+    using std::vector;
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
 
-#endif
+    // Create a ParameterList with all the valid keys we support.
+    RCP<ParameterList> p = rcp(new ParameterList);
+    p->set<string>("Residual Name", "?");
+    p->set<string>("Value Name", "?");
+    RCP<BasisIRLayout> basis;
+    p->set("Basis", basis);
+    RCP<IntegrationRule> ir;
+    p->set("IR", ir);
+    p->set<double>("Multiplier", 1.0);
+    RCP<const vector<string> > fms;
+    p->set("Field Multipliers", fms);
+    return p;
+  } // end of getValidParameters()
 
+} // end of namespace panzer
+
+#endif // __Panzer_Integerator_BasisTimesVector_impl_hpp__

@@ -48,7 +48,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
-#include <stk_search/OctTree.hpp>
 
 namespace stk {
 namespace search {

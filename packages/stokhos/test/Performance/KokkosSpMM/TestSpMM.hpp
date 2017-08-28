@@ -41,7 +41,9 @@
 #include <iostream>
 
 // Kokkos CrsMatrix
-#include "Kokkos_Sparse.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv.hpp"
+
 
 // Utilities
 #include "impl/Kokkos_Timer.hpp"

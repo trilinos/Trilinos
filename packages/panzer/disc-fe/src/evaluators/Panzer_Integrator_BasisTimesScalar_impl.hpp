@@ -84,6 +84,7 @@ namespace panzer
     using panzer::Cell;
     using panzer::EvaluatorStyle;
     using panzer::IP;
+    using panzer::PureBasis;
     using PHX::MDField;
     using PHX::typeAsString;
     using std::invalid_argument;
@@ -176,8 +177,8 @@ namespace panzer
     using panzer::getBasisIndex;
 
     // Determine the number of nodes and quadrature points.
-    numNodes_ = static_cast<int>(field_.extent(1));
-    numQP_    = static_cast<int>(scalar_.extent(1));
+    numNodes_ = field_.extent(1);
+    numQP_    = scalar_.extent(1);
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);

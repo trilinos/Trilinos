@@ -62,7 +62,7 @@
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Kokkos_Blas1_MV.hpp"
+#include "KokkosBlas1_dot.hpp"
 #include <stdexcept>
 #include <sstream>
 
