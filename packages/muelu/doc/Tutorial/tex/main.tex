@@ -2385,6 +2385,8 @@ The interesting part is the ``AllLevel'' sublist (you can freely choose the name
 
 \section{Exemplary setup for a $2\times 2$ problem with rebalancing}
 
+\subsection{Transfer operator setup}
+
 \begin{figure}
 \begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
 		\tikzstyle{style_factory}=[anchor=center,rectangle, draw=black, fill=white, text centered, anchor=north, text=black, text width=3cm, line width=0.5mm]%
@@ -2496,11 +2498,27 @@ The interesting part is the ``AllLevel'' sublist (you can freely choose the name
         \draw[myarrow]   (BlockedRAPFact)  -| node[left]{} ($(rebBlockedRAPFact.west)+(-4.0,0.0)$) -- (rebBlockedRAPFact);				        
 		\draw[myarrow]   (BlockedRFact)  -| node[left]{} ($(rebBlockedRFact.east)+(1.8,0.0)$) -- (rebBlockedRFact);				
 \end{tikzpicture}
-\caption{Setup of $2\times 2$ block transfer operators}
-\label{fig:transferoperatorsetup}
+\caption{Setup of $2\times 2$ block transfer operators with rebalancing}
+\label{fig:transferoperatorsetuprebalancing}
 \end{figure}
 
+Figure \ref{fig:transferoperatorsetuprebalancing} shows the basic setup for block transfer operators with rebalancing enabled. Please compare it with the complete XML input deck in Section \ref{sec:xmlinputdeckrebalancing}.
 
+As one can see from the upper part of Figure \ref{fig:transferoperatorsetuprebalancing} first we build blocked transfer operators and a blocked coarse level operator using sub-factory manager objects \texttt{myFirstGroup} and \texttt{mySecondGroup} in the factories \texttt{myBlockedPFact}, \texttt{myBlockedRFact} and \texttt{myBlockedRAPFact}. Then, we rebalance the coarse level blocked operator $A$ from \texttt{myBlockedRAPFact}. 
+
+The \texttt{myRepartitionHeuristicFact} object will decide whether rebalancing is necessary. If yes, then it will return the number of required partitions for the coarse level operator. This input is processed by the repartition interface and repartition factory objects that finally create \texttt{Xpetra::Importer} to do the rebalancing. The \texttt{myRebBlocked\{P,R,Ac\}Fact} objects use those \texttt{Importer} objects to perform the rebalancing.
+
+Please note, that we build additional helper factory manager objects \texttt{myRebFirstGroup} and \texttt{myRebSecondGroup} which contain all factories relevant for rebalancing the two blocks.
+
+\begin{mycomment}
+No changes are necessary when setting up the block smoothers as they use the matrices on the current level as input (which may or may not be rebalanced in the previous transfer operator setup process).
+\end{mycomment}
+
+\subsection{Complete XML input deck}
+
+The following listing shows the full input deck for a $2\times 2$ blocked operator multigrid setup including rebalancing and level smoothers.
+
+\label{sec:xmlinputdeckrebalancing}
 
 \begin{lstlisting}
 <ParameterList name="MueLu">
@@ -2867,6 +2885,14 @@ The interesting part is the ``AllLevel'' sublist (you can freely choose the name
 </ParameterList>
 <!-- end "MueLu" -->
 \end{lstlisting}
+
+Note, that we are using a coordinate-based rebalancing method from the \texttt{Zoltan} package. The \texttt{myInputCoordsFact} provides the \texttt{Coordinates} variable to the \texttt{ZoltanInterface}. That is, \texttt{myInputCoordsFact} uses user-provided data on the finest level and switches to Coordinates provided by the \texttt{myTransferCoordinatesFact} on the coarser level. 
+
+\begin{mycomment}
+To deal with potential logical circular dependencies between factories you can use the \textit{dependency for} keyword as demonstrated for the \texttt{myTransferCoordinatesFact} and \texttt{myInputCoordsFact} in this example. Note: you can always use the \textit{dependency for} keyword to extend/change factory dependencies in the xml file.
+\end{mycomment}
+
+
 
 \section{Background}
 
