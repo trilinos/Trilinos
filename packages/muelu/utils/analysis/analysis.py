@@ -57,20 +57,21 @@ def setup_timers(input_files, display, top, ax = None):
 
     timers = timer_data.index
 
-    timers_f = [x for x in timers   if re.search('.*\(level=', x) != None]    # search level specific
-    timers_f = [x for x in timers_f if re.search('Solve', x)      == None]    # ignore Solve timers
+    # Timer string corresponding to filtered timers
+    timers_fs = [x for x in timers    if re.search('.*\(level=', x) != None]    # search level specific
+    timers_fs = [x for x in timers_fs if re.search('Solve', x)      == None]    # ignore Solve timers
+    if top > len(timers_fs):
+      print("Warning: there are only ", len(timers_fs), " timers to plot.")
+    top = min(top, len(timers_fs))
 
     # Select subset of the timer data based on the provided timer labels
-    dfs = timer_data.loc[timers_f]
+    dfs = timer_data.loc[timers_fs]
     dfs.sort_values('maxT', ascending=True, inplace=True)
-    timers_f = dfs.index
-
-    # Top few
-    if top > len(timers_f):
-      print("Warning: there are only ", len(timers_f), " timers to plot.")
-    top = min(top, len(timers_f))
-    timers_f = dfs.index[-top:]
+    timers_f = dfs.index[-top:]     # top few
     dfs = dfs.loc[timers_f]
+
+    # Timer string corresponding to filtered and truncated
+    timers_fs = timers_f.get_values()
 
     ## Check the second file (if present)
     diff_mode = False
@@ -81,8 +82,16 @@ def setup_timers(input_files, display, top, ax = None):
             yaml_data = yaml.safe_load(data_file)
 
         timer_data = construct_dataframe(yaml_data)
+        timers = timer_data.index
 
-        dfs1 = timer_data.loc[timers_f]
+        # Replace timers by _kokkos versions if present
+        # This makes sense for comparing non-Kokkos with Kokkos variant
+        for i in range(0,len(timers_fs)):
+            kokkos_timer = timers_fs[i].replace('Factory:', 'Factory_kokkos:')
+            if kokkos_timer in timer_data.index:
+                timers_fs[i] = kokkos_timer
+
+        dfs1 = timer_data.loc[timers_fs]
 
     height = 0.4
 
