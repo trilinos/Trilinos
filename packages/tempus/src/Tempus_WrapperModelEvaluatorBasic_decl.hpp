@@ -33,8 +33,11 @@ public:
   /// Constructor
   WrapperModelEvaluatorBasic(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
-    : appModel_(appModel)
-  {}
+    : appModel_(appModel), timeDer_(Teuchos::null)
+  {
+    wrapperInArgs_  = this->createInArgs();
+    wrapperOutArgs_ = this->createOutArgs();
+  }
 
   /// Set the underlying application ModelEvaluator
   virtual void setAppModel(
@@ -45,13 +48,30 @@ public:
   virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getAppModel() const { return appModel_; }
 
-  /// Set values to compute x dot and evaluate application model.
-  virtual void initialize(
-    std::function<void (const Thyra::VectorBase<Scalar> &,
-                              Thyra::VectorBase<Scalar> &)> computeXDot,
-    double t, double alpha, double beta)
+  /// Set InArgs the wrapper ModelEvalutor.
+  virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
+  { wrapperInArgs_.setArgs(inArgs); }
+
+  /// Get InArgs the wrapper ModelEvalutor.
+  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs()
+  { return wrapperInArgs_; }
+
+  /// Set OutArgs the wrapper ModelEvalutor.
+  virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
+  { wrapperOutArgs_.setArgs(outArgs); }
+
+  /// Get OutArgs the wrapper ModelEvalutor.
+  virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
+  { return wrapperOutArgs_; }
+
+  /// Initialize WrapperModelEvalutor to evaluate application ModelEvaluator.
+  virtual void initialize(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
+    Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs,
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs)
   {
-    computeXDot_ = computeXDot; t_ = t; alpha_ = alpha; beta_ = beta;
+    timeDer_ = timeDer;
+    wrapperInArgs_.setArgs(inArgs);
+    wrapperOutArgs_.setArgs(outArgs);
   }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
@@ -74,6 +94,9 @@ public:
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const
       { return appModel_->get_x_space(); }
 
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const
+      { return appModel_->get_g_space(i); }
+
     Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
       { return appModel_->getNominalValues(); }
 
@@ -90,12 +113,10 @@ private:
   WrapperModelEvaluatorBasic();
 
 private:
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >      appModel_;
-  std::function<void (const Thyra::VectorBase<Scalar> &,
-                            Thyra::VectorBase<Scalar> &)> computeXDot_;
-  Scalar t_;
-  Scalar alpha_;
-  Scalar beta_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
+  Teuchos::RCP<TimeDerivative<Scalar> >              timeDer_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>          wrapperInArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         wrapperOutArgs_;
 };
 
 } // namespace Tempus

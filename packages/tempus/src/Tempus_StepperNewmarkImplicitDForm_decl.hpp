@@ -16,11 +16,10 @@ namespace Tempus {
 
 /** \brief Newmark time stepper.
  *
- *  Here, we implement the Newmark scheme in displacement predictor/corrector form;
- *  see equations (34)-(35) in: A. Mota, W. Klug, M. Ortiz,  "Finite element
- * simulation
- *  of firearm injury to the human cranium",  Computational Mechanics 31(1)
- * 115-121 (2003).
+ *  Here, we implement the Newmark scheme in displacement predictor/corrector
+ *  form; see equations (34)-(35) in: A. Mota, W. Klug, M. Ortiz,
+ *  "Finite element simulation of firearm injury to the human cranium",
+ *  Computational Mechanics 31(1) 115-121 (2003).
  *
  *  Newmark has two parameters: \f$\beta\f$
  *  and \f$\gamma\f$, both of which need to be in the range \f$[0,1]\f$.

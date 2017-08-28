@@ -9,7 +9,7 @@
 #ifndef Tempus_WrapperModelEvaluator_hpp
 #define Tempus_WrapperModelEvaluator_hpp
 
-#include <functional>
+#include "Tempus_TimeDerivative.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 
 namespace Tempus {
@@ -27,6 +27,21 @@ class WrapperModelEvaluator : public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
 
+  /// \name Methods that apply to both explicit and implicit terms.
+  //@{
+    /// Get the x-solution space
+    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+      get_x_space() const = 0;
+
+    /// Get the g space
+    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+      get_g_space(int i) const = 0;
+
+    /// Get the p space
+    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+      get_p_space(int i) const = 0;
+  //@}
+
   /// Set the underlying application ModelEvaluator
   virtual void setAppModel(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me) = 0;
@@ -35,11 +50,22 @@ public:
   virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getAppModel() const = 0;
 
-  /// Set values to compute x dot and evaluate application model.
-  virtual void initialize(
-    std::function<void (const Thyra::VectorBase<Scalar> &,
-                              Thyra::VectorBase<Scalar> &)> computeXDot,
-    double t, double alpha, double beta) = 0;
+  /// Set InArgs the wrapper ModelEvalutor.
+  virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs) = 0;
+
+  /// Get InArgs the wrapper ModelEvalutor.
+  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs() = 0;
+
+  /// Set OutArgs the wrapper ModelEvalutor.
+  virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)=0;
+
+  /// Get OutArgs the wrapper ModelEvalutor.
+  virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs() = 0;
+
+  /// Initialize to evaluate application ModelEvaluator.
+  virtual void initialize(Teuchos::RCP<TimeDerivative<Scalar> > td,
+    Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs) = 0;
 };
 
 } // namespace Tempus
