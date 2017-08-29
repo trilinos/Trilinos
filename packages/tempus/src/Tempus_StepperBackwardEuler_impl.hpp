@@ -192,10 +192,27 @@ void StepperBackwardEuler<Scalar>::setPredictor(
 
 
 template<class Scalar>
+void StepperBackwardEuler<Scalar>::setObserver(
+  Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs)
+{
+  if (obs == Teuchos::null) {
+    // Create default observer, otherwise keep current observer.
+    if (stepperBEObserver_ == Teuchos::null) {
+      stepperBEObserver_ =
+        Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>());
+    }
+  } else {
+    stepperBEObserver_ = obs;
+  }
+}
+
+
+template<class Scalar>
 void StepperBackwardEuler<Scalar>::initialize()
 {
   this->setSolver();
   this->setPredictor();
+  this->setObserver();
 }
 
 
@@ -207,6 +224,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackardEuler::takeStep()");
   {
+    stepperBEObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
@@ -238,8 +256,12 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
     wrapperModel_->initialize(timeDer, inArgs, outArgs);
 
+    stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);
+
     const Thyra::SolveStatus<double> sStatus =
       this->solveNonLinear(wrapperModel_, *solver_, x);
+
+    stepperBEObserver_->observeAfterSolve(solutionHistory, *this);
 
     timeDer->compute(x, xDot);
 
@@ -248,8 +270,8 @@ void StepperBackwardEuler<Scalar>::takeStep(
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
     workingState->setOrder(this->getOrder());
+    stepperBEObserver_->observeEndTakeStep(solutionHistory, *this);
   }
-
   return;
 }
 

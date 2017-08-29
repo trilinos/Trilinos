@@ -13,6 +13,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX.hpp"
+#include "Tempus_StepperIMEX_RKObserver.hpp"
 
 
 namespace Tempus {
@@ -281,7 +282,9 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     /// Set solver.
     virtual void setSolver(
-        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual void setObserver(
+      Teuchos::RCP<StepperIMEX_RKObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -339,6 +342,8 @@ protected:
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageG_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
+
+  Teuchos::RCP<StepperIMEX_RKObserver<Scalar> >  stepperIMEX_RKObserver_;
 };
 
 

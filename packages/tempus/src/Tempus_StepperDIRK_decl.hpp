@@ -13,9 +13,10 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
+#include "Tempus_StepperDIRKObserver.hpp"
+
 
 namespace Tempus {
-
 
 /** \brief Diagonally Implicit Runge-Kutta (DIRK) time stepper.
  *
@@ -104,6 +105,8 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL = Teuchos::null);
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual void setObserver(
+      Teuchos::RCP<StepperDIRKObserver<Scalar> > obs = Teuchos::null);
 
     void setTableau(
       Teuchos::RCP<Teuchos::ParameterList> pList,
@@ -156,6 +159,8 @@ protected:
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
+
+  Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
 };

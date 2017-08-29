@@ -11,9 +11,10 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
+#include "Tempus_StepperBackwardEulerObserver.hpp"
+
 
 namespace Tempus {
-
 
 /** \brief Backward Euler time stepper.
  *
@@ -51,10 +52,12 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual void setObserver(
+      Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs = Teuchos::null);
 
     /// Set the predictor
     void setPredictor(std::string predictorName);
-    void setPredictor(Teuchos::RCP<Teuchos::ParameterList> predPL=Teuchos::null);
+    void setPredictor(Teuchos::RCP<Teuchos::ParameterList>predPL=Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -97,10 +100,12 @@ private:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>              stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >      wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
-  Teuchos::RCP<Stepper<Scalar> >                    predictorStepper_;
+  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
+  Teuchos::RCP<WrapperModelEvaluator<Scalar> >       wrapperModel_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  solver_;
+  Teuchos::RCP<Stepper<Scalar> >                     predictorStepper_;
+
+  Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
 };
 
 /** \brief Time-derivative interface for Backward Euler.

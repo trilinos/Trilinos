@@ -12,10 +12,10 @@
 #include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_RKButcherTableau.hpp"
+#include "Tempus_StepperExplicitRKObserver.hpp"
 
 
 namespace Tempus {
-
 
 /** \brief Explicit Runge-Kutta time stepper.
  *
@@ -85,6 +85,8 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     virtual void setSolver(
         Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual void setObserver(
+      Teuchos::RCP<StepperExplicitRKObserver<Scalar> > obs = Teuchos::null);
 
     void setTableau(
       Teuchos::RCP<Teuchos::ParameterList> pList,
@@ -140,9 +142,11 @@ protected:
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
 
+  Teuchos::RCP<StepperExplicitRKObserver<Scalar> >  stepperExplicitRKObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
 };
+
 } // namespace Tempus
 
 #endif // Tempus_StepperExplicitRK_decl_hpp
