@@ -125,6 +125,8 @@ public:
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
+
+
   }
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -152,6 +154,7 @@ public:
   MatrixPartitioningProblem(Adapter *A, ParameterList *p):
     MatrixPartitioningProblem(A, p, Teuchos::DefaultComm<int>::getComm())
   {
+
   }
 
 
@@ -306,6 +309,9 @@ template <typename Adapter>
 template <typename Adapter>
 void MatrixPartitioningProblem<Adapter>::solve(bool updateInputData)
 {
+  std::cout << "MatrixPartitioningProblem solve " << std::endl;
+
+
   this->env_->debug(DETAILED_STATUS, "Entering solve");
 
   // Create the computational model.
@@ -321,9 +327,14 @@ void MatrixPartitioningProblem<Adapter>::solve(bool updateInputData)
   // update the solution with part assignments and quality metrics.
 
   // Create the algorithm
-  try {
-    if (algName_ == std::string("2D Cartesian")) 
-    {
+  try 
+  {
+
+
+    //TODO NEED to add if statement back once parameters work
+    // if (algName_ == std::string("2D Cartesian")) 
+    // {
+
       // this->algorithm_ = rcp(new AlgMatrix<Adapter>(this->envConst_,
       // 								 this->comm_,
       // 								 this->baseInputAdapter_));
@@ -332,10 +343,10 @@ void MatrixPartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new AlgMatrix<Adapter>(this->envConst_,
 								 this->comm_,
 								 this->baseInputAdapter_));
-    }
-    else {
-      throw std::logic_error("partitioning algorithm not supported");
-    }
+    // }
+    // else {
+    //   throw std::logic_error("partitioning algorithm not supported");
+    // }
   }
   Z2_FORWARD_EXCEPTIONS;
 

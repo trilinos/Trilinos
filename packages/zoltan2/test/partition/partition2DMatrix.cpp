@@ -180,12 +180,13 @@ int main(int narg, char** arg)
 
   params.set("partitioning_approach", "partition");
 
-  params.set("2D Cartesian", method);
+
+  // TODO this needs to be added back once parameter is properly validated
+  //  params.set("algorithm", "2D Cartesian");
 
 
   ////// Create an input adapter for the graph of the Tpetra matrix.
   //  SparseGraphAdapter adapter(origMatrix->getCrsGraph(), nVwgts, nEwgts);
-
 
   SparseMatrixAdapter adapter(origMatrix, 0);
 
@@ -193,10 +194,7 @@ int main(int narg, char** arg)
   // 									     int nWeightsPerRow = 0 
   // 									     )
 
-
-
   ////// Create and solve partitioning problem
-  //  Zoltan2::PartitioningProblem<SparseGraphAdapter> problem(&adapter, &params);
   Zoltan2::MatrixPartitioningProblem<SparseMatrixAdapter> problem(&adapter, &params);
 
   try {
@@ -319,6 +317,8 @@ int main(int narg, char** arg)
 //     if (!haveFailure)
 //       std::cout << "PASS" << std::endl;
 //   }
+
+  std::cout << "Finished" << std::endl;
 
   return testReturn;
 }
