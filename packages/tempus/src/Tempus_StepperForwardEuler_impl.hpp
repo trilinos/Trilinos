@@ -13,6 +13,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
+
 namespace Tempus {
 
 // StepperForwardEuler definitions:
@@ -34,9 +35,8 @@ void StepperForwardEuler<Scalar>::setModel(
   this->validExplicitODE(appModel);
   appModel_ = appModel;
 
-  inArgs_  = appModel_->createInArgs();
-  outArgs_ = appModel_->createOutArgs();
   inArgs_  = appModel_->getNominalValues();
+  outArgs_ = appModel_->createOutArgs();
 }
 
 template<class Scalar>
@@ -78,6 +78,20 @@ void StepperForwardEuler<Scalar>::setSolver(
   return;
 }
 
+template<class Scalar>
+void StepperForwardEuler<Scalar>::setObserver(
+  Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs)
+{
+  if (obs == Teuchos::null) {
+    // Create default observer, otherwise keep current observer.
+    if (stepperFEObserver_ == Teuchos::null) {
+      stepperFEObserver_ =
+        Teuchos::rcp(new StepperForwardEulerObserver<Scalar>());
+    }
+  } else {
+    stepperFEObserver_ = obs;
+  }
+}
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::takeStep(
@@ -87,6 +101,7 @@ void StepperForwardEuler<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperForwardEuler::takeStep()");
   {
+    stepperFEObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
     typedef Thyra::ModelEvaluatorBase MEB;
@@ -101,6 +116,8 @@ void StepperForwardEuler<Scalar>::takeStep(
     if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
     outArgs_.set_f(currentState->getXDot());
 
+    stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
+
     appModel_->evalModel(inArgs_,outArgs_);
 
     // Forward Euler update, x = x + dt*xdot
@@ -111,6 +128,7 @@ void StepperForwardEuler<Scalar>::takeStep(
 
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     workingState->setOrder(this->getOrder());
+    stepperFEObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

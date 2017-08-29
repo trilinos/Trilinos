@@ -35,6 +35,7 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   this->setParameterList(pList);
   this->setModel(appModel);
   this->setSolver();
+  this->setObserver();
   this->initialize();
 }
 
@@ -356,6 +357,23 @@ void StepperIMEX_RK<Scalar>::setSolver(
   solver_ = solver;
 }
 
+
+template<class Scalar>
+void StepperIMEX_RK<Scalar>::setObserver(
+  Teuchos::RCP<StepperIMEX_RKObserver<Scalar> > obs)
+{
+  if (obs == Teuchos::null) {
+    // Create default observer, otherwise keep current observer.
+    if (stepperIMEX_RKObserver_ == Teuchos::null) {
+      stepperIMEX_RKObserver_ =
+        Teuchos::rcp(new StepperIMEX_RKObserver<Scalar>());
+    }
+  } else {
+    stepperIMEX_RKObserver_ = obs;
+  }
+}
+
+
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::initialize()
 {
@@ -424,6 +442,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperIMEX_RK::takeStep()");
   {
+    stepperIMEX_RKObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -442,6 +461,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
     Thyra::SolveStatus<double> sStatus;
     Thyra::assign(stageX_.ptr(), *(currentState->getX()));
     for (int i = 0; i < numStages; ++i) {
+      stepperIMEX_RKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j = 0; j < i; ++j) {
         if (AHat(i,j) != Teuchos::ScalarTraits<Scalar>::zero())
@@ -471,6 +491,8 @@ void StepperIMEX_RK<Scalar>::takeStep(
             inArgs.set_x_dot(Teuchos::null);
           outArgs.set_f(stageG_[i]);
 
+          stepperIMEX_RKObserver_->observeBeforeDAEExplicit(solutionHistory,
+                                                            *this);
           wrapperModelPairIMEX_->getImplicitModel()->evalModel(inArgs,outArgs);
           Thyra::Vt_S(stageG_[i].ptr(), -1.0);
         }
@@ -498,16 +520,22 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
         wrapperModelPairIMEX_->initialize(timeDer, inArgs, outArgs);
 
+        stepperIMEX_RKObserver_->observeBeforeSolve(solutionHistory, *this);
+
         sStatus = this->solveNonLinear(wrapperModelPairIMEX_,*solver_,stageX_);
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
+
+        stepperIMEX_RKObserver_->observeAfterSolve(solutionHistory, *this);
 
         // Update contributions to stage values
         Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *stageX_, alpha, *xTilde_);
       }
 
       // Evaluate the ExplicitODE
+      stepperIMEX_RKObserver_->observeBeforeExplicit(solutionHistory, *this);
       evalExplicitModel(stageX_, tHats, dt, i, stageF_[i]);
       Thyra::Vt_S(stageF_[i].ptr(), -1.0);
+      stepperIMEX_RKObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 - dt*Sum{ bHat(i)*f(i) + b(i)*g(i) }
@@ -524,6 +552,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
     workingState->setOrder(this->getOrder());
+    stepperIMEX_RKObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

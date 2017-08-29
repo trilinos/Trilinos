@@ -35,6 +35,7 @@ StepperDIRK<Scalar>::StepperDIRK(
   this->setParameterList(pList);
   this->setModel(appModel);
   this->setSolver();
+  this->setObserver();
   this->initialize();
 }
 
@@ -154,6 +155,23 @@ void StepperDIRK<Scalar>::setTableau(
   description_ = DIRK_ButcherTableau_->description();
 }
 
+
+template<class Scalar>
+void StepperDIRK<Scalar>::setObserver(
+  Teuchos::RCP<StepperDIRKObserver<Scalar> > obs)
+{
+  if (obs == Teuchos::null) {
+    // Create default observer, otherwise keep current observer.
+    if (stepperDIRKObserver_ == Teuchos::null) {
+      stepperDIRKObserver_ =
+        Teuchos::rcp(new StepperDIRKObserver<Scalar>());
+    }
+  } else {
+    stepperDIRKObserver_ = obs;
+  }
+}
+
+
 template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
@@ -177,6 +195,7 @@ void StepperDIRK<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperDIRK::takeStep()");
   {
+    stepperDIRKObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -191,6 +210,7 @@ void StepperDIRK<Scalar>::takeStep(
     bool pass = true;
     Thyra::SolveStatus<double> sStatus;
     for (int i=0; i < numStages; ++i) {
+      stepperDIRKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j=0; j < i; ++j) {
         if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
@@ -217,6 +237,7 @@ void StepperDIRK<Scalar>::takeStep(
             inArgs.set_x_dot(Teuchos::null);
           outArgs.set_f(stageXDot_[i]);
 
+          stepperDIRKObserver_->observeBeforeDAEExplicit(solutionHistory,*this);
           wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
         }
       } else {
@@ -241,11 +262,16 @@ void StepperDIRK<Scalar>::takeStep(
 
         wrapperModel_->initialize(timeDer, inArgs, outArgs);
 
+        stepperDIRKObserver_->observeBeforeSolve(solutionHistory, *this);
+
         sStatus = this->solveNonLinear(wrapperModel_, *solver_, stageX_);
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED ) pass=false;
 
+        stepperDIRKObserver_->observeAfterSolve(solutionHistory, *this);
+
         timeDer->compute(stageX_, stageXDot_[i]);
       }
+      stepperDIRKObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 + Sum{ dt*b(i) * f(i) }
@@ -266,6 +292,7 @@ void StepperDIRK<Scalar>::takeStep(
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
     workingState->setOrder(this->getOrder());
+    stepperDIRKObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
