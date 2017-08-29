@@ -71,7 +71,7 @@ public:
    virtual void buildConnectivity(const FieldPattern & fp) = 0;
   
    /** Build a clone of this connection manager, without any assumptions
-     * about the required connectivity (e.g. <code>buildConnectivity</code>
+     * about the required connectivity (i.e. <code>buildConnectivity</code>
      * has never been called).
      */
    virtual Teuchos::RCP<ConnManagerBase<LocalOrdinalT> > noConnectivityClone() const = 0;

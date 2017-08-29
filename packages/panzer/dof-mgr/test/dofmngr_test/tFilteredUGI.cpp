@@ -50,14 +50,15 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <unordered_set>
 
-#include "Thyra_SpmdVectorSpaceBase.hpp"
+// #include "Thyra_SpmdVectorSpaceBase.hpp"
 
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+// #include "Panzer_EpetraLinearObjFactory.hpp"
 
 #include "UnitTest_ConnManager.hpp"
 
@@ -67,8 +68,8 @@
 
 #include "Kokkos_DynRankView.hpp"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
+// #include "Epetra_MpiComm.h"
+// #include "Epetra_SerialComm.h"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -91,13 +92,8 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 {
-
-   // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::MpiComm<int> > tComm 
+     = rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
 
    // panzer::pauseToAttach();
 
@@ -105,8 +101,8 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();   
 
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
@@ -191,16 +187,8 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 {
-
-   // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-
-      RCP<const Teuchos::MpiComm<int> > tComm 
-         = rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::MpiComm<int> > tComm 
+     = rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
 
    // panzer::pauseToAttach();
 
@@ -208,8 +196,8 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = tComm->getRank(); 
+   int numProc = tComm->getSize(); 
 
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
@@ -425,7 +413,13 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    }
 }
 
+// **************************************
+// The next test was moved into disc-fe since it requires Thyra and
+// LOF
+// **************************************
+
 // this just excercises a bunch of functions
+/*
 TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
 {
    using Teuchos::RCP;
@@ -561,6 +555,6 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
 
 
 }
-
+*/
 
 }
