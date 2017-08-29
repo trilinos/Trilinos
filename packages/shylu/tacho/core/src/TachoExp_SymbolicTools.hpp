@@ -368,7 +368,7 @@ namespace Tacho {
           for (ordinal_type i=0;i<nsids;++i) flag(i) = i;
 
           std::sort(flag.data(), flag.data()+nsids, 
-                    [&](std::size_t i, std::size_t j){ return sididx(i) < sididx(j); });
+                    [&](std::size_t i, std::size_t j){ return cid(i) < cid(j); });
           std::transform(flag.data(), flag.data()+nsids, 
                          sididx.data(),[&](std::size_t i) { return cid(i); });
           std::transform(flag.data(), flag.data()+nsids, 

@@ -48,15 +48,21 @@ namespace Tacho {
         KOKKOS_INLINE_FUNCTION
         Supernode() 
           : lock(0), row_begin(0), m(0), n(0), 
-            gid_col_begin(0), sid_col_begin(0), nchildren(0),
+            gid_col_begin(0), gid_col_end(0), 
+            sid_col_begin(0), sid_col_end(0), 
+            nchildren(0),
             max_decendant_schur_size(0),
             max_decendant_supernode_size(0),
-            buf(NULL) {}
+            buf(NULL) {
+          for (ordinal_type i=0;i<nchildren;++i) children[i] = 0;
+        }
 
         KOKKOS_INLINE_FUNCTION
         Supernode(const Supernode &b) 
           : lock(0), row_begin(b.row_begin), m(b.m), n(b.n), 
-            gid_col_begin(b.gid_col_begin), sid_col_begin(b.sid_col_begin), nchildren(b.nchildren),
+            gid_col_begin(b.gid_col_begin), gid_col_end(b.gid_col_end), 
+            sid_col_begin(b.sid_col_begin), sid_col_end(b.sid_col_end), 
+            nchildren(b.nchildren),
             max_decendant_schur_size(b.max_decendant_schur_size),
             max_decendant_supernode_size(b.max_decendant_supernode_size),
             buf(b.buf) {
@@ -137,8 +143,8 @@ namespace Tacho {
           s.gid_col_begin = gid_ptr_(sid); s.gid_col_end = gid_ptr_(sid+1);
           s.sid_col_begin = sid_ptr_(sid); s.sid_col_end = sid_ptr_(sid+1);
 
-          for (ordinal_type i=s.sid_col_begin;i<static_cast<ordinal_type>(sid_ptr_(sid+1));++i) {
-            sid_block_colidx_(i).first  = sid_colidx_(i);
+          for (ordinal_type i=s.sid_col_begin;i<s.sid_col_end;++i) {
+              sid_block_colidx_(i).first  = sid_colidx_(i);
             sid_block_colidx_(i).second = blk_colidx_(i);
           }
 
