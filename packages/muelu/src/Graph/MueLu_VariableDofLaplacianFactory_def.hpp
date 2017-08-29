@@ -177,7 +177,7 @@ namespace MueLu {
 
     // copy from dof vector to nodal vector
     for (size_t i = 0; i < myLocalNodeIds.size(); i++)
-       amalgColMapGIDs[ myLocalNodeIds[i]] = Teuchos::as<Scalar>(tempAmalgColVecBData[i]); //tempAmalgColMap[i];
+       amalgColMapGIDs[ myLocalNodeIds[i]] = tempAmalgColVecBData[i];
 
     Teuchos::RCP<Map> amalgRowMap = MapFactory::Build(lib,
                Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
