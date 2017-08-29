@@ -71,6 +71,9 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   using Teuchos::rcp;
   using MueLu::Exceptions::RuntimeError;
 
+  Kokkos::initialize(argc, argv);
+
+
   // MPI initialization using Teuchos
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
@@ -213,6 +216,8 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  Kokkos::finalize();
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
