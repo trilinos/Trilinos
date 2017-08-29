@@ -71,11 +71,17 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   using Teuchos::rcp;
   using MueLu::Exceptions::RuntimeError;
 
-  Kokkos::initialize(argc, argv);
-
-
   // MPI initialization using Teuchos
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+
+  // Tpetra nodes call Kokkos::execution_space::initialize if the execution
+  // space is not initialized, but they don't call Kokkos::initialize.
+  // Teuchos::GlobalMPISession captures its command-line arguments for later
+  // use that Tpetra takes advantage of.
+  //
+  // We call Kokkos::initialize() after MPI so that MPI has the chance to bind
+  // processes correctly before Kokkos touches things.
+  Kokkos::initialize(argc, argv);
 
   bool success = true;
   bool verbose = true;
