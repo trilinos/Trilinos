@@ -186,7 +186,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
 
         if (config)
-          Kokkos::Cuda::print_configuration(galeriStream, true/*details*/);
+          Kokkos::Cuda::print_configuration(std::cout, true/*details*/);
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
